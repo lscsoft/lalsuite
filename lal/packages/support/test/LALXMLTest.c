@@ -65,6 +65,7 @@ int testLIGOTimeGPS(void);
 int testPulsarDopplerParams(void);
 int test_gsl_vector(void);
 int test_gsl_matrix(void);
+int testTableCreation ( void );
 
 /* private utility prototypes */
 int validateDocument(const xmlDocPtr xmlDocument);
@@ -107,6 +108,12 @@ int main(void)
     fprintf(stderr, "======================================================================\n\n");
 
     if ( (result = test_gsl_matrix()) != LALXMLC_ENOM ) {
+      return result;
+    }
+
+    fprintf(stderr, "======================================================================\n\n");
+
+    if ( ( result = testTableCreation()) != LALXMLC_ENOM ) {
       return result;
     }
 
@@ -679,6 +686,71 @@ test_gsl_matrix(void)
 
 
 
+int testTableCreation ( void )
+{
+  const char *fn = "testTableCreation()";
+
+  xmlNodePtr fieldNodeList = NULL, newFieldNode = NULL;
+
+  if ( (fieldNodeList = XLALCreateVOTFieldNode ( "Freq", "Hz", VOT_REAL8, NULL )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Freq'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Alpha", "rad", VOT_REAL8, NULL )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Alpha'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Delta", "rad", VOT_REAL8, NULL )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Delta'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
+
+  xmlNodePtr xmlTable = NULL;
+
+  REAL8 Freqs[] = { 100.1234, 101.234, 102.345 };
+  REAL8 Alphas[] = { 0.1234, 2.123434, 3.2341 };
+  REAL8 Deltas[] = { -1.234, -0.5, 1.234 };
+
+
+  if ( (xmlTable = XLALCreateVOTTableNode ( "testTable", fieldNodeList, VOT_SERIALIZE_TABLEDATA, NULL, 3, Freqs, Alphas, Deltas )) == NULL ){
+    XLALPrintError("%s: XLALCreateVOTTableNode() failed. errno = %d.\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+
+
+  xmlDocPtr xmlDocument = NULL;
+  xmlChar *xmlString = NULL;
+
+  /* convert VOTable fragment into VOTable document */
+  if ( (xmlDocument = (xmlDocPtr)XLALCreateVOTDocumentFromTree((const xmlNodePtr)xmlTable)) == NULL ) {
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
+    return LALXMLC_EFUN;
+  }
+  fprintf(stderr, "LALXMLTest: [XLALCreateVOTDocumentFromTree(): %s]\n", LALXMLC_MSGENOM);
+
+  /* convert VOTable document into XML string */
+  if(!xmlDocument2String(xmlDocument, &xmlString)) {
+    return LALXMLC_EFUN;
+  }
+
+  /* ---------- display serialized structure */
+  fprintf(stderr, "Serialized VOTable XML:\n");
+  fprintf(stderr, "----------------------------------------------------------------------\n");
+  fprintf(stderr, (char*)xmlString);
+  fprintf(stderr, "----------------------------------------------------------------------\n");
+
+
+  return LALXMLC_ENOM;
+
+} /* testTableCreation() */
 
 
 /* -------------------- Helper functions -------------------- */

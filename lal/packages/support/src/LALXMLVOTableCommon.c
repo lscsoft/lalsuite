@@ -26,6 +26,7 @@
 
 /* ---------- includes ---------- */
 #include <string.h>
+#include <stdarg.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -35,7 +36,7 @@
 #include <lal/XLALError.h>
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXML.h>
-
+#include <lal/LALMalloc.h>
 
 /* ---------- defines and macros ---------- */
 #define VOTABLE_VERSION     "1.1"
@@ -48,7 +49,9 @@
 
 /* ---------- internal prototypes ---------- */
 const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
-const char* XLALVOTParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute );
+VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
+
+const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 
 /* ---------- function definitions ---------- */
 
@@ -316,7 +319,230 @@ xmlNodePtr XLALCreateVOTResourceNode(const char *type,
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlResourceNode;
-}
+
+} /* XLALCreateVOTResourceNode() */
+
+
+/**
+ * \brief Creates a VOTable \c TABLE %node
+ *
+ * This function creates a VOTable \c TABLE %node with a given (otpional) name and the given FIELD elements
+ *
+ * Note: the variable-length argument pointers must be *void pointers*, and match in number,
+ * and type of data pointed-to with the list of FIELD elements passed in!
+ *
+ * \return A \c xmlNodePtr that holds the new \c TABLE %node (incl. all children and data).
+ * In case of an error, a null-pointer is returned.\n
+ *
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr
+XLALCreateVOTTableNode ( const char *name,			/**< [in] optional name attribute to assign to this \c TABLE element (may be NULL) */
+                         const xmlNodePtr fieldNodeList, 	/**< [in] Pointer to an array of \c xmlNodes that are to be assigned as FIELD children */
+                         VOTABLE_SERIALIZATION_TYPE serializer,	/**< [in] table-serialization: embedded TABLEDATA or external BINARY file? */
+                         const char *externalStream,		/**< [in] optional external stream (eg file) to write serialized data to if not using TABLEDATA */
+                         UINT4 numRows,				/**< [in] number of *rows* in the table [*must* be <= than the lenght of the data arrays!] */
+                         ...					/**< [in] list of void-pointers to field column data: must match FIELD specs! */
+                         )
+{
+    static const char *fn = "XLALCreateVOTTableNode()";
+    int err;
+
+    va_list ap;	/* pointer to each unnamed argument in turn */
+
+    xmlNodePtr xmlTableNode = NULL;
+    xmlNodePtr xmlChildNode = NULL;
+
+    UINT4 row, col, numFields;
+
+    /* input sanity check */
+    if ( fieldNodeList == NULL ) {
+      XLALPrintError ("%s: invalid NULL input 'fieldNodeList'\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    }
+    /* only TABLEDATA implemented for now */
+    if ( serializer != VOT_SERIALIZE_TABLEDATA ) {
+      XLALPrintError ("%s: only serialization implemented is VOT_SERIALIZE_TABLEDATA (=%d), got %d.\n", fn, VOT_SERIALIZE_TABLEDATA, serializer );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    }
+    if ( externalStream != NULL ) {
+      XLALPrintError ("%s: serializer VOT_SERIALIZE_TABLEDATA doesn't allow external stream, got '%s'\n", fn, externalStream );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    }
+
+
+    /* create master node */
+    if ( (xmlTableNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("TABLE"))) == NULL ) {
+      XLALPrintError("%s: Element instantiation failed: TABLE\n", fn);
+      err = XLAL_EFAILED;
+      goto failed;
+    }
+
+    /* add attributes (if any) */
+    if(name && !xmlNewProp(xmlTableNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(name))) {
+      XLALPrintError("%s: Attribute instantiation failed: name\n", fn);
+      err = XLAL_EFAILED;
+      goto failed;
+    }
+
+    /* add FIELD children */
+    xmlChildNode = fieldNodeList;	/* init to first field Node */
+    numFields = 0;
+    while ( xmlChildNode )
+      {
+        if ( !xmlAddChild ( xmlTableNode, xmlChildNode ) )
+          {
+            XLALPrintError("%s: Couldn't add child FIELD node to TABLE node!\n", fn);
+            err = XLAL_EFAILED;
+            goto failed;
+          }
+
+        /* advance to next sibling in list */
+        xmlChildNode = xmlChildNode->next;
+        numFields ++;
+
+      } /* while xmlChildNode */
+
+
+    /* ---------- serialize TABLEDATA from varargs input list ---------- */
+    void **dataColumns;			/* array of void-pointers to variable-length input arguments */
+    VOTABLE_DATATYPE *dataTypes;	/* array of corresponding datatypes, parsed from fieldNodeList */
+
+    if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
+      XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", fn, numFields, sizeof(*dataColumns) );
+      err = XLAL_ENOMEM;
+      goto failed;
+    }
+    if ( (dataTypes = XLALCalloc ( numFields, sizeof(*dataTypes) )) == NULL ) {
+      XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", fn, numFields, sizeof(*dataTypes) );
+      err = XLAL_ENOMEM;
+      goto failed;
+    }
+
+    /* handle variable-length input arguments containing the table data (columns) */
+    va_start(ap, numRows);
+
+    xmlChildNode = fieldNodeList;	/* init to first field Node */
+    /* ----- in a first pass we just catalog the data-pointers and corresponding data-types into arrays */
+    for ( col=0; col < numFields; col ++ )	/* loop over all fields (= columns of table) */
+      {
+        char *datatypeStr;
+
+        dataColumns[col] = va_arg(ap, void *);	/* assemble a list of data-pointers of all data columns */
+
+        if ( (datatypeStr = (char*)xmlGetProp ( xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
+          XLALPrintError ("%s: xmlGetProp() failed to find attribute 'datatype' in field node Nr %d.\n", fn, col );
+          err = XLAL_EINVAL;
+          goto failed;
+        }
+        if ( ( dataTypes[col] = XLALVOTString2Datatype ( datatypeStr ) ) == VOT_DATATYPE_LAST ) {
+          XLALPrintError ("%s: invalid data-type attribute encountered '%s' in field node Nr %d.\n", fn, datatypeStr, col );
+          xmlFree ( datatypeStr );
+          err = XLAL_EINVAL;
+          goto failed;
+        }
+        xmlFree ( datatypeStr );
+
+        /* advance to next sibling in list */
+        xmlChildNode = xmlChildNode->next;
+
+      } /* for col < numFields */
+    va_end(ap);
+
+    /* ----- ok, we're ready for assembling the actual TABLEDATA entries now */
+    /* FIXME: need to pass in format strings here !! */
+
+    /* create DATA node */
+    xmlNodePtr xmlDATAnode = NULL;
+    if ( (xmlDATAnode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("DATA") )) == NULL ) {
+      XLALPrintError ("%s: xmlNewNode() failed to create new 'DATA' node.\n", fn );
+      err = XLAL_ENOMEM;
+      goto failed;
+    }
+
+    /* create TABLEDATA node */
+    xmlNodePtr xmlTABLEDATAnode = NULL;
+    if ( ( xmlTABLEDATAnode = xmlNewChild ( xmlDATAnode, NULL, CAST_CONST_XMLCHAR("TABLEDATA"), NULL ))== NULL ) {
+      XLALPrintError ("%s: xmlNewChild() failed to create 'TABLEDATA' child node to 'DATA'.\n", fn );
+      err = XLAL_ENOMEM;
+      goto failed;
+    }
+
+    for ( row = 0; row < numRows; row ++ )
+      {
+        /* create this TR node */
+        xmlNodePtr xmlThisRowNode = NULL;
+        if ( (xmlThisRowNode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("TR") )) == NULL ) {
+          XLALPrintError ("%s: xmlNewNode() failed to create new 'TR' node.\n", fn );
+          err = XLAL_EFAILED;
+          goto failed;
+        }
+        if ( xmlAddChild(xmlTABLEDATAnode, xmlThisRowNode ) == NULL ) {
+          XLALPrintError ("%s: failed to insert 'TR' node into 'TABLEDATA' node.\n", fn );
+          err = XLAL_EFAILED;
+          goto failed;
+        }
+
+        for ( col = 0; col < numFields; col ++ )
+          {
+            /* create this TD node */
+            xmlNodePtr xmlThisEntryNode = NULL;
+            if ( (xmlThisEntryNode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("TD") )) == NULL ) {
+              XLALPrintError ("%s: xmlNewNode() failed to create new 'TD' node.\n", fn );
+              err = XLAL_EFAILED;
+              goto failed;
+            }
+            if ( xmlAddChild(xmlThisRowNode, xmlThisEntryNode ) == NULL ) {
+              XLALPrintError ("%s: failed to insert 'TD' node into 'TR' node.\n", fn );
+              err = XLAL_EFAILED;
+              goto failed;
+            }
+            char textbuf[1024];
+            if ( snprintf(textbuf, 1024, "%g", 9.99999 ) < 0) {
+              XLALPrintError("%s: failed to convert double element to string.\n", fn );
+              err = XLAL_EFAILED;
+              goto failed;
+            }
+            xmlNodePtr xmlTextNode;
+            if ( (xmlTextNode = xmlNewText (CAST_CONST_XMLCHAR(textbuf) )) == NULL ) {
+              XLALPrintError("%s: xmlNewText() failed to turn text '%s' into node\n", fn, textbuf );
+              err = XLAL_EFAILED;
+              goto failed;
+            }
+            if ( xmlAddChild(xmlThisEntryNode, xmlTextNode ) == NULL ) {
+              XLALPrintError ("%s: failed to insert text-node node into 'TD' node.\n", fn );
+              err = XLAL_EFAILED;
+              goto failed;
+            }
+
+          } /* for col < numFields */
+      } /* for row < numRows */
+
+    /* stick xmlDATANode into parent xmlTableNode */
+    if ( xmlAddChild ( xmlTableNode, xmlDATAnode ) == NULL ) {
+      XLALPrintError ("%s: failed to insert 'DATA' node into top-level 'TABLE' element.\n", fn );
+      err = XLAL_EFAILED;
+      goto failed;
+    }
+
+    /* return complete TABLE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+    return xmlTableNode;
+
+ failed:
+    if ( dataTypes ) XLALFree ( dataTypes );
+    if ( dataColumns ) XLALFree ( dataColumns );
+    if ( xmlTableNode ) xmlFreeNode(xmlTableNode);	/* recursive */
+    if ( xmlDATAnode ) xmlFreeNode ( xmlDATAnode );	/* recursive */
+
+    XLAL_ERROR_NULL ( fn, err );
+
+} /* XLALCreateVOTTableNode() */
+
 
 
 /**
@@ -523,7 +749,7 @@ xmlChar * XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
                                                  const char *resourceType,
                                                  const char *resourceName,
                                                  const char *paramName,
-                                                 VOTABLE_PARAM_ATTRIBUTE paramAttribute)
+                                                 VOTABLE_ATTRIBUTE paramAttribute)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
@@ -551,8 +777,8 @@ xmlChar * XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
     }
 
 
-    if ( (paramAttributeString = XLALVOTParamAttribute2String ( paramAttribute )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTParamAttribute2String() failed.\n", logReference );
+    if ( (paramAttributeString = XLALVOTAttribute2String ( paramAttribute )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTAttribute2String() failed.\n", logReference );
       XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
     }
 
@@ -630,55 +856,101 @@ XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 } /* XLALVOTDatatype2String() */
 
 
-/** Simply returns the string representation of the given VOTABLE_PARAM_ATTRIBUTE
+/** Simply returns the enum VOTABLE_DATATYPE corresponding to the string representation of 'datatype'
+ * returns VOT_DATATYPE_LAST if invalid.
+ */
+VOTABLE_DATATYPE
+XLALVOTString2Datatype ( const char *datatypeString )
+{
+  static const char *fn = "XLALVOTString2Datatype()";
+
+  if ( !datatypeString ) {
+    XLALPrintError("%s: invalid NULL input 'datatypeString'.\n", fn );
+    return VOT_DATATYPE_LAST;
+  }
+  else if ( !strcmp ( datatypeString, "boolean" ) )
+    return VOT_BOOL;
+  else if ( !strcmp ( datatypeString, "bit" ) )
+    return VOT_BIT;
+  else if ( !strcmp ( datatypeString, "char" ) )
+    return VOT_CHAR;
+  else if ( !strcmp ( datatypeString, "unicodeChar" ) )
+    return VOT_CHAR_UTF;
+  else if ( !strcmp ( datatypeString, "unsignedByte" ) )
+    return VOT_INT1;
+  else if ( !strcmp ( datatypeString, "short" ) )
+    return VOT_INT2;
+  else if ( !strcmp ( datatypeString, "int" ) )
+    return VOT_INT4;
+  else if ( !strcmp ( datatypeString, "long" ) )
+    return VOT_INT8;
+  else if ( !strcmp ( datatypeString, "float" ) )
+    return VOT_REAL4;
+  else if ( !strcmp ( datatypeString, "double" ) )
+    return VOT_REAL8;
+  else if ( !strcmp ( datatypeString, "floatComplex" ) )
+    return VOT_COMPLEX_REAL4;
+  else if ( !strcmp ( datatypeString, "doubleComplex" ) )
+    return VOT_COMPLEX_REAL8;
+  else
+    {
+      XLALPrintError ("%s: invalid datatype string '%s'\n", fn, datatypeString );
+      return VOT_DATATYPE_LAST;
+    }
+
+} /* XLALVOTString2Datatype() */
+
+
+
+/** Simply returns the string representation of the given VOTABLE_ATTRIBUTE
  */
 const char*
-XLALVOTParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute )
+XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
 {
-  static const char *fn = "XLALVOTParamAttribute2String()";
-  const char *paramAttributeString = NULL;
+  static const char *fn = "XLALVOTAttribute2String()";
+  const char *attributeString = NULL;
 
-  switch(paramAttribute)
+  switch(elementAttribute)
     {
     case VOT_ID:
-      paramAttributeString = "ID";
+      attributeString = "ID";
       break;
     case VOT_UNIT:
-      paramAttributeString = "unit";
+      attributeString = "unit";
       break;
     case VOT_DATATYPE:
-      paramAttributeString = "datatype";
+      attributeString = "datatype";
       break;
     case VOT_PRECISION:
-      paramAttributeString = "precision";
+      attributeString = "precision";
       break;
     case VOT_WIDTH:
-      paramAttributeString = "width";
+      attributeString = "width";
       break;
     case VOT_REF:
-      paramAttributeString = "ref";
+      attributeString = "ref";
       break;
     case VOT_NAME:
-      paramAttributeString = "name";
+      attributeString = "name";
       break;
     case VOT_UCD:
-      paramAttributeString = "ucd";
+      attributeString = "ucd";
       break;
     case VOT_UTYPE:
-      paramAttributeString = "utype";
+      attributeString = "utype";
       break;
     case VOT_ARRAYSIZE:
-      paramAttributeString = "arraysize";
+      attributeString = "arraysize";
       break;
     case VOT_VALUE:
-      paramAttributeString = "value";
+      attributeString = "value";
       break;
     default:
-      XLALPrintError ("%s: invalid paramAttribute (%d), must lie within [1, %d].\n", fn, paramAttribute, VOT_PARAM_ATTRIBUTE_LAST - 1 );
+      XLALPrintError ("%s: invalid paramAttribute (%d), must lie within [1, %d].\n", fn, elementAttribute, VOT_ATTRIBUTE_LAST - 1 );
       XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
     }
 
-  return paramAttributeString;
+  return attributeString;
 
-} /* XLALVOTParamAttribute2String() */
+} /* XLALVOTAttribute2String() */
 

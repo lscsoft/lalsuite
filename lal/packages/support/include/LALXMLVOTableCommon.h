@@ -32,10 +32,10 @@
 extern "C" {
 #endif
 
-
+/* ---------- exported includes ---------- */
 #include <libxml/tree.h>
 
-
+/* ---------- exported defines and constants ---------- */
 /**
  * \brief List of all supported VOTable data types
  *
@@ -64,10 +64,10 @@ typedef enum {
 } VOTABLE_DATATYPE;
 
 /**
- * \brief List of all supported VOTable \c PARAM element attributes
+ * \brief List of all supported VOTable element attributes
  *
  * This enumeration contains all supported attributes of the
- * VOTable \c PARAM element
+ * VOTable \c PARAM and \c FIELD elements
  *
  * \sa XLALGetSingleVOTResourceParamAttribute
  *
@@ -86,20 +86,53 @@ typedef enum {
     VOT_UTYPE,
     VOT_ARRAYSIZE,
     VOT_VALUE,
-    VOT_PARAM_ATTRIBUTE_LAST
-} VOTABLE_PARAM_ATTRIBUTE;
+    VOT_ATTRIBUTE_LAST
+} VOTABLE_ATTRIBUTE;
 
+
+
+/**
+ * \brief List of all supported VOTable Table Serialization types.
+ *
+ * Note: this does not yet contain all serialization types allowed
+ * within the VOTable standard, such as exteran Fits files etc,
+ * but this is left for future extensions, if required.
+ *
+ * \sa XLALCreateVOTTableNode
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+typedef enum {
+  VOT_SERIALIZE_TABLEDATA = 1,	/**< embedded TABLEDATA inside TABLE element */
+  VOT_SERIALIZE_BINARY, 	/**< external binary stream, referenced within TABLE element */
+  VOT_SERIALIZE_LAST
+} VOTABLE_SERIALIZATION_TYPE;
+
+
+
+/* ---------- exported API prototypes ---------- */
 
 xmlNodePtr XLALCreateVOTParamNode(const char *name,
                                   const char *unit,
                                   VOTABLE_DATATYPE datatype,
                                   const char *arraysize,
                                   const char *value);
+
 xmlNodePtr
 XLALCreateVOTFieldNode ( const char *name,
                          const char *unit,
                          VOTABLE_DATATYPE datatype,
                          const char *arraysize
+                         );
+
+xmlNodePtr
+XLALCreateVOTTableNode ( const char *name,
+                         const xmlNodePtr fieldNodeList,
+                         VOTABLE_SERIALIZATION_TYPE serializer,
+                         const char *externalStream,
+                         UINT4 numRows,
+                         ...
                          );
 
 xmlNodePtr XLALCreateVOTResourceNode(const char *type,
@@ -116,7 +149,7 @@ xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
                                                 const char *resourceType,
                                                 const char *resourceName,
                                                 const char *paramName,
-                                                VOTABLE_PARAM_ATTRIBUTE paramAttribute);
+                                                VOTABLE_ATTRIBUTE paramAttribute);
 
 
 /* C++ protection */
