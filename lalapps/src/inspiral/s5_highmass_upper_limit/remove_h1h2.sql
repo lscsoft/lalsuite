@@ -21,7 +21,7 @@ WHERE
 		WHERE
 			coinc_inspiral.ifos == "H2,L1"
 			AND coinc_event.instruments == "H1,H2,L1"
-	)
+	);
 
 -- remove unused rows from the coinc_event table
 
