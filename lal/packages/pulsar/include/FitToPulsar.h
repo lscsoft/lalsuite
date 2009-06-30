@@ -25,7 +25,7 @@ $Id$
 /********************************* <lalLaTeX>
 
 \section{Header \texttt{FitToPulsar.h}}
-Provides routines for finding the best fit of the measured data to the strain expected from 
+Provides routines for finding the best fit of the measured data to the strain expected from
 non-precessing pulsar.
 
 \subsection*{Synopsis}
@@ -46,7 +46,7 @@ The reduced set of data points is fitted to this model by minimizing
 \chi^2(\textrm{{\bf a}}) = \sum_{k}\left|\frac{B_{k} - y(t;\textrm{{\bf a}})}{\sigma_{k}^{2}}\right|^2
 \end{equation}
 
-The minimization of $\chi^2$ is done in two steps \texttt{LALCoarseFitToPulsar()} and \texttt{LALFineFitToPulsar()}. 
+The minimization of $\chi^2$ is done in two steps \texttt{LALCoarseFitToPulsar()} and \texttt{LALFineFitToPulsar()}.
 
 
 More documentation soon.
@@ -59,22 +59,22 @@ More documentation soon.
 \idx[Type]{CoarseFitInput}
 \noindent This structure stores locked data to be fitted by model.
 \begin{description}
-\item[\texttt{COMPLEX16Vector *B}] heterodyned, averaged and resampled data 
-\item[\texttt{COMPLEX16Vector *var}] variance of the rFactor points that were averaged 
+\item[\texttt{COMPLEX16Vector *B}] heterodyned, averaged and resampled data
+\item[\texttt{COMPLEX16Vector *var}] variance of the rFactor points that were averaged
 \item[\texttt{LIGOTimeGPS *t}] time stamp for each data point (not necessarily with equal time steps)
-\end{description} 
+\end{description}
 
 \subsubsection*{Structure \texttt{CoarseFitOutput}}
 \idx[Type]{CoarseFitOutput}
 \noindent This structure stores the results from the coarse fit of parameters.
 \begin{description}
-\item[\texttt{REAL8 h0}] best fit h0 
+\item[\texttt{REAL8 h0}] best fit h0
 \item[\texttt{REAL8 eh0[3]}] standard error for h0, min standard error, max standard error
-\item[\texttt{REAL8 cosIota}] best fit cosIota 
-\item[\texttt{REAL8 phase}] best fit phase 
-\item[\texttt{REAL8 psi}] best fit psi (polarization angle) 
-\item[\texttt{REAL8 chiSquare}] min value of chi square 
-\item[\texttt{REAL8Vector *mChiSquare}] matrix with chi square values 
+\item[\texttt{REAL8 cosIota}] best fit cosIota
+\item[\texttt{REAL8 phase}] best fit phase
+\item[\texttt{REAL8 psi}] best fit psi (polarization angle)
+\item[\texttt{REAL8 chiSquare}] min value of chi square
+\item[\texttt{REAL8Vector *mChiSquare}] matrix with chi square values
 \end{description}
 
 \subsubsection*{Structure \texttt{CoarseFitParams}}
@@ -82,11 +82,11 @@ More documentation soon.
 \noindent This structure stores the parameters for the coarse fit.
 \begin{description}
 \item[\texttt{REAL8 meshH0[3]}] min h0, delta h0, number of steps
-\item[\texttt{REAL8 meshCosIota[3]}] min cosIota, delta cosIota, number of steps 
-\item[\texttt{REAL8 meshPhase[3]}] min phase, delta phase, number of steps 
-\item[\texttt{REAL8 meshPsi[3]}] min psi, delta psi, number of steps 
-\item[\texttt{LALSource pulsarSrc}] describes sky position of pulsar 
-\item[\texttt{LALDetector detector}] detector 
+\item[\texttt{REAL8 meshCosIota[3]}] min cosIota, delta cosIota, number of steps
+\item[\texttt{REAL8 meshPhase[3]}] min phase, delta phase, number of steps
+\item[\texttt{REAL8 meshPsi[3]}] min psi, delta psi, number of steps
+\item[\texttt{LALSource pulsarSrc}] describes sky position of pulsar
+\item[\texttt{LALDetector detector}] detector
 \end{description}
 
 \vfill{\footnotesize\input{FitToPulsarHV}}
@@ -151,7 +151,7 @@ tagCoarseFitInput
   COMPLEX16Vector *B;     /* heterodyned, averaged and resampled data */
   COMPLEX16Vector *var;   /* variance of the rFactor points that were averaged */
   LIGOTimeGPS *t;        /* time stamp for each data point (not necessarily with equal time steps)*/
-  
+
 } CoarseFitInput;
 
 typedef struct

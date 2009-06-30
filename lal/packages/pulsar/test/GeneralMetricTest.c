@@ -47,11 +47,11 @@ With no options, this program displays metric components for a single point
 in parameter space for the default parameter values.
 
 The \texttt{-a} option determines which LAL metric code is used.  The
-options are: 
+options are:
 
-\hspace{1cm} 1 = PtoleMetric (default), 
+\hspace{1cm} 1 = PtoleMetric (default),
 
-\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic), 
+\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic),
 
 \hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
 
@@ -65,17 +65,17 @@ and the argument should be given in hh:mm:ss:dd:mm:ss format.
 (Default is the center of the globular cluster 47 Tuc).
 
 The \texttt{-d} option sets the detector to the option argument. The
-options are: 
- 
-\hspace{1cm} 1 = LIGO Hanford 
+options are:
+
+\hspace{1cm} 1 = LIGO Hanford
 
 \hspace{1cm} 2 = LIGO Livingston
 
-\hspace{1cm} 3 = VIRGO 
+\hspace{1cm} 3 = VIRGO
 
 \hspace{1cm} 4 = GEO600 (default)
 
-\hspace{1cm} 5 = TAMA300 
+\hspace{1cm} 5 = TAMA300
 
 The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
 
@@ -101,8 +101,8 @@ code to see the exact format.  The user should then write a small
 script to convert the data into the format appropriate to their
 favorite graphics package.
 
-The \texttt{-t} option sets the duration of integration in seconds. (The 
-default is $39600$ seconds $= 11$ hours, which is chosen because it is of 
+The \texttt{-t} option sets the duration of integration in seconds. (The
+default is $39600$ seconds $= 11$ hours, which is chosen because it is of
 the right size for S2 analyses).
 
 The \texttt{-x} option produces a graph of the 2\% power mismatch
@@ -120,7 +120,7 @@ program is not installed on your system.
 #define GENERALMETRICTESTC_ESUB 2
 #define GENERALMETRICTESTC_ESYS 3
 #define GENERALMETRICTESTC_EMET 4
- 
+
 #define GENERALMETRICTESTC_MSGEMEM "memory (de)allocation error"
 #define GENERALMETRICTESTC_MSGESUB "subroutine failed"
 #define GENERALMETRICTESTC_MSGESYS "system call failed"
@@ -262,7 +262,7 @@ int main( int argc, char *argv[] ) {
       f0 = atof( optarg );
       break;
     case 'l':
-      if( sscanf( optarg, "%d:%d:%d:%d", 
+      if( sscanf( optarg, "%d:%d:%d:%d",
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
 	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max all in degrees" );
@@ -348,7 +348,7 @@ int main( int argc, char *argv[] ) {
   tevparam.errors = 0;
   tevparam.start = 0; /* start time relative to epoch */
   tevpulse.t0 = 0.0;  /* spindown definition time relative to epoch */
- 
+
   /* Fill in the fields tevpulse.tMidnight & tevpulse.tAutumn: */
   LALGetEarthTimes( &status, &tevpulse );
   if( status.statusCode )
@@ -502,11 +502,11 @@ int main( int argc, char *argv[] ) {
     for (dec=dec_max; dec>=dec_min; dec-=10) {
       for (ra=ra_min; ra<=ra_max; ra+=15) {
         REAL8 gaa, gad, gdd, angle, smaj, smin;
- 
+
         /* Get the metric at this ra, dec. */
         in.position.longitude = tevlambda->data[1] = ra*LAL_PI_180;
         in.position.latitude  = tevlambda->data[2] = dec*LAL_PI_180;
-	
+
 	/* Evaluate metric: */
 	if(metric_code==1)
 	  {
@@ -529,7 +529,7 @@ int main( int argc, char *argv[] ) {
 	      }
 	  }
 
-	/*  Project metric: */ 
+	/*  Project metric: */
 	LALProjectMetric( &status, metric, 0 );
 	if( status.statusCode )
 	  {
@@ -564,7 +564,7 @@ int main( int argc, char *argv[] ) {
         angle = atan2( gad, mismatch/smaj/smaj-gdd );
         if (angle <= -LAL_PI_2) angle += LAL_PI;
         if (angle > LAL_PI_2) angle -= LAL_PI;
- 
+
         if(grace)
 	  {
 	    /* Print set header. */
@@ -575,21 +575,21 @@ int main( int argc, char *argv[] ) {
 	  }
 	if(nongrace)
 	  /* Print center of patch. */
-	  fprintf( fnongrace, "%16.8g %16.8g\n", (float)ra, (float)dec );   
+	  fprintf( fnongrace, "%16.8g %16.8g\n", (float)ra, (float)dec );
 	/* Loop around patch ellipse. */
         for (i=0; i<=SPOKES; i++) {
           c_ellipse = LAL_TWOPI*i/SPOKES;
-          r_ellipse = MAGNIFY*LAL_180_PI*smaj*smin / 
+          r_ellipse = MAGNIFY*LAL_180_PI*smaj*smin /
 	    sqrt( pow(smaj*sin(c_ellipse),2) + pow(smin*cos(c_ellipse),2) );
 	  if(grace)
-	    fprintf( pvc, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse), 
+	    fprintf( pvc, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse),
 		     dec+r_ellipse*sin(angle-c_ellipse) );
 	  if(nongrace)
-	    fprintf( fnongrace, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse), 
+	    fprintf( fnongrace, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse),
 		     dec+r_ellipse*sin(angle-c_ellipse) );
 
         } /* for (a...) */
- 
+
       } /* for (ra...) */
     } /* for (dec...) */
     if(grace)

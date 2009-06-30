@@ -1424,7 +1424,7 @@ LALEOBWaveformEngine (
    INT4       modeM;          /* number of modes required */
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
-   REAL8      y1, y2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
+   REAL8      y_1, y_2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
 
    /* Used for EOBNR */
    COMPLEX8Vector *modefreqs;
@@ -1451,15 +1451,15 @@ LALEOBWaveformEngine (
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    /* Check order is consistent if using EOBNR and EOB */
-   if ( params->approximant == EOBNR && params->order != pseudoFourPN )
+   if ( params->approximant == EOBNR && params->order != LAL_PNORDER_PSEUDO_FOUR )
    {
-     LALSnprintf( message, 256, "Order must be pseudoFourPN for approximant EOBNR." );
+     LALSnprintf( message, 256, "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNR." );
      LALError( status, message );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
-   else if ( params->approximant == EOB && params->order < twoPN )
+   else if ( params->approximant == EOB && params->order < LAL_PNORDER_TWO )
    {
-     LALSnprintf( message, 256, "Order must be twoPN or greater for approximant EOB." );
+     LALSnprintf( message, 256, "Order must be LAL_PNORDER_TWO or greater for approximant EOB." );
      LALError( status, message );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
@@ -1598,19 +1598,19 @@ LALEOBWaveformEngine (
 
    switch (params->order)
    {
-     case twoPN:
-     case twoPointFivePN:
+     case LAL_PNORDER_TWO:
+     case LAL_PNORDER_TWO_POINT_FIVE:
        rootIn1.function = LALlightRingRadius;
        rootIn2.function = LALrOfOmega;
        funcParams2 = (void *) &rofomegain;
        break;
-     case threePN:
-     case threePointFivePN:
+     case LAL_PNORDER_THREE:
+     case LAL_PNORDER_THREE_POINT_FIVE:
        rootIn1.function = LALlightRingRadius3PN;
        rootIn2.function = LALrOfOmega3PN;
        funcParams2 = (void *) &pr3in;
        break;
-     case pseudoFourPN:
+     case LAL_PNORDER_PSEUDO_FOUR:
        rootIn1.function = LALlightRingRadiusP4PN;
        rootIn2.function = LALrOfOmegaP4PN;
        funcParams2 = (void *) &pr3in;
@@ -1652,16 +1652,16 @@ LALEOBWaveformEngine (
 
    switch (params->order)
    {
-     case twoPN:
-     case twoPointFivePN:
+     case LAL_PNORDER_TWO:
+     case LAL_PNORDER_TWO_POINT_FIVE:
        omegaofr2PN (&omega, r, eta);
        pr3in.omega = omega;
        LALpphiInit(&q, r, eta);
        LALprInit(&p, r, &in3);
        in4.function = LALHCapDerivatives;
        break;
-     case threePN:
-     case threePointFivePN:
+     case LAL_PNORDER_THREE:
+     case LAL_PNORDER_THREE_POINT_FIVE:
        omegaofr3PN (&omega, r, &pr3in);
        pr3in.omega = omega;
        LALpphiInit3PN(&q, r, eta, params->OmegaS);
@@ -1675,7 +1675,7 @@ LALEOBWaveformEngine (
        CHECKSTATUSPTR(status);
        in4.function = LALHCapDerivatives3PN;
        break;
-     case pseudoFourPN:
+     case LAL_PNORDER_PSEUDO_FOUR:
        omegaofrP4PN (&omega, r, &pr3in);
        pr3in.omega = omega;
        LALpphiInitP4PN(&q, r, eta, params->OmegaS);
@@ -2015,8 +2015,8 @@ LALEOBWaveformEngine (
      ABORTXLAL( status );
    }
 
-   y1 =   MultSphHarmP.re + MultSphHarmM.re;
-   y2 =   MultSphHarmM.im - MultSphHarmP.im;
+   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
+   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
    z1 = - MultSphHarmM.im - MultSphHarmP.im;
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
@@ -2033,7 +2033,7 @@ LALEOBWaveformEngine (
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
-     sig1->data[i] = (x1 * y1) + (x2 * y2);
+     sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
      if (x1 || x2)
      {

@@ -446,6 +446,7 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
    return (flux);
 }
 
+#if 0
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
@@ -464,6 +465,7 @@ static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
    flux *= (1.+  log(v/ak->vlsoP4) * (l6*v6 + l8*v8) ) ;
    return (flux);
 }
+#endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 void
@@ -486,7 +488,7 @@ LALInspiralChooseModel(
    ASSERT (f,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->order != oneHalfPN,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+   ASSERT (params->order != LAL_PNORDER_HALF,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
@@ -494,7 +496,7 @@ LALInspiralChooseModel(
 
    switch (params->order)
    {
-      case newtonian:
+      case LAL_PNORDER_NEWTONIAN:
       switch (params->approximant)
       {
          case AmpCorPPN:
@@ -528,10 +530,10 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case oneHalfPN:
-        ABORT(status, LALINSPIRALH_ECHOICE, "OneHalfPN is not valid");
+      case LAL_PNORDER_HALF:
+        ABORT(status, LALINSPIRALH_ECHOICE, "LAL_PNORDER_HALF is not valid");
         break;
-      case onePN:
+      case LAL_PNORDER_ONE:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -568,7 +570,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case onePointFivePN:
+      case LAL_PNORDER_ONE_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -608,7 +610,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case twoPN:
+      case LAL_PNORDER_TWO:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -652,7 +654,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case twoPointFivePN:
+      case LAL_PNORDER_TWO_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -697,7 +699,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case threePN:
+      case LAL_PNORDER_THREE:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -742,7 +744,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case threePointFivePN:
+      case LAL_PNORDER_THREE_POINT_FIVE:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -782,7 +784,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case pseudoFourPN:
+      case LAL_PNORDER_PSEUDO_FOUR:
       switch (params->approximant)
       {
          case Eccentricity:

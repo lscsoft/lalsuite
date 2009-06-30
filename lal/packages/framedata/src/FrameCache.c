@@ -344,7 +344,7 @@ FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params )
       ++n;
     }
 
-    qsort( cache->frameFiles, cache->numFrameFiles, 
+    qsort( cache->frameFiles, cache->numFrameFiles,
         sizeof( *cache->frameFiles ), FrStatCompare );
   }
 
@@ -367,7 +367,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
   fnptrn = fnptrn ? fnptrn : "*.gwf";
   dirstr = dirstr ? dirstr : ".";
 
-  if ( fnptrn[0] && 
+  if ( fnptrn[0] &&
       ( fnptrn[0] == '/'
         || ( fnptrn[0] == '.' && fnptrn[1] &&
           ( fnptrn[1] == '/' || ( fnptrn[1] == '.' && fnptrn[2] == '/' ) ) )
@@ -385,7 +385,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
       nextdir = strchr( dirname, ':' );
       if ( nextdir )
         *nextdir++ = 0;
-      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", 
+      LALSnprintf( path, sizeof( path ) - 1, "%s/%s",
           *dirname ? dirname : ".", fnptrn );
       glob( path, globflags, NULL, &g );
       fnptrn = path;
@@ -495,7 +495,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
 
 
 int XLALFrExportCache( FrCache *cache, const CHAR *fname )
-{ 
+{
   static const char *func = "XLALFrExportCache";
   UINT4 i;
   FILE *fp;
@@ -556,7 +556,7 @@ void XLALFrDestroyCache( FrCache *cache )
       if ( file->url )
         LALFree( file->url );
     }
-    if ( cache->frameFiles ) 
+    if ( cache->frameFiles )
       LALFree( cache->frameFiles );
     LALFree( cache );
   }

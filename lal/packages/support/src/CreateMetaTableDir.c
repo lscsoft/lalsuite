@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: CreateMetaTableDir.c
  *
  * Author: Brown, D. A., and Brady, P. R.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="CreateMetaTableDirCV">
 Author: Brown, D. A., and Brady, P. R.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <lal/LALStdio.h>
@@ -122,16 +122,16 @@ MetaTableDirectory* XLALCreateMetaTableDir(
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
         {
-          if ( (tmpTableDir[i].pos = 
+          if ( (tmpTableDir[i].pos =
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
+            XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
             XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
             sizeof(MetaTableDirectory)) ;
         memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
@@ -148,16 +148,16 @@ MetaTableDirectory* XLALCreateMetaTableDir(
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
         {
-          if ( (tmpTableDir[i].pos = 
+          if ( (tmpTableDir[i].pos =
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
+            XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
             XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
             sizeof(MetaTableDirectory)) ;
         memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
@@ -205,16 +205,16 @@ MetaTableDirectory* XLALCreateMetaTableDir(
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
         {
-          if ( (tmpTableDir[i].pos = 
+          if ( (tmpTableDir[i].pos =
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
+            XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
             XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
             sizeof(MetaTableDirectory)) ;
         memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
@@ -263,16 +263,16 @@ MetaTableDirectory* XLALCreateMetaTableDir(
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
         {
-          if ( (tmpTableDir[i].pos = 
+          if ( (tmpTableDir[i].pos =
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
+            XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
             XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
-        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
             sizeof(MetaTableDirectory)) ;
         memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
@@ -319,7 +319,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos =
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            XLALPrintError( "XLALError - unable to find column %s\n", 
+            XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
             XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
@@ -335,7 +335,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           "unable to index type summ_value_table\n" );
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
       break;
-    default: 
+    default:
       XLALPrintError( "XLALError - "
           "unable to index table due to unknown table type error\n" );
       XLAL_ERROR_NULL( func, XLAL_EFAILED );

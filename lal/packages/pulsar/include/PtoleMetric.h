@@ -20,7 +20,7 @@
 /**
  * \author Jones, D. I.  Owen, B. J.
  * \date 2001 -- 2006
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Provides routines to compute pulsar parameter-space metrics using the
  * ``Ptolemaic'' approximation.
@@ -35,7 +35,7 @@
  coherent integration.) The results should be very similar to those under the
  <tt>StackMetric.h</tt> header, and reading that documention is a good
  background for this documentation.
- 
+
  Why this extra header? Two words: simplicity and speed. The metric
  components can be expressed analytically in terms of trig functions,
  allowing one to get a feel for what the parameter space will look like
@@ -49,7 +49,7 @@
  tiling at catching signals should be very little reduced by the
  approximation. Jones, Owen, and Whitbeck will write a short paper on this
  and other details.
- 
+
  *
  */
 

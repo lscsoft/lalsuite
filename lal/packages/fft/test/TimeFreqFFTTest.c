@@ -22,12 +22,12 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \subsection{Program \texttt{TimeFreqFFTTest.c}}
  * \label{ss:TimeFreqFFTTest.c}
- * 
+ *
  * Tests the routines in \verb+TimeFreqFFT.h+.
- * 
+ *
  * \subsection*{Usage}
  * \begin{verbatim}
  * TimeFreqFFTTest [options]
@@ -37,7 +37,7 @@
  *   -v         verbose: print extra information
  *   -d level   set lalDebugLevel to level
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Description}
  * \subsubsection*{Exit codes}
  * \begin{tabular}{|c|l|}
@@ -49,12 +49,12 @@
  * \tt 2 & PSD estimation tolerance exceeded \\
  * \hline
  * \end{tabular}
- * 
+ *
  * \subsubsection*{Uses}
  * \subsubsection*{Notes}
- * 
+ *
  * \vfill{\footnotesize\input{TimeFreqFFTTestCV}}
- * 
+ *
  **** </lalLaTeX> */
 
 #include <stdio.h>
@@ -161,7 +161,7 @@ int main( int argc, char *argv[] )
    * Try the real transform.
    *
    */
-  
+
 
   x.f0 = 0;
   x.deltaT = dt;
@@ -234,12 +234,12 @@ int main( int argc, char *argv[] )
           y.data->data[j] *= var[vr];
           ssq += y.data->data[j] * y.data->data[j];
         }
-        
+
         /* compute tolerance for comparison */
         lbn = log( y.data->length ) / log( 2 );
         sig = sqrt( 2.5 * lbn * eps * eps * ssq / y.data->length );
         tol = 5 * sig;
-        
+
         /* compute the psd and find the average */
         LALREAL4AverageSpectrum( &status, &Y, &y, &avgSpecParams );
         TestStatus( &status, CODES( 0 ), 1 );
@@ -251,7 +251,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "FAIL: PSD estimate appears incorrect\n");
           fprintf( stderr, "expected %e, got %e ", Sfk, sfk );
-          fprintf( stderr, "(difference = %e, tolerance = %e)\n", 
+          fprintf( stderr, "(difference = %e, tolerance = %e)\n",
               fabs(Sfk-sfk), tol );
           exit(2);
         }
@@ -269,7 +269,7 @@ int main( int argc, char *argv[] )
     TestStatus( &status, CODES( 0 ), 1 );
   }
 
-  
+
   /*
    *
    * Try the complex transform.

@@ -412,18 +412,18 @@ XLALPlaygroundInSearchSummary (
   static const char *func = "PlaygroundInSearchSummary";
   INT8 startNS, endNS, lengthNS, playNS;
 
-  startNS = XLALGPStoINT8( &(ssTable->in_start_time) );
-  endNS = XLALGPStoINT8( &(ssTable->in_end_time) );
+  startNS = XLALGPSToINT8NS( &(ssTable->in_start_time) );
+  endNS = XLALGPSToINT8NS( &(ssTable->in_end_time) );
   lengthNS = endNS - startNS;
   playNS = PlaygroundOverlap( endNS, lengthNS );
   if ( playNS < 0 )
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  inPlayTime = XLALINT8toGPS( inPlayTime, playNS );
+  inPlayTime = XLALINT8NSToGPS( inPlayTime, playNS );
 
-  startNS = XLALGPStoINT8( &(ssTable->out_start_time) );
-  endNS = XLALGPStoINT8( &(ssTable->out_end_time) );
+  startNS = XLALGPSToINT8NS( &(ssTable->out_start_time) );
+  endNS = XLALGPSToINT8NS( &(ssTable->out_end_time) );
   lengthNS = endNS - startNS;
 
   playNS = PlaygroundOverlap( endNS, lengthNS );
@@ -431,7 +431,7 @@ XLALPlaygroundInSearchSummary (
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  outPlayTime = XLALINT8toGPS( outPlayTime, playNS );
+  outPlayTime = XLALINT8NSToGPS( outPlayTime, playNS );
 
   return( 0 );
 }
@@ -710,7 +710,7 @@ LALDistanceScanSummValueTable (
 /* </lalVerbatim> */
 {
   SummValueTable    *thisSummValue = NULL;
-  INT4 test=0;
+  /*INT4 test=0;*/
   INT8 ta=0, tb=0, tc=0;
 
   INITSTATUS( status, "LALDistanceScanSummValueTable", LIGOMETADATAUTILSC );

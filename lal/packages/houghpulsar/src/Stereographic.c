@@ -21,7 +21,7 @@
  *
  * File Name: Stereographic.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M.,
  *
  * Revision: $Id$
  *
@@ -43,7 +43,7 @@
  */
 
 /************************************ <lalVerbatim file="StereographicCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -71,40 +71,40 @@ projection.
 
 ${}$
 
- \indent The function \verb&LALRotatePolarU()& rotates the celestial sphere so that 
+ \indent The function \verb&LALRotatePolarU()& rotates the celestial sphere so that
  a given point,
  in the rotated coordinates, corresponds to ($\alpha = 0$, $\delta = -\pi/2$).
 The inputs are:
-\verb@*par@ the reference point (e.g., the center of the sky-patch) of type 
- \verb@REAL8UnitPolarCoor@ and 
+\verb@*par@ the reference point (e.g., the center of the sky-patch) of type
+ \verb@REAL8UnitPolarCoor@ and
 \verb@*in@ the point on the celestial sphere we want to rotate. The output is
 \verb@*out@ of type \verb@REAL8UnitPolarCoor@ containing the coordinates of the
 point in the rotated reference frame.\\
 
- The function \verb&LALInvRotatePolarU()& does the inverse rotation. Given the 
-reference point \verb@*par@ (e.g., the center of the sky-patch) of type 
+ The function \verb&LALInvRotatePolarU()& does the inverse rotation. Given the
+reference point \verb@*par@ (e.g., the center of the sky-patch) of type
  \verb@REAL8UnitPolarCoor@  and a point \verb@*in@ in the rotated reference
- frame, the output \verb@*out@ are the coordinates of the point is the 
+ frame, the output \verb@*out@ are the coordinates of the point is the
  same reference system as \verb@*par@. All inputs and output being
   of type \verb@REAL8UnitPolarCoor@. \\
 
 Given a point on the celestial sphere \verb@*in@ of type
 \verb@REAL8UnitPolarCoor@, the function \verb&LALStereoProjectPolar()&
-returns \verb@*out@, 
-of type \verb@REAL8Polar2Coor@, the stereographic projection of that point 
+returns \verb@*out@,
+of type \verb@REAL8Polar2Coor@, the stereographic projection of that point
 in polar coordinates, with the particularity  that \verb@out->radius@  can be positive
 or negative. \verb@in->delta@=$\pi/2$ is an invalid argument  and an error will
 output. \\
 
 Given a point on the celestial sphere \verb@*in@ of type
 \verb@REAL8UnitPolarCoor@, the function \verb@LALStereoProjectCart()@
-returns \verb@*out@, of type \verb@REAL8Cart2Coor@, the stereographic projection of that point 
+returns \verb@*out@, of type \verb@REAL8Cart2Coor@, the stereographic projection of that point
 in Cartesian coordinates. \verb@in->delta@=$\pi/2$ is an invalid argument  and an error will
 output. \\
 
 Given a point on the projected plane \verb@*in@ , the functions
 \verb&LALStereoInvProjectPolar()&  and \verb&LALStereoInvProjectCart()&
-provide the corresponding point on the sphere \verb@*out@ (corresponding to the inverse 
+provide the corresponding point on the sphere \verb@*out@ (corresponding to the inverse
 stereographic  projection) of type \verb@REAL8UnitPolarCoor@.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -137,9 +137,9 @@ NRCSID (STEREOGRAPHICC, "$Id$");
 void LALRotatePolarU(LALStatus            *status,
 		     REAL8UnitPolarCoor   *out,
 		     REAL8UnitPolarCoor   *in,
-		     REAL8UnitPolarCoor   *par)  
+		     REAL8UnitPolarCoor   *par)
 { /*  ************************************************ </lalVerbatim> */
- 
+
   REAL8 Xx, Xy, Xz;
   REAL8 Yx, Yy, Yz;
   REAL8 Zx, Zy, Zz;
@@ -151,20 +151,20 @@ void LALRotatePolarU(LALStatus            *status,
 
   /* --------------------------------------------- */
   INITSTATUS (status, " LALRotatePolarU", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
-  
-  /*   Make sure the arguments are not NULL: */ 
+  ATTATCHSTATUSPTR (status);
+
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /* -------------------------------------------   */
-  
+
   alphaN = par->alpha;
   deltaN = par->delta;
-  
+
   alphaIn = in->alpha;
   deltaIn = in->delta;
-  
+
   /* -------------------------------------------   */
   /* Initial vector */
   VIx = cos(deltaIn) * cos(alphaIn) ;
@@ -198,18 +198,18 @@ void LALRotatePolarU(LALStatus            *status,
     out->alpha = atan2(Vy,Vx);
   } else {
     out->alpha =0.0;
-  }  
+  }
   out->delta = asin(Vz);
-   
+
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
 
- 
+
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -217,9 +217,9 @@ void LALRotatePolarU(LALStatus            *status,
 void LALInvRotatePolarU(LALStatus            *status,
 		     REAL8UnitPolarCoor   *out,
 		     REAL8UnitPolarCoor   *in,
-		     REAL8UnitPolarCoor   *par)  
+		     REAL8UnitPolarCoor   *par)
 { /*  ************************************************ </lalVerbatim> */
- 
+
   REAL8 Xx, Xy, Xz;
   REAL8 Yx, Yy, Yz;
   REAL8 Zx, Zy, Zz;
@@ -231,20 +231,20 @@ void LALInvRotatePolarU(LALStatus            *status,
 
   /* --------------------------------------------- */
   INITSTATUS (status, " LALInvRotatePolarU", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /* -------------------------------------------   */
-   
+
   alphaN = par->alpha;
   deltaN = par->delta;
-  
+
   alphaIn = in->alpha;
   deltaIn = in->delta;
-  
+
   /* -------------------------------------------   */
   /* Initial vector */
   VIx = cos(deltaIn) * cos(alphaIn) ;
@@ -278,46 +278,46 @@ void LALInvRotatePolarU(LALStatus            *status,
     out->alpha = atan2(Vy,Vx);
   } else {
     out->alpha =0.0;
-  }  
+  }
   out->delta = asin(Vz);
-   
+
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
 
 /* -------------------------------------------   */
- 
+
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /*  ***************************** <lalVerbatim file="StereographicD"> */
 void LALStereoProjectPolar(LALStatus           *status,
 			   REAL8Polar2Coor     *out,
-			   REAL8UnitPolarCoor  *in)  
+			   REAL8UnitPolarCoor  *in)
 { /*  ************************************************ </lalVerbatim> */
- 
+
   REAL8   mygamma;
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoProjectPolar", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /*   Make sure delta is not pi/2: */
   ASSERT (in->delta - LAL_PI_2 , status, LUTH_EVAL, LUTH_MSGEVAL);
   /* -------------------------------------------   */
-  
+
   out->alpha = in->alpha;
   mygamma = LAL_PI_4 + 0.5*(in->delta);
   out->radius = 2.0 * tan(mygamma); /* positive or negative ! */
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
@@ -331,20 +331,20 @@ void LALStereoProjectCart(LALStatus           *status,
 			  REAL8Cart2Coor      *out,
 			  REAL8UnitPolarCoor  *in )
 { /*  ************************************************ </lalVerbatim> */
- 
+
   REAL8   mygamma;
   REAL8   alpha, radius;
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoProjectCart", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /*   Make sure delta is not  pi/2: */
   ASSERT (in->delta - LAL_PI_2 , status, LUTH_EVAL, LUTH_MSGEVAL);
   /* -------------------------------------------   */
-  
+
   alpha = in->alpha;
   mygamma = LAL_PI_4 + 0.5*(in->delta);
   radius = 2.0 * tan(mygamma); /* positive or negative */
@@ -352,9 +352,9 @@ void LALStereoProjectCart(LALStatus           *status,
   out->x = radius * cos(alpha);
   out->y = radius * sin(alpha);
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
@@ -364,28 +364,28 @@ void LALStereoProjectCart(LALStatus           *status,
 /*  ***************************** <lalVerbatim file="StereographicD"> */
 void LALStereoInvProjectPolar(LALStatus        *status,
 			   REAL8UnitPolarCoor  *out,
-			   REAL8Polar2Coor     *in)  
+			   REAL8Polar2Coor     *in)
 { /*  ************************************************ </lalVerbatim> */
- 
+
 
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoInvProjectPolar", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /* -------------------------------------------   */
-  
+
   out->alpha = in->alpha;
   out->delta = 2.0* atan(0.5*(in->radius) ) - LAL_PI_2;
 
   /*  Note: since I have not ask for a positive radius input, */
   /*  delta in principle is not cofined to (-pi/2, pi/2)      */
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
@@ -394,40 +394,40 @@ void LALStereoInvProjectPolar(LALStatus        *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /*  ***************************** <lalVerbatim file="StereographicD"> */
-void LALStereoInvProjectCart(LALStatus           *status, 
+void LALStereoInvProjectCart(LALStatus           *status,
 			     REAL8UnitPolarCoor  *out,
-			     REAL8Cart2Coor      *in)  
+			     REAL8Cart2Coor      *in)
 { /*  ************************************************ </lalVerbatim> */
- 
+
   REAL8 x,y,radius;
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoInvProjectCart", STEREOGRAPHICC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
   /* -------------------------------------------   */
-  
+
   x = in->x;
   y = in->y;
   if ( x || y ){
     radius = sqrt(x*x + y*y);
-    
+
     out->alpha = atan2(y,x);
-    out->delta = 2.0* atan(0.5*(radius) ) - LAL_PI_2; 
+    out->delta = 2.0* atan(0.5*(radius) ) - LAL_PI_2;
     /*  Note: since I have not ask for a positive radius input, */
     /*  delta in principle is not cofined to (-pi/2, pi/2)      */
 
   } else { /* x=y =0 */
     out->alpha = 0.0;
     out->delta = - LAL_PI_2;
-  } 
+  }
 
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }

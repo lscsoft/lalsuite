@@ -22,7 +22,7 @@
  * $Id$
  * </lalVerbatim>
  */
-/* <lalLaTeX> 
+/* <lalLaTeX>
    \subsection{Module \texttt{LALfct.c}}
    \label{ss:LALfct.c}
      In this document I will need to refer to the different axes in the
@@ -68,20 +68,20 @@ NRCSID( LALFCTC, "$Id$" );
 /* This is the LALFCTPlan structure. */
 struct LALFCTPlan {
   UINT2   numOfDims;           /* Number of terms and phase functions. */
-  UINT4   numOfDataPoints;     
+  UINT4   numOfDataPoints;
   UINT4  *lengthOfDim;         /* An array of the lengths of the dimensions */
-  UINT4  *maxDeltaOfDim;       /* An array of the largest Delta in each 
+  UINT4  *maxDeltaOfDim;       /* An array of the largest Delta in each
 				  dimension */
   LALFCT_FP  *phaseFuncForDim; /* An array of phase Functions */
   UINT4     **deltaNForDim;    /* An array of arrays telling when each dimension
-				  should change */  
-  LALFCTCOMP  **prePhaseArray;    /* An array of arrays that contain 
+				  should change */
+  LALFCTCOMP  **prePhaseArray;    /* An array of arrays that contain
 				     the Prephase data. */
   fftw_plan     planForFFT;    /* These fftw things will probably be changed */
   fftw_complex *work;          /* later. */
 };
 
- 
+
 /* Declare local (static) functions (definitions can go here or at the
    end of the file) */
 static INT2 fctMakeDeltaArray( LALFCTPlan *fctPlan, UINT2 dim );
@@ -100,13 +100,13 @@ static INT4 CheckStatus( LALStatus *status);
 /* <lalVerbatim> */
 void LALfctInitialize(LALStatus *status,
 		      LALFCTPlan **fctPlan,
-		      LALfctInitParams *fctInitParams 
+		      LALfctInitParams *fctInitParams
 		      ){ /* </lalVerbatim> */
-  /* <lalLaTeX> 
-     This function initializes the fctPlan structure. In needs to called before 
-     any of the other functions.  
+  /* <lalLaTeX>
+     This function initializes the fctPlan structure. In needs to called before
+     any of the other functions.
      \vspace{0.1in}
-     
+
 
      </lalLaTeX>*/
 
@@ -115,14 +115,14 @@ void LALfctInitialize(LALStatus *status,
   INITSTATUS( status, "LALfctInitialize", LALFCTC );
 
   FFTWHOOKS;
-  
+
   /* Check to make sure that the pointer that we were passed will work. */
   ASSERT( fctPlan != 0, status, LALFCTH_EPOINTERIS0, LALFCTH_MSGEPOINTERIS0 );
   ASSERT( *fctPlan == 0, status, LALFCTH_EPOINTERNOT0, LALFCTH_MSGEPOINTERNOT0 );
 
   /* Allocate the memory for the fctPlan structure. */
   *fctPlan = (LALFCTPlan *) LALMalloc( sizeof( LALFCTPlan ) );
-  
+
   /* Check to make sure that the memory was allocated. */
   if ( *fctPlan == NULL ){
     ABORT(status, LALFCTH_EALLOC_MEM, LALFCTH_MSGEALLOC_MEM);
@@ -145,20 +145,20 @@ void LALfctInitialize(LALStatus *status,
 
   (*fctPlan)->work = \
     (fftw_complex *) LALCalloc( fctInitParams->numOfDataPoints, \
-				sizeof( fftw_complex ) ); 
+				sizeof( fftw_complex ) );
   (*fctPlan)->deltaNForDim = (UINT4 **) LALCalloc( fctInitParams->numOfDims,\
 						   sizeof(UINT4 *));
   (*fctPlan)->prePhaseArray = \
     (LALFCTCOMP **) LALCalloc(fctInitParams->numOfDims, \
 			      sizeof(LALFCTCOMP *));
- 
-  /* Check to make sure that the memory was allocated and the that the 
-     FFT plan was calculated. */ 
+
+  /* Check to make sure that the memory was allocated and the that the
+     FFT plan was calculated. */
   if ( (*fctPlan)->lengthOfDim && (*fctPlan)->maxDeltaOfDim && \
        (*fctPlan)->phaseFuncForDim && (*fctPlan)->planForFFT && \
        (*fctPlan)->work && (*fctPlan)->deltaNForDim && \
        (*fctPlan)->prePhaseArray == 0 ) {
-    
+
     if ( (*fctPlan)->lengthOfDim != 0 ) {
      LALFree( (*fctPlan)->lengthOfDim );
     }
@@ -189,58 +189,58 @@ void LALfctInitialize(LALStatus *status,
   /* Initialize a few variables inside the fctPlan. */
   (*fctPlan)->numOfDims = fctInitParams->numOfDims;
   (*fctPlan)->numOfDataPoints = fctInitParams->numOfDataPoints;
-  (*fctPlan)->lengthOfDim[0] = fctInitParams->numOfDataPoints; 
-  
+  (*fctPlan)->lengthOfDim[0] = fctInitParams->numOfDataPoints;
+
   RETURN( status );
 }
 
 /* <lalVerbatim> */
 void LALfctAddPhaseFunc(LALStatus *status,
 			LALFCTPlan *fctPlan,
-			LALfctAddPhaseFuncParams *fctAddPhaseFuncParams 
+			LALfctAddPhaseFuncParams *fctAddPhaseFuncParams
 			){ /* </lalVerbatim> */
   /* <lalLaTeX>
      This function puts the length of the dimension and the phaseFunc for that
      dimension into the fctPlan.
-     
+
      This function also calls the internal functions fctMakeDeltaArray and fctGenPrePhaseArray.
      \vspace{0.1in}
-     
+
      </lalLaTeX> */
-  UINT2 dim;   
-  UINT4 length; 
+  UINT2 dim;
+  UINT4 length;
   INT2 check;
-  
+
   /* Initialize status to indicate nominal execution by default. */
   INITSTATUS( status, "LALfctAddPhaseFunc", LALFCTC );
-  
+
   /* Check our parameters. */
   ASSERT( fctAddPhaseFuncParams != 0, status, LALFCTH_EPOINTERIS0, \
 	  LALFCTH_MSGEPOINTERIS0 );
-  
+
   /* Get dim from fctAddPhaseFuncParams and check it to make sure that it's
      in the proper range. */
   dim = fctAddPhaseFuncParams->dim;
   if ((dim >= fctPlan->numOfDims)||(dim == 0)) {
     ABORT( status, LALFCTH_EDIM_OUT_OF_RANGE, LALFCTH_MSGEDIM_OUT_OF_RANGE );
-  } 
-  
+  }
+
   /* Get length from fctAddPhaseFuncParams */
   length = fctAddPhaseFuncParams->lengthOfDim;
 
   /* Check the fctPlan */
   if (fctPlan == 0) {
     ABORT(status, LALFCTH_ECALL_INIT_FIRST,  LALFCTH_MSGECALL_INIT_FIRST);
-  } else if (fctPlan->lengthOfDim && fctPlan->phaseFuncForDim == 0) {  
+  } else if (fctPlan->lengthOfDim && fctPlan->phaseFuncForDim == 0) {
     ABORT(status, LALFCTH_ECALL_INIT_FIRST,  LALFCTH_MSGECALL_INIT_FIRST);
   }
 
   /* Set the length of the dimension. */
   fctPlan->lengthOfDim[dim] = length;
-  
+
   /* Set the phase function for the dimension. */
   fctPlan->phaseFuncForDim[dim] = fctAddPhaseFuncParams->phaseFuncForDim;
-  
+
   /* Call fctMakeDeltaArray and check to make sure that it succeeded. */
   check = fctMakeDeltaArray(fctPlan, dim);
   if (check <= 0) {
@@ -261,43 +261,43 @@ void LALfctAddPhaseFunc(LALStatus *status,
 /* <lalVerbatim> */
 void LALfctCalc( LALStatus *status,
 		 LALfctCalcOutput *fctCalcOutput,
-		 LALFCTCOMPVector *inputDataVector, 
+		 LALFCTCOMPVector *inputDataVector,
 		 LALfctCalcParams *fctCalcParams){ /* </lalVerbatim> */
   /* <lalLaTeX>
-     This function Calculates the N-dimensional FCT.  It requires that 
+     This function Calculates the N-dimensional FCT.  It requires that
      LALfctInitialize and LALfctAddPhaseFunc were called to set up fctPlan
-     first.  
-     
+     first.
+
      It calls fctGenRowIndex to make the list of rows parallel to K[0] axis.
-     This list of rows is actually stored in the columns of 
+     This list of rows is actually stored in the columns of
      $fctCalcOutput \rightarrow rowIndex \rightarrow data$.  This is because LAL
      and FFTW use row-major order and I think that it's easier to deal with
      the different rows if they are in contiguous arrays.
 
-     Then it calls fctGenRowData to create $fctCalcOutput \rightarrow outputData$.  
-     $fctCalcOutput \rightarrow OutputData$ is a 2 dimensional LALFCTCOMPArray that stores 
+     Then it calls fctGenRowData to create $fctCalcOutput \rightarrow outputData$.
+     $fctCalcOutput \rightarrow OutputData$ is a 2 dimensional LALFCTCOMPArray that stores
      the the data corresponding to the list of indices in $fctCalcOutput /rightarrow rowIndex$
-     in the columns of $fctCalcOutput \rightarrow outputData \rightarrow data$. 
-     
-     FFTW is then called to calculate the FFT of all of the columns of 
+     in the columns of $fctCalcOutput \rightarrow outputData \rightarrow data$.
+
+     FFTW is then called to calculate the FFT of all of the columns of
      $fctCalcOutput \rightarrow outputData \rightarrow data$.
 
-     Remember: The columns of $fctCalcOutput \rightarrow outputData \rightarrow data$ and 
+     Remember: The columns of $fctCalcOutput \rightarrow outputData \rightarrow data$ and
      $fctCalcOutput \rightarrow rowIndex \rightarrow data$ correspond to the rows
      parallel to the K[0] axis.
      \vspace{0.1in}
-     
+
      </lalLaTeX>
   */
 
   INT2 check;
   LALfctGenRowIndexOutput fctGenRowIndexOutput;
-  
+
   /* Initialize status to indicate nominal execution by default. */
   INITSTATUS( status, "LALfctCalc", LALFCTC );
 
   FFTWHOOKS;
-  
+
   /* Check the various parameters. */
   ASSERT(fctCalcOutput != 0, status, LALFCTH_EPOINTERIS0, \
 	 LALFCTH_MSGEPOINTERIS0 );
@@ -315,59 +315,59 @@ void LALfctCalc( LALStatus *status,
 	 LALFCTH_MSGEPOINTERNOT0);
   ASSERT(fctCalcOutput->outputData == 0, status, LALFCTH_EPOINTERNOT0, \
 	 LALFCTH_MSGEPOINTERNOT0);
-  
+
   /*Fill in the fctGenRowIndexOutput structure */
   fctGenRowIndexOutput.fctCalcOutput = fctCalcOutput;
 
   /* Call fctGenRowIndex and check to make sure it succeeded. */
   if (fctCalcParams->fctGenRowIndexFunc) {
     fctCalcParams->fctGenRowIndexFunc(status, &fctGenRowIndexOutput, \
-				      fctCalcParams->fctGenRowIndexParams); 
+				      fctCalcParams->fctGenRowIndexParams);
   } else {
     LALfctGenRowIndex(status, &fctGenRowIndexOutput, \
-		      fctCalcParams->fctGenRowIndexParams); 
+		      fctCalcParams->fctGenRowIndexParams);
   }
   if (CheckStatus( status )) {
     RETURN( status );
   }
-  
-  
+
+
   /* Call fctGenRowData and check to make sure it succeeded. */
   check = fctGenRowData(fctCalcParams->fctPlan, inputDataVector, fctCalcOutput);
   if (check <= 0) {
     ABORT(status, LALFCTH_EGEN_ROW_DATA, LALFCTH_MSGEGEN_ROW_DATA);
   }
 
-  /* Call fftw to calculate the fft of all the columns of 
+  /* Call fftw to calculate the fft of all the columns of
      fctCalcOutput->outputData->data.  Remember: these columns correspond
      to the rows parallel to the K[0] axis. */
   fftw( fctCalcParams->fctPlan->planForFFT, fctGenRowIndexOutput.numOfRows, \
 	(fftw_complex *) fctCalcOutput->outputData->data, 1, \
 	fctCalcParams->fctPlan->lengthOfDim[0], \
 	fctCalcParams->fctPlan->work, 1, 0 );
-  
+
   RETURN( status );
 }
 
 /* <lalVerbatim> */
 void LALfctGenRowIndex(LALStatus *status, \
 		       LALfctGenRowIndexOutput *fctGenRowIndexOutput, \
-		       LALfctGenRowIndexParams *fctGenRowIndexParams) { 
+		       LALfctGenRowIndexParams *fctGenRowIndexParams) {
 /* </lalVerbatim> */
 
-  /* <lalLaTeX> 
+  /* <lalLaTeX>
      This function generates a list of rows to calculate.
-     
+
      This is the default fctGenRowIndex function. It just generates a list of
      all the rows in the entire space.
-     
+
      If you want a smarter function you should write your own and pass a pointer
      to your new GenRowIndex function in the fctCalcParams structure.
      \vspace{0.1in}
-     
+
      </lalLaTeX>
  */
-  
+
   /* I want this function easy to copy and change for different wave types and
      dependencies.  To that end I'm making a few things more general. */
 
@@ -383,13 +383,13 @@ void LALfctGenRowIndex(LALStatus *status, \
   BOOLEAN continueRowLooping;
   BOOLEAN continueIndexGenLooping;
   BOOLEAN numOfRowsKnown=0;
-  
+
   /* Initialize status indicate nominal execution by default. */
   INITSTATUS( status, "LALfct: fctGenRowIndex", LALFCTC );
 
   LALfctAccessNumOfDims( status, fctGenRowIndexParams->fctPlan, &numOfDims );
   LALfctAccessLengthOfDims( status, fctGenRowIndexParams->fctPlan, &lengthOfDim );
-  
+
   /* Create an array of cursors to use while generating the rowIndex. */
   dimCursors = (UINT4 *) LALCalloc(numOfDims - 1, sizeof(UINT4));
   if (dimCursors == 0) {
@@ -400,31 +400,31 @@ void LALfctGenRowIndex(LALStatus *status, \
   /* Determine the number of rows that will be calculated */
   if (!fctGenRowIndexParams->goToEndOfRows) {
     totalRows = fctGenRowIndexParams->numOfRows;
-    numOfRowsKnown = 1;  
+    numOfRowsKnown = 1;
   }
-  
+
   continueIndexGenLooping = 1;
   do {
     if (numOfRowsKnown && fctGenRowIndexParams->createIndex) {
-      /* Create a vector to use to create the array. 
+      /* Create a vector to use to create the array.
 	 :TODO: This vector probably doesn't need to be created dynamically.*/
       LALU4CreateVector ( status, &dimlength, 2);
-      if (CheckStatus(status)) {	
+      if (CheckStatus(status)) {
 	RETURN( status );
-      } 
+      }
       dimlength->data[0] = totalRows; /* LAL uses Row major order,
 					 we should too.*/
-      dimlength->data[1] = numOfDims - 1; /* I want the data in a 
+      dimlength->data[1] = numOfDims - 1; /* I want the data in a
 					     contiguous piece. */
-      
+
       /* Create the Array to hold the index. */
       LALU4CreateArray ( status, &(fctGenRowIndexOutput->fctCalcOutput->rowIndex), \
 		      dimlength );
       if (CheckStatus(status)) {
 	LALU4DestroyVector ( status, &dimlength );
 	RETURN( status );
-      } 
-      
+      }
+
       /* Destroy the vector that was used to create the array. */
       LALU4DestroyVector ( status, &dimlength );
       if (CheckStatus(status)) {
@@ -433,22 +433,22 @@ void LALfctGenRowIndex(LALStatus *status, \
 	RETURN( status );
       }
     }
-    
-    
+
+
     continueRowLooping = 1;
     rowCursor = 0;
     skipCursor = 0;
     /* This loops until we've gone through all the possible rows. */
     do {
-      
+
       /*      if (1) {  */ /* This will have a test to see if the row is one
 		    we wish to calculate. */
       if (skipCursor >= fctGenRowIndexParams->skipRows) {
 	if (fctGenRowIndexParams->createIndex&&numOfRowsKnown){
-	  /* Add the row Indices to the list of rows to calculate. */ 
+	  /* Add the row Indices to the list of rows to calculate. */
 	  /* Find the location of the beginning of the index column. */
-	  location =  rowCursor * (numOfDims - 1); 
-	  
+	  location =  rowCursor * (numOfDims - 1);
+
 	  /* Add the indices to the list.  Note that J = 0 is dimension K[1]. */
 	  for (J = 0; ((INT4)J) < numOfDims - 1; J++) {
 	    fctGenRowIndexOutput->fctCalcOutput->rowIndex->data[location+J] = \
@@ -459,14 +459,14 @@ void LALfctGenRowIndex(LALStatus *status, \
       } else {
 	skipCursor++;
       }
-      
+
       /* } This is the end of the test block. */
-      
+
       /* Increase the cursors for the K[1] dimension by 1. */
       dimCursors[0]++;
-    
+
       /* loop through the dimensions. If any of them have reached their
-	 maximum values, then set that dimension cursor to 0 and increase 
+	 maximum values, then set that dimension cursor to 0 and increase
 	 the next dimension cursor.  If the last dimension has reached it's
 	 maximum value than end. */
       for(J = 0; ((INT4)J) < numOfDims - 1; J++) {
@@ -482,18 +482,18 @@ void LALfctGenRowIndex(LALStatus *status, \
       if (!fctGenRowIndexParams->goToEndOfRows) {
 	if (rowCursor == totalRows) {
 	  continueRowLooping = 0;
-	} 
+	}
       }
-      
+
     } while (continueRowLooping);
-    
+
     if (numOfRowsKnown) {
       if (rowCursor != totalRows) {
 	printf("rowCursor = %d, totalRows = %d\n", rowCursor, totalRows);
-	ABORT(status, LALFCTH_EGEN_ROW_INDEX_NUMROW_MISMATCH, 
+	ABORT(status, LALFCTH_EGEN_ROW_INDEX_NUMROW_MISMATCH,
 	      LALFCTH_MSGEGEN_ROW_INDEX_NUMROW_MISMATCH);
       }
-      continueIndexGenLooping = 0; 
+      continueIndexGenLooping = 0;
     } else {
       numOfRowsKnown = 1;
       totalRows = rowCursor;
@@ -502,23 +502,23 @@ void LALfctGenRowIndex(LALStatus *status, \
     if (!fctGenRowIndexParams->createIndex) {
       continueIndexGenLooping = 0;
     }
-      
+
   } while (continueIndexGenLooping);
   fctGenRowIndexOutput->numOfRows = totalRows;
-  
+
   /* This is debug code that will print out the list of rows. */
   /*for (rowCursor = 0; rowCursor < TotalRows; rowCursor++) {
     printf("rC = %d :", rowCursor);
-    location =  rowCursor * (fctPlan->numOfDims - 1); 
+    location =  rowCursor * (fctPlan->numOfDims - 1);
     for (J = 0; J < fctPlan->numOfDims - 1; J++) {
     printf("%d ", fctCalcOutput->rowIndex->data[location+J]);
     }
     printf("\n");
     }*/
-  
-  
+
+
   LALFree(dimCursors);
-  
+
   RETURN( status );
 }
 
@@ -527,17 +527,17 @@ void LALfctGenRowIndex(LALStatus *status, \
 void LALfctAccessNumOfDims( LALStatus *status, LALFCTPlan *fctPlan, \
 			    UINT2 *numOfDims ) {
 /* </lalVerbatim> */
-  /* <lalLaTeX> 
-     Use this function to access the number of dimensions in an fctPlan. 
+  /* <lalLaTeX>
+     Use this function to access the number of dimensions in an fctPlan.
      \vspace{0.1in}
-     
+
 
      </lalLaTeX> */
 /* Initialize status indicate nominal execution by default. */
   INITSTATUS( status, "LALfctAccessNumOfDims", LALFCTC );
-    
+
   *numOfDims = fctPlan->numOfDims;
-  
+
   RETURN( status );
 }
 
@@ -545,41 +545,41 @@ void LALfctAccessNumOfDims( LALStatus *status, LALFCTPlan *fctPlan, \
 void LALfctAccessLengthOfDims( LALStatus *status, LALFCTPlan *fctPlan, \
 			      UINT4 **lengthOfDim ) {
 /* </lalVerbatim> */
- /* <lalLaTeX> 
-     Use this function to access the length of the dimensions in an fctPlan. 
+ /* <lalLaTeX>
+     Use this function to access the length of the dimensions in an fctPlan.
      \vspace{0.1in}
-     
+
      </lalLaTeX> */
- 
+
 /* Initialize status indicate nominal execution by default. */
   INITSTATUS( status, "LALfctAccessNumOfDims", LALFCTC );
-    
+
   *lengthOfDim = fctPlan->lengthOfDim;
-  
+
   RETURN( status );
 }
 
 /* <lalVerbatim> */
 void LALfctDestroyPlan( LALStatus *status,
 			LALFCTPlan **fctPlan ){ /* </lalVerbatim> */
-  /* <lalLaTeX> 
-     This function destroys the fctPlan. 
+  /* <lalLaTeX>
+     This function destroys the fctPlan.
      \vspace{0.1in}
-     
+
      </lalLaTeX> */
-  
+
   UINT2 J;
-  
+
   /* Initialize status indicate nominal execution by default. */
   INITSTATUS( status, "LALfctDestroyPlan", LALFCTC );
 
   FFTWHOOKS;
-  
+
   /* Systematically destroy the fctPlan. */
   if ( (*fctPlan) != 0 ) {
     if ( (*fctPlan)->work != 0 ) {
       LALFree( (*fctPlan)->work );
-    } 
+    }
     if ( (*fctPlan)->planForFFT != 0 ) {
       LAL_FFTW_PTHREAD_MUTEX_LOCK;
       fftw_destroy_plan( (*fctPlan)->planForFFT );
@@ -603,7 +603,7 @@ void LALfctDestroyPlan( LALStatus *status,
     }
     if ( (*fctPlan)->phaseFuncForDim != 0 ) {
       LALFree( (*fctPlan)->phaseFuncForDim );
-    } 
+    }
     if ( (*fctPlan)->maxDeltaOfDim != 0 ) {
       LALFree( (*fctPlan)->maxDeltaOfDim );
     }
@@ -637,7 +637,7 @@ static INT2 fctMakeDeltaArray( LALFCTPlan *fctPlan, UINT2 dim ) {
     LALFree( fctPlan->deltaNForDim[dim] );
   }
 
-  /* Allocate Memory for the delta array for this dimension and check to 
+  /* Allocate Memory for the delta array for this dimension and check to
      make sure it worked. */
   fctPlan->deltaNForDim[dim] = (UINT4 *) LALCalloc(fctPlan->lengthOfDim[dim], \
 						sizeof(UINT4));
@@ -649,32 +649,32 @@ static INT2 fctMakeDeltaArray( LALFCTPlan *fctPlan, UINT2 dim ) {
   /* Store the values of the function at 0 and 1. */
   phaseFuncAt0 = fctPlan->phaseFuncForDim[dim](0);
   phaseFuncAt1 = fctPlan->phaseFuncForDim[dim](1);
-    
+
   /* Initialize some of the variables. */
   jMinPreviousIndex = 0;
   fctPlan->maxDeltaOfDim[dim] = 0;
   sum = 0;
-  
+
   for(j = 1; j < fctPlan->lengthOfDim[dim]; j++){
-    
+
     value = (fftw_real)(j)/fctPlan->lengthOfDim[dim];
     jMinUpperValue = 1;
     jMinLowerValue = 0;
     diff = jMinUpperValue - jMinLowerValue;
-    
-    while(diff > .001) {  
-     
+
+    while(diff > .001) {
+
       jMinMidValue = jMinLowerValue + diff/2;
-      
+
       if( ( fctPlan->phaseFuncForDim[dim](jMinMidValue) - phaseFuncAt0 ) / \
 	 ( phaseFuncAt1 - phaseFuncAt0 ) > value ) {
 	jMinUpperValue = jMinMidValue;
       } else {
 	jMinLowerValue = jMinMidValue;
       }
-	
+
       diff = jMinUpperValue - jMinLowerValue;
-      
+
     }
 
     jMinCurrentIndex  = (int)floor(fctPlan->numOfDataPoints * jMinLowerValue);
@@ -684,14 +684,14 @@ static INT2 fctMakeDeltaArray( LALFCTPlan *fctPlan, UINT2 dim ) {
     if(fctPlan->deltaNForDim[dim][j - 1] > fctPlan->maxDeltaOfDim[dim]){
       fctPlan->maxDeltaOfDim[dim] = fctPlan->deltaNForDim[dim][j - 1];
     }
-    sum += fctPlan->deltaNForDim[dim][j - 1]; 
+    sum += fctPlan->deltaNForDim[dim][j - 1];
   }
-    
+
   fctPlan->deltaNForDim[dim][fctPlan->lengthOfDim[dim] - 1] = \
     fctPlan->numOfDataPoints - jMinPreviousIndex;
-    
+
   if(fctPlan->deltaNForDim[dim][fctPlan->lengthOfDim[dim] - 1] > \
-     fctPlan->maxDeltaOfDim[dim]){ 
+     fctPlan->maxDeltaOfDim[dim]){
     fctPlan->maxDeltaOfDim[dim] = \
       fctPlan->deltaNForDim[dim][fctPlan->lengthOfDim[dim] - 1];
   }
@@ -716,18 +716,18 @@ static INT2 fctMakeDeltaArray( LALFCTPlan *fctPlan, UINT2 dim ) {
 }
 
 static INT2 fctGenPrePhaseArray( LALFCTPlan *fctPlan, UINT2 dim ) {
-  /* This function generates the prePhaseArray for dimension dim.  
+  /* This function generates the prePhaseArray for dimension dim.
      The prePhaseArray is used later in fctGenRowData to multiply the proper
      phase factors to each element of each row (parallel to K[0]). The result
      is the same as what you would get by taking the FFT of every dimension
      except K[0].  */
-     
+
 
   UINT4 J;
   LALFCTREAL x = 0;
   LALFCTREAL realValue;
   LALFCTREAL imagValue;
-  
+
   /* If LALfctAddPhaseFunc is called twice on the same dimension, free the old
      prePhaseArray and recalculate it. */
   if (fctPlan->prePhaseArray[dim] != 0) {
@@ -743,22 +743,22 @@ static INT2 fctGenPrePhaseArray( LALFCTPlan *fctPlan, UINT2 dim ) {
     printf("Problem Allocating Memory\n");
     return(0);
   }
-  
+
   /* It turns out that all of the phase factors that we need can be easily
      derived from fctPlan->lengthOfDim[dim]/2 + 1 complex numbers.  This is
      because exp(-2*PI*i*J/M) is periodic and also that exp(-2*PI*i*8/9) is
      the same as exp(2*PI*i*2/9). */
   for(J = 0; J <= fctPlan->lengthOfDim[dim]/2; J++) {
-    
+
     x = 2*LAL_PI*(J)/fctPlan->lengthOfDim[dim];
-    
+
     realValue = cos(x);
     imagValue = -sin(x); /* this is negative because I've simplified from
 			    exp(-2*PI*i*J/fctPlan->lengthOfDim[dim]) */
-    
+
     fctPlan->prePhaseArray[dim][J].re = realValue;
     fctPlan->prePhaseArray[dim][J].im = imagValue;
-    
+
   }
   return(1);
 }
@@ -770,21 +770,21 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
 		    LALfctCalcOutput *fctCalcOutput ) {
   /* This function generates the data for the rows (parallel to the K[0] axis)
      that are specified in fctCalcOutput->rowIndex */
-  
+
   UINT4 J;
   UINT4 rowCursor=0;
   UINT4 *dataRowCursors;
   UINT4 *dataRowMaxs;
   UINT4 TotalRows;
   UINT4 indexLocation;
-  UINT4 preLocation; 
+  UINT4 preLocation;
   UINT4 tempRowIndex;
   UINT4 rowLocation;
   LALFCTCOMP *outputDataPointer;
   LALFCTCOMP *inputDataPointer;
-  UINT4 indexLocationRowLength; 
-  UINT4 rowLocationRowLength; 
-  
+  UINT4 indexLocationRowLength;
+  UINT4 rowLocationRowLength;
+
   UINT4Vector *dimlength=NULL;
   LALStatus status = statusInit;
 
@@ -792,24 +792,24 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
   LALFCTCOMP *TempPhaseArray;
   LALFCTCOMP prePhaseData;
   LALFCTCOMP TempPhaseStorage;
-  
+
   /* Get the Total number of rows. */
-  TotalRows = fctCalcOutput->rowIndex->dimLength->data[0]; 
- 
+  TotalRows = fctCalcOutput->rowIndex->dimLength->data[0];
+
   /* Create the vector to create the array to store the data in. */
   LALU4CreateVector ( &status, &dimlength, 2);
   if (CheckStatus(&status)) {
     return(0);
-  } 
+  }
   dimlength->data[0] = TotalRows; /* LAL uses Row major order, we should too.*/
   dimlength->data[1] = fctPlan->lengthOfDim[0];
 
-  /* Create the output array */ 
+  /* Create the output array */
   LALFCTCOMPCreateArray ( &status, &(fctCalcOutput->outputData), dimlength );
   if (CheckStatus(&status)) {
     LALU4DestroyVector ( &status, &dimlength );
     return(0);
-  } 
+  }
 
   /* Destroy the vector that was used to create the array. */
   LALU4DestroyVector ( &status, &dimlength );
@@ -817,20 +817,20 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
     LALFCTCOMPDestroyArray ( &status, &(fctCalcOutput->outputData));
     return(0);
   }
- 
+
   /* Allocate the Temporary Phase Array.  (We use this as a cache
-     so that we don't have to multiply all of the phase factors together 
+     so that we don't have to multiply all of the phase factors together
      each time.) */
   TempPhaseArray = (LALFCTCOMP *) LALCalloc(TotalRows, sizeof(LALFCTCOMP));
-  
+
   /* Allocate the dataRowCursors.  We use these to keep track of where the the
      data would be in the N-dimensional space. */
   dataRowCursors = (UINT4 *) LALCalloc(fctPlan->numOfDims, sizeof(UINT4));
-  
+
   /* Allocate the dataRowMaxs.  These keep track of when the dataRowCursors need
      to change. */
   dataRowMaxs = (UINT4 *) LALCalloc(fctPlan->numOfDims, sizeof(UINT4));
-  
+
   /* Check to make sure that they were allocated. */
   if (TempPhaseArray && dataRowCursors && dataRowMaxs == 0) {
     if (TempPhaseArray != 0) {
@@ -850,7 +850,7 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
   for(J = 1; J < fctPlan->numOfDims; J++) {
     dataRowMaxs[J] =  fctPlan->deltaNForDim[J][dataRowCursors[J]];
   }
-  
+
   /* These things make it a bit faster. */
   outputDataPointer = fctCalcOutput->outputData->data;
   inputDataPointer = inputDataVector->data;
@@ -866,7 +866,7 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
   /* Move along the K[0] axis */
   for (dataRowCursors[0] = 0; dataRowCursors[0] < fctPlan->lengthOfDim[0]; \
 	 dataRowCursors[0]++) {
-    
+
     /* As we move along the K[0] axis, check to see if we need to increase any
        of the dataRowCursors. */
     for(J = 1; J < fctPlan->numOfDims; J++) {
@@ -877,20 +877,20 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
 	CachedFlag = 0;
       }
     }
-    
+
     /*Reset these locations. */
     indexLocation = 0;
     rowLocation = 0;
-    
-    
-    if (!CachedFlag) { /* We need to recalculate the TempPhaseArray. */	
-      
+
+
+    if (!CachedFlag) { /* We need to recalculate the TempPhaseArray. */
+
       /* Loop over the rows.*/
       for (rowCursor = 0; rowCursor < TotalRows; rowCursor++) {
-	
+
 	TempPhaseArray[rowCursor].re = 1;
 	TempPhaseArray[rowCursor].im = 0;
-	
+
 	for(J = 1; J < fctPlan->numOfDims; J++){
 	  tempRowIndex = fctCalcOutput->rowIndex->data[indexLocation+J-1];
 	  preLocation = (dataRowCursors[J] * tempRowIndex) % \
@@ -912,22 +912,22 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
 	    TempPhaseStorage.re * prePhaseData.im + \
 	    TempPhaseStorage.im * prePhaseData.re;
 	}
-	
+
 	outputDataPointer[rowLocation+dataRowCursors[0]].re = \
 	  TempPhaseArray[rowCursor].re * \
 	  inputDataPointer[dataRowCursors[0]].re - \
 	  TempPhaseArray[rowCursor].im *\
 	  inputDataPointer[dataRowCursors[0]].im;
-	
+
 	outputDataPointer[rowLocation+dataRowCursors[0]].im = \
 	  TempPhaseArray[rowCursor].re * \
 	  inputDataPointer[dataRowCursors[0]].im + \
 	  TempPhaseArray[rowCursor].im *\
 	  inputDataPointer[dataRowCursors[0]].re;
-	
+
 	indexLocation += indexLocationRowLength;
-	rowLocation += rowLocationRowLength; 
-      } 
+	rowLocation += rowLocationRowLength;
+      }
       CachedFlag = 1;
     } else {
       for (rowCursor = 0; rowCursor < TotalRows; rowCursor++) {
@@ -936,18 +936,18 @@ static INT2 fctGenRowData( LALFCTPlan *fctPlan, LALFCTCOMPVector *inputDataVecto
 	  inputDataPointer[dataRowCursors[0]].re - \
 	  TempPhaseArray[rowCursor].im *\
 	  inputDataPointer[dataRowCursors[0]].im;
-	
+
 	outputDataPointer[rowLocation+dataRowCursors[0]].im = \
 	  TempPhaseArray[rowCursor].re * \
 	  inputDataPointer[dataRowCursors[0]].im + \
 	  TempPhaseArray[rowCursor].im *\
 	  inputDataPointer[dataRowCursors[0]].re;
-	
+
 	indexLocation += indexLocationRowLength;
-	rowLocation += rowLocationRowLength; 
+	rowLocation += rowLocationRowLength;
       }
-    } 
-   
+    }
+
   }
   LALFree(TempPhaseArray);
   LALFree(dataRowCursors);
@@ -960,7 +960,7 @@ static INT4 CheckStatus( LALStatus *status) {
   if ( status->statusCode != 0) {
     REPORTSTATUS( status );
     return(1);
-  } 
+  }
   return(0);
 }
 

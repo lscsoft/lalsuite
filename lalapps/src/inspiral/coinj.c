@@ -48,8 +48,8 @@
 --input <injection.xml>      Specify input SimInspiralTable xml file\n\
 --response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\
 --frames                     Create h(t) frame files\n\n\
-[--minSNR min				 Adjust injections to have SNR >= min in all detectors]\n\
-[--maxSNR max				 Adjust injections to have SNR <= max in all detectors]\n\
+[--maxSNR snrhigh --minSNR snrlow		     Adjust injections to have combined SNR between snrlow and snrhigh in the H1H2L1V1 network]\n\
+[--SNR snr      adjust distance to get precisely this snr]\n\
 [--GPSstart A --GPSend B     Only generate waveforms for injection between GPS seconds A and B (int)]\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
@@ -92,7 +92,7 @@ REAL8		deltaT= 1.0/16384.0;
 REAL8		injLength=100.0; /* Ten seconds at end */
 REAL8		LeadupTime=95.0;
 REAL8		dynRange=1.0/3.0e-23;
-REAL8		tmp;
+
 UINT4		Nsamples,det_idx,i,inj_num=0;
 ActuationParametersType actuationParams[LAL_NUM_IFO];
 ActuationParametersType actData;
@@ -100,35 +100,37 @@ ResponseType injectionResponse=noResponse;
 FILE *		outfile;
 LIGOLwXMLStream		xmlfp;
 CHAR		outfilename[FILENAME_MAX];
-CHAR		outXML[FILENAME_MAX];
+
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 NoiseFunc *PSD;
 REAL8 PSDscale=1.0;
 int c;
+int repeatLoop=0;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
 SimInspiralTable *headTable=NULL;
 MetadataTable MDT;
 REAL4TimeSeries *TimeSeries;
-REAL4TimeSeries *SNRTimeSeries;
+
 REAL4TimeSeries *actuationTimeSeries;
 COMPLEX8FrequencySeries *resp;
 COMPLEX8FrequencySeries *actuationResp;
 COMPLEX8FrequencySeries *transfer;
 COMPLEX8Vector *unity;
-COMPLEX8FrequencySeries *DesignNoise;
+
 FrOutPar	VirgoOutPars;
 CHAR		VirgoParsSource[100];
 CHAR		VirgoParsInfo[100];
-REAL8		SNR,NetworkSNR;
+REAL8		NetworkSNR=0.0;
 INT4  makeFrames=0;
 INT4 outputRaw=0;
 COMPLEX8FrequencySeries *fftData;
 REAL8 mySNRsq,mySNR;
 REAL4FFTPlan *fwd_plan;
 REAL8 minSNR=0.0,maxSNR=0.0;
-REAL8 maxRatio=1.0,minRatio=1.0;
+ REAL8 maxRatio=1.0,minRatio=1.0;
+REAL8 targetSNR=0.0;
 INT4 GPSstart=0,GPSend=2147483647;
 int SNROK=1;
 int rewriteXML=0;
@@ -146,6 +148,7 @@ struct option long_options[]=
 	{"verbose",no_argument,&vrbflg,1},
 	{"minSNR",required_argument,0,2},
 	{"maxSNR",required_argument,0,3},
+	{"SNR",required_argument,0,6},
 	{"GPSstart",required_argument,0,4},
 	{"GPSend",required_argument,0,5},
 	{0,0,0,0}
@@ -208,9 +211,11 @@ while(1)
 			break;
 		case 2:
 			minSNR=atof(optarg);
+			fprintf(stderr,"Using minimum SNR of %f\n",minSNR);
 			break;
 		case 3:
 			maxSNR=atof(optarg);
+			fprintf(stderr,"Using maximum SNR of %f\n",maxSNR);
 			break;
 		case 4:
 			GPSstart=atoi(optarg);
@@ -218,12 +223,19 @@ while(1)
 		case 5:
 			GPSend=atoi(optarg);
 			break;
+	        case 6:
+		  targetSNR=atof(optarg);
+		  fprintf(stderr,"Target SNR = %lf\n",targetSNR);
+		  break;
 	}
 }
 
 if(minSNR!=0 && maxSNR!=0 && (maxSNR<minSNR)){
 	fprintf(stderr,"Error: minSNR must be less than maxSNR\n");
 	exit(1);
+	if(targetSNR!=0.0 && (targetSNR<minSNR || targetSNR>maxSNR)){
+	  fprintf(stderr,"Target SNR %lf is not in range %lf to %lf, ignoring min and max\n",targetSNR,minSNR,maxSNR);
+	}
 }
 
 memset(&status,0,sizeof(status));
@@ -249,11 +261,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	/* Only generate within chosen bounds, if specified */
 	if((this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime )<GPSstart || (this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime)>GPSend) continue;
 
-	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1) continue; /* Don't generate for GEO or TAMA */
-	if(det_idx==LAL_IFO_V1 && injectionResponse!=unityResponse){
-		fprintf(stdout,"Skipping generation of non-strain injection for VIRGO\n");
-		continue;
-	}
+	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1||det_idx==LAL_IFO_H2) continue; /* Don't generate for GEO or TAMA */
 	
 	switch(det_idx)
 	{
@@ -275,11 +283,15 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 	XLALDestroyCOMPLEX8FrequencySeries(resp);
 
+	if(det_idx==LAL_IFO_V1 && injectionResponse!=unityResponse){
+		actuationTimeSeries=NULL;
+		goto calcSNRandwriteFrames;
+	}
 
 	/* -=-=-=-=-=-=- Prepare actuations -=-=-=-=-=-=- */
 
 	if(injectionResponse==actuationX || injectionResponse==actuationY) actData=actuationParams[det_idx];
-	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples+1);
+	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples/2+1);
 	/* Create actuation response */
 	switch(injectionResponse){
 		case unityResponse:
@@ -303,9 +315,9 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	if(injectionResponse!=unityResponse) {
 	  	actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
-		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
+		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples/2+1);
 		for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
-		XLALCCVectorDivide(transfer->data,unity,resp->data);
+		XLALCCVectorDivide(transfer->data,unity,actuationResp->data);
 		for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
 		actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
 		XLALDestroyCOMPLEX8FrequencySeries(transfer);
@@ -316,12 +328,21 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
+	/* Output the actuation time series */
+	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
+	outfile=fopen(outfilename,"w");
+	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
+	for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
+	fclose(outfile);
+
+calcSNRandwriteFrames:
+
 	/* Calculate SNR for this injection */
 	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
 	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
 	XLALREAL4TimeFreqFFT(fftData,TimeSeries,fwd_plan);
 	XLALDestroyREAL4FFTPlan(fwd_plan);
-	
+
 	mySNRsq = 0.0;
 	mySNR=0.0;
 	for(i=1;i<fftData->data->length;i++){
@@ -340,20 +361,11 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	mySNR = sqrt(mySNRsq)/dynRange;
 	fprintf(stdout,"SNR in design %s of injection %i = %lf\n",det_name,inj_num,mySNR);
 	
-	if(minSNR>mySNR) {minRatio=minRatio>(mySNR/minSNR)?(mySNR/minSNR):minRatio; SNROK=1;} /* Find the smallest fraction of the SNR in any IFO */
-	if(maxSNR!=0 && maxSNR<mySNR) {maxRatio=maxRatio<(mySNR/maxSNR)?(mySNR/maxSNR):maxRatio; SNROK=1;} /* find largest fraction... */
-
 	for(i=0;i<TimeSeries->data->length;i++) {
 	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
 	}
+	NetworkSNR+=mySNR*mySNR;
 	
-	
-	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
-	outfile=fopen(outfilename,"w");
-	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
-	for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
-	fclose(outfile);
-
 	if(makeFrames){ /* Also output frames for Virgo */
 		sprintf(VirgoParsSource,"%s-INSP%i",det_name,inj_num);
 		VirgoOutPars.source=VirgoParsSource;
@@ -367,22 +379,28 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 		LALFrWriteREAL4TimeSeries(&status,TimeSeries,&VirgoOutPars);
 	}
 	
-	XLALDestroyREAL4TimeSeries(TimeSeries);
-	if(injectionResponse!=unityResponse) XLALDestroyREAL4TimeSeries(actuationTimeSeries);
-
+	if(TimeSeries==actuationTimeSeries) XLALDestroyREAL4TimeSeries(TimeSeries);
+	else {
+	  if(injectionResponse) XLALDestroyREAL4TimeSeries(actuationTimeSeries);
+	  XLALDestroyREAL4TimeSeries(TimeSeries);
+	}
 } /* End loop over detectors */
+
 /*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
-if(SNROK==0){
-	injTable=injTable->next;
-	inj_num++;
-} 
-/* Otherwise, change distance to make the SNR fit OK */
-else {
-	rewriteXML=1; /* re-write the table when done */
-	if(minRatio<1.0 && maxRatio>1.0) {fprintf(stderr,"error: Cannot adjust signal %i to desired SNR, try increasing maxSNR\n",inj_num); exit(1);}
-	if(minRatio<1.0) injTable->distance*=minRatio;
-	if(maxRatio>1.0) injTable->distance*=maxRatio;
-}
+ NetworkSNR=sqrt(NetworkSNR);
+ 
+ if(targetSNR!=0.0 && repeatLoop==0) { injTable->distance*=(REAL4)(NetworkSNR/targetSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop=0;
+ if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
+ if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/maxSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
+
+ if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
+
+ if(repeatLoop==0){
+   fprintf(stderr,"\nNetwork SNR of %i = %lf\n",inj_num,NetworkSNR);
+   injTable=injTable->next;
+   inj_num++;
+ }
+ 
 
 }while(injTable!=NULL);
 
@@ -390,7 +408,7 @@ else {
 if(rewriteXML){
 	memset(&MDT,0,sizeof(MDT));
 	MDT.simInspiralTable = headTable;
-	fprintf(stderr,"Overwriting %s with adjusted masses\n",inputfile);
+	fprintf(stderr,"Overwriting %s with adjusted distances\n",inputfile);
 	LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, inputfile ), &status );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, MDT,sim_inspiral_table ), &status );

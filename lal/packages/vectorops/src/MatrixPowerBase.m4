@@ -63,7 +63,7 @@ void F1 (
         RETURN (status);
 }
 
-/******************************* <lalLaTeX file="MatrixPowerC"> 
+/******************************* <lalLaTeX file="MatrixPowerC">
 \begin{verbatim}void F2 ( LALStatus *status, REAL8Vector **result,
 		VTYPE *A, TYPE2 B )\end{verbatim}
  ************************************************** </lalLaTeX> */

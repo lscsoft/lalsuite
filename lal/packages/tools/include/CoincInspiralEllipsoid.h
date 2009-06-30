@@ -23,7 +23,7 @@
  *
  * Author: Robinson, C. A.
  *
- * Revision: $Id$
+ * Revision: $Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $
  *
  *-----------------------------------------------------------------------
  */
@@ -31,7 +31,7 @@
 #if 0
 <lalVerbatim file="CoincInspiralEllipsoidHV">
 Author: Robinson, C. A.
-$Id$
+$Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $
 </lalVerbatim>
 
 <lalLaTeX>
@@ -73,7 +73,7 @@ using error ellipsoids.
 extern "C" {
 #endif
 
-NRCSID( COINCINSPIRALELLIPSOIDH, "$Id$" );
+NRCSID( COINCINSPIRALELLIPSOIDH, "$Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $" );
 
 /* <lalVerbatim> */
 typedef struct tagTriggerErrorList
@@ -123,10 +123,15 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(
      REAL8              eMatch
      );
 
+int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
+                                       SnglInspiralTable *event,
+                                       REAL8              eMatch
+                                       );
+
 gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
 
 int XLALSetTimeInPositionVector( gsl_vector *position,
-                                 REAL8       time
+                                 REAL8       timeShift
                                );
 
 /* Function for calculating the e-thinca parameter between coincident events */

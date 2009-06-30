@@ -20,18 +20,18 @@
 /**
  * \author Creighton, T. D.
  * \date 2003
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Some metric computation routines suitable for use in LALCreateTwoDMesh()
  *
  * $Id$
  *
  * \par Description
- * 
+ *
  This module contains metric computation routines suitable for passing
  into LALCreateTwoDMesh() via the \a params->getMetric
  function parameter.
- 
+
  The routine LALGetNearestMetric() takes as its parameter a
  \a (void *) pointer to a \a REAL4VectorSequence structure,
  containing a list of 5-dimensional vectors
@@ -65,7 +65,7 @@ NRCSID( TWODMESHMETRICSC, "$Id$" );
 
 void
 LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
-{ 
+{
   UINT4 length;    /* number of metric mesh points */
   UINT4 iMin;      /* index of point with minimum proper distance */
   UINT4 i, j;      /* i = index of current mesh point, j = 5*i  */

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -23,7 +23,7 @@
  *  \brief Header file for velocity and position routines.
  *  \ingroup moduleHoughPulsar
  *
- *  $Id$ 
+ *  $Id$
  *
  *  Created by Badri Krishnan on May 23, 2003
 ***************************************************** */
@@ -60,24 +60,24 @@ velocity  of a detector in a certain time interval.
 struct VelocityPar
 \end{verbatim}
 \index{\texttt{VelocityPar}}
-\noindent This structure stores the parameters required by LALBarycenter to calculate 
+\noindent This structure stores the parameters required by LALBarycenter to calculate
 Earth velocity at a given detector location.
 \begin{description}
-\item[\texttt{LALDetector    detector}]  
+\item[\texttt{LALDetector    detector}]
 \item[\texttt{EphemerisData  *edat}]  ephemeris data pointer from LALInitBarycenter
 \item[\texttt{LIGOTimeGPS  startTime}]  start of time interval
 \item[\texttt{REAL8          tBase}]  duration of interval
 \item[\texttt{REAL8          vTol}]   fractional accuracy required for velocity
 \end{description}
- 
-  
+
+
 \begin{verbatim}
 struct AvgVelPar
 \end{verbatim}
 \index{\texttt{AvgVelPar}}
 \begin{description}
-\item[\texttt{LALDetector    detector}] 
-\item[\texttt{EphemerisData  *edat}] 
+\item[\texttt{LALDetector    detector}]
+\item[\texttt{EphemerisData  *edat}]
 \end{description}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -95,9 +95,9 @@ struct AvgVelPar
 #define _VELOCITY_H
 
 /* *************
- *    Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
+ *    Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -118,13 +118,13 @@ struct AvgVelPar
 extern "C" {
 #endif
 /* ***************************************
- *   Assignment of Id string using NRCSID()  
+ *   Assignment of Id string using NRCSID()
  */
- 
+
 NRCSID( VELOCITYH, "$Id$");
 
 /* ***************************************
- *   Error codes and messages. This must be auto-extracted for 
+ *   Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
 /* <lalErrTable file="VelocityHErrorTable"> */
@@ -138,14 +138,14 @@ NRCSID( VELOCITYH, "$Id$");
  *   Structure, enum, union, etc., typdefs.
  */
 
-/** parameters required by LALBarycenter to calculate Earth velocity at 
+/** parameters required by LALBarycenter to calculate Earth velocity at
    a given detector location */
 typedef struct tagVelocityPar {
   LALDetector    detector; /**< the detector */
   EphemerisData  *edat;  /**< ephemeris data pointer from LALInitBarycenter */
   LIGOTimeGPS    startTime; /**< start of time interval */
   REAL8          tBase; /**< duration of interval */
-  REAL8          vTol;  /**< fractional accuracy required for velocity (redundant for average velocity calculation) */ 
+  REAL8          vTol;  /**< fractional accuracy required for velocity (redundant for average velocity calculation) */
 } VelocityPar;
 
 
@@ -153,24 +153,24 @@ typedef struct tagVelocityPar {
  *  Functions Declarations (i.e., prototypes).
  */
 void LALAvgDetectorVel(LALStatus    *status,
-		    REAL8        v[3], /* output vector representing average velocity */ 
+		    REAL8        v[3], /* output vector representing average velocity */
 		    VelocityPar  *in); /* parameters required to calculate V */
 
 void LALAvgDetectorPos(LALStatus    *status,
-		    REAL8        x[3], /* output vector representing average position */ 
+		    REAL8        x[3], /* output vector representing average position */
 		    VelocityPar  *in); /* parameters required to calculate position */
 
-void LALDetectorVel(LALStatus   *status, 
-		 REAL8       v[3],  /* output velocity vector */ 
+void LALDetectorVel(LALStatus   *status,
+		 REAL8       v[3],  /* output velocity vector */
 		 LIGOTimeGPS *time0, /* time at which velocity is calculated */
 		 LALDetector  detector, /* detector */
-		 EphemerisData *edat); 
+		 EphemerisData *edat);
 
-void LALDetectorPos(LALStatus   *status, 
-		 REAL8       x[3],  /* output position vector */ 
+void LALDetectorPos(LALStatus   *status,
+		 REAL8       x[3],  /* output position vector */
 		 LIGOTimeGPS *time0, /* time at which position is calculated */
 		 LALDetector  detector, /* detector*/
-		 EphemerisData *edat); 
+		 EphemerisData *edat);
 
 /* ****************************************************** */
 

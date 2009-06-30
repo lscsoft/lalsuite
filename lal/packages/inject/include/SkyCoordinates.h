@@ -81,33 +81,33 @@ typedef struct tagEarthPosition {
 				 * upward vertical direction from the point; that is, the point's
 				 * <em>geodetic</em> latitude and longitude. */
 
-  REAL8 elevation;		/**< The vertical distance of the point above the reference ellipsoid, 
+  REAL8 elevation;		/**< The vertical distance of the point above the reference ellipsoid,
 				 * in metres.*/
 
-  REAL8 x, y, z;		/**< The Earth-fixed geocentric Cartesian coordinates of the point, 
+  REAL8 x, y, z;		/**< The Earth-fixed geocentric Cartesian coordinates of the point,
 				 *in metres.*/
 
   REAL8 radius;			/**< The distance of the point from the geocentre, in metres. */
 
-  SkyPosition geocentric;	/**<  The geographic coordinates of the direction from the centre 
-				 * of the Earth through the point; that is, the point's 
+  SkyPosition geocentric;	/**<  The geographic coordinates of the direction from the centre
+				 * of the Earth through the point; that is, the point's
 				 * <em>geocentric</em> latitude and longitude.*/
 } EarthPosition;
 
 
-/** This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>. 
+/** This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>.
  */
 typedef struct tagConvertSkyParams {
   CoordinateSystem system;	/**<  The coordinate system to which one is transforming. */
 
-  SkyPosition *zenith;		/**< The position of the zenith of the horizon coordinate system; 
-				 * may be <tt>NULL</tt> if one is neither converting to nor from 
+  SkyPosition *zenith;		/**< The position of the zenith of the horizon coordinate system;
+				 * may be <tt>NULL</tt> if one is neither converting to nor from
 				 * a horizon system. */
 
-  LIGOTimeGPS *gpsTime;		/**< The GPS time for conversions between Earth-fixed and 
-				 * sky-fixed coordinates; may be <tt>NULL</tt> if no such conversion 
-				 * is required (or if one is transforming to or from horizon 
-				 * coordinates and <tt>*zenith</tt> is given in the sky-fixed 
+  LIGOTimeGPS *gpsTime;		/**< The GPS time for conversions between Earth-fixed and
+				 * sky-fixed coordinates; may be <tt>NULL</tt> if no such conversion
+				 * is required (or if one is transforming to or from horizon
+				 * coordinates and <tt>*zenith</tt> is given in the sky-fixed
 				 * equatorial system). */
 } ConvertSkyParams;
 

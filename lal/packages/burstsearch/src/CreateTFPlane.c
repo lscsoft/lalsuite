@@ -316,10 +316,10 @@ INT4 XLALEPGetTimingParameters(
  * this for use with a sequence x_{j} whose Fourier transform does not have
  * bins with equal mean square.
  *
- * The FFT plan argument is must be a forward plan (time to frequency)
- * whose length equals that of the window.  If the window has length N the
- * return value is the address of a newly-allocated sequence of length
- * floor(N/2 + 1), or NULL on error.
+ * The FFT plan argument must be a forward plan (time to frequency) whose
+ * length equals that of the window.  If the window has length N the return
+ * value is the address of a newly-allocated sequence of length floor(N/2 +
+ * 1), or NULL on error.
  */
 
 
@@ -528,6 +528,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	if(tukey)
 		correlation = XLALREAL8WindowTwoPointSpectralCorrelation(tukey, plan);
 	else
+		/* error path */
 		correlation = NULL;
 	if(!plane || !channel_data || !channel_buffer || !unwhitened_channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
@@ -540,7 +541,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	/* 
+	/*
 	 * Initialize the structure
 	 */
 
@@ -667,7 +668,7 @@ static REAL8 psd_weighted_filter_inner_product(
 			const COMPLEX16 *f2data = &filter2->data->data[k2];
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
-			
+
 			sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
 
 			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);

@@ -21,15 +21,15 @@
 
 /*
 <lalVerbatim file="SimulatePopcornHV">
-Author: Tania Regimbau 
+Author: Tania Regimbau
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{SimulatePopcorn.h}}
 \label{s:SimulatePopcorn.h}
 
-Provides prototype for simulating whitened time-domain signals in a pair 
+Provides prototype for simulating whitened time-domain signals in a pair
 of detectors that arises from low duty cycle astrophysical backgrounds.
 
 \subsection*{Synopsis}
@@ -51,7 +51,7 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 #include <time.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/StochasticCrossCorrelation.h> 
+#include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
@@ -72,7 +72,7 @@ NRCSID (SIMULATEPOPCORNH, "$Id$");
 </lalLaTeX>
 */
 /*
-<lalErrTable file="SimulatePopcornHErrTab"> 
+<lalErrTable file="SimulatePopcornHErrTab">
 */
 
 #define SIMULATEPOPCORNH_ENULLP          1
@@ -83,7 +83,7 @@ NRCSID (SIMULATEPOPCORNH, "$Id$");
 
 
 #define SIMULATEPOPCORNH_MSGENULLP         "Null pointer"
-#define SIMULATEPOPCORNH_MSGENONNULLFMIN   "Non zero start frequency" 
+#define SIMULATEPOPCORNH_MSGENONNULLFMIN   "Non zero start frequency"
 #define SIMULATEPOPCORNH_MSGEMMDELTA       "Mismatch in sequence spacings"
 #define SIMULATEPOPCORNH_MSGEMMLEN         "Mismatch in sequence lengths"
 #define SIMULATEPOPCORNH_MSGEBV            "Bad input or parameter"
@@ -116,7 +116,7 @@ typedef struct tagSimPopcornInputStruc {
   REAL4   inputlambda; /*mean tims interval between successive bursts*/
   UINT4   inputNdataset; /*number of detector sites 1 for H1/H2, 2 for H/L*/
   INT2   inputsite0; /*first detector code*/
-  INT2   inputsite1; /*second detector code*/  
+  INT2   inputsite1; /*second detector code*/
   COMPLEX8FrequencySeries   *wfilter0; /*response of the first detector*/
   COMPLEX8FrequencySeries   *wfilter1; /*response of the second detector*/
   } SimPopcornInputStruc;
@@ -140,7 +140,7 @@ typedef struct tagSimPopcornParamsStruc {
 The following structure contains the simulated pair time series and $\Omega$ spectrum
 \begin{verbatim}*/
 typedef struct tagSimPopcornOutputStruc {
-  REAL4TimeSeries   *SimPopcorn0;  
+  REAL4TimeSeries   *SimPopcorn0;
   REAL4TimeSeries   *SimPopcorn1;
   REAL4FrequencySeries   *omega0;
   REAL4FrequencySeries   *omega1;

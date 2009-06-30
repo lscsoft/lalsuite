@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXMLRead.h
  *
  * Author: Brown, D. A. and Fairhurst, S.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,12 +32,12 @@
 <lalVerbatim file="LIGOLwXMLReadHV">
 Author: Brown, D. A. and Fairhurst, S.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{LIGOLwXMLRead.h}}
 \label{s:LIGOLwXMLRead.h}
 
-Provides functions for reading LIGO lightweight XML files to LIGO 
+Provides functions for reading LIGO lightweight XML files to LIGO
 metadata database tables.
 
 \subsection*{Synopsis}
@@ -241,7 +241,7 @@ LALStochSummTableFromLIGOLw (
     CHAR *fileName);
 
 int
-LALExtTriggerTableFromLIGOLw ( 
+LALExtTriggerTableFromLIGOLw (
     ExtTriggerTable   **eventHead,
     CHAR               *fileName,
     INT4                startEvent,
@@ -297,7 +297,7 @@ LALMultiInspiralTableFromLIGOLw (
     CHAR                *fileName
     );
 
-int 
+int
 XLALReadMultiInspiralTriggerFile (
     MultiInspiralTable    **inspiralEventList,
     MultiInspiralTable    **lastTrigger,

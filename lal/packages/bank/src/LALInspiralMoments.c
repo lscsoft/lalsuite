@@ -27,7 +27,7 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralMoments.c}}
 
-Module to calculate the moment of the noise power spectral density. 
+Module to calculate the moment of the noise power spectral density.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -35,7 +35,7 @@ Module to calculate the moment of the noise power spectral density.
 \idx{LALInspiralMoments()}
 \begin{itemize}
    \item \texttt{moment,} Output, the value of the moment
-   \item \texttt{pars,} Input 
+   \item \texttt{pars,} Input
 \end{itemize}
 
 \subsubsection*{Description}
@@ -43,14 +43,14 @@ Module to calculate the moment of the noise power spectral density.
 The moments of the noise curve are defined as
 \begin{equation}
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q}}{S_{h}(x)} \, dx \,.  
+\frac{x^{-q}}{S_{h}(x)} \, dx \,.
 \end{equation}
 Because in practice we will always divide one of these moments by another, we
 do not need to include the $S_{h}(f_{0})$ term, which always cancels.
 This function calculates the integral
 \begin{equation}
 I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q}}{S_{h}(x)} \, dx \,.
-\end{equation} 
+\end{equation}
 It then divides this quantity by a normalisation constant which has been
 passed to the function. In the case of calculating the components of the
 metric for the signal manifold for the purpose of generating a template bank,
@@ -65,7 +65,7 @@ Given the exponent \texttt{pars.ndx} and limits of integration
 the power spectral density specified by the frequency series
 \texttt{pars.shf} according to
 \begin{equation}
-\mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}} 
+\mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}}
 \frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
 \end{equation}
 
@@ -92,7 +92,7 @@ LALGetInspiralMoments (
     LALStatus            *status,
     InspiralMomentsEtc   *moments,
     REAL8FrequencySeries *psd,
-    InspiralTemplate     *params 
+    InspiralTemplate     *params
     )
 /* </lalVerbatim> */
 {
@@ -102,11 +102,11 @@ LALGetInspiralMoments (
   INITSTATUS( status, "LALGetInspiralMoments", LALINSPIRALMOMENTSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( params, status, 
+  ASSERT( params, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params->fLower>0, status, 
+  ASSERT( params->fLower>0, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( moments, status, 
+  ASSERT( moments, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
   ASSERT( psd, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
@@ -132,27 +132,27 @@ LALGetInspiralMoments (
 
   /* First compute the norm and print if requested */
   in.norm = 1.L;
-  in.ndx = 7.L/3.L; 
-  LALInspiralMoments( status->statusPtr, &moments->j[7], in ); 
+  in.ndx = 7.L/3.L;
+  LALInspiralMoments( status->statusPtr, &moments->j[7], in );
   CHECKSTATUSPTR( status );
   in.norm = moments->j[7];
 
   if ( lalDebugLevel & LALINFO )
   {
-    LALPrintError( 
-        "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n", 
-        moments->a01, moments->a21, moments->a22, moments->a31, 
+    LALPrintError(
+        "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n",
+        moments->a01, moments->a21, moments->a22, moments->a31,
         moments->a41, moments->a42, moments->a43, moments->j[7] );
   }
 
   /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
   for ( k = 1; k <= 17; ++k )
   {
-    in.ndx = (REAL8) k / 3.L; 
-    LALInspiralMoments( status->statusPtr, &moments->j[k], in );  
+    in.ndx = (REAL8) k / 3.L;
+    LALInspiralMoments( status->statusPtr, &moments->j[k], in );
     CHECKSTATUSPTR( status );
 
-    if ( lalDebugLevel & LALINFO ) 
+    if ( lalDebugLevel & LALINFO )
     {
       LALPrintError( "j%1i=%e\n", k, moments->j[k] );
     }
@@ -172,7 +172,7 @@ LALGetInspiralMomentsBCV (
     LALStatus               *status,
     InspiralMomentsEtcBCV   *moments,
     REAL8FrequencySeries    *psd,
-    InspiralTemplate        *params 
+    InspiralTemplate        *params
     )
 {
   UINT4 k;
@@ -187,13 +187,13 @@ LALGetInspiralMomentsBCV (
    *  case. Indeed on one hand we use quantity which are a ratio between two moments and
    *  consequently a factor 1 or 2 is not important. Howver in the case of BCV, we might
    *  use a moment alone. Thus a factor in the computation has an effect. */
-  
+
   /*  for (i=0; i< psd->data->length ; i++)
   {
     psd->data->data[i] = psd->data->data[i] * 1e45;
   }
    */
-  in.shf = psd;  
+  in.shf = psd;
   in.xmin = params->fLower;
   in.xmax = params->fCutoff;
 
@@ -212,59 +212,59 @@ LALGetInspiralMomentsBCV (
       in.ndx = (17.- (REAL8)k) /3.L;
     }
 
-    LALInspiralMoments( status->statusPtr, &moments->i[k], in ); 
+    LALInspiralMoments( status->statusPtr, &moments->i[k], in );
     CHECKSTATUSPTR(status);
   }
 
-  in.norm = moments->i[7] -2.*moments->alpha * moments->i[5] +    
+  in.norm = moments->i[7] -2.*moments->alpha * moments->i[5] +
     moments->alpha * moments->alpha*moments->i[3];
 
 
   /* 17 */
   q = 2* moments->n0; /*=10/3 */
-  moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +    
+  moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +
       moments->alpha * moments->alpha*moments->i[13]) / in.norm;
   /* 14 */
-  q = moments->n0 +moments->n15; 
-  moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +    
+  q = moments->n0 +moments->n15;
+  moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +
       moments->alpha * moments->alpha*moments->i[10]) / in.norm;
   /* 11 */
-  q = 2 * moments->n15; 
-  moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +    
+  q = 2 * moments->n15;
+  moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +
       moments->alpha * moments->alpha*moments->i[7]) / in.norm;
 
   moments->M1[1][0]=moments->M1[0][1] ;
 
   /*  12 */
-  q = moments->n0; 
-  moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +    
-      moments->alpha * moments->alpha*moments->i[8]) / in.norm;   
+  q = moments->n0;
+  moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +
+      moments->alpha * moments->alpha*moments->i[8]) / in.norm;
   /* 9 */
-  q = moments->n15; 
+  q = moments->n15;
 
-  moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
-      moments->alpha * moments->alpha*moments->i[5]) / in.norm;   
+  moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +
+      moments->alpha * moments->alpha*moments->i[5]) / in.norm;
   /*  9 */
-  q = moments->n0-1;   
+  q = moments->n0-1;
 
-  moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
+  moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +
       moments->alpha * moments->alpha*moments->i[5]) / in.norm;
   /*  6 */
-  q = moments->n15-1; 
-  moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +    
+  q = moments->n15-1;
+  moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +
       moments->alpha * moments->alpha*moments->i[2]) / in.norm;
 
   /* 7 */
-  q = 0; 
-  moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +    
-      moments->alpha * moments->alpha*moments->i[3]) / in.norm;   
+  q = 0;
+  moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +
+      moments->alpha * moments->alpha*moments->i[3]) / in.norm;
   /* 4 */
-  q = -1; 
-  moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +    
-      moments->alpha * moments->alpha*moments->i[0]) / in.norm;   
+  q = -1;
+  moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +
+      moments->alpha * moments->alpha*moments->i[0]) / in.norm;
   /* 1 */
-  q = -2; 
-  moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[18] +    
+  q = -2;
+  moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[18] +
       moments->alpha * moments->alpha * moments->i[20]) / in.norm;
 
   moments->M3[1][0]=moments->M3[0][1] ;
@@ -286,7 +286,7 @@ LALGetInspiralMomentsBCV (
         moments->M2[1][0],
         moments->M2[1][1] );
 
-    LALPrintError( "#M3=\n" );     
+    LALPrintError( "#M3=\n" );
     LALPrintError( "#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
         moments->M3[0][0],
         moments->M3[0][1],
@@ -319,11 +319,11 @@ LALInspiralMoments(
 
   INITSTATUS( status, "LALInspiralMoments", LALINSPIRALMOMENTSC );
 
-  ASSERT( pars.shf, status, 
+  ASSERT( pars.shf, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( pars.shf->data, status, 
+  ASSERT( pars.shf->data, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( pars.shf->data->data, status, 
+  ASSERT( pars.shf->data->data, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 
   /* make sure that the minimum and maximum of the integral are within */

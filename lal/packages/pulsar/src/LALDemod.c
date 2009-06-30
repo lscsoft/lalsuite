@@ -34,12 +34,12 @@ Computes a demodulated Fourier transform (DeFT) given a set of input short Fouri
 
 This routine computes the $F$ statistic for a set of templates that are defined by: one sky position, a set of spin-down parameters and a band of possible signal frequencies. The $F$ statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single emission frequency model.
 
-The {\bf parameter structure} defines the search frequency band 
+The {\bf parameter structure} defines the search frequency band
 (\verb@f0@ and \verb@imax@), the search frequency resolution (\verb@df@) the first frequency of the input SFTs (\verb@ifmin@), how many SFTs have to be combined (\verb@SFTno@) and template parameters (\verb@*spinDwnOrder@, \verb@*spinDwn@ and @\verb@*skyConst@). \verb@amcoe@ contains the values of the amplitude modulation functions $a$ and $b$.  \verb@Dterms@ represents the numbers of terms to be summed to compute the Dirichlet kernel on each side of the instantaneous frequency.
 
 The {\bf input} is: \verb@**input@, an array of structures of type \verb@FFT@. This data type will soon disappear as it is just a complex8frequencyseries.
 
-The {\bf output} is a pointer a structure of type \verb+LALFstat+ containing an array of the values of $\mathcal{F}$. 
+The {\bf output} is a pointer a structure of type \verb+LALFstat+ containing an array of the values of $\mathcal{F}$.
 In addition, if \verb+DemodPar->returnFaFb == TRUE+, the values of $F_a$ and $F_b$ will be returned in addition.
 (Memory has to be allocated correctly beforehand!)
 
@@ -53,14 +53,14 @@ $\alpha$, which identifies the SFTs.
 The value of  $k^*$ is then computed using the second of Eq. \ref{DeFT_defs},
 and thus the summation over $k$ of Eq.\ref{DeFT_algo} is carried out, with a
 loop over Dterms.  In this loop the product $\tilde{x}_{\alpha k}P_{\alpha k}$
-is calculated.  Once this loop completes, 
+is calculated.  Once this loop completes,
 $e^{iy_\alpha}$ is computed, the summation over $\alpha$ performed and,
 finally,  the code yields the DeFT $\hat{x}_b$.  It can be seen that the code
-closely follows the analytical development of the formalism. 
+closely follows the analytical development of the formalism.
 
 Finally, note that in order to avoid repeated
-trigonometric function computations, a look-up-table (LUT) for sine and cosine is 
-constructed at the beginning of the routine. 
+trigonometric function computations, a look-up-table (LUT) for sine and cosine is
+constructed at the beginning of the routine.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -83,9 +83,9 @@ None
 NRCSID( LALDEMODC, "$Id$" );
 
 /* <lalVerbatim file="LALDemodCP"> */
-void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
+void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 /* </lalVerbatim> */
-{ 
+{
 
   INT4 alpha,i;                 /* loop indices */
   REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
@@ -137,7 +137,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
    res=64;
    sinVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
-   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8)); 
+   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
    for (k=0; k<=res; k++){
      sinVal[k]=sin((LAL_TWOPI*k)/res);
      cosVal[k]=cos((LAL_TWOPI*k)/res);
@@ -152,7 +152,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
     xSum[alpha]=0.0;
     ySum[alpha]=0.0;
     for(s=0; s<spOrder;s++) {
-      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s]; 	
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
@@ -180,21 +180,21 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 	realXP=0.0;
 	imagXP=0.0;
-	      
+
 	/* find correct index into LUT -- pick closest point */
 	tempFreq=xTemp-(INT4)xTemp;
 	myindex=(INT4)(tempFreq*res+0.5);
-	      
+
 	{
 	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)myindex/(REAL8)res);
 	  REAL8 d2=0.5*d*d;
 	  REAL8 ts=sinVal[myindex];
 	  REAL8 tc=cosVal[myindex];
-		
+
 	  tsin=ts+d*tc-d2*ts;
 	  tcos=tc-d*ts-d2*tc-1.0;
 	}
-		     
+
 	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
 	k1=(INT4)xTemp-params->Dterms+1;
 	/* Loop over terms in dirichlet Kernel */
@@ -206,12 +206,12 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	    imagP=tcos/x;
 
 	    /* If x is small we need correct x->0 limit of Dirichlet kernel */
-	    if(fabs(x) < SMALL) 
+	    if(fabs(x) < SMALL)
 	      {
 		realP=1.0;
 		imagP=0.0;
-	      }	 
- 
+	      }
+
 	    sftIndex=k1+k-params->ifmin;
 
 	    /* these four lines compute P*xtilde */
@@ -221,7 +221,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	    imagXP += Xalpha_k.re*imagP;
 	    imagXP += Xalpha_k.im*realP;
 	  }
-      
+
 	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
 
 	realQ = cos(y);
@@ -236,12 +236,12 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	  Fb.re += b*realQXP;
 	  Fb.im += b*imagQXP;
 	}
-    }      
+    }
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
-	  	  	
+
     Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)
       {
@@ -255,7 +255,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
-  
+
   LALFree(sinVal);
   LALFree(cosVal);
 

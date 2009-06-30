@@ -88,13 +88,13 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
 static INT8 start_time(const SnglBurst *x)
 {
-	return(XLALGPStoINT8(&x->start_time));
+	return(XLALGPSToINT8NS(&x->start_time));
 }
 
 
 static INT8 peak_time(const SnglBurst *x)
 {
-	return(XLALGPStoINT8(&x->peak_time));
+	return(XLALGPSToINT8NS(&x->peak_time));
 }
 
 

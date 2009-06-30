@@ -19,7 +19,7 @@
 
 /*********************** <lalVerbatim file="CoarseGrainFrequencySeriesHV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$ 
+$Id$
 *********************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -34,7 +34,7 @@ which coarse-grain a frequency series.
 #include <lal/CoarseGrainFrequencySeries.h>
 \end{verbatim}
 
-\noindent 
+\noindent
 
 \subsection*{Error conditions}
 \input{CoarseGrainFrequencySeriesHE}
@@ -70,9 +70,9 @@ NRCSID( COARSEGRAINFREQUENCYSERIESH,
 
 #define COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR    "Null pointer"
 #define COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR    "Input and Output pointers the same"
-#define COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN    "Zero length for data member of series" 
-#define COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF "Negative or zero frequency spacing" 
-#define COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN "Negative start frequency" 
+#define COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN    "Zero length for data member of series"
+#define COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF "Negative or zero frequency spacing"
+#define COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN "Negative start frequency"
 #define COARSEGRAINFREQUENCYSERIESH_MSGEMMHETERO   "Mismatch in heterodyning frequencies"
 #define COARSEGRAINFREQUENCYSERIESH_MSGEMMFMIN     "Mismatch in start frequencies"
 #define COARSEGRAINFREQUENCYSERIESH_MSGEMMDELTAF   "Mismatch in frequency spacings"
@@ -93,10 +93,10 @@ NRCSID( COARSEGRAINFREQUENCYSERIESH,
 \subsubsection*{\texttt{struct FrequencySamplingParams}}
 \idx[Type]{FrequencySamplingParams}
 
-\noindent 
+\noindent
 Contains the parameters needed to specify the sampling of a
 frequency series:
- 
+
 \begin{description}
 \item[\texttt{UINT4 length}]
 The number of points in the frequency series.

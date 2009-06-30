@@ -12,36 +12,36 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \file NRWaveIO.c
  *  \ingroup NRWaveIO
  *  \author S.Fairhurst, B.Krishnan, L.Santamaria
- * 
+ *
  *  \brief Functions for reading/writing numerical relativity waveforms
  *
- * $Id$ 
+ * $Id$
  *
  */
 
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
-#include <lal/NRWaveInject.h> 
+#include <lal/NRWaveInject.h>
 
 NRCSID( NRWAVEIOC, "$Id$");
 
 
 
-/** Functionfor reading the numrel waveform -- just returns the numrel 
+/** Functionfor reading the numrel waveform -- just returns the numrel
     data as it is without any rescaling of time or amplitude */
 
-void LALReadNRWave_raw(LALStatus *status, 
+void LALReadNRWave_raw(LALStatus *status,
 		       REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
-		       const CHAR  *filename        /**< [in] File containing numrel waveform */) 
+		       const CHAR  *filename        /**< [in] File containing numrel waveform */)
 {
 
   UINT4 length, k, r;
@@ -52,8 +52,8 @@ void LALReadNRWave_raw(LALStatus *status,
   REAL4 tmp1, tmp2, tmp3;
 
   INITSTATUS (status, "LALReadNRWave_raw", NRWAVEIOC);
-  ATTATCHSTATUSPTR (status); 
- 
+  ATTATCHSTATUSPTR (status);
+
   /* some consistency checks */
   ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
@@ -70,12 +70,12 @@ void LALReadNRWave_raw(LALStatus *status,
   }
   strcpy(ret->name,filename);
   ret->f0 = 0;
-  
+
   data =  XLALCreateREAL4VectorSequence (2, length);
   if (!data) {
     ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
   }
-  
+
   timeVec = XLALCreateREAL4Vector (length);
   if (!timeVec) {
     ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
@@ -83,7 +83,7 @@ void LALReadNRWave_raw(LALStatus *status,
 
   /* now get the data */
   for (k = 0; k < length; k++) {
-    r = sscanf(cfgdata->lines->tokens[k], "%f%f%f", &tmp1, &tmp2, &tmp3);    
+    r = sscanf(cfgdata->lines->tokens[k], "%f%f%f", &tmp1, &tmp2, &tmp3);
 
     /* Check the data file format */
     if ( r != 3) {
@@ -94,7 +94,7 @@ void LALReadNRWave_raw(LALStatus *status,
     timeVec->data[k] = tmp1;
     data->data[k] = tmp2;
     data->data[data->vectorLength + k] = tmp3;
-     
+
   }
 
   /*  scale time */
@@ -111,18 +111,18 @@ void LALReadNRWave_raw(LALStatus *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-  
+
 } /* LALReadNRWave() */
 
 
-/** Reads a numerical relativity waveform given a filename and a value of the 
+/** Reads a numerical relativity waveform given a filename and a value of the
     total mass for setting the timescale.  The output waveform is scaled corresponding
     to a distance of 1Mpc.
 */
-void LALReadNRWave(LALStatus *status, 
+void LALReadNRWave(LALStatus *status,
 		   REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
 		   const REAL4  mass,           /**< [in] Value of total mass for setting time scale */
-		   const CHAR  *filename        /**< [in] File containing numrel waveform */) 
+		   const CHAR  *filename        /**< [in] File containing numrel waveform */)
 {
 
   UINT4 length, k, r;
@@ -134,8 +134,8 @@ void LALReadNRWave(LALStatus *status,
   REAL4 tmp1, tmp2, tmp3;
 
   INITSTATUS (status, "LALReadNRWave", NRWAVEIOC);
-  ATTATCHSTATUSPTR (status); 
- 
+  ATTATCHSTATUSPTR (status);
+
   /* some consistency checks */
   ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( mass > 0, status, NRWAVEIO_EVAL, NRWAVEIO_MSGEVAL );
@@ -153,12 +153,12 @@ void LALReadNRWave(LALStatus *status,
   }
   strcpy(ret->name,filename);
   ret->f0 = 0;
-  
+
   data =  XLALCreateREAL4VectorSequence (2, length);
   if (!data) {
     ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
   }
-  
+
   timeVec = XLALCreateREAL4Vector (length);
   if (!timeVec) {
     ABORT( status, NRWAVEIO_ENOMEM, NRWAVEIO_MSGENOMEM );
@@ -169,7 +169,7 @@ void LALReadNRWave(LALStatus *status,
 
   /* now get the data */
   for (k = 0; k < length; k++) {
-    r = sscanf(cfgdata->lines->tokens[k], "%f%f%f", &tmp1, &tmp2, &tmp3);    
+    r = sscanf(cfgdata->lines->tokens[k], "%f%f%f", &tmp1, &tmp2, &tmp3);
 
     /* Check the data file format */
     if ( r != 3) {
@@ -180,7 +180,7 @@ void LALReadNRWave(LALStatus *status,
     timeVec->data[k] = tmp1;
     data->data[k] = massMpc * tmp2;
     data->data[data->vectorLength + k] = massMpc * tmp3;
-     
+
   }
 
   /*  scale time */
@@ -197,15 +197,15 @@ void LALReadNRWave(LALStatus *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-  
+
 } /* LALReadNRWave() */
 
 
 
 /** Function for reading a numerical relativity metadata file.
-    It returns a list of numrel wave parameters.  It uses 
+    It returns a list of numrel wave parameters.  It uses
     LALParseDataFile() for reading the data file.  This automatically
-    takes care of removing comment lines starting with # and other details. 
+    takes care of removing comment lines starting with # and other details.
  */
 void
 LALNRDataFind( LALStatus *status,
@@ -217,7 +217,7 @@ LALNRDataFind( LALStatus *status,
   UINT4 k, numWaves;
 
   INITSTATUS (status, "LALNRDataFind", NRWAVEIOC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
@@ -251,7 +251,7 @@ void
 LALGetSingleNRMetaData( LALStatus       *status,
 			NRWaveMetaData  *out,   /**< [out] Meta data struct to be filled */
 			const CHAR      *dir,   /**< [in] data directory */
-			const CHAR      *cfgstr /**< [in] config string containing the data for a single NR wave*/) 
+			const CHAR      *cfgstr /**< [in] config string containing the data for a single NR wave*/)
 {
   REAL4 tmpR[7];
   INT4  tmpI[2];
@@ -259,18 +259,18 @@ LALGetSingleNRMetaData( LALStatus       *status,
   CHAR tmpStr[512];
 
   INITSTATUS (status, "LALGetSingleNRMetaData", NRWAVEIOC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (cfgstr != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT (out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT (dir != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
 
-  test = sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5, 
+  test = sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5,
 	 tmpR+6, tmpI, tmpI+1, tmpStr);
 
   /* Check the metadata file format */
   if ( test != 10) {
-    /* there must be exactly 10 data entries 
+    /* there must be exactly 10 data entries
        -- massratio, spin1[3], spin2[3], l, m, filename */
     ABORT( status, NRWAVEIO_EFORMAT, NRWAVEIO_MSGEFORMAT );
   }
@@ -316,7 +316,7 @@ LALAddStrainModes(
   NRWaveMetaData thisMetaData;
 
   INITSTATUS (status, "LALAddStrainModes", NRWAVEIOC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   /* loop over l values */
   for ( modeL = modeLlo; modeL <= modeLhi; modeL++ )
@@ -337,12 +337,12 @@ LALAddStrainModes(
 
 	  if (sumStrain == NULL) {
 
-	    sumStrain = LALCalloc(1, sizeof(*sumStrain));	    
+	    sumStrain = LALCalloc(1, sizeof(*sumStrain));
 
-	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength); 
+	    sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength);
 	    sumStrain->deltaT = tempStrain->deltaT;
-	    sumStrain->f0 = tempStrain->f0; 
-	    sumStrain->sampleUnits = tempStrain->sampleUnits; 
+	    sumStrain->f0 = tempStrain->f0;
+	    sumStrain->sampleUnits = tempStrain->sampleUnits;
 
 	    memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
 
@@ -367,7 +367,7 @@ LALAddStrainModes(
   /*fprintf(stdout, "\nNR injections done\n");*/
 
   *outStrain = sumStrain;
-      
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -377,7 +377,7 @@ LALAddStrainModes(
 
 
 /** Main driver funtion for doing Numerical Relativity Injections */
-void LALDriveNRInject( LALStatus *status, 
+void LALDriveNRInject( LALStatus *status,
 		       REAL4TimeSeries *injData, /**< The time series to inject into */
 		       SimInspiralTable *injections, /**< The list of injections to perform */
 		       NumRelInjectParams *params /**< Parameters */
@@ -396,9 +396,9 @@ void LALDriveNRInject( LALStatus *status,
 
       TRY( LALAddStrainModes(status->statusPtr, &sumStrain, params->nrCatalog,
 				  params->modeLlo, params->modeLhi, thisInj), status);
-      
+
       TRY( LALInjectStrainGW( status->statusPtr, injData, sumStrain, thisInj, params->ifo, params->dynRange), status);
-      
+
       XLALDestroyREAL4VectorSequence ( sumStrain->data );
       LALFree( sumStrain );
       sumStrain = NULL;
@@ -408,7 +408,7 @@ void LALDriveNRInject( LALStatus *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-  
+
 }
 
 

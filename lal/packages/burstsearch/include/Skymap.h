@@ -29,7 +29,7 @@ extern "C" {
 #include <lal/LALRCSID.h>
 NRCSID(EPSEARCHH, "$Id$");
 
-/* 
+/*
  * Stores pre-computed properties of each sky direction
  */
 typedef struct tagLALSkymapPixelType
@@ -39,7 +39,7 @@ typedef struct tagLALSkymapPixelType
     double f[3][2];
 } XLALSkymapPixelType;
 
-/* 
+/*
  * Stores pre-computed information for generating a sky map
  */
 typedef struct tagXLALSkymapPlanType
@@ -55,23 +55,23 @@ typedef struct tagXLALSkymapPlanType
 
     XLALSkymapPixelType* pixel;
     int pixelCount;
-    
+
     /* raster size */
     int m;
     int n;
 } XLALSkymapPlanType;
 
-/* 
+/*
  * Construct an analysis plan for a given frequency
  */
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n);
 
-/* 
+/*
  * Destroy an analysis plan
  */
 void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
 
-/* 
+/*
  * Produce a skymap according to a plan
  */
 int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6]);
@@ -104,15 +104,15 @@ void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const d
 
 /*
  * Lightweight coordinate transformations
- */ 
+ */
 void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi);
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3]);
 int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3]);
 
-/* 
+/*
  * Find the most plausible direction (the mode of the distribution) and return
- * its theta and phi coordinates 
+ * its theta and phi coordinates
  */
 void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi[2]);
 

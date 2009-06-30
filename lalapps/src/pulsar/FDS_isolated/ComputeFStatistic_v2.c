@@ -71,9 +71,9 @@ int finite(double);
 #include <lalappsGitID.h>
 
 /* local includes */
-
 #include "HeapToplist.h"
 
+#include "ComputeFstatGPU.h"
 
 RCSID( "$Id$");
 
@@ -251,6 +251,8 @@ typedef struct {
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
+  BOOLEAN GPUready;		/**< use special single-precision  'GPU-ready' version */
+
   BOOLEAN version;		/**< output version information */
 } UserInput_t;
 
@@ -305,10 +307,12 @@ static const FstatCandidate empty_FstatCandidate;
  */
 int main(int argc,char *argv[])
 {
+  static const char *fn = "main()";
   LALStatus status = blank_status;	/* initialize status */
 
   FILE *fpFstat = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
+  ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
@@ -436,8 +440,25 @@ int main(int argc,char *argv[])
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
       
       /* main function call: compute F-statistic for this template */
-      LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
-			     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+      if ( ! uvar.GPUready )
+        {
+          LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
+                                       GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+        }
+      else
+        {
+          REAL4 F;
+
+          XLALDriverFstatGPU ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
+          if ( xlalErrno ) {
+            XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno=%d\n", fn, xlalErrno );
+            return xlalErrno;
+          }
+          /* this function only returns F, not Fa, Fb */
+          Fstat = empty_Fcomponents;
+          Fstat.F = F;
+
+        } /* if GPUready==true */
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -476,15 +497,26 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;
-      if ( cfBuffer.multiCmplxAMcoef ) {
-	thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
-      } else {
-	thisFCand.Mmunu.Ad = cfBuffer.multiAMcoef->Mmunu.Ad;
-	thisFCand.Mmunu.Bd = cfBuffer.multiAMcoef->Mmunu.Bd;
-	thisFCand.Mmunu.Cd = cfBuffer.multiAMcoef->Mmunu.Cd;
-	thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
-	thisFCand.Mmunu.Ed = 0.0;
-      }
+      if ( !uvar.GPUready )
+        {
+          if ( cfBuffer.multiCmplxAMcoef ) {
+            thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
+          } else {
+            thisFCand.Mmunu.Ad = cfBuffer.multiAMcoef->Mmunu.Ad;
+            thisFCand.Mmunu.Bd = cfBuffer.multiAMcoef->Mmunu.Bd;
+            thisFCand.Mmunu.Cd = cfBuffer.multiAMcoef->Mmunu.Cd;
+            thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
+            thisFCand.Mmunu.Ed = 0.0;
+          }
+        }
+      else
+        {
+          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
+          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
+          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
+          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
+          thisFCand.Mmunu.Ed = 0.0;
+        }
 
       /* correct normalization in --SignalOnly case:
        * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
@@ -651,6 +683,7 @@ int main(int argc,char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
+  XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
@@ -763,6 +796,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
+  uvar->GPUready = 0;
+
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
@@ -854,6 +889,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
   LALregREALUserStruct(status,  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
   LALregREALUserStruct(status,  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
+
+  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

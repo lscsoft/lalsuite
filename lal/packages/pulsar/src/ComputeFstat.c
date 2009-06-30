@@ -118,7 +118,7 @@ int finite(double x);
     they must be correctly set outside this function.
 */
 void ComputeFStatFreqBand ( LALStatus *status,
-			    REAL8FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
+			    REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
@@ -128,7 +128,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 {
 
   UINT4 numDetectors, numBins, k;
-  REAL8 deltaF, fStart;
+  REAL8 deltaF;
   Fcomponents Fstat;
   PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
@@ -152,19 +152,18 @@ void ComputeFStatFreqBand ( LALStatus *status,
       from the fstatvector and from the input doppler point -- they could be inconsistent
       or the user of this function could misunderstand */
 
-  /* a check that the f0 values from thisPoint and fstatVector are 
+  /* a check that the f0 values from thisPoint and fstatVector are
      at least close to each other -- this is only meant to catch
-     stupid errors but not subtle ones */ 
-  ASSERT ( fabs(fstatVector->f0 - doppler->fkdot[0]) < fstatVector->deltaF, 
-	   status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT ); 
-	   
+     stupid errors but not subtle ones */
+  ASSERT ( fabs(fstatVector->f0 - doppler->fkdot[0]) < fstatVector->deltaF,
+	   status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
 
   numBins = fstatVector->data->length;
   deltaF = fstatVector->deltaF;
-  fStart = thisPoint.fkdot[0];
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
@@ -174,7 +173,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
     fstatVector->data->data[k] = Fstat.F;
 
-    thisPoint.fkdot[0] = fStart + k*deltaF;
+    thisPoint.fkdot[0] += deltaF;
   }
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
@@ -1423,7 +1422,7 @@ LALNewGetAMCoeffs(LALStatus *status,
 
 } /* LALNewGetAMCoeffs() */
 
-
+
 
 /** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
  *
@@ -1493,7 +1492,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 } /* XLALComputeAntennaPatternCoeffs() */
 
 
-
+
 
 
 /** For a given OrbitalParams, calculate the time-differences
@@ -1975,7 +1974,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
 } /* LALGetMultiAMCoeffs() */
 
 
-
+
 /* ===== Object creation/destruction functions ===== */
 
 /** Destroy a MultiSSBtimes structure.

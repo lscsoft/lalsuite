@@ -22,178 +22,74 @@
  *
  * File Name: LALTrigScanCluster.h
  *
- * Author: Sengupta, Anand. S. and Gupchup, Jayant A.
+ * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
- * Revision: $Id$
+ * Revision: $Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
  *
  *----------------------------------------------------------------------- */
 
 #if 0
 <lalVerbatim file="LALTrigScanClusterHV">
-Author: Sengupta, Anand. S. and Gupchup, Jayant A.
-$Id$
+Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
+$Id: LALTrigScanCluster.h,v 1.10 2007/06/08 14:41:57 bema Exp $
 </lalVerbatim>
 #endif
 
 #ifndef _LALTRIGSCANCLUSTER_H
 #define _LALTRIGSCANCLUSTER_H
 
-#include    <math.h>
 #include    <lal/LALStdlib.h>
-#include    <lal/LALInspiralBank.h>
-#include    <lal/LALNoiseModels.h>
-#include    <lal/LALInspiral.h>
-#include    <lal/LALConstants.h>
-#include    <lal/LALStdlib.h>
-#include    <lal/Matrix.h>
 #include    <lal/LIGOMetadataTables.h>
 #include    <lal/LIGOMetadataUtils.h>
-#include    <lal/AVFactories.h>
-#include    <lal/FindChirp.h>
-#include    <lal/Sort.h>
+#include    <lal/Date.h>
+
 #include    <lal/EllipsoidOverlapTools.h>
+#include    <lal/CoincInspiralEllipsoid.h>
 
 NRCSID( LALTRIGSCANCLUSTERH,
         "$Id$");
 
-/* Cluster classification:
- *     -1 for unclassified,
- *      0 for noise and
- *      an integer > 0 for a valid cluster
- */
-
-#define TRIGSCAN_UNCLASSIFIED     (-1)
-#define TRIGSCAN_NOISE            (0)
-#define TRIGSCAN_CLUSTER_MIN_PTS  (2)
-
-/* Error messages */
-#define LALTRIGSCANCLUSTERH_ENULL          1
-#define LALTRIGSCANCLUSTERH_ECHOICE        2
-#define LALTRIGSCANCLUSTERH_ESIZE          4
-
-#define LALTRIGSCANCLUSTERH_MSGENULL      "Uexpected NULL pointer"
-#define LALTRIGSCANCLUSTERH_MSGECHOICE    "Invalid input parameter"
-#define LALTRIGSCANCLUSTERH_MSGESIZE      "Invalid input size"
 
 typedef enum {
     trigScanNone,
     T0T3Tc,
-    Psi0Psi3Tc
+    Psi0Psi3Tc,
+    NUM_TRIGSCAN_TYPE
 }
 trigScanType;
 
-typedef enum {
-    trigScanFalse,
-    trigScanTrue
-}
-trigScanValidEvent;
-
-typedef struct tagTrigScanInputPoint
+typedef struct
+tagTrigScanCluster
 {
-    REAL8       y, z, tc_sec, tc_ns;
-    REAL8       rho;
-    INT4        clusterID;
-    REAL8       Gamma[6];
-    gsl_matrix  *invGamma;
-}
-trigScanInputPoint;
+  INT4                      nelements;
+  TriggerErrorList          *element;
+  struct tagTrigScanCluster *next;
+} TrigScanCluster;
 
-typedef struct tagTrigScanClusterIn
+typedef enum
 {
-    INT2                  vrbflag, appendStragglers;
-    REAL8                 rho_th1, chisq_th1;
-    InputMasses           massChoice;
-    REAL8                 bin_time, ts_scaling;
-    trigScanInputPoint    *masterList;
-    trigScanType          scanMethod;
-    INT4                  n;
-    REAL8                 maxTcFootPrint;
-}
-trigScanClusterIn;
+  TRIGSCAN_SUCCESS,
+  TRIGSCAN_ERROR,
+  TRIGSCAN_NUM_STATUS
+} TrigScanStatus;
 
-typedef struct tagTrigScanClusterOut
-{
-    REAL8  y, z, tc_sec, tc_ns;
-    REAL8  rho;
-    INT4   master_idx;
-    INT4   cluster_id, nelements;
-}
-trigScanClusterOut;
 
-typedef struct tagTrigScanEpsSearchIn
-{
-    trigScanInputPoint   *masterList;
-    INT4                 nInputPoints;
-    INT4                 clusterID;
-    REAL8                maxTcFootPrint;
-    INT4                 minLoopIdx;
-}
-trigScanEpsSearchInput;
+int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
+                                 trigScanType      method,
+                                 REAL8             scaleFactor,
+                                 INT4              appendStragglers );
 
-/*--- Function prototypes ---*/
-void LALTrigScanClusterDriver (
-        LALStatus           *status,
-        trigScanClusterIn   *clusterIn,
-        trigScanClusterOut  **clusterOut,
-        INT4                *nclusters
-        );
+TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
+                                             REAL8            tcMax );
 
-/*--- Core functions which carry out clustering ---*/
-trigScanValidEvent XLALTrigScanExpandCluster (
-        INT4                  *list,
-        trigScanClusterIn     *condenseIn,
-        INT4                  nPoints,
-        INT4                  currClusterID,
-        trigScanClusterOut    **condenseOut
-        );
+int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters );
 
-void XLALTrigScanGetEpsNeighbourhood (
-        INT4                    seed,
-        INT4                    **list,
-        INT4                    *size,
-        trigScanEpsSearchInput  *epsSearchIn
-        );
+int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster );
 
-void LALTrigScanStoreThisCluster (
-        LALStatus                *status,
-        const INT4               *list,
-        const trigScanClusterIn  *condenseIn,
-        const INT4               size,
-        const INT4               currClusterID,
-        trigScanClusterOut       **condenseOut
-        );
+int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead );
 
-void LALTrigScanAppendIsolatedTriggers (
-        LALStatus               *status,
-        trigScanClusterIn       *condenseIn,
-        trigScanClusterOut      **condenseOut,
-        INT4                    *nclusters
-        );
-
-INT4 XLALDeleteSnglInspiralTable (
-        SnglInspiralTable **eventHead
-        );
-
-SnglInspiralTable *
-XLALTrimSnglInspiralTable (
-        SnglInspiralTable   **inspiralEventList,
-        trigScanClusterOut  *clusterOut,
-        INT4                nclusters
-        );
-
-INT4 XLALPopulateTrigScanInput (
-        trigScanClusterIn     **condenseIn,
-        FindChirpDataParams   *fcDataParams,
-        FindChirpTmpltParams  *fcTmpltParams,
-        FindChirpFilterParams *fcFilterParams,
-        InspiralTemplate      *bankHead
-        );
-
-void LALClusterSnglInspiralOverTemplatesAndEndTime (
-        LALStatus              *status,
-        SnglInspiralTable      **eventHead,
-        trigScanClusterIn      *condenseIn
-        );
-
+void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
+                                TrigScanStatus   status
+                              );
 #endif /* _LALTRIGSCANCLUSTER_H */
 

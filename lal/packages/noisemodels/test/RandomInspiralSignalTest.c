@@ -45,7 +45,7 @@ If \texttt{TimeDomain=0} then the code fitlers the random signal
 with a template of the same parameters and outputs the
 results of the correlation.
 If \texttt{TimeDomain=1} then the code outputs the time-domain
-signal/noise/signal+noise 
+signal/noise/signal+noise
 
 The parameter
 {\texttt randIn.type=0} generates only signal
@@ -53,7 +53,7 @@ The parameter
 {\texttt randIn.type=2} generates {\texttt randIn.SignalAmp * signal(t)
 + randIn.NoiseAmp * noise(t)}
 Note that one must calculate the length of the waveform and allocate memory for it
-\emph{before} calling \texttt{InspiralWave}. The length of the waveform can 
+\emph{before} calling \texttt{InspiralWave}. The length of the waveform can
 be calculated by calling the function \texttt{InspiralWaveLength} beforehand, as shown.
 
 There are only two functions which one can call to generate waveforms. These are
@@ -75,8 +75,8 @@ LALCreateReverseRealFFTPlan
 LALInspiralParameterCalc
 LALInspiralWaveLength
 LALInspiralWaveOverlap
-LALInspiralFindEventsCluster 
-LALNoiseSpectralDensity 
+LALInspiralFindEventsCluster
+LALNoiseSpectralDensity
 LALRandomInspiralSignal
 \end{verbatim}
 
@@ -94,13 +94,13 @@ LALRandomInspiralSignal
 #include <lal/RealFFT.h>
 
 NRCSID (RANDOMINSPIRALSIGNALTESTC,"$Id$");
- 
+
 void printf_timeseries(INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0, FILE *file);
 
 INT4 lalDebugLevel=1;
-     
-int 
-main ( void ) 
+
+int
+main ( void )
 {
    UINT4 TimeDomain=0;
 /*
@@ -124,7 +124,7 @@ main ( void )
    InspiralWaveOverlapOut overlapout;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    InspiralEventsList *eventlist=NULL;
-	      
+
    InspiralFindEventsIn findeventsin;
    INT4 nEvents=0;
 
@@ -153,12 +153,12 @@ main ( void )
    randIn.mMin = 3.0;
    randIn.mMax = 20.0;
    randIn.MMax = 2.*randIn.mMax;
-   randIn.param.startTime=0.0; 
-   randIn.param.startPhase=0.88189; 
+   randIn.param.startTime=0.0;
+   randIn.param.startPhase=0.88189;
    randIn.param.nStartPad = 3000;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
-   randIn.param.ieta = 1; 
+   randIn.param.ieta = 1;
    randIn.param.fLower = 40.;
    randIn.param.fCutoff = 2000.;
    randIn.param.tSampling = 4096.;
@@ -167,7 +167,7 @@ main ( void )
    randIn.param.OmegaS = 0.0;
    randIn.param.Theta = 0.0;
    randIn.param.approximant = EOB;
-   randIn.param.order = twoPN;
+   randIn.param.order = LAL_PNORDER_TWO;
    randIn.param.massChoice = totalMassAndEta;
    randIn.etaMin = randIn.mMin * ( randIn.MMax - randIn.mMin) /
       pow(randIn.MMax,2.);
@@ -181,7 +181,7 @@ main ( void )
    randIn.psi0Max = 100000.L;
    randIn.psi3Min = -1000.L;
    randIn.psi3Max = 1000.L;
-	      
+
    findeventsin.currentGPSTime = 0;
    findeventsin.Threshold = 4.0;
    findeventsin.ClusterThreshold = 2.;
@@ -240,7 +240,7 @@ main ( void )
               overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
-	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",
 			      overlapout.phase, overlapout.bin, overlapout.max);
       }
 
@@ -260,7 +260,7 @@ main ( void )
               overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
-	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",
 			      overlapout.phase, overlapout.bin, overlapout.max);
       }
 
@@ -280,14 +280,14 @@ main ( void )
 	      if (randIn.param.approximant != BCV) LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
-	      if (randIn.param.approximant !=BCV) 
+	      if (randIn.param.approximant !=BCV)
 		      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      else
 		      randIn.param.fCutoff = randIn.param.fFinal;
               overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
-	      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e psi0=%e psi3=%e phase_max=%e bin_max=%d overlap_max=%e\n",  
+	      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e psi0=%e psi3=%e phase_max=%e bin_max=%d overlap_max=%e\n",
 			      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2,
 			      randIn.param.psi0, randIn.param.psi3,
 			      overlapout.phase, overlapout.bin, overlapout.max);
@@ -295,13 +295,13 @@ main ( void )
 	      findeventsin.param = randIn.param;
 	      LALInspiralFindEventsCluster (&status, &nEvents, &eventlist, &findeventsin);
 	      fprintf(stderr, "Number of Events=%d\n", nEvents);
-	      if (nEvents) 
+	      if (nEvents)
 	      {
-		      
+
 		      for (j=0; j<nEvents; j++)
 		      {
-		      
-			      fprintf(stderr, "%d %d %e %e\n", 
+
+			      fprintf(stderr, "%d %d %e %e\n",
 					      eventlist[j].impulseTime, eventlist[j].endTime, eventlist[j].snr, eventlist[j].chisq);
 		      }
 		      LALFree(eventlist);
@@ -323,15 +323,15 @@ main ( void )
    return(0);
 }
 
-void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0, FILE *file) 
+void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0, FILE *file)
 {
    int i=0;
- 
- 
-   do 
+
+
+   do
       fprintf (file, "%e %e\n", i*delta+t0, *(signal+i));
-   while (n-++i); 
- 
+   while (n-++i);
+
    fprintf(file, "&\n");
 }
 

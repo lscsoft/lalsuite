@@ -196,7 +196,7 @@ static int rngmed_sortindex(const void *elem1, const void *elem2){
   const struct rngmed_val_index *A = elem1;
   const struct rngmed_val_index *B = elem2;
   double data1, data2;
-  
+
   data1=A->data;
   data2=B->data;
   if (data1 < data2)
@@ -267,7 +267,7 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length,
 
     /* compare results */
     if(compare_double(median,medians->data[i])) {
-      printf("ERROR: index:%d median:% 22.15e running median:% 22.15e mismatch:% 22.15e\n", 
+      printf("ERROR: index:%d median:% 22.15e running median:% 22.15e mismatch:% 22.15e\n",
              i, median, medians->data[i], median - medians->data[i]);
       LALFree(index_block);
       LALFree(medians);
@@ -520,7 +520,7 @@ int main( int argc, char **argv )
   } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
   }
-  
+
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,NULL,param);
   if(stat.statusCode == LALRUNNINGMEDIANH_ENULL) {
@@ -710,7 +710,7 @@ int main( int argc, char **argv )
   /* report status if wanted */
   if(lalDebugLevel)
     REPORTSTATUS(&stat);
-  
+
   /* nominal exit */
   EXIT( LALRUNNINGMEDIANTESTC_ENOM, argv0, LALRUNNINGMEDIANTESTC_MSGENOM );
 }

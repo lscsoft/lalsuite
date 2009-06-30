@@ -21,600 +21,602 @@
  *
  * File Name: LALTrigScanCluster.c
  *
- * Author: Sengupta, Anand. S. and Gupchup, Jayant A.
+ * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
- * $Id$
+ * $Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
  *
  *---------------------------------------------------------------------------*/
 
 #if 0
 <lalVerbatim file="LALTrigScanClusterCV">
 Author: Sengupta, Anand. S. and Gupchup, Jayant A.
-$Id$
+$Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
 </lalVerbatim>
 #endif
 
+#include <lal/TrigScanEThincaCommon.h>
 #include <lal/LALTrigScanCluster.h>
 
 NRCSID (LALTRIGSCANCLUSTERC,
         "$Id$");
 
-/* ------------------------------------------------------------------*/
-/* This function takes in a seed point and 'expands' that seed point */
-/* to include other points from a masterList which are part of the   */
-/* same cluster. If the input seed cannot be 'expand'ed then it      */
-/* returns false. Otherwise it returns true.                         */
-/* ------------------------------------------------------------------*/
-trigScanValidEvent XLALTrigScanExpandCluster (
-        INT4                  *list,
-        trigScanClusterIn     *condenseIn,
-        INT4                  nPoints,
-        INT4                  currClusterID,
-        trigScanClusterOut    **condenseOut
-        )
-{
-    static LALStatus        status;
-    trigScanValidEvent      flag = trigScanFalse;
-    INT4                    seed;
-    trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to*/
-                                         /* getEpsNeighbourhood fn.         */
-
-    INT4   pointer=0, size=1; /* when pointer < size, all elements */
-                              /* have been accessed                */
-
-    /* Create the epsSearchIn data structure */
-    epsSearchIn.masterList     = condenseIn->masterList;
-    epsSearchIn.nInputPoints   = nPoints;
-    epsSearchIn.clusterID      = currClusterID;
-    epsSearchIn.maxTcFootPrint = condenseIn->maxTcFootPrint;
-    epsSearchIn.minLoopIdx     = list[0];
-
-    while (pointer < size) {
-
-        /* Pick the index of the first point in this list as the seed */
-        seed = list[pointer];
-
-        /* call function which returns the points which are inside the */
-        /* eps-Neighbourhood. Allow the list to grow as update size as */
-        /* more seeds are added to the list                            */
-        XLALTrigScanGetEpsNeighbourhood (seed, &list, &size, &epsSearchIn);
-
-        /* if valid seed then insert and update size by */
-        /* number of points retrieved                   */
-
-        pointer++;
-    }
-
-    /* set flag to true if (size > 1) indicating that a valid cluster
-     * has been discovered
-     * */
-    if (size > 1)
-    {
-
-
-        LALTrigScanStoreThisCluster (
-                &status, (const INT4 *)( list ),
-                (const trigScanClusterIn  *)( condenseIn ),
-                (const INT4)( size ), (const INT4)( currClusterID ),
-                condenseOut
-                );
-
-        flag = trigScanTrue;
-
-    }
-
-    /* deallocate the list before returning */
-    LALFree (list);
-    list = NULL;
-
-    return flag;
-}
-
-/* ------------------------------------------------------------------------*/
-/* The following function takes in a seed point and a list of other points */
-/* in the master list. Each unclassified point in the masterList is a      */
-/* possible candidate for 'epsilon neighbour' of this seed point.          */
-/* What it does is the following :                                         */
-/*  For each unclassified point in the masterList                          */
-/*      Calculate if it is an eps-neighbor of seed point.                  */
-/*  If true, that unclassified point in the masterList and the seed        */
-/*  become part of the same cluster. Further, the size of the temporary    */
-/*  list of epsilon neighbors is incremented by 1 - and this brand-new     */
-/*  member added to it. The 'size' variable is the length of this list.    */
-/* ------------------------------------------------------------------------*/
-void XLALTrigScanGetEpsNeighbourhood (
-        INT4                    seed,
-        INT4                    **list,
-        INT4                    *size,
-        trigScanEpsSearchInput  *epsSearchIn
-        )
-{
-
-    static const char *func = "XLALTrigScanGetEpsNeighbourhood";
-
-    INT4              i;
-    REAL8             distance;
-    REAL8             q1[3], q2[3]; /* Position vectors */
-    gsl_vector_view   vq1, vq2;     /* vector views from position vectors */
-    fContactWorkSpace *workSpace;   /* reqd for ellipsoid overlap */
-
-    /* Init the workSpace required for checking ellipsoid overlaps */
-    workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
-
-    /* Set the position vector (q1) of the seed point */
-    q1[0] = epsSearchIn->masterList[seed].tc_sec
-            + 1.e-9*(epsSearchIn->masterList[seed].tc_ns);
-    q1[1] = epsSearchIn->masterList[seed].y;
-    q1[2] = epsSearchIn->masterList[seed].z;
-
-    /* create a vector view from the q1 array */
-    vq1 = gsl_vector_view_array(q1,3);
-
-    /* Set the shape matrix of the seed point */
-    workSpace->invQ1  = epsSearchIn->masterList[seed].invGamma;
-
-    for (i = epsSearchIn->minLoopIdx; i < epsSearchIn->nInputPoints; i++)
-    {
-        /* check if the point has been classified */
-        if (epsSearchIn->masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
-        {
-            /* Set the position vector (q2) of the i-th point */
-            q2[0] = epsSearchIn->masterList[i].tc_sec
-                    + 1.e-9*(epsSearchIn->masterList[i].tc_ns);
-            q2[1] = epsSearchIn->masterList[i].y;
-            q2[2] = epsSearchIn->masterList[i].z;
-
-            /* Notice that the triggers are actually time ordered. This means
-             * So, if the endTime difference between trigger and seed exceeds
-             * some value (say 6 * maxTcFootPrint), quit the loop
-             */
-            if ( ( (q2[0] - q1[0]) >= 6.0 * epsSearchIn->maxTcFootPrint ) )
-            {
-                /* Note that the order q2 - q1 is VERY important in the above
-                 * test. This tests for triggers that are further ahead in time
-                 * than the seed are not too far away. If they are, there is no
-                 * need to continue the loop any further.
-                 fprintf (stderr, "Breaking out as q2 (%d) is too far from q1 (%d) index = %d \n", i, seed, i);
-                 */
-                break;
-            }
-
-
-            /* Worry about overlaps only if the triggers times differ by a
-             * fixed amount. If the trigger times differ by more than this, it
-             * is assumed that the overlap will fail anyway
-             */
-            if ( (fabs(q2[0] - q1[0]) <= 6.0 * epsSearchIn->maxTcFootPrint ) )
-            {
-                /* create a vector view from the q2 array */
-                vq2 = gsl_vector_view_array(q2,3);
-
-                /* Set the shape matrix of the i-th point */
-                workSpace->invQ2    = epsSearchIn->masterList[i].invGamma;
-
-                /* Figure out if the above ellipsoids overlap */
-                distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
-                if ( XLAL_IS_REAL8_FAIL_NAN( distance ) )
-                {
-                  XLALFreeFContactWorkSpace( workSpace );
-                  XLAL_ERROR_VOID( func, XLAL_EFUNC );
-                }
-
-
-                if ( distance <= 1.)
-                {
-                    /* set the clusterID to the currClusterID */
-                    epsSearchIn->masterList[i].clusterID = epsSearchIn->clusterID;
-
-                    /* increment the size variable and hence realloc the list */
-                    (*size)++;
-
-                    if ( !(*list = (INT4*)
-                                LALRealloc(*list,
-                                    sizeof(INT4)*(*size)))
-                       )
-                    {
-                        fprintf (stderr, "LALRealloc error. Aborting at %d\n",
-                                *size);
-                        abort ();
-                    }
-
-                    /* add the shortlisted point to the list at position size - 1*/
-                    (*list)[*size - 1]  = i;
-
-                } /* If the two triggers overlap */
-
-            } /* If two triggers are within n times maxTcFootPrint only then */
-
-        } /*if unclassified trigger */
-
-    } /* Loop over triggers */
-
-
-    /* De-allocate workSpace allocated earlier */
-    /* This workSpace is used to check overlap */
-    /* of ambiguity ellipsoids                 */
-    XLALFreeFContactWorkSpace( workSpace );
-}
-
-/*----------------------------------------------------------------------
- * Once a cluster has been discovered we need to store it in the
- * trigScanClusterOut structure. This particular function does that job. The
- * inputs are the list of triggers in the newly discovered cluster and its
- * size, the corresponding clusterID.
- ---------------------------------------------------------------------*/
-void LALTrigScanStoreThisCluster (
-        LALStatus                *status,
-        const INT4               *list,
-        const trigScanClusterIn  *condenseIn,
-        const INT4               size,
-        const INT4               currClusterID,
-        trigScanClusterOut       **condenseOut
-        )
-{
-    REAL4Vector *unSortedSnr = NULL;
-    INT4Vector  *heapSortIndex = NULL;
-    INT4        i, mid;
-
-    INITSTATUS (status, "LALTrigScanStoreThisEvent", LALTRIGSCANCLUSTERC);
-    ATTATCHSTATUSPTR(status);
-
-    /* We can now figure out the maximum SNR here */
-    unSortedSnr    = XLALCreateREAL4Vector( size );
-    heapSortIndex  = XLALCreateINT4Vector( size );
-
-    for (i=0; i<size; i++)
-    {
-        mid = list[i];
-        unSortedSnr->data[i] = condenseIn->masterList[mid].rho;
-    }
-
-    LALSHeapIndex(status->statusPtr, heapSortIndex, unSortedSnr);
-    CHECKSTATUSPTR( status );
-
-    mid = list[heapSortIndex->data[size-1]];
-
-    /*-- Allocate memory for output --*/
-    if ( !(*condenseOut = (trigScanClusterOut*)
-                LALRealloc(*condenseOut,
-                    sizeof(trigScanClusterOut)*(currClusterID)))
-       )
-    {
-        fprintf (stderr, "LALRealloc error in condenseout. \n");
-        abort ();
-    }
-
-    (*condenseOut)[currClusterID-1].y          = condenseIn->masterList[mid].y;
-    (*condenseOut)[currClusterID-1].z          = condenseIn->masterList[mid].z;
-    (*condenseOut)[currClusterID-1].tc_sec     = condenseIn->masterList[mid].tc_sec;
-    (*condenseOut)[currClusterID-1].tc_ns      = condenseIn->masterList[mid].tc_ns;
-    (*condenseOut)[currClusterID-1].rho        = condenseIn->masterList[mid].rho;
-    (*condenseOut)[currClusterID-1].master_idx = mid;
-    (*condenseOut)[currClusterID-1].nelements  = size;
-
-    /* Delete the Vectors used for heap sort */
-    XLALDestroyREAL4Vector( unSortedSnr );
-    XLALDestroyINT4Vector( heapSortIndex );
-
-    /* Normal exit */
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-}
-
-/* ---------------------------------------------------------------------
- * This function appends the stragglers to the condenseOut list
- ----------------------------------------------------------------------*/
-void LALTrigScanAppendIsolatedTriggers (
-        LALStatus               *status,
-        trigScanClusterIn       *condenseIn,
-        trigScanClusterOut      **condenseOut,
-        INT4                    *nclusters
-        )
-{
-    INT4                 i, j, n, ni, n1;
-    REAL8                xi, xj, dxij;
-    trigScanInputPoint   *masterList=NULL;
-    REAL8                *xx=NULL, *vv=NULL;
-    INT4                 *mid = NULL;
-
-    INITSTATUS (status,
-            "LALTrigScanAppendIsolatedTriggers", LALTRIGSCANCLUSTERC);
-    ATTATCHSTATUSPTR(status);
-
-    n            = condenseIn->n;
-    masterList   = condenseIn->masterList;
-
-    /* AT first figure out how many stragglers */
-    for (i=1, n1=0; i<=n; i++) {
-        if (masterList[i-1].clusterID < 1 ) {
-            n1++;
-        }
-    }
-
-    /* Now allocate memory */
-    mid  = LALCalloc (1, (n1+1)*sizeof(INT4));
-    xx   = LALCalloc (1, (n1+1)*sizeof(REAL8));
-    vv   = LALCalloc (1, (n1+1)*sizeof(REAL8));
-
-    ASSERT (condenseOut,
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (masterList,
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (n > 0, status,
-            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (*nclusters >= 0, status,
-            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (xx && vv && mid,
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
 #if 0
-    if ( condenseIn->vrbflag )
-          fprintf (stderr, "--------- BEGINNING TO APPEND ----------\n");
-#endif
-    for (i=1, n1=0; i<=n; i++) {
-        if (masterList[i-1].clusterID < 1 ) {
-            n1++;
-            xx[n1]  = masterList[i-1].tc_sec + masterList[i-1].tc_ns/1.0e9;
-            vv[n1]  = masterList[i-1].rho;
-            mid[n1] = i-1;
+<lalLaTeX>
+\subsection{Module \texttt{LALTrigScanCluster.c}}
 
-#if 0
-            if ( condenseIn->vrbflag )
-                  fprintf (stderr, "%4d   %d  %d   %d   %d   %1.12e\n",
-                          n1, mid[n1],
-                          (masterList[i-1].clusterID),
-                          (int)(masterList[i-1].tc_sec),
-                          (int)(masterList[i-1].tc_ns),
-                          masterList[i-1].rho);
-#endif
-        }
-    }
+\noindent Functions for trigScan clustering
 
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALTrigScanClusterCP}
+\idx{XLALTrigScanClusterTriggers()}
+\idx{XLALTrigScanCreateCluster()}
+\idx{XLALTrigScanRemoveStragglers()}
+\idx{XLALTrigScanKeepLoudestTrigger()}
+\idx{XLALTrigScanReLinkLists()}
+\idx{XLALTrigScanDestroyCluster()}
+\subsubsection*{Description}
 
-    i = 1;
-    while (i <= n1)
-    {
-        xi = xx[i];
-        ni = i + 1;
-        for (j = i+1; j<=n1; j++)
-        {
-            xj = xx[j];
-            dxij = fabs( xi - xj );
+\texttt{XLALTrigScanClusterTriggers()} is the main function for invoking
+trigScan clustering. It takes in the \texttt{SnglInspiralTable} to be clustered,
+the method to be applied, the metric scaling factor, and a flag to say whether
+to append stragglers (i.e. clusters of only 1 trigger). Upon success, the
+return value will be XLAL_SUCCESS, with the texttt{SnglInspiralTable} having
+been clustered. At present, the only clustering method implemented is T0T3Tc.
 
-            /* We can now the following simplification - since the stragglers
-             * are also time ordered - if (xj-xi) exceeds condenseIn->bin_time
-             * then it is meaningless to continue this loop - so ABORT. Note
-             * that the test has to be done on (xj-xi) (order is important
-             * here).
-             */
-            if ( (xj-xi) > condenseIn->bin_time )
-            {
-                break;
-            }
+\texttt{XLALTrigScanCreateCluster()} takes in a \texttt{TriggerErrorList}
+containing the triggers, their position vectors and ellipsoid matrices. It
+creates the cluster by agglomerating triggers by checking for overlap of
+ellipsoids. Upon ellipsoid overlap, the trigger is added to the cluster, and
+removed from the unclustered list.
 
-            if ( dxij <= condenseIn->bin_time )
-            {
-                ni = ni + 1;
-                if ( vv[j] > vv[i] )
-                {
-                    i = j;
-                }
-            }
-        }
+\texttt{XLALTrigScanRemoveStragglers()} takes in a linked list of
+\texttt{TrigScanCluster}s. It removes all clusters of 1 element from the list.
 
-        /* We are now ready to append the i-th element in this list. The
-         * master index has to be de-referenced to k first in order to do
-         * this correctly.
-         */
-        {
-            INT4 k = mid[i];
+\texttt{XLALTrigScanKeepLoudestTrigger()} performs the actual clustering,
+freeing all triggers in the cluster except the loudest. Currently, loudest
+means the trigger with the highest SNR, but this could be extended to other
+statistics.
 
-            /*-- Allocate memory for output --*/
-            if ( !(*condenseOut = (trigScanClusterOut*)
-                        LALRealloc(*condenseOut,
-                            sizeof(trigScanClusterOut)*(*nclusters+1)))
-               )
-            {
-                fprintf (stderr, "LALRealloc error in condenseout. \n");
-                abort ();
-            }
+\texttt{XLALTrigScanReLinkLists()} re-links all the inter-cluster lists after
+the clustering has been performed, in preparation for returning the clustered
+\texttt{SnglInspiralTable} to the program.
 
-            /* Copy the elements to the newly created memory */
-            (*condenseOut)[(*nclusters)].y          = masterList[k].y;
-            (*condenseOut)[(*nclusters)].z          = masterList[k].z;
-            (*condenseOut)[(*nclusters)].tc_sec     = masterList[k].tc_sec;
-            (*condenseOut)[(*nclusters)].tc_ns      = masterList[k].tc_ns;
-            (*condenseOut)[(*nclusters)].rho        = masterList[k].rho;
-            (*condenseOut)[(*nclusters)].master_idx = k;
-            (*condenseOut)[(*nclusters)].nelements  = 1;
-
-            /* increment nclusters as we have added a new one */
-            (*nclusters) ++;
-
-#if 0
-            /* After adding this element, print it to stderr and stdout */
-            if (condenseIn->vrbflag)
-            {
-                fprintf (stderr, "Added cluster %3d after %3d (%3d members) max snr index "
-                        "%3d %9d %9d %e\n",
-                        (*nclusters), (*nclusters)-1, (*condenseOut)[(*nclusters)-1].nelements,
-                        (*condenseOut)[(*nclusters)-1].master_idx,
-                        (INT4)((*condenseOut)[(*nclusters)-1].tc_sec),
-                        (INT4)((*condenseOut)[(*nclusters)-1].tc_ns),
-                        (*condenseOut)[(*nclusters)-1].rho);
-            }
-#endif
-        }
-
-        i = ni;
-    }
-
-#if 0
-    if ( condenseIn->vrbflag )
-          fprintf (stderr, "--------- DONE APPENDING ----------\n");
+\texttt{XLALTrigScanDestroyCluster()} frees memory associated with a cluster.
+It has two modes of operation, specified by the \texttt{TrigScanStatus}. If this
+is TRIGSCAN_FAILURE, the SnglInspiralTable will also be freed. If it is
+TRIGSCAN_SUCCESS, the SnglInspiralTable will be kept for returning to the
+calling program.
+</lalLaTeX>
 #endif
 
-    /* Free up memory */
-    if (xx)  LALFree (xx);
-    if (vv)  LALFree (vv);
-    if (mid) LALFree (mid);
-
-    /* Normal exit */
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-}
-
-/* ---------------------------------------------------------------------
- * This general purpose function can be used to delete all the elements
- * of a SnglInspiralTable.
- ----------------------------------------------------------------------*/
-INT4 XLALDeleteSnglInspiralTable (
-        SnglInspiralTable **eventHead
-        )
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
+                                 trigScanType      method,
+                                 REAL8             scaleFactor,
+                                 INT4              appendStragglers )
+/* </lalVerbatim> */
 {
-    SnglInspiralTable    *thisEvent=NULL;
 
-    /* Delete the original masterList */
-    while ( (*eventHead) )
+  static const char func[] = "XLALTrigScanClusterTriggers";
+
+  SnglInspiralTable *tableHead     = NULL;
+  SnglInspiralTable *thisTable     = NULL;
+  TriggerErrorList  *errorList     = NULL;
+  TrigScanCluster   *clusterHead   = NULL;
+  TrigScanCluster   *thisCluster   = NULL;
+
+  /* The maximum time difference associated with an ellipsoid */
+  REAL8 tcMax;
+
+#ifndef LAL_NDEBUG
+  if ( !table )
+  {
+    XLAL_ERROR( func, XLAL_EFAULT );
+  }
+
+  if ( (UINT4) method >= (UINT4) NUM_TRIGSCAN_TYPE )
+  {
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
+#endif
+
+  tableHead = *table;
+
+  if ( !tableHead )
+  {
+    XLALPrintWarning( "No triggers to cluster.\n" );
+    return XLAL_SUCCESS;
+  }
+
+  if ( method == trigScanNone )
+  {
+    XLALPrintWarning( "No clustering requested.\n" );
+    return XLAL_SUCCESS;
+  }
+
+  /* TrigScan only currently implemented for tau0/tau3 */
+  if ( method != T0T3Tc )
+  {
+    XLALPrintError( "TrigScan only currently implemented for tau0/tau3!\n" );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
+
+  if ( scaleFactor <= 0.0 )
+  {
+    XLALPrintError( "TrigScan metric scaling must be > 0: %e given.\n", scaleFactor );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
+
+  /* TrigScan requires triggers to be time-ordered. Make sure this is the case */
+  /* and if not, sort the triggers */
+  for ( thisTable = tableHead; thisTable->next; thisTable = thisTable->next )
+  {
+    if ( XLALGPSToINT8NS( &(thisTable->end_time) )
+           > XLALGPSToINT8NS( &(thisTable->next->end_time) ) )
     {
-        thisEvent = (*eventHead);
-        (*eventHead) = (*eventHead)->next;
-        XLALFreeSnglInspiral ( &thisEvent );
+      *table = tableHead = XLALSortSnglInspiral( tableHead, LALCompareSnglInspiralByTime );
+      break;
     }
+  }
 
-    return (0);
-}
+  /* Firstly, create the matrices, etc required for the clustering */
+  errorList = XLALCreateTriggerErrorList( tableHead, scaleFactor, &tcMax );
+  if ( !errorList )
+  {
+    XLAL_ERROR( func, XLAL_EFUNC );
+  }
 
-/* ---------------------------------------------------------------------
- * This function populates some (not all) members of the trigScanClusterIn
- * structure using the information available in other structures. This is
- * typically called from inspiral.c
- ----------------------------------------------------------------------*/
-INT4 XLALPopulateTrigScanInput (
-        trigScanClusterIn     **condenseIn,
-        FindChirpDataParams   *fcDataParams,
-        FindChirpTmpltParams  *fcTmpltParams,
-        FindChirpFilterParams *fcFilterParams,
-        InspiralTemplate      *bankHead
-        )
-{
-    static const char *func = "XLALPopulateTrigScanInput";
-    UINT4        numPoints, ki;
-    REAL8        sampleRate, deltaF, deltaT;
+  /* Now create the list of clusters. Keep going until errorlist is exhausted */
+  while ( errorList )
+  {
+    TrigScanCluster *newCluster = NULL;
 
-    if ( !fcFilterParams || !fcTmpltParams || !fcDataParams || !bankHead )
-        XLAL_ERROR( func, XLAL_ENOMEM );
+    newCluster = XLALTrigScanCreateCluster( &errorList, tcMax );
+    /* The next line is to keep track of memory in case of failure */
+    if ( errorList )
+      *table = errorList->trigger;
+    else
+      *table = NULL;
 
-    (*condenseIn) = (trigScanClusterIn *)
-            LALCalloc (1, sizeof(trigScanClusterIn));
-
-    if ( !condenseIn )
-        XLAL_ERROR( func, XLAL_ENOMEM );
-
-    sampleRate = 1.0L/fcTmpltParams->deltaT;
-    numPoints  = 2*(fcDataParams->wtildeVec->length - 1);
-    deltaT     = fcTmpltParams->deltaT;
-    deltaF     = sampleRate / (REAL8)(numPoints);
-
-    (*condenseIn)->rho_th1     = sqrt(fcFilterParams->rhosqThresh);
-    (*condenseIn)->chisq_th1   = fcFilterParams->chisqThresh;
-
-    return 0;
-}
-
-/* ---------------------------------------------------------------------
- * This function takes a SnglInspiralTable and returns another SnglInspiral
- * table consisting of ncluster elements contained in clusterOut[i]->masterIdx
- * where i runs from 0 to ncluster-1.
- ----------------------------------------------------------------------*/
-SnglInspiralTable *
-XLALTrimSnglInspiralTable (
-        SnglInspiralTable   **eventHead,
-        trigScanClusterOut  *clusterOut,
-        INT4                nclusters
-        )
-{
-    static const char    *func = "XLALTrimSnglInspiralTable";
-    static LALStatus     status;
-    SnglInspiralTable    *output     = NULL;
-    SnglInspiralTable    *tempList   = NULL;
-    SnglInspiralTable    *thisEvent  = NULL;
-    REAL4Vector          *clusterMasterIndex = NULL;
-    INT4Vector           *heapSortIndex = NULL;
-    INT4                 l, j, nOrgTrigs;
-
-    /* if there are no events, then no-op */
-    if ( ! *eventHead )
-          return (0);
-
-    /* We will assume that the clusters returned are NOT sorted in time */
-    clusterMasterIndex = XLALCreateREAL4Vector( nclusters );
-    heapSortIndex      = XLALCreateINT4Vector( nclusters );
-    for (j=0; j<nclusters; j++)
-          clusterMasterIndex->data[j] = (REAL4)(clusterOut[j].master_idx);
-
-    LALSHeapIndex(&status,heapSortIndex,clusterMasterIndex);
-    if(status.statusCode){
-        LALPrintError("%s: %s\n", LALTRIGSCANCLUSTERC, "Error in Heap Sort");
-        REPORTSTATUS(&status);
-    }
-
-
-    nOrgTrigs = XLALCountSnglInspiral(*eventHead);
-    /* Copy the clustered events to tempList */
-    for ( l=0, j=0; (l<nOrgTrigs) && (j<nclusters); l++ )
+    if ( !newCluster )
     {
-        /* Point thisEvent to the correct event */
-        if (l<1) /* if first event */
-        {
-            thisEvent = (*eventHead);
-        }
-        else /* subsequent event */
-        {
-            thisEvent = thisEvent->next;
-        }
 
-        if (l == clusterOut[heapSortIndex->data[j]].master_idx)
-        {
-            j = j+1;
+      thisCluster = clusterHead;
 
-            if ( !tempList )
-            {
-                output = tempList = (SnglInspiralTable *)
-                        LALCalloc ( 1, sizeof(SnglInspiralTable) );
-            }
-            else
-            {
-                tempList = tempList->next = (SnglInspiralTable *)
-                        LALCalloc ( 1, sizeof(SnglInspiralTable) );
-            }
+      while ( thisCluster )
+      {
+         TrigScanCluster *tmpCluster = thisCluster;
+         thisCluster = thisCluster->next;
+         XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
+      }
+      if ( errorList ) XLALDestroyTriggerErrorList( errorList );
 
-            /* If memory allocation failed we should free up everything */
-            if ( !tempList )
-            {
-                XLALDeleteSnglInspiralTable (&output);
-                XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-            }
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+    /* Add the cluster to the list */
+    if ( !clusterHead )
+    {
+      clusterHead = thisCluster = newCluster;
+    }
+    else
+    {
+      thisCluster = thisCluster->next = newCluster;
+    }
+  }
 
-            memcpy (tempList, thisEvent, sizeof(SnglInspiralTable));
-            tempList->next = NULL;
+  /* Remove stragglers if necessary */
+  if ( !appendStragglers )
+  {
+    if ( XLALTrigScanRemoveStragglers( &clusterHead ) == XLAL_FAILURE )
+    {
+      thisCluster = clusterHead;
 
-            /* This is the place to append cluster specific information
-             * to the sngl_inspiral table. At the moment we want to know
-             * how big was the cluster. Since there is no element of the
-             * sngl_inspiral table structure dedicated to store this
-             * information, we will use the element alpha. However this is
-             * not a good practice.
-             */
-            tempList->alpha = (REAL4)(clusterOut[heapSortIndex->data[j-1]].nelements);
-        }
+      while ( thisCluster )
+      {
+         TrigScanCluster *tmpCluster = thisCluster;
+         thisCluster = thisCluster->next;
+         XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
+      }
+
+      XLAL_ERROR( func, XLAL_EFUNC );
     }
 
-    /* Delete the Vectors used for heap sort */
-    XLALDestroyREAL4Vector( clusterMasterIndex );
-    XLALDestroyINT4Vector( heapSortIndex );
+    if ( !clusterHead )
+    {
+      XLALPrintWarning( "All triggers were stragglers! All have been removed.\n" );
+      return XLAL_SUCCESS;
+    }
+  }
 
-    return (output);
+  /* Keep the loudest trigger in each cluster */
+  for ( thisCluster = clusterHead; thisCluster; thisCluster = thisCluster->next )
+  {
+    if ( XLALTrigScanKeepLoudestTrigger( thisCluster ) == XLAL_FAILURE )
+    {
+      thisCluster = clusterHead;
+
+      while ( thisCluster )
+      {
+         TrigScanCluster *tmpCluster = thisCluster;
+         thisCluster = thisCluster->next;
+         XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
+      }
+
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+  }
+
+  /* Re-link the lists ready for returning */
+  if ( XLALTrigScanReLinkLists( clusterHead ) == XLAL_FAILURE )
+  {
+    thisCluster = clusterHead;
+
+    while ( thisCluster )
+    {
+       TrigScanCluster *tmpCluster = thisCluster;
+       thisCluster = thisCluster->next;
+       XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
+    }
+
+    XLAL_ERROR( func, XLAL_EFUNC );
+  }
+
+  *table = clusterHead->element->trigger;
+
+  /* Since trigScan can have multiple clusters at similar times */
+  /* We sort the list to ensure time-ordering */
+  *table = XLALSortSnglInspiral( *table, LALCompareSnglInspiralByTime );
+  XLALPrintInfo( "Returning %d clustered triggers.\n", XLALCountSnglInspiral( *table ) );
+
+  /* Free the memory */
+  thisCluster = clusterHead;
+  while ( thisCluster )
+  {
+     TrigScanCluster *tmpCluster = thisCluster;
+     thisCluster = thisCluster->next;
+     XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_SUCCESS );
+  }
+
+  return XLAL_SUCCESS;
 }
 
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
+                                             REAL8            tcMax )
+/* </lalVerbatim> */
+{
+  static const char func[] = "XLALTrigScanCreateCluster";
 
+  TrigScanCluster *cluster = NULL;
+
+  /* Pointers to the main trigger error list */
+  TriggerErrorList *thisErrorList     = NULL;
+  TriggerErrorList *previousErrorList = NULL;
+
+  /* Pointers to the trigger error list within the cluster */
+  TriggerErrorList *thisClusterList   = NULL;
+  TriggerErrorList *endClusterList    = NULL;
+
+  INT8              maxTimeDiff;
+
+  /* Stuff for checking ellipsoid overlap */
+  fContactWorkSpace *workSpace        = NULL;
+  REAL8             fContactValue;
+
+#ifndef LAL_NDEBUG
+  if ( !errorListHead )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  }
+
+  if ( !(*errorListHead) )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  }
+
+  if ( tcMax <= 0 )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+  }
+#endif
+
+  /* Allocate memory for the cluster */
+  cluster = LALCalloc( 1, sizeof( TrigScanCluster ) );
+  if ( !cluster )
+  {
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+  }
+
+  /* Create the workspace for checking ellipsoid overlap */
+  workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
+  if ( !workSpace )
+  {
+    LALFree( cluster );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+
+  /* Set the first trigger in the list to be part of the cluster */
+  cluster->element                = *errorListHead;
+  endClusterList                  = cluster->element;
+  cluster->nelements              = 1;
+  *errorListHead                  = cluster->element->next;
+  cluster->element->next          = NULL;
+  cluster->element->trigger->next = NULL;
+
+  maxTimeDiff = (INT8)( (2.0 * tcMax + 1.0e-5) * 1.0e9 );
+
+  thisClusterList = cluster->element;
+  /* Now we go through the agglomeration procedure */
+  while ( thisClusterList )
+  {
+    /* Timing info of the trigger in the cluster */
+    INT8  endTimeA;
+    REAL8 originalTimeA;
+
+    /* Timing info of the trigger we wish to compare */
+    INT8  endTimeB;
+    REAL8 originalTimeB;
+
+    endTimeA = XLALGPSToINT8NS( &(thisClusterList->trigger->end_time) );
+    XLAL_CALLGSL( originalTimeA = gsl_vector_get( thisClusterList->position, 0 ) );
+
+    /* Reset the time to avoid precision problems */
+    XLALSetTimeInPositionVector( thisClusterList->position, 0 );
+
+    /* Loop through the list of triggers */
+    thisErrorList = *errorListHead;
+    previousErrorList = NULL;
+    while ( thisErrorList )
+    {
+
+      endTimeB = XLALGPSToINT8NS( &(thisErrorList->trigger->end_time) );
+      XLAL_CALLGSL( originalTimeB = gsl_vector_get( thisErrorList->position, 0 ) );
+
+      /* If the triggers are more than twice the max time error apart, no need to proceed */
+      if ( endTimeB - endTimeA > maxTimeDiff )
+      {
+        break;
+      }
+
+      XLALSetTimeInPositionVector( thisErrorList->position,
+                (REAL8) ( ( endTimeB - endTimeA ) * 1.0e-9 ) );
+
+
+      /* check for the intersection of the ellipsoids */
+      workSpace->invQ1 = thisClusterList->err_matrix;
+      workSpace->invQ2 = thisErrorList->err_matrix;
+      fContactValue = XLALCheckOverlapOfEllipsoids( thisClusterList->position,
+                   thisErrorList->position, workSpace );
+      if (XLAL_IS_REAL8_FAIL_NAN(fContactValue))
+      {
+        /* The triggers in the cluster have been removed from the main list */
+        /* so they must be freed here */
+        thisClusterList = cluster->element;
+        while ( thisClusterList )
+        {
+          TriggerErrorList *tmpClusterList = thisClusterList;
+          thisClusterList = thisClusterList->next;
+          XLALFreeSnglInspiral( &(tmpClusterList->trigger) );
+          XLAL_CALLGSL( gsl_matrix_free( tmpClusterList->err_matrix ) );
+          XLAL_CALLGSL( gsl_vector_free( tmpClusterList->position ) );
+          LALFree( tmpClusterList );
+        }
+        XLALFreeFContactWorkSpace( workSpace );
+        XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      }
+      /* Reset the time to its original value */
+      XLALSetTimeInPositionVector( thisErrorList->position, originalTimeB );
+
+      /* test whether we have coincidence */
+      if ( fContactValue <= 1.0 )
+      {
+        /* Add the trigger to the cluster, and pull it off the main list */
+        if ( previousErrorList )
+        {
+          if ( thisErrorList->next )
+          {
+            previousErrorList->trigger->next = thisErrorList->next->trigger;
+          }
+          else
+          {
+            previousErrorList->trigger->next = NULL;
+          }
+          previousErrorList->next = thisErrorList->next;
+        }
+        else
+        {
+          *errorListHead = thisErrorList->next;
+        }
+        endClusterList->trigger->next = thisErrorList->trigger;
+        endClusterList = endClusterList->next = thisErrorList;
+        thisErrorList = thisErrorList->next;
+        endClusterList->next = NULL;
+        endClusterList->trigger->next = NULL;
+        cluster->nelements++;
+      }
+      else
+      {
+        /* No coincidence, so we go on */
+        previousErrorList = thisErrorList;
+        thisErrorList = thisErrorList->next;
+      }
+    }
+    /* Reset the time in the cluster list trigger */
+    XLALSetTimeInPositionVector( thisClusterList->position, originalTimeA );
+    thisClusterList = thisClusterList->next;
+  }
+
+  XLALFreeFContactWorkSpace( workSpace );
+
+  /* We have now clustered the triggers - return the result */
+  XLALPrintInfo( "Returning a cluster containing %d triggers.\n", cluster->nelements );
+  return cluster;
+}
+
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
+/* </lalVerbatim> */
+{
+
+  static const char func[] = "XLALTrigScanRemoveStragglers";
+
+  TrigScanCluster *previous    = NULL; /* Keeping track of the previous element */
+  TrigScanCluster *thisCluster = NULL;
+
+#ifndef LAL_NDEBUG
+  if ( !clusters )
+  {
+    XLAL_ERROR( func, XLAL_EFAULT );
+  }
+#endif
+
+  /* Loop through the list and remove all clusters containing 1 trigger */
+  while ( thisCluster )
+  {
+    if ( thisCluster->nelements == 1 )
+    {
+      TrigScanCluster *tmpCluster = thisCluster;
+
+      thisCluster = thisCluster->next;
+
+      if ( !previous )
+      {
+        *clusters = tmpCluster->next;
+      }
+      else
+      {
+        previous->next = tmpCluster->next;
+      }
+      XLALFreeSnglInspiral( &(tmpCluster->element->trigger) );
+      XLAL_CALLGSL( gsl_matrix_free( tmpCluster->element->err_matrix ) );
+      XLAL_CALLGSL( gsl_vector_free( tmpCluster->element->position ) );
+      LALFree( tmpCluster );
+    }
+    else
+    {
+      previous = thisCluster;
+      thisCluster = thisCluster->next;
+    }
+  }
+
+  return XLAL_SUCCESS;
+}
+
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
+{
+  static const char func[] = "TrigScanKeepLoudestTrigger";
+
+  TriggerErrorList *triggerToKeep;
+  TriggerErrorList *thisTrigger;
+
+#ifndef LAL_NDEBUG
+  if ( !cluster )
+  {
+    XLAL_ERROR( func, XLAL_EFAULT );
+  }
+
+  if ( cluster->nelements < 1 )
+  {
+    XLALPrintError( "Invalid number of triggers in cluster: %d\n", cluster->nelements );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
+#endif
+
+  if ( cluster->nelements == 1 )
+  {
+    /* No need to do anything */
+    return XLAL_SUCCESS;
+  }
+
+  triggerToKeep = cluster->element;
+
+  /* Find the loudest trigger */
+  for ( thisTrigger = cluster->element->next; thisTrigger; thisTrigger = thisTrigger->next )
+  {
+    if ( thisTrigger->trigger->snr > triggerToKeep->trigger->snr )
+    {
+      triggerToKeep = thisTrigger;
+    }
+  }
+
+  /* Keep only the loudest trigger */
+  thisTrigger = cluster->element;
+  while ( thisTrigger )
+  {
+    TriggerErrorList *tmpTrigger = thisTrigger;
+    thisTrigger = thisTrigger->next;
+
+    if ( tmpTrigger != triggerToKeep )
+    {
+      XLALFreeSnglInspiral( &(tmpTrigger->trigger ) );
+      XLAL_CALLGSL( gsl_matrix_free( tmpTrigger->err_matrix ) );
+      XLAL_CALLGSL( gsl_vector_free( tmpTrigger->position ) );
+      LALFree( tmpTrigger );
+    }
+  }
+
+  cluster->element = triggerToKeep;
+  cluster->element->trigger->next = NULL;
+  cluster->element->next = NULL;
+
+  return XLAL_SUCCESS;
+}
+
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead )
+/* </lalVerbatim> */
+{
+
+  static const char func[] = "XLALTrigScanReLinkLists";
+
+  TrigScanCluster *thisCluster;
+
+  if ( ! clusterHead )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  for ( thisCluster = clusterHead; thisCluster->next; thisCluster = thisCluster->next )
+  {
+    thisCluster->element->trigger->next = thisCluster->next->element->trigger;
+  }
+  /* Set the last one to null */
+  thisCluster->element->trigger->next = NULL;
+
+  return XLAL_SUCCESS;
+}
+
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
+void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
+                                TrigScanStatus   status
+                              )
+/* </lalVerbatim> */
+{
+
+  static const char func[] = "XLALTrigScanDestroyCluster";
+
+  TriggerErrorList *thisList;
+
+#ifndef LAL_NDEBUG
+  if ( !cluster )
+    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+
+  if ( (UINT4) status >= (UINT4) TRIGSCAN_NUM_STATUS )
+    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+#endif
+
+  /* If something has failed, we need to free the SnglInspirals */
+  if ( status == TRIGSCAN_ERROR )
+  {
+    for ( thisList = cluster->element; thisList; thisList = thisList->next )
+    {
+      XLALFreeSnglInspiral( &(thisList->trigger ) );
+    }
+  }
+
+  XLALDestroyTriggerErrorList( cluster->element );
+  LALFree( cluster );
+
+  return;
+}

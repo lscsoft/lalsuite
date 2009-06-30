@@ -30,18 +30,18 @@
 
 /* ------------------------------------- AUTO-DOC ------------------------------------ */
 /* ----------------------------------------------------------------------------------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
 /*<lalVerbatim file="LALMathNDPlotCV">
   Author: Hanna, C. R.
   $Id$
   </lalVerbatim>*/
-                                                                                                                                                
+
 /*SUBSECTION - MODULE - "LALMathNDPlot.c" ------------------------------------ <lalLaTeX>
   \subsection{Module \texttt{LALMathNDPlot.c}}
   \label{ss:LALMathNDPlot}
   </lalLaTeX> */
-                                                                                                                                                
+
   /* SUBSUBSECTION - PROTOTYPES - "LALMathNDPlot()" -------------------------- <lalLaTeX>
      \subsubsection{Prototypes}
      \input{LALMathNDPlotCP}
@@ -57,17 +57,17 @@
      * called as NULL and a calculated value will be assigned.  (Its only a rough guess)
      </lalLaTeX>
      END SUBSUBSECTION - PROTOTYPES "LALMathNDPlot()" -------------------------------- */
-                                                                                                                                                
+
   /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
      \subsubsection{Description}
    * This module contains a function for plotting N-Dimensional template banks by creating
    * a \MATHEMATICA notebook.  The notebook renders the templates as points in all of the
-   * 3-Dimensional projection permutations. Each projection may be animated so the user 
+   * 3-Dimensional projection permutations. Each projection may be animated so the user
    * can see the template bank from different perspectives.
      </lalLaTeX>
      END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
 
-                                                                                                                                                
+
   /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
      \subsubsection{Notes}
      \begin{itemize}
@@ -78,23 +78,23 @@
    * Windows users unless you have another path configured in your \MATHEMATICA
    * installation. It is necessary to change the file name within the notebook to avoid
    * overwriting previous files.
-   * \item The number of projections is N!/(3!(N-3)!).  Thus plotting 6 dimensions would 
+   * \item The number of projections is N!/(3!(N-3)!).  Thus plotting 6 dimensions would
    * produce 20 projections, 7 dimensions would yeilds 35 amd 8 gives 56.
      \end{itemize}
      </lalLaTeX>
      END SUBSUBSECTION - NOTES ------------------------------------------------------- */
-                                                                                                                                                
+
 /*END - SUBSECTION - MODULE - LALMathNDPlot.c" --------------------------------------- */
-                                                                                                                                                
+
 /*<lalLaTeX>
 \vfill{\footnotesize\input{LALMathNDPlotCV}}
 </lalLaTeX>*/
-                                                                                                                                                
-                                                                                                                                                
+
+
 /* -------------------------------------END AUTO DOC --------------------------------- */
 /* ----------------------------------------------------------------------------------- */
-                                                                                                                                                
-                                                                                                                    
+
+
 #include <lal/LALConfig.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
@@ -105,7 +105,7 @@
 #define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
 
 NRCSID(LALMATHNDPLOTC, "$Id$");
-                                                                                                                                                
+
 /* <lalVerbatim file="LALMathNDPlotCP"> */
 void
 LALMathNDPlot( LALStatus *stat,
@@ -124,21 +124,21 @@ LALMathNDPlot( LALStatus *stat,
   INT4 y = 0;
   INT4 z = 0;
 
-                                                                                                                                                
+
   INITSTATUS( stat, "LALMathNDPlot", LALMATHNDPLOTC );
-  
+
   /* Check that the PointList isn't NULL */
   if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
   }
-  
+
   /* Open a file for writing a notebook */
   if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
-  
+
   /* Appropriately handle the inputs for ntiles and pointsize to assure
-     that a propter pointSize is chosen.  Also print a warning if the 
+     that a propter pointSize is chosen.  Also print a warning if the
      length of the MathNDPointList is not equal in length to the parameter
      ntiles passed to this function. */
   if (!pointSize){
@@ -167,7 +167,7 @@ LALMathNDPlot( LALStatus *stat,
     if (*ntiles > 10000)
       printf("\nWARNING!!! More than 10,000 tiles may crash Mathematica:)\n");
   }
-                                                                                                                                                
+
   else{
     if ((*pointSize <= 0.0) || (*pointSize >= 1.0)) {
       printf("\nIllegal value of pointSize; it must be between 0 and 1.\n");
@@ -260,7 +260,7 @@ LALMathNDPlot( LALStatus *stat,
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
           fprintf(nb, "Point List (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
-        END_SECTIONCELL; 
+        END_SECTIONCELL;
         BEG_INPUTCELL;
           fprintf(nb, "TILES%i%i%i  = \n", (x+1), (y+1), (z+1));
           fprintf(nb, "Graphics3D[{PointSize[PtSize]");
@@ -315,7 +315,7 @@ LALMathNDPlot( LALStatus *stat,
           fprintf(nb, "\"ColorReductionDither\" -> False}]]");
         END_INPUTCELL_;
       END_GROUPCELLC_;
-    END_GROUPCELLC; 
+    END_GROUPCELLC;
 	  }
         }
       }
@@ -326,4 +326,4 @@ LALMathNDPlot( LALStatus *stat,
 
 
 
-  
+

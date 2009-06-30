@@ -125,7 +125,7 @@ int XLALFrFileCheckSum( FrFile *iFile )
   if ( iFile->chkTypeFiRead == 0 ) {
     XLALPrintWarning( "XLAL Warning - %s: missing checksum\n", func );
     return 1;
-  } 
+  }
   if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
     XLALPrintError( "XLAL Error - %s: bad checksum\n", func );
     return -1;
@@ -204,7 +204,7 @@ FrDetector * XLALFrDetectorNew( int detector )
 }
 
 
-FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration, 
+FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     const char *project, int run, int frnum, int detectorFlags )
 {
   static const char *func = "XLALFrameNew";
@@ -810,7 +810,7 @@ int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 	if ( ! adc ) {
 	  XLAL_ERROR( func, XLAL_EERR );
 	}
-	
+
 	for(i=0; i < (int)series->data->length; i++) {
 	  adc->data->dataF[i] = series->data->data[i];
 /* 	  fprintf(stdout,"%d %f %f\n",i, adc->data->dataF[i], series->data->data[i]); */

@@ -34,7 +34,7 @@
  * SYNOPSIS
  * #include <lal/TimeFreq.h>
  *
- * DESCRIPTION 
+ * DESCRIPTION
  * Header file for the TFR package (computation of time-frequency
  * representation for the detection of gravitational waves from
  * unmodeled astrophysical sources)
@@ -51,9 +51,9 @@
 #define _TIMEFREQ_H
 
 /*
- * 3. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
+ * 3. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -74,7 +74,7 @@ extern "C" {
 NRCSID (TIMEFREQH, "$Id$");
 
 /*
- * 5. Macros. But, note that macros are deprecated. 
+ * 5. Macros. But, note that macros are deprecated.
  */
 
 /*
@@ -131,11 +131,11 @@ NRCSID (TIMEFREQH, "$Id$");
 
 /* Available TFR types */
 
-#define TIME_FREQ_REP_NAMELIST {"Undefined","Spectrogram","WignerVille", "PSWignerVille","RSpectrogram"} 
+#define TIME_FREQ_REP_NAMELIST {"Undefined","Spectrogram","WignerVille", "PSWignerVille","RSpectrogram"}
 
 typedef enum tagTimeFreqRepType {
 Undefined, Spectrogram, WignerVille, PSWignerVille, RSpectrogram
-} TimeFreqRepType; 
+} TimeFreqRepType;
 
 /* Time-Frequency Representation structure */
 
@@ -165,7 +165,7 @@ typedef struct tagCreateTimeFreqIn {
   INT4 wlengthT;                    /* (Sp, Pswv and Rsp) Window length */
   INT4 wlengthF;                    /* (Pswv) Window */
 } CreateTimeFreqIn;
- 
+
 /*
  * 9. Functions Declarations (i.e., prototypes).
  */

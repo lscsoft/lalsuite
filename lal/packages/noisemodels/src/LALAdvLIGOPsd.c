@@ -35,8 +35,8 @@ Module to calculate the noise power spectral density for the initial LIGO detect
 
 \subsubsection*{Description}
 
-The module takes as an input a frequency $f$ in Hz, and it 
-calculates the noise spectral density (per Hz) $S_{h}(f)$ 
+The module takes as an input a frequency $f$ in Hz, and it
+calculates the noise spectral density (per Hz) $S_{h}(f)$
 for that frequency. The noise PSD is based on data provided by
 Kip Thorne, and the fit by B.S.Sathyaprakash
 
@@ -46,7 +46,7 @@ Kip Thorne, and the fit by B.S.Sathyaprakash
    \frac{f}{f_0}^2 + 0.5  \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
 \end{equation}
 where, $f_0=215$Hz
-The returned value is scaled up by $S_0 = 10^{49}.$ 
+The returned value is scaled up by $S_0 = 10^{49}.$
 
 \subsubsection*{Algorithm}
 
@@ -66,7 +66,7 @@ NRCSID (LALADVLIGOPSDC,"$Id$");
 
 /*  <lalVerbatim file="LALAdvLIGOPsdCP"> */
 void
-LALAdvLIGOPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
+LALAdvLIGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
 
    REAL8 x2,x;

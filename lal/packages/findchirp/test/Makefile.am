@@ -6,7 +6,7 @@ check_PROGRAMS  = FindChirpBCVSpinTest FindChirpTDTest #FindChirpACTDTest
 #CoherentInspiralInputTest
 TESTS           = NoTest.sh
 
-EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c FindChirpBCVSpinTest.c 
+EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c FindChirpBCVSpinTest.c
 
 EXTRA_TEXSOURCES = NoTest.sh
 

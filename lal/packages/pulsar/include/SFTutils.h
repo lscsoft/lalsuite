@@ -12,23 +12,23 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix, Badri Krishnan
  * \date 2005
- * \file 
+ * \file
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVectors
  *
  * $Id$
  *
  *  The helper functions LALCreateSFTtype(), LALDestroySFTtype(), LALCreateSFTVector()
- * and LALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors. 
- * Similarly, LALCreateTimestampVector() and LALDestroyTimestampVector() allocate and free 
+ * and LALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
+ * Similarly, LALCreateTimestampVector() and LALDestroyTimestampVector() allocate and free
  * a bunch of GPS-timestamps.
  *
  */
@@ -85,9 +85,15 @@ typedef struct {
   REAL8FrequencySeries   *data;
 } REAL8FrequencySeriesVector;
 
+/** A vector of REAL4FrequencySeries */
+typedef struct {
+  UINT4                  length;
+  REAL4FrequencySeries   *data;
+} REAL4FrequencySeriesVector;
+
 
 /** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
-typedef COMPLEX8FrequencySeries 	SFTtype;	
+typedef COMPLEX8FrequencySeries 	SFTtype;
 
 
 /** The corresponding vector-type to hold a vector of 'SFTs' */
@@ -149,9 +155,9 @@ extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
- *  some prototypes for general functions handling these data-types 
+ *  some prototypes for general functions handling these data-types
  *----------------------------------------------------------------------*/
-void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);	
+void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);
 void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
 void LALCreateMultiSFTVector ( LALStatus *status, MultiSFTVector **out, UINT4 length, UINT4Vector *numsft );
 
@@ -189,15 +195,15 @@ void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFT
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
-void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, 
+void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect,
 			      INT4 blkSize, UINT4 excludePercentile);
-void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd, 
+void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd,
 				   UINT4 blocksRngMed, UINT4 excludePercentile);
 void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

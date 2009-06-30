@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -41,7 +41,7 @@
  * CALLS
  *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -71,18 +71,18 @@ Compute the spectrogram from a time series.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALComputeTFCSpectrogram (
-		       LALStatus *status, 
-		       TFCSpectrogram *out, 
-		       TFPlaneParams *tspec, 
+		       LALStatus *status,
+		       TFCSpectrogram *out,
+		       TFPlaneParams *tspec,
 		       REAL4TimeSeries *tseries
 		       )
 }
 \idx{LALComputeTFCSpectrogram()}
 
 \subsubsection*{Description}
-Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
+Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}.
 FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration; if they do overlap, a Welch window is applied.
 The power is the norm square of the (normalized) discrete Fourier transform.
 
@@ -98,11 +98,11 @@ LALDestroyRealFFTPlan()
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 
-void 
+void
 LALComputeTFCSpectrogram (
-		       LALStatus *status, 
-		       TFCSpectrogram *out, 
-		       TFPlaneParams *tspec, 
+		       LALStatus *status,
+		       TFCSpectrogram *out,
+		       TFPlaneParams *tspec,
 		       REAL4TimeSeries *tseries
 		       )
 {
@@ -123,7 +123,7 @@ LALComputeTFCSpectrogram (
   INITSTATUS (status, "LALComputeTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
-  
+
   /* Check return structure: out should have NULL pointer */
   ASSERT ( out, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
   ASSERT ( out->power == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
@@ -169,7 +169,7 @@ LALComputeTFCSpectrogram (
 
   params->timeBins = tspec->timeBins;
   params->freqBins = tspec->freqBins;
-  params->flow = tspec->flow; 
+  params->flow = tspec->flow;
   params->deltaT = tspec->deltaT;
 
   out->params = params;
@@ -188,14 +188,14 @@ LALComputeTFCSpectrogram (
   CHECKSTATUSPTR (status);
 
   Pvec.length = NN;
-  
+
   LALCCreateVector( status->statusPtr, &Hvec, NN/2 + 1);
   CHECKSTATUSPTR (status);
 
   norm = (REAL8)NN;
 
   /* set window */
-  if(olap) { 
+  if(olap) {
     REAL4 nn2 = 0.5*(REAL4)NN;
     wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
     ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
@@ -262,18 +262,18 @@ Compute the spectrogram from a time series.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALComputeXTFCSpectrogram (
-		       LALStatus *status, 
-		       TFCSpectrogram *out, 
-		       TFPlaneParams *tspec, 
+		       LALStatus *status,
+		       TFCSpectrogram *out,
+		       TFPlaneParams *tspec,
 		       REAL4VectorTimeSeries *tseries
 		       )
 }
 \idx{LALComputeXTFCSpectrogram()}
 
 \subsubsection*{Description}
-Computes the cross-spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
+Computes the cross-spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}.
 FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration; if they do overlap, a Welch window is applied.
 The power is the norm square of the (normalized) discrete Fourier transform.
 
@@ -289,11 +289,11 @@ LALDestroyRealFFTPlan()
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 
-void 
+void
 LALComputeXTFCSpectrogram (
-		       LALStatus *status, 
-		       TFCSpectrogram *out, 
-		       TFPlaneParams *tspec, 
+		       LALStatus *status,
+		       TFCSpectrogram *out,
+		       TFPlaneParams *tspec,
 		       REAL4TimeVectorSeries *tseries
 		       )
 {
@@ -314,7 +314,7 @@ LALComputeXTFCSpectrogram (
   INITSTATUS (status, "LALComputeXTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
-  
+
   /* Check return structure: out should have NULL pointer */
   ASSERT ( out, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
   ASSERT ( out->power == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
@@ -362,7 +362,7 @@ LALComputeXTFCSpectrogram (
 
   params->timeBins = tspec->timeBins;
   params->freqBins = tspec->freqBins;
-  params->flow = tspec->flow; 
+  params->flow = tspec->flow;
   params->deltaT = tspec->deltaT;
 
   out->params = params;
@@ -381,7 +381,7 @@ LALComputeXTFCSpectrogram (
   CHECKSTATUSPTR (status);
 
   Pvec.length = NN;
-  
+
   LALCCreateVector( status->statusPtr, &Hvec, NN/2 + 1);
   CHECKSTATUSPTR (status);
 
@@ -391,7 +391,7 @@ LALComputeXTFCSpectrogram (
   norm = (REAL8)NN;
 
   /* set window */
-  if(olap) { 
+  if(olap) {
     REAL4 nn2 = 0.5*(REAL4)NN;
     wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
     ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
@@ -420,7 +420,7 @@ LALComputeXTFCSpectrogram (
     LALForwardRealFFT(status->statusPtr, Hvec, &Pvec, pfwd);
 
 
-    
+
     if(olap) {
       memcpy(tdat, tseries->data->data + tseries->data->vectorLength + sid * (NN - olap), NN * sizeof(REAL4));
       for(k=0; (int)k<(int)NN; k++) {
@@ -467,18 +467,18 @@ Apply the first two levels of thresholds: (i) cut on power of individual pixels 
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALGetClusters (
-		LALStatus *status, 
-		CList *clist, 
-		TFCSpectrogram *tpower, 
+		LALStatus *status,
+		CList *clist,
+		TFCSpectrogram *tpower,
 		CListDir *dir
 		)
 }
 \idx{LALGetClusters()}
 
 \subsubsection*{Description}
-First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Only clusters with power strictly between \texttt{dir->minf} and \texttt{dir->maxf} are kept (if \texttt{dir->maxf} is negative, only clusters with at least some power between \texttt{dir->minf} and \texttt{dir->maxf} are kept). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}. 
+First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Only clusters with power strictly between \texttt{dir->minf} and \texttt{dir->maxf} are kept (if \texttt{dir->maxf} is negative, only clusters with at least some power between \texttt{dir->minf} and \texttt{dir->maxf} are kept). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -490,7 +490,7 @@ LALFreeCList()
 \begin{itemize}
 \item \texttt{*clist} must be initialized by a proper call to \texttt{LALInitCList()} before calling this function.
 \item Calling this function destroys \texttt{*tpower}.
-\item \texttt{dir->rho[0]} corresponds to \texttt{minf}, not DC. 
+\item \texttt{dir->rho[0]} corresponds to \texttt{minf}, not DC.
 \end{itemize}
 
 \vfill{\footnotesize\input{TFClustersCV}}
@@ -500,15 +500,15 @@ static void GetNearestNeighb(CList *, TFCSpectrogram *, REAL8 *, UINT4, UINT4);
 static UINT4 ClustDistance(UINT4 s1, UINT4 *t1, UINT4 *f1, UINT4 s2, UINT4 *t2, UINT4 *f2);
 
 static UINT4 min(UINT4 a, UINT4 b);
-  
+
 static UINT4 max(UINT4 a, UINT4 b);
 
 
-void 
+void
 LALGetClusters (
-		LALStatus *status, 
-		CList *clist, 
-		TFCSpectrogram *tpower, 
+		LALStatus *status,
+		CList *clist,
+		TFCSpectrogram *tpower,
 		CListDir *dir
 		)
 {
@@ -524,12 +524,12 @@ LALGetClusters (
   INITSTATUS (status, "LALGetClusters", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
-  
+
   /* check I/O structure */
   ASSERT ( dir, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( tpower, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( clist, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
-  
+
   ASSERT ( tpower->power, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( tpower->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
 
@@ -555,12 +555,12 @@ LALGetClusters (
   ASSERT ( clist->P == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
 
 
-  
+
   ndir = dir->sigma * (dir->sigma - 1) / 2;
 
   for(mins=-1, i=0;i<ndir;i++)
-    if(dir->d[i] > 0 && dir->s1[i] < mins) mins=dir->s1[i]; 
-      
+    if(dir->d[i] > 0 && dir->s1[i] < mins) mins=dir->s1[i];
+
 
 
   LALInitCList(status->statusPtr, &tlist, clist->params);
@@ -571,7 +571,7 @@ LALGetClusters (
   tlist.t = tlist.f = NULL;
   tlist.P = NULL;
 
-  
+
 
   /* Get the raw clusters */
   for(i=0;i<(UINT4)tpower->params->timeBins;i++) /* loop over all points */
@@ -583,7 +583,7 @@ LALGetClusters (
 
 	  tlist.sizes = (UINT4 *)LALRealloc(tlist.sizes, tlist.nclusters*sizeof(UINT4));
 	  ASSERT ( tlist.sizes, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
-	  
+
 	  tlist.t = (UINT4 **)LALRealloc(tlist.t, tlist.nclusters*sizeof(UINT4 *));
 	  ASSERT ( tlist.t, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
 
@@ -600,10 +600,10 @@ LALGetClusters (
 	  tlist.P[tlist.nclusters - 1] = NULL;
 
 	  GetNearestNeighb(&tlist, tpower, rho, i, j);
-	}        
+	}
 
 
-  
+
   /* clean to minf and maxf */
   if(dir->maxf < 0.0) {
     strictFCut = 0;
@@ -693,7 +693,7 @@ LALGetClusters (
 	    LALFree(tlist.P[i]);
 	  }
 	}
-	
+
       if(tlist.nclusters > 0)
 	{LALFree(tlist.sizes);
 	LALFree(tlist.f);
@@ -704,11 +704,11 @@ LALGetClusters (
       tlist.sizes=ts;
       tlist.f = tf;
       tlist.t = tt;
-      tlist.P = tP;	  
+      tlist.P = tP;
     }
 
 
-  
+
   /* clean to mins */
   if(mins > 1 && mins != -1U)
     {
@@ -800,20 +800,20 @@ LALGetClusters (
       else
 	for(j=i+1;j<tlist.nclusters;j++)
 	  {
-	    if((int)bbox[j][0] - (int)bbox[i][1] > (int)dir->mdist) break; /*don't care about clusters that start more than ? pixels after the end of the actual one */ 
+	    if((int)bbox[j][0] - (int)bbox[i][1] > (int)dir->mdist) break; /*don't care about clusters that start more than ? pixels after the end of the actual one */
 
 
 	  if(tlist.sizes[j] < dir->sigma)
 	    {
 	      s1 = min(tlist.sizes[i], tlist.sizes[j]);
 	      s2 = max(tlist.sizes[i], tlist.sizes[j]);
-	    
+
 	      dpos = s2 - s1 + (2*dir->sigma - s1) * (s1 - 1) / 2;
 
 	      if(dir->d[dpos] > 0)
 		{
 		  if(min(abs((int)bbox[i][0] - (int)bbox[j][1]), abs((int)bbox[i][1] - (int)bbox[j][0])) <= dir->d[dpos] &&
-		     min(abs((int)bbox[i][2] - (int)bbox[j][3]), abs((int)bbox[i][3] - (int)bbox[j][2])) <= dir->d[dpos]) 
+		     min(abs((int)bbox[i][2] - (int)bbox[j][3]), abs((int)bbox[i][3] - (int)bbox[j][2])) <= dir->d[dpos])
 		    {
 		      if( ClustDistance(tlist.sizes[i], tlist.t[i], tlist.f[i], tlist.sizes[j], tlist.t[j], tlist.f[j]) <= dir->d[dpos])
 			{
@@ -828,7 +828,7 @@ LALGetClusters (
 			    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
 			  friends1[nfriends-1] = i;
 			  friends2[nfriends-1] = j;
-			}	
+			}
 		    }
 		}
 	    }
@@ -889,7 +889,7 @@ LALGetClusters (
 
 
 
-  
+
   /* friends */
 
   if(tlist.nclusters > 0) {
@@ -909,7 +909,7 @@ LALGetClusters (
 	  where[friends2[i]] = clist->nclusters;
 
 	  clist->nclusters++;
-	  
+
 	  clist->sizes = (UINT4 *)LALRealloc(clist->sizes, clist->nclusters*sizeof(UINT4));
 	  if(!(clist->sizes))
 	    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
@@ -960,8 +960,8 @@ LALGetClusters (
 	  myj0 = clist->sizes[where[friends1[i]]];
 
 	  clist->sizes[where[friends1[i]]] += tlist.sizes[friends2[i]];
-	  
-	  clist->f[where[friends1[i]]] = (UINT4 *)LALRealloc(clist->f[where[friends1[i]]], clist->sizes[where[friends1[i]]] * sizeof(UINT4));	  
+
+	  clist->f[where[friends1[i]]] = (UINT4 *)LALRealloc(clist->f[where[friends1[i]]], clist->sizes[where[friends1[i]]] * sizeof(UINT4));
 	  if(!(clist->f[where[friends1[i]]]))
 	    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
 
@@ -978,7 +978,7 @@ LALGetClusters (
 	    {clist->f[where[friends1[i]]][j+myj0] = tlist.f[friends2[i]][j];
 	    clist->t[where[friends1[i]]][j+myj0] = tlist.t[friends2[i]][j];
 	    clist->P[where[friends1[i]]][j+myj0] = tlist.P[friends2[i]][j];}
-	}      
+	}
 
       if(where[friends1[i]] == -1U &&
 	 where[friends2[i]] != -1U) /* append first */
@@ -988,11 +988,11 @@ LALGetClusters (
 	  myj0 = clist->sizes[where[friends2[i]]];
 
 	  clist->sizes[where[friends2[i]]] += tlist.sizes[friends1[i]];
-	  
-	  clist->f[where[friends2[i]]] = (UINT4 *)LALRealloc(clist->f[where[friends2[i]]], clist->sizes[where[friends2[i]]] * sizeof(UINT4));	
+
+	  clist->f[where[friends2[i]]] = (UINT4 *)LALRealloc(clist->f[where[friends2[i]]], clist->sizes[where[friends2[i]]] * sizeof(UINT4));
 	  if(!(clist->f[where[friends2[i]]]))
 	    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
-  
+
 	  clist->t[where[friends2[i]]] = (UINT4 *)LALRealloc(clist->t[where[friends2[i]]], clist->sizes[where[friends2[i]]] * sizeof(UINT4));
 	  if(!(clist->t[where[friends2[i]]]))
 	    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
@@ -1006,7 +1006,7 @@ LALGetClusters (
 	    {clist->f[where[friends2[i]]][j+myj0] = tlist.f[friends1[i]][j];
 	    clist->t[where[friends2[i]]][j+myj0] = tlist.t[friends1[i]][j];
 	    clist->P[where[friends2[i]]][j+myj0] = tlist.P[friends1[i]][j];}
-	}      
+	}
     }
 
   if(where != NULL)
@@ -1045,11 +1045,11 @@ Apply the final cut by thresholding on the total power in the clusters.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALClustersPowerThreshold (
-			   LALStatus *status, 
+			   LALStatus *status,
 			   CList *out,
-			   CList *in, 
+			   CList *in,
 			   CListDir *dir
 			   )
 }
@@ -1067,11 +1067,11 @@ This function loops over all clusters in \texttt{*in}; for each cluster it compu
 ********* </lalLaTeX> ********/
 static void incgam(LALStatus *, REAL4, REAL4, REAL4 *);
 
-void 
+void
 LALClustersPowerThreshold (
-			   LALStatus *status, 
+			   LALStatus *status,
 			   CList *out,
-			   CList *in, 
+			   CList *in,
 			   CListDir *dir
 			   )
 {
@@ -1099,7 +1099,7 @@ LALClustersPowerThreshold (
     LALCopyCList(status->statusPtr, out, in);
     CHECKSTATUSPTR (status);
     DETATCHSTATUSPTR (status);
-    RETURN (status); 
+    RETURN (status);
   }
 
   out->nclusters = 0;
@@ -1139,7 +1139,7 @@ LALClustersPowerThreshold (
   ASSERT ( in->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
 
   for(i=0; i<in->nclusters; i++) { /* loop over input clusters */
-  
+
     winner = 0;
 
     if(dir->alpha > 0) {
@@ -1148,13 +1148,13 @@ LALClustersPowerThreshold (
 	po += in->P[i][j];
 	P0 += dir->rho[in->f[i][j]];
       }
-     
+
       po -= P0;
 
       incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
       CHECKSTATUSPTR (status);
 
-      if(prob < dir->alpha) { 
+      if(prob < dir->alpha) {
 	winner = 1;
       }
     } else {
@@ -1182,7 +1182,7 @@ LALClustersPowerThreshold (
       out->t = (UINT4**)LALRealloc(out->t, out->nclusters * sizeof(UINT4*));
       if(!(out->t))
 	{ABORT ( status,TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC);}
-      
+
       out->f = (UINT4**)LALRealloc(out->f, out->nclusters * sizeof(UINT4*));
       if(!(out->f)) {
 	ABORT ( status,TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC);
@@ -1215,7 +1215,7 @@ LALClustersPowerThreshold (
       }
     }
   }
-  
+
 
   /* Normal exit */
   DETATCHSTATUSPTR (status);
@@ -1234,9 +1234,9 @@ Merge two cluster lists.
 \texttt{
 void
 LALMergeClusterLists (
-		      LALStatus *status, 
+		      LALStatus *status,
 		      CList *out,
-		      CList *A, 
+		      CList *A,
 		      CList *B
 		      )
 }
@@ -1260,9 +1260,9 @@ LALFreeCList()
 ********* </lalLaTeX> ********/
 void
 LALMergeClusterLists (
-		      LALStatus *status, 
+		      LALStatus *status,
 		      CList *out_,
-		      CList *A, 
+		      CList *A,
 		      CList *B
 		      )
 {
@@ -1300,9 +1300,9 @@ LALMergeClusterLists (
       LALCopyCList(status->statusPtr, out_, B);
       CHECKSTATUSPTR (status);
     }
-    
+
     DETATCHSTATUSPTR (status);
-    RETURN (status); 
+    RETURN (status);
   }
 
   if(B->nclusters > 0) {
@@ -1313,14 +1313,14 @@ LALMergeClusterLists (
     ASSERT ( B->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
   else {
-    
+
     if(A!=out_) {
       LALCopyCList(status->statusPtr, out_, A);
       CHECKSTATUSPTR (status);
     }
-    
+
     DETATCHSTATUSPTR (status);
-    RETURN (status); 
+    RETURN (status);
   }
 
 
@@ -1384,7 +1384,7 @@ LALMergeClusterLists (
 
   if(!(cB = (BOOLEAN *)LALMalloc(B->nclusters * sizeof(BOOLEAN))))
     {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
-  
+
   for(i=0; i<A->nclusters; i++) cA[i] = 1;
   for(i=0; i<B->nclusters; i++) cB[i] = 1;
 
@@ -1393,9 +1393,9 @@ LALMergeClusterLists (
 
       BOOLEAN firstOne = 1;
 
-    for(j=0; j<B->nclusters; j++) { 
+    for(j=0; j<B->nclusters; j++) {
       if(cB[j]) {
-	if(bboxA[i][0] <= bboxB[j][1] + 1 && 
+	if(bboxA[i][0] <= bboxB[j][1] + 1 &&
 	   bboxB[j][0] <= bboxA[i][1] + 1 &&
 	   bboxA[i][2] <= bboxB[j][3] + 1 &&
 	   bboxB[j][2] <= bboxA[i][3] + 1) {
@@ -1415,7 +1415,7 @@ LALMergeClusterLists (
 	    firstOne = 0;
 	    cA[i] = cB[j] = 0;
 
-	    out->nclusters++;	  
+	    out->nclusters++;
 	    out->sizes = (UINT4 *)LALRealloc(out->sizes, out->nclusters*sizeof(UINT4));
 	    if(!(out->sizes))
 	      {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
@@ -1445,12 +1445,12 @@ LALMergeClusterLists (
 	      out->t[out->nclusters-1][k] = A->t[i][k];
 	      out->P[out->nclusters-1][k] = A->P[i][k];}
 
-	    
+
 	    for(k=0;k<B->sizes[j]; k++) {
 	      for(l=0; l<A->sizes[i]; l++) {
 		if(A->t[i][l] == B->t[j][k] &&
 		   A->f[i][l] == B->f[j][k]) {break;}
-	      }  
+	      }
 	      if(l == A->sizes[i])
 		{
 
@@ -1472,7 +1472,7 @@ LALMergeClusterLists (
 		}
 	    }
 	    }
-	    else /* not firstOne */ 
+	    else /* not firstOne */
 	      {
 		UINT4 ktmp = out->sizes[out->nclusters-1];
 		for(l=0; l<B->sizes[j]; l++) {
@@ -1480,7 +1480,7 @@ LALMergeClusterLists (
 
 		    if(B->t[j][l] == out->t[out->nclusters-1][k] &&
 		       B->f[j][l] == out->f[out->nclusters-1][k]) {break;}
-		  }  
+		  }
 
 		  if(k == ktmp)
 		    {
@@ -1496,7 +1496,7 @@ LALMergeClusterLists (
 		      out->P[out->nclusters-1] = (REAL8 *)LALRealloc(out->P[out->nclusters-1], out->sizes[out->nclusters-1] * sizeof(REAL8));
 		      if(!(out->P[out->nclusters-1]))
 			{ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
-		      
+
 		      out->f[out->nclusters-1][out->sizes[out->nclusters-1]-1] = B->f[j][l];
 		      out->t[out->nclusters-1][out->sizes[out->nclusters-1]-1] = B->t[j][l];
 		      out->P[out->nclusters-1][out->sizes[out->nclusters-1]-1] = B->P[j][l];
@@ -1506,12 +1506,12 @@ LALMergeClusterLists (
 	      }
 	  }
 	}
-      
+
 	if(cA[i]) { /* doesn't touch to anybody */
-	
+
 	  cA[i] = 0;
 
-	  out->nclusters++;	  
+	  out->nclusters++;
 	  out->sizes = (UINT4 *)LALRealloc(out->sizes, out->nclusters*sizeof(UINT4));
 	  if(!(out->sizes))
 	    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
@@ -1543,14 +1543,14 @@ LALMergeClusterLists (
     }
   }
   }
-	
 
-  for(i=0;i<B->nclusters; i++) { 
+
+  for(i=0;i<B->nclusters; i++) {
     if(cB[i]) {
 
       cB[i] = 0;
 
-      out->nclusters++;	  
+      out->nclusters++;
       out->sizes = (UINT4 *)LALRealloc(out->sizes, out->nclusters*sizeof(UINT4));
       if(!(out->sizes))
 	{ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
@@ -1585,7 +1585,7 @@ LALMergeClusterLists (
 
   for(i=0;i<A->nclusters; i++) LALFree(bboxA[i]);
   for(i=0;i<B->nclusters; i++) LALFree(bboxB[i]);
-  
+
   LALFree(bboxA);
   LALFree(bboxB);
 
@@ -1600,7 +1600,7 @@ LALMergeClusterLists (
   }
 
   DETATCHSTATUSPTR (status);
-  RETURN (status); 
+  RETURN (status);
 }
 
 
@@ -1613,7 +1613,7 @@ Make a copy of a cluster list.
 \texttt{
 void
 LALCopyCList (
-	      LALStatus *status, 
+	      LALStatus *status,
 	      CList *dest,
 	      CList *src
 	      );
@@ -1638,7 +1638,7 @@ LALFreeCList()
 
 void
 LALCopyCList (
-	      LALStatus *status, 
+	      LALStatus *status,
 	      CList *dest,
 	      CList *src
 	      )
@@ -1653,7 +1653,7 @@ LALCopyCList (
 
   LALFreeCList(status->statusPtr, dest);
   CHECKSTATUSPTR (status);
-  
+
   dest->nclusters = src->nclusters;
 
   if(src->nclusters > 0) {
@@ -1664,7 +1664,7 @@ LALCopyCList (
     }
     memcpy(dest->sizes, src->sizes, src->nclusters * sizeof(UINT4));
 
-  
+
     dest->t = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
     if(!dest->t) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
     dest->f = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
@@ -1676,7 +1676,7 @@ LALCopyCList (
       dest->t[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
       dest->f[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
       dest->P[i] = (REAL8 *)LALMalloc(src->sizes[i] * sizeof(REAL8));
-      
+
       memcpy(dest->t[i], src->t[i], src->sizes[i] * sizeof(UINT4));
       memcpy(dest->f[i], src->f[i], src->sizes[i] * sizeof(UINT4));
       memcpy(dest->P[i], src->P[i], src->sizes[i] * sizeof(REAL8));
@@ -1699,7 +1699,7 @@ Initialize a spectrogram with default values.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -1714,7 +1714,7 @@ Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \tex
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
-void 
+void
 LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -1749,7 +1749,7 @@ Initialize a spectrogram with default values.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -1760,11 +1760,11 @@ LALPlainTFCSpectrogramWin(
 \idx{LALPlainTFCSpectrogramWin()}
 
 \subsubsection*{Description}
-Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T}/2 and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. 
+Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T}/2 and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}.
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
-void 
+void
 LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -1799,7 +1799,7 @@ Initialize a cluster list structure.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALInitCList (
 	      LALStatus *status,
 	      CList *clist,
@@ -1813,7 +1813,7 @@ Initialize \texttt{*clist} and set its parameters to \texttt{*tspec}.
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
-void 
+void
 LALInitCList (
 	      LALStatus *status,
 	      CList *clist,
@@ -1845,7 +1845,7 @@ LALInitCList (
 
   clist->params->timeBins = tspec->timeBins;
   clist->params->freqBins = tspec->freqBins;
-  clist->params->flow = tspec->flow; 
+  clist->params->flow = tspec->flow;
   clist->params->deltaT = tspec->deltaT;
 
 
@@ -1864,7 +1864,7 @@ Initialize a threshold structure.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALFillCListDir (
 		 LALStatus *status,
 		 CListDir *cldir,
@@ -1883,7 +1883,7 @@ Initialize \texttt{*cldir}. This means allocating memory for \texttt{cldir->s1},
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
-void 
+void
 LALFillCListDir (
 		 LALStatus *status,
 		 CListDir *cldir,
@@ -1913,12 +1913,12 @@ LALFillCListDir (
 
     cldir->s2 = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
     if(!(cldir->s2)) {
-      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
     }
 
     cldir->d = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
     if(!(cldir->d)) {
-      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
     }
 
 
@@ -1935,7 +1935,7 @@ LALFillCListDir (
 
   cldir->rho = (REAL8 *)LALMalloc(cldir->freqBins * sizeof(REAL8));
   if(!(cldir->rho)) {
-    ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+    ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
 
   for(i=0; i<cldir->freqBins; i++)
@@ -1955,9 +1955,9 @@ Functions to destroy the different structures.
 \subsubsection*{Prototype}
 \vspace{0.1in}
 \texttt{
-void 
+void
 LALFreeCList(
-	     LALStatus *status, 
+	     LALStatus *status,
 	     CList *clist
 	     )
 }
@@ -1966,9 +1966,9 @@ LALFreeCList(
 \vspace{0.1in}
 \texttt{
 \noindent
-void 
+void
 LALFreeSpecgram(
-		LALStatus *status, 
+		LALStatus *status,
 		TFCSpectrogram *power
 		)
 }
@@ -1991,9 +1991,9 @@ Release allocated memory.
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 
-void 
+void
 LALFreeCList(
-	     LALStatus *status, 
+	     LALStatus *status,
 	     CList *clist
 	     )
 {
@@ -2017,7 +2017,7 @@ LALFreeCList(
     LALFree(clist->f);
     LALFree(clist->P);
   }
-    
+
   LALFree(clist->params);
 
   clist->nclusters = 0;
@@ -2032,9 +2032,9 @@ LALFreeCList(
 
 
 
-void 
+void
 LALFreeSpecgram(
-		LALStatus *status, 
+		LALStatus *status,
 		TFCSpectrogram *power
 		)
 {
@@ -2080,7 +2080,7 @@ LALFreeCListDir (
 
 
 /**************************INTERNAL FUNCTIONS***************************/
-static void GetNearestNeighb(CList *clist, TFCSpectrogram *tpower, REAL8 *rho, UINT4 i, UINT4 j) 
+static void GetNearestNeighb(CList *clist, TFCSpectrogram *tpower, REAL8 *rho, UINT4 i, UINT4 j)
 {
   /* first, add point to clist */
   (clist->sizes[clist->nclusters - 1])++;
@@ -2187,13 +2187,13 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
 	break;
       }
     }
-   
-    if(n>ITMAX) 
+
+    if(n>ITMAX)
       {ABORT ( status, TFCLUSTERSH_EMAXITE, TFCLUSTERSH_MSGEMAXITE);}
 
     *retu = 1.0 - elln;
     return;
-  } 
+  }
   else {
     a1=x+1.0-a;
     a2=1.0/1e-30;
@@ -2205,16 +2205,16 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
 
       a3=an*a3+a1;
       if (fabs(a3) < 1e-30) a3=1e-30;
-      
+
       a2=a1+an/a2;
       if (fabs(a2) < 1e-30) a2=1e-30;
-      
+
       a3=1.0/a3;
       del=a2*a3;
       sum *= del;
       if (fabs(del-1.0) < 3e-7) break;
     }
-    
+
     if(n>ITMAX) {
       ABORT ( status, TFCLUSTERSH_EMAXITE, TFCLUSTERSH_MSGEMAXITE);
     }

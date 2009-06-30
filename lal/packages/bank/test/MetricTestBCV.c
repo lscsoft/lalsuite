@@ -59,15 +59,15 @@ NRCSID (METRICTESTBCVC,"$Id$");
 
 INT4 lalDebugLevel=0;
 
-int 
+int
 main ( void )
-{  
+{
   InspiralMetric metric;
   static LALStatus status;
   InspiralTemplate     *params;
   REAL8FrequencySeries    psd;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4 numPSDpts = 65536;    
+  UINT4 numPSDpts = 65536;
   REAL8 tSampling;
   REAL8 mismatch;
   FILE *fpr;
@@ -77,7 +77,7 @@ main ( void )
   params = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate));
 
   params->alpha = 0.L;
-  params->fLower = 30;    
+  params->fLower = 30;
   params->fCutoff = 400;
 
   tSampling = 4096.L;
@@ -87,7 +87,7 @@ main ( void )
   LALDCreateVector(&status, &(psd.data), numPSDpts );
   psd.deltaF = tSampling / (2.L*(REAL8) psd.data->length + 1.L);
   LALNoiseSpectralDensity (&status, psd.data, noisemodel, psd.deltaF );
-   
+
   LALInspiralComputeMetricBCV(&status, &metric, &psd, params);
 
   fprintf(fpr, "#%e %e %e\n", metric.G00, metric.G01, metric.G11);
@@ -95,7 +95,7 @@ main ( void )
   fprintf(fpr, "#dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
   fprintf(fpr, "#dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
 
-  
+
   {
   double MM;
   double dp0, dp1;
@@ -109,10 +109,10 @@ main ( void )
   for ( dp0= dp0min; dp0<=dp0max ; dp0+=d0)
   {
       for ( dp1= dp1min; dp1<=dp1max ; dp1+=d1)
-      {  
+      {
 	  MM = 1. - (metric.G00 * dp0 * dp0 +  metric.G01 * dp0 * dp1
 		  +  metric.G01 * dp1 * dp0 +  metric.G11 * dp1 * dp1);
-	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);	  
+	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);
       }
       fprintf(fpr, "\n");
   }

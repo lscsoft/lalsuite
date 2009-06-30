@@ -2,7 +2,7 @@
 #check_PROGRAMS = LALfctTest LALfctSample LALFCTInterfaceTest
 if INTELFFT
 check_PROGRAMS =
-TESTS = 
+TESTS =
 else
 check_PROGRAMS = LALfctTest LALfctSample LALFCTInterfaceTest LALSNRTest
 LALfctTest_SOURCES = LALfctTest.c timingfunctions.c timingfunctions.h

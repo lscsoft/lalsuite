@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -38,12 +38,12 @@
  * CALLS
  *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 Sample usage of the routines in \texttt{TFClusters.h}.
 
 \subsection*{Usage}
@@ -117,7 +117,7 @@ int main(void) {
 
   LALPlainTFCSpectrogram(&status, &tspec, &tseries, T); /* this creates spectrogram parameters at the 'Heisenberg limit' from DC+1/T to the Nyquist frequency */
   CHKST;
-  
+
   spower.power = NULL;
   spower.params = NULL;
 
@@ -142,7 +142,7 @@ int main(void) {
   dir.d[2] = 0;
   dir.d[3] = 0; /* 1,4 */
   dir.d[4] = 0; /* 2,2 */
-  dir.d[5] = 0; 
+  dir.d[5] = 0;
   dir.d[6] = 2; /* 2,4 */
   dir.d[7] = 3; /* 3,3 */
   dir.d[8] = 4; /* 3,4 */
@@ -167,7 +167,7 @@ int main(void) {
 
   LALInitCList(&status, &list, &tspec); /* initialize list */
   CHKST;
-  
+
   LALClustersPowerThreshold(&status, &list, &clist, &dir); /* generate new list */
   CHKST;
 
@@ -188,15 +188,15 @@ int main(void) {
     for(P=0, j=0; j<list.sizes[i]; j++) P += list.P[i][j];
     printf("%i\t\t%i\t\t%g\n",i,list.sizes[i],P);
   }
-  
+
   /* clean up */
   LALFreeCList(&status, &list);
   CHKST;
 
-  
+
   LALDestroyVector(&status, &vect);
   CHKST;
-  
+
   return 0;
 
 }

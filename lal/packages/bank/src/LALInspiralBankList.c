@@ -55,7 +55,7 @@ print_list(CellList *head)
   if (head == NULL){
     printf("\n");
   }
-  else { 
+  else {
     printf(" %d", head->id);
     print_list(head->next);
   }
@@ -64,7 +64,7 @@ print_list(CellList *head)
 
 UINT4 LALListLength(CellList *list)
 {
-  UINT4 count = 0; 
+  UINT4 count = 0;
   while (list != NULL){
     count++;
     list = list->next;
@@ -75,7 +75,7 @@ UINT4 LALListLength(CellList *list)
 
 
 void LALListAppend(
-	CellList **headRef, 
+	CellList **headRef,
 	INT4 id)
 {
   CellList *current;
@@ -98,13 +98,13 @@ void LALListAppend(
 void DeleteList(CellList **headRef)
 {
   CellList *tmp;
-  
+
   while (headRef !=NULL){
     tmp = (*headRef)->next;
     free(headRef);
     (*headRef) = tmp;
   }
-  
+
 }
 */
 
@@ -138,5 +138,5 @@ void LALListDelete(CellList **headRef, INT4 id)
   return ;
 
 
- 
+
 }

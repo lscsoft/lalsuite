@@ -19,7 +19,7 @@
 
 /**** <lalVerbatim file="ExampleCV">
  * Author: Al A. Lal
- * $Id$  
+ * $Id$
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
@@ -31,29 +31,29 @@
  * \subsubsection*{Prototypes}
  * \input{ExampleCP}
  * %% \idx{LALExample()}
- * 
+ *
  * \subsubsection*{Description}
- * 
- * %% A description of the data analysis task performed by this function; 
+ *
+ * %% A description of the data analysis task performed by this function;
  * %% this is the main place to document the module.
- * 
+ *
  * \subsubsection*{Algorithm}
- * 
+ *
  * %% A description of the method used to perform the calculation.
- * 
+ *
  * \subsubsection*{Uses}
- * 
+ *
  * %% List of any external functions called by this function.
  * \begin{verbatim}
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Notes}
- * 
+ *
  * %% Any relevant notes.
- * 
+ *
  * \vfill{\footnotesize\input{ExampleCV}}
- * 
- **** </lalLaTeX> */ 
+ *
+ **** </lalLaTeX> */
 
 /**
  ** INCLUDE STANDARD LIBRARY HEADERS
@@ -117,7 +117,7 @@ NRCSID( EXAMPLEC, "$Id$" );
  **
  ** local functions need not satisfy all of the LAL convensions for
  ** functions
- **     
+ **
  **/
 
 /** DEFINE GLOBAL FUNCTIONS **/
@@ -143,7 +143,7 @@ LALExample(
    ** no function (not even a local one) should use static variables:
    **
    **   static REAL4 x;  !!! BAD !!!
-   **   
+   **
    **/
 
   /** initialize status **/
@@ -200,7 +200,7 @@ LALExample(
    **     LALFree( str );
    **   }
    **   ENDFAIL( status );
-   **   
+   **
    **
    ** never use I/O:
    **

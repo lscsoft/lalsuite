@@ -57,7 +57,7 @@ int main( void )
 
   /* set time series data to be a unit impulse */
   /*
-  memset( tseries.data->data, 0, tseries.data->length * sizeof( 
+  memset( tseries.data->data, 0, tseries.data->length * sizeof(
         *tseries.data->data ) );
   tseries.data->data[0] = 1;
   */
@@ -83,7 +83,7 @@ int main( void )
   /* output results -- omit DC & Nyquist */
   /*
   for ( i = 1; i < fseries.data->length - 1; ++i )
-    fprintf( stdout, "%e\t%e\n", i * fseries.deltaF, 
+    fprintf( stdout, "%e\t%e\n", i * fseries.deltaF,
         fseries.data->data[i] );
    */
 

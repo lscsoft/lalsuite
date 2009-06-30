@@ -93,7 +93,7 @@ LALDR_CrossProd3Vector(REAL8 result[3],
   return;
 } /* END: LALDR_CrossProd3Vector() */
 
-
+
 
 /*
  * Dot product of two 3-vectors
@@ -110,7 +110,7 @@ LALDR_DotProd3Vector(REAL8 a[3], REAL8 b[3])
   return result;
 } /* END: LALDR_DotProd3Vector() */
 
-
+
 
 /*
  * Scalar product of two 3x3 matrices
@@ -128,7 +128,7 @@ LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
   return result;
 } /* END: LALDR_DotProd33Matrix() */
 
-
+
 
 
 /*
@@ -149,7 +149,7 @@ LALDR_Set33Matrix(REAL8 matrix[3][3],
   return;
 } /* END: LALDR_Set33Matrix() */
 
-
+
 
 /*
  * Copy matrix source to matrix target
@@ -166,7 +166,7 @@ LALDR_Copy33Matrix(REAL8 target[3][3], const REAL8 source[3][3])
   return;
 } /* END: LALDR_Copy33Matrix() */
 
-
+
 
 /*
  * Zero matrix
@@ -181,7 +181,7 @@ LALDR_Zero33Matrix(REAL8 matrix[3][3])
   return;
 }
 
-
+
 
 /*
  * Matrix multiply
@@ -213,7 +213,7 @@ LALDR_Multiply33Matrix(REAL8 product[3][3],
   return;
 }
 
-
+
 
 /*
  * Scalar multiply
@@ -232,7 +232,7 @@ LALDR_ScalarMult33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Add matrix
@@ -251,7 +251,7 @@ LALDR_Add33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Subtract matrices (M1 - M2)
@@ -270,7 +270,7 @@ LALDR_Subtract33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Transpose matrix
@@ -296,7 +296,7 @@ LALDR_Transpose33Matrix(REAL8 transpose[3][3],
   return;
 }
 
-
+
 
 /*
  * The L2 norm of a matrix
@@ -317,7 +317,7 @@ LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
 }
 
 
-
+
 
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
@@ -337,7 +337,7 @@ LALDR_RMSNorm33Matrix(const REAL8 matrix[3][3])
     return rmsnorm;
 }
 
-
+
 
 /*
  * The "infinity" norm of a matrix: max over all elems
@@ -356,7 +356,7 @@ LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
     return infnorm;
 }
 
-
+
 
 /*
  * Print out matrix
@@ -434,7 +434,7 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
   return;
 }
 
-
+
 
 
 
@@ -481,7 +481,7 @@ LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
   return;
 }
 
-
+
 
 
 /*

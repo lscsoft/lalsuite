@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -38,12 +38,12 @@
  * CALLS
  *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 Sample usage of the routines in \texttt{TFClusters.h}.
 
 \subsection*{Usage}
@@ -113,7 +113,7 @@ int main(void) {
   /* Next compute a spectrogram for the time series */
   T = 1.0; /* this is the resolution in seconds of the spectrogram */
 
-  LALPlainTFCSpectrogramWin(&status, &tspec, &tseries, T); 
+  LALPlainTFCSpectrogramWin(&status, &tspec, &tseries, T);
   CHKST;
 
   /* Set thresholds */
@@ -123,7 +123,7 @@ int main(void) {
   dir.minf = 0;
   dir.maxf = 512; /* max frequency to consider (Hz) */
 
-  LALFillCListDir(&status, &dir, 1.5); 
+  LALFillCListDir(&status, &dir, 1.5);
   CHKST;
 
 
@@ -133,7 +133,7 @@ int main(void) {
   dir.d[2] = 0;
   dir.d[3] = 0; /* 1,4 */
   dir.d[4] = 0; /* 2,2 */
-  dir.d[5] = 0; 
+  dir.d[5] = 0;
   dir.d[6] = 2; /* 2,4 */
   dir.d[7] = 3; /* 3,3 */
   dir.d[8] = 4; /* 3,4 */
@@ -141,7 +141,7 @@ int main(void) {
 
   dir.mdist = 4; /* no need to worry about things that are more than 4 units away from each other */
 
-  
+
   mainlist = NULL;
 
   Nlists = 5;
@@ -175,11 +175,11 @@ int main(void) {
 
 
   /* run threshold on cluster total power */
-  dir.alpha = -3.0; 
+  dir.alpha = -3.0;
 
   LALInitCList(&status, list + k, &tspec); /* initialize list */
   CHKST;
-  
+
   LALClustersPowerThreshold(&status, list + k, &clist, &dir); /* generate new list */
   CHKST;
 
@@ -205,7 +205,7 @@ int main(void) {
     for(P=0, j=0; j<mainlist->sizes[i]; j++) P += mainlist->P[i][j];
     printf("%i\t\t%i\t\t%g\n",i,mainlist->sizes[i],P);
   }
-  
+
   /* clean up */
   LALFreeCListDir(&status, &dir);
   CHKST;

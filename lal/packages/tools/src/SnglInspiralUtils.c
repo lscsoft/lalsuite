@@ -228,7 +228,7 @@ second instrument.
 
 static INT8 end_time(const SnglInspiralTable *x)
 {
-	return(XLALGPStoINT8(&x->end_time));
+	return(XLALGPSToINT8NS(&x->end_time));
 }
 
 static INT4 end_time_sec(const SnglInspiralTable *x)
@@ -649,7 +649,7 @@ XLALCompareInspirals (
   InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
 
-  static const char *func = "XLALCompareInspirals";
+  /* static const char *func = "XLALCompareInspirals"; */
 
   params->match = 1;
 
@@ -669,8 +669,8 @@ XLALCompareInspirals (
   ifoaNum = XLALIFONumber( aPtr->ifo );
   ifobNum = XLALIFONumber( bPtr->ifo );
 
-  ta = XLALGPStoINT8( &(aPtr->end_time) );
-  tb = XLALGPStoINT8( &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
   aAcc = params->ifoAccuracy[ifoaNum];
@@ -872,8 +872,8 @@ XLALClusterSnglInspiralTable (
 
   while ( nextEvent )
   {
-    INT8 thisTime = XLALGPStoINT8( &(thisEvent->end_time) );
-    INT8 nextTime = XLALGPStoINT8( &(nextEvent->end_time) );;
+    INT8 thisTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
+    INT8 nextTime = XLALGPSToINT8NS( &(nextEvent->end_time) );;
 
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
@@ -957,8 +957,8 @@ XLALTimeCutSingleInspiral(
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
-  INT8                  startTimeNS = XLALGPStoINT8( startTime );
-  INT8                  endTimeNS = XLALGPStoINT8( endTime );
+  INT8                  startTimeNS = XLALGPSToINT8NS( startTime );
+  INT8                  endTimeNS = XLALGPSToINT8NS( endTime );
 
 
   /* Remove all the triggers before and after the requested */
@@ -1674,7 +1674,7 @@ XLALPlayTestSingleInspiral(
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      triggerTime = XLALGPStoINT8( &(tmpEvent->end_time) );
+      triggerTime = XLALGPSToINT8NS( &(tmpEvent->end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||

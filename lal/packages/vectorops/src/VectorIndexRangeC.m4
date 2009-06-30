@@ -14,7 +14,7 @@ $Id$
 \subsection*{Algorithms}
 
 \subsection*{Uses}
- 
+
 \begin{itemize}
 \item \texttt{LAL*CreateVector}
 \end{itemize}

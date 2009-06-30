@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2006
- * \file 
+ * \file
  * \ingroup pulsar
  * \brief Header-file defining the API for the LISA-specific functions
  *
@@ -51,10 +51,10 @@ NRCSID( LISASPECIFICSH, "$Id$" );
 
 /*---------- exported types ----------*/
 /** Translate TDI arm indices to C-indexing */
-typedef enum { 
-  LISA_ARM1 = 0, 
-  LISA_ARM2, 
-  LISA_ARM3 
+typedef enum {
+  LISA_ARM1 = 0,
+  LISA_ARM2,
+  LISA_ARM3
 } LISAarmT;
 
 /*---------- exported Global variables ----------*/

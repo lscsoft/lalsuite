@@ -120,6 +120,7 @@ src/inspiral/posterior/lalapps_inspnest
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
+src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_power
 src/power/sense_compare

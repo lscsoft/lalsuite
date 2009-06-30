@@ -26,9 +26,9 @@
 /* LALfctTest: This program shows the basic use of the LALfct package.
  *
  * In the future it will probably also have the standard error code tests that
- * the rest of the LAL packages have. 
+ * the rest of the LAL packages have.
  *
- * Usage: LALfctTest accepts a number of commandline parameters. 
+ * Usage: LALfctTest accepts a number of commandline parameters.
  *  Valid Options are:
  *    -t   Activate timing (for performance testing)
  *    -r   read input data from input.dat
@@ -38,7 +38,7 @@
  *    -nX  numRuns = X
  *    -NX  numOfDims = X
  *    -zX  noise = X
- * 
+ *
  */
 
 #include <config.h>
@@ -89,7 +89,7 @@ static void TestStatus( LALStatus *status, const char *ignored, int exitcode );
 void fctTestCheckOutput( LALfctCalcOutput *fctCalcOutput);
 void fctTestFindMax( LALfctCalcOutput *fctCalcOutput);
 
-/* These are for getopt */ 
+/* These are for getopt */
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -97,20 +97,20 @@ extern int optind, opterr, optopt;
 int main( int argc, char **argv ) {
   static LALStatus status; /* status initialization will complain if status is
 			     not set to zero. */
-  LALFCTCOMPVector *inputDataVector=0; 
+  LALFCTCOMPVector *inputDataVector=0;
   LALfctInitParams fctInitParams;
   LALfctAddPhaseFuncParams fctAddPhaseFuncParams;
   LALfctCalcParams fctCalcParams;
   LALfctGenRowIndexParams fctGenRowIndexParams;
   LALfctCalcOutput fctCalcOutput;
-  LALFCTPlan *fctPlan=0;  
+  LALFCTPlan *fctPlan=0;
 
   UINT4 dataSize;
   UINT4 I;
   /* REMOVE  INT2 check; */
   UINT4 numRuns = 10;
   UINT2 numOfDims = 2;
-    
+
   FILE *OUTPUT = 0;
   FILE *OUTPUTAVG = 0;
 
@@ -125,7 +125,7 @@ int main( int argc, char **argv ) {
   REAL8 userTimeTotal = 0;
   REAL8 userTimeSqTotal = 0;
   REAL8 userTempTime = 0;
-  
+
   LALFCTREAL noise = 0;
 
   BOOLEAN timeFlag = 0;
@@ -141,7 +141,7 @@ int main( int argc, char **argv ) {
   /* These have to be set to 0 or the CreateVector functions will complain */
   fctCalcOutput.rowIndex = 0;
   fctCalcOutput.outputData = 0;
-     
+
   /* Check the commandline parameters */
   opterr = 0;
   while ((c = getopt (argc, argv, "trmD:d:n:N:z:")) != -1) {
@@ -179,7 +179,7 @@ int main( int argc, char **argv ) {
 	break;
       case '?':
 	fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-	printf("Valid Options are:\n");	
+	printf("Valid Options are:\n");
 	printf(" -t   Activate timing (for performance testing)\n");
 	printf(" -r   read input data from input.dat\n");
 	printf(" -m   Locate the maximum\n");
@@ -199,10 +199,10 @@ int main( int argc, char **argv ) {
   }
 
   /* If we're not timing then only do one run at the minimum data size */
-  if (!timeFlag) { 
+  if (!timeFlag) {
     dataSizeMax = dataSizeMin;
     numRuns = 1;
-  } 
+  }
 
   /* This loops over the dataSize */
   for ( dataSize = dataSizeMin; dataSize <= dataSizeMax; dataSize += 1024 ) {
@@ -210,11 +210,11 @@ int main( int argc, char **argv ) {
     fflush(stdout);
 
     /* Initialize the fct_plan */
-    fctInitParams.numOfDataPoints = dataSize; 
+    fctInitParams.numOfDataPoints = dataSize;
     fctInitParams.numOfDims = numOfDims;
     LALfctInitialize( &status, &fctPlan, &fctInitParams );
     TestStatus( &status, CODES( 0 ), 1 );
-    
+
     /* Add the proper phase functions */
     switch (numOfDims) {
       case 2:
@@ -222,7 +222,7 @@ int main( int argc, char **argv ) {
 	fctAddPhaseFuncParams.lengthOfDim = 128;
 	fctAddPhaseFuncParams.phaseFuncForDim =  &phaseFunction1;
 	LALfctAddPhaseFunc(&status, fctPlan, &fctAddPhaseFuncParams);
-	TestStatus( &status, CODES( 0 ), 1 );	
+	TestStatus( &status, CODES( 0 ), 1 );
 	break;
       case 3:
 	fctAddPhaseFuncParams.dim = 1;
@@ -261,7 +261,7 @@ int main( int argc, char **argv ) {
 	printf("for %d dimensions.\n", numOfDims);
 	exit(1);
     }
-    
+
     /* Create the proper size inputDataVector */
     LALFCTCOMPCreateVector ( &status, &inputDataVector, dataSize );
     TestStatus( &status, CODES( 0 ), 1 );
@@ -272,18 +272,18 @@ int main( int argc, char **argv ) {
     } else {
       generateData(inputDataVector, numOfDims, noise);
     }
-    
-    /* Fill in fctCalcParams */ 
+
+    /* Fill in fctCalcParams */
     fctCalcParams.fctPlan = fctPlan;
     fctCalcParams.fctGenRowIndexParams = &fctGenRowIndexParams;
     fctCalcParams.fctGenRowIndexFunc = 0;
-    
+
     fctGenRowIndexParams.fctPlan = fctPlan;
     fctGenRowIndexParams.goToEndOfRows = 1;
     fctGenRowIndexParams.createIndex = 1;
     fctGenRowIndexParams.skipRows = 0;
     fctGenRowIndexParams.numOfRows = 0; /* This is ignored */
-    
+
     /* Reset the timing varibles */
     if (timeFlag) {
       wallTimeTotal = 0;
@@ -291,7 +291,7 @@ int main( int argc, char **argv ) {
       userTimeTotal = 0;
       userTimeSqTotal = 0;
     }
-    
+
     /* Loop around numRuns times to get an average run time. */
     for(I = 0; I < numRuns; I++) {
 
@@ -304,22 +304,22 @@ int main( int argc, char **argv ) {
 	LALU4DestroyArray(&status, &(fctCalcOutput.rowIndex));
 	fctCalcOutput.rowIndex = 0;
       }
-      
+
       /* Start timing */
       if (timeFlag) {
 	WallTimeVal();
 	UserTimeVal();
       }
-      
+
       /* Run LALfctCalc */
       LALfctCalc(&status, &fctCalcOutput, inputDataVector, &fctCalcParams);
-  
+
       /* Read the time from the timers */
       if (timeFlag) {
 	userTempTime = UserTimeVal();
 	wallTempTime = WallTimeVal();
       }
-      
+
       /* Test the status that was returned from LALfctCalc*/
 
       TestStatus( &status, CODES( 0 ), 1 );
@@ -332,9 +332,9 @@ int main( int argc, char **argv ) {
 	wallTimeSqTotal += wallTempTime * wallTempTime;
       }
     } /* for numRuns */
-    
+
     if (timeFlag) {
-      
+
       /* Calculate the Averages and the Deviations */
       avgWallTime = wallTimeTotal / (double) numRuns;
       wallDeviation = ((wallTimeSqTotal / (double)  numRuns) - \
@@ -342,13 +342,13 @@ int main( int argc, char **argv ) {
       avgUserTime = userTimeTotal / (double) numRuns;
       userDeviation = ((userTimeSqTotal / (double)  numRuns) - \
 		       avgUserTime * avgUserTime) * (numRuns/(numRuns-1));
-      
+
       /* Print them out to the screen. */
       printf("AvgWallTime = %g, WallDeviation = %g,", \
 	     avgWallTime, wallDeviation);
       printf("AvgUserTime = %g, UserDeviation = %g\n", \
 	     avgUserTime, userDeviation);
-      
+
       /* Print them out to a file. */
       OUTPUTAVG = fopen ("./2dtimesAvg.dat", "a");
       fprintf(OUTPUTAVG, "%d, %d, %g, %g, %g, %g\n", \
@@ -356,55 +356,55 @@ int main( int argc, char **argv ) {
 	      avgUserTime, userDeviation);
       fclose(OUTPUTAVG);
     }
-    
+
     if ((!timeFlag) || (maxFlag)) {
-      
+
       /* Move the Cursor to the next line. */
       printf("\n");
-      
+
       /* Locate the Maximum in the Output. */
       fctTestFindMax( &fctCalcOutput );
-    
-      /* Check the Output to make sure that the power in all the rows 
+
+      /* Check the Output to make sure that the power in all the rows
 	 is the same. */
       fctTestCheckOutput( &fctCalcOutput );
-      
+
     }
 
     if (!timeFlag) {
-      
+
       /* Output the data to a file. */
       if (numOfDims == 2) {
 	OUTPUT = fopen ("./output.dat", "w");
 	fwrite(fctCalcOutput.outputData->data, sizeof(REAL4), 2 * \
 	       fctCalcOutput.outputData->dimLength->data[0] * \
 	       fctCalcOutput.outputData->dimLength->data[1], OUTPUT);
-	fclose(OUTPUT); 
+	fclose(OUTPUT);
       }
-       
-    } 
-    
+
+    }
+
     /* free the components of fctCalcOutput */
     LALFCTCOMPDestroyArray(&status, &(fctCalcOutput.outputData));
-    fctCalcOutput.outputData = 0;   
+    fctCalcOutput.outputData = 0;
     LALU4DestroyArray(&status, &(fctCalcOutput.rowIndex));
     fctCalcOutput.rowIndex = 0;
 
     /* free the inputData Vector */
     LALFCTCOMPDestroyVector(&status, &inputDataVector);
-   
+
     /*    printf("numOfDim = %d\n", fctPlan.numOfDims);*/
     /* Destroy the fctPlan */
     LALfctDestroyPlan(&status, &fctPlan);
     TestStatus( &status, CODES( 0 ), 1 );
-    
-    /*Check for Memory leaks.  This is only effective if you set debuglevel 
+
+    /*Check for Memory leaks.  This is only effective if you set debuglevel
       to something like LALALLDBG. (some value that causes memory checks at
       least.) */
     LALCheckMemoryLeaks();
 
-  } /* for dataSize */ 
-  
+  } /* for dataSize */
+
   return 0;
 }
 
@@ -451,7 +451,7 @@ void generateData(LALFCTCOMPVector *inputDataVector, UINT2 numOfDims, \
       printf("for %d dimensions.\n", numOfDims);
       exit(1);
       break;
-    } 
+    }
     inputDataVector->data[i].re = cos(phase) + noise*mygasdev();
     inputDataVector->data[i].im = sin(phase) + noise*mygasdev();
   }
@@ -461,7 +461,7 @@ void readData(LALFCTCOMPVector *inputDataVector) {
   /* This function fills the inputDataVector with data from input.dat */
   FILE *INPUT;
   int Check;
-  
+
   INPUT = fopen("./input.dat", "r");
   if (INPUT == NULL) {
     printf("Error couldn't read Data File.\n");
@@ -495,15 +495,15 @@ LALFCTREAL mygasdev(void) {
     iset = 1;
     return (v2 * fac);
   } else {
-    iset = 0; 
+    iset = 0;
     return gset;
   }
 }
 
 
 
-void fctTestCheckOutput( LALfctCalcOutput *fctCalcOutput){ 
-  /* This function calculates the power in each row and keeps track of the 
+void fctTestCheckOutput( LALfctCalcOutput *fctCalcOutput){
+  /* This function calculates the power in each row and keeps track of the
      minimum and maximum power.  It then prints out the minimum, maximum, and
      the difference.  It's just for debugging and sanity checks. */
 
@@ -513,9 +513,9 @@ void fctTestCheckOutput( LALfctCalcOutput *fctCalcOutput){
   LALFCTREAL power;
   LALFCTREAL powermax = 0;
   LALFCTREAL powermin = 0;
- 
+
   for (row = 0; row < fctCalcOutput->outputData->dimLength->data[0]; row++) {
-    location =  row * (fctCalcOutput->outputData->dimLength->data[1]); 
+    location =  row * (fctCalcOutput->outputData->dimLength->data[1]);
     power = 0;
     for (elementCursor = 0; \
 	   elementCursor < fctCalcOutput->outputData->dimLength->data[1]; \
@@ -536,24 +536,24 @@ void fctTestCheckOutput( LALfctCalcOutput *fctCalcOutput){
     }
   }
   printf("powermax = %f, powermin = %f, Difference = %g\n", powermax, powermin, \
-	 powermax-powermin); 
+	 powermax-powermin);
 }
 
 
-void fctTestFindMax( LALfctCalcOutput *fctCalcOutput){ 
+void fctTestFindMax( LALfctCalcOutput *fctCalcOutput){
   /* This function finds the maximum in the output and prints it's location. */
   UINT2 J;
   UINT4 row;
   UINT4 location;
   UINT4 elementCursor;
-  UINT4 maxRow = 0;  
+  UINT4 maxRow = 0;
   UINT4 maxRowElement = 0;
-  
+
   LALFCTREAL temp;
   LALFCTREAL max = 0;
-  
+
   for (row = 0; row < fctCalcOutput->outputData->dimLength->data[0]; row++) {
-    location =  row * (fctCalcOutput->outputData->dimLength->data[1]); 
+    location =  row * (fctCalcOutput->outputData->dimLength->data[1]);
     for (elementCursor = 0; \
 	   elementCursor < fctCalcOutput->outputData->dimLength->data[1]; \
 	   elementCursor++) {
@@ -569,19 +569,19 @@ void fctTestFindMax( LALfctCalcOutput *fctCalcOutput){
     }
   }
   printf("maxRow = %d, maxRowElement = %d: ", maxRow, maxRowElement);
- 
-  location =  maxRow * fctCalcOutput->rowIndex->dimLength->data[1]; 
+
+  location =  maxRow * fctCalcOutput->rowIndex->dimLength->data[1];
   printf("(%d", maxRowElement);
   for (J = 0; J < fctCalcOutput->rowIndex->dimLength->data[1]; J++) {
     printf(", %d", fctCalcOutput->rowIndex->data[location+J]);
   }
   printf("): max = %f\n", max);
-  
+
 }
 
 
 static void TestStatus( LALStatus *status, const char *ignored, int exitcode ) {
-  /* This function tests the status structure. I took most of this from 
+  /* This function tests the status structure. I took most of this from
      one of the LAL fft test programs. */
   char  str[64];
   char *tok;
@@ -600,7 +600,7 @@ static void TestStatus( LALStatus *status, const char *ignored, int exitcode ) {
       }
     }
   }
-  
+
   REPORTSTATUS( status );
   fprintf( stderr, "\nExiting to system with code %d\n", exitcode );
   exit( exitcode );

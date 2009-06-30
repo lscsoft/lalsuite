@@ -567,7 +567,7 @@ XLALFreeCoincRingdown(
     CoincRingdownTable        **coincPtr
     )
 {
-  static const char *func = "FreeCoincRingdown";
+  /*static const char *func = "FreeCoincRingdown";*/
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   EventIDColumn                *prevID     = NULL;
   EventIDColumn                *thisID     = NULL;
@@ -618,8 +618,10 @@ LALAddSnglRingdownToCoinc(
     )
 /* </lalVerbatim> */
 {
+  /*
   CoincRingdownTable  *coincRingdown = NULL;
   EventIDColumn       *eventId = NULL;
+  */
 
   INITSTATUS( status, "LALAddSnglRingdownToCoinc", COINCRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1510,7 +1512,7 @@ XLALRingdownDistanceCut(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "RingdownDistanceCut";
+  /*static const char *func = "RingdownDistanceCut";*/
   InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
   CoincRingdownTable   *thisCoinc = NULL;
@@ -1677,7 +1679,7 @@ XLALCoincRingdownTimeNS (
   {
     if ( coincRingdown->snglRingdown[ifoNumber] )
     {
-      startTime = XLALGPStoINT8(
+      startTime = XLALGPSToINT8NS(
           &(coincRingdown->snglRingdown[ifoNumber]->start_time) );
       return(startTime);
     }

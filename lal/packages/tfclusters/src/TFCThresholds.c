@@ -23,10 +23,10 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
- 
+
 
 /******** <lalVerbatim file="TFCThresholdsCV"> ********
 Author: Sylvestre, J
@@ -64,8 +64,8 @@ static REAL4 *vector(long nl, long nh);
 
 static void free_vector(REAL4 *v, long nl);
 
-static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8), 
-		    REAL4 x1, REAL4 x2, 
+static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8),
+		    REAL4 x1, REAL4 x2,
 		    REAL4 tol,
 		    REAL8 P0, REAL8 Q, REAL8 bpp);
 
@@ -84,11 +84,11 @@ LALTFCRiceThreshold ( LALStatus *status,
 \idx{LALTFCRiceThreshold()}
 
 \subsubsection*{Description}
-Computes the thresholds on the power at every frequency, using a best fit to the Rice distribution. 
+Computes the thresholds on the power at every frequency, using a best fit to the Rice distribution.
 
 \subsubsection*{Notes}
 \begin{itemize}
-\item \texttt{rho} must be pointing to allocated memory. 
+\item \texttt{rho} must be pointing to allocated memory.
 \end{itemize}
 \vfill{\footnotesize\input{TFCThresholdsCV}}
 ********* </lalLaTeX> ********/
@@ -103,7 +103,7 @@ LALTFCRiceThreshold ( LALStatus *status,
 		      )
 {
   UINT4 i;
-  
+
 
   INITSTATUS (status, "LALTFCRiceThreshold", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
@@ -121,13 +121,13 @@ LALTFCRiceThreshold ( LALStatus *status,
 
   for(i=0; i<thr->nFreq; i++) {
 
-    rho[i] = RiceThreshold(thr->bpp, 
+    rho[i] = RiceThreshold(thr->bpp,
 			   thr->Q[i],
 			   thr->P0[i],
 			   thr->eGoal);
 
     if(numError > 1) {ABORT(status,TFCTHRESHOLDSH_ENERR,TFCTHRESHOLDSH_MSGENERR);}
-    
+
     if(numError) {rho[i] = 1e30;}
   }
 
@@ -306,8 +306,8 @@ static void free_vector(REAL4 *v, long nl)
 #define EPS 3.0e-8
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
-static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8), 
-		    REAL4 x1, REAL4 x2, 
+static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8),
+		    REAL4 x1, REAL4 x2,
 		    REAL4 tol,
 		    REAL8 P0, REAL8 Q, REAL8 bpp)
 {
@@ -382,7 +382,7 @@ static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8),
 #define MAXIT 20000
 
 #if 0
-static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8), 
+static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8),
              REAL4 x1, REAL4 x2,
              REAL4 xacc,
              REAL8 P0, REAL8 Q, REAL8 bpp)

@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
@@ -62,9 +62,9 @@ Compute standardized burst information.
 /* <lalVerbatim> */
 void
 LALBurstOutput(
-	       LALStatus *status,           
-	       EventIDColumn *output,  
-	       EventIDColumn *Input,   
+	       LALStatus *status,
+	       EventIDColumn *output,
+	       EventIDColumn *Input,
 	       BurstOutputParameters *params
 	       ) {
 /* </lalVerbatim> */
@@ -88,7 +88,7 @@ Description of the function...
   static BurstOutputSpecStat *bsstat = NULL; /* linked list of spectrogram stats */
   static COMPLEX8Vector *Hvec = NULL; /* buffer for fft */
   static REAL4Vector *Dvec = NULL;    /* buffer for fft */
-  static UINT4 Hlen = 0, 
+  static UINT4 Hlen = 0,
     Dlen = 0;
 
   BurstOutputDataSegment *data;
@@ -152,7 +152,7 @@ Description of the function...
 
     DETATCHSTATUSPTR (status);
     RETURN (status);
-  } 
+  }
 
   /* trivial input check */
   ASSERT ( output, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
@@ -164,7 +164,7 @@ Description of the function...
 
   ASSERT( params->data->data->data->length == 1, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
 
-  
+
   data = params->data;
 
 
@@ -178,7 +178,7 @@ Description of the function...
   if(!Hvec) {
     Hlen = data->data->data->vectorLength/2 + 1;
     LALCCreateVector( status->statusPtr, &Hvec, data->data->data->vectorLength/2 + 1);
-    CHECKSTATUSPTR (status);	  
+    CHECKSTATUSPTR (status);
   }
 
   /* loop over input */
@@ -218,7 +218,7 @@ Description of the function...
       /* the real thing */
 /******** <lalLaTeX file="StdBurstSearchC"> ********
 \subsection*{Algorithm}
-\begin{itemize}      
+\begin{itemize}
 ********* </lalLaTeX> ********/
 
       {
@@ -394,7 +394,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    P2 = bptr->Q[l] / (REAL8)k;
 
 	    R = 2.0*Pm*Pm - P2;
-	    
+
 	    if(R>0.0) {
 	      R = sqrt(R);
 	    } else {
@@ -486,8 +486,8 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  LALRiceLikelihood(status->statusPtr, &q0, 0.0, &rp);
 	  if(status->statusPtr->statusCode) {
 	    char msg[1024];
-	    float bw = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime); 
-	    float fr = (REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime); 
+	    float bw = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime);
+	    float fr = (REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime);
 	    sprintf(msg,"Error in LALRiceLikelihood at frequency %g Hz, BW = %g Hz; %g %g %g %g %g %g",fr,bw,bptr->norm,Hvec->data[l].re,Hvec->data[l].im,rp.P0,rp.Q,rp.P);
 	    ABORT(status, 111, msg);
 	  }
@@ -500,7 +500,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    dfri.xmin = 0.0;
 	    dfri.xmax = rp.P;
 	    dfri.function = LALRiceLikelihood;
-	  
+
 	    LALDBisectionFindRoot(status->statusPtr, &Pmax, &dfri, &rp);
 	    CHECKSTATUSPTR (status);
 	  } else {
@@ -525,7 +525,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    if(ar > 30.0) {
 	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + 27.3847;
 	    } else {
-	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + log(LALi0(ar)); 
+	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + log(LALi0(ar));
 	    }
 
 	  }
@@ -546,7 +546,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 ********* </lalLaTeX> ********/
 	/* set "central_freq" to maximum of power */
 	if(mfi>0) {
-	  central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
+	  central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);
 	} else {
 	  central_freq = input->central_freq;
 	}
@@ -557,7 +557,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	amplitude = sqrt(totalPower * (data->data->deltaT * bptr->nTime));
 
-/*set amplitude to sqrt(maximum of power); get strain per rtHz 
+/*set amplitude to sqrt(maximum of power); get strain per rtHz
   amplitude = sqrt(mlik * 2.0 * data->data->deltaT); */
 
 	/*****************************************************************/
@@ -572,7 +572,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  REAL8 thr;
 	  INT4 pind, sdur, tdel;
 	  INT4 msdur, mpeak = mfi - llo;
-	  
+
 	  msdur = FPower->length - mpeak;
 	  if(mpeak < msdur) {
 	    msdur = mpeak;
@@ -665,7 +665,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  CHECKSTATUSPTR (status);
 
 	  f.directCoef = &a1;
-	  
+
 	  f.history = NULL;
 	  LALCreateVector(status->statusPtr, &(f.history), 1+a1.length);
 	  CHECKSTATUSPTR (status);
@@ -724,12 +724,12 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  a2.data = NULL;
 	  a2.length = wforder;
-	  
+
 	  LALLPC(status->statusPtr, &a2, &e2v, wforder);
 	  CHECKSTATUSPTR (status);
 
 	  f.directCoef = &a2;
-	  
+
 	  bzero(f.history->data, f.history->length * sizeof(REAL4));
 
 	  a2.data[0] = 0.0;
@@ -765,7 +765,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  LALDestroyVector(status->statusPtr, &delta);
 	  CHECKSTATUSPTR (status);
-	  
+
 	  for(i=0; i<e2v.length; i++) {
 	    e2[i] = e2t[i] - e2[i];
 	  }
@@ -794,7 +794,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/* look at whitened data near the burst */
 	llo = start_index;
 	lhi = start_index + nTime;
-	
+
 	if(start_index >= e2_start) {
 	  filter_delay = e2_filter_delay;
 	  r4ptr = e2;
@@ -931,7 +931,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    REAL8 thr;
 	    INT4 pind, sdur, tdel;
 	    INT4 msdur, mpeak = mfi - llo - 1;
-	  
+
 	    msdur = FPower->length - mpeak;
 	    if(mpeak < msdur) {
 	      msdur = mpeak;
@@ -995,7 +995,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	confidence /= log(10.0);
 
       }
-      
+
       break;
 
     default:
@@ -1041,7 +1041,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
     strncpy(boutput->ifo,input->ifo,LIGOMETA_IFO_MAX);
     strncpy(boutput->search,input->search,LIGOMETA_SEARCH_MAX);
     strncpy(boutput->channel,input->channel,LIGOMETA_CHANNEL_MAX);
-    
+
     if(Input->snglTransdataTable) {
       output->snglTransdataTable = Input->snglTransdataTable;
     }
@@ -1060,7 +1060,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
   RETURN (status);
 }
 
-void 
+void
 LALRiceLikelihood(
 		  LALStatus *status,
 		  REAL8 *llik,
@@ -1077,7 +1077,7 @@ LALRiceLikelihood(
   Q = params->Q + Qs;
 
   x = 2.0*sqrt(params->P*Q)/params->P0;
-  
+
   if(Q>0.0) {
     /*
     *llik = exp(-(params->P+Q)/params->P0) * (-LALi0(x) + params->P*LALi1(x)/sqrt(params->P*Q)) / (params->P0 * params->P0);
@@ -1087,7 +1087,7 @@ LALRiceLikelihood(
     *llik = exp(-params->P/params->P0) * (params->P-params->P0) / pow(params->P0,3.0);
   }
 
-  /* JC: isnan is not allowed. 
+  /* JC: isnan is not allowed.
   if(isnan(*llik)) {
     CHAR ebuf[2048];
     sprintf(ebuf,"Q=%g P=%g P0=%g x=%g *llik=%g io=%g i1=%g\n",Q,params->P,params->P0,x,*llik,LALi0e(x),LALi1e(x));
@@ -1301,7 +1301,7 @@ static REAL8 BB[] =
 
 /*
 static REAL8 LALi1(REAL8 x)
-{ 
+{
 REAL8 y, z;
 
 z = fabs(x);
@@ -1321,7 +1321,7 @@ return( z );
 */
 
 static REAL8 LALi1e( REAL8 x )
-{ 
+{
 REAL8 y, z;
 
 z = fabs(x);

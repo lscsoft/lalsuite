@@ -362,7 +362,7 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
-	  }	 
+	  }
 	} /* if (chan2 != 0) */
     }
   else
@@ -551,12 +551,12 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
-	  }	 
+	  }
 	  if ( XLALAddSymmTensor3s ( &detT->im, &detT1.im, &detT2.im ) != 0 ) {
 	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
-	  }	 
+	  }
 	} /* if (chan2 != 0) */
   } else {
     if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, chan1, freq_skypos ) != 0 ) {
@@ -648,7 +648,7 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   coeffBB.re += 0.25f * cospha * sinc_eta;
   coeffBB.im += 0.25f * sinpha * sinc_eta;
 
-  /* now we can express the detector tensor in the rigid adiabatic approximation (RAA): 
+  /* now we can express the detector tensor in the rigid adiabatic approximation (RAA):
    * detT = coeffAA * basisA - coeffBB * basisB
    */
   {

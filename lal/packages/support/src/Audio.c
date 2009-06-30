@@ -53,7 +53,7 @@ static int output_wav_hdr( FILE *fp, INT4 samplerate, UINT4 datasize )
 	UINT4 totalsize = datasize + 36; /* for header */
 	INT4 byterate = samplerate * sizeof( UINT2 );
 
-	/* 
+	/*
 	 *
 	 * Write RIFF Header
 	 *
@@ -72,7 +72,7 @@ static int output_wav_hdr( FILE *fp, INT4 samplerate, UINT4 datasize )
 	fprintf( fp, "WAVE" );
 
 
-	/* 
+	/*
 	 *
 	 * Write Format Chunk
 	 *
@@ -275,7 +275,7 @@ int XLALAudioWAVRecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 	if ( ! series->data->length )
 		XLAL_ERROR( func, XLAL_EBADLEN );
 
-	datasize  = series->data->length * sizeof( UINT2 ); 
+	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
 		XLAL_ERROR( func, XLAL_EINVAL );
@@ -311,7 +311,7 @@ int XLALAudioWAVRecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series )
 	if ( ! series->data->length )
 		XLAL_ERROR( func, XLAL_EBADLEN );
 
-	datasize  = series->data->length * sizeof( UINT2 ); 
+	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
 		XLAL_ERROR( func, XLAL_EINVAL );
@@ -348,7 +348,7 @@ int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series )
 	if ( ! series->data->length )
 		XLAL_ERROR( func, XLAL_EBADLEN );
 
-	datasize  = series->data->length * sizeof( UINT2 ); 
+	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
 		XLAL_ERROR( func, XLAL_EINVAL );
@@ -384,7 +384,7 @@ int XLALAudioAURecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series )
 	if ( ! series->data->length )
 		XLAL_ERROR( func, XLAL_EBADLEN );
 
-	datasize  = series->data->length * sizeof( UINT2 ); 
+	datasize  = series->data->length * sizeof( UINT2 );
 	samplerate = (INT4)(1.0/series->deltaT);
 	if ( samplerate < 1 )
 		XLAL_ERROR( func, XLAL_EINVAL );

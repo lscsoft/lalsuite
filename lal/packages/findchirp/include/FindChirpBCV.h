@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCV.h
  *
  * Author: Brown, D. A. and Messaritaki, E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpBCVHV">
 Author: Brown, D. A. and Messaritaki, E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpBCV.h}}
@@ -72,8 +72,8 @@ extern "C" {
 NRCSID (FINDCHIRPBCVH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -123,7 +123,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpBCVHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0

@@ -72,7 +72,7 @@ Provides a set of utilities for manipulating \texttt{multiInspiralTable}s.
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
 {
-  return(XLALGPStoINT8(&x->geocent_end_time));
+  return(XLALGPSToINT8NS(&x->geocent_end_time));
 }
 
 /*
@@ -81,9 +81,11 @@ static INT8 geocent_end_time(const SimInspiralTable *x)
 
 static INT8 end_time(const MultiInspiralTable *x)
 {
-	return(XLALGPStoINT8(&x->end_time));
+	return(XLALGPSToINT8NS(&x->end_time));
 }
 
+#if 0
+/* functions currently unused */
 static INT4 end_time_sec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsSeconds);
@@ -93,6 +95,7 @@ static INT4 end_time_nsec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsNanoSeconds);
 }
+#endif
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
@@ -236,8 +239,8 @@ XLALClusterMultiInspiralTable (
 
   while ( nextEvent )
   {
-    INT8 thisTime = XLALGPStoINT8( &(thisEvent->end_time) );
-    INT8 nextTime = XLALGPStoINT8( &(nextEvent->end_time) );;
+    INT8 thisTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
+    INT8 nextTime = XLALGPSToINT8NS( &(nextEvent->end_time) );;
 
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
@@ -300,8 +303,8 @@ XLALTimeCutMultiInspiral(
   MultiInspiralTable    *inspiralEventList = NULL;
   MultiInspiralTable    *thisEvent = NULL;
   MultiInspiralTable    *prevEvent = NULL;
-  INT8                  startTimeNS = XLALGPStoINT8( startTime );
-  INT8                  endTimeNS = XLALGPStoINT8( endTime );
+  INT8                  startTimeNS = XLALGPSToINT8NS( startTime );
+  INT8                  endTimeNS = XLALGPSToINT8NS( endTime );
 
 
   /* Remove all the triggers before and after the requested */
@@ -412,7 +415,7 @@ XLALPlayTestMultiInspiral(
       MultiInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      triggerTime = XLALGPStoINT8( &(tmpEvent->end_time) );
+      triggerTime = XLALGPSToINT8NS( &(tmpEvent->end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
@@ -533,7 +536,7 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              *ifo;
+  CHAR              *ifo = NULL;
 
   int numSimFound  = 0;
   int coincidence = 0;
@@ -566,7 +569,7 @@ XLALMultiSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
 
         if( inspiralTime < (simGeocentTime - earthRadiusNS - injectWindowNS ) )
         {
@@ -594,7 +597,7 @@ XLALMultiSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
 
         if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {

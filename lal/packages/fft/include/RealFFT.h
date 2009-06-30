@@ -25,18 +25,18 @@
  *
  * \section{Header \texttt{RealFFT.h}}
  * \label{s:RealFFT.h}
- * 
+ *
  * Performs real-to-complex and complex-to-real FFTs.
- * 
+ *
  * \subsection*{Synopsis}
  * \begin{verbatim}
  * #include <lal/RealFFT.h>
  * \end{verbatim}
- * 
+ *
  * \noindent Perform real-to-complex and complex-to-real fast Fourier
  * transforms of vectors, and sequences of vectors using the package
  * FFTW~\cite{fj:1998}.
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _REALFFT_H
@@ -86,9 +86,9 @@ NRCSID( REALFFTH, "$Id$" );
 
 /**** </lalErrTable> */
 /**** <lalLaTeX>
- * 
+ *
  * \subsection*{Structures}
- * 
+ *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
 typedef struct tagREAL4FFTPlan REAL4FFTPlan;
@@ -97,10 +97,10 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
 #define RealFFTPlan REAL4FFTPlan
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains the parameters necessary for performing an FFT of a
  * given size and direction.  The contents should not be manually adjusted.
- * 
+ *
  * \newpage\input{RealFFTC}
  *
  * \newpage\subsection{XLAL Functions}
@@ -113,7 +113,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
  * REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl );
  * void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
- * 
+ *
  * int XLALREAL4ForwardFFT( COMPLEX8Vector *output, REAL4Vector *input,
  *     REAL4FFTPlan *plan );
  * int XLALREAL4ReverseFFT( REAL4Vector *output, COMPLEX8Vector *input,
@@ -127,7 +127,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl );
  * REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl );
  * void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
- * 
+ *
  * int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
  *     REAL8FFTPlan *plan );
  * int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
@@ -153,7 +153,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * \idx{XLALREAL8ReverseFFT}
  * \idx{XLALREAL8VectorFFT}
  * \idx{XLALREAL8PowerSpectrum}
- * 
+ *
  * \subsubsection*{Description}
  *
  * The \verb+REAL4+ routines are described below.  These use single-precision
@@ -163,7 +163,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * \verb+REAL8Vector+s into \verb+COMPLEX16Vector+s.
  *
  * The routine \verb+XLALCreateREAL4FFTPlan+ creates a \verb+REAL4FFTPlan+
- * structure to perform FFTs of vectors of length \verb+size+.  If 
+ * structure to perform FFTs of vectors of length \verb+size+.  If
  * \verb+fwdflg+ is non-zero then the plan is created to perform forward
  * (real-to-complex) FFTs with a negative exponential sign.  Otherwise
  * the plan is created to perform reverse (complex-to-real) FFTs with a
@@ -183,7 +183,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * memory that was allocated in the structure as well as the structure
  * itself.  It can be used on either forward or reverse plans.
  *
- * \verb+XLALREAL4ForwardFFT+ and 
+ * \verb+XLALREAL4ForwardFFT+ and
  * \verb+XLALREAL4ReverseFFT+ perform forward (real to complex) and
  * reverse (complex to real) transforms respectively.  The plan supplied
  * to these routines must be correctly generated for the direction of the
@@ -201,11 +201,11 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  *
  * \subsubsection*{Return Values}
  *
- * Upon success, 
+ * Upon success,
  * \verb+XLALCreateREAL4FFTPlan+,
- * \verb+XLALCreateForwardREAL4FFTPlan+, and 
+ * \verb+XLALCreateForwardREAL4FFTPlan+, and
  * \verb+XLALCreateReverseREAL4FFTPlan+ return a pointer to a newly-allocated
- * FFT plan.  Upon failure, they return a \verb+NULL+ pointer and set 
+ * FFT plan.  Upon failure, they return a \verb+NULL+ pointer and set
  * \verb+xlalErrno+ to one of the following values:
  * \verb+XLAL_EBADLEN+ if \verb+size+ is not greater than zero,
  * \verb+XLAL_ENOMEM+ if a memory allocation failed, or

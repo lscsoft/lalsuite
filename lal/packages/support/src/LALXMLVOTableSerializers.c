@@ -916,7 +916,7 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const
 }
 
 
-
+
 
 
 /**
@@ -1151,7 +1151,7 @@ XLALVOTableDoc2gsl_vectorByName(const xmlDocPtr xmlDocument,
 
 
 
-
+
 
 /**
  * \brief Serializes a \c gsl_matrix into a VOTable XML %node

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVSpin.h
  *
  * Author: Brown, D. A. and Jones, G.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,14 +32,14 @@
 <lalVerbatim file="FindChirpBCVSpinHV">
 Author: Brown, D. A. and Jones, G
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpBCVSpin.h}}
 \label{s:FindChirpBCVSpin.h}
 
 Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using the spinning BCV detection 
+and generate binary inspiral chirps using the spinning BCV detection
 template family.
 
 \subsection*{Synopsis}
@@ -72,8 +72,8 @@ extern "C" {
 NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -120,7 +120,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpBCVSpinHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0
@@ -163,7 +163,7 @@ LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,             
+    FindChirpFilterParams      *params,
     FindChirpDataParams        *fcDataParams
   );
 

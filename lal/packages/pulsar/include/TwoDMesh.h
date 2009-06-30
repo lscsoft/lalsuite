@@ -299,7 +299,7 @@ covered with a single column of tiles.
 
 typedef struct tagTwoDColumnParamStruc {
   REAL4 domain[2];
-  REAL4 leftRange[2];  
+  REAL4 leftRange[2];
   REAL4 rightRange[2];
   REAL4 leftClip[2];
   REAL4 rightClip[2];

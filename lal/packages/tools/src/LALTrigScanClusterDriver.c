@@ -330,7 +330,7 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
     {
         const SnglInspiralTable *thisEvent = NULL;
         INT4  kk;
-        REAL8 a11, a23, a22, a33, a12, a13, tcFootPrint, t0FootPrint, denom;
+        REAL8 a11, a23, a22, a33, a12, a13, tcFootPrint, denom;
 
         if (condenseIn->vrbflag)
               fprintf (stderr, "Input trigger list seems to have the metric ... using it \n");

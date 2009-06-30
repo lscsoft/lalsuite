@@ -86,6 +86,8 @@ in Equation (\ref{eq:ode2}).
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 /* structure to provide M and eta. */
 typedef struct
@@ -415,6 +417,10 @@ LALInspiralEccentricityEngine(
    REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
+
+   /* ff and phi are unused in this function */
+   UNUSED(ff);
+   UNUSED(phi);
 
    INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
    ATTATCHSTATUSPTR(status);

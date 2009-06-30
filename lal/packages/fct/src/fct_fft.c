@@ -48,7 +48,7 @@ void fct_setup_fft(fct_plan *plan, fct_status* const status)
     status->fct_errno = FCT_ENOT_PWR2;
     return;
   }
-      
+
   /*Allocate the memory for the fct_fft_plan structure.*/
   fft_plan = (fct_fft_plan *)fct_malloc(sizeof(fct_fft_plan));
 
@@ -56,7 +56,7 @@ void fct_setup_fft(fct_plan *plan, fct_status* const status)
       status->fct_errno = FCT_EMEM;
       return;
   }
-  
+
   /*Create the plan for fftw*/
   fft_plan->plan = fftw_create_plan(fft_length, FFTW_BACKWARD, 0);
   if (fft_plan->plan == 0)
@@ -90,7 +90,7 @@ void fct_destroy_fft_plan(fct_plan *plan)
 {
   /*Destroy FFTW plan*/
   fftw_destroy_plan(plan->fft_plan->plan);
-  
+
   /*Free the fct_fft_plan memory*/
   fct_free(plan->fft_plan);
 }
@@ -108,7 +108,7 @@ int powerof2(int data)
     data = data >> 1;
   }
 
-  if (sum <= 1) { 
+  if (sum <= 1) {
     return (1);
   } else {
     return (0);

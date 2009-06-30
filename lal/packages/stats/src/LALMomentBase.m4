@@ -67,7 +67,7 @@ void FUNC (
 	if ( whichMoment > 2 )
 	{
 		for (iterator = 0; iterator < length; iterator++)
-		{	
+		{
 			base = (data->data[iterator] - ave);
 			sum = pow( base, whichMoment );
 			momentn += sum;

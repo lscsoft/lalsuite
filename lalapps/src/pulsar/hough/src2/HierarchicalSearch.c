@@ -111,7 +111,7 @@
  */
 
 
-
+#include "../../FDS_isolated/ComputeFstatREAL4.h"
 #include"HierarchicalSearch.h"
 
 
@@ -205,7 +205,7 @@ void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8Vec
 void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, MultiNoiseWeightsSequence *stackMultiNoiseWeights,
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in);
 
-void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
+void PrintFstatVec (LALStatus *status, REAL4FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
 void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp, LIGOTimeGPS refTime);
@@ -317,7 +317,7 @@ int MAIN( int argc, char *argv[]) {
   UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
-  static REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
+  static REAL4FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;		   
 
@@ -413,6 +413,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
+  BOOLEAN uvar_GPUready = 0;
 
   global_status = &status;
 
@@ -497,6 +498,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
+
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -858,7 +861,7 @@ int MAIN( int argc, char *argv[]) {
   /* allocate some fstat memory */
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
-  fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
+  fstatVector.data = (REAL4FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL4FrequencySeries));
   if ( fstatVector.data == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
     return(HIERARCHICALSEARCH_EMEM);
@@ -1014,14 +1017,14 @@ int MAIN( int argc, char *argv[]) {
 	  fstatVector.data[k].deltaF = dFreqStack;
 	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
 	  if (fstatVector.data[k].data == NULL) {
-	    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data = (REAL4Sequence *)LALCalloc( 1, sizeof(REAL4Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
-	    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
+	    fstatVector.data[k].data->data = (REAL4 *)LALCalloc( 1, binsFstat1 * sizeof(REAL4));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
@@ -1029,14 +1032,14 @@ int MAIN( int argc, char *argv[]) {
 
 	  } 
 	  else {
-	    fstatVector.data[k].data = (REAL8Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data = (REAL4Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL4Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
-	    fstatVector.data[k].data->data = (REAL8 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL8));
+	    fstatVector.data[k].data->data = (REAL4 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL4));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
@@ -1049,6 +1052,7 @@ int MAIN( int argc, char *argv[]) {
 
       } /* fstat memory allocation block */
       
+      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
       
 	/* loop over fdot values
 	   -- spindown range and resolutionhas been set earlier */
@@ -1064,21 +1068,42 @@ int MAIN( int argc, char *argv[]) {
 	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
-	  for ( k = 0; k < nStacks; k++) {
-	    
-	    /* set spindown value for Fstat calculation */
-	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
-	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
-	    
-	    /* this is the most costly function. We here allow for using an architecture-specific optimized
-	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
-					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
-					     stackMultiDetStates.data[k], &CFparams), &status);
-	  }
-	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
-	  
+          if ( !uvar_GPUready )
+            {
+              for ( k = 0; k < nStacks; k++)
+                {
+                  /* set spindown value for Fstat calculation */
+                  thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+                  thisPoint.fkdot[0] = fstatVector.data[k].f0;
+                  /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+                  /* this is the most costly function. We here allow for using an architecture-specific optimized
+                     function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+                  LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
+                                                   stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+                                                   stackMultiDetStates.data[k], &CFparams), &status);
+                } /* for k < nStacks */
+            }
+          else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
+            {
+              /* set spindown value for Fstat calculation */
+              thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+              thisPoint.fkdot[0] = fstatVector.data[0].f0;
+              /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+              /* this is the most costly function. We here allow for using an architecture-specific optimized
+               * function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+              if ( XLALComputeFStatFreqBandVector ( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights,
+                                                    &stackMultiDetStates, CFparams.Dterms, &cfvBuffer) != XLAL_SUCCESS )
+                {
+                  LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBandVector() failed with errno = %d\n", xlalErrno );
+                  return XLAL_EFUNC;
+                }
+
+            } /* if GPUready */
+
+          LogPrintfVerbatim(LOG_DETAIL, "done\n");
+
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
@@ -1113,7 +1138,7 @@ int MAIN( int argc, char *argv[]) {
 		      meanN, sigmaN, semiCohPar.threshold);
 	    
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
-	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
+	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, (REAL4)uvar_peakThrF), &status);
 	      
 	    /* get candidates */
 	    /* this is the second most costly function. We here allow for using architecture-specific
@@ -1156,6 +1181,7 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
+      XLALEmptyComputeFBufferREAL4V ( &cfvBuffer );
 
       /* continue forward till the end if uvar_skyPointIndex is set
 	 ---This probably doesn't make sense when checkpointing is turned on */
@@ -2089,8 +2115,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 */
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
-			  REAL8FrequencySeriesVector *FstatVect,
-			  REAL8  thr)
+                          REAL4FrequencySeriesVector *FstatVect,
+			  REAL4  thr)
 {
   INT4 j, k;
   INT4 nStacks, nSearchBins, nPeaks;
@@ -2129,14 +2155,14 @@ void FstatVectToPeakGram (LALStatus *status,
   /* loop over each stack and set peakgram */
   for (k=0; k<nStacks; k++) {
     INT4 *pInt; /* temporary pointer */
-    REAL8 *pV;  /* temporary pointer */
+    REAL4 *pV;  /* temporary pointer */
     REAL8 f0, deltaF;
     pV = FstatVect->data[k].data->data;
 
     /* loop over Fstat vector, count peaks, and set upg values */
     nPeaks = 0;
     for(j=0; j<nSearchBins; j++) {
-      if ( (REAL4)(pV[j]) > (REAL4)thr ) {
+      if (pV[j] > thr ) {
 	nPeaks++;	
 	upg[j] = 1; 
       }
@@ -2710,7 +2736,7 @@ void PrintSemiCohCandidates(LALStatus *status,
 
 /** Print Fstat vectors */
   void PrintFstatVec (LALStatus *status,
-		      REAL8FrequencySeries *in,
+		      REAL4FrequencySeries *in,
 		      FILE                 *fp,
 		      PulsarDopplerParams  *thisPoint,
 		      LIGOTimeGPS          refTime,

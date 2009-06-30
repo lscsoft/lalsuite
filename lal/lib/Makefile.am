@@ -42,13 +42,14 @@ lal_version_LDADD = liblal.la
 MOSTLYCLEANFILES = LALBuildDate.c git_info.sed .vcsinfo
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
-	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 .vcsinfo:
-	touch .vcsinfo
+	@touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
-	d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
-	test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
-	-rm -f .vcsinfo
+	@echo "creating LALVCSInfo.h"
+	@d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
+	@test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
+	@-rm -f .vcsinfo
 
 all-local: include-link
 include-link: LALVCSInfo.h
@@ -57,5 +58,4 @@ include-link: LALVCSInfo.h
 		if test ! -r $$targetdir/LALVCSInfo.h ; then \
 			rm -f $$targetdir/LALVCSInfo.h; \
 			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
-			echo "$(LN_S) $$d/LALVCSInfo.h $$targetdir"; \
 		fi

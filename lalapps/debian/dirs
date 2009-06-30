@@ -1,4 +1,6 @@
 opt/lscsoft/lalapps/bin
-opt/lscsoft/lalapps/sbin
 opt/lscsoft/lalapps/etc
-opt/lscsoft/lalapps/share
+opt/lscsoft/lalapps/lib
+opt/lscsoft/lalapps/sbin
+opt/lscsoft/lalapps/share/lalapps
+opt/lscsoft/lalapps/share/man
