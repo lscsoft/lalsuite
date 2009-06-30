@@ -42,7 +42,7 @@ extern "C" {
  * This enumeration contains all supported VOTable data types.
  * They are used for \c PARAM elements for instance.
  *
- * \sa XLALCreateVOTableParamNode
+ * \sa XLALCreateVOTParamNode
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -69,7 +69,7 @@ typedef enum {
  * This enumeration contains all supported attributes of the
  * VOTable \c PARAM element
  *
- * \sa XLALGetSingleVOTableResourceParamAttribute
+ * \sa XLALGetSingleVOTResourceParamAttribute
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -90,27 +90,27 @@ typedef enum {
 } VOTABLE_PARAM_ATTRIBUTE;
 
 
-xmlNodePtr XLALCreateVOTableParamNode(const char *name,
-                                      const char *unit,
-                                      VOTABLE_DATATYPE datatype,
-                                      const char *arraysize,
-                                      const char *value);
+xmlNodePtr XLALCreateVOTParamNode(const char *name,
+                                  const char *unit,
+                                  VOTABLE_DATATYPE datatype,
+                                  const char *arraysize,
+                                  const char *value);
 
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
-                                         const char *identifier,
-                                         const xmlNodePtr childNodeList);
+xmlNodePtr XLALCreateVOTResourceNode(const char *type,
+                                     const char *identifier,
+                                     const xmlNodePtr childNodeList);
 
-xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree);
+xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree);
 
-INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
-                                     xmlChar **xmlStringBuffer,
-                                     INT4 *xmlStringBufferSize);
+INT4 XLALCreateVOTStringFromTree(const xmlNodePtr xmlTree,
+                                 xmlChar **xmlStringBuffer,
+                                 INT4 *xmlStringBufferSize);
 
-xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                                     const char *resourceType,
-                                                     const char *resourceName,
-                                                     const char *paramName,
-                                                     VOTABLE_PARAM_ATTRIBUTE paramAttribute);
+xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                                const char *resourceType,
+                                                const char *resourceName,
+                                                const char *paramName,
+                                                VOTABLE_PARAM_ATTRIBUTE paramAttribute);
 
 
 /* C++ protection */

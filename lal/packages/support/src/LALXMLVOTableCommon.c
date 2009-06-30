@@ -46,8 +46,8 @@
 #define FALSE 0
 
 /* ---------- internal prototypes ---------- */
-const char* XLALVOTableDatatype2String ( VOTABLE_DATATYPE datatype );
-const char* XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute );
+const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
+const char* XLALVOTParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute );
 
 /* ---------- function definitions ---------- */
 
@@ -71,14 +71,14 @@ const char* XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttr
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableParamNode(const char *name,
-                                      const char *unit,
-                                      VOTABLE_DATATYPE datatype,
-                                      const char *arraysize,
-                                      const char *value)
+xmlNodePtr XLALCreateVOTParamNode(const char *name,
+                                  const char *unit,
+                                  VOTABLE_DATATYPE datatype,
+                                  const char *arraysize,
+                                  const char *value)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableParamNode";
+    static const CHAR *logReference = "XLALCreateVOTParamNode";
     xmlNodePtr xmlParamNode = NULL;
     static const CHAR *datatypeString;
 
@@ -113,8 +113,8 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         }
     }
     /* mandatory: datatype */
-    if ( ( datatypeString = XLALVOTableDatatype2String ( datatype )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTableDatatype2String() failed.\n", logReference );
+    if ( ( datatypeString = XLALVOTDatatype2String ( datatype )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", logReference );
       XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
     }
 
@@ -172,12 +172,12 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
-                                         const char *identifier,
-                                         const xmlNodePtr childNodeList)
+xmlNodePtr XLALCreateVOTResourceNode(const char *type,
+                                     const char *identifier,
+                                     const xmlNodePtr childNodeList)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableResourceNode";
+    static const CHAR *logReference = "XLALCreateVOTResourceNode";
     xmlNodePtr xmlResourceNode = NULL;
     xmlNodePtr xmlChildNode = childNodeList;
 
@@ -248,15 +248,15 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
  * \b Important: the caller is responsible to free the allocated memory (when the
  * document isn't needed anymore) using \c xmlFreeDoc.
  *
- * \sa XLALCreateVOTableStringFromTree
+ * \sa XLALCreateVOTStringFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
+xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableDocumentFromTree";
+    static const CHAR *logReference = "XLALCreateVOTDocumentFromTree";
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
@@ -357,17 +357,17 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
  * \b Important: the caller is responsible to free the allocated memory of \c xmlStringBuffer (when the
  * string isn't needed anymore) using \c xmlFree.
  *
- * \sa XLALCreateVOTableDocumentFromTree
+ * \sa XLALCreateVOTDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
-                                     xmlChar **xmlStringBuffer,
-                                     INT4 *xmlStringBufferSize)
+INT4 XLALCreateVOTStringFromTree(const xmlNodePtr xmlTree,
+                                 xmlChar **xmlStringBuffer,
+                                 INT4 *xmlStringBufferSize)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
+    static const CHAR *logReference = "XLALCreateVOTStringFromTree";
     xmlDocPtr xmlDocument;
 
     /* sanity check */
@@ -385,7 +385,7 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
     }
 
     /* build VOTable document */
-    xmlDocument = XLALCreateVOTableDocumentFromTree(xmlTree);
+    xmlDocument = XLALCreateVOTDocumentFromTree(xmlTree);
     if(xmlDocument == NULL) {
         XLALPrintError("VOTable document construction failed\n");
         XLAL_ERROR(logReference, XLAL_EFAILED);
@@ -429,14 +429,14 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                                     const char *resourceType,
-                                                     const char *resourceName,
-                                                     const char *paramName,
-                                                     VOTABLE_PARAM_ATTRIBUTE paramAttribute)
+xmlChar * XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                                 const char *resourceType,
+                                                 const char *resourceName,
+                                                 const char *paramName,
+                                                 VOTABLE_PARAM_ATTRIBUTE paramAttribute)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALGetSingleVOTableResourceParamAttribute";
+    static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
     const CHAR *paramAttributeString = NULL;
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
     static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
@@ -461,8 +461,8 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
     }
 
 
-    if ( (paramAttributeString = XLALVOTableParamAttribute2String ( paramAttribute )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTableParamAttribute2String() failed.\n", logReference );
+    if ( (paramAttributeString = XLALVOTParamAttribute2String ( paramAttribute )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTParamAttribute2String() failed.\n", logReference );
       XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
     }
 
@@ -486,9 +486,9 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
 /** Simply returns the string representation of the given VOTABLE_DATATYPE.
  */
 const char*
-XLALVOTableDatatype2String ( VOTABLE_DATATYPE datatype )
+XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 {
-  static const char *fn = "XLALVOTableDatatype2String()";
+  static const char *fn = "XLALVOTDatatype2String()";
   const char *datatypeString = NULL;
 
   switch(datatype)
@@ -537,15 +537,15 @@ XLALVOTableDatatype2String ( VOTABLE_DATATYPE datatype )
 
   return datatypeString;
 
-} /* XLALVOTableDatatype2String() */
+} /* XLALVOTDatatype2String() */
 
 
 /** Simply returns the string representation of the given VOTABLE_PARAM_ATTRIBUTE
  */
 const char*
-XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute )
+XLALVOTParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute )
 {
-  static const char *fn = "XLALVOTableParamAttribute2String()";
+  static const char *fn = "XLALVOTParamAttribute2String()";
   const char *paramAttributeString = NULL;
 
   switch(paramAttribute)
@@ -590,5 +590,5 @@ XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute )
 
   return paramAttributeString;
 
-} /* XLALVOTableParamAttribute2String() */
+} /* XLALVOTParamAttribute2String() */
 

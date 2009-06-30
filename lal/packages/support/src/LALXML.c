@@ -87,7 +87,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \b Important: the caller is responsible to free the allocated memory (when the
  * string isn't needed anymore) using \c xmlFree.
  *
- * \sa XLALGetSingleVOTableResourceParamValue
+ * \sa XLALGetSingleVOTResourceParamValue
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -384,7 +384,7 @@ INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtP
  * \return \c XLAL_SUCCESS if the namespace could be successfully assigned to all elements.
  * Please note that this function can't return anything else than XLAL_SUCCESS.
  *
- * \sa XLALCreateVOTableDocumentFromTree
+ * \sa XLALCreateVOTDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
