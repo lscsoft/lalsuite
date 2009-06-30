@@ -48,10 +48,6 @@
 #endif 
 
 
-/* don't clobber ebx , used for PIC on Mac OS */
-
-#if (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87)
-
 #define ADDPHMD2HD_WLR_LOOP(_XPIXEL,_YLOWER,_YUPPER,_XSIDEP1,_MAP,_WEIGHT)\
 __asm __volatile ( 				      \
 	"push %%ebx				\n\t" \
@@ -118,5 +114,4 @@ __asm __volatile ( 				      \
 	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)"  \
 	);			
 
-#endif
 #endif
