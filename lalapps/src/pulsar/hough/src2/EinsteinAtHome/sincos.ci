@@ -178,17 +178,20 @@ union {
   "and     $0xffffff,"PDX" \n\t" /* i  = ix & SINCOS_MASK1;*/
 #define SINCOS_P3							\
   "fildl   %[tmp]          \n\t"					\
-  "sar     $0xe,"PDX"      \n\t" /*  i  = i >> SINCOS_SHIFT;*/		\
-  "fld     %%st            \n\t" /* st: n; n; */
+  "sar     $0xe,"PDX"      \n\t" /*  i  = i >> SINCOS_SHIFT;*/
 #define SINCOS_P4							\
+  "fld     %%st            \n\t" /* st: n; n; */			\
   "fmuls   ("PAX","PDX",4) \n\t"					\
-  "mov     %[scb], "PDI"   \n\t"					\
-  "fadds   ("PDI","PDX",4) \n\t" /* st:sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/
+  "mov     %[scb], "PDI"   \n\t"
+#define SINCOS_P4A		 /* P4 w/o doubling, used when P6 is not */ \
+  "fmuls   ("PAX","PDX",4) \n\t"					\
+  "mov     %[scb], "PDI"   \n\t"
 #define SINCOS_P5(sin)							\
+  "fadds   ("PDI","PDX",4) \n\t" /* st: sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/ \
   "add     $0x100,"PDX"    \n\t" /* edx+=SINCOS_LUT_RES/4*/		\
-  "fstps   %[" #sin "]     \n\t" /* (*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/ \
-  "fmuls   ("PAX","PDX",4) \n\t"
+  "fstps   %[" #sin "]     \n\t" /* (*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/
 #define SINCOS_P6(cos) \
+  "fmuls   ("PAX","PDX",4) \n\t"					\
   "fadds   ("PDI","PDX",4) \n\t"					\
   "fstps   %[" #cos "]     \n\t" /* (*cos)=cosbase[i]+n*cosdiff[i];*/
 /* list of clobbered registers */
