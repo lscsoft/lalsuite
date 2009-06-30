@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2009 Oliver Bock
+ *  Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -150,6 +151,95 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlParamNode;
 }
+
+
+/**
+ * \brief Creates a VOTable \c FIELD %node
+ *
+ * This function creates a VOTable \c FIELD %node with the specified properties.
+ *
+ * \param name [in] Content of the \c name attribute of the \c FIELD %node (mandatory)
+ * \param unit [in] Content of the \c unit attribute of the \c FIELD %node (optional)
+ * \param datatype [in] Content of the \c datatype attribute of the \c FIELD %node (mandatory)
+ * \param arraysize [in] Content of the \c arraysize attribute of the \c FIELD %node (optional)
+ *
+ * \return A \c xmlNodePtr that holds the new \c FIELD %node.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr
+XLALCreateVOTFieldNode ( const char *name,
+                         const char *unit,
+                         VOTABLE_DATATYPE datatype,
+                         const char *arraysize
+                         )
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTFieldNode()";
+    xmlNodePtr xmlFieldNode = NULL;
+    static const CHAR *datatypeString;
+
+    /* create node */
+    xmlFieldNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("FIELD"));
+    if(xmlFieldNode == NULL) {
+        XLALPrintError("Element instantiation failed: FIELD\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* add attributes */
+    /* mandatory: name */
+    if(!name || strlen(name) <= 0) {
+        /* clean up */
+        xmlFreeNode(xmlFieldNode);
+        XLALPrintError("Missing mandatory attribute: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(name))) {
+        /* clean up */
+        xmlFreeNode(xmlFieldNode);
+        XLALPrintError("Attribute instantiation failed: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    /* optional: unit */
+    if(unit && strlen(unit) > 0) {
+        if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("unit"), CAST_CONST_XMLCHAR(unit))) {
+            /* clean up */
+            xmlFreeNode(xmlFieldNode);
+            XLALPrintError("Attribute instantiation failed: unit\n");
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+    }
+    /* mandatory: datatype */
+    if ( ( datatypeString = XLALVOTDatatype2String ( datatype )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", logReference );
+      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
+    }
+
+    if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("datatype"), CAST_CONST_XMLCHAR(datatypeString))) {
+        /* clean up */
+        xmlFreeNode(xmlFieldNode);
+        XLALPrintError("Attribute instantiation failed: datatype\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    /* optional: arraysize */
+    if(arraysize && strlen(arraysize) > 0) {
+        if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("arraysize"), CAST_CONST_XMLCHAR(arraysize))) {
+            /* clean up */
+            xmlFreeNode(xmlFieldNode);
+            XLALPrintError("Attribute instantiation failed: arraysize\n");
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+    }
+
+    /* return FIELD node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+    return xmlFieldNode;
+
+} /* XLALCreateVOTFieldNode() */
 
 
 /**

@@ -95,6 +95,12 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
                                   VOTABLE_DATATYPE datatype,
                                   const char *arraysize,
                                   const char *value);
+xmlNodePtr
+XLALCreateVOTFieldNode ( const char *name,
+                         const char *unit,
+                         VOTABLE_DATATYPE datatype,
+                         const char *arraysize
+                         );
 
 xmlNodePtr XLALCreateVOTResourceNode(const char *type,
                                      const char *identifier,
