@@ -111,8 +111,8 @@
  */
 
 
-#include "../../FDS_isolated/ComputeFstatREAL4.h"
-#include"HierarchicalSearch.h"
+#include "EinsteinAtHome/ComputeFstatREAL4.h"
+#include "HierarchicalSearch.h"
 
 
 /* This need to go here after HierarchicalSearch.h is included;
