@@ -23,6 +23,7 @@
  * \brief Implementation of the common VOTable XML API
  */
 
+/* ---------- includes ---------- */
 #include <string.h>
 
 #include <libxml/parser.h>
@@ -35,6 +36,7 @@
 #include <lal/LALXML.h>
 
 
+/* ---------- defines and macros ---------- */
 #define VOTABLE_VERSION     "1.1"
 #define VOTABLE_NS_PREFIX   "vot"
 #define VOTABLE_NS_URL      "http://www.ivoa.net/xml/VOTable/v"VOTABLE_VERSION
@@ -43,6 +45,11 @@
 #define TRUE 1
 #define FALSE 0
 
+/* ---------- internal prototypes ---------- */
+const char* XLALVOTableDatatype2String ( VOTABLE_DATATYPE datatype );
+const char* XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute );
+
+/* ---------- function definitions ---------- */
 
 /**
  * \brief Creates a VOTable \c PARAM %node
@@ -106,54 +113,11 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         }
     }
     /* mandatory: datatype */
-    if(!datatype) {
-        /* clean up */
-        xmlFreeNode(xmlParamNode);
-        XLALPrintError("Missing mandatory attribute: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    if ( ( datatypeString = XLALVOTableDatatype2String ( datatype )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTableDatatype2String() failed.\n", logReference );
+      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
     }
-    else {
-        switch(datatype) {
-            case VOT_BOOL:
-                datatypeString = "boolean";
-                break;
-            case VOT_BIT:
-                datatypeString = "bit";
-                break;
-            case VOT_CHAR:
-                datatypeString = "char";
-                break;
-            case VOT_CHAR_UTF:
-                datatypeString = "unicodeChar";
-                break;
-            case VOT_INT1:
-                datatypeString = "unsignedByte";
-                break;
-            case VOT_INT2:
-                datatypeString = "short";
-                break;
-            case VOT_INT4:
-                datatypeString = "int";
-                break;
-            case VOT_INT8:
-                datatypeString = "long";
-                break;
-            case VOT_REAL4:
-                datatypeString = "float";
-                break;
-            case VOT_REAL8:
-                datatypeString = "double";
-                break;
-            case VOT_COMPLEX_REAL4:
-                datatypeString = "floatComplex";
-                break;
-            case VOT_COMPLEX_REAL8:
-                datatypeString = "doubleComplex";
-                break;
-            default:
-                datatypeString = "UNKNOWN";
-        }
-    }
+
     if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("datatype"), CAST_CONST_XMLCHAR(datatypeString))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
@@ -495,48 +459,11 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
         XLALPrintError("Invalid input parameters: paramName\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(paramAttribute <= 0) {
-        XLALPrintError("Invalid input parameters: paramAttribute\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    else {
-        switch(paramAttribute) {
-            case VOT_ID:
-                paramAttributeString = "ID";
-                break;
-            case VOT_UNIT:
-                paramAttributeString = "unit";
-                break;
-            case VOT_DATATYPE:
-                paramAttributeString = "datatype";
-                break;
-            case VOT_PRECISION:
-                paramAttributeString = "precision";
-                break;
-            case VOT_WIDTH:
-                paramAttributeString = "width";
-                break;
-            case VOT_REF:
-                paramAttributeString = "ref";
-                break;
-            case VOT_NAME:
-                paramAttributeString = "name";
-                break;
-            case VOT_UCD:
-                paramAttributeString = "ucd";
-                break;
-            case VOT_UTYPE:
-                paramAttributeString = "utype";
-                break;
-            case VOT_ARRAYSIZE:
-                paramAttributeString = "arraysize";
-                break;
-            case VOT_VALUE:
-                paramAttributeString = "value";
-                break;
-            default:
-                paramAttributeString = "UNKNOWN";
-        }
+
+
+    if ( (paramAttributeString = XLALVOTableParamAttribute2String ( paramAttribute )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTableParamAttribute2String() failed.\n", logReference );
+      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
     }
 
     /* prepare XPath search */
@@ -553,3 +480,115 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
     /* retrieve specified attribute (content) */
     return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
 }
+
+
+
+/** Simply returns the string representation of the given VOTABLE_DATATYPE.
+ */
+const char*
+XLALVOTableDatatype2String ( VOTABLE_DATATYPE datatype )
+{
+  static const char *fn = "XLALVOTableDatatype2String()";
+  const char *datatypeString = NULL;
+
+  switch(datatype)
+    {
+    case VOT_BOOL:
+      datatypeString = "boolean";
+      break;
+    case VOT_BIT:
+      datatypeString = "bit";
+      break;
+    case VOT_CHAR:
+      datatypeString = "char";
+      break;
+    case VOT_CHAR_UTF:
+      datatypeString = "unicodeChar";
+      break;
+    case VOT_INT1:
+      datatypeString = "unsignedByte";
+      break;
+    case VOT_INT2:
+      datatypeString = "short";
+      break;
+    case VOT_INT4:
+      datatypeString = "int";
+      break;
+    case VOT_INT8:
+      datatypeString = "long";
+      break;
+    case VOT_REAL4:
+      datatypeString = "float";
+      break;
+    case VOT_REAL8:
+      datatypeString = "double";
+      break;
+    case VOT_COMPLEX_REAL4:
+      datatypeString = "floatComplex";
+      break;
+    case VOT_COMPLEX_REAL8:
+      datatypeString = "doubleComplex";
+      break;
+    default:
+      XLALPrintError ("%s: invalid datatype passed (%d), has to be within [1, %d].\n", fn, datatype, VOT_DATATYPE_LAST - 1 );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+      break;
+    }
+
+  return datatypeString;
+
+} /* XLALVOTableDatatype2String() */
+
+
+/** Simply returns the string representation of the given VOTABLE_PARAM_ATTRIBUTE
+ */
+const char*
+XLALVOTableParamAttribute2String ( VOTABLE_PARAM_ATTRIBUTE paramAttribute )
+{
+  static const char *fn = "XLALVOTableParamAttribute2String()";
+  const char *paramAttributeString = NULL;
+
+  switch(paramAttribute)
+    {
+    case VOT_ID:
+      paramAttributeString = "ID";
+      break;
+    case VOT_UNIT:
+      paramAttributeString = "unit";
+      break;
+    case VOT_DATATYPE:
+      paramAttributeString = "datatype";
+      break;
+    case VOT_PRECISION:
+      paramAttributeString = "precision";
+      break;
+    case VOT_WIDTH:
+      paramAttributeString = "width";
+      break;
+    case VOT_REF:
+      paramAttributeString = "ref";
+      break;
+    case VOT_NAME:
+      paramAttributeString = "name";
+      break;
+    case VOT_UCD:
+      paramAttributeString = "ucd";
+      break;
+    case VOT_UTYPE:
+      paramAttributeString = "utype";
+      break;
+    case VOT_ARRAYSIZE:
+      paramAttributeString = "arraysize";
+      break;
+    case VOT_VALUE:
+      paramAttributeString = "value";
+      break;
+    default:
+      XLALPrintError ("%s: invalid paramAttribute (%d), must lie within [1, %d].\n", fn, paramAttribute, VOT_PARAM_ATTRIBUTE_LAST - 1 );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    }
+
+  return paramAttributeString;
+
+} /* XLALVOTableParamAttribute2String() */
+
