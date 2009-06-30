@@ -46,11 +46,28 @@
 #include <lal/ComputeFstat.h>
 
 #include "ComputeFstatREAL4.h"
-#include "../hough/src2/HierarchicalSearch.h"
+#include "../HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
+#ifdef EAH_OPTIMIZATION
+#include "LocalOptimizationFlags.h"
+#endif
+
+/*----- SIN/COS Lookup table code inserted here -----*/
+/* In particular this defines
+  - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
+  - a function void local_sin_cos_2PI_LUT_init(void) that inits the lookup tables
+  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x) that uses the
+    lookup tables to evaluate sin and cos values of 2*Pi*x
+  - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
+*/
+#include "sincos.ci"
+
 /*---------- local DEFINES ----------*/
+#define TRUE  (1==1)
+#define FALSE (1==0)
+
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -88,11 +105,16 @@ const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 const FcomponentsREAL4 empty_FcomponentsREAL4;
 
+
 /*---------- internal prototypes ----------*/
+/* don't use finite() from win_lib.cpp here for performance reasons */
+#ifdef _MSC_VER
+#define finite _finite
+#else
 int finite(double x);
-void sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x);
-void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
-void init_sin_cos_LUT_REAL4 (void);
+#endif
+void init_sin_cos_LUT_REAL4(void);
+
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -619,7 +641,9 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	lambda_alpha = phi_alpha_rem - tmp;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
+	/* the sin/cos LUT calculations are woven into the hotloop for performance reasons
+	   sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
+	*/
 
         kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
 	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
@@ -642,8 +666,10 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
-      c_alpha -= 1.0f;
+      /* the sin/cos LUT calculations are woven into the hotloop for performance reasons
+	 sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
+	 c_alpha -= 1.0f;
+      */
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
@@ -662,7 +688,26 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
+#ifdef __GNUC__
+	/** somehow the branch prediction of gcc-4.1.2 terribly failes
+	    with the current case distinction in the hot-loop,
+	    having a severe impact on runtime of the E@H Linux App.
+	    So let's allow to give gcc a hint which path has a higher probablility */
+	if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
+#else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+#endif
+#ifdef AUTOVECT_HOTLOOP
+#include "hotloop_autovect.ci"
+#elif __ALTIVEC__
+#include "hotloop_altivec.ci"
+#elif __SSE__
+#ifdef _MSC_VER
+#include "hotloop_sse_msc.ci"
+#else
+#include "hotloop_precalc.ci"
+#endif /* MSC_VER */
+#else
 	{
 	  /* improved hotloop algorithm by Fekete Akos:
 	   * take out repeated divisions into a single common denominator,
@@ -680,10 +725,10 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	    {
 	      Xalpha_l ++;
 
-	      pn = pn - 1.0f; 			/* p_(n+1) */
+	      pn = pn - 1.0f; 				/* p_(n+1) */
 	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
-	      qn *= pn;				/* q_(n+1) */
+	      qn *= pn;					/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
           REAL4 qn_inv = 1.0f / qn;
@@ -697,17 +742,40 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  }
 #endif
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-
+	  {
+	    REAL8 kstar8 = kappa_star;
+	    SINCOS_2PI_TRIMMEED(&s_alpha, &c_alpha, kstar8);
+	  }
+	  c_alpha -= 1.0f;
+	
+ 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+ 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	} /* if |remainder| > LD_SMALL4 */
+
+        {
+	  REAL8 _lambda_alpha = -lambda_alpha;
+	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+        }
+
+
+#endif /* hotloop variant */
+
       else
+
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	  UINT4 ind0;
+
+	  /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
+	  REAL8 _lambda_alpha = -lambda_alpha;
+	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
 	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	  
 	} /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
@@ -1006,86 +1074,28 @@ XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 
 /* ---------- pure REAL4 version of sin/cos lookup tables */
 
-/** REAL4 version of sin_cos_LUT()
- *
- * Calculate sin(x) and cos(x) to roughly 1e-7 precision using
- * a lookup-table and Taylor-expansion.
- *
- * NOTE: this function will fail for arguments larger than
- * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
- *
- * return = 0: OK, nonzero=ERROR
- */
-void
-sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x)
-{
-  sin_cos_2PI_LUT_REAL4 ( sinx, cosx, x * OOTWOPI_FLOAT );
-  return;
+void init_sin_cos_LUT_REAL4(void) {
+  static int firstcall = TRUE;
+  if (firstcall) {
+    /* init sin/cos lookup tables */
+    local_sin_cos_2PI_LUT_init();
+    
+    /* write out optimization settings */
+
+#ifdef EAH_OPTIMIZATION
+    
+    fprintf(stderr,
+	    "\n$Revision$ REV:%s, OPT:%d, "
+	    "SCVAR:%d, SCTRIM:%d, "
+	    "HOTVAR:%d, HOTDIV:%d, "
+	    "HGHPRE:%d, HGHBAT:%d\n",
+	    EAH_OPTIMIZATION_REVISION, EAH_OPTIMIZATION,
+	    EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
+	    EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
+	    EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
+    
+#endif /* def EAH_OPTIMIZATION */
+
+    firstcall = FALSE;
+  }
 }
-
-/* initialize the global sin/cos lookup table */
-void
-init_sin_cos_LUT_REAL4 (void)
-{
-  UINT4 k;
-  static int firstCall = 1;
-
-  if ( !firstCall )
-    return;
-
-  for (k=0; k <= LUT_RES; k++)
-    {
-      sinVal[k] = sin( LAL_TWOPI * k / LUT_RES );
-      cosVal[k] = cos( LAL_TWOPI * k / LUT_RES );
-    }
-
-  firstCall = 0;
-
-  return;
-
-} /* init_sin_cos_LUT_REAL4() */
-
-
-/* REAL4 version of sin_cos_2PI_LUT() */
-void
-sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x)
-{
-  REAL4 xt;
-  INT4 i0;
-  REAL4 d, d2;
-  REAL4 ts, tc;
-
-  /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that
-   * will be somewhat slower...
-   */
-  xt = x - (INT8)x;	/* xt in (-1, 1) */
-
-  if ( xt < 0.0 )
-    xt += 1.0f;			/* xt in [0, 1 ) */
-
-#ifndef LAL_NDEBUG
-  if ( xt < 0.0 || xt > 1.0 )
-    {
-      XLALPrintError("\nFailed numerics in sin_cos_2PI_LUT_REAL4(): xt = %f not in [0,1)\n\n", xt );
-      XLAL_ERROR_VOID ( "sin_cos_2PI_LUT_REAL4()", XLAL_EFPINEXCT );
-    }
-#endif
-
-  i0 = (INT4)( xt * LUT_RES + 0.5f );	/* i0 in [0, LUT_RES ] */
-  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
-  d2 *= 0.5f * d;
-
-  ts = sinVal[i0];
-  tc = cosVal[i0];
-
-  /* use Taylor-expansions for sin/cos around LUT-points */
-  (*sin2pix) = ts + d * tc - d2 * ts;
-  (*cos2pix) = tc - d * ts - d2 * tc;
-
-  return;
-
-} /* sin_cos_2PI_LUT_REAL4() */
