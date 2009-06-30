@@ -8,8 +8,9 @@ CLEANFILES =
 
 cfs_sources = 	$(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
-		$(hsHOME)/LocalComputeFstat.c $(hsHOME)/LocalComputeFstatHoughMap.c\
-		$(hsHOME)/HoughFStatToplist.c $(cfsHOME)/HeapToplist.c \
+		$(hsHOME)/LocalComputeFstat.c $(hsHOME)/LocalComputeFstatHoughMap.c \
+		$(hsHOME)/HoughFStatToplist.c \
+		$(cfsHOME)/HeapToplist.c $(cfsHOME)/ComputeFstatREAL4.c \
 		$(hsHOME)/hs_boinc_extras.c $(hsHOME)/hs_boinc_options.cpp
 
 ## start with some common defaults
