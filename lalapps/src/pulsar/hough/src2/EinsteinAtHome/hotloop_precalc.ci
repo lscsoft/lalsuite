@@ -9,8 +9,9 @@
 	  static REAL4 *scb = &(sincosLUTbase[0]);
 	  static REAL4 M1 = -1.0f;
 	  static REAL8 sincos_adds = 402653184.0;
-	  REAL8 tmp;
+	  REAL8 tmp; /* this could as well be an int64, it's just a 64Bit placeholder */
           REAL8 _lambda_alpha = -lambda_alpha;
+	  REAL8 kstar8 = kappa_star; /* kstar8 should be optimized away if kappa_star is already REAL8 */
           /* vector constants */
           /* having these not aligned will crash the assembler code */
 #define ALIGNED_VECTOR(name) static REAL4 name[4] __attribute__ ((aligned (16)))
@@ -141,7 +142,7 @@
 	     /* input */
 	     [Xa]            "r" (Xalpha_l),     /*(*REAL4)*/
 	     [kappa_s]       "m" (kappa_s),      /*REAL4*/
-	     [kappa_star]    "m" (kappa_star),   /*REAL8 sincos*/
+	     [kappa_star]    "m" (kstar8),       /*REAL8 sincos*/
 	     [_lambda_alpha] "m" (_lambda_alpha),/*REAL8 sincos*/
 	     [scd]	     "m" (scd),          /*(*REAL4) sincos*/
 	     [scb]	     "m" (scb),          /*(*REAL4) sincos*/
