@@ -111,7 +111,7 @@
  */
 
 
-#include "../../FDS_isolated/ComputeFstatGPU.h"
+#include "../../FDS_isolated/ComputeFstatREAL4.h"
 #include"HierarchicalSearch.h"
 
 

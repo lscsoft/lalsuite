@@ -17,8 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-#ifndef _COMPUTEFSTATGPU_H
-#define _COMPUTEFSTATGPU_H
+#ifndef _COMPUTEFSTATREAL4_H
+#define _COMPUTEFSTATREAL4_H
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -72,7 +72,7 @@ typedef struct {
   COMPLEX8 Fb;		/**< complex amplitude Fb */
 } FcomponentsREAL4;
 
-/** Struct holding buffered XLALDriverFstatGPU()-internal quantities
+/** Struct holding buffered XLALDriverFstatREAL4()-internal quantities
  * to avoid unnecessarily recomputing things that depend ONLY on the skyposition and detector-state series
  * (but not on the spins).
  */
@@ -112,7 +112,7 @@ XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
                                  ComputeFBufferREAL4V *cfvBuffer
                                  );
 int
-XLALDriverFstatGPU ( REAL4 *Fstat,
+XLALDriverFstatREAL4 ( REAL4 *Fstat,
                      const PulsarDopplerParams *doppler,
                      const MultiSFTVector *multiSFTs,
                      const MultiNoiseWeights *multiWeights,
@@ -122,7 +122,7 @@ XLALDriverFstatGPU ( REAL4 *Fstat,
                      );
 
 void
-XLALCoreFstatGPU (REAL4 *Fstat,
+XLALCoreFstatREAL4 (REAL4 *Fstat,
                   PulsarSpinsREAL4 *fkdot4,
                   const MultiSFTVector *multiSFTs,
                   MultiSSBtimesREAL4 *multiSSB4,

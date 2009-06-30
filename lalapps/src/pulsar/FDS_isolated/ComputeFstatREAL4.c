@@ -45,7 +45,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
 
-#include "ComputeFstatGPU.h"
+#include "ComputeFstatREAL4.h"
 #include "../hough/src2/HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
@@ -247,11 +247,11 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
           /* call the core function to compute one multi-IFO F-statistic */
 
           /* >>>>> this function could run on the GPU device <<<<< */
-          XLALCoreFstatGPU ( &Fstat, &fkdot4, multiSFTsV->data[n], cfvBuffer->multiSSB4V[n], cfvBuffer->multiAMcoefV[n], Dterms );
+          XLALCoreFstatREAL4 ( &Fstat, &fkdot4, multiSFTsV->data[n], cfvBuffer->multiSSB4V[n], cfvBuffer->multiAMcoefV[n], Dterms );
 
           if ( xlalErrno ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError ("%s: XLALCoreFstatGPU() failed with errno = %d in loop n=%d, k=%d.\n", fn, xlalErrno, n, k );
+            XLALPrintError ("%s: XLALCoreFstatREAL4() failed with errno = %d in loop n=%d, k=%d.\n", fn, xlalErrno, n, k );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
@@ -278,7 +278,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
  *
  */
 int
-XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic value 'F' */
+XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic value 'F' */
                      const PulsarDopplerParams *doppler, 		/**< parameter-space point to compute F for */
                      const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
                      const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
@@ -287,7 +287,7 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
                      ComputeFBufferREAL4 *cfBuffer       		/**< CF-internal buffering structure */
                      )
 {
-  static const char *fn = "XLALDriverFstatGPU()";
+  static const char *fn = "XLALDriverFstatREAL4()";
 
   MultiSSBtimesREAL4 *multiSSB4 = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -370,17 +370,17 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
   /* call the core function to compute one multi-IFO F-statistic */
 
   /* >>>>> this function could run on the GPU device <<<<< */
-  XLALCoreFstatGPU (Fstat, &fkdot4, multiSFTs, multiSSB4, multiAMcoef, Dterms );
+  XLALCoreFstatREAL4 (Fstat, &fkdot4, multiSFTs, multiSSB4, multiAMcoef, Dterms );
 
   if ( xlalErrno ) {
-    XLALPrintError ("%s: XLALCoreFstatGPU() failed with errno = %d.\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCoreFstatREAL4() failed with errno = %d.\n", fn, xlalErrno );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
 
 
-} /* XLALDriverFstatGPU() */
+} /* XLALDriverFstatREAL4() */
 
 
 /** This function computes a multi-IFO F-statistic value for given frequency (+fkdots),
@@ -391,7 +391,7 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
  *
  */
 void
-XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
+XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
                   PulsarSpinsREAL4 *fkdot4,		/**< [in] frequency and derivatives in REAL4-safe format */
                   const MultiSFTVector *multiSFTs,	/**< [in] input multi-IFO data ("SFTs") */
                   MultiSSBtimesREAL4 *multiSSB4,	/**< [in] multi-IFO SSB-timings in REAL4-safe format */
@@ -399,7 +399,7 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
                   UINT4 Dterms				/**< [in] parameter: number of Dterms to use in Dirichlet kernel */
                   )
 {
-  static const char *fn = "XLALCoreFstatGPU()";
+  static const char *fn = "XLALCoreFstatREAL4()";
 
   UINT4 numIFOs, X;
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
@@ -477,7 +477,7 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
 
   return;
 
-} /* XLALCoreFstatGPU() */
+} /* XLALCoreFstatREAL4() */
 
 
 
