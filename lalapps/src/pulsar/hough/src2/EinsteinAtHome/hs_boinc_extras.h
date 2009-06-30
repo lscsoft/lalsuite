@@ -29,7 +29,7 @@
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
-#include "HoughFStatToplist.h"
+#include "../HoughFStatToplist.h"
 
 #define HSBOINCEXTRASHRCSID "$Id$"
 
@@ -40,7 +40,7 @@
 
 /* use a local copy of ComputeFStatFreqBand() and related functions for E@H-specific optimizations */
 #ifdef EAH_CUDA
-#include "HierarchicalSearch.h"
+#include "../HierarchicalSearch.h"
 #include <cuda_fstat.h>
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define REARRANGE_SFT_DATA   cuda_prepare_sfts (&stackMultiSFT, nStacks, &fstatVector)
@@ -54,7 +54,7 @@
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
-#include "HierarchicalSearch.h"
+#include "../HierarchicalSearch.h"
 
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 

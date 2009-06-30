@@ -129,7 +129,7 @@ RCSID( "$Id$");
    and will be set in boinc_extras.h if EAH_BOINC is set
  */
 #ifdef EAH_BOINC
-#include "hs_boinc_extras.h"
+#include "EinsteinAtHome/hs_boinc_extras.h"
 #else
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;

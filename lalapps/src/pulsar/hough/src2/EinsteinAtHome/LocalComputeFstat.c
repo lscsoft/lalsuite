@@ -74,7 +74,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     lookup tables to evaluate sin and cos values of 2*Pi*x
   - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
 */
-#include "EinsteinAtHome/sincos.ci"
+#include "sincos.ci"
 
 
 /*---------- Global variables ----------*/
@@ -568,31 +568,31 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #ifdef EAH_HOTLOOP_VARIANT
 
 #if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
-#include "EinsteinAtHome/hotloop_precalc.ci"
+#include "hotloop_precalc.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
-#include "EinsteinAtHome/hotloop_sse.ci"
+#include "hotloop_sse.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
-#include "EinsteinAtHome/hotloop_altivec.ci"
+#include "hotloop_altivec.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
-#include "EinsteinAtHome/hotloop_autovect.ci"
+#include "hotloop_autovect.ci"
 #else /* EAH_HOTLOOP_VARIANT */
-#include "EinsteinAtHome/hotloop_generic.ci"
+#include "hotloop_generic.ci"
 #endif /* EAH_HOTLOOP_VARIANT == */
 
 #else /* def EAH_HOTLOOP_VARIANT */
 
 #ifdef AUTOVECT_HOTLOOP
-#include "EinsteinAtHome/hotloop_autovect.ci"
+#include "hotloop_autovect.ci"
 #elif __ALTIVEC__
-#include "EinsteinAtHome/hotloop_altivec.ci"
+#include "hotloop_altivec.ci"
 #elif __SSE__
 #ifdef _MSC_VER
-#include "EinsteinAtHome/hotloop_sse_msc.ci"
+#include "hotloop_sse_msc.ci"
 #else
-#include "EinsteinAtHome/hotloop_precalc.ci"
+#include "hotloop_precalc.ci"
 #endif /* MSC_VER */
 #else
-#include "EinsteinAtHome/hotloop_generic.ci"
+#include "hotloop_generic.ci"
 #endif
 
 #endif /* def EAH_HOTLOOP_VARIANT */

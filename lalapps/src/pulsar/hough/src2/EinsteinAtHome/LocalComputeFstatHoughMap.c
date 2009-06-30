@@ -25,18 +25,18 @@
    $Id$
 */
 
-#include "HierarchicalSearch.h"
+#include "../HierarchicalSearch.h"
 #include "LocalOptimizationFlags.h"
 
 #if __x86_64__
-#include "EinsteinAtHome/hough_x64.ci"
-#warning including "EinsteinAtHome/hough_x64.ci"
+#include "hough_x64.ci"
+#warning including "hough_x64.ci"
 #elif __SSE2__
-#include "EinsteinAtHome/hough_sse2.ci"
-#warning including "EinsteinAtHome/hough_sse2.ci"
+#include "hough_sse2.ci"
+#warning including "hough_sse2.ci"
 #elif __i386__
-#include "EinsteinAtHome/hough_x87.ci"
-#warning including "EinsteinAtHome/hough_x87.ci"
+#include "hough_x87.ci"
+#warning including "hough_x87.ci"
 #else
 #warning ADDPHMD2HD_WLR_LOOP unset
 #endif
