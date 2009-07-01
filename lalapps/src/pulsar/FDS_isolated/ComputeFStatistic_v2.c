@@ -73,7 +73,7 @@ int finite(double);
 /* local includes */
 #include "HeapToplist.h"
 
-#include "ComputeFstatGPU.h"
+#include "ComputeFstatREAL4.h"
 
 RCSID( "$Id$");
 
@@ -449,9 +449,9 @@ int main(int argc,char *argv[])
         {
           REAL4 F;
 
-          XLALDriverFstatGPU ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
+          XLALDriverFstatREAL4 ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno=%d\n", fn, xlalErrno );
+            XLALPrintError ("%s: XLALDriverFstatREAL4() failed with errno=%d\n", fn, xlalErrno );
             return xlalErrno;
           }
           /* this function only returns F, not Fa, Fb */
