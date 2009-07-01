@@ -218,6 +218,7 @@ packages/support/test/?TS*.dat
 packages/support/test/ConfigFileTest
 packages/support/test/LALMath3DPlotTest
 packages/support/test/LALMathNDPlotTest
+packages/support/test/LALXMLTest
 packages/support/test/Math3DNotebook.nb
 packages/support/test/MathNDNotebook.nb
 packages/support/test/NRWaveIOTest
