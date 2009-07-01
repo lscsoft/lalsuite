@@ -563,6 +563,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   REAL4 f0 = fkdot4->FreqMain;
   REAL4 df = fkdot4->fkdot[0];
+  REAL4 tau = 1.0f / df;
+  REAL4 Freq = f0 + df;
 
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -618,10 +620,12 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         deltaT = T0 + dT;
 
         /* phi_alpha = f * Tas; */
-        phi_alpha_rem = f0 * dT + df * T0 + df * dT;
-        phi_alpha_rem = REM ( phi_alpha_rem );
+        REAL4 T0rem = fmodf ( T0, tau );
+        phi_alpha_rem = f0 * dT;
+        phi_alpha_rem += T0rem * df;
+        phi_alpha_rem += df * dT;
         Dphi_alpha_int = f0;
-        Dphi_alpha_rem = df * (1.0f + TdotM1) + f0 * TdotM1;
+        Dphi_alpha_rem = df + Freq * TdotM1;
 
         /* higher-order spindowns */
         Tas = deltaT;
