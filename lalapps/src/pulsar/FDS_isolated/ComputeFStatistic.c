@@ -1734,9 +1734,9 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
-       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+       teemp = XLALGPSGetREAL8(&(timestamps[k]));
        teemp += 0.5*GV.tsft;
-       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+       XLALGPSSetREAL8(&(midTS[k]), teemp);
      }
    
    TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 
@@ -2484,7 +2484,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
      */
     if ( LALUserVarWasSet(&uvar_refTime)) {
-      TRY ( LALFloatToGPS (status->statusPtr, &refTime, &uvar_refTime), status);
+      XLALGPSSetREAL8(&refTime, uvar_refTime);
     } else {
       refTime.gpsSeconds = cfg->Ti; refTime.gpsNanoSeconds = 0;
     }

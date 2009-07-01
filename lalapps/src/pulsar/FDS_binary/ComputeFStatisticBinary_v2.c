@@ -328,7 +328,7 @@ int main(int argc,char *argv[])
     t0 = SFTData[0]->fft->epoch;
     t1 = SFTData[GV.SFTno-1]->fft->epoch;
     scanInit.obsBegin = t0;
-    LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
+    duration = XLALGPSDiff(&t1, &t0);
     scanInit.obsDuration = duration + GV.tsft;
     /* FIXME: temporariliy disable these lines to allow compiling. Call to InitDopplerSkyScan() 
      * needs to be adjusted to new API...
@@ -1086,9 +1086,9 @@ void CreateDemodParams (LALStatus *status)
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
-       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+       teemp = XLALGPSGetREAL8(&(timestamps[k]));
        teemp += 0.5*GV.tsft;
-       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+       XLALGPSSetREAL8(&(midTS[k]), teemp);
      }
    
    TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 
@@ -1189,9 +1189,9 @@ void CreateBinaryDemodParams (LALStatus *status)
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
-       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+       teemp = XLALGPSGetREAL8(&(timestamps[k]));
        teemp += 0.5*GV.tsft;
-       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+       XLALGPSSetREAL8(&(midTS[k]), teemp);
      }
    
    TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 

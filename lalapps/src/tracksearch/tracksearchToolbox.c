@@ -70,33 +70,17 @@ LALappsTSACropMap(
    * Adjust times on mapStopGPS and mapStartGPS to be times
    * after cropping the MAP
    */
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &startTime,
-			 &tmpMarkingParams.mapStartGPS),
-	   status);
+  startTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
 
   startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
 
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &tmpMarkingParams.mapStartGPS,
-			 &startTime),
-	   status);
+  XLALGPSSetREAL8(&tmpMarkingParams.mapStartGPS, startTime);
 
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &stopTime,
-			 &tmpMarkingParams.mapStopGPS),
-	   status);
+  stopTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStopGPS);
 
   stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
 
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &tmpMarkingParams.mapStopGPS,
-			 &stopTime),
-	   status);
+  XLALGPSSetREAL8(&tmpMarkingParams.mapStopGPS, stopTime);
 
   LALappsTSACreateMap(status,
 		      &tmpMap,
@@ -718,11 +702,7 @@ LALappsTSASortCache(LALStatus   *status,
       if (status->statusCode != 0)
 	inputCache->mapStartTime[i]=-1;
       else
-	LAL_CALL(
-		 LALGPStoFloat(status,
-			       &(inputCache->mapStartTime[i]),
-			       &(tempMap->imageBorders.mapStartGPS)),
-		 status);
+        inputCache->mapStartTime[i] = XLALGPSGetREAL8(&(tempMap->imageBorders.mapStartGPS));
       LALappsTSADestroyMap(status,
 			   &tempMap);
     }
@@ -967,10 +947,7 @@ void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
   LALStatus   status=blank_status;
   REAL8   timeT;
   size_t i;
-  LAL_CALL(LALGPStoFloat(&status,
-			 &timeT,
-			 &(fseries->epoch)),
-	   &status);
+  timeT = XLALGPSGetREAL8(&(fseries->epoch));
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
@@ -990,10 +967,7 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   LALStatus   status=blank_status;
   REAL8   timeT;
   size_t i;
-  LAL_CALL(LALGPStoFloat(&status,
-			 &timeT,
-			 &(fseries->epoch)),
-	   &status);
+  timeT = XLALGPSGetREAL8(&(fseries->epoch));
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)

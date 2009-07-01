@@ -900,7 +900,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar_refTime)) {
-    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+    XLALGPSSetREAL8(&(cfg->refTime), uvar_refTime);
   }
   else
     cfg->refTime = startTime;
@@ -1073,7 +1073,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       }
 
     if ( LALUserVarWasSet ( &uvar_internalRefTime ) ) {
-      TRY ( LALFloatToGPS (status->statusPtr, &(internalRefTime), &uvar_internalRefTime), status);
+      XLALGPSSetREAL8(&(internalRefTime), uvar_internalRefTime);
     }
     else
       internalRefTime = startTime;

@@ -843,11 +843,9 @@ int main( int argc, char *argv[] )
 
   /* store the start and end time of the raw channel in the search summary */
   searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+  XLALGPSSetREAL8(&(searchsumm.searchSummaryTable->in_end_time), tsLength );
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -1552,12 +1550,9 @@ int main( int argc, char *argv[] )
   /* store the start and end time of the filter channel in the search summ */
   /* noting that we don't look for events in the first and last quarter    */
   /* of each findchirp segment of the input data                           */
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->out_start_time), &tsLength ),
-      &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_start_time), tsLength );
 
   outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
@@ -1568,12 +1563,9 @@ int main( int argc, char *argv[] )
           trigStartTimeNS );
   }
 
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ),
-      &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
 
   outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_end_time) );
 

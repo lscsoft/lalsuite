@@ -625,11 +625,9 @@ int main ( int argc, char *argv[] )
 
   /* store the start and end time of the raw channel in the search summary */
   searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8(&(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -719,12 +717,9 @@ int main ( int argc, char *argv[] )
 
   /* store the start and end time of the filter channel in the search summ */
   searchsumm.searchSummaryTable->out_start_time = chan.epoch;
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ),
-      &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
 
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;

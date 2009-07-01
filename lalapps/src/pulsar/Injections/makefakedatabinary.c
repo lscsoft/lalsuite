@@ -625,7 +625,7 @@ int compute_SSBtimes(LALStatus* status) {
     LALBarycenterEarth(status, &earth, &timestamps[i], edat);
     LALBarycenter(status, &emit, &baryinput, &earth);
     floatTime= emit.deltaT + Ts + Tns*1.E-9;
-    LALFloatToGPS(status,&ssb, &floatTime);
+    XLALGPSSetREAL8(&ssb, floatTime);
     SSBtimestamps[i]=ssb;
     
   }

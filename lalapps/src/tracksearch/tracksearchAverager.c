@@ -464,10 +464,8 @@ LALappsTSAMergeMap(LALStatus  *status,
    */
   inputA=&mapA;
   inputB=&mapB;
-  LAL_CALL(LALGPStoFloat(status,&timeA,&(inputA->imageBorders.mapStartGPS)),
-	   status);
-  LAL_CALL(LALGPStoFloat(status,&timeB,&(inputB->imageBorders.mapStartGPS)),
-	   status);
+  timeA = XLALGPSGetREAL8(&(inputA->imageBorders.mapStartGPS));
+  timeB = XLALGPSGetREAL8(&(inputB->imageBorders.mapStartGPS));
   LALappsTSassert((*output==NULL),
 		  TRACKSEARCHAVERAGERC_ENPTR,
 		  TRACKSEARCHAVERAGERC_MSGENPTR);
@@ -492,18 +490,10 @@ LALappsTSAMergeMap(LALStatus  *status,
    *	  TRACKSEARCHAVERAGERC_EDIMS,
    *	  TRACKSEARCHAVERAGERC_MSGEDIMS);
    */
-  LAL_CALL(LALGPStoFloat(status,&timeA,&(inputA->imageBorders.mapStartGPS)),
-	   status);
-  LAL_CALL(LALGPStoFloat(status,&timeB,&(inputB->imageBorders.mapStartGPS)),
-	   status);
-  LAL_CALL(LALGPStoFloat(status,
-			 &timeAstop,
-			 &(inputA->imageBorders.mapStopGPS)),
-	   status);
-  LAL_CALL(LALGPStoFloat(status,
-			 &timeBstop,
-			 &(inputB->imageBorders.mapStopGPS)),
-	   status);
+  timeA = XLALGPSGetREAL8(&(inputA->imageBorders.mapStartGPS));
+  timeB = XLALGPSGetREAL8(&(inputB->imageBorders.mapStartGPS));
+  timeAstop = XLALGPSGetREAL8(&(inputA->imageBorders.mapStopGPS));
+  timeBstop = XLALGPSGetREAL8(&(inputB->imageBorders.mapStopGPS));
   /*
    * InputA should end before inputB ends and after equal B starts
    */

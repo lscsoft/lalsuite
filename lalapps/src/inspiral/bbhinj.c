@@ -673,8 +673,7 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_end_time),
-          &(this_inj->geocent_end_time), u * timeInterval ), &status );
+      XLALGPSAdd( &(this_inj->geocent_end_time), u * timeInterval );
     }
 
     /* set gmst */
@@ -805,8 +804,7 @@ int main( int argc, char *argv[] )
         &status);
     
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd( &gpsStartTime, meanTimeStep );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 
