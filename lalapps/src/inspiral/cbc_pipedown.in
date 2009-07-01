@@ -146,7 +146,7 @@ for tag in user_tags:
   # determine whether or not this was an injection run by checking if there
   # is an injection file
 
-  file_sieve = '*'.join([ 'INJECTION', tag.split('_')[0] ])
+  file_sieve = ''.join([ 'INJECTION*', tag.split('_CAT')[0], '*' ])
   inj_cache = ihope_cache.sieve( description = file_sieve, exact_match = True )
   if len(inj_cache) == 0:
     simulation = False
