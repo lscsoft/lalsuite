@@ -106,7 +106,6 @@ lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
 LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
-LALGPStoINT8()                  LALINT8toGPS()
 LALGPStoUTC()                   LALDateString()
 LALGPStoGMST1()
 LALCHARCreateVector()           LALCHARDestroyVector()
@@ -520,8 +519,8 @@ main( int argc, char **argv )
 
     /* Convert to INT8 seconds and back, just to test things (and get
        the LIGOTimeGPS structure into standard form). */
-    SUB( LALGPStoINT8( &stat, &nsec, &gpsTime ), &stat );
-    SUB( LALINT8toGPS( &stat, &gpsTime, &nsec ), &stat );
+    nsec = XLALGPSToINT8NS(&gpsTime);
+    XLALINT8NSToGPS(&gpsTime, nsec);
     fprintf( stdout, "TIME COORDINATE\n" );
 
     /* Convert to UTC timestamp. */
