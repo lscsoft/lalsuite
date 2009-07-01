@@ -1,3 +1,15 @@
+lal (6.0.2-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.0.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 12 Jun 2009 14:25:26 -0600
+
+lal (6.0.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 10 Jun 2009 20:53:45 -0600
+
 lal (6.0-1lscsoft1) unstable; urgency=low
 
   * LAL 6.0 (based on branch 9d93e994822c8dc61f2a62233e017d71866564f9)

@@ -652,8 +652,7 @@ int main( int argc, char *argv[] )
             "generating chan to put waveform in\n" );
 
         /* get the gps start time of the signal to inject */
-        LALGPStoINT8( &status, &waveformStartTime, 
-            &(thisInjection->geocent_end_time) );
+        waveformStartTime = XLALGPSToINT8NS( &(thisInjection->geocent_end_time) );
         waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
         offset = (3.0 * numRawPoints / 4.0) * deltaT;
@@ -681,7 +680,7 @@ int main( int argc, char *argv[] )
             &(resp->sampleUnits) );
 
         /* set the start times for spinning injection */
-        LALINT8toGPS( &status, &(waveform.a->epoch), &waveformStartTime );
+        XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
         memcpy(&(waveform.f->epoch), &(waveform.a->epoch),
             sizeof(LIGOTimeGPS) );
         memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),
@@ -801,8 +800,7 @@ int main( int argc, char *argv[] )
         memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
 
         /* get the gps start time of the signal to inject */
-        LALGPStoINT8( &status, &waveformStartTime,
-            &(thisInjection->geocent_end_time) );
+        waveformStartTime = XLALGPSToINT8NS( &(thisInjection->geocent_end_time) );
         waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
         offset = (chan->data->length / 2.0) * chan->deltaT;

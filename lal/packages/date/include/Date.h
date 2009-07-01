@@ -690,23 +690,6 @@ void LALIntervalToFloat(LALStatus *status,
                         const LALTimeInterval *pInterval);
 
 
-/* <lalLaTeX>
-\newpage\input{GPStoINT8C}
-</lalLaTeX> */
-void
-LALINT8toGPS (
-    LALStatus          *status,
-    LIGOTimeGPS        *output,
-    const INT8         *input
-    );
-
-void
-LALGPStoINT8 (
-    LALStatus          *status,
-    INT8               *output,
-    const LIGOTimeGPS  *input
-    );
-
 /* This next function is to facilitate writing loops that increment time
  * by a time interval */
 /* <lalLaTeX>

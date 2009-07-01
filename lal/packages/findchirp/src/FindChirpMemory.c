@@ -189,8 +189,7 @@ LALInitializeDataSegmentVector (
 
   /* store the start of the input channel and its gps start time */
   dataPtr = chan->data->data;
-  LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
-  CHECKSTATUSPTR( status );
+  chanStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
   for ( i = 0; i < dataSegVec->length; ++i )
   {
@@ -217,9 +216,7 @@ LALInitializeDataSegmentVector (
           (REAL8) i * chan->deltaT
         );
 
-      LALINT8toGPS( status->statusPtr, &(currentSegment->chan->epoch),
-          &currentSegmentTime );
-      CHECKSTATUSPTR( status );
+      XLALINT8NSToGPS( &(currentSegment->chan->epoch), currentSegmentTime );
     }
 
     /* set up the REAL4Sequence to contain the correct data */

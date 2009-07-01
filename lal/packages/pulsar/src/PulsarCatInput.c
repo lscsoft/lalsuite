@@ -103,7 +103,7 @@ measured.  In most cases this means it will be treated as zero.
 \begin{verbatim}
 lalDebugLevel
 LALWarning()                  LALStringToU2()
-LALLeapSecs()                 LALINT8toGPS()
+LALLeapSecs()
 LALDCreateVector()            LALDDestroyVector()
 \end{verbatim}
 
@@ -620,7 +620,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
     acc.accuracy = LALLEAPSEC_STRICT;
     acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( jday - 2444244.5 )*(8.64e13L) );
-    TRY( LALINT8toGPS( stat->statusPtr, &epoch, &gpsNan ), stat );
+    XLALINT8NSToGPS( &epoch, gpsNan );
     leap2 = 0;
     do {
       leap1 = leap2;
@@ -749,7 +749,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
     acc.accuracy = LALLEAPSEC_STRICT;
     acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( jday - 2444244.5 )*(8.64e13L) );
-    TRY( LALINT8toGPS( stat->statusPtr, &epoch, &gpsNan ), stat );
+    XLALINT8NSToGPS( &epoch, gpsNan );
     leap2 = 0;
     do {
       leap1 = leap2;
