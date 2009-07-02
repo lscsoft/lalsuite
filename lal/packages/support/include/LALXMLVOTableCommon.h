@@ -139,7 +139,8 @@ xmlNodePtr XLALCreateVOTResourceNode(const char *type,
                                      const char *identifier,
                                      const xmlNodePtr childNodeList);
 
-xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree);
+xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree);
+
 
 INT4 XLALCreateVOTStringFromTree(const xmlNodePtr xmlTree,
                                  xmlChar **xmlStringBuffer,
@@ -151,6 +152,7 @@ xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
                                                 const char *paramName,
                                                 VOTABLE_ATTRIBUTE paramAttribute);
 
+CHAR *XLALVOTTree2String ( const xmlNode *xmlTree );
 
 /* C++ protection */
 #ifdef  __cplusplus

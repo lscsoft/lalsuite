@@ -52,6 +52,8 @@ const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
 VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
 
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
+char * XMLCleanVOTTableWhitespace ( const char *xmlString );
+
 
 /* ---------- function definitions ---------- */
 
@@ -503,7 +505,7 @@ XLALCreateVOTTableNode ( const char *name,			/**< [in] optional name attribute t
               goto failed;
             }
             char textbuf[1024];
-            if ( snprintf(textbuf, 1024, "%g", 9.99999 ) < 0) {
+            if ( snprintf(textbuf, 1024, "%g", ((double**)dataColumns)[col][row] ) < 0) {
               XLALPrintError("%s: failed to convert double element to string.\n", fn );
               err = XLAL_EFAILED;
               goto failed;
@@ -569,7 +571,7 @@ XLALCreateVOTTableNode ( const char *name,			/**< [in] optional name attribute t
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
+xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTDocumentFromTree";
@@ -577,6 +579,7 @@ xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
     xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
     xmlNsPtr xmlSchemaNamespace = NULL;
+    xmlNodePtr localTree = NULL;	/* we need to *copy* the xmlTree, as it will be inserted into the xmlDoc */
 
     /* make sure that the shared library is the same as the
      * library version the code was compiled against */
@@ -586,6 +589,11 @@ xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
     if(!xmlTree) {
         XLALPrintError("Invalid input parameter: xmlTree\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    if ( ( localTree = xmlCopyNode ( (const xmlNodePtr)xmlTree, 1) ) == NULL ) {
+      XLALPrintError ("%s: failed to xmlCopyNode() the input tree.\n", logReference );
+      XLAL_ERROR_NULL ( logReference, XLAL_EFAILED );
     }
 
     /* set up XML document */
@@ -635,7 +643,7 @@ xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
     }
 
     /* append tree to root node */
-    if(!xmlAddChild(xmlRootElement, xmlTree)) {
+    if(!xmlAddChild(xmlRootElement, localTree)) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("Couldn't append given tree to VOTABLE root element\n");
@@ -655,7 +663,8 @@ xmlDocPtr XLALCreateVOTDocumentFromTree(const xmlNodePtr xmlTree)
 
     /* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
     return xmlDocument;
-}
+
+} /* XLALCreateVOTDocumentFromTree() */
 
 
 /**
@@ -954,3 +963,170 @@ XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
 
 } /* XLALVOTAttribute2String() */
 
+
+/** Cleans whitespace in VOTable string representation from table-rows.
+ *
+ * Note: this function decides on the final formatting of the XML string:
+ * we use standard lalxml2 indentation, except for successive <TD></TD> elements,
+ * which all stand on one line. Same applies to <TR><TD> and </TD></TR> elements,
+ * so that each table-row takes exactly one line only [for better readabiltiy]
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+CHAR *
+XMLCleanVOTTableWhitespace ( const char *xmlString )
+{
+  static const char *fn = "XMLCleanVOTTableWhitespace()";
+
+  /* check input consistency */
+  if ( !xmlString ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* we want all successive <TD> elements to be on one line,
+   * so we step through the whole xml-string and nuke all whitespace
+   * found between </TD> and <TD> elements.
+   */
+  static const char *TD_OPEN  = "<TD>";
+  static const char *TD_CLOSE = "</TD>";
+  static const char *TR_OPEN  = "<TR>";
+  static const char *TR_CLOSE = "</TR>";
+  const size_t TD_OPEN_LEN  = strlen ( TD_OPEN );
+  const size_t TD_CLOSE_LEN = strlen ( TD_CLOSE );
+  const size_t TR_OPEN_LEN  = strlen ( TR_OPEN );
+  const size_t TR_CLOSE_LEN = strlen ( TR_CLOSE );
+
+  const char *tmp, *nextEl;
+  char *startEl;
+
+  UINT4 numChars = strlen ( xmlString );
+  tmp = xmlString;
+  /* ----- first pass: replace all whitespace between <TR>..<TD>, </TD>..<TD>, and </TD>...</TR>  by ZERO's ! */
+  while( ( startEl = strchr (tmp, '<' ) ) != NULL )
+    {
+      /* ---------- case 1: <TR> ... <TD> ---------- */
+      if ( !strncmp ( startEl, TR_OPEN, TR_OPEN_LEN ) )
+        {
+          startEl += TR_OPEN_LEN;
+          /* find then next XML element */
+          if ( (nextEl = strchr (startEl, '<' )) == NULL ) {	/* find next element */
+            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", startEl );
+            XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+          }
+          /* check that next element is <TD>, if not ... something is wrong */
+          if (strncmp ( nextEl, TD_OPEN, TD_OPEN_LEN ) ) {
+            XLALPrintError ("Malformed XML Table: <TR> is not followed by <TD>: '%s'\n", fn, nextEl );
+            XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+          }
+
+        } /* if we found <TR> */
+
+      /* ---------- case 2: </TD> ...[<TD>|</TR>] ---------- */
+      else if ( !strncmp ( startEl, TD_CLOSE, TD_CLOSE_LEN ) )
+        {
+          startEl += TD_CLOSE_LEN;
+          /* find the next XML element */
+          if ( (nextEl = strchr (startEl, '<' )) == NULL ) {	/* find next element */
+            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", startEl );
+            XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+          }
+
+          /* check that next element is either <TD> or </TR>, if not ... something is wrong */
+          if ( strncmp ( nextEl, TD_OPEN, TD_OPEN_LEN ) &&
+               strncmp ( nextEl, TR_CLOSE, TR_CLOSE_LEN ) )
+            {
+              XLALPrintError ("%s: Malformed XML Table: </TD> is not followed by <TD> or </TR>: '%s'\n", fn, nextEl );
+              XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+            }
+
+        } /* case 2: </TD> ... <TD>|</TR> */
+      else /* not a table element <TR> or </TD>, so continue */
+        {
+          tmp = startEl + 1;	/* skip '<' */
+          continue;
+        }
+
+      /* now brutally set everything between startEl and nextEl to ZERO */
+      memset ( startEl, 0, (size_t)(nextEl - startEl) * sizeof(char) );
+
+      /* skip all of the treated region */
+      tmp = nextEl;
+
+    } /* while more XML elements are found */
+
+  char *ret;
+  /* ----- second pass: copy all chars skipping all ZEROS */
+  if ( (ret = XLALMalloc ( (numChars + 1) * sizeof(char) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", fn, numChars * sizeof(char));
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 l = 0;	/* count chars converted */
+  UINT4 i;
+  for ( i=0; i < numChars; i ++ )
+    {
+      if ( xmlString[i] )
+        ret[l++] = xmlString[i];
+    } /* for i < numChars */
+
+  /* now reduce converted string to its actual length */
+  ret = XLALRealloc ( ret, (l+1) * sizeof(char) );
+  /* ZERO-terminate final string */
+  ret[l] = 0;
+
+  return ret;
+
+} /* XMLCleanVOTTableWhitespace() */
+
+
+/** Convert the given VOTable xmlTree into a complete XML document string
+ *
+ *  This function should be used for the final string-formatting of a
+ *  VOTable XML-tree
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+CHAR *
+XLALVOTTree2String ( const xmlNode *xmlTree )
+{
+  const char *fn = "XLALVOTTree2String()";
+  xmlChar *xmlString;
+  xmlDocPtr xmlDoc;
+  CHAR *ret;
+
+  /* check input consistency */
+  if ( !xmlTree ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* ----- Step 1: convert VOTable tree into full-fledged VOTable document */
+  if ( (xmlDoc = XLALCreateVOTDocumentFromTree( xmlTree )) == NULL ) {
+    XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
+  if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
+    XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
+    xmlFreeDoc ( xmlDoc );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- Step 3: post-process string somewhat for single-line table rows */
+  if ( ( ret = XMLCleanVOTTableWhitespace ( (const char*)xmlString )) == NULL ) {
+    XLALPrintError ("%s: XMLCleanVOTTableWhitespace() failed to clean table whitespace from string. errno=%d\n", fn, xlalErrno );
+    xmlFreeDoc ( xmlDoc );
+    xmlFree ( xmlString );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  xmlFreeDoc ( xmlDoc );
+  xmlFree ( xmlString );
+
+  return ret;
+
+} /* XLALVOTTree2String() */
