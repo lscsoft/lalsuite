@@ -6,7 +6,7 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           StochasticOptimalFilterNormalizationTest \
           OverlapReductionFunctionTest          StochasticInverseNoiseTest \
-          AstroOmegaTest
+          AstroOmegaTest SimulateSBTest SimulatePopcornTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -42,6 +42,10 @@ OverlapReductionFunctionTest_LDADD = $(top_builddir)/packages/support/src/liblal
 StochasticInverseNoiseTest_SOURCES = StochasticInverseNoiseTest.c \
                                          CheckStatus.c
 StochasticInverseNoiseTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SimulateSBTest_SOURCES  = SimulateSBTest.c CheckStatus.c
+SimulateSBTest_LDADD    = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
+SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 # SFalseAlarmTest_SOURCES = SFalseAlarmTest.c
 # SFalseAlarmTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 # SFalseDismissalTest_SOURCES = SFalseDismissalTest.c
@@ -65,7 +69,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           \
           StochasticOptimalFilterNormalizationTest   StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
-          AstroOmegaTest
+          AstroOmegaTest SimulateSBTest SimulatePopcornTest
 
 TESTS_ENVIRONMENT = 1>/dev/null
 #    SFalseAlarmTest       SFalseDismissalTest  \
@@ -74,7 +78,7 @@ TESTS_ENVIRONMENT = 1>/dev/null
 
 EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckStatus.c CheckStatus.h
 
-MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
+MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0* WHITENED-SB*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@
