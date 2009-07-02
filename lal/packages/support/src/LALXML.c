@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 2007 Jolien Creighton
  *  Copyright (C) 2009 Oliver Bock
+ *  Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,12 +35,14 @@
 
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
+#include <lal/LALMalloc.h>
 #include <lal/LALXML.h>
 
 
-/* private prototypes */
+/* ---------- private prototypes ---------- */
 INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtPtr xmlSchemaValidator);
 
+/* ---------- function definitions ---------- */
 
 static void print_element_names(xmlNode *node)
 {
@@ -407,3 +410,73 @@ INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsP
 
     return XLAL_SUCCESS;
 }
+
+
+/** Convert a general (but complete!) XML-string into an xmlDoc representation.
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlDocPtr
+XLALXMLString2Doc ( const char *xmlString )
+{
+  const char *fn = "XLALXMLString2Doc()";
+  xmlDocPtr ret = NULL;
+
+  /* check input consistency */
+  if ( !xmlString ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* parse XML document */
+  if ( (ret = xmlReadMemory((const char*)xmlString, strlen((const char*)xmlString), NULL, "UTF-8", 0)) == NULL ) {
+    XLALPrintError ( "%s: XML document parsing xmlReadMemory() failed!\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* clean up */
+  xmlCleanupParser();
+
+  return ret;
+
+} /* XLALXMLString2Doc() */
+
+
+/** Convert the given xmlDoc representation of a VOTable into a string representation,
+ *  eg for storing the XML into a file.
+ *
+ * Note: the returned string must be free'ed using \c xmlFree !
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar *
+XLALXMLDoc2String ( const xmlDoc *xmlDocument )
+{
+  static const char *fn = "XLALXMLDoc2String()";
+
+  /* set up local variables */
+  int xmlStringBufferSize = 0;
+  xmlChar *xmlString = NULL;
+
+  /* check input consistency */
+  if ( !xmlDocument ) {
+    XLALPrintError ("%s: invalid NULL input 'xmlDocument'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* prepare XML serialization (here: indentation) */
+  xmlThrDefIndentTreeOutput(1);
+
+  /* dump document to a string buffer */
+  xmlDocDumpFormatMemory ( (xmlDocPtr)xmlDocument, &xmlString, &xmlStringBufferSize, 1);
+  if(xmlStringBufferSize <= 0) {
+    XLALPrintError ("%s: XML document dump xmlDocDumpFormatMemory() failed!\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+
+  return xmlString;
+
+} /* XLALXMLDoc2String() */
+
