@@ -58,7 +58,7 @@
 
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 
-                            REAL8FrequencySeries *FstatVector,
+                            REAL4FrequencySeries *FstatVector,
                             const PulsarDopplerParams *doppler,
                             const MultiSFTVector *multiSFTs, 
                             const MultiNoiseWeights *multiWeights,
