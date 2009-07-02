@@ -748,7 +748,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
 	  {
 	    REAL8 kstar8 = kappa_star;
-	    SINCOS_2PI_TRIMMEED(&s_alpha, &c_alpha, kstar8);
+	    SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kstar8);
 	  }
 	  c_alpha -= 1.0f;
 	
