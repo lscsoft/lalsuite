@@ -30,15 +30,10 @@
 
 #if __x86_64__
 #include "hough_x64.ci"
-#warning including "hough_x64.ci"
 #elif __SSE2__
 #include "hough_sse2.ci"
-#warning including "hough_sse2.ci"
 #elif __i386__
 #include "hough_x87.ci"
-#warning including "hough_x87.ci"
-#else
-#warning ADDPHMD2HD_WLR_LOOP unset
 #endif
 
 RCSID( "$Id$");
