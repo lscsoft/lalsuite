@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = libstochastic.la
-libstochastic_la_SOURCES = StochasticCrossCorrelation.c ZeroPadAndFFT.c \
+lib_LTLIBRARIES = liblalstochastic.la
+liblalstochastic_la_SOURCES = StochasticCrossCorrelation.c ZeroPadAndFFT.c \
                            StochasticOptimalFilter.c \
                            StochasticOptimalFilterNormalization.c \
                            OverlapReductionFunction.c StochasticOmegaGW.c \
