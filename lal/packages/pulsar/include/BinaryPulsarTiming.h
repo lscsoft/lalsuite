@@ -152,6 +152,8 @@ tagBinaryPulsarParams
   REAL8 f1;     /**< frequency first derivative (Hz/s) */
   REAL8 f2;     /**< frequency second derivative (Hz/s^2) */
   REAL8 f3;     /**< frequency third derivative (Hz/s^3) */
+  REAL8 f4;     /**< frequency fourth derivative (Hz/s^4) */
+  REAL8 f5;     /**< frequency fifth derivative (Hz/s^5) */
 
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
@@ -229,10 +231,12 @@ tagBinaryPulsarParams
   REAL8 f1Err;
   REAL8 f2Err;
   REAL8 f3Err;
-  
+  REAL8 f4Err;
+  REAL8 f5Err;
+
   REAL8 pepochErr;
   REAL8 posepochErr;
-  
+
   REAL8 raErr;
   REAL8 decErr;
   REAL8 pmraErr;

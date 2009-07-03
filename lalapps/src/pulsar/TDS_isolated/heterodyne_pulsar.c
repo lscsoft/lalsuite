@@ -863,7 +863,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   static LALStatus status;
 
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
-  REAL8 t=0., t2=0., tdt=0., T0=0., T0Update=0.;
+  REAL8 t=0., t2=0., tdt=0., tdt2=0., T0=0., T0Update=0.;
   REAL8 dtpos=0.; /* time between position epoch and data timestamp */
   INT4 i=0;
 
@@ -1000,13 +1000,18 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
     }
 
+    tdt2 = tdt*tdt; /* tdt^2 for /slightly/ faster computation */
     /* multiply by 2 to get gw phase */
     phaseCoarse = freqfactor*(hetParams.het.f0*tdt +
-      0.5*hetParams.het.f1*tdt*tdt + (1./6.)*hetParams.het.f2*tdt*tdt*tdt +
-      (1./24.)*hetParams.het.f3*tdt*tdt*tdt*tdt);
+      0.5*hetParams.het.f1*tdt2 + (1./6.)*hetParams.het.f2*tdt2*tdt +
+      (1./24.)*hetParams.het.f3*tdt2*tdt2 + 
+      (1./120.)*hetParams.het.f4*tdt2*tdt2*tdt + 
+      (1./720.)*hetParams.het.f5*tdt2*tdt2*tdt2);
 
     fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
-      0.5*hetParams.het.f2*tdt*tdt + (1./6.)*hetParams.het.f3*tdt*tdt*tdt);
+      0.5*hetParams.het.f2*tdt2 + (1./6.)*hetParams.het.f3*tdt2*tdt +
+      (1./24.)*hetParams.het.f4*tdt2*tdt2 + 
+      (1./120.)*hetParams.het.f5*tdt2*tdt2*tdt);
 
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
@@ -1081,11 +1086,14 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         position = middle + (INT4)floor(df/filtresp->deltaf);
       }
 
+      tdt2 = tdt*tdt;
       /* multiply by freqfactor to get gw phase */
       phaseUpdate = freqfactor*(hetParams.hetUpdate.f0*tdt +
-        0.5*hetParams.hetUpdate.f1*tdt*tdt +
-        (1./6.)*hetParams.hetUpdate.f2*tdt*tdt*tdt +
-        (1./24.)*hetParams.hetUpdate.f3*tdt*tdt*tdt*tdt);
+        0.5*hetParams.hetUpdate.f1*tdt2 +
+        (1./6.)*hetParams.hetUpdate.f2*tdt2*tdt +
+        (1./24.)*hetParams.hetUpdate.f3*tdt2*tdt2 + 
+        (1./120.)*hetParams.hetUpdate.f4*tdt2*tdt2*tdt + 
+        (1./720.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt2);
     }
 
 /******************************************************************************/

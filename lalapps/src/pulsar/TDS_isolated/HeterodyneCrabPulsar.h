@@ -232,6 +232,7 @@ tagTNHeterodyneInput
 	noise heterodyne) heterodyne frequency */
   REAL8			f1;		/* the initial heterdyne f1 */
   REAL8			f2;		/* the initial heterodyne f2 */
+  REAL8                 f3;             /* the initial heterodyne f3 */
   COMPLEX16 Vh;		/* the complex output of the initial heterodyne */
 	REAL8			t0;		/* the epoch of the initial heterodyne frequency */
 	LIGOTimeGPS epoch;  /* the time of the data point Vh */
