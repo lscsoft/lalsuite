@@ -938,7 +938,7 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-
+      ComputeFBufferREAL4V cfvBuffer;
 
       /* if (skyGridCounter == 25965) { */
 
@@ -1052,7 +1052,7 @@ int MAIN( int argc, char *argv[]) {
 
       } /* fstat memory allocation block */
       
-      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
+      cfvBuffer = empty_ComputeFBufferREAL4V;
       
 	/* loop over fdot values
 	   -- spindown range and resolutionhas been set earlier */
