@@ -1305,7 +1305,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"e_3") || !strcmp(val[i],"E_3") ||
       !strcmp(val[i],"ECC_3")      || !strcmp(val[i],"ecc_3")) {
-      output->e2 = atof(val[i+1]);
+      output->e3 = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
