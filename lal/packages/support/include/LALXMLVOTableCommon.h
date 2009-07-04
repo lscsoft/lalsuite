@@ -137,7 +137,7 @@ xmlNodePtr XLALCreateVOTResourceNode(const char *type,
                                      const char *identifier,
                                      const xmlNodePtr childNodeList);
 
-xmlDoc *XLALCreateVOTDocFromTree(xmlNodePtr xmlTree);
+xmlDoc *XLALCreateVOTDocFromTree(xmlNodePtr xmlTree, BOOLEAN reconcileNamespace );
 
 xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
                                                 const char *resourceType,

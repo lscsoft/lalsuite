@@ -720,21 +720,24 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
  * \li \c INFO
  * \li \c RESOURCE
  *
- * \param xmlTree [in] The XML fragment to be turned into a VOTable document
- *
  * \return A pointer to a \c xmlDoc that represents the full VOTable XML document.
  * In case of an error, a null-pointer is returned.\n
  * \b Important: the caller is responsible to free the allocated memory (when the
  * document isn't needed anymore) using \c xmlFreeDoc.
  *
  * Note: the xmlTree passed as input becomes part of the returned xmlDoc, so
- * be careful not to free the xmlTree in addition to xmlDoc (==> double-free!)
+ * be careful not to free the xmlTree in addition to xmlDoc (==> double-free!)!!
+ *
+ * Note2: if the resulting xmlDoc should pass validation, you need to set reconcileNamespace == true,
+ * but this is not required to generate a valid XML string.
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
 xmlDoc *
-XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree )
+XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be turned into a VOTable document */
+                           BOOLEAN reconcileNamespace	/**< [in] switch to turn on/off namespace-reconciliation: required to validate xmlDoc */
+                           )
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTDocFromTree";
@@ -810,16 +813,16 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree )
     /* finally, assign root element to document */
     xmlDocSetRootElement(xmlDocument, xmlRootElement);
 
-#if 0
-    /* FIXME: [repr] it's not clear to me why we would need this, so I'm temporarily turning it off */
-    /* reconcile default namespace with all document elements */
-    if(XLALReconcileDefaultNamespace(xmlRootElement, xmlVOTableNamespace) != XLAL_SUCCESS) {
-        /* clean up */
-        xmlFreeDoc(xmlDocument);
-        XLALPrintError("Default namespace reconciliation failed!\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-#endif
+    if ( reconcileNamespace )
+      {
+        /* reconcile default namespace with all document elements */
+        if(XLALReconcileDefaultNamespace(xmlRootElement, xmlVOTableNamespace) != XLAL_SUCCESS) {
+          /* clean up */
+          xmlFreeDoc(xmlDocument);
+          XLALPrintError("Default namespace reconciliation failed!\n");
+          XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+      } /* if reconcileNamespace */
 
     /* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
     return xmlDocument;
@@ -1202,7 +1205,7 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
   }
 
   /* ----- Step 1: convert VOTable tree into full-fledged VOTable document */
-  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree )) == NULL ) {
+  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
     XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
