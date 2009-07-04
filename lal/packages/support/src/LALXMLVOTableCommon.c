@@ -55,6 +55,7 @@ VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
+const char *XLALwriteVOTatomFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
 
 /* ---------- function definitions ---------- */
 
@@ -263,9 +264,10 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTResourceNode(const char *type,
-                                     const char *identifier,
-                                     const xmlNodePtr childNodeList)
+xmlNodePtr
+XLALCreateVOTResourceNode(const char *type,
+                          const char *identifier,
+                          const xmlNodePtr childNodeList)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTResourceNode";
@@ -442,6 +444,10 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
 
     UINT4 row, col, numFields;
     const xmlNode *xmlChildNode = NULL;
+    xmlNodePtr xmlTABLEDATAnode = NULL;
+    void **dataColumns = NULL;		/* array of void-pointers to variable-length input arguments */
+    VOTABLE_DATATYPE *dataTypes = NULL;	/* array of corresponding datatypes, parsed from fieldNodeList */
+    const char **dataFmts = NULL;	/* array of format strings for printing */
 
     /* input sanity check */
     if ( !fieldNodeList ) {
@@ -461,10 +467,6 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
 
 
     /* ---------- prepare column writing from varargs input list ---------- */
-    void **dataColumns;			/* array of void-pointers to variable-length input arguments */
-    VOTABLE_DATATYPE *dataTypes;	/* array of corresponding datatypes, parsed from fieldNodeList */
-    const char **dataFmts;		/* array of format strings for printing */
-
     if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
       XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", fn, numFields, sizeof(*dataColumns) );
       err = XLAL_ENOMEM;
@@ -509,7 +511,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
         dataColumns[col] = va_arg(ap, void *);	/* assemble a list of data-pointers of all data columns */
 
         /* get data-types */
-        char *datatypeStr;
+        char *datatypeStr = NULL;
         if ( (datatypeStr = (char*)xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
           XLALPrintError ("%s: xmlGetProp() failed to find required attribute 'datatype' in FIELD node Nr %d.\n", fn, col );
           err = XLAL_EINVAL;
@@ -527,7 +529,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
         if ( fmtList )
           dataFmts[col] = fmtList->tokens[col];
         else
-          dataFmts[col] = XLALgetDefaultFmt4Datatype ( dataTypes[col] );
+          dataFmts[col] = NULL;
 
         /* advance to next sibling in list */
         xmlChildNode = xmlChildNode->next;
@@ -538,7 +540,6 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
     /* we're ready for assembling the actual TABLEDATA entries now */
 
     /* create TABLEDATA node */
-    xmlNodePtr xmlTABLEDATAnode = NULL;
     if ( ( xmlTABLEDATAnode = xmlNewNode ( NULL, CAST_CONST_XMLCHAR("TABLEDATA") ))== NULL ) {
       XLALPrintError ("%s: xmlNewNode() failed to create 'TABLEDATA' node.\n", fn );
       err = XLAL_ENOMEM;
@@ -561,7 +562,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
           goto failed;
         }
 
-        /* loop over columns and generate each table element */
+        /* ----- loop over columns and generate each table element */
         for ( col = 0; col < numFields; col ++ )
           {
             /* create TD node */
@@ -576,103 +577,17 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
               err = XLAL_EFAILED;
               goto failed;
             }
-#define TEXTBUFLEN 1024
-            char textbuf[TEXTBUFLEN];
-            BOOLEAN val;
 
-            switch ( dataTypes[col] )
-              {
-              case VOT_BOOL:
-                val = ((BOOLEAN**)dataColumns)[col][row];
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], val ? 1 : 0 ) < 0) {
-                  XLALPrintError("%s: failed to convert BOOLEAN element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_BIT:
-                XLALPrintError ("%s: Sorry, datatype 'VOT_BIT' not currently supported!\n", fn );
-                err = XLAL_EDOM;
-                goto failed;
-                break;
-              case VOT_CHAR:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((CHAR**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert CHAR element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_CHAR_UTF:
-                XLALPrintError ("%s: Sorry, datatype 'VOT_CHAR_UTF' not currently supported!\n", fn );
-                err = XLAL_EDOM;
-                goto failed;
-                break;
-              case VOT_INT1:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((CHAR**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert INT1 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_INT2:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((INT2**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert INT2 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_INT4:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((INT4**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert INT4 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_INT8:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((INT8**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert INT8 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_REAL4:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((REAL4**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert REAL4 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_REAL8:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((REAL8**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert REAL8 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_COMPLEX8:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((COMPLEX8**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert COMPLEX8 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              case VOT_COMPLEX16:
-                if ( snprintf(textbuf, TEXTBUFLEN, dataFmts[col], ((COMPLEX16**)dataColumns)[col][row] ) < 0) {
-                  XLALPrintError("%s: failed to convert COMPLEX16 element (row=%d, col=%d) to string using fmt '%s'.\n", fn, row, col, dataFmts[col] );
-                  err = XLAL_EFAILED;
-                  goto failed;
-                }
-                break;
-              default:
-                XLALPrintError ("%s: invalid datatype (%d), has to be within [1, %d].\n", fn, dataTypes[col], VOT_DATATYPE_LAST - 1 );
-                XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-                break;
-              } /* switch datatype[col] */
-
+            const char* tmptxt;
+            if ( (tmptxt = XLALwriteVOTatomFromArray ( dataTypes[col], dataFmts[col], dataColumns[col], row )) == NULL ){
+              XLALPrintError ("%s: XLALwriteVOTatomFromArray() failed for row = %d, col = %d. errno = %d.\n", fn, row, col, xlalErrno );
+              err = XLAL_EFUNC;
+              goto failed;
+            }
 
             xmlNodePtr xmlTextNode;
-            if ( (xmlTextNode = xmlNewText (CAST_CONST_XMLCHAR(textbuf) )) == NULL ) {
-              XLALPrintError("%s: xmlNewText() failed to turn text '%s' into node\n", fn, textbuf );
+            if ( (xmlTextNode = xmlNewText (CAST_CONST_XMLCHAR(tmptxt) )) == NULL ) {
+              XLALPrintError("%s: xmlNewText() failed to turn text '%s' into node\n", fn, tmptxt );
               err = XLAL_EFAILED;
               goto failed;
             }
@@ -852,11 +767,12 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlChar * XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                                 const char *resourceType,
-                                                 const char *resourceName,
-                                                 const char *paramName,
-                                                 VOTABLE_ATTRIBUTE paramAttribute)
+xmlChar *
+XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                       const char *resourceType,
+                                       const char *resourceName,
+                                       const char *paramName,
+                                       VOTABLE_ATTRIBUTE paramAttribute)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
@@ -903,6 +819,61 @@ xmlChar * XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
     /* retrieve specified attribute (content) */
     return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
 }
+
+
+/** Convert the given VOTable xmlTree into a complete VOTable XML document string
+ *
+ * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
+ * Please note that all restrictions described for \ref XLALCreateVOTDocFromTree also apply here!
+ *
+ *  This function should be used for the final string-formatting of a VOTable XML-tree.
+ *
+ * \author Oliver Bock, Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ *
+ */
+CHAR *
+XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
+{
+  const char *fn = "XLALVOTTransformTree2String()";
+  xmlChar *xmlString;
+  xmlDocPtr xmlDoc;
+  CHAR *ret;
+
+  /* check input consistency */
+  if ( !xmlTree ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* ----- Step 1: convert VOTable tree into full-fledged VOTable document, but skip namespace-reconciliation  */
+  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
+    XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
+  if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
+    XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
+    xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
+    xmlFreeDoc ( xmlDoc );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
+  xmlFreeDoc ( xmlDoc );	/* free the document container */
+
+  /* ----- Step 3: post-process string: clean newlines+white-space from table rows */
+  if ( ( ret = XMLCleanVOTTableWhitespace ( (const char*)xmlString )) == NULL ) {
+    XLALPrintError ("%s: XMLCleanVOTTableWhitespace() failed to clean table whitespace from string. errno=%d\n", fn, xlalErrno );
+    xmlFree ( xmlString );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  xmlFree ( xmlString );
+
+  return ret;
+
+} /* XLALVOTTree2String() */
 
 
 
@@ -1179,60 +1150,6 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
 } /* XMLCleanVOTTableWhitespace() */
 
 
-/** Convert the given VOTable xmlTree into a complete VOTable XML document string
- *
- * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
- * Please note that all restrictions described for \ref XLALCreateVOTDocFromTree also apply here!
- *
- *  This function should be used for the final string-formatting of a VOTable XML-tree.
- *
- * \author Oliver Bock, Reinhard Prix\n
- * Albert-Einstein-Institute Hannover, Germany
- *
- */
-CHAR *
-XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
-{
-  const char *fn = "XLALVOTTransformTree2String()";
-  xmlChar *xmlString;
-  xmlDocPtr xmlDoc;
-  CHAR *ret;
-
-  /* check input consistency */
-  if ( !xmlTree ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  /* ----- Step 1: convert VOTable tree into full-fledged VOTable document */
-  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
-    XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
-  if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
-    XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
-    xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
-    xmlFreeDoc ( xmlDoc );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
-  xmlFreeDoc ( xmlDoc );	/* free the document container */
-
-  /* ----- Step 3: post-process string: clean newlines+white-space from table rows */
-  if ( ( ret = XMLCleanVOTTableWhitespace ( (const char*)xmlString )) == NULL ) {
-    XLALPrintError ("%s: XMLCleanVOTTableWhitespace() failed to clean table whitespace from string. errno=%d\n", fn, xlalErrno );
-    xmlFree ( xmlString );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-  xmlFree ( xmlString );
-
-  return ret;
-
-} /* XLALVOTTree2String() */
-
 /** Get (static & constant!) format string (without leading '%') suitable for writing 'datatype'.
  * This is used for default printf-format in table writing.
  *
@@ -1292,3 +1209,115 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
   return fmtString;
 
 } /* XLALgetDefaultFmt4Datatype() */
+
+
+/** Write a VOTable atomic type of given datatype, using element 'index' from array 'dataPtr',
+ *  using the (optional) printf format string.
+ *
+ * NOTE: the returned string is a static pointer and MUST not be freed.
+ * The livetime of the resulting string is only until the next call of this function.
+ */
+const char *
+XLALwriteVOTatomFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
+                            const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
+                            void *dataPtr,		/**< [in] pointer to array of data values */
+                            UINT4 index			/**< [in] index of element to write: dataPtr[index] */
+                            )
+{
+  static const char *fn = "XLALwriteVOTatomFromArray()";
+
+#define TEXTBUFLEN 1024
+  static char textbuf[TEXTBUFLEN];
+  BOOLEAN val;
+  const char *writeFmt;
+
+  if ( fmt )
+    writeFmt = fmt;
+  else
+    {
+      if ( (writeFmt = XLALgetDefaultFmt4Datatype ( datatype )) == NULL ) {
+        XLALPrintError ("%s: XLALgetDefaultFmt4Datatype() failed for datatype = %d.\n", fn, datatype );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+    }
+
+  switch ( datatype )
+    {
+    case VOT_BOOL:
+      val = ((BOOLEAN*)dataPtr)[index];
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, val ? 1 : 0 ) < 0) {
+        XLALPrintError("%s: failed to convert BOOLEAN element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_BIT:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_BIT' not currently supported!\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    case VOT_CHAR:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR**)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert CHAR element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_CHAR_UTF:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_CHAR_UTF' not currently supported!\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    case VOT_INT1:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert INT1 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_INT2:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT2*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert INT2 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_INT4:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT4*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert INT4 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_INT8:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT8*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert INT8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_REAL4:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL4*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert REAL4 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_REAL8:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL8*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert REAL8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_COMPLEX8:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert COMPLEX8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    case VOT_COMPLEX16:
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)dataPtr)[index] ) < 0) {
+        XLALPrintError("%s: failed to convert COMPLEX16 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+      break;
+    default:
+      XLALPrintError ("%s: invalid datatype (%d), has to be within [1, %d].\n", fn, datatype, VOT_DATATYPE_LAST - 1 );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    } /* switch datatype */
+
+  return textbuf;
+
+} /* XLALwriteVOTatomFromArray() */
