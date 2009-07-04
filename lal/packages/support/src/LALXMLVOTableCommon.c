@@ -727,20 +727,21 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
  * \b Important: the caller is responsible to free the allocated memory (when the
  * document isn't needed anymore) using \c xmlFreeDoc.
  *
- * \sa XLALCreateVOTStringFromTree
+ * Note: the xmlTree passed as input becomes part of the returned xmlDoc, so
+ * be careful not to free the xmlTree in addition to xmlDoc (==> double-free!)
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
+xmlDoc *
+XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree )
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTDocumentFromTree";
+    static const CHAR *logReference = "XLALCreateVOTDocFromTree";
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
     xmlNsPtr xmlSchemaNamespace = NULL;
-    xmlNodePtr localTree = NULL;	/* we need to *copy* the xmlTree, as it will be inserted into the xmlDoc */
 
     /* make sure that the shared library is the same as the
      * library version the code was compiled against */
@@ -750,11 +751,6 @@ xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
     if(!xmlTree) {
         XLALPrintError("Invalid input parameter: xmlTree\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-
-    if ( ( localTree = xmlCopyNode ( (const xmlNodePtr)xmlTree, 1) ) == NULL ) {
-      XLALPrintError ("%s: failed to xmlCopyNode() the input tree.\n", logReference );
-      XLAL_ERROR_NULL ( logReference, XLAL_EFAILED );
     }
 
     /* set up XML document */
@@ -804,7 +800,7 @@ xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
     }
 
     /* append tree to root node */
-    if(!xmlAddChild(xmlRootElement, localTree)) {
+    if(!xmlAddChild(xmlRootElement, (xmlNodePtr)xmlTree)) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("Couldn't append given tree to VOTABLE root element\n");
@@ -814,6 +810,8 @@ xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
     /* finally, assign root element to document */
     xmlDocSetRootElement(xmlDocument, xmlRootElement);
 
+#if 0
+    /* FIXME: [repr] it's not clear to me why we would need this, so I'm temporarily turning it off */
     /* reconcile default namespace with all document elements */
     if(XLALReconcileDefaultNamespace(xmlRootElement, xmlVOTableNamespace) != XLAL_SUCCESS) {
         /* clean up */
@@ -821,76 +819,12 @@ xmlDoc *XLALCreateVOTDocumentFromTree(const xmlNode *xmlTree)
         XLALPrintError("Default namespace reconciliation failed!\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
+#endif
 
     /* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
     return xmlDocument;
 
-} /* XLALCreateVOTDocumentFromTree() */
-
-
-/**
- * \brief Takes a XML fragment (tree) and turns it into a VOTable document string
- *
- * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
- * Please note that all restrictions described for \ref XLALCreateVOTableDocumentFromTree also apply here!
- *
- * \param xmlTree [in] The XML fragment to be turned into a VOTable document
- * \param xmlStringBuffer [out] Pointer to the (uninitialized) buffer that will hold the XML string
- * \param xmlStringBufferSize [out] Pointer to a variable that will hold the size of \c xmlStringBuffer
- *
- * \return \c XLAL_SUCCESS if the specified XML tree could be successfully serialized and dumped into a string.
- * The content will be encoded in UTF-8.\n
- * \b Important: the caller is responsible to free the allocated memory of \c xmlStringBuffer (when the
- * string isn't needed anymore) using \c xmlFree.
- *
- * \sa XLALCreateVOTDocumentFromTree
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-INT4 XLALCreateVOTStringFromTree(const xmlNodePtr xmlTree,
-                                 xmlChar **xmlStringBuffer,
-                                 INT4 *xmlStringBufferSize)
-{
-    /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTStringFromTree";
-    xmlDocPtr xmlDocument;
-
-    /* sanity check */
-    if(!xmlTree) {
-        XLALPrintError("Invalid input parameters: xmlTree\n");
-        XLAL_ERROR(logReference, XLAL_EINVAL);
-    }
-    if(!xmlStringBuffer) {
-        XLALPrintError("Invalid input parameters: xmlStringBuffer\n");
-        XLAL_ERROR(logReference, XLAL_EINVAL);
-    }
-    if(!xmlStringBufferSize) {
-        XLALPrintError("Invalid input parameters: xmlStringBufferSize\n");
-        XLAL_ERROR(logReference, XLAL_EINVAL);
-    }
-
-    /* build VOTable document */
-    xmlDocument = XLALCreateVOTDocumentFromTree(xmlTree);
-    if(xmlDocument == NULL) {
-        XLALPrintError("VOTable document construction failed\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
-    /* dump VOTable document to formatted XML string */
-    xmlDocDumpFormatMemoryEnc(xmlDocument, xmlStringBuffer, xmlStringBufferSize, "UTF-8", 1);
-    if(*xmlStringBufferSize <= 0) {
-        /* clean up */
-        xmlFreeDoc(xmlDocument);
-        XLALPrintError("VOTable document dump failed\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
-    /* clean up */
-    xmlFreeDoc(xmlDocument);
-
-    return XLAL_SUCCESS;
-}
+} /* XLALCreateVOTDocFromTree() */
 
 
 /**
@@ -1242,18 +1176,21 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
 } /* XMLCleanVOTTableWhitespace() */
 
 
-/** Convert the given VOTable xmlTree into a complete XML document string
+/** Convert the given VOTable xmlTree into a complete VOTable XML document string
  *
- *  This function should be used for the final string-formatting of a
- *  VOTable XML-tree
+ * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
+ * Please note that all restrictions described for \ref XLALCreateVOTDocFromTree also apply here!
  *
- * \author Reinhard Prix\n
+ *  This function should be used for the final string-formatting of a VOTable XML-tree.
+ *
+ * \author Oliver Bock, Reinhard Prix\n
  * Albert-Einstein-Institute Hannover, Germany
+ *
  */
 CHAR *
-XLALVOTTree2String ( const xmlNode *xmlTree )
+XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 {
-  const char *fn = "XLALVOTTree2String()";
+  const char *fn = "XLALVOTTransformTree2String()";
   xmlChar *xmlString;
   xmlDocPtr xmlDoc;
   CHAR *ret;
@@ -1265,7 +1202,7 @@ XLALVOTTree2String ( const xmlNode *xmlTree )
   }
 
   /* ----- Step 1: convert VOTable tree into full-fledged VOTable document */
-  if ( (xmlDoc = XLALCreateVOTDocumentFromTree( xmlTree )) == NULL ) {
+  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree )) == NULL ) {
     XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
@@ -1273,19 +1210,20 @@ XLALVOTTree2String ( const xmlNode *xmlTree )
   /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
   if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
     XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
+    xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
     xmlFreeDoc ( xmlDoc );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  /* ----- Step 3: post-process string somewhat for single-line table rows */
+  xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
+  xmlFreeDoc ( xmlDoc );	/* free the document container */
+
+  /* ----- Step 3: post-process string: clean newlines+white-space from table rows */
   if ( ( ret = XMLCleanVOTTableWhitespace ( (const char*)xmlString )) == NULL ) {
     XLALPrintError ("%s: XMLCleanVOTTableWhitespace() failed to clean table whitespace from string. errno=%d\n", fn, xlalErrno );
-    xmlFreeDoc ( xmlDoc );
     xmlFree ( xmlString );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
-
-  xmlFreeDoc ( xmlDoc );
   xmlFree ( xmlString );
 
   return ret;
