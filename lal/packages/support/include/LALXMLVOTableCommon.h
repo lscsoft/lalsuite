@@ -58,8 +58,8 @@ typedef enum {
     VOT_INT8,
     VOT_REAL4,
     VOT_REAL8,
-    VOT_COMPLEX_REAL4,
-    VOT_COMPLEX_REAL8,
+    VOT_COMPLEX8,
+    VOT_COMPLEX16,
     VOT_DATATYPE_LAST
 } VOTABLE_DATATYPE;
 
@@ -127,13 +127,11 @@ XLALCreateVOTFieldNode ( const char *name,
                          );
 
 xmlNodePtr
-XLALCreateVOTTableNode ( const char *name,
-                         const xmlNodePtr fieldNodeList,
-                         VOTABLE_SERIALIZATION_TYPE serializer,
-                         const char *externalStream,
-                         UINT4 numRows,
-                         ...
-                         );
+XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, UINT4 numRows, const char *fmt, ... );
+
+xmlNodePtr
+XLALCreateVOTTableNode ( const char *name, xmlNode *fieldNodeList, xmlNode *dataContentNode );
+
 
 xmlNodePtr XLALCreateVOTResourceNode(const char *type,
                                      const char *identifier,

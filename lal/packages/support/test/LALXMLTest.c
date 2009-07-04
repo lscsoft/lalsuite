@@ -65,7 +65,7 @@ int testLIGOTimeGPS(void);
 int testPulsarDopplerParams(void);
 int test_gsl_vector(void);
 int test_gsl_matrix(void);
-int testTableCreation ( void );
+int testTable ( void );
 
 /* private utility prototypes */
 int validateDocument(const xmlDocPtr xmlDocument);
@@ -111,12 +111,12 @@ int main(void)
 
     fprintf(stderr, "======================================================================\n\n");
 
-    if ( ( result = testTableCreation()) != LALXMLC_ENOM ) {
-      LogPrintf (LOG_CRITICAL, "testTableCreation() failed. ret = %d\n", result );
+    if ( ( result = testTable()) != LALXMLC_ENOM ) {
+      LogPrintf (LOG_CRITICAL, "testTable() failed. ret = %d\n", result );
       return result;
     }
     else
-      LogPrintf (LOG_NORMAL, "testTableCreation() succeeded.\n" );
+      LogPrintf (LOG_NORMAL, "testTable() succeeded.\n" );
 
     fprintf(stderr, "**********************************************************************\n");
 
@@ -677,9 +677,9 @@ test_gsl_matrix(void)
 
 
 
-int testTableCreation ( void )
+int testTable ( void )
 {
-  const char *fn = "testTableCreation()";
+  const char *fn = "testTable()";
 
   xmlNodePtr fieldNodeList = NULL, newFieldNode = NULL;
 
@@ -704,17 +704,23 @@ int testTableCreation ( void )
     return LALXMLC_EFUN;
   }
 
-  xmlNodePtr xmlTable = NULL;
+  xmlNodePtr xmlTable, xmlTabledataNode;
 
   REAL8 Freqs[] = { 100.1234, 101.234, 102.345 };
   REAL8 Alphas[] = { 0.1234, 2.123434, 3.2341 };
   REAL8 Deltas[] = { -1.234, -0.5, 1.234 };
 
 
-  if ( (xmlTable = XLALCreateVOTTableNode ( "testTable", fieldNodeList, VOT_SERIALIZE_TABLEDATA, NULL, 3, Freqs, Alphas, Deltas )) == NULL ){
+  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f", Freqs, Alphas, Deltas )) == NULL ){
+    XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+
+  if ( (xmlTable = XLALCreateVOTTableNode ( "testTable", fieldNodeList, xmlTabledataNode )) == NULL ) {
     XLALPrintError("%s: XLALCreateVOTTableNode() failed. errno = %d.\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
+
 
   xmlDocPtr xmlDocument = NULL;
   char *xmlString = NULL;
