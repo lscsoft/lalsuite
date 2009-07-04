@@ -82,35 +82,41 @@ int main(void)
     fprintf(stderr, "**********************************************************************\n");
     fprintf(stderr, "Running LALXMLTest...\n\n");
 
-    result = testLIGOTimeGPS();
-    if(result != LALXMLC_ENOM) {
-        return result;
+    if ( (result = testLIGOTimeGPS()) != LALXMLC_ENOM ) {
+      LogPrintf (LOG_CRITICAL, "testPulsarDopplerParams() failed. ret = %d\n", result );
+      return result;
     }
 
     fprintf(stderr, "======================================================================\n\n");
 
     result = testPulsarDopplerParams();
     if(result != LALXMLC_ENOM) {
+      LogPrintf (LOG_CRITICAL, "testPulsarDopplerParams() failed. ret = %d\n", result );
         return result;
     }
 
     fprintf(stderr, "======================================================================\n\n");
 
     if ( (result = test_gsl_vector()) != LALXMLC_ENOM ) {
+      LogPrintf (LOG_CRITICAL, "test_gsl_vector() failed. ret = %d\n", result );
       return result;
     }
 
     fprintf(stderr, "======================================================================\n\n");
 
     if ( (result = test_gsl_matrix()) != LALXMLC_ENOM ) {
+      LogPrintf (LOG_CRITICAL, "test_gsl_matrix() failed. ret = %d\n", result );
       return result;
     }
 
     fprintf(stderr, "======================================================================\n\n");
 
     if ( ( result = testTableCreation()) != LALXMLC_ENOM ) {
+      LogPrintf (LOG_CRITICAL, "testTableCreation() failed. ret = %d\n", result );
       return result;
     }
+    else
+      LogPrintf (LOG_NORMAL, "testTableCreation() succeeded.\n" );
 
     fprintf(stderr, "**********************************************************************\n");
 
@@ -855,18 +861,16 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
             *nextDataPath++ = 0;
         }
         if(!strlen(currentDataPath)) {
-            /* this directory is empty */
-            /* default data directory */
-            currentDataPath = LAL_PREFIX"/share/lal";
+            /* this directory is empty, so we skip it */
+          currentDataPath = nextDataPath;
+          continue;
         }
 
-        /* build absolute path (required by "file" URI scheme) */
-        n = snprintf(absolutePath,
-                        PATH_MAXLEN,
-                        "%s/%s/%s",
-                        workingDir,
-                        currentDataPath ? currentDataPath : ".",
-                        filename);
+        /* make sure we got an absolute path (required by "file" URI scheme) */
+        if ( currentDataPath[0] == '/' )
+          n = snprintf(absolutePath, PATH_MAXLEN, "%s/%s", currentDataPath, filename);
+        else
+          n = snprintf(absolutePath, PATH_MAXLEN, "%s/%s/%s", workingDir, currentDataPath, filename);
 
         if(n >= PATH_MAXLEN) {
             /* data file name too long */
@@ -883,6 +887,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
             *validatedPath = absolutePath;
             LALFclose(fileCheck);
             LALFree(dataPath);
+            fprintf(stderr, "Specified file (%s) found in %s\n", filename, absolutePath);
             return XLAL_SUCCESS;
         }
 
