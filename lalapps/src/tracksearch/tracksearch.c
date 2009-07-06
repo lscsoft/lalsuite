@@ -615,11 +615,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    /*XLALFloatToGPS(&tempGPS,startTime);*/
-	    LAL_CALL(LALFloatToGPS(status,
-				   &tempGPS,
-				   &startTime),
-		     status);
+	    XLALGPSSetREAL8(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -1284,16 +1280,12 @@ void LALappsGetFrameData(LALStatus*          status,
       XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
       memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-      LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
-	       status);
+      bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
        */
       bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-      LAL_CALL(LALFloatToGPS(status,
-			     &bufferedDataStopGPS,
-			     &bufferedDataStop),
-	       status);
+      XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
       bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
@@ -2319,22 +2311,13 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &signalStart,
-			 &signalSeries->epoch),
-	   status);
+  signalStart = XLALGPSGetREAL8(&signalSeries->epoch);
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
    */
   signalStop=(signalSeries->deltaT*(signalSeries->data->length))+signalStart;
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &(mapMarkerParams.mapStopGPS),
-			 &signalStop),
-			 
-	   status);
+  XLALGPSSetREAL8(&(mapMarkerParams.mapStopGPS),signalStop);
   mapMarkerParams.mapTimeBins=tfmap->tCol;
   mapMarkerParams.mapFreqBins=((tfmap->fRow/2)+1);
   /*This is the map time resolution*/
@@ -2493,17 +2476,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    *Adjust value of edgeOffsetGPS to be new start point 
    * including col buffer data
    */
-    LAL_CALL(
-	     LALGPStoFloat(status,
-			   &originalFloatTime,
-			   &(params.GPSstart)),
-	     status);
+    originalFloatTime = XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
-    LAL_CALL(LALFloatToGPS(status,
-			   &edgeOffsetGPS,
-			   &newFloatTime),
-	     status);
-    
+    XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
+
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,
 				      0,
@@ -3009,16 +2985,8 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &startStamp,
-			     &(outCurve.curves[i].gpsStamp[0]))
-	       ,status);
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &stopStamp,
-			     &(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]))
-	       ,status);
+      startStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[0]));
+      stopStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]));
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,

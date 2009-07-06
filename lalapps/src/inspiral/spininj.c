@@ -288,8 +288,7 @@ int main( int argc, char *argv[] )
 	      &status);
 
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &(paramsIn.gpsStartTime), &(paramsIn.gpsStartTime), 
-				paramsIn.meanTimeStep ), &status );
+    XLALGPSAdd( &(paramsIn.gpsStartTime), paramsIn.meanTimeStep );
 
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &(paramsIn.gpsStartTime), 
 			     &(paramsIn.gpsEndTime) ), &status );
@@ -569,16 +568,14 @@ void LALSetSiteParameters(LALStatus *status,
   placeAndGPS.p_detector = &lho;
   LAL_CALL( LALTimeDelayFromEarthCenter( status, &time_diff_ns,
 					 &detTimeAndSource ), status );
-  LAL_CALL( LALAddFloatToGPS( status, &(this_inj->h_end_time),
-			      &(this_inj->h_end_time), time_diff_ns ), status );
-  
+  XLALGPSAdd( &(this_inj->h_end_time), time_diff_ns );
+
   /* llo */
   placeAndGPS.p_detector = &llo;
   LAL_CALL( LALTimeDelayFromEarthCenter( status,  &time_diff_ns,
 					 &detTimeAndSource ), status);
-  LAL_CALL( LALAddFloatToGPS( status,  &(this_inj->l_end_time),
-			      &(this_inj->l_end_time), time_diff_ns ), status);
-  
+  XLALGPSAdd( &(this_inj->l_end_time), time_diff_ns );
+
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO times                */
   
@@ -651,8 +648,7 @@ void LALSetGeoCentricEndTime(LALStatus *status,
   if ( params.timeInterval )
     {
       LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-      LAL_CALL( LALAddFloatToGPS( status, &(this_inj->geocent_end_time),
-				  &(this_inj->geocent_end_time), u * params.timeInterval ), status );
+      XLALGPSAdd( &(this_inj->geocent_end_time), u * params.timeInterval );
     }
 
   gpsAndAcc.gps = this_inj->geocent_end_time;

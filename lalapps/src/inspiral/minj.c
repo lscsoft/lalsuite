@@ -621,8 +621,7 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
-            &(galacticPar.geocentEndTime), u * timeInterval ), &status );
+      XLALGPSAdd( &(galacticPar.geocentEndTime), u * timeInterval );
     }
 
     /* populate the sim_inspiral table */
@@ -635,8 +634,7 @@ int main( int argc, char *argv[] )
         "GeneratePPNtwoPN" );
 
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd( &gpsStartTime, meanTimeStep );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 

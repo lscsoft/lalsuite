@@ -874,8 +874,7 @@ LALTrackSearchDataSegmenter(
     {
       /*Determine Segment Epoch*/
       kTime=TSSearchData->deltaT*k;
-      LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
-      CHECKSTATUSPTR (status);
+      XLALGPSSetREAL8(&(timeInterval), kTime);
       for (j=0;j<PreparedData->dataSeg[l]->data->length;j++)
 	{
 	  PreparedData->dataSeg[l]->data->data[j]=TSSearchData->data->data[k];

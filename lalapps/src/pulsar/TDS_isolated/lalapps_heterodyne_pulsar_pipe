@@ -31,7 +31,7 @@ from types import *
 
 try:
   from glue import segments
-  from glue import LSCsegFindClient
+#  from glue import LSCsegFindClient
   from glue import gsiserverutils
   from glue.lal import LIGOTimeGPS
 except ImportError, e:
@@ -199,9 +199,6 @@ pulsar_param_dir = cp.get('data','pulsar_param_dir')
 earth_ephem = cp.get('ephem','earth_ephem')
 sun_ephem = cp.get('ephem','sun_ephem')
 
-# default values
-manual_epoch = 0
-
 # actual info on the analysis
 tstart = cp.get('input','starttime')
 tend = cp.get('input','endtime')
@@ -212,7 +209,10 @@ resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 freq_factor = cp.get('input','freq_factor')
-manual_epoch = cp.get('input','manual_epoch')
+try:
+  manual_epoch = cp.get('input','manual_epoch')
+except:
+  manual_epoch = None
 
 # check that if you're performing a coarse heterodyne, but you're not doing a
 # datafind that you have instead supplied a frame cache file
@@ -400,7 +400,8 @@ if do_coarse:
       coarse[j].set_earth_ephem(earth_ephem)
       coarse[j].set_sun_ephem(sun_ephem)
       """
-      coarse[j].set_manual_epoch(manual_epoch)
+      if manual_epoch != None:
+        coarse[j].set_manual_epoch(manual_epoch)
       coarse[j].set_filter_knee(filter_knee)
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
@@ -519,7 +520,8 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_resample_rate(resample_rate)
       fine[j].set_data_file(data_file)
       fine[j].set_seg_list(seg_list_file)
-      fine[j].set_manual_epoch(manual_epoch)
+      if manual_epoch != None:
+        fine[j].set_manual_epoch(manual_epoch)
      
       if do_calibrate:
         fine[j].set_calibrate()

@@ -627,10 +627,12 @@ int SetupPspaceParams(GlobVar GV,RTparameterspace *RTspace,XYparameterspace *XYs
     if (PeriapseShift(GV.tperi_MAX,&(tperi_MAX_new),GV.tstartSSB,GV.period)) return 2;*/
 
   /* try to solve straddling problem where pspace straddles a periapse passage time */
-  LALDeltaFloatGPS(&status,&tperi_err,&(GV.tperi_MIN),&(GV.tperi_0));
-  LALAddFloatToGPS(&status,&tperi_MIN_new,&tperi_0_new,tperi_err);
-  LALDeltaFloatGPS(&status,&tperi_err,&(GV.tperi_MAX),&(GV.tperi_0));
-  LALAddFloatToGPS(&status,&tperi_MAX_new,&tperi_0_new,tperi_err);
+  tperi_err = XLALGPSDiff(&(GV.tperi_MIN),&(GV.tperi_0));
+  tperi_MIN_new = tperi_0_new;
+  XLALGPSAdd(&tperi_MIN_new, tperi_err);
+  tperi_err = XLALGPSDiff(&(GV.tperi_MAX),&(GV.tperi_0));
+  tperi_MAX_new = tperi_0_new;
+  XLALGPSAdd(&tperi_MAX_new, tperi_err);
 
   /*  printf("old tperi 0 %d %d\n",GV.tperi_0.gpsSeconds,GV.tperi_0.gpsNanoSeconds);
   printf("new tperi 0 %d %d\n",tperi_0_new.gpsSeconds,tperi_0_new.gpsNanoSeconds);

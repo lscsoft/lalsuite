@@ -480,7 +480,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     Tsft = 1.0 / catalog->data[0].header.deltaF;
     startTime = catalog->data[0].header.epoch;
     endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-    LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+    XLALGPSAdd(&endTime, Tsft);
     duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
   }
 

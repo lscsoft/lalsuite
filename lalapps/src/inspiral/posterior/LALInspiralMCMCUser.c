@@ -418,7 +418,7 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 XLALClearErrno();*/
 
 /* Is this the correct way to set the end time? */
-/*	XLALFloatToGPS((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
+/*	XLALGPSSetREAL8((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
 /* Fill the rest of the mass/tc parameters in */
 	LALInspiralParameterCalc(&status,&template);
 
@@ -903,7 +903,7 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	/* Adjust time */
 	REAL8 tC=XLALMCMCGetParameter(parameter,"time");
 	tC-=PPNparams.tc; /* tC is now the time the wave reaches the low frequency */
-	LALFloatToGPS(&status,&(co_wave.a->epoch),&tC); /* which is the starting epoch of the co_wave */
+	XLALGPSSetREAL8(&(co_wave.a->epoch),tC); /* which is the starting epoch of the co_wave */
 	memcpy(&(co_wave.f->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 	memcpy(&(co_wave.phi->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 
