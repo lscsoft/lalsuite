@@ -30,7 +30,7 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/ComputeFstat.h>
 
-#include "../HierarchicalSearch.h"
+#include "../hough/src2/HierarchicalSearch.h"
 
 /* ---------- exported defines and macros ---------- */
 
