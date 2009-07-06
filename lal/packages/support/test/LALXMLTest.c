@@ -605,10 +605,20 @@ int testTable ( void )
   xmlDocPtr xmlDocument = NULL;
   char *xmlString = NULL;
 
+
+  REAL8 Freqs[] = { 100.1234, 101.234, 102.345 };
+  REAL8 Alphas[] = { 0.1234, 2.123434, 3.2341 };
+  REAL8 Deltas[] = { -1.234, -0.5, 1.234 };
+  CHAR *Names[] = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
+  INT4  Indices[] = { 5, 7, 99 };
+
+  /* ---------- create FIELDS */
+  /* ----- Freq */
   if ( (fieldNodeList = XLALCreateVOTFieldNode ( "Freq", "Hz", VOT_REAL8, NULL )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Freq'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
+  /* ----- Alpha */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Alpha", "rad", VOT_REAL8, NULL )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Alpha'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
@@ -617,8 +627,27 @@ int testTable ( void )
     XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
     return LALXMLC_EFUN;
   }
+  /* ----- Delta */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Delta", "rad", VOT_REAL8, NULL )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Delta'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
+  /* ----- Names */
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Names", NULL, VOT_CHAR, "*" )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Names'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
+  /* ----- Indices */
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Indices", NULL, VOT_INT4, NULL)) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
@@ -628,11 +657,7 @@ int testTable ( void )
 
   xmlNodePtr xmlFragment, xmlTable, xmlTabledataNode;
 
-  REAL8 Freqs[] = { 100.1234, 101.234, 102.345 };
-  REAL8 Alphas[] = { 0.1234, 2.123434, 3.2341 };
-  REAL8 Deltas[] = { -1.234, -0.5, 1.234 };
-
-  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f", Freqs, Alphas, Deltas )) == NULL ){
+  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f,%s,%d", Freqs, Alphas, Deltas, Names, Indices )) == NULL ){
     XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
