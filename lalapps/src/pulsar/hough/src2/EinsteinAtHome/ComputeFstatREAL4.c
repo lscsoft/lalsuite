@@ -139,6 +139,8 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   REAL8 f0, deltaF;
   REAL4 Fstat;
   REAL8 Freq0, Freq;
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s;
 
   /* check input consistency */
   if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !cfvBuffer ) {
@@ -177,8 +179,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   }
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s;
   Freq = Freq0 = doppler->fkdot[0];
   fkdot4.FreqMain = (INT4)Freq0;
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
@@ -313,13 +313,16 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
   MultiSSBtimesREAL4 *multiSSB4 = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
+  UINT4 numIFOs;
+  UINT4 s;
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
 
   /* check input consistency */
   if ( !Fstat || !doppler || !multiSFTs || !multiDetStates || !cfBuffer ) {
     XLALPrintError("%s: Illegal NULL pointer input.\n", fn );
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
-  UINT4 numIFOs = multiSFTs->length;
+  numIFOs = multiSFTs->length;
   if ( multiDetStates->length != numIFOs ) {
     XLALPrintError("%s: inconsistent number of IFOs in SFTs (%d) and detector-states (%d).\n", fn, numIFOs, multiDetStates->length);
     XLAL_ERROR (fn, XLAL_EINVAL );
@@ -340,18 +343,18 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
     }
   else
     {
-      /* compute new SSB timings */
-      if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
-        XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
-	XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
-
       /* compute new AM-coefficients */
       SkyPosition skypos;
       LALStatus status = empty_LALStatus;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
+
+      /* compute new SSB timings */
+      if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
+        XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
 
       LALGetMultiAMCoeffs ( &status, &multiAMcoef, multiDetStates, skypos );
       if ( status.statusCode ) {
@@ -379,8 +382,6 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s;
   fkdot4.FreqMain = (INT4)doppler->fkdot[0];
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
   fkdot4.fkdot[0] = (REAL4)( doppler->fkdot[0] - (REAL8)fkdot4.FreqMain );
@@ -425,6 +426,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 
   UINT4 numIFOs, X;
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
+  REAL4 Ad, Bd, Cd, Dd_inv;
 
 #ifndef LAL_NDEBUG
   /* check input consistency */
@@ -483,10 +485,10 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
   /* ----- compute final Fstatistic-value ----- */
 
   /* convenient shortcuts */
-  REAL4 Ad = multiAMcoef->Mmunu.Ad;
-  REAL4 Bd = multiAMcoef->Mmunu.Bd;
-  REAL4 Cd = multiAMcoef->Mmunu.Cd;
-  REAL4 Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
+  Ad = multiAMcoef->Mmunu.Ad;
+  Bd = multiAMcoef->Mmunu.Bd;
+  Cd = multiAMcoef->Mmunu.Cd;
+  Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
@@ -534,6 +536,12 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   REAL4 norm = OOTWOPI_FLOAT;
 
+  REAL4 dFreq;
+  REAL4 f0;
+  REAL4 df;
+  REAL4 tau;
+  REAL4 Freq;
+
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
@@ -557,14 +565,14 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   numSFTs = sfts->length;
   Tsft = (REAL4)( 1.0 / sfts->data[0].deltaF );
 
-  REAL4 dFreq = sfts->data[0].deltaF;
+  dFreq = sfts->data[0].deltaF;
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
-  REAL4 f0 = fkdot4->FreqMain;
-  REAL4 df = fkdot4->fkdot[0];
-  REAL4 tau = 1.0f / df;
-  REAL4 Freq = f0 + df;
+  f0 = fkdot4->FreqMain;
+  df = fkdot4->fkdot[0];
+  tau = 1.0f / df;
+  Freq = f0 + df;
 
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -612,6 +620,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
         REAL4 phi_alpha_rem;
         REAL4 TdotM1;		/* defined as Tdot_al - 1 */
+        REAL4 T0rem;
+	REAL4 tmp;
 
         /* 1st oder: s = 0 */
         TdotM1 = *TdotM1_al;
@@ -620,7 +630,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         deltaT = T0 + dT;
 
         /* phi_alpha = f * Tas; */
-        REAL4 T0rem = fmodf ( T0, tau );
+	T0rem = fmodf ( T0, tau );
         phi_alpha_rem = f0 * dT;
         phi_alpha_rem += T0rem * df;
         phi_alpha_rem += df * dT;
@@ -641,7 +651,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         Dphi_alpha_int *= Tsft;
 	Dphi_alpha_rem *= Tsft;
 
-        REAL4 tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
+        tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
 	lambda_alpha = phi_alpha_rem - tmp;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
@@ -697,7 +707,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	    with the current case distinction in the hot-loop,
 	    having a severe impact on runtime of the E@H Linux App.
 	    So let's allow to give gcc a hint which path has a higher probablility */
-	if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
+      if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 #else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
 #endif
@@ -735,10 +745,11 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	      qn *= pn;					/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
-          REAL4 qn_inv = 1.0f / qn;
-
-	  U_alpha = Sn * qn_inv;
-	  V_alpha = Tn * qn_inv;
+	  {
+	    REAL4 qn_inv = 1.0f / qn;
+	    U_alpha = Sn * qn_inv;
+	    V_alpha = Tn * qn_inv;
+	  }
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
