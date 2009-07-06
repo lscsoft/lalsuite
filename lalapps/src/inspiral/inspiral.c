@@ -2796,11 +2796,6 @@ int main( int argc, char *argv[] )
     /* point the saved events to the linked list of loudest events */
     savedEvents.snglInspiralTable = loudestEventHead;
   }
-  else
-  {
-    /* save the number of events in the search summary table */
-    searchsumm.searchSummaryTable->nevents = numEvents;
-  }
 
 
   /*
@@ -2940,6 +2935,109 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
+  /* cut triggers based on start/end times and do trig_scan clustering */
+  if ( savedEvents.snglInspiralTable )
+  {
+    SnglInspiralTable *tmpEventHead = NULL;
+    SnglInspiralTable *lastEvent = NULL;
+
+    /* sort the inspiral events by time */
+    if ( vrbflg ) fprintf( stdout, "  sorting events by time... " );
+    LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
+          LALCompareSnglInspiralByTime), &status );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* discard any triggers outside the trig start/end time window */
+    event = savedEvents.snglInspiralTable;
+    if ( ! bankSim && ( trigStartTimeNS || trigEndTimeNS ) )
+    {
+      if ( vrbflg ) fprintf( stdout,
+          "  discarding triggers outside trig start/end time... " );
+
+      while ( event )
+      {
+        INT8 trigTimeNS;
+        trigTimeNS = XLALGPSToINT8NS( &(event->end_time) );
+
+        if ( trigTimeNS &&
+            ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
+             (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
+        {
+          /* throw this trigger away */
+          SnglInspiralTable *tmpEvent = event;
+
+          if ( lastEvent )
+          {
+            lastEvent->next = event->next;
+          }
+
+          /* increment the linked list by one and free the event */
+          event = event->next;
+          LALFree( tmpEvent );
+        }
+        else
+        {
+          /* store the first event as the head of the new linked list */
+          if ( ! tmpEventHead ) tmpEventHead = event;
+
+          /* save the last event and increment the linked list by one */
+          lastEvent = event;
+          event = event->next;
+        }
+      }
+
+      savedEvents.snglInspiralTable = tmpEventHead;
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+
+    if (maximizationInterval)
+    {
+      XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
+          maximizationInterval);
+    }
+
+    /* trigScanClustering */ 
+    if ( trigScanMethod ) 
+    { 
+        if ( savedEvents.snglInspiralTable) 
+        { 
+            
+           /* Call the clustering routine */ 
+           if (XLALTrigScanClusterTriggers( &(savedEvents.snglInspiralTable),
+                                       trigScanMethod,
+                                       trigScanMetricScalingFac,
+                                       trigScanAppendStragglers ) == XLAL_FAILURE )
+           {
+             fprintf( stderr, "New trig scan has failed!!\n" );
+             exit(1);
+           }
+
+        }
+        else
+        {
+            if ( vrbflg )
+                  fprintf (stderr,
+                          "The event head appears to be null containing %d triggers \n",
+                          XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
+        }
+    }
+  }
+
+  /* After clustering, count the number of triggers left. */
+  if(!banksim)
+  {
+    numEvents = 1;
+    eventList = savedEvents.snglInspiralTable;
+    while ( eventList->next )
+    {
+      eventList = eventList->next;
+      ++numEvents;
+    }
+    searchsumm.searchSummaryTable->nevents = numEvents;
+  }
+
+
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( outputPath[0] )
@@ -3070,94 +3168,6 @@ int main( int argc, char *argv[] )
   /* free the search summary table after the summ_value table is written */
   free( searchsumm.searchSummaryTable );
 
-  /* cut triggers based on start/end times and do trig_scan clustering */
-  if ( savedEvents.snglInspiralTable )
-  {
-    SnglInspiralTable *tmpEventHead = NULL;
-    SnglInspiralTable *lastEvent = NULL;
-
-    /* sort the inspiral events by time */
-    if ( vrbflg ) fprintf( stdout, "  sorting events by time... " );
-    LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
-          LALCompareSnglInspiralByTime), &status );
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-    /* discard any triggers outside the trig start/end time window */
-    event = savedEvents.snglInspiralTable;
-    if ( ! bankSim && ( trigStartTimeNS || trigEndTimeNS ) )
-    {
-      if ( vrbflg ) fprintf( stdout,
-          "  discarding triggers outside trig start/end time... " );
-
-      while ( event )
-      {
-        INT8 trigTimeNS;
-        trigTimeNS = XLALGPSToINT8NS( &(event->end_time) );
-
-        if ( trigTimeNS &&
-            ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
-             (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
-        {
-          /* throw this trigger away */
-          SnglInspiralTable *tmpEvent = event;
-
-          if ( lastEvent )
-          {
-            lastEvent->next = event->next;
-          }
-
-          /* increment the linked list by one and free the event */
-          event = event->next;
-          LALFree( tmpEvent );
-        }
-        else
-        {
-          /* store the first event as the head of the new linked list */
-          if ( ! tmpEventHead ) tmpEventHead = event;
-
-          /* save the last event and increment the linked list by one */
-          lastEvent = event;
-          event = event->next;
-        }
-      }
-
-      savedEvents.snglInspiralTable = tmpEventHead;
-
-      if ( vrbflg ) fprintf( stdout, "done\n" );
-    }
-
-    if (maximizationInterval)
-    {
-      XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
-          maximizationInterval);
-    }
-
-    /* trigScanClustering */ 
-    if ( trigScanMethod ) 
-    { 
-        if ( savedEvents.snglInspiralTable) 
-        { 
-            
-           /* Call the clustering routine */ 
-           if (XLALTrigScanClusterTriggers( &(savedEvents.snglInspiralTable),
-                                       trigScanMethod,
-                                       trigScanMetricScalingFac,
-                                       trigScanAppendStragglers ) == XLAL_FAILURE )
-           {
-             fprintf( stderr, "New trig scan has failed!!\n" );
-             exit(1);
-           }
-
-        }
-        else
-        {
-            if ( vrbflg )
-                  fprintf (stderr,
-                          "The event head appears to be null containing %d triggers \n",
-                          XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
-        }
-    }
-  }
 
   /* write sngl_inspiral table */
   if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
