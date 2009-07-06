@@ -90,6 +90,8 @@ static int smallerHough(const void *a,const void *b) {
 
 #ifdef __GNUC__
 #define ALWAYS_INLINE __attribute__((always_inline))
+#else
+#define ALWAYS_INLINE
 #endif
 
 static void
@@ -729,23 +731,21 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 
 /* prefetch compiler directives */
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-#if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
+#if ( EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_NONE )
+#define PREFETCH(a) a
+#elif defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
 // not tested yet with icc or MS Visual C 
 #include "xmmintrin.h"
 #define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
 #elif defined(__GNUC__)
 #define PREFETCH(a) __builtin_prefetch(a)
-#else
-#define PREFETCH(a) a
-#endif
-#else
+#else  /* no known compiler, but not EAH_HOUGH_PREFETCH_NONE */
 #define PREFETCH(a) a
 #endif
 
 #if ( (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87) || (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_AMD64) )
 
-INLINE void __attribute__((always_inline))
+INLINE void ALWAYS_INLINE
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
@@ -788,7 +788,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
       yUpper = ySide - 1;
     }
 
-    ADDPHMD2HD_WLR_LOOP(xPixel,yLower,yUpper,xSideP1,map,weight)
+    ADDPHMD2HD_WLR_LOOP(xPixel,yLower,yUpper,xSideP1,map,weight);
 
   };
     

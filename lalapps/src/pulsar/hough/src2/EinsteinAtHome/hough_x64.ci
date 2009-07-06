@@ -95,6 +95,6 @@ AD_ALIGN32 "\n"	\
 	:					 \
 	"memory","r8","r9","r10","r11","rax", "rcx", "rdx", "rsi", "rdi", "cc",	 \
 	"xmm0","xmm1","xmm2"	 \
-	);
+	)
 
 #endif

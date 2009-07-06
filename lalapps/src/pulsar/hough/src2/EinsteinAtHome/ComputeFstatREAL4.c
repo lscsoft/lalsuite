@@ -226,6 +226,8 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
 
       for ( n=0; n < numSegments; n ++ )
         {
+          LALStatus status = empty_LALStatus;
+
           /* compute new SSB timings over all segments */
           if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -233,7 +235,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
-          LALStatus status = empty_LALStatus;
           LALGetMultiAMCoeffs ( &status, &(cfvBuffer->multiAMcoefV[n]), multiDetStatesV->data[n], skypos );
           if ( status.statusCode ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -711,6 +712,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 #else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
 #endif
+
 #ifdef AUTOVECT_HOTLOOP
 #include "hotloop_autovect.ci"
 #elif __ALTIVEC__
@@ -765,14 +767,14 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+
+	  {
+	    REAL8 _lambda_alpha = -lambda_alpha;
+	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+	  }
+
 	} /* if |remainder| > LD_SMALL4 */
-
-        {
-	  REAL8 _lambda_alpha = -lambda_alpha;
-	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-        }
-
 
 #endif /* hotloop variant */
 
@@ -1064,11 +1066,14 @@ XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 void
 XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 {
+  UINT4 numSegments;
+  UINT4 i;
+
   if ( !cfbv )
     return;
 
-  UINT4 numSegments = cfbv->numSegments;
-  UINT4 i;
+  numSegments = cfbv->numSegments;
+
   for (i=0; i < numSegments; i ++ )
     {
       XLALDestroyMultiSSBtimesREAL4 ( cfbv->multiSSB4V[i] );

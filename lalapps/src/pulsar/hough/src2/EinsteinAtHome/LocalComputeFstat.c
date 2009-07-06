@@ -560,7 +560,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    So let's allow to give gcc a hint which path has a higher probablility */
 	if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 #else
-	if ((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4)
+	if ((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4))
 #endif
 	  {
 	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 and DTERMS == 8 */

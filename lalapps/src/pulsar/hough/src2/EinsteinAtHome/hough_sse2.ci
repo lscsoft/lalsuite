@@ -106,5 +106,5 @@ __asm __volatile ( 				      \
 	:					 \
 	"memory","eax", "ecx", "edx", "esi", "edi", "cc", \
 	"xmm0","xmm1","xmm2"	 \
-	);	
+	)
 #endif
