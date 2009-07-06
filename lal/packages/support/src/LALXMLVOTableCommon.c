@@ -292,16 +292,17 @@ XLALCreateVOTResourceNode(const char *type,
     }
 
     /* add attributes */
-    if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR(type))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-        XLALPrintError("Attribute instantiation failed: utype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
     if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(identifier))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
         XLALPrintError("Attribute instantiation failed: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR(type))) {
+        /* clean up */
+        xmlFreeNode(xmlResourceNode);
+        XLALPrintError("Attribute instantiation failed: utype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
