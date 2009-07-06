@@ -624,6 +624,10 @@ int main ( int argc, char *argv[] )
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* store the start and end time of the raw channel in the search summary */
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+  */
   searchsumm.searchSummaryTable->in_start_time = chan.epoch;
   tsLength = XLALGPSGetREAL8(&(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
@@ -716,6 +720,10 @@ int main ( int argc, char *argv[] )
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
   /* store the start and end time of the filter channel in the search summ */
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, chan.deltaT * (REAL8) chan.data->length);
+  */
   searchsumm.searchSummaryTable->out_start_time = chan.epoch;
   tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;

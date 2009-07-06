@@ -448,6 +448,10 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   midTS = (LIGOTimeGPS *)LALCalloc(CLA->nTsft,sizeof(LIGOTimeGPS));
   for(k=0; k < CLA->nTsft; k++)
     {
+      /* FIXME:  loss of precision; consider
+      midTS[k] = timestamps->data[k];
+      XLALGPSAdd(&midTS[k], 0.5*CLA->Tsft);
+      */
       REAL8 teemp=0.0;
       teemp = XLALGPSGetREAL8(&(timestamps->data[k]));
       teemp += 0.5*CLA->Tsft;

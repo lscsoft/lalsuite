@@ -1733,6 +1733,10 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
    midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
    for(k=0; k<GV.SFTno; k++)
      { 
+       /* FIXME: loss of precision; consider
+       midTS[k] = timestamps[k];
+       XLALGPSAdd(&midTS[k], 0.5*GV.tsft);
+       */
        REAL8 teemp=0.0;
        teemp = XLALGPSGetREAL8(&(timestamps[k]));
        teemp += 0.5*GV.tsft;

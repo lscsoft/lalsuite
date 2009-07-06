@@ -664,6 +664,10 @@ int main( int argc, char *argv[] )
 	  }
 	
 	/* store the start and end time of the first ifo cdata in the search summary */
+	/* FIXME:  loss of precision;  consider
+	searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = cohInspCVec->cData[0]->epoch;
+	XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, (REAL8) cohSegLength / sampleRate);
+	*/
 	searchsumm.searchSummaryTable->in_start_time = cohInspCVec->cData[0]->epoch;
 	cohSeriesLength = XLALGPSGetREAL8( &(cohInspCVec->cData[0]->epoch) );
 	cohSeriesLength += (REAL8) cohSegLength / sampleRate ;

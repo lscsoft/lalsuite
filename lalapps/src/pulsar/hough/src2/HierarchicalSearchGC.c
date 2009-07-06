@@ -3260,6 +3260,12 @@ void ComputeNumExtraBins(LALStatus            *status,
 
   nStacks = tsMid->length;;
 
+  /* FIXME:  loss of precision; consider
+  refTime = tStart + XLALGPSDiff(tsMid->data + nStacks - 1, tsMid->data) / 2;
+  or declare refTime to be LIGOTimeGPS and do
+  refTime = tsMid->data;
+  XLALGPSAdd(&refTime, XLALGPSDiff(tsMid->data + nStacks - 1, tsMid->data) / 2);
+  */
   tStart = XLALGPSGetREAL8(tsMid->data);
   tEnd = XLALGPSGetREAL8(tsMid->data + nStacks - 1);
   refTime = 0.5 * (tStart + tEnd);

@@ -70,6 +70,10 @@ LALappsTSACropMap(
    * Adjust times on mapStopGPS and mapStartGPS to be times
    * after cropping the MAP
    */
+  /* FIXME:  loss of precision; consider
+  XLALGPSAdd(&tmpMarkingParams.mapStartGPS, tmpMarkingParams.deltaT*binsToCrop);
+  XLALGPSAdd(&tmpMarkingParams.mapStopGPS, -tmpMarkingParams.deltaT*binsToCrop);
+  */
   startTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
 
   startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);

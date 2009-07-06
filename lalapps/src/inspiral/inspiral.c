@@ -842,6 +842,10 @@ int main( int argc, char *argv[] )
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* store the start and end time of the raw channel in the search summary */
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+  */
   searchsumm.searchSummaryTable->in_start_time = chan.epoch;
   tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
@@ -1550,6 +1554,10 @@ int main( int argc, char *argv[] )
   /* store the start and end time of the filter channel in the search summ */
   /* noting that we don't look for events in the first and last quarter    */
   /* of each findchirp segment of the input data                           */
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, (REAL8) (numPoints / 4) * chan.deltaT);
+  */
   tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
   XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_start_time), tsLength );
@@ -1563,6 +1571,10 @@ int main( int argc, char *argv[] )
           trigStartTimeNS );
   }
 
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_end_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4)));
+  */
   tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
   XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
