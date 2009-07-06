@@ -297,9 +297,9 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-    /* GPStemp = (MJDVec[i]-44244.)*86400.; */
-    GPStemp = LALTDBMJDtoGPS(MJDVec[i]);
-
+    /* GPStemp = LALTDBMJDtoGPS(MJDVec[i]); */
+    GPStemp = LALTTMJDtoGPS(MJDVec[i]);
+    
     MJDVec[i] = GPStemp + tArrVec[i];
     
     /*printf("%lf\n",fmod(MJDVec[i],50000));*/ 
@@ -371,7 +371,7 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     /* (phase is tracked well enough using the values of f0, f1, f2 and f3 
       calculated above to be able to constrain the phase after time t to the nearest
       integer) */
-      phaseNew = floor(phase + 0.5);
+    phaseNew = floor(phase + 0.5);
     /* fprintf(stdout,"%lf\t%lf\n",phase,phaseNew); */
     
     /* recalculate spindown params with constrained phase */
@@ -384,7 +384,7 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     f2 = -(15.0/(2.0*t1*t1*t1))*a - (3.0/(2.0*t1*t1))*b + (3.0/(4.0*t1))*c;
     f3 = (45.0/(2.0*t1*t1*t1*t1))*a + (3.0/(2.0*t1*t1*t1))*b - (15.0/(4.0*t1*t1))*c;
     f4 = -(45.0/(2.0*t1*t1*t1*t1*t1))*a + (15.0/(4.0*t1*t1*t1))*c;
-    
+
     output->f0->data[i-1] = f0;
     output->f1->data[i-1] = f1;
     output->f2->data[i-1] = f2;
@@ -408,7 +408,6 @@ LALSetSpindownParams	( LALStatus  *status,
 {
   UINT4 i = 0;
   REAL8 dataEpoch;
-  /*REAL8 dt;*/
   
   INITSTATUS( status, "LALSetSpindownParams", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
@@ -479,16 +478,15 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   /* Dt between time of data point and the epoch of the FIRST data point */
   /* epoch of the FIRST data point is always the GPS time of that point  */
   t = t - (REAL8)input->t0 + emit.deltaT;
-  
+
   /* Dt between time of data point and the epoch of that data point */
   t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
-
-  //fprintf(stderr, "params->epoch = %lf\n", params->epoch);
   
   /* calculate phase difference between signal with timing noise and one without */
   /* phi - phi0 */
   /* input f0 is already at GW freq (i.e. spin freq * 2) */
-  phi0 = input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t;
+  phi0 = input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t +
+    (input->f3/24.)*t*t*t*t;
 
   phi = 2.0*(params->f0*t1 + 0.5*params->f1*t1*t1 + (params->f2/6.0)*t1*t1*t1+
     (params->f3/24.0)*t1*t1*t1*t1 + (params->f4/120.0)*t1*t1*t1*t1*t1);
