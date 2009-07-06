@@ -22,20 +22,20 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \section{Header \texttt{ComplexFFT.h}}
  * \label{s:ComplexFFT.h}
- * 
+ *
  * Performs complex-to-complex FFTs.
- * 
+ *
  * \subsection*{Synopsis}
  * \begin{verbatim}
  * #include <lal/ComplexFFT.h>
  * \end{verbatim}
- * 
+ *
  * Perform complex-to-complex fast Fourier transforms of vectors using the
  * package FFTW~\cite{fj:1998}.
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _COMPLEXFFT_H
@@ -81,9 +81,9 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 
 /**** </lalErrTable> */
 /**** <lalLaTeX>
- * 
+ *
  * \subsection*{Structures}
- * 
+ *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
 typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
@@ -92,10 +92,10 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 #define ComplexFFTPlan COMPLEX8FFTPlan
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains the parameters necessary for performing an FFT of a
  * given size and direction.  The contents should not be manually adjusted.
- * 
+ *
  * \newpage\input{ComplexFFTC}
  * \newpage\input{ComplexFFTTestC}
  **** </lalLaTeX> */

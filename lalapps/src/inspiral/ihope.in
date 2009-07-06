@@ -60,17 +60,19 @@ there is data on the cluster the analysis is being run.
 
 3) Find the data on the cluster.  Can be skipped with --skip-datafind.
 
-4) The search itself.  Can be skipped with --skip-search.
+4) Generate the template banks.  Can be skipped with --skip-tmpltbank.
 
-5) The application of the data quality vetoes.  Can be skipped with
+5) The search itself.  Can be skipped with --skip-search.
+
+6) The application of the data quality vetoes.  Can be skipped with
 --skip-data-quality.
 
-6) Make plots of the output.  Can be skipped with --skip-plots.
+7) Make plots of the output.  Can be skipped with --skip-plots.
 
-7) Followup the loudest events (currently not working).  Can be skipped
+8) Followup the loudest events (currently not working).  Can be skipped
 with --skip-followup.
 
-For options 4-7, you can run 3 types of analysis:
+For options 5-8, you can run 3 types of analysis:
 a) playground and playground time slides. Skipped with --skip-playground
 b) full data and full data time slides.  Skipped with --skip-full-data
 c) software injections. Skipped with --skip-injections
@@ -111,6 +113,9 @@ parser.add_option("-V", "--skip-generate-veto-segments",action="store_false",\
 
 parser.add_option("-B", "--skip-datafind",action="store_false",\
     default=True, dest="run_datafind", help="skip the datafind step")
+
+parser.add_option("-T", "--skip-tmpltbank",action="store_false",\
+    default=True, dest="run_tmpltbank", help="skip the template bank generation")
 
 parser.add_option("-F", "--skip-full-data",action="store_false",\
     default=True, dest="run_full_data", help="skip the full data + slides")
@@ -176,6 +181,13 @@ if not opts.gps_end_time:
 
 if opts.gps_end_time < opts.gps_start_time:
   print >> sys.stderr, "The GPS end time must be after the GPS start time"
+  sys.exit(1)
+
+#FIXME: run hardware injections option will no longer work with the switch
+# to ligolw_segment_query. For now, will print error message and exit; once
+# fixed, remove this.
+if opts.run_hardware_injections:
+  print >> sys.stderr, "--run-hardware-injections currently does not work"
   sys.exit(1)
 
 ##############################################################################
@@ -282,25 +294,20 @@ if opts.run_hardware_injections:
 os.chdir(analysisDirectory)
 os.chdir("segments")
 
-# Download the dqSegFiles
+# Download the veto definer xml file
+vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
 
-dqSegFile = {}
-dqHWSegFile = {}
-for ifo in ifos:
-  dqSegFile[ifo] = inspiralutils.downloadDqSegFiles(cp,\
-                   ifo,opts.generate_segments)
-  if opts.run_hardware_injections:
-    os.chdir("../hardware_inj_segments")
-    dqHWSegFile[ifo] = inspiralutils.downloadDqHWSegFiles(hwcp,\
-        ifo,opts.generate_segments,"../segments/" + dqSegFile[ifo])
-    os.chdir("../segments")
+# Generate veto xml files for each ifo and for each category
+inspiralutils.generate_veto_cat_files(cp, vetoDefFile, \
+    opts.generate_veto_segments)
+
 
 segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
   segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, 
-      dqSegFile[ifo],opts.generate_segments, opts.use_available_data, \
+      opts.generate_segments, opts.use_available_data, \
       opts.generate_veto_segments)
   # set correct name as we're in the segments directory:
   segFile[ifo] = "../segments/" + segFile[ifo]
@@ -308,7 +315,17 @@ for ifo in ifos:
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
 
+
 if opts.run_hardware_injections:
+  # FIXME: This will no longer work
+  dqHWSegFile = {}
+  # Download the dqHWSegFiles
+  for ifo in ifos:
+    os.chdir("../hardware_inj_segments")
+    dqHWSegFile[ifo] = inspiralutils.downloadDqHWSegFiles(hwcp,\
+        ifo,opts.generate_segments,"../segments/" + dqSegFile[ifo])
+    os.chdir("../segments")
+
   os.chdir("..")
   os.chdir("hardware_inj_segments")
   hwInjHtmlLoc = hwcp.get('hardware-inj','hw-inj-file-html-path')
@@ -333,11 +350,11 @@ if opts.run_hardware_injections:
 os.chdir("..")
 
 ##############################################################################
-# Run lalapps_inspiral_hipe for datafind
-if opts.run_datafind:
-  print "Running inspiral hipe for datafind run"
+# Run lalapps_inspiral_hipe for datafind and template bank generation
+if opts.run_datafind or opts.run_tmpltbank:
+  print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
-      opts.log_path, dfOnly = True)
+      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
@@ -347,26 +364,32 @@ cachelist = []
 cachefilename = basename + '.cache'
 
 if opts.run_search:
+  # We need to get the names of the template bank files that are generated in
+  # the datafind step, so we can link them into all the search directories
+  datafind_cache_filename = "datafind/" + inspiralutils.hipe_cache(ifos, \
+      "DATAFIND", opts.gps_start_time, opts.gps_end_time)
+  tmpltbank_cache = inspiralutils.tmpltbank_cache(datafind_cache_filename)
 
   if opts.run_playground:
     print "Running inspiral hipe for playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
          opts.log_path, playOnly = True, dax=opts.dax, \
-         site=cp.get("sites","playground"))
+         site=cp.get("sites","playground"), tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground/" + cacheFile)
     dag.add_node(hipePlayNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     print "Running inspiral hipe for analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data", cp, ifos, \
-        opts.log_path,dax=opts.dax,site=cp.get("sites","full_data"))
+        opts.log_path,dax=opts.dax,site=cp.get("sites","full_data"), \
+        tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipeAnalysisNode.add_parent(hipeDfNode)
 
   if opts.run_hardware_injections:
@@ -384,11 +407,11 @@ if opts.run_search:
     for (injDir, injSeed) in cp.items("injections"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           site=cp.get("sites",injDir))
+           site=cp.get("sites",injDir), tmpltbankCache = tmpltbank_cache)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
-      if opts.run_datafind:
+      if opts.run_datafind or opts.run_tmpltbank:
         hipeInjNode[injDir].add_parent(hipeDfNode)
 
 ################################################################################
@@ -401,22 +424,23 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         site = cp.get("sites","playground"))
+         site = cp.get("sites","playground"), tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     cp.set ("inspiral","reverse-chirp-bank","")
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
-        opts.log_path, dax=opts.dax, site = cp.get("sites","full_data"))
+        opts.log_path, dax=opts.dax, site = cp.get("sites","full_data"), \
+        tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipeAnalysisNode.add_parent(hipeDfNode)
 
   if opts.run_injections:
@@ -426,11 +450,11 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           site= cp.get("sites",injDir))
+           site= cp.get("sites",injDir), tmpltbankCache = tmpltbank_cache)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
-      if opts.run_datafind:
+      if opts.run_datafind or opts.run_tmpltbank:
         hipeInjNode[injDir].add_parent(hipeDfNode)
 
 ##############################################################################
@@ -578,7 +602,7 @@ if opts.run_plots:
     print "Making plots depending only on the playground"
     dag = inspiralutils.zeroSlidePlots(dag, "playground_summary_plots", cp, \
         opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
 
   if opts.run_playground and opts.run_full_data:
 
@@ -595,7 +619,7 @@ if opts.run_plots:
     print "Making plots with full data slides, playground zero lag"
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
 
   # Setting up plots for hardware injection run.
   
@@ -631,7 +655,7 @@ if opts.run_plots:
           "hardware_injections" + "_summary_plots", hwcp, opts.log_path,\
           "HARDWARE_INJECTIONS", zeroLagSuffix, slideSuffix, \
           "../" + cachefilename, opts.do_dag_categories, parentNodes,
-          parentVetoNodes, 3)
+          parentVetoNodes, 3, ifos)
     print "Making plots of hardware injection runs"
 
 
@@ -670,7 +694,7 @@ if opts.run_plots:
       dag = inspiralutils.injZeroSlidePlots(dag, injDir + "_summary_plots", \
           cp, opts.log_path, injDir.upper(), zeroLagSuffix, slideSuffix, \
           "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-          parentVetoNodes, 3)
+          parentVetoNodes, 3, ifos)
 
     print "Making plots of all injection runs together"
 
@@ -694,27 +718,26 @@ if opts.run_plots:
     dag = inspiralutils.injZeroSlidePlots(dag, "allinj_summary_plots", cp, \
         opts.log_path, "*INJ", zeroLagSuffix, slideSuffix, \
         "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-        parentVetoNodes, 3)
+        parentVetoNodes, 3, ifos)
 
   if opts.do_dag_categories:
     dag.add_maxjobs_category('plotting',2)
 
 if opts.generate_results_plots:
   # set up parents correctly
+  parentNodes = None
+  parentVetoNodes = None
   if opts.run_full_data:
     if opts.run_search:
       parentNodes = [hipeAnalysisNode]
-    else: parentNodes = None
-
     if opts.run_data_quality:
       parentVetoNodes = [hipeAnalysisVetoNode[3]]
-    else: parentVetoNodes = None
 
   # make the full data slide/zerolag plots
   print "Making full data zero lag plots."
   dag = inspiralutils.zeroSlidePlots(dag, "full_data_summary_plots", cp, \
         opts.log_path, "FULL_DATA", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
                              
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe

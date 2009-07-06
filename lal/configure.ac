@@ -1,8 +1,154 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id$
-AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
+AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_FILES([ \
+                 lal.spec \
+                 lal.pc \
+                 lalframe.pc \
+                 lalmetaio.pc \
+                 lalxml.pc \
+                 lalsupport.pc \
+                 lal-config \
+                 Makefile \
+                 debian/Makefile \
+                 doc/Makefile \
+                 doc/laldoc/Makefile \
+                 doc/autodoc/Makefile \
+                 include/Makefile \
+                 include/lal/Makefile \
+                 lib/git_version
+                 lib/Makefile \
+                 misc/Makefile \
+                 packages/Makefile \
+                 packages/std/Makefile \
+                 packages/std/doc/Makefile \
+                 packages/std/include/Makefile
+                 packages/std/src/Makefile \
+                 packages/std/test/Makefile \
+                 packages/tools/Makefile \
+                 packages/tools/doc/Makefile \
+                 packages/tools/include/Makefile \
+                 packages/tools/src/Makefile \
+                 packages/tools/test/Makefile \
+                 packages/factories/Makefile \
+                 packages/factories/doc/Makefile \
+                 packages/factories/include/Makefile \
+                 packages/factories/src/Makefile \
+                 packages/factories/test/Makefile \
+                 packages/vectorops/Makefile \
+                 packages/vectorops/doc/Makefile \
+                 packages/vectorops/include/Makefile \
+                 packages/vectorops/src/Makefile \
+                 packages/vectorops/test/Makefile \
+                 packages/utilities/Makefile \
+                 packages/utilities/doc/Makefile \
+                 packages/utilities/include/Makefile \
+                 packages/utilities/src/Makefile \
+                 packages/utilities/test/Makefile \
+                 packages/stats/Makefile \
+                 packages/stats/doc/Makefile \
+                 packages/stats/include/Makefile \
+                 packages/stats/src/Makefile \
+                 packages/stats/test/Makefile \
+                 packages/inject/Makefile \
+                 packages/inject/doc/Makefile \
+                 packages/inject/include/Makefile \
+                 packages/inject/src/Makefile \
+                 packages/inject/test/Makefile \
+                 packages/date/Makefile \
+                 packages/date/doc/Makefile \
+                 packages/date/include/Makefile \
+                 packages/date/src/Makefile \
+                 packages/date/test/Makefile \
+                 packages/tdfilter/Makefile \
+                 packages/tdfilter/doc/Makefile \
+                 packages/tdfilter/include/Makefile \
+                 packages/tdfilter/src/Makefile \
+                 packages/tdfilter/test/Makefile \
+                 packages/window/Makefile \
+                 packages/window/doc/Makefile \
+                 packages/window/include/Makefile \
+                 packages/window/src/Makefile \
+                 packages/window/test/Makefile \
+                 packages/fft/Makefile \
+                 packages/fft/doc/Makefile \
+                 packages/fft/include/Makefile \
+                 packages/fft/src/Makefile \
+                 packages/fft/test/Makefile \
+                 packages/clremoval/Makefile \
+                 packages/clremoval/doc/Makefile \
+                 packages/clremoval/include/Makefile \
+                 packages/clremoval/src/Makefile \
+                 packages/clremoval/test/Makefile \
+                 packages/stochastic/Makefile \
+                 packages/stochastic/doc/Makefile \
+                 packages/stochastic/include/Makefile \
+                 packages/stochastic/src/Makefile \
+                 packages/stochastic/test/Makefile \
+                 packages/inspiral/Makefile \
+                 packages/inspiral/doc/Makefile \
+                 packages/inspiral/include/Makefile \
+                 packages/inspiral/src/Makefile \
+                 packages/inspiral/test/Makefile \
+                 packages/noisemodels/Makefile \
+                 packages/noisemodels/doc/Makefile \
+                 packages/noisemodels/include/Makefile \
+                 packages/noisemodels/src/Makefile \
+                 packages/noisemodels/test/Makefile \
+                 packages/bank/Makefile \
+                 packages/bank/doc/Makefile \
+                 packages/bank/include/Makefile \
+                 packages/bank/src/Makefile \
+                 packages/bank/test/Makefile \
+                 packages/ring/Makefile \
+                 packages/ring/doc/Makefile \
+                 packages/ring/include/Makefile \
+                 packages/ring/src/Makefile \
+                 packages/ring/test/Makefile \
+                 packages/findchirp/Makefile \
+                 packages/findchirp/doc/Makefile \
+                 packages/findchirp/include/Makefile \
+                 packages/findchirp/src/Makefile \
+                 packages/findchirp/test/Makefile \
+                 packages/pulsar/Makefile \
+                 packages/pulsar/doc/Makefile \
+                 packages/pulsar/include/Makefile \
+                 packages/pulsar/src/Makefile \
+                 packages/pulsar/test/Makefile \
+                 packages/houghpulsar/Makefile \
+                 packages/houghpulsar/doc/Makefile \
+                 packages/houghpulsar/include/Makefile \
+                 packages/houghpulsar/src/Makefile \
+                 packages/houghpulsar/test/Makefile \
+                 packages/burstsearch/Makefile \
+                 packages/burstsearch/doc/Makefile \
+                 packages/burstsearch/include/Makefile \
+                 packages/burstsearch/src/Makefile \
+                 packages/burstsearch/test/Makefile \
+                 packages/tracksearch/Makefile \
+                 packages/tracksearch/doc/Makefile \
+                 packages/tracksearch/include/Makefile \
+                 packages/tracksearch/src/Makefile \
+                 packages/tracksearch/test/Makefile \
+                 packages/timefreq/Makefile \
+                 packages/timefreq/doc/Makefile \
+                 packages/timefreq/include/Makefile \
+                 packages/timefreq/src/Makefile \
+                 packages/timefreq/test/Makefile \
+                 packages/support/Makefile \
+                 packages/support/doc/Makefile \
+                 packages/support/include/Makefile \
+                 packages/support/src/Makefile \
+                 packages/support/test/Makefile \
+                 packages/framedata/Makefile \
+                 packages/framedata/doc/Makefile \
+                 packages/framedata/include/Makefile \
+                 packages/framedata/src/Makefile \
+                 packages/framedata/test/Makefile
+])
 AM_INIT_AUTOMAKE([])
-AM_CONFIG_HEADER([include/config.h] [include/lal/LALConfig.h])
 AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
@@ -20,7 +166,6 @@ AH_BOTTOM([
 AC_CANONICAL_HOST
 
 LAL_WITH_CC
-LAL_WITH_MPICC
 LAL_WITH_CFLAGS
 LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
@@ -32,7 +177,6 @@ LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
 LAL_ENABLE_XML
-LAL_ENABLE_MPI
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -67,18 +211,25 @@ if test "$lal_pthread_lock" = "true" ; then
     CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
     CC="$PTHREAD_CC"
   else
-    AC_MSG_ERROR([don't know how to compile posix threads])
+    AC_MSG_ERROR([do not know how to compile posix threads])
   fi
 fi
 
+# check for c compiler
+m4_pattern_allow([AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS(M4, gm4 m4, m4)
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
@@ -106,8 +257,8 @@ AC_SUBST(TEXFLAGS)
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200101L"
-  AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
+  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT(none);;
 esac
 
@@ -149,7 +300,7 @@ else
       LAL_INTEL_FFT_LIBS_MSG_ERROR
     else
       AC_CHECK_LIB(mkl_ia32, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
-    fi  
+    fi
   else
     AC_CHECK_LIB(mkl, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
   fi
@@ -196,6 +347,8 @@ AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
 fi
+AC_CHECK_HEADER(stdint.h, , [AC_MSG_ERROR(could not find stdint.h)])
+AC_CHECK_HEADER(inttypes.h, , [AC_MSG_ERROR(could not find inttypes.h)])
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)
@@ -230,28 +383,6 @@ if test "${lal_pthread_lock}" = "true"; then
 fi
 
 
-dnl Checks for optional MPI libraries and header files.
-if test "${mpi}" = "true"; then
-  AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
-  LAL_CHECK_MPI_FLAGS
-  lal_pre_mpi_LIBS="$LIBS"
-  lal_pre_mpi_CPPFLAGS="$CPPFLAGS"
-  lal_pre_mpi_CFLAGS="$CFLAGS"
-  LIBS="$LIBS $MPI_LDFLAGS"
-  CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
-  CFLAGS="$CFLAGS $MPI_CFLAGS"
-  AC_SEARCH_LIBS(MPI_Init, mpi, , [AC_MSG_ERROR([can't find MPI library])])
-  AC_CHECK_HEADERS(mpi.h, , [AC_MSG_ERROR([can't find mpi.h header])])
-  LIBS="$lal_pre_mpi_LIBS"
-  CPPFLAGS="$lal_pre_mpi_CPPFLAGS"
-  CFLAGS="$lal_pre_mpi_CFLAGS"
-else
-  MPI_CFLAGS=
-  MPI_CPPFLAGS=
-  MPI_LDFLAGS=
-fi
-
-
 dnl Define variables describing what was enabled.
 if test "${fftw3}" = "true"; then
   AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
@@ -265,9 +396,6 @@ fi
 if test "${xml}" = "true"; then
   AC_DEFINE(LAL_XML_ENABLED, 1, [Define if using xml2 library])
 fi
-if test "${mpi}" = "true"; then
-  AC_DEFINE(LAL_MPI_ENABLED, 1, [Define if using MPI])
-fi
 
 
 dnl Record the libraries needed for linking LAL.
@@ -277,10 +405,6 @@ AC_SUBST(LALLIBADD)
 LAL_LIBADD="$LIBS $LALLIBADD"
 AC_SUBST(LAL_LIBADD)
 AC_SUBST(LALSUPPORT_LIBADD)
-AC_SUBST(MPI_CFLAGS)
-AC_SUBST(MPI_CPPFLAGS)
-AC_SUBST(MPI_LDFLAGS)
-AC_SUBST(LAL_MPI_ENABLED)
 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -289,10 +413,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF(short, 2)
-LAL_CHECK_SIZEOF(int, 4)
-LAL_CHECK_SIZEOF(long, 4)
-LAL_CHECK_SIZEOF(long long, 8)
 LAL_CHECK_SIZEOF(float, 4)
 LAL_CHECK_SIZEOF(double, 8)
 
@@ -309,8 +429,6 @@ AC_SUBST(pkgdocdir)
 
 dnl Setup automake conditionals
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
-AM_CONDITIONAL(MPI, test x$mpi = xtrue)
-AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
 AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
@@ -355,209 +473,18 @@ dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
 fi
-LIBLISTBASE='$(top_builddir)/packages/std/src/libstd.la $(top_builddir)/packages/tools/src/libtools.la $(top_builddir)/packages/sample/src/libsample.la $(top_builddir)/packages/hello/src/libhello.la $(top_builddir)/packages/factories/src/libfactories.la $(top_builddir)/packages/vectorops/src/libvectorops.la $(top_builddir)/packages/utilities/src/libutilities.la $(top_builddir)/packages/stats/src/libstats.la $(top_builddir)/packages/inject/src/libinject.la $(top_builddir)/packages/date/src/libdate.la $(top_builddir)/packages/tdfilter/src/libtdfilter.la $(top_builddir)/packages/window/src/libwindow.la $(top_builddir)/packages/fft/src/libfft.la $(top_builddir)/packages/clremoval/src/libclremoval.la $(top_builddir)/packages/stochastic/src/libstochastic.la $(top_builddir)/packages/inspiral/src/libinspiral.la $(top_builddir)/packages/noisemodels/src/libnoisemodels.la $(top_builddir)/packages/bank/src/libbank.la $(top_builddir)/packages/ring/src/libring.la $(top_builddir)/packages/findchirp/src/libfindchirp.la $(top_builddir)/packages/pulsar/src/libpulsar.la $(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la $(top_builddir)/packages/burstsearch/src/libburstsearch.la $(top_builddir)/packages/tracksearch/src/libtracksearch.la $(top_builddir)/packages/tfclusters/src/libtfclusters.la $(top_builddir)/packages/slopefilters/src/libslopefilters.la $(top_builddir)/packages/block/src/libblock.la $(top_builddir)/packages/timefreq/src/libtimefreq.la '
-LIBLISTMPI='$(top_builddir)/packages/comm/src/libcomm.la '
-LIBLISTFRAME='$(top_builddir)/packages/framedata/src/libframedata.la '
-LIBLISTMPIFRAME=''
-if test x$mpi = xfalse; then
-  LIBLISTMPI=
-  LIBLISTMPIFRAME=
-fi
-if test x$frame = xfalse; then
-  LIBLISTFRAME=
-  LIBLISTMPIFRAME=
-fi
-PKGLIST="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq support comm framedata  "
-AC_SUBST(PKGLIST)
-AC_SUBST(LIBLISTBASE)
-AC_SUBST(LIBLISTMPI)
-AC_SUBST(LIBLISTFRAME)
-AC_SUBST(LIBLISTMPIFRAME)
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
 AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
-AC_OUTPUT_COMMANDS([chmod +x lal-config])
-AC_CONFIG_FILES([lal.spec])
-AC_CONFIG_FILES([lal.pc])
-AC_CONFIG_FILES([lalframe.pc])
-AC_CONFIG_FILES([lalmetaio.pc])
-AC_CONFIG_FILES([lalxml.pc])
-AC_CONFIG_FILES([lalmpi.pc])
-AC_CONFIG_FILES([lalsupport.pc])
-AC_CONFIG_FILES([lal-config])
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([debian/Makefile])
-AC_CONFIG_FILES([doc/Makefile])
-AC_CONFIG_FILES([doc/laldoc/Makefile])
-AC_CONFIG_FILES([doc/autodoc/Makefile])
-AC_CONFIG_FILES([include/Makefile])
-AC_CONFIG_FILES([include/lal/Makefile])
-AC_CONFIG_FILES([lib/Makefile])
-AC_CONFIG_FILES([misc/Makefile])
-AC_CONFIG_FILES([packages/Makefile])
-AC_CONFIG_FILES([packages/std/Makefile])
-AC_CONFIG_FILES([packages/std/doc/Makefile])
-AC_CONFIG_FILES([packages/std/include/Makefile])
-AC_CONFIG_FILES([packages/std/src/Makefile])
-AC_CONFIG_FILES([packages/std/test/Makefile])
-AC_CONFIG_FILES([packages/tools/Makefile])
-AC_CONFIG_FILES([packages/tools/doc/Makefile])
-AC_CONFIG_FILES([packages/tools/include/Makefile])
-AC_CONFIG_FILES([packages/tools/src/Makefile])
-AC_CONFIG_FILES([packages/tools/test/Makefile])
-AC_CONFIG_FILES([packages/sample/Makefile])
-AC_CONFIG_FILES([packages/sample/doc/Makefile])
-AC_CONFIG_FILES([packages/sample/include/Makefile])
-AC_CONFIG_FILES([packages/sample/src/Makefile])
-AC_CONFIG_FILES([packages/sample/test/Makefile])
-AC_CONFIG_FILES([packages/hello/Makefile])
-AC_CONFIG_FILES([packages/hello/doc/Makefile])
-AC_CONFIG_FILES([packages/hello/include/Makefile])
-AC_CONFIG_FILES([packages/hello/src/Makefile])
-AC_CONFIG_FILES([packages/hello/test/Makefile])
-AC_CONFIG_FILES([packages/factories/Makefile])
-AC_CONFIG_FILES([packages/factories/doc/Makefile])
-AC_CONFIG_FILES([packages/factories/include/Makefile])
-AC_CONFIG_FILES([packages/factories/src/Makefile])
-AC_CONFIG_FILES([packages/factories/test/Makefile])
-AC_CONFIG_FILES([packages/vectorops/Makefile])
-AC_CONFIG_FILES([packages/vectorops/doc/Makefile])
-AC_CONFIG_FILES([packages/vectorops/include/Makefile])
-AC_CONFIG_FILES([packages/vectorops/src/Makefile])
-AC_CONFIG_FILES([packages/vectorops/test/Makefile])
-AC_CONFIG_FILES([packages/utilities/Makefile])
-AC_CONFIG_FILES([packages/utilities/doc/Makefile])
-AC_CONFIG_FILES([packages/utilities/include/Makefile])
-AC_CONFIG_FILES([packages/utilities/src/Makefile])
-AC_CONFIG_FILES([packages/utilities/test/Makefile])
-AC_CONFIG_FILES([packages/stats/Makefile])
-AC_CONFIG_FILES([packages/stats/doc/Makefile])
-AC_CONFIG_FILES([packages/stats/include/Makefile])
-AC_CONFIG_FILES([packages/stats/src/Makefile])
-AC_CONFIG_FILES([packages/stats/test/Makefile])
-AC_CONFIG_FILES([packages/inject/Makefile])
-AC_CONFIG_FILES([packages/inject/doc/Makefile])
-AC_CONFIG_FILES([packages/inject/include/Makefile])
-AC_CONFIG_FILES([packages/inject/src/Makefile])
-AC_CONFIG_FILES([packages/inject/test/Makefile])
-AC_CONFIG_FILES([packages/date/Makefile])
-AC_CONFIG_FILES([packages/date/doc/Makefile])
-AC_CONFIG_FILES([packages/date/include/Makefile])
-AC_CONFIG_FILES([packages/date/src/Makefile])
-AC_CONFIG_FILES([packages/date/test/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/doc/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/include/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/src/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/test/Makefile])
-AC_CONFIG_FILES([packages/window/Makefile])
-AC_CONFIG_FILES([packages/window/doc/Makefile])
-AC_CONFIG_FILES([packages/window/include/Makefile])
-AC_CONFIG_FILES([packages/window/src/Makefile])
-AC_CONFIG_FILES([packages/window/test/Makefile])
-AC_CONFIG_FILES([packages/fft/Makefile])
-AC_CONFIG_FILES([packages/fft/doc/Makefile])
-AC_CONFIG_FILES([packages/fft/include/Makefile])
-AC_CONFIG_FILES([packages/fft/src/Makefile])
-AC_CONFIG_FILES([packages/fft/test/Makefile])
-AC_CONFIG_FILES([packages/clremoval/Makefile])
-AC_CONFIG_FILES([packages/clremoval/doc/Makefile])
-AC_CONFIG_FILES([packages/clremoval/include/Makefile])
-AC_CONFIG_FILES([packages/clremoval/src/Makefile])
-AC_CONFIG_FILES([packages/clremoval/test/Makefile])
-AC_CONFIG_FILES([packages/stochastic/Makefile])
-AC_CONFIG_FILES([packages/stochastic/doc/Makefile])
-AC_CONFIG_FILES([packages/stochastic/include/Makefile])
-AC_CONFIG_FILES([packages/stochastic/src/Makefile])
-AC_CONFIG_FILES([packages/stochastic/test/Makefile])
-AC_CONFIG_FILES([packages/inspiral/Makefile])
-AC_CONFIG_FILES([packages/inspiral/doc/Makefile])
-AC_CONFIG_FILES([packages/inspiral/include/Makefile])
-AC_CONFIG_FILES([packages/inspiral/src/Makefile])
-AC_CONFIG_FILES([packages/inspiral/test/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/doc/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/include/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/src/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/test/Makefile])
-AC_CONFIG_FILES([packages/bank/Makefile])
-AC_CONFIG_FILES([packages/bank/doc/Makefile])
-AC_CONFIG_FILES([packages/bank/include/Makefile])
-AC_CONFIG_FILES([packages/bank/src/Makefile])
-AC_CONFIG_FILES([packages/bank/test/Makefile])
-AC_CONFIG_FILES([packages/ring/Makefile])
-AC_CONFIG_FILES([packages/ring/doc/Makefile])
-AC_CONFIG_FILES([packages/ring/include/Makefile])
-AC_CONFIG_FILES([packages/ring/src/Makefile])
-AC_CONFIG_FILES([packages/ring/test/Makefile])
-AC_CONFIG_FILES([packages/findchirp/Makefile])
-AC_CONFIG_FILES([packages/findchirp/doc/Makefile])
-AC_CONFIG_FILES([packages/findchirp/include/Makefile])
-AC_CONFIG_FILES([packages/findchirp/src/Makefile])
-AC_CONFIG_FILES([packages/findchirp/test/Makefile])
-AC_CONFIG_FILES([packages/pulsar/Makefile])
-AC_CONFIG_FILES([packages/pulsar/doc/Makefile])
-AC_CONFIG_FILES([packages/pulsar/include/Makefile])
-AC_CONFIG_FILES([packages/pulsar/src/Makefile])
-AC_CONFIG_FILES([packages/pulsar/test/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/doc/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/include/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/src/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/test/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/doc/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/include/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/src/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/test/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/doc/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/include/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/src/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/test/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/doc/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/include/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/src/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/test/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/doc/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/include/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/src/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/test/Makefile])
-AC_CONFIG_FILES([packages/block/Makefile])
-AC_CONFIG_FILES([packages/block/doc/Makefile])
-AC_CONFIG_FILES([packages/block/include/Makefile])
-AC_CONFIG_FILES([packages/block/src/Makefile])
-AC_CONFIG_FILES([packages/block/test/Makefile])
-AC_CONFIG_FILES([packages/timefreq/Makefile])
-AC_CONFIG_FILES([packages/timefreq/doc/Makefile])
-AC_CONFIG_FILES([packages/timefreq/include/Makefile])
-AC_CONFIG_FILES([packages/timefreq/src/Makefile])
-AC_CONFIG_FILES([packages/timefreq/test/Makefile])
-AC_CONFIG_FILES([packages/support/Makefile])
-AC_CONFIG_FILES([packages/support/doc/Makefile])
-AC_CONFIG_FILES([packages/support/include/Makefile])
-AC_CONFIG_FILES([packages/support/src/Makefile])
-AC_CONFIG_FILES([packages/support/test/Makefile])
-AC_CONFIG_FILES([packages/comm/Makefile])
-AC_CONFIG_FILES([packages/comm/doc/Makefile])
-AC_CONFIG_FILES([packages/comm/include/Makefile])
-AC_CONFIG_FILES([packages/comm/src/Makefile])
-AC_CONFIG_FILES([packages/comm/test/Makefile])
-AC_CONFIG_FILES([packages/framedata/Makefile])
-AC_CONFIG_FILES([packages/framedata/doc/Makefile])
-AC_CONFIG_FILES([packages/framedata/include/Makefile])
-AC_CONFIG_FILES([packages/framedata/src/Makefile])
-AC_CONFIG_FILES([packages/framedata/test/Makefile])
+AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
+AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-mpienabled="`test x${mpi} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -566,10 +493,9 @@ echo "
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
                 LAL XML library support is $xmlenabled
-                LAL MPI support is $mpienabled
 
         Now run 'make' to build LAL
- 	and run 'make install' to install LAL
+        and run 'make install' to install LAL
         LAL will be installed under the directory:
 
                 $prefix

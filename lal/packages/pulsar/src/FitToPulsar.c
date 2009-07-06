@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="FitToPulsarCV">
 Author: Dupuis, R. J.
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -41,9 +41,9 @@ LALFineFitToPulsar	(            LALStatus            *status,
 
 \subsubsection*{Description}
 
-This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through 
-fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters 
-returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for 
+This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through
+fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters
+returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for
 \texttt{LALFineFitToPulsar()}.
 
 The function \texttt{LALFineFitToPulsar()} refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
@@ -63,7 +63,7 @@ LALComputeDetAMResponse()
 
 \vfill{\footnotesize\input{FitToPulsarCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -94,7 +94,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 		    		CoarseFitOutput      *output,
 		    		CoarseFitInput       *input,
 		    		CoarseFitParams      *params )
-		
+
 /* </lalVerbatim> */
 {
   /******* DECLARE VARIABLES ************/
@@ -115,77 +115,77 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
  	COMPLEX16		Xp, Xc;
 	REAL8 			Y, cosIota2;
 	COMPLEX16		A,B;
-  	REAL8			sumAA, sumBB, sumAB;	
+  	REAL8			sumAA, sumBB, sumAB;
 	REAL8			h0BestFit=0,phaseBestFit=0, psiBestFit=0, cosIotaBestFit=0;
   	REAL8			minChiSquare;
 	COMPLEX16		eh0;
 	REAL8 oldMinEh0, oldMaxEh0, weh0;
 	UINT4			iH0, iCosIota, iPhase, iPsi, arg;
-	
+
   INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
   ATTATCHSTATUSPTR(status);
 
-  /******* CHECK VALIDITY OF ARGUMENTS  ************/	 
+  /******* CHECK VALIDITY OF ARGUMENTS  ************/
   ASSERT(output != (CoarseFitOutput *)NULL, status,
-         FITTOPULSARH_ENULLOUTPUT, FITTOPULSARH_MSGENULLOUTPUT);	 
-  
+         FITTOPULSARH_ENULLOUTPUT, FITTOPULSARH_MSGENULLOUTPUT);
+
   ASSERT(params != (CoarseFitParams *)NULL, status,
          FITTOPULSARH_ENULLPARAMS, FITTOPULSARH_MSGENULLPARAMS);
-	 
+
   ASSERT(input != (CoarseFitInput *)NULL, status,
          FITTOPULSARH_ENULLINPUT, FITTOPULSARH_MSGENULLINPUT);
 
-  ASSERT(input->B->length == input->var->length, status, 
+  ASSERT(input->B->length == input->var->length, status,
   FITTOPULSARH_EVECSIZE , FITTOPULSARH_MSGEVECSIZE );
 
   /******* EXTRACT INPUTS AND PARAMETERS ************/
-  
+
   n = input->B->length;
 
   for (i = 0; i < n; i++)
      ASSERT(input->var->data[i].re > 0.0 && input->var->data[i].im > 0.0, status,
          FITTOPULSARH_EVAR, FITTOPULSARH_MSGEVAR);
-  
+
   detector = params->detector;
   detAndSource.pDetector = &detector;
-  
+
   pulsar = params->pulsarSrc;
 
   /******* ALLOCATE MEMORY TO VECTORS **************/
-  
+
   Fp = NULL;
   LALSCreateVector(status->statusPtr, &Fp, n);
   Fp->length = n;
- 
+
   Fc = NULL;
   LALSCreateVector(status->statusPtr, &Fc, n);
   Fc->length = n;
-  
+
   var = NULL;
   LALDCreateVector(status->statusPtr, &var, n);
-  var->length = n; 
+  var->length = n;
   /******* INITIALIZE VARIABLES *******************/
-  
+
   minChiSquare = INICHISQU;
   oldMaxEh0 = INIMAXEH;
   oldMinEh0 = INIMINEH;
-  
-  
+
+
   for (i=0;i<n;i++)
-  {  
+  {
     var->data[i] = input->var->data[i].re + input->var->data[i].im;
   }
   /******* DO ANALYSIS ************/
-  
+
   for (iPsi = 0; iPsi < params->meshPsi[2]; iPsi++)
   {
     psi = params->meshPsi[0] + iPsi*params->meshPsi[1];
     pulsar.orientation = psi;
     detAndSource.pSource = &pulsar;
-   
-   /* create vectors containing amplitude response of detector for specified times */ 
+
+   /* create vectors containing amplitude response of detector for specified times */
    for (i=0;i<n;i++)
-   {     
+   {
      LALGPSandAcc gpsAndAcc;
      gpsAndAcc.gps = input->t[i];
      gpsAndAcc.accuracy = LALLEAPSEC_STRICT; /* FIXME: check */
@@ -193,59 +193,59 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
      Fp->data[i] = (REAL8)computedResponse.plus;
      Fc->data[i] = (REAL8)computedResponse.cross;
    }
-   
+
    for (iPhase = 0; iPhase < params->meshPhase[2]; iPhase++)
-   {   
+   {
      phase = params->meshPhase[0] + iPhase*params->meshPhase[1];
      cos2phase = cos(2.0*phase);
      sin2phase = sin(2.0*phase);
      for (iCosIota = 0; iCosIota < params->meshCosIota[2]; iCosIota++)
      {
        cosIota = params->meshCosIota[0] + iCosIota*params->meshCosIota[1];
-       cosIota2 = 1.0 + cosIota*cosIota; 
+       cosIota2 = 1.0 + cosIota*cosIota;
        Xp.re = cosIota2 * cos2phase;
        Xp.im = cosIota2 * sin2phase;
 
        Y = 2.0*cosIota;
-		
+
        Xc.re = Y*sin2phase;
-       Xc.im = -Y*cos2phase; 
-	  
+       Xc.im = -Y*cos2phase;
+
        sumAB = 0.0;
        sumAA = 0.0;
        sumBB = 0.0;
        eh0.re=0.0;
        eh0.im=0.0;
-       
+
        for (i = 0; i < n; i++)
        {
 	 B.re = input->B->data[i].re;
 	 B.im = input->B->data[i].im;
-	    
+
 	 A.re = Fp->data[i]*Xp.re + Fc->data[i]*Xc.re;
-	 A.im = Fp->data[i]*Xp.im + Fc->data[i]*Xc.im;	
-	
+	 A.im = Fp->data[i]*Xp.im + Fc->data[i]*Xc.im;
+
 	 sumBB += (B.re*B.re + B.im*B.im) / var->data[i];
-	 sumAA += (A.re*A.re + A.im*A.im) / var->data[i];   
+	 sumAA += (A.re*A.re + A.im*A.im) / var->data[i];
 	 sumAB += (B.re*A.re + B.im*A.im) / var->data[i];
-	  
+
          /**** calculate error on h0 **********/
 	 eh0.re += (Fp->data[i]*cosIota2*cos2phase
-                + 2.0*Fc->data[i]*cosIota*sin2phase) 
+                + 2.0*Fc->data[i]*cosIota*sin2phase)
 	        * (Fp->data[i]*cosIota2*cos2phase
                 + 2.0*Fc->data[i]*cosIota*sin2phase) / input->var->data[i].re;
-	   
+
          eh0.im += (Fp->data[i]*cosIota2*sin2phase
                 - 2.0*Fc->data[i]*cosIota*cos2phase)
 	        * (Fp->data[i]*cosIota2*sin2phase
-                - 2.0*Fc->data[i]*cosIota*cos2phase) / input->var->data[i].im;	  
+                - 2.0*Fc->data[i]*cosIota*cos2phase) / input->var->data[i].im;
         }
 
 	for (iH0 = 0; iH0 < params->meshH0[2]; iH0++)
         {
 	  h0 = params->meshH0[0] + iH0*params->meshH0[1];
 	  chiSquare = sumBB - 2.0*h0*sumAB + h0*h0*sumAA;
-	
+
 	  if (chiSquare<minChiSquare)
 	  {
 	    minChiSquare = chiSquare;
@@ -255,15 +255,15 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 	    phaseBestFit = phase;
 	    output->eh0[0] = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
 	  }
-	   
+
 	  weh0 = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
-  	
+
 	  if (weh0>oldMaxEh0)
 	  {
 	    output->eh0[2] = weh0;
 	    oldMaxEh0 = weh0;
 	  }
-	
+
 	  if (weh0<oldMinEh0)
 	  {
 	    output->eh0[1] = weh0;
@@ -272,7 +272,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 	  arg = iH0 + params->meshH0[2]*(iCosIota +  params->meshCosIota[2]*(iPhase + params->meshPhase[2]*iPsi));
 	  output->mChiSquare->data[arg] = chiSquare;
         }
-      }  
+      }
     }
   }
 
@@ -286,13 +286,13 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 
 
   ASSERT(minChiSquare < INICHISQU,  status,
-  FITTOPULSARH_EMAXCHI , FITTOPULSARH_MSGEMAXCHI); 
-  
+  FITTOPULSARH_EMAXCHI , FITTOPULSARH_MSGEMAXCHI);
+
   LALSDestroyVector(status->statusPtr, &Fp);
   LALSDestroyVector(status->statusPtr, &Fc);
   LALDDestroyVector(status->statusPtr, &var);
   DETATCHSTATUSPTR(status);
   RETURN(status);
- 
-  
+
+
 }

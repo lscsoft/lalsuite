@@ -18,7 +18,7 @@
 */
 
 /******************************** <lalVerbatim file="DirichletTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu 
+Author: UTB Relativity Group; contact whelan@phys.utb.edu
 $Id$
 ********************************* </lalVerbatim> */
 
@@ -109,15 +109,15 @@ int check ( LALStatus*, INT4, const CHAR* );
 
 NRCSID(MAIN, "$Id$");
 
-int 
+int
 main( void )
 {
-   
+
   static LALStatus            status;
-  REAL4Vector*                poutput = NULL; 
+  REAL4Vector*                poutput = NULL;
   REAL4Vector                 dummy;
   DirichletParameters         parameters;
-  
+
   UINT4                        length;
   length = 10;
 
@@ -126,18 +126,18 @@ main( void )
   if ( ! lalNoDebug )
   {
     parameters.length = 11 ;
-    dummy.length = 11; 
+    dummy.length = 11;
     /* test behavior for null pointer to input parameters */
     LALDirichlet( &status, &dummy, NULL );
-    
-    if ( check( &status, DIRICHLETH_ENULLPIN, DIRICHLETH_MSGENULLPIN ) ) 
+
+    if ( check( &status, DIRICHLETH_ENULLPIN, DIRICHLETH_MSGENULLPIN ) )
     {
       return 1;
     }
-    printf("PASS: %s\n", DIRICHLETH_MSGENULLPIN); 
-    
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPIN);
+
     /* test behavior for LALDirichlet parameter N <= 0  */
-    
+
     parameters.n = 0;
     LALDirichlet( &status, &dummy, &parameters);
     if ( check( &status, DIRICHLETH_ENVALUE, DIRICHLETH_MSGENVALUE ) )
@@ -150,7 +150,7 @@ main( void )
 
   /* define valid value of N */
   parameters.n = 10 ;
-  
+
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
   {
@@ -166,29 +166,29 @@ main( void )
 
   /* define valid value for specified length of output vector */
   parameters.length = 11 ;
-  dummy.length = 11; 
-  
+  dummy.length = 11;
+
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
   {
     /* test behavior for x spacing <= 0 */
     parameters.deltaX = -4.0;
     LALDirichlet( &status, &dummy, &parameters);
-    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) ) 
+    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) )
     {
       return 1;
     }
     printf("PASS: %s\n", DIRICHLETH_MSGEDELTAX );
     parameters.deltaX = 0.0;
     LALDirichlet( &status, &dummy, &parameters);
-    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) ) 
+    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) )
     {
       return 1;
     }
     printf("PASS: %s\n", DIRICHLETH_MSGEDELTAX );
   }
-#endif  /* LAL_NDEBUG */ 
-  
+#endif  /* LAL_NDEBUG */
+
   /* define valid delta x */
   parameters.deltaX = 0.1;
 
@@ -202,12 +202,12 @@ main( void )
       return 1;
     }
     printf("PASS: %s\n", DIRICHLETH_MSGENULLPOUT);
-      
+
     /* test behavior for length of output vector not equal to length  */
     /* specified in input parameters */
-    dummy.length = 10; 
+    dummy.length = 10;
     LALDirichlet( &status, &dummy, &parameters );
-    if ( check( &status, DIRICHLETH_ESIZEMM, DIRICHLETH_MSGESIZEMM ) ) 
+    if ( check( &status, DIRICHLETH_ESIZEMM, DIRICHLETH_MSGESIZEMM ) )
     {
       return 1;
     }
@@ -224,126 +224,126 @@ main( void )
     /* test behavior for null pointer to data member of output vector */
     dummy.data = NULL;
     LALDirichlet( &status, &dummy, &parameters );
-    if ( check( &status, DIRICHLETH_ENULLPDOUT, DIRICHLETH_MSGENULLPDOUT)) 
+    if ( check( &status, DIRICHLETH_ENULLPDOUT, DIRICHLETH_MSGENULLPDOUT))
     {
       return 1;
     }
     printf("PASS: %s\n", DIRICHLETH_MSGENULLPDOUT);
   }
 # endif  /* LAL_NDEBUG */
-  
+
   /* VALID TEST DATA #1 */
   /* call Dirichet() with valid data (N=even) */
   parameters.n      = 10;
   parameters.length = 101;
-  parameters.deltaX = 0.01; 
-  
-  
-  LALSCreateVector (&status, &poutput, parameters.length);  
+  parameters.deltaX = 0.01;
+
+
+  LALSCreateVector (&status, &poutput, parameters.length);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALDirichlet( &status, poutput, &parameters );  
+
+
+  LALDirichlet( &status, poutput, &parameters );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALPrintVector(poutput); 
+
+
+  LALPrintVector(poutput);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALSDestroyVector( &status, &poutput );   
+
+
+  LALSDestroyVector( &status, &poutput );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
+
   /* VALID TEST DATA #2 */
   /* call Dirichet() with valid data (N=odd) */
   parameters.n      = 11;
   parameters.length = 101;
-  parameters.deltaX = 0.01; 
-  
-  
-  LALSCreateVector(&status, &poutput, parameters.length);  
+  parameters.deltaX = 0.01;
+
+
+  LALSCreateVector(&status, &poutput, parameters.length);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALDirichlet( &status, poutput, &parameters );  
+
+
+  LALDirichlet( &status, poutput, &parameters );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALPrintVector(poutput); 
+
+
+  LALPrintVector(poutput);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALSDestroyVector( &status, &poutput );   
+
+
+  LALSDestroyVector( &status, &poutput );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
+
+
   /* VALID TEST DATA #3 */
   /* call Dirichet() with valid data (x=0 to 2) */
   parameters.n      = 10;
   parameters.length = 201;
-  parameters.deltaX = 0.01; 
-  
-  
-  LALSCreateVector(&status, &poutput, parameters.length);  
+  parameters.deltaX = 0.01;
+
+
+  LALSCreateVector(&status, &poutput, parameters.length);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALDirichlet( &status, poutput, &parameters );  
+
+
+  LALDirichlet( &status, poutput, &parameters );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALPrintVector(poutput); 
+
+
+  LALPrintVector(poutput);
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
-  LALSDestroyVector( &status, &poutput );   
+
+
+  LALSDestroyVector( &status, &poutput );
   if ( check( &status, 0 , "") )
   {
     return 1;
   }
-  
-  
+
+
   return 0;
 }
 /*------------------------------------------------------------------------*/
 
-int 
+int
 check( LALStatus* status, INT4 code, const CHAR* message )
 {
-  if ( status->statusCode!= code ) 
+  if ( status->statusCode!= code )
   {
     printf ( "FAIL: did not recognize \"%s\"\n", message );
     return 1;
@@ -351,7 +351,7 @@ check( LALStatus* status, INT4 code, const CHAR* message )
   else if (code && strcmp( message, status->statusDescription)) {
     printf("FAIL: incorrect warning message \"%s\" not \"%s\"\n",
 	   status->statusDescription, message);
-    
+
     return 1;
   }
 

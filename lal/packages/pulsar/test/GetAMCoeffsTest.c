@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (C) 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -13,17 +13,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /*********************************************************************************/
 /** \author Reinhard Prix
- * \file 
+ * \file
  * \brief Test for LALGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function  LALComputeAM()
- *                                                                          
+ *
  *********************************************************************************/
 #include <math.h>
 #include <sys/times.h>
@@ -142,9 +142,9 @@ int main(int argc, char *argv[])
 
   /* ----- pick detector-site at random ----- */
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
-  if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL ) 
+  if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL )
     {
-      LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n", 
+      LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n",
 		     sites[pickedSite]);
       return GETAMCOEFFSTEST_ESUB;
     }
@@ -165,17 +165,17 @@ int main(int argc, char *argv[])
   amParams.das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
   amParams.das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
   amParams.baryinput = &baryinput;
-  amParams.earth = &earth; 
+  amParams.earth = &earth;
   amParams.edat = &edat;
   amParams.das->pDetector = det;
   amParams.das->pSource->equatorialCoords.longitude = alpha;
   amParams.das->pSource->equatorialCoords.latitude = delta;
   amParams.das->pSource->orientation = 0.0;
   amParams.das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-  amParams.polAngle = 0; 
+  amParams.polAngle = 0;
   amParams.leapAcc = LALLEAPSEC_STRICT;
 
-  SUB (LALComputeAM ( &status, &AMold, timestamps->data, &amParams), &status); 
+  SUB (LALComputeAM ( &status, &AMold, timestamps->data, &amParams), &status);
 
   /* ===== compute AM-coeffs the 'new way' using LALGetAMCoeffs() */
 
@@ -204,10 +204,10 @@ int main(int argc, char *argv[])
   averr_a /= timestamps->length;
   averr_b /= timestamps->length;
 
-  if ( lalDebugLevel ) 
+  if ( lalDebugLevel )
     {
       printf ("Parameters: IFO = %s, skypos = [%g, %g]\n", sites[pickedSite], alpha, delta );
-      printf ("Maximal relative errors: maxerr(a) = %g %%, maxerr(b) = %g %% \n", 
+      printf ("Maximal relative errors: maxerr(a) = %g %%, maxerr(b) = %g %% \n",
 	      100.0 * maxerr_a, 100.0 * maxerr_b);
       printf ("Average relative errors: averr(a)  = %g %%, averr(b)  = %g %% \n",
 	      100.0 * averr_a, 100.0 * averr_b );
@@ -231,11 +231,11 @@ int main(int argc, char *argv[])
   XLALDestroyDetectorStateSeries ( detStates );
   LALFree ( amParams.das->pSource );
   LALFree ( amParams.das );
-  
+
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
 
-  
+
   LALCheckMemoryLeaks();
 
   return 0;	/* OK */

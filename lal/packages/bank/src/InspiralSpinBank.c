@@ -90,7 +90,7 @@
  * is at least twice the smaller body's maximum mass.  If the parameter
  * range is specified with physical parameters rather than the
  * phenomenological parameters $(\psi_0, \psi_3, \beta)$ then using mass
- * values that violate these conditions will result in an error message.   
+ * values that violate these conditions will result in an error message.
  *
  * \vfill{\footnotesize\input{InspiralSpinBankCV}}
  *
@@ -112,7 +112,7 @@
 #include <lal/SeqFactories.h>
 
 
-#define INSPIRALSPINBANKC_ENOTILES 5 
+#define INSPIRALSPINBANKC_ENOTILES 5
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
 
 
@@ -121,10 +121,10 @@ NRCSID(INSPIRALSPINBANKC, "$Id$");
 /* Internal structures and functions --------------------------------------- */
 
 static void cleanup(LALStatus *,
-    REAL4Array 	**, 
-    UINT4Vector **, 
-    REAL4Vector **, 
-    SnglInspiralTable 	*, 
+    REAL4Array 	**,
+    UINT4Vector **,
+    REAL4Vector **,
+    SnglInspiralTable 	*,
     SnglInspiralTable 	*,
     INT4 	*
     ); /* cleanup() prototype */
@@ -165,7 +165,7 @@ static INT4 test(
     REAL4,
     REAL4,
     REAL4,
-    REAL4 
+    REAL4
     ); /* test() prototype */
 
 static BOOLEAN inPsiRegion(
@@ -208,8 +208,8 @@ LALInspiralSpinBankMetric(
   if (!moments){
     ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
     }
-  
-  
+
+
   /* Rescale the moments to F0 = Noise Curve Minimum */
   for(loop = 1; loop <=17; loop++){
     moments->j[loop] *= pow((inspiralTemplate->fLower/(*f0)), ((7.0-(REAL4) loop)/3.0));
@@ -224,7 +224,7 @@ LALInspiralSpinBankMetric(
   J12 = moments->j[12];
   J14 = moments->j[14];
   J17 = moments->j[17];
-                                                                                                                                                
+
   /* Set metric components as functions of moments. */
 
   metric->data[0] = (REAL4) 0.5*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
@@ -242,7 +242,7 @@ LALInspiralSpinBankMetric(
   if ( lalDebugLevel & LALINFO )
   {
     CHAR msg[256];
-    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "metric components:\n"
+    snprintf( msg, sizeof(msg) / sizeof(*msg), "metric components:\n"
                  "psi0-psi0 %e\npsi0-psi3 %e psi3-psi3 %e\npsi0-beta %e "
 		 "psi3-beta %e beta-beta %e\n", metric->data[0] /
 		 pow(*f0,10./3), metric->data[3] / pow(*f0,7./3),
@@ -250,12 +250,12 @@ LALInspiralSpinBankMetric(
 		 pow(*f0,7./3), metric->data[7] / pow(*f0,4./3),
                  metric->data[8] / pow(*f0,4./3) );
     LALInfo( status, msg );
-    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "f0 = %f j1=%f j4=%f "
+    snprintf( msg, sizeof(msg) / sizeof(*msg), "f0 = %f j1=%f j4=%f "
 		 "j6=%f j9=%f j11=%f j12=%f j14=%f j17=%f", *f0, J1, J4,
                  J6, J9, J11, J12, J14, J17 );
     LALInfo( status, msg );
   }
-  
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALInspiralSpinBankMetric */
@@ -321,19 +321,19 @@ LALInspiralSpinBank(
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
   REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
   REAL4 theta;               		/* angle of rotation for xp and yp */
-  REAL4 m1Min, m1Max;       		/* range of m1 to search */
-  REAL4 m2Min, m2Max;        		/* range of m2 to search */
+  REAL4 m1Min=0, m1Max=0;       		/* range of m1 to search */
+  REAL4 m2Min=0, m2Max=0;        		/* range of m2 to search */
   REAL4 f0 = -1;  			/* frequency of minimum of noise curve */
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
   REAL4 shf0 = 1;			/* used to find minimum of shf */
   BOOLEAN havePsi;			/* are we using phenom parameters?  */
-  
+
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
-  
-  
+
+
   ASSERT( coarseIn, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
   /* Check that minimal match is OK. */
@@ -401,12 +401,12 @@ LALInspiralSpinBank(
   inspiralTemplate.fCutoff = coarseIn->fUpper;
   LALGetInspiralMoments( status->statusPtr, &moments, &(coarseIn->shf),
                          &inspiralTemplate );
-  BEGINFAIL(status)                                                           
+  BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
   ENDFAIL(status);
 
   /* Find the metric. */
-  LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);	
+  LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
@@ -500,7 +500,7 @@ printf( "theta is %e\n", theta );
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
           }
         }
-        
+
         /* If dx behind is not in region, try dx/2 behind. */
         x = calculateX(-1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
@@ -619,8 +619,8 @@ printf( "theta is %e\n", theta );
   *tiles = tmplt;
 
   /* What if no templates were allocated? ABORT */
-  if (*tiles == NULL) 
-  {  
+  if (*tiles == NULL)
+  {
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
     ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
   }
@@ -634,10 +634,10 @@ printf( "theta is %e\n", theta );
 
 /* Try to free up memory. */
 static void cleanup(
-    LALStatus *s, 
-    REAL4Array **m, 
-    UINT4Vector **md, 
-    REAL4Vector **e, 
+    LALStatus *s,
+    REAL4Array **m,
+    UINT4Vector **md,
+    REAL4Vector **e,
     SnglInspiralTable *f,
     SnglInspiralTable *t,
     INT4 *nt)
@@ -652,7 +652,7 @@ static void cleanup(
     TRY(LALSDestroyVector(s->statusPtr, e),s);
     }
   if (e){
-    TRY(LALSDestroyArray(s->statusPtr, m),s); 
+    TRY(LALSDestroyArray(s->statusPtr, m),s);
     }
   if (t && f)
   {
@@ -677,10 +677,10 @@ static REAL4 calculateX(REAL4 n,
                REAL4 dxp,
                REAL4 yp,
                REAL4 dyp,
-               INT4 bccFlag, 
+               INT4 bccFlag,
                REAL4 theta)
   {
-  return xp0 + (n*dxp + xp+dxp/2.0*(bccFlag%2))*cos(theta) - 
+  return xp0 + (n*dxp + xp+dxp/2.0*(bccFlag%2))*cos(theta) -
                 (yp+dyp/2.0*(bccFlag%2))*sin(theta);
   } /* REAL4 x(); */
 
@@ -693,7 +693,7 @@ static REAL4 calculateY(REAL4 n,
                INT4 bccFlag,
                REAL4 theta)
   {
-  return (yp0 + (xp+dxp/2.0*((bccFlag)%2))*sin(theta) + 
+  return (yp0 + (xp+dxp/2.0*((bccFlag)%2))*sin(theta) +
                 (n*dyp + yp+dyp/2.0*((bccFlag)%2))*cos(theta));
   } /* REAL4 y(); */
 
@@ -706,8 +706,8 @@ static REAL4 calculateZ(REAL4 n,
 
 
 /* Check if we're in physical parameter region. */
-static INT4 test(REAL4 x, 
-                 REAL4 y, 
+static INT4 test(REAL4 x,
+                 REAL4 y,
                  REAL4 z,
                  REAL4 m1Min,
                  REAL4 m1Max,

@@ -192,7 +192,7 @@ int XLALPopulateProcessTable(
 	}
 	if(!strptime(cvs_keyword_value, "%Y/%m/%d %T", &utc))
 	  {
-	    if(!strptime(cvs_keyword_value, "%F %T %z", &utc))
+	    if(!strptime(cvs_keyword_value, "%Y-%m-%d %T", &utc))
 	      {
 		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_keyword_value);
 		free(cvs_keyword_value);

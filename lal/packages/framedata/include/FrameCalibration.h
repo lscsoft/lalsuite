@@ -33,7 +33,7 @@
  * #include <lal/FrameCalibration.h>
  * \end{verbatim}
  *
- * Provides a high level interface for building a transfer or response 
+ * Provides a high level interface for building a transfer or response
  * functions from raw calibration data provided by the calibration team.
  *
  **** </lalLaTeX> */
@@ -61,8 +61,8 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
  * been generated since there was an error reading the reference
  * calibration. If an error occours once the reference calibration
  * has been read in, then the reference calibration is returned
- * without being updated. This allows the user the option to 
- * trap the error and fall back on the reference calibration or 
+ * without being updated. This allows the user the option to
+ * trap the error and fall back on the reference calibration or
  * to give up completely. This can be done in the case of error
  * code 8, or error code $-1$, which indicates an error in one
  * of the functions used to update the reference calibration.
@@ -99,7 +99,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
  **** </lalLaTeX> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \vfill{\footnotesize\input{FrameCalibrationHV}}
  * \newpage\input{FrameCalibrationC}
  * \newpage\input{FrameCalibrationTestC}

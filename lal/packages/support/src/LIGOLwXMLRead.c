@@ -20,14 +20,14 @@
  * 02111-1307  USA
  */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXMLRead.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@
 <lalVerbatim file="LIGOLwXMLReadCV">
 Author: Brown, D. A. and Fairhurst, S.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <string.h>
@@ -82,7 +82,7 @@ files.
   \verb+SnglBurstTable+ which is appended to the end of a linked list of such
   tables.  When all rows have been read in, the file is closed using
   \verb+MetaioClose+.  \verb+eventHead+ is set to point to the head of the linked
-  list of \verb+SnglBurstTable+s.  
+  list of \verb+SnglBurstTable+s.
 
   The routine \verb+LALSnglInspiralTableFromLIGOLw+ reads in a
   \verb+sngl_inspiral+ table from the LIGOLwXML file specified in \verb+fileName+.
@@ -1064,19 +1064,19 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
     /* allocate memory for the template we are about to read in */
     if ( ! eventHead )
     {
-      thisEvent = eventHead = (MultiInspiralTable *) 
+      thisEvent = eventHead = (MultiInspiralTable *)
         LALCalloc( 1, sizeof(MultiInspiralTable) );
     }
     else
     {
-      thisEvent = thisEvent->next = (MultiInspiralTable *) 
+      thisEvent = thisEvent->next = (MultiInspiralTable *)
         LALCalloc( 1, sizeof(MultiInspiralTable) );
     }
     if ( ! thisEvent )
@@ -1086,24 +1086,24 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       MetaioClose( env );
       XLAL_ERROR_NULL( func, XLAL_ENOMEM );
     }
-      
+
 
     /* parse the contents of the row into the InspiralTemplate structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
       enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
+      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -1254,7 +1254,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
@@ -1273,7 +1273,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->null_statistic = r8colData;
+        thisEvent->null_statistic = r4colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
@@ -1419,7 +1419,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"alpha5",                  -1, 31},
     {"alpha6",                  -1, 32},
     {"beta",                    -1, 33},
-    {"f_final",                 -1, 34}, 
+    {"f_final",                 -1, 34},
     {"snr",                     -1, 35},
     {"chisq",                   -1, 36},
     {"chisq_dof",               -1, 37},
@@ -1480,19 +1480,19 @@ LALSnglInspiralTableFromLIGOLw (
   /* figure out the column positions of the template parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
-    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0
         &&  tableDir[i].idx != 39 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
 
       if ( ! strcmp(tableDir[i].name, "event_id") )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "The event_id column is not populated, continuing anyway\n");
-      } 
+      }
       else if ( strstr(tableDir[i].name, "Gamma") )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "The %s column is not populated, continuing anyway\n", tableDir[i].name);
       }
       else
@@ -1505,7 +1505,7 @@ LALSnglInspiralTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
@@ -1522,12 +1522,12 @@ LALSnglInspiralTableFromLIGOLw (
       /* allocate memory for the template we are about to read in */
       if ( ! *eventHead )
       {
-        thisEvent = *eventHead = (SnglInspiralTable *) 
+        thisEvent = *eventHead = (SnglInspiralTable *)
           LALCalloc( 1, sizeof(SnglInspiralTable) );
       }
       else
       {
-        thisEvent = thisEvent->next = (SnglInspiralTable *) 
+        thisEvent = thisEvent->next = (SnglInspiralTable *)
           LALCalloc( 1, sizeof(SnglInspiralTable) );
       }
       if ( ! thisEvent )
@@ -1550,17 +1550,17 @@ LALSnglInspiralTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+          snprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 2 )
         {
-          LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+          snprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 3 )
@@ -1731,7 +1731,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -1795,7 +1795,7 @@ LALSnglInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 56 )
         {
           thisEvent->chi = r4colData;
-        }        
+        }
         else
         {
           CLOBBER_EVENTS;
@@ -1819,7 +1819,7 @@ LALSnglInspiralTableFromLIGOLw (
 
   /* we have sucesfully parsed temples */
   MetaioClose( env );
-  return nrows;  
+  return nrows;
 }
 
 #undef CLOBBER_EVENTS
@@ -1903,7 +1903,7 @@ InspiralTmpltBankFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "process_params" );
   if ( mioStatus )
   {
-    fprintf( stderr, "error opening process_params table from file %s\n", 
+    fprintf( stderr, "error opening process_params table from file %s\n",
         fileName );
     return -1;
   }
@@ -1925,10 +1925,10 @@ InspiralTmpltBankFromLIGOLw (
   /* get the minimal match of the bank from the process params */
   while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
-    if ( ! strcmp( env->ligo_lw.table.elt[pParParam].data.lstring.data, 
+    if ( ! strcmp( env->ligo_lw.table.elt[pParParam].data.lstring.data,
           "--minimal-match" ) )
     {
-      minMatch = (REAL4) 
+      minMatch = (REAL4)
         atof( env->ligo_lw.table.elt[pParValue].data.lstring.data );
     }
   }
@@ -1952,12 +1952,12 @@ InspiralTmpltBankFromLIGOLw (
 
       if ( ! strcmp(tableDir[i].name, "event_id") )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "The event_id column is not populated, continuing anyway\n");
       }
       else if ( strstr(tableDir[i].name, "Gamma") )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "The %s column is not populated, continuing anyway\n", tableDir[i].name);
       }
       else
@@ -1970,7 +1970,7 @@ InspiralTmpltBankFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
@@ -1987,12 +1987,12 @@ InspiralTmpltBankFromLIGOLw (
       /* allocate memory for the template we are about to read in */
       if ( ! *bankHead )
       {
-        thisTmplt = *bankHead = (InspiralTemplate *) 
+        thisTmplt = *bankHead = (InspiralTemplate *)
           LALCalloc( 1, sizeof(InspiralTemplate) );
       }
       else
       {
-        thisTmplt = thisTmplt->next = (InspiralTemplate *) 
+        thisTmplt = thisTmplt->next = (InspiralTemplate *)
           LALCalloc( 1, sizeof(InspiralTemplate) );
       }
       if ( ! thisTmplt )
@@ -2079,7 +2079,7 @@ InspiralTmpltBankFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -2098,7 +2098,7 @@ InspiralTmpltBankFromLIGOLw (
         }
         else if ( tableDir[j].idx == 17 )
         {
-          LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+          snprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 18 )
@@ -2148,7 +2148,7 @@ InspiralTmpltBankFromLIGOLw (
         else if ( tableDir[j].idx == 29 )
         {
           thisTmplt->chi = colData;
-        }        
+        }
         else
         {
           CLOBBER_BANK;
@@ -2161,7 +2161,7 @@ InspiralTmpltBankFromLIGOLw (
       thisTmplt->totalMass = thisTmplt->mass1 + thisTmplt->mass2;
       if ( thisTmplt->totalMass > 0 )
       {
-        thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
+        thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 /
           thisTmplt->totalMass;
       }
 
@@ -2183,7 +2183,7 @@ InspiralTmpltBankFromLIGOLw (
 
   /* we have sucesfully parsed temples */
   MetaioClose( env );
-  return nrows;  
+  return nrows;
 }
 
 #define CLOBBER_SIM \
@@ -2287,7 +2287,7 @@ SimInspiralTableFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "sim_inspiral" );
   if ( mioStatus )
   {
-    fprintf( stderr, "error opening sim_inspiral table from file %s\n", 
+    fprintf( stderr, "error opening sim_inspiral table from file %s\n",
         fileName );
     return -1;
   }
@@ -2305,7 +2305,7 @@ SimInspiralTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     INT4 geo_time = env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
 
@@ -2316,12 +2316,12 @@ SimInspiralTableFromLIGOLw (
       /* allocate memory for the template we are about to read in */
       if ( ! *simHead )
       {
-        thisSim = *simHead = (SimInspiralTable *) 
+        thisSim = *simHead = (SimInspiralTable *)
           LALCalloc( 1, sizeof(SimInspiralTable) );
       }
       else
       {
-        thisSim = thisSim->next = (SimInspiralTable *) 
+        thisSim = thisSim->next = (SimInspiralTable *)
           LALCalloc( 1, sizeof(SimInspiralTable) );
       }
       if ( ! thisSim )
@@ -2340,10 +2340,10 @@ SimInspiralTableFromLIGOLw (
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+          snprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
-        }    
-        else if ( tableDir[j].idx == 1 )    
+        }
+        else if ( tableDir[j].idx == 1 )
         {
           thisSim->geocent_end_time.gpsSeconds = i4colData;
         }
@@ -2351,7 +2351,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->geocent_end_time.gpsNanoSeconds = i4colData;
         }
-        else if ( tableDir[j].idx == 3 )    
+        else if ( tableDir[j].idx == 3 )
         {
           thisSim->h_end_time.gpsSeconds = i4colData;
         }
@@ -2359,7 +2359,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->h_end_time.gpsNanoSeconds = i4colData;
         }
-        else if ( tableDir[j].idx == 5 )    
+        else if ( tableDir[j].idx == 5 )
         {
           thisSim->l_end_time.gpsSeconds = i4colData;
         }
@@ -2367,7 +2367,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->l_end_time.gpsNanoSeconds = i4colData;
         }
-        else if ( tableDir[j].idx == 7 )    
+        else if ( tableDir[j].idx == 7 )
         {
           thisSim->g_end_time.gpsSeconds = i4colData;
         }
@@ -2375,7 +2375,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->g_end_time.gpsNanoSeconds = i4colData;
         }
-        else if ( tableDir[j].idx == 9 )    
+        else if ( tableDir[j].idx == 9 )
         {
           thisSim->t_end_time.gpsSeconds = i4colData;
         }
@@ -2383,7 +2383,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->t_end_time.gpsNanoSeconds = i4colData;
         }
-        else if ( tableDir[j].idx == 11 )     
+        else if ( tableDir[j].idx == 11 )
         {
           thisSim->v_end_time.gpsSeconds = i4colData;
         }
@@ -2397,7 +2397,7 @@ SimInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 14 )
         {
-          LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+          snprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 15 )
@@ -2431,7 +2431,7 @@ SimInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 22 )
         {
           thisSim->coa_phase = r4colData;
-        } 
+        }
         else if ( tableDir[j].idx == 23 )
         {
           thisSim->polarization = r4colData;
@@ -2455,11 +2455,11 @@ SimInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 28 )
         {
           thisSim->alpha2 = r4colData;
-        }	
+        }
         else if ( tableDir[j].idx == 29 )
         {
           thisSim->alpha3 = r4colData;
-        }	
+        }
         else if ( tableDir[j].idx == 30 )
         {
           thisSim->alpha4 = r4colData;
@@ -2475,7 +2475,7 @@ SimInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 33 )
         {
           thisSim->beta = r4colData;
-        }    
+        }
         else if ( tableDir[j].idx == 34 )
         {
           thisSim->spin1x = r4colData;
@@ -2550,7 +2550,7 @@ SimInspiralTableFromLIGOLw (
 	}
 	else if ( tableDir[j].idx == 52 )
 	{
-          LALSnprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
+          snprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
 	}
         else if ( tableDir[j].idx == 53 )
@@ -2559,7 +2559,7 @@ SimInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 54 )
         {
-            LALSnprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
                     "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 55 )
@@ -2575,7 +2575,7 @@ SimInspiralTableFromLIGOLw (
       }
 
       /* increase the count of rows parsed */
-      ++nrows;       
+      ++nrows;
     }
   }
 
@@ -2589,7 +2589,7 @@ SimInspiralTableFromLIGOLw (
 
   /* we have sucesfully parsed temples */
   MetaioClose( env );
-  return nrows;  
+  return nrows;
 }
 
 #undef CLOBBER_SIM
@@ -2650,8 +2650,8 @@ SummValueTableFromLIGOLw (
   {
     MetaioAbort(env);
     MetaioClose(env);
-    fprintf( stderr, 
-        "warning: unable to open summ_value table from file %s\n", 
+    fprintf( stderr,
+        "warning: unable to open summ_value table from file %s\n",
         fileName );
     return -1;
   }
@@ -2669,17 +2669,17 @@ SummValueTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* allocate memory for the table */
     if ( ! *sumHead )
     {
-      thisValue = *sumHead = (SummValueTable *) 
+      thisValue = *sumHead = (SummValueTable *)
         LALCalloc( 1, sizeof(SummValueTable) );
     }
     else
     {
-      thisValue = thisValue->next = (SummValueTable *) 
+      thisValue = thisValue->next = (SummValueTable *)
         LALCalloc( 1, sizeof(SummValueTable) );
     }
     if ( ! thisValue )
@@ -2698,7 +2698,7 @@ SummValueTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisValue->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
+        snprintf( thisValue->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -2719,12 +2719,12 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 5 )
       {
-        LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 6 )
       {
-        LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
+        snprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX *
             sizeof(CHAR), "%s",
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
@@ -2734,7 +2734,7 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 8 )
       {
-        LALSnprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
+        snprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX *
             sizeof(CHAR), "%s",
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
@@ -2760,7 +2760,7 @@ SummValueTableFromLIGOLw (
 
   /* we have sucesfully parsed table */
   MetaioClose( env );
-  return nrows;  
+  return nrows;
 }
 
 #undef CLOBBER_VAL
@@ -2838,7 +2838,7 @@ LALStochasticTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ((mioStatus = MetaioGetRow(env)) == 1) 
+  while ((mioStatus = MetaioGetRow(env)) == 1)
   {
     /* allocate memory for the table */
     if (!*stochHead)
@@ -2867,23 +2867,23 @@ LALStochasticTableFromLIGOLw (
 
       if (tableDir[j].idx == 0)
       {
-        LALSnprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if (tableDir[j].idx == 1)
       {
-        LALSnprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 2 )
       {
-        LALSnprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 3 )
       {
-        LALSnprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
@@ -2941,7 +2941,7 @@ LALStochasticTableFromLIGOLw (
 
   /* we have sucesfully parsed table */
   MetaioClose(env);
-  return nrows;  
+  return nrows;
 }
 
 #undef CLOBBER_STOCH_VAL
@@ -3019,7 +3019,7 @@ LALStochSummTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ((mioStatus = MetaioGetRow(env)) == 1) 
+  while ((mioStatus = MetaioGetRow(env)) == 1)
   {
     /* allocate memory for the table */
     if (!*stochSummHead)
@@ -3048,23 +3048,23 @@ LALStochSummTableFromLIGOLw (
 
       if (tableDir[j].idx == 0)
       {
-        LALSnprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if (tableDir[j].idx == 1)
       {
-        LALSnprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 2 )
       {
-        LALSnprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 3 )
       {
-        LALSnprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
@@ -3122,7 +3122,7 @@ LALStochSummTableFromLIGOLw (
 
   /* we have sucesfully parsed table */
   MetaioClose(env);
-  return nrows;  
+  return nrows;
 }
 
 #undef CLOBBER_STOCH_SUMM_VAL
@@ -3185,7 +3185,7 @@ LALExtTriggerTableFromLIGOLw (
     {"obs_fov_dec",            -1, 26},
     {"obs_fov_dec_width",      -1, 27},
     {"obs_fov_ra",             -1, 28},
-    {"obs_fov_ra_width",       -1, 29},   
+    {"obs_fov_ra_width",       -1, 29},
     {"obs_loc_ele",            -1, 30},
     {"obs_loc_lat",            -1, 31},
     {"obs_loc_long",           -1, 32},
@@ -3232,7 +3232,7 @@ LALExtTriggerTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
@@ -3249,12 +3249,12 @@ LALExtTriggerTableFromLIGOLw (
       /* allocate memory for the template we are about to read in */
       if ( ! *eventHead )
       {
-        thisEvent = *eventHead = (ExtTriggerTable*) 
+        thisEvent = *eventHead = (ExtTriggerTable*)
           LALCalloc( 1, sizeof(ExtTriggerTable) );
       }
       else
       {
-        thisEvent = thisEvent->next = (ExtTriggerTable *) 
+        thisEvent = thisEvent->next = (ExtTriggerTable *)
           LALCalloc( 1, sizeof(ExtTriggerTable) );
       }
       if ( ! thisEvent )
@@ -3274,44 +3274,44 @@ LALExtTriggerTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->det_alts, LIGOMETA_STD * sizeof(CHAR), 
+          snprintf( thisEvent->det_alts, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->det_band, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_band, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 2 )
         {
-          LALSnprintf( thisEvent->det_fluence, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_fluence, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }  
+        }
         else if ( tableDir[j].idx == 3 )
         {
-          LALSnprintf( thisEvent->det_fluence_int, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_fluence_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }  
+        }
         else if ( tableDir[j].idx == 4 )
         {
-          LALSnprintf( thisEvent->det_name, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_name, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 5 )
         {
-          LALSnprintf( thisEvent->det_peak, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_peak, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }  
+        }
         else if ( tableDir[j].idx == 6 )
         {
-          LALSnprintf( thisEvent->det_peak_int, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_peak_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }  
+        }
         else if ( tableDir[j].idx == 7 )
         {
-          LALSnprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        } 
+        }
         else if ( tableDir[j].idx == 8 )
         {
           thisEvent->email_time = i4colData;
@@ -3325,13 +3325,13 @@ LALExtTriggerTableFromLIGOLw (
           thisEvent->event_dec_err = r4colData;
         }
         else if ( tableDir[j].idx == 11 )
-        {  
-          LALSnprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
+        {
+          snprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 12 )
         {
-          LALSnprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 13 )
@@ -3350,10 +3350,10 @@ LALExtTriggerTableFromLIGOLw (
         else if ( tableDir[j].idx == 16 )
         {
           thisEvent->start_time_ns = i4colData;
-        }	
+        }
         else if ( tableDir[j].idx == 17 )
         {
-          LALSnprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 18 )
@@ -3366,17 +3366,17 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 20 )
         {
-          LALSnprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }	
+        }
         else if ( tableDir[j].idx == 21 )
         {
-          LALSnprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 22 )
         {
-          LALSnprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 23 )
@@ -3385,14 +3385,14 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 24 )
         {
-          LALSnprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 25 )
         {
-          LALSnprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }	
+        }
         else if ( tableDir[j].idx == 26 )
         {
           thisEvent->obs_fov_dec = r4colData;
@@ -3439,7 +3439,7 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 37 )
         {
-          LALSnprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
+          snprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 38 )
@@ -3474,29 +3474,31 @@ LALExtTriggerTableFromLIGOLw (
 
   /* we have sucesfully parsed temples */
   MetaioClose( env );
-  return nrows;  
+  return nrows;
 }
 
 
 #undef CLOBBER_EVENTS
 
 
-int 
+int
 XLALReadSummValueFile (
     SummValueTable **summValueList,
     CHAR                  *fileName
     )
 /* </lalVerbatim> */
 {
+#if 0
   const char *func = "XLALReadSummValueFile";
   INT4 numFileTriggers = 0;
+#endif
   INT4 haveSummValue = 0;
   SummValueTable  *thisSummValue = NULL;
   SummValueTable  *inputSummValue = NULL;
 
 
-  /* read in the summ value table and store */ 
-  XLALPrintInfo( 
+  /* read in the summ value table and store */
+  XLALPrintInfo(
       "XLALReadSummValueFile(): Reading summ_value table\n");
 
   haveSummValue = SummValueTableFromLIGOLw(&inputSummValue, fileName);
@@ -3508,20 +3510,20 @@ XLALReadSummValueFile (
   else
   {
     /* store the summ value table in SummValueList list */
-    XLALPrintInfo("XLALReadSummValueFile(): Checking summ_value_table\n"); 
-    
-    /* keep only relevant information (inspiral_effective_distance)*/  
+    XLALPrintInfo("XLALReadSummValueFile(): Checking summ_value_table\n");
+
+    /* keep only relevant information (inspiral_effective_distance)*/
     XLALCleanSummValueTable(&inputSummValue);
-    
+
     if ( ! *summValueList )
     {
       *summValueList = thisSummValue = inputSummValue;
     }
     else
     {
-      for ( thisSummValue = *summValueList; thisSummValue->next; 
+      for ( thisSummValue = *summValueList; thisSummValue->next;
           thisSummValue = thisSummValue->next);
-      thisSummValue = thisSummValue->next = inputSummValue;    
+      thisSummValue = thisSummValue->next = inputSummValue;
     }
   }
  return 1;
@@ -3540,7 +3542,7 @@ XLALReadInspiralTriggerFile (
 {
   const char *func = "XLALReadInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   SnglInspiralTable  *inputData = NULL;
   SearchSummaryTable *inputSummary = NULL;
   SearchSummaryTable *thisSearchSumm = NULL;
@@ -3563,19 +3565,19 @@ XLALReadInspiralTriggerFile (
   }
   else
   {
-    for ( thisInputFile = *inputFileList; thisInputFile->next; 
+    for ( thisInputFile = *inputFileList; thisInputFile->next;
         thisInputFile = thisInputFile->next );
     thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
       LALCalloc( 1, sizeof(SearchSummvarsTable) );
   }
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
       "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-      "%s", fileName );      
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+      "%s", fileName );
 
 
-  /* read in the search summary and store */ 
-  XLALPrintInfo( 
+  /* read in the search summary and store */
+  XLALPrintInfo(
       "XLALReadInspiralTriggerFile(): Reading search_summary table\n");
 
   inputSummary = XLALSearchSummaryTableFromLIGOLw(fileName);
@@ -3596,14 +3598,14 @@ XLALReadInspiralTriggerFile (
     }
     else
     {
-      for ( thisSearchSumm = *searchSummList; thisSearchSumm->next; 
+      for ( thisSearchSumm = *searchSummList; thisSearchSumm->next;
           thisSearchSumm = thisSearchSumm->next);
       thisSearchSumm = thisSearchSumm->next = inputSummary;
     }
   }
 #if 0
-  /* read in the summ value table and store */ 
-  XLALPrintInfo( 
+  /* read in the summ value table and store */
+  XLALPrintInfo(
       "XLALReadInspiralTriggerFile(): Reading summ_value table\n");
 
   haveSummValue = SummValueTableFromLIGOLw(&inputSummValue, fileName);
@@ -3618,30 +3620,30 @@ XLALReadInspiralTriggerFile (
   else
   {
     /* store the summ value table in SummValueList list */
-    XLALPrintInfo("XLALReadInspiralTriggerFile(): Checking summ_value_table\n"); 
-    
-    /* keep only relevant information (inspiral_effective_distance)*/  
+    XLALPrintInfo("XLALReadInspiralTriggerFile(): Checking summ_value_table\n");
+
+    /* keep only relevant information (inspiral_effective_distance)*/
     XLALCleanSummValueTable(&inputSummValue);
-    
+
     if ( ! *summValueList )
     {
       *summValueList = thisSummValue = inputSummValue;
     }
     else
     {
-      for ( thisSummValue = *summValueList; thisSummValue->next; 
+      for ( thisSummValue = *summValueList; thisSummValue->next;
           thisSummValue = thisSummValue->next);
-      thisSummValue = thisSummValue->next = inputSummValue;    
+      thisSummValue = thisSummValue->next = inputSummValue;
     }
   }
 #endif
   /* read in the triggers */
-  numFileTriggers = 
+  numFileTriggers =
     LALSnglInspiralTableFromLIGOLw( &inputData, fileName, 0, -1 );
 
   if ( numFileTriggers < 0 )
   {
-    XLALPrintError("Unable to read sngl_inspiral table from %s\n", 
+    XLALPrintError("Unable to read sngl_inspiral table from %s\n",
         fileName );
     LALFree(thisInputFile);
     XLAL_ERROR(func, XLAL_EIO);
@@ -3649,8 +3651,8 @@ XLALReadInspiralTriggerFile (
   else if ( numFileTriggers > 0 )
   {
 
-    XLALPrintInfo( 
-        "XLALReadInspiralTriggerFile(): Got %d sngl_inspiral rows from %s\n", 
+    XLALPrintInfo(
+        "XLALReadInspiralTriggerFile(): Got %d sngl_inspiral rows from %s\n",
         numFileTriggers, fileName );
 
     /* store the triggers */
@@ -3673,20 +3675,20 @@ XLALReadInspiralTriggerFile (
   return( numFileTriggers );
 }
 
-      
+
 
 /* function which reads a summ_value table and remove
-   all rows which do not contain name set 
+   all rows which do not contain name set
    to "effective_inspiral_distance". */
 void XLALCleanSummValueTable(SummValueTable **inputSummValue)
 {
   SummValueTable *this = NULL;
   SummValueTable *prev = NULL;
   SummValueTable *head = NULL;
-  
+
   this  = *inputSummValue;
   head = NULL;
-      
+
   while( this )
   {
     INT4 discard = 0;
@@ -3694,9 +3696,9 @@ void XLALCleanSummValueTable(SummValueTable **inputSummValue)
 
     this = this->next;
 
-    if (strncmp( tmp->name, "inspiral_effective_distance", 
+    if (strncmp( tmp->name, "inspiral_effective_distance",
 	LIGOMETA_SUMMVALUE_NAME_MAX) )
-    {      
+    {
       /* not an effective distance -- discard */
       XLALPrintInfo(
   	"XLALReadIspiralTriggerFile(): Removing entry with  \"%s\" name \n",
@@ -3705,10 +3707,10 @@ void XLALCleanSummValueTable(SummValueTable **inputSummValue)
     }
     else
     {
-      discard = 0; 
-      XLALPrintInfo( 
+      discard = 0;
+      XLALPrintInfo(
 	"XLALReadIspiralTriggerFile(): Got inspiral effective distance of %f for a %s system.\n",
-	tmp->value, tmp->comment);     
+	tmp->value, tmp->comment);
     }
 
     if (discard)
@@ -3898,12 +3900,12 @@ LALMultiInspiralTableFromLIGOLw (
       /* dereference the data stored in the table */
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -4054,7 +4056,7 @@ LALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
@@ -4073,7 +4075,7 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->null_statistic = r8colData;
+        thisEvent->null_statistic = r4colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
@@ -4163,7 +4165,7 @@ XLALReadMultiInspiralTriggerFile (
 {
   const char *func = "XLALReadMultiInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   MultiInspiralTable   *inputData = NULL;
   SearchSummaryTable   *inputSummary = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
@@ -4191,9 +4193,9 @@ XLALReadMultiInspiralTriggerFile (
     thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
       LALCalloc( 1, sizeof(SearchSummvarsTable) );
   }
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
       "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
       "%s", fileName );
 
 

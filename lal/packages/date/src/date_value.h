@@ -17,30 +17,30 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
- * File Name: date_value.h 
- * 
+/*-----------------------------------------------------------------------
+ *
+ * File Name: date_value.h
+ *
  * Author: David Chin <dwchin@umich.edu>
- * 
+ *
  * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
+ *
+ *-----------------------------------------------------------------------
  *
  * SYNOPSIS
  * Macros for constants used in date and time routines.
- * 
+ *
  * DESCRIPTION
  *
- * 
- * DIAGNOSTICS 
- * (Abnormal termination conditions, error and warning codes summarized 
+ *
+ * DIAGNOSTICS
+ * (Abnormal termination conditions, error and warning codes summarized
  * here. More complete descriptions are found in documentation.)
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -90,10 +90,10 @@
 
 
 /* Difference between Unix and GPS epochs */
-/* 
- * difference between Unix and GPS time 315964811 = 
- *     3600 sec/hour x 24 hours/day x (365 days/year x 8 years + 
- *     366 days/year x 2 years + 5 days) + 11 leap seconds 
+/*
+ * difference between Unix and GPS time 315964811 =
+ *     3600 sec/hour x 24 hours/day x (365 days/year x 8 years +
+ *     366 days/year x 2 years + 5 days) + 11 leap seconds
  * That's roughly speaking.  See docs on UtoGPS.c for exact value
  * quoted from Explanatory Supplement to Astronomical Almanac.
  */

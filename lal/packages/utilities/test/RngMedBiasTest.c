@@ -20,7 +20,7 @@
 /*-----------------------------------------------------------------------
  *
  * File Name: RngMedBiasTest.c
- * Authors: Krishnan, B., Itoh, Y., 
+ * Authors: Krishnan, B., Itoh, Y.,
  *
  * Revision: $Id$
  *
@@ -107,14 +107,14 @@ char *lalWatch;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
-  static LALStatus       status;  /* LALStatus pointer */ 
+int main(int argc, char *argv[]){
+  static LALStatus       status;  /* LALStatus pointer */
   INT4 arg, blkSize;                         /* Argument counter */
-  REAL8 bias;  
-  
+  REAL8 bias;
+
   /* default values */
   blkSize=7;
-  /********************************************************/  
+  /********************************************************/
   /* Parse argument list.  i stores the current position. */
   /********************************************************/
   arg = 1;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]){
         LALPrintError( USAGE, *argv );
         return RNGMEDBIASTESTC_EARG;
       }
-    }  
+    }
     /* Unrecognized option. */
     else {
       ERROR( RNGMEDBIASTESTC_EARG, RNGMEDBIASTESTC_MSGEARG, 0 );
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/
 
 
-  
+
   SUB( LALRngMedBias( &status, &bias, blkSize), &status);
 
   printf("The correction factor for block size %d is:  %1.15lf\n", blkSize, bias);

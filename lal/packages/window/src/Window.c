@@ -69,7 +69,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 
 	if(!orig)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		
+
 	new = XLALMalloc(sizeof(*new));
 	data = XLALCreateREAL4Sequence(orig->data->length);
 
@@ -530,7 +530,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 {
 	static const char func[] = "XLALCreateKaiserREAL8Window";
 	REAL8Sequence *sequence;
-	REAL8 I0beta;
+	REAL8 I0beta=0;
 	UINT4 i;
 
 	if(beta < 0)
@@ -575,7 +575,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 	for(i = 0; i < (length + 1) / 2; i++) {
 		double y = Y(length, i);
 		double x = sqrt(1 - y * y);
-		double w1, w2;
+		double w1=0, w2=0;
 
 		if(beta < 705)
 			w1 = gsl_sf_bessel_I0(beta * x) / I0beta;

@@ -20,7 +20,7 @@
 /* <lalVerbatim file="LALMathematicaHV">
  * Author: Hanna, C. R.
  * $Id$
- * </lalVerbatim> */ 
+ * </lalVerbatim> */
 
 /* <lalLaTeX>
  * \section{Header \texttt{LALMathematica.h}}
@@ -31,7 +31,7 @@
  * header file are \texttt{LALMath3DPlot()}, which generates 3D animated
  * plots of template banks having three parameters and
  * \texttt{LALMathNDPlot()} which plots the 3-dimensional projections of a
- * bank that is N-dimensional.  
+ * bank that is N-dimensional.
  *
  * \subsection*{Synopsis}
  * \begin{verbatim}
@@ -43,15 +43,15 @@
  * these macros to make your own program generate a \MATHEMATICA notebook.
  *
  * \begin{enumerate}
- * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".  
- * \item Use BEG\_NOTEBOOK to start the notebook file.  
+ * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".
+ * \item Use BEG\_NOTEBOOK to start the notebook file.
  * \item Use the appropriate BEG and END macros with fprint(nb, ``Your
  * Text") in between to write your text to the cells of the notebook.  If
  * you are writing \MATHEMATICA commands use the INPUT macros; for plain
- * text, use TEXT Macros.  
- * \item Denote titles and sections with the appropriate macros.  
+ * text, use TEXT Macros.
+ * \item Denote titles and sections with the appropriate macros.
  * \item Use END\_NOTEBOOK to end the notebook and use fclose(nb) to close
- * the file ``nb". 
+ * the file ``nb".
  * \end{enumerate}
  *
  * The result is very readable/changeable source similar in style to most
@@ -70,17 +70,17 @@
  * fclose(nb);
  * \end{verbatim}
  *
- * \vfill{\footnotesize\input{LALMathematicaHV}} 
+ * \vfill{\footnotesize\input{LALMathematicaHV}}
  *
  * \newpage
- * \subsection*{Error codes} 
+ * \subsection*{Error codes}
  * \input{LALMathematicaHE}
  *
- * \subsection*{Macros} 
+ * \subsection*{Macros}
  *  \input{LALMathematicaHM}
  *  \noindent
  * See the source file \texttt{Math3DPlot.c} for an example of how to use
- * these macros to generate a \MATHEMATICA notebook in your own program.  
+ * these macros to generate a \MATHEMATICA notebook in your own program.
  *
  * \begin{description}
  * \item{NOTEBOOK} Denotes the beginning and ending of the notebook file.  A
@@ -106,12 +106,12 @@
  * Therefore, when you view the notebook in \MATHEMATICA  you may see the
  * word ``NULL" printed on a line.  That is an indication that you should
  * use the underscore version of the tag which preceeded the ``NULL"
- * statement.   
+ * statement.
  *
- * \vfill{\footnotesize\input{LALMathematicaHV}} 
+ * \vfill{\footnotesize\input{LALMathematicaHV}}
  *
  * \newpage
- * \subsection*{Types} 
+ * \subsection*{Types}
  * \input{LALMathematicaHT}
  * \idx[Type]{Math3DPointList}
  * \idx[Type]{MathNDPointList}
@@ -122,10 +122,10 @@
  * parameter called grayLevel which must be $\epsilon [0,1]$.  It specifies
  * the shading of the point in the final plot with 0 representing black and
  * 1 representing white.  By creatively assigning its value the grayscale
- * shade of the points may convey additional information. 
+ * shade of the points may convey additional information.
  * \\\\
  * \noindent The MathNDPointList type is similar except the coordinates are
- * stored as data in the REAL4Vector \texttt{coordinates}.  
+ * stored as data in the REAL4Vector \texttt{coordinates}.
  *
  * \subsection*{Notes}
  * \noindent\begin{itemize}
@@ -134,10 +134,10 @@
  * test programs.
  * \item There are many more commands to manipulate the structure of
  * \MATHEMATICA notebooks that are not included in this header.  The macros
- * are only what is necessary for a \emph{bare minimum} interface.   
- * \end{itemize} 
+ * are only what is necessary for a \emph{bare minimum} interface.
+ * \end{itemize}
  *
- * \vfill{\footnotesize\input{LALMathematicaHV}} 
+ * \vfill{\footnotesize\input{LALMathematicaHV}}
  *
  * \newpage\input{LALMath3DPlotC}
  * \newpage\input{LALMathNDPlotC}
@@ -156,9 +156,9 @@
 
 
 /* <lalErrTable file="LALMathematicaHE"> */
-#define LALMATHEMATICAH_ENULL 1 
+#define LALMATHEMATICAH_ENULL 1
 #define LALMATHEMATICAH_MSGENULL "NULL pointer to a LALMathematica.h input structure"
-#define LALMATHEMATICAH_EFILE 2 
+#define LALMATHEMATICAH_EFILE 2
 #define LALMATHEMATICAH_MSGEFILE "Could not open file to write a Mathematica Notebook"
 #define LALMATHEMATICAH_EVAL 3
 #define LALMATHEMATICAH_MSGEVAL "Invalid parameter value"
@@ -190,11 +190,11 @@ NRCSID (LALMATHEMATICAH, "$Id$");
 /* <lalVerbatim file="LALMathematicaHT"> */
 typedef struct Math3DPointList{
   struct Math3DPointList *next;
-  REAL4 x;			
-  REAL4 y;			
-  REAL4 z;  		
-  REAL4 grayLevel;		
-  }Math3DPointList;  
+  REAL4 x;
+  REAL4 y;
+  REAL4 z;
+  REAL4 grayLevel;
+  }Math3DPointList;
 
 typedef struct MathNDPointList{
   struct MathNDPointList *next;
@@ -205,10 +205,10 @@ typedef struct MathNDPointList{
 /* </lalVerbatim> */
 
 
-void  
-LALMath3DPlot( LALStatus *status, 
-               Math3DPointList *first, 
-               INT4 *ntiles, 
+void
+LALMath3DPlot( LALStatus *status,
+               Math3DPointList *first,
+               INT4 *ntiles,
                REAL4 *pointSize);
 
 void

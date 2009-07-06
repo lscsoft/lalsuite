@@ -12,7 +12,7 @@ Functions for the implementation of the standard burst searches:
 
 \item A wrapper for the SLOPE algorithm.
 
-\item A set of functions to implement the excess power search technique which was suggested in Ref.~\cite{fh:1998} and later independently invented in Ref.~\cite{acdhp:1999}.  The implementation here is described in detail in Ref.~\cite{abcf:2000}. 
+\item A set of functions to implement the excess power search technique which was suggested in Ref.~\cite{fh:1998} and later independently invented in Ref.~\cite{acdhp:1999}.  The implementation here is described in detail in Ref.~\cite{abcf:2000}.
 
 \end{itemize}
 
@@ -50,7 +50,7 @@ standard DFT yields complex data
 \end{equation}
 in the Fourier domain, for $0 \le \gamma \le [n/2]+1$.  Here the data point
 ${\tilde h}_\gamma$ corresponds to a frequency $f_\gamma = \gamma \Delta f$,
-where $\Delta f= 1/(n \Delta t)$ is the frequency resolution.  
+where $\Delta f= 1/(n \Delta t)$ is the frequency resolution.
 
 
 Now suppose that we can factorize the number $n$ of data points as
@@ -86,7 +86,7 @@ N_F) \right] \, h_{2 N_F J + k},
 for $0 \le J < N_T$ and $0 \le \Sigma < N_F$.  We call this first type
 of TF plane a vertical TF plane, since it corresponds to a series of
 vertical lines if the time axis is horizontal and the frequency axis
-vertical. 
+vertical.
 
 The second type of TF plane is obtained by first taking a DFT of all the time
 domain data to obtain frequency domain data, then dividing the frequency
@@ -109,11 +109,11 @@ Eq.\ (\ref{standarddft}).
 \noindent Parameters needed to describe a particular TF plane.
 
 \begin{description}
-\item[\texttt{INT4 timeBins}] Number of time bins $N_T$ in TF plane. 
+\item[\texttt{INT4 timeBins}] Number of time bins $N_T$ in TF plane.
 
 \item[\texttt{INT4 freqBins}] Number of freq bins $N_F$ in TF plane.
 
-\item[\texttt{REAL8 deltaT}] The time resolution ${\overline {\Delta t}}$ 
+\item[\texttt{REAL8 deltaT}] The time resolution ${\overline {\Delta t}}$
 of the TF plane in seconds, \texttt{deltaF} will always be 1/\texttt{deltaT}.
 
 \item[\texttt{REAL8 flow}] The lowest frequency $f_{\rm low}$ in the TF plane
@@ -128,7 +128,7 @@ the above correspondence].
 \idx[Type]{RealDFTParams}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent 
+\noindent
 
 \begin{description}
 \item[\texttt{WindowType windowType}]
@@ -142,7 +142,7 @@ the above correspondence].
 \idx[Type]{ComplexDFTParams}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent 
+\noindent
 
 \begin{description}
 \item[\texttt{WindowType  windowType}]
@@ -156,7 +156,7 @@ the above correspondence].
 \idx[Type]{COMPLEX8TimeFrequencyPlane}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent 
+\noindent
 This structure has some fields that also appear in the structures
 \verb+REAL4TimeSeries+ and \verb+COMPLEX8FrequencySeries+.
 
@@ -173,7 +173,7 @@ plane from input data.  (See above.)
 
 \item[\texttt{TFPlaneType   planeType}]  This is an enumerated type that can
 be either \verb+verticalPlane+ or \verb+horizontalPlane+, corresponding to the
-two types of TF plane. 
+two types of TF plane.
 
 \item[\texttt{COMPLEX8   *data}]  The $N_T \times N_F$ array of complex
 numbers $H_{J\Sigma}$.
@@ -185,7 +185,7 @@ numbers $H_{J\Sigma}$.
 \idx[Type]{VerticalTFTransformIn}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent 
+\noindent
 
 \begin{description}
 \item[\texttt{RealDFTParams  *dftParams}]
@@ -197,7 +197,7 @@ numbers $H_{J\Sigma}$.
 \idx[Type]{HorizontalTFTransformIn}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent 
+\noindent
 
 \begin{description}
 \item[\texttt{ComplexDFTParams  *dftParams}]
@@ -232,7 +232,7 @@ exit, \verb+*dftParams+ will point to the newly created structure.
 LALCreateForwardRealFFTPlan
 LALCreateReverseRealFFTPlan
 LALSCreateVector
-LALWindow 
+LALWindow
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -244,20 +244,20 @@ LALWindow
 \bibitem{ab:1999}
 Warren G. Anderson and R. Balasubramanian, \textit{Time-frequency
 detection of gravitational waves}, gr-qc/9905023, and references
-therein. 
+therein.
 
 \bibitem{fh:1998}
 \'Eanna~\'E.~Flanagan and S. A. Hughes, Phys. Rev. D {\bf 57},
-4535-4565 (1998) (also gr-qc/9701039).  
+4535-4565 (1998) (also gr-qc/9701039).
 
 \bibitem{acdhp:1999}
 N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
 \textit{Triggers for the Detection of Gravitational Wave Bursts},
-gr-qc/9903035.  
+gr-qc/9903035.
 
 \bibitem{abcf:2000}
-Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and 
-{\'E}anna {\'E}. Flanagan, 
+Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and
+{\'E}anna {\'E}. Flanagan,
 \textit{An excess power statistic for detection of burst sources of
 gravitational radiation}, PRD 63, 042003 (2001) (gr-qc/0008066).
 For a short version see {\it ibid}, \textit{A power filter for the

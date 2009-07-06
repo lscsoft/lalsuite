@@ -23,7 +23,7 @@
  * \date $Id$
  * \brief The primative LAL datatypes.
  *
- * This header defines the primative LAL datatypes.  These datatypes 
+ * This header defines the primative LAL datatypes.  These datatypes
  * are: CHAR, INT2, INT4, INT8 (signed integer types); UCHAR, UINT2
  * UINT4, UINT8 (unsigned integer types); REAL4, REAL8 (single- and
  * double-precision floating point types); and COMPLEX8 and COMPLEX16
@@ -210,58 +210,7 @@ typedef char CHAR;
 typedef unsigned char UCHAR;
 typedef unsigned char BOOLEAN;
 
-#ifdef LDAS_BUILD
-
-#include <lal/LDASConfig.h>
-
-/* Integer types */
-
-#if SIZEOF_SHORT == 2
-  typedef short INT2;
-  typedef unsigned short UINT2;
-#elif SIZEOF_INT == 2
-  typedef int INT2;
-  typedef unsigned int UINT2;
-#else
-# error "ERROR: NO 2 BYTE INTEGER FOUND"
-#endif
-
-#if SIZEOF_INT == 4
-  typedef int INT4;
-  typedef unsigned int UINT4;
-#elif SIZEOF_LONG == 4
-  typedef long INT4;
-  typedef unsigned long UINT4;
-#else
-# error "ERROR: NO 4 BYTE INTEGER FOUND"
-#endif
-
-#if SIZEOF_LONG == 8
-  typedef long INT8;
-  typedef unsigned long UINT8;
-#elif SIZEOF_LONG_LONG == 8
-  typedef long long INT8;
-  typedef unsigned long long UINT8;
-#else
-# error "ERROR: NO 8 BYTE INTEGER FOUND"
-#endif
-
-/* Real types */
-
-#if SIZEOF_FLOAT == 4
-  typedef float REAL4;
-#else
-# error "ERROR: NO 4 BYTE REAL FOUND"
-#endif
-
-#if SIZEOF_DOUBLE == 8
-  typedef double REAL8;
-#else
-# error "ERROR: NO 8 BYTE REAL FOUND"
-#endif
-
-#else /* ! LDAS_BUILD */
-
+#include <stdint.h>
 #include <lal/LALConfig.h>
 #include <lal/LALRCSID.h>
 NRCSID( LALATOMICDATATYPESH, "$Id$" );
@@ -282,83 +231,18 @@ NRCSID( LALATOMICDATATYPESH, "$Id$" );
 
 
 /* Integer types */
-
-/* could do this... but want this file to be independent of stdint.h */
-/*
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
 typedef int16_t  INT2;
 typedef int32_t  INT4;
 typedef int64_t  INT8;
 typedef uint16_t UINT2;
 typedef uint32_t UINT4;
 typedef uint64_t UINT8;
-#else
-*/
-
-#if LAL_SIZEOF_SHORT == 2
-  typedef short INT2;
-  typedef unsigned short UINT2;
-#elif LAL_SIZEOF_INT == 2
-  typedef int INT2;
-  typedef unsigned int UINT2;
-#else
-  typedef short INT2;
-  typedef unsigned short UINT2;
-# error "ERROR: NO 2 BYTE INTEGER FOUND"
-#endif
-
-#if LAL_SIZEOF_INT == 4
-  typedef int INT4;
-  typedef unsigned int UINT4;
-#elif LAL_SIZEOF_LONG == 4
-  typedef long INT4;
-  typedef unsigned long UINT4;
-#else
-  typedef int INT4;
-  typedef unsigned int UINT4;
-# error "ERROR: NO 4 BYTE INTEGER FOUND"
-#endif
-
-#if LAL_SIZEOF_LONG == 8
-  typedef long INT8;
-  typedef unsigned long UINT8;
-#elif LAL_SIZEOF_LONG_LONG == 8
-#ifdef __GNUC__
-  __extension__ typedef long long INT8;
-  __extension__ typedef unsigned long long UINT8;
-#else
-  typedef long long INT8;
-  typedef unsigned long long UINT8;
-#endif /* __GNUC__ */
-#else
-  typedef long long INT8;
-  typedef unsigned long long UINT8;
-# error "ERROR: NO 8 BYTE INTEGER FOUND"
-#endif
-
-/* #endif */ /* HAVE_STDINT_H  -- commented out above */
 
 /* Macros for integer constants */
-#if LAL_SIZEOF_LONG == 8
-#define LAL_INT8_C(v) (v ## L)
-#define LAL_UINT8_C(v) (v ## UL) 
-#elif LAL_SIZEOF_LONG_LONG == 8
-#ifdef __GNUC__
-#define LAL_INT8_C(v) (__extension__ v ## LL)
-#define LAL_UINT8_C(v) (__extension__ v ## ULL)
-#else
-#define LAL_INT8_C(v) (v ## LL)
-#define LAL_UINT8_C(v) (v ## ULL)
-#endif
-#else
-#define LAL_INT8_C(v) (v ## LL)
-#define LAL_UINT8_C(v) (v ## ULL)
-# error "ERROR: NO 8 BYTE INTEGER FOUND"
-#endif
+#define LAL_INT8_C INT64_C
+#define LAL_UINT8_C UINT64_C
 
 /* Real types */
-
 #if LAL_SIZEOF_FLOAT == 4
   typedef float REAL4;
 #else
@@ -372,8 +256,6 @@ typedef uint64_t UINT8;
   typedef double REAL8;
 # error "ERROR: NO 8 BYTE REAL FOUND"
 #endif
-
-#endif /* LDAS_BUILD */
 
 /* <lalLaTeX>
 

@@ -29,7 +29,7 @@ $Id$
 
 
 This header defines structures to hold the basic data describing
-a gravitational wave detector.  
+a gravitational wave detector.
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -150,7 +150,7 @@ Technical Note
 % of Global and Local Coordinate Axes for the LIGO Sites'', LIGO
 % Technical Note LIGO-T950004
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 
 #ifndef _LALDETECTORS_H
@@ -164,12 +164,12 @@ extern "C" {
 
 NRCSID( LALDETECTORSH, "$Id$" );
 
-/** \file 
+/** \file
  * \ingroup tools
  * \author J. T. Whelan and J. D. E. Creighton
  * \date $Id$
  * \brief Provides constants describing various gravitational wave detectors
- * 
+ *
  * This header defines numerical constants that describe the location and
  * geometry of several operating gravitational wave detectors.
  * These detectors are both resonant mass (bar) detectors and interferometric
@@ -180,21 +180,21 @@ NRCSID( LALDETECTORSH, "$Id$" );
  * and
  *
  *      L. S. Finn and A. Lazzarini, Phys. Rev. D 64, 082002 (2001)
- * 
+ *
  * Data for LIGO detectors is taken from:
  *
- *      William Althouse, Larry Jones, Albert Lazzarini (1999) 
+ *      William Althouse, Larry Jones, Albert Lazzarini (1999)
  *      "Determination of Global and Local Coordinate Axes for the LIGO Sites"
- *      LIGO-T980044-08-E 
- *      
+ *      LIGO-T980044-08-E
+ *
  * Data for the VIRGO detector is provided by Benoit Mours.
  *
  * Data for the GEO detector is taken from:
  *
- *      http://www.geo600.uni-hannover.de/geo600/project/location.html 
+ *      http://www.geo600.uni-hannover.de/geo600/project/location.html
  *
  * Data for the TAMA detector is provided by Masa-Katsu Fujimoto
- * 
+ *
  * Data for the Caltech detector is taken from:
  *
  *      B. Allen, "Gravitational Wave Detector Sites," gr-qc/9607075 (1996).
@@ -202,8 +202,8 @@ NRCSID( LALDETECTORSH, "$Id$" );
  * See the technical document
  *
  *      Warren Anderson, Patrick Brady, David Chin, Jolien Creighton,
- *      Keith Riles, and John Whelan 
- *      "Beam Pattern Response Functions and Times of Arrival 
+ *      Keith Riles, and John Whelan
+ *      "Beam Pattern Response Functions and Times of Arrival
  *      for Earthbound Interferometer"
  *      LIGO-T010110-00-Z
  *      http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf
@@ -235,7 +235,7 @@ NRCSID( LALDETECTORSH, "$Id$" );
 
 #define LALDETECTORSH_PRINTF        0
 
-/********************************* <lalLaTeX> 
+/********************************* <lalLaTeX>
 
 \subsubsection*{The \texttt{LALDetectorType} enumeration}
 \idx[Type]{LALDetectorType}
@@ -256,13 +256,13 @@ Since data from bars as well as interferometers can be written to
 The possible values are (each value is prefaced by
 \texttt{LALDETECTORTYPE\_}):
 \begin{description}
-  \item[\texttt{LALDETECTORTYPE\_ABSENT}] No \texttt{FrDetector} 
+  \item[\texttt{LALDETECTORTYPE\_ABSENT}] No \texttt{FrDetector}
 	associated with the structure
-  \item[\texttt{LALDETECTORTYPE\_IFODIFF}] Interferometer 
+  \item[\texttt{LALDETECTORTYPE\_IFODIFF}] Interferometer
 	in differential mode
-  \item[\texttt{LALDETECTORTYPE\_IFOXARM}] Interferometer 
+  \item[\texttt{LALDETECTORTYPE\_IFOXARM}] Interferometer
 	in one-armed mode (X arm)
-  \item[\texttt{LALDETECTORTYPE\_IFOYARM}] Interferometer 
+  \item[\texttt{LALDETECTORTYPE\_IFOYARM}] Interferometer
 	in one-armed mode (Y arm)
   \item[\texttt{LALDETECTORTYPE\_IFOCOMM}] Interferometer in common mode
   \item[\texttt{LALDETECTORTYPE\_CYLBAR}]  Cylindrical bar
@@ -302,7 +302,7 @@ indices of the known detectors:
 \idx[Constant]{LAL\_NUM\_DETECTORS}
 ********************************** </lalLaTeX> */
 
-  /********************************* <lalLaTeX> 
+  /********************************* <lalLaTeX>
 For example, the \texttt{LALDetector} representing LIGO Hanford 4km (H1) in
 differential mode is
 \texttt{lalCachedDetectors[LAL\_LHO\_4K\_DETECTOR]}.
@@ -311,7 +311,7 @@ differential mode is
 
 ********************************** </lalLaTeX> */
 
-/********************************* <lalLaTeX> 
+/********************************* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALFrDetector}}
 \idx[Type]{LALFrDetector}
@@ -322,7 +322,7 @@ frames spec. \cite{tools:LIGOVIRGO:2000}  The fields are:
 \begin{description}
   \item[\texttt{CHAR name[LALNameLength]}] A unique identifying string.
   \item[\texttt{CHAR prefix[3]}] Two-letter prefix for detector names.
-  \item[\texttt{REAL8 vertexLongitudeRadians}] The geodetic longitude 
+  \item[\texttt{REAL8 vertexLongitudeRadians}] The geodetic longitude
 $\lambda$ of the vertex, in radians.
   \item[\texttt{REAL8 vertexLatitudeRadians}] The geodetic latitude
 $\beta$ of the vertex, in radians.
@@ -346,11 +346,11 @@ $\beta$ of the vertex, in radians.
 \idx[Type]{LALDetector}
 
 The \texttt{LALDetector} structure is intended to be the way that detector
-   geometry information is passed to LAL routines. 
+   geometry information is passed to LAL routines.
 This structure describes a detector geometry in a way independent of
 the type of detector.  The fields are:
 \begin{description}
-  \item[\texttt{REAL8 location[3]}]  The three components, in an 
+  \item[\texttt{REAL8 location[3]}]  The three components, in an
   Earth-fixed Cartesian co\"{o}rdinate system, of the
   position vector from the center of the Earth to the detector,
   in meters.
@@ -368,7 +368,7 @@ the type of detector.  The fields are:
 
 ********************************** </lalLaTeX> */
 
-
+
 
 /** Enumeration of Detectors: follows order of DQ bit assignments */
 enum {
@@ -401,10 +401,10 @@ enum {
 	LAL_NIOBE_DETECTOR_BIT   	=	1 << 2 * LAL_NIOBE_DETECTOR,
 	LAL_NAUTILUS_DETECTOR_BIT	=	1 << 2 * LAL_NAUTILUS_DETECTOR
 };
-
+
 
 /** Detector type
- * 
+ *
  * The type of detector.  This determines how the detector response
  * is determined.
  */
@@ -417,10 +417,10 @@ typedef enum {
 	LALDETECTORTYPE_CYLBAR	/**< Cylindrical bar */
 }
 LALDetectorType;
-
+
 
 /** Detector frame data structure
- * 
+ *
  * Structure to contain the data that appears in a FrDetector structure
  * in frame data.
  */
@@ -439,10 +439,10 @@ typedef struct tagLALFrDetector
 	REAL4	yArmMidpoint;	/**< The distance to the midpoint of the Y arm in meters (unused for bars: set it to zero). */
 }
 LALFrDetector;
-
+
 
 /** Detector structure
- * 
+ *
  * Structure to contain detector data in the format most easily used
  * by the LAL routines.
  */
@@ -454,7 +454,7 @@ typedef struct tagLALDetector
 	LALFrDetector	frDetector;	/**< The original LALFrDetector structure from which this was created. */
 }
 LALDetector;
-
+
 
 /** Pre-existing detectors. */
 extern const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS];
@@ -469,7 +469,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 
 /* Interferometric Detectors */
 
-
+
 /** \name TAMA 300m Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * TAMA 300m Interferometric Detector. */
@@ -496,7 +496,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_TAMA_300_ARM_Y_DIRECTION_Z           	-0.81232223390	/**< TAMA_300 z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name VIRGO 3km Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * VIRGO 3km Interferometric Detector. */
@@ -523,7 +523,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_VIRGO_ARM_Y_DIRECTION_Z           	0.24080451708	/**< VIRGO z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name GEO 600m Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * GEO 600m Interferometric Detector. */
@@ -550,7 +550,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_GEO_600_ARM_Y_DIRECTION_Z           	0.55058372486	/**< GEO_600 z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name LIGO Hanford Observatory 2km Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * LIGO Hanford Observatory 2km Interferometric Detector. */
@@ -577,7 +577,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LHO_2K_ARM_Y_DIRECTION_Z           	-0.40492342125	/**< LHO_2k z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name LIGO Hanford Observatory 4km Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * LIGO Hanford Observatory 4km Interferometric Detector. */
@@ -604,7 +604,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LHO_4K_ARM_Y_DIRECTION_Z           	-0.40492342125	/**< LHO_4k z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name LIGO Livingston Observatory 4km Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * LIGO Livingston Observatory 4km Interferometric Detector. */
@@ -631,7 +631,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LLO_4K_ARM_Y_DIRECTION_Z           	-0.82054461286	/**< LLO_4k z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
-
+
 /** \name Caltech 40m Prototype Detector constants
  * The following constants describe the location and geometry of the
  * Caltech 40m Prototype Detector. */
@@ -661,7 +661,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 
 /* Resonant Mass (Bar) Detectors */
 
-
+
 /** \name ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis" constants
  * The following constants describe the location and geometry of the
  * ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis". */
@@ -684,7 +684,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_Y            	0.40093077976	/**< ALLEGRO_320 y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_Z            	0.66063901000	/**< ALLEGRO_320 z-component of unit vector pointing along axis in Earth-centered frame */
 
-
+
 /** \name AURIGA Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * AURIGA Resonant Mass Detector. */
@@ -707,7 +707,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_AURIGA_AXIS_DIRECTION_Y            	0.57365538956	/**< AURIGA y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_AURIGA_AXIS_DIRECTION_Z            	0.50550364038	/**< AURIGA z-component of unit vector pointing along axis in Earth-centered frame */
 
-
+
 /** \name EXPLORER Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * EXPLORER Resonant Mass Detector. */
@@ -730,7 +730,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_EXPLORER_AXIS_DIRECTION_Y            	0.56480832712	/**< EXPLORER y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_EXPLORER_AXIS_DIRECTION_Z            	0.53544371484	/**< EXPLORER z-component of unit vector pointing along axis in Earth-centered frame */
 
-
+
 /** \name Nautilus Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * Nautilus Resonant Mass Detector. */
@@ -753,7 +753,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_NAUTILUS_AXIS_DIRECTION_Y            	0.57250373141	/**< Nautilus y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_NAUTILUS_AXIS_DIRECTION_Z            	0.53605060283	/**< Nautilus z-component of unit vector pointing along axis in Earth-centered frame */
 
-
+
 /** \name NIOBE Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * NIOBE Resonant Mass Detector. */

@@ -51,7 +51,7 @@ NRCSID (ASTROOMEGAH, "$Id$");
 
 /*<lalLaTeX>
 \subsection*{Error conditions}
-the errors that may occur in this module are integration errors already defined in Integrate.h  
+the errors that may occur in this module are integration errors already defined in Integrate.h
 
 \subsection*{Structures}
 These are function pointers corresponding to the spectral energy density of a single source.
@@ -79,7 +79,7 @@ source parameters
 \begin{verbatim}
 typedef struct
 tagAstroOmegaSourceParams
- { 
+ {
    REAL8LALSDensity   *SDensitySource; single spectral energy density
    REAL8              numax; frequency cutoff in the source frame
    REAL8              lambda; mass fraction of source progenitors expressed in inverse solar masses.
@@ -95,7 +95,7 @@ tagAstroOmegaParams
  {
    AstroOmegaCosmoParams          cosmoparams;
    AstroOmegaSourceParams         sourceparams;
-   void                           *extraparams;  
+   void                           *extraparams;
  }
 AstroOmegaParams;
 \end{verbatim}
@@ -123,7 +123,7 @@ AstroOmegaCosmoParams;
 /*in the general case, the user should define previously the single spectral energy density*/
 typedef struct
 tagAstroOmegaSourceParams
- { 
+ {
    REAL8LALSDensity   *SDensitySource;
    REAL8              numax;
    REAL8              lambda;
@@ -136,7 +136,7 @@ tagAstroOmegaParams
  {
    AstroOmegaCosmoParams          cosmoparams;
    AstroOmegaSourceParams         sourceparams;
-   void                           *extraparams;  
+   void                           *extraparams;
  }
 AstroOmegaParams;
 

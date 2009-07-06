@@ -118,7 +118,7 @@ LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
 \verb+XLALUnitAsString+ converts a \verb+LALUnit+ structure into a character
 string of maximum length \verb+length+ (including NUL termination)
 representation of the units.  The inverse function, \verb+XLALParseUnitString+
-parses a character string to produce a \verb+LALUnit+ structure; if 
+parses a character string to produce a \verb+LALUnit+ structure; if
 \verb+output+ is \verb+NULL+, memory for the output is allocated.  If the input
 \verb+string+ is \verb+NULL+ or is empty then the output units are
 dimensionless: \verb+lalDimensionlessUnit+.
@@ -135,7 +135,7 @@ is put into normal form.
 \verb+XLALUnitRaiseRAT4+ raises a \verb+LALUnit+ structure to a rational
 power given by the \verb+RAT4+ structure \verb+power+.
 \verb+XLALUnitRaiseINT2+ raises a \verb+LALUnit+ structure to an integer
-power \verb+power+.  
+power \verb+power+.
 \verb+XLALUnitSquare+ produces the square of a \verb+LALUnit+ structure.
 \verb+XLALUnitSqrt+ produces the square-root of a \verb+LALUnit+ structure.
 
@@ -215,11 +215,11 @@ NRCSID (UNITSH, "$Id$");
 
 
 /* The parameter structure for LALUnitRaise contains the numerator and
- * denominator-minus-one of the rational power.  
+ * denominator-minus-one of the rational power.
  */
 
 typedef struct
-tagRAT4 
+tagRAT4
 {
   INT2 numerator;
   UINT2 denominatorMinusOne;
@@ -257,7 +257,7 @@ REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2);
 
 
 /* LALUnitNormalize will reduce the rational powers in the basic unit
- * exponents, e.g. converting 2/2 to 1/1 and 3/6 to 1/2.  
+ * exponents, e.g. converting 2/2 to 1/1 and 3/6 to 1/2.
  */
 
 void LALUnitNormalize (LALStatus *status, LALUnit *output,
@@ -306,14 +306,14 @@ void LALUnitRaise (LALStatus *status, LALUnit *output,
 void LALUnitAsString (LALStatus *status, CHARVector *output,
 		      const LALUnit *input);
 
-void 
+void
 LALParseUnitString ( LALStatus *status,
 		     LALUnit *output,
 		     const CHARVector *input );
 
 enum { LALUnitNameSize = sizeof("strain") };
 enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
-				"s^-32768/32767 A^-32768/32767 " 
+				"s^-32768/32767 A^-32768/32767 "
 				"K^-32768/32767 strain^-32768/32767 "
 				"count^-32768/32767") };
 
@@ -351,7 +351,7 @@ extern const LALUnit lalHertzUnit     ;
 extern const LALUnit lalNewtonUnit    ;
 extern const LALUnit lalJouleUnit     ;
 extern const LALUnit lalWattUnit      ;
-extern const LALUnit lalPascalUnit    ;   
+extern const LALUnit lalPascalUnit    ;
 
 /* Derived Electromagnetic Units */
 extern const LALUnit lalCoulombUnit   ;

@@ -38,7 +38,7 @@ frequency-domain instrument response function
 
 As described in Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c},
 the most convenient combinations of the noise $P(f)$ (defined by $\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)$) and
-instrument response 
+instrument response
 $\widetilde{R}(f)=h(f)/h(f)$ to use in
 constructing an optimal filter are the inverse half-calibrated power
 spectral density
@@ -88,10 +88,10 @@ strncpy()
   \begin{eqnarray}
     {} [P] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
     {} [\widetilde{R}] &=& 10^{18}\,\textrm{strain}^{-1}\,\textrm{count} \\
-    {} [1/P^{\scriptstyle{\rm C}}] 
+    {} [1/P^{\scriptstyle{\rm C}}]
     &:=& [\widetilde{R}]^2 [P]
     = 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
-    {} [1/P^{\scriptstyle{\rm HC}}] 
+    {} [1/P^{\scriptstyle{\rm HC}}]
     &:=&  [\widetilde{R}] [P]
     = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
   \end{eqnarray}
@@ -99,12 +99,12 @@ strncpy()
 
 \vfill{\footnotesize\input{StochasticInverseNoiseCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /********************** <lalLaTeX file="StochasticInverseNoiseCB">
 
 % \bibitem{stochastic:}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
@@ -134,7 +134,7 @@ LALStochasticInverseNoiseCal(
 
   REAL4 *sPtrPW, *sPtrIP, *sStopPtr;
   COMPLEX8 *cPtrR, *cPtrIPHC;
-  
+
   RAT4 power;
   LALUnitPair unitPair;
   LALUnit wInvNoiseUnits;
@@ -160,7 +160,7 @@ LALStochasticInverseNoiseCal(
   ASSERT(output != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
- 
+
   /* check that pointers to members of input structure are not null */
   ASSERT(wNoise != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -174,8 +174,8 @@ LALStochasticInverseNoiseCal(
   ASSERT(invNoise != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-  
-  
+
+
   /* check that pointers to data members of series are not null */
   ASSERT(wNoise->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -188,7 +188,7 @@ LALStochasticInverseNoiseCal(
   ASSERT(invNoise->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-  
+
   /* check that pointers to data-data members of series are not null */
   ASSERT(wNoise->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -288,7 +288,7 @@ LALStochasticInverseNoiseCal(
   TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
         &unitPair), status);
 
-	
+
   sStopPtr = wNoise->data->data + length;
 
   if (f0 == 0)
@@ -360,7 +360,7 @@ LALStochasticInverseNoise(
   ASSERT(output != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
- 
+
   /* check that pointers to members of input structure are not null */
   ASSERT(wNoise != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -378,7 +378,7 @@ LALStochasticInverseNoise(
   ASSERT(hwInvNoise != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-  
+
   /* check that pointers to data members of series are not null */
   ASSERT(wNoise->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -476,7 +476,7 @@ LALStochasticInverseNoise(
   invNoise->epoch = hwInvNoise->epoch = wNoise->epoch;
 
   /*---------------Valid data here---------------*/
-  
+
   strncpy(invNoise->name, "Calibrated invserse noise PSD", LALNameLength);
   strncpy(hwInvNoise->name, "half-calibrated invserse noise PSD", \
       LALNameLength);
@@ -531,7 +531,7 @@ LALStochasticInverseNoise(
     cPtrIPHC->re = cPtrR->re / *sPtrPW;
 
     /* minus sign because of complex conjugate */
-    cPtrIPHC->im = -cPtrR->im / *sPtrPW; 
+    cPtrIPHC->im = -cPtrR->im / *sPtrPW;
   }
 
   DETATCHSTATUSPTR(status);

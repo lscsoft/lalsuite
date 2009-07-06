@@ -24,7 +24,7 @@ $Id$
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALTaylorNWaveform.c} and 
+\subsection{Module \texttt{LALTaylorNWaveform.c} and
 \texttt{LALTaylorNWaveformTemplates.c}}
 
 \vfill{\footnotesize\input{LALTaylorNWaveformCV}}
@@ -34,70 +34,65 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/LALConstants.h>
 
 typedef struct tagxiInitIn {
   REAL8 eta, omega, e0;
 } xiInitIn;
 
 static void LALxiInit4PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      xi, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      xi,
   void      *params);
 
 
 static void LALxiInit5PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      xi, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      xi,
   void      *params);
 
 
 static void LALxiInit6PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      xi, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      xi,
   void      *params);
 
 
 static void LALxiInit7PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      xi, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      xi,
   void      *params);
 
 
 void LALTaylorNDerivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorNDerivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorNDerivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorNDerivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
-void LALTaylorNWaveform (
-  LALStatus        *status,
-  REAL4Vector      *signal,
-  InspiralTemplate *params
-);
-
-void 
+void
 LALTaylorNWaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -106,10 +101,10 @@ NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
 static void LALxiInit4PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      xi, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      xi,
+   void      *params)
 {
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
@@ -130,10 +125,10 @@ static void LALxiInit4PN(
 }
 
 static void LALxiInit5PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      xi, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      xi,
+   void      *params)
 {
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
@@ -154,10 +149,10 @@ static void LALxiInit5PN(
 }
 
 static void LALxiInit6PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      xi, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      xi,
+   void      *params)
 {
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
@@ -173,16 +168,16 @@ static void LALxiInit6PN(
    xi43 = pow(xi, 4./3.);
    pisq = LAL_PI*LAL_PI;
 
-   *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 
+   *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43
         + (315./2. + (-817./4. + 123./32.*pisq) * eta + 7*eta2) * xi2);
    *x -= in->omega;
 }
 
 static void LALxiInit7PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      xi, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      xi,
+   void      *params)
 {
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
@@ -198,28 +193,27 @@ static void LALxiInit7PN(
    xi43 = pow(xi, 4./3.);
    pisq = LAL_PI*LAL_PI;
 
-   *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 
+   *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43
         + (315./2. + (-817./4. + 123./32.*pisq) * eta + 7*eta2) * xi2);
    *x -= in->omega;
 }
 
 
 void LALTaylorNDerivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq, gamma;
+   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
@@ -235,21 +229,20 @@ void LALTaylorNDerivatives4PN(
 }
 
 void LALTaylorNDerivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq, gamma;
+   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
@@ -266,14 +259,14 @@ void LALTaylorNDerivatives5PN(
 }
 
 void LALTaylorNDerivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq, gamma;
+   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -281,7 +274,6 @@ void LALTaylorNDerivatives6PN(
    xi = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi13 = pow(xi, 1./3.);
    xi23 = pow(xi, 2./3.);
@@ -291,25 +283,25 @@ void LALTaylorNDerivatives6PN(
    xi113 = pow(xi, 11./3.);
    pisq = LAL_PI*LAL_PI;
 
-   dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 
+   dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43
 		   + (315./2. + (-817./4. + 123./32.*pisq) * eta + 7*eta2) * xi2);
 
    dvalues->data[1] = 96./5.*eta*xi113*(1. + (1273./336. - 11./4.*eta) * xi23
 		   + 4.*LAL_PI*xi + (438887./18144. - 49507./2016.*eta + 59./18.*eta2)*xi43
 		   + (20033./672. - 189./8.*eta) * LAL_PI * xi53 + (38047038863./139708800.
-			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta 
-			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(gamma + log(4*xi13)))*xi2);
+			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta
+			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(LAL_GAMMA + log(4*xi13)))*xi2);
 }
 
 void LALTaylorNDerivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq, gamma;
+   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -317,7 +309,6 @@ void LALTaylorNDerivatives7PN(
    xi = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi13 = pow(xi, 1./3.);
    xi23 = pow(xi, 2./3.);
@@ -327,14 +318,14 @@ void LALTaylorNDerivatives7PN(
    xi113 = pow(xi, 11./3.);
    pisq = LAL_PI*LAL_PI;
 
-   dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 
+   dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43
 		   + (315./2. + (-817./4. + 123./32.*pisq) * eta + 7*eta2) * xi2);
 
    dvalues->data[1] = 96./5.*eta*xi113*(1. + (1273./336. - 11./4.*eta) * xi23
 		   + 4.*LAL_PI*xi + (438887./18144. - 49507./2016.*eta + 59./18.*eta2)*xi43
 		   + (20033./672. - 189./8.*eta) * LAL_PI * xi53 + (38047038863./139708800.
-			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta 
-			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(gamma + log(4*xi13)))*xi2
+			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta
+			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(LAL_GAMMA + log(4*xi13)))*xi2
 		   + (971011./4032. - 1608185./6048.*eta + 91495./1512.*eta2)*LAL_PI*xi73);
 }
 
@@ -342,30 +333,30 @@ void LALTaylorNDerivatives7PN(
 /*  <lalVerbatim file="LALTaylorNWaveformCP"> */
 void LALTaylorNWaveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
-   ) 
+   )
 { /* </lalVerbatim> */
 
-   InspiralInit paramsInit;   
+   InspiralInit paramsInit;
    INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORETWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status, 
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status, 
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params,  status, 
+   ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params->nStartPad >= 0, status, 
+   ASSERT(params->nStartPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->nEndPad >= 0, status, 
+   ASSERT(params->nEndPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->fLower > 0, status, 
+   ASSERT(params->fLower > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->tSampling > 0, status, 
+   ASSERT(params->tSampling > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass > 0., status, 
+   ASSERT(params->totalMass > 0., status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
@@ -374,10 +365,10 @@ void LALTaylorNWaveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorNWaveformEngine(status->statusPtr, signal, params, &paramsInit);
+   LALTaylorNWaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -385,10 +376,10 @@ void LALTaylorNWaveform (
 }
 
 /*---------------------------------------------------------*/
-void 
+void
 LALTaylorNWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal,
+                REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -442,7 +433,7 @@ LALTaylorNWaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signal->length; 
+   length = signalvec->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -454,24 +445,23 @@ LALTaylorNWaveformEngine (
    rootIn.xmin = omega/2.;
    switch (params->order)
    {
-	case twoPN:
-   
+	case LAL_PNORDER_TWO:
 	   rootIn.function = LALxiInit4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   rootIn.function = LALxiInit5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   rootIn.function = LALxiInit6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   rootIn.function = LALxiInit7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
    }
    in3.eta = ak.eta;
@@ -493,23 +483,23 @@ LALTaylorNWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   in4.function = LALTaylorNDerivatives4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   in4.function = LALTaylorNDerivatives5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   in4.function = LALTaylorNDerivatives6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorNDerivatives7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
    }
    in4.y = &values;
@@ -540,7 +530,7 @@ LALTaylorNWaveformEngine (
    t = 0.0;
    ndx = 0;
    count = 0;
-      
+
    /* fprintf(stdout, "fMin=%e, fMax=%e, f=%e, dxi/dt=%e\n",  */
    /* omega/(m*LAL_PI), omegaMax/(m*LAL_PI),                  */
    /* dvalues.data[0]/(m*LAL_PI), dvalues.data[1]);           */
@@ -555,7 +545,7 @@ LALTaylorNWaveformEngine (
       }
 
       h = 4 * m * eta * xi * sin(2.*phi)/1.e14;
-      signal->data[ndx] = h;
+      signalvec->data[ndx] = h;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(m*LAL_PI)); */
 
       /* Integrate one step forward */
@@ -581,8 +571,8 @@ LALTaylorNWaveformEngine (
 
       t = (++count-params->nStartPad) * dt;
       ndx++;
-   }  
-      
+   }
+
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/

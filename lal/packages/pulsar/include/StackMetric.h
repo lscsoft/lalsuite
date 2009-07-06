@@ -20,21 +20,21 @@
 /**
  * \author Creighton, T. D.
  * \date 2000 -- 2003
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Provides routines to compute parameter-space metrics for coherent or
  * stacked pulsar searches.
  *
  * $Id$
  *
- * \par Description 
- * 
+ * \par Description
+ *
  This header covers routines that determine the metric
  coefficients for the mismatch function (ambiguity function) on the
  parameter space for a pulsar search.  The assumed search method is
  stacking one or more Fourier power spectra, after some suitable
  demodulation.
- 
+
  The method for determining the parameter metric is discussed in detail
  in Sec.~II of \ref Brady_P2000; we present the key results here in
  brief.  We assume that a model waveform in our search is described by
@@ -46,7 +46,7 @@
  = (f_0,\lambda^1,\ldots,\lambda^n)\f$ represents the total set of
  parameters we must search over, and \f$\tau[t;\vec{\lambda}]\f$ is a
  canonical time coordinate describing the shape of the waveform.
- 
+
  A (local) maximum in detected power \f$P\f$ occurs if a signal is filtered
  (or demodulated in time and the Fourier spectrum is sampled) using a
  phase model that matches the true phase of the signal.  If the
@@ -58,11 +58,11 @@
  The \em metric of this distance measure is simply the set of
  quadratic coefficients of the Taylor expansion of \f$\Delta P/P\f$ about
  its minimum.
- 
+
  Clearly the power will degrade rapidly with variation in some
  parameter \f$\lambda^\alpha\f$ if the phase function \f$\phi\f$ depends
  strongly on that parameter.  It turns out that if the detected power
- is computed from a coherent power spectrum of a time interval \f$\Delta t\f$, 
+ is computed from a coherent power spectrum of a time interval \f$\Delta t\f$,
  then the metric components are given simply by the covariances of
  the phase derivatives \f$\partial\phi/\partial\lambda^\alpha\f$ over the
  time interval: \anchor eq_gab_phi
@@ -79,7 +79,7 @@
  \left\langle
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\beta}
  \right\rangle \; ,
- \f} 
+ \f}
  where \f$\langle\ldots\rangle\f$ denotes a time average over the interval
  \f$\Delta t\f$, and \f$\alpha\f$ and \f$\beta\f$ are indecies running from 0 to
  \f$n\f$.  The partial derivatives are evaluated at the point \f$\mathbf{\lambda}\f$
@@ -87,7 +87,7 @@
  the sum of several power spectra computed from separate time intervals
  (of the same length), then the overall metric is the \em average of
  the metrics from each time interval.
- 
+
  When power spectra are computed using fast Fourier transforms, the
  entire frequency band from DC to Nyquist is computed at once; one then
  scans all frequencies for significant peaks.  In this case one is
@@ -132,10 +132,10 @@ NRCSID(STACKMETRICH,"$Id$");
     to compute the metric and to the parameters required by this function.
     In addition, this structure must indicate the timespan over which the
     timing differences accumulate, and whether this accumulation is
-    coherent or divided into stacks which are summed in power.  
+    coherent or divided into stacks which are summed in power.
 */
 typedef struct tagMetricParamStruc{
-  void (*dtCanon)(LALStatus *, REAL8Vector *, REAL8Vector *, PulsarTimesParamStruc * ); /**< The function to compute the canonical 
+  void (*dtCanon)(LALStatus *, REAL8Vector *, REAL8Vector *, PulsarTimesParamStruc * ); /**< The function to compute the canonical
 											  * time coordinate and its derivatives. */
   PulsarTimesParamStruc *constants; 	/**< The constant parameters used by *dt(). */
   REAL8 start;  			/**< Start time of search, measured relative to constants->epoch. */

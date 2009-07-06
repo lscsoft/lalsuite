@@ -17,33 +17,33 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: CreateTimeFreqParam.c
- * 
+ *
  * Maintainer: Torres C, (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * CreateTimeFreqParam
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  * void LALCreateTimeFreqParam (LALStatus *, TimeFreqParam **param, CreateTimeFreqIn *in);
- * 
- * DESCRIPTION 
- * Create a TimeFreqParam object. 
- * 
- * DIAGNOSTICS 
+ *
+ * DESCRIPTION
+ * Create a TimeFreqParam object.
+ *
+ * DIAGNOSTICS
  *
  * CALLS
  * LALMalloc
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -52,27 +52,27 @@
 
 NRCSID (CREATETIMEFREQPARAMC, "$Id$");
 
-void LALCreateTimeFreqParam (LALStatus *status, 
+void LALCreateTimeFreqParam (LALStatus *status,
 			TimeFreqParam **param,
-			CreateTimeFreqIn *in) 
+			CreateTimeFreqIn *in)
 {
   /* Initialize status */
-  INITSTATUS (status, "LALCreateTimeFreqParam", CREATETIMEFREQPARAMC);	
-  
+  INITSTATUS (status, "LALCreateTimeFreqParam", CREATETIMEFREQPARAMC);
+
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFP_ENULL, CREATETFP_MSGENULL);
-  
+
   /* Check return structure  */
   ASSERT (param != NULL, status, CREATETFP_ENULL, CREATETFP_MSGENULL);
   ASSERT (*param == NULL, status, CREATETFP_ENNUL, CREATETFP_MSGENNUL);
-  
+
   *param = (TimeFreqParam *) LALMalloc(sizeof(TimeFreqParam));
 
   /* Check Allocation */
   ASSERT (*param != NULL, status, CREATETFP_EMALL, CREATETFP_MSGEMALL);
-  
+
   (*param)->type=Undefined; /* Undefined until storage allocated */
-  (*param)->windowT = NULL; /* NULL data until allocated */ 
+  (*param)->windowT = NULL; /* NULL data until allocated */
   (*param)->windowF = NULL; /* NULL data until allocated */
 
   switch (in->type) {
@@ -80,14 +80,14 @@ void LALCreateTimeFreqParam (LALStatus *status,
 
     /* Make sure the window length is a odd number */
     ASSERT (in->wlengthT%2 != 0, status, CREATETFP_EWSIZ, CREATETFP_MSGEWSIZ);
-  
+
     LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
-    (*param)->type = Spectrogram; 
+    (*param)->type = Spectrogram;
 
     break;
   case WignerVille :
- 
-    (*param)->type = WignerVille; 
+
+    (*param)->type = WignerVille;
 
     break;
   case PSWignerVille :
@@ -100,8 +100,8 @@ void LALCreateTimeFreqParam (LALStatus *status,
 
     LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
     LALSCreateVector(status,&(*param)->windowF,in->wlengthF);
-    (*param)->type = PSWignerVille; 
-    
+    (*param)->type = PSWignerVille;
+
     break;
   case RSpectrogram :
 
@@ -109,14 +109,14 @@ void LALCreateTimeFreqParam (LALStatus *status,
     ASSERT (in->wlengthT%2 != 0, status, CREATETFP_EWSIZ, CREATETFP_MSGEWSIZ);
 
     LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
-    (*param)->type = RSpectrogram; 
+    (*param)->type = RSpectrogram;
 
     break;
   default :
     ABORT(status,CREATETFP_ETYPE, CREATETFP_MSGETYPE);
-    
+
   }
-  
+
   /* We be done: Normal exit */
 
   RETURN (status);

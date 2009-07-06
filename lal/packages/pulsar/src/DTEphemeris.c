@@ -115,7 +115,7 @@ LALDTEphemeris( LALStatus             *status,
   ASSERT( var->length >= 3, status, PULSARTIMESH_EBAD, PULSARTIMESH_MSGEBAD);
   /* result has to be at least [T(t), and optionally dT/dt, dT/dalpha, dT/ddelta] */
   ASSERT( drv->length >= 1, status, PULSARTIMESH_EBAD, PULSARTIMESH_MSGEBAD);
-  
+
   /* Make sure ephermis and detector data have been passed */
   ASSERT (tev->ephemeris != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT (tev->site != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
@@ -127,7 +127,7 @@ LALDTEphemeris( LALStatus             *status,
   /* Set the GPS time: */
   tGPS = tev->epoch;
   XLALGPSAdd ( &tGPS, var->data[0] );	/* time relative to epoch */
- 
+
   /* Set the ephemeris data: */
   eph = tev->ephemeris;
 
@@ -173,16 +173,16 @@ LALDTEphemeris( LALStatus             *status,
   if ( numDeriv >= 2 )
     {
       /* Need to finite difference to get d(tb)/d(alpha), d(tb)/d(delta) */
-      
+
       /* Get dtb/da by finite differencing.   */
       /* Default upper and lower alpha values: */
       upper = var->data[1] + d_alpha;
       lower = var->data[1] - d_alpha;
       /* Overwrite if alpha is too close to zero or 2 PI: */
       if(var->data[1] < d_alpha)
-	lower = var->data[1]; 
+	lower = var->data[1];
       if(var->data[1] > (LAL_TWOPI-d_alpha))
-	upper = var->data[1]; 
+	upper = var->data[1];
       /* Evaluate emit at upper value: */
       baryin.alpha = upper;
       TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
@@ -204,9 +204,9 @@ LALDTEphemeris( LALStatus             *status,
       lower = var->data[2] - d_delta;
       /* Overwrite if delta is too close to PI/2 or -PI/2: */
       if(var->data[2] < (-LAL_PI_2+d_alpha))
-	lower = var->data[2]; 
+	lower = var->data[2];
       if(var->data[2] > (LAL_PI_2-d_alpha))
-	upper = var->data[2]; 
+	upper = var->data[2];
       /* Evaluate emit at upper value: */
       baryin.delta = upper;
       TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
@@ -219,7 +219,7 @@ LALDTEphemeris( LALStatus             *status,
       drv->data[3] /= (upper-lower);
       baryin.alpha = var->data[2];
     } /* if numDeriv >= 3 */
-  
+
   /* Go home */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -228,10 +228,10 @@ LALDTEphemeris( LALStatus             *status,
 /*Computes the barycentric time using Ephemeris data.*/
 
 /* <lalVerbatim file="DTEphemerisCP"> */
-void 
-LALTEphemeris( LALStatus   *status, 
+void
+LALTEphemeris( LALStatus   *status,
 	       REAL8 *tBary,
-	       REAL8Vector *var, 
+	       REAL8Vector *var,
 	       PulsarTimesParamStruc *tev )
 { /* </lalVerbatim>*/
   LIGOTimeGPS tGPS; /* Input structure to BarycenterEarth() */
@@ -285,7 +285,7 @@ LALTEphemeris( LALStatus   *status,
 
   /* this gives emit the position, velocity, time etc */
   TRY(LALBarycenter(status->statusPtr,&emit,&baryin,&earth),status);
-  
+
   *tBary = emit.te.gpsSeconds+1.0e-9*emit.te.gpsNanoSeconds;
   *tBary -= tev->epoch.gpsSeconds+1.0e-9*tev->epoch.gpsNanoSeconds;
 

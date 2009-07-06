@@ -159,6 +159,9 @@ parser.add_option("-C", "--mcmc",action="store_true",default=False,\
 parser.add_option("-P", "--plot-mcmc",action="store_true",default=False,\
     help="Plot MCMC results (experimental)")
 
+parser.add_option("", "--spin-mcmc",action="store_true",default=False,\
+    help="Do SPIN MCMC on the followup trigs (experimental)")
+
 parser.add_option("-H", "--inspiral-head",action="store_true",default=False,\
     help="Run a job using inspiral from HEAD (to get bank and cont. chisq) (experimental)")
 
@@ -173,12 +176,13 @@ parser.add_option("", "--convert-eventid",action="store_true",\
     Therefore when analysing S5 second year data, one must activate this \
     option. The followup code will make a copy of the original xml files in \
     the local directory and use the \"ligolw_conv_inspid\" to convert the \
-    event_id into the correct type.")
+    event_id into the correct type. This option also enables event_id \
+    remapping when reading trigger files for plots of triggers versus time")
 
 parser.add_option("", "--create-localcopy",action="store_true",\
     default=False, help="If this option is called, the followup pipeline will \
     make a local copy of all the useful xml files. This option is ignored \
-    when --convert-eventid is called.")
+    when \"--convert-eventid\" is requested.")
 
 parser.add_option("", "--add-trig-columns",action="store_true",\
     default=False, help="For the analysis of teh second year branch, \
@@ -221,6 +225,12 @@ parser.add_option("", "--disable-dag-categories",action="store_true",\
 parser.add_option("","--do-remote-ifo",action="store",\
     type="string",default=False,metavar=" IFO",\
     help="specify ifo for which calculations should be done remotely")
+
+parser.add_option("","--activate-cm-messages",action="store_true",\
+    default=False,help="when this option is called with the option " \
+    "--do-remote-ifo V1 the Virgo omega scans will be run remotely at " \
+    "Cascina. The communication between the LIGO cluster and Cascina use " \
+    "Cm messages.")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -338,6 +348,8 @@ if not opts.disable_followup and not opts.read_times:
 if not opts.disable_followup:
   qscanFgJob      = qscanJob(opts,cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
+  if opts.activate_cm_messages:
+    rQscanJob       = remoteQscanJob(opts,cp)
 
   if not opts.read_times:
     inspDataJob     = followupDataFindJob(cp,'inspiral')
@@ -348,6 +360,8 @@ if not opts.disable_followup:
     statusJob       = IFOstatus_checkJob(opts,cp)
     MCMCJob 	    = followupmcmcJob(opts,cp)
     PLOTMCMCJob     = plotmcmcJob(opts,cp)
+    SPINMCMCJob     = followupspinmcmcJob(opts,cp)
+    #PLOTSPINMCMCJob = plotspinmcmcJob(opts,cp)
     headInspJob     = followUpInspJob(cp, 'head')
     cohInspJob      = followUpInspJob(cp, 'coh')
     cohInspJobNotrig= followUpInspJob(cp, 'notrig')
@@ -355,8 +369,10 @@ if not opts.disable_followup:
     skyMapJob       = lalapps_skyMapJob(opts,cp)
     skyPlotJob      = pylal_skyPlotJob(opts,cp)
     oddsJob         = followupoddsJob(opts,cp)
+    oddsPostJob     = followupOddsPostJob(opts,cp)
     chiaCDataInspJob= followUpInspJob(cp, 'chia')
     chiaJob         = followUpChiaJob(opts,cp)
+    cohireJob       = followUpCohireJob(opts,cp)
     chiaPlotJob     = plotChiaJob(opts,cp)
     fuTriggerJob    = followupTriggerJob(opts,cp)
     checkListJob    = makeCheckListJob(opts,cp)
@@ -375,7 +391,7 @@ ifos_list = ['H1','H2','L1','G1','V1','T1']
 ############ PREPARE FILES FOR REMOTE (DEPORTED) VIRGO QSCANS #################
 ###############################################################################
 
-if opts.do_remote_ifo:
+if opts.do_remote_ifo and not opts.activate_cm_messages:
 
   depIfoIniConfig = depIfo+'config-file'
   depIfoIniWeb = depIfo+'web'
@@ -453,14 +469,14 @@ if opts.background_qscan or opts.background_hoft_qscan or opts.background_seis_q
       qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
   
     # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
-    if opts.do_remote_ifo:
+    if opts.do_remote_ifo and not opts.activate_cm_messages:
       if ifo == depIfo and len(times)!=0:
         os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
 
 ############# Preparing deported qscans and distribution node #################
 ###############################################################################
 
-if opts.do_remote_ifo:
+if opts.do_remote_ifo and not opts.activate_cm_messages:
   # Initialize qscan times text file for deported qscans
   if opts.qscan or opts.seis_qscan:
     depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
@@ -481,10 +497,14 @@ if opts.read_times:
       event_title = ifo + ' @ GPS ' + repr(time)
       dag.appendSubSection(event_title)
 
-      # Write time in file for deported qscans
+      # Prepare deported qscans
       if opts.do_remote_ifo and ifo==depIfo:
-         if opts.qscan or opts.seis_qscan:
-           depQscanTFile.write(repr(time)+'\n')
+         if opts.activate_cm_messages:
+           rQFgNode = remoteQscanFgNode(rQscanJob,time,cp,ifo,'foreground-qscan',opts,dag,'qscan')
+           rQFgNode = remoteQscanFgNode(rQscanJob,time,cp,ifo,'foreground-seismic-qscan',opts,dag,'seis_qscan')
+         else:
+           if opts.qscan or opts.seis_qscan:
+             depQscanTFile.write(repr(time)+'\n')
 
       # SETUP DATAFIND JOBS FOR HOFT QCANS
       dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,'hoft_datafind')
@@ -522,6 +542,8 @@ if not opts.disable_followup and not opts.read_times:
     # coincident trigger level. it takes many ifos as input. 
     skyNode = lalapps_skyMapNode(skyMapJob,trig,opts)
     chiaNode = followUpChiaNode(chiaJob,trig,opts,dag,cp)
+    cohireNode = followUpCohireNode(cohireJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,cohireNode,dag,dag.page,opts,cp)
  
     #Lets make a new section for this event
     event_title = 'Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue)
@@ -541,11 +563,15 @@ if not opts.disable_followup and not opts.read_times:
     for ifo in trig.ifolist_in_coinc:
       try: trig.gpsTime[ifo]
       except: continue
-    
+
       # Write time in file for deported qscans
       if opts.do_remote_ifo and ifo==depIfo:
-         if opts.qscan or opts.seis_qscan:
-           depQscanTFile.write(repr(trig.gpsTime[ifo])+'\n')
+         if opts.activate_cm_messages:
+           rQFgNode = remoteQscanFgNode(rQscanJob,trig.gpsTime[ifo],cp,ifo,'foreground-qscan',opts,dag,'qscan')
+           rQFgNode = remoteQscanFgNode(rQscanJob,trig.gpsTime[ifo],cp,ifo,'foreground-seismic-qscan',opts,dag,'seis_qscan')
+         else:
+           if opts.qscan or opts.seis_qscan:
+             depQscanTFile.write(repr(trig.gpsTime[ifo])+'\n')
  
       #Lets append a new subsection to the last section
       dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
@@ -571,7 +597,8 @@ if not opts.disable_followup and not opts.read_times:
       chiaCDataNode = followUpInspNode(chiaCDataInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='chia')
       #skyNode.append_insp_node(inspiralNode,ifo)
       skyNode.append_insp_node(cohInspNode,ifo)
-      chiaNode.append_insp_node(chiaCDataNode,ifo)      
+      chiaNode.append_insp_node(chiaCDataNode,ifo)     
+      chiaPlotNode.append_insp_node(chiaCDataNode,ifo) 
       headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind', 'head', bank)
 
 
@@ -587,11 +614,11 @@ if not opts.disable_followup and not opts.read_times:
       mcmcIdList = []
       for k in range(int(chainNumber)):
         randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
-        MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, randomseed, cp, opts, dag)
+        MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params, trig, randomseed, cp, opts, dag, ifo)
         mcmcIdList.append(MCMCNode.id)
 
       # PLOT MCMC JOBS
-      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,mcmcIdList,cp,opts,dag)
+      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,trig,mcmcIdList,cp,opts,dag,MCMCNode.ifoRef,MCMCNode.ifonames)
 
       # SETUP STATUS SUMMARY PLOT JOBS
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
@@ -614,6 +641,11 @@ if not opts.disable_followup and not opts.read_times:
         #Lets append a new subsection to the last section
         dag.appendSubSection(str(ifo)+" (non coincident ifo)")
 
+        # Write time in file for deported qscans
+        if opts.do_remote_ifo and ifo==depIfo and not opts.activate_cm_messages:
+           if opts.qscan or opts.seis_qscan:
+             depQscanTFile.write(repr(trig.gpsTime[trig.ifolist_in_coinc[0]])+'\n')
+
         # SETUP DATAFIND JOBS FOR HOFT QCANS
         dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,'hoft_datafind')
 
@@ -631,6 +663,7 @@ if not opts.disable_followup and not opts.read_times:
         cohInspNodeNotrig = followUpInspNode(cohInspJob,inspiral_process_params[ifo], trig.ifolist_in_coinc[0], trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='coh')
         chiaCDataNodeNotrig = followUpInspNode(chiaCDataInspJob,inspiral_process_params[ifo], trig.ifolist_in_coinc[0], trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='chia')
         chiaNode.append_insp_node(chiaCDataNodeNotrig,ifo)
+        chiaPlotNode.append_insp_node(chiaCDataNodeNotrig,ifo)
         skyNode.append_insp_node(cohInspNodeNotrig,ifo)
 
         # generate the snr/chisq time series for each triggered template
@@ -650,15 +683,49 @@ if not opts.disable_followup and not opts.read_times:
     # the names we need. 
     skyNode.add_node_to_dag(dag,opts,trig)
     skyPlotNode = pylal_skyPlotNode(skyPlotJob,trig,skyNode,dag,dag.page,opts)
-    oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+
+    # MCMC JOBS
+    # run multiple MCMC chains for each trigger (1 chain = 1 node)
+    chainNumber = string.strip(cp.get('followup-mcmc','chain_nb'))
+    mcmcIdList = []
+    for k in range(int(chainNumber)):
+      randomseed = [str(trig.gpsTime[trig.ifolist_in_coinc[0]] + k).split('.')[0][5:9],str(trig.gpsTime[trig.ifolist_in_coinc[0]]).split('.')[1]]
+      MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+      mcmcIdList.append(MCMCNode.id)
+
+    # PLOT MCMC JOBS
+    PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,trig,mcmcIdList,cp,opts,dag,MCMCNode.ifoRef,MCMCNode.ifonames)
+
+    # SPIN MCMC JOBS
+    chainNumber = string.strip(cp.get('followup-spin-mcmc','chain_nb'))
+    spinmcmcIdList = []
+    for k in range(int(chainNumber)):
+      SPINMCMCNode = followupspinmcmcNode(SPINMCMCJob,inspiral_process_params, trig, cp, opts, dag, k)
+      spinmcmcIdList.append(SPINMCMCNode.id)
+
+    # PLOT SPIN MCMC JOBS
+    # PLOTSPINMCMCNode = plotspinmcmcNode(PLOTSPINMCMCJob,trig,spinmcmcIdList,cp,opts,dag)
+
+    #oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+
+    # ODDS RATIO. This calculates the odds ratio vs Gaussian noise and outputs a nested sampling chain
+    # Will split across CPUs
+    oddsIdList=[]
+    Nlive_tot=int(string.strip(cp.get('followup-odds','live-points')))
+    Nlive_base=int(string.strip(cp.get('followup-odds','min-live')))
+    Nparallel=int(math.ceil(Nlive_tot/Nlive_base))
+    for k in range(Nparallel):
+        randomseed = [str(trig.gpsTime[trig.ifolist_in_coinc[0]] + k).split('.')[0][5:9],str(trig.gpsTime[trig.ifolist_in_coinc[0]]).split('.')[1]]
+        oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+        oddsIdList.append(oddsNode.id)
+
+    # plot odds output
+    oddsPostNode = followupOddsPostNode(oddsPostJob,inspiral_process_params,trig,oddsIdList, cp, opts, dag)
 
     #SETUP CHIA JOBS
-    #CHECK: chiaNode.add_node_to_dag(dag,opts,trig)
-    chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
-    #CHECK: chiaPlotNode = followUpChiaPlotNode(chiaPlotJob,trig,chiaNode,dag,page,opts)
-    #Need to create this from scratch: chia_process_params
-    #CHECK:chiaNode = followUpChiaNode(chiaJob,inspiral_process_params[maxIFO],trig, cp, opts, dag , skyNode , skyNodeNotrig )
-
+    #chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    #cohireNode = followUpCohireNode(cohireJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    #chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,cohireNode,dag,dag.page,opts,cp)
 
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
@@ -673,7 +740,7 @@ if not opts.disable_followup and not opts.read_times:
     checkListNode = makeCheckListNode(checkListJob,trig,cp,opts,dag) 
 
 # Prepare for moving the deported qscan directory (tar-gzip)
-if opts.do_remote_ifo:
+if opts.do_remote_ifo and not opts.activate_cm_messages:
   if opts.qscan or opts.seis_qscan:
     depQscanTFile.close()
   os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)

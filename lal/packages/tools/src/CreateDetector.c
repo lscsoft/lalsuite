@@ -334,8 +334,8 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $(          -6.107\times 10^{-4},     162^\circ\!\!.2835)$
 \\ \hline
      $(L_X/2,L_Y/2)$
-     & $(2000\,\textrm{m},2000\,\textrm{m})$ 
-     & $(2000\,\textrm{m},2000\,\textrm{m})$ 
+     & $(2000\,\textrm{m},2000\,\textrm{m})$
+     & $(2000\,\textrm{m},2000\,\textrm{m})$
 \\ \hline
 \hline
       index & \texttt{LAL\_VIRGO\_DETECTOR}
@@ -404,8 +404,8 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $( 0,           334^\circ\!\!.0569)$
 \\ \hline
      $(L_X/2,L_Y/2)$
-     & $(1500\,\textrm{m},1500\,\textrm{m})$ 
-     & $(300\,\textrm{m},300\,\textrm{m})$ 
+     & $(1500\,\textrm{m},1500\,\textrm{m})$
+     & $(300\,\textrm{m},300\,\textrm{m})$
 \\ \hline
 \hline
       index & \texttt{LAL\_TAMA\_300\_DETECTOR}
@@ -474,8 +474,8 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $(0,          90^\circ)$
 \\ \hline
      $(L_X/2,L_Y/2)$
-     & $(150\,\textrm{m},150\,\textrm{m})$ 
-     & $(20\,\textrm{m},20\,\textrm{m})$ 
+     & $(150\,\textrm{m},150\,\textrm{m})$
+     & $(20\,\textrm{m},20\,\textrm{m})$
 \\ \hline
 
     \end{tabular}
@@ -498,7 +498,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 
 /*  { name,
       vertexLatitiudeRadians,
-      vertexLongitudeRadians, 
+      vertexLongitudeRadians,
       vertexElevation,
       xArmAltitudeRadians, xArmAzimuthRadians,
       yArmAltitudeRadians, yArmAzimuthRadians }   */
@@ -695,7 +695,7 @@ void getCartesianComponents( REAL4 u[3],
   printf("uEast = %g\n",uEast);
   printf("uUp = %g\n",sinAlt);
   printf("uRho = %g\n",uRho);
-#endif  
+#endif
 
   u[0] = cosLon * uRho - sinLon * uEast;
   u[1] = sinLon * uRho + cosLon * uEast;
@@ -706,7 +706,7 @@ void getCartesianComponents( REAL4 u[3],
 
 
 /* <lalVerbatim file="CreateDetectorCP"> */
-LALDetector * XLALCreateDetector( LALDetector *detector, 
+LALDetector * XLALCreateDetector( LALDetector *detector,
     const LALFrDetector *frDetector, LALDetectorType type )
 /* </lalVerbatim> */
 {

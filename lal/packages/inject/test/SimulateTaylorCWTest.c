@@ -445,7 +445,7 @@ main(int argc, char **argv)
     memset( &output, 0, sizeof(REAL4TimeSeries) );
     I8ToLIGOTimeGPS( &(output.epoch), epochOut );
     output.deltaT = dt;
-    LALSnprintf( output.name, LALNameLength, "Taylor CW waveform" );
+    snprintf( output.name, LALNameLength, "Taylor CW waveform" );
     SUB( LALSCreateVector( &stat, &(output.data), npt ), &stat );
     memset( output.data->data, 0, npt*sizeof(REAL4) );
     tStop = epochOut + 1000000000LL*(INT8)( dt*npt + 1.0 );
@@ -699,8 +699,8 @@ main(int argc, char **argv)
       }
       SUB( LALGenerateTaylorCW( &stat, &waveform, &params ), &stat );
       if ( params.dfdt > 2.0 ) {
-	/* LALSnprintf() can't seem to print floating-point formats.
-        LALSnprintf( message, MSGLEN,
+	/* snprintf() can't seem to print floating-point formats.
+        snprintf( message, MSGLEN,
                      "Waveform sampling interval is too large:\n"
                      "\tmaximum df*dt = %f", params.dfdt );
 	*/

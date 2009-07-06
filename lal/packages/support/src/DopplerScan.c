@@ -46,6 +46,8 @@
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -300,10 +302,9 @@ InitDopplerSkyScan( LALStatus *status,
 
     gridpoint.Alpha = skyScan->skyGrid->Alpha;
     gridpoint.Delta = skyScan->skyGrid->Delta;
+
+    INIT_MEM ( gridpoint.fkdot );
     gridpoint.fkdot[0] = init->Freq;
-    gridpoint.fkdot[1] = 0;
-    gridpoint.fkdot[2] = 0;
-    gridpoint.fkdot[3] = 0;
 
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
@@ -1589,7 +1590,7 @@ getGridSpacings( LALStatus *status,
 void
 getMCDopplerCube (LALStatus *status,
 		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
-		  PulsarDopplerParams signal, 	/**< signal-position: approximate cube-center */
+		  PulsarDopplerParams lal_signal, 	/**< signal-position: approximate cube-center */
 		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */
 		  const DopplerSkyScanInit *params)/**< search+metric parameters */
 {
@@ -1606,7 +1607,7 @@ getMCDopplerCube (LALStatus *status,
   ASSERT ( cube != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
 
   /* get the grid-spacings at the signal-location */
-  TRY ( getGridSpacings(status->statusPtr, &spacings, signal, params), status);
+  TRY ( getGridSpacings(status->statusPtr, &spacings, lal_signal, params), status);
 
   dAlpha = spacings.Alpha;
   dDelta = spacings.Delta;
@@ -1640,13 +1641,13 @@ getMCDopplerCube (LALStatus *status,
 
       /* setup metric parameters */
       metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-      metricpar.position.longitude = signal.Alpha;
-      metricpar.position.latitude = signal.Delta;
+      metricpar.position.longitude = lal_signal.Alpha;
+      metricpar.position.latitude = lal_signal.Delta;
       TRY ( LALSCreateVector (status->statusPtr, &(metricpar.spindown), 1), status);
-      metricpar.spindown->data[0] = signal.fkdot[1] / signal.fkdot[0];
+      metricpar.spindown->data[0] = lal_signal.fkdot[1] / lal_signal.fkdot[0];
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      metricpar.maxFreq = signal.fkdot[0];
+      metricpar.maxFreq = lal_signal.fkdot[0];
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;
       metricpar.metricType = params->metricType;
@@ -1658,7 +1659,7 @@ getMCDopplerCube (LALStatus *status,
       TRY ( LALDDestroyVector(status->statusPtr, &metric), status);
 
       /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
-      DopplerFreqBand = 2.0 * signal.fkdot[0] * 1.0e-4 * ellipse.smajor;
+      DopplerFreqBand = 2.0 * lal_signal.fkdot[0] * 1.0e-4 * ellipse.smajor;
 
       LogPrintf (LOG_DEBUG,
 		 "Using projected sky-metric: canonical FreqBand would be %g,"
@@ -1669,10 +1670,10 @@ getMCDopplerCube (LALStatus *status,
     } /* if project metric */
 
   /* set center-point to signal-location */
-  Alpha = signal.Alpha - 0.5 * AlphaBand;
-  Delta = signal.Delta - 0.5 * DeltaBand;
-  Freq  = signal.fkdot[0] - 0.5 * FreqBand;
-  f1dot = signal.fkdot[1] - 0.5 * f1dotBand;
+  Alpha = lal_signal.Alpha - 0.5 * AlphaBand;
+  Delta = lal_signal.Delta - 0.5 * DeltaBand;
+  Freq  = lal_signal.fkdot[0] - 0.5 * FreqBand;
+  f1dot = lal_signal.fkdot[1] - 0.5 * f1dotBand;
 
   /* randomize center-point within one grid-cell *
    * (we assume seed has been set elsewhere) */
@@ -1747,13 +1748,17 @@ getMetricEllipse(LALStatus *status,
 int
 fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params )
 {
+  UINT4 s;
   if ( !fp || !params )
     return -1;
 
-  fprintf ( fp, " sky = {%f, %f}, fkdot = { %f, %g, %g, %g }\n",
-	    params->Alpha, params->Delta,
-	    params->fkdot[0], params->fkdot[1], params->fkdot[2], params->fkdot[3]
-	    );
+  fprintf ( fp, " sky = {%f, %f}, ", params->Alpha, params->Delta );
+
+  fprintf ( fp, "fkdot = { %f ", params->fkdot[0] );
+  for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
+    fprintf ( fp, ", %g", params->fkdot[s] );
+
+  fprintf ( fp, "}\n");
 
   return 0;
 } /* printfDopplerParams() */

@@ -107,7 +107,7 @@ LALDirichlet(LALStatus*                 status,
   /* check that pointer to input parameters is not null */
   ASSERT(parameters != NULL,status,
          DIRICHLETH_ENULLPIN,DIRICHLETH_MSGENULLPIN);
-        
+
   /* check that Dirichlet parameter N is > 0 */
   ASSERT(parameters->n > 0,status,
          DIRICHLETH_ENVALUE,DIRICHLETH_MSGENVALUE);

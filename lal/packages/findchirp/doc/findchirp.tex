@@ -72,7 +72,7 @@ The raw output of the interferometer is the error signal from the length
 sensing and control servo, LSC-AS\_Q.  Although this signal is a dimensionless
 quantity, we say that it has units of ``counts'' and we denote it by $v(t)$.
 The calibrated detector output is related in the frequency domain to the raw
-detector output by the detector response function according to 
+detector output by the detector response function according to
 \begin{equation}
 \tilde{s}(f) = R(f;t) \tilde{v}(f)
 \end{equation}
@@ -119,7 +119,7 @@ may approximate the Fourier transform of this band limited signal $v(t_j)$ by
 \end{equation}
 where $-(N/2 + 1) \le k \le N/2$ and the symbol $\rightarrow$ means
 equal to under discretization.  Notice that the approximation to the
-Fourier transform is periodic in $k$ with period $N$ and so 
+Fourier transform is periodic in $k$ with period $N$ and so
 \begin{equation}
 \tilde{v}_{-k} = \tilde{v}_{N-k}\quad k = 1, \ldots, N - 1.
 \end{equation}
@@ -128,7 +128,7 @@ to $k=0$, positive frequencies $0 < f < f_\mathrm{Ny}$ to values in the range
 $0 < k < N/2$ and negative frequencies $-f_\mathrm{Ny} < f < 0$ correspond
 to values in the range $N/2 < k < N$. The value $k = N/2$ approximates the
 value of the Fourier transform at both $-f_\mathrm{Ny}$ and $f_\mathrm{Ny}$;
-both these values are equal due to the periodicity of the discrete transform 
+both these values are equal due to the periodicity of the discrete transform
 defined by
 \begin{equation}
 \tilde{v}_k = \sum_{j=0}^{N-1} v_j e^{-i 2 \pi j k / N}.
@@ -150,24 +150,24 @@ in the fft package.
 \subsection{Power Spectral Densities}
 \label{ss:psdconv}
 
-The one sided power spectral density $S_n(|f|)$ of $n(t)$ to be 
+The one sided power spectral density $S_n(|f|)$ of $n(t)$ to be
 \begin{equation}
-\left\langle\tilde{n}(f) \tilde{n}^\ast(f')\right\rangle = 
+\left\langle\tilde{n}(f) \tilde{n}^\ast(f')\right\rangle =
 \frac{1}{2}S_n(|f|)\delta(f-f')
 \end{equation}
 where angle brackets denote an average over different realizations of the noise.
 If $n(t)$ has units of $U$ then $\tilde{n}(f)$ has units of
 $(\mathrm{time}) \times U$. The units $\delta(f-f')$ are $(\mathrm{time})$,
-since 
+since
 \begin{equation}
 \int_{-\infty}^\infty \delta(f)\,df = 1
 \end{equation}
 is a dimensionless quantity and $df$ has units $(\mathrm{time})^{-1}$.
 Therefore we see that $S_n(|f|)$ has units of $(\mathrm{time})\times U^2$.
-If we replace $\tilde{n}(f_k)$ with the discretely sampled quantities 
+If we replace $\tilde{n}(f_k)$ with the discretely sampled quantities
 $\tilde{n}_k = \tilde{n}(f_k)$, we obtain
 \begin{equation}
-\left\langle\tilde{n}_k \tilde{n}_{k'}^\ast\right\rangle = 
+\left\langle\tilde{n}_k \tilde{n}_{k'}^\ast\right\rangle =
 \frac{N}{2\Delta t}\ospsd\delta_{kk'}
 \label{eq:ospsddisc}
 \end{equation}
@@ -177,7 +177,7 @@ obtained by discretization of the continuous $\delta$-function:
 \delta(f-f') \rightarrow N\Delta t\delta_{kk'}
 \end{equation}
 Equation (\ref{eq:ospsddisc}) defines \ospsd in terms of the discrete
-frequency domain quantities. 
+frequency domain quantities.
 
 \newpage\input{FindChirpDatatypesH}
 \newpage\input{FindChirpH}

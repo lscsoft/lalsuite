@@ -93,6 +93,10 @@ static void print_usage(char *program)
       "  --gps-end-time   end_time    end time of the job\n"\
       "  --enable-all-ifo             generate bank with templates for all ifos\n"\
       "  --disable-all-ifo            only generate bank for triggers in coinc\n"\
+      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
+      "                     [ snrsq | effective_snrsq ]\n"\
+      " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
+      " [--cluster-time]      time     cluster triggers with time ms window\n"\
       "\n");
 }
 
@@ -106,12 +110,19 @@ int main( int argc, char *argv[] )
   INT4 numTriggers = 0;
   INT4 numCoincs = 0;
   INT4 numTmplts = 0;
- 
+  CoincInspiralStatistic coincstat = no_stat;
+  REAL4 statThreshold = 0;
+  INT8 cluster_dt = 0;
+  int  numSlides = 0;
+  int  numClusteredEvents = 0;
+  CoincInspiralStatParams    bittenLParams;
   INT4        startTime = -1;
   LIGOTimeGPS startTimeGPS = {0,0};
   INT4        endTime = -1;
   LIGOTimeGPS endTimeGPS = {0,0};
-
+  INT8        startTimeNS = 0;
+  INT8        endTimeNS = 0;
+  INT8        tmpCoincEndTime = 0;
   CHAR  ifos[LIGOMETA_IFOS_MAX];
 
   CHAR  comment[LIGOMETA_COMMENT_MAX];
@@ -124,6 +135,9 @@ int main( int argc, char *argv[] )
   SnglInspiralTable    *newEventList = NULL;
 
   CoincInspiralTable   *coincHead = NULL;
+  CoincInspiralTable   *coincEventList = NULL;
+  CoincInspiralTable   *thisFullCoinc = NULL;
+  CoincInspiralTable   *prevFullCoinc = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
@@ -157,6 +171,11 @@ int main( int argc, char *argv[] )
     {"gps-start-time",         required_argument,     0,                 's'},
     {"gps-end-time",           required_argument,     0,                 't'},
     {"ifos",                   required_argument,     0,                 'i'},
+    {"coinc-stat",              required_argument,      0,              'C'},
+    {"stat-threshold",          required_argument,      0,              'E'},
+    {"cluster-time",            required_argument,      0,              'T'},
+    {"num-slides",              required_argument,      0,              'N'},
+    {"eff-snr-denom-fac",    required_argument,      0,              'A'},
     {0, 0, 0, 0}
   };
   int c;
@@ -199,6 +218,9 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
+  memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
+  /* default value from traditional effective snr formula */
+  bittenLParams.eff_snr_denom_fac = 250.0; 
 
   /* parse the arguments */
   while ( 1 )
@@ -209,7 +231,7 @@ int main( int argc, char *argv[] )
     long int gpstime;
 
     c = getopt_long_only( argc, argv, 
-        "hi:s:t:x:z:VZ:", long_options, 
+        "hi:s:t:x:z:C:E:T:N:A:VZ:", long_options, 
         &option_index );
 
     /* detect the end of the options */
@@ -317,6 +339,79 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'C':
+        /* choose the coinc statistic */
+        {        
+          if ( ! strcmp( "snrsq", optarg ) )
+          {
+            coincstat = snrsq;
+          }
+          else if ( ! strcmp( "effective_snrsq", optarg) )
+          {
+            coincstat = effective_snrsq;
+          }
+          else
+          {
+            fprintf( stderr, "invalid argument to  --%s:\n"
+                "unknown coinc statistic:\n "
+                "%s (must be one of:\n"
+                "snrsq, effective_snrsq\n",
+                long_options[option_index].name, optarg);
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
+      case 'E':
+        /* store the stat threshold for a cut */
+        statThreshold = atof( optarg );
+        if ( statThreshold <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "statThreshold must be positive: (%f specified)\n",
+              long_options[option_index].name, statThreshold );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%f", statThreshold );
+        break;
+
+
+      case 'T':
+        /* cluster time is specified on command line in ms */
+        cluster_dt = (INT8) atoi( optarg );
+        if ( cluster_dt <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "custer window must be > 0: "
+              "(%ld specified)\n",
+              long_options[option_index].name, cluster_dt );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", cluster_dt );
+        /* convert cluster time from ms to ns */
+        cluster_dt *= 1000000LL;
+        break;
+
+      case 'N':
+        /* store the number of slides */
+        numSlides = atoi( optarg );
+        if ( numSlides < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "numSlides >= 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, numSlides );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSlides );
+        break;
+
+      case 'A':
+        bittenLParams.eff_snr_denom_fac = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
       case 'Z': 
         /* create storage for the usertag */
         optarg_len = strlen(optarg) + 1;
@@ -404,6 +499,9 @@ int main( int argc, char *argv[] )
    *
    */
 
+  startTimeNS = XLALGPSToINT8NS( &startTimeGPS );
+  endTimeNS = XLALGPSToINT8NS( &endTimeGPS );
+
   if ( startTime < 0 )
   {
     fprintf( stderr, "Error: --gps-start-time must be specified\n" );
@@ -420,6 +518,14 @@ int main( int argc, char *argv[] )
   {
     fprintf(stderr,"You must specify a list of ifos with --ifos. Exiting.\n");
     exit(1);
+  }
+
+  /* check that if clustering is being done that we have all the options */
+  if ( cluster_dt && (coincstat == no_stat) )
+  {
+    fprintf( stderr, 
+        "--coinc-stat must be specified if --cluster-time is given\n" );
+    exit( 1 );
   }
 
   /*
@@ -482,15 +588,92 @@ int main( int argc, char *argv[] )
           numTriggers );
     }
 
+  /*
+   *
+   * sort the inspiral events by time
+   *
+   */
+
+
+    if ( coincHead && cluster_dt )
+    {
+      if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
+      coincHead = XLALSortCoincInspiral( coincHead, 
+		          *XLALCompareCoincInspiralByTime );
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+
+      if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
+      
+      if ( !numSlides )
+      {
+	numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
+		      cluster_dt, coincstat , &bittenLParams);
+      }
+      else
+      { 
+	int slide = 0;
+	int numClusteredSlide = 0;
+	CoincInspiralTable *slideCoinc = NULL;
+	CoincInspiralTable *slideClust = NULL;
+	
+	if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+	
+	for( slide = -numSlides; slide < (numSlides + 1); slide++)
+	{
+	  if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+	  /* extract the slide */
+	  slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
+	  /* run clustering */
+	  numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
+          	     cluster_dt, coincstat, &bittenLParams);
+	  
+	  if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+				 numClusteredSlide );
+	  numClusteredEvents += numClusteredSlide;
+	  
+	  /* add clustered triggers */
+	  if( slideCoinc )
+	  {
+	    if( slideClust )
+	    {
+	      thisCoinc = thisCoinc->next = slideCoinc;
+	    }
+	    else
+	    {
+	      slideClust = thisCoinc = slideCoinc;
+	    }
+	    /* scroll to end of list */
+	    for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
+	  }
+	}
+	
+	/* free coincHead -- although we expect it to be empty */
+	while ( coincHead )
+	{
+	  thisCoinc = coincHead;
+	  coincHead = coincHead->next;
+	  XLALFreeCoincInspiral( &thisCoinc );
+	}
+	
+	/* move events to coincHead */
+	coincHead = slideClust;
+	slideClust = NULL;
+      }
+      
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+      if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+			     numClusteredEvents );
+    }
+    
     /*
      *
      *  Create the coherent bank
      *
      */
-
+    
     if ( allIFO )
     {
-      numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
+	numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
     }
     else
     {
@@ -521,6 +704,8 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
   searchsumm.searchSummaryTable->nevents = numTmplts;
 
+  startTimeNS = XLALGPSToINT8NS( &startTimeGPS );
+  endTimeNS = XLALGPSToINT8NS( &endTimeGPS );
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
@@ -631,7 +816,6 @@ int main( int argc, char *argv[] )
     LALFree( thisSearchSumm );
   }
 
-
   while ( inspiralEventList )
   {
     currentTrigger = inspiralEventList;
@@ -639,6 +823,14 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
 
+  /* while ( coincEventList )
+  {       
+    thisCoinc = coincEventList;
+    coincEventList = coincEventList->next;
+    LALFree( thisCoinc );
+  }       
+  */
+   
   while ( newEventList )
   {
     currentTrigger = newEventList;
@@ -661,3 +853,4 @@ int main( int argc, char *argv[] )
 
   exit( 0 );
 }
+

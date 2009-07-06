@@ -26,16 +26,16 @@
  *
  * \section{Header \texttt{Random.h}}
  * \label{s:Random.h}
- * 
+ *
  * Generates random numbers.
- * 
+ *
  * \subsection*{Synopsis}
  * \begin{verbatim}
  * #include <lal/Random.h>
  * \end{verbatim}
- * 
+ *
  * \noindent This header covers the routines for generating random numbers.
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _RANDOM_H
@@ -66,7 +66,7 @@ NRCSID (RANDOMH, "$Id$");
 #define RANDOMH_ESEGZ 16
 #define RANDOMH_ENUMZ 32
 #define RANDOMH_EALOC 64
-#define RANDOMH_EINIT 128 
+#define RANDOMH_EINIT 128
 #define RANDOMH_EZERO 256
 #define RANDOMH_ESEED 512
 #define RANDOMH_MSGENULL "Null pointer"
@@ -82,15 +82,15 @@ NRCSID (RANDOMH, "$Id$");
 /* </lalErrTable> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \subsection*{Structures}
  * \idx[Type]{RandomParams}
  * \idx[Type]{MTRandomParams}
- * 
+ *
  * \begin{verbatim}
  * typedef struct tagRandomParams RandomParams;
  * \end{verbatim}
- * 
+ *
  * This structure contains the parameters necessary for generating the current
  * sequence of random numbers (based on the initial seed).  The contents should
  * not be manually adjusted.
@@ -98,11 +98,11 @@ NRCSID (RANDOMH, "$Id$");
  * \begin{verbatim}
  * typedef struct tagMTRandomParams MTRandomParams;
  * \end{verbatim}
- * 
+ *
  * This structure contains the parameters necessary for generating the current
  * sequence of Mersenne twiser random numbers (based on the initial seed).  The
  * contents should not be manually adjusted.
- * 
+ *
  **** </lalLaTeX> */
 
 typedef struct
@@ -117,7 +117,7 @@ RandomParams;
 typedef struct tagMTRandomParams MTRandomParams;
 
 /**** <lalLaTeX>
- * 
+ *
  * \newpage\input{RandomC}
  * \newpage\input{RandomTestC}
  * \newpage\input{MersenneRandomC}

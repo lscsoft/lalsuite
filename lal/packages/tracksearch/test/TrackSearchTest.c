@@ -29,8 +29,6 @@
 
 NRCSID (TESTSTSC,"$Id$");
 
-static void OutputInvertedMap(TimeFreqRep, TrackSearchParams);
-
 INT4 lalDebugLevel=0;
 int main( void )
 {
@@ -62,17 +60,17 @@ int main( void )
   for(i=0;i<params.height;i++)
     in.map[i] = LALMalloc(params.width*sizeof(REAL4));
   /* Read the image */
-  for(j=0;j<params.width;j++){  
-    for(i=0;i<params.height;i++){ 
+  for(j=0;j<params.width;j++){
+    for(i=0;i<params.height;i++){
       fscanf(fp,"%c",&dummy);
       /* bright parts of the image should have higer values
 	 hence the inversion */
       *(in.map[i] + j) = maxVal - dummy;
     }
   }
-  /* 
+  /*
    * Use information about image to setup TF Rep tCol and fRow
-   * values which must be 
+   * values which must be
    * fRow/2+1 == width
    * tCol == height
    */
@@ -102,8 +100,8 @@ int main( void )
 	*(in.map[out.curves[i].row[j]] + out.curves[i].col[j]) = cnt;
       }
     }
-  }    
-  
+  }
+
   /* Free the space allocated for output structures */
   for(i=0;i<out.numberOfCurves;i++){
     LALFree(out.curves[i].row);

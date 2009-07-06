@@ -14,23 +14,23 @@ define(`STYPE',`format(`%sArraySequence',TYPE)')
 define(`FUNC',`format(`LAL%sCreateArraySequence',TYPECODE)')
 
 /* <lalVerbatim file="ArraySequenceFactoriesD"> */
-void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in ) 
+void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
 { /* </lalVerbatim> */
   UINT4 i;
 
-  /* 
+  /*
    * Initialize status
    */
-  INITSTATUS( status, "FUNC", ARRAYSEQUENCEFACTORIESC );	
+  INITSTATUS( status, "FUNC", ARRAYSEQUENCEFACTORIESC );
   ATTATCHSTATUSPTR( status );
 
   /* Check input structure: report if NULL */
 
   ASSERT (in != NULL, status, SEQFACTORIESH_EINPTR, SEQFACTORIESH_MSGEINPTR);
   ASSERT (in->dimLength, status,
-          SEQFACTORIESH_EINPTR, SEQFACTORIESH_MSGEINPTR); 
-      
-  /* Check sequence length: report error if 0 
+          SEQFACTORIESH_EINPTR, SEQFACTORIESH_MSGEINPTR);
+
+  /* Check sequence length: report error if 0
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
@@ -38,7 +38,7 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
   ASSERT (in->length > 0, status,
           SEQFACTORIESH_ESLENGTH, SEQFACTORIESH_MSGESLENGTH);
 
-  /* Check dimension lengths: report error any are 0 
+  /* Check dimension lengths: report error any are 0
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
@@ -46,13 +46,13 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
   for ( i = 0; i < in->dimLength->length; i++ )
   {
     ASSERT (in->dimLength->data[i] > 0, status,
-	    SEQFACTORIESH_EALENGTH, SEQFACTORIESH_MSGEALENGTH); 
+	    SEQFACTORIESH_EALENGTH, SEQFACTORIESH_MSGEALENGTH);
   }
 #endif
 
-  /* 
+  /*
    * Check return structure: If return pointer does not point to a
-   *    valid pointer then report an error 
+   *    valid pointer then report an error
    */
 
   ASSERT (aseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR);
@@ -73,7 +73,7 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
   (*aseq)->dimLength = NULL;	/* NULL dimLength until allocated */
   (*aseq)->data   = NULL;	/* NULL data until allocated */
 
-  /* 
+  /*
    * Allocate dimLength
    */
   {
@@ -88,8 +88,8 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
 	= in->dimLength->data[i];
   }
 
-  /* 
-   * Allocate storage 
+  /*
+   * Allocate storage
    */
   {
     size_t tlength;

@@ -508,6 +508,7 @@ so that
 \end{equation}
 The definition of the power spectral density is such that
 \begin{align}
+\label{eqn9}
 \mean{s_{j}^{2}}
    & = \frac{1}{N^{2} \Delta t^{2}} \sum_{k = 0}^{N - 1} \sum_{k' = 0}^{N -
    1} \mean{\tilde{s}_{k} \conj{\tilde{s}}_{k'}} \ee^{2 \pi \aye j (k - k')
@@ -581,6 +582,17 @@ samples were averaged in each bin so the floor, which is
 with what is expected.}
 \label{fig:sksk}
 \end{figure}
+
+Using \eqref{eqn4} in place of the two-point spectral correlation function
+in \eqref{eqn9} allows us to compute the variance of the time series that
+results from inverse transforming the whitened frequency-domain data.  This
+is
+\begin{equation}
+\mean{s_{j}^{2}}
+    = \frac{1}{\Delta t^{2} \sigma_{w}^{2}} w_{j}^{2}.
+\end{equation}
+One finds the shape of the original window function preserved in the
+whitened time series.
 
 The power spectral density is estimated using the median power at each
 frequency for a number of overlapping segments.  The use of the median

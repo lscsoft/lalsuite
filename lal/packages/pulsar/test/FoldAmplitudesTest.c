@@ -90,7 +90,7 @@ NRCSID( FOLDAMPLITUDESTESTC, "$Id$" );
 
 int lalDebugLevel = LALMSGLVL3;
 
-/* See the section (currently 7.4.1) of the LSD 
+/* See the section (currently 7.4.1) of the LSD
  * on "Status-reporting objects" for list of predefined debug levels */
 
 int main( void )
@@ -241,11 +241,11 @@ int main( void )
     binRange = param.binMax - param.binMin;
 
     for (j = -8; j <= 8; ++j) {
-  	
+
   	for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   	{
 		input.amplitudeVec->data[i] = 1.0;
-                /* Set the phase:  Add in a multiple of twoPi to check that values bin correctly */		
+                /* Set the phase:  Add in a multiple of twoPi to check that values bin correctly */
 		input.phaseVec->data[i] = j*(binRange/8.0) + j*j*j*binRange + .001;
   	}
 
@@ -294,7 +294,7 @@ int main( void )
 		    }
 		}
 	}
-	
+
     }  /* end for (j = -8; j < 8; ++j) */
 
   } /* end for (k = 0; k < 1; ++k) */
@@ -358,7 +358,7 @@ int main( void )
 		printf ("In bin %i expected 1 but instead got %g in this bin. \n",i,output->data[i]);
 		gotError = 1;
 	}
-	
+
   }
 
   printf("\n");
@@ -420,7 +420,7 @@ int main( void )
 		printf ("In bin %i expected %g but instead got %g in this bin. \n",i,sin(twoPi*i/10.0 + .0001),output->data[i]);
 		gotError = 1;
 	}
-	
+
   }
 
   printf("\n");
@@ -443,7 +443,7 @@ int main( void )
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
 	input.amplitudeVec->data[i] = sin(2.0*twoPi*i/5.0 + .001);
-	input.phaseVec->data[i] = i/5.0 + .001;	
+	input.phaseVec->data[i] = i/5.0 + .001;
   }
 
   /* Initialize the output vector */
@@ -481,7 +481,7 @@ int main( void )
 		printf ("In bin %i expected %g but instead got %g in this bin. \n",i,2.0*sin(2.0*twoPi*i/5.0 + .001),output->data[i]);
 		gotError = 1;
 	}
-	
+
   }
 
   printf("\n");
@@ -499,7 +499,7 @@ int main( void )
   param.binMin = 0.0;
   param.binMax = twoPi;
 
-  printf("\n");  	
+  printf("\n");
   printf("Test 5 check by hand: numBins, binMax = %i, %g \n",param.numBins,param.binMax);
 
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
@@ -527,7 +527,7 @@ int main( void )
 
   LALFoldAmplitudes( &status, output, &input, &param );
 
-  if ( status.statusCode ) 
+  if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
 	    status.statusCode, status.statusDescription );
@@ -563,6 +563,6 @@ int main( void )
   printf("\n");
   printf("PASS: All tests \n");
   printf("\n");
-   	
+
   return FOLDAMPLITUDESTESTC_ENOM;
 }

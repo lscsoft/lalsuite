@@ -37,24 +37,24 @@ VTYPE * XFUNC ( UINT4 length )
 }
 
 /* <lalVerbatim file="VectorFactoriesD"> */
-void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length ) 
+void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status structure
    */
 
-  INITSTATUS( status, "FUNC", VECTORFACTORIESC );	
-      
-  /* Check sequence length: report error if 0 
+  INITSTATUS( status, "FUNC", VECTORFACTORIESC );
+
+  /* Check sequence length: report error if 0
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
 
   ASSERT( length > 0, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
 
-  /* 
+  /*
    * Check return structure: If return pointer does not point to a
-   *    valid pointer then report an error 
+   *    valid pointer then report an error
    */
 
   ASSERT( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );

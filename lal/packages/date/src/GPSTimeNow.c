@@ -97,11 +97,11 @@ LALGPSTimeNow (
   ATTATCHSTATUSPTR( status );
   ASSERT( gpstime, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT );
   ASSERT( accuracy, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT );
-  
+
   ASSERT( XLALGPSTimeNow(gpstime), status, DATEH_EDATETOOEARLY, DATEH_MSGEDATETOOEARLY );
 
   XLALPrintDeprecationWarning("LALGPSTimeNow", "XLALGPSTimeNow");
-  
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }

@@ -1,6 +1,6 @@
 % -----------------------------------------------------
 %  hough.tex
-%  
+%
 %  Documentation of the Hough transform code
 %
 %   Authors: Alicia M. Sintes, Maria Alessandra Papa, et...
@@ -15,11 +15,11 @@
 
 Alicia M. Sintes, M. Alessandra Papa., Krishnan, B.\\
 
-The  hierarchical Hough transform search strategy is 
-an efficient and highly parallel computer algorithm 
+The  hierarchical Hough transform search strategy is
+an efficient and highly parallel computer algorithm
 \cite{Schutz:1998} \cite{Papa:2001}.
 This package provides the necessary routines for the Hough incoherent search
-(the second stage of the search) 
+(the second stage of the search)
   to track the frequency evolution of peaks in the spectra, which
   is known in advance for some choice of the source parameters.\\
 
@@ -32,37 +32,37 @@ from the demodulated FT.
 The demodulation  has been performed with respect to a certain sky
 location and certain spin-down parameters,
 in such a way  that, if a source was located in
-the center of the patch and having the same spin-down parameters 
+the center of the patch and having the same spin-down parameters
 for which it has been
-demodulated, we will observe a set of points forming a horizontal 
+demodulated, we will observe a set of points forming a horizontal
 line at the intrinsic frequency  of the source $f_0$.
  Due to the mismatch between the source  parameters
  and the demodulated parameters we will observe a certain pattern in the time
-  frequency diagram following the 
+  frequency diagram following the
    {\sl Hough transform master equation}.
 \item[ Output:] Histograms in the parameter space:
   for each $f_0$, residual spin-down and refined sky location.
 \end{description}
 The principal is the following: for every point in the {\it  time-frequency}
- plane, we enhance the number count in the 
+ plane, we enhance the number count in the
 histogram in the pixels that are {\it consistent}. At the end of this procedure,
 significant clustering
  in a pixel in parameter space indicates
- likelihood of the data containing a signal 
+ likelihood of the data containing a signal
 having the parameters
 of that pixel.
 \\
 
 The package  is organized under the headers
-\verb@LUT.h@ \verb@PHMD.h@ \verb@HoughMap.h@  \verb@LALHough.h@ and 
-the modules   \verb@PatchGrid.c@,  \verb@Stereographic.c@,  
-\verb@ParamPLUT.c@, \verb@NDParamPLUT.c@,\verb@ConstructPLUT.c@, 
+\verb@LUT.h@ \verb@PHMD.h@ \verb@HoughMap.h@  \verb@LALHough.h@ and
+the modules   \verb@PatchGrid.c@,  \verb@Stereographic.c@,
+\verb@ParamPLUT.c@, \verb@NDParamPLUT.c@,\verb@ConstructPLUT.c@,
  \verb@Peak2PHMD.c@,  \verb@HoughMap.c@,  and \verb@DriveHough.c@.
 
 \subsection*{Acknowledgment}
 The authors thank S. Frasca and  C. Palomba for helpful discussions,
 F. Massaioli for helping in the initial stages of code
-development, and B. Allen and J. Creighton for their valuable 
+development, and B. Allen and J. Creighton for their valuable
 implementation advice.
 
 \newpage\input{LUTH}
@@ -76,21 +76,21 @@ implementation advice.
 \newpage\begin{thebibliography}{0}
 
 \bibitem{Schutz:1998}
- B.~F. Schutz, M.~A. Papa, 
-{\it End-to-end algorithm for hierarchical area searches for 
- long-duration GW sources for GEO 600} in 
+ B.~F. Schutz, M.~A. Papa,
+{\it End-to-end algorithm for hierarchical area searches for
+ long-duration GW sources for GEO 600} in
   {\it \lq\lq Gravitational waves and experimental gravity"}.
  Edts. J. Tran Thanh Van, J. Dumarchez, S. Reynaud, C. Salomon, S. Thorsett,
 J.Y. Vinet; World Publishers,  (2000), Hanoi-Vietnam. gr-qc/9905018
- 
- 
+
+
  \bibitem{Papa:2001}
- M.~A. Papa, B.~F. Schutz, and A.~M. Sintes, 
+ M.~A. Papa, B.~F. Schutz, and A.~M. Sintes,
 {\it Searching for continuous gravitational wave signals. The hierarchical Hough
-transform algorithm} in 
+transform algorithm} in
 {\it \lq\lq Gravitational waves: A challenge to theoretical astrophysics''}.
-Edts. V. Ferrari, J.C. Miller, L. Rezzolla, 
-ICTP Lecture Notes Series, Volume III  (ISBN 92-95003-05-5), p. 431-442 (2001), 
+Edts. V. Ferrari, J.C. Miller, L. Rezzolla,
+ICTP Lecture Notes Series, Volume III  (ISBN 92-95003-05-5), p. 431-442 (2001),
 Italy. AEI-2000-077, gr-qc/0011034
 
  %A.~M. Sintes, B.~F. Schutz, Phys. Rev. D\textbf{58}, 122003 (1998)

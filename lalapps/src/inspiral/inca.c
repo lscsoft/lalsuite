@@ -759,7 +759,7 @@ int main( int argc, char *argv[] )
   }
 
   /* calculate the slide time in nanoseconds */
-  LAL_CALL( LALGPStoINT8( &status, &slideDataNS, &slideData ), &status );
+  slideDataNS = XLALGPSToINT8NS( &slideData );
 
 
   /*
@@ -899,17 +899,13 @@ int main( int argc, char *argv[] )
                           "Doing a time slide of %d sec %d nanosec on IFOB\n",
                           slideData.gpsSeconds, slideData.gpsNanoSeconds );
 
-                      LAL_CALL( LALGPStoINT8( &status, &startNS, 
-                            &(thisSummValue->start_time) ), &status );
+                      startNS = XLALGPSToINT8NS( &(thisSummValue->start_time) );
                       startNS += slideDataNS;
-                      LAL_CALL( LALINT8toGPS( &status, 
-                            &(thisSummValue->start_time), &startNS ), &status );
+                      XLALINT8NSToGPS( &(thisSummValue->start_time), startNS );
 
-                      LAL_CALL( LALGPStoINT8( &status, &endNS, 
-                            &(thisSummValue->end_time) ), &status );
+                      endNS = XLALGPSToINT8NS( &(thisSummValue->end_time) );
                       endNS += slideDataNS;
-                      LAL_CALL( LALINT8toGPS( &status, 
-                            &(thisSummValue->end_time), &endNS ), &status );
+                      XLALINT8NSToGPS( &(thisSummValue->end_time), endNS );
                       if ( vrbflg ) 
                       {
                         fprintf( stdout, "inspiral effective distance of %f ", 
@@ -1008,12 +1004,9 @@ int main( int argc, char *argv[] )
               if ( slideDataNS && j == 1 )
               {
                 INT8 trigTimeNS = 0;
-                LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-                      &(currentTrigger[j]->end_time) ), &status );
+                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
                 trigTimeNS += slideDataNS;
-                LAL_CALL( LALINT8toGPS( &status, 
-                      &(currentTrigger[j]->end_time), &trigTimeNS ), 
-                    &status );
+                XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
               }     
               currentTrigger[j] = currentTrigger[j]->next;
             }
@@ -1022,11 +1015,9 @@ int main( int argc, char *argv[] )
             if ( slideDataNS && j == 1)
             {
               INT8 trigTimeNS = 0;
-              LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-                    &(currentTrigger[j]->end_time) ), &status );
+              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
               trigTimeNS += slideDataNS;
-              LAL_CALL( LALINT8toGPS( &status, &(currentTrigger[j]->end_time), 
-                    &trigTimeNS ), &status );
+              XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
             }
 
             /* store number of triggers from ifo a for trigtotmplt algorithm */
@@ -1318,8 +1309,7 @@ int main( int argc, char *argv[] )
         currentTrigger[0]->end_time.gpsSeconds, 
         ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
 
-    LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
-        &status );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
 
@@ -1368,8 +1358,7 @@ int main( int argc, char *argv[] )
       /* window of the current ifo a trigger                            */
       while ( currentTrigger[1] )
       {
-        LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
-            &status );
+        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
         if ( tb > ta - errorParams.dt )
         {
@@ -1401,10 +1390,8 @@ int main( int argc, char *argv[] )
             while ( currentEffRange[j] )
             {
               INT8 ts, te;
-              LAL_CALL( LALGPStoINT8( &status, &ts, 
-                    &(currentEffRange[j]->start_time) ), &status );
-              LAL_CALL( LALGPStoINT8( &status, &te, 
-                    &(currentEffRange[j]->end_time) ), &status );
+              ts = XLALGPSToINT8NS( &(currentEffRange[j]->start_time) );
+              te = XLALGPSToINT8NS( &(currentEffRange[j]->end_time) );
 
               if ( (ts <= ta) && (ta < te) )
               {
@@ -1480,8 +1467,7 @@ int main( int argc, char *argv[] )
 
           while ( currentTrigger[1] )
           {
-            LAL_CALL( LALGPStoINT8( &status, &tb, 
-                  &(currentTrigger[1]->end_time) ), &status );
+            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
             if (tb > ta + errorParams.dt )
             {

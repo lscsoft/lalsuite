@@ -207,6 +207,8 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
 
 /* <lalVerbatim file="StreamSequenceInputCP"> */
 int
+XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
+int
 XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
 { /* </lalVerbatim> */
   BufferList head;  /* head of linked list of buffers */

@@ -872,8 +872,6 @@ InitEphemeris (LALStatus * status,
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-  INT4 leap;
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -907,9 +905,14 @@ InitEphemeris (LALStatus * status,
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-    
-  TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
-  edat->leap = (INT2) leap;
+
+  edat->leap = XLALGPSLeapSeconds( epoch.gpsSeconds );
+  {
+    INT4 err = xlalErrno;
+    if ( err != XLAL_SUCCESS ) {
+      ABORT ( status, err, "XLALLeapSeconds() failed!\n");
+    }
+  }
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 

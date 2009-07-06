@@ -42,28 +42,28 @@ int SetLaTeXFlags( LALEnvironment *LaTeXEnv, char *sourcefile , FILE *inSrc )
         LaTeXEnv->lineCount  = 0             ;
         LaTeXEnv->Preamble   = TopOfLaTeXEnv ;
         LaTeXEnv->PostFix    = EndOfLaTeXEnv ;
-    
+
         return 0;
 }
 
 /*
- * 
- * Routine that writes to the  LaTeX file 
+ *
+ * Routine that writes to the  LaTeX file
  *
  */
 int WriteLaTeX( char *line , LALEnvironment *Env )
-{  
+{
         char *onFlagOnCurrentLine;
         int i;
         onFlagOnCurrentLine = strstr(line, Env->OnFlag );
 
-        if( onFlagOnCurrentLine  ){ 
+        if( onFlagOnCurrentLine  ){
              /* We do not print anything from line with On-Flag.*/
              return 0;
         }
         else
         {
-             /* 
+             /*
               * Elliminate leading *'s from the latex, ie like in
               * this comment block
               *

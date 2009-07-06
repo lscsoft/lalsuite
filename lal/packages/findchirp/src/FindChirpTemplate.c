@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpTemplate.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpTemplateCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpTemplate.c}}
@@ -52,7 +52,7 @@ values to intialize a search. It creates a structure of type
 \texttt{FindChirpTmpltParams} as described above and returns its address.
 
 The function \texttt{LALFindChirpTemplateFinalize()} takes as the address
-of a structure of type \texttt{FindChirpTmpltParams} destroys this 
+of a structure of type \texttt{FindChirpTmpltParams} destroys this
 structure and sets the address to NULL.
 
 \subsubsection*{Algorithm}
@@ -70,7 +70,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpTemplateCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -109,14 +109,14 @@ LALFindChirpTemplateInit (
    */
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );  
+  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( !*output, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  
+
   /* make sure that the number of points is positive */
-  ASSERT( params->numPoints > 0, status, 
+  ASSERT( params->numPoints > 0, status,
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
 
@@ -148,7 +148,7 @@ LALFindChirpTemplateInit (
     case EOB:
     case EOBNR:
       /* time domain waveforms use xfac to store the time domain waveform */
-      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
+      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec),
           params->numPoints );
       BEGINFAIL( status )
       {
@@ -156,16 +156,16 @@ LALFindChirpTemplateInit (
         *output = NULL;
       }
       ENDFAIL( status );
-      
-      memset( outputPtr->xfacVec->data, 0, 
+
+      memset( outputPtr->xfacVec->data, 0,
           outputPtr->xfacVec->length * sizeof(REAL4) );
-      
+
       /* create an fft plan for the time domain waveform */
-      LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan), 
+      LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan),
           params->numPoints, 0 );
       BEGINFAIL( status )
       {
-        TRY( LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) ), 
+        TRY( LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) ),
             status );
 
         LALFree( outputPtr );
@@ -173,12 +173,12 @@ LALFindChirpTemplateInit (
       }
       ENDFAIL( status );
       break;
-      
+
     case FindChirpSP:
     case BCV:
     case BCVSpin:
       /* freq domain waveforms need xfac vector containing k^(-1/3) */
-      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
+      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec),
           params->numPoints/2 + 1 );
       BEGINFAIL( status )
       {
@@ -190,7 +190,7 @@ LALFindChirpTemplateInit (
       xfac = outputPtr->xfacVec->data;
 
       xfac[0] = 0;
-      for (k = 1; k < outputPtr->xfacVec->length; ++k) 
+      for (k = 1; k < outputPtr->xfacVec->length; ++k)
         xfac[k] = pow( (REAL4) k, exponent );
       break;
 
@@ -226,7 +226,7 @@ LALFindChirpTemplateInit (
       }
 
       /* create a forward FFT plan */
-      outputPtr->fwdPlan = 
+      outputPtr->fwdPlan =
         XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
       if ( ! outputPtr->fwdPlan )
       {
@@ -237,7 +237,7 @@ LALFindChirpTemplateInit (
 
     case AmpCorPPN:
       /* create workspace memory for the time-domain Q vectors */
-      outputPtr->ACTDVecs = 
+      outputPtr->ACTDVecs =
                       XLALCreateVectorSequence( NACTDVECS, params->numPoints );
       if ( ! outputPtr->ACTDVecs )
       {
@@ -245,7 +245,7 @@ LALFindChirpTemplateInit (
       }
 
       /* create a forward FFT plan */
-      outputPtr->fwdPlan = 
+      outputPtr->fwdPlan =
         XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
       if ( ! outputPtr->fwdPlan )
       {
@@ -253,7 +253,7 @@ LALFindChirpTemplateInit (
       }
 
       break;
-      
+
 
     default:
       /* unknown approximant type */
@@ -262,8 +262,8 @@ LALFindChirpTemplateInit (
       ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
       break;
   }
-      
-  
+
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN (status);
@@ -295,7 +295,7 @@ LALFindChirpTemplateFinalize (
   /* make sure handle is non-null and points to a non-null pointer */
   ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( *output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  
+
 
   /*
    *
@@ -316,7 +316,7 @@ LALFindChirpTemplateFinalize (
 
   /* destroy the vector used to store part of the template if it exists */
   if ( outputPtr->xfacVec )
-  {  
+  {
   LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) );
   CHECKSTATUSPTR( status );
   }
@@ -342,14 +342,14 @@ LALFindChirpTemplateFinalize (
   {
     XLALDestroyVectorSequence( outputPtr->PTFe2 );
   }
- 
+
   /* destroy ACTD vectors if they exist */
   if ( outputPtr->ACTDVecs )
   {
     XLALDestroyVectorSequence( outputPtr->ACTDVecs );
   }
- 
-  
+
+
   /* free the structure */
   LALFree( outputPtr );
   *output = NULL;

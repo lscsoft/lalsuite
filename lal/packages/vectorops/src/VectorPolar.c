@@ -37,12 +37,12 @@
  * \idx{LALZVectorAbs()}
  * \idx{LALZVectorAngle()}
  * \idx{LALUnwrapREAL8Angle()}
- * 
+ *
  * \subsubsection*{Description}
  *
  * Let \texttt{u} be an object of type \texttt{COMPLEX8Vector}, and let
  * \texttt{a} and \texttt{b} be objects of type \texttt{REAL4Vector}.
- * 
+ *
  * The \verb:LALCVectorAbs( &status, &a, &u ): function computes
  * the magnitude of a complex vector \texttt{u}.
  * $\mbox{\texttt{a.data[i]}}=\mbox{\texttt{sqrt}} (
@@ -59,27 +59,27 @@
  * by adding multiples of
  * $\pm\pi$ when the absolute jumps between consecutive
  * angle elements are greater than $\pi$ radians.
- * This function detects branch cut crossings, but it can be 
+ * This function detects branch cut crossings, but it can be
  * fooled by sparse, rapidly changing phase values.
- * 
+ *
  * The double-precision functions are similar.
- *  
+ *
  * \subsubsection*{Algorithm}
  *
- * 
+ *
  * The algorithm for LALUnwrapREAL4Angle and LALUnwrapREAL8Angle
  * (Inspired from the MATLAP function unwrap):
  * \begin{verbatim}
- * 
+ *
  *   a = in->data;
  *   b = out->data;
  *   n = out->length;
- *   
+ *
  *   cumsum = 0.0;
  *   phaseI = *a;
  *   *b = phaseI;
  *   --n;
- * 
+ *
  *   while (n-- > 0)
  *   {
  *     ++a;
@@ -87,12 +87,12 @@
  *     phaseII = *a;
  *     diffph = phaseII - phaseI;
  *     phaseI = phaseII;
- *     
+ *
  *     cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
- *     
+ *
  *     *b= phaseII + cumsum;
  *   }
- * 
+ *
  * \end{verbatim}
  *
  * \subsubsection*{Notes}
@@ -100,10 +100,10 @@
  * For the LALUnwrapREAL4Angle and LALUnwrapREAL8Angle functions, \texttt{a},
  * and \texttt{b} should  not point to the same memory location (\texttt{a !=
  * b}).
- * 
+ *
  * \vfill{\footnotesize\input{VectorPolarCV}}
- * 
- **** </lalLaTeX> */ 
+ *
+ **** </lalLaTeX> */
 
 #include <math.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS 1
@@ -113,7 +113,7 @@
 #include <lal/VectorOps.h>
 
 NRCSID (VECTORPOLARC, "$Id$");
- 
+
 
 /** computes the magnitudes of a vector of complex numbers */
 int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
@@ -207,7 +207,7 @@ int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
 	}
 	return 0;
 }
-  
+
 /** corrects the radian phase angles of a real vector by adding multiples of
  * pi when the absolute jumps between consecutive angle elements are greater
  * pi radians */
@@ -245,7 +245,7 @@ LALCVectorAbs(
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALCVectorAbs", VECTORPOLARC);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -253,10 +253,10 @@ LALCVectorAbs(
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
@@ -276,7 +276,7 @@ LALZVectorAbs(
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALZVectorAbs", VECTORPOLARC);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -284,10 +284,10 @@ LALZVectorAbs(
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
@@ -307,7 +307,7 @@ LALCVectorAngle (
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALCVectorAngle", VECTORPOLARC);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -315,10 +315,10 @@ LALCVectorAngle (
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
@@ -338,7 +338,7 @@ LALZVectorAngle (
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALZVectorAngle", VECTORPOLARC);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -346,10 +346,10 @@ LALZVectorAngle (
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
@@ -368,7 +368,7 @@ LALUnwrapREAL4Angle (
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALUnwrapREAL4Angle", VECTORPOLARC );
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -376,14 +376,14 @@ LALUnwrapREAL4Angle (
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
-          
+
   /* Make sure the arguments are not pointing to the same memory location */
   ASSERT (out != in, status, VECTOROPSH_ESAME, VECTOROPSH_MSGESAME);
 
@@ -401,7 +401,7 @@ LALUnwrapREAL8Angle (
     )
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALUnwrapREAL8Angle", VECTORPOLARC );
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -409,14 +409,14 @@ LALUnwrapREAL8Angle (
   /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in->data,  status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
-  
+
  /* Make sure the size is correct (invalid input size): */
-  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE); 
-  
+  ASSERT (out->length > 0, status, VECTOROPSH_ESIZE, VECTOROPSH_MSGESIZE);
+
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
-          
+
   /* Make sure the arguments are not pointing to the same memory location */
   ASSERT (out != in, status, VECTOROPSH_ESAME, VECTOROPSH_MSGESAME);
 

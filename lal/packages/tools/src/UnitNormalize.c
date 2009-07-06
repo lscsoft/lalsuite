@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="UnitNormalizeCV">
 Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -34,7 +34,7 @@ all of the rational exponents into LCD form.
 \idx{LALUnitsNormalize()}
 
 \subsubsection*{Description}
- 
+
 Since the \texttt{LALUnit} structure stores the rational powers of the
 fundamental units as numerator and denominator, it is possible to
 represent the same units in different ways, \textit{e.g.}, m$^2$
@@ -59,12 +59,12 @@ call it explicitly.
 
 \vfill{\footnotesize\input{UnitNormalizeCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************************** <lalLaTeX file="UnitNormalizeCB">
 \bibitem{tools:Geddes:1992}
 K.~O.~Geddes, S.~R.~Czapor, and G.~Labahn, \textit{Algorithms for
 computer algebra}.  (Kluwer Academic, Boston, 1992)
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #define TRUE 1
 #define FALSE 0
@@ -75,8 +75,8 @@ computer algebra}.  (Kluwer Academic, Boston, 1992)
 NRCSID( UNITNORMALIZEC, "$Id$" );
 
 /* this is an implementation of the Euclidean Algorithm */
-static UINT2 
-gcd(INT2 numer, UINT2 denom) 
+static UINT2
+gcd(INT2 numer, UINT2 denom)
 {
    UINT2 next_numer,next_denom,remainder;
    next_numer=abs(numer);

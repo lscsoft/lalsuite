@@ -26,7 +26,7 @@ $Id$
 
 \subsection{Module \texttt{LALDeterminant.c}}
 
-Module to calculate the determinant of a 3-dimensional matrix $g_{ij}$. 
+Module to calculate the determinant of a 3-dimensional matrix $g_{ij}$.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -43,14 +43,14 @@ This code computes the determinant of a 3-dimensional matrix.
 
 \subsubsection*{Algorithm}
 Given a matrix $g_{ij}$ its determinant
-is computed using  the formula $g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},$ 
-where $\epsilon$ is the totally anti-symmetric tensor in 3-dimensions. 
+is computed using  the formula $g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},$
+where $\epsilon$ is the totally anti-symmetric tensor in 3-dimensions.
 
 \subsubsection*{Uses}
 None.
 
 \subsubsection*{Notes}
-Don't ever generalise this to higher dimensions since this 
+Don't ever generalise this to higher dimensions since this
 would take many more operations than some of the standard routines.
 
 \vfill{\footnotesize\input{LALDeterminant3CV}}
@@ -63,9 +63,9 @@ NRCSID(LALDETERMINANT3C, "$Id$");
 
 /*  <lalVerbatim file="LALDeterminant3CP"> */
 
-void LALDeterminant3(LALStatus *status, 
-                     REAL8     *determinant, 
-                     REAL8     **matrix) 
+void LALDeterminant3(LALStatus *status,
+                     REAL8     *determinant,
+                     REAL8     **matrix)
 { /* </lalVerbatim> */
 
    REAL8 epsilon[3][3][3] = {{

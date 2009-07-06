@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
   * Copyright (C) 2004, 2005 Cristina V. Torres
   *
@@ -21,13 +21,15 @@ __author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 
+import sys
+sys.path.append('@PYTHONLIBDIR@')
 from optparse import OptionParser
+import shutil
 import ConfigParser
 import getopt
 import math
 import os
 import string
-import sys
 import time
 import commands
 
@@ -57,6 +59,24 @@ parser.add_option(
                  help="This specifies the path (PARENT) where cleaning will start moving down the directory structure.  We will spare directories with RESULTS in their path names.  This ideally should be an absolute path def to avoid ambiguity.",
                  metavar="PARENT_DIR"
                  )
+parser.add_option(\
+                  "-g","--migrate-to",dest="migrateto",\
+                  default=None,
+                  help="Specify a complete path when setting this\
+option to move the spared files to the migrate location.  If this\
+location doesn't exist we will create it.",
+                  metavar="MIGRATE_TO"
+                  )
+parser.add_option(\
+                 "-e","--migrate-from",dest="migratefrom",
+                 default=None,
+                 help="Defaults to option --ignore-path if set\
+ otherwise no migration will happen.  Set this to the directory\
+ you want surviving files placed into.  Filename collisions are\
+ possible we don't check to see what exists before the\
+ migration.",
+                 metavar="MIGRATE_FROM"
+                 )    
 (options,args)=parser.parse_args()
 masks=str(options.removeMasks).split(',');
 if (masks == ""):
@@ -89,14 +109,22 @@ if (ignorePathStr == ""):
 else:
     print "Ignoring paths containing the string :",ignorePathStr
 
+migrateTo=options.migrateto
+migrateFrom=options.migratefrom
+if ((migrateFrom == None) and (ignorePathStr != "")):
+    migrateFrom=ignorePathStr
+
 #Create the structure containing all the files down from the parent directory.
 files2clean=[]
+allFilesSeen=[]
 for root,dir,files in os.walk(parentDir):
     for entry in files:
         thisFile=os.path.join(root,entry)
+        allFilesSeen.append(thisFile)
         for maskKey in masks:
             if os.path.basename(thisFile).__contains__(maskKey):
                     files2clean.append(thisFile)
+
 #Keep only files which are not in the ignorePathStr
 files2remove=[]
 if (ignorePathStr != ""):
@@ -125,3 +153,20 @@ if (action == 'yes'):
 else:
     print "Leaving file system intact!"
  
+#Migrate files not cleaned out of the directory structure
+if (migrateTo != None) and (migrateFrom != None):
+    #Set paths
+    migrateTo=os.path.abspath(migrateTo)
+    if ignorePathStr != migrateFrom:
+        migrateFrom=os.path.abspath(migrateFrom)
+    #Create migrateTo location if not there!
+    if not os.path.isdir(migrateTo):
+        os.makedirs(migrateTo)
+    #Loop over the files to be migrated.
+    if os.path.isdir(migrateTo):
+        for file in allFilesSeen:
+            #If file lives in migrateFrom path
+            if file.__contains__(migrateFrom):
+                print "Moving file ",file," to ",migrateTo
+                shutil.move(file,migrateTo)
+

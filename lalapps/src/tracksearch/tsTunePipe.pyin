@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
   * Copyright (C) 2004, 2005 Cristina V. Torres
   *
@@ -25,6 +25,8 @@ the pipes needed to tune the search algorithm.  This script will also
 require its own ini file to setup the analysis tuning.  The convention
 we want to follow for tuning ini files to give them the extens .tun
 """
+import sys
+sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 from optparse import OptionParser
 import ConfigParser
@@ -34,11 +36,9 @@ import getopt
 import math
 import os
 import string
-import sys
 import time
 import pickle
 import tracksearch
-sys.path.append('@PYTHONLIBDIR@')
 from tracksearchutils import *
 from tracksearch import buildDir
 

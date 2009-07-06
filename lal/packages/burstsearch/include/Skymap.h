@@ -29,7 +29,7 @@ extern "C" {
 #include <lal/LALRCSID.h>
 NRCSID(EPSEARCHH, "$Id$");
 
-/* 
+/*
  * Stores pre-computed properties of each sky direction
  */
 typedef struct tagLALSkymapPixelType
@@ -39,7 +39,7 @@ typedef struct tagLALSkymapPixelType
     double f[3][2];
 } XLALSkymapPixelType;
 
-/* 
+/*
  * Stores pre-computed information for generating a sky map
  */
 typedef struct tagXLALSkymapPlanType
@@ -55,24 +55,29 @@ typedef struct tagXLALSkymapPlanType
 
     XLALSkymapPixelType* pixel;
     int pixelCount;
+
+    /* raster size */
+    int m;
+    int n;
 } XLALSkymapPlanType;
 
-/* 
+/*
  * Construct an analysis plan for a given frequency
  */
-XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency);
+XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n);
 
-/* 
+/*
  * Destroy an analysis plan
  */
 void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
 
-/* 
+/*
  * Produce a skymap according to a plan
  */
-int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes);
-int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6]);
+int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[8]);
 
+/* deprecated legacy interface */
+int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes);
 /* deprecated legacy interface */
 int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests);
 /* deprecated legacy interface*/
@@ -99,24 +104,22 @@ void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const d
 
 /*
  * Lightweight coordinate transformations
- */ 
+ */
 void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi);
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3]);
 int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3]);
 
-/* 
+/*
  * Find the most plausible direction (the mode of the distribution) and return
- * its theta and phi coordinates 
+ * its theta and phi coordinates
  */
 void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi[2]);
 
 /*
  * Render the skymap from the internal format to a variety of map projections
  */
-int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
+int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p);
 
 #ifdef __cplusplus
 }

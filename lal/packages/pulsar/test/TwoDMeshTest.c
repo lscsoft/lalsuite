@@ -359,7 +359,7 @@ main(int argc, char **argv)
   CHAR *metricfile = NULL, *rangefile = NULL; /* input filenames */
   REAL4 mismatch = MISMATCH;                  /* maximum mismatch */
   UINT4 nmax = 0, cmax = 0;                   /* maximum nodes/columns */
-  REAL4 x1 = X1, y1 = Y1, x2 = X2, y2 = Y2;   /* boundary params. */
+  REAL4 x_1 = X1, y_1 = Y1, x_2 = X2, y_2 = Y2;   /* boundary params. */
   REAL4 a = A_DEFAULT, b = B_DEFAULT, c = C_DEFAULT; /* ellipse params. */
   REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;       /* ellipse x gradient */
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;       /* ellipse y gradient */
@@ -422,10 +422,10 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-b" ) ) {
       if ( argc > arg + 4 ) {
 	arg++;
-	x1 = atof( argv[arg++] );
-	y1 = atof( argv[arg++] );
-	x2 = atof( argv[arg++] );
-	y2 = atof( argv[arg++] );
+	x_1 = atof( argv[arg++] );
+	y_1 = atof( argv[arg++] );
+	x_2 = atof( argv[arg++] );
+	y_2 = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -499,49 +499,49 @@ main(int argc, char **argv)
     REAL4 axisMin, axisTemp; /* Min. ellipse size, and a temp value */
 
     /* Set up range function and parameters. */
-    if ( ( x1 == 0.0 ) && ( x2 == 0.0 ) ) {
+    if ( ( x_1 == 0.0 ) && ( x_2 == 0.0 ) ) {
       ERROR( TWODMESHTESTC_EBAD, TWODMESHTESTC_MSGEBAD,
-	     "x1 = x2 = 0:" );
+	     "x_1 = x_2 = 0:" );
       return TWODMESHTESTC_EBAD;
     }
-    if ( x1 < x2 ) {
-      rangeParams[0] = x1;
-      rangeParams[1] = y1;
-      rangeParams[2] = x2;
-      rangeParams[3] = y2;
+    if ( x_1 < x_2 ) {
+      rangeParams[0] = x_1;
+      rangeParams[1] = y_1;
+      rangeParams[2] = x_2;
+      rangeParams[3] = y_2;
     } else {
-      rangeParams[0] = x2;
-      rangeParams[1] = y2;
-      rangeParams[2] = x1;
-      rangeParams[3] = y1;
+      rangeParams[0] = x_2;
+      rangeParams[1] = y_2;
+      rangeParams[2] = x_1;
+      rangeParams[3] = y_1;
     }
     params.getRange = LALRangeTest;
     params.rangeParams = (void *)( rangeParams );
-    if ( x1*x2 <= 0.0 ) {
-      if ( x1 < x2 ) {
-	params.domain[0] = x1;
-	params.domain[1] = x2;
+    if ( x_1*x_2 <= 0.0 ) {
+      if ( x_1 < x_2 ) {
+	params.domain[0] = x_1;
+	params.domain[1] = x_2;
       } else {
-	params.domain[0] = x2;
-	params.domain[1] = x1;
+	params.domain[0] = x_2;
+	params.domain[1] = x_1;
       }
     } else {
-      if ( x1 < 0.0 ) {
-	params.domain[0] = x1 + x2;
+      if ( x_1 < 0.0 ) {
+	params.domain[0] = x_1 + x_2;
 	params.domain[1] = 0.0;
       } else {
 	params.domain[0] = 0.0;
-	params.domain[1] = x1 + x2;
+	params.domain[1] = x_1 + x_2;
       }
     }
 
     /* Check that metric will be positive everywhere in the region. */
     axisMin = a;
-    axisTemp = a + dadx*x1 + dady*y1;
+    axisTemp = a + dadx*x_1 + dady*y_1;
     if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = a + dadx*x2 + dady*y2;
+    axisTemp = a + dadx*x_2 + dady*y_2;
     if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = a + dadx*( x1 + x2 ) + dady*( y1 + y2 );
+    axisTemp = a + dadx*( x_1 + x_2 ) + dady*( y_1 + y_2 );
     if ( axisTemp < axisMin ) axisMin = axisTemp;
     if ( axisMin <= 0.0 ) {
       ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
@@ -550,11 +550,11 @@ main(int argc, char **argv)
     }
     axisTemp = b;
     if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*x1 + dbdy*y1;
+    axisTemp = b + dbdx*x_1 + dbdy*y_1;
     if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*x2 + dbdy*y2;
+    axisTemp = b + dbdx*x_2 + dbdy*y_2;
     if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*( x1 + x2 ) + dbdy*( y1 + y2 );
+    axisTemp = b + dbdx*( x_1 + x_2 ) + dbdy*( y_1 + y_2 );
     if ( axisTemp < axisMin ) axisMin = axisTemp;
     if ( axisMin <= 0.0 ) {
       ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
@@ -656,22 +656,22 @@ main(int argc, char **argv)
        straight. */
     if ( !metricfile ) {
       REAL4 theta1, theta2;
-      REAL4 xSum = x1 + x2, xDiff = x2 - x1;
-      REAL4 ySum = y1 + y2, yDiff = y2 - y1;
+      REAL4 xSum = x_1 + x_2, xDiff = x_2 - x_1;
+      REAL4 ySum = y_1 + y_2, yDiff = y_2 - y_1;
       theta1 = LAL_180_PI*atan2( (REAL4)( TWODMESHPLOTH_YSIZE ),
 				 (REAL4)( TWODMESHPLOTH_XSIZE ) );
       if ( xSum*xSum + ySum*ySum >= xDiff*xDiff + yDiff*yDiff )
 	theta1 -= LAL_180_PI*atan2( ySum, xSum );
       else
 	theta1 -= LAL_180_PI*atan2( yDiff, xDiff );
-      theta2 = theta1 + LAL_180_PI*atan2( y1, x1 );
+      theta2 = theta1 + LAL_180_PI*atan2( y_1, x_1 );
       while ( theta2 < -180.0 ) theta2 += 360.0;
       while ( theta2 > 180.0 ) theta2 -= 360.0;
       if ( theta2 > 90.0 )
 	theta1 -= theta2 - 90.0;
       else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
 	theta1 -= theta2 + 90.0;
-      theta2 = theta1 + LAL_180_PI*atan2( y2, x2 );
+      theta2 = theta1 + LAL_180_PI*atan2( y_2, x_2 );
       while ( theta2 < -180.0 ) theta2 += 360.0;
       while ( theta2 > 180.0 ) theta2 -= 360.0;
       if ( theta2 > 90.0 )

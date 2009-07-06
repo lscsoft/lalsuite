@@ -143,7 +143,7 @@ tagNullStatInputParams
   CVector               *CData;
 }
 NullStatInputParams;
-  
+
 
 typedef struct
 tagNullStatParams

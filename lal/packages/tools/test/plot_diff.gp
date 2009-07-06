@@ -26,7 +26,7 @@ set title "Abs. difference between LAL and GRASP for det. @ North Pole - Plus po
 splot 'ff_diff_plus.txt' matrix
 
 
-set palette model RGB 
+set palette model RGB
 set output "ff_diff_cros.png"
 set terminal png
 set title "Abs. difference between LAL and GRASP for det. @ North Pole - Cross pol."

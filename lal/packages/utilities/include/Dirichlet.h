@@ -35,7 +35,7 @@ ${\cal D}_N(x)$.
 #include "Dirichlet.h"
 \end{verbatim}
 
-\noindent 
+\noindent
 % Add more information here, if necessary.
 
 \subsection*{Error conditions}
@@ -50,7 +50,7 @@ struct DirichletParameters
 \noindent
 Contains parameters that specify the Dirichlet kernel $\mathcal{D}_N(x)$.
 The fields are:
- 
+
 \begin{description}
 \item[\texttt{UINT4 n}] Dirichlet parameter $N$.
 
@@ -101,11 +101,11 @@ typedef struct tagDirichletParameters{
   UINT4	 n;       /* LALDirichlet parameter N */
   UINT4	 length;  /* specified length of output vector */
   REAL8	 deltaX;  /* spacing of x values */
-} DirichletParameters; 
+} DirichletParameters;
 
-void 
-LALDirichlet(LALStatus*, 
-	     REAL4Vector*, 
+void
+LALDirichlet(LALStatus*,
+	     REAL4Vector*,
 	     const DirichletParameters*);
 
 #ifdef  __cplusplus

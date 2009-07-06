@@ -24,7 +24,7 @@ $Id$
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALTaylorT4Waveform.c} and 
+\subsection{Module \texttt{LALTaylorT4Waveform.c} and
 \texttt{LALTaylorT4WaveformTemplates.c}}
 
 \vfill{\footnotesize\input{LALTaylorT4WaveformCV}}
@@ -36,38 +36,38 @@ $Id$
 #include <lal/FindRoot.h>
 
 void LALTaylorT4Derivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
 void LALTaylorT4Derivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
 void LALTaylorT4Derivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
 void LALTaylorT4Derivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
 void LALTaylorT4Waveform (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params
 );
 
 void LALTaylorT4WaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -76,8 +76,8 @@ NRCSID (LALTAYLORT4WAVEFORMC,
 "$Id$");
 
 void LALTaylorT4Derivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
@@ -105,7 +105,7 @@ void LALTaylorT4Derivatives4PN(
    /* evaluating all the fractions so as to speed of the code            */
    /* The PN expansion from which it results is given by: dv/dt =        */
    /* (32*v^9*\[Eta]*(1 + 4*Pi*v^3 + v^2*(-743/336 - (11*\[Eta])/4)      */
-   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */ 
+   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */
    /* + v^4*(34103/18144 + (13661*\[Eta])/2016 + (59*\[Eta]^2)/18)       */
    /* + v^7*((-4415*Pi)/4032 + (358675*Pi*\[Eta])/6048                   */
    /* + (91495*Pi*\[Eta]^2)/1512) + v^6*(16447322263/139708800           */
@@ -113,17 +113,17 @@ void LALTaylorT4Derivatives4PN(
    /* + (451*Pi^2*\[Eta])/48 + (541*\[Eta]^2)/896 - (5605*\[Eta]^3)/2592 */
    /* - (856*Log[16])/105 - (1712*Log[v])/105)))/5                       */
    /*--------------------------------------------------------------------*/
-											      
+
    dvalues->data[0] = 6.4*v9*eta/ak->totalmass*(1.
-     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi 
-     + v4*(1.8795745149911816 + 6.77628968*eta  + 3.27777778*eta2)); 
+     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi
+     + v4*(1.8795745149911816 + 6.77628968*eta  + 3.27777778*eta2));
 
    dvalues->data[1] =  v3/ak->totalmass;
 }
 
 void LALTaylorT4Derivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
@@ -151,7 +151,7 @@ void LALTaylorT4Derivatives5PN(
    /* evaluating all the fractions so as to speed of the code            */
    /* The PN expansion from which it results is given by: dv/dt =        */
    /* (32*v^9*\[Eta]*(1 + 4*Pi*v^3 + v^2*(-743/336 - (11*\[Eta])/4)      */
-   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */ 
+   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */
    /* + v^4*(34103/18144 + (13661*\[Eta])/2016 + (59*\[Eta]^2)/18)       */
    /* + v^7*((-4415*Pi)/4032 + (358675*Pi*\[Eta])/6048                   */
    /* + (91495*Pi*\[Eta]^2)/1512) + v^6*(16447322263/139708800           */
@@ -159,18 +159,18 @@ void LALTaylorT4Derivatives5PN(
    /* + (451*Pi^2*\[Eta])/48 + (541*\[Eta]^2)/896 - (5605*\[Eta]^3)/2592 */
    /* - (856*Log[16])/105 - (1712*Log[v])/105)))/5                       */
    /*--------------------------------------------------------------------*/
-											      
+
    dvalues->data[0] = 6.4*v9*eta/ak->totalmass*(1.
-     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi 
+     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi
      + v4*(1.8795745149911816 + 6.77628968*eta  + 3.27777778*eta2)
-     + v5*(-6.1889881*LAL_PI - 23.625*LAL_PI*eta));  
+     + v5*(-6.1889881*LAL_PI - 23.625*LAL_PI*eta));
 
    dvalues->data[1] =  v3/ak->totalmass;
 }
 
 void LALTaylorT4Derivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
@@ -198,7 +198,7 @@ void LALTaylorT4Derivatives6PN(
    /* evaluating all the fractions so as to speed of the code            */
    /* The PN expansion from which it results is given by: dv/dt =        */
    /* (32*v^9*\[Eta]*(1 + 4*Pi*v^3 + v^2*(-743/336 - (11*\[Eta])/4)      */
-   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */ 
+   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */
    /* + v^4*(34103/18144 + (13661*\[Eta])/2016 + (59*\[Eta]^2)/18)       */
    /* + v^7*((-4415*Pi)/4032 + (358675*Pi*\[Eta])/6048                   */
    /* + (91495*Pi*\[Eta]^2)/1512) + v^6*(16447322263/139708800           */
@@ -206,22 +206,22 @@ void LALTaylorT4Derivatives6PN(
    /* + (451*Pi^2*\[Eta])/48 + (541*\[Eta]^2)/896 - (5605*\[Eta]^3)/2592 */
    /* - (856*Log[16])/105 - (1712*Log[v])/105)))/5                       */
    /*--------------------------------------------------------------------*/
-											      
+
    dvalues->data[0] = 6.4*v9*eta/ak->totalmass*(1.
-     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi 
+     + v2*(-2.2113095238095237 - 2.75*eta) + v3*fourpi
      + v4*(1.8795745149911816 + 6.77628968*eta  + 3.27777778*eta2)
      + v5*(-6.1889881*LAL_PI - 23.625*LAL_PI*eta)
      + v6*(117.72574285227559 - 16.3047619*0.577215664901
 	     + 5.3333333*pisq - 258.114202*eta
-	     + 9.39583333*pisq*eta + 0.603794643*eta2 
+	     + 9.39583333*pisq*eta + 0.603794643*eta2
 	     - 2.16242284*eta3 - 8.15238095*log(16*v2)));
 
    dvalues->data[1] =  v3/ak->totalmass;
 }
 
 void LALTaylorT4Derivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
@@ -249,7 +249,7 @@ void LALTaylorT4Derivatives7PN(
    /* evaluating all the fractions so as to speed of the code            */
    /* The PN expansion from which it results is given by: dv/dt =        */
    /* (32*v^9*\[Eta]*(1 + 4*Pi*v^3 + v^2*(-743/336 - (11*\[Eta])/4)      */
-   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */ 
+   /* + v^5*((-4159*Pi)/672 - (189*Pi*\[Eta])/8)                         */
    /* + v^4*(34103/18144 + (13661*\[Eta])/2016 + (59*\[Eta]^2)/18)       */
    /* + v^7*((-4415*Pi)/4032 + (358675*Pi*\[Eta])/6048                   */
    /* + (91495*Pi*\[Eta]^2)/1512) + v^6*(16447322263/139708800           */
@@ -257,18 +257,18 @@ void LALTaylorT4Derivatives7PN(
    /* + (451*Pi^2*\[Eta])/48 + (541*\[Eta]^2)/896 - (5605*\[Eta]^3)/2592 */
    /* - (856*Log[16])/105 - (1712*Log[v])/105)))/5                       */
    /*--------------------------------------------------------------------*/
-											      
+
    dvalues->data[0] = 6.4*v9*eta/ak->totalmass*(1.
-     + v2*(-2.2113095238095237 - 2.75*eta) 
-     + v3*fourpi 
-     + v4*(1.8795745149911816 + 6.77628968*eta  
-	     + 3.27777778*eta2) 
-     + v5*(-6.1889881*LAL_PI - 23.625*LAL_PI*eta) 
+     + v2*(-2.2113095238095237 - 2.75*eta)
+     + v3*fourpi
+     + v4*(1.8795745149911816 + 6.77628968*eta
+	     + 3.27777778*eta2)
+     + v5*(-6.1889881*LAL_PI - 23.625*LAL_PI*eta)
      + v6*(117.72574285227559 - 16.3047619*0.577215664901
 	     + 5.3333333*pisq - 258.114202*eta
-	     + 9.39583333*pisq*eta + 0.603794643*eta2 
+	     + 9.39583333*pisq*eta + 0.603794643*eta2
 	     - 2.16242284*eta3 - 8.15238095*log(16*v2))
-     + v7*(-1.09499008*LAL_PI + 59.3047288*LAL_PI*eta 
+     + v7*(-1.09499008*LAL_PI + 59.3047288*LAL_PI*eta
 	     + 60.5125661*LAL_PI*eta2));
 
    dvalues->data[1] =  v3/ak->totalmass;
@@ -277,30 +277,30 @@ void LALTaylorT4Derivatives7PN(
 /*  <lalVerbatim file="LALTaylorT4WaveformCP"> */
 void LALTaylorT4Waveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
-   ) 
+   )
 { /* </lalVerbatim> */
 
-   InspiralInit paramsInit;   
+   InspiralInit paramsInit;
    INITSTATUS(status, "LALTaylorT4Waveform", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status, 
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status, 
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params,  status, 
+   ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params->nStartPad >= 0, status, 
+   ASSERT(params->nStartPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->nEndPad >= 0, status, 
+   ASSERT(params->nEndPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->fLower > 0, status, 
+   ASSERT(params->fLower > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->tSampling > 0, status, 
+   ASSERT(params->tSampling > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass > 0., status, 
+   ASSERT(params->totalMass > 0., status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
@@ -309,10 +309,10 @@ void LALTaylorT4Waveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorT4WaveformEngine(status->statusPtr, signal, params, &paramsInit);
+   LALTaylorT4WaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -320,10 +320,10 @@ void LALTaylorT4Waveform (
 }
 
 /*---------------------------------------------------------*/
-void 
+void
 LALTaylorT4WaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal,
+                REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -339,7 +339,7 @@ LALTaylorT4WaveformEngine (
    rk4In                 in4;
    expnCoeffs            ak;
    expnFunc              func;
-   DFindRootIn           rootIn;
+   /*DFindRootIn           rootIn;*/
    CHAR message[256];
 
 
@@ -375,7 +375,7 @@ LALTaylorT4WaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signal->length; 
+   length = signalvec->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -394,23 +394,23 @@ LALTaylorT4WaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-     case twoPN:
+     case LAL_PNORDER_TWO:
        in4.function = LALTaylorT4Derivatives4PN;
        break;
-     case twoPointFivePN:
+     case LAL_PNORDER_TWO_POINT_FIVE:
        in4.function = LALTaylorT4Derivatives5PN;
        break;
-     case threePN:
+     case LAL_PNORDER_THREE:
        in4.function = LALTaylorT4Derivatives6PN;
        break;
-     case threePointFivePN:
+     case LAL_PNORDER_THREE_POINT_FIVE:
        in4.function = LALTaylorT4Derivatives7PN;
        break;
      default:
-       LALSnprintf(message, 256, "There are no T4 waveforms at order %d\n", params->order);
+       snprintf(message, 256, "There are no T4 waveforms at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
-       ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+       ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
 
    in4.y = &values;
@@ -441,7 +441,7 @@ LALTaylorT4WaveformEngine (
    t = 0.0;
    ndx = 0;
    count = 0;
-      
+
    /* fprintf(stdout, "fMin=%e, fMax=%e, dv/dt=%e, dphi/dt=%e\n", */
    /* omega/LAL_PI, omegaMax/LAL_PI,                              */
    /* dvalues.data[0], dvalues.data[1]);                          */
@@ -456,7 +456,7 @@ LALTaylorT4WaveformEngine (
       }
 
       h = 4 * m * eta * v*v * cos(2.*phi);
-      signal->data[ndx] = h;
+      signalvec->data[ndx] = h;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(2.*m*LAL_PI)); */
 
       /* Integrate one step forward */
@@ -480,8 +480,8 @@ LALTaylorT4WaveformEngine (
 
       t = (++count-params->nStartPad) * dt;
       ndx++;
-   }  
-      
+   }
+
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/

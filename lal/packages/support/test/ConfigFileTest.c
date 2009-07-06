@@ -22,7 +22,7 @@ Author: Reinhard Prix
 $Id$
 ************************************* </lalVerbatim> */
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 
 \subsection{Program \texttt{ConfigFileTest.c}}
 \label{s:ConfigFileTest.c}
@@ -31,7 +31,7 @@ Tests the routines in \verb@ConfigFile.h@.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-ConfigFileTest 
+ConfigFileTest
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -116,10 +116,10 @@ do {                                                                 \
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-int main(int argc, char *argv[]){ 
-  static LALStatus       status;  
+int main(int argc, char *argv[]){
+  static LALStatus       status;
   static LALParsedDataFile *cfgdata;
-  
+
   BOOLEAN testBool;
   CHAR *string1 = NULL;
   CHARVector *string2 = NULL;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]){
 
   SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1", &wasRead), &status);
 
-  SUB (LALCHARCreateVector (&status, &string2, 35), &status);  
+  SUB (LALCHARCreateVector (&status, &string2, 35), &status);
   SUB (LALReadConfigSTRINGNVariable(&status, string2,   cfgdata, "string2", &wasRead), &status);
 
   SUB (LALReadConfigSTRINGVariable(&status, &string2b,   cfgdata, "string2", &wasRead), &status);
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_ESTRING);
   }
 
-  
+
   if ( testBool != 0 ) {
     ERROR (CONFIGFILETESTC_EBOOL, CONFIGFILETESTC_MSGEBOOL, 0);
     return (CONFIGFILETESTC_EBOOL);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]){
   LALFree (string2b);
   LALFree (string3);
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return CONFIGFILETESTC_ENORM;
 }

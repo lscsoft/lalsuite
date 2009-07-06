@@ -12,12 +12,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
- 
-/** \file 
+
+/** \file
  * \ingroup UserInput
  * \author Reinhard Prix
  * \date $Date$
@@ -49,7 +49,7 @@ Routines for general config-file reading.
 #include <lal/StringInput.h>
 
 /* C++ protection. */
-#ifdef  __cplusplus   
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -103,9 +103,9 @@ typedef struct {
 } LALConfigVar;
 
 
-/** This structure is returned by LALParseDataFile() and holds the contents of an 
- * ASCII data-file in a pre-parsed form, namely stripped from all comments ('#', ';'+), 
- * spurious whitespaces, and separated into lines (taking into account line-continuation 
+/** This structure is returned by LALParseDataFile() and holds the contents of an
+ * ASCII data-file in a pre-parsed form, namely stripped from all comments ('#', ';'+),
+ * spurious whitespaces, and separated into lines (taking into account line-continuation
  * by '\' at the end of lines).
  * This is used as the input structure in the config-variable reading routines.
  */
@@ -127,43 +127,43 @@ void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
 int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
 
-void 
-LALReadConfigBOOLVariable (LALStatus *, 
-			  BOOLEAN *varp, 
-			  const LALParsedDataFile *cfgdata, 
-			  const CHAR *varName, 
+void
+LALReadConfigBOOLVariable (LALStatus *,
+			  BOOLEAN *varp,
+			  const LALParsedDataFile *cfgdata,
+			  const CHAR *varName,
 			  BOOLEAN *wasRead);
 
 void
 LALReadConfigINT4Variable (LALStatus *,
-			   INT4 *varp, 
-			   const LALParsedDataFile *cfgdata, 
-			   const CHAR *varName, 
+			   INT4 *varp,
+			   const LALParsedDataFile *cfgdata,
+			   const CHAR *varName,
 			   BOOLEAN *wasRead);
 
 void
-LALReadConfigREAL8Variable (LALStatus *, 
-			    REAL8 *varp, 
-			    const LALParsedDataFile *cfgdata, 
-			    const CHAR *varName, 
+LALReadConfigREAL8Variable (LALStatus *,
+			    REAL8 *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *varName,
 			    BOOLEAN *wasRead);
 
-void 
-LALReadConfigSTRINGVariable (LALStatus *, 
-			     CHAR **varp, 
-			     const LALParsedDataFile *cfgdata, 
+void
+LALReadConfigSTRINGVariable (LALStatus *,
+			     CHAR **varp,
+			     const LALParsedDataFile *cfgdata,
 			     const CHAR *varName,
 			     BOOLEAN *wasRead);
 
 void
-LALReadConfigSTRINGNVariable (LALStatus *, 
+LALReadConfigSTRINGNVariable (LALStatus *,
 			      CHARVector *varp,
-			      const LALParsedDataFile *cfgdata, 
+			      const LALParsedDataFile *cfgdata,
 			      const CHAR *varName,
 			      BOOLEAN *wasRead);
 
 void
-LALReadConfigVariable (LALStatus *, 
+LALReadConfigVariable (LALStatus *,
 		       void *varp,
 		       const LALParsedDataFile *cfgdata,
 		       const LALConfigVar *param,
@@ -176,7 +176,7 @@ void LALLowerCaseString (LALStatus *, CHAR *string);
 /* C++ protection. */
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 
 #endif  /* Double-include protection. */
 

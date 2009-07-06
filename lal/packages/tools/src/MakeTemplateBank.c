@@ -28,35 +28,35 @@
  *
  *________________________________________________________________________
  */
-                                                                                                                                                
+
 /* ------------------------------- AUTO-DOC --------------------------- */
 /* -------------------------------------------------------------------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
 /*<lalVerbatim file="MakeTemplateBankCV">
   Author: Hanna, C. R.
   $Id$
   </lalVerbatim>*/
-                                                                                                                                                
+
 /*SUBSECTION - MODULE - "MakeTemplateBank.c" --------------- <lalLaTeX>
   \subsection{Module \texttt{MakeTemplateBank.c}}
   \label{ss:MakeTemplateBank}
   </lalLaTeX> */
-                                                                                                                                                
+
   /* SUBSUBSECTION - PROTOTYPES - "LALMakeTemplateBank()" ----- <lalLaTeX>
      \subsubsection{Prototypes}
      \input{LALMakeTemplateBankCP}
      \idx{MakeTemplateBank()}
      </lalLaTeX>
      END SUBSUBSECTION - PROTOTYPES "LALMakeTemplateBank()" ----------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
   /* SUBSUBSECTION - DESCRIPTION ------------------------------ <lalLaTeX>
      \subsubsection{Description}
      </lalLaTeX>
      END SUBSUBSECTION - DESCRIPTION ---------------------------------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
   /* SUBSUBSECTION - NOTES ------------------------------------ <lalLaTeX>
      \subsubsection{Notes}
      \begin{itemize}
@@ -64,17 +64,17 @@
      \end{itemize}
      </lalLaTeX>
      END SUBSUBSECTION - NOTES ---------------------------------------- */
-                                                                                                                                                
+
 /*END - SUBSECTION - MODULE - MakeTemplateBank.c" ------------------ */
-                                                                                                                                                
+
 /*<lalLaTeX>
 \vfill{\footnotesize\input{MakeTemplateBankCV}}
 </lalLaTeX>*/
-                                                                                                                                                
-                                                                                                                                                
+
+
 /* ------------------------ END AUTO DOC ------------------------------ */
 /* -------------------------------------------------------------------- */
-                                                                                                                                                
+
 
 
 
@@ -85,7 +85,7 @@
 #include<lal/LIGOMetadataTables.h>
 
 NRCSID(MAKETEMPLATEBANKC, "$Id$");
-   
+
 void
 /* <lalVerbatim file="LALMakeTemplateBankCP"> */
 LALMakeTemplateBank(
@@ -96,7 +96,7 @@ LALMakeTemplateBank(
 /* </lalVerbatim> */
 {
   INITSTATUS(status, "LALMakeTemplateBank", MAKETEMPLATEBANKC);
-  ATTATCHSTATUSPTR(status); 
+  ATTATCHSTATUSPTR(status);
   if(type == NULL){
     ABORT(status, TEMPLATEBANKGENERATIONH_ENULL, TEMPLATEBANKGENERATIONH_MSGENULL);
     }
@@ -110,31 +110,31 @@ LALMakeTemplateBank(
 /* look at inspiral Searches */
 #if 0
   if ((*type >= 100) && (*type < 200)){
-    printf("\nInside if type statement in MakeTemplateBank\n");  
-    TRY(LALInspiralBankGeneration(status->statusPtr, 
-                              type, 
-                              input->InspiralInput, 
-                              table->snglInspiralTable), status); 
+    printf("\nInside if type statement in MakeTemplateBank\n");
+    TRY(LALInspiralBankGeneration(status->statusPtr,
+                              type,
+                              input->InspiralInput,
+                              table->snglInspiralTable), status);
     printf("Just called LALInspiralBankGeneration\n");
     }
 #endif
 
 
 
-  /* 
+  /*
   if ((*type >= 200) && (*type < 300)){
     LALPulsarBankGeneration(status->statusPointer, type,
-                            input.PulsarInput, 
-                            table.pulsarTable); 
+                            input.PulsarInput,
+                            table.pulsarTable);
   }
 
-  
+
   if ((*type >= 300) && (*type < 400)){
     LALBurstBankGeneration(status->statusPointer, type,
-                           input.BurstInput, 
+                           input.BurstInput,
                            table.snglBurstTable);
   }*/
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 

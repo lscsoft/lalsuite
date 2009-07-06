@@ -49,14 +49,14 @@ These modules generate a time-domain chirp waveform of type {\tt TaylorT3}.
 
 \subsubsection*{Description}
 {\tt LALInspiralWave3} generates {\tt TaylorT3} approximant which
-corresponds to the case wherein 
+corresponds to the case wherein
 the phase of the waveform is given as an explicit function of time
-as in Equation (\ref{eq:InspiralWavePhase3}). 
+as in Equation (\ref{eq:InspiralWavePhase3}).
 
-{\tt LALInspiralWave3Templates} simultaneously generates 
-two inspiral waveforms and the two differ in 
-phase by $\pi/2$.  
- 
+{\tt LALInspiralWave3Templates} simultaneously generates
+two inspiral waveforms and the two differ in
+phase by $\pi/2$.
+
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
@@ -85,7 +85,7 @@ typedef struct
 {
 	void (*func)(LALStatus *status, REAL8 *f, REAL8 tC, expnCoeffs *ak);
 	expnCoeffs ak;
-} 
+}
 ChirptimeFromFreqIn;
 
 static void LALInspiralFrequency3Wrapper(LALStatus *status, REAL8 *f, REAL8 tC, void *pars);
@@ -108,16 +108,16 @@ NRCSID (LALINSPIRALWAVE3C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave3CP"> */
 
-void 
+void
 LALInspiralWave3 (
    LALStatus        *status,
-   REAL4Vector      *output, 
+   REAL4Vector      *output,
    InspiralTemplate *params
    )
 
 { /* </lalVerbatim>  */
 
-  
+
   UINT4 count;
   InspiralInit paramsInit;
 
@@ -130,7 +130,7 @@ LALInspiralWave3 (
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  
+
   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
@@ -147,7 +147,7 @@ LALInspiralWave3 (
   memset( output->data, 0, output->length * sizeof(REAL4) );
 
   /* Call the engine function */
-  LALInspiralWave3Engine(status->statusPtr, output, NULL, NULL, 
+  LALInspiralWave3Engine(status->statusPtr, output, NULL, NULL,
 			NULL, NULL, NULL, &count, params, &paramsInit);
 
   CHECKSTATUSPTR(status);
@@ -180,11 +180,11 @@ NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave3TemplatesCP"> */
 
-void 
+void
 LALInspiralWave3Templates (
    LALStatus        *status,
-   REAL4Vector      *output1, 
-   REAL4Vector      *output2, 
+   REAL4Vector      *output1,
+   REAL4Vector      *output2,
    InspiralTemplate *params
    )
 
@@ -201,14 +201,14 @@ LALInspiralWave3Templates (
   ASSERT(output2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(output1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(output2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
+  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
   CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), 
+  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func),
 					&(paramsInit.ak), params);
   CHECKSTATUSPTR(status);
 
@@ -226,7 +226,7 @@ LALInspiralWave3Templates (
   memset(output2->data, 0, output2->length * sizeof(REAL4));
 
   /* Call the engine function */
-  LALInspiralWave3Engine(status->statusPtr, output1, output2, NULL, 
+  LALInspiralWave3Engine(status->statusPtr, output1, output2, NULL,
 			    NULL, NULL, NULL, &count, params, &paramsInit);
   CHECKSTATUSPTR(status);
 
@@ -242,16 +242,16 @@ NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave3ForInjectionCP"> */
 
-void 
+void
 LALInspiralWave3ForInjection (
 			      LALStatus        *status,
-			      CoherentGW       *waveform,   
+			      CoherentGW       *waveform,
 			      InspiralTemplate *params,
 			      PPNParamStruc  *ppnParams)
-     
+
      /* </lalVerbatim>  */
 {
-  
+
   UINT4 count, i;
   REAL4Vector *h=NULL;
   REAL4Vector *a=NULL;
@@ -262,46 +262,46 @@ LALInspiralWave3ForInjection (
   REAL8 phiC;/* phase at coalescence */
   CHAR message[256];
 
-  
-  InspiralInit paramsInit;  
-  
+
+  InspiralInit paramsInit;
+
  /** -- -- */
   INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
   ATTATCHSTATUSPTR(status);
-  
+
   /* Make sure parameter and waveform structures exist. */
   ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT( !( waveform->h ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  
+
   params->ampOrder = 0;
   sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
   LALInfo(status, message);
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
-  CHECKSTATUSPTR(status);   
+  CHECKSTATUSPTR(status);
 
   if (paramsInit.nbins==0)
     {
       DETATCHSTATUSPTR(status);
       RETURN (status);
-      
+
     }
-  
-  /* Now we can allocate memory and vector for coherentGW structure*/     
+
+  /* Now we can allocate memory and vector for coherentGW structure*/
   LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
-  CHECKSTATUSPTR(status);   
+  CHECKSTATUSPTR(status);
   LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
-  CHECKSTATUSPTR(status);   
+  CHECKSTATUSPTR(status);
   LALDCreateVector(status->statusPtr, &phiv, paramsInit.nbins);
   CHECKSTATUSPTR(status);
 
  /* By default the waveform is empty */
- 
+
   memset(ff->data, 0, ff->length * sizeof(REAL4));
   memset(a->data,  0, a->length * sizeof(REAL4));
   memset(phiv->data, 0, phiv->length * sizeof(REAL8));
@@ -309,7 +309,7 @@ LALInspiralWave3ForInjection (
   if( params->ampOrder )
   {
      LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
-     CHECKSTATUSPTR(status);   
+     CHECKSTATUSPTR(status);
      memset(h->data,  0, h->length * sizeof(REAL4));
   }
 
@@ -350,7 +350,7 @@ LALInspiralWave3ForInjection (
   }
 
   /*  if ( (phase/2./LAL_PI) < 2. ){
-    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
+    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.",
 	       (double)phase/2./(double)LAL_PI );
     LALWarning(status, message);
 
@@ -358,7 +358,7 @@ LALInspiralWave3ForInjection (
   }
   else*/
     {
-      
+
       /*wrap the phase vector*/
       phiC =  phiv->data[count-1] ;
       for (i=0; i<count;i++)
@@ -387,75 +387,75 @@ LALInspiralWave3ForInjection (
 	       LALINSPIRALH_MSGEMEM );
       }
       memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-      
-      
-      
+
+
+
       in.length = (UINT4)count;
       in.vectorLength = 2;
       LALSCreateVectorSequence( status->statusPtr,
 				&( waveform->a->data ), &in );
-      CHECKSTATUSPTR(status);      
+      CHECKSTATUSPTR(status);
       LALSCreateVector( status->statusPtr,
 			&( waveform->f->data ), count);
-      CHECKSTATUSPTR(status);      
+      CHECKSTATUSPTR(status);
       LALDCreateVector( status->statusPtr,
 			&( waveform->phi->data ), count );
-      CHECKSTATUSPTR(status);        
-      
-      
-  
-      
+      CHECKSTATUSPTR(status);
+
+
+
+
       memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
       memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
       memcpy(waveform->phi->data->data ,phiv->data, count*(sizeof(REAL8)));
-      
-      
-      
-      
+
+
+
+
       waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
 	= 1./params->tSampling;
-      
+
       waveform->a->sampleUnits = lalStrainUnit;
       waveform->f->sampleUnits = lalHertzUnit;
-      waveform->phi->sampleUnits = lalDimensionlessUnit;  
+      waveform->phi->sampleUnits = lalDimensionlessUnit;
       waveform->position = ppnParams->position;
       waveform->psi = ppnParams->psi;
 
-      LALSnprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
-      LALSnprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );
-      
+      snprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
+      snprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
+      snprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );
+
       /* --- fill some output ---*/
-      
+
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
       ppnParams->length = count;
-      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
 			- waveform->f->data->data[count-2])) * ppnParams->deltaT;
       ppnParams->fStop  = params->fFinal;
       ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
-      
+
       ppnParams->fStart   = ppnParams->fStartIn;
 
       if( params->ampOrder )
       {
         if ( ( waveform->h = (REAL4TimeVectorSeries *)
-	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
         {
 	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
         }
         memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
         LALSCreateVectorSequence( status->statusPtr,
 				  &( waveform->h->data ), &in );
-        CHECKSTATUSPTR(status);      
+        CHECKSTATUSPTR(status);
         memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
         waveform->h->deltaT = 1./params->tSampling;
         waveform->h->sampleUnits = lalStrainUnit;
-        LALSnprintf( waveform->h->name, LALNameLength, "T3 inspiral polarizations" );
+        snprintf( waveform->h->name, LALNameLength, "T3 inspiral polarizations" );
         LALSDestroyVector(status->statusPtr, &h);
         CHECKSTATUSPTR(status);
-      } 
-    }    /*end of coherentGW storage */ 
+      }
+    }    /*end of coherentGW storage */
 
 
   /* --- free memory --- */
@@ -499,7 +499,7 @@ LALInspiralWave3Engine(
   void *pars;
 
   REAL8 temp, tempMax=0, tempMin = 0;
-  
+
   /* Only used in injection case */
   REAL8 unitHz = 0.;
   REAL8 cosI = 0.;/* cosine of system inclination */
@@ -533,19 +533,19 @@ LALInspiralWave3Engine(
   totalMass = (params->totalMass)*LAL_MTSUN_SI; /* mass of the system in seconds */
 
 
-/* 
-   If flso is less than the user inputted upper frequency cutoff fu, 
-   then the waveforn is truncated at f=flso.  
+/*
+   If flso is less than the user inputted upper frequency cutoff fu,
+   then the waveforn is truncated at f=flso.
 */
 
-  if (fu) 
-     fHigh = (fu < ak.flso) ? fu : ak.flso; 
-  else 
+  if (fu)
+     fHigh = (fu < ak.flso) ? fu : ak.flso;
+  else
      fHigh = ak.flso;
 
-/* 
-   Check that the highest frequency is less than half the sampling frequency - 
-   the Nyquist theorum 
+/*
+   Check that the highest frequency is less than half the sampling frequency -
+   the Nyquist theorum
 */
 
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -564,7 +564,7 @@ LALInspiralWave3Engine(
    * chirp times are obtained by inverting t(f). Rather tC should be obtained by
    * solving the equation f0 - f(tC) = 0. This is what is implemented below.
    */
-                                                                                                                             
+
   timeIn.func = func.frequency3;
   timeIn.ak = ak;
   rootIn.function = &LALInspiralFrequency3Wrapper;
@@ -576,12 +576,12 @@ LALInspiralWave3Engine(
 
   rootIn.xmax = c1*params->tC*3 + 5.; /* we add 5 so that if tC is small then xmax
                                          is always greater than a given value (here 5)*/
-                                                                                                                             
+
   /* for x in [rootIn.xmin, rootIn.xmax], we search the value which gives the max frequency.
    and keep the corresponding rootIn.xmin. */
-                                                                                                                             
-                                                                                                                             
-                                                                                                                             
+
+
+
   for (tc = c1*params->tC/1000.; tc < rootIn.xmax; tc+=c1*params->tC/1000.){
     LALInspiralFrequency3Wrapper(status->statusPtr, &temp,  tc , pars);
     if (temp > tempMax) {
@@ -592,7 +592,7 @@ LALInspiralWave3Engine(
       tempMin = temp;
     }
   }
-                                                                                                                             
+
   /* if we have found a value positive then everything should be fine in the
      BissectionFindRoot function */
   if (tempMax > 0  &&  tempMin < 0){
@@ -608,9 +608,9 @@ LALInspiralWave3Engine(
   else
     /* Or abort if not injection */
     ABORT( status, LALINSPIRALH_EROOTINIT, LALINSPIRALH_MSGEROOTINIT );
-                                                                                                                             
+
   tc /= c1;
-                                                                                                                             
+
   tc += params->startTime;       /* Add user given startTime to instant of
                                      coalescence of the compact objects */
 
@@ -629,7 +629,7 @@ LALInspiralWave3Engine(
 
 /* We stop if any of the following conditions fail */
 
-  while (f < fHigh && t < tmax && f > fOld) 
+  while (f < fHigh && t < tmax && f > fOld)
   {
     /* Check we don't write past the end of the vector */
     if ((output1 && ((UINT4)i >= output1->length)) || (ff && ((UINT4)count >= ff->length)))
@@ -637,13 +637,13 @@ LALInspiralWave3Engine(
         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
     }
 
-    fOld = f; 
+    fOld = f;
     v = pow(f*LAL_PI*totalMass, oneby3);
     v2 = v*v;
     if (output1)
-    { 
-        
-        
+    {
+
+
       /*
       output1->data[i]   = LALInspiralHPlusPolarization( phase+phi0, v, params );
       */
@@ -654,18 +654,18 @@ LALInspiralWave3Engine(
       */
         output2->data[i] = (REAL4) (apFac * v2) * cos(phase+phi1);
     }
-    else if (a) 
+    else if (a)
     {
       int ice, ico;
       ice = 2*count;
       ico = ice + 1;
       omega = v*v*v;
-      
+
       ff->data[count]     = (REAL4)(omega/unitHz);
       a->data[ice]        = (REAL4)(apFac * v2 );
       a->data[ico]        = (REAL4)(acFac * v2 );
       phiv->data[count]   = (REAL8)(phase );
- 
+
       if (h)
       {
         h->data[ice] = LALInspiralHPlusPolarization( phase, v, params );
@@ -679,10 +679,10 @@ LALInspiralWave3Engine(
     func.phasing3(status->statusPtr, &phase, td, &ak);
     CHECKSTATUSPTR(status);
     func.frequency3(status->statusPtr, &f, td, &ak);
-    CHECKSTATUSPTR(status); 
+    CHECKSTATUSPTR(status);
   }
   params->fFinal = fOld;
-  if (output1 && !output2) params->tC = t;  
+  if (output1 && !output2) params->tC = t;
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
 */

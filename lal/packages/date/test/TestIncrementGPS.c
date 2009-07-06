@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 
     /* later */
     gps2.gpsNanoSeconds -= 1;
-    
+
     if (!compare_gps_ok(&status, &gps, &gps2, LALGPS_LATER))
       return FAILURE;
 
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     /* later */
     gps2.gpsSeconds -= 1;
     gps2.gpsNanoSeconds -= 1;
-    
+
     if (!compare_gps_ok(&status, &gps, &gps2, LALGPS_LATER))
       return FAILURE;
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
       return FAILURE;
 
   } /* END: test of LALCompareGPS() */
-  
+
 
   /*
    * TEST No. 1 -- test of LALIncrementGPS()
@@ -231,15 +231,15 @@ int main(int argc, char **argv)
     /* now see if deltaT1 takes us from gps1 to gps2 and vice-versa */
     SUB (LALAddFloatToGPS (&status, &gpsTest, &gps2, deltaT1), &status);
     if ( (gpsTest.gpsSeconds != gps1.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps1.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 1.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 1.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n",
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps1.gpsSeconds, gps1.gpsNanoSeconds);
-      return FAILURE; 
+      return FAILURE;
     }
     /* no go the other direction..*/
     deltaT1 = -deltaT1;
     SUB (LALAddFloatToGPS (&status, &gpsTest, &gps1, deltaT1), &status);
     if ( (gpsTest.gpsSeconds != gps2.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps2.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 2.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 2.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n",
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
       return FAILURE;
     }
@@ -248,7 +248,7 @@ int main(int argc, char **argv)
     gps3.gpsSeconds = 717076574;
     gps3.gpsNanoSeconds = 401265590;
     if ( (gpsTest.gpsSeconds != gps3.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps3.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 3.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 3.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n",
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
       return FAILURE;
     }
@@ -256,12 +256,12 @@ int main(int argc, char **argv)
     gps3.gpsSeconds = 715615153;
     gps3.gpsNanoSeconds = 712343412;
     if ( (gpsTest.gpsSeconds != gps3.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps3.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 4.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 4.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n",
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
       return FAILURE;
     }
 
-    
+
   } /* testing LALAddFloatToGPS() and LALDeltaFloatGPS() */
   /*----------------------------------------------------------------------*/
 
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
   if (!decrement_gps_ok(&status, &deltaT, &gps, &expected_gps))
     return FAILURE;
 
-  
+
   gps.gpsSeconds     =     100;
   gps.gpsNanoSeconds =      70;
   deltaT.seconds     =     100;
@@ -309,7 +309,7 @@ int main(int argc, char **argv)
 
   if (!decrement_gps_ok(&status, &deltaT, &gps, &expected_gps))
     return FAILURE;
-  
+
   /* expect an error on this next one */
   gps.gpsSeconds     = 100;
   gps.gpsNanoSeconds =  70;
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
           fprintf(stderr, "       got: %9d:%09d\n", deltaT.seconds,
                   deltaT.nanoSeconds);
         }
-      
+
       return FAILURE;
     }
 
@@ -413,7 +413,7 @@ int main(int argc, char **argv)
   return SUCCESS;
 } /* END: main() */
 
-
+
 
 static int print_compare_errmsg_maybe(const char *msg,
                                       LALGPSCompareResult expected_val,
@@ -465,7 +465,7 @@ static int print_compare_errmsg_maybe(const char *msg,
           strncat(long_msg, later_str, LONGESTSTR - 1 - strlen(long_msg));
           break;
         }
-  
+
       return fprintf(stderr, "%s\n\n", long_msg);
     }
   else
@@ -475,7 +475,7 @@ static int print_compare_errmsg_maybe(const char *msg,
 }
 
 
-
+
 static BOOLEAN compare_gps_ok(LALStatus *status,
                               const LIGOTimeGPS *p_gps1,
                               const LIGOTimeGPS *p_gps2,
@@ -505,14 +505,14 @@ static BOOLEAN compare_gps_ok(LALStatus *status,
     }
 }
 
-
+
 static int sprint_gps_time(char *str, const LIGOTimeGPS *p_gps)
 {
   return snprintf(str, LONGESTSTR - 1 - strlen(str),
                   "%9d:%09d", p_gps->gpsSeconds, p_gps->gpsNanoSeconds);
 }
 
-
+
 #if 0 /* NOT USED */
 static int sprint_time_interval(char *str,
                                 const LALTimeInterval *p_time_interval)
@@ -524,7 +524,7 @@ static int sprint_time_interval(char *str,
 #endif
 
 
-
+
 
 static int print_incr_errmsg_maybe(const char *msg,
                                    const LIGOTimeGPS *p_expected_gps,
@@ -544,7 +544,7 @@ static int print_incr_errmsg_maybe(const char *msg,
       sprint_gps_time(long_msg, p_expected_gps);
       snprintf(long_msg, LONGESTSTR, ", got ");
       sprint_gps_time(long_msg, p_got_gps);
-      
+
       return fprintf(stderr, "%s\n\n", long_msg);
     }
   else
@@ -552,9 +552,9 @@ static int print_incr_errmsg_maybe(const char *msg,
       return 0;
     }
 } /* END: print_incr_errmsg_maybe() */
-                                   
 
-
+
+
 static BOOLEAN increment_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
                                 LIGOTimeGPS *p_init_gps,
@@ -581,14 +581,14 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
               __LINE__, LALTESTINCREMENTGPSC);
       REPORTSTATUS(status);
       exit (status->statusCode);
-    }  
+    }
 
   if (verbose_p)
     {
       printf("got_gps:      %9d:%09d\n", p_init_gps->gpsSeconds,
              p_init_gps->gpsNanoSeconds);
     }
-  
+
   if (cmprslt != LALGPS_EQUAL)
     {
       print_incr_errmsg_maybe("LALIncrementGPS() failed",
@@ -601,7 +601,7 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
     }
 } /* END: increment_gps_ok() */
 
-
+
 
 static BOOLEAN decrement_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,

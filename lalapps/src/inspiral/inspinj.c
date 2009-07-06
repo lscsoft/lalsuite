@@ -208,7 +208,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
-  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
   return pp;
 }
@@ -241,7 +241,7 @@ static void print_usage(char *program)
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
       "  [--time-step] step       space injections by average of step seconds\n"\
-      "                           (default : 2630 / pi seconds)\n"\
+      "                           (suggestion : 2630 / pi seconds)\n"\
       "  [--time-interval] int    distribute injections in an interval, int s\n"\
       "                           (default : 0 seconds)\n"\
       "\n"\
@@ -261,7 +261,7 @@ static void print_usage(char *program)
       "                           volume: uniform distribution in volume\n"\
       "  --i-distr INCDIST        set the inclination distribution, must be either\n"\
       "                           uniform: distribute uniformly over arccos(i)\n"\
-      "                           gaussian: gaussian distributed in arccos(i)\n"\
+      "                           gaussian: gaussian distributed in (i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
@@ -871,7 +871,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
-  REAL8 meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
+  REAL8 meanTimeStep = -1;
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
@@ -1885,8 +1885,8 @@ int main( int argc, char *argv[] )
 
 
   /* check for gaussian mass distribution parameters */
-  if ( mDistr==gaussianMassDist && (meanMass1 < 0.0 || massStdev1 < 0.0 || 
-        meanMass2 < 0.0 || massStdev2 < 0.0))
+  if ( mDistr==gaussianMassDist && (meanMass1 <= 0.0 || massStdev1 <= 0.0 || 
+        meanMass2 <= 0.0 || massStdev2 <= 0.0))
   {
     fprintf( stderr, 
         "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
@@ -1895,8 +1895,8 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <0.0 || minMass2 <0.0 || 
-        maxMass1 <0.0 || maxMass2 <0.0) )
+  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 || 
+	 maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr, 
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
@@ -2014,6 +2014,13 @@ int main( int argc, char *argv[] )
           "Minimal kappa must be less than maximal kappa\n" );
       exit( 1 );
     }
+  }
+
+  if (meanTimeStep<=0)
+  {
+    fprintf( stderr,
+	     "Minimum time step value must be larger than zero\n" );
+    exit( 1 );
   }
 
   
@@ -2145,9 +2152,16 @@ int main( int argc, char *argv[] )
       simTable->longitude = longitude;
       simTable->latitude = latitude;
     }
-    else
+    else if (lDistr == uniformSkyLocation)
     {
       simTable=XLALRandomInspiralSkyLocation(simTable, randParams); 
+    }
+    else
+    {
+      fprintf( stderr,
+	       "Unknown location distribution specified. Possible choices: "
+	       "source, exttrig, random or fixed\n" );
+      exit( 1 );
     }
 
     /* populate orientations */
@@ -2276,7 +2290,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   if (source_data)
-    free(source_data);
+    LALFree(source_data);
 
 
   LALCheckMemoryLeaks();

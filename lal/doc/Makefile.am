@@ -6,45 +6,9 @@ man_MANS = lal.3 lal-config.1
 
 INSTALLFILES = lalspec.dvi lalspec.ps lalspec.pdf lsd.dvi lsd.ps lsd.pdf
 DISTCLEANFILES = $(INSTALLFILES)
-MAINTAINERCLEANFILES = lal-install.tex lal-preinstall.tex \
-		       lal-install.txt lal-preinstall.txt \
-		       lal-install.sh lal-preinstall.sh README.install
-BUILT_SOURCES = lal-install.tex lal-preinstall.tex \
-		lal-install.txt lal-preinstall.txt \
-		lal-install.sh lal-preinstall.sh README.install
 EXTRA_DIST = $(man_MANS) ligodcc.cls lalspec.tex lsd.tex lal.sty \
              lsdFigDirStructure.eps merger.eps \
-             lsdFigDirStructure.pdf merger.pdf \
-	     lal-install.tex lal-preinstall.tex \
-	     lal-install.txt lal-preinstall.txt \
-	     lal-install.sh lal-preinstall.sh \
-	     lal-install-x.sh lal-preinstall-x.sh \
-	     scrstrip.sed texstrip.sed txtstrip.sed install.m4 \
-	     README.install
-
-README.install: install.m4 lal-install.txt lal-preinstall.txt
-	-rm -f $(srcdir)/README.install
-	cd $(srcdir) && m4 install.m4 >> README.install
-	cp -f $(srcdir)/README.install $(top_srcdir)
-
-lal-preinstall.sh: lal-preinstall-x.sh scrstrip.sed
-	cd $(srcdir) && sed -f scrstrip.sed lal-preinstall-x.sh > lal-preinstall.sh
-	cd $(srcdir) && chmod +x lal-preinstall.sh
-
-lal-preinstall.tex: lal-preinstall-x.sh texstrip.sed
-	cd $(srcdir) && sed -f texstrip.sed lal-preinstall-x.sh > lal-preinstall.tex
-
-lal-preinstall.txt: lal-preinstall-x.sh txtstrip.sed
-	cd $(srcdir) && sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
-
-lal-install.sh: lal-install-x.sh scrstrip.sed
-	cd $(srcdir) && sed -f scrstrip.sed lal-install-x.sh > lal-install.sh
-
-lal-install.tex: lal-install-x.sh texstrip.sed
-	cd $(srcdir) && sed -f texstrip.sed lal-install-x.sh > lal-install.tex
-
-lal-install.txt: lal-install-x.sh txtstrip.sed
-	cd $(srcdir) && sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
+						 lsdFigDirStructure.pdf merger.pdf
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)

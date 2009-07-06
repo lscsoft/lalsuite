@@ -70,9 +70,9 @@ to develop a \emph{portable} and \emph{convenient} library, both for users and
 developers.
 
 To achieve portability, the library is a library of routines written in a
-subset of C89, which is well supported on nearly every computing environment,
-and the routines can easily be used by programs written in other languages
-(C++, Fortran, Python, etc.).  
+subset of C99, which is well supported on nearly every modern computing
+environment, and the routines can easily be used by programs written in
+other languages (C++, Fortran, Python, etc.).
 
 The first edition of this specification contained several highly restrictive
 rules that were conceived to give LAL routines a standard ``look and feel''
@@ -282,8 +282,8 @@ NRCSID( LALTHISSOURCEFILEC, "$Id$" );
 
 
 \subsection{Language requirements}
-LAL code should all be in ``clean C,'' i.e., that language that is a 
-subset of both C and C++.  This is not quite the same as just the C 
+LAL code should all be in ``clean C,'' i.e., that language that is a
+subset of both C and C++.  This is not quite the same as just the C
 programming language.  Only C-style comments should be used and avoid
 any constructs that would behave differently with C++-style comments.
 Names of variables, functions, etc., should not be any of the reserved
@@ -343,13 +343,12 @@ since there should be no assumptions about the nature of the filesystem.
 LAL is not supposed to assume POSIX.  Furthermore, there should be no
 assumptions about (or dependence on) the environment under which a LAL
 function is called.  This will allow LAL routines to be integrated into
-a wide variety of programming environments: they may be used in stand-alone
-programs or in loadable modules integrated into other run environments.
-Specifically this means that routines in \verb+stdio.h+ are not allowed (except
-for \verb+sprintf+, but there is a LAL replacement for this,
-\verb+LALSnprintf+, which should be used instead), several routines in
+a wide variety of programming environments: they may be used in
+stand-alone programs or in loadable modules integrated into other run
+environments.  Specifically this means that routines in \verb+stdio.h+
+are not allowed (except for \verb+snprintf+), several routines in
 \verb+stdlib.h+ including \verb+rand+ and \verb+srand+ (there are LAL
-replacements for these), \verb+system+, and \verb+getenv+.  
+replacements for these), \verb+system+, and \verb+getenv+.
 
 \begin{lalrule}
 Functions will not perform any file I/O or have any dependence on the
@@ -362,7 +361,7 @@ used.
 \subsection{Memory management}
 
 Memory should always be allocated or freed with one of the LAL custom
-memory managers: \verb+LALMalloc+, \verb+LALCalloc+, \verb+LALRealloc+, 
+memory managers: \verb+LALMalloc+, \verb+LALCalloc+, \verb+LALRealloc+,
 and \verb+LALFree+, and \emph{not} with \verb+malloc+, \verb+calloc+,
 \verb+realloc+, and \verb+free+.  The LAL memory managers have additional
 memory leak checking ability that will assist in debugging if the debug
@@ -431,7 +430,7 @@ Thus the routines \verb+exit+, \verb+atexit+, and routines in \verb+signal.h+
 and \verb+assert.h+ should not be used.  (But note the exception that XLAL
 functions do call an error handler, which can be set outside of the library to
 abort or exit.)  Also, long-jumps are not allowed, so any routine in
-\verb+setjmp.h+ is not allowed. 
+\verb+setjmp.h+ is not allowed.
 \begin{lalrule}
 All functions will return control to the calling function.  Functions such
 as \verb+exit+, \verb+atexit+, \verb+raise+, \verb+assert+, \verb+abort+
@@ -577,7 +576,7 @@ is to design some rules for the XLAL functions that try to approach some
 degree of uniformity without overly hampering their interface.
 \end{enumerate}
 For the purpose of providing a relatively uniform error reporting system, it
-is necessary to categorize XLAL functions into four likely types, which are 
+is necessary to categorize XLAL functions into four likely types, which are
 based on their return types.
 \begin{lalrule}
 All XLAL functions shall have a name beginning with \verb+XLAL+ followed by
@@ -712,10 +711,10 @@ string and \verb+errnum+ is the XLAL error number (see below).
 
 \subsection{XLAL error numbers and error handlers}
 
-XLAL functions use the modifiable lvalue \verb+xlalErrno+ (think of it as 
+XLAL functions use the modifiable lvalue \verb+xlalErrno+ (think of it as
 a global \verb+int+-type variable) to codify the nature of a failure.  It
 should not be used for any other purpose.  The values that \verb+xlalErrno+
-is allowed to have are controlled.  It is quite analogous to the standard 
+is allowed to have are controlled.  It is quite analogous to the standard
 C \verb+errno+.
 
 To use \verb+xlalErrno+, set it to zero (no error) before calling an XLAL
@@ -785,7 +784,7 @@ occurs.  \emph{However, the error handler should not be changed within a
 LAL or an XLAL function.}  Replacing the error handler should always be
 done in the top-level program.
 
-To assist in setting \verb+xlalErrno+ and invoking the error handler, 
+To assist in setting \verb+xlalErrno+ and invoking the error handler,
 the function
 \begin{verbatim}
 void XLALError( const char *func, const char *file, int line, int errnum );
@@ -853,7 +852,7 @@ are occasions when violations must be allowed.  In such cases, the violations
 are under strict control of the LAL Librarian.
 
 
-\section{Beyond LAL... LALSupport, LALMetaIo, LALFrame, LALMPI}
+\section{Beyond LAL... LALSupport, LALMetaIo, LALFrame}
 
 Of the LAL requirements, the most \emph{functionally} limiting is the
 requirement that no I/O is allowed.  This requirement is in place to
@@ -869,12 +868,12 @@ need to conform to all of the LAL standards; in particular, their purpose
 is to provide the I/O functions that are missing from LAL.
 
 \begin{lalrule}
-The \verb+LALSupport+, \verb+LALMetaIo+, \verb+LALFrame+, and \verb+LALMPI+
-libraries contain routines that need not conform to all of the LAL
-specifications; in particular, they contain routines that perform file
-I/O and/or require additional libraries.  Routines from these libraries
-are intended to be used along with LAL routines, but LAL routines shall
-not call any routine from (or in any other way be dependent upon) these
+The \verb+LALSupport+, \verb+LALMetaIo+, and \verb+LALFrame+ libraries
+contain routines that need not conform to all of the LAL specifications;
+in particular, they contain routines that perform file I/O and/or
+require additional libraries.  Routines from these libraries are
+intended to be used along with LAL routines, but LAL routines shall not
+call any routine from (or in any other way be dependent upon) these
 libraries.
 \end{lalrule}
 
@@ -905,25 +904,14 @@ data format.  These routines use the \textsc{Frame} library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \textsc{Frame} library is available.
 
-\subsection{The \texttt{LALMPI} library}
-
-This library provides routines that wrap certain MPI functions for easy use
-in communicating various LAL structures between different nodes using MPI.
-The library requires a suitable MPI library (e.g., LAM or MPICH) to be
-present; if one of these is available, the \texttt{LALMPI} library can be
-conditionally built and installed.
-
-
-
- 
 \appendix
 
 \section{Language issues}
 \label{a:language}
 
-The C89 standard specifies certain keywords and standard library functions.
+The C99 standard specifies certain keywords and standard library functions.
 Only a subset of these are suitable for LAL functions.  However, for maximum
-portability, one should avoid various extensions to the C89 keywords and
+portability, one should avoid various extensions to the C99 keywords and
 functions.  Here are some guidelines on writing portable LAL code.
 
 \subsection{Namespace requirements}
@@ -953,24 +941,22 @@ using        virtual      void         volatile     wchar_t        while
 xor          xor_eq
 \end{verbatim}
 It is not a good idea to use \verb+fortran+ or \verb+entry+ either as these
-are sometimes reserved.  Of these keywords, the ones that are C89 keywords are
+are sometimes reserved.  Of these keywords, the ones that are C99 keywords are
 \begin{verbatim}
-auto            double          int             struct
-break           else            long            switch
-case            enum            register        typedef
-char            extern          return          union
-const           float           short           unsigned
-continue        for             signed          void
-default         goto            sizeof          volatile
-do              if              static          while
+_Bool           _Complex        _Imaginary      auto
+break           case            char            const
+continue        default         do              double
+else            enum            extern          float
+for             goto            if              inline
+int             long            register        restrict
+return          short           signed          sizeof
+static          struct          switch          typedef
+union           unsigned        void            volatile
+while
 \end{verbatim}
 Of these there is (almost) no need to use \verb+auto+, \verb+char+,
 \verb+double+, \verb+float+, \verb+long+, \verb+register+, \verb+short+,
 \verb+signed+, \verb+unsigned+, or \verb+volatile+.
-
-There are also a few new keywords in C99.  These are
-\verb+inline+, \verb+_Imaginary+, \verb+_Complex+, and \verb+_Bool+,
-and \verb+restrict+.  These should be avoided.
 
 \subsubsection*{Reserved names}
 
@@ -1007,7 +993,7 @@ others, it is important to respect these when coding the interface.
 \item Names prefixed with \texttt{gr\_} are reserved in \verb+grp.h+.
 \item Names suffixed with \texttt{\_MAX} are reserved in \verb+limits.h+.
 \item Names prefixed with \texttt{pw\_} are reserved in \verb+pwd.h+.
-\item Names prefixed with \texttt{sa\_} and \texttt{SA\_} are reserved 
+\item Names prefixed with \texttt{sa\_} and \texttt{SA\_} are reserved
 in \verb+signal.h+.
 \item Names prefixed with \texttt{st\_} and \texttt{S\_} are reserved in
 \verb+sys/stat.h+.
@@ -1030,9 +1016,9 @@ uppercase letter.
 
 \subsection{Allowed functions from standard C}
 
-C libraries often have various extensions from the C89 standard C library,
+C libraries often have various extensions from the C99 standard C library,
 but for portability purposes only those functions that are specified by the
-C89 standard should be used (note: LAL does require a \emph{hosted} rather
+C99 standard should be used (note: LAL does require a \emph{hosted} rather
 than \emph{freestanding} environment).  Also, many of these should \emph{not}
 be used in LAL because they would cause the LAL functions to violate one of the
 above rules (e.g., would be used for file I/O, would cause a function to not

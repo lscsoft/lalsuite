@@ -32,7 +32,7 @@
    take into account binary pulsar orbits
    Models are taken from Taylor and Weisberg (1989) and use the
    naming conventions therein and used by TEMPO */
-   
+
 /*   Also contains function to read TEMPO .par files to obtain parameters
   and errors on parameters (if available) */
 
@@ -40,26 +40,26 @@
    Author: Pitkin, M. D.
    $Id$
    </lalVerbatim>
-   
+
    <lalLaTeX>
    \subsection{Module \texttt{BinaryPulsarTiming.c}}
    \label{ss:BinaryPulsarTiming.c}
-   
+
    Functions for calculating the timing delay to a signal from a pulsar in a
    binary system and reading pulsar parameters from TEMPO \cite{TEMPO} .par
    files.
-   
+
    \subsubsection*{Prototypes}
    \vspace{0.1in}
    \input{BinaryPulsarTimingCP}
    \idx{LALBinaryPulsarDeltaT()}
    \idx{LALReadTEMPOParFile()}
    \idx{LALdegsToRads()}
-   
+
    \subsubsection*{Description}
-   
+
    The main function computes the time delay of a signal from a pulsar in a
-   binary system due to doppler shifts and relativistic delays, 
+   binary system due to doppler shifts and relativistic delays,
    \begin{equation}
    \Delta{}t = t_{\rm Roemer} + t_{\rm Shapiro} + t_{\rm Einstein} + t_{\rm
    Abberation},
@@ -67,35 +67,35 @@
    where $t_{\rm Roemer}$ is the light travel time, $t_{\rm Shapiro}$ is the
    General relativistic time delay, $t_{\rm Einstein}$ is the special
    relativistic time delay, and $t_{\rm Abberation}$ is the delay caused by the
-   pulsars' rotation. There are several models of the binary systems, described 
+   pulsars' rotation. There are several models of the binary systems, described
    in \cite{TaylorWeisberg:1989}, of which the four most common are so far
    implemented. The four models are the Blandford-Teukolsky model (BT)
    \cite{BlandfordTeukolsky:1976}, the low ellipticity model (ELL1)
-   \cite{ChLangeetal:2001}, Damour-Deruelle model (DD) \cite{DamourDeruelle:1985}, 
+   \cite{ChLangeetal:2001}, Damour-Deruelle model (DD) \cite{DamourDeruelle:1985},
    and the main sequence system model (MSS) \cite{Wex:1998}.
    These four models all use the five main binary parameters: the longitude of
    periastron $\omega_0$, the eccentricity of the orbit $e$, the orbital period
-   $P$, the time of periastron/or the time of ascension of the first node 
+   $P$, the time of periastron/or the time of ascension of the first node
    $T_0$/$T_{{\rm asc}}$, and the projected semi-major axis $a\sin{}i$. The are
    also many other model dependent parameters. These routines closely follow
    those used in the radio astronomy package TEMPO \cite{TEMPO}.
- 
+
    Radio astronomers fit pulsar parameters using TEMPO which will output
    the parameters in a \verb+.par+ file. The values allowed in this file can be
-   found in the TEMPO documentation. A function is included to extract these 
+   found in the TEMPO documentation. A function is included to extract these
    parameters from the \verb+.par+ files and put them into a
    \verb+BinaryPulsarParams+ structure, it will set any unused parameters to
    zero or \texttt{NULL}. All parameters are in the units used by TEMPO with any
    conversion to SI units occuring within the binary timing routines. A function
-   is also included which converts a string containing the right ascension or 
-   declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s} 
-   (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in 
+   is also included which converts a string containing the right ascension or
+   declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s}
+   (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in
    radians.
- 
+
    \subsubsection*{Notes}
-   
+
    \vfill{\footnotesize\input{BinaryPulsarTimingCV}}
-   
+
    </lalLaTeX>
 */
 
@@ -115,7 +115,7 @@
 /******* DEFINE RCS ID STRING ************/
 NRCSID( BINARYPULSARTIMINGC, "$Id$" );
 
-/** Calculate the binary system time delay using the pulsar parameters in 
+/** Calculate the binary system time delay using the pulsar parameters in
  *  \c params
  */
 void
@@ -127,13 +127,13 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   ATTATCHSTATUSPTR(status);
 
   /* Check input arguments */
-  ASSERT(input != (BinaryPulsarInput *)NULL, status, 
+  ASSERT(input != (BinaryPulsarInput *)NULL, status,
   BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT);
 
-  ASSERT(output != (BinaryPulsarOutput *)NULL, status, 
+  ASSERT(output != (BinaryPulsarOutput *)NULL, status,
   BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
 
-  ASSERT(params != (BinaryPulsarParams *)NULL, status, 
+  ASSERT(params != (BinaryPulsarParams *)NULL, status,
   BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS);
 
   ASSERT((!strcmp(params->model, "BT")) ||
@@ -143,7 +143,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
          (!strcmp(params->model, "ELL1")) ||
          (!strcmp(params->model, "DD")) ||
          (!strcmp(params->model, "MSS")), status,
-         BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
+         BINARYPULSARTIMINGH_ENULLBINARYMODEL,
          BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
 
   XLALBinaryPulsarDeltaT( output, input, params );
@@ -163,7 +163,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
-  REAL8 w;  /* longitude of periastron */
+  REAL8 w=0;  /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
   REAL8 eps1, eps2;
   REAL8 eps1dot, eps2dot;
@@ -173,14 +173,14 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   REAL8 T0, Tasc, tb=0.; /* time parameters */
 
   REAL8 s, r; /* Shapiro shape and range params */
-  REAL8 gamma; /* time dilation and grav redshift */
+  REAL8 lal_gamma; /* time dilation and grav redshift */
   REAL8 dr, dth;
 
   REAL8 a0, b0;	/* abberation parameters */
-  
+
   REAL8 M, m2;
   REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
-  
+
   CHAR *model = params->model;
 
   /* Check input arguments */
@@ -212,9 +212,9 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   Pb = params->Pb*DAYSTOSECS; /* covert period from days to secs */
   pbdot = params->Pbdot*1.0e-12;
-  
+
   T0 = params->T0; /* these should be in TDB in seconds */
-  Tasc = params->Tasc;	
+  Tasc = params->Tasc;
 
   e = params->e;
   edot = params->edot*1.0e-12;
@@ -227,7 +227,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   xdot = params->xdot*1.0e-12;
   xpbdot = params->xpbdot*1.0e-12;
 
-  gamma = params->gamma;
+  lal_gamma = params->gamma;
   s = params->s;
   dr = params->dr;
   dth = params->dth*1.0e-6;
@@ -240,7 +240,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
   r = LAL_G_SI*m2/c3;
-  
+
   /* if T0 is not defined, but Tasc is */
   if(T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0){
     REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
@@ -254,19 +254,19 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* set time at which to calculate the binary time delay */
   tb = input->tb;
-  
+
   /* for BT, BT1P and BT2P models (and BTX model, but only for one orbit) */
   if(strstr(model, "BT") != NULL){
     REAL8 tt0;
-    REAL8 orbits=0.; 
+    REAL8 orbits=0.;
     INT4 norbits=0.;
     REAL8 phase; /* same as mean anomaly */
     REAL8 u = 0.0; /* eccentric anomaly */
-    REAL8 du = 1.0; 
-  
+    REAL8 du = 1.0;
+
     INT4 nplanets=1; /* number of orbitting bodies in system */
     INT4 i=1, j=1;
-    REAL8 fac=1.; /* factor in front of fb coefficients */  
+    REAL8 fac=1.; /* factor in front of fb coefficients */
 
     REAL8 su = 0., cu = 0.;
     REAL4 sw = 0., cw = 0.; /* phases from LUT */
@@ -287,7 +287,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /*REAL8 q, r, s;*/
 
       /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary
-        model.\n");*/		
+        model.\n");*/
 
       if(i==2){
         T0 = params->T02;
@@ -319,7 +319,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
             orbits += fac*params->fb[j-1]*pow(tt0,j);
           }
         }
-        else{ 
+        else{
           orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
         }
       }
@@ -351,18 +351,18 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /**********************************************************/
       if( strstr(model, "BTX") != NULL ){
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-          gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
+          lal_gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
+          lal_gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-          gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
+          lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
@@ -375,7 +375,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     com = cos(w);
     alpha = x*som;
     beta = x*com*sqrt(tt);
-    q = alpha*(cos(u)-e) + (beta+gamma)*sin(u);
+    q = alpha*(cos(u)-e) + (beta+lal_gamma)*sin(u);
     r = -alpha*sin(u) + beta*cos(u);
     s = 1.0/(1.0-e*cos(u));
     dt = -(-q+(LAL_TWOPI/Pb)*q*r*s);*/
@@ -435,14 +435,14 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       e2 = eps2 + eps2dot*tt0;
     }
     else{
-      REAL4 swint = 0., cwint = 0.;     
+      REAL4 swint = 0., cwint = 0.;
 
       ecc = sqrt(eps1*eps1 + eps2*eps2);
       ecc += edot*tt0;
       w_int = atan2(eps1, eps2);
       w_int = w_int + wdot*tt0;
 
-      sin_cos_LUT(&swint, &cwint, w_int); 
+      sin_cos_LUT(&swint, &cwint, w_int);
       /* e1 = ecc*sin(w_int);
       e2 = ecc*cos(w_int); */
       e1 = ecc*swint;
@@ -452,7 +452,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     sin_cos_LUT(&sp, &cp, phase);
     sin_cos_LUT(&s2p, &c2p, 2.*phase);
 
-    /* this timing delay (Roemer + Einstein) should be most important in most cases */ 
+    /* this timing delay (Roemer + Einstein) should be most important in most cases */
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
     DREpp = -x*sin(phase); */
@@ -494,7 +494,7 @@ different than DD model - TEMPO bnrymss.f */
     REAL8 Dbb;    /* Delta barbar in DD eq 52 */
 
     REAL8 xi; /* parameter for MSS model - the only other one needed */
-    
+
     REAL8 su = 0., cu = 0.;
     REAL4 sw = 0., cw = 0., swAe = 0., cwAe = 0.;
 
@@ -541,7 +541,7 @@ different than DD model - TEMPO bnrymss.f */
     Ae = LAL_TWOPI*orbits + Ae - phase;
 
     w = w0 + k*Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
-    
+
     /* small difference between MSS and DD */
     if(strstr(params->model, "MSS") != NULL){
       x = x + xi*Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
@@ -549,16 +549,16 @@ this isn't defined for either of the two pulsars currently using this model */
     }
     else
       x = x + xdot*tt0;
-    
+
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sin_cos_LUT(&sw, &cw, w);    
+    sin_cos_LUT(&sw, &cw, w);
     /* sw = sin(w);
     cw = cos(w); */
     alpha = x*sw;
     beta = x*sqrt(1.0-eth*eth)*cw;
-    bg = beta + gamma;
+    bg = beta + lal_gamma;
     DRE = alpha*(cu-er)+bg*su;
     DREp = -alpha*su + bg*cu;
     DREpp = -alpha*cu - bg*su;
@@ -572,21 +572,21 @@ this isn't defined for either of the two pulsars currently using this model */
     DS = -2.0*r*dlogbr;
 
     /* this abberation delay is prob fairly small */
-    sin_cos_LUT(&swAe, &cwAe, (w+Ae));    
+    sin_cos_LUT(&swAe, &cwAe, (w+Ae));
     /* DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw); */
     DA = a0*(swAe+e*sw) + b0*(cwAe+e*cw);
 
     /* timing difference */
-    Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp - 
+    Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp -
           0.5*e*su*anhat*anhat*DRE*DREp/onemecu) + DS + DA;
 
     output->deltaT = -Dbb;
   }
 
-  /* for DDGR model */  
+  /* for DDGR model */
 
   /* for Epstein-Haugan (EH) model - see Haugan, ApJ (1985) eqs 69 and 71 */
-  
+
   /* check that the returned value is not a NaN */
   if( isnan(output->deltaT) ){
     XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENAN );
@@ -601,8 +601,8 @@ LALReadTEMPOParFile(  LALStatus *status,
 {
   INITSTATUS(status, "LALReadTEMPOParFile", BINARYPULSARTIMINGC);
   ATTATCHSTATUSPTR(status);
-  
-  ASSERT(output != (BinaryPulsarParams *)NULL, status, 
+
+  ASSERT(output != (BinaryPulsarParams *)NULL, status,
   BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
 
   XLALReadTEMPOParFile( output, pulsarAndPath );
@@ -618,7 +618,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   const CHAR *fn = "XLALReadTEMPOParFile()";
 
   FILE *fp=NULL;
-  CHAR val[500][40]; /* string array to hold all the read in values 
+  CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
 
@@ -635,20 +635,20 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->x=0.0;      /* projected semi-major axis/speed of light (light secs) */
   output->T0=0.0;     /* time of orbital perisastron as measured in TDB (MJD) */
 
-  output->e2=0.0;      
-  output->Pb2=0.0;     
-  output->w02=0.0;     
-  output->x2=0.0;      
+  output->e2=0.0;
+  output->Pb2=0.0;
+  output->w02=0.0;
+  output->x2=0.0;
   output->T02=0.0;
 
-  output->e3=0.0;      
-  output->Pb3=0.0;     
-  output->w03=0.0;     
-  output->x3=0.0;      
+  output->e3=0.0;
+  output->Pb3=0.0;
+  output->w03=0.0;
+  output->x3=0.0;
   output->T03=0.0;
 
   output->xpbdot=0.0;  /* (10^-12) */
-  
+
   output->eps1=0.0;       /* e*sin(w) */
   output->eps2=0.0;       /* e*cos(w) */
   output->eps1dot=0.0;
@@ -701,7 +701,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->raErr=0.0;
   output->decErr=0.0;
   output->pmraErr=0.0;
-  output->pmdecErr=0.0;	
+  output->pmdecErr=0.0;
 
   output->posepoch=0.0;
   output->pepoch=0.0;
@@ -773,20 +773,20 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   while(!feof(fp)){
     /* make sure val[i] is clear first */
     sprintf(val[i], "%s", "");
-    
+
     fscanf(fp, "%s", val[i]);
     i++;
   }
-  
+
   k=i; /* k is the end number */
   i=0; /* reset i */
-  
+
   /* set pulsar values for output */
   /* in .par files first column will param name, second will be param value,
      if third is defined it will be an integer to tell TEMPO whether to fit
-     the param or not (don't need this), fourth will be the error on the 
+     the param or not (don't need this), fourth will be the error on the
      param (in same units as the param) */
- 
+
   /* convert all epochs given in MJD in .par files to secs in TDB  */
   while(1){
     j=i;
@@ -850,8 +850,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"f0") || !strcmp(val[i],"F0")) {
       /* in .par files exponents sometimes shown as D/d rather than e/E
-         need way to check this as atof will not convert D (but will 
-         work for e/E (if a d/D is present atof will convert the number 
+         need way to check this as atof will not convert D (but will
+         work for e/E (if a d/D is present atof will convert the number
          before the d/D but not the exponent */
       CHAR *loc;
 
@@ -894,7 +894,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"f2") || !strcmp(val[i],"F2")) {
       CHAR *loc;
-  
+
       /* check if exponent contains e/E or d/D or neither */
       if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
         output->f2 = atof(val[i+1])*pow(10, atof(loc+1));
@@ -1127,7 +1127,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       /* some of the parameter files in the ATNF catalogue have values
          of EDOT that are stupidly large e.g. O(1e33). These can cause
-         the time delay routines to fail, so if values of EDOT are 
+         the time delay routines to fail, so if values of EDOT are
          greater than 10000 ignore them and set it to zero */
       if( output->edot > 10000 ){
         output->edot = 0.;
@@ -1415,7 +1415,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         }
         j+=2;
       }
-    
+
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb3") || !strcmp(val[i], "FB3") ){
@@ -1465,7 +1465,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         }
         j+=2;
       }
-      
+
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb5") || !strcmp(val[i], "FB5") ){
@@ -1654,7 +1654,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     if(i>=k)
       break;
   }
-  
+
   /*fprintf(stderr, "Have I got to the end of LALReadPARFile.\n");*/
   fclose(fp);
 }
@@ -1672,7 +1672,7 @@ params.pmra, params.pmraErr, params.pmdec, params.pmdecErr);
     fprintf(stderr, "epochs:\tperiod %lf (GPS), position %lf (GPS)\n", params.pepoch,
 params.posepoch);
   fprintf(stderr, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n");
-  
+
   fprintf(stderr, "Frequency parameters\n");
   if(params.f0 != 0.)
     fprintf(stderr, "\tf0 = %.10lf +/- %.3le (Hz)\n", params.f0, params.f0Err);
@@ -1683,7 +1683,7 @@ params.posepoch);
   /* print binary parameters */
   if(params.model != NULL){
     fprintf(stderr, "\nBinary parameters:\tmodel %s\n", params.model);
-    
+
     fprintf(stderr, "Keplarian parameters:-\n");
     if(params.Pb != 0.)
       fprintf(stderr, "\tperiod = %lf +/- %.3le (days)\n", params.Pb, params.PbErr);
@@ -1709,16 +1709,16 @@ params.eps2Err);
     if(params.eps2 != 0.)
       fprintf(stderr, "\tsecond Laplace-Lagrange parameter (eps1) = %le +/- %.3le\n", params.eps2,
 params.eps2Err);
-    
+
     /*fprintf(stderr, "Post-Newtonian parameters:-\n");
     if(params.gamma != 0.)
       fprintf(stderr, "\tGravitational redshift parameter = %le +/- %.3le\n", params.gamma,
 params.gammaErr);*/
-      
+
   }
 }
 
-/* function converts dec or ra from format dd/hh:mm:ss.sss or format 
+/* function converts dec or ra from format dd/hh:mm:ss.sss or format
    dd/hhmmss.ss to radians */
 REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
   REAL8 radians=0.;
@@ -1727,7 +1727,7 @@ REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
   CHAR dc[4]="", mc[3]="", *sc=NULL;
   CHAR *loc;
   INT4 n, negbutzero=0;
-  
+
   /* if in format dd/hh:mm:ss.s do this*/
   /* locate first : */
   if((loc = strchr(degs, ':'))!=NULL){
@@ -1813,8 +1813,8 @@ and the other 19 seconds come from the leap seonds added between the TAI and
 UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
 http://www.stjarnhimlen.se/comp/time.html for details) */
 
-/* Matt - you have tested these function using the radio pulsar data that Michael 
-Kramer sent you and they are correct and are especially needed for the binary system 
+/* Matt - you have tested these function using the radio pulsar data that Michael
+Kramer sent you and they are correct and are especially needed for the binary system
 epochs */
 
 /* a very good paper describing the tranforms between different time systems
@@ -1828,7 +1828,7 @@ REAL8 LALTTMJDtoGPS(REAL8 MJD){
   if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
+  }
 
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
 start of GPS time */
@@ -1845,8 +1845,8 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
-  
+  }
+
   /* use factors from Seidelmann and Fukushima (their factors in the sin terms
      are ~36525 times larger than what I use here as the time T they use is in
      Julian centuries rather than Julian days) */
@@ -1856,7 +1856,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   TDBtoTT = 0.0016568*sin((357.5 + 0.98560028*Tdiff) * LAL_PI_180) +
             0.0000224*sin((246.0 + 0.90251882*Tdiff) * LAL_PI_180) +
             0.0000138*sin((355.0 + 1.97121697*Tdiff) * LAL_PI_180) +
-            0.0000048*sin((25.0 + 0.08309103*Tdiff) * LAL_PI_180) + 
+            0.0000048*sin((25.0 + 0.08309103*Tdiff) * LAL_PI_180) +
             0.0000047*sin((230.0 + 0.95215058*Tdiff) *LAL_PI_180);
 
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
@@ -1885,7 +1885,7 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
 
   /* convert from TDB to GPS */
   GPS = LALTDBMJDtoGPS(MJD);
-  
+
   /* add extra factor as the MJD was really in TCB not TDB) */
   GPS -= TCBtoTDB;
 

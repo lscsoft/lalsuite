@@ -36,7 +36,7 @@ $Id$
 #include <lal/LALNoiseModels.h>
 \end{verbatim}
 
-\noindent This header file covers routines that are used in 
+\noindent This header file covers routines that are used in
 synthetic background noise  expected in various
 detectors and signals with random parameters in background noise.
 
@@ -55,7 +55,7 @@ detectors and signals with random parameters in background noise.
 #include <lal/RealFFT.h>
 
 #ifdef  __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
     NRCSID( LALNOISEMODELSH, "$Id$" );
@@ -91,22 +91,22 @@ extern "C" {
 
     typedef enum
     {
-        geo, 
-        ligo, 
-        tama, 
+        geo,
+        ligo,
+        tama,
         virgo
     }
     Detector;
 
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \idx[Type]{Detector} 
+    /*  <lalLaTeX>
+        \idx[Type]{Detector}
         </lalLaTeX>  */
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
-            tagInspiralWaveCorrelateIn 
+            tagInspiralWaveCorrelateIn
             {
                 REAL8        df;
                 REAL8        fCutoff;
@@ -124,24 +124,24 @@ extern "C" {
         </lalLaTeX>  */
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
-    typedef struct 
+    typedef struct
             tagAddVectorsIn
             {
                 REAL4Vector *v1;
                 REAL4Vector *v2;
                 REAL8       a1;
                 REAL8       a2;
-            } 
+            }
     AddVectorsIn;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \idx[Type]{AddVectorsIn} 
+    /*  <lalLaTeX>
+        \idx[Type]{AddVectorsIn}
         </lalLaTeX>  */
 
 
     /*=================================================*/
-    typedef struct tagDiscoverInspiralEventsIn 
+    typedef struct tagDiscoverInspiralEventsIn
     {
         UINT4            currentGPSTime;
         INT4             nBegin, nEnd;
@@ -155,10 +155,10 @@ extern "C" {
         RealFFTPlan      *revp;
         UINT2            displayCorrelationStats;
         UINT2            displayCorrelation;
-    } 
-    DiscoverInspiralEventsIn; 
+    }
+    DiscoverInspiralEventsIn;
 
-    typedef struct tagDiscoverInspiralEventsList 
+    typedef struct tagDiscoverInspiralEventsList
     {
         UINT4               bin;
         INT4                endTime, endTimeNS, impulseTime, impulseTimeNS, chisqDOF;
@@ -166,8 +166,8 @@ extern "C" {
         REAL8               cmax1, cmax2, sigmasq;
         REAL8               chisq, chisq1, chisq2;
         REAL8               t0, t3, m1, m2;
-    } 
-    DiscoverInspiralEventsList; 
+    }
+    DiscoverInspiralEventsList;
 
     typedef struct tagInspiralChisqInput
     {
@@ -202,7 +202,7 @@ extern "C" {
     /*===============================================================*/
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
-    typedef struct 
+    typedef struct
             tagRandomInspiralSignalIn
             {
                 INT4 useed;       /* Seed for the random number generator */
@@ -216,7 +216,7 @@ extern "C" {
                 REAL8 SignalAmp;  /* amplitude of the signal (relevant only when type=2) */
                 REAL8 NoiseAmp;   /* amplitude of noise (relevant only when type=2) */
                 REAL8 etaMin;     /* smallest value of the symmetric mass ratio */
-                InspiralTemplate 
+                InspiralTemplate
                         param;      /* parameter stuct; user to specify certain params. */
                 REAL8Vector psd;  /* power spectral density used for coloring the noise */
                 RealFFTPlan *fwdp;/* pre-computed fftw plan for forward fftw */
@@ -241,17 +241,17 @@ extern "C" {
                 REAL8 polarisationAngleMin, polarisationAngleMax;
                 REAL8 sourceThetaMin, sourceThetaMax, sourcePhiMin, sourcePhiMax;
                 REAL8 inclinationMin, inclinationMax;
-            }  
+            }
     RandomInspiralSignalIn;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \idx[Type]{RandomInspiralSignalIn} 
+    /*  <lalLaTeX>
+        \idx[Type]{RandomInspiralSignalIn}
         </lalLaTeX>  */
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
-            tagInspiralWaveOverlapIn 
+            tagInspiralWaveOverlapIn
             {
                 INT4             nBegin;
                 INT4             nEnd;
@@ -259,41 +259,41 @@ extern "C" {
                 REAL8Vector      psd;
                 InspiralTemplate param;
                 RealFFTPlan      *fwdp;
-                RealFFTPlan      *revp;                               
+                RealFFTPlan      *revp;
                 UINT2            ifExtOutput;       /* A flag which takes values 0 or 1 to denote
-                                                       if an extended output consisting of filter 
-                                                       and xcorr vectors need to be filled out in 
+                                                       if an extended output consisting of filter
+                                                       and xcorr vectors need to be filled out in
                                                        the call to LALInspiralWaveOverlap ( )
                                                     */
                UINT2             ifCorrelationOutput;/* a flag to fill the xcorr1 and xcorr2 outputs*/
-            } 
-    InspiralWaveOverlapIn; 
+            }
+    InspiralWaveOverlapIn;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \idx[Type]{InspiralwaveOverlapIn} 
+    /*  <lalLaTeX>
+        \idx[Type]{InspiralwaveOverlapIn}
         </lalLaTeX>  */
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
-            tagInspiralWaveOverlapOut 
+            tagInspiralWaveOverlapOut
             {
                 REAL8        max, phase, alpha;
                 INT4         bin;                /* bin at which max occurs */
                 REAL4Vector  *filter1, *filter2; /* zero and pi/2 phase templates */
-                REAL4Vector  *xcorr1, *xcorr2;   /* cross correlation against filter 1/2 */ 
-            } 
-    InspiralWaveOverlapOut; 
+                REAL4Vector  *xcorr1, *xcorr2;   /* cross correlation against filter 1/2 */
+            }
+    InspiralWaveOverlapOut;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \idx[Type]{InspiralWaveOverlapOut} 
+    /*  <lalLaTeX>
+        \idx[Type]{InspiralWaveOverlapOut}
         </lalLaTeX>  */
 
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
-            tagInspiralFindEventsIn 
+            tagInspiralFindEventsIn
             {
                 UINT4            currentGPSTime;
                 INT4             nBegin;
@@ -310,17 +310,17 @@ extern "C" {
                 UINT2            displayTemplates;
                 UINT2            displayCorrelation;
                 UINT2            displayCorrelationStats;
-            } 
-    InspiralFindEventsIn; 
+            }
+    InspiralFindEventsIn;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \index{\texttt{InspiralFindEventsIn}} 
+    /*  <lalLaTeX>
+        \index{\texttt{InspiralFindEventsIn}}
         </lalLaTeX>  */
 
     /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
-            tagInspiralEventsList 
+            tagInspiralEventsList
             {
                 UINT4            bin;
 
@@ -338,12 +338,12 @@ extern "C" {
                 REAL8            chisq;
 
                 InspiralTemplate param;
-            } 
-    InspiralEventsList; 
+            }
+    InspiralEventsList;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \index{\texttt{InspiralEventsList}} 
+    /*  <lalLaTeX>
+        \index{\texttt{InspiralEventsList}}
         </lalLaTeX>  */
 
 
@@ -352,10 +352,10 @@ extern "C" {
             tagInspiralWaveNormaliseIn
             {
                 REAL8        df;
-                REAL8        fCutoff; 
+                REAL8        fCutoff;
                 REAL8        samplingRate;
                 REAL8Vector *psd;
-            } 
+            }
     InspiralWaveNormaliseIn;
     /*  </lalVerbatim>  */
 
@@ -368,7 +368,7 @@ extern "C" {
                 REAL8 stddev;
                 REAL8 min;
                 REAL8 max;
-            } 
+            }
     StatsREAL4VectorOut;
     /*  </lalVerbatim>  */
 
@@ -380,7 +380,7 @@ extern "C" {
             {
                 REAL4Vector *SNRIntegrand;
                 REAL8Vector *psd;
-            } 
+            }
     InspiralChisqDataVec;
     /*  </lalVerbatim>  */
 
@@ -393,7 +393,7 @@ extern "C" {
                 REAL8 totalMass;
                 REAL8 fLower;
                 REAL8 deltaT; /* sampling interval */
-            } 
+            }
     InspiralChisqParams;
     /*  </lalVerbatim>  */
 
@@ -406,12 +406,12 @@ extern "C" {
 
                 REAL8 phase;  /* phase of the correlation where the max occurs */
                 REAL8 deltaT; /* sampling interval */
-            } 
+            }
     InspiralSNRIntegrandParams;
     /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX> 
-        \index{\texttt{StatsREAL4VectorOut}} 
+    /*  <lalLaTeX>
+        \index{\texttt{StatsREAL4VectorOut}}
         </lalLaTeX>  */
 
 
@@ -426,11 +426,11 @@ extern "C" {
        \newpage\input{LALNoiseSpectralDensityC}
        </lalLaTeX>  */
 
-    void 
-            LALNoiseSpectralDensity 
+    void
+            LALNoiseSpectralDensity
             (
-             LALStatus   *status, 
-             REAL8Vector *psd, 
+             LALStatus   *status,
+             REAL8Vector *psd,
              void        (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
              REAL8       f
             );
@@ -439,11 +439,11 @@ extern "C" {
        \newpage\input{LALInspiralWaveCorrelateC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralWaveCorrelate 
+    void
+            LALInspiralWaveCorrelate
             (
-             LALStatus   *status, 
-             REAL4Vector *output, 
+             LALStatus   *status,
+             REAL4Vector *output,
              InspiralWaveCorrelateIn in
             );
 
@@ -451,12 +451,12 @@ extern "C" {
        \newpage\input{LALInspiralWaveNormaliseC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralWaveNormalise 
+    void
+            LALInspiralWaveNormalise
             (
-             LALStatus   *status, 
-             REAL4Vector *dh, 
-             REAL8       *norm, 
+             LALStatus   *status,
+             REAL4Vector *dh,
+             REAL8       *norm,
              REAL8Vector psd
             );
 
@@ -464,11 +464,11 @@ extern "C" {
        \newpage\input{LALInspiralWaveNormaliseLSOC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralWaveNormaliseLSO 
+    void
+            LALInspiralWaveNormaliseLSO
             (
-             LALStatus               *status, 
-             REAL4Vector             *filter, 
+             LALStatus               *status,
+             REAL4Vector             *filter,
              REAL8                   *norm,
              InspiralWaveNormaliseIn *in
             );
@@ -477,11 +477,11 @@ extern "C" {
        \newpage\input{LALEGOPsdC}
        </lalLaTeX>  */
 
-    void 
-            LALEGOPsd 
+    void
+            LALEGOPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
@@ -490,11 +490,11 @@ extern "C" {
        \newpage\input{LALGEOPsdC}
        </lalLaTeX>  */
 
-    void 
-            LALGEOPsd 
+    void
+            LALGEOPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
@@ -502,25 +502,25 @@ extern "C" {
        \newpage\input{LALAdvLIGOPsdC}
        </lalLaTeX>  */
 
-    void 
-            LALAdvLIGOPsd 
+    void
+            LALAdvLIGOPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
-    REAL8 
-            XLALLIGOIPsd 
+    REAL8
+            XLALLIGOIPsd
             (
              REAL8     f
             );
 
-    void 
-            LALLIGOIPsd 
+    void
+            LALLIGOIPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
@@ -528,11 +528,11 @@ extern "C" {
        \newpage\input{LALTAMAPsdC}
        </lalLaTeX>  */
 
-    void 
-            LALTAMAPsd 
+    void
+            LALTAMAPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
@@ -540,11 +540,11 @@ extern "C" {
        \newpage\input{LALVIRGOPsdC}
        </lalLaTeX>  */
 
-    void 
-            LALVIRGOPsd 
+    void
+            LALVIRGOPsd
             (
-             LALStatus *status, 
-             REAL8     *shf, 
+             LALStatus *status,
+             REAL8     *shf,
              REAL8     x
             );
 
@@ -553,10 +553,10 @@ extern "C" {
        \newpage\input{LALRandomInspiralSignalC}
        </lalLaTeX>  */
 
-    void 
+    void
             LALRandomInspiralSignal
             (
-             LALStatus *status, 
+             LALStatus *status,
              REAL4Vector *signalvec,
              RandomInspiralSignalIn *randIn
             );
@@ -565,11 +565,11 @@ extern "C" {
        \newpage\input{LALColoredNoiseC}
        </lalLaTeX>  */
 
-    void 
-            LALColoredNoise 
+    void
+            LALColoredNoise
             (
              LALStatus   *status,
-             REAL4Vector *noisy, 
+             REAL4Vector *noisy,
              REAL8Vector psd
             );
 
@@ -577,19 +577,19 @@ extern "C" {
        \newpage\input{LALAddVectorsC}
        </lalLaTeX>  */
 
-    void 
+    void
             LALAddVectors
             (
-             LALStatus *status, 
-             REAL4Vector *vector, 
+             LALStatus *status,
+             REAL4Vector *vector,
              AddVectorsIn in);
 
     /* <lalLaTeX>
        \newpage\input{LALInspiralWaveOverlapC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralWaveOverlap 
+    void
+            LALInspiralWaveOverlap
             (
              LALStatus               *status,
              REAL4Vector             *output,
@@ -603,8 +603,8 @@ extern "C" {
        \newpage\input{LALInspiralFindEventsC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralFindEvents 
+    void
+            LALInspiralFindEvents
             (
              LALStatus   *status,
              INT4  *nEvents,
@@ -630,8 +630,8 @@ extern "C" {
        \newpage\input{LALInspiralFindEventsClusterC}
        </lalLaTeX>  */
 
-    void 
-            LALInspiralFindEventsCluster 
+    void
+            LALInspiralFindEventsCluster
             (
              LALStatus            *status,
              INT4                 *nEvents,
@@ -643,11 +643,11 @@ extern "C" {
        \newpage\input{LALStatsREAL4VectorC}
        </lalLaTeX>  */
 
-    void 
+    void
             LALStatsREAL4Vector
             (
-             LALStatus *status, 
-             StatsREAL4VectorOut *out, 
+             LALStatus *status,
+             StatsREAL4VectorOut *out,
              REAL4Vector *vector
             );
 
@@ -656,10 +656,10 @@ extern "C" {
        \newpage\input{LALInspiralComputeChisqC}
        </lalLaTeX>  */
 
-    void 
+    void
             LALInspiralComputeChisq
             (
-             LALStatus *status, 
+             LALStatus *status,
              REAL4 *chisq,
              InspiralChisqDataVec *input,
              InspiralChisqParams *params
@@ -670,10 +670,10 @@ extern "C" {
        \newpage\input{LALInspiralComputeSNRIntegrandC}
        </lalLaTeX>  */
 
-    void 
+    void
             LALInspiralComputeSNRIntegrand
             (
-             LALStatus *status, 
+             LALStatus *status,
              REAL4Vector *output,
              InspiralWaveCorrelateIn corrin,
              InspiralSNRIntegrandParams *params
@@ -683,24 +683,24 @@ extern "C" {
     /*=========================================*/
     void LALDiscoverInspiralEvents
             (
-             LALStatus                     *status, 
-             INT4                          *nEvents, 
-             DiscoverInspiralEventsList    **eventlist, 
-             DiscoverInspiralEventsIn      *findeventsin 
+             LALStatus                     *status,
+             INT4                          *nEvents,
+             DiscoverInspiralEventsList    **eventlist,
+             DiscoverInspiralEventsIn      *findeventsin
             );
 
     void LALEstimateEffectiveDistance
             (
-             LALStatus          *status, 
-             InspiralTemplate    param, 
-             REAL8               df, 
-             REAL8Vector        *psd, 
-             REAL8               snr, 
+             LALStatus          *status,
+             InspiralTemplate    param,
+             REAL8               df,
+             REAL8Vector        *psd,
+             REAL8               lal_nm_snr,
              REAL8              *effDistance
             );
 
     void LALEvaluateInspiralChisqTest
-            ( 
+            (
              LALStatus             *status,
              InspiralChisqOutput   *chisqOut,
              InspiralChisqInput    *chisqIn
@@ -715,7 +715,7 @@ extern "C" {
 
     /*==============================================*/
  void GenerateTimeDomainWaveformForInjection (
-        LALStatus              *status, 
+        LALStatus              *status,
         REAL4Vector            *buff,
         InspiralTemplate       *params
         );

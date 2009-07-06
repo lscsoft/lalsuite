@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSPData.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpSPDataCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpSPData.c}}
@@ -41,7 +41,7 @@ $Id$
 \input{FindChirpSPDataCDoc}
 
 \vfill{\footnotesize\input{FindChirpSPDataCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -66,7 +66,7 @@ LALFindChirpSPData (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 i, k; 
+  UINT4                 i, k;
   UINT4                 cut;
   CHAR                  infoMsg[512];
 
@@ -84,7 +84,7 @@ LALFindChirpSPData (
 
   /* stuff added for continous chisq test */
   REAL4Vector          *dataPower = NULL;
-  REAL4		        PSDsum = 0;  
+  REAL4		        PSDsum = 0;
   INT4 			startIX = 0;
   INT4			endIX = 0;
   INT4			sortFlag = 0;
@@ -103,48 +103,48 @@ LALFindChirpSPData (
 
 
   /* check that the output exists */
-  ASSERT( fcSegVec, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+  ASSERT( fcSegVec, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec" );
-  ASSERT( fcSegVec->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+  ASSERT( fcSegVec->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data" );
-  ASSERT( fcSegVec->data->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+  ASSERT( fcSegVec->data->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data->dat" );
-  ASSERT( fcSegVec->data->data->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+  ASSERT( fcSegVec->data->data->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data->data->data" );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSPH_ENULL, 
+  ASSERT( params, status, FINDCHIRPSPH_ENULL,
       FINDCHIRPSPH_MSGENULL ": params" );
 
   /* check that the workspace vectors exist */
-  ASSERT( params->ampVec, status, 
+  ASSERT( params->ampVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->ampVec->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-
-  ASSERT( params->wVec, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->wVec->data, status, 
+  ASSERT( params->ampVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
-  ASSERT( params->wtildeVec, status, 
+  ASSERT( params->wVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->wtildeVec->data, status, 
+  ASSERT( params->wVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
-  ASSERT( params->tmpltPowerVec, status, 
+  ASSERT( params->wtildeVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->tmpltPowerVec->data, status, 
+  ASSERT( params->wtildeVec->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
+  ASSERT( params->tmpltPowerVec, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->tmpltPowerVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the fft plans exist */
-  ASSERT( params->fwdPlan, status, 
+  ASSERT( params->fwdPlan, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->invPlan, status, 
+  ASSERT( params->invPlan, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter values are reasonable */
@@ -155,16 +155,16 @@ LALFindChirpSPData (
 
   /* check that the input exists */
   ASSERT( dataSegVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": dataSegVec" );
   ASSERT( dataSegVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": dataSegVec->data" );
   ASSERT( dataSegVec->data->chan, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": dataSegVec->data->chan" );
   ASSERT( dataSegVec->data->chan->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": dataSegVec->data->chan->data" );
 
   /* check that the parameter structure is set */
@@ -187,9 +187,9 @@ LALFindChirpSPData (
   wtilde     = params->wtildeVec->data;
   tmpltPower = params->tmpltPowerVec->data;
 
-  /* allocate memory to store some temporary info for the 
+  /* allocate memory to store some temporary info for the
      continous chisq test */
-  fcSeg        = &(fcSegVec->data[0]);  
+  fcSeg        = &(fcSegVec->data[0]);
   fftVec = XLALCreateCOMPLEX8Vector( fcSeg->data->data->length );
 
   /*
@@ -212,14 +212,14 @@ LALFindChirpSPData (
 
     dataSeg      = &(dataSegVec->data[i]);
     fcSeg        = &(fcSegVec->data[i]);
-  
+
     dataVec      = dataSeg->chan->data;
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
     outputData   = fcSeg->data->data->data;
     dataPower    = fcSeg->dataPower->data;
- 
+
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
@@ -235,7 +235,7 @@ LALFindChirpSPData (
      */
 
 
-    LALForwardRealFFT( status->statusPtr, fcSeg->data->data, 
+    LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
         dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
 
@@ -260,21 +260,21 @@ LALFindChirpSPData (
 
 
     /* set low frequency cutoff inverse power spectrum */
-    cut = params->fLow / dataSeg->spec->deltaF > 1 ? 
+    cut = params->fLow / dataSeg->spec->deltaF > 1 ?
       params->fLow / dataSeg->spec->deltaF : 1;
-    LALSnprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
+    snprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
         "low frequency cut off index = %d\n", cut );
     LALInfo( status, infoMsg );
 
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
-    
+
     /* compute inverse of S_v */
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
       if ( spec[k] == 0 )
       {
-        
+
         ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
       }
       wtilde[k].re = 1.0 / spec[k];
@@ -300,16 +300,16 @@ LALFindChirpSPData (
       wtilde[0].re                             = 0.0;
 
       /* transform to time domain */
-      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec, 
+      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec,
           params->invPlan );
       CHECKSTATUSPTR (status);
 
       /* truncate in time domain */
-      memset( w + params->invSpecTrunc/2, 0, 
+      memset( w + params->invSpecTrunc/2, 0,
           (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
 
       /* transform to frequency domain */
-      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec, 
+      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec,
           params->fwdPlan );
       CHECKSTATUSPTR (status);
 
@@ -361,7 +361,7 @@ LALFindChirpSPData (
       outputData[k].re = 0.0;
       outputData[k].im = 0.0;
     }
-    
+
     for ( k = 0; k < cut; ++k )
     {
       fftVec->data[k].re = 0.0;
@@ -372,7 +372,7 @@ LALFindChirpSPData (
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
 
-    fcSeg->tmpltPowerVec = params->tmpltPowerVec; 
+    fcSeg->tmpltPowerVec = params->tmpltPowerVec;
 
     segNormSum = 0.0;
     for ( k = 1; k < fcSeg->data->data->length; ++k )
@@ -381,7 +381,7 @@ LALFindChirpSPData (
       segNormSum += tmpltPower[k];
       fcSeg->segNorm->data[k] = segNormSum;
     }
-  
+
     /*  Compute whitened data for continous chisq test */
     for ( k = 0; k < fcSeg->data->data->length; ++k )
     {
@@ -402,12 +402,12 @@ LALFindChirpSPData (
         dataPower->data[k-1] +
         dataPower->data[k] * dataPower->data[k];
       }
-    
+
     /* hard wired to quarter segment !! */
     startIX = floor(1.0/4.0 * (REAL4) dataPower->length + 0.5);
     endIX = floor(3.0/4.0 * (REAL4) dataPower->length + 0.5);
     /* compute the total power in the uncorrupted data */
-    dataPower->data[dataPower->length - 1 ] = 2.0 * 
+    dataPower->data[dataPower->length - 1 ] = 2.0 *
       (dataPower->data[endIX] - dataPower->data[startIX]);
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
@@ -422,7 +422,7 @@ LALFindChirpSPData (
     fcSeg->data->epoch.gpsNanoSeconds  = dataSeg->chan->epoch.gpsNanoSeconds;
 
     fcSeg->data->f0     = dataSeg->chan->f0;
-    fcSeg->data->deltaF = 1.0 / 
+    fcSeg->data->deltaF = 1.0 /
       ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
 
     fcSeg->deltaT       = dataSeg->chan->deltaT;
@@ -441,19 +441,19 @@ LALFindChirpSPData (
   /* For the continuous chisq test */
   fcSeg = &(fcSegVec->data[0]);
   PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ];
-  
+
   for ( i = 1; i < dataSegVec->length; ++i )
   {
     fcSeg = &(fcSegVec->data[i]);
-    if 
+    if
     (
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    && 
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0)
-    || 
+    ((fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    &&
+    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0))
+    ||
     PSDsum == 0
-    ) 
+    )
     {
-      PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ]; 
+      PSDsum = fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ];
     }
 
   }
@@ -469,7 +469,7 @@ LALFindChirpSPData (
 
   /* clean up the data used for the continous chisq test */
   XLALDestroyCOMPLEX8Vector( fftVec );
-  
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirp.h
  *
  * Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpHV">
 Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirp.h}}
@@ -49,13 +49,13 @@ filter interferometer data for binary inspiral chirps.
 
 \noindent Each function in findchirp falls into one of four classes:
 \begin{enumerate}
-\item Generate management functions which are independent of the type of 
-filtering implemented. The prototypes for these functions are provided by 
+\item Generate management functions which are independent of the type of
+filtering implemented. The prototypes for these functions are provided by
 this header file.
 
 \item Functions for filtering data for time domain and frequency domain
 templates with an unknown amplitude and phase. These are the functions
-that implement matched filtering for time domain templates (TaylorT1, 
+that implement matched filtering for time domain templates (TaylorT1,
 TaylorT2, TaylorT2, PadeT1, EOB and GeneratePPN) and matched filtering
 for post-Newtonian frequency domain templates (FindChirpSP). The main
 filter function \texttt{FindChirpFilterSegment()} is prototyped in
@@ -66,7 +66,7 @@ documentation of the module \texttt{FindChirpFilter.c}.
 
 \item Functions to filter interferometer data for using the frequency
 domain non-spinning black hole detection template family known as BCV.
-These functions are protoyped by the header \texttt{FindChirpBCV.h} 
+These functions are protoyped by the header \texttt{FindChirpBCV.h}
 which contains documentation of the algorithms used.
 
 \item Functions to filter interferometer data for using the frequency domain
@@ -118,8 +118,8 @@ extern "C" {
 NRCSID (FINDCHIRPH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -203,7 +203,7 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
   BOOLEAN                       createCVec;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
 }
 FindChirpInitParams;
 /* </lalVerbatim> */
@@ -211,14 +211,14 @@ FindChirpInitParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{UINT4 numSegments}] The number of data segments in the input 
+\item[\texttt{UINT4 numSegments}] The number of data segments in the input
 \texttt{DataSegmentVector} and a the \texttt{FindChirpSegmentVector}.
 
 \item[\texttt{UINT4 numPoints}] The number of discrete data points $N$ in each
-data segment. 
+data segment.
 
 \item[\texttt{UINT4 ovrlap}] The number of sample points by which each
-data segment overlaps. 
+data segment overlaps.
 
 \item[\texttt{UINT4 numChisqBins}] The number of bins $p$ used to contruct the
 $\chi^2$ veto.
@@ -242,7 +242,7 @@ TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, FindChirpSP, BCV and BCVSpin.
 \subsubsection*{Structure \texttt{FindChirpDataParams}}
 \idx[Type]{FindChirpDataParams}
 
-\noindent This structure contains the parameters needed to call the data 
+\noindent This structure contains the parameters needed to call the data
 conditioning functions \texttt{FindChirpSPData()}, \texttt{FindChirpTDData()},
 \texttt{FindChirpBCVData()} or \texttt{FindChirpBCVSpinData()}. It should be
 initialized by \texttt{FindChirpDataInit()} and destroyed by
@@ -294,8 +294,8 @@ amplitude vector.
 time domain interferometer data $v(t_j)$ into its DFT $\tilde{v}_k$.
 
 \item[\texttt{REAL4Vector *invPlan}] An FFTW plan used to transform the
-dimensionless frequency domain interferometer strain $\tilde{w}_k$ into 
-the quantity $N w(t_j)$ to allow time domain trunction of the inverse 
+dimensionless frequency domain interferometer strain $\tilde{w}_k$ into
+the quantity $N w(t_j)$ to allow time domain trunction of the inverse
 power spectrum.
 
 \item[\texttt{REAL4Vector *wVec}] A vector used as workspace when truncating
@@ -312,14 +312,14 @@ segments. It contains:
 \end{equation}
 
 \item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
-\texttt{FindChirpSPData()} or from \texttt{FindChirpBCVData()} 
+\texttt{FindChirpSPData()} or from \texttt{FindChirpBCVData()}
 contains the quantity
 \begin{equation}
 \mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
 \end{equation}
 
 \item[\texttt{REAL4Vector *tmpltPowerVecBCV}] A vector which on exit from
-\texttt{FindChirpBCVData()}  
+\texttt{FindChirpBCVData()}
 contains the quantity
 \begin{equation}
 \mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{\ospsd}
@@ -369,7 +369,7 @@ tagFindChirpTmpltParams
   REAL4VectorSequence          *PTFe2;
   RealFFTPlan                  *fwdPlan;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
   INT4                          reverseChirpBank;
   INT4                          bandPassTmplt;
   InspiralApplyTaper            taperTmplt;
@@ -380,7 +380,7 @@ FindChirpTmpltParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$ of the input 
+\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$ of the input
 data channel.
 
 \item[\texttt{REAL4 fLow}] The frequency domain low frequency cutoff
@@ -389,7 +389,7 @@ $f_\mathrm{low}$. All frequency domain data is zero below this frequency.
 \item[\texttt{REAL4 dynRange}] A dynamic range factor $d$ which cancels from
 the filter output.  This allows quantities to be stored in the range of
 \texttt{REAL4} rather than \texttt{REAL8}. This must be set to the same value
-as \texttt{dynRange} in the \texttt{FindChirpDataParams}. For LIGO data a 
+as \texttt{dynRange} in the \texttt{FindChirpDataParams}. For LIGO data a
 value of $d = 2^{69}$ is appropriate.
 
 \item[\texttt{REAL4Vector *xfacVec}] For frequency domain templates, this is a
@@ -405,14 +405,14 @@ which is stored in the findchirp template.
 
 \item[\texttt{Approximant approximant}] Generate templates of type
 \texttt{approximant}. Valid approximants are TaylorT1, TaylorT2, TaylorT3,
-PadeT1, EOB, FindChirpSP, BCV and BCVSpin. For time domain templates the 
-post-Newtonian order is always two. For stationary phase templates, the 
+PadeT1, EOB, FindChirpSP, BCV and BCVSpin. For time domain templates the
+post-Newtonian order is always two. For stationary phase templates, the
 post-Newtonian order is specified by \texttt{order}.
 
-\item[\texttt{Order order}] Specifies the post-Newtonian order of the 
-templates. Valid pN orders are twoPN, twoPointFivePN, threePN, 
-threePointFivePN, pseudoFourPN. pseudoFourPN is not the true four PN 
-correction, but may increase the fitting factor between stationary phase and 
+\item[\texttt{LALPNOrder order}] Specifies the post-Newtonian order of the
+templates. Valid pN orders are twoPN, twoPointFivePN, threePN,
+threePointFivePN, pseudoFourPN. pseudoFourPN is not the true four PN
+correction, but may increase the fitting factor between stationary phase and
 numerical relativity waveforms.
 
 \item[\texttt{INT4 reverseChirpBank}] Switches a FindChirpSP template bank
@@ -480,10 +480,10 @@ FindChirpFilterOutputVetoParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{REAL4 rsqvetoWindow}] Width of the $r^2$ veto window in units of 
+\item[\texttt{REAL4 rsqvetoWindow}] Width of the $r^2$ veto window in units of
 seconds.
 
-\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the $r^2$ veto test analogous to the 
+\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the $r^2$ veto test analogous to the
 $r^2$ threshold employed in the bns and macho inspiral searches.
 \end{description}
 \subsubsection*{Structure \texttt{FindChirpFilterParams}}
@@ -499,15 +499,15 @@ typedef struct
 tagFindChirpFilterParams
 {
   REAL8                         deltaT;
-  REAL4                         clusterWindow;                  
+  REAL4                         clusterWindow;
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         chisqDelta;
   UINT4                         maximiseOverChirp;
   UINT4                         ignoreIndex;
-  FindChirpClustering           clusterMethod;          
+  FindChirpClustering           clusterMethod;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
   COMPLEX8Vector               *qVecBCVSpin1;
@@ -541,17 +541,17 @@ FindChirpFilterParams;
 
 \item[\texttt{REAL4 rhosqThresh}] The signal-to-noise ratio squared threshold
 $\rho^2_\ast$. If the matched filter output exceeds this value, that is
-$\rho^2(t_j) > \rho^2_\ast$, the event processing algorithm is entered and 
+$\rho^2(t_j) > \rho^2_\ast$, the event processing algorithm is entered and
 triggers may be generated (subject to addition vetoes such as the $\chi^2$
 veto). The value of $\rho^2_\ast0$ must be greater than or equal to zero.
 
-\item[\texttt{REAL4 chisqThresh}] The $\chi^2$ veto threshold on. This 
+\item[\texttt{REAL4 chisqThresh}] The $\chi^2$ veto threshold on. This
 threshold is described in details in the documentation for the $\chi^2$
 veto.
 
 \item[\texttt{REAL4 norm}] On exit this contains the normalisation constant
-that relates the quantity $|q_j|^2$ with the signal to noise squared, 
-$\rho^2(t_j)$ by 
+that relates the quantity $|q_j|^2$ with the signal to noise squared,
+$\rho^2(t_j)$ by
 \begin{equation}
 \rho^2(t_j) = \textrm{norm} \times \left|q_j\right|^2.
 \end{equation}
@@ -599,23 +599,23 @@ will be overwritten with the value of $\tilde{q}_k$ for the segment filtered
 on exit.
 
 \item[\texttt{COMPLEX8Vector *qtildeVecBCV}] Pointer to the additional
-vector required for filtering BCV templates, allocated by 
+vector required for filtering BCV templates, allocated by
 \texttt{FindChirpFilterInit()}.
 
 \item[\texttt{COMPLEX8Vector *qtildeVecBCVSpin1}] Pointer to the additional
-vector required for filtering spinning BCV templates, allocated by 
+vector required for filtering spinning BCV templates, allocated by
 \texttt{FindChirpFilterInit()}.
 
 \item[\texttt{COMPLEX8Vector *qtildeVecBCVSpin2}] Pointer to the additional
-vector required for filtering spinning BCV templates, allocated by 
+vector required for filtering spinning BCV templates, allocated by
 \texttt{FindChirpFilterInit()}.
 
-\item[\texttt{ComplexFFTPlan *invPlan}] Pointer to FFTW plan created by 
+\item[\texttt{ComplexFFTPlan *invPlan}] Pointer to FFTW plan created by
 \texttt{FindChirpFilterInit()} to transform the quantity $\tilde{q}_k$ to
 ${q}_j$ usimg the inverse DFT. Must not be NULL.
 
 \item[\texttt{REAL4TimeSeries *rhosqVec}] Pointer to a time series which
-contains a vector of length $N$. If this is not NULL, the filter output $\rho^2(t_j)$ 
+contains a vector of length $N$. If this is not NULL, the filter output $\rho^2(t_j)$
 is stored in the vector.
 
 \item[\texttt{COMPLEX8Vector *rhosqVec}] Pointer to a time series which
@@ -639,9 +639,9 @@ greater than zero.
 structure for the BCV $\chi^2$ veto. Must not be NULL if the approximant is
 BCV and \texttt{numChisqBins} is greater than zero.
 
-\item[\texttt{FindChirpFilterOutputVetoParams *filterOutputVetoParams}] 
+\item[\texttt{FindChirpFilterOutputVetoParams *filterOutputVetoParams}]
 Pointer to the parameter structure for the additional signal based veto
-function. 
+function.
 
 \end{description}
 </lalLaTeX>
@@ -660,7 +660,7 @@ function.
 \subsubsection*{Structure \texttt{FindChirpFilterInput}}
 \idx[Type]{FindChirpFilterInput}
 
-\noindent This structure groups the input data required for the 
+\noindent This structure groups the input data required for the
 \texttt{FindChirpFilterSegment()} function into a single structure.
 
 </lalLaTeX>
@@ -721,7 +721,7 @@ typedef struct
 tagFindChirpBankSimParams
 {
   Approximant           approx;
-  Order                 order;
+  LALPNOrder            order;
   REAL4                 minMass;
   REAL4                 maxMass;
   RandomParams         *randParams;
@@ -747,7 +747,7 @@ FindChirpBankSimParams;
 
 
 \vfill{\footnotesize\input{FindChirpHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 
@@ -772,7 +772,7 @@ LALFindChirpCreateTmpltNode (
     );
 
 void
-LALFindChirpDestroyTmpltNode ( 
+LALFindChirpDestroyTmpltNode (
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
     );
@@ -797,7 +797,7 @@ void
 LALFinalizeDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector
-    );    
+    );
 
 void
 LALCreateDataSegmentVector (
@@ -922,13 +922,13 @@ LALDestroyFindChirpInput (
     );
 
 void
-LALFindChirpCreateCoherentInput( 
+LALFindChirpCreateCoherentInput(
      LALStatus                  *status,
      COMPLEX8TimeSeries         **coherentInputData,
      COMPLEX8TimeSeries         *input,
      SnglInspiralTable          *templt,
      REAL4                      coherentSegmentLength,
-     INT4                       corruptedDataLength 
+     INT4                       corruptedDataLength
      );
 
 void
@@ -969,8 +969,8 @@ LALFindChirpClusterEvents (
 </lalLaTeX>
 #endif
 
-void 
-LALFindChirpFilterOutputVeto( 
+void
+LALFindChirpFilterOutputVeto(
     LALStatus                          *status,
     SnglInspiralTable                 **eventList,
     FindChirpFilterInput               *input,
@@ -991,7 +991,7 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
-SimRingdownTable *
+void
 LALFindChirpInjectIMR (
     LALStatus                     *status,
     REAL4TimeSeries               *chan,
@@ -1045,7 +1045,7 @@ XLALCmprSgmntTmpltFlags (
     UINT4 SgmntFlag
     );
 
-UINT4 
+UINT4
 XLALFindChirpBankSimInitialize (
     REAL4FrequencySeries       *spec,
     COMPLEX8FrequencySeries    *resp,
@@ -1061,7 +1061,7 @@ XLALFindChirpBankSimInjectSignal (
     );
 
 REAL4
-XLALFindChirpBankSimSignalNorm( 
+XLALFindChirpBankSimSignalNorm(
     FindChirpDataParams         *fcDataParams,
     FindChirpSegmentVector      *fcSegVec,
     UINT4                        cut
@@ -1088,11 +1088,11 @@ XLALFindChirpCreateSubBanks(
     );
 
 void
-XLALBankVetoCCMat ( 
+XLALBankVetoCCMat (
     FindChirpBankVetoData 	*bankVetoData,
     FindChirpSubBank            *vetoBank,
     FindChirpDataParams         *params,
-    REAL4 			dynRange, 
+    REAL4 			dynRange,
     REAL4 			fLow,
     REAL4 			deltaF,
     REAL4			deltaT
@@ -1106,7 +1106,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
 REAL4
 XLALComputeFullChisq(
-    FindChirpBankVetoData      *bankVetoData,    
+    FindChirpBankVetoData      *bankVetoData,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,
     COMPLEX8                   *q,
@@ -1117,9 +1117,9 @@ XLALComputeFullChisq(
 );
 
 InspiralTemplate *
-XLALFindChirpSortTemplates( 
-  InspiralTemplate *bankHead, 
-  UINT4 num, 
+XLALFindChirpSortTemplates(
+  InspiralTemplate *bankHead,
+  UINT4 num,
   UINT4 subbanksize
 );
 

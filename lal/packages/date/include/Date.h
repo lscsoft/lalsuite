@@ -112,7 +112,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
-/* UPDATEME */  
+/* UPDATEME */
 #define DATEH_MSGERANGEGPSABS "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2006-Jun-30 23:59:59 UTC (GPS 835747212)"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
@@ -135,7 +135,7 @@ NRCSID (DATEH, "$Id$");
  * interval.  POSIX:2001 defines the relation between the UNIX time
  * \c time_t \c t and a broken down time \c struct \c tm \c utc as
  * \code
- * t = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600 
+ * t = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600
  *     + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
  *     + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
  *     + ((utc.tm_year+299)/400)*86400;
@@ -145,9 +145,9 @@ NRCSID (DATEH, "$Id$");
  * \c t=315964800.  That is what this is.
  */
 #define XLAL_EPOCH_UNIX_GPS 315964800
-#define XLAL_EPOCH_J2000_0_JD 2451545.0 /**< Julian Day of the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
-#define XLAL_EPOCH_J2000_0_TAI_UTC 32 /**< Leap seconds (TAI-UTC) on the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
-#define XLAL_EPOCH_J2000_0_GPS 630763213 /**< GPS seconds of the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
+#define XLAL_EPOCH_J2000_0_JD 2451545.0 /**< Julian Day of the J2000.0 epoch (2000 JAN 1 12h UTC). */
+#define XLAL_EPOCH_J2000_0_TAI_UTC 32 /**< Leap seconds (TAI-UTC) on the J2000.0 epoch (2000 JAN 1 12h UTC). */
+#define XLAL_EPOCH_J2000_0_GPS 630763213 /**< GPS seconds of the J2000.0 epoch (2000 JAN 1 12h UTC). */
 #define XLAL_EPOCH_GPS_JD 2444244.5 /**< Julian Day of the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_EPOCH_GPS_TAI_UTC 19 /**< Leap seconds (TAI-UTC) on the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_MJD_REF 2400000.5 /**< Reference Julian Day for Mean Julian Day. */
@@ -327,7 +327,7 @@ This enumerated type is used to define mnemonic symbols for the
 \bigskip
 
 </lalLaTeX> */
-  
+
 typedef enum
 {
   LALMONTH_JAN =  0,
@@ -479,7 +479,7 @@ nanosecond information.  The fields are:
 
 \begin{description}
 \item{\texttt{LALUnixDate unixDate}} Unix date in \texttt{struct tm}
-  format 
+  format
 \item{\texttt{INT4 residualNanoSeconds}} Residual nanoseconds
 \end{description}
 </lalLaTeX> */
@@ -594,7 +594,7 @@ LALMSTUnitsAndAcc;
 
 
 
-/* 
+/*
  * Function prototypes
  */
 
@@ -628,13 +628,13 @@ void LALGPStoGMST1( LALStatus         *status,
 void LALLMST1 (LALStatus             *status,
                REAL8                 *lmst,          /* output - LMST1 */
                const LALPlaceAndDate *placeAndDate,  /* input -  location
-                                                        and date */ 
+                                                        and date */
                LALMSTUnits            outunits);     /* LMST1 units */
 
 void LALGPStoLMST1( LALStatus             *status,
                     REAL8                 *lmst,        /* output - LMST1 */
                     const LALPlaceAndGPS  *placeAndGps, /* input - location and
-                                                           GPS */  
+                                                           GPS */
                     const LALMSTUnitsAndAcc      *pUnitsAndAcc);   /* LMST1 units
                                                                and leapsec
                                                                accuracy */
@@ -674,11 +674,11 @@ LALLeapSecs (LALStatus                    *status,
 \newpage\input{GPStoFloatC}
 </lalLaTeX> */
 void LALGPStoFloat (LALStatus *status,
-                    REAL8     *output, 
+                    REAL8     *output,
                     const LIGOTimeGPS *input);
 
-void LALFloatToGPS(LALStatus *status, 
-                   LIGOTimeGPS *output, 
+void LALFloatToGPS(LALStatus *status,
+                   LIGOTimeGPS *output,
                    const REAL8 *input);
 
 void LALFloatToInterval(LALStatus *status,
@@ -688,35 +688,7 @@ void LALFloatToInterval(LALStatus *status,
 void LALIntervalToFloat(LALStatus *status,
                         REAL8 *pDeltaT,
                         const LALTimeInterval *pInterval);
-                        
 
-/* <lalLaTeX>
-\newpage\input{GPStoINT8C}
-</lalLaTeX> */
-LIGOTimeGPS *
-XLALINT8toGPS ( 
-    LIGOTimeGPS *output,
-    INT8 input
-    );
-
-void
-LALINT8toGPS ( 
-    LALStatus          *status,
-    LIGOTimeGPS        *output, 
-    const INT8         *input 
-    );
-
-INT8
-XLALGPStoINT8 ( 
-    const LIGOTimeGPS *input 
-    );
-
-void
-LALGPStoINT8 ( 
-    LALStatus          *status,
-    INT8               *output, 
-    const LIGOTimeGPS  *input 
-    );
 
 /* This next function is to facilitate writing loops that increment time
  * by a time interval */
@@ -785,7 +757,7 @@ LALGPSTimeNow (
 \newpage\input{PlaygroundC}
 </lalLaTeX> */
 int
-XLALINT8NanoSecIsPlayground ( 
+XLALINT8NanoSecIsPlayground (
     const INT8         *ns
     );
 

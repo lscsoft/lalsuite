@@ -31,12 +31,14 @@ extern "C" {
 #endif
 
 /* frame channels */
-#define ONLINE_STRAIN_CHANNEL "DMT-STRAIN"
-#define ONLINE_STATE_VECTOR "DMT-STATE_VECTOR"
-#define ONLINE_DQ_VECTOR "DMT-DATA_QUALITY_VECTOR"
+#define LAL_ONLINE_STRAIN_CHANNEL "DMT-STRAIN"
+#define LAL_ONLINE_VIRGO_STRAIN_CHANNEL "h_16384Hz"
+#define LAL_ONLINE_STATE_VECTOR "DMT-STATE_VECTOR"
+#define LAL_ONLINE_DQ_VECTOR "DMT-DATA_QUALITY_VECTOR"
+#define LAL_ONLINE_VIRGO_DQ_VECTOR "Hrec_Veto_dataQuality"
 
 /* frame metadata */
-#define ONLINE_FRAME_DURATION 16
+#define LAL_ONLINE_FRAME_DURATION 16
 
 /* data quality */
 #define LAL_DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */
@@ -106,15 +108,44 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     REAL8 duration,
     INT4 dq_bitmask);
 
+/* return start position of data gap */
+UINT4 XLALAggregationDQGapStart(INT4TimeSeries *series,
+    INT4 dq_bitmask);
+
 /* return end position of data gap */
+UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
+    INT4 dq_bitmask);
+
+/* return end position of data gap - deprecated */
 UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
     INT4 dq_bitmask);
 
-/* low-level routine to read single-precision frame data */
+/* return strain data time series for given ifo, gps time, duration, and
+ * a maximum wait time */
+REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
+
+/* return data quality vector time series for given ifo, gps time,
+ * duration, and a maximum wait time */
 INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration,
-    INT4 max_wait);
+    UINT4 max_wait);
+
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
+
+/* check that all frames files, for requested data segment, are
+ * available */
+INT4 XLALAggregationStatFiles(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration);
 
 #ifdef __cplusplus
 }

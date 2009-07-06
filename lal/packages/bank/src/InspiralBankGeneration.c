@@ -48,10 +48,10 @@ LALInspiralBankGeneration(
   INT4  numTmplts = 0;
   INT4  i;
   REAL8 *chi, *kappa, dChi, dKappa;
-  
+
   INITSTATUS(status, "LALInspiralBankGeneration", INSPIRALBANKGENERATIONC);
   ATTATCHSTATUSPTR(status);
-    
+
   ASSERT( input != NULL, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
   ASSERT( *first == NULL, status, LALINSPIRALBANKH_ENULL,
@@ -81,7 +81,7 @@ LALInspiralBankGeneration(
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
          *input ), status );
-    /* */ 
+    /* */
     /* Convert output data structure. */
     bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
     if (bank == NULL){
@@ -91,12 +91,12 @@ LALInspiralBankGeneration(
     for( cnt = 0; cnt < *ntiles; cnt++ )
     {
       /* Set the min and max fFinals using the appropriate formula*/
-      if( input->maxFreqCut == SchwarzISCO )
+      if( input->maxFreqCut == FreqCut_SchwarzISCO )
 	{
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == BKLISCO )
+      else if( input->maxFreqCut == FreqCut_BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -106,16 +106,16 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->maxFreqCut == LightRing )
+      else if( input->maxFreqCut == FreqCut_LightRing )
 	{
 	  maxfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == ERD )
+      else if( input->maxFreqCut == FreqCut_ERD )
 	{
 	  maxfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == FRD )
+      else if( input->maxFreqCut == FreqCut_FRD )
 	{
 	  maxfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -124,7 +124,7 @@ LALInspiralBankGeneration(
                     *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
                     *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
-      else if( input->maxFreqCut == LRD )
+      else if( input->maxFreqCut == FreqCut_LRD )
 	{
 	  maxfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -136,12 +136,12 @@ LALInspiralBankGeneration(
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
 
-      if( input->minFreqCut == SchwarzISCO )
+      if( input->minFreqCut == FreqCut_SchwarzISCO )
 	{
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == BKLISCO )
+      else if( input->minFreqCut == FreqCut_BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -151,16 +151,16 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->minFreqCut == LightRing )
+      else if( input->minFreqCut == FreqCut_LightRing )
 	{
 	  minfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == ERD )
+      else if( input->minFreqCut == FreqCut_ERD )
 	{
 	  minfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == FRD )
+      else if( input->minFreqCut == FreqCut_FRD )
 	{
 	  minfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -169,7 +169,7 @@ LALInspiralBankGeneration(
                     *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
                     *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
-      else if( input->minFreqCut == LRD )
+      else if( input->minFreqCut == FreqCut_LRD )
 	{
 	  minfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -205,7 +205,7 @@ LALInspiralBankGeneration(
 	  bank->ttotal = coarseList[cnt].params.tC;
 	  bank->psi0 = coarseList[cnt].params.psi0;
 	  bank->psi3 = coarseList[cnt].params.psi3;
-      
+
           /* If fFinal > fNyquist, end template at fNyquist */
 	  fFinal = minfFinal;
 	  if (fFinal > input->fUpper)
@@ -213,13 +213,13 @@ LALInspiralBankGeneration(
 	      fFinal = input->fUpper;
 	    }
 	  coarseList[cnt].params.fFinal = fFinal;
-    
-	  /* Update the Gamma parameter if requested, using the proper cut-off 
+
+	  /* Update the Gamma parameter if requested, using the proper cut-off
 	   * frequency */
 	  if ( input->computeMoments )
 	    {
 	      coarseList[cnt].params.fCutoff = coarseList[cnt].params.fFinal;
-	      LALGetInspiralMoments( status->statusPtr, &moments, &(input->shf), 
+	      LALGetInspiralMoments( status->statusPtr, &moments, &(input->shf),
 				     &(coarseList[cnt].params) );
 
 	      LALInspiralComputeMetric(status->statusPtr, &(coarseList[cnt].metric),
@@ -230,7 +230,7 @@ LALInspiralBankGeneration(
 	  bank->f_final = coarseList[cnt].params.fFinal;
 	  bank->eta = coarseList[cnt].params.eta;
 	  bank->beta = coarseList[cnt].params.beta;
-      
+
 	  /* Copy the 10 metric co-efficients ... */
 	  memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
 	}
@@ -259,9 +259,9 @@ LALInspiralBankGeneration(
       bank->ttotal = coarseList[cnt].params.tC;
       bank->psi0 = coarseList[cnt].params.psi0;
       bank->psi3 = coarseList[cnt].params.psi3;
-      
-      /* This calucation is only valid for the PN case. For EOB, we 
-       * should use the correct value of v (close to lightring). What 
+
+      /* This calucation is only valid for the PN case. For EOB, we
+       * should use the correct value of v (close to lightring). What
        * about the amplitude corrected one ? */
       fFinal = minfFinal + i *
 	(maxfFinal - minfFinal)/(input->numFreqCut - 1);
@@ -270,13 +270,13 @@ LALInspiralBankGeneration(
         fFinal = input->fUpper;
       }
       coarseList[cnt].params.fFinal = fFinal;
-    
-      /* Update the Gamma parameter if requested, using the proper cut-off 
+
+      /* Update the Gamma parameter if requested, using the proper cut-off
        * frequency */
       if ( input->computeMoments )
       {
         coarseList[cnt].params.fCutoff = coarseList[cnt].params.fFinal;
-        LALGetInspiralMoments( status->statusPtr, &moments, &(input->shf), 
+        LALGetInspiralMoments( status->statusPtr, &moments, &(input->shf),
             &(coarseList[cnt].params) );
 
         LALInspiralComputeMetric(status->statusPtr, &(coarseList[cnt].metric),
@@ -287,11 +287,11 @@ LALInspiralBankGeneration(
       bank->f_final = coarseList[cnt].params.fFinal;
       bank->eta = coarseList[cnt].params.eta;
       bank->beta = coarseList[cnt].params.beta;
-      
+
       /* Copy the 10 metric co-efficients ... */
       memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
       }
-      
+
     }
     /* Free first template, which is blank. */
     bank = (*first)->next;
@@ -300,29 +300,29 @@ LALInspiralBankGeneration(
     /* free the coarse list returned by create coarse bank */
     LALFree( coarseList );
     break;
-  
+
   case FindChirpPTF:
-   
+
     chi = malloc (input->nPointsChi * sizeof(REAL8));
     kappa = malloc (input->nPointsKappa * sizeof(REAL8));
     dChi = ( input->chiMax - input->chiMin) / (REAL8) input->nPointsChi;
     dKappa = ( input->kappaMax - input->kappaMin ) / (REAL8) input->nPointsKappa;
-    
+
     for (i=0; i < input->nPointsChi; i++)
-    {  
+    {
       if (!i) chi[i] = input->chiMin + dChi / 2.0;
       else chi[i] = chi[0] + i * dChi ;
     }
     for (i=0; i < input->nPointsKappa; i++)
-    {  
+    {
       if (!i) kappa[i] = input->kappaMin + dKappa / 2.0;
       else kappa[i] = kappa[0] + i * dKappa ;
     }
-    
+
     /* Use LALInspiralCreateCoarseBank(). */
     TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
          *input ), status );
- 
+
     /* Convert output data structure. */
     bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
     if (bank == NULL){
@@ -337,7 +337,7 @@ LALInspiralBankGeneration(
         for( cnt = 0; cnt < *ntiles; cnt++ )
         {
           /* restrict the bank boundaries to the region of validity of PTF */
-          if ( coarseList[cnt].params.mass1 < 6.0 || 
+          if ( coarseList[cnt].params.mass1 < 6.0 ||
                coarseList[cnt].params.mass2 > 3.0 ) continue;
           bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
                 SnglInspiralTable ) );
@@ -364,7 +364,7 @@ LALInspiralBankGeneration(
           bank->f_final = coarseList[cnt].params.fFinal;
           bank->eta     = coarseList[cnt].params.eta;
           bank->beta    = coarseList[cnt].params.beta;
-          
+
 
           /* Copy the 10 metric co-efficients ... */
           memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
@@ -372,7 +372,7 @@ LALInspiralBankGeneration(
         }
       }
     }
-    
+
     free(chi);
     free(kappa);
     /* Free first template, which is blank. */
@@ -389,32 +389,32 @@ LALInspiralBankGeneration(
     {
     /* Use LALInspiralSpinBank(); no need to convert output. */
     TRY( LALInspiralSpinBank( status->statusPtr, first, ntiles, input ),
-         status );   
+         status );
     }
     else if (input->spinBank==1)
     {
     /* For extended bank use LALInspiralBCVSpinBank() */
     /*
     TRY( LALInspiralBCVSpinBank( status->statusPtr, first, ntiles, input ),
-         status );   
+         status );
     */
     }
     else if (input->spinBank==2)
     {
     /* For extended bank use LALInspiralBCVSpinBank() */
-    
+
     /*
     TRY( LALInspiralBCVSpinRandomBank( status->statusPtr, first, ntiles, input ),
-         status );   
+         status );
      */
-     
+
     }
     else
     {
       ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
     }
 
-    if (*ntiles < 1){       
+    if (*ntiles < 1){
       ABORT( status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
     }
     break;
@@ -425,5 +425,5 @@ LALInspiralBankGeneration(
   }
 
   DETATCHSTATUSPTR(status);
-  RETURN(status); 
+  RETURN(status);
 }

@@ -17,34 +17,34 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: DestroyTimeFreqParam.c
- * 
+ *
  * Maintainer: Torres, C (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * DestroyTimeFreqParam
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  * void LALDestroyTimeFreqParam ( LALStatus *,  TimeFreqParam **param );
- * 
- * DESCRIPTION 
+ *
+ * DESCRIPTION
  * Returns to system storage allocated by CreateTimeFreqParam
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  * param == NULL, *param == NULL, free failure
  *
  * CALLS
  * LALFree
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -56,41 +56,41 @@ void LALDestroyTimeFreqParam (LALStatus *status, TimeFreqParam **param)
 {
   /*  Initialize status */
   INITSTATUS (status, "LALDestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
-      
+
   /* Check param: report if NULL */
-  ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL); 
+  ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL);
 
   /*  Check *param: report if NULL */
   ASSERT (*param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL);
 
   switch ((*param)->type) {
   case Spectrogram :
-  
+
     LALSDestroyVector(status,&(*param)->windowT);
-    (*param)->type = Undefined; 
+    (*param)->type = Undefined;
 
     break;
   case WignerVille :
- 
-    (*param)->type = Undefined; 
+
+    (*param)->type = Undefined;
 
     break;
   case PSWignerVille :
 
     LALSDestroyVector(status,&(*param)->windowT);
     LALSDestroyVector(status,&(*param)->windowF);
-    (*param)->type = Undefined; 
-    
+    (*param)->type = Undefined;
+
     break;
   case RSpectrogram :
 
     LALSDestroyVector(status,&(*param)->windowT);
-    (*param)->type = Undefined; 
+    (*param)->type = Undefined;
 
     break;
   default :
     ABORT(status,DESTROYTFP_ETYPE, DESTROYTFP_MSGETYPE);
-    
+
   }
   /* Ok, now let's free allocated storage */
 

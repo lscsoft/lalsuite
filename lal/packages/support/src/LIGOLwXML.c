@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXML.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LIGOLwXMLCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <stdarg.h>
@@ -77,7 +77,10 @@ files.
 
 \subsubsection*{Description}
 
-The routine \verb+LALOpenLIGOLwXMLFile+ calls the C standard library function
+The routine \verb+LALOpenLIGOLwXMLFile+
+
+The routine \verb+XLALCreateLIGOLwXMLFileName+ creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
+
 \verb+fopen+ to open a file specified by the \verb+path+ argument. The file is
 truncated to zero length if already exists. The standard LIGO lightweight XML
 header, \verb+LIGOLW_XML_HEADER+ given in LIGOLwXMLHeaders.h, is then written
@@ -93,7 +96,7 @@ table to begin is specified by the \verb+table+ argument.  The appropriate
 headers are again contained in LIGOLwXMLHeaders.h and contain the table name as
 well as the names and data types of each of the columns in the table.  In
 addition, it sets \verb+xml->first+ to 1 and \verb+xml->table+ to the requested
-table. 
+table.
 
 The routine \verb+LALEndLIGOLwXMLTable+ prints the table footer.  This is the
 same for all tables, and given by \verb+LIGOLW_XML_TABLE_FOOTER+ in
@@ -103,7 +106,7 @@ The routine \verb+LALWriteLIGOLwXMLTable+ writes the content of the xml table.
 The type of table to be written is specified by \verb+table+.  The contents of
 the table should be stored as a linked list in \verb+tablePtr->table+.  The data
 is written using the row format for the specified table given in
-LIGOLwXMLHeaders.h. 
+LIGOLwXMLHeaders.h.
 
 
 \subsubsection*{Algorithm}
@@ -129,7 +132,7 @@ list of all the files which must be updated.
 
 \begin{enumerate}
 \item  Change the table header written at to the LIGOLwXML file.  This is
-\verb+#define+d in \verb+LIGOLwXMLHeaders.h+.  For example, to change the 
+\verb+#define+d in \verb+LIGOLwXMLHeaders.h+.  For example, to change the
 \verb+sngl_inspiral+ table, you must edit \verb+LIGOLW_XML_SNGL_INSPIRAL+.
 
 \item Change the row format of the LIGOLwXML file.  This is \verb+#define+d in
@@ -137,7 +140,7 @@ list of all the files which must be updated.
 table, you must edit \verb+SNGL_INSPIRAL_ROW+.
 
 \item Change the fprintf command which writes the table rows.  This is contained
-in \verb+LIGOLwXML.c+.  
+in \verb+LIGOLwXML.c+.
 
 \end{enumerate}
 
@@ -334,52 +337,52 @@ LALBeginLIGOLwXMLTable (
       ABORT( status, LIGOLWXMLH_ENTAB, LIGOLWXMLH_MSGENTAB );
       break;
     case process_table:
-      myfprintf( xml->fp, LIGOLW_XML_PROCESS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_PROCESS );
       break;
     case process_params_table:
-      myfprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
       break;
     case search_summary_table:
-      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
       break;
     case search_summvars_table:
-      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
       break;
     case sngl_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
     case sngl_inspiral_table_bns:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BNS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BNS );
       break;
     case sngl_inspiral_table_bcv:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BCV );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BCV );
       break;
     case sngl_ringdown_table:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
       break;
     case multi_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
       break;
     case sim_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
       break;
     case sim_ringdown_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
       break;
     case summ_value_table:
-      myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
     case sim_inst_params_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
       break;
     case stochastic_table:
-      myfprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
+      (void)myfprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
       break;
     case ext_triggers_table:
-      myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
+      (void)myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
     case filter_table:
-      myfprintf( xml->fp, LIGOLW_XML_FILTER );
+      (void)myfprintf( xml->fp, LIGOLW_XML_FILTER );
       break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
@@ -406,7 +409,7 @@ LALEndLIGOLwXMLTable (
   {
     ABORT( status, LIGOLWXMLH_EENDT, LIGOLWXMLH_MSGEENDT );
   }
-  myfprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
+  (void)myfprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
   xml->table = no_table;
   RETURN( status );
 }
@@ -810,7 +813,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->theta0,
               tablePtr.simInspiralTable->phi0,
               tablePtr.simInspiralTable->f_lower,
-              tablePtr.simInspiralTable->f_final, 
+              tablePtr.simInspiralTable->f_final,
               tablePtr.simInspiralTable->eff_dist_h,
               tablePtr.simInspiralTable->eff_dist_l,
               tablePtr.simInspiralTable->eff_dist_g,
@@ -1319,6 +1322,8 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
 
+
+
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
 		XLAL_ERROR(func, XLAL_EFAILED);
@@ -1388,5 +1393,50 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	/* done */
 
 	return 0;
+}
+
+/**
+ * Creates a XML filename accordingly to document T050017
+ */
+
+int XLALCreateLIGODataFileName(
+        char* filename,
+        size_t size,
+        const char* dataSource,
+        const char* dataDescription,
+        const LIGOTimeGPS* gpsStartTime,
+        const LIGOTimeGPS* gpsEndTime,
+        const char* extension
+)
+{
+     static const char func[] = "XLALCreateLIGODataFileName";
+
+     INT4 gpsDuration;
+
+     /* check input structures */
+     if (!filename || !dataSource || !dataDescription ||
+	 !gpsStartTime || !gpsEndTime || !extension)
+          XLAL_ERROR(func, XLAL_EFAULT);
+
+     /* check the correctnes of the input strings */
+     if ( strchr(dataSource, '-') || strchr(dataDescription, '-'))
+     {
+          filename = NULL;
+          XLALPrintError("the input character strings contain invalid"
+			 " dashes ('-').");
+          XLAL_ERROR(func, XLAL_EINVAL);
+      }
+
+      /* calculate the GPS duration */
+      gpsDuration = gpsEndTime->gpsSeconds - gpsStartTime->gpsSeconds;
+      if (gpsEndTime->gpsNanoSeconds > 0) ++gpsDuration;
+
+      /* and here put it all together */
+      snprintf( filename, size, "%s-%s-%d-%d.%s",
+		   dataSource, dataDescription, gpsStartTime->gpsSeconds,
+		   gpsDuration, extension );
+
+      /* return success */
+      return 0;
 }
 

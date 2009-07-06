@@ -15,12 +15,12 @@ define(`F5',`format(`LAL%sCreateArraySequence',TYPECODE)')
 define(`F6',`format(`LAL%sDestroyArraySequence',TYPECODE)')
 */
 
-          
+
 
 void F5 ( LALStatus *status,
           ASEQTYPE **arraySequence,
           CreateArraySequenceIn *aSeqParams);
-          
+
 void F6 ( LALStatus *status,
           ASEQTYPE **arraySeqence);
-          
+

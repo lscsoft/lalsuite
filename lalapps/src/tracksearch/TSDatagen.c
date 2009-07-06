@@ -149,7 +149,6 @@ int intializeArgs(
       {"Sampling_Frequency",     required_argument,      0,       'e'},
       {"Sample_Points",          required_argument,      0,       'g'},
       {"Noise_Amplitude",        required_argument,      0,       'f'},
-      {"File_Name",              required_argument,      0,       'h'},
       {"Quiet",                  no_argument,            0,       'i'},
       {"SNR",                    required_argument,      0,       'j'},
       {"Noise_Only",             no_argument,            0,       'k'},

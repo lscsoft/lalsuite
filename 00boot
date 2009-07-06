@@ -1,0 +1,28 @@
+#!/bin/sh
+
+## Function to report failure
+fail () {
+  echo "!!! 00boot: $1 failed" >&2
+  echo "!!! 00boot: consult the file 'README' for help" >&2
+  exit 1
+}
+
+## Run 00boot in subdirs
+for d in lal lalapps; do
+	echo "00boot: running 00boot in $d"
+	(cd "$d" && ./00boot 1>/dev/null) || fail "00boot in $d"
+done
+
+echo "00boot: running autoreconf"
+autoreconf || fail "autoreconf"
+
+echo "00boot: success"
+echo "
+=================================================================
+
+        00boot has been run.
+
+        Now run './configure' with appropriate options
+        to configure LALSuite.
+
+================================================================="

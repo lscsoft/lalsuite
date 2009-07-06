@@ -49,7 +49,6 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSnprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -71,24 +70,27 @@ LALSnprintf()
 #include <lal/GenerateRing.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
+#include <lal/TimeFreqFFT.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 NRCSID( GENERATERINGC, "$Id$" );
 
 /* <lalVerbatim file="GenerateRingCP"> */
 void
-LALGenerateRing( 
-    LALStatus          *stat, 
+LALGenerateRing(
+    LALStatus          *stat,
     CoherentGW         *output,
     REAL4TimeSeries    *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     )
-    
+
 { /* </lalVerbatim> */
-  UINT4 n, i;      /* number of and index over samples */
+  UINT4 i;      /* number of and index over samples */
   REAL8 t, dt;         /* time, interval */
-  REAL8 t0, gtime ;    /* central time, decay time */
+  REAL8 gtime ;    /* central time, decay time */
   REAL8 f0, quality;   /* frequency and quality factor */
   REAL8 twopif0;       /* 2*pi*f0 */
   REAL4 h0;            /* peak strain for ringdown */
@@ -97,16 +99,22 @@ LALGenerateRing(
   REAL8 init_phase;    /*initial phase of injection */
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
-  REAL4TimeSeries signal; /* start time of block that injection is injected into */
-  LALTimeInterval  interval;
   UINT4 nPointInj; /* number of data points in a block */
+#if 0
+  UINT4 n;
+  REAL8 t0;
+  REAL4TimeSeries signalvec; /* start time of block that injection is injected into */
+  LALTimeInterval  interval;
   INT8 geoc_tns;       /* geocentric_start_time of the injection in ns */
   INT8 block_tns;      /* start time of block in ns */
   REAL8 deltaTns;
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
-  
- 
+#endif
+
+  /* series is unused in this function */
+  UNUSED(series);
+
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
 
@@ -125,15 +133,15 @@ LALGenerateRing(
 	  GENERATERINGH_MSGEOUT );
   ASSERT( !( output->shift ), stat, GENERATERINGH_EOUT,
 	  GENERATERINGH_MSGEOUT );
-  
+
 
   /* Set up some other constants, to avoid repeated dereferencing. */
-  dt = params->deltaT; 
+  dt = params->deltaT;
   startTime = simRingdown->geocent_start_time;
 /* N_point = 2 * floor(0.5+ 1/ dt); */
- 
+
   nPointInj = 163840;
-  
+
   /* Generic ring parameters */
   h0 = simRingdown->amplitude;
   quality = (REAL8)simRingdown->quality;
@@ -141,7 +149,7 @@ LALGenerateRing(
   twopif0 = f0*LAL_TWOPI;
   init_phase = simRingdown->phase;
 
- 
+
   if ( ( output->a = (REAL4TimeVectorSeries *)
 	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
     ABORT( stat, GENERATERINGH_EMEM, GENERATERINGH_MSGEMEM );
@@ -162,20 +170,20 @@ LALGenerateRing(
   memset( output->phi, 0, sizeof(REAL8TimeSeries) );
 
   /* Set output structure metadata fields. */
-  output->position.longitude = simRingdown->longitude; 
+  output->position.longitude = simRingdown->longitude;
   output->position.latitude = simRingdown->latitude;
   output->position.system = params->system;
   output->psi = simRingdown->polarization;
    /* set epoch of output time series to that of the block */
   output->a->epoch = output->f->epoch = output->phi->epoch = simRingdown->geocent_start_time;
-  output->a->deltaT = params->deltaT; 
-  output->f->deltaT = output->phi->deltaT = params->deltaT; 
+  output->a->deltaT = params->deltaT;
+  output->f->deltaT = output->phi->deltaT = params->deltaT;
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->a->name, LALNameLength, "Ring amplitudes" );
-  LALSnprintf( output->f->name, LALNameLength, "Ring frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "Ring phase" );
+  snprintf( output->a->name, LALNameLength, "Ring amplitudes" );
+  snprintf( output->f->name, LALNameLength, "Ring frequency" );
+  snprintf( output->phi->name, LALNameLength, "Ring phase" );
 
 
   /* Allocate phase and frequency arrays. */
@@ -185,7 +193,7 @@ LALGenerateRing(
     LALFree( output->f );   output->f = NULL;
     LALFree( output->phi ); output->phi = NULL;
   } ENDFAIL( stat );
-  
+
   LALDCreateVector( stat->statusPtr, &( output->phi->data ), nPointInj );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
@@ -212,12 +220,12 @@ LALGenerateRing(
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
   }
-  
+
 
   /*  set arrays to zero */
   memset( output->f->data->data, 0, sizeof( REAL4 ) *  output->f->data->length );
   memset( output->phi->data->data, 0, sizeof( REAL8 ) * output->phi->data->length );
-  memset( output->a->data->data, 0, sizeof( REAL4 ) * 
+  memset( output->a->data->data, 0, sizeof( REAL4 ) *
       output->a->data->length * output->a->data->vectorLength );
 
 /* Fill frequency and phase arrays starting at time of injection NOT start */
@@ -233,7 +241,7 @@ LALGenerateRing(
       gtime = twopif0 / 2 / quality * t ;
       *(fData++)   = f0;
       *(phiData++) = twopif0 * t+init_phase;
-      *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) * 
+      *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) *
         exp( - gtime );
       *(aData++) = h0* 2.0 * cos( simRingdown->inclination ) * exp( - gtime );
     }
@@ -243,7 +251,7 @@ LALGenerateRing(
     ABORT( stat, GENERATERINGH_ETYP, GENERATERINGH_MSGETYP );
   }
 
-  
+
 /* Set output field and return. */
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
@@ -252,8 +260,8 @@ LALGenerateRing(
 
 /* <lalVerbatim file="GenerateRingCP"> */
 void
-LALRingInjectSignals( 
-    LALStatus               *stat, 
+LALRingInjectSignals(
+    LALStatus               *stat,
     REAL4TimeSeries         *series,
     SimRingdownTable        *injections,
     COMPLEX8FrequencySeries *resp,
@@ -268,7 +276,7 @@ LALRingInjectSignals(
   COMPLEX8Vector    *unity = NULL;
   CoherentGW         waveform;
   RingParamStruc     ringParam;
-  REAL4TimeSeries    signal;
+  REAL4TimeSeries    signalvec;
   SimRingdownTable  *simRingdown=NULL;
   LALDetector       *tmpDetector=NULL /*,*nullDetector=NULL*/;
   COMPLEX8FrequencySeries    *transfer = NULL;
@@ -281,15 +289,15 @@ LALRingInjectSignals(
   injStopTime = series->epoch.gpsSeconds + 10 + (INT4)(series->data->length
       * series->deltaT);
 
-  /* 
-   *compute the transfer function 
+  /*
+   *compute the transfer function
    */
 
   /* allocate memory and copy the parameters describing the freq series */
   memset( &detector, 0, sizeof( DetectorResponse ) );
   transfer = (COMPLEX8FrequencySeries *)
     LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! transfer ) 
+  if ( ! transfer )
   {
     ABORT( stat, GENERATERINGH_EMEM, GENERATERINGH_MSGEMEM );
   }
@@ -341,7 +349,7 @@ LALRingInjectSignals(
 
   LALCCreateVector( stat->statusPtr, &unity, resp->data->length );
   CHECKSTATUSPTR( stat );
-  for ( k = 0; k < resp->data->length; ++k ) 
+  for ( k = 0; k < resp->data->length; ++k )
   {
     unity->data[k].re = 1.0;
     unity->data[k].im = 0.0;
@@ -355,15 +363,15 @@ LALRingInjectSignals(
   CHECKSTATUSPTR( stat );
 
   /* Set up a time series to hold signal in ADC counts */
-  signal.deltaT = series->deltaT;
-  if ( ( signal.f0 = series->f0 ) != 0 )
+  signalvec.deltaT = series->deltaT;
+  if ( ( signalvec.f0 = series->f0 ) != 0 )
   {
     ABORT( stat, GENERATERINGH_EMEM, GENERATERINGH_MSGEMEM );
   }
-  signal.sampleUnits = lalADCCountUnit;
+  signalvec.sampleUnits = lalADCCountUnit;
 
-  signal.data=NULL;
-  LALSCreateVector( stat->statusPtr, &(signal.data), 
+  signalvec.data=NULL;
+  LALSCreateVector( stat->statusPtr, &(signalvec.data),
       series->data->length );
   CHECKSTATUSPTR( stat );
 
@@ -421,23 +429,23 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj, kplus, kcross;
-        LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
-            "waveform-%d-%d-%s.txt", 
+        snprintf( fname, sizeof(fname) / sizeof(*fname),
+            "waveform-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,
             simRingdown->waveform );
         fp = fopen( fname, "w" );
-         
-        for( jj = 0, kplus = 0, kcross = 1; jj < waveform.phi->data->length; 
+
+        for( jj = 0, kplus = 0, kcross = 1; jj < waveform.phi->data->length;
             ++jj, kplus += 2, kcross +=2 )
           {
             fprintf(fp, "%d %e %e %le %e\n", jj,
-                waveform.a->data->data[kplus], 
-                waveform.a->data->data[kcross], 
-                waveform.phi->data->data[jj], 
+                waveform.a->data->data[kplus],
+                waveform.a->data->data[kcross],
+                waveform.phi->data->data[jj],
                 waveform.f->data->data[jj]);
             }
-        fclose( fp );     
+        fclose( fp );
         }
     /* end */
 #if 0
@@ -449,18 +457,18 @@ LALRingInjectSignals(
         waveform.f->epoch.gpsSeconds, waveform.f->epoch.gpsNanoSeconds );
 #endif
     /* must set the epoch of signal since it's used by coherent GW */
-    signal.epoch = series->epoch;
-    memset( signal.data->data, 0, signal.data->length * sizeof(REAL4) );
+    signalvec.epoch = series->epoch;
+    memset( signalvec.data->data, 0, signalvec.data->length * sizeof(REAL4) );
 
     /* decide which way to calibrate the data; defaul to old way */
     if( calType )
       detector.transfer=NULL;
     else
       detector.transfer=transfer;
-    
+
     /* convert this into an ADC signal */
-    LALSimulateCoherentGW( stat->statusPtr, 
-        &signal, &waveform, &detector );
+    LALSimulateCoherentGW( stat->statusPtr,
+        &signalvec, &waveform, &detector );
     CHECKSTATUSPTR( stat );
 
 
@@ -470,16 +478,16 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj;
-        LALSnprintf( fname, sizeof(fname) / sizeof(*fname),
+        snprintf( fname, sizeof(fname) / sizeof(*fname),
             "signal-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,
             simRingdown->waveform );
         fp = fopen( fname, "w" );
 
-        for( jj = 0; jj < signal.data->length; ++jj )
+        for( jj = 0; jj < signalvec.data->length; ++jj )
           {
-            fprintf( fp, "%d %le\n", jj, signal.data->data[jj] );
+            fprintf( fp, "%d %le\n", jj, signalvec.data->data[jj] );
           }
         fclose( fp );
         }
@@ -487,17 +495,17 @@ LALRingInjectSignals(
 #if 0
     fprintf( stderr, "series.epoch->gpsSeconds = %d\nseries.epoch->gpsNanoSeconds = %d\n",
         series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds );
-    fprintf( stderr, "signal->epoch->gpsSeconds = %d\nsignal->epoch->gpsNanoSeconds = %d\n",
-        signal.epoch.gpsSeconds, signal.epoch.gpsNanoSeconds );
+    fprintf( stderr, "signalvec->epoch->gpsSeconds = %d\nsignalvec->epoch->gpsNanoSeconds = %d\n",
+        signalvec.epoch.gpsSeconds, signalvec.epoch.gpsNanoSeconds );
 #endif
     /* if calibration using RespFilt */
     if( calType == 1 )
-      XLALRespFilt(&signal, transfer);
+      XLALRespFilt(&signalvec, transfer);
 
     /* inject the signal into the data channel */
-    LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
+    LALSSInjectTimeSeries( stat->statusPtr, series, &signalvec );
     CHECKSTATUSPTR( stat );
-    
+
 /* free memory in coherent GW structure.  TODO:  fix this */
     LALSDestroyVectorSequence( stat->statusPtr, &( waveform.a->data ) );
     CHECKSTATUSPTR( stat );
@@ -517,7 +525,7 @@ LALRingInjectSignals(
   }
 
   /* destroy the signal */
-  LALSDestroyVector( stat->statusPtr, &(signal.data) );
+  LALSDestroyVector( stat->statusPtr, &(signalvec.data) );
   CHECKSTATUSPTR( stat );
 
   LALCDestroyVector( stat->statusPtr, &( transfer->data ) );

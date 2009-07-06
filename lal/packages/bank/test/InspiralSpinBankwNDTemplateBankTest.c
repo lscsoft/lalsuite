@@ -18,13 +18,13 @@
 */
 
 /*_______________________________________________________________________________________
- * 
+ *
  * File Name: InspiralSpinBankwNDTemplateBankTest.c
  *
  * Author: Hanna C. R.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *_______________________________________________________________________________________
  */
 
@@ -35,38 +35,38 @@
 /*<lalVerbatim file="InspiralSpinBankwNDTemplateBankTestCV">
   Author: Hanna, C.R.
   $Id$
-  </lalVerbatim>*/ 
+  </lalVerbatim>*/
 
 /*SUBSECTION - PROGRAM - "InspiralSpinBankwNDTemplateBankTest.c" ---------------------------- <lalLaTeX>
   \subsection{Program \texttt{InspiralSpinBankwNDTemplateBankTest.c}}
   \label{s:InspiralSpinBankwNDTemplateBankTest.c}
   \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
-* Tests InpsiralSpinBankwNDTemplateBank(). 
+* Tests InpsiralSpinBankwNDTemplateBank().
   </lalLaTeX>*/
-  
+
   /*SUBSUBSECTION - USAGE - "InspiralSpinBankwNDTemplateBankTest.c" ------------------------- <lalLaTeX>
     \begin{verbatim}
     InspiralSpinBankwNDTemplateBankTest
-    \end{verbatim} 
+    \end{verbatim}
     </lalLaTeX>
     END SUBSUBSECTION - USAGE - "InspiralSpinBankwNDTemplateBankTest.c" ----------------------------- */
 
   /*SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankwNDTemplateBankTest.c" ------------------- <lalLaTeX>
     \subsubsection{Description}
   * This program uses InspiralSpinBankwNDTemplateBank() to generate a template bank from command line
-  * parameter input.  It also has the option to make a \MATHEMATICA notebook using 
-  * LALMath3DPlot() which will plot the 3D template bank. 
+  * parameter input.  It also has the option to make a \MATHEMATICA notebook using
+  * LALMath3DPlot() which will plot the 3D template bank.
     </lalLaTeX>
     END SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ----------------------- */
-  
+
   /*SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" ----------------------- <lalLaTeX>
     \subsubsection{Command line options}
     \begin{description}
-    \item[-n] 
+    \item[-n]
   * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
     \item[-x]
   * Specifies the maximum smaller mass between 0 and 5.0 $M\odot$.
-    \item[-m] 
+    \item[-m]
   * Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
   * it is best to pick a value $O[1]$ to save compiling time.
     \item[-p]
@@ -74,12 +74,12 @@
     \end{description}
     </lalLaTeX>
     END SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" --------------------------- */
-  
+
   /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
     /* <lalLaTeX>
     \subsubsection*{Exit codes}
     \input{InspiralSpinBankwNDTemplateBankTestCE}
-    </lalLaTeX> 
+    </lalLaTeX>
     END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
 
   /*SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" ------------------------- <lalLaTeX>
@@ -89,12 +89,12 @@
   * total mass $<15M\odot$ where the minimum larger mass is at least twice the maximum
   * smaller mass.  Choosing mass values that violate these conditions will cause an
   * error message.
-  * \item It is unlikely that you will be able to run a \MATHEMATICA notebook that 
-  * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to 
+  * \item It is unlikely that you will be able to run a \MATHEMATICA notebook that
+  * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to
   * view a plot.
     \end{itemize}
     </lalLaTeX>
-    END - SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" --------------------------- */ 
+    END - SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" --------------------------- */
   /*<lalLaTeX>
   \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
   </lalLaTeX>
@@ -127,7 +127,7 @@ extern char *optarg;
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_EMEM      1
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ESUB      2
-                                                                                                                                              
+
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGENORM  "Normal exit"
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB   "Subroutine error"
@@ -139,8 +139,8 @@ int main(int argc, char *argv[]){
   static LALStatus stat;
   INT4 loop = 0; 			/* loop counter */
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
-  Math3DPointList *first = NULL; 	
-  InspiralTemplateList *Tiles = NULL;	
+  Math3DPointList *first = NULL;
+  InspiralTemplateList *Tiles = NULL;
   InspiralCoarseBankIn CoarseIn;	/* this input stucture is superfluous */
   INT4 ntiles = 0;			/* number of tiles */
   INT2 Math3DPlot = 0;			/* option flag for Mathematica plot */
@@ -153,11 +153,11 @@ int main(int argc, char *argv[]){
   INT2 printMoments = 0;
   InspiralMomentsEtc moments;
   REAL4 F0 = 164.0; /* Roughly the minimum of the noise curve */
-                    /* This should be calculated */ 
+                    /* This should be calculated */
   REAL8 minfreq = 1;
   FILE *plot;
-  plot = fopen("plot.dat", "w");  
- 
+  plot = fopen("plot.dat", "w");
+
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&stat, INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGEMEM);
     printf(INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGEMEM);
@@ -165,23 +165,23 @@ int main(int argc, char *argv[]){
     }
 
   first = list;
- 
+
   /* Stuff for calculating the PSD and Noise Moments */
   CoarseIn.fLower = 30;
   CoarseIn.fUpper = 3300;
   CoarseIn.iflso = 0;
   inspiralTemplate.fLower = 30;
   inspiralTemplate.fCutoff = 2000;
-                                                                                                                                                
+
  /* Parse options. */
   do{
-    optflag++;  
+    optflag++;
     switch (opt) {
       case 'n':
         CoarseIn.mMin = atof( optarg );
         break;
       case 'm':
-        CoarseIn.mmCoarse = atof( optarg );       
+        CoarseIn.mmCoarse = atof( optarg );
         break;
       case 'x':
         CoarseIn.MMax = atof( optarg );
@@ -201,24 +201,24 @@ int main(int argc, char *argv[]){
          break;
       }
     } while ((opt = getopt( argc, argv, "n:m:x:ps" )) != -1);
-  
+
   CoarseIn.shf.data = NULL;
   memset( &(CoarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
   CoarseIn.shf.f0 = 0;
-  LALDCreateVector(&stat, &psd, 3300); 
+  LALDCreateVector(&stat, &psd, 3300);
   df = 1.0;
   LALNoiseSpectralDensity(&stat, psd, &LALLIGOIPsd, df);
   CoarseIn.shf.data = psd;
   CoarseIn.shf.deltaF = df;
-  
+
   for(loop = 0; loop < psd->length; loop++){
-    if ((psd->data[loop]) && (psd->data[loop] <= minfreq)){ 
+    if ((psd->data[loop]) && (psd->data[loop] <= minfreq)){
       F0 = (REAL4) CoarseIn.shf.deltaF * loop;
       minfreq = psd->data[loop];
       }
     }
   printf("\nF0=%f\n",F0);
-    
+
 
   printf("\n\n\n____________________________________________________________________");
   if (optflag) printf("\nThe parameters you specified (along with defaults) are:\n");
@@ -233,11 +233,11 @@ int main(int argc, char *argv[]){
     printf("\n\t\t      of the tiles\n");
     printf("\t-s (no arg) - this prints the noise moments");
     printf("\nThe default parameters are:\n");
-    } 
-  printf("\nMismatch = %f\nMathematica Plot = %i\nMass two min = %f\nMass two max = %f\nPrint Moments = %i\n", 
+    }
+  printf("\nMismatch = %f\nMathematica Plot = %i\nMass two min = %f\nMass two max = %f\nPrint Moments = %i\n",
     CoarseIn.mmCoarse, Math3DPlot, CoarseIn.mMin, CoarseIn.MMax, printMoments);
   printf("______________________________________________________________________\n");
-    
+
   if (printMoments){
     LALGetInspiralMoments(&stat, &moments, &CoarseIn.shf, &inspiralTemplate);
     printf("\nThe noise moments are:\n");
@@ -246,22 +246,22 @@ int main(int argc, char *argv[]){
       printf("J[%i] = %f\n", loop, moments.j[loop]);
       }
     }
-   
-  printf("\n\nCalling LALInspiralSpinBankwNDTemplateBank()......\n"); 
-  LALInspiralSpinBankwNDTemplateBank(&stat, &Tiles, &ntiles, CoarseIn);  
+
+  printf("\n\nCalling LALInspiralSpinBankwNDTemplateBank()......\n");
+  LALInspiralSpinBankwNDTemplateBank(&stat, &Tiles, &ntiles, CoarseIn);
   REPORTSTATUS(&stat);
   if (stat.statusCode){
     LALError(&stat, INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB);
     printf(INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB);
     return INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ESUB;
   }
-    
+
   printf("\nThese parameters yeild %i tiles.\n\n\n", ntiles);
-  
+
   for(loop=0; loop < ntiles; loop++){
     fprintf(plot, "%f\t%f\n", Tiles[loop].params.mass1/LAL_MTSUN_SI, Tiles[loop].params.mass2/LAL_MTSUN_SI);
     }
-  
+
   /* Mathematica Plot Stuff */
   if (Math3DPlot){
     for(loop=0; loop < (ntiles); loop++){
@@ -284,8 +284,8 @@ int main(int argc, char *argv[]){
       printf(INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB);
       return INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ESUB;
     }
- 
-    
+
+
     /* Clean Up the memory from the MathPlot3D structure */
     list = first;
     while(list->next){
@@ -294,10 +294,10 @@ int main(int argc, char *argv[]){
       list = first;
     }
   }
-  
+
   /* free the last (first?) memory allocated for Math3DPlot. */
-  LALFree(list); 
- 
+  LALFree(list);
+
   if (stat.statusCode)
     return INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_ESUB;
   else

@@ -48,8 +48,8 @@ int main( void )
   const REAL4 mass1        = 1.4;    /* solar masses */
   const REAL4 mass2        = 1.4;    /* solar masses */
   const REAL4 srate        = 16384;  /* Hz */
-  const REAL4 fmin         = 100;    /* Hz */
-  const REAL4 fmax         = 1000;   /* Hz */
+  const REAL4 f_min        = 100;    /* Hz */
+  const REAL4 f_max        = 1000;   /* Hz */
   const REAL4 dynRange     = 1;
 
   FindChirpInitParams initParams; /* need to populate this by hand */
@@ -87,29 +87,29 @@ int main( void )
 
 
   /* create some fake data */
-  MakeData( dataSegVec, mass1, mass2, srate, fmin, fmax );
+  MakeData( dataSegVec, mass1, mass2, srate, f_min, f_max );
 
 
   /*
    * initialize the SP- and TD-specific parameters
    */
 
-  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, fmin, dynRange,
+  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, f_min, dynRange,
      invSpecTrunc );
 
-  TDInit( &tdDataParams, &initParams, srate, fmin, dynRange, invSpecTrunc );
+  TDInit( &tdDataParams, &initParams, srate, f_min, dynRange, invSpecTrunc );
 
 
   /*
    * do the SP- and TD-filtering... could loop over templates and data here
    * without re-initializing
    */
-  spTmpltParams->order = twoPN;
+  spTmpltParams->order = LAL_PNORDER_TWO;
 
   SPFilter( dataSegVec, mass1, mass2, filterInput, filterParams, fcSegVec,
       spTmpltParams, spDataParams );
 
-  TDFilter( dataSegVec, mass1, mass2, fmax, filterInput, filterParams, fcSegVec,
+  TDFilter( dataSegVec, mass1, mass2, f_max, filterInput, filterParams, fcSegVec,
       tdDataParams );
 
 
@@ -129,7 +129,7 @@ int main( void )
 }
 
 
-
+
 /*
  *
  * Start(), Stop()
@@ -193,7 +193,7 @@ int Stop(
   return 0;
 }
 
-
+
 /*
  *
  * SPInit(), SPFini()
@@ -208,24 +208,24 @@ int SPInit(
     FindChirpDataParams  **spDataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     )
 {
   LALFindChirpTemplateInit( &status, spTmpltParams, initParams );
   TEST_STATUS( &status );
 
   (*spTmpltParams)->deltaT   = 1 / srate;
-  (*spTmpltParams)->fLow     = fmin;
+  (*spTmpltParams)->fLow     = f_min;
   (*spTmpltParams)->dynRange = dynRange;
 
   LALFindChirpDataInit( &status, spDataParams, initParams );
   TEST_STATUS( &status );
 
-  (*spDataParams)->fLow         = fmin;
+  (*spDataParams)->fLow         = f_min;
   (*spDataParams)->dynRange     = dynRange;
-  (*spDataParams)->invSpecTrunc = trunc;
+  (*spDataParams)->invSpecTrunc = lal_trunc;
 
   return 0;
 }
@@ -245,7 +245,7 @@ int SPFini(
 }
 
 
-
+
 /*
  *
  * TDInit(), TDFini()
@@ -259,21 +259,23 @@ int TDInit(
     FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     )
 {
   UINT4 i;
   LALFindChirpDataInit( &status, tdDataParams, initParams );
   TEST_STATUS( &status );
 
+  srate=0;
+
   for ( i = 0; i < (*tdDataParams)->ampVec->length; ++i )
     (*tdDataParams)->ampVec->data[i] = 1;
 
-  (*tdDataParams)->fLow         = fmin;
+  (*tdDataParams)->fLow         = f_min;
   (*tdDataParams)->dynRange     = dynRange;
-  (*tdDataParams)->invSpecTrunc = trunc;
+  (*tdDataParams)->invSpecTrunc = lal_trunc;
 
   return 0;
 }
@@ -288,7 +290,7 @@ int TDFini(
 }
 
 
-
+
 /*
  *
  * SPFilter()
@@ -356,7 +358,7 @@ int SPFilter(
 }
 
 
-
+
 /*
  *
  * TDFilter()
@@ -372,14 +374,14 @@ int TDFilter(
     DataSegmentVector *dataSegVec,
     REAL4 mass1,
     REAL4 mass2,
-    REAL4 fmax,
+    REAL4 f_max,
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
     FindChirpDataParams *dataParams
     )
 {
-  REAL4Vector    *signal = NULL;
+  REAL4Vector    *signalvec = NULL;
   COMPLEX8Vector *stilde = NULL;
   InspiralTemplate tmplt;
   UINT4 segment;
@@ -405,11 +407,11 @@ int TDFilter(
   tmplt.startPhase      = 0;
   tmplt.tSampling       = 1 / fcSegVec->data->deltaT;
   tmplt.fLower          = fcSegVec->data->fLow;
-  tmplt.fCutoff         = fmax;
+  tmplt.fCutoff         = f_max;
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = 0;
   tmplt.nEndPad         = 0;
-  tmplt.order           = twoPN;
+  tmplt.order           = LAL_PNORDER_TWO;
   tmplt.approximant     = TaylorT2;
   tmplt.massChoice      = m1Andm2;
   tmplt.OmegaS          = 0;
@@ -426,31 +428,31 @@ int TDFilter(
     exit( 1 );
   }
 
-  LALSCreateVector( &status, &signal, numPoints );
+  LALSCreateVector( &status, &signalvec, numPoints );
   TEST_STATUS( &status );
 
   LALCCreateVector( &status, &stilde, numPoints / 2 + 1 );
   TEST_STATUS( &status );
 
-  LALInspiralWave( &status, signal, &tmplt );
+  LALInspiralWave( &status, signalvec, &tmplt );
   TEST_STATUS( &status );
 
   /* shift chirp to end of vector */
   n = numPoints;
-  while ( signal->data[--n] == 0 )
+  while ( signalvec->data[--n] == 0 )
     ;
   ++n;
-  memmove( signal->data + numPoints - n, signal->data,
-      n * sizeof( *signal->data ) );
-  memset( signal->data, 0, ( numPoints - n ) * sizeof( *signal->data ) );
+  memmove( signalvec->data + numPoints - n, signalvec->data,
+      n * sizeof( *signalvec->data ) );
+  memset( signalvec->data, 0, ( numPoints - n ) * sizeof( *signalvec->data ) );
 
   /* fft chirp */
-  LALForwardRealFFT( &status, stilde, signal, dataParams->fwdPlan );
+  LALForwardRealFFT( &status, stilde, signalvec, dataParams->fwdPlan );
   TEST_STATUS( &status );
 
 
   /* re-compute data normalization */
-  memset( fcSegVec->data->segNorm->data, 0, 
+  memset( fcSegVec->data->segNorm->data, 0,
       fcSegVec->data->segNorm->length * sizeof(REAL4) );
   segNormSum = 0;
   for ( k = 1; k < stilde->length; ++k )
@@ -460,7 +462,7 @@ int TDFilter(
     REAL4 power = re * re + im * im;
     segNormSum += power * dataParams->wtildeVec->data[k].re;
     fcSegVec->data->segNorm->data[k] += segNormSum;
-      
+
   }
 
 
@@ -507,7 +509,7 @@ int TDFilter(
     }
   }
 
-  LALSDestroyVector( &status, &signal );
+  LALSDestroyVector( &status, &signalvec );
   TEST_STATUS( &status );
 
   LALCDestroyVector( &status, &stilde );
@@ -518,7 +520,7 @@ int TDFilter(
 
 
 
-
+
 /*
  *
  * MakeData()
@@ -533,8 +535,8 @@ int MakeData(
     REAL4 mass1,
     REAL4 mass2,
     REAL4 srate,
-    REAL4 fmin,
-    REAL4 fmax
+    REAL4 f_min,
+    REAL4 f_max
     )
 {
   InspiralTemplate tmplt;
@@ -552,13 +554,13 @@ int MakeData(
   tmplt.massChoice      = m1Andm2;
   tmplt.startTime       = 0;
   tmplt.startPhase      = 0;
-  tmplt.fLower          = fmin;
-  tmplt.fCutoff         = fmax;
+  tmplt.fLower          = f_min;
+  tmplt.fCutoff         = f_max;
   tmplt.tSampling       = srate;
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = dataSegVec->data->chan->data->length / 2;
   tmplt.nEndPad         = 0;
-  tmplt.order           = twoPN;
+  tmplt.order           = LAL_PNORDER_TWO;
   tmplt.approximant     = TaylorT2;
   tmplt.massChoice      = m1Andm2;
   tmplt.OmegaS          = 0;

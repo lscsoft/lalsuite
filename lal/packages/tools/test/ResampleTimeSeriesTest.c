@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
- * 
+ *
  * Tests the routines in \verb|ResampleTimeSeries.h|
  *
  * \subsubsection*{Usage}
@@ -92,7 +92,7 @@
  * phase shift of the output at 4096 Hz, however there is attenuation and
  * phase shift of the output at 2048 Hz. This is due to the fact that the
  * signal is very close to the output Nyquist frequency. Care should be taken
- * to downsample to a suitable rate to avoid this type of attenuation.  
+ * to downsample to a suitable rate to avoid this type of attenuation.
  * }
  * \end{figure}
  *
@@ -107,6 +107,8 @@
 #include <lal/Units.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/FrameStream.h>
+#include <lal/AVFactories.h>
+#include <lal/LALStdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -114,7 +116,7 @@
 #include <getopt.h>
 #endif
 
-NRCSID (MAIN, "$Id$");  
+NRCSID (MAIN, "$Id$");
 
 extern char *optarg;
 extern int   optind;
@@ -157,13 +159,13 @@ main (int argc, char *argv[])
   chan.epoch.gpsSeconds = 100;
   resampPars.deltaT = 1.0 / (REAL8) outRate;
   resampPars.filterType = filtType;
-  
+
   for ( j = 0; j < chan.data->length; ++j )
   {
     chan.data->data[j] = sin( 2.0 * LAL_PI * sineFreq * j * chan.deltaT );
   }
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_in",
+  snprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_in",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &in_opar );
   TestStatus (&status, "0", 1);
@@ -171,7 +173,7 @@ main (int argc, char *argv[])
   LALResampleREAL4TimeSeries( &status, &chan, &resampPars );
   TestStatus (&status, "0", 1);
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_out",
+  snprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_out",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &out_opar );
   TestStatus (&status, "0", 1);
@@ -309,7 +311,7 @@ ParseOptions (int argc, char *argv[])
         {
           filtType = defaultButterworth;
         }
-        else 
+        else
         {
           Usage (argv[0], 1);
         }

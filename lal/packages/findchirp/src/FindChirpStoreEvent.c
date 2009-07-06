@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpStoreEvent.c
  *
  * Author: Brown, D. A.,  Woods D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ $Id$
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPSTOREEVENTC, "$Id$"); 
+NRCSID (FINDCHIRPSTOREEVENTC, "$Id$");
 
 /* <lalVerbatim file="FindChirpStoreEventCP"> */
 void
@@ -73,7 +73,7 @@ LALFindChirpStoreEvent (
   REAL4                      deltaT;
   LALMSTUnitsAndAcc          gmstUnits;
   UINT4			     numPoints;
- 
+
   INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
   ATTATCHSTATUSPTR( status );
 
@@ -117,9 +117,9 @@ LALFindChirpStoreEvent (
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
- 
+
   /* set the event LIGO GPS time of the event */
-  timeNS = 1000000000L * 
+  timeNS = 1000000000L *
     (INT8) (input->segment->data->epoch.gpsSeconds);
   timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
   timeNS += (INT8) (1e9 * timeIndex * deltaT);
@@ -133,7 +133,7 @@ LALFindChirpStoreEvent (
   thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;
 
   /* record the ifo name for the event */
-  strncpy( thisEvent->ifo, input->segment->data->name, 
+  strncpy( thisEvent->ifo, input->segment->data->name,
       2 * sizeof(CHAR) );
   strncpy( thisEvent->channel, input->segment->data->name + 3,
       (LALNameLength - 3) * sizeof(CHAR) );
@@ -163,7 +163,7 @@ LALFindChirpStoreEvent (
   memcpy (thisEvent->Gamma, input->fcTmplt->tmplt.Gamma, 10*sizeof(REAL4));
 
   /* set the type of the template used in the analysis */
-  memcpy( thisEvent->search, searchName, 
+  memcpy( thisEvent->search, searchName,
       LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
 
   /* set snrsq, chisq, sigma and effDist for this event */
@@ -172,7 +172,7 @@ LALFindChirpStoreEvent (
     /* we store chisq distributed with 2p - 2 degrees of freedom */
     /* in the database. params->chisqVec->data = r^2 = chisq / p */
     /* so we multiply r^2 by p here to get chisq                 */
-    thisEvent->chisq = 
+    thisEvent->chisq =
       params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
     thisEvent->chisq_dof = numChisqBins;
   }
@@ -181,14 +181,14 @@ LALFindChirpStoreEvent (
     thisEvent->chisq     = 0;
     thisEvent->chisq_dof = 0;
   }
-  thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
+  thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] *
     input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
 
   thisEvent->snr *= norm;
   thisEvent->snr = sqrt( thisEvent->snr );
 
   /* Effective distance is: D_eff = sigma / rho  */
-  
+
   thisEvent->eff_distance = sqrt( thisEvent->sigmasq ) / thisEvent->snr;
 
   /* compute the time since the snr crossing */

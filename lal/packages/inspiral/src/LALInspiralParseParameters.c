@@ -17,9 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/*<lalVerbatim file="LALInspiralParseParametersCV"> 
+/*<lalVerbatim file="LALInspiralParseParametersCV">
   Author:  Cokelaer, T.
-  $Id$
+  $Id: LALInspiralParseParameters.c,v 1.24 2009/04/01 00:45:29 ajith Exp $
   </lalVerbatim>  */
 
 
@@ -30,7 +30,7 @@
 DOC IN PROGRESS
 
 
-Module to work with the inspiralTemplate Structure. 
+Module to work with the inspiralTemplate Structure.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -52,25 +52,25 @@ Module to work with the inspiralTemplate Structure.
 
 
 \subsubsection*{Description}
-This module is a set of functions to play with the inspiralTemplate structure of the 
-inspiral package. It allows to set default values to the inspiral strcuture, to parse 
-parameters from the inspiral strcuture and to print the inspiral structure. 
+This module is a set of functions to play with the inspiralTemplate structure of the
+inspiral package. It allows to set default values to the inspiral strcuture, to parse
+parameters from the inspiral strcuture and to print the inspiral structure.
 
 Has to check and finalized...
 
 \begin{itemize}
-\item  The \texttt{LALInspiralITSructureParseParameters} function allows 
-the user to parse string with respect to that structure. Each variable in the 
+\item  The \texttt{LALInspiralITSructureParseParameters} function allows
+the user to parse string with respect to that structure. Each variable in the
 inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
  i.e. \textit{--approximant TaylorT1}. Each argument starts with a double dash character
 followed by a key word which is exactly as written in the InspiralTemplate Structure such as
  --order, --mass1, --mass2, --fCutoff ...
 
-Once the string is parsed, the checking function is called. 
- 
-\item The \texttt{LALInspiralITStructurePrint} function will print on the stdout the value 
+Once the string is parsed, the checking function is called.
+
+\item The \texttt{LALInspiralITStructurePrint} function will print on the stdout the value
 of the InspiralTemplate structure.
-\item The \texttt{LALInspiralITStructureSetDefault} set default values to the variables. 
+\item The \texttt{LALInspiralITStructureSetDefault} set default values to the variables.
 Those values are written in the C-code.
 \item \texttt{LALInspiralITStructureHelp}
 \end{itemize}
@@ -89,8 +89,8 @@ None
 
 
 #define  INSPIRALTEMPLATE_APPROXIMANT 	TaylorT3
-#define  INSPIRALTEMPLATE_ORDER 	twoPN
-#define  INSPIRALTEMPLATE_AMPORDER 	twoPN
+#define  INSPIRALTEMPLATE_ORDER 	LAL_PNORDER_TWO
+#define  INSPIRALTEMPLATE_AMPORDER 	LAL_PNORDER_TWO
 #define  INSPIRALTEMPLATE_MASS1  	10.
 #define  INSPIRALTEMPLATE_MASS2 	10.
 #define  INSPIRALTEMPLATE_FCUTOFF 	1000.
@@ -137,7 +137,7 @@ NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
 
 /* <lalVerbatim file="LALInspiralITStructureParseParametersCP"> */
 void LALInspiralITStructureParseParameters(LALStatus *status,
-					   UINT4 argc, 
+					   UINT4 argc,
 					   CHAR **argv,
 					   InspiralTemplate *params)
 /* </lalVerbatim> */
@@ -146,7 +146,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 
   INITSTATUS( status, "LALInspiralParseParameters", LALINSPIRALPARSEPARAMETERSC);
   ATTATCHSTATUSPTR( status );
-  
+
   while(i <argc)
     {
       if (strcmp(argv[i], "--approximant")==0)
@@ -178,6 +178,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = EOB;}
 	  else if (strcmp(argv[i],"EOBNR")==0){
 	    params->approximant = EOBNR;}
+	  else if (strcmp(argv[i],"IMRPhenomA")==0){
+	    params->approximant = IMRPhenomA;}
 	  else if (strcmp(argv[i],"SpinTaylor")==0){
 	    params->approximant = SpinTaylor;}
 	  else if (strcmp(argv[i],"BCV")==0){
@@ -213,7 +215,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--massChoice")==0){
 	if (strcmp(argv[++i],"masses")==0){
 	  params->massChoice = m1Andm2;}
-	else if (strcmp(argv[i],"psi")==0){ 
+	else if (strcmp(argv[i],"psi")==0){
 	  params->massChoice = psi0Andpsi3;}
       }
       else if (strcmp(argv[i],"--fLower")==0){
@@ -231,7 +233,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--theta")==0){
 	params->Theta = atof(argv[++i]); }
       else if (strcmp(argv[i],"--zeta2")==0){
-	params->Zeta2 = atof(argv[++i]); } 
+	params->Zeta2 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--alpha")==0){
 	params->alpha = atof(argv[++i]); }
       else if (strcmp(argv[i],"--alpha1")==0){
@@ -247,7 +249,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--alpha6")==0){
 	params->alpha6 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--beta")==0){
-	params->beta = atof(argv[++i]); }  
+	params->beta = atof(argv[++i]); }
       else if (strcmp(argv[i],"--psi0")==0){
 	params->psi0 = atof(argv[++i]); }
       else if (strcmp(argv[i],"--psi3")==0){
@@ -259,29 +261,29 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--sourcePhi")==0){
 	params->sourcePhi = atof(argv[++i]); }
       /* we need also the spin .Has to be checked*/
-      else if (strcmp(argv[i],"--spin1x")==0){	 
+      else if (strcmp(argv[i],"--spin1x")==0){
 	params->spin1[0]= atof(argv[++i]);}
-      else if (strcmp(argv[i],"--spin1y")==0){	 
-	params->spin1[1]= atof(argv[++i]); } 
-      else if (strcmp(argv[i],"--spin1z")==0){	 
+      else if (strcmp(argv[i],"--spin1y")==0){
+	params->spin1[1]= atof(argv[++i]); }
+      else if (strcmp(argv[i],"--spin1z")==0){
 	params->spin1[2]= atof(argv[++i]); }
-      else if (strcmp(argv[i],"--spin2x")==0){	 
-	params->spin2[0]= atof(argv[++i]);} 
-      else if (strcmp(argv[i],"--spin2y")==0){	 
+      else if (strcmp(argv[i],"--spin2x")==0){
+	params->spin2[0]= atof(argv[++i]);}
+      else if (strcmp(argv[i],"--spin2y")==0){
 	  params->spin2[1]= atof(argv[++i]);}
-      else if  (strcmp(argv[i],"--spin2z")==0){	 
+      else if  (strcmp(argv[i],"--spin2z")==0){
 	  params->spin2[2]= atof(argv[++i]);}
-      i++;       
+      i++;
    }
-  
-  
+
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
 
 /* <lalVerbatim file="LALInspiralITStructurePrintCP"> */
-void LALInspiralITStructurePrint(LALStatus *status, 
+void LALInspiralITStructurePrint(LALStatus *status,
 				 InspiralTemplate params)
 /* </lalVerbatim> */
 {
@@ -289,7 +291,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# approximant = %-15.12d\n", params.approximant);
   printf("# order       = %-15.12d\n", params.order);
   printf("# ampOrder    = %-15.12d\n", params.ampOrder);
-  printf("# mass1       = %-15.12f\n", params.mass1); 
+  printf("# mass1       = %-15.12f\n", params.mass1);
   printf("# mass2       = %-15.12f\n", params.mass2);
   printf("# fFinal      = %-15.12f\n", params.fFinal);
   printf("# fCutoff     = %-15.12f\n", params.fCutoff);
@@ -331,18 +333,18 @@ void LALInspiralITStructurePrint(LALStatus *status,
 
 /* Paramters which are computed using LALInspiralParameterCalc */
 
-  printf("# chirpMass   = %-15.12f\n", params.chirpMass); 
+  printf("# chirpMass   = %-15.12f\n", params.chirpMass);
   printf("# eta         = %-15.12f\n", params.eta);
-  printf("# totalMass   = %-15.12f\n", params.totalMass); 
+  printf("# totalMass   = %-15.12f\n", params.totalMass);
   printf("# fFinal      = %-15.12f\n", params.fFinal);
-  printf("# t0          = %-15.12f\n", params.t0); 
-  printf("# t2          = %-15.12f\n", params.t2); 
-  printf("# t3          = %-15.12f\n", params.t3); 
-  printf("# t4          = %-15.12f\n", params.t4); 
-  printf("# t5          = %-15.12f\n", params.t5); 
-  printf("# tC          = %-15.12f\n", params.tC); 
+  printf("# t0          = %-15.12f\n", params.t0);
+  printf("# t2          = %-15.12f\n", params.t2);
+  printf("# t3          = %-15.12f\n", params.t3);
+  printf("# t4          = %-15.12f\n", params.t4);
+  printf("# t5          = %-15.12f\n", params.t5);
+  printf("# tC          = %-15.12f\n", params.tC);
 
-  printf("# massChoice  = %-15.12d\n", params.massChoice); 
+  printf("# massChoice  = %-15.12d\n", params.massChoice);
 
   RETURN(status);
 }
@@ -354,7 +356,7 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
 				      InspiralTemplate *params)
 /* </lalVerbatim> */
 {
-  
+
   params->approximant  = INSPIRALTEMPLATE_APPROXIMANT;
   params->order        = INSPIRALTEMPLATE_ORDER ;
   params->ampOrder     = INSPIRALTEMPLATE_AMPORDER ;
@@ -362,21 +364,21 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   params->mass2        = INSPIRALTEMPLATE_MASS2 ;
   params->fCutoff      = INSPIRALTEMPLATE_FCUTOFF;
   params->fLower       = INSPIRALTEMPLATE_FLOWER;
-  params->tSampling    = INSPIRALTEMPLATE_TSAMPLING; 
-  params->distance     = INSPIRALTEMPLATE_DISTANCE;   
-  
+  params->tSampling    = INSPIRALTEMPLATE_TSAMPLING;
+  params->distance     = INSPIRALTEMPLATE_DISTANCE;
+
   params->signalAmplitude = INSPIRALTEMPLATE_SIGNALAMPLITUDE;
   params->startPhase   = INSPIRALTEMPLATE_STARTPHASE;
   params->startTime    = INSPIRALTEMPLATE_STARTTIME;
-  
+
   params->Theta        = INSPIRALTEMPLATE_THETA;
-  params->Zeta2        = INSPIRALTEMPLATE_ZETA2;  
-  
-  
+  params->Zeta2        = INSPIRALTEMPLATE_ZETA2;
+
+
   params->alpha        = INSPIRALTEMPLATE_ALPHA;
   params->psi0         = INSPIRALTEMPLATE_PSI0;
   params->psi3         = INSPIRALTEMPLATE_PSI3;
-   
+
   params->alpha1       = INSPIRALTEMPLATE_ALPHA1;
   params->alpha2       = INSPIRALTEMPLATE_ALPHA2;
   params->alpha3       = INSPIRALTEMPLATE_ALPHA3;
@@ -384,24 +386,24 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   params->alpha5       = INSPIRALTEMPLATE_ALPHA5;
   params->alpha6       = INSPIRALTEMPLATE_ALPHA6;
   params->beta         = INSPIRALTEMPLATE_BETA;
-    
+
   params->inclination  = INSPIRALTEMPLATE_INCLINATION;
   params->sourceTheta  = INSPIRALTEMPLATE_SOURCETHETA;
   params->sourcePhi    = INSPIRALTEMPLATE_SOURCEPHI;
-  params->spin1[0]     = INSPIRALTEMPLATE_SPIN1X;  
-  params->spin1[1]     = INSPIRALTEMPLATE_SPIN1Y;  
-  params->spin1[2]     = INSPIRALTEMPLATE_SPIN1Z;  
-  params->spin2[0]     = INSPIRALTEMPLATE_SPIN2X;  
-  params->spin2[1]     = INSPIRALTEMPLATE_SPIN2Y;  
-  params->spin2[2]     = INSPIRALTEMPLATE_SPIN2Z;  
+  params->spin1[0]     = INSPIRALTEMPLATE_SPIN1X;
+  params->spin1[1]     = INSPIRALTEMPLATE_SPIN1Y;
+  params->spin1[2]     = INSPIRALTEMPLATE_SPIN1Z;
+  params->spin2[0]     = INSPIRALTEMPLATE_SPIN2X;
+  params->spin2[1]     = INSPIRALTEMPLATE_SPIN2Y;
+  params->spin2[2]     = INSPIRALTEMPLATE_SPIN2Z;
 
-  params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;   
-  
-  params->ieta         = 1.;  
+  params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;
+
+  params->ieta         = 1.;
   params->OmegaS       = INSPIRALTEMPLATE_OMEGAS;
   params->nStartPad    = 0;
   params->nEndPad      = 0;
-  params->massChoice   = m1Andm2;  
+  params->massChoice   = m1Andm2;
 
   RETURN(status);
 }
@@ -416,7 +418,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin,\nPadeT1, TaylorEt, TaylorT4, TaylorN, AmpCorPPN)\n");
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--ampOrder    (0, 1, 2, 3, 4, 5 (i.e. 4==twoPN)\n");
-  fprintf(stderr,"--mass1       (in solar mass)\n"); 
+  fprintf(stderr,"--mass1       (in solar mass)\n");
   fprintf(stderr,"--mass2       (in solar mass)\n");
   fprintf(stderr,"--fLower      \n");
   fprintf(stderr,"--tSampling   \n");
@@ -438,7 +440,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--alpha5      (BCVSpin)\n");
   fprintf(stderr,"--alpha6      (BCVSpin)\n");
   fprintf(stderr,"--beta        (BCVSpin)\n");
-  
+
   fprintf(stderr,"--eccentricity \n");
 
   fprintf(stderr,"--inclination \n");

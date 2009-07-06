@@ -35,7 +35,7 @@ file.
 #include <lal/PrintFTSeries.h>
 \end{verbatim}
 
-\noindent Provides prototype information for the routines in 
+\noindent Provides prototype information for the routines in
 \verb+PrintTimeSeries.c+ and \verb+PrintFrequencySeries.c+.
 
 \vfill{\footnotesize\input{PrintFTSeriesHV}}

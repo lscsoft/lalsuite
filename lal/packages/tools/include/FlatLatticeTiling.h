@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
   NRCSID(FLATLATTICETILINGH, "$Id$");
-  
+
   /**
    * Flat lattice tiling bound
    */
@@ -54,24 +54,24 @@ extern "C" {
 					     void *data /**< Arbitrary data describing parameter space */
 					     );
   typedef struct tagFlatLatticeTilingBound {
-    
+
     /* Number of bound dimensions */
     INT4 dimensions;
 
     /* Dimensions which are bound */
     UINT8 is_bound;
-    
+
     /* Parameter space bound function */
     FlatLatticeTilingBoundFunc func;
-    
+
     /* Arbitrary data describing parameter space */
     void *data;
-    
+
     /* Cleanup function */
     FlatLatticeTilingBoundFree free;
 
   } FlatLatticeTilingBound;
-  
+
   /**
    * Flat lattice tiling subspace
    */
@@ -99,9 +99,9 @@ extern "C" {
 					    gsl_matrix** generator, /**< Generator matrix */
 					    REAL8* norm_thickness   /**< Normalised thickness */
 					    );
-  
+
   /**
-   * State of the flat lattice tiling algorithm 
+   * State of the flat lattice tiling algorithm
    */
   typedef enum tagFlatLatticeTilingState {
     FLT_S_NotInitialised,
@@ -165,7 +165,7 @@ extern "C" {
   } FlatLatticeTiling;
 
   /**
-   * Core functions 
+   * Core functions
    */
   FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
   void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
@@ -184,14 +184,14 @@ extern "C" {
   int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
   gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);
   int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8, REAL8);
-  
+
   /**
    * Specific lattices and parameter spaces
    */
   int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
   int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
   int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, INT4, REAL8, REAL8);
-  
+
 #ifdef __cplusplus
 }
 #endif

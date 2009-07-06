@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
   * Copyright (C) 2004, 2005 Cristina V. Torres
   *
@@ -21,14 +21,14 @@
 This is a python script that will setup a big segment run with given
 arguements and a combination from the ini file specified
 """
-import sys,os
+import sys
+sys.path.append('@PYTHONLIBDIR@')
+import os
 import getopt
-
 from optparse import OptionParser
 import ConfigParser
 import time
 from glue import pipeline
-sys.path.append('@PYTHONLIBDIR@')
 import tracksearch
 from tracksearch import buildDir
 from tracksearchutils import progressSpinner

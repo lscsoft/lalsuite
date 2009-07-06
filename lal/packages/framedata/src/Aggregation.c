@@ -36,6 +36,7 @@
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/AVFactories.h>
+#include <lal/Date.h>
 
 
 /* return frame gps start time for given gps time */
@@ -58,9 +59,9 @@ LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
     XLAL_ERROR_NULL(func, XLAL_ENOMEM);
   }
 
-  /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
-  start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
-                      ONLINE_FRAME_DURATION;
+  /* determine frame start time, multiple of LAL_ONLINE_FRAME_DURATION */
+  start->gpsSeconds = (INT4)floor(gps->gpsSeconds / LAL_ONLINE_FRAME_DURATION) * \
+                      LAL_ONLINE_FRAME_DURATION;
   start->gpsNanoSeconds = 0;
 
   return start;
@@ -87,15 +88,15 @@ CHAR *XLALAggregationFrameType(CHAR *ifo)
   }
   else if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
   {
-    /* FIXME virgo - currently undefined */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    /* virgo */
+    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_HREC", ifo);
   }
   else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
       (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
       (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
   {
     /* ligo */
-    LALSnprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_C00_L2", ifo);
+    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_C00_L2", ifo);
   }
   else
   {
@@ -143,12 +144,12 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
   }
 
   /* determine gps directory name, frame start must be multiple of
-   * ONLINE_FRAME_DURATION */
+   * LAL_ONLINE_FRAME_DURATION */
   frame_start = XLALAggregationFrameStart(gps);
   gps_dir = (INT4)floor(frame_start->gpsSeconds / 100000);
 
   /* construct directory */
-  LALSnprintf(directory, FILENAME_MAX, "%s/%s/%c-%s-%d", base_dir, ifo, \
+  snprintf(directory, FILENAME_MAX, "%s/%s/%c-%s-%d", base_dir, ifo, \
       ifo[0], type, gps_dir);
 
   /* free memory */
@@ -187,8 +188,8 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
   frame_start = XLALAggregationFrameStart(gps);
 
   /* construct frame filename */
-  LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
-      frame_start->gpsSeconds, ONLINE_FRAME_DURATION);
+  snprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
+      frame_start->gpsSeconds, LAL_ONLINE_FRAME_DURATION);
 
   /* free memory */
   XLALFree(frame_start);
@@ -231,7 +232,7 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
   }
 
   /* construct path */
-  LALSnprintf(path, FILENAME_MAX, "%s/%s", directory, filename);
+  snprintf(path, FILENAME_MAX, "%s/%s", directory, filename);
 
   return path;
 }
@@ -262,7 +263,7 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
   }
 
   /* construct url */
-  LALSnprintf(url, FILENAME_MAX, "file://localhost%s", path);
+  snprintf(url, FILENAME_MAX, "file://localhost%s", path);
 
   return url;
 }
@@ -293,7 +294,7 @@ LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo)
   }
 
   /* determine path to latest file */
-  LALSnprintf(path, FILENAME_MAX, "%s/%s/latest", base_dir, ifo);
+  snprintf(path, FILENAME_MAX, "%s/%s/latest", base_dir, ifo);
 
   /* check file status */
   if (stat(path, &file_status) == -1)
@@ -355,9 +356,9 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
                        (INT4)((duration - floor(duration)) * pow(10, 9));
   frame_start = XLALAggregationFrameStart(start);
   last_frame_start = XLALAggregationFrameStart(&gps);
-  frame_duration = (last_frame_start->gpsSeconds + ONLINE_FRAME_DURATION) - \
+  frame_duration = (last_frame_start->gpsSeconds + LAL_ONLINE_FRAME_DURATION) - \
                    frame_start->gpsSeconds;
-  num_frames = frame_duration / ONLINE_FRAME_DURATION;
+  num_frames = frame_duration / LAL_ONLINE_FRAME_DURATION;
 
   /* free memory */
   XLALFree(frame_start);
@@ -399,7 +400,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     FrStat *file = cache->frameFiles + i;
 
     /* increment gps */
-    gps.gpsSeconds = start->gpsSeconds + (i * ONLINE_FRAME_DURATION);
+    gps.gpsSeconds = start->gpsSeconds + (i * LAL_ONLINE_FRAME_DURATION);
     gps.gpsNanoSeconds = start->gpsNanoSeconds;
 
     /* determine url */
@@ -438,7 +439,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     strcpy(file->source, ifo);
     strcpy(file->description, type);
     file->startTime = frame_start->gpsSeconds;
-    file->duration = ONLINE_FRAME_DURATION;
+    file->duration = LAL_ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
 
     /* free memory */
@@ -501,6 +502,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   FrStream *stream;
   REAL8TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -509,6 +511,20 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -519,7 +535,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)round(duration);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)
@@ -536,9 +552,28 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
+  /* get channel name */
+  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  {
+    /* virgo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      LAL_ONLINE_VIRGO_STRAIN_CHANNEL);
+  }
+  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      LAL_ONLINE_STRAIN_CHANNEL);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
   /* get strain data time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_STRAIN_CHANNEL);
   series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
@@ -566,6 +601,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   FrStream *stream;
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -574,6 +610,20 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -584,7 +634,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)round(duration);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)
@@ -601,9 +651,28 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
+    /* get channel name */
+  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  {
+    /* virgo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      LAL_ONLINE_VIRGO_DQ_VECTOR);
+  }
+  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      LAL_ONLINE_DQ_VECTOR);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
   /* get data quality vector time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_DQ_VECTOR);
   series = XLALFrReadINT4TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
@@ -632,6 +701,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
   UINT4 i;
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -640,6 +710,20 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -650,7 +734,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)round(duration);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)
@@ -667,9 +751,22 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
+  /* get channel name */
+  if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      LAL_ONLINE_STATE_VECTOR);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
   /* get state vector time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_STATE_VECTOR);
   state = XLALFrReadREAL4TimeSeries(stream, channel, start, duration, 0);
   if (state == NULL)
   {
@@ -751,11 +848,51 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 }
 
 
-/* return end position of data gap */
-UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
+/* return start position of data gap */
+UINT4 XLALAggregationDQGapStart(INT4TimeSeries *series,
     INT4 dq_bitmask)
 {
-  static const char *func = "XLALAggregationDQGap";
+  static const char *func = "XLALAggregationDQGapStart";
+
+  /* declare variables */
+  UINT4 i;
+  UINT4 gap = 0;
+
+  /* check arguments */
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* check for required bitmask */
+  for (i = 0; i < series->data->length; i++)
+  {
+    if ((series->data->data[i] & dq_bitmask) == dq_bitmask)
+    {
+      /* data matches bitmask */
+      gap = i;
+    }
+    else
+    {
+      /* bad data */
+      continue;
+    }
+  }
+
+  /* return gap */
+  if (gap != 0)
+  {
+    gap += 1;
+    return gap;
+  }
+  else
+    return 0;
+}
+
+
+/* return end position of data gap */
+UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
+    INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQGapEnd";
 
   /* declare variables */
   UINT4 i;
@@ -788,4 +925,249 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
   }
   else
     return 0;
+}
+
+
+/* return end position of data gap - deprecated */
+UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
+    INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQGap";
+
+  /* declare variables */
+  UINT4 gap = 0;
+
+  /* check arguments */
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* deprecation warning */
+  XLALPrintDeprecationWarning("XLALAggregationDQGap", "XLALAggregationDQGapEnd");
+
+  /* get end of data gap */
+  gap = XLALAggregationDQGapEnd(series, dq_bitmask);
+
+  return gap;
+}
+
+
+/* return strain data time series for given ifo, gps time, duration, and
+ * a maximum wait time */
+REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStrainDataWait";
+
+  /* declare variables */
+  FrStream *stream;
+  REAL8TimeSeries *series;
+  UINT4 wait_time;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait_time */
+  wait_time = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStrainData(ifo, start, duration);
+    if ((series == NULL) && (wait_time > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait_time += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* return data quality vector time series for given ifo, gps time,
+ * duration, and a maximum wait time */
+INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationDQVectorWait";
+
+  /* declare variables */
+  FrStream *stream;
+  INT4TimeSeries *series;
+  UINT4 wait_time;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait_time */
+  wait_time = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationDQVector(ifo, start, duration);
+    if ((series == NULL) && (wait_time > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait_time += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStateVectorWait";
+
+  /* declare variables */
+  FrStream *stream;
+  INT4TimeSeries *series;
+  UINT4 wait_time;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait_time */
+  wait_time = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStateVector(ifo, start, duration);
+    if ((series == NULL) && (wait_time > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait_time += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* check that all frames files, for requested data segment, are
+ * available */
+INT4 XLALAggregationStatFiles(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration)
+{
+  static const char *func = "XLALAggregationStatFiles";
+
+  /* declare variables */
+  LIGOTimeGPS time_now;
+  FrCache *cache;
+  UINT4 i;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* generate frame cache for requested data */
+  cache = XLALAggregationFrameCache(ifo, start, duration);
+  if (cache == NULL)
+  {
+    /* failed to get cache */
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* loop through files in cache */
+  for (i = 0; i < cache->numFrameFiles; i++)
+  {
+    /* declare variables */
+    struct stat file_status;
+    CHAR *filename;
+
+    /* strip file://localhost from url */
+    filename = cache->frameFiles[i].url + 16;
+
+    /* check that file exists */
+    if (stat(filename, &file_status) == -1)
+    {
+      /* file doesn't exist */
+      XLAL_ERROR(func, XLAL_EIO);
+    }
+  }
+
+  /* close cache */
+  XLALFrDestroyCache(cache);
+
+  return 0;
 }

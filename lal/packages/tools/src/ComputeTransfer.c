@@ -38,10 +38,10 @@ Computes the transfer function from zero-pole-gain representation.
 
 \subsubsection*{Description}
 
-A transfer function can either be specified as a list of coefficients or a 
-list of poles and zeros. The function \verb@LALComputeTransfer()@ computes the 
+A transfer function can either be specified as a list of coefficients or a
+list of poles and zeros. The function \verb@LALComputeTransfer()@ computes the
 frequency representation of the transfer function \verb+calrec->transfer+
-described by the zeroes,  poles and gain in \verb@*calrec@.   The memory for 
+described by the zeroes,  poles and gain in \verb@*calrec@.   The memory for
 the frequency series should be allocated before calling this routine which uses
 \verb+calrec->transfer->deltaF+ and \verb+calrec->transfer->data->npoints+.
 
@@ -52,8 +52,8 @@ lines yield two constants (as a slowly-varying function of time) that are
 used as coefficients to the reference response and sensing functions to
 compute the current response and sensing functions.  These coefficients are
 stored in time series in the parameter structure, along with the current
-epoch and duration for which the calibration functions are to be computed.  If 
-the duration is zero, the calibration factors are the first ones at or after 
+epoch and duration for which the calibration functions are to be computed.  If
+the duration is zero, the calibration factors are the first ones at or after
 the given epoch.  If the duration is non-zero, then the calibration factors are
 an average of all calibrations between epoch and epoch + duration.
 
@@ -64,17 +64,17 @@ of the real and imaginary parts independently) to the frequencies required
 in the output frequency series;  (ii) if the output frequency series has units
 that are the inverse of those of the input frequency series, the data is
 inverted;  (iii) the data is scaled by an appropriate power of ten computed
-from the input units and the output units.  For example you can convert from 
+from the input units and the output units.  For example you can convert from
 strain per count to counts per atto-strain.
 
 \subsubsection*{Algorithm}
 
 The transfer function is deduced from the poles and zeros as follows:
 \begin{equation}
-T(f) = c_{\mathrm{gain}} 
+T(f) = c_{\mathrm{gain}}
 {\prod_i \textrm{zero}(f,z_i)}{ \prod_{i} \textrm{pole}(f,p_i)}
 \end{equation}
-where 
+where
 \begin{equation}
 \textrm{zero}(f,z) = \left\{ \begin{array}{ll}
 (i f / z) + 1 & \textrm{ when } z\neq 0 \\
@@ -82,7 +82,7 @@ i f & \textrm{ when } z = 0
 \end{array}
 \right.
 \end{equation}
-and 
+and
 \begin{equation}
 \textrm{pole}(f,p) = \left\{ \begin{array}{ll}
 \frac{1}{(i f / p) + 1} & \textrm{ when } p \neq 0 \\
@@ -126,9 +126,9 @@ appropriate for the particular epoch.
 \end{verbatim}
 
 \subsubsection*{Notes}
-The DC component of \verb+calrec->transfer+ is always filled with $1 + i 0$.  
-In most cases,  this should be irrelevant for gravitational wave data analysis,  
-but care should be taken if DC is relevant when this function is used.  
+The DC component of \verb+calrec->transfer+ is always filled with $1 + i 0$.
+In most cases,  this should be irrelevant for gravitational wave data analysis,
+but care should be taken if DC is relevant when this function is used.
 
 \vfill{\footnotesize\input{ComputeTransferCV}}
 
@@ -148,10 +148,10 @@ but care should be taken if DC is relevant when this function is used.
 NRCSID( COMPUTETRANSFERC, "$Id$" );
 
 static void product(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
-  
+
   c->re = a->re * b->re - a->im * b->im;
   c->im = a->re * b->im + a->im * b->re;
-  
+
   return;
 }
 
@@ -159,10 +159,10 @@ static void ratio(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
   REAL4 norm;
 
   norm = b->re * b->re + b->im * b->im;
-  
+
   c->re = (a->re * b->re + a->im * b->im)/norm;
   c->im = (- a->re * b->im + a->im * b->re)/norm;
-  
+
   return;
 }
 
@@ -172,7 +172,7 @@ LALComputeTransfer( LALStatus                 *stat,
                     CalibrationRecord         *calrec
                     )
 /* </lalVerbatim> */
-{ 
+{
   UINT4         i, j;                    /* indexes               */
   UINT4         jmin;                    /* used to handle DC     */
   COMPLEX8      dummy, dummyC, factor;   /* dummy complex numbers */
@@ -185,10 +185,10 @@ LALComputeTransfer( LALStatus                 *stat,
   /* Make sure parameter structures and their fields exist. */
   ASSERT( calrec, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( calrec->zeros, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
-  ASSERT( calrec->poles, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );  
-  ASSERT( calrec->transfer, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );  
+  ASSERT( calrec->poles, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( calrec->transfer, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
 
-  /* initialise everything */ 
+  /* initialise everything */
   dummyC.re = factor.re = 1.0;
   dummyC.im = factor.im = 0.0;
   df = calrec->transfer->deltaF;
@@ -196,7 +196,7 @@ LALComputeTransfer( LALStatus                 *stat,
 
   /* compute the normalization constant */
   norm = calrec->gain;
-  
+
   for ( i=0 ; i < calrec->poles->length ; i++)
     if ( calrec->poles->data[i] != 0 )
     {
@@ -250,7 +250,7 @@ LALComputeTransfer( LALStatus                 *stat,
     calrec->transfer->data->data[j].im = norm * dummyC.im;
   }
 
- 
+
   /* we're out of here */
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
@@ -402,15 +402,15 @@ LALUpdateCalibration(
   output->sensingFunction->epoch = params->epoch;
 
   /* locate correct values of a and ab */
-  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)), 
+  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)),
       status );
   TRY( LALGPStoFloat( status->statusPtr, &first_cal,
     &(params->sensingFactor->epoch)), status );
-  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)), 
+  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)),
       status );
 
   dt = epoch - first_cal;
-  
+
   /* find the first point at or before the requested time */
   if ( (i_r4 = floor( dt / params->sensingFactor->deltaT ) ) < 0 )
   {
@@ -420,7 +420,7 @@ LALUpdateCalibration(
   {
     i = (UINT4) i_r4;
   }
- 
+
   /* compute the sum of the calibration factors */
   a.re = a.im = ab.re = ab.im = 0;
   length = 0;
@@ -428,7 +428,7 @@ LALUpdateCalibration(
   {
     COMPLEX8 this_a;
     COMPLEX8 this_ab;
-    
+
     if ( i > params->sensingFactor->data->length - 1 )
     {
       ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
@@ -442,11 +442,11 @@ LALUpdateCalibration(
          ( fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny ) )
     {
       /* this is a hack for the broken S2 calibration frame data */
-      if ( (params->epoch.gpsSeconds >= CAL_S2START) && 
+      if ( (params->epoch.gpsSeconds >= CAL_S2START) &&
           (params->epoch.gpsSeconds < CAL_S2END ) )
       {
         /* if the zero is during S2 print a warning... */
-        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
             "Zero calibration factors found during S2 at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -454,7 +454,7 @@ LALUpdateCalibration(
       else
       {
         /* ...or abort if we are outside S2 */
-        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
             "Zero calibration factor found at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -476,22 +476,22 @@ LALUpdateCalibration(
     /* increment the calibration factor index */
     ++i;
   }
-  while ( (first_cal + (REAL8) i * params->sensingFactor->deltaT) < 
+  while ( (first_cal + (REAL8) i * params->sensingFactor->deltaT) <
       (epoch + duration) );
 
   /* if all the calibration factors are zero the abort */
-  if ( ! length || 
+  if ( ! length ||
       (fabs( a.re ) < tiny && fabs( a.im ) < tiny) ||
       (fabs( ab.re ) < tiny && fabs( ab.im ) < tiny) )
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Got %d calibration samples\nalpha and/or beta are zero:\n"
         "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
         length, a.re, a.im, ab.re, ab.im );
     LALWarning( status, warnMsg );
     ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
   }
-  
+
   /* compute the mean of the calibration factors from the sum */
   a.re /= length;
   a.im /= length;
@@ -501,7 +501,7 @@ LALUpdateCalibration(
   /* return the used values of alpha and alphabeta */
   params->alpha = a;
   params->alphabeta = ab;
-  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+  snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Got %d calibration samples\n"
       "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
       length, a.re, a.im, ab.re, ab.im );
@@ -560,9 +560,9 @@ LALResponseConvert(
     if ( j > input->data->length - 2 )
       j = input->data->length - 2;
     x -= j;
-    output->data->data[i].re = input->data->data[j].re 
+    output->data->data[i].re = input->data->data[j].re
       + x * ( input->data->data[j+1].re - input->data->data[j].re );
-    output->data->data[i].im = input->data->data[j].im 
+    output->data->data[i].im = input->data->data[j].im
       + x * ( input->data->data[j+1].im - input->data->data[j].im );
   }
 
@@ -677,9 +677,9 @@ XLALResponseConvert(
     if ( j > input->data->length - 2 )
       j = input->data->length - 2;
     x -= j;
-    output->data->data[i].re = input->data->data[j].re 
+    output->data->data[i].re = input->data->data[j].re
       + x * ( input->data->data[j+1].re - input->data->data[j].re );
-    output->data->data[i].im = input->data->data[j].im 
+    output->data->data[i].im = input->data->data[j].im
       + x * ( input->data->data[j+1].im - input->data->data[j].im );
   }
 
@@ -691,7 +691,7 @@ XLALResponseConvert(
    */
 
   /* determine if units need to be inverted or not (or if they are bad) */
-  XLALUnitNormalize( &output->sampleUnits );  
+  XLALUnitNormalize( &output->sampleUnits );
   XLALUnitNormalize( &input->sampleUnits );
   unitOne = output->sampleUnits;
   unitTwo = input->sampleUnits;

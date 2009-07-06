@@ -56,7 +56,7 @@ $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)$, an overlap reduction
 function $\gamma(f)$, and unwhitened noise power spectral densities
 $\{P_i(f)$ for a pair of detectors.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
@@ -98,12 +98,12 @@ It then verifies that the correct optimal filter is generated
 is satisfied) for each of the following simple test cases (with
 $f_0=0$, $f_{\scriptstyle{\rm R}}=1$, $\delta f=1$ and $N=8$):
 \begin{enumerate}
-\item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f) 
-  = P^{\scriptstyle{\rm C}}_1(f) 
+\item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)
+  = P^{\scriptstyle{\rm C}}_1(f)
   = P^{\scriptstyle{\rm C}}_2(f) = 1$;
   The expected results in this case are $\lambda=3.079042427975$,
   $\sigma^2\,T^{-1}=4.822422518205$
-\item $\gamma(f) = P^{\scriptstyle{\rm C}}_1(f) 
+\item $\gamma(f) = P^{\scriptstyle{\rm C}}_1(f)
   = P^{\scriptstyle{\rm C}}_2(f) = 1$;
   $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)=f^3$.
   The expected results in this case are $\lambda=.4474881517327$,
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
 
   INT4       i;
   REAL8      f;
- 
+
   LALUnitPair              unitPair;
   LALUnit                  expectedUnit;
   BOOLEAN                  result;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 
   ParseOptions (argc, argv);
 
-  /* define valid params */ 
+  /* define valid params */
 
   overlap.name[0] = '\0';
   overlap.f0     = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
   invNoise2.sampleUnits = invNoise1.sampleUnits;
 
   overlap.sampleUnits.unitNumerator[LALUnitIndexStrain] = 2;
- 
+
   params.fRef = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FREF;
   params.heterodyned = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE;
   params.window1 = params.window2 = NULL;
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
   /* allocate memory */
   LALSCreateVector(&status, &(overlap.data),
                    STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
   LALSCreateVector(&status, &(omegaGW.data),
                    STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
   }
   LALSCreateVector(&status, &(invNoise1.data),
                    STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
   }
   LALSCreateVector(&status, &(invNoise2.data),
                    STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -348,8 +348,8 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to output structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
-    /* test behavior for null pointer to overlap reduction function */ 
+
+    /* test behavior for null pointer to overlap reduction function */
     input.overlapReductionFunction = NULL;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -362,8 +362,8 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to overlap reduction function results in error:\n      \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.overlapReductionFunction = &overlap;
-    
-    /* test behavior for null pointer to gravitational-wave spectrum */ 
+
+    /* test behavior for null pointer to gravitational-wave spectrum */
     input.omegaGW = NULL;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to gravitational-wave spectrum results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.omegaGW = &omegaGW;
-    
+
     /* test behavior for null pointer to inverse noise 1 member */
     /* of input structure */
     input.inverseNoisePSD1 = NULL;
@@ -390,9 +390,9 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD1 = &invNoise1;
-    
+
     /* test behavior for null pointer to inverse noise 2 member */
-    /* of input structure*/ 
+    /* of input structure*/
     input.inverseNoisePSD2 = NULL;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD2 = &invNoise2;
-    
+
     /* test behavior for null pointer to data member of overlap */
     input.overlapReductionFunction = &realBadData;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of overlap reduction function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.overlapReductionFunction = &overlap;
-    
+
     /* test behavior for null pointer to data member of omega */
     input.omegaGW = &realBadData;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of gravitational-wave spectrum results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.omegaGW = &omegaGW;
-    
+
     /* test behavior for null pointer to data member of first inverse noise PSD */
     input.inverseNoisePSD1 = &realBadData;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD1 = &invNoise1;
-    
+
     /* test behavior for null pointer to data member of second inverse noise PSD */
     input.inverseNoisePSD2 = &realBadData;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD2 = &invNoise2;
-    
+
     /* Create a vector for testing REAL4 null data-data pointers */
     LALSCreateVector(&status, &(realBadData.data), STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of data member of overlap reduction function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.overlapReductionFunction = &overlap;
-    
+
     /* test behavior for null pointer to data member of data member of omega */
     input.omegaGW = &realBadData;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of data member of gravitational-wave spectrum results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.omegaGW = &omegaGW;
-    
+
     /* test behavior for null pointer to data member of data member of */
     /* first inverse noise PSD */
     input.inverseNoisePSD1 = &realBadData;
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of data member of first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD1 = &invNoise1;
-    
+
     /* test behavior for null pointer to data member of data member of */
     /* second inverse noise PSD */
     input.inverseNoisePSD2 = &realBadData;
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of data member of second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.inverseNoisePSD2 = &invNoise2;
-    
+
     /** clean up **/
     realBadData.data->data = realTempPtr;
     LALSDestroyVector(&status, &(realBadData.data));
@@ -531,10 +531,10 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     /* test behavior for zero length */
-    overlap.data->length = 
-      omegaGW.data->length = invNoise1.data->length = 
+    overlap.data->length =
+      omegaGW.data->length = invNoise1.data->length =
       invNoise2.data->length = 0;
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
@@ -547,10 +547,10 @@ int main(int argc, char *argv[])
     printf("  PASS: zero length results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* reassign valid length */
-    overlap.data->length = 
-      omegaGW.data->length = invNoise1.data->length = 
+    overlap.data->length =
+      omegaGW.data->length = invNoise1.data->length =
       invNoise2.data->length = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH;
-    
+
     /* test behavior for negative frequency spacing */
     overlap.deltaF = omegaGW.deltaF =
       invNoise1.deltaF = invNoise2.deltaF = -3.5;
@@ -565,10 +565,10 @@ int main(int argc, char *argv[])
     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    overlap.deltaF = omegaGW.deltaF = 
-      invNoise1.deltaF = invNoise2.deltaF 
+    overlap.deltaF = omegaGW.deltaF =
+      invNoise1.deltaF = invNoise2.deltaF
       = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-    
+
     /* test behavior for zero frequency spacing */
     overlap.deltaF = omegaGW.deltaF =
       invNoise1.deltaF = invNoise2.deltaF = 0;
@@ -583,15 +583,15 @@ int main(int argc, char *argv[])
     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    overlap.deltaF = 
-      omegaGW.deltaF = invNoise1.deltaF = 
+    overlap.deltaF =
+      omegaGW.deltaF = invNoise1.deltaF =
       invNoise2.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-  } /* if ( ! lalNoDebug ) */ 
+  } /* if ( ! lalNoDebug ) */
 #endif /* LAL_NDEBUG */
 
   /* test behavior for negative start frequency */
-  overlap.f0 = omegaGW.f0 
-    = invNoise1.f0 
+  overlap.f0 = omegaGW.f0
+    = invNoise1.f0
     = invNoise2.f0 = -3.0;
 
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -621,9 +621,9 @@ int main(int argc, char *argv[])
   printf("  PASS: length mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   omegaGW.data->length = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH;
-  
+
   /* test behavior length mismatch between overlap reduction function and first inverse noise PSD */
-  invNoise1.data->length 
+  invNoise1.data->length
     = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH - 1;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
   if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -635,9 +635,9 @@ int main(int argc, char *argv[])
    }
   printf("  PASS: length mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  invNoise1.data->length 
+  invNoise1.data->length
     = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH;
-  
+
   /* test behavior length mismatch between overlap reduction function and second inverse noise PSD */
   invNoise2.data->length = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH - 1;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -651,7 +651,7 @@ int main(int argc, char *argv[])
   printf("  PASS: length mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   invNoise2.data->length = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH;
-  
+
   /* test behavior for frequency spacing mismatch between overlap reduction function and omega */
   omegaGW.deltaF = 2.0 * STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -665,7 +665,7 @@ int main(int argc, char *argv[])
   printf("  PASS: frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   omegaGW.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-  
+
   /* test behavior frequency spacing mismatch between overlap reduction function and first inverse noise PSD */
   invNoise1.deltaF = 2.0 * STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -679,7 +679,7 @@ int main(int argc, char *argv[])
   printf("  PASS: frequency spacing mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   invNoise1.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-  
+
   /* test behavior frequency spacing mismatch between overlap reduction function and inverse */
   /* noise 2 */
   invNoise2.deltaF = 2.0 * STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
@@ -694,7 +694,7 @@ int main(int argc, char *argv[])
   printf("  PASS: frequency spacing mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   invNoise2.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-  
+
   /* test behavior for start frequency mismatch between overlap reduction function and omega */
   omegaGW.f0 = 30;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
   printf("  PASS: start frequency mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n         \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   omegaGW.f0 = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
-  
+
   /* test behavior start frequency mismatch between overlap reduction function and first inverse noise PSD */
   invNoise1.f0 = 30;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
   printf("  PASS: start frequency mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   invNoise1.f0 = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
-  
+
   /* test behavior start frequency mismatch between overlap reduction function and second inverse noise PSD */
   invNoise2.f0 = 30;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
   printf("  PASS: start frequency mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   invNoise2.f0 = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
-  
+
   /* test behavior for reference frequency to be less than frequency spacing */
   params.fRef = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF/2;
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
   }
   printf("  PASS: reference frequency less than frequency spacing results in error:\n       \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   params.fRef = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FREF;
- 
+
   /* test behavior for reference frequency to be greater than its maximum */
   params.fRef = (STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH*STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF);
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
@@ -762,10 +762,10 @@ int main(int argc, char *argv[])
   }
   printf("  PASS: reference frequency greater than maximum frewquency results in error:\n       \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   params.fRef = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FREF;
-  
 
- /* VALID TEST DATA HERE ----------------------------------------- */ 
-  
+
+ /* VALID TEST DATA HERE ----------------------------------------- */
+
   /* create input to test */
   overlap.data->data[0] = 1;
   omegaGW.data->data[0] = 0;
@@ -777,7 +777,7 @@ int main(int argc, char *argv[])
   for (i=1; i < STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH; i++)
   {
     f = i*STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-    
+
     overlap.data->data[i] = 1;
     omegaGW.data->data[i] = 1;
     invNoise1.data->data[i] = 1;
@@ -789,7 +789,7 @@ int main(int argc, char *argv[])
   input.omegaGW                     = &(omegaGW);
   input.inverseNoisePSD1             = &(invNoise1);
   input.inverseNoisePSD2             = &(invNoise2);
- 
+
   /* calculate optimal filter normalization */
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
   if ( ( code = CheckStatus(&status,0, "",
@@ -822,7 +822,7 @@ int main(int argc, char *argv[])
   }
 
   /* check units of normalization*/
-  
+
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
   expectedUnit.powerOfTen = -36;
@@ -835,8 +835,8 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  
-  if (optVerbose) 
+
+  if (optVerbose)
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -845,7 +845,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -854,7 +854,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -863,7 +863,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
-    
+
     LALCHARDestroyVector(&status, &unitString);
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -872,13 +872,13 @@ int main(int argc, char *argv[])
       return code;
     }
   }
-  
+
   if (!result)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
     {
-      printf("Exiting with error: %s\n", 
+      printf("Exiting with error: %s\n",
              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS);
     }
     return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
@@ -905,7 +905,7 @@ int main(int argc, char *argv[])
   }
 
   /* check units of variance per unit time */
-  
+
   unitPair.unitOne = &lalSecondUnit;
   unitPair.unitTwo = &(varOut.units);
   LALUnitCompare(&status, &result, &unitPair);
@@ -915,8 +915,8 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  
-  if (optVerbose) 
+
+  if (optVerbose)
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -925,7 +925,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -934,7 +934,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -943,7 +943,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
-    
+
     LALCHARDestroyVector(&status, &unitString);
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -952,13 +952,13 @@ int main(int argc, char *argv[])
       return code;
     }
   }
-  
+
   if (!result)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
     {
-      printf("Exiting with error: %s\n", 
+      printf("Exiting with error: %s\n",
              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS);
     }
     return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
@@ -983,10 +983,10 @@ int main(int argc, char *argv[])
   input.omegaGW                     = &(omegaGW);
   input.inverseNoisePSD1             = &(invNoise1);
   input.inverseNoisePSD2             = &(invNoise2);
-    
+
   /* calculate optimal filter */
   LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
-  if ( ( code = CheckStatus(&status,0, "", 
+  if ( ( code = CheckStatus(&status,0, "",
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[])
   }
 
   /* check units of normalization*/
-  
+
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
   expectedUnit.powerOfTen = -36;
@@ -1029,8 +1029,8 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  
-  if (optVerbose) 
+
+  if (optVerbose)
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -1039,7 +1039,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1048,7 +1048,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1057,7 +1057,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
-    
+
     LALCHARDestroyVector(&status, &unitString);
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1066,13 +1066,13 @@ int main(int argc, char *argv[])
       return code;
     }
   }
-  
+
   if (!result)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
     {
-      printf("Exiting with error: %s\n", 
+      printf("Exiting with error: %s\n",
              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS);
     }
     return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
@@ -1099,7 +1099,7 @@ int main(int argc, char *argv[])
   }
 
   /* check units of variance per unit time */
-  
+
   unitPair.unitOne = &lalSecondUnit;
   unitPair.unitTwo = &(varOut.units);
   LALUnitCompare(&status, &result, &unitPair);
@@ -1109,8 +1109,8 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  
-  if (optVerbose) 
+
+  if (optVerbose)
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -1119,7 +1119,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1128,7 +1128,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1137,7 +1137,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
-    
+
     LALCHARDestroyVector(&status, &unitString);
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1146,13 +1146,13 @@ int main(int argc, char *argv[])
       return code;
     }
   }
-  
+
   if (!result)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
     {
-      printf("Exiting with error: %s\n", 
+      printf("Exiting with error: %s\n",
              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS);
     }
     return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
@@ -1162,28 +1162,28 @@ int main(int argc, char *argv[])
 
   /* clean up valid data */
   LALSDestroyVector(&status, &(overlap.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
        return code;
        }
   LALSDestroyVector(&status, &(omegaGW.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
        return code;
        }
   LALSDestroyVector(&status, &(invNoise1.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
        return code;
        }
   LALSDestroyVector(&status, &(invNoise2.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
   {
@@ -1198,16 +1198,16 @@ int main(int argc, char *argv[])
  /* VALID USER TEST DATA HERE ----------------------------------------- */
 
   if (optOverlapFile[0] &&  optOmegaFile[0] && optInvNoise1File[0] && optInvNoise2File[0])
-  { 
-    
-    /* allocate memory */ 
+  {
+
+    /* allocate memory */
     overlap.data     = NULL;
     omegaGW.data     = NULL;
     invNoise1.data   = NULL;
     invNoise2.data   = NULL;
-    
+
     LALSCreateVector(&status, &(overlap.data), optLength);
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
@@ -1215,51 +1215,51 @@ int main(int argc, char *argv[])
     }
 
     LALSCreateVector(&status, &(omegaGW.data), optLength);
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALSCreateVector(&status, &(invNoise1.data), optLength);
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALSCreateVector(&status, &(invNoise2.data), optLength);
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
       return code;
     }
-    
+
     /* Read input files */
     LALSReadFrequencySeries(&status, &overlap,   optOverlapFile);
     LALSReadFrequencySeries(&status, &omegaGW,   optOmegaFile);
     LALSReadFrequencySeries(&status, &invNoise1, optInvNoise1File);
     LALSReadFrequencySeries(&status, &invNoise2, optInvNoise2File);
-    
+
     /* fill optimal input */
     input.overlapReductionFunction    = &(overlap);
     input.omegaGW                     = &(omegaGW);
     input.inverseNoisePSD1             = &(invNoise1);
     input.inverseNoisePSD2             = &(invNoise2);
-    
+
     params.fRef = optFRef;
     params.heterodyned = optHetero;
-    
+
     /* calculate optimal filter normalization */
     LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EUSE,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEUSE) ) )
     {
       return code;
     }
-    
+
     /* Convert Unit Structure to String */
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -1268,7 +1268,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, &(normOut.units) );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1294,7 +1294,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, &(varOut.units) );
     if ( ( code = CheckStatus(&status, 0 , "",
                               STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -1311,7 +1311,7 @@ int main(int argc, char *argv[])
 
     printf("=========== Variance per Unit Time for User-Specified Data Is =======\n");
     printf("     %g %s\n", varOut.value, unitString->data);
-    
+
     /* clean up */
     LALSDestroyVector(&status, &(overlap.data));
     if ( ( code = CheckStatus (&status, 0 , "",
@@ -1328,14 +1328,14 @@ int main(int argc, char *argv[])
       return code;
     }
     LALSDestroyVector(&status, &(invNoise1.data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALSDestroyVector(&status, &(invNoise2.data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
                                STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
     {
@@ -1362,7 +1362,7 @@ static void Usage (const char *program, int exitcode)
   fprintf (stderr, "  -n length      frequency series contain length points\n");
   fprintf (stderr, "  -f fRef        set normalization reference frequency to fRef\n");
   fprintf (stderr, "  -w filename    read gravitational-wave spectrum from file filename\n");
-  fprintf (stderr, "  -g filename    read overlap reduction function from file filename\n"); 
+  fprintf (stderr, "  -g filename    read overlap reduction function from file filename\n");
   fprintf (stderr, "  -i filename    read first inverse noise PSD from file filename\n");
   fprintf (stderr, "  -j filename    read second inverse noise PSD from file filename\n");
   fprintf (stderr, "  -o filename    print optimal filter to file filename\n");
@@ -1394,7 +1394,7 @@ ParseOptions (int argc, char *argv[])
       case 'o': /* specify output file */
         strncpy (optOptimalFile, optarg, LALNameLength);
         break;
-        
+
       case 'f': /* specify refernce frequency */
         optFRef = atoi (optarg);
         break;
@@ -1402,15 +1402,15 @@ ParseOptions (int argc, char *argv[])
       case 'n': /* specify number of points in frequency series */
         optLength = atoi (optarg);
         break;
-        
+
       case 'w': /* specify omegaGW file */
         strncpy (optOmegaFile, optarg, LALNameLength);
         break;
-        
+
       case 'g': /* specify overlap file */
         strncpy (optOverlapFile, optarg, LALNameLength);
         break;
-        
+
       case 'i': /* specify InvNoise1 file */
         strncpy (optInvNoise1File, optarg, LALNameLength);
         break;

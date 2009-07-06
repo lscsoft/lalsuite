@@ -33,6 +33,7 @@ ReadGEOData_SOURCES = ReadGEOData.c
 ReadLHOData_SOURCES = ReadLHOData.c
 MakeFrames_SOURCES = MakeFrames.c
 #FrameCalibrationTest_SOURCES = FrameCalibrationTest.c
+AggregationTest_SOURCES = AggregationTest.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep *.out *.[0-9][0-9][0-9] catalog.out Response*.txt

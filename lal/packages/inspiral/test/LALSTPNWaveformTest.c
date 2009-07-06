@@ -56,7 +56,7 @@ NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:
 
 int main() {
     static LALStatus    mystatus;
-    
+
     CoherentGW      thewaveform;
     SimInspiralTable    injParams;
     PPNParamStruc       ppnParams;
@@ -73,35 +73,35 @@ int main() {
     memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 
     /* --- first we fill the SimInspiral structure --- */
-    
+
     injParams.mass1 = 10.;
     injParams.mass2 = 10.;
 
     /* MV-20060224: I believe this is not used in the SpinTaylor code! */
     injParams.f_final = 500.0;
     injParams.f_lower = 40.;;
-    
-    LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
-     
-    /* this is given in Mpc */    
+
+    snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+
+    /* this is given in Mpc */
     injParams.distance = 100.;
     /* this should not be zero*/
     injParams.theta0 = 0.01;
     injParams.phi0   = 0.5;
-    
+
     injParams.inclination = 0.8;
     injParams.polarization   = 0.9;
 
     injParams.spin1x = 0.1;
     injParams.spin1y = 0.2;
     injParams.spin1z = 0.3;
-    
+
     injParams.spin2x = 0.4;
     injParams.spin2y = 0.5;
     injParams.spin2z = 0.6;
 
     ppnParams.deltaT = 1.0 / 4096.0;
- 
+
     fprintf(stderr, "Lower cut-off frequency used will be %fHz\n", injParams.f_lower);
 
     /* --- now we can call the injection function --- */

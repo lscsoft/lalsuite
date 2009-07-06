@@ -207,7 +207,7 @@ LALSimulateInspiral( LALStatus                  *stat,
   UINT4 i;                  /* an index */
   COMPLEX8 *tData;          /* pointer to transfer function data */
   PPNParamStruc ppnParams;  /* the parameters of the inspiral */
-  CoherentGW signal;        /* the signal generated */
+  CoherentGW signalvec;     /* the signal generated */
 
   /* Frequency interpolation constants.  By linear interpolation, the
      transfer function at any frequency f is given by:
@@ -277,7 +277,7 @@ LALSimulateInspiral( LALStatus                  *stat,
   }
 
   /* Set up other parameters that won't change between injections. */
-  memset( &signal, 0, sizeof(CoherentGW) );
+  memset( &signalvec, 0, sizeof(CoherentGW) );
   ppnParams.deltaT = output->deltaT;
   tData = transfer->data->data;
   strncpy( name, output->name, LALNameLength );
@@ -304,17 +304,17 @@ LALSimulateInspiral( LALStatus                  *stat,
       }
       ppnParams.d *= params->effDist;
     }
-    TRY( LALGeneratePPNInspiral( stat->statusPtr, &signal,
+    TRY( LALGeneratePPNInspiral( stat->statusPtr, &signalvec,
 				 &ppnParams ), stat );
 
     /* Next, simulate the instrument response.  To save memory, this
        will be done in place, overwriting the frequency function
-       signal.f since it has the right type and length.  Also compute
+       signalvec.f since it has the right type and length.  Also compute
        characteristic detection amplitude. */
-    aData = signal.a->data->data;
-    fData = signal.f->data->data;
-    phiData = signal.phi->data->data;
-    for ( i = 0; i < signal.f->data->length; i++ ) {
+    aData = signalvec.a->data->data;
+    fData = signalvec.f->data->data;
+    phiData = signalvec.phi->data->data;
+    for ( i = 0; i < signalvec.f->data->length; i++ ) {
       REAL8 y = fOffset + *fData*dfInv;
       if ( y < 0.0 || y >= transfer->data->length ) {
 	*fData = 0.0;
@@ -331,7 +331,7 @@ LALSimulateInspiral( LALStatus                  *stat,
       fData++;
       phiData++;
     }
-    signal.f->sampleUnits = lalADCCountUnit;
+    signalvec.f->sampleUnits = lalADCCountUnit;
 
     /* Warn if we ever stepped outside of the frequency domain of the
        transfer function. */
@@ -345,8 +345,8 @@ LALSimulateInspiral( LALStatus                  *stat,
       params->signalAmplitude = sqrt( amp2 );
     else {
       amp2 = params->signalAmplitude / sqrt( amp2 );
-      fData = signal.f->data->data;
-      i = signal.f->data->length;
+      fData = signalvec.f->data->data;
+      i = signalvec.f->data->length;
       while ( i-- ) {
 	*fData *= amp2;
 	fData++;
@@ -360,26 +360,26 @@ LALSimulateInspiral( LALStatus                  *stat,
     tc *= 1000000000L;
     tc += params->timeC.gpsNanoSeconds;
     tc -= (INT8)( 1000000000.0L*ppnParams.tc );
-    signal.f->epoch.gpsSeconds = tc / 1000000000L;
-    signal.f->epoch.gpsNanoSeconds = tc % 1000000000L;
+    signalvec.f->epoch.gpsSeconds = tc / 1000000000L;
+    signalvec.f->epoch.gpsNanoSeconds = tc % 1000000000L;
 
     /* Inject the waveform into the output data, and reset everything
        for the next injection. */
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &(signal.a->data) ),
+    TRY( LALSDestroyVectorSequence( stat->statusPtr, &(signalvec.a->data) ),
 	 stat );
-    TRY( LALDDestroyVector( stat->statusPtr, &(signal.phi->data) ),
+    TRY( LALDDestroyVector( stat->statusPtr, &(signalvec.phi->data) ),
 	 stat );
-    LALFree( signal.a ); signal.a = NULL;
-    LALFree( signal.phi ); signal.phi = NULL;
-    LALSSInjectTimeSeries( stat->statusPtr, output, signal.f );
+    LALFree( signalvec.a ); signalvec.a = NULL;
+    LALFree( signalvec.phi ); signalvec.phi = NULL;
+    LALSSInjectTimeSeries( stat->statusPtr, output, signalvec.f );
     BEGINFAIL( stat ) {
-      TRY( LALSDestroyVector( stat->statusPtr, &(signal.f->data) ),
+      TRY( LALSDestroyVector( stat->statusPtr, &(signalvec.f->data) ),
 	   stat );
-      LALFree( signal.f ); signal.f = NULL;
+      LALFree( signalvec.f ); signalvec.f = NULL;
     } ENDFAIL( stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &(signal.f->data) ),
+    TRY( LALSDestroyVector( stat->statusPtr, &(signalvec.f->data) ),
 	 stat );
-    LALFree( signal.f ); signal.f = NULL;
+    LALFree( signalvec.f ); signalvec.f = NULL;
     strncpy( output->name, name, LALNameLength );
     params = params->next;
   }

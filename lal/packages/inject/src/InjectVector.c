@@ -40,14 +40,14 @@ with dithering.
 
 The function \verb@LALSI2InjectVector()@ (i.e.\ ``Single-precision to
 \verb@INT2@'') dithers the contents of \verb@*output@, adds the
-contents of \verb@*signal@, and rounds to the nearest integer, storing
+contents of \verb@*signalvec@, and rounds to the nearest integer, storing
 the result back in \verb@*output@.  If desired, the random parameters
 for the dithering can be created outside this routine and passed in as
 \verb@*params@ (see \verb@Random.h@); if this pointer is \verb@NULL@,
 the parameters will be generated internally.
 
 The function \verb@LALSSInjectVector()@ (i.e.\ ``Single-precision to
-single-precision'') simply adds the contents of \verb@*signal@ to
+single-precision'') simply adds the contents of \verb@*signalvec@ to
 \verb@*output@ where they overlap, without performing any dithering.
 
 \subsubsection*{Algorithm}
@@ -88,7 +88,7 @@ NRCSID( INJECTVECTORC, "$Id$" );
 void
 LALSI2InjectVector( LALStatus    *stat,
 		    INT2Vector   *output,
-		    REAL4Vector  *signal,
+		    REAL4Vector  *signalvec,
 		    RandomParams *params )
 { /* </lalVerbatim> */
   UINT4 n;  /* number of samples injected */
@@ -102,8 +102,8 @@ LALSI2InjectVector( LALStatus    *stat,
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
-  ASSERT( signal, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
 
@@ -116,8 +116,8 @@ LALSI2InjectVector( LALStatus    *stat,
 
   /* Find out how many samples will be injected. */
   n = output->length;
-  if ( n > signal->length )
-    n = signal->length;
+  if ( n > signalvec->length )
+    n = signalvec->length;
 
   /* Start injecting... */
   for ( i = 0; i < n; i++ ) {
@@ -125,7 +125,7 @@ LALSI2InjectVector( LALStatus    *stat,
     REAL4 d;                              /* current dithering */
 
     /* Compute the dithering. */
-    LALUniformDeviate( stat->statusPtr, &d, internal ); 
+    LALUniformDeviate( stat->statusPtr, &d, internal );
     BEGINFAIL( stat )
       if ( !params ) {
 	TRY( LALDestroyRandomParams( stat->statusPtr, &internal ),
@@ -134,7 +134,7 @@ LALSI2InjectVector( LALStatus    *stat,
     ENDFAIL( stat );
 
     /* Dither and inject. */
-    x += d + signal->data[i];
+    x += d + signalvec->data[i];
     if ( x > max )
       output->data[i] = max;
     else if ( x < min )
@@ -156,7 +156,7 @@ LALSI2InjectVector( LALStatus    *stat,
 void
 LALSSInjectVector( LALStatus    *stat,
 		   REAL4Vector  *output,
-		   REAL4Vector  *signal )
+		   REAL4Vector  *signalvec )
 { /* </lalVerbatim> */
   UINT4 n;  /* number of samples injected */
   UINT4 i;  /* an index */
@@ -164,18 +164,18 @@ LALSSInjectVector( LALStatus    *stat,
   INITSTATUS( stat, "LALSSInjectVector", INJECTVECTORC );
 
   /* Make sure parameter structures and their fields exist. */
-  ASSERT( signal, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
 
   /* Find out how many samples will be injected. */
   n = output->length;
-  if ( n > signal->length )
-    n = signal->length;
+  if ( n > signalvec->length )
+    n = signalvec->length;
 
   /* Inject and exit. */
   for ( i = 0; i < n; i++ )
-    output->data[i] += signal->data[i];
+    output->data[i] += signalvec->data[i];
   RETURN( stat );
 }

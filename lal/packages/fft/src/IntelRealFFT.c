@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: IntelRealFFT.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -102,10 +102,10 @@ LALCreateForwardRealFFTPlan(
   CHECKINTELFFTSTATUS( fftStat );
 
   /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
       DFTI_NOT_INPLACE );
   CHECKINTELFFTSTATUS( fftStat );
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT,
       DFTI_PACK_FORMAT );
   CHECKINTELFFTSTATUS( fftStat );
 
@@ -164,10 +164,10 @@ LALCreateReverseRealFFTPlan(
   CHECKINTELFFTSTATUS( fftStat );
 
   /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
       DFTI_NOT_INPLACE );
   CHECKINTELFFTSTATUS( fftStat );
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT,
       DFTI_PACK_FORMAT );
   CHECKINTELFFTSTATUS( fftStat );
 
@@ -362,7 +362,7 @@ LALRealPowerSpectrum (
 
   INITSTATUS( status, "LALRealPowerSpectrum", REALFFTC );
   XLALPrintDeprecationWarning("LALRealPowerSpectrum", "XLALREAL4PowerSpectrum");
-  
+
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );

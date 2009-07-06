@@ -29,7 +29,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fmax]
+GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f_max]
                         [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
                         [-s taper]
 \end{verbatim}
@@ -60,7 +60,7 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fm
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-/* headers from SimulateCoherentGW.c */ 
+/* headers from SimulateCoherentGW.c */
 #include <lal/LALError.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
@@ -98,7 +98,7 @@ int lalDebugLevel = 1;
 #define AMP (5)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f fmin fmax] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n\t [-s taper]"
+#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f f_min f_max] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n\t [-s taper]"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -204,7 +204,7 @@ main(int argc, char **argv)
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
-  REAL4 fmin = FMIN, fmax=FMAX; /* start and stop frequencies */
+  REAL4 f_min = FMIN, f_max=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
   INT4 amp = AMP;               /* Amplitude switches */
@@ -281,8 +281,8 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 2 ) {
 	arg++;
-	fmin = atof( argv[arg++] );
-	fmax = atof( argv[arg++] );
+	f_min = atof( argv[arg++] );
+	f_max = atof( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -395,8 +395,8 @@ main(int argc, char **argv)
   params.phi = 0.0;
   params.psi = psi;
   params.d = dist*LAL_PC_SI*1.0e3;
-  params.fStartIn = fmin;
-  params.fStopIn = fmax;
+  params.fStartIn = f_min;
+  params.fStopIn = f_max;
 
   /* Amplitude switches */
   params.ampOrder = amp;
@@ -441,7 +441,7 @@ main(int argc, char **argv)
   detector.response[0][2] = detector.response[2][0] = 0.;
   detector.response[1][2] = detector.response[2][1] = 0.;
   detector.type = LALDETECTORTYPE_ABSENT;
-  
+
   pulsar.equatorialCoords.longitude = 0.; /* RA */
   pulsar.equatorialCoords.latitude  = 0.; /* Dec */
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
@@ -454,7 +454,7 @@ main(int argc, char **argv)
   plus_series.data = NULL;
   cross_series.data = NULL;
   scalar_series.data = NULL;
-  
+
   am_response_series.pPlus   = &(plus_series);
   am_response_series.pCross  = &(cross_series);
   am_response_series.pScalar = &(scalar_series);
@@ -462,7 +462,7 @@ main(int argc, char **argv)
   LALSCreateVector(&stat, &(am_response_series.pPlus->data), 1);
   LALSCreateVector(&stat, &(am_response_series.pCross->data), 1);
   LALSCreateVector(&stat, &(am_response_series.pScalar->data), 1);
-  
+
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
   time_info.deltaT               = dt;
@@ -473,15 +473,15 @@ main(int argc, char **argv)
                                 &am_response_series,
                                 &det_and_pulsar,
                                 &time_info);
- 
+
   for ( i = 0; i < waveform.h->data->length; i++)
   {
     hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
                    waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
-  }	
+  }
 
   /* Taper hoft */
-  if( taper > 0 ) 
+  if( taper > 0 )
     LALInspiralWaveTaper(&stat, hoft, 3);
 
   if( fftout )
@@ -489,36 +489,36 @@ main(int argc, char **argv)
     LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
     LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
     LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
-  
+
     ht.f0 = 0;
     ht.deltaT = dt;
     for( i = 0; i < waveform.h->data->length ; i++)
       ht.data->data[i] = hoft->data[i];
-    
+
     LALTimeFreqRealFFT( &stat, &Hf, &ht, fwdRealPlan );
 
     if( ( fourier = fopen(fftout, "w")) == NULL)
       fourier = fopen("fftout", "w");
 
-    for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF) 
-      fprintf(fourier," %f %1.6e %1.6e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
+    for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF)
+      fprintf(fourier," %f %1.6e %1.6e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);
     fclose(fourier);
-    
+
 		LALDestroyRealFFTPlan( &stat, &fwdRealPlan );
     LALCDestroyVector( &stat, &Hf.data );
     LALSDestroyVector( &stat, &ht.data );
   }
 
   /* Print termination information. */
-  LALSnprintf( message, MSGLENGTH, "%d: %s", params.termCode,
+  snprintf( message, MSGLENGTH, "%d: %s", params.termCode,
 	       params.termDescription );
   INFO( message );
 
   /* Print coalescence phase.*/
-  LALSnprintf( message, MSGLENGTH,
+  snprintf( message, MSGLENGTH,
 	       "Waveform ends %.3f cycles before coalescence",
 	       -waveform.phi->data->data[waveform.phi->data->length-1]
-	       / (REAL4)( LAL_TWOPI ) ); 
+	       / (REAL4)( LAL_TWOPI ) );
   {
     INT4 code = sprintf( message,
 			 "Waveform ends %.3f cycles before coalescence",
@@ -535,7 +535,7 @@ main(int argc, char **argv)
 
   /* Check if sampling interval was too large. */
   if ( params.dfdt > 2.0 ) {
-    LALSnprintf( message, MSGLENGTH,
+    snprintf( message, MSGLENGTH,
 		 "Waveform sampling interval is too large:\n"
 		 "\tmaximum df*dt = %f", params.dfdt );
     WARNING( message );
@@ -557,7 +557,7 @@ main(int argc, char **argv)
 		  waveform.h->data->data[2*i],
 		  waveform.h->data->data[2*i+1],
 		  hoft->data[i]);
-    
+
     fclose( fp );
   }
 

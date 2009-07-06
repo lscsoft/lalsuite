@@ -1,0 +1,7 @@
+opt/lscsoft/lalsuite/bin/lalapps_*
+opt/lscsoft/lalsuite/etc/lalapps-user-env.*
+opt/lscsoft/lalsuite/lib/python*
+opt/lscsoft/lalsuite/share/lalapps
+opt/lscsoft/lalsuite/share/man/man1/lalapps_*.1*
+#opt/lscsoft/lalsuite/datadir/lalapps
+#opt/lscsoft/lalsuite/pythondir

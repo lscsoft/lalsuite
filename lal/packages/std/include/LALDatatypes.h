@@ -29,7 +29,7 @@
  * datatypes, and structured datatypes.  The LAL status structure
  * is a special case of a structured datatype that is used in every
  * standard LAL function.
- * 
+ *
  * This header file is automatically included by the header
  * <tt>LALStdlib.h</tt>.  In turn, this header file starts by including the
  * header <tt>LALAtomicDatatypes.h</tt>.
@@ -1524,7 +1524,7 @@ tagINT4FrequencySeries
 {
   CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
-  REAL8         f0;	
+  REAL8         f0;
   REAL8         deltaF;
   LALUnit       sampleUnits;
   INT4Sequence *data;
@@ -1536,7 +1536,7 @@ tagUINT4FrequencySeries
 {
   CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
-  REAL8          f0;	
+  REAL8          f0;
   REAL8          deltaF;
   LALUnit        sampleUnits;
   UINT4Sequence *data;
@@ -1572,7 +1572,7 @@ tagREAL4FrequencySeries
 {
   CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
-  REAL8          f0;	
+  REAL8          f0;
   REAL8          deltaF;
   LALUnit        sampleUnits;
   REAL4Sequence *data;
@@ -1596,7 +1596,7 @@ tagCOMPLEX8FrequencySeries
 {
   CHAR              name[LALNameLength];
   LIGOTimeGPS       epoch;
-  REAL8             f0;	
+  REAL8             f0;
   REAL8             deltaF;
   LALUnit           sampleUnits;
   COMPLEX8Sequence *data;
@@ -1608,7 +1608,7 @@ tagCOMPLEX16FrequencySeries
 {
   CHAR               name[LALNameLength];
   LIGOTimeGPS        epoch;
-  REAL8              f0;	
+  REAL8              f0;
   REAL8              deltaF;
   LALUnit            sampleUnits;
   COMPLEX16Sequence *data;

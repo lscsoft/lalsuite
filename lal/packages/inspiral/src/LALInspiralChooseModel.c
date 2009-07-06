@@ -40,16 +40,16 @@ energy, flux, frequency, timing and phasing functions.
 \end{itemize}
 
 \subsubsection*{Description}
-This module gives the post-Newtonian expansions and/or P-approximants 
+This module gives the post-Newtonian expansions and/or P-approximants
 to the energy, its derivative and gravitational-wave flux functions. More
-specifically, the {\tt static REAL8} functions below give Taylor expansions 
-of $dE/dv,$ and ${\cal F}(v),$ P-approximants of $e(v),$ $dE/dv$ 
-(derived from $e(v)$) and ${\cal F}(v).$ 
+specifically, the {\tt static REAL8} functions below give Taylor expansions
+of $dE/dv,$ and ${\cal F}(v),$ P-approximants of $e(v),$ $dE/dv$
+(derived from $e(v)$) and ${\cal F}(v).$
 
 {\tt LALInspiralChooseModel}
-is used to set pointers to the required energy and flux functions 
+is used to set pointers to the required energy and flux functions
 $E^{\prime}_T(v),$ $\mathcal{F}_T(v),$ $E^{\prime}_P(v)$ and $\mathcal{F}_P(v),$
-in {\tt expnFunc,} as also the GW phasing and frequency fucntions used in 
+in {\tt expnFunc,} as also the GW phasing and frequency fucntions used in
 the various approximants to generate the waveform.
 More specifically pointers are set to the following functions in the structure
 {\tt expnFunc}:
@@ -61,20 +61,20 @@ More specifically pointers are set to the following functions in the structure
   \item {\tt InspiralPhasing3 *phasing3}
   \item {\tt InspiralFrequency3 *frequency3}
 \end{itemize}
-{\tt LALInspiralChooseModel} also outputs in {\tt ak} the 
+{\tt LALInspiralChooseModel} also outputs in {\tt ak} the
 last stable orbit (LSO) velocity $v_{\rm LSO}$ (as {\tt ak->vn})
 defined by the equation $E'(v_{\rm LSO})=0,$
-the values of the GW frequency $f_{\rm LSO}=v_{\rm LSO}^3/(\pi m)$ 
-(as {\tt ak->fn}) and time (as {\tt ak->tn}) elapsed from {\tt params->fLower} 
+the values of the GW frequency $f_{\rm LSO}=v_{\rm LSO}^3/(\pi m)$
+(as {\tt ak->fn}) and time (as {\tt ak->tn}) elapsed from {\tt params->fLower}
 to smaller of {\tt fCutOff} and {\tt ak->fn} by evaluating the integral
 \begin{equation}
 t_n = t_{0} - m \int^{v_n}_{v_0} \frac{E^{\prime}(v)}{\mathcal{F}(v)} \, dv\,,
 \end{equation}
-where $t_{0}$ (usually equal to zero) is the user specified starting 
+where $t_{0}$ (usually equal to zero) is the user specified starting
 time for the waveform when the wave frequency reaches {\tt params->fLower}
-and $v_{0}= (\pi m f)^{1/3}$ (with $f={\tt params->fLower}$) is the  velocity 
+and $v_{0}= (\pi m f)^{1/3}$ (with $f={\tt params->fLower}$) is the  velocity
 at time $t_{0}.$  Note that $E'(v)$ and ${\cal F}(v)$ are defined in
-{\tt f->dEnergy} and {\tt f->flux.} 
+{\tt f->dEnergy} and {\tt f->flux.}
 
 \subsubsection*{Algorithm}
 Numerical integration is used to compute {\tt ak->tn.}
@@ -104,15 +104,15 @@ Spinning waveforms are only defined at the highest PN order.
 NRCSID (LALINSPIRALCHOOSEMODELC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEt0(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEt0(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 dEnergy;
    dEnergy = ak->dETaN * v;
    return (dEnergy);
-} 
+}
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEt2(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEt2(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 dEnergy, x;
    x = v*v;
@@ -121,7 +121,7 @@ static REAL8 dEt2(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEt4(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEt4(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 dEnergy, x;
    x = v*v;
@@ -131,7 +131,7 @@ static REAL8 dEt4(REAL8 v, expnCoeffs *ak)
 
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEt6(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEt6(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 dEnergy, x;
    x = v*v;
@@ -144,7 +144,7 @@ static REAL8 dEt6(REAL8 v, expnCoeffs *ak)
 
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft0(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft0(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -156,7 +156,7 @@ static REAL8 Ft0(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft2(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft2(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -168,7 +168,7 @@ static REAL8 Ft2(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft3(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft3(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -180,7 +180,7 @@ static REAL8 Ft3(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft4(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft4(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -192,20 +192,20 @@ static REAL8 Ft4(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft5(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft5(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4 
+   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
         + ak->FTa5*v4*v);
    return (flux);
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft6(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft6(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -213,13 +213,13 @@ static REAL8 Ft6(REAL8 v, expnCoeffs *ak)
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4 
+   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
         + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6);
    return (flux);
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Ft7(REAL8 v, expnCoeffs *ak) 
+static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -227,7 +227,7 @@ static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4 
+   flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
         + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6 + ak->FTa7*v6*v);
    return (flux);
 }
@@ -235,7 +235,7 @@ static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
 
 #if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 ep0(REAL8 v, expnCoeffs *ak) 
+static REAL8 ep0(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 x, energy;
    ak = NULL;
@@ -246,7 +246,7 @@ static REAL8 ep0(REAL8 v, expnCoeffs *ak)
 #endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 ep2(REAL8 v, expnCoeffs *ak) 
+static REAL8 ep2(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 x, energy;
    x = v*v;
@@ -255,7 +255,7 @@ static REAL8 ep2(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 ep4(REAL8 v, expnCoeffs *ak) 
+static REAL8 ep4(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 x, energy;
    x = v*v;
@@ -264,7 +264,7 @@ static REAL8 ep4(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 ep6(REAL8 v, expnCoeffs *ak) 
+static REAL8 ep6(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 x, energy;
    x = v*v;
@@ -274,7 +274,7 @@ static REAL8 ep6(REAL8 v, expnCoeffs *ak)
 
 #if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEp0(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEp0(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 energy, denergy, Energy, dEnergy, y;
    energy = ep0(v, ak);
@@ -287,7 +287,7 @@ static REAL8 dEp0(REAL8 v, expnCoeffs *ak)
 #endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEp2(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEp2(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 energy, denergy, Energy, dEnergy, x, y;
    x = v*v;
@@ -300,7 +300,7 @@ static REAL8 dEp2(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEp4(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEp4(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 energy, denergy, Energy, dEnergy, x, y;
    x = v*v;
@@ -314,17 +314,17 @@ static REAL8 dEp4(REAL8 v, expnCoeffs *ak)
 
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 dEp6(REAL8 v, expnCoeffs *ak) 
+static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 energy, denergy, Energy, dEnergy, x, y;
    x = v*v;
    energy = ep6(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
-   denergy = (1. + 2.*(ak->ePa2+ak->ePa3)*x + (ak->ePa1*ak->ePa2 
-           + ak->ePa2*ak->ePa2 + 2.* ak->ePa2*ak->ePa3 
+   denergy = (1. + 2.*(ak->ePa2+ak->ePa3)*x + (ak->ePa1*ak->ePa2
+           + ak->ePa2*ak->ePa2 + 2.* ak->ePa2*ak->ePa3
            + ak->ePa3*ak->ePa3) * x*x)
-           /pow(1. + (ak->ePa1 + ak->ePa2 + ak->ePa3) * x 
+           /pow(1. + (ak->ePa1 + ak->ePa2 + ak->ePa3) * x
            + ak->ePa1*ak->ePa3*x*x,2.);
    dEnergy = - v * ak->eta * denergy /((1.+Energy) * y);
    return(dEnergy);
@@ -334,7 +334,7 @@ static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
 
 #if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp0(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp0(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -348,7 +348,7 @@ static REAL8 Fp0(REAL8 v, expnCoeffs *ak)
 
 #if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp1(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp1(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -362,7 +362,7 @@ static REAL8 Fp1(REAL8 v, expnCoeffs *ak)
 
 #if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp2(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp2(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
@@ -375,46 +375,46 @@ static REAL8 Fp2(REAL8 v, expnCoeffs *ak)
 #endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp3(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp3(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v))) 
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v)))
 	* (1.-v/ak->vpoleP4));
    return (flux);
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp4(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp4(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v 
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
 	/ (1.+ak->fPa4*v)))) * (1.-v/ak->vpoleP4));
    return (flux);
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp5(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp5(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v 
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
 	/ (1.+ak->fPa4*v / (1.+ak->fPa5*v))))) * (1.-v/ak->vpoleP4));
    return (flux);
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp6(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp6(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -422,8 +422,8 @@ static REAL8 Fp6(REAL8 v, expnCoeffs *ak)
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v 
-        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v)))))) 
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
+        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v))))))
         * (1.-v/ak->vpoleP6));
    /* */
    flux *= (1.+  log(v/ak->vlsoP4) * ak->FTl6*v6) ;
@@ -431,7 +431,7 @@ static REAL8 Fp6(REAL8 v, expnCoeffs *ak)
 }
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-static REAL8 Fp7(REAL8 v, expnCoeffs *ak) 
+static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v6,v8,v10;
    v2 = v*v;
@@ -439,13 +439,14 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v 
-        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v / (1.+ak->fPa7*v))))))) 
+   flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
+        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v / (1.+ak->fPa7*v)))))))
         * (1.-v/ak->vpoleP6));
    flux *= (1.+  log(v/ak->vlsoP4) * ak->FTl6*v6) ;
    return (flux);
 }
 
+#if 0
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
 { /* </lalVerbatim>  */
@@ -458,15 +459,16 @@ static REAL8 Fp8(REAL8 v, expnCoeffs *ak)
    l6 = ak->FTl6;
    l8 = ak->FTl8 - ak->FTa2*ak->FTl6;
    flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v
-        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v / (1.+ak->fPa7*v 
+        / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v / (1.+ak->fPa7*v
 	/ (1.+ak->fPa8*v))))))))
         * (1.-v/ak->vpoleP6));
    flux *= (1.+  log(v/ak->vlsoP4) * (l6*v6 + l8*v8) ) ;
    return (flux);
 }
+#endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
-void 
+void
 LALInspiralChooseModel(
    LALStatus        *status,
    expnFunc         *f,
@@ -486,16 +488,16 @@ LALInspiralChooseModel(
    ASSERT (f,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->order != oneHalfPN,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+   ASSERT (params->order != LAL_PNORDER_HALF,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    vlso = 0;
 
-   switch (params->order) 
+   switch (params->order)
    {
-      case newtonian:
-      switch (params->approximant) 
+      case LAL_PNORDER_NEWTONIAN:
+      switch (params->approximant)
       {
          case AmpCorPPN:
          case Eccentricity:
@@ -528,11 +530,11 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case oneHalfPN:
-        ABORT(status, LALINSPIRALH_ECHOICE, "OneHalfPN is not valid");
+      case LAL_PNORDER_HALF:
+        ABORT(status, LALINSPIRALH_ECHOICE, "LAL_PNORDER_HALF is not valid");
         break;
-      case onePN:
-      switch (params->approximant) 
+      case LAL_PNORDER_ONE:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -543,7 +545,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
-         case SpinTaylorT3: 
+         case SpinTaylorT3:
          case SpinTaylor:
          case IMRPhenomA:
 
@@ -568,8 +570,8 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case onePointFivePN:
-      switch (params->approximant) 
+      case LAL_PNORDER_ONE_POINT_FIVE:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -580,7 +582,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
-         case SpinTaylorT3: 
+         case SpinTaylorT3:
          case SpinTaylor:
          case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -608,8 +610,8 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case twoPN:
-      switch (params->approximant) 
+      case LAL_PNORDER_TWO:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -622,7 +624,7 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3:
          case SpinTaylor:
-/* 
+/*
    The value vlsoT4 is too large and doesn't work sometimes;
    so we use vlsoT2.
 */
@@ -652,8 +654,8 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case twoPointFivePN:
-      switch (params->approximant) 
+      case LAL_PNORDER_TWO_POINT_FIVE:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -666,7 +668,7 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3:
          case SpinTaylor:
-/* 
+/*
    The value vlsoT4 is too large and doesn't work with 2.5 PN
    Taylor approximant; so we use vlsoT2.
 */
@@ -697,8 +699,8 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case threePN:
-      switch (params->approximant) 
+      case LAL_PNORDER_THREE:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -711,8 +713,8 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3:
       case SpinTaylor:
-/* 
-   vlsoT6 is as yet undetermined and vlsoT4 is too large in 
+/*
+   vlsoT6 is as yet undetermined and vlsoT4 is too large in
    certain cases (TaylorT2 crashes for (1.4,10)); using vlsoT2;
 */
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -742,8 +744,8 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case threePointFivePN:
-      switch (params->approximant) 
+      case LAL_PNORDER_THREE_POINT_FIVE:
+      switch (params->approximant)
       {
          case Eccentricity:
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
@@ -782,7 +784,7 @@ LALInspiralChooseModel(
             break;
       }
       break;
-      case pseudoFourPN:
+      case LAL_PNORDER_PSEUDO_FOUR:
       switch (params->approximant)
       {
          case Eccentricity:
@@ -835,12 +837,12 @@ LALInspiralChooseModel(
    case TaylorT4:
    case TaylorN:
      ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
-     
+
      if (ak->fn) {
        vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
        ak->vn = (vn < vlso) ? vn :  vlso;
-     } 
-     
+     }
+
      in1.t=0.0;
      in1.v0=ak->v0;
      in1.t0=ak->t0;
@@ -849,23 +851,23 @@ LALInspiralChooseModel(
      in1.dEnergy = f->dEnergy;
      in1.flux = f->flux;
      in1.coeffs = ak;
-     
-     in2 = (void *) &in1;      
-     
+
+     in2 = (void *) &in1;
+
      LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
      CHECKSTATUSPTR(status);
-     
+
      ak->tn = -tofv - ak->samplinginterval;
      params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
      /*
-       for (v=0; v<ak->vn; v+=0.001) 
+       for (v=0; v<ak->vn; v+=0.001)
        {
        FtN = Ft0(v,ak);
        printf("%e %e %e %e %e %e %e\n", v,
        Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
        Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
        }
-       exit(0); 
+       exit(0);
      */
      break;
  case BCV:
@@ -877,13 +879,13 @@ LALInspiralChooseModel(
    /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
     * the duration are longer than non eccentric waveform and starts at 2fl/3*/
    ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
-   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);   
+   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
    break;
  default:
    ABORT( status, 9999, "Unknown case in switch." );
 }
 
    DETATCHSTATUSPTR(status);
-   RETURN (status); 
+   RETURN (status);
 }
 

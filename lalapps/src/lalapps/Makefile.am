@@ -3,7 +3,7 @@
 if FRAME
 FRAMESRCS = series.c series.h lalappsfrutils.c lalappsfrutils.h
 else
-FRAMESRCS = 
+FRAMESRCS =
 endif
 noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = lalapps.c lalapps.h getopt.c getopt1.c getopt.h \
@@ -12,7 +12,7 @@ bin_PROGRAMS = lalapps_version lalapps_tconvert lalapps_cache
 lalapps_version_SOURCES = version.c lalapps.h
 lalapps_tconvert_SOURCES = tconvert.c getdate.c getdate.h
 lalapps_cache_SOURCES = cache.c
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD = liblalapps.la @LAL_LIBS@
 INCLUDES = -I$(top_srcdir)/src
 if HAVE_PYTHON
 pkgpython_DATA = __init__.py

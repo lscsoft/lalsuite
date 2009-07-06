@@ -1,0 +1,6 @@
+lalsuite (6.0-1lscsoft1) unstable; urgency=low
+
+  * LAL and LALapps 6.0 (based on branch 9d93e994822c8dc61f2a62233e017d71866564f9)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 09 Jun 2009 09:30:00 +0200
+

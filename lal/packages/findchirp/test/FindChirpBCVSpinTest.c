@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVSpinTest.c
  *
  * Author: Brown, D. A., Jones, G
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -50,6 +50,7 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
+#include <lal/FindChirpTD.h>
 
 NRCSID (MAIN, "$Id$");
 
@@ -59,10 +60,10 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-static void 
+static void
 Usage (const char *program, int exitflag);
 
-static void 
+static void
 ParseOptions (int argc, char *argv[]);
 
 typedef enum
@@ -81,7 +82,7 @@ static BOOLEAN          rhosqout        = 0;
 static BOOLEAN          verbose         = 0;
 static INT4             numPoints       = 262144; /*128; 32768;*/
 static INT4             numSegments     = 8;
-static INT4             numTmplts       = 1; /* 8; */ 
+static INT4             numTmplts       = 1; /* 8; */
 static INT4             numChisqBins    = 0;  /* changed default to zero */
 static INT4             srate           = 2048;
 static REAL4            sigmasq         = 64.0;
@@ -109,7 +110,6 @@ main (int argc, char *argv[])
   INT4                          i;
   INT4                          j;
   INT4                          k;
-  INT4                          l;
 
   INT4                          seed = 3;
 
@@ -123,12 +123,10 @@ main (int argc, char *argv[])
 
   REAL4                         sigma;
   REAL4                         Sfk;
-  REAL4                         respRe; 
+  REAL4                         respRe;
   REAL4                         respIm;
   REAL4                         deltaT;
-  REAL4                         deltaF;   
-  
-  REAL4                         temp;
+  REAL4                         deltaF;
 
   REAL4Vector                  *noiseVec = NULL;
 
@@ -149,7 +147,7 @@ main (int argc, char *argv[])
   InspiralTemplate             *tmplt = NULL;
   SnglInspiralTable            *event = NULL;
 
-  
+
   /*
    *
    * parse options, allocate memory, init params and set values
@@ -162,7 +160,7 @@ main (int argc, char *argv[])
   /* override numSegments if outputting rhosq */
   if ( rhosqout )
   {
-    numSegments = 1; 
+    numSegments = 1;
     numTmplts = 1;
     fpRhosq = fopen ("rhosqBCVSpin.dat", "w");
   }
@@ -221,7 +219,7 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpChisqVetoInit (&status, filterParams->chisqParams, 
+  LALFindChirpChisqVetoInit (&status, filterParams->chisqParams,
       numChisqBins, numPoints);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -255,11 +253,11 @@ main (int argc, char *argv[])
   fprintf( stdout, "        numSegments = %d\n\n", numSegments );
   fprintf( stdout, "            sigma^2 = %5.2f\n", sigmasq );
   fprintf( stdout, "                Sfk = %10.8f\n", Sfk );
-  fprintf( stdout, "             deltaT = %e\n             deltaF = %e\n\n", 
+  fprintf( stdout, "             deltaT = %e\n             deltaF = %e\n\n",
       deltaT, deltaF);
   fprintf( stdout, "       invSpecTrunc = %d\n", invSpecTrunc );
   fprintf( stdout, "               fLow = %5.3f\n\n", fLow );
-  fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
+  fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n",
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
  fprintf( stdout, "         numSegments = %d\n\n", numSegments );
@@ -268,8 +266,8 @@ main (int argc, char *argv[])
  fprintf( stdout, "                psi3 = %e\n", psi3 );
  fprintf( stdout, "                beta = %e\n", beta );
  fprintf( stdout, "              fFinal = %e\n", fFinal );
- 
- 
+
+
 
 
 
@@ -317,11 +315,11 @@ main (int argc, char *argv[])
 
         noise =  0.5 + sigma * noiseVec->data[j];
 
-        if ( noise > -2048 && noise < 2047 ) 
+        if ( noise > -2048 && noise < 2047 )
           ifodmro= noise;
-        else if ( noise < -2048 ) 
+        else if ( noise < -2048 )
           ifodmro = -2048.0;
-        else 
+        else
           ifodmro=2047.0;
 
         dataSeg[i].chan->data->data[j] = ifodmro;
@@ -365,19 +363,19 @@ main (int argc, char *argv[])
       /* read in ifodmro data */
       for ( j = 0; j < numPoints; ++j )
       {
-        
-       if (( (flag = fscanf( fpData, "%f\n", 
-                  &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF ) 
-            && j <  numPoints ) 
+
+       if (( (flag = fscanf( fpData, "%f\n",
+                  &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF )
+            && j <  numPoints )
         {
-          fprintf( stdout, "error reading input data %f %d\n" , temp, j);
+          fprintf( stdout, "error reading input data %d\n" , j);
           fflush( stdout );
           fclose( fpData );
           fclose( fpSpec );
           fclose( fpResp );
           goto abort;
         }
-       
+
       fprintf (fpRead, "%e\n",  dataSeg[i].chan->data->data[j] );
 
       }
@@ -387,7 +385,7 @@ main (int argc, char *argv[])
       /* read in spec and resp */
       for ( k = 0; k < numPoints/2 + 1; ++k )
       {
-        if (( (flag = fscanf( fpSpec, "%f\n", 
+        if (( (flag = fscanf( fpSpec, "%f\n",
                   &(dataSeg[i].spec->data->data[k]) )) != 1 || flag == EOF )
             && k < numPoints/2 + 1 )
         {
@@ -399,8 +397,8 @@ main (int argc, char *argv[])
           goto abort;
         }
 
-        if (( (flag = fscanf( fpResp, "%f %f\n", 
-                  &(dataSeg[i].resp->data->data[k].re), 
+        if (( (flag = fscanf( fpResp, "%f %f\n",
+                  &(dataSeg[i].resp->data->data[k].re),
                   &(dataSeg[i].resp->data->data[k].im) )) != 2 || flag == EOF )
             && k < numPoints/2 + 1 )
         {
@@ -464,10 +462,10 @@ main (int argc, char *argv[])
   for ( betaCount = 0.; betaCount < 3.; betaCount +=2 )
   {
   for (psi3Count = 2000; psi3Count < 4001; psi3Count += 1000)
-  { 
-	  
+  {
+
      fprintf (stdout, "psi0Count = %d\n", psi0Count);*/
-	  
+
     /*
      *
      * generate stationary phase template
@@ -485,12 +483,12 @@ main (int argc, char *argv[])
       tmplt->mu        = m1 * m2 / tmplt->totalMass;
       tmplt->eta       = tmplt->mu / tmplt->totalMass;
       tmplt->approximant = BCVSpin;
-      
+
       tmplt->fFinal 	= fFinal;
       tmplt->psi0       = psi0;
       tmplt->psi3       = psi3;
       tmplt->beta       = beta;
-      
+
       tmpltParams->fLow  = fLow;
       tmpltParams->deltaT = deltaT;
     }
@@ -510,9 +508,9 @@ main (int argc, char *argv[])
 
     for ( i = 0; i < numSegments; ++i )
     {
-     
-      fprintf (stdout, "segment number %d\n", i);  
-    
+
+      fprintf (stdout, "segment number %d\n", i);
+
       filterInput->segment = fcSegVec->data + i;
 
       event = NULL;
@@ -529,7 +527,7 @@ main (int argc, char *argv[])
           InspiralEvent *thisEvent = event;
           event = thisEvent->next;
           fprintf( stdout, "event id       = %d\n", thisEvent->id );
-          fprintf( stdout, "event GPS time = %d.%d\n", 
+          fprintf( stdout, "event GPS time = %d.%d\n",
               thisEvent->time.gpsSeconds, thisEvent->time.gpsNanoSeconds );
           fprintf( stdout, "timeIndex      = %d\n", thisEvent->timeIndex );
           fprintf( stdout, "m1             = %f\n", thisEvent->tmplt.mass1 );
@@ -539,9 +537,9 @@ main (int argc, char *argv[])
           fprintf( stdout, "sigma          = %e\n", thisEvent->sigma );
           fprintf( stdout, "effective dist = %f\n", thisEvent->effDist);
           fflush( stdout );
-	
+
           LALFree( thisEvent );
-	} 
+	}
       }
     */
 
@@ -549,7 +547,7 @@ main (int argc, char *argv[])
 
 loopCount = loopCount + 1;
 
- /* } /* end loop over templates */
+ /* } end loop over templates */
  /* }
   }  */
 
@@ -659,8 +657,8 @@ abort:
  */
 static void
 TestStatus (
-    LALStatus  *status, 
-    const char *ignored, 
+    LALStatus  *status,
+    const char *ignored,
     int         exitcode
            )
 {
@@ -722,7 +720,7 @@ ClearStatus (
 
 static void
 Usage (
-    const char *program, 
+    const char *program,
     int         exitcode
       )
 {
@@ -750,7 +748,7 @@ Usage (
   fprintf (stderr, "    -t rhosqThresh    signal to noise squared threshold [100.0]\n");
   fprintf (stderr, "    -c chisqThresh    chi squared threshold [0.0001]\n");
   fprintf (stderr, "  Template Parameters:\n");
-  fprintf (stderr, "    -Psi0 psi0        psi0 value for template\n"); 
+  fprintf (stderr, "    -Psi0 psi0        psi0 value for template\n");
   fprintf (stderr, "    -Psi3 psi3        psi3 value for template\n");
   fprintf (stderr, "    -Beta beta        beta value for template\n");
   fprintf (stderr, "    -F    fFinal      fFinal value for template\n");
@@ -762,7 +760,7 @@ Usage (
 
 static void
 ParseOptions (
-    int         argc, 
+    int         argc,
     char       *argv[]
              )
 {
@@ -867,7 +865,7 @@ ParseOptions (
   return;
 }
 
-
+#if 0
 /*
  *
  * graphREAL4 ()
@@ -877,10 +875,10 @@ ParseOptions (
  */
 static void
 graphREAL4 (
-    REAL4      *array, 
+    REAL4      *array,
     INT4        n,
     INT4        spacing
-           ) 
+           )
 {
   FILE *fp;
   INT4 i;
@@ -912,12 +910,12 @@ graphREAL4 (
  * function to graph an array of INT2's for debugging
  *
  */
-static void 
+static void
 graphINT2 (
-    INT2       *array, 
+    INT2       *array,
     INT4        n,
     INT4        spacing
-          ) 
+          )
 {
   FILE *fp;
   INT4 i;
@@ -949,12 +947,12 @@ graphINT2 (
  * function to graph an array of INT4's for debugging
  *
  */
-static void 
+static void
 graphINT4 (
-    INT4       *array, 
+    INT4       *array,
     INT4        n,
     INT4        spacing
-          ) 
+          )
 {
   FILE *fp;
   INT4 i;
@@ -977,3 +975,4 @@ graphINT4 (
 
 return;
 }
+#endif

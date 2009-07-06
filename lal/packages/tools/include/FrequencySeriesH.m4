@@ -8,15 +8,6 @@ void `XLALDestroy'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="FrequencySeriesDestroyP">
-\idx{`LALDestroy'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="FrequencySeriesDestroyP"> */
-void `LALDestroy'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE *series
-);
-/* </lalVerbatim> */
-
 /* <lalLaTeX file="FrequencySeriesCreateP">
 \idx{`XLALCreate'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesCreateP"> */
@@ -26,21 +17,6 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	REAL8 f0,
 	REAL8 deltaF,
 	const LALUnit *sampleUnits,
-	size_t length
-);
-/* </lalVerbatim> */
-
-/* <lalLaTeX file="FrequencySeriesCreateP">
-\idx{`LALCreate'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="FrequencySeriesCreateP"> */
-void `LALCreate'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE **output,
-	const CHAR *name,
-	LIGOTimeGPS epoch,
-	REAL8 f0,
-	REAL8 deltaF,
-	LALUnit sampleUnits,
 	size_t length
 );
 /* </lalVerbatim> */

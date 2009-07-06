@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsarCommon
  * \brief Some common useful data-types for pulsar-searches.
  *
@@ -49,7 +49,7 @@ extern "C" {
 NRCSID( PULSARDATATYPESH, "$Id$");
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
-#define PULSAR_MAX_SPINS	4    
+#define PULSAR_MAX_SPINS	7
 
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct {
@@ -68,10 +68,20 @@ typedef struct {
   REAL8 phi0;	/**< initial signal-phase (at some reference time) */
 } PulsarAmplitudeParams;
 
+/** Struct for 'canonical' coordinates in amplitude-params space A^mu = {A1, A2, A3, A4} */
+typedef struct {
+  REAL8 A1;
+  REAL8 A2;
+  REAL8 A3;
+  REAL8 A4;
+} PulsarAmplitudeVect;
+
+
+/** Typedef for fixed-size array holding GW frequency and derivatives fk = d^k Freq/dt^k|(tau_ref) */
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
 
 /** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
- *  at a given (SSB) reference GPS-time \f$\tau\f$. 
+ *  at a given (SSB) reference GPS-time \f$\tau\f$.
  * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  */
 typedef struct
@@ -84,8 +94,8 @@ typedef struct
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
 typedef struct {
   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
-  REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */ 
-  REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */ 
+  REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */
+  REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */
   PulsarSpins fkdot;	/**< intrinsic spins: [Freq, f1dot, f2dot, ... ] where fkdot = d^kFreq/dt^k */
   BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
 } PulsarDopplerParams;
@@ -138,7 +148,7 @@ extern const SkyPosition empty_SkyPosition;
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

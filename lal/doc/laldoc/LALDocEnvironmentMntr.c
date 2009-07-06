@@ -19,7 +19,7 @@
 
 #include "LALDoc.h"
 
-/* 
+/*
  *
  * Check to see if enviroment switch is on this line,
  * and set the switch accordingly.
@@ -40,7 +40,7 @@ int CheckEnvironment(char *line, LALEnvironment *Env)
            }
 
            else   /* if not on, then we turn it on and open an output file */
-           { 
+           {
 
                    Env->On = 1;
 
@@ -59,7 +59,7 @@ int CheckEnvironment(char *line, LALEnvironment *Env)
                    FindNameOfOutPutFile( line , Env );
                    FindDefaultFileName(  Env );
                    /* if no file name specified, use the default */
-                   if( *(Env->fileName) == '\0' ) 
+                   if( *(Env->fileName) == '\0' )
                           for(i=0;i<MAXSTR;i++){
                                   *(Env->fileName +i) = *(Env->dfltFile +i);
                           }
@@ -76,9 +76,9 @@ int CheckEnvironment(char *line, LALEnvironment *Env)
                             Env->sourceFile , __LINE__ , __FILE__ , 1 );
            }
            else
-           { 
-                   /* 
-                    * print any closing remarks to the file 
+           {
+                   /*
+                    * print any closing remarks to the file
                     * eg \end{verbatim}
                    */
                    Env->PostFix ( Env );
@@ -100,21 +100,21 @@ int CheckEnvironment(char *line, LALEnvironment *Env)
 }
 
 /*
- *       Check For Environment Conflicts 
+ *       Check For Environment Conflicts
  *
  * Routine checks to see if there are any environment conflicts.
- * It is very forgiving.  It allows everything, but writing 
+ * It is very forgiving.  It allows everything, but writing
  * different environments to the same file at the same time.
  *
 */
-int 
+int
 CheckForEnvConflicts( LALEnvironment *LaTeXEnv    ,
                       LALEnvironment *VerbatimEnv ,
-                      LALEnvironment *ErrTableEnv ) 
+                      LALEnvironment *ErrTableEnv )
 {
 
     /* Note: The nested 'if' statements are necessary because strcmp()
-     * will give a SEGV if it has not been intialized.  
+     * will give a SEGV if it has not been intialized.
     */
     if( LaTeXEnv->On ){
             if( VerbatimEnv->On ){
@@ -134,20 +134,20 @@ CheckForEnvConflicts( LALEnvironment *LaTeXEnv    ,
             if( ErrTableEnv->On ){
                     if((strcmp( ErrTableEnv->fileName, VerbatimEnv->fileName)==0)){
                             LALDocErr("Verbatim/ErrTable output conflict.",
-                            LaTeXEnv->sourceFile , __LINE__ , __FILE__ , 1 );   
+                            LaTeXEnv->sourceFile , __LINE__ , __FILE__ , 1 );
                     }
             }
     }
-    
+
 return 1;
 }
 
 
-int 
-CleanExit( FILE *ptrInputFile , FILE *ptrErrorFile, 
+int
+CleanExit( FILE *ptrInputFile , FILE *ptrErrorFile,
            LALEnvironment *LaTeXEnv    ,
            LALEnvironment *VerbatimEnv ,
-           LALEnvironment *ErrTableEnv ) 
+           LALEnvironment *ErrTableEnv )
 {
 
     /* Check to see that all environments terminated */
@@ -180,7 +180,7 @@ int LalDocGetLine(char *line, int max, FILE *fpin)
    for (i=0;i<MAXSTR;i++) { *(line+i) = '\0' ; }
    if (fgets(line, max, fpin) == NULL)
       return 0;
-   else 
+   else
       return strlen(line);
 }
 

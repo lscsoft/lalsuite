@@ -43,17 +43,17 @@ int SetErrTableFlags( LALEnvironment *ErrTableEnv, const char *sourcefile , FILE
         ErrTableEnv->Preamble     = TopOfErrTableEnv ;
         ErrTableEnv->PostFix      = EndOfErrTableEnv ;
 
-      
+
         return 0;
 }
 
 /*
- * 
+ *
  * Routine that writes  the Error Code Table:
  *
  */
 int WriteErrTable( char *line , LALEnvironment *Env )
-{  
+{
         fpos_t  linePtr;
         char *onFlagOnCurrentLine;
         onFlagOnCurrentLine = strstr(line, Env->OnFlag );
@@ -62,9 +62,9 @@ int WriteErrTable( char *line , LALEnvironment *Env )
 
            /*
             * This routine determines that the Error Table On Flag
-            * has been set. It then searches for the file and 
+            * has been set. It then searches for the file and
             * writes the table.  Then it repositions the file
-            * pointer back to the line just below the 
+            * pointer back to the line just below the
             * Error Table On flag as if nothing has happened.
            */
            Env->cnvtnVioltn = 0;  /* initialize the convention violation flag*/
@@ -74,12 +74,12 @@ int WriteErrTable( char *line , LALEnvironment *Env )
            LALDocConstructErrorTable( Env );
            /* and reset the file  position as if nothing has happened. */
            fsetpos( Env->InFilePtr , &linePtr);
-                    
+
         }
         else
         {
                 /* if we are in the in body table, skip it we have
-                 * already done the work above  
+                 * already done the work above
                 */
         }
 
@@ -115,7 +115,7 @@ EndOfErrTableEnv(void  *recastToEnv )
     Env = (LALEnvironment *)recastToEnv;
 
     /* close out the table */
-    fprintf(Env->OutFilePtr,"\\hline");           
+    fprintf(Env->OutFilePtr,"\\hline");
     fprintf(Env->OutFilePtr,"\n\\end{tabular}");
     fprintf(Env->OutFilePtr,"\n\\end{center}");
 
@@ -137,7 +137,7 @@ EndOfErrTableEnv(void  *recastToEnv )
     fprintf(Env->OutFilePtr, "and the status descriptions in\n");
     fprintf(Env->OutFilePtr, "\\verb@%s_MSGE@\\texttt{<}\\textit{name}\\texttt{>}. ",
           Env->errCodePrfx );
-        
+
     }
     fprintf(Env->OutFilePtr,"The source code ");
     fprintf(Env->OutFilePtr,"with these messages is in \\verb@%s@",

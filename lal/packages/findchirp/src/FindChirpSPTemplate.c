@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Darren Woods, Drew Keppel, Duncan Brown, Gareth Jones, 
+*  Copyright (C) 2007 Darren Woods, Drew Keppel, Duncan Brown, Gareth Jones,
 *             Jolien Creighton, Patrick Brady, Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -18,22 +18,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSPTemplate.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpSPTemplateCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpSPTemplate.c}}
@@ -65,7 +65,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpSPTemplateCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -107,7 +107,7 @@ LALFindChirpSPTemplate (
   const REAL4   cannonDist = 1.0; /* Mpc */
 
   /* pn constants */
-  REAL4 c0, c10, c15, c20, c25, c25Log, c30, c30Log, c35, c40P; 
+  REAL4 c0, c10, c15, c20, c25, c25Log, c30, c30Log, c35, c40P;
 
   /* variables used to compute chirp time */
   REAL4 c0T, c2T, c3T, c4T, c5T, c6T, c6LogT, c7T;
@@ -118,8 +118,8 @@ LALFindChirpSPTemplate (
   const REAL4 s4 =  0.00761;
   const REAL4 c2 = -0.49670;
   const REAL4 c4 =  0.03705;
-  
-  
+
+
   INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
   ATTATCHSTATUSPTR( status );
 
@@ -129,26 +129,26 @@ LALFindChirpSPTemplate (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, 
+  ASSERT( fcTmplt, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( fcTmplt->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( fcTmplt->data->data, status, 
+  ASSERT( fcTmplt->data->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->xfacVec, status, 
+  ASSERT( params->xfacVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->xfacVec->data, status, 
+  ASSERT( params->xfacVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the timestep is positive */
-  ASSERT( params->deltaT > 0, status, 
+  ASSERT( params->deltaT > 0, status,
       FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
 
   /* check that the input exists */
@@ -207,7 +207,7 @@ LALFindChirpSPTemplate (
 
   if ( lalDebugLevel & LALINFO )
   {
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
     LALInfo( status, infomsg );
   }
@@ -219,27 +219,27 @@ LALFindChirpSPTemplate (
   /* Switch on PN order, set the appropriate phase coeffs for that order */
   switch( params->order )
   {
-    case pseudoFourPN: 
+    case LAL_PNORDER_PSEUDO_FOUR:
       c40P = 3923.0;
-    case threePointFivePN: 
-      c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0 
+    case LAL_PNORDER_THREE_POINT_FIVE:
+      c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0
             - eta*eta*74045.0/756.0);
-    case threePN:
-      c30 = 11583231236531.0/4694215680.0 - LAL_GAMMA*6848.0/21.0 
-            - LAL_PI*LAL_PI*640.0/3.0 + eta*(LAL_PI*LAL_PI*2255.0/12.0 
-            - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0 
+    case LAL_PNORDER_THREE:
+      c30 = 11583231236531.0/4694215680.0 - LAL_GAMMA*6848.0/21.0
+            - LAL_PI*LAL_PI*640.0/3.0 + eta*(LAL_PI*LAL_PI*2255.0/12.0
+            - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0
             - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
       c30Log = -6848.0/21.0;
-    case twoPointFivePN:
+    case LAL_PNORDER_TWO_POINT_FIVE:
       c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0;
       c25Log = 3*c25;
-    case twoPN:
+    case LAL_PNORDER_TWO:
       c20 = 15293365.0/508032.0 + eta*(27145.0/504.0 + eta*3085.0/72.0);
       c15 = -16*LAL_PI;
       c10 = 3715.0/756.0 + eta*55.0/9.0;
       c0  = 3.0/(eta*128.0);
       break;
-    default: 
+    default:
       ABORT( status, FINDCHIRPSPH_EORDR, FINDCHIRPSPH_MSGEORDR );
       break;
   }
@@ -249,7 +249,7 @@ LALFindChirpSPTemplate (
 
   /* frequency cutoffs */
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
-  kmax = tmplt->fFinal / deltaF < numPoints/2 ? 
+  kmax = tmplt->fFinal / deltaF < numPoints/2 ?
     tmplt->fFinal / deltaF : numPoints/2;
 
   /* compute psi0: used in range reduction */
@@ -258,9 +258,9 @@ LALFindChirpSPTemplate (
   /* higher order coeffs will be set to zero.     */
 
     x = x1 * xfac[kmin];
-    psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) 
-                + c25 - c25Log * log(x) + (1.0/x) 
-                * ( c30 - c30Log * log(x) + (1.0/x) * ( c35 - (1.0/x) 
+    psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) )
+                + c25 - c25Log * log(x) + (1.0/x)
+                * ( c30 - c30Log * log(x) + (1.0/x) * ( c35 - (1.0/x)
                 * c40P * log(x) ) ) );
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
 
@@ -276,11 +276,11 @@ LALFindChirpSPTemplate (
 
     for ( k = kmin; k < kmax ; ++k )
     {
-      REAL4 x = x1 * xfac[k];
-      REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) ) 
-                  + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x) 
-                  + (1.0/x) * ( c35 - (1.0/x) * c40P * log(x) ) ) );
-      REAL4 psi1 = psi + psi0;
+      REAL4 x_0 = x1 * xfac[k];
+      REAL4 psi_0 = c0 * ( x_0 * ( c20 + x_0 * ( c15 + x_0 * (c10 + x_0 * x_0 ) ) )
+                  + c25 - c25Log * log(x_0) + (1.0/x_0) * ( c30 - c30Log * log(x_0)
+                  + (1.0/x_0) * ( c35 - (1.0/x_0) * c40P * log(x_0) ) ) );
+      REAL4 psi1 = psi_0 + psi0;
       REAL4 psi2;
 
       /* range reduction of psi1 */
@@ -338,31 +338,31 @@ LALFindChirpSPTemplate (
   /* This formula works for any PN order, because */
   /* higher order coeffs will be set to zero.     */
 
-  
+
   /* Initialize all PN chirp time coeffs to zero. */
   c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.;
 
   /* Switch on PN order, set the chirp time coeffs for that order */
   switch( params->order )
   {
-    case pseudoFourPN: 
-    case threePointFivePN: 
+    case LAL_PNORDER_PSEUDO_FOUR:
+    case LAL_PNORDER_THREE_POINT_FIVE:
       c7T = LAL_PI*(14809.0*eta*eta - 75703.0*eta/756.0 - 15419335.0/127008.0);
-    case threePN:
-      c6T = LAL_GAMMA*6848.0/105.0 - 10052469856691.0/23471078400.0 
-            + LAL_PI*LAL_PI*128.0/3.0 + eta*( 3147553127.0/3048192.0 
-            - LAL_PI*LAL_PI*451.0/12.0 ) - eta*eta*15211.0/1728.0 
+    case LAL_PNORDER_THREE:
+      c6T = LAL_GAMMA*6848.0/105.0 - 10052469856691.0/23471078400.0
+            + LAL_PI*LAL_PI*128.0/3.0 + eta*( 3147553127.0/3048192.0
+            - LAL_PI*LAL_PI*451.0/12.0 ) - eta*eta*15211.0/1728.0
             + eta*eta*eta*25565.0/1296.0 + log(4.0)*6848.0/105.0;
       c6LogT = 6848.0/105.0;
-    case twoPointFivePN:
+    case LAL_PNORDER_TWO_POINT_FIVE:
       c5T = 13.0*LAL_PI*eta/3.0 - 7729.0/252.0;
-    case twoPN:
+    case LAL_PNORDER_TWO:
       c4T = 3058673.0/508032.0 + eta * (5429.0/504.0 + eta * 617.0/72.0);
       c3T = -32.0 * LAL_PI / 5.0;
       c2T = 743.0/252.0 + eta * 11.0/3.0;
       c0T = 5.0 * m * LAL_MTSUN_SI / (256.0 * eta);
       break;
-    default: 
+    default:
       ABORT( status, FINDCHIRPSPH_EORDR, FINDCHIRPSPH_MSGEORDR );
       break;
   }
@@ -384,7 +384,7 @@ LALFindChirpSPTemplate (
   /* This formula works for any PN order, because */
   /* higher order coeffs will be set to zero.     */
 
-  tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T 
+  tmplt->tC = c0T * ( 1 + c2T*x2T + c3T*x3T + c4T*x4T + c5T*x5T
               + ( c6T + c6LogT*log(xT) )*x6T + c7T*x7T ) / x8T;
 
   /* copy the template parameters to the findchirp template structure */

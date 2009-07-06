@@ -23,7 +23,7 @@
  * \file
  * \brief Header for CW cross-correlation search
  *
- * $Id$
+ * $Id: pulsar_crosscorr.h,v 1.7 2009/03/13 00:43:04 cchung Exp $
  *
  */
  
@@ -82,7 +82,7 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (PULSAR_CROSSCORRH, "$Id$");
+NRCSID (PULSAR_CROSSCORRH, "$Id: pulsar_crosscorr.h,v 1.7 2009/03/13 00:43:04 cchung Exp $");
 
 /******************************************************
  *  Error codes and messages.
@@ -128,6 +128,18 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 			       REAL8 dAlpha,
 			       REAL8 dDelta);
 
+void InitDoppParams(LALStatus *status,
+ 		    REAL8Vector *fdots,
+		    PulsarDopplerParams *thisPoint,
+		    LIGOTimeGPS refTime,
+  		    REAL8 f_current,
+ 		    REAL8 q1_current,
+		    REAL8 q2_current,
+	 	    REAL8 n_current,
+		    REAL8 fdot_current,
+		    REAL8 fddot_current);
+
+
 void GetBeamInfo(LALStatus *status, 
 		 CrossCorrBeamFnListElement *beamHead, 
 		 SFTListElement *sftHead, 
@@ -136,6 +148,13 @@ void GetBeamInfo(LALStatus *status,
 		 SkyPosition skypos, 
 		 EphemerisData *edat, 
 		 PulsarDopplerParams *thisPoint);
+
+void CalculateFdots (LALStatus *status,
+		     REAL8Vector *fdots,
+		     REAL8 f0,
+		     REAL8 q1,
+		     REAL8 q2,
+		     REAL8 n);
 
 void CopySFTFromCatalog(LALStatus *status,
 		   	SFTCatalog *catalog,

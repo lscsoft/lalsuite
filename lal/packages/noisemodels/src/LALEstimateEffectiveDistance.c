@@ -29,7 +29,7 @@ void LALEstimateEffectiveDistance (
         InspiralTemplate        param,
         REAL8                   df,
         REAL8Vector             *psd,
-        REAL8                   snr,
+        REAL8                   lal_nm_snr,
         REAL8                   *effDistance
         )
 {
@@ -53,22 +53,22 @@ void LALEstimateEffectiveDistance (
         f = i*df;
         if (f > flso) break;
         if (psd->data[i]) powerNorm += pow(f,msevenby3)/psd->data[i];
-    } 
+    }
 
     /* I am not sure if there should be a factor of 2.0 here inside the sqrt ()
        i.e distanceNorm = sqrt(2.0*powerNorm * df);
        Multiplying by 2.0 makes dist agree with HW injections */
     distanceNorm = 2.*sqrt(2.*powerNorm * df);
 
-    ins_amp = (LAL_MTSUN_SI * LAL_C_SI / (1.0e6 *  LAL_PC_SI)) 
-            * sqrt( 5.0*param.mu / 96.0 ) 
+    ins_amp = (LAL_MTSUN_SI * LAL_C_SI / (1.0e6 *  LAL_PC_SI))
+            * sqrt( 5.0*param.mu / 96.0 )
             * ( pow( param.totalMass/(LAL_PI*LAL_PI) , 0.33333 ) / pow(LAL_MTSUN_SI, 1.0 / 6.0) ) ;
 
     distanceNorm *= (ins_amp * sqrt(dynRange));
 
     /* We need to calculate randIn.SignalAmp = distanceNorm / deff (in
      * Mpc)*/
-    (*effDistance) = (distanceNorm / snr); 
+    (*effDistance) = (distanceNorm / lal_nm_snr);
 
     /* Normal exit */
     DETATCHSTATUSPTR (status);

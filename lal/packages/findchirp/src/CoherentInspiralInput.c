@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: CoherentInspiralInput.c
  *
  * Author: Seader, S. E.  Brown, D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 double modf( double value, double *integerPart );
 
 void
-LALFindChirpCreateCoherentInput( 
+LALFindChirpCreateCoherentInput(
      LALStatus                  *status,
      COMPLEX8TimeSeries         **coherentInputData,
      COMPLEX8TimeSeries         *input,
@@ -95,7 +95,7 @@ LALFindChirpCreateCoherentInput(
   INT4                     cohSegStart = 0;
   INT4                     nonCorruptEnd = 0;
   INT4                     nonCorruptStart = 0;
-  INT4                     overlap         = 0;
+  /*INT4                     overlap         = 0;*/
   INT4                     fullCohSegLength = 0;
   INT4                     eventTimePoint = 0;
 
@@ -159,17 +159,17 @@ LALFindChirpCreateCoherentInput(
       LALCCreateVector(status->statusPtr, &(cohInputData->data), fullCohSegLength);
       CHECKSTATUSPTR( status );
       /* store C-data snippet and its associated info */
-      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) ); 
+      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
       memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), fullCohSegLength * sizeof(COMPLEX8) );
       cohInputData->deltaT = deltaT;
-      /*CHECK: Below is a temporary fix for communicating sigmasq 
-	from inspiral to coherent_inspiral via the f0 member of 
+      /*CHECK: Below is a temporary fix for communicating sigmasq
+	from inspiral to coherent_inspiral via the f0 member of
 	the COMPLEX8TimeSeries structure*/
       cohInputData->f0 = (REAL8) templt->sigmasq;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart * deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;
-      cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
+      cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9);
     }
   else
     {

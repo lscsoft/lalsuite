@@ -207,7 +207,7 @@ int main( void )
 
   LALI8CreateVector( &status, &i8Vector, 10 );
   for ( n=i8Vector->length, i8=i8Vector->data; n > 0 ; --n, ++i8 ) {
-    *i8 = pow((n-5),1+abs(n-5)*abs(n-5)); 
+    *i8 = pow((n-5),1+abs(n-5)*abs(n-5));
 	/* *i8 = pow(10,2*n); */
   }
   LALI8PrintVector(i8Vector);
@@ -219,7 +219,7 @@ int main( void )
     *u2 = pow(abs(n-5),1+abs(n-5));
   }
   LALU2PrintVector(u2Vector);
-  
+
   u4Vector = NULL;
 
   LALU4CreateVector( &status, &u4Vector, 10 );
@@ -232,7 +232,7 @@ int main( void )
 
   LALU8CreateVector( &status, &u8Vector, 10 );
   for ( n=u8Vector->length, u8=u8Vector->data; n > 0 ; --n, ++u8 ) {
-    *u8 = pow(abs(n-5),1+abs(n-5)*abs(n-5)); 
+    *u8 = pow(abs(n-5),1+abs(n-5)*abs(n-5));
 	/* *u8 = pow(10,2*n); */
   }
   LALU8PrintVector(u8Vector);

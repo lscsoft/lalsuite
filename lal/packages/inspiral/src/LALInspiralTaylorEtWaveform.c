@@ -24,7 +24,7 @@ $Id$
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALTaylorEtWaveform.c} and 
+\subsection{Module \texttt{LALTaylorEtWaveform.c} and
 \texttt{LALTaylorEtWaveformTemplates.c}}
 
 \vfill{\footnotesize\input{LALTaylorEtWaveformCV}}
@@ -34,67 +34,68 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/LALConstants.h>
 
 typedef struct tagzetaInitIn {
   REAL8 eta, omega, e0;
 } zetaInitIn;
 
 static void LALzetaInit4PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      zeta, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      zeta,
   void      *params);
 
 static void LALzetaInit5PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      zeta, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      zeta,
   void      *params);
 
 static void LALzetaInit6PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      zeta, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      zeta,
   void      *params);
 
 static void LALzetaInit7PN(
-  LALStatus *status, 
-  REAL8     *x, 
-  REAL8      zeta, 
+  LALStatus *status,
+  REAL8     *x,
+  REAL8      zeta,
   void      *params);
 
 
 void LALTaylorEtDerivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorEtDerivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorEtDerivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 void LALTaylorEtDerivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 );
 
 void LALTaylorEtWaveform (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params
 );
 
-void 
+void
 LALTaylorEtWaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -103,10 +104,10 @@ NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
 static void LALzetaInit4PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      zeta, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      zeta,
+   void      *params)
 {
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
@@ -121,16 +122,16 @@ static void LALzetaInit4PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
+   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
    *x -= in->omega;
 }
 
 static void LALzetaInit5PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      zeta, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      zeta,
+   void      *params)
 {
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
@@ -145,16 +146,16 @@ static void LALzetaInit5PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
+   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
    *x -= in->omega;
 }
 
 static void LALzetaInit6PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      zeta, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      zeta,
+   void      *params)
 {
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
@@ -169,18 +170,18 @@ static void LALzetaInit6PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
-     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 
-     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta 
+   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
+     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
    *x -= in->omega;
 }
 
 static void LALzetaInit7PN(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8      zeta, 
-   void      *params) 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8      zeta,
+   void      *params)
 {
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
@@ -195,21 +196,21 @@ static void LALzetaInit7PN(
    zeta32 = pow(zeta, 1.5);
    pisq = LAL_PI*LAL_PI;
 
-   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
-     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 
-     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta 
+   *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
+     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
    *x -= in->omega;
 }
 
 void LALTaylorEtDerivatives4PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -217,7 +218,6 @@ void LALTaylorEtDerivatives4PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -227,24 +227,24 @@ void LALTaylorEtDerivatives4PN(
    pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
-   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
-     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2); 
+   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2);
    /*
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
    */
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
 }
 
 void LALTaylorEtDerivatives5PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -252,7 +252,6 @@ void LALTaylorEtDerivatives5PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -262,25 +261,25 @@ void LALTaylorEtDerivatives5PN(
    pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
-   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
+   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
    /*
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
    */
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2
-     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52 ); 
+     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52 );
 }
 
 void LALTaylorEtDerivatives6PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -288,7 +287,6 @@ void LALTaylorEtDerivatives6PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -298,30 +296,30 @@ void LALTaylorEtDerivatives6PN(
    pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
-   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
-     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 
-     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta 
+   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
+     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
    /*
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
    */
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2
-     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52 
-     + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.  
+     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52
+     + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.
 	     - 24861497.*eta/72576. - 856.*log(16.*zeta)/105. + 16.*pisq/3.
-	     - 1712.*gamma/105. + 37999588601./279417600.) * zeta3 );
+	     - 1712.*LAL_GAMMA/105. + 37999588601./279417600.) * zeta3 );
 }
 
 void LALTaylorEtDerivatives7PN(
-  REAL8Vector *values, 
-  REAL8Vector *dvalues, 
+  REAL8Vector *values,
+  REAL8Vector *dvalues,
   void        *funcParams
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -329,7 +327,6 @@ void LALTaylorEtDerivatives7PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -339,21 +336,21 @@ void LALTaylorEtDerivatives7PN(
    pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
-   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta 
-     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 
-     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta 
+   dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
+     + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2
+     + (41445./1024. - (309715./3072. - 205./64.*pisq) * eta
      + 1215./1024.*eta2 + 45./1024*eta3) * zeta3);
    /*
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2);
    */
-   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta 
+   dvalues->data[1] = 64./5.* eta * zeta5 * (1. + (13./336. - 2.5*eta)*zeta
      + fourpi*zeta32 + (117857./18144. - 12017./2016.*eta + 2.5*eta2) * zeta2
-     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52 
-     + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.  
+     + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52
+     + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.
 	     - 24861497.*eta/72576. - 856.*log(16.*zeta)/105. + 16.*pisq/3.
-	     - 1712.*gamma/105. + 37999588601./279417600.) * zeta3 
-     + (613373.*LAL_PI*eta2/12096. - 3207739.*LAL_PI*eta/48384.  
+	     - 1712.*LAL_GAMMA/105. + 37999588601./279417600.) * zeta3
+     + (613373.*LAL_PI*eta2/12096. - 3207739.*LAL_PI*eta/48384.
 	     + 129817.*LAL_PI/2304.) * zeta72);
 }
 
@@ -361,30 +358,30 @@ void LALTaylorEtDerivatives7PN(
 /*  <lalVerbatim file="LALTaylorEtWaveformCP"> */
 void LALTaylorEtWaveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
-   ) 
+   )
 { /* </lalVerbatim> */
 
-   InspiralInit paramsInit;   
+   InspiralInit paramsInit;
    INITSTATUS(status, "LALTaylorEtWaveform", LALTAYLORETWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status, 
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status, 
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params,  status, 
+   ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params->nStartPad >= 0, status, 
+   ASSERT(params->nStartPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->nEndPad >= 0, status, 
+   ASSERT(params->nEndPad >= 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->fLower > 0, status, 
+   ASSERT(params->fLower > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->tSampling > 0, status, 
+   ASSERT(params->tSampling > 0, status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass > 0., status, 
+   ASSERT(params->totalMass > 0., status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
@@ -393,10 +390,10 @@ void LALTaylorEtWaveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorEtWaveformEngine(status->statusPtr, signal, params, &paramsInit);
+   LALTaylorEtWaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -404,10 +401,10 @@ void LALTaylorEtWaveform (
 }
 
 /*---------------------------------------------------------*/
-void 
+void
 LALTaylorEtWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal,
+                REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -460,7 +457,7 @@ LALTaylorEtWaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signal->length; 
+   length = signalvec->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -471,27 +468,27 @@ LALTaylorEtWaveformEngine (
    rootIn.xacc = 1.0e-16;
    rootIn.xmax = 1.;
    rootIn.xmin = v*v/2.;
-   
+
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   rootIn.function = LALzetaInit4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   rootIn.function = LALzetaInit5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   rootIn.function = LALzetaInit6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   rootIn.function = LALzetaInit7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
    }
    in3.eta = ak.eta;
@@ -513,23 +510,23 @@ LALTaylorEtWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   in4.function = LALTaylorEtDerivatives4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   in4.function = LALTaylorEtDerivatives6PN;
 	   break;
-	case threePointFivePN:
+case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
    }
    in4.y = &values;
@@ -560,7 +557,7 @@ LALTaylorEtWaveformEngine (
    t = 0.0;
    ndx = 0;
    count = 0;
-      
+
    /* fprintf(stdout, "fMin=%e, fMax=%e, f=%e, dzeta/dt=%e\n",  */
    /* omega/(m*LAL_PI), omegaMax/(m*LAL_PI),                  */
    /* dvalues.data[0]/(m*LAL_PI), dvalues.data[1]);           */
@@ -575,7 +572,7 @@ LALTaylorEtWaveformEngine (
       }
 
       h = 4 * m * eta * zeta * sin(2.*phi)/1.e14;
-      signal->data[ndx] = h;
+      signalvec->data[ndx] = h;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(m*LAL_PI)); */
 
       /* Integrate one step forward */
@@ -601,8 +598,8 @@ LALTaylorEtWaveformEngine (
 
       t = (++count-params->nStartPad) * dt;
       ndx++;
-   }  
-      
+   }
+
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/
