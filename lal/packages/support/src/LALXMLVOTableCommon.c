@@ -38,6 +38,7 @@
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXML.h>
 #include <lal/LALMalloc.h>
+#include <lal/LALString.h>
 
 /* ---------- defines and macros ---------- */
 #define VOTABLE_VERSION     "1.1"
@@ -51,11 +52,15 @@
 /* ---------- internal prototypes ---------- */
 const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
 VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
+const char* XLALVOTElement2String ( VOTABLE_ELEMENT element );
 
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
 const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
+
+CHAR * XLALgetXPathToElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attribute );
+
 
 /* ---------- function definitions ---------- */
 
@@ -157,7 +162,8 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
 
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlParamNode;
-}
+
+} /* XLALCreateVOTParamNode() */
 
 
 /**
@@ -747,79 +753,153 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
 
 
 /**
- * \brief Retrieves a specific attribute of a single VOTable \c RESOURCE->PARAM %node relation
+ * \brief Retrieves a specific attribute of a hiearchically named VOTable element of the form 'res1.res2...resN.leaf'.
  *
- * This function fetches the content of the specified attribute of the specified \c PARAM element,
- * which is a child of the specified \c RESOURCE element, from the given VOTable document.
+ * This function returns the given VOTable attribute-content for the VOTable element specified
+ * by a hiearchical name of the form "res1.res2.res3.leaf", where 'resN' are the names of
+ * parent RESOURCE elements, and 'leaf' is the name of the element to be read, which can be any one
+ * of RESOURCE, PARAM, FIELD, ..
  *
- * \param xmlDocument [in] The XML document to be searched
- * \param resourceType [in] Value of the \c utype attribute of the \c RESOURCE element to be searched
- * \param resourceName [in] Value of the \c name attribute of the \c RESOURCE element to be searched
- * \param paramName [in] Value of the \c name attribute of the \c PARAM element to be searched
- * \param paramAttribute [in] Attribute of the \c PARAM element to be searched for
+ * \return a string holding the contents of the given leaf's attribute, if found, NULL on error.
  *
- * \return A pointer to a \c xmlChar that holds the content (string) of the specified \c PARAM element
- * attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
- * \b Important: the caller is responsible to free the allocated memory (when the
- * string isn't needed anymore) using \c xmlFree.
+ * \b Note: the caller is responsible to free the allocated memory using \c XLALFree()
  *
- * \sa XLALGetSingleNodeContentByXPath
- *
- * \author Oliver Bock\n
+ * \author Reinhard Prix, Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlChar *
-XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                       const char *resourceType,
-                                       const char *resourceName,
-                                       const char *paramName,
-                                       VOTABLE_ATTRIBUTE paramAttribute)
+CHAR *
+XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] The XML document to be searched */
+                                       const char *resourcePath,	/**< [in] [optional] hiearchical path 'res1.res2....resN' of parent RESOURCES */
+                                       const char *elementName,		/**< [in] name of leaf element to parse */
+                                       VOTABLE_ELEMENT elementType,	/**< [in] VOtable element type of 'element' */
+                                       VOTABLE_ATTRIBUTE attrib		/**< [in] Attribute to be read */
+                                       )
 {
-    /* set up local variables */
-    static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
-    const CHAR *paramAttributeString = NULL;
-    CHAR xpath[XPATHSTR_MAXLEN] = {0};
-    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
-    const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
+  static const CHAR *fn = "XLALReadVOTAttributeFromNamedElement()";
 
-    /* sanity check */
-    if(!xmlDocument) {
-        XLALPrintError("Invalid input parameters: xmlDocument\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!resourceType) {
-        XLALPrintError("Invalid input parameters: resourceType\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!resourceName) {
-        XLALPrintError("Invalid input parameters: resourceName\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!paramName) {
-        XLALPrintError("Invalid input parameters: paramName\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
+  CHAR *xpath;
+  static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
+  const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
+  xmlChar *xmlContent;
+  char *ret;
+
+  /* sanity checks */
+  if(!xmlDocument || !elementName ) {
+    XLALPrintError("%s: Invalid NULL input\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL);
+  }
+
+  /* prepare XPath search */
+  if ( (xpath = XLALgetXPathToElementAttibute ( resourcePath, elementName, elementType, attrib )) == NULL ) {
+    XLALPrintError ("%s: failed to assemble xpath to named leaf-attribute.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* retrieve specified attribute (content) */
+  if ( (xmlContent = XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector)) == NULL ) {
+    XLALPrintError ("%s: XLALGetSingleNodeContentByXPath() failed for xpath='%s'\n", fn, xpath );
+    XLALFree ( xpath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  XLALFree ( xpath );
+
+  /* copy attribute-content into a standard CHAR string, so caller can XLALFree() it */
+  UINT4 len = strlen ( (const char*)xmlContent ) + 1;
+  if ( (ret = XLALMalloc ( len * sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALMalloc (%d)\n", fn, len * sizeof(*ret) );
+    xmlFree ( xmlContent );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  strcpy ( ret, (const char*)xmlContent );
+  xmlFree ( xmlContent );
+
+  return ret;
+
+} /* XLALReadVOTAttributeFromNamedElement() */
 
 
-    if ( (paramAttributeString = XLALVOTAttribute2String ( paramAttribute )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTAttribute2String() failed.\n", logReference );
-      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
-    }
+/** Assemble an xpath-expression to a named elements's attribute, allowing for
+ * a hiearachical "path" of parent RESOURCES of the form "resource1.resource2....resourceN",
+ */
+CHAR *
+XLALgetXPathToElementAttibute ( const CHAR *resourcePath,		/**< [in] optional path of parent-RESOURCES "res1.res2...resN" */
+                                const CHAR *elementName,		/**< [in] name of 'leaf' element to parse */
+                                VOTABLE_ELEMENT elementType,	/**< [in] type of element */
+                                VOTABLE_ATTRIBUTE attribute	/**< [in] attribute to read out from element */
+                                )
+{
+  static const char *fn = "XLALgetXPathToElementAttibute()";
 
-    /* prepare XPath search */
-    if(snprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",
-            resourceType, resourceName, paramName, paramAttributeString) < 0)
+  UINT4 i;
+  char *xpath;
+  char buf[XPATHSTR_MAXLEN];
+
+  /* check input consistency */
+  if ( !elementName ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  xpath = NULL;
+  if ( ( xpath = XLALStringAppend( xpath, "/" )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* disassemble parent hierarchy of RESOURCE element names */
+  if ( resourcePath )
     {
-        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttributeString);
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
+      TokenList *resParents = NULL;
+      if ( XLALCreateTokenList(&resParents, resourcePath, "." ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: Failed to parse hierachical parent resource path '%s'.\n", fn, resourcePath );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      /* assemble path of parent RESOURCE elements */
+      for ( i=0; i < resParents->nTokens; i ++ )
+        {
+          if ( snprintf ( buf, XPATHSTR_MAXLEN, "/%s:RESOURCE[@name='%s']", VOTABLE_NS_PREFIX, resParents->tokens[i] ) < 0 ) {
+            XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
+            XLALFree ( xpath );
+            XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+          }
+          if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+        } /* for i < nTokens */
 
-    /* retrieve specified attribute (content) */
-    return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
-}
+    } /* if resource path */
+
+  /* attach last leaf-element of type 'elementType' */
+  const char *elementStr;
+  if ( (elementStr = XLALVOTElement2String ( elementType )) == NULL ) {
+    XLALFree ( xpath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  if ( snprintf ( buf, XPATHSTR_MAXLEN, "/%s:%s[@name='%s']", VOTABLE_NS_PREFIX, elementStr, elementName ) < 0 ) {
+    XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
+    XLALFree ( xpath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* finally attach search path matching the attribute */
+  const char *attribName;
+  if ( (attribName = XLALVOTAttribute2String ( attribute )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  if ( snprintf ( buf, XPATHSTR_MAXLEN, "/@%s", attribName ) < 0 ) {
+    XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
+    XLALFree ( xpath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  return xpath;
+
+} /* XLALgetXPathToElementAttibute() */
 
 
 /** Convert the given VOTable xmlTree into a complete VOTable XML document string
@@ -836,7 +916,7 @@ XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
 CHAR *
 XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 {
-  const char *fn = "XLALVOTTransformTree2String()";
+  const char *fn = "XLALCreateVOTStringFromTree()";
   xmlChar *xmlString;
   xmlDocPtr xmlDoc;
   CHAR *ret;
@@ -874,11 +954,13 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 
   return ret;
 
-} /* XLALVOTTree2String() */
+} /* XLALCreateVOTStringFromTree() */
 
 
 
-/** Simply returns the string representation of the given VOTABLE_DATATYPE.
+/** Returns the string representation of the given VOTABLE_DATATYPE.
+ *
+ * Note: the returned string is const and MUST not be freed!
  */
 const char*
 XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
@@ -934,6 +1016,46 @@ XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 
 } /* XLALVOTDatatype2String() */
 
+
+/** Returns the string representation of the given VOTABLE_DATATYPE.
+ *
+ * Note: the returned string is const and MUST not be freed!
+ */
+const char*
+XLALVOTElement2String ( VOTABLE_ELEMENT element )
+{
+  static const char *fn = "XLALVOTElement2String()";
+  const char *elString = NULL;
+
+  switch(element)
+    {
+    case VOT_RESOURCE:
+      elString = "RESOURCE";
+      break;
+    case VOT_TABLE:
+      elString = "TABLE";
+      break;
+    case VOT_STREAM:
+      elString = "STREAM";
+      break;
+    case VOT_PARAM:
+      elString = "PARAM";
+      break;
+    case VOT_FIELD:
+      elString = "FIELD";
+      break;
+
+      /* not complete yet: add more here as needed ... */
+
+    default:
+      XLALPrintError ("%s: invalid element passed (%d), has to be within [1, %d].\n", fn, element, VOT_ELEMENT_LAST - 1 );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+      break;
+    } /* switch element */
+
+  return elString;
+
+} /* XLALVOTElement2String() */
 
 /** Simply returns the enum VOTABLE_DATATYPE corresponding to the string representation of 'datatype'
  * returns VOT_DATATYPE_LAST if invalid.
@@ -1322,3 +1444,84 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
   return textbuf;
 
 } /* XLALVOTprintfFromArray() */
+
+
+#if 0
+
+/**
+ * \brief Retrieves a specific attribute of a single VOTable \c RESOURCE->PARAM %node relation
+ *
+ * This function fetches the content of the specified attribute of the specified \c PARAM element,
+ * which is a child of the specified \c RESOURCE element, from the given VOTable document.
+ *
+ * \param xmlDocument [in] The XML document to be searched
+ * \param resourceType [in] Value of the \c utype attribute of the \c RESOURCE element to be searched
+ * \param resourceName [in] Value of the \c name attribute of the \c RESOURCE element to be searched
+ * \param paramName [in] Value of the \c name attribute of the \c PARAM element to be searched
+ * \param paramAttribute [in] Attribute of the \c PARAM element to be searched for
+ *
+ * \return A pointer to a \c xmlChar that holds the content (string) of the specified \c PARAM element
+ * attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using \c xmlFree.
+ *
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar *
+XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                       const char *resourceType,
+                                       const char *resourceName,
+                                       const char *paramName,
+                                       VOTABLE_ATTRIBUTE paramAttribute)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
+    const CHAR *paramAttributeString = NULL;
+    CHAR xpath[XPATHSTR_MAXLEN] = {0};
+    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
+    const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
+
+    /* sanity check */
+    if(!xmlDocument) {
+        XLALPrintError("Invalid input parameters: xmlDocument\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!resourceType) {
+        XLALPrintError("Invalid input parameters: resourceType\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!resourceName) {
+        XLALPrintError("Invalid input parameters: resourceName\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!paramName) {
+        XLALPrintError("Invalid input parameters: paramName\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+
+    if ( (paramAttributeString = XLALVOTAttribute2String ( paramAttribute )) == NULL ) {
+      XLALPrintError ("%s: XLALVOTAttribute2String() failed.\n", logReference );
+      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
+    }
+
+    /* prepare XPath search */
+    if(snprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",
+            resourceType, resourceName, paramName, paramAttributeString) < 0)
+    {
+        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttributeString);
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve specified attribute (content) */
+    return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
+
+} /* XLALGetSingleVOTResourceParamAttribute() */
+
+#endif

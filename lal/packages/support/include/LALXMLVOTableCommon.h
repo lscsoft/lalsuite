@@ -90,6 +90,18 @@ typedef enum {
 } VOTABLE_ATTRIBUTE;
 
 
+/** List of supported VOTable "leaf" elements
+ *
+ */
+typedef enum {
+  VOT_RESOURCE = 1,
+  VOT_TABLE,
+  VOT_STREAM,
+  VOT_PARAM,
+  VOT_FIELD,
+  VOT_ELEMENT_LAST
+} VOTABLE_ELEMENT;
+
 
 /**
  * \brief List of all supported VOTable Table Serialization types.
@@ -139,13 +151,25 @@ xmlNodePtr XLALCreateVOTResourceNode(const char *type,
 
 xmlDoc *XLALCreateVOTDocFromTree(xmlNodePtr xmlTree, BOOLEAN reconcileNamespace );
 
+CHAR *
+XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,
+                                       const char *resourcePath,
+                                       const char *elementName,
+                                       VOTABLE_ELEMENT elementType,
+                                       VOTABLE_ATTRIBUTE attrib
+                                       );
+
+CHAR *XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree );
+
+
+#if 0
 xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
                                                 const char *resourceType,
                                                 const char *resourceName,
                                                 const char *paramName,
                                                 VOTABLE_ATTRIBUTE paramAttribute);
+#endif
 
-CHAR *XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree );
 
 /* C++ protection */
 #ifdef  __cplusplus

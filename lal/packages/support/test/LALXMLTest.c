@@ -443,7 +443,7 @@ test_gsl_vector(void)
 
 
   printf ("--> Read out gsl_vector ... ");
-  if( (out_vect = XLALVOTDoc2gsl_vectorByName(xmlDocument, LALXMLC_TYPETEST3, LALXMLC_NAMETEST3, "vect", "m")) == NULL ) {
+  if( (out_vect = XLALVOTDoc2gsl_vectorByName(xmlDocument, LALXMLC_NAMETEST3, "vect", "m")) == NULL ) {
     return LALXMLC_EFUN;
   }
   printf( "ok : %s = ", LALXMLC_NAMETEST3 );
@@ -559,7 +559,7 @@ test_gsl_matrix(void)
 
   /* ---------- deserialize VOTable document into structure */
   printf ("--> Read out LIGOTimeGPSStruct ... ");
-  if( (out_matrix = XLALVOTDoc2gsl_matrixByName ( xmlDocument, LALXMLC_TYPETEST4, LALXMLC_NAMETEST4, "matrix", "ms")) == NULL ) {
+  if( (out_matrix = XLALVOTDoc2gsl_matrixByName ( xmlDocument, LALXMLC_NAMETEST4, "matrix", "ms")) == NULL ) {
     XLALPrintError ("%s: XLALVOTDoc2gsl_matrixByName() failed. errno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }

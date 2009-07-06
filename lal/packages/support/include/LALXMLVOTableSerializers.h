@@ -47,8 +47,7 @@ INT4 XLALVOTDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char 
 
 xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *name);
 INT4 XLALVOTDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
-                                  const char *resourceType,
-                                  const char *resourceName,
+                                  const char *resourcePath,
                                   const char *paramName,
                                   PulsarSpins spins);
 
@@ -56,10 +55,17 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
 INT4 XLALVOTDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
 xmlNodePtr XLALgsl_vector2VOTNode(const gsl_vector *vect, const char *name, const CHAR *unitName );
-gsl_vector *XLALVOTDoc2gsl_vectorByName(const xmlDocPtr xmlDocument, const char *resourceType, const char *resourceName, const char *paramName, const CHAR *unitName);
+
+gsl_vector *XLALVOTDoc2gsl_vectorByName(const xmlDocPtr xmlDocument,
+                                        const char *resourcePath,
+                                        const char *paramName,
+                                        const CHAR *unitName);
 
 xmlNodePtr XLALgsl_matrix2VOTNode(const gsl_matrix *vect, const char *name, const CHAR *unitName );
-gsl_matrix *XLALVOTDoc2gsl_matrixByName(const xmlDocPtr xmlDocument, const char *resourceType, const char *resourceName, const char *paramName, const CHAR *unitName);
+gsl_matrix *XLALVOTDoc2gsl_matrixByName(const xmlDocPtr xmlDocument,
+                                        const char *resourcePath,
+                                        const char *paramName,
+                                        const CHAR *unitName);
 
 
 
