@@ -662,7 +662,7 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
 
-  if ( (xmlTable = XLALCreateVOTTableNode ( "testTable", fieldNodeList, xmlTabledataNode )) == NULL ) {
+  if ( (xmlTable = XLALCreateVOTTableNode ( NULL, fieldNodeList, xmlTabledataNode )) == NULL ) {
     XLALPrintError("%s: XLALCreateVOTTableNode() failed. errno = %d.\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }

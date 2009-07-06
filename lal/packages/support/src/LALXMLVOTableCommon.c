@@ -55,7 +55,7 @@ VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
 const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
-const char *XLALwriteVOTatomFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
+const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
 
 /* ---------- function definitions ---------- */
 
@@ -580,8 +580,8 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
             }
 
             const char* tmptxt;
-            if ( (tmptxt = XLALwriteVOTatomFromArray ( dataTypes[col], dataFmts[col], dataColumns[col], row )) == NULL ){
-              XLALPrintError ("%s: XLALwriteVOTatomFromArray() failed for row = %d, col = %d. errno = %d.\n", fn, row, col, xlalErrno );
+            if ( (tmptxt = XLALVOTprintfFromArray ( dataTypes[col], dataFmts[col], dataColumns[col], row )) == NULL ){
+              XLALPrintError ("%s: XLALVOTprintfFromArray() failed for row = %d, col = %d. errno = %d.\n", fn, row, col, xlalErrno );
               err = XLAL_EFUNC;
               goto failed;
             }
@@ -1212,20 +1212,20 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
 } /* XLALgetDefaultFmt4Datatype() */
 
 
-/** Write a VOTable atomic type of given datatype, using element 'index' from array 'dataPtr',
+/** Write a VOTable value of given primitive datatype, using element 'index' from array 'dataPtr',
  *  using the (optional) printf format string.
  *
  * NOTE: the returned string is a static pointer and MUST not be freed.
  * The livetime of the resulting string is only until the next call of this function.
  */
 const char *
-XLALwriteVOTatomFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
-                            const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
-                            void *dataPtr,		/**< [in] pointer to array of data values */
-                            UINT4 index			/**< [in] index of element to write: dataPtr[index] */
-                            )
+XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
+                         const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
+                         void *dataPtr,			/**< [in] pointer to array of data values */
+                         UINT4 index			/**< [in] index of element to write: dataPtr[index] */
+                         )
 {
-  static const char *fn = "XLALwriteVOTatomFromArray()";
+  static const char *fn = "XLALVOTprintfFromArray()";
 
 #define TEXTBUFLEN 1024
   static char textbuf[TEXTBUFLEN];
@@ -1321,4 +1321,4 @@ XLALwriteVOTatomFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte
 
   return textbuf;
 
-} /* XLALwriteVOTatomFromArray() */
+} /* XLALVOTprintfFromArray() */
