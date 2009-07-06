@@ -54,6 +54,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 /* don't use finite() from win_lib.cpp here for performance reasons */
 #ifdef _MSC_VER
+#include <float.h>
 #define finite _finite
 #endif
 
