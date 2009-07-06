@@ -26,9 +26,9 @@
 #define EAH_HOTLOOP_DIVS_MULTIPLE    EAH_GENERIC
 #define EAH_HOTLOOP_DIVS_RECIPROCAL  1
 
-
 #define EAH_HOUGH_PREFETCH_NONE      EAH_GENERIC
 #define EAH_HOUGH_PREFETCH_DIRECT    1 /* prefetching using compiler directives */
+#define EAH_HOUGH_PREFETCH_AMD64     6
 #define EAH_HOUGH_PREFETCH_X87       7 /* prefetch commands inlined in x87 assembler */
 
 /* this is the default batch size for prefetching, which should be ok for SSE and PPC.
