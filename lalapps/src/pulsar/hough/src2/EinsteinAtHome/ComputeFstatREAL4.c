@@ -542,6 +542,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   REAL4 df;
   REAL4 tau;
   REAL4 Freq;
+  REAL4 T0offs;
+  REAL4 phi_alpha_offs;
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -574,6 +576,10 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   df = fkdot4->fkdot[0];
   tau = 1.0f / df;
   Freq = f0 + df;
+#if 1
+  T0offs = tSSB->DeltaT_int->data[0];
+  phi_alpha_offs = df * fmodf ( T0offs, tau );
+#endif
 
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -626,15 +632,24 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
         /* 1st oder: s = 0 */
         TdotM1 = *TdotM1_al;
-        T0 = *DeltaT_int_al;
         dT = *DeltaT_rem_al;
+#if 1
+        T0 = *DeltaT_int_al - T0offs;
+        deltaT = *DeltaT_int_al + dT;
+#else
+        T0 = *DeltaT_int_al;
         deltaT = T0 + dT;
+#endif
 
         /* phi_alpha = f * Tas; */
 	T0rem = fmodf ( T0, tau );
+#if 1
+        phi_alpha_rem = phi_alpha_offs + f0 * dT + T0 * df + df * dT;
+#else
         phi_alpha_rem = f0 * dT;
         phi_alpha_rem += T0rem * df;
         phi_alpha_rem += df * dT;
+#endif
         Dphi_alpha_int = f0;
         Dphi_alpha_rem = df + Freq * TdotM1;
 
