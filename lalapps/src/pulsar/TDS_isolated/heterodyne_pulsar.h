@@ -116,7 +116,8 @@ extern "C" {
 " --binary-output     output data to a binary file\n"\
 "\n"
 
-#define MAXLENGTH 10000000 /* max number of lines in heterodyned data file */
+#define MAXLENGTH 5000000 /* max number of lines in heterodyned data file */
+/* for the S5 analysis MAXLENGTH needs to be defined to about 10000000 */
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
 #define MAXNUMFRAMES 940000 /* maximum number of frame files in data file */
