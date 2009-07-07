@@ -10,6 +10,188 @@
 
 #include <fftw3.h>
 
+#define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
+
+static void minimal()
+{    
+    
+    XLALSkymap2PlanType *plan;    
+    XLALSkymap2SphericalPolarType *direction;
+    XLALSkymap2DirectionPropertiesType *properties;
+    double wSw[3];
+    XLALSkymap2KernelType *kernel;
+    double *xSw[3];
+    
+    {
+        plan = malloc(sizeof(*plan));
+        XLALSkymap2PlanConstruct(8192, plan);
+
+        TEST(plan->sampleFrequency == 8192);
+    }
+    
+    {
+        direction = malloc(sizeof(*direction));
+        (*direction)[0] = LAL_PI_2;
+        (*direction)[1] = 0.;
+    }
+    
+    {
+        properties = malloc(sizeof(*properties));
+        XLALSkymap2DirectionPropertiesConstruct(plan, direction, properties);
+    }
+    
+    {
+        int i;
+        for (i = 0; i != 3; ++i)
+            wSw[i] = 1.;
+    }
+    
+    {
+        kernel = malloc(sizeof(*kernel));
+        XLALSkymap2KernelConstruct(properties, wSw, kernel);
+    }
+    
+    {
+        int i;
+        for (i = 0; i != 3; ++i)
+        {
+            int j;
+            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
+            for (j = 0; j != plan->sampleFrequency; ++j)
+            {
+                xSw[i][j] = 0.;
+            }
+        }
+    }
+    
+    {
+        double logPosterior;
+        XLALSkymap2Apply(properties, kernel, xSw, plan->sampleFrequency / 2, &logPosterior);
+        
+        printf("%g\n", exp(logPosterior));
+    }        
+    
+    {
+        int i;
+        for(i = 0; i != 3; ++i)
+            free(xSw[i]);
+    }
+    
+    free(kernel);
+    free(properties);
+    free(direction);    
+    free(plan);
+    
+}
+
+static void directional()
+{    
+    XLALSkymap2PlanType *plan;    
+    XLALSkymap2SphericalPolarType *directions;
+    XLALSkymap2DirectionPropertiesType *properties;
+    double wSw[3];
+    XLALSkymap2KernelType *kernels;
+    double *xSw[3];
+    int n;
+    double* logPosteriors;
+    
+    {
+        plan = malloc(sizeof(*plan));
+        XLALSkymap2PlanConstruct(8192, plan);
+
+        TEST(plan->sampleFrequency == 8192);
+    }
+    
+    {
+        int i;
+        directions = malloc(sizeof(*directions) * 180 * 360);
+        for (i = 0; i != 180; ++i)
+        {
+            int j;
+            for (j = 0; j != 360; ++j)
+            {
+                directions[i * 360 + j][0] = (i + 0.5) / 180. * LAL_PI;
+                directions[i * 360 + j][1] = (j + 0.5) / 180. * LAL_PI;
+            }
+        }
+    }
+    
+    {
+        int i;
+        properties = malloc(sizeof(*properties) * 180 * 360);
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            XLALSkymap2DirectionPropertiesConstruct(
+                plan, 
+                directions + i, 
+                properties + i
+                );
+        }
+    }
+    
+    {
+        int i;
+        for (i = 0; i != 3; ++i)
+            wSw[i] = 1.;
+    }
+    
+    {
+        int i;
+        kernels = malloc(sizeof(*kernels) * 180 * 360);
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
+        }
+    }
+    
+    {
+        int i;
+        for (i = 0; i != 3; ++i)
+        {
+            int j;
+            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
+            for (j = 0; j != plan->sampleFrequency; ++j)
+            {
+                xSw[i][j] = 0.;
+            }
+        }
+    }
+    
+    {
+        int i;
+        logPosteriors = malloc(sizeof(*logPosteriors) * 180 * 360);
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            XLALSkymap2Apply(properties + i, kernels + i, xSw, plan->sampleFrequency / 2, logPosteriors + i);        
+            printf("%g %g %g\n", directions[i][0], directions[i][1], exp(logPosteriors[i]));
+        }
+    }        
+    
+    free(logPosteriors);
+    
+    {
+        int i;
+        for(i = 0; i != 3; ++i)
+            free(xSw[i]);
+    }
+    
+    free(kernels);
+    free(properties);
+    free(directions);    
+    free(plan);
+    
+}
+
+int main(int argc, char** argv)
+{
+    // minimal();
+    directional();
+    
+    return 0;
+}
+
+#if 0
+
 int main(int argc, char** argv)
 {
 
@@ -86,6 +268,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
+#endif
 
 #if 0
 #include <stdlib.h>
