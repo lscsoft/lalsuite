@@ -35,7 +35,7 @@
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
-#include "win_lib.h"
+#include "../win_lib.h"
 #endif
 
 /* probably already included by previous headers, but make sure they are included */
