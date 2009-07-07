@@ -57,7 +57,7 @@ class sqlite_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid-$(process)).err')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_job(pipeline.CondorDAGJob):
   """
