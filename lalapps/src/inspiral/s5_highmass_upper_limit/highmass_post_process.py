@@ -478,7 +478,7 @@ for cat in ['CAT_3']:
 
 #IFAR plots
 for cat in cats:
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, "FULL_DATA"+cat+"_"+timestr+".sqlite", n, [lallappsNewcorseNodeCombined[cat]]);n+=1
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lallappsNewcorseNodeCombined[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()
