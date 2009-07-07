@@ -319,9 +319,9 @@ double XLALSkymapLogTotalExp(double* begin, double* end)
 
 /* coordinate transformations */
 
-void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi)
+void XLALSkymapCartesianFromSpherical(double a[3], double b[2])
 {
-    set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+    set3(a, sin(b[0]) * cos(b[1]), sin(b[0]) * sin(b[1]), cos(b[0]));
 }
 
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3])
@@ -505,10 +505,11 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
                 double direction[3];
                 int k;
                 /* compute theta and phi */
-                double theta = acos(1. - (i + 0.5) * (2. / plan->m));
-                double phi   = (j + 0.5) * (2. * pi / plan->n);
+                double thetaphi[2];
+                thetaphi[0] = acos(1. - (i + 0.5) * (2. / plan->m));
+                thetaphi[1]   = (j + 0.5) * (2. * pi / plan->n);
                 /* compute direction */
-                XLALSkymapCartesianFromSpherical(direction, theta, phi);
+                XLALSkymapCartesianFromSpherical(direction, thetaphi);
                 /* determine the corresponding pixel */
                 k = XLALSkymapIndexFromDirection(plan, direction);
                 /* increase the total area */
@@ -1223,10 +1224,11 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
             double direction[3];
             int k;
             /* compute theta and phi */
-            double theta = acos(1. - (i + 0.5) * (2. / plan->m));
-            double phi   = (j + 0.5) * (2. * pi / plan->n);
+            double thetaphi[2];
+            thetaphi[0] = acos(1. - (i + 0.5) * (2. / plan->m));
+            thetaphi[1] = (j + 0.5) * (2. * pi / plan->n);
             /* compute direction */
-            XLALSkymapCartesianFromSpherical(direction, theta, phi);
+            XLALSkymapCartesianFromSpherical(direction, thetaphi);
             /* determine the corresponding pixel */
             k = XLALSkymapIndexFromDirection(plan, direction);
 
@@ -1255,3 +1257,176 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
     return 0;
 }
 
+/////////////////////////////////////////////////////////////////////
+
+// VERSION 2
+
+static void diag3(double a[3][3], double b[3])
+{
+    int i;
+    int j;
+    for (i = 0; i != 3; ++i)
+        for (j = 0; j != 3; ++j)
+            a[i][j] = (i == j) ? b[i] : 0.;
+}
+
+static void eye2(double a[2][2])
+{
+    int i;
+    int j;
+    for (i = 0; i != 2; ++i)
+        for (j = 0; j != 2; ++j)
+            a[i][j] = (i == j) ? 1. : 0.;
+}
+
+static void add22(double a[2][2], double b[2][2], double c[2][2])
+{
+    int i;
+    int j;
+    for (i = 0; i != 2; ++i)
+        for (j = 0; j != 2; ++j)
+            a[i][j] = b[i][j] + c[i][j];
+}
+
+static void sub22(double a[2][2], double b[2][2], double c[2][2])
+{
+    int i;
+    int j;
+    for (i = 0; i != 2; ++i)
+        for (j = 0; j != 2; ++j)
+            a[i][j] = b[i][j] - c[i][j];
+}
+static void mul233(double a[2][3], double b[2][3], double c[3][3])
+{
+    int i, j, k;
+    for (i = 0; i != 2; ++i)
+        for (k = 0; k != 3; ++k)
+        {
+            a[i][k] = 0;
+            for (j = 0; j != 3; ++j)
+                a[i][k] += b[i][j] * c[j][k];
+        }
+}
+
+static void mul232(double a[2][2], double b[2][3], double c[3][2])
+{
+    int i, j, k;
+    for (i = 0; i != 2; ++i)
+        for (k = 0; k != 2; ++k)
+        {
+            a[i][k] = 0;
+            for (j = 0; j != 3; ++j)
+                a[i][k] += b[i][j] * c[j][k];
+        }
+}
+
+void XLALSkymap2PlanConstruct(int sampleFrequency, XLALSkymap2PlanType* plan)
+{
+    static const char func[] = "XLALSkymap2ConstructPlan";
+
+    if (sampleFrequency <= 0)
+    {
+        XLALPrintError("%s(): invalid sample frequency %d\n", func, sampleFrequency);
+        XLAL_ERROR_VOID(func, XLAL_EINVAL);
+    }
+
+    plan->sampleFrequency = sampleFrequency;
+    construct_hlv(plan->site);
+}
+
+void XLALSkymap2DirectionPropertiesConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2SphericalPolarType* directions,
+    XLALSkymap2DirectionPropertiesType* properties
+    )
+{
+    double x[3];
+    int j;
+    XLALSkymapCartesianFromSpherical(x, *directions);
+    for (j = 0; j != 3; ++j)
+    {
+        properties->delay[j] = floor(site_time(plan->site + j, x) * plan->sampleFrequency + 0.5);
+        site_response(properties->f[j], plan->site + j, x);
+    }
+}
+
+void XLALSkymap2KernelConstruct(
+    XLALSkymap2DirectionPropertiesType* properties,
+    double wSw[3],
+    XLALSkymap2KernelType* kernel
+    )
+{
+       
+    //
+    // F(F^T diag(w.S_j^{-1}.w) F + I) F^T
+    //
+        
+    double fT[2][3];
+    double diagwSw[3][3];
+    double fTdiagwSw[2][3];
+    double fTdiagwSwf[2][2];
+    double eye[2][2];
+    double fTdiagwSwfeye[2][2];
+    double invfTdiagwSwfeye[2][2];
+    double finvfTdiagwSwfeye[3][2];        
+    //double finvfTdiagwSwfeyefT[3][3];
+    
+    double fTfinvfTdiagwSwfeye[2][2];
+    double fTfinvfTdiagwSwfeyeeye[2][2];
+    
+    // Compute the kernel
+    
+    // F^T
+    transpose32(fT, properties->f);
+    // diag(w.S_j^{-1}.w)
+    diag3(diagwSw, wSw);
+    // F^T . diag(wSw)
+    mul233(fTdiagwSw, fT, diagwSw);
+    // F^T diag(wSw) . F
+    mul232(fTdiagwSwf, fTdiagwSw, properties->f);
+    // I
+    eye2(eye);
+    // F^T diag(wSw) F + I
+    add22(fTdiagwSwfeye, fTdiagwSwf, eye);
+    // (F^T diag(wSw) F + I)^{-1}
+    inv22(invfTdiagwSwfeye, fTdiagwSwfeye);
+    // F . (F^T diag(wSw) F + I)^{-1}
+    mul322(finvfTdiagwSwfeye, properties->f, invfTdiagwSwfeye);
+    // F (F^T diag(wSw) F + I)^{-1} . F^T
+    mul323(kernel->k, finvfTdiagwSwfeye, fT);
+        
+    // Compute the normalization via Sylvester's determinant theorem
+        
+    // F^T . F (F^T diag(wSw) F + I)^{-1}
+    mul232(fTfinvfTdiagwSwfeye, fT, finvfTdiagwSwfeye);
+    // F^T F (F^T diag(wSw) F + I)^{-1} - I
+    sub22(fTfinvfTdiagwSwfeyeeye, fTfinvfTdiagwSwfeye, eye);
+    // log(sqrt(|F^T F (F^T diag(wSw) F + I)^{-1} - I|))
+    kernel->logNormalization = log(det22(fTfinvfTdiagwSwfeyeeye)) * 0.5;
+}
+
+static double ip33(double a[3], double b[3][3], double c[3])
+{
+    double d = 0.;
+    int i;
+    int j;
+    for (i = 0; i != 3; ++i)
+        for (j = 0; j != 3; ++j)
+            d += a[i] * b[i][j] * c[j];
+    return d;
+}
+
+void XLALSkymap2Apply(
+    XLALSkymap2DirectionPropertiesType* properties,
+    XLALSkymap2KernelType* kernel,
+    double* xSw[3],
+    int tau,
+    double* posterior
+    )
+{
+    double x[3];
+    int j;
+    for (j = 0; j != 3; ++j)
+        x[j] = xSw[j][tau + properties->delay[j]];
+    *posterior = 0.5 * ip33(x, kernel->k, x) + kernel->logNormalization;
+}
