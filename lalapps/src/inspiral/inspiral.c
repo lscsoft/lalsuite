@@ -3025,7 +3025,7 @@ int main( int argc, char *argv[] )
   }
 
   /* After clustering, count the number of triggers left. */
-  if(!banksim)
+  if( ! bankSim )
   {
     numEvents = 1;
     eventList = savedEvents.snglInspiralTable;
