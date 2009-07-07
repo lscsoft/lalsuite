@@ -413,7 +413,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
-#ifdef GPUREADY_DEFAULT
+#ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
 #endif
   BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
