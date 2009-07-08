@@ -673,14 +673,6 @@ LALLeapSecs (LALStatus                    *status,
 /* <lalLaTeX>
 \newpage\input{GPStoFloatC}
 </lalLaTeX> */
-void LALGPStoFloat (LALStatus *status,
-                    REAL8     *output,
-                    const LIGOTimeGPS *input);
-
-void LALFloatToGPS(LALStatus *status,
-                   LIGOTimeGPS *output,
-                   const REAL8 *input);
-
 void LALFloatToInterval(LALStatus *status,
                         LALTimeInterval *pInterval,
                         const REAL8 *pDeltaT);
@@ -724,18 +716,6 @@ LALCompareGPS (LALStatus *status,
                                                          1 => GPS1 > GPS2 */
                const LIGOTimeGPS *pGPS1, /* input: GPS1 */
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
-
-void
-LALAddFloatToGPS (LALStatus             *status,
-		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
-		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
-		  REAL8 		deltaT); 	/* input: interval to increment by in seconds*/
-
-void
-LALDeltaFloatGPS (LALStatus    *status,
-		  REAL8 	*deltaT,	/* tGPS1 - tGPS2 */
-		  const LIGOTimeGPS *tGPS1, 	/* input: tGPS1 */
-		  const LIGOTimeGPS *tGPS2);
 
 /* This function returns the current GPS time according to the system clock */
 /* <lalLaTeX>

@@ -455,7 +455,8 @@ int GenRandomParams(RandomParameters *randparams)
     RandDeltaT=vector->data[k]*deltaTFLT;
    
     /* add random increment */
-    LALAddFloatToGPS(&status,&randparams->tperi->value,&randparams->tperi->min,RandDeltaT);
+    randparams->tperi->value = randparams->tperi->min;
+    XLALGPSAdd(&randparams->tperi->value, RandDeltaT);
     k++;
   }
   if (randparams->ecc!=NULL) {

@@ -331,12 +331,14 @@ int main( int argc, char *argv[] )
     memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
     /* store the start and end time of the raw channel in the search summary */
+    /* FIXME:  loss of precision;  consider
+    searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+    */
     searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-    LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
-        &status );
+    tsLength = XLALGPSGetREAL8( &(chan.epoch) );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
-    LAL_CALL( LALFloatToGPS( &status, 
-          &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
 
     if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
         "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 

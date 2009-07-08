@@ -511,7 +511,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     *nlist = 0 ;
     for (i=0; i<cellEvolution.nTemplate; i++)
     {
-      if (cells[i].position == In & cells[i].t0>0)
+      if ((cells[i].position == In) && (cells[i].t0 > 0))
       {
         tempPars->t0  = cells[i].t0;
         tempPars->t3  = cells[i].t3;

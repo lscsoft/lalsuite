@@ -57,7 +57,7 @@ class sqlite_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid-$(process)).err')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_job(pipeline.CondorDAGJob):
   """
@@ -478,7 +478,7 @@ for cat in ['CAT_3']:
 
 #IFAR plots
 for cat in cats:
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, "FULL_DATA"+cat+"_"+timestr+".sqlite", n, [lallappsNewcorseNodeCombined[cat]]);n+=1
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lallappsNewcorseNodeCombined[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()

@@ -367,15 +367,14 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* determine number of calibration points required */
-      TRY( LALGPStoFloat( status->statusPtr, &duration_real,
-	    &(calfacts->duration) ), status );
+      duration_real = XLALGPSGetREAL8(&(calfacts->duration));
       length = (UINT4) ceil( duration_real / sensemonTS.deltaT );
       ++length;
 
       /* make sure we get the first point before the requested cal time */
       alphaDeltaT = sensemonTS.deltaT;
-      TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            fuzz - sensemonTS.deltaT ), status );
+      seekEpoch = output->epoch;
+      XLALGPSAdd(&seekEpoch, fuzz - sensemonTS.deltaT);
       sensemonTS.epoch = seekEpoch;
 
       GET_POS;
@@ -509,14 +508,13 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* determine number of calibration points required */
-      TRY( LALGPStoFloat( status->statusPtr, &duration_real,
-	   &(calfacts->duration)), status);
+      duration_real = XLALGPSGetREAL8(&(calfacts->duration));
       length = (UINT4) ceil( duration_real / a.deltaT );
       ++length;
 
       /* make sure we get the first point before the requested cal time */
-      TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            fuzz - a.deltaT ), status );
+      seekEpoch = output->epoch;
+      XLALGPSAdd(&seekEpoch, fuzz - a.deltaT);
       a.epoch = ab.epoch = seekEpoch;
 
       GET_POS;

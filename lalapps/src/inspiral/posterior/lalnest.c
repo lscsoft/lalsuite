@@ -42,6 +42,8 @@ extern double timewindow;
 CHAR **CacheFileNames = NULL;
 CHAR **ChannelNames = NULL;
 CHAR **IFOnames = NULL;
+CHAR UserChannel[512];
+int UserChannelFlag=0;
 INT4 nIFO=0;
 int fakeinj =0;
 REAL8 duration=0;
@@ -146,16 +148,21 @@ void initialise(int argc, char *argv[]){
 		{"RA",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 	       	{"skyloc",no_argument,0,13},
+       		{"channel",required_argument,0,'C'},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
-	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
 			else		CacheFileNames=realloc(CacheFileNames,(nCache+1)*sizeof(char *));
 			CacheFileNames[nCache]=malloc(strlen(optarg)+1);
 			strcpy(CacheFileNames[nCache++],optarg);
 			break;
+	  case 'C':
+	    strcpy(UserChannel,optarg);
+	    UserChannelFlag=1;
+	    break;
        	        case 13: SkyLocFlag=1; break;
 	        case 'D':
 	                dataseed=atoi(optarg);
@@ -239,7 +246,7 @@ void initialise(int argc, char *argv[]){
 			break;
 		case 'G':
 			GPS=atof(optarg);
-			LALFloatToGPS(&status,&datastart,&GPS);
+			XLALGPSSetREAL8(&datastart,GPS);
 			break;
 		case 'T':
 			duration=atof(optarg);
@@ -347,6 +354,7 @@ int main( int argc, char *argv[])
 	inputMCMC.deltaT=(REAL8 )(1.0/SampleRate);
 	inputMCMC.verbose=verbose;
 	char strainname[20]="LSC-STRAIN";
+	if(UserChannelFlag==1) strcpy(strainname,UserChannel);
 	if(NINJA) sprintf(strainname,"STRAIN"); /* Different strain channel name for NINJA */
 
 	/* Set up Detector structures */
@@ -412,7 +420,8 @@ int main( int argc, char *argv[])
 /*		InjParams.tc = insptemplate.tC;*/
 /*****************************************************************************************************/
 
-		LALAddFloatToGPS(&status,&injstart,&(injTable->geocent_end_time),-InjParams.tc); /* makes injstart the time at fLow */
+		injstart = injTable->geocent_end_time;
+		XLALGPSAdd(&injstart, -InjParams.tc); /* makes injstart the time at fLow */
 /*		fprintf(stderr,"start time = %lf\n",injstart.gpsSeconds + injstart.gpsNanoSeconds*1.e-9); */
 		fprintf(stderr,"INJ: Injected wave chirp time: %lf s\n",InjParams.tc);
 		if(InjectGW.h) memcpy(&(InjectGW.h->epoch),&injstart,sizeof(LIGOTimeGPS));
@@ -455,7 +464,8 @@ int main( int argc, char *argv[])
 		TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; /* Centre the injection */
 
 
-		LALAddFloatToGPS(&status,&segmentStart,&datastart,(REAL8)TrigSegStart/(REAL8)SampleRate);
+		segmentStart = datastart;
+		XLALGPSAdd(&segmentStart, (REAL8)TrigSegStart/(REAL8)SampleRate);
 		memcpy(&(inputMCMC.epoch),&segmentStart,sizeof(LIGOTimeGPS));
 		/* Check for synthetic data */
 		if(!(strcmp(CacheFileNames[i],"LALLIGO") && strcmp(CacheFileNames[i],"LALVirgo") && strcmp(CacheFileNames[i],"LALGEO") && strcmp(CacheFileNames[i],"LALEGO") && strcmp(CacheFileNames[i],"LALAdLIGO")))
@@ -476,7 +486,8 @@ int main( int argc, char *argv[])
 			for(j=0;j<inputMCMC.invspec[i]->data->length;j++){ PSD(&status,&(inputMCMC.invspec[i]->data->data[j]),j*inputMCMC.deltaF);}
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&datastart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			memcpy(&(inputMCMC.stilde[i]->epoch),&segmentStart,sizeof(LIGOTimeGPS));
-/*			LALAddFloatToGPS(&status,&(inputMCMC.stilde[i]->epoch),&datastart,(REAL8)TrigSegStart/(REAL8)SampleRate);*/
+/*			inputMCMC.stilde[i]->epoch = datastart;
+			XLALGPSAdd(&(inputMCMC.stilde[i]->epoch), (REAL8)TrigSegStart/(REAL8)SampleRate);*/
 			/* Create the fake data */
 			for(j=0;j<inputMCMC.invspec[i]->data->length;j++){
 				inputMCMC.invspec[i]->data->data[j]=1.0/(scalefactor*inputMCMC.invspec[i]->data->data[j]);
@@ -491,7 +502,8 @@ int main( int argc, char *argv[])
 			memcpy(&realstart,&datastart,sizeof(LIGOTimeGPS));
 			LALUniformDeviate(&status,&TSoffset,randparam);
 			TSoffset=(TSoffset-0.5)*TIMESLIDE;
-			LALAddFloatToGPS(&status,&datastart,&realstart,TSoffset);
+			datastart = realstart;
+			XLALGPSAdd(&datastart, TSoffset);
 			fprintf(stderr,"Slid %s by %f s\n",IFOnames[i],TSoffset);
 			XLALDestroyRandomParams(randparam);
 		}

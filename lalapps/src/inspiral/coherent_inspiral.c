@@ -664,13 +664,15 @@ int main( int argc, char *argv[] )
 	  }
 	
 	/* store the start and end time of the first ifo cdata in the search summary */
+	/* FIXME:  loss of precision;  consider
+	searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = cohInspCVec->cData[0]->epoch;
+	XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, (REAL8) cohSegLength / sampleRate);
+	*/
 	searchsumm.searchSummaryTable->in_start_time = cohInspCVec->cData[0]->epoch;
-	LAL_CALL( LALGPStoFloat( &status, &cohSeriesLength, 
-				 &(cohInspCVec->cData[0]->epoch) ), &status );
+	cohSeriesLength = XLALGPSGetREAL8( &(cohInspCVec->cData[0]->epoch) );
 	cohSeriesLength += (REAL8) cohSegLength / sampleRate ;
-	LAL_CALL( LALFloatToGPS( &status, 
-				 &(searchsumm.searchSummaryTable->in_end_time), &cohSeriesLength ), &status );
-	
+	XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), cohSeriesLength );
+
 	/* If we can estimate distance then compute templateNorm */
 	/* At present, this is only good for frequency domain tmplts */
 	/* Since each detector's data has been filtered with templates */
