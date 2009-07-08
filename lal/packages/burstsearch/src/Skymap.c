@@ -1288,14 +1288,15 @@ static void add22(double a[2][2], double b[2][2], double c[2][2])
             a[i][j] = b[i][j] + c[i][j];
 }
 
-static void sub22(double a[2][2], double b[2][2], double c[2][2])
-{
-    int i;
-    int j;
-    for (i = 0; i != 2; ++i)
-        for (j = 0; j != 2; ++j)
-            a[i][j] = b[i][j] - c[i][j];
-}
+// static void sub22(double a[2][2], double b[2][2], double c[2][2])
+// {
+//     int i;
+//     int j;
+//     for (i = 0; i != 2; ++i)
+//         for (j = 0; j != 2; ++j)
+//             a[i][j] = b[i][j] - c[i][j];
+// }
+
 static void mul233(double a[2][3], double b[2][3], double c[3][3])
 {
     int i, j, k;
@@ -1318,6 +1319,22 @@ static void mul232(double a[2][2], double b[2][3], double c[3][2])
             for (j = 0; j != 3; ++j)
                 a[i][k] += b[i][j] * c[j][k];
         }
+}
+
+static double det3(double z[3][3])
+{
+    double a, b, c, d, e, f, g, h, i;
+    a = z[0][0];
+    b = z[0][1];
+    c = z[0][2];
+    d = z[1][0];
+    e = z[1][1];
+    f = z[1][2];
+    g = z[2][0];
+    h = z[2][1];
+    i = z[2][2];
+    
+    return a * e * i - a * f * h - b * d * i + b * f * g + c * d * h - c * e * g;
 }
 
 void XLALSkymap2PlanConstruct(int sampleFrequency, XLALSkymap2PlanType* plan)
@@ -1356,53 +1373,87 @@ void XLALSkymap2KernelConstruct(
     XLALSkymap2KernelType* kernel
     )
 {
+    
+    {
        
-    //
-    // F(F^T diag(w.S_j^{-1}.w) F + I) F^T
-    //
+        //
+        // F(F^T diag(w.S_j^{-1}.w) F + I) F^T
+        //
+
+        double fT[2][3];
+        double diagwSw[3][3];
+        double fTdiagwSw[2][3];
+        double fTdiagwSwf[2][2];
+        double eye[2][2];
+        double fTdiagwSwfeye[2][2];
+        double invfTdiagwSwfeye[2][2];
+        double finvfTdiagwSwfeye[3][2];        
+        //double finvfTdiagwSwfeyefT[3][3];
+
+        //double fTfinvfTdiagwSwfeye[2][2];
+        //double fTfinvfTdiagwSwfeyeeye[2][2];
+
+        // Compute the kernel
+
+        // F^T
+        transpose32(fT, properties->f);
+        // diag(w.S_j^{-1}.w)
+        diag3(diagwSw, wSw);
+        // F^T . diag(wSw)
+        mul233(fTdiagwSw, fT, diagwSw);
+        // F^T diag(wSw) . F
+        mul232(fTdiagwSwf, fTdiagwSw, properties->f);
+        // I
+        eye2(eye);
+        // F^T diag(wSw) F + I
+        add22(fTdiagwSwfeye, fTdiagwSwf, eye);
+        // (F^T diag(wSw) F + I)^{-1}
+        inv22(invfTdiagwSwfeye, fTdiagwSwfeye);
+        // F . (F^T diag(wSw) F + I)^{-1}
+        mul322(finvfTdiagwSwfeye, properties->f, invfTdiagwSwfeye);
+        // F (F^T diag(wSw) F + I)^{-1} . F^T
+        mul323(kernel->k, finvfTdiagwSwfeye, fT);
         
-    double fT[2][3];
-    double diagwSw[3][3];
-    double fTdiagwSw[2][3];
-    double fTdiagwSwf[2][2];
-    double eye[2][2];
-    double fTdiagwSwfeye[2][2];
-    double invfTdiagwSwfeye[2][2];
-    double finvfTdiagwSwfeye[3][2];        
-    //double finvfTdiagwSwfeyefT[3][3];
+    }
+      
     
-    double fTfinvfTdiagwSwfeye[2][2];
-    double fTfinvfTdiagwSwfeyeeye[2][2];
     
-    // Compute the kernel
-    
-    // F^T
-    transpose32(fT, properties->f);
-    // diag(w.S_j^{-1}.w)
-    diag3(diagwSw, wSw);
-    // F^T . diag(wSw)
-    mul233(fTdiagwSw, fT, diagwSw);
-    // F^T diag(wSw) . F
-    mul232(fTdiagwSwf, fTdiagwSw, properties->f);
-    // I
-    eye2(eye);
-    // F^T diag(wSw) F + I
-    add22(fTdiagwSwfeye, fTdiagwSwf, eye);
-    // (F^T diag(wSw) F + I)^{-1}
-    inv22(invfTdiagwSwfeye, fTdiagwSwfeye);
-    // F . (F^T diag(wSw) F + I)^{-1}
-    mul322(finvfTdiagwSwfeye, properties->f, invfTdiagwSwfeye);
-    // F (F^T diag(wSw) F + I)^{-1} . F^T
-    mul323(kernel->k, finvfTdiagwSwfeye, fT);
+    {
         
+        // Compute the normalization
+        
+        double a;
+        double b[3][3];
+        double c;
+        int i, j;
+        
+        a = wSw[0] * wSw[1] * wSw[2];
+        
+        for (i = 0; i != 3; ++i)
+        {
+            for (j = 0; j != 3; ++j)
+            {
+                b[i][j] = -kernel->k[i][j];
+            }
+            b[i][i] += 1. / wSw[i];
+        }
+        c = det3(b);
+        
+        kernel->logNormalization = 0.5 * log(a * c);
+        
+        
+    }
+    
     // Compute the normalization via Sylvester's determinant theorem
         
+    // Wrong!  Need to recompute it
+    
     // F^T . F (F^T diag(wSw) F + I)^{-1}
-    mul232(fTfinvfTdiagwSwfeye, fT, finvfTdiagwSwfeye);
+    //mul232(fTfinvfTdiagwSwfeye, fT, finvfTdiagwSwfeye);
     // F^T F (F^T diag(wSw) F + I)^{-1} - I
-    sub22(fTfinvfTdiagwSwfeyeeye, fTfinvfTdiagwSwfeye, eye);
+    //sub22(fTfinvfTdiagwSwfeyeeye, fTfinvfTdiagwSwfeye, eye);
     // log(sqrt(|F^T F (F^T diag(wSw) F + I)^{-1} - I|))
-    kernel->logNormalization = log(det22(fTfinvfTdiagwSwfeyeeye)) * 0.5;
+    //kernel->logNormalization = log(det22(fTfinvfTdiagwSwfeyeeye)) * 0.5;
 }
 
 static double ip33(double a[3], double b[3][3], double c[3])

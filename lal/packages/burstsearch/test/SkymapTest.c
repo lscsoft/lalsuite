@@ -89,17 +89,16 @@ static void directional()
     XLALSkymap2PlanType *plan;    
     XLALSkymap2SphericalPolarType *directions;
     XLALSkymap2DirectionPropertiesType *properties;
-    double wSw[3];
+    double wSw[3] = { 100., 100., 10. };
     XLALSkymap2KernelType *kernels;
     double *xSw[3];
     int n;
-    double* logPosteriors;
     
     {
         plan = malloc(sizeof(*plan));
-        XLALSkymap2PlanConstruct(8192, plan);
+        XLALSkymap2PlanConstruct(512, plan);
 
-        TEST(plan->sampleFrequency == 8192);
+        TEST(plan->sampleFrequency == 512);
     }
     
     {
@@ -128,13 +127,7 @@ static void directional()
                 );
         }
     }
-    
-    {
-        int i;
-        for (i = 0; i != 3; ++i)
-            wSw[i] = 1.;
-    }
-    
+        
     {
         int i;
         kernels = malloc(sizeof(*kernels) * 180 * 360);
@@ -146,29 +139,37 @@ static void directional()
     
     {
         int i;
+        RandomParams* rng;
+        rng = XLALCreateRandomParams(0);
         for (i = 0; i != 3; ++i)
         {
             int j;
             xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
             for (j = 0; j != plan->sampleFrequency; ++j)
             {
-                xSw[i][j] = 0.;
+                xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
             }
+            //xSw[i][plan->sampleFrequency/2] += XLALNormalDeviate(rng) * wSw[i];
         }
     }
     
     {
         int i;
-        logPosteriors = malloc(sizeof(*logPosteriors) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
-            XLALSkymap2Apply(properties + i, kernels + i, xSw, plan->sampleFrequency / 2, logPosteriors + i);        
-            printf("%g %g %g\n", directions[i][0], directions[i][1], exp(logPosteriors[i]));
+            int t;
+            double p = 0;
+            for (t = plan->sampleFrequency / 4; t != plan->sampleFrequency / 4 * 3; ++t)
+            {
+                double logPosterior;
+                XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
+                p += exp(logPosterior) / (plan->sampleFrequency / 2);
+                
+            }
+            printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
         }
     }        
-    
-    free(logPosteriors);
-    
+       
     {
         int i;
         for(i = 0; i != 3; ++i)
