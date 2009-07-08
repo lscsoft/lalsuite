@@ -171,7 +171,7 @@ void XLALSkymap2DirectionPropertiesConstruct(
 
 void XLALSkymap2KernelConstruct(
     XLALSkymap2DirectionPropertiesType* properties,
-    double normalization[3],
+    double wSw[3],
     XLALSkymap2KernelType* kernel
     );
 
@@ -182,39 +182,8 @@ void XLALSkymap2Apply(
     XLALSkymap2KernelType* kernel,
     double* xSw[3],
     int tau,
-    double* posterior
+    double* logPosterior
     );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

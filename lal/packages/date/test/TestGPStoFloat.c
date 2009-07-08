@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
     printf("TestGPStoFloat: expected %22.9f\n                got      %22.9f\n",
            987654321.123456789, realTime);
   }
-  if (realTime != 987654321.123456789)
+  /* require error to be less than 0.5 nanoseconds */
+  if (fabs(realTime - 987654321.123456789) >= 0.5e-9)
     {
       fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() returned wrong value; expected %.17g, got %.17g\n",
               987654321.123456789, realTime);
