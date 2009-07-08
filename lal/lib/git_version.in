@@ -189,11 +189,9 @@ def generate_git_version_info():
 # parse command line options
 options = parse_args()
 
-# check if we are in a git repo from return codes of 'git status'
-# 128 indicates that the git status command failed
-# 127 indicates that the git command is not available
-ret_code = run_external_command('git status', honour_ret_code=False)[0]
-git_ok = ret_code not in (127, 128)
+# check if we are in a git repo
+ret_code, output = run_external_command('which git', honour_ret_code=False)
+git_ok = (ret_code != 1) and not output.startswith('no')
 
 # generate version information output, if appropriate
 if git_ok:
