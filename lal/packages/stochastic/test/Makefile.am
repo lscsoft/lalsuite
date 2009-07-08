@@ -6,7 +6,7 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           StochasticOptimalFilterNormalizationTest \
           OverlapReductionFunctionTest          StochasticInverseNoiseTest \
-          AstroOmegaTest
+          AstroOmegaTest SimulateSBTest SimulatePopcornTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -15,33 +15,37 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
 StochasticCrossCorrelationStatisticTest_SOURCES = \
                                StochasticCrossCorrelationStatisticTest.c \
                                CheckStatus.c
-StochasticCrossCorrelationStatisticTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticCrossCorrelationStatisticTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticHeterodynedCrossCorrelationStatisticTest_SOURCES = \
                     StochasticHeterodynedCrossCorrelationStatisticTest.c \
                                CheckStatus.c
-StochasticHeterodynedCrossCorrelationStatisticTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticHeterodynedCrossCorrelationStatisticTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticCrossCorrelationSpectrumTest_SOURCES = \
                    StochasticCrossCorrelationSpectrumTest.c \
                                CheckStatus.c
-StochasticCrossCorrelationSpectrumTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticCrossCorrelationSpectrumTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 SZeroPadAndFFTTest_SOURCES = SZeroPadAndFFTTest.c CheckStatus.c
-SZeroPadAndFFTTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SZeroPadAndFFTTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 CZeroPadAndFFTTest_SOURCES = CZeroPadAndFFTTest.c CheckStatus.c
-CZeroPadAndFFTTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+CZeroPadAndFFTTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticOptimalFilterTest_SOURCES = StochasticOptimalFilterTest.c \
                                          CheckStatus.c
-StochasticOptimalFilterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticOptimalFilterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticOptimalFilterNormalizationTest_SOURCES = StochasticOptimalFilterNormalizationTest.c \
                                          CheckStatus.c
-StochasticOptimalFilterNormalizationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticOptimalFilterNormalizationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticOmegaGWTest_SOURCES = StochasticOmegaGWTest.c CheckStatus.c
-StochasticOmegaGWTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticOmegaGWTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 OverlapReductionFunctionTest_SOURCES = OverlapReductionFunctionTest.c \
                                          CheckStatus.c
-OverlapReductionFunctionTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+OverlapReductionFunctionTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 StochasticInverseNoiseTest_SOURCES = StochasticInverseNoiseTest.c \
                                          CheckStatus.c
-StochasticInverseNoiseTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticInverseNoiseTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
+SimulateSBTest_SOURCES  = SimulateSBTest.c CheckStatus.c
+SimulateSBTest_LDADD    = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
+SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
+SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 # SFalseAlarmTest_SOURCES = SFalseAlarmTest.c
 # SFalseAlarmTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 # SFalseDismissalTest_SOURCES = SFalseDismissalTest.c
@@ -55,7 +59,7 @@ StochasticInverseNoiseTest_LDADD = $(top_builddir)/packages/support/src/liblalsu
 # DFDismissalVsFAlarmTest_SOURCES = DFDismissalVsFAlarmTest.c
 # DFDismissalVsFAlarmTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 AstroOmegaTest_SOURCES = AstroOmegaTest.c
-AstroOmegaTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+AstroOmegaTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/packages/stochastic/src/liblalstochastic.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS =	  StochasticCrossCorrelationStatisticTest \
@@ -65,7 +69,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           \
           StochasticOptimalFilterNormalizationTest   StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
-          AstroOmegaTest
+          AstroOmegaTest SimulateSBTest SimulatePopcornTest
 
 TESTS_ENVIRONMENT = 1>/dev/null
 #    SFalseAlarmTest       SFalseDismissalTest  \
@@ -74,7 +78,7 @@ TESTS_ENVIRONMENT = 1>/dev/null
 
 EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckStatus.c CheckStatus.h
 
-MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
+MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0* WHITENED-SB*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@

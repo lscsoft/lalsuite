@@ -9,6 +9,7 @@ AC_CONFIG_FILES([ \
                  lalframe.pc \
                  lalmetaio.pc \
                  lalxml.pc \
+                 lalstochastic.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -82,11 +83,6 @@ AC_CONFIG_FILES([ \
                  packages/clremoval/include/Makefile \
                  packages/clremoval/src/Makefile \
                  packages/clremoval/test/Makefile \
-                 packages/stochastic/Makefile \
-                 packages/stochastic/doc/Makefile \
-                 packages/stochastic/include/Makefile \
-                 packages/stochastic/src/Makefile \
-                 packages/stochastic/test/Makefile \
                  packages/inspiral/Makefile \
                  packages/inspiral/doc/Makefile \
                  packages/inspiral/include/Makefile \
@@ -137,6 +133,11 @@ AC_CONFIG_FILES([ \
                  packages/timefreq/include/Makefile \
                  packages/timefreq/src/Makefile \
                  packages/timefreq/test/Makefile \
+                 packages/stochastic/Makefile \
+                 packages/stochastic/doc/Makefile \
+                 packages/stochastic/include/Makefile \
+                 packages/stochastic/src/Makefile \
+                 packages/stochastic/test/Makefile \
                  packages/support/Makefile \
                  packages/support/doc/Makefile \
                  packages/support/include/Makefile \

@@ -19,7 +19,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/window/src/libwindow.la \
 	$(top_builddir)/packages/fft/src/libfft.la \
 	$(top_builddir)/packages/clremoval/src/libclremoval.la \
-	$(top_builddir)/packages/stochastic/src/libstochastic.la \
 	$(top_builddir)/packages/inspiral/src/libinspiral.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
 	$(top_builddir)/packages/bank/src/libbank.la \

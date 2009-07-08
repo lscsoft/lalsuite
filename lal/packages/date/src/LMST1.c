@@ -34,9 +34,7 @@ GMST1) computations.
 \vspace{0.1in}
 
 \input{LMST1CP}
-\idx{LALGMST1()}
 \idx{LALGPStoGMST1()}
-\idx{LALLMST1()}
 \idx{LALGPStoLMST1()}
 
 
@@ -47,13 +45,7 @@ units: seconds, hours, degrees, or radians. LMST1 is offset from GMST1
 by the longitude of the observing post.
 
 \begin{itemize}
-\item \texttt{LALGMST1()} computes GMST1 given a Gregorian date UTC in an
-\texttt{LALDate} structure.
 \item  \texttt{LALGPStoGMST1()} computes GMST1 given a GPS time.
-\item  \texttt{LALLMST1()} computes LMST1 given an observing location (in a
-  \texttt{LALDetector} structure) and a Gregorian date UTC.
-\item \texttt{LALGPStoLMST1()} computes LMST1 given an observing location
-  and a GPS time.
 \end{itemize}
 
 
@@ -67,8 +59,7 @@ the Almanac.
 The basic definitions and formulae are from~\cite{esaa:1992}, Ch. 2,
 Sec. 24, and also Sec. B of the Astronomical Almanac. The formula
 computes GMST1 for 0h UT1.  To compute GMST1 for other times, a simple
-linear interpolation is done. The implementation used in
-\texttt{LALGMST1()} is from~\cite{novas:1999} .  Since 1984-Jan-01,
+linear interpolation is done.  Since 1984-Jan-01,
 GMST has been related to UT1 as follows:
 %
 \begin{displaymath}
@@ -87,72 +78,6 @@ taking on values of $\pm 0.5, \pm 1.5, \pm 2.5,
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
-
-Here is a simple example:
-
-\begin{verbatim}
-#include <stdlib.h>
-#include <lal/LALStdlib.h>
-#include <lal/Date.h>
-
-INT4 debuglevel = 2;
-
-NRCSID (TESTLMSTC, "Id");
-
-int
-main(int argc, char *argv[])
-{
-    LALDate date;
-    LALDate mstdate;
-    REAL8   gmsthours, lmsthours;
-    REAL8   gmstsecs;
-    REAL8   longitude;
-    LALMSTUnitsAndAcc units_and_acc;
-    time_t  timer;
-    CHAR    timestamp[64], tmpstr[64];
-    Status  status = {0};
-
-    if (argc == 1)
-    {
-        printf("Usage: TestUTCtoGPS debug_level -- debug_level = [0,1,2]\n");
-        return 0;
-    }
-
-    if (argc == 2)
-        debuglevel = atoi(argv[1]);
-
-    INITSTATUS(&status, "TestLMST", TESTLMSTC);
-
-    printf("TEST of GMST1 routine\n");
-    printf("=====================\n");
-
-
-    // Check against the Astronomical Almanac:
-    // For 1994-11-16 0h UT - Julian Date 2449672.5, GMST 03h 39m 21.2738s
-    date.unixDate.tm_sec  = 0;
-    date.unixDate.tm_min  = 0;
-    date.unixDate.tm_hour = 0;
-    date.unixDate.tm_mday = 16;
-    date.unixDate.tm_mon  = LALMONTH_NOV;
-    date.unixDate.tm_year = 94;
-
-    longitude = 0.;
-    LALGMST1(&status, &gmsthours, &date, MST_HRS);
-    LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
-
-    LALGMST1(&status, &gmstsecs, &date, MST_SEC);
-    LALSecsToLALDate(&status, &mstdate, gmstsecs);
-    strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
-    sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
-    strcat(timestamp, tmpstr+1);
-
-    printf("gmsthours = %f = %s\n", gmsthours, timestamp);
-    printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
-
-    return(0);
-}
-\end{verbatim}
-
 
 From~\cite{esaa:1992}:
 
@@ -185,39 +110,6 @@ A useful resource is \url{http://aa.usno.navy.mil/}.
 </lalLaTeX> */
 
 
-/*******************************************************************
- *
- * SYNOPSIS
- *
- * LALGMST1(): Returns LALGMST1 for given date-time
- * LALLMST1(): Returns LALLMST1 given date-time, and longitude
- *
- * DESCRIPTION
- *
- * LALGMST1():
- *      Inputs: LALDate *date      -- date-time to compute GMST1
- *              LALMSTUnits outunits -- units requested:
- *                                      MST_SEC - seconds
- *                                      MST_HRS - hours
- *                                      MST_DEG - degrees
- *                                      MST_RAD - radians
- *
- *      Outputs: REAL8  *gmst      -- LALGMST1 in units requested
- *
- * LALLMST1():
- *      Inputs: LALPlaceAndDate *place_and_date -- location and date-time
- *                                                 to compute GMST1
- *              LALMSTUnits outunits -- units requested:
- *                                      MST_SEC - seconds
- *                                      MST_HRS - hours
- *                                      MST_DEG - degrees
- *                                      MST_RAD - radians
- *
- *      Outputs: REAL8  *lmst      -- LALGMST1 in units requested
- *
- *
- *----------------------------------------------------------------------- */
-
 #include <lal/LALRCSID.h>
 
 NRCSID (LMST1C, "$Id$");
@@ -229,57 +121,6 @@ NRCSID (LMST1C, "$Id$");
 #include <lal/XLALError.h>
 
 #define INFOSTR_LEN 256
-
-/*
- * Compute GMST in requested units given date UTC.
- */
-
-/* <lalVerbatim file="LMST1CP"> */
-void
-LALGMST1 (LALStatus     *status,
-          REAL8         *p_gmst,     /* output - GMST1 */
-          const LALDate *p_date,     /* input  - date and time */
-          LALMSTUnits    outunits)   /* GMST1 units */
-{ /* </lalVerbatim> */
-  LIGOTimeGPS gps;
-  LALMSTUnitsAndAcc UnitsAndAcc;
-  char infostr[INFOSTR_LEN];
-
-  INITSTATUS (status, "LALGMST1", LMST1C);
-  ATTATCHSTATUSPTR(status);
-
-  /*
-   * Check pointer to input variables
-   */
-  ASSERT (p_date != (LALDate *)NULL, status,
-          DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  /*
-   * Check pointer to output variable
-   */
-  ASSERT (p_gmst != (REAL8 *)NULL, status,
-          DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-
-  /*
-   * Compute GMST for UTC on given date in seconds
-   */
-
-  UnitsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  UnitsAndAcc.units = outunits;
-
-  TRY( LALUTCtoGPS( status->statusPtr, &gps, p_date, &UnitsAndAcc.accuracy ), status );
-  TRY( LALGPStoGMST1( status->statusPtr, p_gmst, &gps, &UnitsAndAcc ), status );
-
-  if (lalDebugLevel & LALINFO)
-  {
-    snprintf(infostr, INFOSTR_LEN, "LALGMST1: *p_gmst = %g\n", *p_gmst);
-    LALInfo(status, infostr);
-  }
-
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-} /* END LALGMST1() */
-
 
 
 /*
@@ -342,132 +183,3 @@ LALGPStoGMST1( LALStatus         *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* END: LALGPStoGMST1() */
-
-
-
-
-
-/*
- * Compute LMST1 in requested units given date-time
- */
-/* <lalVerbatim file="LMST1CP"> */
-void
-LALLMST1 (LALStatus             *status,
-          REAL8                 *p_lmst,            /* output - LMST1 */
-          const LALPlaceAndDate *p_place_and_date,  /* input - place and date */
-          LALMSTUnits            outunits)          /* LMST1 units */
-{ /* </lalVerbatim> */
-  REAL8 gmst;
-  REAL8 day = 0;
-  REAL8 longitude = LAL_180_PI *
-    atan2(p_place_and_date->p_detector->location[1],
-          p_place_and_date->p_detector->location[0]);
-
-  INITSTATUS (status, "LALLMST1", LMST1C);
-  ATTATCHSTATUSPTR(status);
-
-  /*
-   * Check pointer to input variables
-   */
-  ASSERT (p_place_and_date != (LALPlaceAndDate *)NULL, status,
-          DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  /*
-   * Check pointer to output variable
-   */
-  ASSERT (p_lmst != (REAL8 *)NULL, status,
-          DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-
-  /*
-   * Compute LMST1 in seconds since J2000.0
-   */
-
-  /* get GMST1 in seconds */
-  TRY( LALGMST1(status->statusPtr, &gmst, p_place_and_date->p_date, outunits),
-       status);
-
-  /* convert longitude to appropriate units of sidereal time */
-  switch (outunits)
-        {
-    case MST_SEC:
-      longitude /= (REAL8)DEGS_PER_HOUR / (REAL8)SECS_PER_HOUR;
-      day        = SECS_PER_DAY;
-      break;
-    case MST_HRS:
-      longitude /= (REAL8)DEGS_PER_HOUR;
-      day        = 24.;
-      break;
-    case MST_DEG:
-      day        = 360.;
-      break;
-    case MST_RAD:
-      longitude /= 180. / (REAL8)LAL_PI;
-      day        = (REAL8)LAL_TWOPI;
-      break;
-    default:
-      break;
-    }
-
-  *p_lmst = gmst + longitude;
-
-  while (*p_lmst < 0)
-    *p_lmst += day;
-
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-} /* END LALLMST1() */
-
-
-
-/*
- * Compute LMST1 in requested units given GPS time
- */
-/* <lalVerbatim file="LMST1CP"> */
-void
-LALGPStoLMST1( LALStatus             *status,
-               REAL8                 *p_lmst,          /* output - LMST1 */
-               const LALPlaceAndGPS  *p_place_and_gps, /* input - place and GPS */
-               const LALMSTUnitsAndAcc *pUnitsAndAcc)        /* LMST1 units and accuracy */
-{ /* </lalVerbatim> */
-  LALDate         date;
-  LALPlaceAndDate place_and_date;
-
-  INITSTATUS (status, "LALGPStoLMST1", LMST1C);
-  ATTATCHSTATUSPTR(status);
-
-
-  /*
-   * Check pointer to input variables
-   */
-  ASSERT (p_place_and_gps != (LALPlaceAndGPS *)NULL, status,
-          DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  ASSERT (pUnitsAndAcc != (LALMSTUnitsAndAcc *)NULL, status,
-          DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  /*
-   * Check pointer to output variable
-   */
-  ASSERT (p_lmst != (REAL8 *)NULL, status,
-          DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-
-
-  /*
-   * Convert GPS to date-time structure
-   */
-
-  /* first, GPS to Unix */
-  TRY( LALGPStoUTC(status->statusPtr, &date, p_place_and_gps->p_gps,
-                   &(pUnitsAndAcc->accuracy)),
-       status );
-
-  /* stuff it all into a LALPlaceAndDate */
-  place_and_date.p_detector = p_place_and_gps->p_detector;
-  place_and_date.p_date     = &date;
-
-  TRY( LALLMST1(status->statusPtr, p_lmst, &place_and_date,
-                pUnitsAndAcc->units), status );
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-} /* END: LALGPStoLMST1() */
