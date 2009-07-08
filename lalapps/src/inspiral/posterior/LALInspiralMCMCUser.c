@@ -351,6 +351,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	parameter->logPrior=0.0;
 	REAL8 mc,eta;
 	REAL8 minCompMass = 1.0;
+	REAL8 maxCompMass = 35.0;
 	/* copied from alex's function */
 /*	logdl=2.0*XLALMCMCGetParameter(parameter,"distMpc");
 	parameter->logPrior+=2.0*logdl;
@@ -362,13 +363,16 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 /* Check in range */
 	mc=XLALMCMCGetParameter(parameter,"mchirp");
 	eta=XLALMCMCGetParameter(parameter,"eta");
+	m1 = mc2mass1(mc,eta);
+	m2 = mc2mass2(mc,eta);
 
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior-=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-	if(mc2mass1(mc,eta)<minCompMass) parameter->logPrior=-DBL_MAX;
+	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
 }
 
@@ -418,7 +422,7 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 XLALClearErrno();*/
 
 /* Is this the correct way to set the end time? */
-/*	XLALFloatToGPS((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
+/*	XLALGPSSetREAL8((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
 /* Fill the rest of the mass/tc parameters in */
 	LALInspiralParameterCalc(&status,&template);
 
@@ -903,7 +907,7 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	/* Adjust time */
 	REAL8 tC=XLALMCMCGetParameter(parameter,"time");
 	tC-=PPNparams.tc; /* tC is now the time the wave reaches the low frequency */
-	LALFloatToGPS(&status,&(co_wave.a->epoch),&tC); /* which is the starting epoch of the co_wave */
+	XLALGPSSetREAL8(&(co_wave.a->epoch),tC); /* which is the starting epoch of the co_wave */
 	memcpy(&(co_wave.f->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 	memcpy(&(co_wave.phi->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 

@@ -880,97 +880,97 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->f == 0.0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->To == 0.0)
     {
       fprintf(stderr,"No integration time for the factors specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->G0Re == 0.0 )
     {
       fprintf(stderr,"No real part of open loop gain specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->G0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of open loop gain specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->D0Re == 0.0 )
     {
       fprintf(stderr,"No real part of digital filter specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->D0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of digital filter specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->GPSEnd == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->filterfile == NULL)
     {
       fprintf(stderr,"No filter file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->sv_chan == NULL)
     {
       fprintf(stderr,"No state vector channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->lax_chan == NULL)
     {
       fprintf(stderr,"No light in x-arm channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->lay_chan == NULL)
     {
       fprintf(stderr,"No light in y-arm  channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->darmerr_chan == NULL)
     {
       fprintf(stderr,"No darm err channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->asq_chan != NULL)
@@ -983,13 +983,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->frametype == NULL)
     {
       fprintf(stderr,"No frame type specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->strainchannel == NULL)
     {
       fprintf(stderr,"No strain channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->datadirL1 != NULL)
@@ -1000,7 +1000,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->datadirL2 == NULL)
     {
       fprintf(stderr,"No L2 frame directory specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
    if ( (InputData.wings < 2) || (InputData.wings%2 != 0) )

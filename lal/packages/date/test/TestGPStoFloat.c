@@ -72,22 +72,12 @@ int main(int argc, char *argv[])
   /* 1 */
   gpsTime.gpsSeconds     = 987654321;
   gpsTime.gpsNanoSeconds = 123456789;
-  LALGPStoFloat(&status, &realTime, &gpsTime);
-
-  if (status.statusCode && lalDebugLevel)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() failed; line %i, %s\n",
-              __LINE__, LALTESTGPSTOFLOATC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-
-    if (lalDebugLevel)
-    {
-      printf("TestGPStoFloat: expected %22.9f\n                got      %22.9f\n",
-             987654321.123456789, realTime);
-    }
-
+  realTime = XLALGPSGetREAL8(&gpsTime);
+  if (lalDebugLevel)
+  {
+    printf("TestGPStoFloat: expected %22.9f\n                got      %22.9f\n",
+           987654321.123456789, realTime);
+  }
   if (realTime != 987654321.123456789)
     {
       fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() returned wrong value; expected %.17g, got %.17g\n",
@@ -98,22 +88,12 @@ int main(int argc, char *argv[])
 
   /* 2 */
   realTime = 54321.123456789;
-  LALFloatToGPS(&status, &gpsTime, &realTime);
-
-  if (status.statusCode && lalDebugLevel)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALFloatToGPS() failed; line %i, %s\n",
-              __LINE__, LALTESTGPSTOFLOATC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-
+  XLALGPSSetREAL8(&gpsTime, realTime);
   if (lalDebugLevel)
     {
       printf("TestFloatToGPS: expected (%d, %d)\n                got      (%d, %d)\n",
              54321, 123456789, gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds);
     }
-
   if (gpsTime.gpsSeconds != 54321 || gpsTime.gpsNanoSeconds != 123456789)
     {
       fprintf(stderr, "TestGPStoFloat: LALFloatToGPS() returned wrong value; expected (%d, %d), got (%d, %d)\n",

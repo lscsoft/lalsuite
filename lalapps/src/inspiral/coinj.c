@@ -253,7 +253,8 @@ this_injection.next=NULL;
 NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
-LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
+inj_epoch = this_injection.geocent_end_time;
+XLALGPSAdd(&inj_epoch, -LeadupTime);
 inj_epoch.gpsNanoSeconds=0;
 SNROK=0; /* Reset this to 0 = OK */
 minRatio=2.0;

@@ -89,7 +89,9 @@ LALTracksearchFindLambdaMean(
   REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
+#if 0
   REAL8 myFloor=10e20;/*Lowest value in TFR */
+#endif
   INT4        lowerFRow=-1;
   INT4        upperFRow=-1;
   REAL8       binPerHz=0;
@@ -874,8 +876,7 @@ LALTrackSearchDataSegmenter(
     {
       /*Determine Segment Epoch*/
       kTime=TSSearchData->deltaT*k;
-      LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
-      CHECKSTATUSPTR (status);
+      XLALGPSSetREAL8(&(timeInterval), kTime);
       for (j=0;j<PreparedData->dataSeg[l]->data->length;j++)
 	{
 	  PreparedData->dataSeg[l]->data->data[j]=TSSearchData->data->data[k];

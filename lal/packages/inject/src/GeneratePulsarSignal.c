@@ -151,11 +151,11 @@ LALGeneratePulsarSignal (LALStatus *status,
 
   /* end time in SSB */
   t1 = params->startTimeGPS;
-  TRY ( LALAddFloatToGPS(status->statusPtr, &t1, &t1, params->duration), status);
+  XLALGPSAdd(&t1, params->duration);
   TRY (LALConvertGPS2SSB(status->statusPtr, &t1, t1, params), status);	 /* convert time to SSB */
 
   /* get duration of source-signal */
-  TRY (LALDeltaFloatGPS(status->statusPtr, &SSBduration, &t1, &t0), status);
+  SSBduration = XLALGPSDiff(&t1, &t0);
   SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
 
   sourceParams.epoch = t0;
@@ -327,7 +327,8 @@ LALSignalToSFTs (LALStatus *status,
 
   /* get last possible start-time for an SFT */
   duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
-  TRY ( LALAddFloatToGPS(status->statusPtr, &tLast, &tStart, duration - params->Tsft), status);
+  tLast = tStart;
+  XLALGPSAdd(&tLast, duration - params->Tsft);
 
   /* for simplicity we _always_ work with timestamps.
    * Therefore, we have to generate them now if none have been provided by the user. */
@@ -376,7 +377,7 @@ LALSignalToSFTs (LALStatus *status,
       thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
-      TRY ( LALDeltaFloatGPS(status->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), status);
+      delay = XLALGPSDiff(&(timestamps->data[iSFT]), &tPrev);
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
       relIndexShift = (INT4) (delay / signalvec->deltaT + 0.5);
       totalIndex += relIndexShift;
@@ -386,7 +387,8 @@ LALSignalToSFTs (LALStatus *status,
 
       /* fill the header of the i'th output SFT */
       realDelay = (REAL4)(relIndexShift * signalvec->deltaT);  /* avoid rounding-errors*/
-      TRY (LALAddFloatToGPS(status->statusPtr, &tmpTime,&tPrev, realDelay),status);
+      tmpTime = tPrev;
+      XLALGPSAdd(&tmpTime, realDelay);
 
       strcpy ( thisSFT->name, signalvec->name );
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
@@ -400,7 +402,7 @@ LALSignalToSFTs (LALStatus *status,
       if (lalDebugLevel > 0)
 	{
 	  REAL8 diff;
-	  TRY (LALDeltaFloatGPS(status->statusPtr, &diff, &(timestamps->data[iSFT]),&tmpTime),status);
+	  diff = XLALGPSDiff(&(timestamps->data[iSFT]),&tmpTime);
 	  if (diff != 0)
 	    {
 	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
@@ -612,7 +614,8 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
   /* loop that calls LALComputeDetAMResponse to find F_+ and F_x at the midpoint of each SFT for ZERO Psi */
   for(i=0; i<numSFTs; i++) {
       /* Find mid point from timestamp, half way through SFT. */
-      TRY ( LALAddFloatToGPS (status->statusPtr, &midTS, &(params->pSFTParams->timestamps->data[i]), halfTsft), status);
+      midTS = params->pSFTParams->timestamps->data[i];
+      XLALGPSAdd(&midTS, halfTsft);
       timeAndAcc.gps=midTS;
       TRY ( LALComputeDetAMResponse(status->statusPtr, &response, das, &timeAndAcc), status);
       output->fPlusZeroPsi[i] = response.plus;
@@ -1134,7 +1137,7 @@ correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   INITSTATUS( status, "correct_phase", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
 
-  TRY (LALDeltaFloatGPS(status->statusPtr, &deltaT, &(sft->epoch), &tHeterodyne), status);
+  deltaT = XLALGPSDiff(&(sft->epoch), &tHeterodyne);
   deltaT *= sft->f0;
 
   /* check if we really need to do anything here? (i.e. is deltaT an integer?) */

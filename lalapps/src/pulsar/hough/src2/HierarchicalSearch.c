@@ -598,10 +598,9 @@ int MAIN( int argc, char *argv[]) {
   /* read in ephemeris data */
   LAL_CALL( LALInitBarycenter( &status, edat), &status);        
 
+  XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
+  XLALGPSSetREAL8(&maxEndTimeGPS, uvar_maxEndTime1);
 
-  LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS, &uvar_minStartTime1), &status);
-  LAL_CALL ( LALFloatToGPS( &status, &maxEndTimeGPS, &uvar_maxEndTime1), &status);
-    
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
     {
@@ -1344,8 +1343,8 @@ void SetUpSFTs( LALStatus *status,
   tStartGPS = catalog->data[0].header.epoch;
   in->tStartGPS = tStartGPS;
   tEndGPS = catalog->data[catalog->length - 1].header.epoch;
-  TRY( LALAddFloatToGPS( status->statusPtr, &tEndGPS, &tEndGPS, timebase ), status);
-  TRY ( LALDeltaFloatGPS ( status->statusPtr, &tObs, &tEndGPS, &tStartGPS), status);
+  XLALGPSAdd(&tEndGPS, timebase);
+  tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
   in->tObs = tObs;
 
   /* Leap seconds for the first timestamp */
@@ -1408,7 +1407,7 @@ void SetUpSFTs( LALStatus *status,
 
   if ( in->refTime > 0)  {
     REAL8 refTime = in->refTime;
-    TRY ( LALFloatToGPS( status->statusPtr, &refTimeGPS, &refTime), status);
+    XLALGPSSetREAL8(&refTimeGPS, refTime);
   }
   else {  /* set refTime to exact midtime of the total observation-time spanned */
     refTimeGPS = tMidGPS;
@@ -1627,7 +1626,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   fdot = params->fdot;
   tsMid = params->tsMid;
   refTimeGPS = params->refTime;  
-  TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
+  refTime = XLALGPSGetREAL8(&refTimeGPS);
 
   /* set patch size */
   /* this is supposed to be the "educated guess" 
@@ -1643,8 +1642,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   
   for (k=0; k<nStacks; k++) {
     REAL8 tMidStack;
-
-    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
+    tMidStack = XLALGPSGetREAL8(tsMid->data + k);
     timeDiffV->data[k] = tMidStack - refTime;
   }
 
@@ -2219,15 +2217,15 @@ void SetUpStacks(LALStatus *status,
   /* tStart will be start time of a given stack. 
      This initializes tStart to the first sft time stamp as this will 
      be the start time of the first stack */
-  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[0].header.epoch)), status);
+  tStart = XLALGPSGetREAL8(&(in->data[0].header.epoch));
 
   /* loop over the sfts */
   stackCounter = 0; 
   for( j = 0; j < in->length; j++) 
     {
       /* thisTime is current sft timestamp */
-      TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, &(in->data[j].header.epoch)), status);
-    
+      thisTime = XLALGPSGetREAL8(&(in->data[j].header.epoch));
+
       /* if sft lies in stack duration then add 
 	 this sft to the stack. Otherwise move 
 	 on to the next stack */
@@ -2253,8 +2251,8 @@ void SetUpStacks(LALStatus *status,
 	  stackCounter++;
 	  
 	  /* reset start time of stack */
-	  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[j].header.epoch)), status);
-	  
+          tStart = XLALGPSGetREAL8(&(in->data[j].header.epoch));
+
 	  /* realloc to increase length of catalog and copy data */    
 	  out->data[stackCounter].length = 1;    /* first entry in new stack */
 	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, sizeof(SFTDescriptor));
@@ -3264,12 +3262,12 @@ void ComputeNumExtraBins(LALStatus            *status,
   tsMid = par->tsMid;
 
   refTimeGPS = par->refTime;  
-  TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
+  refTime = XLALGPSGetREAL8(&refTimeGPS);
 
   nStacks = tsMid->length;;
 
-  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, tsMid->data), status);
-  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, tsMid->data + nStacks - 1), status);
+  tStart = XLALGPSGetREAL8(tsMid->data);
+  tEnd = XLALGPSGetREAL8(tsMid->data + nStacks - 1);
   refTime = 0.5 * (tStart + tEnd);
 
   /* the skygrid resolution params */
@@ -3304,7 +3302,7 @@ void ComputeNumExtraBins(LALStatus            *status,
   TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
   
   for (j=0; j<nStacks; j++) {
-    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + j), status);
+    tMidStack = XLALGPSGetREAL8(tsMid->data + j);
     timeDiffV->data[j] = tMidStack - refTime;
   }
 
