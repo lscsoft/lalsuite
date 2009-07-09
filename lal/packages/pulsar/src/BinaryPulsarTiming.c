@@ -367,7 +367,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       }
     /**********************************************************/
     }
-    
+
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
     /**********************************************************/
     /*tt = 1.0-e*e;
