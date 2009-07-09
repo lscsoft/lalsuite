@@ -1388,10 +1388,6 @@ void XLALSkymap2KernelConstruct(
         double fTdiagwSwfeye[2][2];
         double invfTdiagwSwfeye[2][2];
         double finvfTdiagwSwfeye[3][2];        
-        //double finvfTdiagwSwfeyefT[3][3];
-
-        //double fTfinvfTdiagwSwfeye[2][2];
-        //double fTfinvfTdiagwSwfeyeeye[2][2];
 
         // Compute the kernel
 
@@ -1444,16 +1440,6 @@ void XLALSkymap2KernelConstruct(
         
     }
     
-    // Compute the normalization via Sylvester's determinant theorem
-        
-    // Wrong!  Need to recompute it
-    
-    // F^T . F (F^T diag(wSw) F + I)^{-1}
-    //mul232(fTfinvfTdiagwSwfeye, fT, finvfTdiagwSwfeye);
-    // F^T F (F^T diag(wSw) F + I)^{-1} - I
-    //sub22(fTfinvfTdiagwSwfeyeeye, fTfinvfTdiagwSwfeye, eye);
-    // log(sqrt(|F^T F (F^T diag(wSw) F + I)^{-1} - I|))
-    //kernel->logNormalization = log(det22(fTfinvfTdiagwSwfeyeeye)) * 0.5;
 }
 
 static double ip33(double a[3], double b[3][3], double c[3])
