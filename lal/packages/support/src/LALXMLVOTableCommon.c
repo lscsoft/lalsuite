@@ -625,7 +625,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
     if ( fmtList ) XLALDestroyTokenList( &fmtList );
     if ( dataFmts ) XLALFree ( dataFmts );
     if ( dataColumns ) XLALFree ( dataColumns );
-    if ( xmlTABLEDATAnode ) xmlFree ( xmlTABLEDATAnode );
+    if ( xmlTABLEDATAnode ) xmlFreeNode ( xmlTABLEDATAnode );
 
     XLAL_ERROR_NULL ( fn, err );
 
@@ -661,7 +661,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
  */
 xmlDoc *
 XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be turned into a VOTable document */
-                           BOOLEAN reconcileNamespace	/**< [in] switch to turn on/off namespace-reconciliation: required to validate xmlDoc */
+                           BOOLEAN reconcileNamespace	/**< [in] switch to turn on namespace-reconciliation, which is required to validate xmlDoc */
                            )
 {
     /* set up local variables */
@@ -869,6 +869,8 @@ XLALgetXPathToElementAttibute ( const CHAR *resourcePath,		/**< [in] optional pa
           }
         } /* for i < nTokens */
 
+      XLALDestroyTokenList ( &resParents );
+
     } /* if resource path */
 
   /* attach last leaf-element of type 'elementType' */
@@ -940,11 +942,13 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
   if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
     XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
     xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
+    xmlSetListDoc ( xmlTree, NULL ); /* unset document info */
     xmlFreeDoc ( xmlDoc );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
   xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
+  xmlSetListDoc ( xmlTree, NULL ); /* unset document info */
   xmlFreeDoc ( xmlDoc );	/* free the document container */
 
   /* ----- Step 3: post-process string: clean newlines+white-space from table rows */

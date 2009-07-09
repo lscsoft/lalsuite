@@ -128,6 +128,8 @@ int main(void)
       return result;
     }
 
+    LALCheckMemoryLeaks();
+
     return LALXMLC_ENOM;
 
 } /* main() */
@@ -157,6 +159,7 @@ int testLIGOTimeGPS(void)
       XLALPrintError ( "%s: XLALLIGOTimeGPS2VOTNode() failed.\n", fn );
       return LALXMLC_EFUN;
     }
+
     /* convert VOTable tree into XML string */
     if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
       XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed.\n", fn);
@@ -166,10 +169,10 @@ int testLIGOTimeGPS(void)
 
     /* display serialized structure */
     printf( "----------------------------------------------------------------------\n");
-    printf( xmlString);
+    printf( xmlString );
     printf( "----------------------------------------------------------------------\n");
 
-    /* ---------- pase XML string back and validate ---------- */
+    /* ---------- parse XML string back and validate ---------- */
     /* convert VOTable string back into VOTable document */
     printf ("--> Parsing XML string into xmlDoc ... ");
     if ( (xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
@@ -195,8 +198,6 @@ int testLIGOTimeGPS(void)
       XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", fn, xlalErrno );
       return LALXMLC_EFUN;
     }
-    /* clean up */
-    xmlFreeDoc(xmlDocument);
     printf( "ok: %s = { %d, %d }\n", LALXMLC_NAMETEST1, timeDestination.gpsSeconds, timeDestination.gpsNanoSeconds );
 
     /* check test results */
@@ -209,6 +210,12 @@ int testLIGOTimeGPS(void)
     }
     else
       printf ( "--> Final struct agrees with input struct. Test PASSED.\n");
+
+
+    /* clean up */
+    xmlFreeDoc(xmlDocument);
+    xmlFreeNode ( xmlFragment );
+    XLALFree ( xmlString );
 
     return LALXMLC_ENOM;
 
@@ -312,8 +319,6 @@ int testPulsarDopplerParams(void)
       XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", fn, xlalErrno );
       return LALXMLC_EFUN;
     }
-    /* clean up */
-    xmlFreeDoc(xmlDocument);
 
     printf ( "ok: %s = {\n"
             "\trefTime: {%d, %d}\n"
@@ -358,6 +363,12 @@ int testPulsarDopplerParams(void)
     }
 
     printf ( "--> Final struct agrees with input struct. Test PASSED.\n");
+
+    /* clean up */
+    xmlFreeDoc(xmlDocument);
+    xmlFreeNode ( xmlFragment );
+    XLALFree ( xmlString );
+
     return LALXMLC_ENOM;
 
 } /* testPulsarDopplerParams() */
@@ -467,6 +478,9 @@ test_gsl_vector(void)
 
   /* free memory */
   xmlFreeDoc(xmlDocument);
+  xmlFreeNode ( xmlFragment );
+  XLALFree ( xmlString );
+
   gsl_vector_free ( in_vect );
   gsl_vector_free ( out_vect );
 
@@ -587,6 +601,9 @@ test_gsl_matrix(void)
 
   /* free memory */
   xmlFreeDoc(xmlDocument);
+  xmlFreeNode ( xmlFragment );
+  XLALFree ( xmlString );
+
   gsl_matrix_free ( in_matrix );
   gsl_matrix_free ( out_matrix );
 
@@ -706,8 +723,9 @@ int testTable ( void )
   printf ("ok.\n");
 
 
-
-
+  /* clean up */
+  xmlFreeDoc ( xmlDocument );
+  xmlFreeNode ( xmlFragment );
   XLALFree ( xmlString );
 
   return LALXMLC_ENOM;
