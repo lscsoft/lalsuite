@@ -35,7 +35,8 @@ NRCSID (LALTESTLMSTC, "$Id$");
 static BOOLEAN mstdate_ok_p(const LALDate *p_date,
                             const LALDate *p_expected_date);
 
-int main(int argc, char *argv[])
+/*int main(int argc, char *argv[])*/
+int main(void)
 {
 /* FIXME:  this needs to be ported to test the XLAL replacements */
 #if 0
