@@ -78,6 +78,7 @@ int SkyPatch=0;
 int FakeFlag=0;
 int GRBflag=0;
 int SkyLocFlag=0;
+REAL8 SNRfac=1.0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -147,12 +148,16 @@ void initialise(int argc, char *argv[]){
 		{"studentt",no_argument,0,'l'},
 		{"RA",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
+		{"SNRfac",required_argument,0,'14'},
 	       	{"skyloc",no_argument,0,13},
        		{"channel",required_argument,0,'C'},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+		case 14:
+			SNRfac=atof(optarg);
+			break;
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
 			else		CacheFileNames=realloc(CacheFileNames,(nCache+1)*sizeof(char *));
@@ -573,7 +578,7 @@ int main( int argc, char *argv[])
 			COMPLEX16FrequencySeries *injF = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("injFD",&(segmentStart),0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			/* Window the data */
 			REAL4 WinNorm = sqrt(windowplan->sumofsquares/windowplan->data->length);
-			for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=windowplan->data->data[j]/WinNorm;
+			for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=SNRfac*windowplan->data->data[j]/WinNorm;
 			XLALREAL8TimeFreqFFT(injF,inj8Wave,fwdplan); /* This calls XLALREAL8TimeFreqFFT which normalises by deltaT */
 			REPORTSTATUS(&status);
 			if(estimatenoise){
@@ -676,7 +681,7 @@ int main( int argc, char *argv[])
 	Live = (LALMCMCParameter **)LALMalloc(Nlive*sizeof(LALMCMCParameter *));
 	for (i=0;i<Nlive;i++) Live[i]=(LALMCMCParameter *)LALMalloc(sizeof(LALMCMCParameter));
 
-	fprintf(stdout,"Injected signal network SNR= %lf\n",sqrt(networkSNR));
+	if(networkSNR!=0.0) fprintf(stdout,"Injected signal network SNR= %lf\n",sqrt(networkSNR));
 
 	double ReducedChiSq=0;
 	/* variance of dimensionful real part d(f_k) (= variance of imaginary part) is zeta^2 */
@@ -772,8 +777,11 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
   etaMin=etaMin<0.0?0.0:etaMin;
   etaMax=etaMax>0.25?0.25:etaMax;
   deltaEta=etaMax-etaMin;
+  double lmmin=log(inMc-deltaM);
+  double lmmax=log(inMc+deltaM);
+  XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
-  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);
+/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
   XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
   XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
   XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
@@ -798,7 +806,11 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
        	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
 
-	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);
+	double lmmin=log(mcmin);
+	double lmmax=log(mcmax);
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+
+/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 /*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
@@ -820,7 +832,10 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
-	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);
+	double lmmin=log(mcmin);
+	double lmmax=log(mcmax);
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 /*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
