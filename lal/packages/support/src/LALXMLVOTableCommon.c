@@ -397,25 +397,28 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
 
       } /* while xmlChildNode */
 
-    /* create DATA node */
-    xmlNodePtr xmlDataNode = NULL;
-    if ( (xmlDataNode = xmlNewChild ( xmlTableNode, NULL, CAST_CONST_XMLCHAR("DATA"), NULL )) == NULL ) {
-      XLALPrintError ("%s: xmlNewChild() failed to create child node 'DATA' under 'TABLE' node.\n", fn );
-      err = XLAL_ENOMEM;
-      goto failed;
-    }
-
-    if ( dataContentNode && !xmlAddChild ( xmlDataNode, dataContentNode ) )
+    if ( dataContentNode )
       {
-        XLALPrintError("%s: failed to add dataContentNode as child to DATA node!\n", fn);
-        err = XLAL_EFAILED;
-        goto failed;
+        /* create DATA node */
+        xmlNodePtr xmlDataNode = NULL;
+        if ( (xmlDataNode = xmlNewChild ( xmlTableNode, NULL, CAST_CONST_XMLCHAR("DATA"), NULL )) == NULL ) {
+          XLALPrintError ("%s: xmlNewChild() failed to create child node 'DATA' under 'TABLE' node.\n", fn );
+          err = XLAL_ENOMEM;
+          goto failed;
+        }
+
+        if ( !xmlAddChild ( xmlDataNode, dataContentNode ) ) {
+          XLALPrintError("%s: failed to add dataContentNode as child to DATA node!\n", fn);
+          xmlFreeNode ( xmlDataNode );
+          err = XLAL_EFAILED;
+          goto failed;
+        }
       }
 
     return xmlTableNode;
 
  failed:
-    xmlFree ( xmlTableNode );
+    xmlFreeNode ( xmlTableNode );
     XLAL_ERROR_NULL ( fn, err );
 
 } /* XLALCreateVOTTableNode() */
