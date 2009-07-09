@@ -722,6 +722,28 @@ int testTable ( void )
   }
   printf ("ok.\n");
 
+  /* ---------- de-serialize back into C-struct ---------- */
+
+  /* discover list of FIELDS contained in table */
+  xmlNodeSet *fieldNodeSet;
+
+  if ( (fieldNodeSet = XLALFindVOTElementsAtPath ( xmlDocument, LALXMLC_NAMETEST5".$TABLE.$FIELD" )) == NULL ) {
+    XLALPrintError ( "%s: failed to find list of FIELD elements in table '%s'.\n", fn, LALXMLC_NAMETEST5 );
+    return LALXMLC_EFUN;
+  }
+
+  printf ("\nFound %d FIELD elements in table '%s'.\n", fieldNodeSet->nodeNr, LALXMLC_NAMETEST5 );
+  UINT4 i;
+  for ( i = 0 ; i < fieldNodeSet->nodeNr; i ++ )
+    {
+      xmlNode *thisNode = fieldNodeSet->nodeTab[i];
+      xmlChar *name;
+      printf ("i = %d: %s", i, thisNode->name );
+      if ( (name = (char*)xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("name"))) != NULL ) {
+        printf (" name = '%s'", name );
+      }
+      printf("\n");
+    } /* for i < numNodes */
 
   /* clean up */
   xmlFreeDoc ( xmlDocument );

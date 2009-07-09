@@ -31,6 +31,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 
 #include <lal/LALStdio.h>
 #include <lal/StringInput.h>
@@ -59,8 +60,8 @@ char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
 const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
 
-CHAR * XLALgetXPathToElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attribute );
-
+CHAR * XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attribute );
+CHAR *XLALVOTResourcePath2XPath ( const CHAR *resourcePath );
 
 /* ---------- function definitions ---------- */
 
@@ -793,7 +794,7 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
   }
 
   /* prepare XPath search */
-  if ( (xpath = XLALgetXPathToElementAttibute ( resourcePath, elementName, elementType, attrib )) == NULL ) {
+  if ( (xpath = XLALgetXPathToVOTElementAttibute ( resourcePath, elementName, elementType, attrib )) == NULL ) {
     XLALPrintError ("%s: failed to assemble xpath to named leaf-attribute.\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
@@ -825,15 +826,14 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
  * a hiearachical "path" of parent RESOURCES of the form "resource1.resource2....resourceN",
  */
 CHAR *
-XLALgetXPathToElementAttibute ( const CHAR *resourcePath,		/**< [in] optional path of parent-RESOURCES "res1.res2...resN" */
-                                const CHAR *elementName,		/**< [in] name of 'leaf' element to parse */
-                                VOTABLE_ELEMENT elementType,	/**< [in] type of element */
-                                VOTABLE_ATTRIBUTE attribute	/**< [in] attribute to read out from element */
-                                )
+XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional path of parent-RESOURCES "res1.res2...resN" */
+                                   const CHAR *elementName,	/**< [in] name of 'leaf' element to parse */
+                                   VOTABLE_ELEMENT elementType,	/**< [in] type of element */
+                                   VOTABLE_ATTRIBUTE attribute	/**< [in] attribute to read out from element */
+                                   )
 {
-  static const char *fn = "XLALgetXPathToElementAttibute()";
+  static const char *fn = "XLALgetXPathToVOTElementAttibute()";
 
-  UINT4 i;
   char *xpath;
   char buf[XPATHSTR_MAXLEN];
 
@@ -847,29 +847,18 @@ XLALgetXPathToElementAttibute ( const CHAR *resourcePath,		/**< [in] optional pa
   if ( ( xpath = XLALStringAppend( xpath, "/" )) == NULL ) {
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
-
-  /* disassemble parent hierarchy of RESOURCE element names */
+  /* turn parent hierarchy "resourcePath" into an xpath expression for parent RESOURCE elements */
   if ( resourcePath )
     {
-      TokenList *resParents = NULL;
-      if ( XLALCreateTokenList(&resParents, resourcePath, "." ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: Failed to parse hierachical parent resource path '%s'.\n", fn, resourcePath );
+      CHAR *resXPath;
+      if ( (resXPath = XLALVOTResourcePath2XPath ( resourcePath )) == NULL ) {
+        XLALPrintError ("%s: XLALVOTResourcePath2XPath('%s') failed.\n",fn, resourcePath );
         XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
       }
-      /* assemble path of parent RESOURCE elements */
-      for ( i=0; i < resParents->nTokens; i ++ )
-        {
-          if ( snprintf ( buf, XPATHSTR_MAXLEN, "/%s:RESOURCE[@name='%s']", VOTABLE_NS_PREFIX, resParents->tokens[i] ) < 0 ) {
-            XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
-            XLALFree ( xpath );
-            XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
-          }
-          if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-          }
-        } /* for i < nTokens */
-
-      XLALDestroyTokenList ( &resParents );
+      if ( ( xpath = XLALStringAppend( xpath, resXPath )) == NULL ) {
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      XLALFree ( resXPath );
 
     } /* if resource path */
 
@@ -904,7 +893,73 @@ XLALgetXPathToElementAttibute ( const CHAR *resourcePath,		/**< [in] optional pa
 
   return xpath;
 
-} /* XLALgetXPathToElementAttibute() */
+} /* XLALgetXPathToVOTElementAttibute() */
+
+
+/** Generate an xpath statement reflecting a VOT "extended" resource path.
+ *
+ * Note: the 'extResourcePath' may contain unnamed element types prefixed by '$', eg
+ * 'resource1.resource2....resourceN.$TABLE', in order to parse element inside <TABLE> under
+ * the named <RESOURCE name="resourceN">, within a named <RESOURCE name="resourceN-1"> etc.
+ *
+ * NOTE: caller needs to XLALFree() the returned string.
+ */
+CHAR *
+XLALVOTResourcePath2XPath ( const CHAR *extResourcePath )
+{
+  static const char *fn = "XLALVOTResourcePath2XPath()";
+  CHAR *xpath;
+  CHAR buf[XPATHSTR_MAXLEN];
+  UINT4 i;
+
+  if ( !extResourcePath ) {
+    XLALPrintError ("%s: invalid NULL input 'extResourcePath'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  TokenList *resParents = NULL;
+  if ( XLALCreateTokenList(&resParents, extResourcePath, "." ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Failed to parse hierachical parent resource path '%s'.\n", fn, extResourcePath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* assemble path of parent RESOURCE elements and unnamed element-types */
+  xpath = NULL;
+  for ( i=0; i < resParents->nTokens; i ++ )
+    {
+      if ( resParents->tokens[i][0] == '$' )
+        {
+          /* refers to an un-named element TYPE */
+          if ( snprintf ( buf, XPATHSTR_MAXLEN, "/%s:%s", VOTABLE_NS_PREFIX, resParents->tokens[i] + 1 ) < 0 ) {
+            XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
+            XLALFree ( xpath );
+            XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+          }
+          if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+        } /* if unnamed element type */
+      else
+        {
+          /* refers to a named RESOURCE element */
+          if ( snprintf ( buf, XPATHSTR_MAXLEN, "/%s:RESOURCE[@name='%s']", VOTABLE_NS_PREFIX, resParents->tokens[i] ) < 0 ) {
+            XLALPrintError ("%s: snprintf() failed to assemble xpath string.\n", fn );
+            XLALFree ( xpath );
+            XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+          }
+          if ( ( xpath = XLALStringAppend( xpath, buf )) == NULL ) {
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+        } /* if named RESOURCE element */
+
+    } /* for i < nTokens */
+
+  XLALDestroyTokenList ( &resParents );
+
+  return(xpath);
+
+} /* XLALVOTResourcePath2XPath() */
+
 
 
 /** Convert the given VOTable xmlTree into a complete VOTable XML document string
@@ -1451,6 +1506,110 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
   return textbuf;
 
 } /* XLALVOTprintfFromArray() */
+
+
+
+
+
+/**
+ * \brief Discover the list of elements at a given "extended resourcePath".
+ *
+ * This function searches the given XML document for VOTable element nodes
+ * at a given extended resource-path, prescribing the parent-hierarchy
+ * of RESOURCE elements and unnamed element-types.
+ *
+ * \return A "node set" containing all matching xmlNodes at the given "path".
+ *
+ * Note: the 'extResourcePath' may contain unnamed element types prefixed by '$', eg
+ * 'resource1.resource2....resourceN.$TABLE', in order to parse element inside <TABLE> under
+ * the named <RESOURCE name="resourceN">, within a named <RESOURCE name="resourceN-1"> etc.
+ *
+ * \b Important: the caller is responsible to free the returned node-set using xmlXPathFreeNodeSet()
+ *
+ * \author Reinhard Prix, Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodeSet *
+XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument to search */
+                            const CHAR *extResourcePath		/**< [in] "extended" path 'res1.res2....resN.$TABLE.$DATA...' of parent nodes */
+                            )
+{
+  /* set up local variables */
+  static const CHAR *fn = "XLALFindVOTElementsAtPath()";
+  xmlXPathContextPtr xpathCtx = NULL;
+  CHAR *xpath = NULL;
+  CHAR buf[XPATHSTR_MAXLEN];
+  xmlXPathObjectPtr xpathObj = NULL;
+  xmlNodeSetPtr xmlNodes = NULL;
+
+  UINT4 i;
+  xmlChar const *xmlNsPrefix = NULL;
+  xmlChar const *xmlNsUrl = NULL;
+
+  static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
+  const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
+
+  /* sanity checks */
+  if ( !xmlDocument || !extResourcePath ) {
+    XLALPrintError("%s: Invalid NULL input parameter\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL);
+  }
+
+  /* prepare xpath context */
+  if ( (xpathCtx = xmlXPathNewContext ( xmlDocument )) == NULL ) {;
+    XLALPrintError("%s: XPath context instantiation xmlXPathNewContext() failed\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED);
+  }
+
+  /* register namespaces */
+  for(i = 0; i < xmlNsVector.count; ++i)
+    {
+      xmlNsPrefix = xmlNsVector.items[i].prefix;
+      xmlNsUrl= xmlNsVector.items[i].url;
+      if ( xmlXPathRegisterNs ( xpathCtx, xmlNsPrefix, xmlNsUrl ) )
+        {
+          xmlXPathFreeContext(xpathCtx);
+          XLALPrintError("%s: XPath namespace registration failed: %s=%s\n", fn, xmlNsPrefix, xmlNsUrl);
+          XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+        }
+    } /* for i < NSvector->count */
+
+  xpath = NULL;
+  if ( ( xpath = XLALStringAppend( xpath, "/" )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  /* turn parent hierarchy "extResourcePath" into an xpath expression for parent elements */
+  char *resXPath;
+  if ( (resXPath = XLALVOTResourcePath2XPath ( extResourcePath )) == NULL ) {
+    XLALPrintError ("%s: XLALVOTResourcePath2XPath('%s') failed.\n",fn, extResourcePath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  if ( ( xpath = XLALStringAppend( xpath, resXPath )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  XLALFree ( resXPath );
+
+  /* run xpath query */
+  if ( (xpathObj = xmlXPathEvalExpression ( (xmlChar*)xpath, xpathCtx)) == NULL ) {
+    XLALFree ( xpath );
+    xmlXPathFreeContext ( xpathCtx );
+    XLALPrintError("%s: XPath evaluation failed\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+
+  /* retrieve node set returned by xpath query */
+  xmlNodes = xpathObj->nodesetval;
+
+  /* clean up */
+  xpathObj-> nodesetval = NULL;		/* protect node-set from free'ing */
+  xmlXPathFreeObject ( xpathObj );
+  xmlXPathFreeContext ( xpathCtx );
+  XLALFree ( xpath );
+
+  /* return list of nodes that matched query (to be free'ed by xmlXPathFreeNodeSet() */
+  return xmlNodes;
+
+} /* XLALFindVOTElementsAtPath() */
 
 
 #if 0

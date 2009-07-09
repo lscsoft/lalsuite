@@ -34,6 +34,7 @@ extern "C" {
 
 /* ---------- exported includes ---------- */
 #include <libxml/tree.h>
+#include <libxml/xpath.h>
 
 /* ---------- exported defines and constants ---------- */
 /**
@@ -158,6 +159,12 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,
                                        VOTABLE_ELEMENT elementType,
                                        VOTABLE_ATTRIBUTE attrib
                                        );
+
+xmlNodeSet *
+XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,
+                            const CHAR *extResourcePath
+                            );
+
 
 CHAR *XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree );
 
