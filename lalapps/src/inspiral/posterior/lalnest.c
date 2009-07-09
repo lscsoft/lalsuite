@@ -42,6 +42,8 @@ extern double timewindow;
 CHAR **CacheFileNames = NULL;
 CHAR **ChannelNames = NULL;
 CHAR **IFOnames = NULL;
+CHAR UserChannel[512];
+int UserChannelFlag=0;
 INT4 nIFO=0;
 int fakeinj =0;
 REAL8 duration=0;
@@ -146,16 +148,21 @@ void initialise(int argc, char *argv[]){
 		{"RA",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 	       	{"skyloc",no_argument,0,13},
+       		{"channel",required_argument,0,'C'},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
-	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
 			else		CacheFileNames=realloc(CacheFileNames,(nCache+1)*sizeof(char *));
 			CacheFileNames[nCache]=malloc(strlen(optarg)+1);
 			strcpy(CacheFileNames[nCache++],optarg);
 			break;
+	  case 'C':
+	    strcpy(UserChannel,optarg);
+	    UserChannelFlag=1;
+	    break;
        	        case 13: SkyLocFlag=1; break;
 	        case 'D':
 	                dataseed=atoi(optarg);
@@ -347,6 +354,7 @@ int main( int argc, char *argv[])
 	inputMCMC.deltaT=(REAL8 )(1.0/SampleRate);
 	inputMCMC.verbose=verbose;
 	char strainname[20]="LSC-STRAIN";
+	if(UserChannelFlag==1) strcpy(strainname,UserChannel);
 	if(NINJA) sprintf(strainname,"STRAIN"); /* Different strain channel name for NINJA */
 
 	/* Set up Detector structures */

@@ -1577,8 +1577,8 @@ void initUserVars (LALStatus *status)
   uvar_fddot = 0.0;
   uvar_fddotBand = 0.0;
   uvar_fddotResolution = 0.0;
-  uvar_dAlpha = 0.2;
-  uvar_dDelta = 0.2;
+  uvar_dAlpha = 0.0;
+  uvar_dDelta = 0.0;
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;

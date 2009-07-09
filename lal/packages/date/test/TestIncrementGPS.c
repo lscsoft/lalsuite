@@ -213,7 +213,7 @@ int main(int argc, char **argv)
   /* test XLALGPSAdd() and XLALGPSDiff() */
   {
     LIGOTimeGPS gps1, gps2, gpsTest, gps3;
-    REAL8 deltaT1, deltaT0;
+    double deltaT1, deltaT0;
 
     gps1.gpsSeconds = 714153733;
     gps1.gpsNanoSeconds = 23421234;
@@ -222,10 +222,10 @@ int main(int argc, char **argv)
     gps2.gpsNanoSeconds = 712343412;
     /* now use XLALGPSDiff() to calculate the difference in seconds */
     deltaT1 = XLALGPSDiff(&gps1, &gps2);
-    /* compare to correct result */
+    /* compare to correct result (error must be < 0.5 ns) */
     deltaT0 = -1461420.688922178;
-    if (deltaT1 != deltaT0) {
-      LALPrintError ("Failure in XLALGPSDiff(): got %20.9f instead of %20.9f\n", deltaT1, deltaT0);
+    if (fabs(deltaT1 - deltaT0) >= .5e-9) {
+      LALPrintError ("Failure in XLALGPSDiff(): got %.17g instead of %.17g\n", deltaT1, deltaT0);
       return FAILURE;
     }
     /* now see if deltaT1 takes us from gps1 to gps2 and vice-versa */
