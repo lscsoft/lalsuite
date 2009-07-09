@@ -214,9 +214,9 @@ int main(int argc, char *argv[]){
   for (i = ceil(ht.xSide * ht.ySide / 2.0); i < ht.xSide * ht.ySide; i++) ht.map[i] = 900;
   SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
 
-  printf(" Maximum number count: %d\n", stats.maxCount);
+  printf(" Maximum number count: %d\n", (int)stats.maxCount);
   printf(" Location: %d  %d\n", stats.maxIndex[0], stats.maxIndex[1]);
-  printf(" Minimum number count: %d\n", stats.minCount);
+  printf(" Minimum number count: %d\n", (int)stats.minCount);
   printf(" Location: %d  %d\n", stats.minIndex[0], stats.minIndex[1]);
   printf(" Average number count: %f\n", stats.avgCount);
   printf(" Standard deviation of number count: %f\n", stats.stdDev);
