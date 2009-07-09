@@ -184,7 +184,7 @@ static void directional(void)
 
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
     // minimal();
     directional();
