@@ -12,6 +12,7 @@
 
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
+#if 0
 static void minimal(void)
 {
 
@@ -83,6 +84,7 @@ static void minimal(void)
     free(plan);
 
 }
+#endif
 
 static void directional(void)
 {
