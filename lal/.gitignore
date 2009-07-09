@@ -74,6 +74,7 @@ packages/bank/test/MetricTestPTF
 packages/bank/test/PNTemplates
 packages/bank/test/SpaceCovering
 packages/block/test/BlockTest
+packages/burstsearch/test/SkymapTest
 packages/burstsearch/test/ThresholdsTest
 packages/clremoval/test/CLRTest
 packages/clremoval/test/CLRoutdata.asc
