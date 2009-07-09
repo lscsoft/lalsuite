@@ -12,7 +12,7 @@
 
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
-static void minimal()
+static void minimal(void)
 {
 
     XLALSkymap2PlanType *plan;
@@ -84,7 +84,7 @@ static void minimal()
 
 }
 
-static void directional()
+static void directional(void)
 {
     XLALSkymap2PlanType *plan;
     XLALSkymap2SphericalPolarType *directions;
