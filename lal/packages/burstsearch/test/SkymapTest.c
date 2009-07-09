@@ -1,7 +1,7 @@
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
@@ -133,7 +133,7 @@ static void numerical(void)
 }
 
 
-static void minimal()
+static void minimal(void)
 {    
     
     XLALSkymap2PlanType *plan;    
@@ -142,36 +142,36 @@ static void minimal()
     double wSw[3];
     XLALSkymap2KernelType *kernel;
     double *xSw[3];
-    
+
     {
         plan = malloc(sizeof(*plan));
         XLALSkymap2PlanConstruct(8192, plan);
 
         TEST(plan->sampleFrequency == 8192);
     }
-    
+
     {
         direction = malloc(sizeof(*direction));
         (*direction)[0] = LAL_PI_2;
         (*direction)[1] = 0.;
     }
-    
+
     {
         properties = malloc(sizeof(*properties));
         XLALSkymap2DirectionPropertiesConstruct(plan, direction, properties);
     }
-    
+
     {
         int i;
         for (i = 0; i != 3; ++i)
             wSw[i] = 1.;
     }
-    
+
     {
         kernel = malloc(sizeof(*kernel));
         XLALSkymap2KernelConstruct(properties, wSw, kernel);
     }
-    
+
     {
         int i;
         for (i = 0; i != 3; ++i)
@@ -184,44 +184,44 @@ static void minimal()
             }
         }
     }
-    
+
     {
         double logPosterior;
         XLALSkymap2Apply(properties, kernel, xSw, plan->sampleFrequency / 2, &logPosterior);
-        
+
         printf("%g\n", exp(logPosterior));
-    }        
-    
+    }
+
     {
         int i;
         for(i = 0; i != 3; ++i)
             free(xSw[i]);
     }
-    
+
     free(kernel);
     free(properties);
-    free(direction);    
+    free(direction);
     free(plan);
-    
-}
 
-static void directional()
-{    
-    XLALSkymap2PlanType *plan;    
+}
+#endif
+
+static void directional(void)
+{
+    XLALSkymap2PlanType *plan;
     XLALSkymap2SphericalPolarType *directions;
     XLALSkymap2DirectionPropertiesType *properties;
     double wSw[3] = { 1., 1., 1. };
     XLALSkymap2KernelType *kernels;
     double *xSw[3];
-    int n;
-    
+
     {
         plan = malloc(sizeof(*plan));
         XLALSkymap2PlanConstruct(512, plan);
 
         TEST(plan->sampleFrequency == 512);
     }
-    
+
     {
         int i;
         directions = malloc(sizeof(*directions) * 180 * 360);
@@ -235,20 +235,20 @@ static void directional()
             }
         }
     }
-    
+
     {
         int i;
         properties = malloc(sizeof(*properties) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
             XLALSkymap2DirectionPropertiesConstruct(
-                plan, 
-                directions + i, 
+                plan,
+                directions + i,
                 properties + i
                 );
         }
     }
-        
+
     {
         int i;
         kernels = malloc(sizeof(*kernels) * 180 * 360);
@@ -257,7 +257,7 @@ static void directional()
             XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
         }
     }
-    
+
     {
         int i;
         RandomParams* rng;
@@ -273,7 +273,7 @@ static void directional()
             //xSw[i][plan->sampleFrequency/2] += XLALNormalDeviate(rng) * wSw[i];
         }
     }
-    
+
     {
         int i;
         for (i = 0; i != 180 * 360; ++i)
@@ -285,23 +285,23 @@ static void directional()
                 double logPosterior;
                 XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
                 p += exp(logPosterior) / (plan->sampleFrequency / 2);
-                
+
             }
             printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
         }
-    }        
-       
+    }
+
     {
         int i;
         for(i = 0; i != 3; ++i)
             free(xSw[i]);
     }
-    
+
     free(kernels);
     free(properties);
-    free(directions);    
+    free(directions);
     free(plan);
-    
+
 }
 
 static void injection()
@@ -732,10 +732,10 @@ int main(int argc, char** argv)
 
 #if 0
 
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>

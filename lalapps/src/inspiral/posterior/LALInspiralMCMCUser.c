@@ -334,7 +334,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   eta=XLALMCMCGetParameter(parameter,"eta");
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-  parameter->logPrior-=logJacobianMcEta(mc,eta);
+  parameter->logPrior+=logJacobianMcEta(mc,eta);
   parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
   ParamInRange(parameter);
   /*check GRB component masses */
@@ -368,7 +368,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-	/*	parameter->logPrior-=logJacobianMcEta(mc,eta);*/
+	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
