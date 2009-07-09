@@ -13,44 +13,44 @@
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
 static void minimal()
-{    
-    
-    XLALSkymap2PlanType *plan;    
+{
+
+    XLALSkymap2PlanType *plan;
     XLALSkymap2SphericalPolarType *direction;
     XLALSkymap2DirectionPropertiesType *properties;
     double wSw[3];
     XLALSkymap2KernelType *kernel;
     double *xSw[3];
-    
+
     {
         plan = malloc(sizeof(*plan));
         XLALSkymap2PlanConstruct(8192, plan);
 
         TEST(plan->sampleFrequency == 8192);
     }
-    
+
     {
         direction = malloc(sizeof(*direction));
         (*direction)[0] = LAL_PI_2;
         (*direction)[1] = 0.;
     }
-    
+
     {
         properties = malloc(sizeof(*properties));
         XLALSkymap2DirectionPropertiesConstruct(plan, direction, properties);
     }
-    
+
     {
         int i;
         for (i = 0; i != 3; ++i)
             wSw[i] = 1.;
     }
-    
+
     {
         kernel = malloc(sizeof(*kernel));
         XLALSkymap2KernelConstruct(properties, wSw, kernel);
     }
-    
+
     {
         int i;
         for (i = 0; i != 3; ++i)
@@ -63,44 +63,44 @@ static void minimal()
             }
         }
     }
-    
+
     {
         double logPosterior;
         XLALSkymap2Apply(properties, kernel, xSw, plan->sampleFrequency / 2, &logPosterior);
-        
+
         printf("%g\n", exp(logPosterior));
-    }        
-    
+    }
+
     {
         int i;
         for(i = 0; i != 3; ++i)
             free(xSw[i]);
     }
-    
+
     free(kernel);
     free(properties);
-    free(direction);    
+    free(direction);
     free(plan);
-    
+
 }
 
 static void directional()
-{    
-    XLALSkymap2PlanType *plan;    
+{
+    XLALSkymap2PlanType *plan;
     XLALSkymap2SphericalPolarType *directions;
     XLALSkymap2DirectionPropertiesType *properties;
     double wSw[3] = { 100., 100., 10. };
     XLALSkymap2KernelType *kernels;
     double *xSw[3];
     int n;
-    
+
     {
         plan = malloc(sizeof(*plan));
         XLALSkymap2PlanConstruct(512, plan);
 
         TEST(plan->sampleFrequency == 512);
     }
-    
+
     {
         int i;
         directions = malloc(sizeof(*directions) * 180 * 360);
@@ -114,20 +114,20 @@ static void directional()
             }
         }
     }
-    
+
     {
         int i;
         properties = malloc(sizeof(*properties) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
             XLALSkymap2DirectionPropertiesConstruct(
-                plan, 
-                directions + i, 
+                plan,
+                directions + i,
                 properties + i
                 );
         }
     }
-        
+
     {
         int i;
         kernels = malloc(sizeof(*kernels) * 180 * 360);
@@ -136,7 +136,7 @@ static void directional()
             XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
         }
     }
-    
+
     {
         int i;
         RandomParams* rng;
@@ -152,7 +152,7 @@ static void directional()
             //xSw[i][plan->sampleFrequency/2] += XLALNormalDeviate(rng) * wSw[i];
         }
     }
-    
+
     {
         int i;
         for (i = 0; i != 180 * 360; ++i)
@@ -164,30 +164,30 @@ static void directional()
                 double logPosterior;
                 XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
                 p += exp(logPosterior) / (plan->sampleFrequency / 2);
-                
+
             }
             printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
         }
-    }        
-       
+    }
+
     {
         int i;
         for(i = 0; i != 3; ++i)
             free(xSw[i]);
     }
-    
+
     free(kernels);
     free(properties);
-    free(directions);    
+    free(directions);
     free(plan);
-    
+
 }
 
 int main(int argc, char** argv)
 {
     // minimal();
     directional();
-    
+
     return 0;
 }
 
