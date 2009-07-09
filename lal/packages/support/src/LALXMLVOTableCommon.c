@@ -70,12 +70,6 @@ CHAR *XLALVOTResourcePath2XPath ( const CHAR *resourcePath );
  *
  * This function creates a VOTable \c PARAM %node with the specified properties.
  *
- * \param name [in] Content of the \c name attribute of the \c PARAM %node (mandatory)
- * \param unit [in] Content of the \c unit attribute of the \c PARAM %node (optional)
- * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node (mandatory)
- * \param arraysize [in] Content of the \c arraysize attribute of the \c PARAM %node (optional)
- * \param value [in] Content of the \c value attribute of the \c PARAM %node (mandatory, empty value allowed)
- *
  * \return A \c xmlNodePtr that holds the new \c PARAM %node.
  * In case of an error, a null-pointer is returned.\n
  * \b Important: the caller is responsible to free the allocated memory (when the
@@ -85,14 +79,16 @@ CHAR *XLALVOTResourcePath2XPath ( const CHAR *resourcePath );
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTParamNode(const char *name,
-                                  const char *unit,
-                                  VOTABLE_DATATYPE datatype,
-                                  const char *arraysize,
-                                  const char *value)
+xmlNodePtr
+XLALCreateVOTParamNode ( const char *name,		/**< [in] \c name attribute of the \c PARAM %node (mandatory) */
+                         const char *unit,		/**< [in] \c unit attribute of the \c PARAM %node (optional) */
+                         VOTABLE_DATATYPE datatype,	/**< [in] \c datatype attribute of the \c PARAM %node (mandatory) */
+                         const char *arraysize,		/**< [in] \c arraysize attribute of the \c PARAM %node (optional) */
+                         const char *value		/**< [in] \c value attribute of the \c PARAM %node (mandatory, empty value allowed) */
+                         )
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTParamNode";
+    static const CHAR *fn = "XLALCreateVOTParamNode";
     xmlNodePtr xmlParamNode = NULL;
     static const CHAR *datatypeString;
 
@@ -100,7 +96,7 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
     xmlParamNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("PARAM"));
     if(xmlParamNode == NULL) {
         XLALPrintError("Element instantiation failed: PARAM\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add attributes */
@@ -109,13 +105,13 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Missing mandatory attribute: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
     if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(name))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
     /* optional: unit */
     if(unit && strlen(unit) > 0) {
@@ -123,20 +119,20 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
             /* clean up */
             xmlFreeNode(xmlParamNode);
             XLALPrintError("Attribute instantiation failed: unit\n");
-            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
     }
     /* mandatory: datatype */
     if ( ( datatypeString = XLALVOTDatatype2String ( datatype )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", logReference );
-      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
     if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("datatype"), CAST_CONST_XMLCHAR(datatypeString))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
     /* optional: arraysize */
     if(arraysize && strlen(arraysize) > 0) {
@@ -144,7 +140,7 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
             /* clean up */
             xmlFreeNode(xmlParamNode);
             XLALPrintError("Attribute instantiation failed: arraysize\n");
-            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
     }
     /* mandatory: value (empty value allowed) */
@@ -152,13 +148,13 @@ xmlNodePtr XLALCreateVOTParamNode(const char *name,
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Missing mandatory attribute: value\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
     if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("value"), CAST_CONST_XMLCHAR(value))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: value\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
@@ -189,7 +185,7 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
                          )
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTFieldNode()";
+    static const CHAR *fn = "XLALCreateVOTFieldNode()";
     xmlNodePtr xmlFieldNode = NULL;
     static const CHAR *datatypeString;
 
@@ -197,7 +193,7 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
     xmlFieldNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("FIELD"));
     if(xmlFieldNode == NULL) {
         XLALPrintError("Element instantiation failed: FIELD\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add attributes */
@@ -206,13 +202,13 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
         /* clean up */
         xmlFreeNode(xmlFieldNode);
         XLALPrintError("Missing mandatory attribute: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
     if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(name))) {
         /* clean up */
         xmlFreeNode(xmlFieldNode);
         XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
     /* optional: unit */
     if(unit && strlen(unit) > 0) {
@@ -220,20 +216,20 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
             /* clean up */
             xmlFreeNode(xmlFieldNode);
             XLALPrintError("Attribute instantiation failed: unit\n");
-            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
     }
     /* mandatory: datatype */
     if ( ( datatypeString = XLALVOTDatatype2String ( datatype )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", logReference );
-      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
+      XLALPrintError ("%s: XLALVOTDatatype2String() failed.\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
     if(!xmlNewProp(xmlFieldNode, CAST_CONST_XMLCHAR("datatype"), CAST_CONST_XMLCHAR(datatypeString))) {
         /* clean up */
         xmlFreeNode(xmlFieldNode);
         XLALPrintError("Attribute instantiation failed: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
     /* optional: arraysize */
     if(arraysize && strlen(arraysize) > 0) {
@@ -241,7 +237,7 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
             /* clean up */
             xmlFreeNode(xmlFieldNode);
             XLALPrintError("Attribute instantiation failed: arraysize\n");
-            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
     }
 
@@ -257,11 +253,6 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
  * This function creates a VOTable \c RESOURCE %node with the specified identifier and assigns
  * the given children to it.
  *
- * \param type [in] Type of the \c RESOURCE %node (typically the \c struct type name)
- * \param identifier [in] Identifier (name) of the \c RESOURCE %node
- * \param children [in] Pointer to an array of \c xmlNodes that are to be assigned as children
- * \param childCount [in] The number of child nodes referenced by \c children
- *
  * \return A \c xmlNodePtr that holds the new \c RESOURCE %node (incl. all children).
  * In case of an error, a null-pointer is returned.\n
  * \b Important: the caller is responsible to free the allocated memory (when the
@@ -272,30 +263,31 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
  * Albert-Einstein-Institute Hannover, Germany
  */
 xmlNodePtr
-XLALCreateVOTResourceNode(const char *type,
-                          const char *identifier,
-                          const xmlNodePtr childNodeList)
+XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURCE %node (typically the \c struct type name) */
+                            const char *identifier,		/**< [in] Identifier (name) of the \c RESOURCE %node */
+                            const xmlNodePtr childNodeList	/**< [in] Pointer to an array of \c xmlNodes that are to be assigned as children */
+                            )
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTResourceNode";
+    static const CHAR *fn = "XLALCreateVOTResourceNode";
     xmlNodePtr xmlResourceNode = NULL;
     xmlNodePtr xmlChildNode = childNodeList;
 
     /* sanity check */
     if(!type) {
         XLALPrintError("Invalid input parameter: type\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
     if(!identifier) {
         XLALPrintError("Invalid input parameter: identifier\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
 
     /* create node */
     xmlResourceNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("RESOURCE"));
     if(xmlResourceNode == NULL) {
         XLALPrintError("Element instantiation failed: RESOURCE\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add attributes */
@@ -303,14 +295,14 @@ XLALCreateVOTResourceNode(const char *type,
         /* clean up */
         xmlFreeNode(xmlResourceNode);
         XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR(type))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
         XLALPrintError("Attribute instantiation failed: utype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add children */
@@ -319,7 +311,7 @@ XLALCreateVOTResourceNode(const char *type,
             /* clean up */
             xmlFreeNode(xmlResourceNode);
             XLALPrintError("Couldn't add child node to RESOURCE node!\n");
-            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+            XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
         /* advance to next sibling in list */
         xmlChildNode = xmlChildNode->next;
@@ -666,7 +658,7 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
                            )
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTDocFromTree";
+    static const CHAR *fn = "XLALCreateVOTDocFromTree";
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
@@ -679,14 +671,14 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
     /* sanity check */
     if(!xmlTree) {
         XLALPrintError("Invalid input parameter: xmlTree\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        XLAL_ERROR_NULL(fn, XLAL_EINVAL);
     }
 
     /* set up XML document */
     xmlDocument = xmlNewDoc(CAST_CONST_XMLCHAR("1.0"));
     if(xmlDocument == NULL) {
         XLALPrintError("VOTable document instantiation failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* set up root node */
@@ -695,7 +687,7 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("VOTABLE root element instantiation failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add supplemental root node version information */
@@ -710,7 +702,7 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
 
     if(xmlVOTableNamespace == NULL) {
         XLALPrintError("VOTABLE namespace instantiation failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* add supplemental root node schema instance information */
@@ -733,7 +725,7 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("Couldn't append given tree to VOTABLE root element\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(fn, XLAL_EFAILED);
     }
 
     /* finally, assign root element to document */
@@ -746,7 +738,7 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
           /* clean up */
           xmlFreeDoc(xmlDocument);
           XLALPrintError("Default namespace reconciliation failed!\n");
-          XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+          XLAL_ERROR_NULL(fn, XLAL_EFAILED);
         }
       } /* if reconcileNamespace */
 
@@ -1538,7 +1530,6 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
   static const CHAR *fn = "XLALFindVOTElementsAtPath()";
   xmlXPathContextPtr xpathCtx = NULL;
   CHAR *xpath = NULL;
-  CHAR buf[XPATHSTR_MAXLEN];
   xmlXPathObjectPtr xpathObj = NULL;
   xmlNodeSetPtr xmlNodes = NULL;
 
@@ -1611,83 +1602,3 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
 
 } /* XLALFindVOTElementsAtPath() */
 
-
-#if 0
-
-/**
- * \brief Retrieves a specific attribute of a single VOTable \c RESOURCE->PARAM %node relation
- *
- * This function fetches the content of the specified attribute of the specified \c PARAM element,
- * which is a child of the specified \c RESOURCE element, from the given VOTable document.
- *
- * \param xmlDocument [in] The XML document to be searched
- * \param resourceType [in] Value of the \c utype attribute of the \c RESOURCE element to be searched
- * \param resourceName [in] Value of the \c name attribute of the \c RESOURCE element to be searched
- * \param paramName [in] Value of the \c name attribute of the \c PARAM element to be searched
- * \param paramAttribute [in] Attribute of the \c PARAM element to be searched for
- *
- * \return A pointer to a \c xmlChar that holds the content (string) of the specified \c PARAM element
- * attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
- * \b Important: the caller is responsible to free the allocated memory (when the
- * string isn't needed anymore) using \c xmlFree.
- *
- * \sa XLALGetSingleNodeContentByXPath
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-xmlChar *
-XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                       const char *resourceType,
-                                       const char *resourceName,
-                                       const char *paramName,
-                                       VOTABLE_ATTRIBUTE paramAttribute)
-{
-    /* set up local variables */
-    static const CHAR *logReference = "XLALGetSingleVOTResourceParamAttribute";
-    const CHAR *paramAttributeString = NULL;
-    CHAR xpath[XPATHSTR_MAXLEN] = {0};
-    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
-    const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
-
-    /* sanity check */
-    if(!xmlDocument) {
-        XLALPrintError("Invalid input parameters: xmlDocument\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!resourceType) {
-        XLALPrintError("Invalid input parameters: resourceType\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!resourceName) {
-        XLALPrintError("Invalid input parameters: resourceName\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if(!paramName) {
-        XLALPrintError("Invalid input parameters: paramName\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-
-
-    if ( (paramAttributeString = XLALVOTAttribute2String ( paramAttribute )) == NULL ) {
-      XLALPrintError ("%s: XLALVOTAttribute2String() failed.\n", logReference );
-      XLAL_ERROR_NULL ( logReference, XLAL_EFUNC );
-    }
-
-    /* prepare XPath search */
-    if(snprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",
-            resourceType, resourceName, paramName, paramAttributeString) < 0)
-    {
-        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttributeString);
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
-    /* retrieve specified attribute (content) */
-    return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
-
-} /* XLALGetSingleVOTResourceParamAttribute() */
-
-#endif
