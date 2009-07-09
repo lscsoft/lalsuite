@@ -25,6 +25,23 @@ from glue.ligolw import lsctables
 import inspiral
 
 ##############################################################################
+# Function Definitions
+
+def get_veto_segments_name( veto_cat_num, cumulative = True ):
+  """
+  Given a category number, returns a veto segments name 
+  as set by segs_from_cats.
+
+  @veto_cat_num: integer representing the category veto
+  @cumulative: If set to True, will add CUMULATIVE to the name.
+  """
+  if cumulative:
+    return ''.join([ 'VETO_CAT', str(veto_cat_num), '_CUMULATIVE' ])
+  else:
+    return ''.join([ 'VETO_CAT', str(veto_cat_num) ])
+    
+
+##############################################################################
 #
 #  MAIN PROGRAM
 #
@@ -34,20 +51,15 @@ import inspiral
 # parse command-line arguments
 parser = OptionParser( version = "", usage = usage )
 
-parser.add_option( "-u", "--user-tag", action = "store", type = "string",
-  default = None, metavar = " USERTAG",
-  help =
-    "Tag the jobs with USERTAG (overrides value in ini file)."
-  )
-parser.add_option( "", "--hipe-cache", action = "store", type = "string",
+parser.add_option( "", "--ihope-cache", action = "store", type = "string",
   default = None,
   help =
-    "Hipe cache containing THINCA_SECOND files."
+    "The ihope cache to read."
   )
 parser.add_option( "", "--config-file", action = "store", type = "string",
   default = None,
   help =
-    "ini file to use."
+    "The .ini file to use."
   )
 parser.add_option( "", "--log-path", action = "store", type = "string",
   default = None,
@@ -58,17 +70,12 @@ parser.add_option( "", "--log-path", action = "store", type = "string",
 parser.add_option( "", "--gps-start-time", action = "store", type = "string",
   default = None,
   help =
-    "GPS start time of the ihope run that generated the hipe-cache file."
+    "GPS start time of the ihope run."
   )
 parser.add_option( "", "--gps-end-time", action = "store", type = "string",
   default = None,
   help =
-    "GPS end time of the ihope run that generated the hipe-cache file."
-  )
-parser.add_option( "", "--simulation", action = "store", type = "string",
-  default = False,
-  help =
-    "If this is an injection run, set the name of the injection file used."
+    "GPS end time of the ihope run."
   )
 parser.add_option( "", "--plot-playground-only", action = "store_true",
   default = False,
@@ -80,8 +87,8 @@ parser.add_option( "", "--plot-playground-only", action = "store_true",
 
 ##############################################################################
 # Sanity check of input arguments
-if not options.hipe_cache:
-  raise ValueError, "A hipe-cache file is required."
+if not options.ihope_cache:
+  raise ValueError, "An ihope-cache file is required."
 if not options.config_file:
   raise ValueError, "A config-file is required."
 if not options.log_path:
@@ -95,11 +102,6 @@ cp.read(options.config_file)
 experiment_start = options.gps_start_time
 experiment_duration = str(int(options.gps_end_time) - int(options.gps_start_time))
 
-if options.user_tag:
-  user_tag = options.user_tag.strip()
-else:
-  user_tag = ''
-
 # if logs directory not present, create it
 try:
   os.mkdir('logs/')
@@ -109,9 +111,7 @@ except:
 ##############################################################################
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini', r'', options.config_file)
-if user_tag:
-  basename = '.'.join([ basename, user_tag ])
-  
+
 tempfile.tempdir = options.log_path
 tempfile.template = '.'.join([ basename, 'dag.log.' ])
 logfile = tempfile.mktemp()
@@ -123,287 +123,350 @@ fh.close()
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
-# write the jobs that will be run
-t2c_job = inspiral.ThincaToCoincJob(cp)
-tosql_job = pipeline.LigolwSqliteJob(cp)
-dbsimplify_job = inspiral.DBSimplifyJob(cp)
-cluster_job = inspiral.ClusterCoincsJob(cp)
-cfar_job = inspiral.CFarJob(cp)
-if options.simulation:
-  dbaddinj_job = inspiral.DBAddInjJob(cp)
-else:
-  plotslides_job = inspiral.PlotSlidesJob(cp)
-  plotifar_job = inspiral.PlotIfarJob(cp)
+##############################################################################
+# Open the ihope cache and sort THINCA_SECOND files by user_tag
 
-# set better submit file names than the default
-subsuffix = 'sub'
-t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', subsuffix ]) )
-tosql_job.set_sub_file( '.'.join([ basename, 'ligolw_sqlite', subsuffix ]) )
-dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', subsuffix ]) )
-cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', subsuffix ]) )
-cfar_job.set_sub_file( '.'.join([ basename, 'cfar', subsuffix ]) )
-if options.simulation:
-  dbaddinj_job.set_sub_file ( '.'.join([ basename, 'dbaddinj', subsuffix ]) )
-else:
-  plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', subsuffix ]) )
-  plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', subsuffix ]) )
-
-# open the hipe cache file 
-fp = open( options.hipe_cache, 'r' )
-hipe_cache = lal.Cache().fromfile(fp)
+fp = open( options.ihope_cache, 'r' )
+ihope_cache = lal.Cache().fromfile(fp)
 fp.close()
 
-##############################################################################
-# Step 1: Setup thinca_to_coinc nodes
-
-print "Setting up thinca_to_coinc nodes..."
-
-# set job options
-t2c_job.set_experiment_start_time(options.gps_start_time)
-t2c_job.set_experiment_end_time(options.gps_end_time)
-if options.simulation:
-  t2c_job.set_simulation()
-
-# sieve the hipe cache for THINCA_SECOND files
-file_sieve = 'THINCA_SECOND*' + user_tag
-thinca_cache = hipe_cache.sieve( description = file_sieve )
-
-# check that there are files to run on
-if len(thinca_cache) == 0:
-  raise ValueError, "no %s files found in hipe-cache. Check user-tag?" % file_sieve
-
-# get distinct on_instruments in the cache
-distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
-
-t2c_output = []
-cache_start_time = int(experiment_start)
-for on_instruments in distinct_instrument_sets:
-  instrument_cache = thinca_cache.sieve( ifos = on_instruments, exact_match = True )
-  instrument_cache.sort()
-  this_thinca_url_list = []
-  for entry_num, entry in enumerate(instrument_cache):
-    if not this_thinca_url_list:
-      # first entry; store type for cache naming
-      cache_type = entry.description
-    # Add the zero-lag thinca url to the url list
-    this_thinca_url_list.append(entry.url)
-    # check if this is simulation run; if not, add slide file
-    if not options.simulation:
-      # get the name of the slide file
-      slide_url = re.sub('THINCA', 'THINCA_SLIDE', entry.url)
-      this_thinca_url_list.append(slide_url)
-    # if n*20th entry or last remainder, write to cache
-    if entry_num % 19 == 0 or entry_num == len(instrument_cache) - 1:
-      # set duration to be end of this entry - start of first entry in cache
-      cache_duration = entry.segment[1].seconds - cache_start_time
-      this_cache = lal.Cache().from_urls( this_thinca_url_list )
-      this_cache_name = '.'.join([ 
-        '-'.join([on_instruments, cache_type, str(cache_start_time), str(cache_duration)]),
-        'cache' ])
-      this_cache_file = open( this_cache_name, 'w' )
-      this_cache.tofile(this_cache_file)
-      this_cache_file.close()
-      # write node
-      this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
-      input_instruments = lsctables.ifos_from_instrument_set(
-        lsctables.instrument_set_from_ifos( on_instruments ) )
-      this_t2c_node.set_instruments(input_instruments)
-      this_t2c_node.set_input_cache(this_cache_name)
-      dag.add_node(this_t2c_node)
-      # add output files to t2c_output
-      t2c_output += this_t2c_node.get_output_from_cache()
-      # set end-time of last entry to be start time of next cache
-      cache_start_time = entry.segment[1].seconds
-      this_thinca_url_list = []
-    
-# write output cache
-output_cache = lal.Cache().from_urls(t2c_output)
-# create cache name from what's in the output cache
-all_ifos = set()
-for on_instruments in distinct_instrument_sets:
-  all_ifos |= lsctables.instrument_set_from_ifos(on_instruments)
-all_ifos = ''.join(sorted(all_ifos))
-cache_type = output_cache[0].description
-t2c_output_cache = '.'.join([ 
-  '-'.join([ all_ifos, cache_type, experiment_start, experiment_duration ]), 
-  'cache' ])
-fp = open( t2c_output_cache, 'w' )
-output_cache.tofile( fp )
-fp.close()
+# get the user tags
+user_tags = []
+file_sieve = 'THINCA_SECOND'
+for tag in set([ entry.description for entry in ihope_cache.sieve( description = file_sieve ) ]):
+  user_tags.append( '_'.join([ tag.split('_')[ii] for ii in range( 3, len(tag.split('_')) ) ]) )
 
 ##############################################################################
-# Step 2a: Setup a LigolwSqliteNode for putting thinca_to_coincs and veto file
-# into a sql db
+# Cycle over the user tags, creating a pipeline for each
 
-print "Setting up node to put thinca_to_coinc files into a SQLite database..."
-
-# set node options
-t2c2sql_node = pipeline.LigolwSqliteNode( tosql_job )
-t2c2sql_node.set_input_cache( t2c_output_cache )
-t2c2sql_node.set_tmp_space( options.log_path )
-# database name has form: 
-# all_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
-db_type = 'CBC_TRIGDB_RAW'
-if user_tag:
-  db_type = '-'.join([ db_type, user_tag ])
-raw_result_db = '.'.join([
-  '-'.join([ all_ifos, db_type, experiment_start, experiment_duration ]),
-  'sql' ])
-# check to make sure the database doesn't already exist
-if os.path.exists( raw_result_db ):
-  raise ValueError, "Raw result database %s already exists. " % raw_result_db + \
-  "Either rm or mv it, then re-run. (If it exists, you may also want to " + \
-  "mv the CLUSTERED database so it doesn't get overwritten by cluster_coincs.)" \
+for tag in user_tags:
   
+  print "Creating jobs for %s..." % tag
+  
+  # determine whether or not this was an injection run by checking if there
+  # is an injection file
 
-t2c2sql_node.set_database( raw_result_db )
+  file_sieve = ''.join([ 'INJECTION*', tag.split('_CAT')[0], '*' ])
+  inj_cache = ihope_cache.sieve( description = file_sieve, exact_match = True )
+  if len(inj_cache) == 0:
+    simulation = False
+  if len(inj_cache) == 1:
+    simulation = True
+  if len(inj_cache) > 1:
+    raise ValueError, "More than one injection file found for %s" % tag
 
-# set parent nodes to be all the thinca_to_coinc nodes
-[t2c2sql_node.add_parent( node ) for node in dag.get_nodes() \
-  if isinstance(node, inspiral.ThincaToCoincNode)]
-    
-dag.add_node( t2c2sql_node )
+  # write the jobs that will be run
+  t2c_job = inspiral.ThincaToCoincJob(cp)
+  tosql_job = pipeline.LigolwSqliteJob(cp)
+  dbsimplify_job = inspiral.DBSimplifyJob(cp)
+  cluster_job = inspiral.ClusterCoincsJob(cp)
+  ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
+  ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
+  if simulation:
+    dbaddinj_job = inspiral.DBAddInjJob(cp)
+  else:
+    plotslides_job = inspiral.PlotSlidesJob(cp)
+    plotifar_job = inspiral.PlotIfarJob(cp)
 
-##############################################################################
-# Step 2b: Setup a LigolwSqliteNode for putting the veto-segments file 
-# into the raw database
+  # set better submit file names than the default
+  subsuffix = 'sub'
+  t2c_job.set_sub_file( '.'.join([ basename, tag, 'thinca_to_coinc', 'sub' ]) )
+  tosql_job.set_sub_file( '.'.join([ basename, tag, 'ligolw_sqlite', 'sub' ]) )
+  dbsimplify_job.set_sub_file( '.'.join([ basename, tag, 'dbsimplify', 'sub' ]) )
+  cluster_job.set_sub_file( '.'.join([ basename, tag, 'cluster_coincs', 'sub' ]) )
+  ucfar_job.set_sub_file( '.'.join([ basename, tag, 'uncombined.cfar', 'sub' ]) )
+  ccfar_job.set_sub_file( '.'.join([ basename, tag, 'combined.cfar', 'sub' ]) )
+  if simulation:
+    dbaddinj_job.set_sub_file ( '.'.join([ basename, tag, 'dbaddinj', 'sub' ]) )
+  else:
+    plotslides_job.set_sub_file( '.'.join([ basename, tag, 'plotslides', 'sub' ]) )
+    plotifar_job.set_sub_file( '.'.join([ basename, tag, 'plotifar', 'sub' ]) )
 
-# cache the veto file
-veto_seg_file = cp.get('thinca_to_coinc', 'veto-segments')
-veto_cache = lal.Cache().from_urls( [veto_seg_file] )
-veto_cache_file = re.sub('.xml', '.cache', os.path.basename(veto_seg_file))
-fp = open( veto_cache_file, 'w' )
-veto_cache.tofile( fp )
-fp.close()
+  ############################################################################
+  # Step 1: Setup thinca_to_coinc nodes
 
-# write node to add the veto file
-veto2sql_node = pipeline.LigolwSqliteNode( tosql_job )
-veto2sql_node.set_input_cache( veto_cache_file )
-veto2sql_node.set_tmp_space( options.log_path )
-veto2sql_node.set_database( raw_result_db )
+  print "\tsetting up thinca_to_coinc nodes..."
 
-# set parent node
-veto2sql_node.add_parent( t2c2sql_node )
+  # set job options
+  t2c_job.set_experiment_start_time(options.gps_start_time)
+  t2c_job.set_experiment_end_time(options.gps_end_time)
+  if simulation:
+    t2c_job.set_simulation()
 
-dag.add_node( veto2sql_node )
+  # sieve the ihope_cache for THINCA_SECOND files with this tag
+  file_sieve = 'THINCA_SECOND*' + tag
+  thinca_cache = ihope_cache.sieve( description = file_sieve, exact_match = True )
 
-##############################################################################
-# Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
+  # if not an injection run, check that there are an equal number of
+  # slide files
+  file_sieve = 'THINCA_SLIDE_SECOND*' + tag
+  if not simulation and \
+    len(ihope_cache.sieve( description = file_sieve, exact_match = True )) != \
+    len(thinca_cache):
+    raise ValueError, "Number of %s slide files doesn't equal number of zero-lag files. " % tag  + \
+      "Have all the jobs completed?"
 
-print "Setting up dbsimplify node to clean the database..."
+  # get distinct on_instruments in the thinca cache
+  distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
+  # from the distinct_instrument_sets figure out what distinct ifos there are
+  distinct_ifos = set()
+  for on_instruments in distinct_instrument_sets:
+    distinct_ifos |= lsctables.instrument_set_from_ifos(on_instruments)
+  distinct_ifos = ''.join(sorted(distinct_ifos))
 
-# set node options
-dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
-dbsimplify_node.set_tmp_space( options.log_path )
-dbsimplify_node.set_database( raw_result_db )
+  # get the veto file
+  if 'VETO' in tag:
+    # get the category veto (assuming tag has form: *CAT_N_VETO)
+    cat_num = tag.split('_')[-2]
+  else:
+    # is category 1 veto
+    cat_num = '1'
+  veto_file_path = cp.get('input', 'ihope-segments-directory')
+  veto_file_name = ''.join([
+    distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
+    '.xml' ])
+  veto_file = '/'.join([ veto_file_path, veto_file_name ])
+  if not os.path.exists( veto_file ):
+    raise ValueError, "Veto file %s could not be found." % veto_file
+  # get the veto segments name
+  veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
-# set parent node
-dbsimplify_node.add_parent( veto2sql_node )
+  t2c_output = []
+  cache_start_time = int(experiment_start)
+  for on_instruments in distinct_instrument_sets:
+    instrument_cache = thinca_cache.sieve( ifos = on_instruments, exact_match = True )
+    instrument_cache.sort()
+    this_thinca_url_list = []
+    for entry_num, entry in enumerate(instrument_cache):
+      if not this_thinca_url_list:
+        # first entry; store type for cache naming
+        cache_type = entry.description
+      # Add the zero-lag thinca url to the url list
+      this_thinca_url_list.append(entry.url)
+      # if this isn't a simulation add the slide file
+      if not simulation:
+        slide_url = re.sub('THINCA', 'THINCA_SLIDE', entry.url)
+        this_thinca_url_list.append(slide_url)
+      # if n*20th entry or last remainder, write to cache
+      if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
+        # set duration to be end of this entry - start of first entry in cache
+        cache_duration = entry.segment[1].seconds - cache_start_time
+        this_cache = lal.Cache().from_urls( this_thinca_url_list )
+        this_cache_name = '.'.join([ 
+          '-'.join([on_instruments, cache_type, str(cache_start_time), str(cache_duration)]),
+          'cache' ])
+        this_cache_file = open( this_cache_name, 'w' )
+        this_cache.tofile(this_cache_file)
+        this_cache_file.close()
+        # write node
+        this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
+        input_instruments = lsctables.ifos_from_instrument_set(
+          lsctables.instrument_set_from_ifos( on_instruments ) )
+        this_t2c_node.set_instruments(input_instruments)
+        this_t2c_node.set_input_cache(this_cache_name)
+        this_t2c_node.set_veto_segments( veto_file )
+        this_t2c_node.set_veto_segments_name( veto_segs_name )
+        dag.add_node(this_t2c_node)
+        # add output files to t2c_output
+        t2c_output += this_t2c_node.get_output_from_cache()
+        # set end-time of last entry to be start time of next cache
+        cache_start_time = entry.segment[1].seconds
+        this_thinca_url_list = []
+      
+  # write output cache
+  output_cache = lal.Cache().from_urls(t2c_output)
+  # create cache name from what's in the output cache
+  cache_type = output_cache[0].description
+  t2c_output_cache = '.'.join([ 
+    '-'.join([ distinct_ifos, cache_type, experiment_start, experiment_duration ]), 
+    'cache' ])
+  fp = open( t2c_output_cache, 'w' )
+  output_cache.tofile( fp )
+  fp.close()
 
-dag.add_node( dbsimplify_node )
+  ############################################################################
+  # Step 2a: Setup a LigolwSqliteNode for putting thinca_to_coincs 
+  # into a sql db
 
-
-##############################################################################
-# Step 3c: If simulation, add injection file.
-
-if options.simulation:
-  print "Setting up dbaddinj node to add the injection file..."
-
+  print "\tsetting up node to put thinca_to_coinc files into a SQLite database..."
+  
   # set node options
-  dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
-  dbaddinj_node.set_tmp_space( options.log_path )
-  dbaddinj_node.set_database( raw_result_db )
-  dbaddinj_node.set_injection_file( options.simulation )
-
-  dbaddinj_node.add_parent( dbsimplify_node )
-
-  dag.add_node( dbaddinj_node )
-
-##############################################################################
-# Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
-
-print "Setting up cluster node to cluster coincs in the database..."
-
-# set node options
-cluster_node = inspiral.ClusterCoincsNode( cluster_job )
-cluster_node.set_tmp_space( options.log_path )
-cluster_node.set_input( raw_result_db )
-# output database name has form:
-# all_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
-db_type = 'CBC_TRIGDB_CLUSTERED'
-if user_tag:
-  db_type = '-'.join([ db_type, user_tag ])
-result_db = '.'.join([
-  '-'.join([ all_ifos, db_type, experiment_start, experiment_duration ]),
-  'sql' ]) 
-cluster_node.set_output(result_db)
-
-# set parent node
-cluster_node.add_parent( dbsimplify_node )
-if options.simulation:
-  cluster_node.add_parent( dbaddinj_node )
-
-dag.add_node( cluster_node )
-
-##############################################################################
-# Step 5: Setup a CfarNode to compute the uncombined and combined
-# false alarm rates
-
-print "Setting up cfar node to compute false alarm rates..."
-
-# set node options: output database is same as input
-cfar_node = inspiral.CFarNode( cfar_job )
-cfar_node.set_tmp_space( options.log_path )
-cfar_node.set_input( result_db )
-cfar_node.set_output( result_db )
-
-# set parent node
-cfar_node.add_parent( cluster_node )
-
-dag.add_node( cfar_node )
-
-##############################################################################
-# Plotting: Generate all result plots
-
-print "Setting up plotting jobs..."
-
-if not options.simulation:
-  print "\tcreating plotslides node..."
-  # set plotslides_job options
-  if options.plot_playground_only:
-    plotslides_job.set_plot_playground_only()
-  # Write plotslides node
-  plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
-  plotslides_node.set_tmp_space( options.log_path )
-  plotslides_node.set_input( result_db )
-  if user_tag:
-    plotslides_node.set_user_tag( user_tag )
-
-  # set parent node
-  plotslides_node.add_parent( cfar_node )
-
-  dag.add_node( plotslides_node )
-
-  # Write plotifar nodes for different datatypes
-  print "\tcreating plotifar node for datatypes:"
-  for datatype in ['all_data', 'playground', 'exclude_play']: 
-    # only create nodes for non-playground if options.plot-playground-only not set
-    if options.plot_playground_only  and datatype != 'playground':
-      continue
-    print "\t\t%s..." % datatype
-    plotifar_node = inspiral.PlotIfarNode( plotifar_job )
-    plotifar_node.set_tmp_space( options.log_path )
-    plotifar_node.set_input( result_db )
-    plotifar_node.set_datatype( datatype )
-    if user_tag:
-      plotifar_node.set_user_tag( user_tag )
+  t2c2sql_node = pipeline.LigolwSqliteNode( tosql_job )
+  t2c2sql_node.set_input_cache( t2c_output_cache )
+  t2c2sql_node.set_tmp_space( options.log_path )
+  # database name has form: 
+  # distinct_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
+  db_type = 'CBC_TRIGDB_RAW-' + tag
+  raw_result_db = '.'.join([
+    '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
+    'sql' ])
+  # check to make sure the database doesn't already exist
+  if os.path.exists( raw_result_db ):
+    raise ValueError, "Raw result database %s already exists. " % raw_result_db + \
+    "Either rm or mv it, then re-run. (If it exists, you may also want to " + \
+    "mv the CLUSTERED database so it doesn't get overwritten by cluster_coincs.)" \
     
+  
+  t2c2sql_node.set_database( raw_result_db )
+  
+  # set parent nodes to be all the thinca_to_coinc nodes
+  [t2c2sql_node.add_parent( node ) for node in dag.get_nodes() \
+    if isinstance(node, inspiral.ThincaToCoincNode)]
+      
+  dag.add_node( t2c2sql_node )
+  
+  ############################################################################
+  # Step 2b: Setup a LigolwSqliteNode for putting the veto-segments file 
+  # into the raw database
+  
+  # cache the veto file
+  veto_cache = lal.Cache().from_urls( [veto_file] )
+  veto_cache_file = re.sub('.xml', '.cache', os.path.basename(veto_file))
+  fp = open( veto_cache_file, 'w' )
+  veto_cache.tofile( fp )
+  fp.close()
+  
+  # write node to add the veto file
+  veto2sql_node = pipeline.LigolwSqliteNode( tosql_job )
+  veto2sql_node.set_input_cache( veto_cache_file )
+  veto2sql_node.set_tmp_space( options.log_path )
+  veto2sql_node.set_database( raw_result_db )
+  
+  # set parent node
+  veto2sql_node.add_parent( t2c2sql_node )
+  
+  dag.add_node( veto2sql_node )
+  
+  ############################################################################
+  # Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
+  
+  print "\tsetting up dbsimplify node to clean the database..."
+  
+  # set node options
+  dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
+  dbsimplify_node.set_tmp_space( options.log_path )
+  dbsimplify_node.set_database( raw_result_db )
+  
+  # set parent node
+  dbsimplify_node.add_parent( veto2sql_node )
+  
+  dag.add_node( dbsimplify_node )
+  
+  
+  ############################################################################
+  # Step 3c: If simulation, add injection file.
+  
+  if simulation:
+    print "\tsetting up dbaddinj node to add the injection file..."
+  
+    # set node options
+    dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
+    dbaddinj_node.set_tmp_space( options.log_path )
+    dbaddinj_node.set_database( raw_result_db )
+    dbaddinj_node.set_injection_file( inj_cache[0].url )
+  
+    dbaddinj_node.add_parent( dbsimplify_node )
+  
+    dag.add_node( dbaddinj_node )
+  
+  ############################################################################
+  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+  
+  print "\tsetting up cluster node to cluster coincs in the database..."
+  
+  # set node options
+  cluster_node = inspiral.ClusterCoincsNode( cluster_job )
+  cluster_node.set_tmp_space( options.log_path )
+  cluster_node.set_input( raw_result_db )
+  # output database name has form:
+  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
+  db_type = 'CBC_TRIGDB_CLUSTERED-' + tag
+  result_db = '.'.join([
+    '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
+    'sql' ]) 
+  cluster_node.set_output(result_db)
+  
+  # set parent node
+  cluster_node.add_parent( dbsimplify_node )
+  if simulation:
+    cluster_node.add_parent( dbaddinj_node )
+  
+  dag.add_node( cluster_node )
+  
+  ############################################################################
+  # Step 5a: Setup a CfarNode to compute the uncombined false alarm rates
+  
+  print "\tsetting up cfar nodes:"
+  print "\t\tfor uncombined false alarm rates..."
+  
+  # set node options: output database is same as input
+  ucfar_node = inspiral.CFarNode( ucfar_job )
+  ucfar_node.set_tmp_space( options.log_path )
+  ucfar_node.set_input( result_db )
+  ucfar_node.set_output( result_db )
+  
+  # set parent node
+  ucfar_node.add_parent( cluster_node )
+  
+  dag.add_node( ucfar_node )
+  
+  ############################################################################
+  # Step 5b: Setup a CfarNode to compute the combined false alarm rates
+  
+  print "\t\tfor combined false alarm rates..."
+  
+  # set node options: output database is same as input
+  ccfar_node = inspiral.CFarNode( ccfar_job )
+  ccfar_node.set_tmp_space( options.log_path )
+  ccfar_node.set_input( result_db )
+  ccfar_node.set_output( result_db )
+  
+  # set parent node
+  ccfar_node.add_parent( ucfar_node )
+  
+  dag.add_node( ccfar_node )
+
+  ############################################################################
+  # Plotting: Generate all result plots
+  
+  print "\tsetting up plotting jobs..."
+  
+  if not simulation:
+    print "\t\tcreating plotslides node..."
+    # set plotslides_job options
+    if options.plot_playground_only:
+      plotslides_job.set_plot_playground_only()
+    # Write plotslides node
+    plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
+    plotslides_node.set_tmp_space( options.log_path )
+    plotslides_node.set_input( result_db )
+    plotslides_node.set_user_tag( tag )
+  
     # set parent node
-    plotifar_node.add_parent( cfar_node )
-
-    dag.add_node( plotifar_node )
-
-
+    plotslides_node.add_parent( ccfar_node )
+  
+    dag.add_node( plotslides_node )
+  
+    # Write plotifar nodes for different datatypes
+    print "\t\tcreating plotifar node for datatypes:"
+    for datatype in ['all_data', 'playground', 'exclude_play']: 
+      # only create nodes for non-playground if options.plot-playground-only not set
+      if options.plot_playground_only  and datatype != 'playground':
+        continue
+      print "\t\t\t%s..." % datatype
+      plotifar_node = inspiral.PlotIfarNode( plotifar_job )
+      plotifar_node.set_tmp_space( options.log_path )
+      plotifar_node.set_input( result_db )
+      plotifar_node.set_datatype( datatype )
+      plotifar_node.set_user_tag( tag )
+      
+      # set parent node
+      plotifar_node.add_parent( ccfar_node )
+  
+      dag.add_node( plotifar_node )
+  
+  
+##############################################################################
 ##############################################################################
 # Final Step: Write the DAG
 

@@ -1469,9 +1469,7 @@ int main( int argc, char *argv[] )
 
     for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
     {
-      LAL_CALL( LALGPStoFloat( &stat, &trigtime, &(thisEvent->start_time) ),
-          &stat );
-
+      trigtime = XLALGPSGetREAL8(&(thisEvent->start_time));
     }
 
     fclose( fp );

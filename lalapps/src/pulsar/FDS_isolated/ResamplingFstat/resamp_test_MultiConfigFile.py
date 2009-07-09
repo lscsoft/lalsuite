@@ -3,7 +3,7 @@
 # set as the value, else it is chosen uniformly from _min to _max
 
 # Strength of signal
-h0 = 0.2
+h0 = 0.15*0
 
 # Cosine of iota
 cosi = -0.3
@@ -21,13 +21,13 @@ phi0_min = 0
 phi0_max = 1
 
 # Number of Dirichlet terms used.
-Dterms = 64
+Dterms = 128
 
 # Interferometer
-IFO = 'H2'
+IFOs = 'H2 H1'
 
 # Start Time
-t0 = 820000000 
+t0 = '820006091 820000000'
 
 # Reference Time in SSB
 refTime = 820000000
@@ -42,56 +42,64 @@ Ephem = '/Users/ppatel/home/install/lal/share/lal'
 EphemYear = '05-09'
 
 # Noise Sh
-Sh = 0.1
+Sh = 0.15
 
 # Duration of Analysis
-TSpan = 36000
+TSpan = '36000 36000'
 
 # SFT time baseline
 TSFT = 1800
 
 # Number of SFTs to add
-NumSFTs = 10
+#NumSFTs = '20 20'
+NumSFTs = '10 11'
 
 # Number of Gaps to add
-NumGaps = 3
+NumGaps = '5 5'
+#NumGaps = '0 0'
 
 # Alpha (Right Ascension)
-Alpha = 2.0
+#Alpha = 2.0
 Alpha_min = 0
 Alpha_max = 6.28
 
 # Delta (Declination)
-Delta = 0.5
+#Delta = 0.5
 Delta_min = -1.57
 Delta_max = 1.57
 
 # Minimum Frequency
 #Fmin = 100.12345 - 2e-3
-Fmin = 3.0
+Fmin = 103.0
 
 # Band of Analysis
-Band = 2.0
+Band = 0.2
 
 # Injection Frequency
-Finj = 4.1
+Finj = 103.05
 Finj_min = 55.0
 Finj_max = 55.1
 
 # Spindown
-FDot = 1e-7*0
-FDot_min = 1e-10
+FDot = 1e-8
+FDot_min = 1e-7
 FDot_max = 1e-11
+
+# Fdot band
+FDotBand = 2e-8*0
+
+# dFdot
+dFDot = 5e-9
 
 # Optional debug
 debug = 1
 
 # Resolution
-Res = 1.0/TSpan/6
+Res = 1.0/144000/4/2
 
 # OutputTimeSeries
 TimeSeriesOut = 'TSeries'
 
 # TimeStampsFile
-TimeStampsFile = 'TimeStampsFileH1'
+#TimeStampsFile = 'TimeStampsFile'
  

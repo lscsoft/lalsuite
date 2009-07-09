@@ -276,8 +276,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
       if ( (currentError[1] = currentError[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentError[1]->trigger->end_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end_time) );
       }
       else
       {

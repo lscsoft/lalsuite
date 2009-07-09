@@ -190,12 +190,12 @@ main(int argc, char *argv[]){
     constraints.detector = NULL;
   
   if ( LALUserVarWasSet( &uvar.startTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar.startTime), &status);
+    XLALGPSSetREAL8(&startTimeGPS, uvar.startTime);
     constraints.startTime = &startTimeGPS;
   }
   
   if ( LALUserVarWasSet( &uvar.endTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar.endTime), &status);
+    XLALGPSSetREAL8(&endTimeGPS, uvar.endTime);
     constraints.endTime = &endTimeGPS;
   }
   

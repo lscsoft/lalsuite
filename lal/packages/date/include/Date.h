@@ -532,8 +532,8 @@ LALPlaceAndGPS;
 \idx[Type]{LALPlaceAndDate}
 
 Like \texttt{LALPlaceAndGPS}, this structure aggregates a pointer to a
-detector and a pointer to a date.  This is another convenience
-structure, used in calling \texttt{LALLMST1()}.  The fields are:
+detector and a pointer to a date.  This is another (in)convenience
+structure.  The fields are:
 
 \begin{description}
 \item{\verb+LALDetector *p_detector+} Pointer to a detector
@@ -582,7 +582,7 @@ LALLeapSecFormatAndAcc;
 
 This structure aggregates the \texttt{LALMSTUnits} and
 \texttt{LALLeapSecAccuracy} parameters for passing to
-\texttt{LALGPStoGMST1()} and \texttt{LALGPStoLMST1()}.
+\texttt{LALGPStoGMST1()}.
 </lalLaTeX> */
 typedef struct
 tagLALMSTUnitsAndAcc
@@ -614,38 +614,11 @@ void LALDateString (LALStatus     *status,
 \newpage\input{LMST1C}
 </lalLaTeX> */
 
-void LALGMST1 (LALStatus     *status,
-               REAL8         *gmst,        /* output - GMST1 */
-               const LALDate *date,        /* input  - date and time */
-               LALMSTUnits    outunits);   /* GMST1 units */
-
 void LALGPStoGMST1( LALStatus         *status,
                     REAL8             *gmst,      /* output - GMST1 */
                     const LIGOTimeGPS *gps,       /* input - GPS time */
                     const LALMSTUnitsAndAcc *pUnitsAndAcc); /* GMST1 units and
                                                         leapsec accuracy */
-
-void LALLMST1 (LALStatus             *status,
-               REAL8                 *lmst,          /* output - LMST1 */
-               const LALPlaceAndDate *placeAndDate,  /* input -  location
-                                                        and date */
-               LALMSTUnits            outunits);     /* LMST1 units */
-
-void LALGPStoLMST1( LALStatus             *status,
-                    REAL8                 *lmst,        /* output - LMST1 */
-                    const LALPlaceAndGPS  *placeAndGps, /* input - location and
-                                                           GPS */
-                    const LALMSTUnitsAndAcc      *pUnitsAndAcc);   /* LMST1 units
-                                                               and leapsec
-                                                               accuracy */
-
-/* <lalLaTeX>
-\newpage\input{SecsToLALDateC}
-</lalLaTeX> */
-
-void LALSecsToLALDate(LALStatus *status,
-                      LALDate   *date,
-                      REAL8     );
 
 /* <lalLaTeX>
 \newpage\input{GPStoUTCC}
@@ -673,14 +646,6 @@ LALLeapSecs (LALStatus                    *status,
 /* <lalLaTeX>
 \newpage\input{GPStoFloatC}
 </lalLaTeX> */
-void LALGPStoFloat (LALStatus *status,
-                    REAL8     *output,
-                    const LIGOTimeGPS *input);
-
-void LALFloatToGPS(LALStatus *status,
-                   LIGOTimeGPS *output,
-                   const REAL8 *input);
-
 void LALFloatToInterval(LALStatus *status,
                         LALTimeInterval *pInterval,
                         const REAL8 *pDeltaT);
@@ -689,23 +654,6 @@ void LALIntervalToFloat(LALStatus *status,
                         REAL8 *pDeltaT,
                         const LALTimeInterval *pInterval);
 
-
-/* <lalLaTeX>
-\newpage\input{GPStoINT8C}
-</lalLaTeX> */
-void
-LALINT8toGPS (
-    LALStatus          *status,
-    LIGOTimeGPS        *output,
-    const INT8         *input
-    );
-
-void
-LALGPStoINT8 (
-    LALStatus          *status,
-    INT8               *output,
-    const LIGOTimeGPS  *input
-    );
 
 /* This next function is to facilitate writing loops that increment time
  * by a time interval */
@@ -741,18 +689,6 @@ LALCompareGPS (LALStatus *status,
                                                          1 => GPS1 > GPS2 */
                const LIGOTimeGPS *pGPS1, /* input: GPS1 */
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
-
-void
-LALAddFloatToGPS (LALStatus             *status,
-		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
-		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
-		  REAL8 		deltaT); 	/* input: interval to increment by in seconds*/
-
-void
-LALDeltaFloatGPS (LALStatus    *status,
-		  REAL8 	*deltaT,	/* tGPS1 - tGPS2 */
-		  const LIGOTimeGPS *tGPS1, 	/* input: tGPS1 */
-		  const LIGOTimeGPS *tGPS2);
 
 /* This function returns the current GPS time according to the system clock */
 /* <lalLaTeX>

@@ -43,9 +43,9 @@ INT4 lalDebugLevel = 1;
 #define NUM 1000
 
 #define EARTHFILE \
-"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/earth05-09-DE405.dat"
+"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/earth05-09.dat"
 #define SUNFILE \
-"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/sun05-09-DE405.dat"
+"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/sun05-09.dat"
 
 int main(int argc, char *argv[]){
   static LALStatus status;

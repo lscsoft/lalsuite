@@ -149,7 +149,13 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 } /* CreateSFTPairsIndicesFrom2SFTvectors */
 
 
-/** Correlate a single pair of SFT at a parameter space point*/
+/** Correlate a single pair of SFT at a parameter space point. This function calculates Y_alpha
+ *  according to Eqn 4.1 in Dhurandar et al 2008, where 
+ *  Y_alpha = (xI* xJ)/Delta T^2 
+ *  sft1 and sft2 have been normalised by LALNormalizeSFT in pulsar_crosscorr.c, so they are actually
+ *  sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2) 
+ *  Therefore, when calculating the output, we need to have
+ *  out = sft1*sqrt(psd1)*sft2*sqrt(psd2)/Delta T^2 */
 void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX16                *out,
 			       COMPLEX8FrequencySeries  *sft1,
@@ -209,26 +215,26 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
 				LIGOTimeGPS		 *epoch,
 				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel)
+				REAL8Vector              *vel_c)
 {
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 vDotn, fhat, factor, timeDiff;
+  REAL8 vDotn_c, fhat, factor, timeDiff;
 
   INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT(vel, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(vel_c, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
 
-  vDotn = cos(delta) * cos(alpha) * vel->data[0]
-    + cos(delta) * sin(alpha)  * vel->data[1]
-    + sin(delta) * vel->data[2];
+  vDotn_c = cos(delta) * cos(alpha) * vel_c->data[0]
+    + cos(delta) * sin(alpha)  * vel_c->data[1]
+    + sin(delta) * vel_c->data[2];
 
   /* now calculate the intrinsic signal frequency in the SFT */
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
@@ -242,7 +248,7 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
     factor *= timeDiff / k;
     fhat += dopp->fkdot[k] * factor;
   }
-  *out = fhat * (1 + vDotn);
+  *out = fhat * (1 + vDotn_c);
 
 
   DETATCHSTATUSPTR (status);
@@ -258,11 +264,11 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
 			    LIGOTimeGPS 	    *epoch,
 			    PulsarDopplerParams     *dopp,
-			    REAL8Vector             *pos)
+			    REAL8Vector             *r_c)
 {
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 rDotn, phihat, factor, timeDiff;
+  REAL8 rDotn_c, phihat, factor, timeDiff;
   LIGOTimeGPS ssbt;
 
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
@@ -270,22 +276,21 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT(pos, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(r_c, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn = cos(delta) * cos(alpha) * pos->data[0]
-    + cos(delta) * sin(alpha) * pos->data[1]
-    + sin(delta) * pos->data[2];
+  rDotn_c = cos(delta) * cos(alpha) * r_c->data[0]
+    + cos(delta) * sin(alpha) * r_c->data[1]
+    + sin(delta) * r_c->data[2];
 
 
   /* now calculate the phase of the SFT */
   /* phi(t) = phi_0 + 2pi(f_0 t + 0.5 f_1 t^2) + 2pi (f_0 + f_1 t) r.n/c */
-  /* this is an approximation... need to change in the future? */
 
   /* this is the sft reference time  - the pulsar reference time */
-  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn);
+  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn_c);
 
   timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime) );
 
@@ -294,14 +299,11 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
   factor = 1.0;
 
- for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+ for (k = 1;  k <= PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;
     phihat += dopp->fkdot[k-1] * factor;
 
   }
-
-    factor *= timeDiff / k;
-    phihat += dopp->fkdot[k-1] * factor;
 
   *out = LAL_TWOPI * ( phihat );
 
@@ -311,6 +313,14 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   RETURN (status);
 }
 
+/* This function calculates sigma_alpha^2 according to Eqn 4.13 in Dhurandar
+ * et al 2008, where
+ * sigma_alpha^2 = Sn1*Sn2/(4 DeltaT^2)
+ * psd1 and psd2 as returned by LALNormalizeSFT are
+ * psd1 = DeltaT*Sn1/2, psd2 = DeltaT*Sn2/2
+ * so when calculating the output, we need to compute
+ * out = psd1*psd2/DeltaT^4 
+ * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/ 
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
 			      REAL8                freq1,

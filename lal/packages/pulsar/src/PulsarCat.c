@@ -168,7 +168,6 @@ updated epoch.
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel                 LALConvertSkyCoordinates()
-LALINT8toGPS()                LALGPStoINT8()
 LALBarycenterEarth()          LALBarycenter()
 LALDDestroyVector()           LALFree()
 \end{verbatim}
@@ -246,10 +245,8 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
   }
 
   /* Compute the new epoch, if this isn't trivial. */
-  TRY( LALGPStoINT8( stat->statusPtr, &t1, &(node->posepoch) ),
-       stat );
-  TRY( LALGPStoINT8( stat->statusPtr, &t2, detectorTime->p_gps ),
-       stat );
+  t1 = XLALGPSToINT8NS( &(node->posepoch) );
+  t2 = XLALGPSToINT8NS( detectorTime->p_gps );
   if ( detectorTime->p_detector ) {
     INT8 dt1; /* (new detector time) - (old SSB time) (ns) */
     INT8 dt2; /* (new SSB time) - (new detector time) (ns) */
@@ -297,8 +294,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 
   /* Adjust pulsar position. */
   dt = (1.0e-9)*(REAL8)( t2 - t1 );
-  TRY( LALINT8toGPS( stat->statusPtr, &(node->posepoch), &t2 ),
-       stat );
+  XLALINT8NSToGPS( &(node->posepoch), t2 );
   node->pos.longitude += node->pm.longitude*dt;
   node->pos.latitude += node->pm.latitude*dt;
   params.system = oldSystem;
@@ -327,8 +323,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 
   /* Adjust pulsar spin frequency and derivatives. */
   if ( node->f ) {
-    TRY( LALGPStoINT8( stat->statusPtr, &t1, &(node->fepoch) ),
-	 stat );
+    t1 = XLALGPSToINT8NS( &(node->fepoch) );
     dt = (1.0e-9)*(REAL8)( t2 - t1 );
     for ( i = 0; i < node->f->length; i++ ) {
       REAL8 dtN = 1.0; /* dt to various powers */
@@ -364,8 +359,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
       }
     }
   }
-  TRY( LALINT8toGPS( stat->statusPtr, &(node->fepoch), &t2 ),
-       stat );
+  XLALINT8NSToGPS( &(node->fepoch), t2 );
 
   /* Adjust properties of companion orbits to a nearby epoch: */
   here = node->companion;
@@ -375,7 +369,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 
     /* Find the epoch of periapsis passage nearest to the desired
        reference time. */
-    TRY( LALGPStoINT8( stat->statusPtr, &t1, &(here->epoch) ), stat );
+    t1 = XLALGPSToINT8NS( &(here->epoch) );
     dt = (1.0e-9)*(REAL8)( t2 - t1 );
     n = dt/here->p;
     n -= 0.5*(here->pDot)*n*n;
@@ -385,7 +379,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
       nInt = (INT4)( n - 0.5 );
     dt = (here->p)*nInt*( 1.0 + 0.5*(here->pDot)*nInt );
     t2 = t1 + (INT8)( 1.0e9*dt );
-    TRY( LALINT8toGPS( stat->statusPtr, &(here->epoch), &t2 ), stat );
+    XLALINT8NSToGPS( &(here->epoch), t2 );
 
     /* Update period and longitude of periapsis. */
     here->p += here->pDot*dt;

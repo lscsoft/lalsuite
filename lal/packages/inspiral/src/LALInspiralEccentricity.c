@@ -596,7 +596,7 @@ LALInspiralEccentricityEngine(
         h1 = amp * ( ( 2. * cos(twoPhim2Beta) + 2.5 * orbital_element_e * cos(phim2Beta)
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
-        if (f>=params->fLower & done==0)
+        if ((f >= params->fLower) && (done == 0))
         {
         /*fprintf(stderr, "freq=%e p=%e, e=%e, phase = %e\n", f,orbital_element_p, orbital_element_e, phase);fflush(stderr);
 */

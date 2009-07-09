@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[6.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -134,11 +134,13 @@ AC_CHECK_LIB(z, compress)
 
 PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
+  AC_CHECK_LIB(lalstochastic, LALStochasticOptimalFilter, , AC_MSG_ERROR(could not find the LAL stochastic library))
 fi
 
 dnl LALFrame, LALMetaIo, and LALXML (optional).
@@ -268,8 +270,8 @@ AC_MSG_RESULT(no))
 AC_CHECK_FUNCS(setenv)
 
 if test "$LALSUITE_BUILD" = "true"; then
-  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
+  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSTOCHASTIC_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
   lalframe="false"
   lalmetaio="false"
   lalxml="false"

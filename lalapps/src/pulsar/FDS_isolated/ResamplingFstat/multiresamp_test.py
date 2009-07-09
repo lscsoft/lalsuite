@@ -67,14 +67,28 @@ def main():
 
     # Interferometer
     try:
-        Vars['IFO'] = config.IFO
+        IFOs = config.IFOs
+        IFOs = IFOs.split(' ')
+        NumofIFOs = len(IFOs)
+        Vars['NumofIFOs'] = NumofIFOs
+        Vars['IFO'] = []
+        for i in range(NumofIFOs):
+            Vars['IFO'].append(IFOs[i])
     except:
         print "IFO cannot be read"
         sys.exit(1)
 
     # Start Time
     try:
-        Vars['t0'] = float(config.t0)
+        t0 = config.t0
+        t0 = t0.split(' ')
+        if(len(t0) != NumofIFOs):
+            print "Number of starttimes != Number of IFOs"
+            sys.exit(1)
+        
+        Vars['t0'] = []
+        for i in range(NumofIFOs):
+            Vars['t0'].append(float(t0[i]))
     except:
         print "t0 cannot be read"
         sys.exit(1)
@@ -116,21 +130,45 @@ def main():
  
     # Duration of Analysis
     try:
-        Vars['TSpan'] = int(config.TSpan)
+        TSpan = config.TSpan
+        TSpan = TSpan.split(' ')
+        if(len(TSpan) != NumofIFOs):
+            print "Number of TSpans != Number of IFOs"
+            sys.exit(1)
+        
+        Vars['TSpan'] = []
+        for i in range(NumofIFOs):
+            Vars['TSpan'].append(float(TSpan[i]))
     except:
         print "TSpan cannot be read"
         sys.exit(1)
 
     # Number of SFTs to add
     try:
-        Vars['NumSFTs'] = int(config.NumSFTs)
+        NumSFTs = config.NumSFTs
+        NumSFTs = NumSFTs.split(' ')
+        if(len(NumSFTs) != NumofIFOs):
+            print "Number of starttimes != Number of IFOs"
+            sys.exit(1)
+        
+        Vars['NumSFTs'] = []
+        for i in range(NumofIFOs):
+            Vars['NumSFTs'].append(int(NumSFTs[i]))
     except:
         print "NumSFTs cannot be read"
         sys.exit(1)
 
     # Number of Gaps to add
     try:
-        Vars['NumGaps'] = int(config.NumGaps)
+        NumGaps = config.NumGaps
+        NumGaps = NumGaps.split(' ')
+        if(len(NumGaps) != NumofIFOs):
+            print "Number of starttimes != Number of IFOs"
+            sys.exit(1)
+        
+        Vars['NumGaps'] = []
+        for i in range(NumofIFOs):
+            Vars['NumGaps'].append(int(NumGaps[i]))
     except:
         print "NumGaps cannot be read"
         sys.exit(1)
@@ -198,17 +236,37 @@ def main():
             print "Cannot read in FDot variable"
             sys.exit(1)
 
+    # FDOTBand
+    try: 
+        Vars['FDotBand'] = config.FDotBand
+    except:
+        Vars['FdotBand'] = 0
+        #print "Cannot read in FDot variable"
+        #sys.exit(1)
+
+    # dFDot
+    try: 
+        Vars['dFDot'] = config.dFDot
+    except:
+        Vars['dFDot'] = 10
+
     # Resolution
     try:
         Vars['Res'] = config.Res
-        if(Vars['Res'] > 1.0/Vars['TSpan']):
+        if(Vars['Res'] > 1.0/Vars['TSpan'][0]):
             print "Resolution too low, set to 1/T"
-            Vars['Res'] = 1.0/Vars['TSpan']
+            Vars['Res'] = 1.0/Vars['TSpan'][0]
         if(Vars['Res'] < 0):
             print "Resolution < 0"
             sys.exit(1)
     except:
-        Vars['Res'] = 1.0/Vars['TSpan']
+        Vars['Res'] = 1.0/Vars['TSpan'][0]
+        current = 0
+        for i in range(NumofIFOs):
+            if(Vars['TSpan'][i] > Vars['TSpan'][current]):
+                current = i
+                Vars['Res'] = 1.0/Vars['TSpan'][i]
+            
 
     # Debug Check
     try:
@@ -242,19 +300,19 @@ def main():
     commands.getoutput(RMOLD)
 
     # Generate Fake data string
-    FakeDataString = GenFakeDataString(1,Vars)
-    
-    if(Vars['debug']):
-        print "----------- Makefakedata String ------------"
-        print FakeDataString
-        print "--------------------------------------------\n\n"
+    for ifo in range(NumofIFOs):
+        FakeDataString = GenFakeDataString(1,Vars,ifo)
+        if(Vars['debug']):
+            print "----------- Makefakedata String ------------"
+            print FakeDataString
+            print "--------------------------------------------\n\n"
 
-    # Generate the data
-    try:
-        G = commands.getoutput(FakeDataString)
-    except:
-        print "Tried to generate SFTs, failed"
-        sys.exit(1)
+        # Generate the data
+        try:
+            G = commands.getoutput(FakeDataString)
+        except:
+            print "Tried to generate SFTs, failed"
+            sys.exit(1)
 
     # Run v2()
     OutputFile = "OutputV"
@@ -295,6 +353,8 @@ def main():
     
     if(Vars['debug']):
         print "---------- Resamp Done -----------\n\n"
+        print "---------- Output was ------------\n\n"
+        print G,"\n"
     
     return(0)
 
@@ -303,61 +363,63 @@ def PrintValues(Dict):
         print key," = ",Dict[key]
 
 def CreateTimeStampFile(Vars):
-    try:
-        File = open('./timestampsFile','w')
-    except:
-        print "Tried to open timestampsFile, failed"
-        sys.exit(0)
-    
-    if(Vars['debug']):
-        print "----------- Starting Random Time Stamp Creation -------------"
-
-    t0 = Vars['t0']
-    NumSFTs = Vars['NumSFTs']
-    NumGaps = Vars['NumGaps']
-    TSpan = Vars['TSpan']
-    TSFT = Vars['TSFT']
-    GapTime = TSpan - TSFT*NumSFTs
-    Gaps = []
-    Chunks = []
-
-    GapTimeleft = GapTime
-    SFTsleft = NumSFTs
-    for i in range(NumGaps-1):
-        Gap = round(random.uniform(0,GapTimeleft),0)
-        GapTimeleft = GapTimeleft - Gap
-        Gaps.append(Gap)
-
-    Gaps.append(GapTimeleft) 
-
-    for i in range(NumGaps):
-        Chunk = int(round(random.uniform(0,SFTsleft),0))
-        SFTsleft = SFTsleft - Chunk
-        Chunks.append(Chunk)
-
-    Chunks.append(SFTsleft)
-
-    TimeNow = t0
-    for i in range(NumGaps):
+    for ifo in range(Vars['NumofIFOs']):
+        ifotimestampfile = "./timestampsFile" + str(Vars['IFO'][ifo])
+        try:
+            File = open(ifotimestampfile,'w')
+        except:
+            print "Tried to open timestampsFile, failed"
+            sys.exit(0)
+            
         if(Vars['debug']):
-            print "Chunk number ",i+1," has ",Chunks[i]," SFTs "
-            print Gaps[i]," is the gap after this chunk "
+            print "----------- Starting Random Time Stamp Creation -------------"
+                
+        t0 = Vars['t0'][ifo]
+        NumSFTs = int(Vars['NumSFTs'][ifo])
+        NumGaps = int(Vars['NumGaps'][ifo])
+        TSpan = Vars['TSpan'][ifo]
+        TSFT = Vars['TSFT']
+        GapTime = TSpan - TSFT*NumSFTs
+        Gaps = []
+        Chunks = []
 
-        for j in range(Chunks[i]):
+        GapTimeleft = GapTime
+        SFTsleft = NumSFTs
+        for i in range(NumGaps-1):
+            Gap = round(random.uniform(0,GapTimeleft),0)
+            GapTimeleft = GapTimeleft - Gap
+            Gaps.append(Gap)
+            
+        Gaps.append(GapTimeleft) 
+            
+        for i in range(NumGaps):
+            Chunk = int(round(random.uniform(0,SFTsleft),0))
+            SFTsleft = SFTsleft - Chunk
+            Chunks.append(Chunk)
+            
+        Chunks.append(SFTsleft)
+
+        TimeNow = t0
+        for i in range(NumGaps):
+            if(Vars['debug']):
+                print "Chunk number ",i+1," has ",Chunks[i]," SFTs "
+                print Gaps[i]," is the gap after this chunk "
+                
+            for j in range(Chunks[i]):
+                File.write(str(int(TimeNow + j*TSFT)))
+                File.write(" 0 \n")
+                TimeNow = TimeNow + Gaps[i] + TSFT*Chunks[i]
+
+        if(Vars['debug']):
+            print "Chunk number ",NumGaps+1," has ",Chunks[NumGaps]," SFTs "
+            print "--------------------------------------------\n \n "
+
+        for j in range(Chunks[NumGaps]):
             File.write(str(int(TimeNow + j*TSFT)))
             File.write(" 0 \n")
-        TimeNow = TimeNow + Gaps[i] + TSFT*Chunks[i]
-
-    if(Vars['debug']):
-        print "Chunk number ",NumGaps+1," has ",Chunks[NumGaps]," SFTs "
-        print "--------------------------------------------\n \n "
-
-    for j in range(Chunks[NumGaps]):
-        File.write(str(int(TimeNow + j*TSFT)))
-        File.write(" 0 \n")
             
 
-def GenFakeDataString(addtonoise,Vars):
+def GenFakeDataString(addtonoise,Vars,ifo):
     if(Vars['Band'] > 1e-2):
         CreationBand = Vars['Band']*4
         CreationFmin = Vars['Fmin']-Vars['Band']*2
@@ -365,13 +427,14 @@ def GenFakeDataString(addtonoise,Vars):
         CreationBand = 1
         CreationFmin = Vars['Fmin'] - 0.5
 
-    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO']) + ' --refTime ' + str(Vars['refTime']) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile '
+    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO'][ifo]) + ' --refTime ' + str(Vars['refTime']) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile' + str(Vars['IFO'][ifo])
     return(S)
                          
 def GenDataString(beginstring,endstring,Vars):
-    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO']) + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + endstring
+    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dotBand ' + str(Vars['FDotBand']) + ' --df1dot ' + str(Vars['dFDot']) +  endstring
     return(S)
- 
+
+#' --f1dot ' + str(Vars['FDot']) + 
 if __name__ == '__main__':
     main()
 

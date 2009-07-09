@@ -59,7 +59,7 @@ Provides a set of utilities for manipulating \texttt{multiInspiralTable}s.
 
 \subsubsection*{Uses}
 
-\noindent LALCalloc, LALFree, LALGPStoINT8, XLALINT8NanoSecIsPlayground.
+\noindent LALCalloc, LALFree, XLALINT8NanoSecIsPlayground.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -498,8 +498,8 @@ LALCompareMultiInspiralByTime (
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   if ( ta > tb )
   {

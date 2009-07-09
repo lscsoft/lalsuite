@@ -331,12 +331,14 @@ int main( int argc, char *argv[] )
     memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
     /* store the start and end time of the raw channel in the search summary */
+    /* FIXME:  loss of precision;  consider
+    searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+    */
     searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-    LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
-        &status );
+    tsLength = XLALGPSGetREAL8( &(chan.epoch) );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
-    LAL_CALL( LALFloatToGPS( &status, 
-          &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
 
     if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
         "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
@@ -499,8 +501,7 @@ int main( int argc, char *argv[] )
         memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
         inj_calfacts.ifo = ifo;
         durationNS = gpsEndTimeNS - gpsStartTimeNS;
-        LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
-              &durationNS ), &status );
+        XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
 
         LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
             &status );
@@ -1455,8 +1456,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ), 
-      &status );
+  XLALINT8NSToGPS( &gpsStartTime, gpsStartTimeNS );
 
   /* end time specified */
   if ( ! gpsEndTimeNS )
@@ -1464,8 +1464,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ), 
-      &status );
+  XLALINT8NSToGPS( &gpsEndTime, gpsEndTimeNS );
 
   /* end after start */
   if ( gpsEndTimeNS <= gpsStartTimeNS )

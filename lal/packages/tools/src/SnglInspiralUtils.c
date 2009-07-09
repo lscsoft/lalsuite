@@ -212,7 +212,7 @@ second instrument.
 
 \subsubsection*{Uses}
 
-\noindent LALCalloc, LALFree, LALGPStoINT8, LALINT8NanoSecIsPlayground.
+\noindent LALCalloc, LALFree, LALINT8NanoSecIsPlayground.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -441,8 +441,8 @@ LALCompareSnglInspiralByTime (
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   if ( ta > tb )
   {
@@ -516,8 +516,8 @@ LALCompareSnglInspiral (
     params->match = 0;
   }
 
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
   if ( labs( ta - tb ) < params->dt && params->match)
@@ -648,8 +648,6 @@ XLALCompareInspirals (
   REAL4   dtau0, dtau3;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
-
-  /* static const char *func = "XLALCompareInspirals"; */
 
   params->match = 1;
 
@@ -1119,9 +1117,9 @@ XLALRsqCutSingleInspiral (
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 SnglInspiralTable *
 XLALVetoSingleInspiral (
-    SnglInspiralTable          *eventHead,
-    LALSegList                 *vetoSegs,
-    CHAR 			*ifo
+    SnglInspiralTable *eventHead,
+    LALSegList        *vetoSegs, 
+    const CHAR        *ifo
     )
 /* </lalVerbatim> */
 {
@@ -1429,143 +1427,115 @@ LALIfoCountSingleInspiral(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-  LALTimeSlideSegList(
-       LALStatus                  *status,
-       LALSegList                 *seglist,
-       LIGOTimeGPS                *startTime,
-       LIGOTimeGPS                *endTime,
-       LIGOTimeGPS                *slideTime
-				 )
-/* </lalVerbatim> */
+/**
+ * utility function to wrap a time t into the interval [start,
+ * start+length).  Used by thinca.
+ */
+
+
+static INT8 thinca_ring_wrap(INT8 t, INT8 ring_start, INT8 ring_length)
 {
-  INT8       startTimeNS = 0;
-  INT8       endTimeNS   = 0;
-  INT8       lengthTimeNS= 0;
-  INT8       slideNS     = 0;
-  INT8       segStartNS, segEndNS;
-  INT8       newStartNS, newEndNS;
-  LALSeg     tmpSeg;
-  LALSegList tmplist;
-  INT4       m;
-  UINT4      n,i;
+  t = (t - ring_start) % ring_length;
+  if( t < 0 )
+    t += ring_length;
+  return ring_start + t;
+}
 
-  INITSTATUS( status, "LALTimeSlideSegList", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
 
-  /* time slide segs in a seglist by a time = slideTime, except those from the
-   * instrument skipIfo which are left untouched. If you want to slide
-   * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
+/**
+ * Time slide segs in a seglist by a time = slideTime.
+ */
 
-  /* check that seglist exist */
-  if ( !seglist ) {
-    DETATCHSTATUSPTR (status);
-    RETURN(status);
-  }
 
-  /* Make sure the segment list has been properly initialized */
+int
+XLALTimeSlideSegList(
+       LALSegList        *seglist,
+       const LIGOTimeGPS *ringStartTime,
+       const LIGOTimeGPS *ringEndTime,
+       const LIGOTimeGPS *slideTime
+)
+{
+  static const char func[] = "XLALTimeSlideSegList";
+  INT8 ringStartNS = 0;	/* initialized to silence warning */
+  INT8 ringEndNS = 0;	/* initialized to silence warning */
+  INT8 slideNS;
+  LALSeg tmpSeg;
+  LALSegList tmplist; 
+  unsigned i;
+
+  /* make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    DETATCHSTATUSPTR (status);
-    RETURN(status);
-  }
-
-  if ( startTime )
-  {
-    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
-  }
-
-  if ( endTime )
-  {
-    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
+    XLALPrintError("%s(): segment list not initialized\n", func);
+    XLAL_ERROR(func, XLAL_EINVAL);
   }
 
   /* calculate the slide time in nanoseconds */
-  LALGPStoINT8( status->statusPtr, &slideNS, slideTime);
+  slideNS = XLALGPSToINT8NS( slideTime );
 
-  /* initialize segment-list */
+  /* convert the ring boundaries to nanoseconds */
+  if( ringStartTime && ringEndTime ) {
+    ringStartNS = XLALGPSToINT8NS( ringStartTime );
+    ringEndNS = XLALGPSToINT8NS( ringEndTime );
+  }
+
+  /* initialize segment list */
   XLALSegListInit( &tmplist );
 
-  /* make sure slide time is within segment time */
-  m=(int)( slideNS/(endTimeNS-startTimeNS) );
-  slideNS-=m*(endTimeNS-startTimeNS);
+  /* loop over the entries in seglist */  
+  for( i = 0; i < seglist->length; i++ ) {
+    /* convert the segment boundaries to nanoseconds */
+    INT8 segStartNS = XLALGPSToINT8NS( &seglist->segs[i].start );
+    INT8 segEndNS = XLALGPSToINT8NS( &seglist->segs[i].end );
 
-  /*  check the length of the segment list. */
-  n=seglist->length;
+    /* ignore zero-length segments */
+    if( segEndNS == segStartNS )
+      continue;
 
-  /* loop over the entries in seglist */
-  for( i=0; i<n; i++ ) {
-
-    /* and seg time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &segStartNS, &(seglist->segs[i].start) );
-    LALGPStoINT8( status->statusPtr, &segEndNS,   &(seglist->segs[i].end) );
-
-    /* do the slide */
-    segStartNS += slideNS;
-    segEndNS   += slideNS;
-
-
-    /* check times to lie on the ring... */
-    if ( startTimeNS && endTimeNS) {
-      lengthTimeNS=endTimeNS - startTimeNS;
-
-      /* print warning if the slide-time is too large...*/
-      if (slideNS>lengthTimeNS) {
-	fprintf(stdout,
-		"WARNING in LALTimeSlideSegList: slide-window LARGER than segment-length.\n");
-      }
-
-      /* check the different cases where a segment can be
-	 slide out of the ring completely or party.
-	 In the latter case, the segment has to be split */
-      if ( segStartNS<startTimeNS ) {
-
-	if ( segEndNS<startTimeNS ) {
-	  segStartNS += lengthTimeNS;
-	  segEndNS   += lengthTimeNS;
-	} else {
-	  /* split up */
-	  newStartNS = segStartNS + lengthTimeNS;
-	  newEndNS   = endTimeNS;
-	  LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &newStartNS );
-	  LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &newEndNS );
-	  XLALSegListAppend( &tmplist, &tmpSeg );
-
-	  segStartNS = startTimeNS;
-	}
-
-      } else if (segEndNS>endTimeNS) {
-
-	if ( segStartNS>endTimeNS) {
-	  segStartNS -= lengthTimeNS;
-	  segEndNS   -= lengthTimeNS;
-	} else {
-	  /* split up */
-	  newStartNS = startTimeNS;
-	  newEndNS   = segEndNS - lengthTimeNS;
-	  LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &newStartNS );
-	  LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &newEndNS );
-	  XLALSegListAppend( &tmplist, &tmpSeg );
-
-	  segEndNS = endTimeNS;
-	}
-      }
+    /* verify segment lies in ring */
+    if( ringStartTime && ringEndTime && ( segStartNS < ringStartNS || segEndNS > ringEndNS ) ) {
+      XLALPrintError("%s(): detected segment outside of ring\n", func);
+      XLAL_ERROR(func, XLAL_EINVAL);
     }
 
-    /* restore segment */
-    LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &segStartNS );
-    LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &segEndNS );
+    /* slide the segment */
+    segStartNS += slideNS;
+    segEndNS += slideNS;
+
+    if( ringStartTime && ringEndTime ) {
+      /* wrap segment around ring */
+      segStartNS = thinca_ring_wrap(segStartNS, ringStartNS, ringEndNS - ringStartNS);
+      segEndNS = thinca_ring_wrap(segEndNS, ringStartNS, ringEndNS - ringStartNS);
+
+      if( segEndNS <= segStartNS ) {
+        /* segment was split.  before adding each piece, confirm that it
+         * has non-zero length */
+        if( segEndNS != ringStartNS ) {
+          XLALINT8NSToGPS( &tmpSeg.start, ringStartNS );
+          XLALINT8NSToGPS( &tmpSeg.end, segEndNS );
+        }
+        /* this piece can't have zero length */
+        XLALINT8NSToGPS( &tmpSeg.start, segStartNS );
+        XLALINT8NSToGPS( &tmpSeg.end, ringEndNS );
+      } else {
+        /* segment was not split */
+        XLALINT8NSToGPS( &tmpSeg.start, segStartNS );
+        XLALINT8NSToGPS( &tmpSeg.end, segEndNS );
+      }
+    } else {
+      /* no ring to wrap segment around */
+      XLALINT8NSToGPS( &tmpSeg.start, segStartNS );
+      XLALINT8NSToGPS( &tmpSeg.end, segEndNS );
+    }
+
     XLALSegListAppend( &tmplist, &tmpSeg );
   }
 
-
   /* clear the old list */
-  XLALSegListClear( seglist );
+  XLALSegListClear( seglist ); 
 
-  /* loop over all segments in this list */
-  for (i=0; i<tmplist.length; i++) {
+  /* copy segments from new list into original */
+  for ( i = 0; i < tmplist.length; i++)
     XLALSegListAppend( seglist, &(tmplist.segs[i]));
-  }
 
   /* clear the temporary list */
   XLALSegListClear( &tmplist );
@@ -1573,77 +1543,49 @@ void
   /* sort and clean up the new list */
   XLALSegListCoalesce( seglist );
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
+  /* done */
+  return 0;
+}  
 
 
 /* ======================================= */
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
-LALTimeSlideSingleInspiral(
-    LALStatus                  *status,
+XLALTimeSlideSingleInspiral(
     SnglInspiralTable          *triggerList,
-    LIGOTimeGPS                *startTime,
-    LIGOTimeGPS                *endTime,
-    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
+    const LIGOTimeGPS          *startTime,
+    const LIGOTimeGPS          *endTime,
+    const LIGOTimeGPS           slideTimes[LAL_NUM_IFO]
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *thisEvent   = NULL;
-  INT8                  startTimeNS = 0;
-  INT8                  endTimeNS   = 0;
-  INT8                  slideNS     = 0;
-  INT8                  trigTimeNS  = 0;
-  INITSTATUS( status, "LALTimeSlideSingleInspiral", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
+  INT8 ringStartNS = 0;	/* initialized to silence warning */
+  INT8 ringLengthNS = 0;	/* initialized to silence warning */
 
-  /* time slide triggers by a time = slideTime, except those from the
-   * instrument skipIfo which are left untouched. If you want to slide
-   * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
-
-
-  /* check that input non-null */
-  ASSERT( triggerList, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-  if ( startTime )
+  if ( startTime && endTime )
   {
-    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
+    ringStartNS = XLALGPSToINT8NS( startTime );
+    ringLengthNS = XLALGPSToINT8NS( endTime ) - ringStartNS;
   }
 
-  if ( endTime )
-  {
-    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
-  }
-
-  for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
+  for( ; triggerList; triggerList = triggerList->next )
   {
     /* calculate the slide time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &slideNS,
-        &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
-    /* and trig time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
+    INT8 slideNS = XLALGPSToINT8NS( &slideTimes[XLALIFONumber(triggerList->ifo)] );
+    /* and trigger time in nanoseconds */
+    INT8 trigTimeNS = XLALGPSToINT8NS( &triggerList->end_time );
+
+    /* slide trigger time */
     trigTimeNS += slideNS;
 
-    while ( startTimeNS && trigTimeNS < startTimeNS )
-    {
-      /* if before startTime, then wrap trigger time */
-      trigTimeNS += endTimeNS - startTimeNS;
-    }
-    while ( endTimeNS && trigTimeNS > endTimeNS )
-    {
-      /* if after endTime, then wrap trigger time */
-      trigTimeNS -= endTimeNS - startTimeNS;
-    }
+    /* wrap trigger time to be in [startTime, endTime) */
+    if ( startTime && endTime )
+      trigTimeNS = thinca_ring_wrap(trigTimeNS, ringStartNS, ringLengthNS);
 
     /* convert back to LIGOTimeGPS */
-    LALINT8toGPS( status->statusPtr, &(thisEvent->end_time), &trigTimeNS );
-  }
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
+    XLALINT8NSToGPS( &triggerList->end_time, trigTimeNS);
+  }         
+}  
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1902,13 +1844,13 @@ LALIncaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -1923,7 +1865,7 @@ LALIncaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if (tb > ta + errorParams->dt )
       {
@@ -2022,7 +1964,7 @@ LALTamaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
           currentTrigger[0]->end_time.gpsSeconds,
@@ -2032,7 +1974,7 @@ LALTamaCoincidenceTest(
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -2048,7 +1990,7 @@ LALTamaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if (tb > ta + errorParams->dt )
       {

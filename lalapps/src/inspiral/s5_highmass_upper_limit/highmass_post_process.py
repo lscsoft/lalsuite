@@ -57,7 +57,7 @@ class sqlite_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid-$(process)).err')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_job(pipeline.CondorDAGJob):
   """
@@ -215,7 +215,8 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
   def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    cline = job.ligolw_sqlite + ' --database ' + database + ' --tmp-space /tmp --verbose '
+    #FIXME add tmp file space
+    cline = job.ligolw_sqlite + ' --database ' + database + ' --verbose '
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
     for xml in xml_list: cline += xml + " "
@@ -292,13 +293,15 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
+  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca", categories="mtotal-ifos-oninstruments", rank="snr"):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
+    self.add_var_opt("categories", categories)
     if mass_bins: self.add_var_opt("mass-bins", mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments-name",veto_segments_name)
+    self.add_var_opt("rank-by", rank)
     self.add_var_arg(database)
     self.add_macro("macroid", id)
     for p in p_node:
@@ -462,9 +465,10 @@ for k in sqliteNodeCluster.keys():
 
 #New corse jobs 
 for cat in cats:
-  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
+  #to compute uncombined far
+  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes, mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr");n+=1
   #to compute combined far 
-  lallappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lallappsNewcorseNode[cat]], mass_bins=None);n+=1
+  lallappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lallappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");n+=1
 
 #Upper limit jobs
 for cat in ['CAT_3']: 
@@ -474,7 +478,7 @@ for cat in ['CAT_3']:
 
 #IFAR plots
 for cat in cats:
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, "FULL_DATA"+cat+"_"+timestr+".sqlite", n, [lallappsNewcorseNodeCombined[cat]]);n+=1
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lallappsNewcorseNodeCombined[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()

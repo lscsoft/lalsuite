@@ -101,7 +101,6 @@ int main (int argc, char *argv[])
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  /*set_debug_level("ALLDBG");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -616,11 +615,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    /*XLALFloatToGPS(&tempGPS,startTime);*/
-	    LAL_CALL(LALFloatToGPS(status,
-				   &tempGPS,
-				   &startTime),
-		     status);
+	    XLALGPSSetREAL8(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -1105,6 +1100,8 @@ void LALappsTrackSearchInitialize(
       if ( params->overlapFlag == 0)
 	{
 	  params->NumSeg = floor(params->TimeLengthPoints/params->SegLengthPoints);
+	  params->discardTLP=(params->TimeLengthPoints)%(params->SegLengthPoints);
+	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
 	}
       else
 	{
@@ -1283,16 +1280,12 @@ void LALappsGetFrameData(LALStatus*          status,
       XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
       memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-      LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
-	       status);
+      bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
        */
       bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-      LAL_CALL(LALFloatToGPS(status,
-			     &bufferedDataStopGPS,
-			     &bufferedDataStop),
-	       status);
+      XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
       bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
@@ -1695,21 +1688,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /* End of error for invalid data types in frame file.*/
 
-      if (params->verbosity >= printFiles)
-	{
-	  if (tmpData->data->length > 3690480)
-	    {
-	      print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
-	    }
-	  else
-	    {
-	      fprintf(stderr,"RawOriginalInputTimeSeries.diag Too Large More that 3690480 points.\n");
-	      fprintf(stderr,"File will not be dumped to disk.\n");
-	      fflush(stderr);
-	    }
-	}
-
       /*
        * Prepare for the resample if needed or just copy the data so send
        * back
@@ -1734,11 +1712,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		fprintf(stdout,"Done Resampling input data.\n");
 		fflush(stdout);
 	    }
-	  if (params->verbosity >= printFiles)
-	    {
-	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"ResampledlOriginalInputTimeSeries_Units.diag");
-	    }
+
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
 	   */
@@ -1902,7 +1876,7 @@ void LALappsDoTrackSearch(
    * the map and use them to run the analysis
    */
   /*
-   * DO THE AUTO ADJUSTMENTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   * DO THE AUTO ADJUSTMENTS!!!
    */
   if (params.autoLambda)
     {
@@ -1953,13 +1927,6 @@ void LALappsDoTrackSearch(
   tsInputs.allocFlag = 2;
   LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	     status);
-#if 0
-  /*
-   * Write PGM to disk if requested
-   */
-  if (params.verbosity >= printFiles)
-    DumpTFImage(tfmap->map,"DumpMap0",tsInputs.height,tsInputs.width,1);
-#endif
   /*
    * Setup for call to function to do map marking
    * We mark maps is convert Tbin and Fbin to 
@@ -2132,11 +2099,26 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 
-      LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
-	       status);
-
-      LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
-	       status);
+      errCode=LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqParam\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
+      errCode=LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqRep\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
       /*
        * There is an issue with the overlapping of fft windows used to
        * construct the TFR.  Example:
@@ -2329,22 +2311,13 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &signalStart,
-			 &signalSeries->epoch),
-	   status);
+  signalStart = XLALGPSGetREAL8(&signalSeries->epoch);
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
    */
   signalStop=(signalSeries->deltaT*(signalSeries->data->length))+signalStart;
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &(mapMarkerParams.mapStopGPS),
-			 &signalStop),
-			 
-	   status);
+  XLALGPSSetREAL8(&(mapMarkerParams.mapStopGPS),signalStop);
   mapMarkerParams.mapTimeBins=tfmap->tCol;
   mapMarkerParams.mapFreqBins=((tfmap->fRow/2)+1);
   /*This is the map time resolution*/
@@ -2503,17 +2476,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    *Adjust value of edgeOffsetGPS to be new start point 
    * including col buffer data
    */
-    LAL_CALL(
-	     LALGPStoFloat(status,
-			   &originalFloatTime,
-			   &(params.GPSstart)),
-	     status);
+    originalFloatTime = XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
-    LAL_CALL(LALFloatToGPS(status,
-			   &edgeOffsetGPS,
-			   &newFloatTime),
-	     status);
-    
+    XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
+
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,
 				      0,
@@ -3019,16 +2985,8 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &startStamp,
-			     &(outCurve.curves[i].gpsStamp[0]))
-	       ,status);
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &stopStamp,
-			     &(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]))
-	       ,status);
+      startStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[0]));
+      stopStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]));
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,
