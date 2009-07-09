@@ -1,7 +1,7 @@
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
@@ -358,10 +358,10 @@ int main(int argc, char** argv)
 
 #if 0
 
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
