@@ -161,7 +161,7 @@ int main(int argc, char *argv[]){
 
   const CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
-  UINT4   i;
+  INT4   i;
   FILE   *fp=NULL;                    /* Output file */
 
   fname = FILEOUT;
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]){
     return TESTSTATISTICSC_EFILE;
   }
 
-  for (i=0; i < hist.length; i++){
+  for (i=0; i < (INT4)hist.length; i++){
     fprintf(fp,"%d  %llu\n", i, hist.data[i]);
   }
 
