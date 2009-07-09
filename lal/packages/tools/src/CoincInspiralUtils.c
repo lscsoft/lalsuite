@@ -887,7 +887,7 @@ XLALExtractSnglInspiralFromCoinc(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "ExtractSnglInspiralFromCoinc";
+  /*static const char *func = "ExtractSnglInspiralFromCoinc";*/
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
