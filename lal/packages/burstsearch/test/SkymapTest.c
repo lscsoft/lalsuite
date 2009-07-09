@@ -92,7 +92,6 @@ static void directional(void)
     double wSw[3] = { 100., 100., 10. };
     XLALSkymap2KernelType *kernels;
     double *xSw[3];
-    int n;
 
     {
         plan = malloc(sizeof(*plan));
