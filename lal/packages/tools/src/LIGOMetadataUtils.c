@@ -114,7 +114,7 @@ Finally, \texttt{LALDistanceScanSummValueTable()} scan a summ value table
 
 \subsubsection*{Uses}
 
-\noindent LALGPStoINT8, LALCalloc, LALMalloc, LALFree.
+\noindent LALCalloc, LALMalloc, LALFree.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -221,32 +221,32 @@ XLALReturnIFO(
   switch( IFONumber )
   {
     case LAL_IFO_G1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "G1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "G1");
       break;
 
     case LAL_IFO_H1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "H1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "H1");
       break;
 
     case LAL_IFO_H2:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "H2");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "H2");
       break;
 
     case LAL_IFO_L1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "L1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "L1");
       break;
 
     case LAL_IFO_T1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "T1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "T1");
       break;
 
     case LAL_IFO_V1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "V1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "V1");
       break;
 
     default:
       /* Invalid Detector Site */
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "");
   }
 }
 
@@ -412,18 +412,18 @@ XLALPlaygroundInSearchSummary (
   static const char *func = "PlaygroundInSearchSummary";
   INT8 startNS, endNS, lengthNS, playNS;
 
-  startNS = XLALGPStoINT8( &(ssTable->in_start_time) );
-  endNS = XLALGPStoINT8( &(ssTable->in_end_time) );
+  startNS = XLALGPSToINT8NS( &(ssTable->in_start_time) );
+  endNS = XLALGPSToINT8NS( &(ssTable->in_end_time) );
   lengthNS = endNS - startNS;
   playNS = PlaygroundOverlap( endNS, lengthNS );
   if ( playNS < 0 )
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  inPlayTime = XLALINT8toGPS( inPlayTime, playNS );
+  inPlayTime = XLALINT8NSToGPS( inPlayTime, playNS );
 
-  startNS = XLALGPStoINT8( &(ssTable->out_start_time) );
-  endNS = XLALGPStoINT8( &(ssTable->out_end_time) );
+  startNS = XLALGPSToINT8NS( &(ssTable->out_start_time) );
+  endNS = XLALGPSToINT8NS( &(ssTable->out_end_time) );
   lengthNS = endNS - startNS;
 
   playNS = PlaygroundOverlap( endNS, lengthNS );
@@ -431,7 +431,7 @@ XLALPlaygroundInSearchSummary (
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  outPlayTime = XLALINT8toGPS( outPlayTime, playNS );
+  outPlayTime = XLALINT8NSToGPS( outPlayTime, playNS );
 
   return( 0 );
 }
@@ -455,8 +455,8 @@ LALCompareSearchSummaryByInTime (
 
   /* determine the in start times */
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->in_start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->in_start_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->in_start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->in_start_time) );
 
   if ( ta > tb )
   {
@@ -470,8 +470,8 @@ LALCompareSearchSummaryByInTime (
   {
     /* determine the in end times */
     memset( &status, 0, sizeof(LALStatus) );
-    LALGPStoINT8( &status, &ta, &( aPtr->in_end_time) );
-    LALGPStoINT8( &status, &tb, &( bPtr->in_end_time) );
+    ta = XLALGPSToINT8NS( &( aPtr->in_end_time) );
+    tb = XLALGPSToINT8NS( &( bPtr->in_end_time) );
 
     if ( ta > tb )
     {
@@ -507,8 +507,8 @@ LALCompareSearchSummaryByOutTime (
 
   /* determine the out start times */
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->out_start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->out_start_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->out_start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->out_start_time) );
 
   if ( ta > tb )
   {
@@ -522,8 +522,8 @@ LALCompareSearchSummaryByOutTime (
   {
     /* determine the out end times */
     memset( &status, 0, sizeof(LALStatus) );
-    LALGPStoINT8( &status, &ta, &(aPtr->out_end_time) );
-    LALGPStoINT8( &status, &tb, &(bPtr->out_end_time) );
+    ta = XLALGPSToINT8NS( &(aPtr->out_end_time) );
+    tb = XLALGPSToINT8NS( &(bPtr->out_end_time) );
 
     if ( ta > tb )
     {
@@ -720,7 +720,7 @@ LALDistanceScanSummValueTable (
   *distance = 0;
 
   /* convert the input GPS time into INT8 */
-  LALGPStoINT8( status->statusPtr, &ta, &(gps) );
+  ta = XLALGPSToINT8NS( &(gps) );
 
   /* scan the summ value table */
   for( thisSummValue = summValueList; thisSummValue;
@@ -737,10 +737,8 @@ LALDistanceScanSummValueTable (
 	    /* IFOs match so now let us check if this entry coincides
 	       with the requested GPS time */
 
-	    LALGPStoINT8( status->statusPtr, &tb,
-			  &(thisSummValue->start_time) );
-	    LALGPStoINT8( status->statusPtr, &tc,
-			  &(thisSummValue->end_time) );
+	    tb = XLALGPSToINT8NS( &(thisSummValue->start_time) );
+	    tc = XLALGPSToINT8NS( &(thisSummValue->end_time) );
 	    if ( ta >= tb && ta<=tc )
 	      {
 		*distance = thisSummValue->value;
@@ -796,10 +794,8 @@ LALCheckOutTimeFromSearchSummary (
   CHECKSTATUSPTR( status );
 
   /* calculate requested start and end time in NS */
-  LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
-  CHECKSTATUSPTR( status );
-  LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
-  CHECKSTATUSPTR( status );
+  startTimeNS = XLALGPSToINT8NS( startTime );
+  endTimeNS = XLALGPSToINT8NS( endTime );
 
   unsearchedStartNS = startTimeNS;
 
@@ -807,16 +803,12 @@ LALCheckOutTimeFromSearchSummary (
   for ( thisSearchSumm = thisIFOSummList; thisSearchSumm;
       thisSearchSumm = thisSearchSumm->next )
   {
-    LALGPStoINT8( status->statusPtr, &outStartNS,
-        &(thisSearchSumm->out_start_time) );
-    CHECKSTATUSPTR( status );
+    outStartNS = XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) );
 
     if ( outStartNS < startTimeNS )
     {
       /* file starts before requested start time */
-      LALGPStoINT8( status->statusPtr, &outEndNS,
-          &(thisSearchSumm->out_end_time) );
-      CHECKSTATUSPTR( status );
+      outEndNS = XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) );
 
       if ( outEndNS > startTimeNS )
       {
@@ -828,9 +820,7 @@ LALCheckOutTimeFromSearchSummary (
     {
       /* this file starts at the beginning of the unsearched data */
       /* calculate the end time and set unsearched start to this */
-      LALGPStoINT8( status->statusPtr, &outEndNS,
-          &(thisSearchSumm->out_end_time) );
-      CHECKSTATUSPTR( status );
+      outEndNS = XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) );
 
       unsearchedStartNS = outEndNS;
     }
@@ -930,8 +920,6 @@ LALCompareSummValueByTime (
     )
 /* </lalVerbatim> */
 {
-  LALStatus     status;
-
   const SummValueTable *aPtr = *((const SummValueTable * const *)a);
   const SummValueTable *bPtr = *((const SummValueTable * const *)b);
 
@@ -939,8 +927,8 @@ LALCompareSummValueByTime (
   INT8 tb = 0;
 
   /* determine the out start times */
-  LALGPStoINT8( &status, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->start_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   if ( ta > tb )
   {
@@ -953,8 +941,8 @@ LALCompareSummValueByTime (
   else
   {
     /* determine the out end times */
-    LALGPStoINT8( &status, &ta, &(aPtr->end_time) );
-    LALGPStoINT8( &status, &tb, &(bPtr->end_time) );
+    ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+    tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
     if ( ta > tb )
     {

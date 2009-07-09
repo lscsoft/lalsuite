@@ -1,0 +1,6 @@
+opt/lscsoft/lalsuite/bin
+opt/lscsoft/lalsuite/include
+opt/lscsoft/lalsuite/lib/pkgconfig
+opt/lscsoft/lalsuite/share/lal
+opt/lscsoft/lalsuite/share/man/man1
+opt/lscsoft/lalsuite/share/man/man3

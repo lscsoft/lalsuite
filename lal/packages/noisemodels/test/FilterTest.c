@@ -35,20 +35,20 @@ BankEfficiency [options]
 
 The options are :
    -alpha : BCV amplitude correction parameter
-   -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...  
--fl : lower frequency cutoff             
--mMin : minimal mass of component stars   
--mMax : maximal mass of component stars    
--mm : minimal match for template bank   
--n : number of trials                  
--order : order of PN model                  
+   -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...
+-fl : lower frequency cutoff
+-mMin : minimal mass of component stars
+-mMax : maximal mass of component stars
+-mm : minimal match for template bank
+-n : number of trials
+-order : order of PN model
 -quiet : if this flag is present, the output is restricted to the min
--seed : seed for random generation         
--sigAmp : amplitude of the signal            
--simType : type of simulation, 0, 1 or 2    
--x0Max : Max value of psi0 
--x1Min : Min value of psi  
-		  
+-seed : seed for random generation
+-sigAmp : amplitude of the signal
+-simType : type of simulation, 0, 1 or 2
+-x0Max : Max value of psi0
+-x1Min : Min value of psi
+
 
 \end{verbatim}
 
@@ -79,7 +79,7 @@ LALInspiralWaveLength
 LALInspiralCreateCoarseBank
 LALRandomInspiralSignal
 LALInspiralParameterCalc
-LALNoiseSpectralDensity 
+LALNoiseSpectralDensity
 LALCreateForwardRealFFTPlan
 LALCreateReverseRealFFTPlan
 LALForwardRealFFT
@@ -104,19 +104,20 @@ LALInspiralParameterCalc
 #include <lal/SeqFactories.h>
 
 NRCSID (FILTERTESTC,"$Id$");
- 
-void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
+
+void printf_timeseries (INT4 n, REAL4 *signal1, REAL8 delta, REAL8 t0);
 
 INT4 lalDebugLevel=1;
-     
-int 
-main (  int argc, char **argv ) 
+
+int
+main (  int argc, char **argv )
 {
    static LALStatus status;
    static INT4 i, approx, tmplt;
+   static UINT4 j;
    static UINT4 psdLength, quietFlag = 0;
    static REAL8 df, norm;
-   static REAL4Vector signal, correlation;
+   static REAL4Vector signalvec, correlation;
    void   (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
@@ -124,9 +125,9 @@ main (  int argc, char **argv )
    static RealFFTPlan *fwdp=NULL,*revp=NULL;
    static InspiralTemplate tmpltParam, param;
    static InspiralWaveNormaliseIn normin;
-   
-   
-   quietFlag = 0;	
+
+
+   quietFlag = 0;
    approx = PadeT1;
    tmplt = BCV;
 
@@ -137,15 +138,15 @@ main (  int argc, char **argv )
    param.order = 5;
    param.mass1 = 5.0;
    param.mass2 = 5.0;
-   param.startTime=0.0; 
-   param.startPhase=0.0; 
+   param.startTime=0.0;
+   param.startPhase=0.0;
    param.nStartPad=0;
    param.fCutoff = 1000.;
    param.tSampling = 4096.;
    param.signalAmplitude = 1.0;
    param.nEndPad = 0;
    param.alpha = 0.L;
-   
+
    tmpltParam = param;
    tmpltParam.massChoice = psi0Andpsi3;
    tmpltParam.approximant = tmplt;
@@ -170,17 +171,17 @@ main (  int argc, char **argv )
 	   }
 	   else if (strcmp(argv[i],"-order")==0)
 	   {
-		   param.order = atoi(argv[++i]); 
+		   param.order = atoi(argv[++i]);
 		   tmpltParam.order = param.order;
 	   }
 	   else if (strcmp(argv[i],"-m1")==0)
-		   param.mass1 = atof(argv[++i]); 
+		   param.mass1 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-m2")==0)
-		   param.mass2 = atof(argv[++i]); 
+		   param.mass2 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-quiet")==0)
 		   quietFlag = 1;
 	   else if (strcmp(argv[i],"-alpha")==0)
-		   tmpltParam.alpha = atof(argv[++i]); 
+		   tmpltParam.alpha = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-psi0")==0)
 		   tmpltParam.psi0 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-psi3")==0)
@@ -209,8 +210,8 @@ main (  int argc, char **argv )
 			   approx = 8;
 		   else if (strcmp(argv[i],"SpinTaylorT3")==0)
 			   approx = 9;
-		   param.approximant = approx;	
-	   }	
+		   param.approximant = approx;
+	   }
 	   else if (strcmp(argv[i], "-template")==0)
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
@@ -233,9 +234,9 @@ main (  int argc, char **argv )
 			   tmplt = 8;
 		   else if (strcmp(argv[i],"SpinTaylorT3")==0)
 			   tmplt = 9;
-		   tmpltParam.approximant = tmplt;	
-	   }	
-	   else 
+		   tmpltParam.approximant = tmplt;
+	   }
+	   else
 	   {
 		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
 		   fprintf(stderr,"The options are (with default values in brackets)\n");
@@ -249,10 +250,10 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", param.psi0);
 		   fprintf(stderr,"       -psi3 : Min value of psi  (%7.2f)\n", param.psi3);
 		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", param.fFinal);
-		   return 1;	
+		   return 1;
 
 	   }
-	   i++;       
+	   i++;
    }
 
 /*---------------------------------------------------------------------------*/
@@ -260,27 +261,27 @@ main (  int argc, char **argv )
 /*---------------------------------------------------------------------------*/
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;
-   signal.length = 0.;
+   signalvec.length = 0.;
    param.approximant = EOB;
-   LALInspiralWaveLength (&status, &signal.length, param);
-   if (!quietFlag) fprintf(stdout, "signal length = %d\n", signal.length);
+   LALInspiralWaveLength (&status, &signalvec.length, param);
+   if (!quietFlag) fprintf(stdout, "signal length = %d\n", signalvec.length);
 
-   correlation.length = signal.length;
-   psdLength = signal.length/2 + 1;
-   signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*signal.length);
+   correlation.length = signalvec.length;
+   psdLength = signalvec.length/2 + 1;
+   signalvec.data = (REAL4*) LALMalloc(sizeof(REAL4)*signalvec.length);
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    memset( &(shf), 0, sizeof(REAL8FrequencySeries) );
    shf.f0 = 0;
    LALDCreateVector( &status, &(shf.data), psdLength );
-   shf.deltaF = param.tSampling / signal.length;
-   df = param.tSampling/(float) signal.length;
+   shf.deltaF = param.tSampling / signalvec.length;
+   df = param.tSampling/(float) signalvec.length;
    LALNoiseSpectralDensity (&status, shf.data, noisemodel, df);
 
-/* 
- * Estimate the plans 
+/*
+ * Estimate the plans
  */
-   LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
-   LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
+   LALCreateForwardRealFFTPlan(&status, &fwdp, signalvec.length, 0);
+   LALCreateReverseRealFFTPlan(&status, &revp, signalvec.length, 0);
 /* REPORTSTATUS(&status); */
 
    param.approximant = approx;
@@ -293,40 +294,40 @@ main (  int argc, char **argv )
    if (param.approximant != BCV && param.approximant != TaylorF1 && param.approximant != TaylorF2 )
    {
 	   LALInspiralWave(&status, &correlation, &param);
-	   LALREAL4VectorFFT(&status, &signal, &correlation, fwdp);
+	   LALREAL4VectorFFT(&status, &signalvec, &correlation, fwdp);
    }
    else
    {
-	   LALInspiralWave(&status, &signal, &param);
+	   LALInspiralWave(&status, &signalvec, &param);
    }
 
    normin.psd = shf.data;
-   normin.df = param.tSampling / (REAL8) signal.length;
+   normin.df = param.tSampling / (REAL8) signalvec.length;
    normin.fCutoff = param.fFinal;
    normin.samplingRate = param.tSampling;
-   LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin);
+   LALInspiralWaveNormaliseLSO(&status, &signalvec, &norm, &normin);
    /*
-   LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+   LALREAL4VectorFFT(&status, &correlation, &signalvec, revp);
    if (!quietFlag) for (i=0; i<correlation.length; i++) printf("%e\n", correlation.data[i]);
    */
 
    overlapin.param = tmpltParam;
    overlapin.psd = *shf.data;
-   overlapin.signal = signal;
+   overlapin.signal = signalvec;
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
-     
+
    overlapin.ifExtOutput = 0;
    LALInspiralWaveOverlap (&status,&correlation,&overlapout,&overlapin);
-   if (!quietFlag) for (i=0; i<correlation.length; i++) printf("%e\n", correlation.data[i]);
-   fprintf (stdout, "%e %e %e %e %e %e %e %e %e\n", 
-		   tmpltParam.psi0, 
-		   tmpltParam.psi3, 
+   if (!quietFlag) for (j=0; j<correlation.length; j++) printf("%e\n", correlation.data[j]);
+   fprintf (stdout, "%e %e %e %e %e %e %e %e %e\n",
+		   tmpltParam.psi0,
+		   tmpltParam.psi3,
 		   param.mass1,
 		   param.mass2,
-		   tmpltParam.totalMass, 
+		   tmpltParam.totalMass,
 		   param.totalMass,
-		   overlapin.param.fFinal, 
+		   overlapin.param.fFinal,
 		   param.fFinal,
 		   overlapout.max
 		   );
@@ -334,23 +335,23 @@ main (  int argc, char **argv )
 
    /*
       LALDDestroyVector( &status, &(shf.data) );
-      if (signal.data != NULL) LALFree(signal.data);
+      if (signalvec.data != NULL) LALFree(signalvec.data);
       if (correlation.data != NULL) LALFree(correlation.data);
-      LALDestroyRealFFTPlan(&status,&fwdp);   
+      LALDestroyRealFFTPlan(&status,&fwdp);
       LALDestroyRealFFTPlan(&status,&revp);
       LALCheckMemoryLeaks();
     */
-   
+
    return(0);
 
 }
 
-void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0) 
+void printf_timeseries (INT4 n, REAL4 *signal1, double delta, double t0)
 {
   int i=0;
 
-  do 
-     printf ("%e %e\n", i*delta+t0, *(signal+i));
-  while (n-++i); 
+  do
+     printf ("%e %e\n", i*delta+t0, *(signal1+i));
+  while (n-++i);
   printf("&\n");
 }

@@ -81,11 +81,11 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     LIBXML_TEST_VERSION
 
     /* check and prepare input parameters */
-    if(!ltg || LALSnprintf(gpsSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsSeconds) < 0) {
+    if(!ltg || snprintf(gpsSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsSeconds) < 0) {
         XLALPrintError("Invalid input parameter: LIGOTimeGPS->gpsSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!ltg || LALSnprintf(gpsNanoSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsNanoSeconds) < 0) {
+    if(!ltg || snprintf(gpsNanoSecondsBuffer, INT4STR_MAXLEN, "%i", ltg->gpsNanoSeconds) < 0) {
         XLALPrintError("Invalid input parameter: LIGOTimeGPS->gpsNanoSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
@@ -250,19 +250,19 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     LIBXML_TEST_VERSION
 
     /* check and prepare input parameters */
-    if(!bop || LALSnprintf(argp, REAL8STR_MAXLEN, "%g", bop->argp) < 0) {
+    if(!bop || snprintf(argp, REAL8STR_MAXLEN, "%g", bop->argp) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->argp\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!bop || LALSnprintf(asini, REAL8STR_MAXLEN, "%g", bop->asini) < 0) {
+    if(!bop || snprintf(asini, REAL8STR_MAXLEN, "%g", bop->asini) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->asini\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!bop || LALSnprintf(ecc, REAL8STR_MAXLEN, "%g", bop->ecc) < 0) {
+    if(!bop || snprintf(ecc, REAL8STR_MAXLEN, "%g", bop->ecc) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->ecc\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!bop || LALSnprintf(period, REAL8STR_MAXLEN, "%g", bop->period) < 0) {
+    if(!bop || snprintf(period, REAL8STR_MAXLEN, "%g", bop->period) < 0) {
         XLALPrintError("Invalid input parameter: BinaryOrbitParams->period\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
@@ -520,7 +520,7 @@ xmlNodePtr XLALPulsarSpins2VOTableNode(const PulsarSpins *const spins, const cha
 
     /* parse input array */
     for(i = 0; i < PULSAR_MAX_SPINS; ++i) {
-        if(LALSnprintf(spinArrayStringItem, REAL8STR_MAXLEN, "%g", (*spins)[i]) < 0) {
+        if(snprintf(spinArrayStringItem, REAL8STR_MAXLEN, "%g", (*spins)[i]) < 0) {
             XLALPrintError("Invalid input parameter: spins[%i]\n", i);
             XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
         }
@@ -536,7 +536,7 @@ xmlNodePtr XLALPulsarSpins2VOTableNode(const PulsarSpins *const spins, const cha
     }
 
     /* set array size attribute */
-    if(LALSnprintf(spinArraySize, PULSARSPINSTR_MAXLEN, "%i", PULSAR_MAX_SPINS) < 0) {
+    if(snprintf(spinArraySize, PULSARSPINSTR_MAXLEN, "%i", PULSAR_MAX_SPINS) < 0) {
         XLALPrintError("Couldn't prepare attribute: arraysize\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
@@ -702,11 +702,11 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
     LIBXML_TEST_VERSION
 
     /* check and convert input parameters */
-    if(!pdp || LALSnprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
+    if(!pdp || snprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Alpha\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!pdp || LALSnprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
+    if(!pdp || snprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Delta\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
@@ -916,7 +916,7 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const
 }
 
 
-
+
 
 
 /**
@@ -969,8 +969,8 @@ XLALgsl_vector2VOTableNode(const gsl_vector *vect,	/**< [in] input gsl_vector to
   dim = vect->size;	/* guaranteed to be >= 1 */
 
   /* prepare array size attribute */
-  if ( LALSnprintf ( arraySizeStr, sizeof(arraySizeStr), "%d", dim ) < 0 ) {
-    XLALPrintError("%s: LALSnprintf() failed for arraySizeStr.\n\n", fn );
+  if ( snprintf ( arraySizeStr, sizeof(arraySizeStr), "%d", dim ) < 0 ) {
+    XLALPrintError("%s: snprintf() failed for arraySizeStr.\n\n", fn );
     XLAL_ERROR_NULL (fn, XLAL_EFAILED);
   }
 
@@ -984,7 +984,7 @@ XLALgsl_vector2VOTableNode(const gsl_vector *vect,	/**< [in] input gsl_vector to
   for ( i = 0; i < dim; i++ )
     {
       /* add vector element [i] to arrayStr */
-      if( LALSnprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_vector_get ( vect, i ) ) < 0 ) {
+      if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_vector_get ( vect, i ) ) < 0 ) {
 	XLALFree ( arrayStr );
 	XLALPrintError("%s: failed to convert vector element to string: vect[%d]\n", i);
 	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
@@ -1151,7 +1151,7 @@ XLALVOTableDoc2gsl_vectorByName(const xmlDocPtr xmlDocument,
 
 
 
-
+
 
 /**
  * \brief Serializes a \c gsl_matrix into a VOTable XML %node
@@ -1214,8 +1214,8 @@ XLALgsl_matrix2VOTableNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix 
    * the matrix with rows varying slowest, columns fastest, which corresponds to
    * arraysize="cols x rows" !
    */
-  if ( LALSnprintf ( arraySizeStr, sizeof(arraySizeStr), "%dx%d", numCols, numRows ) < 0 ) {
-    XLALPrintError("%s: LALSnprintf() failed for arraySizeStr (%dx%d).\n\n", fn, numCols, numRows );
+  if ( snprintf ( arraySizeStr, sizeof(arraySizeStr), "%dx%d", numCols, numRows ) < 0 ) {
+    XLALPrintError("%s: snprintf() failed for arraySizeStr (%dx%d).\n\n", fn, numCols, numRows );
     XLAL_ERROR_NULL (fn, XLAL_EFAILED);
   }
 
@@ -1232,7 +1232,7 @@ XLALgsl_matrix2VOTableNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix 
       for ( col = 0; col < numCols; col ++ )
 	{
 	  /* add matrix element [row,col] to arrayStr */
-	  if( LALSnprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_matrix_get ( matrix, row, col ) ) < 0 ) {
+	  if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_matrix_get ( matrix, row, col ) ) < 0 ) {
 	    XLALFree ( arrayStr );
 	    XLALPrintError("%s: failed to convert matrix element to string: vect[%d,%d]\n", row, col);
 	    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );

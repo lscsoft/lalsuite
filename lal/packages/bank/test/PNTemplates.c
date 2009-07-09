@@ -72,7 +72,7 @@ GetInspiralMoments (
 		InspiralTemplate     *params );
 
 int
-main(int argc, char **argv)
+main(void)
 {
   static LALStatus status;     /* top-level status structure */
   static InspiralTemplate params;
@@ -85,8 +85,8 @@ main(int argc, char **argv)
   REAL4VectorSequence *list=NULL;
   static InspiralMetric metric;
   static InspiralMomentsEtc moments;
-  static InspiralBankParams   bankParams; 
-  static CreateVectorSequenceIn in; 
+  static InspiralBankParams   bankParams;
+  static CreateVectorSequenceIn in;
   INT4 valid;
   FILE *fpr;
   fpr = fopen("PNTemplates.out", "w");
@@ -97,12 +97,12 @@ main(int argc, char **argv)
 
   params.OmegaS = 0.;
   params.Theta = 0.;
-  params.ieta=1; 
-  params.mass1=10.; 
-  params.mass2=10.; 
-  params.startTime=0.0; 
+  params.ieta=1;
+  params.mass1=10.;
+  params.mass2=10.;
+  params.startTime=0.0;
   params.startPhase=0.0;
-  params.fLower=40.0; 
+  params.fLower=40.0;
   params.fCutoff=2000.00;
   params.tSampling=4096.0;
   params.order=4;
@@ -113,7 +113,7 @@ main(int argc, char **argv)
   params.massChoice=m1Andm2;
   params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
   LALInspiralParameterCalc(&status, &params);
-    
+
   coarseIn.fLower = params.fLower;
   coarseIn.fUpper = params.fCutoff;
   coarseIn.tSampling = params.tSampling;
@@ -126,7 +126,7 @@ main(int argc, char **argv)
   coarseIn.mMin = 1.0;
   coarseIn.mMax = 20.0;
   coarseIn.MMax = coarseIn.mMax * 2.;
-  coarseIn.massRange = MinMaxComponentMass; 
+  coarseIn.massRange = MinMaxComponentMass;
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
@@ -141,7 +141,7 @@ main(int argc, char **argv)
   LALNoiseSpectralDensity (&status, shf.data, noisemodel, shf.deltaF );
 
   /* compute the metric */
-	  
+
   GetInspiralMoments (&status, &moments, &shf, &params);
   LALInspiralComputeMetric(&status, &metric, &params, &moments);
   dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
@@ -154,7 +154,7 @@ main(int argc, char **argv)
   bankParams.metric = &metric;
   bankParams.minimalMatch = coarseIn.mmCoarse;
   bankParams.x0Min = 3.0;
-  bankParams.x0Max = 10.00; 
+  bankParams.x0Max = 10.00;
   bankParams.x1Min = 0.15;
   bankParams.x1Max = 1.25;
 
@@ -167,11 +167,11 @@ main(int argc, char **argv)
   nlist = list->length;
 
   fprintf(fpr, "Number of templates=%d dx0=%e dx1=%e\n", nlist, bankParams.dx0, bankParams.dx1);
-                   
+
 
   /* Prepare to print result. */
   {
-    UINT4 j;
+    INT4 j;
     /* Print out the template parameters */
     for (j=0; j<nlist; j++)
     {
@@ -181,22 +181,22 @@ main(int argc, char **argv)
 	    bankParams.x0 = (REAL8) list->data[2*j];
 	    bankParams.x1 = (REAL8) list->data[2*j+1];
 	    LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	    if (valid) fprintf(fpr, "%10.4f %10.4f %10.3f %10.3f\n", 
+	    if (valid) fprintf(fpr, "%10.4f %10.4f\n",
 			    bankParams.x0, bankParams.x1);
     }
   }
   {
-    UINT4 j;
-    INT4 valid;
-  
+    INT4 j;
+    INT4 local_valid;
+
     static RectangleIn RectIn;
     static RectangleOut RectOut;
 
-  
+
     RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/metric.g00 );
     RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/metric.g11 );
     RectIn.theta = metric.theta;
-    
+
     params.massChoice=t03;
     /* Print out the template parameters */
     for (j=0; j<nlist; j++)
@@ -207,15 +207,15 @@ main(int argc, char **argv)
 	RectIn.x0 = bankParams.x0 = (REAL8) list->data[2*j];
 	RectIn.y0 = bankParams.x1 = (REAL8) list->data[2*j+1];
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	valid = 1;
-        if (valid) 
+	local_valid = 1;
+        if (local_valid)
 	{
 		LALRectangleVertices(&status, &RectOut, &RectIn);
-		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
-				RectOut.x1, RectOut.y1, 
-				RectOut.x2, RectOut.y2, 
-				RectOut.x3, RectOut.y3, 
-				RectOut.x4, RectOut.y4, 
+		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n",
+				RectOut.x1, RectOut.y1,
+				RectOut.x2, RectOut.y2,
+				RectOut.x3, RectOut.y3,
+				RectOut.x4, RectOut.y4,
 				RectOut.x5, RectOut.y5);
 		fprintf(fpr, "&\n");
 	}
@@ -243,7 +243,7 @@ GetInspiralMoments (
 
    INITSTATUS (status, "GetInspiralMoments", PNTEMPLATESC);
    ATTATCHSTATUSPTR(status);
-  
+
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (params->fLower>0, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -256,7 +256,7 @@ GetInspiralMoments (
    moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
    moments->a42 = 5429.L/5376.L * pow ( 25.L * LAL_PI/2.L, 1.L/3.L);
    moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)), 1.L/3.L);
-   
+
    /* setup the input structure needed in the computation of the moments */
 
    in.shf = psd;
@@ -264,21 +264,21 @@ GetInspiralMoments (
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
-	   
+
    /* First compute the norm */
 
    in.norm = 1.L;
-   in.ndx = 7.L/3.L; 
-   LALInspiralMoments(status->statusPtr, &moments->j[7], in); 
+   in.ndx = 7.L/3.L;
+   LALInspiralMoments(status->statusPtr, &moments->j[7], in);
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
    if (lalDebugLevel & LALINFO)
    {
-	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
-			   moments->a01, moments->a21, moments->a22, moments->a31, 
+	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n",
+			   moments->a01, moments->a21, moments->a22, moments->a31,
 			   moments->a41, moments->a42, moments->a43);
-   
+
 	   fprintf(stderr, "j7=%e\n", moments->j[7]);
    }
 
@@ -286,14 +286,14 @@ GetInspiralMoments (
 
    for (k=1; k<=17; k++)
    {
-	   in.ndx = (REAL8) k /3.L; 
-	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);  
+	   in.ndx = (REAL8) k /3.L;
+	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
 	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;
-  
+
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }

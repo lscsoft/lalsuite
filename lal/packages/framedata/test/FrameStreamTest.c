@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{FrameStreamTest.c}}
- * 
+ *
  * Tests the low-level frame stream routines.
  *
  * \subsubsection*{Usage}
@@ -41,8 +41,6 @@
  * set) and prints them to files.
  *
  **** </lalLaTeX> */
-
-#include <FrameL.h>
 
 #include <stdio.h>
 #include <unistd.h>

@@ -77,7 +77,7 @@ LALInspiralComputeSNRIntegrand
 
   nby2 = n/2;
 
-  for (i=1; i<nby2; i++) 
+  for (i=1; i<nby2; i++)
   {
      k=n-i;
      psd = corrin.psd.data[i];
@@ -104,7 +104,7 @@ LALInspiralComputeSNRIntegrand
      }
   }
   psd = corrin.psd.data[0];
-  if (psd) 
+  if (psd)
   {
      r1 = corrin.signal1.data[0];
      r2 = corrin.signal2.data[0];
@@ -119,7 +119,7 @@ LALInspiralComputeSNRIntegrand
   }
 
   psd = corrin.psd.data[nby2];
-  if (psd) 
+  if (psd)
   {
      r1 = corrin.signal1.data[nby2];
      r2 = corrin.signal2.data[nby2];

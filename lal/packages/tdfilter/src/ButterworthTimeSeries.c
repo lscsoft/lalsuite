@@ -577,7 +577,7 @@ int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
  *
  * WARNING: THIS FUNCTION IS OBSOLETE.  DO NOT USE IT.
  *
- */ 
+ */
 
 /* <lalVerbatim file="ButterworthTimeSeriesD"> */
 void

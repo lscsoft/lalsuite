@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <gsl/gsl_sf_gamma.h>
 #include <lal/LALComplex.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALStdlib.h>
@@ -370,7 +371,7 @@ int XLALREAL8AverageSpectrumWelch(
 }
 
 
-/* 
+/*
  *
  * Median Method: use median average rather than mean.
  *
@@ -508,7 +509,7 @@ int XLALREAL4AverageSpectrumMedian(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL4ModifiedPeriodogram( work + seg, tseries, window, plan );
-    
+
     /* restore the time series data vector to its original state */
     *tseries->data = savevec;
 
@@ -638,7 +639,7 @@ int XLALREAL8AverageSpectrumMedian(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
-    
+
     /* restore the time series data vector to its original state */
     *tseries->data = savevec;
 
@@ -696,7 +697,7 @@ int XLALREAL8AverageSpectrumMedian(
 }
 
 
-/* 
+/*
  *
  * Median-Mean Method
  *
@@ -821,7 +822,7 @@ int XLALREAL4AverageSpectrumMedianMean(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL4ModifiedPeriodogram( even + seg, tseries, window, plan );
-    
+
     /* now check for failure of the XLAL routine */
     if ( code == XLAL_FAILURE )
     {
@@ -992,7 +993,7 @@ int XLALREAL8AverageSpectrumMedianMean(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL8ModifiedPeriodogram( even + seg, tseries, window, plan );
-    
+
     /* now check for failure of the XLAL routine */
     if ( code == XLAL_FAILURE )
     {
@@ -1417,6 +1418,13 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
  */
 
 
+/* compute the median bias */
+REAL8 XLALLogMedianBiasGeometric( UINT4 nn )
+{
+  return log(XLALMedianBias(nn)) - nn * (gsl_sf_lngamma(1.0 / nn) - log(nn));
+}
+
+
 LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_samples)
 {
   static const char func[] = "XLALPSDRegressorNew";
@@ -1628,9 +1636,8 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
     XLAL_ERROR(func, XLAL_ENOMEM);
 
   /* compute the logarithm of the median bias factor */
-  /* FIXME:  this is close but incorrect */
 
-  median_bias = LAL_GAMMA + log(XLALMedianBias(history_length));
+  median_bias = XLALLogMedianBiasGeometric(history_length);
 
   /* update the geometric mean square using the median in each frequency
    * bin */
@@ -1653,11 +1660,11 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
      * the samples are proportional to a random variable that is
      * \chi^{2}-distributed with two-degrees of freedom.  the median of
      * samples that are \chi^{2} distributed is not equal to the mean of
-     * those samples.  the median differs from the mean by a factor
-     * computed by XLALMedianBias(), so we need to adjust the median by
-     * that factor before using it to update the average.  our samples are
-     * not \chi^{2} distributed, but they are proportional to a variable
-     * that is so the correction factor is the same.
+     * those samples.  the median differs from the mean by a factor whose
+     * logarithm is stored in median_bias, and we need to adjust the median
+     * by that factor before using it to update the average.  our samples
+     * are not \chi^{2} distributed, but they are proportional to a
+     * variable that is so the correction factor is the same.
      */
 
     r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + log(bin_history[history_length / 2]) - median_bias) / r->n_samples;

@@ -29,7 +29,7 @@ extern "C" {
 #include <lal/LALRCSID.h>
 NRCSID(EPSEARCHH, "$Id$");
 
-/* 
+/*
  * Stores pre-computed properties of each sky direction
  */
 typedef struct tagLALSkymapPixelType
@@ -39,7 +39,7 @@ typedef struct tagLALSkymapPixelType
     double f[3][2];
 } XLALSkymapPixelType;
 
-/* 
+/*
  * Stores pre-computed information for generating a sky map
  */
 typedef struct tagXLALSkymapPlanType
@@ -55,26 +55,26 @@ typedef struct tagXLALSkymapPlanType
 
     XLALSkymapPixelType* pixel;
     int pixelCount;
-    
+
     /* raster size */
     int m;
     int n;
 } XLALSkymapPlanType;
 
-/* 
+/*
  * Construct an analysis plan for a given frequency
  */
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n);
 
-/* 
+/*
  * Destroy an analysis plan
  */
 void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
 
-/* 
+/*
  * Produce a skymap according to a plan
  */
-int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6]);
+int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[8]);
 
 /* deprecated legacy interface */
 int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes);
@@ -104,15 +104,15 @@ void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const d
 
 /*
  * Lightweight coordinate transformations
- */ 
-void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi);
+ */
+void XLALSkymapCartesianFromSpherical(double a[3], double b[2]);
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3]);
 int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3]);
 
-/* 
+/*
  * Find the most plausible direction (the mode of the distribution) and return
- * its theta and phi coordinates 
+ * its theta and phi coordinates
  */
 void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi[2]);
 
@@ -120,6 +120,73 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
  * Render the skymap from the internal format to a variety of map projections
  */
 int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p);
+
+///////////////////////////////////////////////////////////////////////////
+
+// VERSION 2
+
+
+typedef double XLALSkymap2SphericalPolarType[2];
+
+//  Stores pre-computed properties of each sky direction
+
+typedef struct
+{
+    double f[3][2];
+    int delay[3];
+} XLALSkymap2DirectionPropertiesType;
+
+// Stores pre-computed kernel information for each sky direction
+
+typedef struct
+{
+    double k[3][3];
+    double logNormalization;
+} XLALSkymap2KernelType;
+
+// Stores pre-computed information for generating a sky map
+
+typedef struct
+{
+    int sampleFrequency;
+    LALDetector site[3];
+} XLALSkymap2PlanType;
+
+// Initialize sample frequency and HLV site information
+
+void XLALSkymap2PlanConstruct(
+    int sampleFrequency,
+    XLALSkymap2PlanType* plan
+    );
+
+// Turn directions into sample delays and antenna patterns
+
+void XLALSkymap2DirectionPropertiesConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2SphericalPolarType* direction,
+    XLALSkymap2DirectionPropertiesType* properties
+    );
+
+// Turn antenna patterns and waveform normalization into kernel matrix
+
+void XLALSkymap2KernelConstruct(
+    XLALSkymap2DirectionPropertiesType* properties,
+    double wSw[3],
+    XLALSkymap2KernelType* kernel
+    );
+
+// Apply the kernel to some data
+
+void XLALSkymap2Apply(
+    XLALSkymap2DirectionPropertiesType* properties,
+    XLALSkymap2KernelType* kernel,
+    double* xSw[3],
+    int tau,
+    double* logPosterior
+    );
+
+
+
 
 #ifdef __cplusplus
 }

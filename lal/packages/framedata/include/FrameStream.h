@@ -42,6 +42,10 @@
  *
  **** </lalLaTeX> */
 
+#pragma GCC system_header
+
+#include <FrameL.h>
+
 #include <lal/LALDatatypes.h>
 #include <lal/FrameCache.h>
 
@@ -166,7 +170,7 @@ tagFrPos
 FrPos;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains a record of the state of a frame stream; this
  * record can be used to restore the stream to the state when the record
  * was made (provided the stream has not been closed).  The fields are:
@@ -191,7 +195,7 @@ FrChanType;
 #define SimDataChannel  LAL_SIM_CHAN
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * These are the various types of channel that can be specified for read/write.
  * They are ``post-processed data'' (\texttt{ProcDataChannel}), ``ADC data''
  * (\texttt{ADCDataChannel}), and ``simulated data'' (\texttt{SimDataChannel}).
@@ -208,7 +212,7 @@ tagFrChanIn
 FrChanIn;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure specifies the channel to read as input.  The fields are:
  * \begin{description}
  * \item[\texttt{name}] the name of the channel.
@@ -231,7 +235,7 @@ tagFrOutPar
 FrOutPar;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure specifies the parameters for output of data to a frame.
  * The fields are:
  * \begin{description}
@@ -359,7 +363,7 @@ LALFrNext(
     );
 
 void
-LALFrRewind( 
+LALFrRewind(
     LALStatus *status,
     FrStream  *stream
     );

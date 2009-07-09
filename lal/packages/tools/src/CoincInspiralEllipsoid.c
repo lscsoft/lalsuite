@@ -23,14 +23,14 @@
  *
  * Author: Craig Robinson
  *
- * $Id$
+ * $Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
  *
  *---------------------------------------------------------------------------*/
 
 #if 0
 <lalVerbatim file="CoincInspiralEllipsoidCV">
 Author: Craig Robinson
-$Id$
+$Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
 </lalVerbatim>
 #endif
 
@@ -40,6 +40,7 @@ $Id$
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALErrno.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
@@ -48,9 +49,10 @@ $Id$
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 #include <lal/EllipsoidOverlapTools.h>
+#include <lal/TrigScanEThincaCommon.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
+NRCSID( COINCINSPIRALELLIPSOIDC, "$Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $" );
 
 #if 0
 <lalLaTeX>
@@ -125,7 +127,23 @@ $(t_C, \tau_0, \tau_3)$ space.
 </lalLaTeX>
 #endif
 
-static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch);
+typedef struct tagEThincaMinimizer
+{
+   fContactWorkSpace  *workSpace;
+   TriggerErrorList   *aPtr;
+   TriggerErrorList   *bPtr;
+}
+EThincaMinimizer;
+
+static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
+                                                   void *minimizer
+                                                 );
+
+REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
+                                                  EThincaMinimizer *minimizer,
+                                                  INT4   exttrig
+                                                );
+
 
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
 void
@@ -137,7 +155,6 @@ LALCreateTwoIFOCoincListEllipsoid(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable            *currentTrigger = NULL;
   INT8                          currentTriggerNS[2];
   CoincInspiralTable           *coincHead = NULL;
   CoincInspiralTable           *thisCoinc = NULL;
@@ -162,44 +179,18 @@ LALCreateTwoIFOCoincListEllipsoid(
 
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
 
-  printf("e-Match = %e\n", accuracyParams->eMatch);
-/*  XLALClearErrno();*/
   /* Loop through triggers and assign each of them an error ellipsoid */
-  for (currentTrigger = snglInput; currentTrigger;
-      currentTrigger = currentTrigger->next)
+  errorListHead = XLALCreateTriggerErrorList( snglInput, accuracyParams->eMatch, &timeError );
+  if ( !errorListHead )
   {
-    REAL8 thisTimeError;
-
-    if (!errorListHead)
-    {
-      errorListHead = (TriggerErrorList *) LALCalloc(1, sizeof(TriggerErrorList));
-      thisErrorList = errorListHead;
-    }
-    else
-    {
-      thisErrorList->next = (TriggerErrorList *) LALCalloc(1, sizeof(TriggerErrorList));
-      thisErrorList = thisErrorList->next;
-    }
-    thisErrorList->trigger    = currentTrigger;
-    thisErrorList->err_matrix = XLALGetErrorMatrixFromSnglInspiral( currentTrigger,
-                                  accuracyParams->eMatch );
-    if (!thisErrorList->err_matrix)
-    {
-      XLALClearErrno();
-      ABORTXLAL( status );
-    }
-    thisErrorList->position   = XLALGetPositionFromSnglInspiral( currentTrigger );
-    thisTimeError = getTimeError(currentTrigger, accuracyParams->eMatch);
-    if (thisTimeError > timeError)
-      timeError = thisTimeError;
+    ABORTXLAL( status );
   }
-
 
   /* Initialise the workspace for ellipsoid overlaps */
   workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
   if (!workSpace)
   {
-    XLALClearErrno();
+    XLALDestroyTriggerErrorList( errorListHead );
     ABORTXLAL( status );
   }
 
@@ -216,12 +207,12 @@ LALCreateTwoIFOCoincListEllipsoid(
   {
 
     /* calculate the time of the trigger */
-    currentTriggerNS[0] = XLALGPStoINT8(
+    currentTriggerNS[0] = XLALGPSToINT8NS(
                  &(currentError[0]->trigger->end_time) );
 
     /* set next trigger for comparison */
     currentError[1] = currentError[0]->next;
-    currentTriggerNS[1] = XLALGPStoINT8(
+    currentTriggerNS[1] = XLALGPSToINT8NS(
                  &(currentError[1]->trigger->end_time) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
@@ -232,19 +223,10 @@ LALCreateTwoIFOCoincListEllipsoid(
       /* test whether we have coincidence */
       match = XLALCompareInspiralsEllipsoid( currentError[0],
                  currentError[1], workSpace, accuracyParams );
-      if ( match < 0 )
+      if ( match == XLAL_FAILURE )
       {
         /* Error in the comparison function */
-        thisErrorList = errorListHead;
-        while (thisErrorList)
-        {
-          errorListHead = thisErrorList->next;
-          gsl_matrix_free( thisErrorList->err_matrix );
-          gsl_vector_free( thisErrorList->position );
-          LALFree( thisErrorList );
-          thisErrorList = errorListHead;
-        }
-
+        XLALDestroyTriggerErrorList( errorListHead );
         XLALFreeFContactWorkSpace( workSpace );
         ABORTXLAL( status );
       }
@@ -252,6 +234,8 @@ LALCreateTwoIFOCoincListEllipsoid(
       /* Check whether the event was coincident */
       if ( match )
       {
+        REAL8 etp = XLALCalculateEThincaParameter( currentError[0]->trigger,  currentError[1]->trigger, accuracyParams );
+        printf( "%e\n", etp );
         /* create a 2 IFO coinc and store */
         if ( ! coincHead  )
         {
@@ -262,6 +246,20 @@ LALCreateTwoIFOCoincListEllipsoid(
         {
           thisCoinc = thisCoinc->next = (CoincInspiralTable *)
             LALCalloc( 1, sizeof(CoincInspiralTable) );
+        }
+        if ( !thisCoinc )
+        {
+          /* Error allocating memory */
+          thisCoinc = coincHead;
+          while ( thisCoinc )
+          {
+            coincHead = thisCoinc->next;
+            LALFree( thisCoinc );
+            thisCoinc = coincHead;
+          }
+          XLALDestroyTriggerErrorList( errorListHead );
+          XLALFreeFContactWorkSpace( workSpace );
+          ABORT( status, LAL_NOMEM_ERR, LAL_NOMEM_MSG );
         }
 
         /* Add the two triggers to the coinc */
@@ -278,8 +276,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
       if ( (currentError[1] = currentError[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentError[1]->trigger->end_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end_time) );
       }
       else
       {
@@ -293,15 +290,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
   /* Free all the memory allocated for the ellipsoid overlap */
   thisErrorList = errorListHead;
-  while (thisErrorList)
-  {
-    errorListHead = thisErrorList->next;
-    gsl_matrix_free( thisErrorList->err_matrix );
-    gsl_vector_free( thisErrorList->position );
-    LALFree( thisErrorList );
-    thisErrorList = errorListHead;
-  }
-
+  XLALDestroyTriggerErrorList( errorListHead );
   XLALFreeFContactWorkSpace( workSpace );
 
   DETATCHSTATUSPTR (status);
@@ -322,7 +311,7 @@ XLALSnglInspiralCoincTestEllipsoid(
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
 
-  static const char *func = "XLALSnglInspiralCoincTest";
+  /*static const char *func = "XLALSnglInspiralCoincTest";*/
 
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
@@ -387,69 +376,44 @@ INT2 XLALCompareInspiralsEllipsoid(
 
   REAL8 overlap;
 
+#ifndef LAL_NDEBUG
+  if (!aPtr || !aPtr->trigger || !aPtr->position ||
+      !bPtr || !bPtr->trigger || !bPtr->position ||
+      !workSpace || !params)
+    XLAL_ERROR( func, XLAL_EFAULT);
+#endif
+
   if (strcmp(aPtr->trigger->ifo, bPtr->trigger->ifo))
   {
-    INT8 curTimeANS, curTimeBNS;
-    REAL8 originalTimeA;
-    REAL8 originalTimeB;
     REAL8 travelTime;
-    REAL8 timeShift = 0.0;
     InterferometerNumber ifoaNum, ifobNum;
+
+    EThincaMinimizer minimizer;
+
+    memset( &minimizer, 0, sizeof(EThincaMinimizer) );
 
     ifoaNum = XLALIFONumber( aPtr->trigger->ifo );
     ifobNum = XLALIFONumber( bPtr->trigger->ifo );
 
-    originalTimeA = gsl_vector_get( aPtr->position, 0 );
-    originalTimeB = gsl_vector_get( bPtr->position, 0 );
-
     travelTime = params->lightTravelTime[ifoaNum][ifobNum] * 1.0e-9;
 
-    curTimeANS = XLALGPStoINT8( &(aPtr->trigger->end_time) );
-    curTimeBNS = XLALGPStoINT8( &(bPtr->trigger->end_time) );
+    minimizer.workSpace = workSpace;
+    minimizer.aPtr      = aPtr;
+    minimizer.bPtr      = bPtr;
 
-    /* if analyzing a grb the position and time-delay is KNOWN */
-    if (params->exttrig)
+    overlap = XLALMinimizeEThincaParameterOverTravelTime( travelTime, &minimizer, params->exttrig );
+    if ( XLAL_IS_REAL8_FAIL_NAN( overlap ) )
     {
-      timeShift=travelTime;
-    }
-    else
-    {
-      timeShift = -travelTime;
+      XLAL_ERROR( func, XLAL_EFUNC );
     }
 
-    /* Reset the times to avoid any precision problems */
-    XLALSetTimeInPositionVector( aPtr->position, timeShift );
-    XLALSetTimeInPositionVector( bPtr->position,
-          (curTimeBNS - curTimeANS) * 1.0e-9 );
-
-    /* Loop over the time shift to sweep the light travel time */
-    while (timeShift <= travelTime)
+    /* test whether we have coincidence */
+    if ( overlap <= 1.0 )
     {
-      /* check for the intersection of the ellipsoids */
-      workSpace->invQ1 = aPtr->err_matrix;
-      workSpace->invQ2 = bPtr->err_matrix;
-      overlap = XLALCheckOverlapOfEllipsoids( aPtr->position,
-                   bPtr->position, workSpace );
-      if (XLAL_IS_REAL8_FAIL_NAN(overlap))
-      {
-        XLAL_ERROR( func, XLAL_EFUNC );
-      }
-
-      /* test whether we have coincidence */
-      if ( overlap <= 1.0 )
-      {
-        isCoinc = 1;
-        break;
-      }
-
-      timeShift += 1.0 / 4096.0;
-      XLALSetTimeInPositionVector( aPtr->position, timeShift );
+      isCoinc = 1;
     }
-
-    /* Set the times back to their correct values */
-    XLALSetTimeInPositionVector( aPtr->position, originalTimeA );
-    XLALSetTimeInPositionVector( bPtr->position, originalTimeB );
   }
+
   params->match = isCoinc;
   return isCoinc;
 }
@@ -466,127 +430,109 @@ REAL8 XLALCalculateEThincaParameter(
 
    static const char *func = "XLALCalculateEThincaParameter";
 
-   TriggerErrorList   errorList[2];
+   TriggerErrorList * errorList[2];
 
-   REAL8 loMatch, hiMatch, midMatch;
+   REAL8 travelTime;
    INT4 i;
-   INT2  isOverlap;
+   INT4 ifoANum, ifoBNum;
    fContactWorkSpace    *workSpace;
 
-   loMatch = 0.0001;
-   hiMatch = 2.0;
+   REAL8 ethinca;
+   EThincaMinimizer *minimizer = NULL;
 
+#ifndef LAL_NDEBUG
   if ( !table1 || !table2 || !accuracyParams)
     XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+#endif
 
-  workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
+  memset( errorList, 0, 2 * sizeof(TriggerErrorList *) );
+
+  /* Before we do anything, check we have triggers from different ifos */
+  if ( !strcmp(table1->ifo, table2->ifo) )
+  {
+    XLALPrintError("%s: Triggers provided are from the same ifo!\n", func );
+    XLAL_ERROR_REAL8( func, XLAL_EINVAL );
+  }
+
+  /* Allocate memory */
+  errorList[0] = LALCalloc( 1, sizeof( TriggerErrorList ));
+  if (errorList[0])
+  {
+    errorList[1] = errorList[0]->next = LALCalloc( 1, sizeof( TriggerErrorList ));
+  }
+  if (!errorList[0] || !errorList[1] )
+  {
+    if (errorList[0])
+      XLALDestroyTriggerErrorList( errorList[0] );
+    XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+  }
+
+  workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-5 );
   if (!workSpace)
   {
-    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    XLALDestroyTriggerErrorList( errorList[0] );
+    XLAL_ERROR_REAL8( func, XLAL_EFUNC | XLALClearErrno() );
   }
 
   /* Set up the trigger lists */
-  if ( XLALGPStoINT8( &(table1->end_time) ) < XLALGPStoINT8( &(table2->end_time )) )
+  if ( XLALGPSToINT8NS( &(table1->end_time) ) < XLALGPSToINT8NS( &(table2->end_time )) )
   {
-     errorList[0].trigger = table1;
-     errorList[1].trigger = table2;
+     errorList[0]->trigger = table1;
+     errorList[1]->trigger = table2;
   }
   else
   {
-     errorList[0].trigger = table2;
-     errorList[1].trigger = table1;
+     errorList[0]->trigger = table2;
+     errorList[1]->trigger = table1;
   }
 
   for (i = 0; i < 2; i++ )
   {
-    errorList[i].position = XLALGetPositionFromSnglInspiral( errorList[i].trigger );
+    errorList[i]->position = XLALGetPositionFromSnglInspiral( errorList[i]->trigger );
 
-    errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
-                                 loMatch );
+    errorList[i]->err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i]->trigger,
+                                 1.0 );
+    if ( !errorList[i]->position || !errorList[i]->err_matrix )
+    {
+      XLALDestroyTriggerErrorList( errorList[0] );
+      XLALFreeFContactWorkSpace( workSpace );
+      XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+    }
   }
 
-  /* Check to see if they overlap for the lowest difference possible. If so there is
-   * nothing more to be done.
-   */
-   isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        accuracyParams );
 
-   for (i = 0; i < 2; i++ )
-   {
-     gsl_matrix_free( errorList[i].err_matrix );
-   }
+  /* Set the travel time */
+  ifoANum = XLALIFONumber( errorList[0]->trigger->ifo );
+  ifoBNum = XLALIFONumber( errorList[1]->trigger->ifo );
 
-   if (isOverlap)
-   {
-     for (i = 0; i < 2; i++ )
-     {
-       gsl_vector_free( errorList[i].position );
-     }
-     XLALFreeFContactWorkSpace( workSpace );
-     return loMatch;
-   }
+  travelTime = accuracyParams->lightTravelTime[ifoANum][ifoBNum] * 1.0e-9;
 
-  /* Now test for the largest error */
-  for (i = 0; i < 2; i++ )
+  /* Create the e-thinca minimizer */
+  minimizer = LALCalloc( 1, sizeof(EThincaMinimizer) );
+  if ( !minimizer )
   {
-    errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
-                                 hiMatch );
+    XLALDestroyTriggerErrorList( errorList[0] );
+    XLALFreeFContactWorkSpace( workSpace );
+    XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+  }
+  minimizer->workSpace = workSpace;
+  minimizer->aPtr = errorList[0];
+  minimizer->bPtr = errorList[1];
+
+  ethinca = XLALMinimizeEThincaParameterOverTravelTime( travelTime, minimizer, accuracyParams->exttrig );
+  if ( XLAL_IS_REAL8_FAIL_NAN( ethinca ) )
+  {
+    LALFree( minimizer );
+    XLALDestroyTriggerErrorList( errorList[0] );
+    XLALFreeFContactWorkSpace( workSpace );
+    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
   }
 
-   isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        accuracyParams );
-
-   for (i = 0; i < 2; i++ )
-   {
-     gsl_matrix_free( errorList[i].err_matrix );
-   }
-   if (!isOverlap)
-   {
-     for (i = 0; i < 2; i++ )
-     {
-       gsl_vector_free( errorList[i].position );
-     }
-     XLALFreeFContactWorkSpace( workSpace );
-     XLALPrintError("The two triggers provided are NOT coincident!!");
-     XLAL_ERROR_REAL8( func, XLAL_EINVAL );
-   }
-
-   /* Now onto the algorithm proper */
-   while (fabs( hiMatch - loMatch ) > 0.001 )
-   {
-     midMatch = (hiMatch + loMatch) / 2.0;
-
-
-     for (i = 0; i < 2; i++ )
-     {
-      errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
-                                 midMatch );
-     }
-     isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
-                                        accuracyParams );
-
-     for (i = 0; i < 2; i++ )
-     {
-       gsl_matrix_free( errorList[i].err_matrix );
-     }
-     if (isOverlap)
-     {
-       hiMatch = midMatch;
-     }
-     else
-     {
-       loMatch = midMatch;
-     }
-   }
-
-   /* Free all accocated memory */
-   for (i = 0; i < 2; i++ )
-   {
-     gsl_vector_free( errorList[i].position );
-   }
-   XLALFreeFContactWorkSpace( workSpace );
-
-   return midMatch;
+  LALFree ( minimizer );
+  XLALDestroyTriggerErrorList( errorList[0] );
+  XLALFreeFContactWorkSpace( workSpace );
+  XLALPrintInfo( " I leave here and return an ethinca of %e.\n", ethinca );
+  return ethinca;
 
 }
 
@@ -619,8 +565,10 @@ REAL8 XLALEThincaParameterForInjection(
 
   LALStatus status;
 
+#ifndef LAL_NDEBUG
   if ( !injection || !trigger )
     XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+#endif
 
   memset( &status, 0, sizeof(LALStatus));
 
@@ -644,14 +592,14 @@ REAL8 XLALEThincaParameterForInjection(
   injTmplt.mass2      = injection->mass2;
   injTmplt.massChoice = m1Andm2;
   injTmplt.fLower     = fLower;
-  injTmplt.order      = threePointFivePN;
+  injTmplt.order      = LAL_PNORDER_THREE_POINT_FIVE;
 
   LALInspiralParameterCalc( &status, &injTmplt );
 
   /* Get the GPS time from the injection*/
   injEndTime = XLALReturnSimInspiralEndTime( injection, trigger->ifo );
 
-  dtC = ( injEndTime - XLALGPStoINT8( &(trigger->end_time) ) ) * 1.0e-9;
+  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end_time) ) ) * 1.0e-9;
   dt0 = injTmplt.t0 - trigger->tau0;
   dt3 = injTmplt.t3 - trigger->tau3;
 
@@ -665,31 +613,181 @@ REAL8 XLALEThincaParameterForInjection(
   return eMatch;
 }
 
-/*
- * This function returns the largest time error associated with a
- * particular error ellipsoid.
- */
-static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch)
+REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
+                                                  EThincaMinimizer *minimizer,
+                                                  INT4   exttrig
+                                                )
 {
-  REAL8 a11;
-  REAL8 a23;
-  REAL8 a22;
-  REAL8 a33;
-  REAL8 a12;
-  REAL8 a13;
-  REAL8 x;
-  REAL8 denom;
 
-  a11 = table->Gamma[0] / eMatch;
-  a12 = table->Gamma[1] / eMatch;
-  a13 = table->Gamma[2] / eMatch;
-  a22 = table->Gamma[3] / eMatch;
-  a23 = table->Gamma[4] / eMatch;
-  a33 = table->Gamma[5] / eMatch;
+  static const char func[] = "XLALMinimizeEThincaParameterOverTravelTime";
 
-  x = (a23 * a23 - a22 * a33) * a22;
-  denom = (a12*a23 - a22*a13) * (a12*a23 - a22*a13)
-              - (a23*a23 - a22*a33) * (a12*a12 - a22*a11);
+  REAL8 ethinca;
 
-  return ( sqrt( x / denom ));
+
+  /* If colocated detectors or known sky position, just return the e-thinca parameter */
+  if (travelTime == 0.0 || exttrig )
+  {
+    ethinca = minimizeEThincaParameterOverTimeDiff( travelTime, minimizer );
+    if ( XLAL_IS_REAL8_FAIL_NAN(ethinca) )
+    {
+      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    }
+    return ethinca;
+  }
+  else
+  {
+    gsl_function        F;
+    INT4                min_status;
+    INT4                iter = 0;
+    const INT4          max_iter = 100;
+    REAL8               epsilon = 1.0 / 16384.0;
+    REAL8               m = 0.0;
+    REAL8               a = - travelTime, b = travelTime; /* Upper and lower bounds */
+    REAL8               minEThinca, maxEThinca;
+    REAL8               midEThinca;
+    gsl_min_fminimizer  *s = gsl_min_fminimizer_alloc( minimizer->workSpace->T );
+
+    if ( !s )
+    {
+      XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+    }
+
+
+    F.function = &minimizeEThincaParameterOverTimeDiff;
+    F.params   = minimizer;
+
+    /* Calculate e-thinca parameter at start, end and mid points */
+    minEThinca = minimizeEThincaParameterOverTimeDiff( a, minimizer );
+    maxEThinca = minimizeEThincaParameterOverTimeDiff( b, minimizer );
+    midEThinca = minimizeEThincaParameterOverTimeDiff( m, minimizer );
+    if ( XLAL_IS_REAL8_FAIL_NAN(minEThinca) || XLAL_IS_REAL8_FAIL_NAN(maxEThinca)
+         || XLAL_IS_REAL8_FAIL_NAN(midEThinca) )
+    {
+      gsl_min_fminimizer_free( s );
+      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    }
+
+    /* Check we have contained a minimum. Otherwise take appropriate action */
+    if ( midEThinca >= minEThinca || midEThinca >= maxEThinca )
+    {
+      REAL8 testEThinca; /* To contain the lowest end-point */
+      if ( minEThinca < maxEThinca )
+      {
+        testEThinca = minEThinca;
+        m           = a + 2.0 * epsilon;
+      }
+      else
+      {
+        testEThinca = maxEThinca;
+        m = b - 2.0 * epsilon;
+      }
+      midEThinca = minimizeEThincaParameterOverTimeDiff( m, minimizer );
+      if ( XLAL_IS_REAL8_FAIL_NAN(midEThinca) )
+      {
+        gsl_min_fminimizer_free( s );
+        XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      }
+
+      /* If we still don't have the minimum return the lowest end-point */
+      if ( midEThinca >= testEThinca )
+      {
+        gsl_min_fminimizer_free( s );
+        return testEThinca;
+      }
+    }
+
+    /* Set up the GSL minimizer */
+    XLAL_CALLGSL( min_status = gsl_min_fminimizer_set_with_values(s, &F,
+                       m, midEThinca, a, minEThinca, b, maxEThinca) );
+    if ( min_status != GSL_SUCCESS )
+    {
+      gsl_min_fminimizer_free( s );
+      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    }
+
+    /* Loop to perform the minimization */
+    do
+    {
+        iter++;
+        XLAL_CALLGSL( min_status = gsl_min_fminimizer_iterate (s) );
+        if (min_status != GSL_SUCCESS )
+        {
+            gsl_min_fminimizer_free( s );
+            XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+        }
+
+        m = gsl_min_fminimizer_x_minimum (s);
+        a = gsl_min_fminimizer_x_lower (s);
+        b = gsl_min_fminimizer_x_upper (s);
+
+        XLAL_CALLGSL( min_status = gsl_min_test_interval (a, b, epsilon, 0.0) );
+        if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS )
+        {
+          gsl_min_fminimizer_free( s );
+          XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+        }
+    }
+    while ( min_status == GSL_CONTINUE && iter < max_iter );
+    /* End of minimization routine */
+
+    /* Throw an error if max iterations would have been exceeded */
+    if ( iter == max_iter && min_status == GSL_CONTINUE )
+    {
+      gsl_min_fminimizer_free( s );
+      XLAL_ERROR_REAL8( func, XLAL_EMAXITER );
+    }
+
+    /* Get the minimum e-thinca param, and free memory for minimizer */
+    ethinca = gsl_min_fminimizer_f_minimum( s );
+    gsl_min_fminimizer_free( s );
+    XLALPrintInfo( "%s: Number of iterations = %d\n", func, iter);
+  }
+
+  /* Return the required e-thinca value */
+  return ethinca;
+}
+
+/* The following function would be called by the GSL minimizer */
+static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
+                                                   void *minimizer
+                                                 )
+{
+
+  EThincaMinimizer *params = (EThincaMinimizer *) minimizer;
+
+
+  INT8 curTimeANS, curTimeBNS;
+  REAL8 originalTimeA;
+  REAL8 originalTimeB;
+  REAL8 overlap;
+
+  originalTimeA = gsl_vector_get( params->aPtr->position, 0 );
+  originalTimeB = gsl_vector_get( params->bPtr->position, 0 );
+
+  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end_time) );
+  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end_time) );
+
+  /* Reset the times to avoid any precision problems */
+  XLALSetTimeInPositionVector( params->aPtr->position, timeShift );
+  XLALSetTimeInPositionVector( params->bPtr->position,
+          (curTimeBNS - curTimeANS) * 1.0e-9 );
+
+  /* check for the intersection of the ellipsoids */
+  params->workSpace->invQ1 = params->aPtr->err_matrix;
+  params->workSpace->invQ2 = params->bPtr->err_matrix;
+  overlap = XLALCheckOverlapOfEllipsoids( params->aPtr->position,
+               params->bPtr->position, params->workSpace );
+  if (XLAL_IS_REAL8_FAIL_NAN(overlap))
+  {
+     /* Set the times back to their correct values */
+     XLALSetTimeInPositionVector( params->aPtr->position, originalTimeA );
+     XLALSetTimeInPositionVector( params->bPtr->position, originalTimeB );
+     XLAL_ERROR_REAL8( "minimizeEThincaParameterOverTimeDiff", XLAL_EFUNC );
+  }
+
+  /* Set the times back to their correct values */
+  XLALSetTimeInPositionVector( params->aPtr->position, originalTimeA );
+  XLALSetTimeInPositionVector( params->bPtr->position, originalTimeB );
+
+  return overlap;
 }

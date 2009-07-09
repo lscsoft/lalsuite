@@ -261,15 +261,11 @@ LALCreateTwoIFOCoincList(
   {
 
     /* calculate the time of the trigger */
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[0],
-        &(currentTrigger[0]->end_time) );
-    CHECKSTATUSPTR( status );
+    currentTriggerNS[0] = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     /* set next trigger for comparison */
     currentTrigger[1] = currentTrigger[0]->next;
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-          &(currentTrigger[1]->end_time) );
-    CHECKSTATUSPTR( status );
+    currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
@@ -314,11 +310,7 @@ LALCreateTwoIFOCoincList(
 
       if ( (currentTrigger[1] = currentTrigger[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentTrigger[1]->end_time) );
-	BEGINFAIL (status) {
-	  XLALFreeCoincInspiral( &coincHead );
-	} ENDFAIL (status);
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
       }
       else
       {
@@ -895,7 +887,7 @@ XLALExtractSnglInspiralFromCoinc(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "ExtractSnglInspiralFromCoinc";
+  /*static const char *func = "ExtractSnglInspiralFromCoinc";*/
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
@@ -911,6 +903,9 @@ XLALExtractSnglInspiralFromCoinc(
       );
     return( NULL );
   }
+
+  /* gpsStartTime is unused in this function */
+  gpsStartTime = NULL;
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
@@ -946,22 +941,16 @@ XLALExtractSnglInspiralFromCoinc(
           /* event id number exists, use it */
           eventId->id = thisCoincEntry->event_id->id;
         }
-        else if ( gpsStartTime )
+        else if ( eventNum > 99999 )
         {
-          eventId->id = LAL_INT8_C(1000000000) *
-            (INT8) gpsStartTime->gpsSeconds + (INT8) eventNum;
+          /* put extra digits into overflow area (above slide number) */
+          eventId->id = ( LAL_INT8_C(1000000000) * (INT8) (eventNum / 100000) )
+          + (INT8) (eventNum % 100000);
         }
         else
         {
-          XLALPrintError(
-              "Event does not have id and no GPS start time given" );
-          while ( snglHead )
-          {
-            thisSngl = snglHead;
-            snglHead = snglHead->next;
-            XLALFreeSnglInspiral( &thisSngl );
-          }
-          XLAL_ERROR_NULL(func,XLAL_EIO);
+          /* just set eventId equal to eventNum */
+          eventId->id = (INT8) eventNum;
         }
 
         if ( slideNum < 0 )
@@ -1364,7 +1353,7 @@ XLALGenerateCoherentBank(
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
         /* set the ifo */
-        LALSnprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
+        snprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )
@@ -1970,7 +1959,7 @@ XLALCoincInspiralTimeNS (
   {
     if ( coincInspiral->snglInspiral[ifoNumber] )
     {
-      endTime = XLALGPStoINT8(
+      endTime = XLALGPSToINT8NS(
           &(coincInspiral->snglInspiral[ifoNumber]->end_time) );
       return(endTime);
     }

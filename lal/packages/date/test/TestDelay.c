@@ -45,7 +45,7 @@ TestDelay
 
 \subsubsection*{Description}
 
-This program does zero-th order tests for \texttt{LALTimeDelay()}. 
+This program does zero-th order tests for \texttt{LALTimeDelay()}.
 
 
 \subsubsection*{Exit codes}
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
            detector1.location[0], detector1.location[1],
            detector1.location[2]);
-    
+
 
   strcpy(frdet2.name, "TEST IFO 2");
   frdet2.vertexLongitudeRadians = LAL_PI_2;
@@ -177,13 +177,13 @@ int main(int argc, char **argv)
               __LINE__, LALTESTDELAYC);
       REPORTSTATUS(&stat);
       return stat.statusCode;
-    }  
+    }
   if (lalDebugLevel > 2)
     REPORTSTATUS(&stat);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
-   * error.) 
+   * error.)
    */
   gps.gpsSeconds     = 60858;
   gps.gpsNanoSeconds = 0;
@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     }
   else
     {
-      fprintf(stderr, "ERROR: computed delay differs from expected delay by amount greater than DOUBLE_EPSILON (% 14.8e); difference = % 14.8e\n", 
+      fprintf(stderr, "ERROR: computed delay differs from expected delay by amount greater than DOUBLE_EPSILON (% 14.8e); difference = % 14.8e\n",
               DOUBLE_EPSILON, difference);
       return 1;
     }

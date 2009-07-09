@@ -78,9 +78,8 @@ void LALComputeStrain(
 {
 /* Inverse sensing, servo, analog actuation, digital x
 actuation  digital y actuation */
-static REAL8TimeSeries uphR,ALPHAS,upALPHAS;
+static REAL8TimeSeries ALPHAS,upALPHAS;
 int p;
-REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
 
@@ -88,9 +87,6 @@ REAL8IIRFilter ALPHASLPFIR;
  ATTATCHSTATUSPTR( status );
 
  LALGetFactors(status->statusPtr, output, input);
- CHECKSTATUSPTR( status );
-
- LALMakeFIRLP(status->statusPtr, &LPFIR, input->CinvUSF);
  CHECKSTATUSPTR( status );
 
  LALMakeFIRHP(status->statusPtr, &HPFIR);
@@ -150,49 +146,19 @@ REAL8IIRFilter ALPHASLPFIR;
 
  /* ---------- Compute Residual Strain -------------*/
 
- LALDCreateVector(status->statusPtr,&uphR.data,input->CinvUSF*input->AS_Q.data->length);
- CHECKSTATUSPTR( status );
- uphR.deltaT=input->AS_Q.deltaT/input->CinvUSF;
-
- /* then we upsample (and smooth it with a low pass filter) */
- if(XLALUpsample(&uphR, &(output->hR), input->CinvUSF))
+ /* check that we are using a recent filter file (without an upsampling of darm_err) */
+ if (input->CinvUSF != 1)
    {
-     ABORT(status,117,"Broke upsampling hR");
+     ABORT(status, 117, "Upsampling factor != 1, this is not a good filters file.");
    }
 
  /* apply delay (actually an advance) */
- for (p=0; p<(int)uphR.data->length+input->CinvDelay; p++){
-   uphR.data->data[p]=uphR.data->data[p-input->CinvDelay];
+ for (p=0; p<(int)output->hR.data->length+input->CinvDelay; p++){
+   output->hR.data->data[p]=output->hR.data->data[p-input->CinvDelay];
  }
-
- /* An odd filter with N points introduces an (N-1)/2 delay */
- /* apply advance to compensate for FIR delay */
- for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
-   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
- }
-
- /* Low pass filter twice to smooth time series */
- XLALFIRFilter(&uphR,&LPFIR);
- XLALFIRFilter(&uphR,&LPFIR);
 
  /* Filter through inverse of sensing function */
- XLALFIRFilter(&uphR, input->Cinv);
-
- /* apply advance to compensate for Low Pass FIR delay */
- for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
-   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
- }
-
- /* Low pass filter twice to smooth time series (again) */
- XLALFIRFilter(&uphR,&LPFIR);
- XLALFIRFilter(&uphR,&LPFIR);
-
- /* then we downsample and voila' */
- for (p=0; p<(int)output->hR.data->length; p++) {
-   output->hR.data->data[p]=uphR.data->data[p*input->CinvUSF];
- }
- LALDDestroyVector(status->statusPtr,&uphR.data);
- CHECKSTATUSPTR( status );
+ XLALFIRFilter(&(output->hR), input->Cinv);
 
  /* Create time series that hold alpha time series and upsampled alpha time-series */
  LALDCreateVector(status->statusPtr,&ALPHAS.data,output->alpha.data->length);
@@ -222,7 +188,7 @@ REAL8IIRFilter ALPHASLPFIR;
    }
 
  /* upsample using a linear interpolation */
- if(XLALUpsampleLinear(&upALPHAS, &ALPHAS, (int) (output->alphabeta.deltaT/input->AS_Q.deltaT+0.5)))
+ if(XLALUpsampleLinear(&upALPHAS, &ALPHAS, (int) (output->alphabeta.deltaT/input->DARM_ERR.deltaT+0.5)))
    {
      ABORT(status,117,"Broke upsampling Alphas");
    }
@@ -348,17 +314,11 @@ REAL8IIRFilter ALPHASLPFIR;
  /* ---------- Compute Net Strain -------------*/
  /* add control and residual signals and voila' */
  for (p=0; p< (int)output->h.data->length; p++){
-   output->h.data->data[p] = output->hC.data->data[p]+output->hR.data->data[p];
+     output->h.data->data[p] = output->hC.data->data[p]+output->hR.data->data[p];
  }
  /* ------------------------------------------*/
 
- /* destroy low and high pass filters */
- LALDDestroyVector(status->statusPtr,&(LPFIR.directCoef));
- CHECKSTATUSPTR( status );
- LALDDestroyVector(status->statusPtr,&(LPFIR.recursCoef));
- CHECKSTATUSPTR( status );
- LALDDestroyVector(status->statusPtr,&(LPFIR.history));
- CHECKSTATUSPTR( status );
+ /* destroy high pass filter */
  LALDDestroyVector(status->statusPtr,&(HPFIR.directCoef));
  CHECKSTATUSPTR( status );
  LALDDestroyVector(status->statusPtr,&(HPFIR.recursCoef));
@@ -589,9 +549,9 @@ REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 LALWindowParams winparams;
 INT4 k,m;
 
-REAL4 deltaT=input->AS_Q.deltaT, To=input->To;
-INT4 length = input->AS_Q.data->length;
-/*INT4 localtime = input->AS_Q.epoch.gpsSeconds;*/
+REAL4 deltaT=input->DARM_ERR.deltaT, To=input->To;
+INT4 length = input->DARM_ERR.data->length;
+/*INT4 localtime = input->DARM_ERR.epoch.gpsSeconds;*/
 
  INITSTATUS( status, "LALGetFactors", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );

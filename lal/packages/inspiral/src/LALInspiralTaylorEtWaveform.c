@@ -34,6 +34,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/LALConstants.h>
 
 typedef struct tagzetaInitIn {
   REAL8 eta, omega, e0;
@@ -209,7 +210,7 @@ void LALTaylorEtDerivatives4PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -217,7 +218,6 @@ void LALTaylorEtDerivatives4PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -244,7 +244,7 @@ void LALTaylorEtDerivatives5PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -252,7 +252,6 @@ void LALTaylorEtDerivatives5PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -280,7 +279,7 @@ void LALTaylorEtDerivatives6PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -288,7 +287,6 @@ void LALTaylorEtDerivatives6PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -311,7 +309,7 @@ void LALTaylorEtDerivatives6PN(
      + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52
      + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.
 	     - 24861497.*eta/72576. - 856.*log(16.*zeta)/105. + 16.*pisq/3.
-	     - 1712.*gamma/105. + 37999588601./279417600.) * zeta3 );
+	     - 1712.*LAL_GAMMA/105. + 37999588601./279417600.) * zeta3 );
 }
 
 void LALTaylorEtDerivatives7PN(
@@ -321,7 +319,7 @@ void LALTaylorEtDerivatives7PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi, gamma;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -329,7 +327,6 @@ void LALTaylorEtDerivatives7PN(
    zeta = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
@@ -352,7 +349,7 @@ void LALTaylorEtDerivatives7PN(
      + (4913.*LAL_PI/672. - 177.*LAL_PI*eta/8.) * zeta52
      + (-85./64.*eta3 + 488849./16128.*eta2 + 369.*pisq*eta/32.
 	     - 24861497.*eta/72576. - 856.*log(16.*zeta)/105. + 16.*pisq/3.
-	     - 1712.*gamma/105. + 37999588601./279417600.) * zeta3
+	     - 1712.*LAL_GAMMA/105. + 37999588601./279417600.) * zeta3
      + (613373.*LAL_PI*eta2/12096. - 3207739.*LAL_PI*eta/48384.
 	     + 129817.*LAL_PI/2304.) * zeta72);
 }
@@ -475,20 +472,20 @@ LALTaylorEtWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   rootIn.function = LALzetaInit4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   rootIn.function = LALzetaInit5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   rootIn.function = LALzetaInit6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   rootIn.function = LALzetaInit7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -513,20 +510,20 @@ LALTaylorEtWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   in4.function = LALTaylorEtDerivatives4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   in4.function = LALTaylorEtDerivatives6PN;
 	   break;
-	case threePointFivePN:
+case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);

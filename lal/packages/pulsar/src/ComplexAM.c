@@ -240,7 +240,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
 } /* LALGetMultiCmplxAMCoeffs() */
 
 
-
+
 /* ===== Object creation/destruction functions ===== */
 
 /** Destroy a MultiCmplxAMCoeffs structure.

@@ -244,7 +244,6 @@ void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads);
 void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads);
 void GPStoTDBMJD(LALStatus *status,MJDTime *TDBMJD,LIGOTimeGPS GPS);
 void MultiplyInterval(LALStatus *status,LALTimeInterval *newinterval,LALTimeInterval interval,INT4 factor);
-int snprintf(char *str, size_t size, const char *format, ...);
 
 /*============================================================
  * FUNCTION definitions
@@ -560,7 +559,8 @@ main(int argc, char *argv[]){
 
   /* define TOA end time in GPS */
   temp = uvar.DurationMJD*86400.0;
-  LALAddFloatToGPS(&status,&TendGPS,&TstartGPS,temp);
+  TendGPS = TstartGPS;
+  XLALGPSAdd(&TendGPS, temp);
   if (lalDebugLevel) fprintf(stdout,"STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
 
   /* generate SSB end time in GPS (force integer seconds) */
@@ -598,7 +598,7 @@ main(int argc, char *argv[]){
     if (lalDebugLevel) fprintf(stdout,"STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
 
     /* define current t-tref */
-    LALDeltaFloatGPS(&status,&dtref,&tnow,&TrefSSB_TDB_GPS);
+    dtref = XLALGPSDiff(&tnow,&TrefSSB_TDB_GPS);
     if (lalDebugLevel) fprintf(stdout,"STATUS : current (t - tref) = %9.12f\n",dtref);
 
     dtcor = 1;
@@ -620,7 +620,8 @@ main(int argc, char *argv[]){
     }
 
     /* define time of zero phase */
-    LALAddFloatToGPS(&status,&TSSB[i],&TrefSSB_TDB_GPS,dtref);
+    TSSB[i] = TrefSSB_TDB_GPS;
+    XLALGPSAdd(&TSSB[i], dtref);
     if (lalDebugLevel) fprintf(stdout,"STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
  
   }

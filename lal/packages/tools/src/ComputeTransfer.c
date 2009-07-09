@@ -402,12 +402,9 @@ LALUpdateCalibration(
   output->sensingFunction->epoch = params->epoch;
 
   /* locate correct values of a and ab */
-  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)),
-      status );
-  TRY( LALGPStoFloat( status->statusPtr, &first_cal,
-    &(params->sensingFactor->epoch)), status );
-  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)),
-      status );
+  epoch = XLALGPSGetREAL8(&(params->epoch));
+  first_cal = XLALGPSGetREAL8(&(params->sensingFactor->epoch));
+  duration = XLALGPSGetREAL8(&(params->duration));
 
   dt = epoch - first_cal;
 
@@ -446,7 +443,7 @@ LALUpdateCalibration(
           (params->epoch.gpsSeconds < CAL_S2END ) )
       {
         /* if the zero is during S2 print a warning... */
-        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
             "Zero calibration factors found during S2 at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -454,7 +451,7 @@ LALUpdateCalibration(
       else
       {
         /* ...or abort if we are outside S2 */
-        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
             "Zero calibration factor found at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -484,7 +481,7 @@ LALUpdateCalibration(
       (fabs( a.re ) < tiny && fabs( a.im ) < tiny) ||
       (fabs( ab.re ) < tiny && fabs( ab.im ) < tiny) )
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Got %d calibration samples\nalpha and/or beta are zero:\n"
         "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
         length, a.re, a.im, ab.re, ab.im );
@@ -501,7 +498,7 @@ LALUpdateCalibration(
   /* return the used values of alpha and alphabeta */
   params->alpha = a;
   params->alphabeta = ab;
-  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+  snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Got %d calibration samples\n"
       "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
       length, a.re, a.im, ab.re, ab.im );

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: StdBurstSearch.h
  *
  * Author: Julien Sylvestre
- * 
+ *
  * Revision: $$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="StdBurstSearchHV">
 Author: Julien Sylvestre
 $$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX file="StdBurstSearchH">
 \section{Header \texttt{StdBurstSearch.h}}
 \label{s:StdBurstSearch.h}
@@ -107,18 +107,18 @@ typedef struct tagBurstParameter {
 /* <lalVerbatim file="StdBurstSearchH"> */
 void
 LALTFClustersETG(
-		 LALStatus *status, 
-		 EventIDColumn *output, 
-		 REAL4TimeVectorSeries *input, 
+		 LALStatus *status,
+		 EventIDColumn *output,
+		 REAL4TimeVectorSeries *input,
 		 BurstParameter *params);
 /* </lalVerbatim> */
 
 /* <lalVerbatim file="StdBurstSearchH"> */
 void
 LALSlopeETG(
-		 LALStatus *status, 
-		 EventIDColumn *output, 
-		 REAL4TimeVectorSeries *input, 
+		 LALStatus *status,
+		 EventIDColumn *output,
+		 REAL4TimeVectorSeries *input,
 		 BurstParameter *params
 		 );
 /* </lalVerbatim> */
@@ -174,7 +174,7 @@ typedef struct tagBurstOutputSpecStat {
 } BurstOutputSpecStat;
 
 typedef struct tagRiceLikelihoodParams {
-  
+
   REAL8 P;
 
   REAL8 P0;
@@ -183,7 +183,7 @@ typedef struct tagRiceLikelihoodParams {
 
 } RiceLikelihoodParams;
 
-void 
+void
 LALRiceLikelihood(
 		  LALStatus *status,
 		  REAL8 *llik,
@@ -195,9 +195,9 @@ LALRiceLikelihood(
 /* <lalVerbatim file="StdBurstSearchH"> */
 void
 LALBurstOutput(
-	       LALStatus *status,           
+	       LALStatus *status,
 	       EventIDColumn *output,  /* output linked list of events */
-	       EventIDColumn *input,   /* linked list of events from ETG */ 
+	       EventIDColumn *input,   /* linked list of events from ETG */
 	       BurstOutputParameters *params
 );
 /* </lalVerbatim> */

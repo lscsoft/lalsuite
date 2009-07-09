@@ -120,14 +120,14 @@ struct CommandLineArgsTag {
   char *exc_chan;          /* excitation channel name */    
   char *darm_chan;         /* darm channel name */ 
   char *darmerr_chan;      /* darm_err  channel name */ 
-  char *asq_chan;          /* asq channel name */
+  char *asq_chan;          /* asq channel name (deprecated) */
   char *sv_chan;           /* state vector channel name */
   char *lax_chan;          /* light in x-arm channel name */
   char *lay_chan;          /* light in y-arm channel name */
   char *filterfile;        /* file with filter coefficients */
   char *frametype;
   char *strainchannel;
-  char *datadirL1;
+  char *datadirL1;         /* (deprecated) */
   char *datadirL2;
   INT4 checkfilename;
 } CommandLineArgs;
@@ -183,7 +183,7 @@ int main(int argc,char *argv[])
   /* Check whether files exist before proceeding */
   if (CommandLineArgs.checkfilename)
     {
-      char fname[FILENAME_MAX];
+      /* char fname[FILENAME_MAX]; */  /* *** DEPRECATED *** */
       char fname2[FILENAME_MAX];
       char site;
       INT4 t0, dt;
@@ -193,13 +193,13 @@ int main(int argc,char *argv[])
       t0 = CommandLineArgs.GPSStart+InputData.wings;
       dt = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart-2*InputData.wings;
 
-      LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL1,site, CommandLineArgs.frametype,"_L1", t0, dt );
-      LALSnprintf( fname2, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL2,site, CommandLineArgs.frametype,"_L2", t0, dt );
+      /* LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL1,site, CommandLineArgs.frametype,"_L1", t0, dt ); */  /* *** DEPRECATED *** */
+      LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL2,site, CommandLineArgs.frametype,"_L2", t0, dt );
 
-      if (access(fname, F_OK) == 0) {
-	fprintf(stdout, "Frame file %s exists. Exiting.\n",fname);
-	return 0;
-      }
+    /*   if (access(fname, F_OK) == 0) { */
+	/* fprintf(stdout, "Frame file %s exists. Exiting.\n",fname); */
+	/* return 0; */
+    /*   } */  /* *** DEPRECATED *** */
       if (access(fname2, F_OK) == 0) {
 	fprintf(stdout, "Frame file %s exists. Exiting.\n",fname2);
 	return 0;
@@ -282,7 +282,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Resize State Vector and Data Quality time series */
   if(!XLALResizeREAL4TimeSeries(&(StateVector), (int)(InputData.wings/StateVector.deltaT),
-               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT)))  /* safe for the *input* state vector?? */
+               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT)))
     XLAL_ERROR(func, XLAL_EFUNC);
   if(!XLALResizeINT4TimeSeries(&(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
 			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT)))
@@ -568,40 +568,40 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   InputData.To=CLA.To;
 
   /* check input data epoch agrees with command line arguments */
-  if ( InputData.AS_Q.epoch.gpsSeconds != CLA.GPSStart )
+  if ( InputData.DARM_ERR.epoch.gpsSeconds != CLA.GPSStart )
     {
       fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.", 
-	      InputData.AS_Q.epoch.gpsSeconds, CLA.GPSStart);
+	      InputData.DARM_ERR.epoch.gpsSeconds, CLA.GPSStart);
       return 1;
     }
 
   /* Allocate output data */
-  OutputData.h.epoch=InputData.AS_Q.epoch;
-  OutputData.h.deltaT=InputData.AS_Q.deltaT;
+  OutputData.h.epoch=InputData.DARM_ERR.epoch;
+  OutputData.h.deltaT=InputData.DARM_ERR.deltaT;
   LALDCreateVector(&status,&OutputData.h.data,(UINT4)(duration/OutputData.h.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputData.hC.epoch=InputData.AS_Q.epoch;
-  OutputData.hC.deltaT=InputData.AS_Q.deltaT;
+  OutputData.hC.epoch=InputData.DARM_ERR.epoch;
+  OutputData.hC.deltaT=InputData.DARM_ERR.deltaT;
   LALDCreateVector(&status,&OutputData.hC.data,(UINT4)(duration/OutputData.hC.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputData.hR.epoch=InputData.AS_Q.epoch;
-  OutputData.hR.deltaT=InputData.AS_Q.deltaT;
+  OutputData.hR.epoch=InputData.DARM_ERR.epoch;
+  OutputData.hR.deltaT=InputData.DARM_ERR.deltaT;
   LALDCreateVector(&status,&OutputData.hR.data,(UINT4)(duration/OutputData.hR.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputData.alpha.epoch=InputData.AS_Q.epoch;
+  OutputData.alpha.epoch=InputData.DARM_ERR.epoch;
   OutputData.alpha.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alpha.data,(UINT4)(duration/OutputData.alpha.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputData.alphabeta.epoch=InputData.AS_Q.epoch;
+  OutputData.alphabeta.epoch=InputData.DARM_ERR.epoch;
   OutputData.alphabeta.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alphabeta.data,(UINT4)(duration/OutputData.alphabeta.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputData.beta.epoch=InputData.AS_Q.epoch;
+  OutputData.beta.epoch=InputData.DARM_ERR.epoch;
   OutputData.beta.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.beta.data,(UINT4)(duration/OutputData.beta.deltaT +0.5));
   TESTSTATUS( &status );
@@ -622,40 +622,40 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   struct option long_options[] = {
-    {"cal-line-freq",       required_argument, NULL,           'f'},
-    {"factors-time",        required_argument, NULL,           't'},
-    {"filters-file",        required_argument, NULL,           'F'},
-    {"frame-cache",         required_argument, NULL,           'C'},
-    {"exc-channel",         required_argument, NULL,           'E'},
-    {"asq-channel",         required_argument, NULL,           'A'},
-    {"darm-channel",        required_argument, NULL,           'D'},
-    {"darmerr-channel",     required_argument, NULL,           'R'},
-    {"sv-channel",          required_argument, NULL,           'V'},
-    {"lax-channel",         required_argument, NULL,           'L'},
-    {"lay-channel",         required_argument, NULL,           'Y'},
-    {"gps-start-time",      required_argument, NULL,           's'},
-    {"gps-end-time",        required_argument, NULL,           'e'},
-    {"olg-re",              required_argument, NULL,           'i'},
-    {"olg-im",              required_argument, NULL,           'j'},
-    {"servo-re",            required_argument, NULL,           'k'},
-    {"servo-im",            required_argument, NULL,           'l'},
-    {"whitener-re",         required_argument, NULL,           'm'},
-    {"whitener-im",         required_argument, NULL,           'n'},
-    {"wings",               required_argument, NULL,           'o'},
-    {"test-sensing",        no_argument, NULL,                 'r'},
-    {"test-actuation",      no_argument, NULL,                 'c'},
-    {"delta",               no_argument, NULL,                 'd'},
-    {"no-factors",          no_argument, NULL,                 'u'},
-    {"td-fir",              no_argument, NULL,                 'x'},
-    {"require-histories",   required_argument, NULL,           'H'},
-    {"frame-type",          required_argument, NULL,           'T'},
-    {"strain-channel",      required_argument, NULL,           'S'},
-    {"data-dirL1",          required_argument, NULL,           'z'},
-    {"data-dirL2",          required_argument, NULL,           'p'},
-    {"check-file-exists",   no_argument, NULL,                 'v'},
-    {"darm-err-only",       no_argument, NULL,                 'w'},
-    {"gamma-fudge-factor",  required_argument, NULL,           'y'},
-    {"help",                no_argument, NULL,                 'h'},
+    {"cal-line-freq",       required_argument, NULL,  'f'},
+    {"factors-time",        required_argument, NULL,  't'},
+    {"filters-file",        required_argument, NULL,  'F'},
+    {"frame-cache",         required_argument, NULL,  'C'},
+    {"exc-channel",         required_argument, NULL,  'E'},
+    {"asq-channel",         required_argument, NULL,  'A'},
+    {"darm-channel",        required_argument, NULL,  'D'},
+    {"darmerr-channel",     required_argument, NULL,  'R'},
+    {"sv-channel",          required_argument, NULL,  'V'},
+    {"lax-channel",         required_argument, NULL,  'L'},
+    {"lay-channel",         required_argument, NULL,  'Y'},
+    {"gps-start-time",      required_argument, NULL,  's'},
+    {"gps-end-time",        required_argument, NULL,  'e'},
+    {"olg-re",              required_argument, NULL,  'i'},
+    {"olg-im",              required_argument, NULL,  'j'},
+    {"servo-re",            required_argument, NULL,  'k'},
+    {"servo-im",            required_argument, NULL,  'l'},
+    {"whitener-re",         required_argument, NULL,  'm'},
+    {"whitener-im",         required_argument, NULL,  'n'},
+    {"wings",               required_argument, NULL,  'o'},
+    {"test-sensing",        no_argument,       NULL,  'r'},
+    {"test-actuation",      no_argument,       NULL,  'c'},
+    {"delta",               no_argument,       NULL,  'd'},
+    {"no-factors",          no_argument,       NULL,  'u'},
+    {"td-fir",              no_argument,       NULL,  'x'},
+    {"require-histories",   required_argument, NULL,  'H'},
+    {"frame-type",          required_argument, NULL,  'T'},
+    {"strain-channel",      required_argument, NULL,  'S'},
+    {"data-dirL1",          required_argument, NULL,  'z'},
+    {"data-dirL2",          required_argument, NULL,  'p'},
+    {"check-file-exists",   no_argument,       NULL,  'v'},
+    {"darm-err-only",       no_argument,       NULL,  'w'},
+    {"gamma-fudge-factor",  required_argument, NULL,  'y'},
+    {"help",                no_argument,       NULL,  'h'},
     {0, 0, 0, 0}
   };
   char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:p:";
@@ -727,31 +727,31 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'E':
       /* name of excitation channel */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'A':
       /* name of as_q channel */
-      CLA->asq_chan=optarg;
-      break;    
+      CLA->asq_chan=optarg;  /* *** Warning: DEPRECATED *** */
+      break;
     case 'D':
       /* name of darm channel */
       CLA->darm_chan=optarg;
-      break;    
+      break;
     case 'R':
       /* name of darm err channel */
       CLA->darmerr_chan=optarg;
-      break;    
+      break;
     case 'V':
       /* name of state vector channel */
       CLA->sv_chan=optarg;
-      break;    
+      break;
     case 'L':
       /* name of light in x-arm channel */
       CLA->lax_chan=optarg;
-      break;   
+      break;
     case 'Y':
       /* name of light in y-arm channel */
       CLA->lay_chan=optarg;
-      break;    
+      break;
     case 's':
       /* GPS start */
       CLA->GPSStart=atof(optarg);
@@ -790,7 +790,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'r':
       /*  output residual signal */
-      CLA->testsensing=1; 
+      CLA->testsensing=1;
       break;
     case 'c':
       /* output control signal */
@@ -809,19 +809,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       InputData.fftconv=0;
       break;
     case 'T':
-      CLA->frametype=optarg;       
+      CLA->frametype=optarg;
       break;
     case 'S':
-      CLA->strainchannel=optarg;       
+      CLA->strainchannel=optarg;
       break;
     case 'z':
-      CLA->datadirL1=optarg;       
+      CLA->datadirL1=optarg;
       break;
     case 'p':
-      CLA->datadirL2=optarg;       
+      CLA->datadirL2=optarg;
       break;
     case 'v':
-      CLA->checkfilename=1;       
+      CLA->checkfilename=1;
       break;
     case 'w':
       /* don't use calibration factors in the strain computation */
@@ -832,40 +832,40 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'h':
       /* print usage/help message */
-      fprintf(stdout,"Arguments are:\n");
-      fprintf(stdout,"\tcal-line-freq (-f)\tFLOAT\t Calibration line frequency in Hz.\n");
-      fprintf(stdout,"\tfactors-time (-t)\tFLOAT\t Factors integration time in seconds.\n");
-      fprintf(stdout,"\tolg-re (-i)\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
-      fprintf(stdout,"\tolg-im (-j)\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
-      fprintf(stdout,"\tservo-re (-k)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\tservo-im (-l)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\twhitener-re (-m)\tFLOAT\t Real part of the whitening filter at the calibration line frequency.\n");
-      fprintf(stdout,"\twhitener-im (-n)\tFLOAT\t Imaginary part of whitening filter at the calibration line frequency.\n");
-      fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time.\n");
-      fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time.\n");
-      fprintf(stdout,"\tfilters-file (-F)\tSTRING\t Name of file containing filters and histories.\n");
-      fprintf(stdout,"\tframe-cache (-C)\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\tasq-channel (-A)\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
-      fprintf(stdout,"\texc-channel (-E)\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ).\n");
-      fprintf(stdout,"\tdarm-channel (-D)\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL).\n");
-      fprintf(stdout,"\tdarmerr-channel (-R)\tSTRING\t Darm ERR channel name (eg, L1:LSC-DARM_ERR).\n");
-      fprintf(stdout,"\tsv-channel (-V)\tSTRING\t State Vector channel name (eg, L1:IFO-SV_STATE_VECTOR).\n");
-      fprintf(stdout,"\tlax-channel (-L)\tSTRING\t Light in X-arm channel name (eg, L1:LSC-LA_PTRX_NORM).\n");
-      fprintf(stdout,"\tlay-channel (-Y)\tSTRING\t Light in Y-arm channel name (eg, L1:LSC-LA_PTRY_NORM).\n");
-      fprintf(stdout,"\twings (-o)\tINTEGER\t Size of wings in seconds.\n");
-      fprintf(stdout,"\ttest-sensing (-r)\tFLAG\t Output residual strain only.\n");
-      fprintf(stdout,"\ttest-actuation (-c)\tFLAG\t Output control strain only.\n");
-      fprintf(stdout,"\tdelta (-d)\tFLAG\t Use unit impulse.\n");
-      fprintf(stdout,"\tno-factors (-u)\tFLAG\t Do not use factors in strain computation.\n");
-      fprintf(stdout,"\ttd-fir (-x)\tFLAG\t Use time-domain FIR filtering (default is FFT convolution).\n");
-      fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLOAT\t Fudge factor used to adjust factor values. Gamma is divided by that value.\n");
-      fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX).\n");
-      fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN).\n");
-      fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/) [DEPRECATED].\n");
-      fprintf(stdout,"\tdata-dirL2 (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
-      fprintf(stdout,"\tcheck-file-exists (-w)\tFLAG\t Checks frame files exist and if they do it exits gracefully.\n");
-      fprintf(stdout,"\tdarm-err-only (-w)\tFLAG\t Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n");
-      fprintf(stdout,"\thelp (-h)\tFLAG\t This message.\n");
+      printf("Arguments are:\n"
+"\t-f, --cal-line-freq   FLOAT     Calibration line frequency in Hz.\n"
+"\t-t, --factors-time    FLOAT     Factors integration time in seconds.\n"
+"\t-i, --olg-re          FLOAT     Real part of the open loop gain at the calibration line frequency.\n"
+"\t-j, --olg-im          FLOAT     Imaginary part of the open loop gain at the calibration line frequency.\n"
+"\t-k, --servo-re        FLOAT     Real part of the digital filter at the calibration line frequency.\n"
+"\t-l, --servo-im        FLOAT     Imaginary part of digital filter at the calibration line frequency.\n"
+"\t-m, --whitener-re     FLOAT     Real part of the whitening filter at the calibration line frequency.\n"
+"\t-n, --whitener-im     FLOAT     Imaginary part of whitening filter at the calibration line frequency.\n"
+"\t-s, --gps-start-time  INT       GPS start time.\n"
+"\t-e, --gps-end-time    INT       GPS end time.\n"
+"\t-F, --filters-file    STRING    Name of file containing filters and histories.\n"
+"\t-C, --frame-cache     STRING    Name of frame cache file.\n"
+"\t-A, --asq-channel     STRING    AS_Q channel name (eg, L1:LSC-AS_Q) [DEPRECATED].\n"
+"\t-E, --exc-channel     STRING    Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ).\n"
+"\t-D, --darm-channel    STRING    Darm channel name (eg, L1:LSC-DARM_CTRL).\n"
+"\t-R, --darmerr-channel STRING    Darm ERR channel name (eg, L1:LSC-DARM_ERR).\n"
+"\t-V, --sv-channel      STRING    State Vector channel name (eg, L1:IFO-SV_STATE_VECTOR).\n"
+"\t-L, --lax-channel     STRING    Light in X-arm channel name (eg, L1:LSC-LA_PTRX_NORM).\n"
+"\t-Y, --lay-channel     STRING    Light in Y-arm channel name (eg, L1:LSC-LA_PTRY_NORM).\n"
+"\t-o, --wings           INTEGER   Size of wings in seconds.\n"
+"\t-r, --test-sensing    FLAG      Output residual strain only.\n"
+"\t-c, --test-actuation  FLAG      Output control strain only.\n"
+"\t-d, --delta           FLAG      Use unit impulse.\n"
+"\t-u, --no-factors      FLAG      Do not use factors in strain computation.\n"
+"\t-x, --td-fir          FLAG      Use time-domain FIR filtering (default is FFT convolution).\n"
+"\t-y, --gamma-fudge-factor FLOAT  Fudge factor used to adjust factor values. Gamma is divided by that value.\n"
+"\t-T, --frame-type      STRING    Frame type to be written (eg, H1_RDS_C01_LX).\n"
+"\t-S, --strain-channel  STRING    Strain channel name in frame (eg, H1:LSC-STRAIN).\n"
+"\t-z, --data-dirL1      STRING    Ouput L1 frame to this directory (eg, /tmp/S4/H1/) [DEPRECATED].\n"
+"\t-p, --data-dirL2      STRING    Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n"
+"\t-v, --check-file-exists FLAG    Checks frame files exist and if they do it exits gracefully.\n"
+"\t-w, --darm-err-only   FLAG      Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n"
+"\t-h, --help            FLAG      This message.\n");
       exit(0);
       break;
     default:
@@ -880,115 +880,116 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->f == 0.0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->To == 0.0)
     {
       fprintf(stderr,"No integration time for the factors specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->G0Re == 0.0 )
     {
       fprintf(stderr,"No real part of open loop gain specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->G0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of open loop gain specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->D0Re == 0.0 )
     {
       fprintf(stderr,"No real part of digital filter specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->D0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of digital filter specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->GPSEnd == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
   if(CLA->filterfile == NULL)
     {
       fprintf(stderr,"No filter file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->sv_chan == NULL)
     {
       fprintf(stderr,"No state vector channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->lax_chan == NULL)
     {
       fprintf(stderr,"No light in x-arm channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->lay_chan == NULL)
     {
       fprintf(stderr,"No light in y-arm  channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->darmerr_chan == NULL)
     {
       fprintf(stderr,"No darm err channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
-   if(CLA->asq_chan == NULL)
+   if(CLA->asq_chan != NULL)
     {
-      fprintf(stderr,"No asq channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
-      return 1;
-    }      
+      fprintf(stderr,"Warning: AS_Q channel specified, but it is not"
+              " used anymore in the calibration (it was only used"
+              " for computing the alpha factors before using the"
+              " Output Mode Cleaner). It will be renamed to the DARM_ERR channel.\n");
+    }
    if(CLA->frametype == NULL)
     {
       fprintf(stderr,"No frame type specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->strainchannel == NULL)
     {
       fprintf(stderr,"No strain channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
    if(CLA->datadirL1 != NULL)
@@ -999,7 +1000,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->datadirL2 == NULL)
     {
       fprintf(stderr,"No L2 frame directory specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
    if ( (InputData.wings < 2) || (InputData.wings%2 != 0) )
@@ -1007,6 +1008,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
        fprintf(stderr,"Overlap %d is either not >=2, or not exactly divisible by two. Exiting.",InputData.wings);
        return 1;
      }
+
+   /* temporary hack: set the name of the (unused) as_q channel to darm_err */
+   CLA->asq_chan=CLA->darmerr_chan;
 
    /* Set some global variables */
    duration = CLA->GPSEnd - CLA->GPSStart;

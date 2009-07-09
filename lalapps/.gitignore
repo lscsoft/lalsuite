@@ -73,6 +73,7 @@ src/frametools/lalapps_frview
 src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
+src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
@@ -120,7 +121,7 @@ src/inspiral/posterior/lalapps_inspnest
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
-src/online/lalapps_online_cache
+src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_power
 src/power/sense_compare
@@ -156,6 +157,7 @@ src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
+src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_dumpSFT
 src/pulsar/Injections/lalapps_makefakedata_test
 src/pulsar/Injections/lalapps_makefakedata_v2

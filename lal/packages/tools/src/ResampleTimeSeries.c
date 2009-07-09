@@ -121,7 +121,7 @@ LALInfo()
 LALDButterworthREAL4TimeSeries()
 LALDCreateVector()
 LALDIIRFilterREAL4Vector()
-LALSnprintf()
+snprintf()
 LALWarning()
 LALDDestroyVector()
 LALRealloc()
@@ -491,7 +491,7 @@ LALResampleREAL4TimeSeries(
 
     /* account for the corruption of the data by the fir filter */
     corrupted = filterOrder;
-    LALSnprintf( warnMsg, 256 * sizeof(CHAR),
+    snprintf( warnMsg, 256 * sizeof(CHAR),
         "Corrupted %d points at start and end of time series", corrupted / 2 );
     LALWarning( status, warnMsg );
     for ( j = 0; j < corrupted; ++j )

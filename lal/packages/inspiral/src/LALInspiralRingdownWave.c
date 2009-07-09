@@ -101,6 +101,9 @@ LALFree
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 /* <lalVerbatim file="XLALInspiralRingdownWaveCP">  */
 INT4 XLALInspiralRingdownWave (
 	REAL4Vector			*rdwave1,
@@ -362,6 +365,9 @@ INT4 XLALGenerateQNMFreq(
   REAL4 BCWre[3][3] = { {1.5251, -1.1568,  0.1292}, {1.3673, -1.0260,  0.1628}, { 1.3223, -1.0257,  0.1860} };
   REAL4 BCWim[3][3] = { {0.7000,  1.4187, -0.4990}, {0.1000,  0.5436, -0.4731}, {-0.1000,  0.4206, -0.4256} };
 
+  /* l and m are unused in this function */
+  UNUSED(l);
+  UNUSED(m);
 
   /* Get a local copy of the intrinstic parameters */
   totalMass = params->totalMass;

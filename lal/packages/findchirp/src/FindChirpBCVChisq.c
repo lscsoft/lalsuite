@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVChisq.c
  *
  * Author: Anderson, W. G., and Brown, D. A. and Messaritaki E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -218,7 +218,7 @@ LALFindChirpBCVChisqVeto (
   qtildeBin    = params->qtildeBinVec->data;
 
 
-  /* 
+  /*
    *
    * fill the numBins time series vectors for the chi-squared statistic
    *
@@ -244,7 +244,7 @@ LALFindChirpBCVChisqVeto (
   }
 
 
-  /* 
+  /*
    *
    * calculate the chi-squared value at each time
    *
@@ -257,17 +257,17 @@ LALFindChirpBCVChisqVeto (
   {
     for ( l = 0; l < numChisqBins; ++l )
     {
-      REAL4 X1 = params->qBinVecPtr[l]->data[j].re;  
+      REAL4 X1 = params->qBinVecPtr[l]->data[j].re;
       REAL4 Y1 = params->qBinVecPtr[l]->data[j].im;
 
-      REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) * 
-          ( X1 - q[j].re / (REAL4) (numChisqBins) ) + 
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) * 
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) ); 
+      REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) *
+          ( X1 - q[j].re / (REAL4) (numChisqBins) ) +
+          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) *
+          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod1 ;
     }
-  }  
+  }
 
   for ( j = 0; j < numPoints; ++j )
   {
@@ -277,9 +277,9 @@ LALFindChirpBCVChisqVeto (
       REAL4 X2 = params->qBinVecPtrBCV[l]->data[j].re;
       REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
 
-      REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) * 
+      REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) *
           ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
-          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) * 
+          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) *
           ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod2;

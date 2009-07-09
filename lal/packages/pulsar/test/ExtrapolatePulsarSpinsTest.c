@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -13,16 +13,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /*********************************************************************************/
 /** \author Reinhard Prix
- * \file 
+ * \file
  * \brief Test for ExtrapolatePulsarSpins().
- *                                                                          
+ *
  *********************************************************************************/
 #include <math.h>
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
   /* first propagate single spin-vector */
   printf(" \n ----- Test1: LALExtrapolatePulsarSpins() ----- \n");
-  printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g ]\n", 
+  printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g ]\n",
 	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
 	 fkdot0[0], fkdot0[1], fkdot0[2], fkdot0[3] );
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, fkdot1, epoch1, phi0, epoch0 ), &status );
 
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
-    if ( RELERROR(phi1, phi1Result) > tolerancePhi ) 
+    if ( RELERROR(phi1, phi1Result) > tolerancePhi )
       {
 	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
 	return -1;
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   printf ("Input: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range0.fkdotBand[0], range0.fkdotBand[1], range0.fkdotBand[2], range0.fkdotBand[3] );
 
-  SUB ( LALExtrapolatePulsarSpinRange (&status, &range2, epoch2, &range0 ), &status ); 
+  SUB ( LALExtrapolatePulsarSpinRange (&status, &range2, epoch2, &range0 ), &status );
 
   printf ("\n");
   printf ("Output: epoch = %d.%09d \n", range2.refTime.gpsSeconds, range2.refTime.gpsNanoSeconds );
@@ -204,14 +204,14 @@ int main(int argc, char *argv[])
 	  range2.fkdot[0], range2.fkdot[1], range2.fkdot[2], range2.fkdot[3] );
   printf ("Output: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range2.fkdotBand[0], range2.fkdotBand[1], range2.fkdotBand[2], range2.fkdotBand[3] );
-  
+
   printf ("\n");
   printf ("Octave : fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
-	  rangeResult.fkdot[0], rangeResult.fkdot[1], rangeResult.fkdot[2], rangeResult.fkdot[3] ); 
+	  rangeResult.fkdot[0], rangeResult.fkdot[1], rangeResult.fkdot[2], rangeResult.fkdot[3] );
   printf ("Octave : fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  rangeResult.fkdotBand[0], rangeResult.fkdotBand[1], rangeResult.fkdotBand[2], rangeResult.fkdotBand[3] );
-  
-  if ( (range2.refTime.gpsSeconds != rangeResult.refTime.gpsSeconds) 
+
+  if ( (range2.refTime.gpsSeconds != rangeResult.refTime.gpsSeconds)
        || ( range2.refTime.gpsNanoSeconds != rangeResult.refTime.gpsNanoSeconds ) )
     {
       LALPrintError ("\nOutput-range has wrong epoch\n");
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
        (RELERROR(range2.fkdotBand[0], rangeResult.fkdotBand[0]) > tolerance) ||
        (RELERROR(range2.fkdotBand[1], rangeResult.fkdotBand[1]) > tolerance) ||
        (RELERROR(range2.fkdotBand[2], rangeResult.fkdotBand[2]) > tolerance) ||
-       (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance) 
+       (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance)
        )
     {
       LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );

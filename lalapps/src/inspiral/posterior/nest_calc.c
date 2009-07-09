@@ -18,10 +18,10 @@
 #define infosafe 1.5
 
 gsl_matrix *cov_mat;
- 
+
 CHAR outfile[512];
 double etawindow;
- 
+
 INT4 seed;
 
 double logadd(double a,double b){
@@ -80,7 +80,7 @@ template.eta = XLALMCMCGetParameter(parameter,"eta");
 template.massChoice = totalMassAndEta;
 template.fLower = inputMCMC->fLow;
 template.distance = XLALMCMCGetParameter(parameter,"distMpc");
-template.order = twoPN;
+template.order = LAL_PNORDER_TWO;
 template.approximant=inputMCMC->approximant;
 template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -96,12 +96,12 @@ template.tSampling = 1.0/inputMCMC->deltaT;
 	LALInspiralParameterCalc(&status,&template);
 
 	template.startTime-=template.tC;
-	
+
 	LALInspiralRestrictedAmplitude(&status,&template);
 	Nmodel=inputMCMC->stilde[0]->data->length*2; /* *2 for real/imag packing format */
 
 	LALCreateVector(&status,&model,Nmodel);
-	
+
 	LALInspiralWave(&status,model,&template); /* Create the model */
 
 	int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[0]->deltaF);
@@ -139,16 +139,16 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	FILE *fpout=NULL;
 	CHAR outEnd[1000];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-	
+
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
-	
+
 	MCMCinput->Live=Live;
 	MCMCinput->Nlive=(UINT4)Nlive;
 	/* Initialise the RNG */
 	gsl_rng_env_setup();
 	RNG=gsl_rng_alloc(gsl_rng_default);
 	gsl_rng_set(RNG,seed==0 ? (unsigned long int)time(NULL) : seed);
-	
+
 	/* Initialise the optimised tables declared in LALInspiralMCMCUser.h*/
 
 	normalisations = calloc((size_t)MCMCinput->numberDataStreams,sizeof(REAL8));
@@ -159,11 +159,11 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 			for(j=(int)(MCMCinput->fLow/MCMCinput->invspec[i]->deltaF);j<MCMCinput->invspec[i]->data->length-1;j++) normalisations[i]+=0.5*log(MCMCinput->invspec[i]->data->data[j]);
 		}
 	}
-	
-	
+
+
 	if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(temp,(void *)MCMCinput->injectionTable);
 	else MCMCinput->funcInit(temp,(void *)MCMCinput->inspiralTable);
-	
+
 	XLALMCMCSetParameter(temp,"distMpc",DBL_MAX);
 	MCMCinput->funcPrior(MCMCinput,temp);
 	MCMCinput->funcLikelihood(MCMCinput,temp);
@@ -183,7 +183,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 
 
 	calcCVM(cov_mat,Live,Nlive);
-	
+
 	for(i=0;i<Nlive;i++) {
 	  accept=MCMCSampleLimitedPrior(Live[i],temp,MCMCinput,-DBL_MAX,cov_mat,MCMCinput->numberDraw);
 	  if(i%50==0)fprintf(stderr,".");
@@ -200,15 +200,15 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	logwarray = calloc(Nruns,sizeof(REAL8));
 	Wtarray = calloc(Nruns,sizeof(REAL8));
 	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL) {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
-	
+
 	logw=log(1.0-exp(-1.0/Nlive));
 	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;}
 	i=0;
-	
+
 	/* open outfile */
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s\n",outfile);
-	
+
 	/* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Nested sampling loop -=-=-=-=--=-=-=-=-==-=-=-=-=-=-= */
 /*	while(((REAL8)i)<=((REAL8)Nlive)*infosafe*H || i<3*Nlive) */
 	deltaZ=1.0;
@@ -255,7 +255,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	if(fpout && !(i%50)) fflush(fpout);
 	i++;
 	}
-	
+
 	/* Sort the remaining points (not essential, just nice)*/
 	for(i=0;i<Nlive-1;i++){
 		minpos=i;
@@ -283,7 +283,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	fprintf(stdout,"deltaLmax = %lf\n",Live[Nlive-1]->logLikelihood-logZnoise);
 	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
 	fprintf(stdout,"Z-score = %lf\n",zscore);
-	
+
 	close(fpout);
 	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");
@@ -344,8 +344,8 @@ while (i<N || (nreflect==a_cnt && nreflect>0 && nreflect%2==0)){
   else if( (jump_select=gsl_rng_uniform(RNG))<0.1) XLALMCMCDifferentialEvolution(MCMCInput,temp);
   /*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
   else XLALMCMCJump(MCMCInput,temp,covM);
-  
-  
+
+
   MCMCInput->funcPrior(MCMCInput,temp);
   if(temp->logPrior!=-DBL_MAX && ( (temp->logPrior - sample->logPrior) > log(gsl_rng_uniform(RNG)) )) {
     /* this would be accepted based on the priors, we can now confirm that its likelihood is above the limit
@@ -443,20 +443,20 @@ fprintf(stderr,"\n");
 free(twopt);
 free(max); free(min);
 */
-/* Debug output the matrix 
+/* Debug output the matrix
 for(i=0;i<ND;i++){
 	for(j=0;j<ND;j++){ fprintf(stderr,"%e ",gsl_matrix_get(cvm,i,j));}
 	fprintf(stderr,"\n");
 	}
 */
-	
+
 return;
 }
 
 /* Calculate shortest angular distance between a1 and a2 */
 REAL8 ang_dist(REAL8 a1, REAL8 a2){
 	double raw = (a2>a1 ? a2-a1 : a1-a2);
-	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw); 
+	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
 }
 
 /* Calculate the variance of a modulo-2pi distribution */

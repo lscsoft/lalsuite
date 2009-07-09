@@ -90,6 +90,10 @@ in Equation (\ref{eq:ode2}).
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/DetResponse.h>
 #include <lal/LIGOMetadataUtils.h>
+
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 static void
 LALInspiralAmplitudeCorrectedWaveEngine(
    LALStatus        *status,
@@ -322,9 +326,9 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
       waveform->position = ppnParams->position;
       waveform->psi = ppnParams->psi;
 
-      LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
-      LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
+      snprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
+      snprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
+      snprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
 
       /* --- fill some output ---*/
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
@@ -380,6 +384,10 @@ LALInspiralAmplitudeCorrectedWaveEngine(
 
    REAL4 hPlus, hCross;
    double fPlus, fCross;
+
+   /* ff and phi are unused in this function */
+   UNUSED(ff);
+   UNUSED(phi);
 
   /* LALDetector det;
    InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;

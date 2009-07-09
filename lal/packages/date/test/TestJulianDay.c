@@ -132,11 +132,13 @@ int main(int argc, char *argv[])
 {
 	time_t now;
 	struct tm utc;
+#if 0
 	REAL8 ref_julian_day;
 	REAL8 julian_day;
-	INT4 old_debuglvl;
 	REAL8 ref_mod_julian_day;
 	REAL8 mod_julian_day;
+#endif
+	INT4 old_debuglvl;
 
 
 	/*

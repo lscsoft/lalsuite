@@ -44,7 +44,7 @@ endif
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
-EXTRA_DIST = CoarseTest.par demo 
+EXTRA_DIST = CoarseTest.par demo
 MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

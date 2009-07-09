@@ -54,8 +54,6 @@ int PeriapseShiftBack(LIGOTimeGPS, LIGOTimeGPS,LIGOTimeGPS,LIGOTimeGPS *, REAL8,
 
 int PeriapseShift(LIGOTimeGPS Tpold, LIGOTimeGPS *Tp,LIGOTimeGPS Tstart, REAL8 Period,INT4 *NORB)
 {
-
-  static LALStatus status;
   REAL8 tdiff;
 
   /*printf("recieved the following in PeriapseShift\n");
@@ -97,8 +95,8 @@ int PeriapseShift(LIGOTimeGPS Tpold, LIGOTimeGPS *Tp,LIGOTimeGPS Tstart, REAL8 P
   /*printf("Tpold is %d %d\n",Tpold.gpsSeconds,Tpold.gpsNanoSeconds);*/
 
   /* calculate the number of periods between periapse and start */
-  LALDeltaFloatGPS(&status,&tdiff,&Tstart,&Tpold);
-  
+  tdiff = XLALGPSDiff(&Tstart,&Tpold);
+
   /*printf("tdiff is %f\n",tdiff);*/
 
   /* deal with before periapse and after periapse differently */
@@ -113,7 +111,8 @@ int PeriapseShift(LIGOTimeGPS Tpold, LIGOTimeGPS *Tp,LIGOTimeGPS Tstart, REAL8 P
   /*printf("tdiff now %f\n",tdiff);*/
 
   /* shift the periapse time so that 0 < Tstart-Tp < Period */
-  LALAddFloatToGPS(&status,Tp,&Tpold,tdiff);  
+  *Tp = Tpold;
+  XLALGPSAdd(Tp, tdiff);
 
   /*printf("returning Tpnew as %d %d\n",Tp->gpsSeconds,Tp->gpsNanoSeconds);*/
 

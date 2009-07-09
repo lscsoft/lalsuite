@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -12,7 +12,6 @@ AC_CONFIG_FILES([\
   misc/Makefile \
   src/Makefile \
   src/lalapps/Makefile \
-  src/example/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
   src/findchirp/Makefile \
@@ -100,6 +99,9 @@ fi
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
 
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CPP
@@ -114,7 +116,6 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
 if test "$GCC" = yes; then
-  CPPFLAGS="$CPPFLAGS -ansi"
   CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
 fi
 AC_PROG_INSTALL
@@ -133,11 +134,13 @@ AC_CHECK_LIB(z, compress)
 
 PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
+  AC_CHECK_LIB(lalstochastic, LALStochasticOptimalFilter, , AC_MSG_ERROR(could not find the LAL stochastic library))
 fi
 
 dnl LALFrame, LALMetaIo, and LALXML (optional).
@@ -267,8 +270,8 @@ AC_MSG_RESULT(no))
 AC_CHECK_FUNCS(setenv)
 
 if test "$LALSUITE_BUILD" = "true"; then
-  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
+  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSTOCHASTIC_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
   lalframe="false"
   lalmetaio="false"
   lalxml="false"

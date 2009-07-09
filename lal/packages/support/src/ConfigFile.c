@@ -497,7 +497,7 @@ XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-fil
     fprintf(stderr, "Error destroying token list.\n");
     return err;
   }
-  
+
   if ( (*cfgdata)->wasRead )
     LALFree ( (*cfgdata)->wasRead );
 
@@ -625,7 +625,7 @@ LALReadConfigVariable (LALStatus *status,
 
 } /* LALReadConfigVariable() */
 
-
+
 
 /** Type-specialization of generic reading-function LALReadConfigVariable() to BOOLEAN variables.
  */
@@ -796,7 +796,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 
 } /* LALReadConfigSTRINGVariable() */
 
-
+
 
 
 /** Type-specialization of generic reading-function LALReadConfigVariable() to
@@ -850,7 +850,7 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 
 } /* LALReadConfigSTRINGNVariable() */
 
-
+
 
 /** Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
@@ -895,7 +895,7 @@ LALCheckConfigReadComplete (LALStatus *status,
 
 } /* LALCheckConfigReadComplete() */
 
-
+
 
 /* ----------------------------------------------------------------------
  *   INTERNAL FUNCTIONS FOLLOW HERE

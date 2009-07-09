@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix, Badri Krishnan, John T. Whelan
  * \date 2005, 2007
- * \file 
+ * \file
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVector's.
  *
@@ -149,7 +149,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 /** Create one SFT-struct. Allows for numBins == 0.
  */
 void
-LALCreateSFTtype (LALStatus *status, 
+LALCreateSFTtype (LALStatus *status,
 		  SFTtype **output, 	/**< [out] allocated SFT-struct */
 		  UINT4 numBins)	/**< number of frequency-bins */
 {
@@ -169,7 +169,7 @@ LALCreateSFTtype (LALStatus *status,
   if ( numBins )
     {
       LALCCreateVector (status->statusPtr, &(sft->data), numBins);
-      BEGINFAIL (status) { 
+      BEGINFAIL (status) {
 	LALFree (sft);
       } ENDFAIL (status);
     }
@@ -184,10 +184,10 @@ LALCreateSFTtype (LALStatus *status,
 } /* LALCreateSFTtype() */
 
 
-/** Create a whole vector of \c numSFT SFTs with \c SFTlen frequency-bins 
+/** Create a whole vector of \c numSFT SFTs with \c SFTlen frequency-bins
  */
 void
-LALCreateSFTVector (LALStatus *status, 
+LALCreateSFTVector (LALStatus *status,
 		    SFTVector **output, /**< [out] allocated SFT-vector */
 		    UINT4 numSFTs, 	/**< number of SFTs */
 		    UINT4 numBins)	/**< number of frequency-bins per SFT */
@@ -265,17 +265,17 @@ void LALCreateMultiSFTVector ( LALStatus *status,
 			       MultiSFTVector **out,  /**< [out] multi sft vector created */
 			       UINT4 length,          /**< number of sft data points */
 			       UINT4Vector *numsft    /**< number of sfts in each sftvect */
-			       )     
+			       )
 {
 
   UINT4 k, j, numifo;
   MultiSFTVector *multSFTVec=NULL;
-  
+
   INITSTATUS (status, "LALCreateMultiSFTs", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
-  ASSERT ( *out == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );  
+  ASSERT ( *out == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
   ASSERT ( length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT );
   ASSERT ( numsft, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( numsft->length > 0, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT );
@@ -291,9 +291,9 @@ void LALCreateMultiSFTVector ( LALStatus *status,
   if ( (multSFTVec->data = (SFTVector **)LALCalloc( 1, numifo*sizeof(SFTVector *))) == NULL) {
     ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
   }
-  
+
   for ( k = 0; k < numifo; k++) {
-    LALCreateSFTVector (status->statusPtr, multSFTVec->data + k, numsft->data[k], length);    
+    LALCreateSFTVector (status->statusPtr, multSFTVec->data + k, numsft->data[k], length);
       BEGINFAIL ( status ) {
 	for ( j = 0; j < k-1; j++)
 	  LALDestroySFTVector ( status->statusPtr, multSFTVec->data + j );
@@ -313,7 +313,7 @@ void LALCreateMultiSFTVector ( LALStatus *status,
 /** Destroy an SFT-struct.
  */
 void
-LALDestroySFTtype (LALStatus *status, 
+LALDestroySFTtype (LALStatus *status,
 		   SFTtype **sft)	/**< SFT-struct to free */
 {
 
@@ -322,7 +322,7 @@ LALDestroySFTtype (LALStatus *status,
 
   ASSERT (sft != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if (*sft == NULL) 
+  if (*sft == NULL)
     goto finished;
 
   if ( (*sft)->data )
@@ -331,7 +331,7 @@ LALDestroySFTtype (LALStatus *status,
 	LALFree ( (*sft)->data->data );
       LALFree ( (*sft)->data );
     }
-  
+
   LALFree ( (*sft) );
 
   *sft = NULL;
@@ -396,7 +396,7 @@ XLALDestroySFTVector (SFTVector *vect)
 /** Destroy a PSD-vector
  */
 void
-LALDestroyPSDVector (LALStatus *status, 
+LALDestroyPSDVector (LALStatus *status,
 		     PSDVector **vect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -436,7 +436,7 @@ LALDestroyPSDVector (LALStatus *status,
 /** Destroy a multi SFT-vector
  */
 void
-LALDestroyMultiSFTVector (LALStatus *status, 
+LALDestroyMultiSFTVector (LALStatus *status,
 		          MultiSFTVector **multvect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -451,10 +451,10 @@ LALDestroyMultiSFTVector (LALStatus *status,
 
   for ( i = 0; i < (*multvect)->length; i++)
       LALDestroySFTVector( status->statusPtr, (*multvect)->data + i);
-  
+
   LALFree( (*multvect)->data );
   LALFree( *multvect );
-  
+
   *multvect = NULL;
 
  finished:
@@ -468,7 +468,7 @@ LALDestroyMultiSFTVector (LALStatus *status,
 /** Destroy a multi PSD-vector
  */
 void
-LALDestroyMultiPSDVector (LALStatus *status, 
+LALDestroyMultiPSDVector (LALStatus *status,
 		          MultiPSDVector **multvect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -481,15 +481,15 @@ LALDestroyMultiPSDVector (LALStatus *status,
   if ( *multvect == NULL )
     goto finished;
 
-  for ( i = 0; i < (*multvect)->length; i++) {    
+  for ( i = 0; i < (*multvect)->length; i++) {
     LALDestroyPSDVector( status->statusPtr, (*multvect)->data + i);
   }
 
   LALFree( (*multvect)->data );
   LALFree( *multvect );
-  
+
   *multvect = NULL;
-  
+
  finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
@@ -498,15 +498,15 @@ LALDestroyMultiPSDVector (LALStatus *status,
 
 
 
-/** Copy an entire SFT-type into another. 
- * We require the destination-SFT to have a NULL data-entry, as the  
+/** Copy an entire SFT-type into another.
+ * We require the destination-SFT to have a NULL data-entry, as the
  * corresponding data-vector will be allocated here and copied into
  *
  * Note: the source-SFT is allowed to have a NULL data-entry,
  * in which case only the header is copied.
  */
 void
-LALCopySFT (LALStatus *status, 
+LALCopySFT (LALStatus *status,
 	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
 	    const SFTtype *src)	/**< input-SFT to be copied */
 {
@@ -525,9 +525,9 @@ LALCopySFT (LALStatus *status,
   /* copy data (if there's any )*/
   if ( src->data )
     {
-      UINT4 numBins = src->data->length;      
+      UINT4 numBins = src->data->length;
       if ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+	ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
       }
       memcpy (dest->data->data, src->data->data, numBins * sizeof (src->data->data[0]));
     }
@@ -537,7 +537,7 @@ LALCopySFT (LALStatus *status,
 
 } /* LALCopySFT() */
 
-
+
 
 /** Subtract two SFT-vectors and put the results in a new one (which it allocates).
  *
@@ -557,7 +557,7 @@ LALSubtractSFTVectors (LALStatus *status,
   UINT4 halfNameLength;
 
   INITSTATUS( status, "LALSubtractSFTVectors", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
@@ -577,7 +577,7 @@ LALSubtractSFTVectors (LALStatus *status,
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1, inVect1->data[0].data->length ), status );
 
   halfNameLength = (LALNameLength - strlen("Xn:{}-{}"))/2;
-  
+
   /* copy the SFTs and subtract their data one-by-one */
   for (i=0; i < numSFTs1; i ++)
     {
@@ -591,7 +591,7 @@ LALSubtractSFTVectors (LALStatus *status,
       Freq1    = inVect1->data[i].f0;
       Freq2    = inVect2->data[i].f0;
       deltaF1  = inVect1->data[i].deltaF;
-      deltaF2  = inVect2->data[i].deltaF;      
+      deltaF2  = inVect2->data[i].deltaF;
 
       if ( numBins1 != numBins2 ) {
 	LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
@@ -620,15 +620,15 @@ LALSubtractSFTVectors (LALStatus *status,
 	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
 	}  /* for j < numBins1 */
 
-      LALSnprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
-      LALSnprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
-      LALSnprintf ( prefix, (strlen("Xn:") + 1), "%s", inVect1->data[i].name );
-      LALSnprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
+      snprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
+      snprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
+      snprintf ( prefix, (strlen("Xn:") + 1), "%s", inVect1->data[i].name );
+      snprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
     } /* for i < numSFTs1 */
 
   /* success: */
   (*outVect) = ret;
-  DETATCHSTATUSPTR (status); 
+  DETATCHSTATUSPTR (status);
   RETURN (status);
 
  failed:
@@ -637,7 +637,7 @@ LALSubtractSFTVectors (LALStatus *status,
 
 } /* LALSubtractSFTVectors() */
 
-
+
 
 /** Linearly combine two or more SFT-vectors and put the results in a new one (which it allocates).
  *
@@ -655,7 +655,7 @@ LALLinearlyCombineSFTVectors
   SFTVector *ret = NULL;
 
   INITSTATUS( status, "LALLinearlyCombineSFTVectors", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
@@ -675,7 +675,7 @@ LALLinearlyCombineSFTVectors
   numSFTs = inVects[0] -> length;
 
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, inVects[0]->data[0].data->length ), status );
-  
+
   /* copy the SFTs from the first vector */
   for (i=0; i < numSFTs; i ++)
     {
@@ -708,7 +708,7 @@ LALLinearlyCombineSFTVectors
 	  numBins2 = inVects[j]->data[i].data->length;
 	  epoch2   = inVects[j]->data[i].epoch;
 	  Freq2    = inVects[j]->data[i].f0;
-	  deltaF2  = inVects[j]->data[i].deltaF;      
+	  deltaF2  = inVects[j]->data[i].deltaF;
 
 	  if ( numBins1 != numBins2 ) {
 	    LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
@@ -737,14 +737,14 @@ LALLinearlyCombineSFTVectors
 		+= weights->data[j].re * inVects[j]->data[i].data->data[k].im
 		+ weights->data[j].im * inVects[j]->data[i].data->data[k].re;
 	    }  /* for k < numBins1 */
-	  
+
 	} /* for j < numSFTVects */
       memcpy ( ret->data[i].name, outName, LALNameLength*sizeof(CHAR) );
     } /* for i < numSFTs */
 
   /* success: */
   (*outVect) = ret;
-  DETATCHSTATUSPTR (status); 
+  DETATCHSTATUSPTR (status);
   RETURN (status);
 
  failed:
@@ -753,7 +753,7 @@ LALLinearlyCombineSFTVectors
 
 } /* LALLinearlyCombineSFTVectors() */
 
-
+
 
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
 void
@@ -763,15 +763,15 @@ LALAppendSFT2Vector (LALStatus *status,
 {
   UINT4 oldlen;
   INITSTATUS( status, "LALAppendSFT2Vector", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT ( sft, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
 
   oldlen = vect->length;
-  
+
   if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
-    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
   }
   memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
   vect->length ++;
@@ -783,7 +783,7 @@ LALAppendSFT2Vector (LALStatus *status,
 
 } /* LALAppendSFT2Vector() */
 
-
+
 
 /** Allocate a LIGOTimeGPSVector */
 LIGOTimeGPSVector *
@@ -792,7 +792,7 @@ XLALCreateTimestampVector (UINT4 length)
   LIGOTimeGPSVector *out = NULL;
 
   out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
-  if (out == NULL) 
+  if (out == NULL)
     XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
 
   out->length = length;
@@ -810,7 +810,7 @@ XLALCreateTimestampVector (UINT4 length)
 
 /** LAL-interface: Allocate a LIGOTimeGPSVector */
 void
-LALCreateTimestampVector (LALStatus *status, 
+LALCreateTimestampVector (LALStatus *status,
 			  LIGOTimeGPSVector **vect, 	/**< [out] allocated timestamp-vector  */
 			  UINT4 length)			/**< number of elements */
 {
@@ -829,7 +829,7 @@ LALCreateTimestampVector (LALStatus *status,
   *vect = out;
 
   RETURN (status);
-  
+
 } /* LALCreateTimestampVector() */
 
 
@@ -842,35 +842,35 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 
   LALFree ( vect->data );
   LALFree ( vect );
-  
+
   return;
-  
+
 } /* XLALDestroyTimestampVector() */
 
 
 /** De-allocate a LIGOTimeGPSVector
  */
 void
-LALDestroyTimestampVector (LALStatus *status, 
+LALDestroyTimestampVector (LALStatus *status,
 			   LIGOTimeGPSVector **vect)	/**< timestamps-vector to be freed */
 {
   INITSTATUS( status, "LALDestroyTimestampVector", SFTUTILSC);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if ( *vect == NULL ) 
+  if ( *vect == NULL )
     goto finished;
 
   XLALDestroyTimestampVector ( (*vect) );
-  
+
   (*vect) = NULL;
 
  finished:
   RETURN (status);
-  
+
 } /* LALDestroyTimestampVector() */
 
-
+
 
 /** Given a start-time, duration and 'stepsize' tStep, returns a list of timestamps
  * covering this time-stretch.
@@ -890,9 +890,9 @@ LALMakeTimestamps(LALStatus *status,
   INITSTATUS( status, "LALMakeTimestamps", SFTUTILSC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (timestamps != NULL, status, SFTUTILS_ENULL, 
+  ASSERT (timestamps != NULL, status, SFTUTILS_ENULL,
 	  SFTUTILS_MSGENULL);
-  ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL, 
+  ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL,
 	  SFTUTILS_MSGENONULL);
 
   numSFTs = ceil( duration / tStep );			/* >= 1 !*/
@@ -922,7 +922,7 @@ LALMakeTimestamps(LALStatus *status,
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
-  
+
 } /* LALMakeTimestamps() */
 
 
@@ -938,7 +938,7 @@ LALGetSFTtimestamps (LALStatus *status,
   LIGOTimeGPSVector *ret = NULL;
 
   INITSTATUS (status, "LALGetSFTtimestamps", SFTUTILSC );
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -961,14 +961,14 @@ LALGetSFTtimestamps (LALStatus *status,
 } /* LALGetSFTtimestamps() */
 
 
-
 
-/** Extract/construct the unique 2-character "channel prefix" from the given 
- * "detector-name", which unfortunately will not always follow any of the 
+
+/** Extract/construct the unique 2-character "channel prefix" from the given
+ * "detector-name", which unfortunately will not always follow any of the
  * official detector-naming conventions given in the Frames-Spec LIGO-T970130-F-E
  * This function therefore sometime has to do some creative guessing:
  *
- * NOTE: in case the channel-number can not be deduced from the name, 
+ * NOTE: in case the channel-number can not be deduced from the name,
  * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
  *
  * NOTE2: the returned string is allocated here!
@@ -1017,9 +1017,9 @@ XLALGetChannelPrefix ( const CHAR *name )
       else /* otherwise: guess */
 	{
 	  strcpy ( channel, "H1" );
-	  if ( lalDebugLevel ) 
+	  if ( lalDebugLevel )
 	    LALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
-	} 
+	}
     } /* if LHO */
   /* LISA channel names are simply left unchanged */
   else if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
@@ -1039,7 +1039,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 	strcpy ( channel, "V2" );
     } /* if Virgo */
 
-    
+
   if ( channel[0] == 0 )
     {
       if ( lalDebugLevel ) LALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
@@ -1054,7 +1054,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 /** Find the site geometry-information 'LALDetector' (mis-nomer!) given a detector-name.
  * The LALDetector struct is allocated here.
  */
-LALDetector * 
+LALDetector *
 XLALGetSiteInfo ( const CHAR *name )
 {
   CHAR *channel;
@@ -1068,7 +1068,7 @@ XLALGetSiteInfo ( const CHAR *name )
   if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {
     XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_ENOMEM );
   }
-  
+
   switch ( channel[0] )
     {
     case 'T':
@@ -1097,7 +1097,7 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
 
     case 'Z':       /* create dummy-sites for LISA  */
-      if ( XLALcreateLISA ( site, channel[1] ) != 0 ) 
+      if ( XLALcreateLISA ( site, channel[1] ) != 0 )
 	{
 	  LALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
@@ -1117,17 +1117,17 @@ XLALGetSiteInfo ( const CHAR *name )
   LALFree ( channel );
 
   return site;
-  
+
 } /* XLALGetSiteInfo() */
 
 
-/** Computes weight factors arising from SFTs with different noise 
+/** Computes weight factors arising from SFTs with different noise
     floors -- it multiplies an existing weight vector */
-void LALComputeNoiseWeights  (LALStatus        *status, 
+void LALComputeNoiseWeights  (LALStatus        *status,
 			      REAL8Vector      *weightV,
 			      const SFTVector  *sftVect,
 			      INT4             blkSize,
-			      UINT4            excludePercentile) 
+			      UINT4            excludePercentile)
 {
 
   UINT4 lengthVect, lengthSFT, lengthPSD, halfLengthPSD;
@@ -1139,9 +1139,9 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
   /* --------------------------------------------- */
   INITSTATUS (status, "LALComputeNoiseWeights", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (weightV, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT (sftVect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT (blkSize > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
@@ -1151,13 +1151,13 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == sftVect->length, status, 
+  ASSERT (weightV->length == sftVect->length, status,
 	  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
   ASSERT (sftVect->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
-  
+
 
   /* set various lengths */
   lengthVect = sftVect->length;
@@ -1196,7 +1196,7 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
     /* calculate the periodogram */
     TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
-    
+
     /* calculate the running median */
     inputV.length = lengthSFT;
     inputV.data = periodo.data->data;
@@ -1205,14 +1205,14 @@ void LALComputeNoiseWeights  (LALStatus        *status,
     /* now sort the mediansV.data vector and exclude the top and last percentiles */
     gsl_sort(mediansV.data, 1, mediansV.length);
 
-    /* sum median excluding appropriate elements */ 
+    /* sum median excluding appropriate elements */
     for (k = excludeIndex; k < lengthPSD - excludeIndex; k++) {
       sumMed += mediansV.data[k];
     }
 
-    /* weight is proportional to 1/sumMed */    
+    /* weight is proportional to 1/sumMed */
     weightV->data[j] /= sumMed;
-    
+
   } /* end of loop over sfts */
 
   /* remember to normalize weights immediately after leaving this function */
@@ -1229,14 +1229,14 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 } /* LALComputeNoiseWeights() */
 
 
-/** Computes weight factors arising from MultiSFTs with different noise 
- * floors -- it multiplies an existing weight vector 
+/** Computes weight factors arising from MultiSFTs with different noise
+ * floors -- it multiplies an existing weight vector
  */
-void LALComputeMultiNoiseWeights  (LALStatus             *status, 
+void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   MultiNoiseWeights     **out,
 				   const MultiPSDVector  *rngmed,
 				   UINT4                 blocksRngMed,
-				   UINT4                 excludePercentile) 
+				   UINT4                 excludePercentile)
 {
   REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
   UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
@@ -1245,7 +1245,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   REAL8 Tsft_calS;	/* overall noise-normalization */
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT ( rngmed, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT ( rngmed->data, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
@@ -1262,11 +1262,11 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 
   weights->length = numifos;
   if ( (weights->data = (REAL8Vector **)LALCalloc( numifos, sizeof(REAL8Vector *))) == NULL) {
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);      
+    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
   }
 
   numsftsTot = 0;
-  for ( X = 0; X < numifos; X++) 
+  for ( X = 0; X < numifos; X++)
     {
       numsfts = rngmed->data[X]->length;
       numsftsTot += numsfts;
@@ -1279,16 +1279,16 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	LALFree (weights->data);
 	LALFree (weights);
       } ENDFAIL(status);
-      
+
       /* loop over rngmeds and calculate weights -- one for each sft */
-      for ( alpha = 0; alpha < numsfts; alpha++) 
+      for ( alpha = 0; alpha < numsfts; alpha++)
 	{
 	  REAL8FrequencySeries *thisrm;
 	  UINT4 halfBlock = blocksRngMed/2;
 	  UINT4 excludeIndex, halfLength, length;
-	  
+
 	  thisrm = &(rngmed->data[X]->data[alpha]);
-	  
+
 	  lengthsft = thisrm->data->length;
 	  if ( lengthsft < blocksRngMed ) {
 	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
@@ -1301,7 +1301,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
-	  Tsft_Sn = 0.0; 
+	  Tsft_Sn = 0.0;
 	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
 	    Tsft_Sn += thisrm->data->data[k];
 	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
@@ -1317,8 +1317,8 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 
   /* make weights of order unity by myltiplying by sumSn/total number of sfts */
   for ( X = 0; X < numifos; X ++) {
-    numsfts = weights->data[X]->length;    
-    for ( alpha = 0; alpha < numsfts; alpha ++) 
+    numsfts = weights->data[X]->length;
+    for ( alpha = 0; alpha < numsfts; alpha ++)
       weights->data[X]->data[alpha] *= Tsft_calS;
   }
 
@@ -1326,33 +1326,33 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 
   *out = weights;
 
-  
+
   DETATCHSTATUSPTR (status);
    /* normal exit */
   RETURN (status);
 }
 
 
-void 
-LALDestroyMultiNoiseWeights  (LALStatus         *status, 
-			      MultiNoiseWeights **weights) 
+void
+LALDestroyMultiNoiseWeights  (LALStatus         *status,
+			      MultiNoiseWeights **weights)
 {
   UINT4 k;
 
   INITSTATUS (status, "LALDestroyMultiNoiseWeights", SFTUTILSC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   ASSERT ( weights != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if (*weights == NULL) 
+  if (*weights == NULL)
     goto finished;
 
   for ( k = 0; k < (*weights)->length; k++)
-    LALDDestroyVector (status->statusPtr, (*weights)->data + k);      
+    LALDDestroyVector (status->statusPtr, (*weights)->data + k);
 
   LALFree( (*weights)->data );
   LALFree(*weights);
-  
+
   *weights = NULL;
 
  finished:
@@ -1368,7 +1368,7 @@ LALDestroyMultiNoiseWeights  (LALStatus         *status,
  * ==================================================
  */
 
-/** upsample a given multi-SFTvector by the given (integer) factor, 
+/** upsample a given multi-SFTvector by the given (integer) factor,
  *  _replacing_ the original SFTs
  */
 void
@@ -1380,7 +1380,7 @@ upsampleMultiSFTVector (LALStatus *status,
 {
   UINT4 X, numDet;
 
-  INITSTATUS( status, "upsampleMultiSFTVector", SFTUTILSC );  
+  INITSTATUS( status, "upsampleMultiSFTVector", SFTUTILSC );
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( inout, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
@@ -1413,9 +1413,9 @@ upsampleSFTVector (LALStatus *status,
 {
   UINT4 alpha, numSFTs;
 
-  INITSTATUS( status, "upsampleSFTVector", SFTUTILSC );  
+  INITSTATUS( status, "upsampleSFTVector", SFTUTILSC );
   ATTATCHSTATUSPTR (status);
-  
+
   ASSERT ( inout, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT ( inout->length, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
 
@@ -1452,8 +1452,8 @@ upsampleSFTVector (LALStatus *status,
  *  This is using DFT-interpolation (derived from zero-padding).
  */
 COMPLEX8Vector *
-XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, 
-			  UINT4 refineby, 
+XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
+			  UINT4 refineby,
 			  UINT4 Dterms)
 {
   UINT4 newLen, oldLen, l;
@@ -1466,12 +1466,12 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
   newLen = oldLen * refineby;
 
   /* the following are used to speed things up in the innermost loop */
-  if ( (ret = XLALCreateCOMPLEX8Vector ( newLen )) == NULL ) 
+  if ( (ret = XLALCreateCOMPLEX8Vector ( newLen )) == NULL )
     return NULL;
 
   for (l=0; l < newLen; l++)
     {
-      
+
       REAL8 kappa_l_k;
       REAL8 remain, kstarREAL;
       UINT4 kstar, kmin, kmax, k;
@@ -1493,17 +1493,17 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 	  /* Optimization: sin(2pi*kappa(l,k)) = sin(2pi*kappa(l,0) and idem for cos */
 	  sink = sin ( LAL_TWOPI * remain );
 	  coskm1 = cos ( LAL_TWOPI * remain ) - 1.0;
-	  
+
 	  /* ---------- innermost loop: k over 2*Dterms around kstar ---------- */
 	  for (k = kmin; k < kmax; k++)
 	    {
 	      REAL8 Plk_re, Plk_im;
-	      
+
 	      Xd_re = in->data[k].re;
 	      Xd_im = in->data[k].im;
-	      
+
 	      kappa_l_k = kstarREAL - k;
-		
+
 	      Plk_re = sink / kappa_l_k;
 	      Plk_im = coskm1 / kappa_l_k;
 
@@ -1511,7 +1511,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 	      Yk_im += Plk_re * Xd_im + Plk_im * Xd_re;
 
 	    } /* hotloop over Dterms */
-	} 
+	}
       else	/* kappa -> 0: Plk = 2pi delta(k, l) */
 	{
 	  Yk_re = LAL_TWOPI * in->data[kstar].re;

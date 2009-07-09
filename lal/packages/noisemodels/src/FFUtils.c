@@ -34,13 +34,13 @@ RCSID(  "$Id$");
 /*!!!!!!!! Need to change randIn to bankIn */
 
 
-void GetMaximumTemplateSize(LALStatus *status, RandomInspiralSignalIn  randIn, 
+void GetMaximumTemplateSize(LALStatus *status, RandomInspiralSignalIn  randIn,
 		      UINT4 *checkLength)
 {
 
    INITSTATUS(status, "BEGetMaximumSize", BANKEFFICIENCYNEWC);
    ATTACHSTATUSPTR(status);
-   
+
    InspiralTemplate dummy;
 
    dummy = randIn.param;
@@ -53,7 +53,7 @@ void GetMaximumTemplateSize(LALStatus *status, RandomInspiralSignalIn  randIn,
    LALInspiralWaveLength(status->statusPtr, checkLength, dummy);
 
    DETACHSTATUSPTR(status);
-   RETURN(status);	
+   RETURN(status);
 
 }
 

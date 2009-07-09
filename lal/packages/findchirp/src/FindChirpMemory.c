@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpMemory.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@ $Id$
 \subsection{Module \texttt{FindChirpMemory.c}}
 \label{ss:FindChirpMemory.c}
 
-Memory management functions for creating and destroying input data and 
+Memory management functions for creating and destroying input data and
 workspace memory for findchirp.
 
 \subsubsection*{Prototypes}
@@ -58,7 +58,7 @@ The function \texttt{LALInitializeDataSegmentVector()} creates a vector of
 \texttt{FindChirpInitParams} structure. The data segments are created using
 the input data in \texttt{chan}, \texttt{spec} and \texttt{resp}. No storage
 is allocated for the actual data in the data segments, instead the data
-segment \texttt{chan}, \texttt{spec} and \texttt{resp} pointers are pointed at 
+segment \texttt{chan}, \texttt{spec} and \texttt{resp} pointers are pointed at
 the input data appropriately. This means that the input \texttt{chan},
 \texttt{spec} and \texttt{resp} time and frequency series must persist for the
 duration of the filtering process.
@@ -146,7 +146,7 @@ LALInitializeDataSegmentVector (
 
 
   /* check that there is enough data to populate the data seg vec */
-  inputLength = params->numPoints * params->numSegments - 
+  inputLength = params->numPoints * params->numSegments -
     ( params->numSegments - 1 ) * params->ovrlap;
   if ( inputLength > chan->data->length )
   {
@@ -154,14 +154,14 @@ LALInitializeDataSegmentVector (
   }
 
   /* allocate memory for the data segment vector */
-  if ( ! (dataSegVec = *dataSegVecPtr = (DataSegmentVector *) 
+  if ( ! (dataSegVec = *dataSegVecPtr = (DataSegmentVector *)
         LALCalloc( 1, sizeof(DataSegmentVector) )) )
   {
     ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
   }
   dataSegVec->length = params->numSegments;
 
-  if ( ! ( dataSegVec->data =  (DataSegment *) 
+  if ( ! ( dataSegVec->data =  (DataSegment *)
         LALCalloc( dataSegVec->length, sizeof(DataSegment) )) )
   {
     ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
@@ -174,13 +174,13 @@ LALInitializeDataSegmentVector (
     DataSegment *currentSegment = dataSegVec->data + i;
 
     /* channel */
-    if ( ! (currentSegment->chan = (REAL4TimeSeries *) 
+    if ( ! (currentSegment->chan = (REAL4TimeSeries *)
           LALCalloc( 1, sizeof(REAL4TimeSeries) )) )
     {
       ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
     }
 
-    if ( ! (currentSegment->chan->data = (REAL4Sequence *) 
+    if ( ! (currentSegment->chan->data = (REAL4Sequence *)
           LALCalloc( 1, sizeof(REAL4Sequence) )) )
     {
       ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
@@ -189,8 +189,7 @@ LALInitializeDataSegmentVector (
 
   /* store the start of the input channel and its gps start time */
   dataPtr = chan->data->data;
-  LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
-  CHECKSTATUSPTR( status );
+  chanStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
   for ( i = 0; i < dataSegVec->length; ++i )
   {
@@ -211,15 +210,13 @@ LALInitializeDataSegmentVector (
 
     /* set the correct GPS time for the current data segment */
     {
-      INT8 currentSegmentTime = chanStartTime + (INT8) 
-        ( 1.0e9 * 
+      INT8 currentSegmentTime = chanStartTime + (INT8)
+        ( 1.0e9 *
           ((REAL8) params->numPoints - (REAL8) params->ovrlap) *
           (REAL8) i * chan->deltaT
         );
 
-      LALINT8toGPS( status->statusPtr, &(currentSegment->chan->epoch), 
-          &currentSegmentTime );
-      CHECKSTATUSPTR( status );
+      XLALINT8NSToGPS( &(currentSegment->chan->epoch), currentSegmentTime );
     }
 
     /* set up the REAL4Sequence to contain the correct data */
@@ -299,7 +296,7 @@ LALCreateDataSegmentVector (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* make sure the output handle exists, but points to a null pointer */
   ASSERT( vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -310,9 +307,9 @@ LALCreateDataSegmentVector (
 
   /* make sure that the number of segments and number of points in a */
   /* segment are positive                                            */
-  ASSERT( params->numSegments > 0, status, 
+  ASSERT( params->numSegments > 0, status,
       FINDCHIRPH_ESEGZ, FINDCHIRPH_MSGESEGZ );
-  ASSERT( params->numPoints > 0, status, 
+  ASSERT( params->numPoints > 0, status,
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
 
@@ -321,10 +318,10 @@ LALCreateDataSegmentVector (
    * create a vector of DataSegments
    *
    */
-  
+
 
   /* create the ouput structure */
-  vectorPtr = *vector = (DataSegmentVector *) 
+  vectorPtr = *vector = (DataSegmentVector *)
     LALCalloc( 1, sizeof(DataSegmentVector) );
   if ( ! vectorPtr )
   {
@@ -335,7 +332,7 @@ LALCreateDataSegmentVector (
   vectorPtr->length = params->numSegments;
 
   /* allocate memory for an array of data segments */
-  segPtr = vectorPtr->data = (DataSegment *) 
+  segPtr = vectorPtr->data = (DataSegment *)
     LALCalloc( 1, vectorPtr->length * sizeof(DataSegment) );
   if ( !segPtr )
   {
@@ -350,38 +347,38 @@ LALCreateDataSegmentVector (
   for (i = 0; i < vectorPtr->length; ++i)
   {
     /* channel */
-    segPtr[i].chan = (REAL4TimeSeries *) 
+    segPtr[i].chan = (REAL4TimeSeries *)
       LALCalloc( 1, sizeof(REAL4TimeSeries) );
     if ( ! segPtr[i].chan )
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
 
-    LALCreateVector (status->statusPtr, 
+    LALCreateVector (status->statusPtr,
         &segPtr[i].chan->data, params->numPoints);
     CHECKSTATUSPTR (status);
 
     /* power spectrum */
-    segPtr[i].spec = (REAL4FrequencySeries *) 
+    segPtr[i].spec = (REAL4FrequencySeries *)
       LALCalloc( 1, sizeof(REAL4FrequencySeries) );
     if ( ! segPtr[i].spec )
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
 
-    LALCreateVector (status->statusPtr, 
+    LALCreateVector (status->statusPtr,
         &segPtr[i].spec->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
-    
+
     /* response function */
-    segPtr[i].resp = (COMPLEX8FrequencySeries *) 
+    segPtr[i].resp = (COMPLEX8FrequencySeries *)
       LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
     if ( ! segPtr[i].resp )
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
 
-    LALCCreateVector (status->statusPtr, 
+    LALCCreateVector (status->statusPtr,
         &segPtr[i].resp->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
   }
@@ -413,7 +410,7 @@ LALDestroyDataSegmentVector (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* make sure handle is non-null and points to a non-null pointer */
   ASSERT( vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -425,8 +422,8 @@ LALDestroyDataSegmentVector (
    * destroy the data segment vector
    *
    */
-  
-  
+
+
   /* local pointer to the segment array */
   segPtr = (*vector)->data;
 
@@ -499,9 +496,9 @@ LALCreateFindChirpSegmentVector (
 
   /* make sure that the number of segments, number of points in a */
   /* segment and number of chisquared bins are positive           */
-  ASSERT( params->numSegments > 0, 
+  ASSERT( params->numSegments > 0,
       status, FINDCHIRPH_ESEGZ, FINDCHIRPH_MSGESEGZ );
-  ASSERT( params->numPoints > 0, 
+  ASSERT( params->numPoints > 0,
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
   /* check that the approximant is of a known type */
@@ -529,13 +526,13 @@ LALCreateFindChirpSegmentVector (
 
   /*
    *
-   * create a vector of findchirp segments 
+   * create a vector of findchirp segments
    *
    */
 
 
   /* create the output structure */
-  vectorPtr = *vector = (FindChirpSegmentVector *) 
+  vectorPtr = *vector = (FindChirpSegmentVector *)
     LALCalloc( 1, sizeof(FindChirpSegmentVector) );
   if ( ! vectorPtr )
   {
@@ -546,7 +543,7 @@ LALCreateFindChirpSegmentVector (
   vectorPtr->length = params->numSegments;
 
   /* allocate memory for an array of findchirp segments */
-  segPtr = vectorPtr->data = (FindChirpSegment *) 
+  segPtr = vectorPtr->data = (FindChirpSegment *)
     LALCalloc( 1, vectorPtr->length * sizeof(FindChirpSegment) );
   if ( !segPtr )
   {
@@ -576,7 +573,7 @@ LALCreateFindChirpSegmentVector (
     }
 
 
-    LALCCreateVector (status->statusPtr, 
+    LALCCreateVector (status->statusPtr,
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
@@ -621,45 +618,45 @@ LALCreateFindChirpSegmentVector (
 #endif
 
       LALCreateVector (status->statusPtr,
-          &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);  
+          &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
     }
 
     /* allocate space for the chi squared frequency bin boundaries */
-    segPtr[i].chisqBinVec = (UINT4Vector *) 
+    segPtr[i].chisqBinVec = (UINT4Vector *)
       LALCalloc( 1, sizeof(UINT4Vector) );
     if ( ! segPtr[i].chisqBinVec )
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
-    segPtr[i].chisqBinVec->length = 
+    segPtr[i].chisqBinVec->length =
       params->numChisqBins ? params->numChisqBins + 1 : 0;
 
     /* additional chisq frequency bins for the BCV templates */
     if ( params->approximant == BCV )
-    { 
+    {
       if ( params->numChisqBins )
       {
         segPtr[i].chisqBinVecBCV = NULL;
-        LALU4CreateVector (status->statusPtr, 
+        LALU4CreateVector (status->statusPtr,
             &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
         CHECKSTATUSPTR (status);
       }
       else
       {
-        segPtr[i].chisqBinVecBCV = (UINT4Vector *) 
+        segPtr[i].chisqBinVecBCV = (UINT4Vector *)
           LALCalloc( 1, sizeof(UINT4Vector) );
       }
     }
 
     /* segment dependent part of normalisation, for the SP templates */
-    LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
+    LALCreateVector( status->statusPtr, &(segPtr[i].segNorm),
         params->numPoints/2 + 1 );
     CHECKSTATUSPTR( status );
 
     /* segment id number (invalid) */
     segPtr[i].number = -1;
-    
+
     /* default is to analyze all segments */
     segPtr[i].analyzeSegment = 1;
   }
@@ -692,7 +689,7 @@ LALDestroyFindChirpSegmentVector (
    *
    */
 
-  
+
   /* make sure handle is non-null and points to a non-null pointer */
   ASSERT( vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( *vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );

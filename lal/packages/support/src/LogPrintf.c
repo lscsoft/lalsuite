@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2005 Reinhard Prix
- * 
+ *
  *  [partially based on the MSG_LOG class in BOINC:
  *  Copyright (C) 2005 University of California]
  *
@@ -16,8 +16,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -97,7 +97,7 @@ void LogSetFile(FILE *file)
 /* set the log-level to be used in this module.
  * (allow independence of lalDebugLevel!)
  */
-void 
+void
 LogSetLevel(LogLevel_t level)
 {
   LogLevel = level;
@@ -111,7 +111,7 @@ LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
     va_list va;
     va_start(va, format);
 
-    if ( LogLevel < level ) 
+    if ( LogLevel < level )
       return;
     if (LogOutput == NULL)
       LogOutput = LogOutputDefault;
@@ -140,16 +140,16 @@ LogPrintf (LogLevel_t level, const char* format, ...)
 } /* LogPrintf() */
 
 
-/** Low-level log-printing function: prefix message by timestamp if given. 
+/** Low-level log-printing function: prefix message by timestamp if given.
  */
 void
 LogPrintf_va (LogLevel_t level, const char* format, va_list va )
 {
-  if ( LogLevel < level ) 
+  if ( LogLevel < level )
     return;
   if (LogOutput == NULL)
     LogOutput = LogOutputDefault;
-     
+
   fprintf(LogOutput, "%s (%d) [%s]: ", LogGetTimestamp(), getpid(), LogFormatLevel(level) );
   vfprintf(LogOutput, format, va);
   fflush(LogOutput);
@@ -162,8 +162,8 @@ LogPrintf_va (LogLevel_t level, const char* format, va_list va )
 
 /* taken from BOINC: return time-string for given unix-time
  */
-const char * 
-LogTimeToString ( double t ) 
+const char *
+LogTimeToString ( double t )
 {
   static char buf[100];
   char finer[16];
@@ -177,7 +177,7 @@ LogTimeToString ( double t )
     hundreds_of_microseconds=0;
     t+=1.0;
   }
-  
+
   strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
   sprintf(finer, ".%04d", hundreds_of_microseconds);
   strcat(buf, finer);
@@ -196,8 +196,8 @@ LogTimeToString ( double t )
 #define EPOCHFILETIME_SEC (11644473600.)
 #define TEN_MILLION 10000000.
 
-static double 
-LogDtime (void) 
+static double
+LogDtime (void)
 {
 #ifdef _MSC_VER
 
@@ -300,7 +300,7 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
 	} /* for j < cols */
     }
   fprintf (fp, " ];\n" );
-  
+
   return 0;
 
 } /* XLALprintGSLmatrix() */
@@ -330,7 +330,7 @@ XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect )
     } /* for i < rows */
 
   fprintf (fp, " ];\n" );
-  
+
   return 0;
 
 } /* XLALprintGSLvector() */
@@ -356,7 +356,7 @@ XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect
     } /* for i < rows */
 
   fprintf (fp, " ];\n" );
-  
+
   return 0;
 
 } /* XLALprintGSLvector_int() */

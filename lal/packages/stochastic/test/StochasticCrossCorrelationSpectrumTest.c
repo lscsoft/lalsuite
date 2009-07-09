@@ -52,7 +52,7 @@ the cross-correlation spectrum given two zero-padded and
 Fourier-transformed data streams and a (frequency domain) optimal
 filter.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
@@ -209,19 +209,19 @@ ParseOptions (int argc, char *argv[]);
 int main( int argc, char *argv[] )
 {
   static LALStatus                status;
-  
+
   StochasticCrossCorrelationInput           input;
-  
+
   COMPLEX8FrequencySeries  goodData1;
   COMPLEX8FrequencySeries  goodData2;
   COMPLEX8FrequencySeries  goodFilter;
   COMPLEX8FrequencySeries  goodOutput;
-  
+
   COMPLEX8FrequencySeries  badData1;
   COMPLEX8FrequencySeries  badData2;
-  COMPLEX8FrequencySeries  badFilter;   
+  COMPLEX8FrequencySeries  badFilter;
   COMPLEX8FrequencySeries  badOutput;
-  
+
   COMPLEX8                *tempPtr;
   LIGOTimeGPS              epoch0 = {0,0};
   LIGOTimeGPS              epoch1 = {630720000,123456789};
@@ -232,16 +232,16 @@ int main( int argc, char *argv[] )
   REAL4 f, x;
   INT4  code;
   REAL4 expIm;
-  
+
   ParseOptions( argc, argv );
-  
+
   /* define valid parameters */
-  
+
   goodFilter.f0     = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0;
   goodFilter.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
   goodFilter.epoch  = epoch0;
   goodFilter.data   = NULL;
-  
+
   goodData1 = goodFilter;
   goodOutput = goodFilter;
 
@@ -249,7 +249,7 @@ int main( int argc, char *argv[] )
   badFilter = goodFilter;
   badData2 = badData1 = goodData2 = goodData1;
   badOutput = goodOutput;
-  
+
   LALCCreateVector(&status, &(goodData1.data),
                           STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH);
   if ( ( code = CheckStatus(&status, 0 , "",
@@ -276,7 +276,7 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  
+
   LALCCreateVector(&status, &(goodOutput.data),
                           STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH);
   if ( ( code = CheckStatus(&status, 0 , "",
@@ -285,12 +285,12 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  
+
   input.hBarTildeOne  = &goodData1;
   input.hBarTildeTwo  = &goodData2;
   input.optimalFilter = &goodFilter;
-  
-#ifndef LAL_NDEBUG  
+
+#ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
   {
     /* test behavior for null pointer to output series */
@@ -304,7 +304,7 @@ int main( int argc, char *argv[] )
       }
     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* test behavior for null pointer to input structure */
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, NULL, STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -316,7 +316,7 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to input structure results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* test behavior for null pointer to first data stream */
     input.hBarTildeOne = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -329,10 +329,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to first data stream results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to second data stream */
     input.hBarTildeOne = &goodData1;
-    
+
     /* test behavior for null pointer to second data stream */
     input.hBarTildeTwo = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -345,10 +345,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to second data stream results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to second data stream */
     input.hBarTildeTwo = &goodData2;
-    
+
     /* test behavior for null pointer to optimal filter */
     input.optimalFilter = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -361,10 +361,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to optimal filter results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to optimal filter */
     input.optimalFilter = &goodFilter;
-    
+
     /* test behavior for null pointer to data member of output series */
     LALStochasticCrossCorrelationSpectrum(&status, &badOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -376,7 +376,7 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* test behavior for null pointer to data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -389,10 +389,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of first data stream results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to data member of first data stream */
     input.hBarTildeOne = &goodData1;
-    
+
     /* test behavior for null pointer to data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -405,10 +405,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of second data stream results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to data member of second data stream */
     input.hBarTildeTwo = &goodData2;
-    
+
     /* test behavior for null pointer to data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -421,10 +421,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of optimal filter results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to data member of optimal filter */
     input.optimalFilter = &goodFilter;
-    
+
     /* Create a vector for testing null data-data pointers */
     LALCCreateVector(&status, &(badFilter.data),
                           STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH);
@@ -437,7 +437,7 @@ int main( int argc, char *argv[] )
     tempPtr = badFilter.data->data;
     badFilter.data->data = NULL;
     badOutput.data = badData1.data = badData2.data = badFilter.data;
-    
+
     /* test behavior for null pointer to data member of data member of output series */
     LALStochasticCrossCorrelationSpectrum(&status, &badOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -449,7 +449,7 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* test behavior for null pointer to data member of data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -462,10 +462,10 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of data member of first data stream results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to data member of data member of first data stream */
     input.hBarTildeOne = &goodData1;
-    
+
     /* test behavior for null pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -481,7 +481,7 @@ int main( int argc, char *argv[] )
 
     /* assign valid pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &goodData2;
-    
+
     /* test behavior for null pointer to data member of data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -494,12 +494,12 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: null pointer to data member of data member of optimal filter results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* assign valid pointer to data member of data member of optimal filter */
     input.optimalFilter = &goodFilter;
-    
+
     /* clean up */
-    
+
     badFilter.data->data = tempPtr;
     LALCDestroyVector(&status, &(badFilter.data));
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -509,9 +509,9 @@ int main( int argc, char *argv[] )
       return code;
     }
     badData1.data = badData2.data = badFilter.data;
-    
+
     /* test behavior for zero length */
-    goodData1.data->length = goodData2.data->length 
+    goodData1.data->length = goodData2.data->length
       = goodFilter.data->length = 0;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
@@ -524,11 +524,11 @@ int main( int argc, char *argv[] )
     printf("  PASS: zero length results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* reassign valid length */
-    goodData1.data->length = goodData2.data->length 
+    goodData1.data->length = goodData2.data->length
       = goodFilter.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH;
-    
+
     /* test behavior for negative frequency spacing */
-    goodData1.deltaF = goodData2.deltaF 
+    goodData1.deltaF = goodData2.deltaF
       = goodFilter.deltaF = -STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
@@ -540,9 +540,9 @@ int main( int argc, char *argv[] )
     }
     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
-    
+
     /* test behavior for zero frequency spacing */
-    goodData1.deltaF = goodData2.deltaF 
+    goodData1.deltaF = goodData2.deltaF
       = goodFilter.deltaF = 0;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
@@ -555,13 +555,13 @@ int main( int argc, char *argv[] )
     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    goodData1.deltaF = goodData2.deltaF 
+    goodData1.deltaF = goodData2.deltaF
       = goodFilter.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
    } /* if ( ! lalNoDebug ) */
 #endif /* LAL_NDEBUG */
 
   /* test behavior for negative start frequency */
-  goodData1.f0 = goodData2.f0 
+  goodData1.f0 = goodData2.f0
     = goodFilter.f0 = -20.0;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
   if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
@@ -573,11 +573,11 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: negative start frequency results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
-  
+
   /* reassign valid start frequency */
-  goodData1.f0 = goodData2.f0 
+  goodData1.f0 = goodData2.f0
     = goodFilter.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0;
-  
+
   /* test behavior for length mismatch between data streams */
   goodData2.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH - 1;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -590,10 +590,10 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: length mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  
+
   /* reassign correct length */
   goodData2.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH;
-  
+
   /* test behavior for frequency spacing mismatch between data streams */
   goodData2.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF * 2.0;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -606,10 +606,10 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: frequency spacing mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  
+
   /* reassign correct frequency spacing */
   goodData2.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
-  
+
   /* test behavior for start frequency mismatch between data streams */
   goodData2.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0 + 2.0;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -622,10 +622,10 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: start frequency mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  
+
   /* reassign correct start frequency */
   goodData2.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0;
-  
+
   /* test behavior for mismatch between epochs of data streams */
   goodData2.epoch = epoch2;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -647,10 +647,10 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: mismatch between epochs of data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMTIME);
-  
+
   /* reassign correct epoch */
   goodData2.epoch = epoch1;
-  
+
   /******************** Test Valid Data Case #1 ***********************/
   goodData1.sampleUnits = lalDimensionlessUnit;
   goodData1.sampleUnits.unitNumerator[LALUnitIndexStrain] = 1;
@@ -661,11 +661,11 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].re = goodData1.data->data[0].im 
-    = goodData2.data->data[0].re = goodData2.data->data[0].im 
-    = goodFilter.data->data[0].re = goodFilter.data->data[0].im 
+  goodData1.data->data[0].re = goodData1.data->data[0].im
+    = goodData2.data->data[0].re = goodData2.data->data[0].im
+    = goodFilter.data->data[0].re = goodFilter.data->data[0].im
     = 0.0;
-  
+
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
@@ -688,12 +688,12 @@ int main( int argc, char *argv[] )
 
    /* check output values */
 
-  if (optVerbose) 
+  if (optVerbose)
   {
     printf("Y(0)=%g + %g i, should be 0\n",
            goodOutput.data->data[0].re, goodOutput.data->data[0].im);
   }
-  if ( ( fabs(goodOutput.data->data[0].re) 
+  if ( ( fabs(goodOutput.data->data[0].re)
          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
        || ( fabs(goodOutput.data->data[0].im)
             > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
@@ -705,14 +705,14 @@ int main( int argc, char *argv[] )
     }
     return STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS;
   }
-   
+
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
     expIm = -1 * (2-x) * (1 + x*x);
 
-    if (optVerbose) 
+    if (optVerbose)
     {
       printf("Y(%f Hz)=%g + %g i, should be %g i\n",
              f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
@@ -731,7 +731,7 @@ int main( int argc, char *argv[] )
        return STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS;
      }
    }
-  
+
 
   /* clean up */
   LALCDestroyVector(&status, &(goodOutput.data));
@@ -757,7 +757,7 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  
+
   LALCDestroyVector(&status, &(goodData2.data));
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS,
@@ -765,7 +765,7 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  
+
   printf("PASS: all tests\n");
   LALCheckMemoryLeaks();
 
@@ -870,7 +870,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  
+
   /* normal exit */
   LALCheckMemoryLeaks();
   return STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ENOM;
@@ -933,19 +933,19 @@ ParseOptions (int argc, char *argv[])
       case 'i': /* specify file containing first data stream */
         strncpy (optData1File, optarg, LALNameLength);
         break;
-        
+
       case 'j': /* specify file containing second data stream */
         strncpy (optData2File, optarg, LALNameLength);
         break;
-        
+
       case 'k': /* specify file containing optimal filter */
         strncpy (optFilterFile, optarg, LALNameLength);
         break;
-        
+
       case 'm': /* specify number of points in optimal filter */
         optFilterLength = atoi (optarg);
         break;
-        
+
       case 'n': /* specify number of points in data streams */
         optStreamLength = atoi (optarg);
         break;

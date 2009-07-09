@@ -354,14 +354,14 @@ int main( int argc, char *argv[] )
 
       if ( ! prevEvent )
       {
-        LALGPStoINT8( &stat, &ta, &(thisEvent->h_start_time) );
+        ta = XLALGPSToINT8NS( &(thisEvent->h_start_time) );
         prevEvent = thisEvent;
         thisEvent = thisEvent->next;
         ++numEventsKept;
       }
       else
       {
-        LALGPStoINT8( &stat, &tb, &(thisEvent->h_start_time) );
+        tb = XLALGPSToINT8NS( &(thisEvent->h_start_time) );
         if( ta!=tb)
         {
           prevEvent = thisEvent;

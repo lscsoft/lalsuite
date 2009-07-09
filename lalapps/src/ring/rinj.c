@@ -119,7 +119,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
     LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
-  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
   return pp;
 }
@@ -723,8 +723,7 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_start_time),
-          &(this_inj->geocent_start_time), u * timeInterval ), &status );
+      XLALGPSAdd(&(this_inj->geocent_start_time), u * timeInterval);
     }    
 
  
@@ -846,8 +845,7 @@ int main( int argc, char *argv[] )
     placeAndGPS.p_detector = &lho;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff_ns,
           &detTimeAndSource ), &status );
-    LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->h_start_time),
-          &(this_inj->h_start_time), time_diff_ns ), &status );
+    XLALGPSAdd(&(this_inj->h_start_time), time_diff_ns);
 
     /* compute the response of the LHO detectors */
     detAndSource.pDetector = &lho;
@@ -869,8 +867,7 @@ int main( int argc, char *argv[] )
     placeAndGPS.p_detector = &llo;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
           &detTimeAndSource ), &status);
-    LAL_CALL( LALAddFloatToGPS( &status,  &(this_inj->l_start_time),
-          &(this_inj->l_start_time), time_diff_ns ), &status);
+    XLALGPSAdd(&(this_inj->l_start_time), time_diff_ns);
 
     /* compute the response of the LLO detector */
     detAndSource.pDetector = &llo;
@@ -889,8 +886,7 @@ int main( int argc, char *argv[] )
           /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
         
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd(&gpsStartTime, meanTimeStep);
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 

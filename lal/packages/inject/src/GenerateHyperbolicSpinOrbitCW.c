@@ -157,7 +157,7 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSnprintf()                 LALWarning()
+snprintf()                 LALWarning()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -263,7 +263,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 
   /* Set up some other constants. */
   twopif0 = f0*LAL_TWOPI;
-  phi0 = params->phi0; 
+  phi0 = params->phi0;
   argument = params->omega;
   a = vp*eccMinusOne*cos( argument ) + ecc;
   b = -vp*sqrt( eccMinusOne/eccPlusOne )*sin( argument );
@@ -351,9 +351,9 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->a->name, LALNameLength, "CW amplitudes" );
-  LALSnprintf( output->f->name, LALNameLength, "CW frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "CW phase" );
+  snprintf( output->a->name, LALNameLength, "CW amplitudes" );
+  snprintf( output->f->name, LALNameLength, "CW frequency" );
+  snprintf( output->phi->name, LALNameLength, "CW phase" );
 
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );

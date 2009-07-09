@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXMLHeaders.h
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@
 <lalVerbatim file="LIGOLwXMLHeadersHV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{LIGOLwXMLHeaders.h}}
 \subsection*{Synopsis}
@@ -47,26 +47,26 @@ This header provides provides \verb|#define|s for the common elements of LIGO
 light weight XML files.  It provides the XML header and footer, as well as table
 definitions for the various metadata tables.  It will need to be kept up to date
 with changes in the LIGO database table definitions.  The quantities which are
-defined in this file are 
+defined in this file are
 
 \begin{itemize}
 \item LIGOLW\_XML\_HEADER
-\item LIGOLW\_XML\_FOOTER 
+\item LIGOLW\_XML\_FOOTER
 \item LIGOLW\_XML\_TABLE\_FOOTER
-\item LIGOLW\_XML\_PROCESS 
-\item PROCESS\_ROW 
-\item LIGOLW\_XML\_PROCESS\_PARAMS 
-\item PROCESS\_PARAMS\_ROW 
-\item LIGOLW\_XML\_SEARCH\_SUMMARY 
-\item SEARCH\_SUMMARY\_ROW 
-\item LIGOLW\_XML\_SEARCH\_SUMMVARS 
-\item SEARCH\_SUMMVARS\_ROW 
+\item LIGOLW\_XML\_PROCESS
+\item PROCESS\_ROW
+\item LIGOLW\_XML\_PROCESS\_PARAMS
+\item PROCESS\_PARAMS\_ROW
+\item LIGOLW\_XML\_SEARCH\_SUMMARY
+\item SEARCH\_SUMMARY\_ROW
+\item LIGOLW\_XML\_SEARCH\_SUMMVARS
+\item SEARCH\_SUMMVARS\_ROW
 \item LIGOLW\_XML\_SIM\_RINGDOWN
 \item SIM\_RINGDOWN\_ROW
-\item LIGOLW\_XML\_SUMM\_VALUE 
-\item SUMM\_VALUE\_ROW 
+\item LIGOLW\_XML\_SUMM\_VALUE
+\item SUMM\_VALUE\_ROW
 \item LIGOLW\_XML\_SIM\_INST\_PARAMS
-\item SIM\_INST\_PARAMS\_ROW 
+\item SIM\_INST\_PARAMS\_ROW
 \item LIGOLW\_XML\_STOCHASTIC
 \item STOCHASTIC\_ROW
 \item LIGOLW\_XML\_STOCH\_SUMM
@@ -195,10 +195,10 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:snr\" Type=\"real_
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:sigma_sq\" Type=\"real_8\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF ) 
+fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_RINGDOWN_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%" LAL_UINT8_FORMAT "\""    
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sim_ringdowngroup:sim_ringdown:table\">\n" , fp ) == EOF || \

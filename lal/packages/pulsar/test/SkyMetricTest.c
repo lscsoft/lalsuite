@@ -151,7 +151,7 @@ LALMalloc()                     LALFree()
 LALDCreateVector()              LALDDestroyVector()
 LALU4CreateVector()             LALU4DestroyVector()
 LALSCreateGrid()                LALSDestroyGrid()
-LALSWriteGrid()                 LALSnprintf()
+LALSWriteGrid()                 snprintf()
 LALStackMetric()                LALProjectMetric()
 LALDTBaryPtolemaic()            LALGetEarthTimes()
 \end{verbatim}
@@ -536,14 +536,14 @@ main(int argc, char **argv)
   /* Warn if any points had bad values or large uncertainties. */
   if ( errors ) {
     CHAR msg[MSGLEN];
-    LALSnprintf( msg, MSGLEN, "%i of %i points had"
+    snprintf( msg, MSGLEN, "%i of %i points had"
 		 " non-positive-definite metric", warnings,
 		 nRA*nDec );
     WARNING( msg );
   }
   if ( warnings ) {
     CHAR msg[MSGLEN];
-    LALSnprintf( msg, MSGLEN, "%i of %i points had metric component"
+    snprintf( msg, MSGLEN, "%i of %i points had metric component"
 		 " errors larger than values", warnings, nRA*nDec );
     WARNING( msg );
   }

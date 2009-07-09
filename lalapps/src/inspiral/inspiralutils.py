@@ -589,7 +589,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipecp = copy.deepcopy(config)
   if dataFind or tmpltBank: # Template generation and datafind share a number of options
     hipeSections = ["condor", "pipeline", "input", "datafind","data",\
-        "ligo-data","inspiral","virgo-data", "condor-max-jobs"]
+        "ligo-data","inspiral","virgo-data", "condor-max-jobs", "calibration"]
     if tmpltBank: # Template generation needs some extra options that datafind doesn't
       hipeSections.extend(["calibration", "geo-data", "tmpltbank", \
           "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
@@ -598,7 +598,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
         "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
-        "sire-inj", "condor-max-jobs"]
+        "sire-inj", "condor-max-jobs", "calibration"]
   else:
     hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
@@ -670,6 +670,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.remove_section(hipeDir)
     hipecp.set("input","injection-seed",injSeed)
     hipecp.set("input", "num-slides", "")
+    # set any extra inspiral arguments for the injection
+    for item in config.items('-'.join([hipeDir,"inspiral"])):
+      hipecp.set("inspiral",item[0],item[1])
 
   elif hardwareInj and not dataFind and not tmpltBank:
     hipecp.set("input","hardware-injection","")
@@ -715,13 +718,19 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   if dataFind or tmpltBank:
     if dataFind:
-      hipeCommand = test_and_add_hipe_arg(hipeCommand,"datafind")
+      for hipe_arg in ["datafind","ringdown"]:
+        hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
     if tmpltBank:
-      hipeCommand = test_and_add_hipe_arg(hipeCommand,"template-bank")
+      for hipe_arg in ["template-bank","ringdown"]:
+        hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   elif vetoCat:
-    for hipe_arg in ["second-coinc", "coire-second-coinc", 
+    if config.has_option("hipe-arguments","ringdown"):
+      hipe_args = ["coincidence", "ringdown"]
+    else:
+      hipe_args = ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
-        "summary-single-ifo-triggers","write-script"]:
+        "summary-single-ifo-triggers","write-script"]
+    for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
     if hardwareInj:

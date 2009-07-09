@@ -184,7 +184,7 @@ ezxml_t ezxml_err(ezxml_root_t root, char *s, const char *err, ...)
     LALSnprintf(fmt, EZXML_ERRL, "[error near line %d]: %s", line, err);
 
     va_start(ap, err);
-    LALVsnprintf(root->err, EZXML_ERRL, fmt, ap);
+    vsnprintf(root->err, EZXML_ERRL, fmt, ap);
     va_end(ap);
 
     return &root->xml;

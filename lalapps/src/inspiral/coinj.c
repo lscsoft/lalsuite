@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
 {
 LALStatus	status=blank_status;
 CHAR		inputfile[FILENAME_MAX];
+CHAR            adjustedfile[FILENAME_MAX+10];
 CHAR		injtype[30];
 CHAR		det_name[10];
 LIGOTimeGPS inj_epoch;
@@ -98,7 +99,7 @@ ActuationParametersType actuationParams[LAL_NUM_IFO];
 ActuationParametersType actData;
 ResponseType injectionResponse=noResponse;
 FILE *		outfile;
-LIGOLwXMLStream		xmlfp;
+LIGOLwXMLStream		*xmlfp=NULL;
 CHAR		outfilename[FILENAME_MAX];
 
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -107,6 +108,7 @@ NoiseFunc *PSD;
 REAL8 PSDscale=1.0;
 int c;
 int repeatLoop=0;
+int hitTarget=0;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
 SimInspiralTable *headTable=NULL;
@@ -251,17 +253,19 @@ this_injection.next=NULL;
 NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
-LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
+inj_epoch = this_injection.geocent_end_time;
+XLALGPSAdd(&inj_epoch, -LeadupTime);
 inj_epoch.gpsNanoSeconds=0;
 SNROK=0; /* Reset this to 0 = OK */
 minRatio=2.0;
 maxRatio=0.0;
+repeatLoop=0;
 /* Loop over detectors */
 for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	/* Only generate within chosen bounds, if specified */
 	if((this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime )<GPSstart || (this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime)>GPSend) continue;
 
-	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1) continue; /* Don't generate for GEO or TAMA */
+	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1||det_idx==LAL_IFO_H2) continue; /* Don't generate for GEO or TAMA */
 	
 	switch(det_idx)
 	{
@@ -291,7 +295,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	/* -=-=-=-=-=-=- Prepare actuations -=-=-=-=-=-=- */
 
 	if(injectionResponse==actuationX || injectionResponse==actuationY) actData=actuationParams[det_idx];
-	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples+1);
+	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples/2+1);
 	/* Create actuation response */
 	switch(injectionResponse){
 		case unityResponse:
@@ -315,9 +319,9 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	if(injectionResponse!=unityResponse) {
 	  	actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
-		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
+		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples/2+1);
 		for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
-		XLALCCVectorDivide(transfer->data,unity,resp->data);
+		XLALCCVectorDivide(transfer->data,unity,actuationResp->data);
 		for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
 		actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
 		XLALDestroyCOMPLEX8FrequencySeries(transfer);
@@ -329,14 +333,14 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
 	/* Output the actuation time series */
-	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
+	sprintf(outfilename,"HWINJ_%i_%s_%i_%s.out",inj_num,injtype,inj_epoch.gpsSeconds,det_name);
 	outfile=fopen(outfilename,"w");
 	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
 	for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
 	fclose(outfile);
 
 calcSNRandwriteFrames:
-	
+
 	/* Calculate SNR for this injection */
 	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
 	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
@@ -388,11 +392,13 @@ calcSNRandwriteFrames:
 
 /*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
  NetworkSNR=sqrt(NetworkSNR);
- 
- if(targetSNR!=0.0 && repeatLoop==0) { injTable->distance*=(REAL4)(NetworkSNR/targetSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop=0;
- if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
- if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/maxSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
-
+ if(NetworkSNR!=0.0){ /* Check the SNR if we did this injection */
+   if(targetSNR!=0.0 && repeatLoop==0 && hitTarget==0) { injTable->distance*=(REAL4)(NetworkSNR/targetSNR); rewriteXML=1; repeatLoop=1; hitTarget=1;} else {repeatLoop=0; hitTarget=0;}
+   if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(0.99*NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;}
+   else {
+     if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(1.01*NetworkSNR/maxSNR); injTable->distance+=0.01; rewriteXML=1; repeatLoop=1; fprintf(stderr,"Multiplying by %lf to get from %lf to target\n",1.01*(NetworkSNR/maxSNR),NetworkSNR);}
+   }
+ }
  if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
 
  if(repeatLoop==0){
@@ -408,12 +414,16 @@ calcSNRandwriteFrames:
 if(rewriteXML){
 	memset(&MDT,0,sizeof(MDT));
 	MDT.simInspiralTable = headTable;
+	
 	fprintf(stderr,"Overwriting %s with adjusted distances\n",inputfile);
-	LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, inputfile ), &status );
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, MDT,sim_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
-	LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
+	strncat(adjustedfile,inputfile,strlen(inputfile)-4); /* Cut off the .xml */
+	sprintf(inputfile,"%s_adj.xml",adjustedfile);
+	xmlfp=XLALOpenLIGOLwXMLFile((const char *)inputfile);
+	if(xmlfp==NULL) fprintf(stderr,"Error! Cannot open %s for writing\n",inputfile);
+	LAL_CALL( LALBeginLIGOLwXMLTable( &status, xmlfp, sim_inspiral_table ), &status );
+	LAL_CALL( LALWriteLIGOLwXMLTable( &status, xmlfp, MDT,sim_inspiral_table ), &status );
+	LAL_CALL( LALEndLIGOLwXMLTable ( &status, xmlfp ), &status );
+	LAL_CALL( LALCloseLIGOLwXMLFile ( &status, xmlfp ), &status );
 }
 
 return(0);

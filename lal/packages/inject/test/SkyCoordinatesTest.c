@@ -106,7 +106,6 @@ lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
 LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
-LALGPStoINT8()                  LALINT8toGPS()
 LALGPStoUTC()                   LALDateString()
 LALGPStoGMST1()
 LALCHARCreateVector()           LALCHARDestroyVector()
@@ -420,8 +419,8 @@ main( int argc, char **argv )
       testIn.longitude = correct.longitude + 4 * LAL_TWOPI;
       testIn.latitude  = correct.latitude - 7 * LAL_TWOPI;
       SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
-      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
-	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14)
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14))
 	{
 	  printf ( "1.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
 		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
@@ -432,19 +431,19 @@ main( int argc, char **argv )
       testIn.latitude = LAL_PI - testIn.latitude;
       testIn.longitude += LAL_PI + 2 * LAL_TWOPI;
       SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
-      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
-	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14)
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14))
 	{
 	  printf ( "2.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
 		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
 	  ERROR( SKYCOORDINATESTESTC_ETEST, SKYCOORDINATESTESTC_MSGETEST, 0 );
 	  return SKYCOORDINATESTESTC_ETEST;
 	}
-      
-      
+
+
     } /* testing LALNormalizeSkyPosition() */
     /***********************************************************************/
-    
+
 
     /* Everything's fine, and nothing should have been allocated. */
     LALCheckMemoryLeaks();
@@ -520,8 +519,8 @@ main( int argc, char **argv )
 
     /* Convert to INT8 seconds and back, just to test things (and get
        the LIGOTimeGPS structure into standard form). */
-    SUB( LALGPStoINT8( &stat, &nsec, &gpsTime ), &stat );
-    SUB( LALINT8toGPS( &stat, &gpsTime, &nsec ), &stat );
+    nsec = XLALGPSToINT8NS(&gpsTime);
+    XLALINT8NSToGPS(&gpsTime, nsec);
     fprintf( stdout, "TIME COORDINATE\n" );
 
     /* Convert to UTC timestamp. */

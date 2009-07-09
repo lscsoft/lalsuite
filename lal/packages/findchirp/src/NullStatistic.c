@@ -23,7 +23,7 @@
  *
  * Author: Messaritaki, E.
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *-----------------------------------------------------------------------
  */
 
@@ -72,7 +72,7 @@ XLALNullStatisticInputInit (
   int m;
 
   /* check that the number of vectors is not zero and that it is 2 */
-  if ( init->numDetectors != 2 )  
+  if ( init->numDetectors != 2 )
   {
     XLALPrintError("number of detectors must be 2; only H1-H2 allowed");
     XLAL_ERROR(func, XLAL_EINVAL);
@@ -88,12 +88,12 @@ XLALNullStatisticInputInit (
   /* check that the number of points is positive */
   if ( init->numPoints <= 0 )
   {
-    XLALPrintError("number of points must be positive");   
+    XLALPrintError("number of points must be positive");
     XLAL_ERROR(func, XLAL_EINVAL);
   }
 
   /* allocate memory for the NullStatInputParams structure */
-  inputPtr = *input = (NullStatInputParams *) 
+  inputPtr = *input = (NullStatInputParams *)
     LALCalloc(1,sizeof(NullStatInputParams) );
   if ( !inputPtr )
   {
@@ -115,7 +115,7 @@ XLALNullStatisticInputInit (
   {
     cVecPtr->cData[m] = (COMPLEX8TimeSeries *)
       LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-  
+
     if ( !(cVecPtr->cData) )
     {
       XLALPrintError("could not allocate memory for cData vector");
@@ -138,7 +138,7 @@ XLALNullStatisticInputInit (
 
   for (m=0; m<LAL_NUM_IFO; m++)
   {
-    cVecPtr->cData[m]->data->data = (COMPLEX8 *) 
+    cVecPtr->cData[m]->data->data = (COMPLEX8 *)
          LALCalloc(1, sizeof(COMPLEX8) );
 
     if ( !(&(cVecPtr->cData[m]->data->data)) )
@@ -200,7 +200,7 @@ XLALNullStatisticParamsInit(
   /* if the null statistic is to be output, create the nullStatVec */
   if ( outputPtr->nullStatOut )
   {
-    outputPtr->nullStatVec = (REAL4TimeSeries *) 
+    outputPtr->nullStatVec = (REAL4TimeSeries *)
       LALCalloc(1, sizeof(REAL4TimeSeries) );
     if ( !(outputPtr->nullStatVec) )
     {
@@ -208,9 +208,9 @@ XLALNullStatisticParamsInit(
       XLAL_ERROR(func, XLAL_ENOMEM);
     }
 #if 0
-    outputPtr->nullStatVec->data = 
+    outputPtr->nullStatVec->data =
           XLALCreateVector( (init->numPoints * sizeof(REAL4Sequence)) );
-    outputPtr->nullStatVec->data->data = 
+    outputPtr->nullStatVec->data->data =
           XLALCreateVector( (init->numPoints * sizeof(REAL4)) );
 #endif
 
@@ -252,13 +252,13 @@ XLALComputeNullStatistic (
   REAL4                 sigmasq[6];
 
   INT4    h1idx, h2idx, m, n, j, idx;
-  REAL4   norm;           
+  REAL4   norm;
 
   static const char *func = "XLALComputeNullStatistic";
 
   /* check that the arguments are reasonable */
 
-  /* assign the parameters to local variables */ 
+  /* assign the parameters to local variables */
   numDetectors   = params->numDetectors;
   numPoints      = params->numPoints;
   numSegments    = params->numSegments;
@@ -275,7 +275,7 @@ XLALComputeNullStatistic (
   h1idx = LAL_IFO_H1;
   h2idx = LAL_IFO_H2;
 
-  norm = ( 1.0 / ( params->sigmasq[h1idx] * params->sigmasq[h1idx] ) ) + 
+  norm = ( 1.0 / ( params->sigmasq[h1idx] * params->sigmasq[h1idx] ) ) +
          ( 1.0 / ( params->sigmasq[h2idx] * params->sigmasq[h2idx] ) );
 
   /* read in the c-data for multiple detectors */
@@ -284,7 +284,7 @@ XLALComputeNullStatistic (
     cData[n] = input->CData->cData[n];
   }
 
-  /* 
+  /*
    * the time for which we want the null statistic is the one at the
    * center of the 4-s time interval
    */
@@ -296,13 +296,13 @@ XLALComputeNullStatistic (
   {
     for (m=0; m<(INT4)numPoints; m++)
     {
-      nullStatRe = 
+      nullStatRe =
           (cData[LAL_IFO_H1]->data->data[m].re / params->sigmasq[LAL_IFO_H1])
         - (cData[LAL_IFO_H2]->data->data[m].re / params->sigmasq[LAL_IFO_H2]);
-      nullStatIm = 
+      nullStatIm =
           (cData[LAL_IFO_H1]->data->data[m].im / params->sigmasq[LAL_IFO_H1])
         - (cData[LAL_IFO_H2]->data->data[m].im / params->sigmasq[LAL_IFO_H2]);
-      nullStatVec->data->data[m] = 
+      nullStatVec->data->data[m] =
          ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
     }
     eventNullStat = nullStatVec->data->data[idx];
@@ -310,14 +310,14 @@ XLALComputeNullStatistic (
   else
   {
 #if 0
-    nullStatRe = 
+    nullStatRe =
         (input->CData->cData[1]->data->data[idx].re / params->sigmasq[1])
       - (input->CData->cData[2]->data->data[idx].re / params->sigmasq[2]);
 #endif
-    nullStatRe = 
+    nullStatRe =
         (cData[LAL_IFO_H1]->data->data[idx].re / params->sigmasq[LAL_IFO_H1])
       - (cData[LAL_IFO_H2]->data->data[idx].re / params->sigmasq[LAL_IFO_H2]);
-    nullStatIm = 
+    nullStatIm =
         (cData[LAL_IFO_H1]->data->data[idx].im / params->sigmasq[LAL_IFO_H1])
       - (cData[LAL_IFO_H2]->data->data[idx].im / params->sigmasq[LAL_IFO_H2]);
     eventNullStat = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / norm ;
@@ -329,7 +329,7 @@ XLALComputeNullStatistic (
   thisEvent->mchirp = input->tmplt->totalMass * pow(input->tmplt->eta, 3.0/5.0);
   thisEvent->eta = input->tmplt->eta;
   thisEvent->null_statistic = eventNullStat;
-  
+
   return (0);
 }
 
@@ -343,8 +343,8 @@ XLALNullStatisticParamsFinal(
 
   NullStatParams  *outputPtr;
 
-  outputPtr = *output ;  
- 
+  outputPtr = *output ;
+
   /* destroy detector vector */
   LALFree( outputPtr->detVector->detector );
   outputPtr->detVector->detector = NULL;
@@ -371,8 +371,8 @@ XLALNullStatisticInputFinal (
 {
   static const char *func = "XLALNullStatisticInputFinal";
 
-  CVector               *cVecPtr; 
-  NullStatInputParams   *inputPtr; 
+  CVector               *cVecPtr;
+  NullStatInputParams   *inputPtr;
   INT4                   l;
 
   inputPtr = *input;
@@ -385,7 +385,7 @@ XLALNullStatisticInputFinal (
   if ( inputPtr->CData )
   {
     cVecPtr = (*input)->CData ;
-  
+
     for ( l=0; l < cVecPtr->numDetectors; l++)
     {
       if ( cVecPtr->cData[l]->data != NULL )
@@ -393,7 +393,7 @@ XLALNullStatisticInputFinal (
         XLALDestroyVector( cVecPtr->cData[l]->data );
       }
     }
-  
+
     LALFree( cVecPtr->cData );
     LALFree (cVecPtr);
     (*input)->CData = NULL;

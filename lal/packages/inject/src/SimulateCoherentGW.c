@@ -181,7 +181,7 @@ flag may be used to turn on other efficient trig algorithms on other
 #if defined HAVE_LIBSUNMATH && defined ONLINE
 #define USE_SINCOSP 1
 #endif
-#endif     
+#endif
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -397,7 +397,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 			    &pair ), stat );
     } else
       output->sampleUnits = CWsignal->a->sampleUnits;
-    LALSnprintf( output->name, LALNameLength, "response to %s",
+    snprintf( output->name, LALNameLength, "response to %s",
 		 CWsignal->a->name );
   }
 
@@ -435,7 +435,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       TRY( LALConvertSkyCoordinates( stat->statusPtr, &source,
 				     &source, &params ), stat );
     }
-  } 
+  }
 
   /* Generate the table of propagation delays.
   dtDelayBy2 = (UINT4)( 38924.9/sqrt( output->f0 +
@@ -762,7 +762,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     INT4 j = (INT4)( -phiOff/phiDt - delayMax );
     if ( i < j )
       i = j;
-    while ( ( i < (INT4)( output->data->length ) ) && 
+    while ( ( i < (INT4)( output->data->length ) ) &&
 	    ( phiOff + TCENTRE( i )*phiDt < 0.0 ) )
       i++;
   }

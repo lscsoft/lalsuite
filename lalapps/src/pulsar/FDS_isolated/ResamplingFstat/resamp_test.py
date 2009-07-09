@@ -222,6 +222,11 @@ def main():
     except:
         Vars['FThres'] = 0
 
+    # Optional Output Variable from Resamp
+    try:
+        Vars['ResampOutput'] = config.ResampOutput
+    except:
+        Vars['ResampOutput'] = "MyTS"
 
     # Print out all the variables (if Debug is on)
     if(Vars['debug']):
@@ -253,7 +258,7 @@ def main():
 
     # Run v2()
     OutputFile = "OutputV"
-    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + " "
+    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + "  "
     endstring = " "
     V2DataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
@@ -273,8 +278,8 @@ def main():
 
     # Run Resamp
     OutputFile = "OutputR"
-    startstring = "./lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + " "
-    endstring = " > plot1 "
+    startstring = "./lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + "  "
+    endstring = "  --outputTimeSeries "  + str(Vars['ResampOutput']) + " > plot1 "
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "-------- Resamp String -----------"
@@ -354,8 +359,8 @@ def CreateTimeStampFile(Vars):
 
 def GenFakeDataString(addtonoise,Vars):
     if(Vars['Band'] > 1e-2):
-        CreationBand = Vars['Band']*2
-        CreationFmin = Vars['Fmin']-Vars['Band']/2
+        CreationBand = Vars['Band']*4
+        CreationFmin = Vars['Fmin']-Vars['Band']*2
     else:
         CreationBand = 1
         CreationFmin = Vars['Fmin'] - 0.5

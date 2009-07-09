@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
-  
+
   /* Set the date */
   utcDate.unixDate.tm_year = 80;
   utcDate.unixDate.tm_mon  =  0;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     }
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
-  
+
   refGPS.gpsSeconds = 0;
   refGPS.gpsNanoSeconds = 0;
   LALDateString(&status, timestamp, &utcDate);
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  if (lalDebugLevel > 0) 
+  if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
 
   if (lalDebugLevel > 0)
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
         }
       if (lalDebugLevel > 0)
         REPORTSTATUS(&status);
-      
+
       LALDateString(&status, timestamp, &utcDate);
       if (status.statusCode && lalDebugLevel > 0)
         {
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
           return status.statusCode;
         }
       REPORTSTATUS(&status);
-      
+
       LALDateString(&status, timestamp, &utcDate);
       if (status.statusCode && lalDebugLevel > 0)
         {
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s = GPS %10d\n", timestamp->data, gpsTime.gpsSeconds);
     }
 
-  
+
   LALCHARDestroyVector(&status, &timestamp);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -426,4 +426,4 @@ int main(int argc, char *argv[])
   LALCheckMemoryLeaks();
   return 0;
 }
-  
+

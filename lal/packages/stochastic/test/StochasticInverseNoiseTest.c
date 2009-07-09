@@ -39,7 +39,7 @@ Options:
   -d level       set lalDebugLevel to level
   -n length      frequency series contain length points
   -w filename    read uncalibrated noise PSD from file filename
-  -f filename    read response function from file filename 
+  -f filename    read response function from file filename
   -u filename    print calibrated inverse noise PSD to file filename
   -m filename    print half-calibrated inverse noise PSD to file filename
 \end{verbatim}
@@ -50,7 +50,7 @@ This program tests the function \texttt{LALStochasticInverseNoise()},
 which outputs an uncalibrated and "half-calibrated" inverse noise spectra
 from a uncalibrated data stream and a response function.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
@@ -85,7 +85,7 @@ It then verifies that the correct uncalibrated and half-calibrated inverse
 noise are generated for a simple test case:
 \begin{enumerate}
 \item $\tilde{R}(f)=(1+i)f^2$, $P(f)=f^3$.  The
-  expected results are $1/P^{\scriptstyle{\rm C}}(f)=2f$, 
+  expected results are $1/P^{\scriptstyle{\rm C}}(f)=2f$,
   $1/P^{\scriptstyle{\rm HC}}(f)=(1-i)f^{-1}$.
 \end{enumerate}
 
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 
   ParseOptions (argc, argv);
 
-  /* define valid parameters */ 
+  /* define valid parameters */
   wNoise.f0     = STOCHASTICINVERSENOISETESTC_F0;
   wNoise.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
   wNoise.epoch  = epoch;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
   invNoise.data = NULL;
 
   realBadData = wNoise;
- 
+
   wFilter.f0     = wNoise.f0;
   wFilter.deltaF  = wNoise.deltaF;
   wFilter.epoch   = wNoise.epoch;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
   wFilter.sampleUnits = lalDimensionlessUnit;
   wFilter.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 1;
   wFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
-  
+
   /* uncalibrated noise */
   wNoise.sampleUnits = lalDimensionlessUnit;
   wNoise.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 2;
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   /* printf("About to create\n"); */
   LALSCreateVector(&status, &(wNoise.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
@@ -275,9 +275,9 @@ int main(int argc, char *argv[])
   }
   /* printf("Just created\n"); */
 
-  LALSCreateVector(&status, &(invNoise.data), 
+  LALSCreateVector(&status, &(invNoise.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
   }
   LALCCreateVector(&status, &(wFilter.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
   }
   LALCCreateVector(&status, &(hwInvNoise.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to input structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* test behavior for null pointer to output structure */
     LALStochasticInverseNoise(&status, NULL, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -331,8 +331,8 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to output structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
-    /* test behavior for null pointer to wNoise member of input structure */ 
+
+    /* test behavior for null pointer to wNoise member of input structure */
     input.unCalibratedNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.responseFunction = &wFilter;
-    
+
     /* test behavior for null pointer to invNoise member of output structure */
     output.calibratedInverseNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.calibratedInverseNoisePSD = &invNoise;
-    
+
     /* test behavior for null pointer to half-calibrated inverse noise member */
     /* of output structure */
     output.halfCalibratedInverseNoisePSD = NULL;
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to half-calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfCalibratedInverseNoisePSD = &hwInvNoise;
-    
+
     /* test behavior for null pointer to data member of wnoise */
     input.unCalibratedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of uncalibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.unCalibratedNoisePSD = &wNoise;
-    
+
     /* test behavior for null pointer to data member of wFilter */
     input.responseFunction = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.responseFunction = &wFilter;
-    
+
     /* test behavior for null pointer to data member of invNoise  */
     output.calibratedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -423,7 +423,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.calibratedInverseNoisePSD = &invNoise;
-    
+
     /* test behavior for null pointer to data member of half-calibrated */
     /* inverse noise */
     output.halfCalibratedInverseNoisePSD = &complexBadData;
@@ -437,10 +437,10 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data member of half-calibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfCalibratedInverseNoisePSD = &hwInvNoise;
-    
+
     /* Create a vector for testing REAL4 null data-data pointers */
     LALSCreateVector(&status, &(realBadData.data), STOCHASTICINVERSENOISETESTC_LENGTH);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EFLS,
 			      STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
     }
     sPtr = realBadData.data->data;
     realBadData.data->data = NULL;
-    
+
     /* test behavior for null pointer to data-data member of wNoise */
     input.unCalibratedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data-data member of uncalibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.unCalibratedNoisePSD = &wNoise;
-    
+
     /* test behavior for null pointer to data-data member of invNoise */
     output.calibratedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -474,10 +474,10 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data-data member of calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.calibratedInverseNoisePSD = &invNoise;
-    
-    /* Create a vector for testing COMPLEX8 null data-data pointers */ 
+
+    /* Create a vector for testing COMPLEX8 null data-data pointers */
     LALCCreateVector(&status, &(complexBadData.data), STOCHASTICINVERSENOISETESTC_LENGTH);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EFLS,
 			      STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
     }
     cPtr = complexBadData.data->data;
     complexBadData.data->data = NULL;
-    
+
     /* test behavior for null pointer to data-data member of wFilter */
     input.responseFunction = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data-data member of response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.responseFunction = &wFilter;
-    
+
     /* test behavior for null pointer to data-data member of hwInvNoise */
     output.halfCalibratedInverseNoisePSD = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
@@ -511,32 +511,32 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to data-data member of half-calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfCalibratedInverseNoisePSD = &hwInvNoise;
-    
+
     /** clean up **/
     realBadData.data->data = sPtr;
     LALSDestroyVector(&status, &(realBadData.data));
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EFLS,
 			      STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
       return code;
     }
-    
+
     complexBadData.data->data = cPtr;
     LALCDestroyVector(&status, &(complexBadData.data));
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EFLS,
 			      STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
       return code;
     }
-    
+
     /* test behavior for zero length */
-    wNoise.data->length = 
-      wFilter.data->length = 
-      invNoise.data->length = 
+    wNoise.data->length =
+      wFilter.data->length =
+      invNoise.data->length =
       hwInvNoise.data->length = 0;
-    
+
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
 			      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
@@ -548,15 +548,15 @@ int main(int argc, char *argv[])
     printf("  PASS: zero length results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* reassign valid length */
-    wNoise.data->length = 
-      wFilter.data->length = 
-      invNoise.data->length = 
+    wNoise.data->length =
+      wFilter.data->length =
+      invNoise.data->length =
       hwInvNoise.data->length =STOCHASTICINVERSENOISETESTC_LENGTH;
-    
+
     /* test behavior for negative frequency spacing */
-    wNoise.deltaF = 
+    wNoise.deltaF =
       wFilter.deltaF = - STOCHASTICINVERSENOISETESTC_DELTAF;
-    
+
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
 			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
@@ -568,13 +568,13 @@ int main(int argc, char *argv[])
     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    wNoise.deltaF = 
+    wNoise.deltaF =
       wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
-    
+
     /* test behavior for zero frequency spacing */
-    wNoise.deltaF = 
+    wNoise.deltaF =
     wFilter.deltaF = 0.0;
-  
+
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
 			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
@@ -586,14 +586,14 @@ int main(int argc, char *argv[])
     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    wNoise.deltaF = 
+    wNoise.deltaF =
       wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
-  } /* if ( ! lalNoDebug ) */  
+  } /* if ( ! lalNoDebug ) */
 #endif /* LAL_NDEBUG */
-  
+
   /* test behavior for negative start frequency */
   wNoise.f0 = wFilter.f0 = -3.0;
-  
+
   LALStochasticInverseNoise(&status, &output, &input);
   if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
 			    STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
@@ -605,11 +605,11 @@ int main(int argc, char *argv[])
   printf("  PASS: negative start  frequency results in error:\n     \"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   /* reasign valid f0 */
-  wNoise.f0 = 
+  wNoise.f0 =
     wFilter.f0 = STOCHASTICINVERSENOISETESTC_F0;
-  
+
   /* test behavior for length mismatch between wNoise and wFilter */
-  wFilter.data->length 
+  wFilter.data->length
     = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
   LALStochasticInverseNoise(&status, &output, &input);
   if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -622,9 +622,9 @@ int main(int argc, char *argv[])
   printf("  PASS: length mismatch between uncalibrated noise and response function results in error:\n       \"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   wFilter.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
-  
+
   /* test behavior length mismatch between wNoise and invNoise */
-  invNoise.data->length 
+  invNoise.data->length
     = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
   LALStochasticInverseNoise(&status, &output, &input);
   if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
    invNoise.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
 
    /* test behavior length mismatch between wNoise and hwInvNoise */
-   hwInvNoise.data->length 
+   hwInvNoise.data->length
     = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
    LALStochasticInverseNoise(&status, &output, &input);
    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
    wFilter.f0 = STOCHASTICINVERSENOISETESTC_F0;
 
    /* test behavior for frequency spacing mismatch between wNoise and wFilter*/
-   wFilter.deltaF = 
+   wFilter.deltaF =
      2.0 * STOCHASTICINVERSENOISETESTC_DELTAF;
    LALStochasticInverseNoise(&status, &output, &input);
    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
@@ -689,7 +689,7 @@ int main(int argc, char *argv[])
    for (i=0; i < STOCHASTICINVERSENOISETESTC_LENGTH; i++)
    {
      f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
-     
+
      wNoise.data->data[i]     = f*f*f;
      wFilter.data->data[i].re = f*f;
      wFilter.data->data[i].im = f*f;
@@ -700,7 +700,7 @@ int main(int argc, char *argv[])
    input.responseFunction                 = &(wFilter);
    output.calibratedInverseNoisePSD         = &(invNoise);
    output.halfCalibratedInverseNoisePSD       = &(hwInvNoise);
-   
+
    /*calculate the calibrated inverse noise and half-calibrated inverse noise*/
    LALStochasticInverseNoise(&status, &output, &input );
    if ( ( code = CheckStatus (&status, 0 , "",
@@ -710,7 +710,7 @@ int main(int argc, char *argv[])
      return code;
    }
 
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("  Valid Data Test:\n");
      printf("  Checking half-calibrated inverse noise...\n");
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
             STOCHASTICINVERSENOISETESTC_DELTAF);
    }
    if ( fabs(hwInvNoise.deltaF-STOCHASTICINVERSENOISETESTC_DELTAF)
-        / STOCHASTICINVERSENOISETESTC_DELTAF 
+        / STOCHASTICINVERSENOISETESTC_DELTAF
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -766,7 +766,7 @@ int main(int argc, char *argv[])
      return code;
    }
 
-   if (optVerbose) 
+   if (optVerbose)
    {
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
      if ( ( code = CheckStatus(&status, 0 , "",
@@ -775,7 +775,7 @@ int main(int argc, char *argv[])
      {
        return code;
      }
-     
+
      LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
@@ -784,7 +784,7 @@ int main(int argc, char *argv[])
        return code;
      }
      printf( "Units of 1/PHW(f) are \"%s\", ", unitString->data );
-     
+
      LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
@@ -793,7 +793,7 @@ int main(int argc, char *argv[])
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
-     
+
      LALCHARDestroyVector(&status, &unitString);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
@@ -802,26 +802,26 @@ int main(int argc, char *argv[])
        return code;
      }
    }
-   
+
    if (!result)
    {
      printf("  FAIL: Valid data test #1\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", 
+       printf("Exiting with error: %s\n",
 	      STOCHASTICINVERSENOISETESTC_MSGEFLS);
      }
      return STOCHASTICINVERSENOISETESTC_EFLS;
    }
 
    /* check output values */
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("1/PHW(0)=%g + %g i, should be 0\n",
             hwInvNoise.data->data[0].re, hwInvNoise.data->data[0].im);
    }
    if ( fabs(hwInvNoise.data->data[0].re) > STOCHASTICINVERSENOISETESTC_TOL
-        || fabs(hwInvNoise.data->data[0].im) 
+        || fabs(hwInvNoise.data->data[0].im)
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -832,12 +832,12 @@ int main(int argc, char *argv[])
      return STOCHASTICINVERSENOISETESTC_EFLS;
    }
 
-  for (i=1; i < STOCHASTICINVERSENOISETESTC_LENGTH; i++) 
+  for (i=1; i < STOCHASTICINVERSENOISETESTC_LENGTH; i++)
   {
     f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
     expectedReal = 1/f;
     expectedImag = - expectedReal;
-    if (optVerbose) 
+    if (optVerbose)
     {
       printf("1/PHW(%f Hz)=%g + %g i, should be %g + %g i\n",
 	     f, hwInvNoise.data->data[i].re, hwInvNoise.data->data[i].im,
@@ -857,7 +857,7 @@ int main(int argc, char *argv[])
     }
   }
   /****** check valid calibrated inverse noise *******/
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("  Checking calibrated inverse noise...\n");
    }
@@ -885,7 +885,7 @@ int main(int argc, char *argv[])
             STOCHASTICINVERSENOISETESTC_DELTAF);
    }
    if ( fabs(invNoise.deltaF-STOCHASTICINVERSENOISETESTC_DELTAF)
-        / STOCHASTICINVERSENOISETESTC_DELTAF 
+        / STOCHASTICINVERSENOISETESTC_DELTAF
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -910,7 +910,7 @@ int main(int argc, char *argv[])
     return code;
   }
 
-  if (optVerbose) 
+  if (optVerbose)
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -919,7 +919,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitTwo );
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
@@ -928,7 +928,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "Units of 1/P(f) are \"%s\", ", unitString->data );
-    
+
     LALUnitAsString( &status, unitString, unitPair.unitOne );
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
@@ -937,7 +937,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
-    
+
     LALCHARDestroyVector(&status, &unitString);
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
@@ -952,14 +952,14 @@ int main(int argc, char *argv[])
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
     {
-      printf("Exiting with error: %s\n", 
+      printf("Exiting with error: %s\n",
              STOCHASTICINVERSENOISETESTC_MSGEFLS);
     }
     return STOCHASTICINVERSENOISETESTC_EFLS;
   }
 
    /* check output values */
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("1/P(0)=%g, should be 0\n",
             invNoise.data->data[0]);
@@ -974,11 +974,11 @@ int main(int argc, char *argv[])
      return STOCHASTICINVERSENOISETESTC_EFLS;
    }
 
-  for (i=1; i < STOCHASTICINVERSENOISETESTC_LENGTH; i++) 
+  for (i=1; i < STOCHASTICINVERSENOISETESTC_LENGTH; i++)
   {
     f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
     expectedReal = 2*f;
-    if (optVerbose) 
+    if (optVerbose)
     {
       printf("1/P(%f Hz)=%g, should be %g\n",
 	     f, invNoise.data->data[i], expectedReal);
@@ -999,28 +999,28 @@ int main(int argc, char *argv[])
 
   /******* clean up valid data ******/
   LALSDestroyVector(&status, &(wNoise .data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
 			     STOCHASTICINVERSENOISETESTC_EFLS,
 			     STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
     return code;
   }
   LALSDestroyVector(&status, &(invNoise.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
 			     STOCHASTICINVERSENOISETESTC_EFLS,
 			     STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
     return code;
   }
   LALCDestroyVector(&status, &(wFilter.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
 			     STOCHASTICINVERSENOISETESTC_EFLS,
 			     STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
     return code;
   }
   LALCDestroyVector(&status, &(hwInvNoise.data));
-  if ( ( code = CheckStatus (&status, 0 , "", 
+  if ( ( code = CheckStatus (&status, 0 , "",
 			     STOCHASTICINVERSENOISETESTC_EFLS,
 			     STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
   {
@@ -1034,9 +1034,9 @@ int main(int argc, char *argv[])
 
  /* VALID USER TEST DATA HERE ----------------------------------------- */
 
-  if (optWNoiseFile[0] && optWFilterFile[0] && 
+  if (optWNoiseFile[0] && optWFilterFile[0] &&
       optInvNoiseFile[0] && optHWInvNoiseFile[0])
-  { 
+  {
     /* allocate memory */
     wNoise.data      = NULL;
     wFilter.data     = NULL;
@@ -1044,28 +1044,28 @@ int main(int argc, char *argv[])
     hwInvNoise.data  = NULL;
 
     LALSCreateVector(&status, &(wNoise.data), optLength);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EUSE,
 			      STOCHASTICINVERSENOISETESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALSCreateVector(&status, &(invNoise.data), optLength);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EUSE,
 			      STOCHASTICINVERSENOISETESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCCreateVector(&status, &(wFilter.data), optLength);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EUSE,
 			      STOCHASTICINVERSENOISETESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCCreateVector(&status, &(hwInvNoise.data), optLength);
-    if ( ( code = CheckStatus(&status, 0 , "", 
+    if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EUSE,
 			      STOCHASTICINVERSENOISETESTC_MSGEUSE) ) )
     {
@@ -1075,7 +1075,7 @@ int main(int argc, char *argv[])
     /* Read input files */
     LALSReadFrequencySeries(&status, &wNoise, optWNoiseFile);
     LALCReadFrequencySeries(&status, &wFilter, optWFilterFile);
-    
+
     /* fill inverse noise input and output */
     input.unCalibratedNoisePSD = &(wNoise);
     input.responseFunction            = &(wFilter);
@@ -1084,7 +1084,7 @@ int main(int argc, char *argv[])
 
     /*calculate the calibrated inverse noise and half-calibrated inverse noise*/
     LALStochasticInverseNoise(&status, &output, &input );
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EUSE,
 			       STOCHASTICINVERSENOISETESTC_MSGEUSE) ) )
     {
@@ -1092,7 +1092,7 @@ int main(int argc, char *argv[])
     }
 
     /* print output files */
-    LALSPrintFrequencySeries(output.calibratedInverseNoisePSD, 
+    LALSPrintFrequencySeries(output.calibratedInverseNoisePSD,
                              optInvNoiseFile);
     printf("====== Calibrated Inverse Noise PSD Written to File %s ======\n",
 	   optInvNoiseFile);
@@ -1104,28 +1104,28 @@ int main(int argc, char *argv[])
 
     /* clean up valid data */
     LALSDestroyVector(&status, &(wNoise .data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALSDestroyVector(&status, &(invNoise.data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALCDestroyVector(&status, &(wFilter.data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALCDestroyVector(&status, &(hwInvNoise.data));
-    if ( ( code = CheckStatus (&status, 0 , "", 
+    if ( ( code = CheckStatus (&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
     {
@@ -1136,7 +1136,7 @@ int main(int argc, char *argv[])
   LALCheckMemoryLeaks();
   return 0;
 
-} 
+}
 
 
 /*----------------------------------------------------------------------*/
@@ -1182,19 +1182,19 @@ ParseOptions (int argc, char *argv[])
 
     switch (c)
     {
-        
+
       case 'n': /* specify number of points in frequency series */
         optLength = atoi (optarg);
         break;
-        
+
       case 'w': /* specify uncalibrated noise file */
         strncpy (optWNoiseFile, optarg, LALNameLength);
         break;
-        
+
       case 'f': /* specify response function file */
         strncpy (optWFilterFile, optarg, LALNameLength);
         break;
-        
+
       case 'u': /* specify calibrated inverse noise file */
         strncpy (optInvNoiseFile, optarg, LALNameLength);
         break;

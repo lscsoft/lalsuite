@@ -22,12 +22,12 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \subsection{Program \texttt{ComplexFFTTest.c}}
  * \label{ss:ComplexFFTTest.c}
- * 
+ *
  * Tests the routines in \verb+ComplexFFT.h+.
- * 
+ *
  * \subsection*{Usage}
  * \begin{verbatim}
  * ComplexFFTTest [options]
@@ -37,7 +37,7 @@
  *   -v         verbose: print extra information
  *   -d level   set lalDebugLevel to level
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Description}
  * \subsubsection*{Exit codes}
  * \begin{tabular}{|c|l|}
@@ -48,12 +48,12 @@
  * \tt 1 & Subroutine failed.            \\
  * \hline
  * \end{tabular}
- * 
+ *
  * \subsubsection*{Uses}
  * \subsubsection*{Notes}
- * 
+ *
  * \vfill{\footnotesize\input{ComplexFFTTestCV}}
- * 
+ *
  **** </lalLaTeX> */
 
 #include <stdio.h>

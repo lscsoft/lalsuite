@@ -18,47 +18,47 @@
   *  MA  02111-1307  USA
   */
 
-/*----------------------------------------------------------------------- 
- * 
- * File Name: TrackSearch.c 
- * 
- * New Maintainer: Torres, C (Univ TX at Browsville)
- * Author: R. Balasubramanian
- * 
+/*-----------------------------------------------------------------------
+ *
+ * File Name: TrackSearch.c
+ *
+ * Current Developer: Torres, Cristina V. (LLO)
+ * Original Developer: R. Balasubramanian
+ *
  * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * TrackSearch.c
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  * (void) LALSignalTrackSearch()
- * 
- * DESCRIPTION 
- * This file contains the routines to detect curves on the time frequency plane. 
- * 
- * DIAGNOSTICS 
- * (Abnormal termination conditions, error and warning codes summarized 
+ *
+ * DESCRIPTION
+ * This file contains the routines to detect curves on the time frequency plane.
+ *
+ * DIAGNOSTICS
+ * (Abnormal termination conditions, error and warning codes summarized
  * here. More complete descriptions are found in documentation.)
- * TS_MSGNON_NULL_POINTER  "Allocation of memory to Non null pointer" 
+ * TS_MSGNON_NULL_POINTER  "Allocation of memory to Non null pointer"
  * TS_MSG_ALLOC            "flag for allocating storage space does not contain a valid value (0,1,2)"
  * TS_MSG_UNINITIALIZED_MASKS "Gaussian masks appear not to have been initialized"
  * TS_MSG_MAP_DIMENSION     "Dimensions of Map have to be each greater than unity"
  * TS_MSG_ILLEGAL_PARAMS   "Illegal parameter values ( high and low should be positive and high>low)"
- * TS_MSG_LINE_START "The number of line start points is not consistent with previous module" 
+ * TS_MSG_LINE_START "The number of line start points is not consistent with previous module"
  * MSG_TS_ARRAY_OVERFLOW  "Array bounds can be crossed "
  * MSG_TS_TOO_MANY_CURVES " Too many curves found in map "
  * MSG_TS_OCTANT "octant cannot be greater than 4 "
  * MSG_TS_MASKSIZE "maskSize too small"
- 
+
  * CALLS
- * (list of LLAL, LDAS, other non-system functions/procedures called. 
+ * (list of LLAL, LDAS, other non-system functions/procedures called.
  * NONE
  *
  * NOTES
  * (Other notes)
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -73,7 +73,7 @@ NRCSID (TRACKSEARCHC, "$Id$");
 /* Local Structure definitions */
 typedef struct tagLinePoints {
   INT4 pValue; /* value of the Line Point: 2 if a line Start Point else 1 if an ordinary line point
-		  A line start point is not necessarily a point where a curve begins but just the point at 
+		  A line start point is not necessarily a point where a curve begins but just the point at
 		  which we begin to search for a curve*/
   INT4 r; /* row of the line point*/
   INT4 c; /* column of the line Point */
@@ -109,44 +109,44 @@ static REAL4 Gauss1(INT4,REAL4);
 static REAL4 Gauss2(INT4,REAL4);
 static INT4 CompareLinePoints(const void *,const void *);
 /*
-  Main Routine to detect curves. 
+  Main Routine to detect curves.
   Convolves the image with the derivatives of Gaussian kernels, identifies line points
   and then connects them into curves
 */
-void 
+void
 LALSignalTrackSearch(LALStatus *status,
 		     TrackSearchOut *out,
 		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
 		     TrackSearchParams *params)
 {
-  INT4 tempmaskcount; /*remove later on temp */
-    
+  /*INT4 tempmaskcount; remove later on temp */
+
   /* Initialize status structure   */
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
 
   /* Check the the arguments are not null pointers */
   ASSERT(tfMap     != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
-  ASSERT(tfMap->map!= NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);  
-  ASSERT(params    != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);  
+  ASSERT(tfMap->map!= NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
+  ASSERT(params    != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   ASSERT(out       != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
-  
+
   /* check if the dimensions of the input image are ok */
   ASSERT(((params->width > 8)&&(params->height>8)),status, TS_MAP_DIMENSION,TS_MSG_MAP_DIMENSION);
   /*
-   * check if the alloc flag has only allowed values 
-   * this flag is used to determine whether memory is to be allocated 
+   * check if the alloc flag has only allowed values
+   * this flag is used to determine whether memory is to be allocated
    *  for the temporary storage space. (allowed values are 0 for no allocation, 1 for allocation
    *  and 2 for deallocation
    */
   ASSERT(((params->allocFlag>=0)&&(params->allocFlag<=2)), status, TS_ALLOC, TS_MSG_ALLOC);
-  
+
   /* If the alloc flag==2 then free storage space and return */
   if(params->allocFlag==2){
     DestroyStorage(status->statusPtr, &(out->store));
     CHECKSTATUSPTR(status);
     DETATCHSTATUSPTR(status);
-    RETURN(status);    
+    RETURN(status);
   }
   /* if the allocFlag==1 then allocate memory and **SET*** allocFlag to 0; in case the caller is forgetful*/
   if(params->allocFlag==1){
@@ -157,47 +157,21 @@ LALSignalTrackSearch(LALStatus *status,
   /* check if the values for the threshold on the second derivative are OK */
   ASSERT(((params->low>0)&&(params->high>params->low)), status, TS_ILLEGAL_PARAMS, TS_MSG_ILLEGAL_PARAMS);
   /* check if sigma is greater than unity. Otherwise the Gaussian masks will be too small to be useful. */
-  ASSERT(params->sigma>=1,status,TS_SIGMASIZE, MSG_TS_SIGMASIZE);    
+  ASSERT(params->sigma>=1,status,TS_SIGMASIZE, MSG_TS_SIGMASIZE);
   /* Now we are ready to begin our work */
   /* Compute Convolutions of the image with the Gaussian derivative Kernels */
   ComputeConvolutions(status->statusPtr, &(out->store), tfMap, params);
-  CHECKSTATUSPTR(status);  
-  /* 
-   * Diagnostic code to be extracted later
-   * Want to check the output convolutions and the map here 
-   * rather than in the function call itself 
-   * Dumping original map also
-   */
-  if (0==1)
-    {
-      DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
-      DumpTFImage(out->store.k[0],"DumpVar0_Col1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[1],"DumpVar1_Row1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[2],"DumpVar2_Col2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[3],"DumpVar3_Row2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[4],"DumpVar4_RC_2Derv",params->height,params->width,0);
-      /* Dumping Out Kernels Collectivly */
-      tempmaskcount=ceil(4*params->sigma);
-      DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[1],"DumpVarKernel_1",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[2],"DumpVarKernel_2",
-			  ((2*tempmaskcount)+1));
-    }
-  /*
-   * End diagnotics temporary code
-   */
+  CHECKSTATUSPTR(status);
   /*
    * If automatic \Lambda is enabled must compute that here
    * use Gauss2 and h averaging routine (to be written)
    * input (W) must be integer and limit for Gauss2 is -W -> W
    * which is what I needed in my derivation for the integral
-   * Also need to to 
+   * Also need to to
    * auto_Lh= H_calc * Gauss2(W,sigma)
-   * storing this in the tracksearch arguments structure for 
-   * reporting the Lh value and associated Ll value as output in 
-   * diagnostics.  
+   * storing this in the tracksearch arguments structure for
+   * reporting the Lh value and associated Ll value as output in
+   * diagnostics.
    */
 
   /* Compute Possible Line Points */
@@ -207,8 +181,8 @@ LALSignalTrackSearch(LALStatus *status,
   /* initialize the number of curves found to be zero */
   out->numberOfCurves=0;
   /*
-   * Connect the Points into curves only if 
-   * there are possible line starting points and 
+   * Connect the Points into curves only if
+   * there are possible line starting points and
    * the number of line points is more than a given threshold
    */
   if((out->store).numLStartPoints&&((out->store).numLPoints>=LENGTH_THRESHOLD)){
@@ -223,32 +197,32 @@ LALSignalTrackSearch(LALStatus *status,
 /* Functions not accessible to the user are defined below */
 /* Routine to allocate and initialise the Gaussian mask arrays */
 
-static void 
-InitializeStorage( LALStatus * status, 
+static void
+InitializeStorage( LALStatus * status,
                    TrackSearchStore *store,
                    TrackSearchParams *params
                    )
 {
   INT4 i,j; /* temporary loop variables */
   INT4 maskSize; /* size of the mask arrays (gaussMask.k[i]) */
-  
+
   /* Initialize status structure   */
   INITSTATUS(status,"InitializeStorage",TRACKSEARCHC);
-  
+
   /* check for null pointers */
   ASSERT (store !=NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   ASSERT (params!=NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
-  
+
   /* height and width of the imap */
   store->height=params->height;
   store->width=params->width;
-  
+
   /* allocate space for isLine, a char Map to flag possible line points*/
   store->isLine = NULL;
   store->isLine = (CHAR **)LALMalloc(store->height*sizeof(CHAR *));
   if (store->isLine == NULL)
     ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
-  for(i=0;i<store->height;i++) 
+  for(i=0;i<store->height;i++)
     {
       *(store->isLine + i ) = NULL;
       *(store->isLine + i ) = (CHAR *) LALMalloc(store->width*sizeof(CHAR));
@@ -262,7 +236,7 @@ InitializeStorage( LALStatus * status,
     store->k[i] = (REAL4 **)LALMalloc(store->height*sizeof(REAL4 *));
     if (store->k[i] == NULL)
       ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
-    for(j=0;j<store->height;j++) 
+    for(j=0;j<store->height;j++)
       {
 	*(store->k[i]+j)=NULL;
 	*(store->k[i]+j) = (REAL4 *)  LALMalloc(store->width*sizeof(REAL4));
@@ -280,7 +254,7 @@ InitializeStorage( LALStatus * status,
   store->imageTemp = (REAL4 **)LALMalloc(store->height*sizeof(REAL4 *));
   if (store->imageTemp == NULL)
     ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
-  for(i=0;i<store->height;i++) 
+  for(i=0;i<store->height;i++)
     {
       *(store->imageTemp + i ) = NULL;
       *(store->imageTemp + i ) = (REAL4 *) LALMalloc(store->width*sizeof(REAL4));
@@ -308,54 +282,54 @@ InitializeStorage( LALStatus * status,
     *(store->gaussMask[1]+j) = -1.0 * Gauss1(i,params->sigma);
     /* Averaged second derivative of Gaussian function */
     *(store->gaussMask[2]+j) = Gauss2(i,params->sigma);
-  }  
+  }
   RETURN(status);
 }
 
 
-static void 
+static void
 DestroyStorage (LALStatus *status,
                 TrackSearchStore *store
                 )
 {
   int i,j; /* temporary loop variables */
-  
-  
+
+
   /* Initialize status structure   */
   INITSTATUS(status,"DestroyStorage",TRACKSEARCHC);
-  
+
   /* check for null pointers */
   ASSERT (store !=NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   /* Free all pointers */
   for(i=0;i<store->height;i++)
     LALFree(*(store->isLine + i));
   LALFree(store->isLine);
-    
+
   for(i=0;i<=4;i++){
     for(j=0;j<store->height;j++){
       LALFree(*(store->k[i] + j));
     }
     LALFree(store->k[i]);
   }
-  
+
   LALFree(store->eigenVec);
-  
-  for(i=0;i<store->height;i++)  
+
+  for(i=0;i<store->height;i++)
     LALFree(*(store->imageTemp + i));
-  LALFree(store->imageTemp);  
-  
+  LALFree(store->imageTemp);
+
   for(i=0;i<=2;i++)
-    LALFree(*(store->gaussMask+i));  
+    LALFree(*(store->gaussMask+i));
   /* set the storage structure to 0 */
   memset((void *)store,sizeof(*store),0);
   RETURN(status);
 }
 
 
-static void 
-ComputeConvolutions (LALStatus *status, 
-                     TrackSearchStore *store, 
-                     const TimeFreqRep *tfMap, 
+static void
+ComputeConvolutions (LALStatus *status,
+                     TrackSearchStore *store,
+                     const TimeFreqRep *tfMap,
                      TrackSearchParams *params)
 {
   REAL8 sum;                /* temporary variable to perform the convolution sum */
@@ -363,29 +337,29 @@ ComputeConvolutions (LALStatus *status,
   REAL8 *rowMask=0, *colMask=0; /* Pointers to the row and column masking arrays*/
   INT4 i,j,k;               /* temporary loop variables*/
   REAL4 **convolvedMatrix=0;  /* A pointer used to point at one of the 5 smoothed derivative images k[i]*/
-  INT4 derivType;           /* Is one of the 5 possible 1st and 2nd directional derivatives 
+  INT4 derivType;           /* Is one of the 5 possible 1st and 2nd directional derivatives
 			       along the row and column directions*/
   REAL4 check;              /* a variable used to check if the Gaussian mask arrays have been Allocated */
   INT4 heightTemp, widthTemp;/* variables used for reflecting images at its edges*/
-  
-  /* Initialize status structure   */ 
+
+  /* Initialize status structure   */
   INITSTATUS(status,"ComputeConvolutions",TRACKSEARCHC);
-  
+
   /* check for null pointers */
   ASSERT(store->k[0],status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   ASSERT(tfMap, status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   ASSERT(params,status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   ASSERT(store->gaussMask[0],status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
-  
+
   /* check whether the Gaussian mask arrays have been set */
   check = (*(store->gaussMask[0] + (INT4)(MASK_SIZE*params->sigma)));
-  ASSERT(check, status,TS_UNITIALIZED_MASKS, TS_MSG_UNINITIALIZED_MASKS); 
+  ASSERT(check, status,TS_UNITIALIZED_MASKS, TS_MSG_UNINITIALIZED_MASKS);
   /*
    *  Computing Derivatives
    *  store->k[0] 1st derivative along column direction          (dI/df)
    *  store->k[1] 1st derivative along row direction             (dI/dt)
    *  store->k[2] 2nd derivative along column direction          (d^2 I/df^2)
-   *  store->k[3] 2nd derivative along row direction             (d^2 I/dt^2) 
+   *  store->k[3] 2nd derivative along row direction             (d^2 I/dt^2)
    *  store->k[4] 2nd derivative along row/column direction      (d^2 I/dtdf)
    */
   maskSize=ceil(MASK_SIZE*params->sigma);
@@ -400,22 +374,22 @@ ComputeConvolutions (LALStatus *status,
       colMask=store->gaussMask[1] + maskSize; /* offset the pointer to point to the central value*/
       rowMask=store->gaussMask[0] + maskSize; /* offset the pointer to point to the central value*/
       convolvedMatrix = store->k[1];
-      break;      
+      break;
     case 2:
       colMask=store->gaussMask[0] + maskSize; /* offset the pointer to point to the central value*/
       rowMask=store->gaussMask[2] + maskSize; /* offset the pointer to point to the central value*/
       convolvedMatrix = store->k[2];
-      break;      
+      break;
     case 3:
       colMask=store->gaussMask[2] + maskSize; /* offset the pointer to point to the central value*/
       rowMask=store->gaussMask[0] + maskSize; /* offset the pointer to point to the central value*/
       convolvedMatrix = store->k[3];
-      break;      
+      break;
     case 4:
       colMask=store->gaussMask[1] + maskSize; /* offset the pointer to point to the central value*/
       rowMask=store->gaussMask[1] + maskSize; /* offset the pointer to point to the central value*/
       convolvedMatrix = store->k[4];
-      break;      
+      break;
     default:/* this would never happen */
       break;
     }
@@ -441,7 +415,7 @@ ComputeConvolutions (LALStatus *status,
 	for(k=-maskSize;k<=maskSize;k++)
 	  sum += (*(tfMap->map[i]+j + k)) * colMask[k];
 	*(store->imageTemp[i] + j) = (REAL4)sum;
-      }      
+      }
       /* take care of reflection at right hand edge */
       for(j=params->width-maskSize;j<params->width;j++){
 	sum=0.0;
@@ -466,7 +440,7 @@ ComputeConvolutions (LALStatus *status,
 	    sum += (*(store->imageTemp[-i-k]+j)) * rowMask[k];
 	}
 	*(convolvedMatrix[i] + j) = (REAL4)sum;
-      }      
+      }
       /* the central region */
       for(i=maskSize;i<params->height-maskSize;i++){
 	sum=0.0;
@@ -484,8 +458,8 @@ ComputeConvolutions (LALStatus *status,
 	    sum += (*(store->imageTemp[heightTemp - i - k]+j)) * rowMask[k];
 	}
 	*(convolvedMatrix[i] + j) = (REAL4)sum;
-      }      
-    }    
+      }
+    }
   }
   RETURN(status);
 }
@@ -494,18 +468,18 @@ ComputeConvolutions (LALStatus *status,
 
 static void
 ComputeLinePoints (LALStatus *status,
-                   TrackSearchStore *store, 
+                   TrackSearchStore *store,
                    TrackSearchParams *params)
-{ 
+{
   INT4 i,j; /* temporary loop variables */
   REAL8 cotTheta, cosTheta, sinTheta, temp, eVal1, eVal2; /* variables used in eigen value computation */
   REAL8 k0,k1,k2,k3,k4;/* variables to contain the 5 first and second directional derivatives */
-  REAL8 a,b,t; /* temporary variables */ 
+  REAL8 a,b,t; /* temporary variables */
   REAL8 px,py;  /* the subpixel line point positions */
-  REAL4 *eigenVec; /* a pointer to the array containing the eigen vector and subpixel position */  
+  REAL4 *eigenVec; /* a pointer to the array containing the eigen vector and subpixel position */
   /*FILE* fp;*/ /* temp added by cwt */
 
-  /* Initialize status structure   */ 
+  /* Initialize status structure   */
   INITSTATUS(status,"ComputeLinePoints",TRACKSEARCHC);
   /* initialize the number of possible line start points and line points */
   store->numLStartPoints=0;
@@ -522,7 +496,7 @@ ComputeLinePoints (LALStatus *status,
       k3 = (REAL8)*((store->k[3])[i]+j); /* second along column */
       k4 = (REAL8)*((store->k[4])[i]+j); /* second along row/column */
       eigenVec = store->eigenVec + 4 * (i * params->width + j);
-      
+
       /* check for a already diagonalised Hessian matrix*/
       if(k4){
 	cotTheta=0.5*(k3-k2)/(k4);
@@ -543,7 +517,7 @@ ComputeLinePoints (LALStatus *status,
 	cosTheta=1.0;
 	sinTheta=0.0;
       }
-      /* Select the Eigen Value with maximum absolute value first; if 
+      /* Select the Eigen Value with maximum absolute value first; if
 	 absolute values are equal then put the one with negative value first */
       if((fabs(eVal1)>fabs(eVal2)) || ((fabs(eVal1)==fabs(eVal2))&&(eVal1<eVal2))){
 	*((store->imageTemp)[i] + j) = (REAL4)eVal1;
@@ -553,11 +527,11 @@ ComputeLinePoints (LALStatus *status,
       else{
 	*((store->imageTemp)[i] + j) = (REAL4)eVal2;
 	eigenVec[0] = -sinTheta;
-	eigenVec[1] = cosTheta;	
+	eigenVec[1] = cosTheta;
       }
       /* compute the line positions */
       if(*((store->imageTemp)[i] + j)<0.0){
-	/* a and b are second order and first order increments of the image function respectively 
+	/* a and b are second order and first order increments of the image function respectively
 	   along the eigen direction */
 	a = k2 * eigenVec[0] * eigenVec[0] + 2.*k4*eigenVec[0]*eigenVec[1] + k3*eigenVec[1]*eigenVec[1];
 	b = k0*eigenVec[0] + k1*eigenVec[1];
@@ -565,7 +539,7 @@ ComputeLinePoints (LALStatus *status,
 	  t = -b/a;
 	  /* position of maximum relative to current position */
 	  px = t*eigenVec[0];
-	  py = t*eigenVec[1];	
+	  py = t*eigenVec[1];
 	  /* check if the maximum of the function lies within this pixel */
 	  if((fabs(px) <= PIXEL_BOUNDARY) && (fabs(py) <= PIXEL_BOUNDARY)){
 	    if(fabs(*((store->imageTemp)[i] + j))>=params->low){
@@ -591,33 +565,33 @@ ComputeLinePoints (LALStatus *status,
 	}
 	else{
 	  *((store->isLine)[i]+j) = 0;
-	}	
+	}
       }
       else{
 	*((store->isLine)[i]+j) = 0;
       }
     }
-  }  
+  }
 }
 
 static const Offset offset[9]={{0,0},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}}; /*neighbouring pixels*/
 
-static void 
+static void
 ConnectLinePoints(LALStatus *status,
                   TrackSearchOut *out,
                   TrackSearchParams *params,
 		  const TimeFreqRep *TimeFreqMap)
 {
-  LinePoints *linePoints; /* An array containing the possible line Points */ 
+  LinePoints *linePoints; /* An array containing the possible line Points */
   TrackSearchStore *store; /* a pointer defined for convenience, points to the temporary storage space */
-  Curve contour[2];  /* 2 Contours, one for each direction; will be linked to a single contour */ 
+  Curve contour[2];  /* 2 Contours, one for each direction; will be linked to a single contour */
   CHAR lineFlag[3]; /* used to flag valid curve extension points */
   CHAR flag; /* used to break out of the loop searching for more points for the curve */
   CHAR directionSwitch; /* used to switch the direction of the line point search if the value of ocant is discontinuous*/
   INT4 **label;/*map whose entries point to the approapriate element of the linePoints array*/
   INT4 **mapContour; /* Each Contour is assigned an iteger value and the points of this map depict the contours*/
   INT4 i,j; /* Temporary loop variables */
-  INT4 index,nextIndex; /* used as an indices to the lineStart array */
+  INT4 lal_index,nextIndex; /* used as an indices to the lineStart array */
   INT4 processed; /*the number of line Points processed so far */
   INT4 octant,lastOctant; /* to use in identifying which neighbouring pixels to search for line points */
   INT4 currentRow,currentCol,nextRow,nextCol; /* variables pointing to the current and next location*/
@@ -628,7 +602,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
-  REAL4 metric[3]; /* a metric defined to choose between 3 different line points */
+  REAL4 metric[3]={0,0,0}; /* a metric defined to choose between 3 different line points */
   REAL4 minimum; /* the minimum of the metric[i]*/
   REAL4 differ; /* the difference between 2 angles */
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
@@ -636,10 +610,10 @@ ConnectLinePoints(LALStatus *status,
   REAL4 *meanProfile=NULL; /* Pointer to array of REAL4s */
   REAL4 mySNR=0; /*current estimate of SNR for particular curve*/
 
-  /* Initialize status structure   */ 
-  INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);  
+  /* Initialize status structure   */
+  INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);
   /* check if the caller has passed a non NULL pointer for Curves */
-  ASSERT(out->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER); 
+  ASSERT(out->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER);
   /* a pointer to the storage structure */
   store = &(out->store);
   /* Estimate the noise profile from the TFR */
@@ -667,29 +641,29 @@ ConnectLinePoints(LALStatus *status,
   /* we do not know whether the curve will have a junction so we initialize to zero(no junction)*/
   contour[0].junction=contour[1].junction=0;
   /* Fill up linePoints structure and set label to 0 */
-  index=0;
+  lal_index=0;
   for(i=0;i<params->height;i++){
     for(j=0;j<params->width;j++){
       label[i][j]=0;
       if(store->isLine[i][j]>0){
-	linePoints[index].pValue = store->isLine[i][j];
-	linePoints[index].r = i;
-	linePoints[index].c = j;
-	linePoints[index].flag = 1;
-	linePoints[index].eigen = store->imageTemp[i][j];
-	eigenVec = store->eigenVec + 4*(params->width*i + j);	
+	linePoints[lal_index].pValue = store->isLine[i][j];
+	linePoints[lal_index].r = i;
+	linePoints[lal_index].c = j;
+	linePoints[lal_index].flag = 1;
+	linePoints[lal_index].eigen = store->imageTemp[i][j];
+	eigenVec = store->eigenVec + 4*(params->width*i + j);
 	/* calculate the angles at all the line points (between 0 and PI)*/
-	linePoints[index].angle=GetAngle(eigenVec[1],eigenVec[0]);	
+	linePoints[lal_index].angle=GetAngle(eigenVec[1],eigenVec[0]);
 	/* store the subpixel line position */
-	linePoints[index].pRow=eigenVec[2];
-	linePoints[index].pCol=eigenVec[3];	
-	index++;
-      }	
+	linePoints[lal_index].pRow=eigenVec[2];
+	linePoints[lal_index].pCol=eigenVec[3];
+	lal_index++;
+      }
     }
   }
   /* check if the number of line start points is the same as found in the previous module */
-  ASSERT(index==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
-  /* sort the line point structures based on their values (2's come first ) 
+  ASSERT(lal_index==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
+  /* sort the line point structures based on their values (2's come first )
      i.e. The first store->numLStartPoints points are line starting points and the remaining are ordinary points
      Also among the line start points the sorting order is one of decreasing value of linePoint.eigen*/
   qsort (linePoints,store->numLPoints,sizeof(LinePoints), CompareLinePoints);
@@ -717,29 +691,29 @@ ConnectLinePoints(LALStatus *status,
       /* identify which direction the line is normal to */
       lastOctant=floor((double)linePoints[processed].angle/(LAL_PI/4.0)) + 1;
       /* check if octant is less than or equal to 4 */
-      ASSERT(lastOctant<=4,status,TS_OCTANT,MSG_TS_OCTANT);      
+      ASSERT(lastOctant<=4,status,TS_OCTANT,MSG_TS_OCTANT);
       /*initialize directionSwitch to 1 */
       directionSwitch=1;
       /* loop while there are points to be joined to the current curve */
-      while(flag){      
-	index=label[currentRow][currentCol]-1;
+      while(flag){
+	lal_index=label[currentRow][currentCol]-1;
 	/* identify which direction the line is normal to */
-	octant = floor((double)linePoints[index].angle/(LAL_PI/4.0)) + 1;
+	octant = floor((double)linePoints[lal_index].angle/(LAL_PI/4.0)) + 1;
 	/* check if octant is less than or equal to 4 */
 	ASSERT(octant<=4,status,TS_OCTANT,MSG_TS_OCTANT);
-	/* now we have to find whether the octant has changed discontinuously for 1 to 4 or from 4 to 1 
+	/* now we have to find whether the octant has changed discontinuously for 1 to 4 or from 4 to 1
 	   This is to avoid infinite loops; if it has done so then  the idea is to switch the direction*/
 	if(((octant==1)&&(lastOctant==4))||((octant==4)&&(lastOctant==1))){
 	  if(directionSwitch)
 	    directionSwitch=0;
 	  else
 	    directionSwitch=1;
-	}	
+	}
 	/* set the last octant to octant */
-	lastOctant=octant;	
-	/* identify the surrounding pixels to reject i.e. reject multiple responses */ 
+	lastOctant=octant;
+	/* identify the surrounding pixels to reject i.e. reject multiple responses */
 	reject[0]=octant;
-	reject[1]=octant+4;	
+	reject[1]=octant+4;
 	/* select the points to search for continuation */
 	if(!direction){
 	  if(directionSwitch){
@@ -753,7 +727,7 @@ ConnectLinePoints(LALStatus *status,
 	    check[1]=octant+6;
 	    if(check[1]>8) check[1]-=8;
 	    check[2]=octant+7;
-	    if(check[2]>8) check[2]-=8;	    
+	    if(check[2]>8) check[2]-=8;
 	  }
 	}
 	else{
@@ -763,12 +737,12 @@ ConnectLinePoints(LALStatus *status,
 	    check[1]=octant+6;
 	    if(check[1]>8) check[1]-=8;
 	    check[2]=octant+7;
-	    if(check[2]>8) check[2]-=8;	    	    
+	    if(check[2]>8) check[2]-=8;
 	  }
 	  else{
 	    check[0]=octant+1;
 	    check[1]=octant+2;
-	    check[2]=octant+3;	    	    
+	    check[2]=octant+3;
 	  }
 	}
 	/* loop through rejected pixels */
@@ -783,16 +757,16 @@ ConnectLinePoints(LALStatus *status,
 	    continue;
 	  /* check whether the pixel is a multiple response*/
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle - linePoints[nextIndex].angle);
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
-	  if(differ<MAX_ANGLE_DIFFERENCE){	
+	  differ=(REAL4)fabs((double)linePoints[lal_index].angle - linePoints[nextIndex].angle);
+	  /*if(differ>LAL_PI/2.0)
+	    differ=LAL_PI - differ;*/
+	  if(differ<MAX_ANGLE_DIFFERENCE){
 	    linePoints[nextIndex].flag=0;
 	    /* check if one of the rejected points is the original starting point and if it is not then we
 	       can safely put the entry in the label equal to zero */
 	    if(linePoints[nextIndex].pValue==2)
 	      if(!((nextRow==linePoints[processed].r)&&(nextCol==linePoints[processed].c)))
-		label[nextRow][nextCol]=0;	
+		label[nextRow][nextCol]=0;
 	  }
 	}
 	/* now go through the possible neighbours */
@@ -807,13 +781,21 @@ ConnectLinePoints(LALStatus *status,
 	  /* if this pixel is not marked as a line point ignore */
 	  if(!label[nextRow][nextCol]){
 	    lineFlag[i]=0;
-	    continue;	  
+	    continue;
 	  }
 	  /* check if the pixel is a valid continuation */
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle-linePoints[nextIndex].angle);
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
+	  differ=(REAL4)fabs((double)linePoints[lal_index].angle-linePoints[nextIndex].angle);
+	  /**
+	   * Cristina:Tue-Jun-09-2009:200906091041
+	   * The if(differ>LAL_PI/2.0) IF I think allows for
+	   * connection of zig-zaggy type triggers.  I think this if
+	   * should be removed permanently Lines 787,821
+	   * Comments cause lines to be shortened slight but they
+	   * appear more continuous in appearance.
+	   */
+	  /*	  if(differ>LAL_PI/2.0)
+		  differ=LAL_PI - differ;*/
 	  if(differ>MAX_ANGLE_DIFFERENCE){
 	    lineFlag[i]=0;
 	  }
@@ -830,12 +812,12 @@ ConnectLinePoints(LALStatus *status,
 		contour[direction].junction=1;
 	      }
 	      lineFlag[i]=0;
-	      continue;	  	    
-	    }    
+	      continue;
+	    }
 	    /* the metric used to select the most plausible adjacent point
 	       d = sqrt((px1-px2)^2 + (py1-py2)^2) + abs(angle1 - angle2)*/
-	    metric[i]=sqrt((linePoints[index].pRow-linePoints[nextIndex].pRow)*(linePoints[index].pRow-linePoints[nextIndex].pRow)+\
-			   (linePoints[index].pCol-linePoints[nextIndex].pCol)*(linePoints[index].pCol-linePoints[nextIndex].pCol)) + differ;
+	    metric[i]=sqrt((linePoints[lal_index].pRow-linePoints[nextIndex].pRow)*(linePoints[lal_index].pRow-linePoints[nextIndex].pRow)+\
+			   (linePoints[lal_index].pCol-linePoints[nextIndex].pCol)*(linePoints[lal_index].pCol-linePoints[nextIndex].pCol)) + differ;
 	  }
 	}
 	/* if none of  the pixels are not a valid continuation, the curve stops here */
@@ -867,11 +849,11 @@ ConnectLinePoints(LALStatus *status,
 	ASSERT(curveLength<=maxCurveLen,status,TS_ARRAY_OVERFLOW,MSG_TS_ARRAY_OVERFLOW);
 	/* if the line point is also a line start point mark it is processed */
 	if(linePoints[nextIndex].pValue==2)
-	  linePoints[nextIndex].flag=0;	
-	mapContour[nextRow][nextCol]=out->numberOfCurves+1;	
+	  linePoints[nextIndex].flag=0;
+	mapContour[nextRow][nextCol]=out->numberOfCurves+1;
 	/* redefine current position and make the new point included as the currect position */
 	currentRow=nextRow;
-	currentCol=nextCol;	      
+	currentCol=nextCol;
       }
       /* end of the Contour reached */
       contour[direction].n=curveLength;
@@ -883,10 +865,10 @@ ConnectLinePoints(LALStatus *status,
     curveDepth=(REAL4*)LALMalloc(sizeof(REAL4)*(contour[0].n+contour[1].n-1));
     /* Following loops may have a single TFR point in common? */
     for(i=0;i<contour[0].n;i++)
-	curveDepth[i] = 
+	curveDepth[i] =
 	  TimeFreqMap->map[contour[0].row[contour[0].n - 1 - i]][contour[0].col[contour[0].n - 1 - i]];
     for(i=0;i<contour[1].n;i++)
-	curveDepth[i+contour[0].n-1] = 
+	curveDepth[i+contour[0].n-1] =
 	  TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
     for(i=0;i<(contour[0].n+contour[1].n-1);i++)
       curvePower=curvePower+curveDepth[i];
@@ -895,7 +877,7 @@ ConnectLinePoints(LALStatus *status,
     mySNR=estimateSNR(contour[0],contour[1],meanProfile,TimeFreqMap);
     /* *** */
     /* check if the length of the curve is greater than the threshhold*/
-    if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD) 
+    if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD)
        && TestPotentialLine(*out,curveLength,curvePower,mySNR)){
       /* record the curve found in the output structure by joining the left and right Contours*/
       out->curves = (Curve*)LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));
@@ -913,22 +895,22 @@ ConnectLinePoints(LALStatus *status,
       powerHalfContourA = 0;
       for(i=0;i<contour[0].n;i++){
 	out->curves[out->numberOfCurves].row[i] = contour[0].row[contour[0].n - 1 - i];
-	out->curves[out->numberOfCurves].col[i] = contour[0].col[contour[0].n - 1 - i];	
+	out->curves[out->numberOfCurves].col[i] = contour[0].col[contour[0].n - 1 - i];
 	out->curves[out->numberOfCurves].fBinHz[i] = 0;
 	out->curves[out->numberOfCurves].gpsStamp[i].gpsSeconds = 0;
 	out->curves[out->numberOfCurves].gpsStamp[i].gpsNanoSeconds = 0;
-	out->curves[out->numberOfCurves].depth[i] = 
+	out->curves[out->numberOfCurves].depth[i] =
 	  TimeFreqMap->map[contour[0].row[contour[0].n - 1 - i]][contour[0].col[contour[0].n - 1 - i]];
 	powerHalfContourA = powerHalfContourA + out->curves[out->numberOfCurves].depth[i];
       }
       powerHalfContourB = 0;
       for(i=0;i<contour[1].n;i++){
-	out->curves[out->numberOfCurves].row[i+contour[0].n-1] = contour[1].row[i];     
-	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i]; 
+	out->curves[out->numberOfCurves].row[i+contour[0].n-1] = contour[1].row[i];
+	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i];
 	out->curves[out->numberOfCurves].fBinHz[i+contour[0].n-1] = 0;
 	out->curves[out->numberOfCurves].gpsStamp[i+contour[0].n-1].gpsSeconds = 0;
 	out->curves[out->numberOfCurves].gpsStamp[i+contour[0].n-1].gpsNanoSeconds = 0;
-	out->curves[out->numberOfCurves].depth[i+contour[0].n-1] = 
+	out->curves[out->numberOfCurves].depth[i+contour[0].n-1] =
 	  TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
         powerHalfContourB = powerHalfContourB + out->curves[out->numberOfCurves].depth[i+contour[0].n-1];
       }
@@ -944,7 +926,7 @@ ConnectLinePoints(LALStatus *status,
       out->numberOfCurves++;
       ASSERT(out->numberOfCurves<=MAX_NUMBER_OF_CURVES,status,TS_TOO_MANY_CURVES,MSG_TS_TOO_MANY_CURVES);
     }
-  }  
+  }
   /* Free up used memory */
   LALFree(linePoints);
   LALFree(contour[0].row);
@@ -957,9 +939,9 @@ ConnectLinePoints(LALStatus *status,
   LALFree(label);
   for(i=0;i<params->height;i++)
     LALFree(mapContour[i]);
-  LALFree(mapContour);  
+  LALFree(mapContour);
   /* Return to Calling program */
-  RETURN(status);  
+  RETURN(status);
 }
 
 
@@ -970,8 +952,8 @@ ConnectLinePoints(LALStatus *status,
 static void estimateProfile(REAL4 *myProfile,
 			    TimeFreqRep Map)
 {
-  INT4 j=0; 
-  INT4 k=0; 
+  INT4 j=0;
+  INT4 k=0;
   REAL4 currentSum=0; /* Current value */
   /*TFR[time][freq] or TFR[tCol][fRow/2+1]*/
   for (k=0;k<Map.fRow/2+1;k++)
@@ -979,31 +961,17 @@ static void estimateProfile(REAL4 *myProfile,
       currentSum=0;
       for (j=0;j<Map.tCol;j++)
 	{
-/* 	  fprintf(stdout,"k:%i/%i j:%i/%i \t Map:%f \t CS %f \n", */
-/* 		  k, */
-/* 		  Map.fRow, */
-/* 		  j, */
-/* 		  Map.tCol, */
-/* 		  Map.map[j][k], */
-/* 		  currentSum, */
-/* 	  fflush(stdout); */
 	  currentSum=currentSum+Map.map[j][k];
 	}
       myProfile[k]=currentSum/Map.tCol;
-/*       fprintf(stdout,"Computing myProfile value.\t"); */
-/*       fprintf(stdout," : %i/%i Value: %f\n",  */
-/* 	      k, */
-/* 	      Map.fRow/2+1, */
-/* 	      myProfile[k]); */
-/*       fflush(stdout); */
     }
 }
 
 
-/* Computes the average Gaussian function over the pixel 
-   Uses a simple averaging process 
+/* Computes the average Gaussian function over the pixel
+   Uses a simple averaging process
 */
-REAL4 
+REAL4
 Gauss0(INT4 pixel, REAL4 sigma)
 {
   REAL8 limit1,limit2; /* the limits over which to average the function */
@@ -1015,7 +983,7 @@ Gauss0(INT4 pixel, REAL4 sigma)
   REAL4 result; /* the value to return */
   REAL8 norm;   /* normalizing constant */
   REAL8 temp;   /* temporary variable */
-    
+
   limit1 = (REAL4)pixel - 0.5;
   limit2 = (REAL4)pixel + 0.5;
   interval=(limit2-limit1)/numberInt;
@@ -1031,10 +999,10 @@ Gauss0(INT4 pixel, REAL4 sigma)
   return result;
 }
 
-/* Computes the average of the derivative of the Gaussian function over the pixel 
-   Uses a simple averaging process 
+/* Computes the average of the derivative of the Gaussian function over the pixel
+   Uses a simple averaging process
 */
-REAL4 
+REAL4
 Gauss1(INT4 pixel, REAL4 sigma)
 {
   REAL8 limit1,limit2; /* the limits over which to average the function */
@@ -1046,7 +1014,7 @@ Gauss1(INT4 pixel, REAL4 sigma)
   REAL4 result; /* the value to return */
   REAL8 norm;   /* normalizing constant */
   REAL8 temp;   /* temporary variable */
-    
+
   limit1 = (REAL4)pixel - 0.5;
   limit2 = (REAL4)pixel + 0.5;
   interval=(limit2-limit1)/numberInt;
@@ -1062,10 +1030,10 @@ Gauss1(INT4 pixel, REAL4 sigma)
   return result;
 }
 
-/* Computes the average of the second derivative of the Gaussian function over the pixel 
-   Uses a simple averaging process 
+/* Computes the average of the second derivative of the Gaussian function over the pixel
+   Uses a simple averaging process
 */
-REAL4 
+REAL4
 Gauss2(INT4 pixel, REAL4 sigma)
 {
   REAL8 limit1,limit2; /* the limits over which to average the function */
@@ -1077,7 +1045,7 @@ Gauss2(INT4 pixel, REAL4 sigma)
   REAL4 result; /* the value to return */
   REAL8 norm;   /* normalizing constant */
   REAL8 temp;   /* temporary variable */
-    
+
   limit1 = (REAL4)pixel - 0.5;
   limit2 = (REAL4)pixel + 0.5;
   interval=(limit2-limit1)/numberInt;
@@ -1094,7 +1062,7 @@ Gauss2(INT4 pixel, REAL4 sigma)
 }
 
 /* computes the angle given the 2 quadratures to within [0,pi] */
-REAL4 
+REAL4
 GetAngle(
 	 REAL4 y,
 	 REAL4 x)
@@ -1124,7 +1092,7 @@ TestPotentialLine(
 		  REAL4 SNR)
 {
   INT4 result=0;
-  
+
   /* Future plan case statement if conditionals based on
    * TSO.thresholdLogic field
    */
@@ -1167,12 +1135,6 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
       curveProfile[contourA.col[n]]=curveProfile[contourA.col[n]]+tfr->map[contourA.row[n]][contourA.col[n]];
-/*       fprintf(stdout,"A -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	      contourA.row[n], */
-/* 	      contourA.col[n], */
-/* 	      tfr->map[contourA.row[n]][contourA.col[n]], */
-/* 	      curveProfile[contourA.row[n]]); */
-/*       fflush(stdout); */
     }
   for (n=1;n<contourB.n;n++)
     {
@@ -1184,18 +1146,10 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
     curveProfile[contourB.col[n]]=curveProfile[contourB.col[n]]+tfr->map[contourB.row[n]][contourB.col[n]];
-/*     fprintf(stdout,"B -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	    contourB.row[n], */
-/* 	    contourB.col[n], */
-/* 	    tfr->map[contourB.row[n]][contourB.col[n]], */
-/* 	    curveProfile[contourB.row[n]]); */
-/*     fflush(stdout); */
     }
-/*   fprintf(stdout,"\n\n"); */
-/*   fflush(stdout); */
   /*Compute the SNR (check the normalization) can we GRASP definition P156-160*/
   /*
-   * We invoke for our estimate the idea of a SNR measure the ratio of in the 
+   * We invoke for our estimate the idea of a SNR measure the ratio of in the
    * frequency domain of our average assumned noise amplitude to that constructed from
    * position information of the curve in the TFR.
    */
@@ -1206,25 +1160,15 @@ estimateSNR(Curve contourA,
       /*Define my snr estimate as std(energyInCurve)/std(energyInNoise)*/
       tmp=tmp+((curveProfile[n]*curveProfile[n])/
 	(tfrProfile[n]*tfrProfile[n]));
-/*       fprintf(stdout,"Index : %i\tTMP :%10.10f\t CP :%10.10f\t TFR :%10.10f\n", */
-/* 	      n, */
-/* 	      tmp, */
-/* 	      curveProfile[n], */
-/* 	      tfrProfile[n]); */
-/*       fflush(stdout); */
     }
   result=sqrt(tmp);
-/*   fprintf(stdout,"SNR Estimate :%f\n",result); */
-/*   fflush(stdout); */
   LALFree(curveProfile);
   return result;
 }
-
-
 /*End static function estimateSNR*/
 
-/* routine called by qsort  
-   Compare the elements of the LinePoint array. 
+/* routine called by qsort
+   Compare the elements of the LinePoint array.
 */
 static int
 CompareLinePoints(const void *element1, const void *element2)
@@ -1232,12 +1176,12 @@ CompareLinePoints(const void *element1, const void *element2)
   if( ((const LinePoints *)element2)->pValue > ((const LinePoints *)element1)->pValue)
     return 1;
   if( ((const LinePoints *)element1)->pValue > ((const LinePoints *)element2)->pValue)
-    return -1;    
+    return -1;
   if(((const LinePoints *)element2)->eigen > ((const LinePoints *)element1)->eigen)
     return 1;
   else
-    return -1;      
-} 
+    return -1;
+}
 
 void LALTrackSearchInsertMarkers(
 				 LALStatus        *status,
@@ -1260,14 +1204,14 @@ void LALTrackSearchInsertMarkers(
   /* Use sampling rate Hz to determine dT */
   deltaT=((REAL8) input->deltaT);
   for (i=0;i < output->numberOfCurves;i++)
-    { /* 
-       *Get ready to start looping over returned curve 
+    { /*
+       *Get ready to start looping over returned curve
        *information for labels
        */
       for (j=0;j<output->curves[i].n;j++)
 	{
 	  /*
-	   * Freq bins default label as frac of fmax 
+	   * Freq bins default label as frac of fmax
 	   * Colums are the freq labels
 	   */
 	  output->curves[i].fBinHz[j]=
@@ -1275,14 +1219,11 @@ void LALTrackSearchInsertMarkers(
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
 	     );
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
-	  LALAddFloatToGPS(status->statusPtr,
-			   &tmpGPS,
-			   &(input->mapStartGPS),
-			   currentRelativeFloatTime);
+	  tmpGPS = input->mapStartGPS;
+	  XLALGPSAdd(&tmpGPS, currentRelativeFloatTime);
 	  CHECKSTATUSPTR(status);
 	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;
-	  /*memcpy(&(input->mapStartGPS),&(tmpGPS),sizeof(LIGOTimeGPS));*/
 	}
     }
   DETATCHSTATUSPTR (status);

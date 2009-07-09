@@ -18,21 +18,21 @@
 */
 
 
-/** \defgroup GenerateInspRing 
- * \ingroup inject 
+/** \defgroup GenerateInspRing
+ * \ingroup inject
  * \author S.Fairhurst
- * 
+ *
  * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
  *
 
  *
  */
- 
+
 /** \file GenerateInspRing.h
  *  \ingroup GenerateInspRing
  * \date $Date$
  *
- * 
+ *
  */
 
 

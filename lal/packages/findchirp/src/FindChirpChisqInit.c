@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpChisqInit.c
  *
  * Author: Anderson, W. G., and Brown, D. A., BCV-Modifications: Messaritaki E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@ $Id$
 \subsection{Module \texttt{FindChirpChisqInit.c}}
 \label{ss:FindChirpChisqInit.c}
 
-Module to initialize the $\chi^2$ veto for the various templates (SP, BCV, 
+Module to initialize the $\chi^2$ veto for the various templates (SP, BCV,
 etc.)
 
 \subsubsection*{Prototypes}
@@ -108,17 +108,17 @@ LALFindChirpChisqVetoInit (
   INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQINITC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   ASSERT( numPoints > 0, status,
       FINDCHIRPCHISQH_ENUMZ, FINDCHIRPCHISQH_MSGENUMZ );
 
-  ASSERT( ! params->plan, status, 
+  ASSERT( ! params->plan, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( ! params->qtildeBinVec, status, 
+  ASSERT( ! params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( ! params->qtildeBinVec, status, 
+  ASSERT( ! params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
   ASSERT( ! params->qtildeBinVecBCV, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
@@ -168,16 +168,16 @@ LALFindChirpChisqVetoInit (
 
 
   /* create plan for chisq filter */
-  LALCreateReverseComplexFFTPlan( status->statusPtr, 
+  LALCreateReverseComplexFFTPlan( status->statusPtr,
       &(params->plan), numPoints, 0 );
   CHECKSTATUSPTR( status );
 
   /* create one vector for the fourier domain data */
-  LALCCreateVector( status->statusPtr, 
+  LALCCreateVector( status->statusPtr,
       &(params->qtildeBinVec), numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
           &(params->plan) ), status );
   }
   ENDFAIL( status );
@@ -200,18 +200,18 @@ LALFindChirpChisqVetoInit (
 
 
   /* create numBins vectors for the time domain data */
-  params->qBinVecPtr = (COMPLEX8Vector **) 
+  params->qBinVecPtr = (COMPLEX8Vector **)
     LALCalloc( 1, numChisqBins * sizeof(COMPLEX8Vector*) );
   if ( ! params->qBinVecPtr )
   {
-    TRY( LALCDestroyVector( status->statusPtr, 
+    TRY( LALCDestroyVector( status->statusPtr,
           &(params->qtildeBinVec) ), status );
     if( params->qtildeBinVecBCV )
     {
       TRY( LALCDestroyVector( status->statusPtr,
             &(params->qtildeBinVecBCV) ), status );
     }
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
           &(params->plan) ), status );
     ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
   }
@@ -223,18 +223,18 @@ LALFindChirpChisqVetoInit (
     {
       for ( m = 0; m < l ; ++m )
       {
-        TRY( LALCDestroyVector( status->statusPtr, 
+        TRY( LALCDestroyVector( status->statusPtr,
               params->qBinVecPtr + m ), status );
       }
       LALFree( params->qBinVecPtr );
-      TRY( LALCDestroyVector( status->statusPtr, 
+      TRY( LALCDestroyVector( status->statusPtr,
             &(params->qtildeBinVec) ), status );
       if (params->qtildeBinVecBCV)
       {
         TRY( LALCDestroyVector( status->statusPtr,
               &(params->qtildeBinVecBCV) ), status );
       }
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(params->plan) ), status );
     }
     ENDFAIL( status );
@@ -356,13 +356,13 @@ LALFindChirpChisqVetoFinalize (
    */
 
 
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( params->plan, status, 
+  ASSERT( params->plan, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( params->qtildeBinVec, status, 
+  ASSERT( params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( params->qtildeBinVec, status, 
+  ASSERT( params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
 
   if ( params->approximant == BCV )

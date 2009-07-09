@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="FoldAmplitudesCV">
 Author: Mendell, Greg A.
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -63,7 +63,7 @@ output: a vector of folded amplitude; component i is the folded amplitude for ph
   	(iii) Only binMin = 0.0 is currently supported.
 
   Code:
-  	
+
   if (binRange == 1.0) {
   	for ( i = 0 ; i < amplitudeVec->length ; ++i )
   	{
@@ -98,7 +98,7 @@ For use in known pulsar search.
 
 \vfill{\footnotesize\input{FoldAmplitudesCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -126,7 +126,7 @@ LALFoldAmplitudes( LALStatus                      *status,
 		     REAL4Vector         	  *output,
 		     const FoldAmplitudesInput    *input,
 		     const FoldAmplitudesParams   *params )
-		
+
 /* </lalVerbatim> */
 {
   /******* DECLARE VARIABLES ************/

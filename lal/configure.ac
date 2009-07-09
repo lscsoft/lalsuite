@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -9,6 +9,7 @@ AC_CONFIG_FILES([ \
                  lalframe.pc \
                  lalmetaio.pc \
                  lalxml.pc \
+                 lalstochastic.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -32,16 +33,6 @@ AC_CONFIG_FILES([ \
                  packages/tools/include/Makefile \
                  packages/tools/src/Makefile \
                  packages/tools/test/Makefile \
-                 packages/sample/Makefile \
-                 packages/sample/doc/Makefile \
-                 packages/sample/include/Makefile \
-                 packages/sample/src/Makefile \
-                 packages/sample/test/Makefile \
-                 packages/hello/Makefile \
-                 packages/hello/doc/Makefile \
-                 packages/hello/include/Makefile \
-                 packages/hello/src/Makefile \
-                 packages/hello/test/Makefile \
                  packages/factories/Makefile \
                  packages/factories/doc/Makefile \
                  packages/factories/include/Makefile \
@@ -92,11 +83,6 @@ AC_CONFIG_FILES([ \
                  packages/clremoval/include/Makefile \
                  packages/clremoval/src/Makefile \
                  packages/clremoval/test/Makefile \
-                 packages/stochastic/Makefile \
-                 packages/stochastic/doc/Makefile \
-                 packages/stochastic/include/Makefile \
-                 packages/stochastic/src/Makefile \
-                 packages/stochastic/test/Makefile \
                  packages/inspiral/Makefile \
                  packages/inspiral/doc/Makefile \
                  packages/inspiral/include/Makefile \
@@ -142,26 +128,16 @@ AC_CONFIG_FILES([ \
                  packages/tracksearch/include/Makefile \
                  packages/tracksearch/src/Makefile \
                  packages/tracksearch/test/Makefile \
-                 packages/tfclusters/Makefile \
-                 packages/tfclusters/doc/Makefile \
-                 packages/tfclusters/include/Makefile \
-                 packages/tfclusters/src/Makefile \
-                 packages/tfclusters/test/Makefile \
-                 packages/slopefilters/Makefile \
-                 packages/slopefilters/doc/Makefile \
-                 packages/slopefilters/include/Makefile \
-                 packages/slopefilters/src/Makefile \
-                 packages/slopefilters/test/Makefile \
-                 packages/block/Makefile \
-                 packages/block/doc/Makefile \
-                 packages/block/include/Makefile \
-                 packages/block/src/Makefile \
-                 packages/block/test/Makefile \
                  packages/timefreq/Makefile \
                  packages/timefreq/doc/Makefile \
                  packages/timefreq/include/Makefile \
                  packages/timefreq/src/Makefile \
                  packages/timefreq/test/Makefile \
+                 packages/stochastic/Makefile \
+                 packages/stochastic/doc/Makefile \
+                 packages/stochastic/include/Makefile \
+                 packages/stochastic/src/Makefile \
+                 packages/stochastic/test/Makefile \
                  packages/support/Makefile \
                  packages/support/doc/Makefile \
                  packages/support/include/Makefile \
@@ -244,6 +220,9 @@ fi
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
 
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CPP
@@ -279,8 +258,8 @@ AC_SUBST(TEXFLAGS)
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200101L"
-  AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
+  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT(none);;
 esac
 

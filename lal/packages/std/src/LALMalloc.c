@@ -322,7 +322,7 @@ the array bounds were overwritten.
     if ( ! (ptr) && (size) )                                               \
     {                                                                      \
        char msg[64];                                                       \
-       LALSnprintf( msg, sizeof( msg ), "%s in %s:%d", func, file, line ); \
+       snprintf( msg, sizeof( msg ), "%s in %s:%d", func, file, line ); \
        XLAL_ERROR_NULL( msg, XLAL_ENOMEM );                                \
     }                                                                      \
     else (void)(0)

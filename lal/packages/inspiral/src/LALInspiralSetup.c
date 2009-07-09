@@ -324,19 +324,19 @@ LALInspiralSetup (
 
    switch (params->order)
    {
-      case newtonian:
-      case onePN:
-      case oneHalfPN:
-      case onePointFivePN:
-      case twoPN:
-      case twoPointFivePN:
+      case LAL_PNORDER_NEWTONIAN:
+      case LAL_PNORDER_HALF:
+      case LAL_PNORDER_ONE:
+      case LAL_PNORDER_ONE_POINT_FIVE:
+      case LAL_PNORDER_TWO:
+      case LAL_PNORDER_TWO_POINT_FIVE:
          vpole = ak->vpoleP4;
          break;
-      case threePN:
-      case threePointFivePN:
+      case LAL_PNORDER_THREE:
+      case LAL_PNORDER_THREE_POINT_FIVE:
             vpole = ak->vpoleP6;
          break;
-      case pseudoFourPN:
+      case LAL_PNORDER_PSEUDO_FOUR:
             vpole = ak->vpoleP6;
          break;
    }
@@ -440,13 +440,13 @@ LALInspiralSetup (
    ak->thetahat = 1039.0/4620.0;  /* value of thetahat set according to
                          Blanchet et. al, Phys. Rev. Lett. 93, 091101 (2004) */
 
-   ak->ST[newtonian] = 1.0;
-   ak->ST[oneHalfPN] = 0.0;
-   ak->ST[onePN] = ( -(1.0/336.0) * (743.0 + 924.0*eta) );
-   ak->ST[onePointFivePN] = ( 4.0 * LAL_PI );
-   ak->ST[twoPN] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 );
+   ak->ST[LAL_PNORDER_NEWTONIAN] = 1.0;
+   ak->ST[LAL_PNORDER_HALF] = 0.0;
+   ak->ST[LAL_PNORDER_ONE] = ( -(1.0/336.0) * (743.0 + 924.0*eta) );
+   ak->ST[LAL_PNORDER_ONE_POINT_FIVE] = ( 4.0 * LAL_PI );
+   ak->ST[LAL_PNORDER_TWO] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 );
 
-   ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 15876.0*eta) );
+   ak->ST[LAL_PNORDER_TWO_POINT_FIVE] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 15876.0*eta) );
    /* coefficient 15876 corrected (from 14532) according
       to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996)
       (see Phys. Rev. D 71 129904 (E) (2005)) and L. Blanchet,
@@ -459,14 +459,14 @@ LALInspiralSetup (
 
    /* both ak->ST[6] and [7] are stored for the threePN contribution */
 
-   ak->ST[threePN] = ( (16447322263.0/139708800.0)
+   ak->ST[LAL_PNORDER_THREE] = ( (16447322263.0/139708800.0)
 		- (1712.0/105.0)* ak->EulerC
 		- (273811877.0/1088640.0)*eta - (88.0/3.0)*ak->thetahat*eta
 		+ (541.0/896.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
 		+ (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
 		- (856.0/105.0)*log(16.0) );
-   ak->ST[threePN+1] = ( -(1712.0/315.0) );     /* extra 3PN component */
-   /* sT[8] is the threePointFivePN contribution */
+   ak->ST[LAL_PNORDER_THREE+1] = ( -(1712.0/315.0) );     /* extra 3PN component */
+   /* sT[8] is the LAL_PNORDER_THREE_POINT_FIVE contribution */
    ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 717350.0*eta + 731960.0*eta*eta);
    /* coefficients 717350 and 731960 corrected (from 661775 and 599156) according
       to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996)

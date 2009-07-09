@@ -18,7 +18,7 @@
 */
 
 /* <lalVerbatim file="GetOrientationEllipseCV">
-Author: Thomas Cokelaer 
+Author: Thomas Cokelaer
 $Id$
 </lalVerbatim> */
 
@@ -26,7 +26,7 @@ $Id$
 \subsection{Program \texttt{GetOrientationEllipse.c}}
 \label{ss:GetOrientationEllipse.c}
 
-Test code for the \texttt{bank} modules. 
+Test code for the \texttt{bank} modules.
 
 
 \subsubsection*{Usage}
@@ -36,22 +36,22 @@ Test code for the \texttt{bank} modules.
 
 \subsubsection*{Description}
 
-This code illustrates the use of several functions such as  
+This code illustrates the use of several functions such as
 \texttt{LALInspiralParameterCalc}, \texttt{LALGetInspiralMoments},
-and \texttt{LALInspiralComputeMetric}. It shows how to defined 
+and \texttt{LALInspiralComputeMetric}. It shows how to defined
 a suitable \texttt{InspiralCoarseBankIn} structure so as to extract
-the metric components for a set of binary parameters. In this 
-example, we first declare all the relevant parameter needed 
-(minimum  and maximum mass, fLower, design sensitivity curve 
+the metric components for a set of binary parameters. In this
+example, we first declare all the relevant parameter needed
+(minimum  and maximum mass, fLower, design sensitivity curve
 and so on), which can be changed by the user before compilation.
 
 Then, a loop spans a square parameter space defined by tau0 in the
 range [.1,40] seconds and tau3 in [1, 2] seconds. For each set of
-parameter, the metric is computed and the code prints on stdout 
-the value of the coordinate used (tau0, tau3) and the orientation 
-of the metric in degrees. We do not check whether a template is valid 
-or not in this code but one could have use a function such as 
-\texttt{LALInspiralValidtemplate} to do so. 
+parameter, the metric is computed and the code prints on stdout
+the value of the coordinate used (tau0, tau3) and the orientation
+of the metric in degrees. We do not check whether a template is valid
+or not in this code but one could have use a function such as
+\texttt{LALInspiralValidtemplate} to do so.
 
 \subsubsection*{Notes}
 \vfill{\footnotesize\input{GetOrientationEllipseCV}}
@@ -71,15 +71,14 @@ NRCSID (GETORIENTATIONELLIPSEC,"$Id$");
 INT4 lalDebugLevel=33;
 
 int
-main(int argc, char **argv)
+main(void)
 {
-  INT4 arg;
   /* top-level status structure */
-  static LALStatus status;     
+  static LALStatus status;
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=262144/4/4; /*Size of the vectors*/
+  UINT4 numPSDpts=262144/4/4; /*Size of the vectors*/
   InspiralTemplate tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
@@ -95,7 +94,7 @@ main(int argc, char **argv)
   coarseIn.fLower       = 40.L;
   coarseIn.fUpper       = 2047.L;
   coarseIn.tSampling    = 4096.L;
-  coarseIn.order        = twoPN;
+  coarseIn.order        = LAL_PNORDER_TWO;
   coarseIn.space        = Tau0Tau3;
   coarseIn.mmCoarse     = 0.97;
   coarseIn.mmFine       = 0.97;
@@ -103,7 +102,7 @@ main(int argc, char **argv)
   coarseIn.mMin         = 3;
   coarseIn.mMax         = 30.0;
   coarseIn.MMax         = coarseIn.mMax * 2.;
-  coarseIn.massRange    = MinMaxComponentMass; 
+  coarseIn.massRange    = MinMaxComponentMass;
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin       = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
@@ -130,19 +129,19 @@ main(int argc, char **argv)
   tempPars.eta = 0.25;
   tempPars.ieta = 1.L;
   tempPars.fLower = coarseIn.fLower;
-  tempPars.massChoice = totalMassAndEta; 
+  tempPars.massChoice = totalMassAndEta;
 
   metric.space = coarseIn.space;
   LALInspiralSetParams( &status, &tempPars, coarseIn );
 
 
   /* */
-  
+
   {
     REAL4 tau0 = 0.;
     REAL4 tau3 = 0.;
     INT4 valid = 0;
-    InspiralBankParams bankPars, bankParsOld;
+    InspiralBankParams bankPars;
 
     /* Get the limit of the parameter space*/
     LALInspiralSetSearchLimits( &status, &bankPars, coarseIn );
@@ -153,7 +152,7 @@ main(int argc, char **argv)
         valid = 1;
         bankPars.x0 = tau0;
         bankPars.x1 = tau3;
-        
+
         LALInspiralValidParams(&status, &valid, bankPars, coarseIn );
 	if  (valid==1)
         {

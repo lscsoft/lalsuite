@@ -196,7 +196,7 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
 				InspiralTemplate *insp_template,
 				REAL4Vector *signalvec) {
 
-    REAL8 df, shft, phi, amp0, ampEff, psiEff, fMerg, fNorm;
+    REAL8 df, shft, phi, amp0, ampEff=0, psiEff, fMerg, fNorm;
     REAL8 f, fRing, sigma, totalMass, eta;
     INT4 i, j, n;
 
@@ -837,11 +837,11 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       waveform->psi = ppnParams->psi;
 
       /* assign names */
-      LALSnprintf( waveform->a->name,
+      snprintf( waveform->a->name,
 	  	LALNameLength, "Phenom inspiral amplitudes");
-      LALSnprintf( waveform->f->name,
+      snprintf( waveform->f->name,
 		  LALNameLength, "Phenom inspiral frequency");
-      LALSnprintf( waveform->phi->name,
+      snprintf( waveform->phi->name,
 	  	LALNameLength, "Phenom inspiral phase");
 
       /* fill some output */
@@ -865,7 +865,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
 	memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
 	waveform->h->deltaT = 1./params->tSampling;
 	waveform->h->sampleUnits = lalStrainUnit;
-	LALSnprintf( waveform->h->name,
+	snprintf( waveform->h->name,
 		     LALNameLength, "Phenom inspiral polarizations");
 	LALSDestroyVector(status->statusPtr, &h);
 	CHECKSTATUSPTR(status);

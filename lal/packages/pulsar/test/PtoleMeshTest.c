@@ -18,23 +18,23 @@
 */
 
 /************************************** <lalVerbatim file="PtoleMeshTestCV">
-Author: Owen, B. J.,   Jones, D. I.  
+Author: Owen, B. J.,   Jones, D. I.
 $Id$
 ********************************************************** </lalVerbatim> */
- 
+
 /**************************************************************** <lalLaTeX>
- 
+
 \subsection{Program \texttt{PtoleMeshTest}}
 \label{ss:PtoleMeshTest}
- 
+
 Tests and showcases the combination of \texttt{PtoleMetric} and
 \texttt{TwoDMesh} modules.
- 
+
 \subsubsection*{Usage}
 \begin{verbatim}
 PtoleMeshTest
 \end{verbatim}
- 
+
 \subsubsection*{Description}
 
 The \texttt{-b} option sets the beginning time of integration to the option
@@ -59,9 +59,9 @@ argument. (Default is 0.02.)
 The \texttt{-n} option sets the maximum number of nodes in the mesh to the
 option argument. (Default is $10^6$.)
 
-The texttt{-p} option causes the coordinates of the nodes to be written to 
-a file \texttt{mesh.dat}, for the benifit of users who don't have 
-\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
+The texttt{-p} option causes the coordinates of the nodes to be written to
+a file \texttt{mesh.dat}, for the benifit of users who don't have
+\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC),
 with the angles in degrees.
 
 The \texttt{-r} option sets the radius (in arcminutes) of the circular
@@ -90,9 +90,9 @@ system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
 #define PTOLEMESHTESTC_MSGEFIO "file I/O error"
 #define PTOLEMESHTESTC_MSGEOPT "unknown command-line option"
 /************************************************** </lalErrTable><lalLaTeX>
- 
+
 \subsubsection*{Algorithm}
- 
+
 \subsubsection*{Uses}
 
 \begin{verbatim}
@@ -102,11 +102,11 @@ LALProjectMetric()
 LALPtoleMetric()
 LALXMGRPlotMesh()
 \end{verbatim}
- 
+
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{PtoleMeshTestCV}}
- 
+
 ************************************************************* </lalLaTeX> */
 
 
@@ -164,7 +164,7 @@ int main( int argc, char **argv )
   REAL4                fMax;      /* maximum frequency of search */
   FILE                *fp;        /* where to write a plot */
 
-  
+
 
   /* Set default values. */
   errors = 0; /* BEN: this is unused right now */
@@ -246,13 +246,13 @@ int main( int argc, char **argv )
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
   mesh.metricParams = (void *) &search;
-  if( radius == 0 ) 
+  if( radius == 0 )
     {
       mesh.domain[0] = dec_min;
       mesh.domain[1] = dec_max;
       mesh.rangeParams = (void *) &search;
     }
-  else 
+  else
     {
       mesh.domain[0] = center.latitude - radius;
       mesh.domain[1] = center.latitude + radius;
@@ -315,14 +315,14 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
   /* Set up shop. */
   INITSTATUS( stat, "getRange", PTOLEMESHTESTC );
   ATTATCHSTATUSPTR( stat );
-  
+
   /* Search a circle. BEN: The 1.001 is a kludge. */
   y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
 				  - pow( x-center.latitude, 2 ) );
   y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
 				  - pow( x-center.latitude, 2 ) );
-    
-  if( unused ) 
+
+  if( unused )
     {
       y[0] = RA_min;
       y[1] = RA_max;
@@ -368,7 +368,7 @@ void getMetric( LALStatus *stat,
       g[1] = metric->data[2];
       g[0] = metric->data[5];
       g[2] = metric->data[4];
- 
+
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   DETATCHSTATUSPTR( stat );

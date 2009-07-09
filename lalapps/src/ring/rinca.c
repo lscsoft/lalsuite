@@ -1261,8 +1261,9 @@ if ( vrbflg)
 
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
     {
-      LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
-               &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+      if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+                                 &slideTimes[ifoNumber] ) < 0 )
+        exit(1);
     }
  
     /* don't analyze zero-lag if numSlides>0 */

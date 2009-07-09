@@ -27,7 +27,7 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralComputeMetric.c}}
 
-Module to compute the components of the metric which is used 
+Module to compute the components of the metric which is used
 to describe distances on the signal manifold.
 
 \subsubsection*{Prototypes}
@@ -42,8 +42,8 @@ to describe distances on the signal manifold.
 \end{itemize}
 
 \subsubsection*{Description}
-We calculate the components of the metric using the procedure outlined 
-in Owen \cite{Owen:96}. 
+We calculate the components of the metric using the procedure outlined
+in Owen \cite{Owen:96}.
 This uses the moments of the noise curve,
 \begin{equation}
 I(q) \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(x)}
@@ -53,7 +53,7 @@ and
 \begin{equation}
 J(q) \equiv \frac{I(q)}{I(7)} \,.
 \end{equation}
-(Please note that the function {\tt LALInspiralMoments} doesn't compute $I(q)$ defined 
+(Please note that the function {\tt LALInspiralMoments} doesn't compute $I(q)$ defined
 here; the index $q$ is definted differently there and the normalisation is supplied by the user.
 For ease of writing, here we shall follow the standard notation.)
 Then the moment functional $\mathcal{J}$ is defined such that, for a function $a$,
@@ -73,9 +73,9 @@ The above equation is used to calculate the components of the metric using the f
 where $\psi_\alpha$ is the derivative of the Fourier phase of the inspiral waveform
 with respect to the parameter $\lambda^\alpha,$ that is
 $\psi_\alpha \equiv \Psi_{,\alpha}.$  Writing the derivative index as
-$\alpha=0,j,$ with $j=1,\ldots,n$ we have 
+$\alpha=0,j,$ with $j=1,\ldots,n$ we have
 \begin{equation}
-\psi_{0} \equiv 2 \pi f, \ \ \ 
+\psi_{0} \equiv 2 \pi f, \ \ \
 \psi_{j} \equiv \frac{\partial \Delta \Psi}{\partial \Delta \lambda^{j}}.
 \end{equation}
 The phase $\Psi$ is that which appears in the usual stationary-phase formula for
@@ -93,20 +93,20 @@ where, defining $v_0 = (\pi m f_0)^{1/3}$ ($m$ being total mass and $f_0$ a
 fiducial starting frequency), the chirptimes $\tau_{k},$ up to 2nd PN order,
 are given by
 $$
-\tau_{0} = \frac{5}{256 \eta v_{0}^{5}},\ \ 
+\tau_{0} = \frac{5}{256 \eta v_{0}^{5}},\ \
 \tau_{2} = \frac{5}{192 \eta v_{0}^{3}} \left( \frac{743}{336} + \frac{11}{4} \eta \right),
 $$
 \begin{equation}
-\tau_{3} = \frac{\pi}{8 \eta v_{0}^{2}},\ \ 
+\tau_{3} = \frac{\pi}{8 \eta v_{0}^{2}},\ \
 \tau_{4} = \frac{5}{128 \eta v_{0}} \left( \frac{3\,058\,673}{1\,016\,064} + \frac{5429}{1008}
 \eta +
 \frac{617}{144} \eta^{2} \right).
 \end{equation}
 Up to second post-Newtonian approximation the $\Psi_{k}$ are given by
 \begin{equation}
-\Psi_{0} = \frac{6}{5 \nu^{5/3}},\ \ 
-\Psi_{2} = \frac{2}{\nu},\ \ 
-\Psi_{3} = - \frac{3}{\nu^{2/3}},\ \ 
+\Psi_{0} = \frac{6}{5 \nu^{5/3}},\ \
+\Psi_{2} = \frac{2}{\nu},\ \
+\Psi_{3} = - \frac{3}{\nu^{2/3}},\ \
 \Psi_{4} = \frac{6}{\nu^{1/3}}.
 \end{equation}
 where $\nu = f/f_{0}$.
@@ -118,16 +118,16 @@ expressed in a simpler form
 \end{equation}
 where the \emph{chirp parameters} $\theta_{k}$ are given by
 $$
-\theta_{0} = \frac{3}{128 \eta}, \ \ 
+\theta_{0} = \frac{3}{128 \eta}, \ \
 \theta_{2} = \frac{5}{96 \eta} \left( \frac{743}{336} + \frac{11}{4} \eta \right),
 $$
 \begin{equation}
-\theta_{3} = - \frac{3 \pi}{8 \eta},\ \ 
+\theta_{3} = - \frac{3 \pi}{8 \eta},\ \
 \theta_{4} = \frac{15}{64 \eta} \left( \frac{3\,058\,673}{1\,016\,064} + \frac{5429}{1008} \eta
 + \frac{617}{144}
 \eta^{2} \right).
 \end{equation}
- 
+
 If we want to express $\Psi$ in terms of $f$ rather than $v$ we simply substitute $v = (\pi m
 f)^{1/3}$
 to obtain
@@ -139,7 +139,7 @@ where
 \begin{equation}
 \theta^{\prime}_{k} = (\pi m)^{(k-5)/3} \theta_{k}.
 \end{equation}
- 
+
 We are now in a position to start calculating components of $\gamma_{\alpha \beta}$. We had
 \begin{equation}
 \psi_{j} \equiv \frac{\partial \Delta \Psi}{\partial \Delta \lambda^{j}}
@@ -158,7 +158,7 @@ components in
 the $(\tau_{0},\tau_{3})$ system.
 So, we first of all calculate the components of $\gamma_{\alpha \beta}$ in the $(m,\eta)$
 system.
- 
+
 This involves calculating the following:
 \begin{equation}
 \frac{\partial \Delta \Psi}{\partial \Delta m} = \frac{\Delta \theta^{\prime}_{0}}{\Delta m}
@@ -190,8 +190,8 @@ form of a power series in $f$ allows us to calculate $\gamma_{\alpha \beta}$ usi
 \end{equation}
 i.e.\ we can express all the $\mathcal{J}[]$ in terms of the integral $J(q)$ which we calculate
 numerically at the outset for the required values of $q$.
- 
- 
+
+
 Once we have obtained $\gamma_{\alpha \beta}$ in this way, we take the inverse of this matrix to
 give us $\gamma^{\alpha \beta}$ in the $(m,\eta)$ system. Then
 we perform the following coordinate transformation to give us the components of
@@ -250,19 +250,19 @@ The starting point of our derivation is Eq.~(3.7) of Owen and Sathyaprakash
 (Phys. Rev. D 60, 022002, 1999) for the Fourier domain phase which we shall
 write as:
 \begin{eqnarray}
-\Psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}  
+\Psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}
 + \left [a_{21} \frac {\theta_1}{\theta_2} + a_{22} \left ( \theta_1 \theta_2^2 \right )^{1/3} \right ] v^{-3}
 + a_{31} \theta_2 v^{-2} \nonumber \\
-& + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3} 
+& + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3}
 + a_{43} \left ( \frac{\theta_2^4}{\theta_1} \right )^{1/3} \right ] v^{-1},
 \end{eqnarray}
-to 2nd post-Newtonain order.  Here $v=(f/f_0)^{1/3},$ $\theta_1$ and $\theta_2$ are 
+to 2nd post-Newtonain order.  Here $v=(f/f_0)^{1/3},$ $\theta_1$ and $\theta_2$ are
 identical to the  $\theta^1$ and $\theta^2$ parameters
 of Owen and Sathyaprakash defined in Eq.~(3.3) there and the $a$ coefficients are given by:
 \begin{eqnarray}
-a_{01} = \frac{3}{5}, \ \ a_{21} = \frac{11\pi}{12}, \ \ 
+a_{01} = \frac{3}{5}, \ \ a_{21} = \frac{11\pi}{12}, \ \
 a_{22} = \frac{743}{2016} \left ( \frac {25}{2\pi^2} \right )^{1/3}, \ \ a_{31} = -\frac{3}{2}, \nonumber \\
-a_{41} = \frac {617}{384} \pi^2, \ \ a_{42} = \frac{5429}{5376} \left ( \frac{25 \pi}{2} \right )^{1/3},\ \ 
+a_{41} = \frac {617}{384} \pi^2, \ \ a_{42} = \frac{5429}{5376} \left ( \frac{25 \pi}{2} \right )^{1/3},\ \
 a_{43} = \frac {15293365}{10838016} \left ( \frac{5}{4\pi^4} \right )^{1/3}.
 \end{eqnarray}
 Differentials of the phase with respect to the coordinates $\theta_1$ and $\theta_2$ appear in the
@@ -273,21 +273,21 @@ metric which we write as:
 where $N$ is the post-Newtonian order up to which the phase is known, or the post-Newtonian
 order at which the metric is desired.
 Expansion coefficients $\Psi_{mn}$ can be considered be $(2\times N)$ matrix which to
-second post-Newtonian order is given by: 
+second post-Newtonian order is given by:
 \begin{equation}
-\Psi = 
-\left [ \matrix { 
-	  a_{01} 
-	& 0 
-	& {a_{21}}/{\theta_2} + ({a_{22}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{2/3} 
-	& 0 
-	& {a_{41}}/{\theta_2^2} + {a_{42}}/\left ({3 \left ( \theta_1^2\theta_2 \right )^{1/3} } \right ) 
-	- ({a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{4/3} \cr 
+\Psi =
+\left [ \matrix {
+	  a_{01}
+	& 0
+	& {a_{21}}/{\theta_2} + ({a_{22}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{2/3}
+	& 0
+	& {a_{41}}/{\theta_2^2} + {a_{42}}/\left ({3 \left ( \theta_1^2\theta_2 \right )^{1/3} } \right )
+	- ({a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{4/3} \cr
 	  0
-	& 0 
-	& - {a_{21}\theta_1}/{\theta_2^2} + (2 {a_{22}}/{3}) \left ( {\theta_1}/{\theta_2} \right )^{1/3} 
-	& a_{31} 
-	& - {2a_{41} \theta_1}/{\theta_2^3} - ({a_{42}}/{3}) \left ( {\theta_1}/{\theta_2^4} \right )^{1/3}  
+	& 0
+	& - {a_{21}\theta_1}/{\theta_2^2} + (2 {a_{22}}/{3}) \left ( {\theta_1}/{\theta_2} \right )^{1/3}
+	& a_{31}
+	& - {2a_{41} \theta_1}/{\theta_2^3} - ({a_{42}}/{3}) \left ( {\theta_1}/{\theta_2^4} \right )^{1/3}
 	+ ({4a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{1/3} }
 \right ].
 \end{equation}
@@ -295,18 +295,18 @@ second post-Newtonian order is given by:
 Using the definition of the
 metric introduced earlier and projecting out the $t_c$ coordinate, one finds that
 \begin{eqnarray}
-g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl} 
+g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl}
 \biggl  [ J(17-k-l) - J(12-k) J(12-l) \biggr . \nonumber \\
 	& - & 	\biggl . \frac { \left ( J(9-k) - J(4)J(12-k) \right )
 		\left ( J(9-l) - J(4)J(12-l) \right )} {\left (J(1) - J(4)^2 \right)}
 \biggr ]
 \end{eqnarray}
-where $J$'s are the moments introduced earlier. 
+where $J$'s are the moments introduced earlier.
 
 
 \subsubsection*{Algorithm}
- 
- 
+
+
 \subsubsection*{Uses}
 \begin{verbatim}
 LALMAlloc
@@ -315,11 +315,11 @@ LALInverse3
 LALMatrixTransform
 LALFree
 \end{verbatim}
- 
+
 \subsubsection*{Notes}
- 
+
 \vfill{\footnotesize\input{LALInspiralComputeMetricCV}}
- 
+
 </lalLaTeX>  */
 
 /*
@@ -337,8 +337,8 @@ LALFree
 	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
 	Outputs:
 	    det: Determinant of the metric. (not in versions after 02/05)
-	    g00: 
-	    g11: 
+	    g00:
+	    g11:
 	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
          srate: The minimal sampling rate required (computed but not outputted.
 	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
@@ -352,17 +352,17 @@ LALFree
 #define METRIC_DIMENSION 2
 #define METRIC_ORDER 5
 
-static void 
+static void
 InspiralComputeMetricGetPsiCoefficients (
-    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER], 
-    InspiralTemplate   *params, 
+    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
+    InspiralTemplate   *params,
     InspiralMomentsEtc *moments
     );
 
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
-void 
+void
 LALInspiralComputeMetric (
     LALStatus          *status,
     InspiralMetric     *metric,
@@ -379,33 +379,33 @@ LALInspiralComputeMetric (
 
   INITSTATUS(status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC );
 
-  ASSERT( metric, status, 
+  ASSERT( metric, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params, status, 
+  ASSERT( params, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( moments, status, 
+  ASSERT( moments, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params->t0 > 0.L, status, 
+  ASSERT( params->t0 > 0.L, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT( params->t3 > 0.L, status, 
+  ASSERT( params->t3 > 0.L, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
   /* use the order of the waveform to compute the metric */
   /* summation below will be carried out up to PNorder   */
-  if ( params->order != onePN && 
-      params->order != onePointFivePN &&
-      params->order != twoPN )
+  if ( params->order != LAL_PNORDER_ONE &&
+      params->order != LAL_PNORDER_ONE_POINT_FIVE &&
+      params->order != LAL_PNORDER_TWO )
   {
     /* Let us force the order to be twoPN because that is the only order
      * available for the template bank anyway. */
-    PNorder = twoPN;
+    PNorder = LAL_PNORDER_TWO;
   }
   else
   {
     PNorder = (UINT4) params->order;
   }
 
-  
+
   /* Setting up \Psi_{mn} coefficients  */
   InspiralComputeMetricGetPsiCoefficients( Psi, params, moments );
 
@@ -419,12 +419,12 @@ LALInspiralComputeMetric (
       for ( k = 0 ; k < PNorder; k++ )
       {
         for ( l = 0; l < PNorder; l++ )
-        { 
+        {
           g[m][n] += Psi[m][k] * Psi[n][l] * (
               moments->j[17-k-l] - moments->j[12-k] * moments->j[12-l]
               - ( moments->j[9-k] - moments->j[4] * moments->j[12-k] )
               * ( moments->j[9-l] - moments->j[4] * moments->j[12-l] )
-              / ( moments->j[1]   - moments->j[4] * moments->j[4]    )   
+              / ( moments->j[1]   - moments->j[4] * moments->j[4]    )
               );
         }
       }
@@ -433,19 +433,19 @@ LALInspiralComputeMetric (
     }
   }
 
-#if 0 
+#if 0
   The minimum sampling rate for given MM is
-    srate = 
-    2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / 
+    srate =
+    2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) /
         (2.0*(1.-MM)));
 #endif
 
   /* The calculation above gives the metric in coordinates   */
   /* (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3). Re-scale metric */
   /* coefficients to get metric in (tau0, tau3) coordinates  */
-  a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.); 
-  b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.); 
-  c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
+  a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.);
+  b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.);
+  c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.);
 
 
   /* The metric in tau0-tau2,3 space. */
@@ -481,15 +481,15 @@ LALInspiralComputeMetric (
   /* We only need metric->Gamma[0,...,5].                          */
   metric->Gamma[0] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
           ( moments->j[1] - (moments->j[4]*moments->j[4]) );
-  
+
   metric->Gamma[1] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
-          ( Psi[0][0]*(moments->j[9] - (moments->j[4]*moments->j[12]) ) 
-          + Psi[0][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) ) 
+          ( Psi[0][0]*(moments->j[9] - (moments->j[4]*moments->j[12]) )
+          + Psi[0][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) )
           + Psi[0][4]*(moments->j[5] - (moments->j[4]*moments->j[8]) ));
-  
+
   metric->Gamma[2] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
-          ( Psi[1][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) ) 
-          + Psi[1][3]*(moments->j[6] - (moments->j[4]*moments->j[9])  ) 
+          ( Psi[1][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) )
+          + Psi[1][3]*(moments->j[6] - (moments->j[4]*moments->j[9])  )
           + Psi[1][4]*(moments->j[5] - (moments->j[4]*moments->j[8])  ));
 
 
@@ -501,35 +501,35 @@ LALInspiralComputeMetric (
   RETURN( status );
 }
 
-static void 
+static void
 InspiralComputeMetricGetPsiCoefficients (
-    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER], 
-    InspiralTemplate   *params, 
+    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
+    InspiralTemplate   *params,
     InspiralMomentsEtc *moments
     )
 {
-  REAL8 t1 = 2.L * LAL_PI * params->fLower * params->t0; 
-  REAL8 t2 = 2.L * LAL_PI * params->fLower * params->t3; 
+  REAL8 t1 = 2.L * LAL_PI * params->fLower * params->t0;
+  REAL8 t2 = 2.L * LAL_PI * params->fLower * params->t3;
 
   Psi[0][0] = moments->a01;
   Psi[0][1] = 0.L;
   Psi[0][2] = moments->a21/t2 + moments->a22/3.L * pow(t2/t1,2.L/3.L);
   Psi[0][3] = 0.L;
-  Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L)) 
+  Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L))
     - moments->a43/3.L * pow(t2/t1,4.L/3.L);
 
   Psi[1][0] = 0.L;
   Psi[1][1] = 0.L;
-  Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L * 
+  Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L *
     moments->a22/3.L * pow(t1/t2,1.L/3.L);
   Psi[1][3] =  moments->a31;
-  Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) - 
-    moments->a42/3.L * pow(t1/pow(t2,4.L),1.L/3.L) + 
+  Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) -
+    moments->a42/3.L * pow(t1/pow(t2,4.L),1.L/3.L) +
     4.L * moments->a43/3.L * pow(t2/t1,1.L/3.L);
 }
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
-void 
+void
 LALInspiralComputeMetricBCV (
     LALStatus             *status,
     InspiralMetric        *metric,
@@ -542,7 +542,7 @@ LALInspiralComputeMetricBCV (
   REAL8 num;
   REAL8 a, b, c, q, det;
 
-  INITSTATUS( status, 
+  INITSTATUS( status,
       "LALInspiralComputeMetricBCV ", LALINSPIRALCOMPUTEMETRICC );
   ATTATCHSTATUSPTR( status );
 
@@ -553,7 +553,7 @@ LALInspiralComputeMetricBCV (
   LALGetInspiralMomentsBCV( status->statusPtr, &moments, psd, params );
   CHECKSTATUSPTR( status );
 
-  num =  moments.M3[0][0] *moments.M3[1][1] 
+  num =  moments.M3[0][0] *moments.M3[1][1]
     - moments.M3[0][1] * moments.M3[1][0];
 
   g[0][0] =moments.M2[0][0]*(moments.M3[1][1]*moments.M2[0][0]
@@ -588,7 +588,7 @@ LALInspiralComputeMetricBCV (
   metric->g00 = 0.5 * (a + c - q);
   metric->g11 = 0.5 * (a + c + q);
   if ( a == c )
-  { 
+  {
     metric->theta = LAL_PI/2.;
   }
   else

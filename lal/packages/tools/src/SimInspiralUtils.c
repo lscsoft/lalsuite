@@ -91,7 +91,7 @@ of the detectors, and setting the \texttt{detector} appropriately.
 \subsubsection*{Uses}
 
 \noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter,
-  LALAddFloatToGPS, LALComputeDetAMResponse.
+  LALComputeDetAMResponse.
 
   \subsubsection*{Notes}
   %% Any relevant notes.
@@ -104,7 +104,7 @@ of the detectors, and setting the \texttt{detector} appropriately.
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
 {
-  return(XLALGPStoINT8(&x->geocent_end_time));
+  return(XLALGPSToINT8NS(&x->geocent_end_time));
 }
 
 
@@ -136,7 +136,7 @@ XLALPlayTestSimInspiral(
       SimInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      triggerTime = XLALGPStoINT8( &(tmpEvent->geocent_end_time) );
+      triggerTime = XLALGPSToINT8NS( &(tmpEvent->geocent_end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
@@ -218,7 +218,7 @@ XLALSimInspiralInSearchedData(
     while ( thisSearchSumm )
     {
       if ( geocent_end_time(tmpEvent) <
-          XLALGPStoINT8( &(thisSearchSumm->out_start_time) ))
+          XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) ))
       {
         XLALPrintInfo(
             "XLALSimInspiralInSearchedData: Discarding injection\n" );
@@ -228,7 +228,7 @@ XLALSimInspiralInSearchedData(
       else
       {
         if ( geocent_end_time(tmpEvent) <
-            XLALGPStoINT8( &(thisSearchSumm->out_end_time) ))
+            XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) ))
         {
           XLALPrintInfo(
               "XLALSimInspiralInSearchedData: Keeping injection\n" );
@@ -554,18 +554,14 @@ LALGalacticInspiralParamsToSimInspiralTable(
   LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, &(output->h_end_time),
-      &(output->h_end_time), time_diff_ns );
-  CHECKSTATUSPTR( status );
+  XLALGPSAdd(&(output->h_end_time), time_diff_ns);
 
   /* ligo livingston observatory */
   placeAndGPS.p_detector = &llo;
   LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, &(output->l_end_time),
-      &(output->l_end_time), time_diff_ns );
-  CHECKSTATUSPTR( status );
+  XLALGPSAdd(&(output->l_end_time), time_diff_ns);
 
 
   /*
@@ -677,9 +673,7 @@ LALInspiralSiteTimeAndDist(
   LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, endTime,
-      endTime, time_diff_ns );
-  CHECKSTATUSPTR( status );
+  XLALGPSAdd(endTime, time_diff_ns);
 
   /* initialize distance with real distance and compute splus and scross */
   *effDist = 2.0 * output->distance;
@@ -871,24 +865,24 @@ XLALReturnSimInspiralEndTime (
   static const char *func = "ReturnSimInspiralEndTime";
   if ( ! strcmp( "L1", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->l_end_time) ) );
+    return( XLALGPSToINT8NS(&(event->l_end_time) ) );
   }
   else if ( ! strcmp( "H1", ifo ) ||
       ! strcmp( "H2", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->h_end_time) ) );
+    return( XLALGPSToINT8NS(&(event->h_end_time) ) );
   }
   else if ( ! strcmp( "G1", ifo ) )
   {
-    return(XLALGPStoINT8(&(event->g_end_time) ) );
+    return(XLALGPSToINT8NS(&(event->g_end_time) ) );
   }
   else if ( ! strcmp( "T1", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->t_end_time) ) );
+    return( XLALGPSToINT8NS(&(event->t_end_time) ) );
   }
   else if ( ! strcmp( "V1", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->v_end_time) ) );
+    return( XLALGPSToINT8NS(&(event->v_end_time) ) );
   }
   else
   {
@@ -950,7 +944,7 @@ XLALSnglSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
 
         if( inspiralTime < (simGeocentTime - earthRadiusNS - injectWindowNS ) )
         {
@@ -978,7 +972,7 @@ XLALSnglSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
 
         if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {

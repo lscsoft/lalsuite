@@ -368,7 +368,7 @@ the type of detector.  The fields are:
 
 ********************************** </lalLaTeX> */
 
-
+
 
 /** Enumeration of Detectors: follows order of DQ bit assignments */
 enum {
@@ -401,7 +401,7 @@ enum {
 	LAL_NIOBE_DETECTOR_BIT   	=	1 << 2 * LAL_NIOBE_DETECTOR,
 	LAL_NAUTILUS_DETECTOR_BIT	=	1 << 2 * LAL_NAUTILUS_DETECTOR
 };
-
+
 
 /** Detector type
  *
@@ -417,7 +417,7 @@ typedef enum {
 	LALDETECTORTYPE_CYLBAR	/**< Cylindrical bar */
 }
 LALDetectorType;
-
+
 
 /** Detector frame data structure
  *

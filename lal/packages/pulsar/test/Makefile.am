@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
-#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
+#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
   earth98.dat sun98.dat \
@@ -18,6 +18,8 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   earth00-04.dat sun00-04.dat \
   earth03-06.dat sun03-06.dat \
   earth05-09.dat sun05-09.dat \
+  earth09-11.dat sun09-11.dat \
+  earth09-11-DE405.dat sun09-11-DE405.dat \
   earth98.ilwd sun98.ilwd \
   earth99.ilwd sun99.ilwd \
   earth00.ilwd sun00.ilwd \
@@ -56,8 +58,6 @@ GeneralMetricTest_SOURCES = GeneralMetricTest.c
 GeneralMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 GeneralMeshTest_SOURCES = GeneralMeshTest.c
 GeneralMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-HeterodynePulsarTest_SOURCES = HeterodynePulsarTest.c
-HeterodynePulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FitToPulsarTest_SOURCES = FitToPulsarTest.c
 FitToPulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 PulsarCatTest_SOURCES = PulsarCatTest.c

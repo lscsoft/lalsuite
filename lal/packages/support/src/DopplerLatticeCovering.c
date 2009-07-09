@@ -518,7 +518,7 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
   return 0;
 } /* XLALgetCurrentDopplerPos() */
 
-
+
 
 /* ------------------------------------------------------------ */
 /* -------------------- INTERNAL functions -------------------- */
@@ -826,7 +826,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 
   /* ----- use the center of the searchRegion as origin of the lattice ----- */
   {
-    vect3D_t com;		/* center-of-mass of points3D */
+    vect3D_t com = {0,0,0};		/* center-of-mass of points3D */
     dopplerParams_t midPoint = empty_dopplerParams;
     UINT4 s;
     findCenterOfMass ( &com, points3D );

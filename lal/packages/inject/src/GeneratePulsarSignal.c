@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -27,7 +27,7 @@
 /**
  * \author Reinhard Prix, Greg Mendell
  * \date 2005
- * \file 
+ * \file
  * \ingroup moduleGeneratePulsarSignal
  *
  * \brief Module to generate simulated pulsar-signals.
@@ -64,7 +64,7 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
-static LALStatus emptyStatus;	
+static LALStatus emptyStatus;
 static SpinOrbitCWParamStruc emptyCWParams;
 static CoherentGW emptySignal;
 
@@ -76,11 +76,11 @@ const SFTandSignalParams empty_SFTandSignalParams;
 /** Generate a time-series at the detector for a given pulsar.
  */
 void
-LALGeneratePulsarSignal (LALStatus *status, 
-			 REAL4TimeSeries **signal, 	   /**< output time-series */
+LALGeneratePulsarSignal (LALStatus *status,
+			 REAL4TimeSeries **signalvec, 	   /**< output time-series */
 			 const PulsarSignalParams *params) /**< input params */
-{ 
-  SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
+{
+  SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   REAL8 SSBduration;
@@ -91,8 +91,8 @@ LALGeneratePulsarSignal (LALStatus *status,
   INITSTATUS( status, "LALGeneratePulsarSignal", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (signal != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*signal == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*signalvec == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
 
   /*----------------------------------------------------------------------
    *
@@ -136,7 +136,7 @@ LALGeneratePulsarSignal (LALStatus *status,
 
   /* sampling-timestep and length for source-parameters */
   /* in seconds; hardcoded; was 60s in makefakedata_v2,
-   * but for fast binaries (e.g. SCO-X1) we need faster sampling 
+   * but for fast binaries (e.g. SCO-X1) we need faster sampling
    * This does not seem to affect performance a lot (~4% in makefakedata),
    * but we'll nevertheless make this sampling faster for binaries and slower
    * for isolated pulsars */
@@ -151,14 +151,14 @@ LALGeneratePulsarSignal (LALStatus *status,
 
   /* end time in SSB */
   t1 = params->startTimeGPS;
-  TRY ( LALAddFloatToGPS(status->statusPtr, &t1, &t1, params->duration), status);
+  XLALGPSAdd(&t1, params->duration);
   TRY (LALConvertGPS2SSB(status->statusPtr, &t1, t1, params), status);	 /* convert time to SSB */
 
   /* get duration of source-signal */
-  TRY (LALDeltaFloatGPS(status->statusPtr, &SSBduration, &t1, &t0), status);
+  SSBduration = XLALGPSDiff(&t1, &t0);
   SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
 
-  sourceParams.epoch = t0; 
+  sourceParams.epoch = t0;
   sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants f_k = fkdot / (f0 * k!) */
@@ -192,7 +192,7 @@ LALGeneratePulsarSignal (LALStatus *status,
   /*----------------------------------------------------------------------
    *
    * Now call the function to translate the source-signal into a (heterodyned)
-   * signal at the detector 
+   * signal at the detector
    *
    *----------------------------------------------------------------------*/
   /* first set up the detector-response */
@@ -201,9 +201,9 @@ LALGeneratePulsarSignal (LALStatus *status,
   detector.ephemerides = params->ephemerides;
 
   /* *contrary* to makefakedata_v2, we use the GPS start-time of the timeseries as
-   * the heterodyning epoch, in order to make sure that the global phase of the 
-   * SFTs it correct: this is necessary to allow correct parameter-estimation on the 
-   * pulsar signal-phase in heterodyned SFTs 
+   * the heterodyning epoch, in order to make sure that the global phase of the
+   * SFTs it correct: this is necessary to allow correct parameter-estimation on the
+   * pulsar signal-phase in heterodyned SFTs
    */
   detector.heterodyneEpoch = params->startTimeGPS;
 
@@ -222,7 +222,7 @@ LALGeneratePulsarSignal (LALStatus *status,
   output->f0 = params->fHeterodyne;
   output->epoch = params->startTimeGPS;
 
-  
+
   TRY ( LALSimulateCoherentGW(status->statusPtr, output, &sourceSignal, &detector ), status );
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
@@ -234,7 +234,7 @@ LALGeneratePulsarSignal (LALStatus *status,
     strcpy ( output->name, name );
     LALFree ( name );
   }
-			       
+
   /*----------------------------------------------------------------------*/
   /* Free all allocated memory that is not returned */
   TRY (LALSDestroyVectorSequence( status->statusPtr, &(sourceSignal.a->data)), status);
@@ -244,7 +244,7 @@ LALGeneratePulsarSignal (LALStatus *status,
   TRY (LALDDestroyVector(status->statusPtr, &(sourceSignal.phi->data )), status);
   LALFree(sourceSignal.phi);
 
-  *signal = output;
+  *signalvec = output;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -256,9 +256,9 @@ LALGeneratePulsarSignal (LALStatus *status,
 /** Turn the given time-series into (v2-)SFTs and add noise if given.
  */
 void
-LALSignalToSFTs (LALStatus *status, 
+LALSignalToSFTs (LALStatus *status,
 		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
-		 const REAL4TimeSeries *signal, /**< input time-series */
+		 const REAL4TimeSeries *signalvec, /**< input time-series */
 		 const SFTParams *params)	/**< params for output-SFTs */
 {
   UINT4 numSFTs;			/* number of SFTs */
@@ -284,10 +284,10 @@ LALSignalToSFTs (LALStatus *status,
 
   INITSTATUS( status, "LALSignalToSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
-  
+
   ASSERT (outputSFTs != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (*outputSFTs == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-  ASSERT (signal != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
 
   /* UPGRADING switch: complain loudly if user didn't set 'make_v2SFTs' to encourage upgrading */
@@ -302,8 +302,8 @@ LALSignalToSFTs (LALStatus *status,
       fprintf (stderr, "********************************************************************************\n\n");
     }
 
-  f0 = signal->f0;				/* lowest frequency */
-  dt = signal->deltaT;		/* timeseries timestep */
+  f0 = signalvec->f0;				/* lowest frequency */
+  dt = signalvec->deltaT;		/* timeseries timestep */
   Band = 1.0 / (2.0 * dt);		/* NOTE: frequency-band is determined by sampling-rate! */
   deltaF = 1.0 / params->Tsft;			/* frequency-resolution */
 
@@ -311,27 +311,28 @@ LALSignalToSFTs (LALStatus *status,
   if (params->noiseSFTs) {
     TRY (checkNoiseSFTs(status->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), status);
   }
-    
+
   /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors) */
   {
     REAL8 timesteps = params->Tsft / dt;		/* this is a float!*/
     numTimesteps = (UINT4) (timesteps + 0.5);		/* round to closest int */
-    ASSERT ( fabs(timesteps - numTimesteps)/timesteps < eps, status, 
+    ASSERT ( fabs(timesteps - numTimesteps)/timesteps < eps, status,
 	     GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
   }
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numTimesteps, 0), status); 	
+  TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numTimesteps, 0), status);
 
   /* get some info about time-series */
-  tStart = signal->epoch;					/* start-time of time-series */
+  tStart = signalvec->epoch;					/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  duration =  (UINT4) (1.0* signal->data->length * dt + 0.5); /* total duration rounded to seconds */
-  TRY ( LALAddFloatToGPS(status->statusPtr, &tLast, &tStart, duration - params->Tsft), status);
+  duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
+  tLast = tStart;
+  XLALGPSAdd(&tLast, duration - params->Tsft);
 
-  /* for simplicity we _always_ work with timestamps. 
+  /* for simplicity we _always_ work with timestamps.
    * Therefore, we have to generate them now if none have been provided by the user. */
-  if (params->timestamps == NULL) 
+  if (params->timestamps == NULL)
     {
       LIGOTimeGPS lastTs;
       TRY(LALMakeTimestamps(status->statusPtr, &timestamps, tStart, duration, params->Tsft ), status);
@@ -344,7 +345,7 @@ LALSignalToSFTs (LALStatus *status,
     {
       timestamps = params->timestamps;
     }
-  
+
   /* check that all timestamps lie within [tStart, tLast] */
   if ( check_timestamp_bounds(timestamps, tStart, tLast) != 0) {
     ABORT (status, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
@@ -376,22 +377,23 @@ LALSignalToSFTs (LALStatus *status,
       thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
-      TRY ( LALDeltaFloatGPS(status->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), status);
+      delay = XLALGPSDiff(&(timestamps->data[iSFT]), &tPrev);
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
-      relIndexShift = (INT4) (delay / signal->deltaT + 0.5);	
+      relIndexShift = (INT4) (delay / signalvec->deltaT + 0.5);
       totalIndex += relIndexShift;
 
       timeStretch.length = numTimesteps;
-      timeStretch.data = signal->data->data + totalIndex; /* point to the right sample-bin */
+      timeStretch.data = signalvec->data->data + totalIndex; /* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
-      realDelay = (REAL4)(relIndexShift * signal->deltaT);  /* avoid rounding-errors*/
-      TRY (LALAddFloatToGPS(status->statusPtr, &tmpTime,&tPrev, realDelay),status);
+      realDelay = (REAL4)(relIndexShift * signalvec->deltaT);  /* avoid rounding-errors*/
+      tmpTime = tPrev;
+      XLALGPSAdd(&tmpTime, realDelay);
 
-      strcpy ( thisSFT->name, signal->name );
+      strcpy ( thisSFT->name, signalvec->name );
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
-      thisSFT->epoch = tmpTime;			
-      thisSFT->f0 = signal->f0;			/* minimum frequency */
+      thisSFT->epoch = tmpTime;
+      thisSFT->f0 = signalvec->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       tPrev = tmpTime;				/* prepare next loop */
@@ -400,13 +402,13 @@ LALSignalToSFTs (LALStatus *status,
       if (lalDebugLevel > 0)
 	{
 	  REAL8 diff;
-	  TRY (LALDeltaFloatGPS(status->statusPtr, &diff, &(timestamps->data[iSFT]),&tmpTime),status);
-	  if (diff != 0) 
+	  diff = XLALGPSDiff(&(timestamps->data[iSFT]),&tmpTime);
+	  if (diff != 0)
 	    {
 	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
 			     "with time-series\n", iSFT, diff);
 	      /* double check if magnitude of nudging seems reasonable .. */
-	      if ( fabs(diff) >= signal->deltaT ) 
+	      if ( fabs(diff) >= signalvec->deltaT )
 		{
 		  LALPrintError ("WARNING: nudged by more than deltaT=%e... "
 				 "this sounds wrong! (We better stop)\n");
@@ -441,14 +443,14 @@ LALSignalToSFTs (LALStatus *status,
 	  data ++;
 	} /* for i < numBins */
       } /* normalize data */
-      
+
       /* correct heterodyning-phase, IF NECESSARY */
-      if ( ( (INT4)signal->f0 != signal->f0  )
-	   || (signal->epoch.gpsNanoSeconds != 0)
+      if ( ( (INT4)signalvec->f0 != signalvec->f0  )
+	   || (signalvec->epoch.gpsNanoSeconds != 0)
 	   || (thisSFT->epoch.gpsNanoSeconds != 0) )
 	{
-	  /* theterodyne = signal->epoch!*/
-	  correct_phase(status->statusPtr, thisSFT, signal->epoch);
+	  /* theterodyne = signalvec->epoch!*/
+	  correct_phase(status->statusPtr, thisSFT, signalvec->epoch);
 	  BEGINFAIL (status) {
 	    LALDestroySFTVector(status->statusPtr, &sftvect);
 	  } ENDFAIL (status);
@@ -470,10 +472,10 @@ LALSignalToSFTs (LALStatus *status,
 	      data++;
 	      noise++;
 	    } /* for j < numBins */
-	
+
 	} /* if noiseSFTs */
 
-    } /* for iSFT < numSFTs */ 
+    } /* for iSFT < numSFTs */
 
   /* free stuff */
   LALDestroyRealFFTPlan(status->statusPtr, &pfwd);
@@ -493,7 +495,7 @@ LALSignalToSFTs (LALStatus *status,
 
 } /* LALSignalToSFTs() */
 
-
+
 
 /* 07/14/04 gam */
 /**
@@ -513,10 +515,10 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
 {
   INT4 i;
   INT4 numSFTs;                      /* number of SFTs */
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */  
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   CSParams *csParams   = NULL;       /* ComputeSky parameters */
   CSBParams *csbParams = NULL;       /* ComputeSkyBinary parameters */
-  SkyPosition tmp;    
+  SkyPosition tmp;
   EarthState earth;
   EmissionTime emit;
   LALDetAMResponse response;  /* output of LALComputeDetAMResponse */
@@ -527,7 +529,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
 
   INITSTATUS( status, "LALComputeSkyAndZeroPsiAMResponse", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
-  
+
   numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */
   halfTsft = 0.5*params->pSFTParams->Tsft;          /* half the time of one SFT */
 
@@ -544,7 +546,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
   baryinput.alpha = tmp.longitude;
   baryinput.delta = tmp.latitude;
   baryinput.dInv = 0.e0;      /* following makefakedata_v2 */
-  
+
   if (params->pSigParams->orbit) {
     /* LALComputeSkyBinary parameters */
     csbParams=(CSBParams *)LALMalloc(sizeof(CSBParams));
@@ -598,7 +600,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
     LALFree(csParams->skyPos);
     LALFree(csParams);
   }
-  
+
   /* Set up das, the Detector and Source info */
   das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
   das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
@@ -608,11 +610,12 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
   das->pSource->orientation = 0.0;  /* NOTE THIS FUNCTION COMPUTE F_+ and F_x for ZERO Psi!!! */
   das->pSource->equatorialCoords.system = params->pSigParams->pulsar.position.system;
   timeAndAcc.accuracy=LALLEAPSEC_STRICT;
- 
+
   /* loop that calls LALComputeDetAMResponse to find F_+ and F_x at the midpoint of each SFT for ZERO Psi */
   for(i=0; i<numSFTs; i++) {
       /* Find mid point from timestamp, half way through SFT. */
-      TRY ( LALAddFloatToGPS (status->statusPtr, &midTS, &(params->pSFTParams->timestamps->data[i]), halfTsft), status);
+      midTS = params->pSFTParams->timestamps->data[i];
+      XLALGPSAdd(&midTS, halfTsft);
       timeAndAcc.gps=midTS;
       TRY ( LALComputeDetAMResponse(status->statusPtr, &response, das, &timeAndAcc), status);
       output->fPlusZeroPsi[i] = response.plus;
@@ -626,14 +629,14 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
 } /* LALComputeSkyAndZeroPsiAMResponse */
 
 /* 07/14/04 gam */
-/** 
+/**
  * Fast generation of Fake SFTs for a pure pulsar signal.
  * Uses the output of LALComputeSkyAndZeroPsiAMResponse and the same inputs
  * as LALGeneratePulsarSignal and LALSignalToSFTs.  The fake signal is
  * Taylor expanded to first order about the midpoint time of each SFT.
  * Analytic expressions are used to find each SFT
  */
-void 
+void
 LALFastGeneratePulsarSFTs (LALStatus *status,
                            SFTVector **outputSFTs,
                            const SkyConstAndZeroPsiAMResponse *input,
@@ -665,20 +668,20 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
   INITSTATUS( status, "LALFastGeneratePulsarSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
- 
+
   /* fprintf(stdout,"\n Hello from LALFastGeneratePulsarSFTs \n");
   fflush(stdout); */
-       
+
   ASSERT (outputSFTs != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   /* ASSERT (*outputSFTs == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL); */
-  ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);  
+  ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (input != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
 
   if ( params->pSFTParams->timestamps && params->pSFTParams->noiseSFTs) {
-    ASSERT ( params->pSFTParams->timestamps->length == params->pSFTParams->noiseSFTs->length, status,  
+    ASSERT ( params->pSFTParams->timestamps->length == params->pSFTParams->noiseSFTs->length, status,
       GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS);
   }
-  
+
   /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
   if (params->resTrig > 0) {
      ASSERT ( fabs( ( params->trigArg[0] + ((REAL8)LAL_TWOPI) )/ ((REAL8)LAL_TWOPI) ) < ( 2.0e-6*((REAL8)LAL_TWOPI) / params->resTrig ), status,
@@ -686,15 +689,15 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
      ASSERT ( fabs( ( params->trigArg[params->resTrig] - ((REAL8)LAL_TWOPI) ) / ((REAL8)LAL_TWOPI)  ) < ( 2.0e-6*((REAL8)LAL_TWOPI) / params->resTrig ), status,
            GENERATEPULSARSIGNALH_ELUTS,  GENERATEPULSARSIGNALH_MSGELUTS);
   }
-          
-  /* SFT parameters */  
+
+  /* SFT parameters */
   tSFT = params->pSFTParams->Tsft;                  /* SFT duration */
-  deltaF = 1.0/tSFT;                                /* frequency resolution */  
+  deltaF = 1.0/tSFT;                                /* frequency resolution */
   f0 = params->pSigParams->fHeterodyne;             /* start frequency */
   k0 = (INT4)(f0*tSFT + 0.5);                       /* index of start frequency */
   band = 0.5*params->pSigParams->samplingRate;      /* frequency band */
   SFTlen = (INT4)(band*tSFT + 0.5);                 /* number of frequency-bins */
-  numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */  
+  numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */
 
   if ( (params->Dterms < 1) || (params->Dterms > SFTlen) ) {
      ABORT (status, GENERATEPULSARSIGNALH_EDTERMS, GENERATEPULSARSIGNALH_MSGEDTERMS);
@@ -730,10 +733,10 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   } else {
     spOrder = 0;
   }
-  
-  /* loop that generates each SFT */  
+
+  /* loop that generates each SFT */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)  {
-      
+
       thisSFT = &(sftvect->data[iSFT]); /* select the SFT to work on */
 
       /* find fPlus, fCross, and the real and imaginary parts of the modulated amplitude, realA and imagA */
@@ -755,17 +758,17 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       }
 
       /* find kappa associated with fOneHalf */
-      /* fOneHalf = (f0Signal*input->skyConst[tmpInt] + xSum)/tSFT; */ 
+      /* fOneHalf = (f0Signal*input->skyConst[tmpInt] + xSum)/tSFT; */
       /* Do not need to actually compute this, just kappa */
       /* kappa = REAL8 index associated with fOneHalf; usually not an integer  */
       kappa = f0Signal*input->skyConst[tmpInt] + xSum;
-      
+
       if (params->resTrig > 0) {
         /* if (params->resTrig > 0) use LUT for trig calls to find sin and cos, else will use standard sin and cos */
-        
+
         /* Compute phase at the beginning of each SFT, called yTmp */
-        /* yTmp is -y from LALDemod plus phi0Signal */      
-        /* Qcc is the complex conjugate of Q in LALDemod times exp(i*phi0Signal) */      
+        /* yTmp is -y from LALDemod plus phi0Signal */
+        /* Qcc is the complex conjugate of Q in LALDemod times exp(i*phi0Signal) */
         /* Using LUT to find cos(yTmp) and sin(yTmp) */
         yTmp = phi0Signal/real8TwoPi + f0Signal*input->skyConst[tmpInt-1] + ySum;
         varTmp = yTmp-(INT4)yTmp;
@@ -774,7 +777,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
-        cosTmp = params->cosVal[indexTrig];      
+        cosTmp = params->cosVal[indexTrig];
         imagQcc = sinTmp + dTmp*cosTmp - dTmp2*sinTmp;
         realQcc = cosTmp - dTmp*sinTmp - dTmp2*cosTmp;
 
@@ -786,7 +789,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
-        cosTmp = params->cosVal[indexTrig];      
+        cosTmp = params->cosVal[indexTrig];
         sin2PiKappa = sinTmp + dTmp*cosTmp - dTmp2*sinTmp;
         oneMinusCos2PiKappa = 1.0 - cosTmp + dTmp*sinTmp + dTmp2*cosTmp;
 
@@ -794,20 +797,20 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         /* if (params->resTrig > 0) use LUT for trig calls to find sin and cos, else will use standard sin and cos */
 
         /* Compute phase at the beginning of each SFT, called yTmp */
-        /* yTmp is -y from LALDemod plus phi0Signal */      
-        /* Qcc is the complex conjugate of Q in LALDemod times exp(i*phi0Signal) */      
+        /* yTmp is -y from LALDemod plus phi0Signal */
+        /* Qcc is the complex conjugate of Q in LALDemod times exp(i*phi0Signal) */
         yTmp = phi0Signal + real8TwoPi*(f0Signal*input->skyConst[tmpInt-1] + ySum);
         realQcc = cos(yTmp);
         imagQcc = sin(yTmp);
-                        
+
         /* Find sin(2*pi*kappa) and 1 - cos(2*pi*kappa) */
         /* use xTmp as temp storage for 2\pi\kappa; note xTmp = 2\pi(\kappa -k) is used in loop below */
-        xTmp = real8TwoPi*kappa; 
+        xTmp = real8TwoPi*kappa;
         sin2PiKappa = sin(xTmp);
         oneMinusCos2PiKappa = 1.0 - cos(xTmp);
 
       } /* END if (params->resTrig > 0) else ... */
-      
+
       /* 09/07/05 gam; use Dterms to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
       k1=(INT4)kappa-params->Dterms+1; /* This is the same as k1 in LALDemod */
       jStart = k1 - k0;
@@ -841,7 +844,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
           thisSFT->data->data[j].re = (REAL4)(realTmp*realA - imagTmp*imagA);
           thisSFT->data->data[j].im = (REAL4)(realTmp*imagA + imagTmp*realA);
       } /* END for (j=jStart; j<jEnd; j++) */
-      if (setToZero) {      
+      if (setToZero) {
         for (j=jEnd; j<SFTlen; j++) {
           thisSFT->data->data[j].re = 0.0;
           thisSFT->data->data[j].im = 0.0;
@@ -862,28 +865,28 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
            thisSFT->data->data[j].im += thisNoiseSFT->data->data[index0n + j].im;
         } /* for j < SFTlen */
       }
-  } /* for iSFT < numSFTs */ 
+  } /* for iSFT < numSFTs */
 
   /* prepare SFT-vector for return */
   if (*outputSFTs == NULL) {
     *outputSFTs = sftvect;
   } /* else sftvect already points to same memory as *outputSFTs */
-          
+
   DETATCHSTATUSPTR( status );
   RETURN (status);
 } /* LALFastGeneratePulsarSFTs () */
 
-
+
 
 /*--------------- some useful helper-functions ---------------*/
 
 /** Convert earth-frame GPS time into barycentric-frame SSB time for given source.
- * \note The only fields used in params are: \a site, \a pulsar.position 
+ * \note The only fields used in params are: \a site, \a pulsar.position
  * and \a ephemerides.
  */
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-LALConvertGPS2SSB (LALStatus* status, 
+LALConvertGPS2SSB (LALStatus* status,
 		   LIGOTimeGPS *SSBout, 	/**< [out] arrival-time in SSB */
 		   LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
 		   const PulsarSignalParams *params) /**< define source-location and detector */
@@ -929,36 +932,36 @@ LALConvertGPS2SSB (LALStatus* status,
 } /* LALConvertGPS2SSB() */
 
 
-/** 
+/**
  * Convert  barycentric frame SSB time into earth-frame GPS time
  *
  * NOTE: this uses simply the inversion-routine used in the original
  *       makefakedata_v2
  */
 void
-LALConvertSSB2GPS (LALStatus *status, 
+LALConvertSSB2GPS (LALStatus *status,
 		   LIGOTimeGPS *GPSout,		 /**< [out] GPS-arrival-time at detector */
 		   LIGOTimeGPS SSBin, 		 /**< [in] input: signal arrival time at SSB */
 		   const PulsarSignalParams *params) /**< params defining source-location and detector */
-{ 
+{
 
   LIGOTimeGPS SSBofguess;
   LIGOTimeGPS GPSguess;
   INT4 iterations, E9=1000000000;
   INT8 delta, guess;
   INT4 j = 0;
-  
+
   INITSTATUS( status, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (status);
 
-  /* 
-   * To start root finding, use SSBpulsarparams as guess 
-   * (not off by more than 400 secs! 
+  /*
+   * To start root finding, use SSBpulsarparams as guess
+   * (not off by more than 400 secs!
    */
   GPSguess = SSBin;
 
   /* now find GPS time corresponding to SSBin by iterations */
-  for (iterations = 0; iterations < 100; iterations++) 
+  for (iterations = 0; iterations < 100; iterations++)
     {
       /* find SSB time of guess */
       TRY ( LALConvertGPS2SSB (status->statusPtr, &SSBofguess, GPSguess, params), status);
@@ -969,7 +972,7 @@ LALConvertSSB2GPS (LALStatus *status,
       delta *= E9;
       delta += SSBin.gpsNanoSeconds;
       delta -= SSBofguess.gpsNanoSeconds;
-      
+
       /* if we are within 1ns of the result increment the flip-flop counter */
       if (abs(delta) == 1) j++;
 
@@ -977,7 +980,7 @@ LALConvertSSB2GPS (LALStatus *status,
       /* also break if the flip-flop counter has reached 3 */
       if ((delta == 0)||(j == 3))
 	break;
-      
+
       /* use delta to make next guess */
       guess  = GPSguess.gpsSeconds;
       guess *= E9;
@@ -987,7 +990,7 @@ LALConvertSSB2GPS (LALStatus *status,
       GPSguess.gpsSeconds = guess / E9;
       guess -= GPSguess.gpsSeconds * E9;	/* get ns remainder */
       GPSguess.gpsNanoSeconds = guess;
-      
+
     } /* for iterations < 100 */
 
   /* check for convergence of root finder */
@@ -1007,8 +1010,8 @@ LALConvertSSB2GPS (LALStatus *status,
 
   /* Now that we've found the GPS time that corresponds to the given SSB time */
   *GPSout = GPSguess;
-  
-  
+
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1016,13 +1019,13 @@ LALConvertSSB2GPS (LALStatus *status,
 
 
 /************************************************************************
- * the following are INTERNAL FUNCTIONS not to be called outside of this 
- * module 
+ * the following are INTERNAL FUNCTIONS not to be called outside of this
+ * module
  ************************************************************************/
 
 #define oneBillion 1000000000;
 /*----------------------------------------------------------------------
- *   check that all timestamps given lie within the range [t0, t1] 
+ *   check that all timestamps given lie within the range [t0, t1]
  *    return: 0 if ok, -1 if not
  *----------------------------------------------------------------------*/
 int
@@ -1056,7 +1059,7 @@ check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIG
 	}
 
       /* check timestamps-bounds */
-      if ( (diff0_s < 0) || (diff1_s < 0) ) 
+      if ( (diff0_s < 0) || (diff1_s < 0) )
 	return (-1);
 
     } /* for i < numSFTs */
@@ -1087,19 +1090,19 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
       deltaFn = thisSFT->deltaF;
       fn0 = thisSFT->f0;
       fn1 = f0 + thisSFT->data->length * deltaFn;
-      
+
       if (deltaFn != deltaF) {
-	if (lalDebugLevel) 
+	if (lalDebugLevel)
 	  LALPrintError ("\n\nTime-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
 	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
       if ( (f0 < fn0) || (f1 > fn1) ) {
-	if (lalDebugLevel) 
+	if (lalDebugLevel)
 	  LALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
 	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
-      
+
       bin1 = f0 / deltaF;	/* exact division if f is an integer frequency-bin! */
       bin2 = fn0 / deltaF;
       shift = bin1 - bin2;
@@ -1107,7 +1110,7 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
       nshift = (UINT4)(shift+0.5);
       relError = fabs( nshift - shift);
       if ( relError > eps ) {
-	if (lalDebugLevel) 
+	if (lalDebugLevel)
 	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
 	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
@@ -1118,13 +1121,13 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
 
 } /* checkNoiseSFTs() */
 
-
+
 
 /*----------------------------------------------------------------------
  * Yousuke's phase-correction function, taken from makefakedata_v2
  *----------------------------------------------------------------------*/
 void
-correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne) 
+correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
 {
   UINT4 i;
   REAL8 cosx,sinx;
@@ -1134,8 +1137,8 @@ correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   INITSTATUS( status, "correct_phase", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
 
-  TRY (LALDeltaFloatGPS(status->statusPtr, &deltaT, &(sft->epoch), &tHeterodyne), status);
-  deltaT *= sft->f0; 
+  deltaT = XLALGPSDiff(&(sft->epoch), &tHeterodyne);
+  deltaT *= sft->f0;
 
   /* check if we really need to do anything here? (i.e. is deltaT an integer?) */
   if ( fabs (deltaT - (INT4) deltaT ) > eps )
@@ -1159,5 +1162,5 @@ correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
 
   DETATCHSTATUSPTR( status );
   RETURN (status);
-  
+
 } /* correct_phase() */

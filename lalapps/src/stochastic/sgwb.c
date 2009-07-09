@@ -650,8 +650,8 @@ StochasticTable *stochastic_search(LALStatus *status,
     for (k = 0; k < segs_in_interval; k++)
     {
       /* set segment start time */
-      LAL_CALL(LALAddFloatToGPS(status, &seg_epoch, &series_one->epoch, \
-            (REAL8)((j * segment_shift) + (k * segment_duration))), status);
+      seg_epoch = series_one->epoch;
+      XLALGPSAdd(&seg_epoch, j * segment_shift + k * segment_duration);
 
       /* is this the analysis segment? */
       if (k == middle_segment)

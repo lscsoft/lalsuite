@@ -9,8 +9,6 @@ BUILT_SOURCES = LALVCSInfo.h
 liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/std/src/libstd.la \
 	$(top_builddir)/packages/tools/src/libtools.la \
-	$(top_builddir)/packages/sample/src/libsample.la \
-	$(top_builddir)/packages/hello/src/libhello.la \
 	$(top_builddir)/packages/factories/src/libfactories.la \
 	$(top_builddir)/packages/vectorops/src/libvectorops.la \
 	$(top_builddir)/packages/utilities/src/libutilities.la \
@@ -21,7 +19,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/window/src/libwindow.la \
 	$(top_builddir)/packages/fft/src/libfft.la \
 	$(top_builddir)/packages/clremoval/src/libclremoval.la \
-	$(top_builddir)/packages/stochastic/src/libstochastic.la \
 	$(top_builddir)/packages/inspiral/src/libinspiral.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
 	$(top_builddir)/packages/bank/src/libbank.la \
@@ -31,9 +28,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la \
 	$(top_builddir)/packages/burstsearch/src/libburstsearch.la \
 	$(top_builddir)/packages/tracksearch/src/libtracksearch.la \
-	$(top_builddir)/packages/tfclusters/src/libtfclusters.la \
-	$(top_builddir)/packages/slopefilters/src/libslopefilters.la \
-	$(top_builddir)/packages/block/src/libblock.la \
 	$(top_builddir)/packages/timefreq/src/libtimefreq.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version
@@ -42,13 +36,14 @@ lal_version_LDADD = liblal.la
 MOSTLYCLEANFILES = LALBuildDate.c git_info.sed .vcsinfo
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
-	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 .vcsinfo:
-	touch .vcsinfo
+	@touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
-	d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
-	test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
-	-rm -f .vcsinfo
+	@echo "creating LALVCSInfo.h"
+	@d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
+	@test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
+	@-rm -f .vcsinfo
 
 all-local: include-link
 include-link: LALVCSInfo.h
@@ -57,5 +52,4 @@ include-link: LALVCSInfo.h
 		if test ! -r $$targetdir/LALVCSInfo.h ; then \
 			rm -f $$targetdir/LALVCSInfo.h; \
 			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
-			echo "$(LN_S) $$d/LALVCSInfo.h $$targetdir"; \
 		fi

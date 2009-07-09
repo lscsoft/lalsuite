@@ -78,6 +78,7 @@ int show=0;
 int do_axis=0;
 int do_text=0;
 int write_frames=0;
+int secs_per_framefile=60;
 long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
@@ -168,9 +169,9 @@ void sighandler(int sig){
 
 /* Like perror() but takes variable numbers of arguments and includes program name */
 void syserror(int showerrno, const char *fmt, ...){
-  char *thiserror=NULL;
-  pid_t pid=getpid();
-  time_t t=time(NULL);
+  char *thiserror = NULL;
+  pid_t pid = getpid();
+  time_t t = time(NULL);
   va_list ap;
   /* initialize variable argument list  */
   va_start(ap,fmt);
@@ -187,7 +188,10 @@ void syserror(int showerrno, const char *fmt, ...){
 
 /* usage message */
 void usage(FILE *filep){    
-  fprintf(filep, 
+  fprintf(filep,
+          "--------------------------------------------------------------------------------\n"
+          "%s: %s\n" 
+          "--------------------------------------------------------------------------------\n"
 	  "Options are:\n"
 	  "-h            THIS help message\n"
           "-v            VCS ID information\n"
@@ -200,16 +204,18 @@ void usage(FILE *filep){
 	  "-T            Print human readable text rather than binary to stdout\n"
 	  "-X            Include X-axis in human-readable text output\n"
 	  "-s            Print commands that would be fork(2)ed, then exit(0)\n"
-	  "              ------------------------------------------------------------\n"
+	  "              ---------- --------------------------------------------------\n"
           "-L DOUBLE     | Inject  calibration lines. Here L,M,H denote Low/Mid/High |\n"
           "-M DOUBLE     | frequency.  The DOUBLE values specifies the corresponding |\n"
 	  "-H DOUBLE     | amplitude. If NOT given, the amplitude defaults to 0.0    |\n"
-	  "              ------------------------------------------------------------\n"
+	  "              ------------- -----------------------------------------------\n"
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
-	  , MAXPULSARS
+	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
+          "--------------------------------------------------------------------------------\n"
+	  , programname, lalappsGitCommitID, MAXPULSARS
 	  );
   return;
 }
@@ -218,7 +224,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:v";
+  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:";
   opterr=0;
   
   /* set some defaults */
@@ -325,12 +331,22 @@ int parseinput(int argc, char **argv){
 	{
 	    int how_many = atoi(optarg);
 	    if (how_many < 0) {
-		syserror(0,"%s: argument -F %d must be non-negative.\n", argv[0], how_many);
+		syserror(0,"%s: fatal error, argument -F %d must be non-negative.\n", argv[0], how_many);
 		exit(1);
 	    }
 	    write_frames = 1 + how_many;
 	    break;
 	}
+    case 'S':
+	secs_per_framefile = atoi(optarg);
+        if (secs_per_framefile < 1) {
+	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
+	    exit(1);
+	}
+        if (secs_per_framefile > 3600) {
+	    syserror(0,"%s: caution, argument -S %d seconds is more than one hour!\n", argv[0], secs_per_framefile);
+	}
+	break;
     default:
       /* error case -- option not recognized */
       syserror(0,"%s: Option argument: -%c unrecognized or missing argument.\n"
@@ -663,7 +679,8 @@ int main(int argc, char *argv[]){
     
     /* now output the total signal to frames */
     if (write_frames) {
-	FrFile *oFile;
+
+	static FrFile *oFile = NULL;
 	FrameH *frame;
 	FrSimData *sim;
 
@@ -671,12 +688,16 @@ int main(int argc, char *argv[]){
 	double sampleRate = SRATE;
 	long ndata = BLOCKSIZE;
 
-	const char *framename[256];
+	char framename[256];
 	static int counter=0;
 	struct stat statbuf;
 	
-	/* create next frame file*/
-	sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime);
+	/* Create next frame file. This leads to a names like:
+	   CW_Injection-921517800-60.gwf
+	*/
+	sprintf(framename, "CW_Injection");
+
+	/* sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime); */
 	frame = FrameHNew(framename);
 	if (!frame) {
 	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
@@ -692,8 +713,30 @@ int main(int argc, char *argv[]){
 	    sim->data->dataF[m] = total[m];
 	}
     
+	
 	/* open file, write file, close file */
-	oFile = FrFileONew(framename, level); 
+	if  (!(counter % secs_per_framefile)) {
+	    if (oFile) {
+		FrFileOEnd(oFile);
+		oFile = NULL;
+	    }
+
+	    /* Does the user want us to keep a limited set of frames on disk? */
+	    if (write_frames>1) {
+		char listname[256];
+		int watchtime = gpstime + secs_per_framefile*(counter/secs_per_framefile - write_frames + 1);
+		sprintf(listname, "CW_Injection-%d-%d.gwf",  watchtime, secs_per_framefile);
+		while (!stat(listname, &statbuf)) {
+		    /* if enough files in place, sleep 0.1 seconds */
+		    struct timespec rqtp;
+		    rqtp.tv_sec = 0;
+		    rqtp.tv_nsec = 100000000; 
+		    nanosleep(&rqtp, NULL);
+		}
+	    }
+	    oFile = FrFileONewM(framename, level, argv[0], secs_per_framefile);
+	}
+
 	if (!oFile) {
 	    syserror(1, "Cannot open output file %s\n", framename);
 	    exit(1);
@@ -703,20 +746,8 @@ int main(int argc, char *argv[]){
 		   "  Last errors are:\n%s", FrErrorGetHistory());
 	    exit(1);
 	}  
-	FrFileOEnd(oFile);
+	/* FrFileOEnd(oFile); */
 	FrameFree(frame);
-
-	/* Does the user want us to keep a limited set of frames on disk? */
-	if (write_frames>1) {
-	    sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime - write_frames + 2);
-		    while (!stat(framename, &statbuf)) {
-			/* if enough files in place, sleep 0.1 seconds */
-			struct timespec rqtp;
-			rqtp.tv_sec = 0;
-			rqtp.tv_nsec = 100000000; 
-			nanosleep(&rqtp, NULL);
-		    }
-	}
 
 	counter++;
     }

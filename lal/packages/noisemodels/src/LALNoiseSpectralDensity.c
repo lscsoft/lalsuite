@@ -25,7 +25,7 @@ $Id$
 \subsection{Module \texttt{LALNoiseSpectralDensity.c}}
 This module generates an array of size specified
 in the vector \texttt{psd}, that is \texttt{psd.length}.
-The inputs are 
+The inputs are
 \begin{enumerate}
 \item The lenght of the psd array required: this must be
 given as a non-zero positive integer by setting the \texttt{length}
@@ -41,7 +41,7 @@ package. These are \texttt{LALGEOPsd, LALLIGOIPsd, LALTAMAPsd, LALVIRGOPsd.}
 These four packages return a scaled PSD while this module returns the
 correctly scaled version. It is assumed that new PSD modules return
 unscaled versions. (Note, however, that it might be better to use the
-scaled versions of the PSD when computing the metric on the signal 
+scaled versions of the PSD when computing the metric on the signal
 manifold; this is because computing the metric involves calculation of
 many moments of the noise PSD and one might encounter round-off errors
 if un-scaled version of PSD is used; I have not checked this to be
@@ -70,14 +70,14 @@ that returns PSD values in units of Hz$^{-1}.$
 NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
 
 /*  <lalVerbatim file="LALNoiseSpectralDensityCP"> */
-void 
-LALNoiseSpectralDensity 
+void
+LALNoiseSpectralDensity
    (
-   LALStatus    *status, 
-   REAL8Vector  *psd, 
+   LALStatus    *status,
+   REAL8Vector  *psd,
    void         (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
    REAL8        df
-   ) 
+   )
 {  /*  </lalVerbatim>  */
 
     REAL8 f, shf, fs, s0;
@@ -138,17 +138,17 @@ LALNoiseSpectralDensity
 
    n = (INT4) psd->length-1;
 
-   /* 
+   /*
     * Set DC and Nyquist components to zero
     */
 
    psd->data[0] = 0.;
 
-   for (i=0; i<=n; i++) 
+   for (i=0; i<=n; i++)
    {
       f = i*df;
 
-      if (f>=fs) 
+      if (f>=fs)
       {
          (*NoisePsd)(status->statusPtr, &shf, f);
          psd->data[i] = s0 * shf;
@@ -156,7 +156,7 @@ LALNoiseSpectralDensity
       } else {
 
          psd->data[i] = 0.;
-      } 
+      }
    }
    DETATCHSTATUSPTR(status);
    RETURN(status);

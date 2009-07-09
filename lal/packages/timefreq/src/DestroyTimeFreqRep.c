@@ -17,34 +17,34 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: DestroyTimeFreqRep.c
- * 
+ *
  * Maintainer: Torres, C (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * DestroyTimeFreqRep
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  * void LALDestroyTimeFreqRep ( LALStatus *,  TimeFreqRep **tfr );
- * 
- * DESCRIPTION 
+ *
+ * DESCRIPTION
  * Returns to system storage allocated by CreateTimeFreqRep
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  * tfr == NULL, *tfr == NULL, (*tfr)->map == NULL, free failure
  *
  * CALLS
  * LALFree
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -54,14 +54,14 @@ NRCSID (DESTROYTIMEFREQREPC, "$Id$");
 
 void LALDestroyTimeFreqRep (LALStatus *status, TimeFreqRep **tfr)
 {
-  /* 
+  /*
    * Initialize status
    */
 
   INITSTATUS (status, "LALDestroyTimeFreqRep", DESTROYTIMEFREQREPC);
-      
+
   /* Check tfr: report if NULL */
-  ASSERT (tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL); 
+  ASSERT (tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL);
 
   /* Check tfr: report if NULL */
   ASSERT (*tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL);
