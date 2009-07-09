@@ -126,15 +126,22 @@ dag.set_dag_file(basename)
 ##############################################################################
 # Open the ihope cache and sort THINCA_SECOND files by user_tag
 
-fp = open( options.ihope_cache, 'r' )
-ihope_cache = lal.Cache().fromfile(fp)
-fp.close()
+ihope_cache = [line for line in file(options.ihope_cache) \
+  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line or " INJECTIONS" in line]
 
-# get the user tags
-user_tags = []
-file_sieve = 'THINCA_SECOND'
-for tag in set([ entry.description for entry in ihope_cache.sieve( description = file_sieve ) ]):
-  user_tags.append( '_'.join([ tag.split('_')[ii] for ii in range( 3, len(tag.split('_')) ) ]) )
+zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "THINCA_SECOND" in entry])
+slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "THINCA_SLIDE_SECOND" in entry])
+inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
+  " INJECTIONS" in entry])
+
+del ihope_cache
+
+# get the user tags from the zero_lag_cache
+user_tags = set([ '_'.join([ entry.description.split('_')[ii] 
+  for ii in range( 3, len(entry.description.split('_')) ) ])
+  for entry in zero_lag_cache ])
 
 ##############################################################################
 # Cycle over the user tags, creating a pipeline for each
