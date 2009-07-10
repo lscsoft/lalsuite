@@ -35,7 +35,6 @@ GMST1) computations.
 
 \input{LMST1CP}
 \idx{LALGPStoGMST1()}
-\idx{LALGPStoLMST1()}
 
 
 \subsubsection*{Description}
