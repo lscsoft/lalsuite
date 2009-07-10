@@ -38,7 +38,7 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SkyCoordinatesTest GeocentricGeodeticTest GeneratePulsarSignalTest $(NEED_MEATIO)
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test
 
-EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat injection.xml
+EXTRA_DIST = CheckStatus.c CheckStatus.h injection.xml
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
