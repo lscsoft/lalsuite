@@ -76,7 +76,7 @@ TESTS_ENVIRONMENT = 1>/dev/null
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #           DFalseDismissalTest   DFDismissalVsFAlarmTest
 
-EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckStatus.c CheckStatus.h
+EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckStatus.c CheckStatus.h L1.dat H2.dat
 
 MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0* WHITENED-SB*
 DISTCLEANFILES = *.tex
