@@ -150,10 +150,10 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
 
 /** Correlate a single pair of SFT at a parameter space point. This function calculates Y_alpha
- *  according to Eqn 4.1 in Dhurandar et al 2008, where 
- *  Y_alpha = (xI* xJ)/Delta T^2 
+ *  according to Eqn 4.1 in Dhurandar et al 2008, where
+ *  Y_alpha = (xI* xJ)/Delta T^2
  *  sft1 and sft2 have been normalised by LALNormalizeSFT in pulsar_crosscorr.c, so they are actually
- *  sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2) 
+ *  sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2)
  *  Therefore, when calculating the output, we need to have
  *  out = sft1*sqrt(psd1)*sft2*sqrt(psd2)/Delta T^2 */
 void LALCorrelateSingleSFTPair(LALStatus                *status,
@@ -319,8 +319,8 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
  * psd1 and psd2 as returned by LALNormalizeSFT are
  * psd1 = DeltaT*Sn1/2, psd2 = DeltaT*Sn2/2
  * so when calculating the output, we need to compute
- * out = psd1*psd2/DeltaT^4 
- * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/ 
+ * out = psd1*psd2/DeltaT^4
+ * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
 			      REAL8                freq1,

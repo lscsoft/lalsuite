@@ -149,13 +149,13 @@ typedef struct
 typedef struct
 {
     int sampleFrequency;
-    LALDetector site[3];    
+    LALDetector site[3];
 } XLALSkymap2PlanType;
 
 // Initialize sample frequency and HLV site information
 
 void XLALSkymap2PlanConstruct(
-    int sampleFrequency, 
+    int sampleFrequency,
     XLALSkymap2PlanType* plan
     );
 
