@@ -132,196 +132,24 @@ static void numerical(void)
         
 }
 
-
-static void minimal(void)
+static void injection(void)
 {    
-    
-    XLALSkymap2PlanType *plan;    
-    XLALSkymap2SphericalPolarType *direction;
+    XLALSkymap2PlanType plan;    
+    XLALSkymap2SphericalPolarType *directions;
     XLALSkymap2DirectionPropertiesType *properties;
+    double S[3] = { 1, 2.0, 4.0 };
     double wSw[3];
-    XLALSkymap2KernelType *kernel;
-    double *xSw[3];
-
-    {
-        plan = malloc(sizeof(*plan));
-        XLALSkymap2PlanConstruct(8192, plan);
-
-        TEST(plan->sampleFrequency == 8192);
-    }
-
-    {
-        direction = malloc(sizeof(*direction));
-        (*direction)[0] = LAL_PI_2;
-        (*direction)[1] = 0.;
-    }
-
-    {
-        properties = malloc(sizeof(*properties));
-        XLALSkymap2DirectionPropertiesConstruct(plan, direction, properties);
-    }
-
-    {
-        int i;
-        for (i = 0; i != 3; ++i)
-            wSw[i] = 1.;
-    }
-
-    {
-        kernel = malloc(sizeof(*kernel));
-        XLALSkymap2KernelConstruct(properties, wSw, kernel);
-    }
-
-    {
-        int i;
-        for (i = 0; i != 3; ++i)
-        {
-            int j;
-            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
-            for (j = 0; j != plan->sampleFrequency; ++j)
-            {
-                xSw[i][j] = 0.;
-            }
-        }
-    }
-
-    {
-        double logPosterior;
-        XLALSkymap2Apply(properties, kernel, xSw, plan->sampleFrequency / 2, &logPosterior);
-
-        printf("%g\n", exp(logPosterior));
-    }
-
-    {
-        int i;
-        for(i = 0; i != 3; ++i)
-            free(xSw[i]);
-    }
-
-    free(kernel);
-    free(properties);
-    free(direction);
-    free(plan);
-
-}
-#endif
-
-static void directional(void)
-{
-    XLALSkymap2PlanType *plan;
-    XLALSkymap2SphericalPolarType *directions;
-    XLALSkymap2DirectionPropertiesType *properties;
-    double wSw[3] = { 1., 1., 1. };
     XLALSkymap2KernelType *kernels;
     double *xSw[3];
-
-    {
-        plan = malloc(sizeof(*plan));
-        XLALSkymap2PlanConstruct(512, plan);
-
-        TEST(plan->sampleFrequency == 512);
-    }
-
-    {
-        int i;
-        directions = malloc(sizeof(*directions) * 180 * 360);
-        for (i = 0; i != 180; ++i)
-        {
-            int j;
-            for (j = 0; j != 360; ++j)
-            {
-                directions[i * 360 + j][0] = (i + 0.5) / 180. * LAL_PI;
-                directions[i * 360 + j][1] = (j + 0.5) / 180. * LAL_PI;
-            }
-        }
-    }
-
-    {
-        int i;
-        properties = malloc(sizeof(*properties) * 180 * 360);
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            XLALSkymap2DirectionPropertiesConstruct(
-                plan,
-                directions + i,
-                properties + i
-                );
-        }
-    }
-
-    {
-        int i;
-        kernels = malloc(sizeof(*kernels) * 180 * 360);
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
-        }
-    }
-
-    {
-        int i;
-        RandomParams* rng;
-        rng = XLALCreateRandomParams(0);
-        for (i = 0; i != 3; ++i)
-        {
-            int j;
-            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
-            for (j = 0; j != plan->sampleFrequency; ++j)
-            {
-                xSw[i][j] = 0.;//XLALNormalDeviate(rng) * sqrt(wSw[i]);
-            }
-            //xSw[i][plan->sampleFrequency/2] += XLALNormalDeviate(rng) * wSw[i];
-        }
-    }
-
-    {
-        int i;
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            int t;
-            double p = 0;
-            for (t = plan->sampleFrequency / 4; t != plan->sampleFrequency / 4 * 3; ++t)
-            {
-                double logPosterior;
-                XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
-                p += exp(logPosterior) / (plan->sampleFrequency / 2);
-
-            }
-            printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
-        }
-    }
-
-    {
-        int i;
-        for(i = 0; i != 3; ++i)
-            free(xSw[i]);
-    }
-
-    free(kernels);
-    free(properties);
-    free(directions);
-    free(plan);
-
-}
-
-static void injection()
-{    
-    XLALSkymap2PlanType *plan;    
-    XLALSkymap2SphericalPolarType *directions;
-    XLALSkymap2DirectionPropertiesType *properties;
-    double wSw[3] = { 10., 10., 10. };
-    XLALSkymap2KernelType *kernels;
-    double *xSw[3];
-    int n;
+    int n = 8192;
+    //printf("%d\n", __LINE__);
+        
+    XLALSkymap2PlanConstruct(n, &plan);
+    
+    // generate directions
     
     {
-        plan = malloc(sizeof(*plan));
-        XLALSkymap2PlanConstruct(2048, plan);
-
-        TEST(plan->sampleFrequency == 2048);
-    }
-    
-    {
+        //printf("%d\n", __LINE__);
         int i;
         directions = malloc(sizeof(*directions) * 180 * 360);
         for (i = 0; i != 180; ++i)
@@ -335,18 +163,118 @@ static void injection()
         }
     }
     
+    // compute properties of the directions
+    
     {
+        //printf("%d\n", __LINE__);
         int i;
         properties = malloc(sizeof(*properties) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
             XLALSkymap2DirectionPropertiesConstruct(
-                plan, 
+                &plan, 
                 directions + i, 
                 properties + i
                 );
         }
+    }    
+    
+    // make some data
+    
+    {
+        int i, j;
+        RandomParams* rng;
+        double* x[3];
+        double* w;
+        rng = XLALCreateRandomParams(0);
+        
+        // one second of data
+        //printf("%d\n", __LINE__);
+        
+        for (i = 0; i != 3; ++i)
+        {
+            x[i] = malloc(sizeof(*x[i]) * n);
+            for (j = 0; j != n; ++j)
+            {
+                //printf("%d\n", __LINE__);
+                x[i][j] = XLALNormalDeviate(rng) * sqrt(S[i]);
+            }
+        }
+        
+        //printf("%d\n", __LINE__);
+        
+        // half a second of waveform
+        
+        w = malloc(sizeof(*w) * n / 2);
+        for (j = 0; j != n / 2; ++j)
+        {
+            double t;
+            t = ((double) j) / plan.sampleFrequency;
+            w[j] = 3 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
+        }
+        
+        //printf("%d\n", __LINE__);
+        // compute wSw
+        
+        for (i = 0; i != 3; ++i)
+        {
+            wSw[i] = 0;
+            for (j = 0; j != n/2; ++j)
+            {
+                wSw[i] += w[j] * w[j] / S[i];
+            }
+            //fprintf(stderr, "wSw[%d] = %f = %f^2\n", i, wSw[i], sqrt(wSw[i]));
+        }
+        //exit(0);
+        //printf("%d\n", __LINE__);
+        
+        // make an injection
+        
+        {
+            int k;
+            double a[2];
+            //k = (int) floor(XLALUniformDeviate(rng) * 360 * 180);
+            k = 120 * 360 + 120;
+            a[0] = XLALNormalDeviate(rng);
+            a[1] = XLALNormalDeviate(rng);
+            //fprintf(stderr, "a = { %f, %f }\n", a[0], a[1]);
+            for (i = 0; i != 3; ++i)
+            {
+                for (j = 0; j != n/2; ++j)
+                {
+                    int q;
+                    for (q = 0; q != 2; ++q)
+                    {
+                        x[i][j + n / 4 + properties[k].delay[i]] += a[q] * w[j] * properties[k].f[i][q];
+                    }
+                }
+            }
+            
+        }
+        
+        
+        // compute xSw (filtering)
+        
+        for (i = 0; i != 3; ++i)
+        {
+            xSw[i] = malloc(sizeof(*xSw[i]) * n);
+            for (j = 0; j != n / 2; ++j)
+            {
+                int k;
+                double a = 0;
+                for (k = 0; k != n / 2; ++k)
+                {
+                    a += x[i][j + k] * w[k] / S[i];
+                }
+                xSw[i][j + n / 4] = a;                
+            }
+        }
+        //printf("%d\n", __LINE__);
+        
+        
     }
+    
+    // compute the kernels
         
     {
         int i;
@@ -355,8 +283,9 @@ static void injection()
         {
             XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
         }
-    }
+    }    
     
+    /*
     {
         int i;
         RandomParams* rng;
@@ -393,6 +322,7 @@ static void injection()
         }
         
     }
+    */
     
     {
         int i;
@@ -400,11 +330,11 @@ static void injection()
         {
             int t;
             double p = 0;
-            for (t = plan->sampleFrequency / 4; t != plan->sampleFrequency / 4 * 3; ++t)
+            for (t = n * 3 / 8; t != n * 5 / 8; ++t)
             {
                 double logPosterior;
                 XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
-                p += exp(logPosterior) / (plan->sampleFrequency / 2);
+                p += exp(logPosterior) / (n / 4);
                 
             }
             printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
@@ -420,139 +350,13 @@ static void injection()
     free(kernels);
     free(properties);
     free(directions);    
-    free(plan);
-    
-}
-
-static void banded()
-{    
-    XLALSkymap2PlanType *plan;    
-    XLALSkymap2SphericalPolarType *directions;
-    XLALSkymap2DirectionPropertiesType *properties;
-    double wSw[3] = { 10., 10., 10. };
-    XLALSkymap2KernelType *kernels;
-    double *xSw[3];
-    int n;
-    
-    {
-        plan = malloc(sizeof(*plan));
-        XLALSkymap2PlanConstruct(2048, plan);
-
-        TEST(plan->sampleFrequency == 2048);
-    }
-    
-    {
-        int i;
-        directions = malloc(sizeof(*directions) * 180 * 360);
-        for (i = 0; i != 180; ++i)
-        {
-            int j;
-            for (j = 0; j != 360; ++j)
-            {
-                directions[i * 360 + j][0] = (i + 0.5) / 180. * LAL_PI;
-                directions[i * 360 + j][1] = (j + 0.5) / 180. * LAL_PI;
-            }
-        }
-    }
-    
-    {
-        int i;
-        properties = malloc(sizeof(*properties) * 180 * 360);
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            XLALSkymap2DirectionPropertiesConstruct(
-                plan, 
-                directions + i, 
-                properties + i
-                );
-        }
-    }
-        
-    {
-        int i;
-        kernels = malloc(sizeof(*kernels) * 180 * 360);
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
-        }
-    }
-    
-    {
-        int i;
-        RandomParams* rng;
-        rng = XLALCreateRandomParams(0);
-        for (i = 0; i != 3; ++i)
-        {
-            int j;
-            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
-            for (j = 0; j != plan->sampleFrequency; ++j)
-            {
-                xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
-            }
-        }
-        // injection
-        {
-            double h[2];
-            int k;
-            h[0] = XLALNormalDeviate(rng);
-            h[1] = XLALNormalDeviate(rng);
-            // k = (int) floor(XLALUniformDeviate(rng) * 360 * 180);
-            k = 120 * 360 + 120;
-            for (i = 0; i != 3; ++i)
-            {
-                int j;
-                for (j = 0; j != 2; ++j)
-                {
-                    xSw[i][
-                        plan->sampleFrequency / 2 + 
-                        properties[k].delay[i]
-                        ] += h[j] * properties[k].f[i][j] * wSw[i];
-                }
-            }
-            
-        }
-        
-    }
-    
-    {
-        int i;
-        for (i = 0; i != 180 * 360; ++i)
-        {
-            int t;
-            double p = 0;
-            for (t = plan->sampleFrequency / 4; t != plan->sampleFrequency / 4 * 3; ++t)
-            {
-                double logPosterior;
-                XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
-                p += exp(logPosterior) / (plan->sampleFrequency / 2);
-                
-            }
-            printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
-        }
-    }        
-       
-    {
-        int i;
-        for(i = 0; i != 3; ++i)
-            free(xSw[i]);
-    }
-    
-    free(kernels);
-    free(properties);
-    free(directions);    
-    free(plan);
     
 }
 
 int main(int argc, char** argv)
 {
-    // minimal();
-    // directional();
-    // injection();
-    // banded
-    // 
-    
-    numerical();
+     //numerical();
+    injection();
     
     
     // ideas for tests:
