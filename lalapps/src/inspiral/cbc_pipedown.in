@@ -15,7 +15,7 @@ import os, sys, re
 import ConfigParser
 from optparse import OptionParser
 import tempfile
-sys.path.append('@PYTHONLIBDIR@')
+sys.path.append('/home/cdcapano/local/pipedown_speedup/lib/python2.4/site-packages/lalapps')
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -126,33 +126,42 @@ dag.set_dag_file(basename)
 ##############################################################################
 # Open the ihope cache and sort THINCA_SECOND files by user_tag
 
-fp = open( options.ihope_cache, 'r' )
-ihope_cache = lal.Cache().fromfile(fp)
-fp.close()
+print "Parsing the ihope cache..."
+ihope_cache = [line for line in file(options.ihope_cache) \
+  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line or " INJECTIONS" in line]
 
-# get the user tags
-user_tags = []
-file_sieve = 'THINCA_SECOND'
-for tag in set([ entry.description for entry in ihope_cache.sieve( description = file_sieve ) ]):
-  user_tags.append( '_'.join([ tag.split('_')[ii] for ii in range( 3, len(tag.split('_')) ) ]) )
+zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "THINCA_SECOND" in entry])
+slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "THINCA_SLIDE_SECOND" in entry])
+inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
+  " INJECTIONS" in entry])
+
+del ihope_cache
+
+# get the user tags from the zero_lag_cache
+user_tags = set([ '_'.join([ entry.description.split('_')[ii] 
+  for ii in range( 3, len(entry.description.split('_')) ) ])
+  for entry in zero_lag_cache ])
 
 ##############################################################################
 # Cycle over the user tags, creating a pipeline for each
 
 for tag in user_tags:
-  
+
   print "Creating jobs for %s..." % tag
   
   # determine whether or not this was an injection run by checking if there
-  # is an injection file
+  # is an injection file for this tag
 
-  file_sieve = ''.join([ 'INJECTION*', tag.split('_CAT')[0], '*' ])
-  inj_cache = ihope_cache.sieve( description = file_sieve, exact_match = True )
-  if len(inj_cache) == 0:
+  file_sieve = ''.join([ '*', tag.split('_CAT')[0], '*' ])
+  inj_file = inj_cache.sieve( description = file_sieve, exact_match = True )
+  if len(inj_file) == 0:
     simulation = False
-  if len(inj_cache) == 1:
+  elif len(inj_file) == 1:
     simulation = True
-  if len(inj_cache) > 1:
+    inj_file = inj_file[0].url
+  else:
     raise ValueError, "More than one injection file found for %s" % tag
 
   # write the jobs that will be run
@@ -193,18 +202,16 @@ for tag in user_tags:
   if simulation:
     t2c_job.set_simulation()
 
-  # sieve the ihope_cache for THINCA_SECOND files with this tag
-  file_sieve = 'THINCA_SECOND*' + tag
-  thinca_cache = ihope_cache.sieve( description = file_sieve, exact_match = True )
+  # sieve zero_lag_cache for THINCA_SECOND files with this tag
+  file_sieve = '*' + tag
+  thinca_cache = zero_lag_cache.sieve( description = file_sieve, exact_match = True )
 
   # if not an injection run, check that there are an equal number of
   # slide files
-  file_sieve = 'THINCA_SLIDE_SECOND*' + tag
   if not simulation and \
-    len(ihope_cache.sieve( description = file_sieve, exact_match = True )) != \
+    len(slide_cache.sieve( description = file_sieve, exact_match = True )) != \
     len(thinca_cache):
-    raise ValueError, "Number of %s slide files doesn't equal number of zero-lag files. " % tag  + \
-      "Have all the jobs completed?"
+    raise ValueError, "Number of %s slide files doesn't equal number of zero-lag files." % tag
 
   # get distinct on_instruments in the thinca cache
   distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
@@ -232,26 +239,25 @@ for tag in user_tags:
   veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
   t2c_output = []
+  this_cache = lal.Cache()
   cache_start_time = int(experiment_start)
   for on_instruments in distinct_instrument_sets:
     instrument_cache = thinca_cache.sieve( ifos = on_instruments, exact_match = True )
     instrument_cache.sort()
-    this_thinca_url_list = []
     for entry_num, entry in enumerate(instrument_cache):
-      if not this_thinca_url_list:
+      if not this_cache:
         # first entry; store type for cache naming
         cache_type = entry.description
-      # Add the zero-lag thinca url to the url list
-      this_thinca_url_list.append(entry.url)
+      # Add the zero-lag thinca entry to this_cache 
+      this_cache.append(entry)
       # if this isn't a simulation add the slide file
       if not simulation:
-        slide_url = re.sub('THINCA', 'THINCA_SLIDE', entry.url)
-        this_thinca_url_list.append(slide_url)
+        slide_entry = lal.CacheEntry(re.sub('THINCA', 'THINCA_SLIDE', str(entry)))
+        this_cache.append(slide_entry)
       # if n*20th entry or last remainder, write to cache
       if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
         # set duration to be end of this entry - start of first entry in cache
         cache_duration = entry.segment[1].seconds - cache_start_time
-        this_cache = lal.Cache().from_urls( this_thinca_url_list )
         this_cache_name = '.'.join([ 
           '-'.join([on_instruments, cache_type, str(cache_start_time), str(cache_duration)]),
           'cache' ])
@@ -271,7 +277,8 @@ for tag in user_tags:
         t2c_output += this_t2c_node.get_output_from_cache()
         # set end-time of last entry to be start time of next cache
         cache_start_time = entry.segment[1].seconds
-        this_thinca_url_list = []
+        del this_cache
+        this_cache = lal.Cache()
       
   # write output cache
   output_cache = lal.Cache().from_urls(t2c_output)
@@ -363,7 +370,7 @@ for tag in user_tags:
     dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
     dbaddinj_node.set_tmp_space( options.log_path )
     dbaddinj_node.set_database( raw_result_db )
-    dbaddinj_node.set_injection_file( inj_cache[0].url )
+    dbaddinj_node.set_injection_file( inj_file )
   
     dbaddinj_node.add_parent( dbsimplify_node )
   
@@ -434,7 +441,7 @@ for tag in user_tags:
   if not simulation:
     print "\t\tcreating plotslides node..."
     # set plotslides_job options
-    if options.plot_playground_only:
+    if options.plot_playground_only or 'PLAYGROUND' in tag:
       plotslides_job.set_plot_playground_only()
     # Write plotslides node
     plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
@@ -451,7 +458,7 @@ for tag in user_tags:
     print "\t\tcreating plotifar node for datatypes:"
     for datatype in ['all_data', 'playground', 'exclude_play']: 
       # only create nodes for non-playground if options.plot-playground-only not set
-      if options.plot_playground_only  and datatype != 'playground':
+      if (options.plot_playground_only or 'PLAYGROUND' in tag)  and datatype != 'playground':
         continue
       print "\t\t\t%s..." % datatype
       plotifar_node = inspiral.PlotIfarNode( plotifar_job )

@@ -31,7 +31,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-GeneratePPNInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f fmin fmax]
+GeneratePPNInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f f_min f_max]
                         [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]
 \end{verbatim}
 
@@ -49,7 +49,7 @@ solar massses (default values: $1.4M_\odot$).
 angles to \verb@inc@ and \verb@phii@ degrees (default values:
 0~degrees).
 \item[\texttt{-f}] Sets the initial and final wave frequencies to
-\verb@fmin@ and \verb@fmax@ Hz (default values: 40Hz and 500Hz).
+\verb@f_min@ and \verb@f_max@ Hz (default values: 40Hz and 500Hz).
 \item[\texttt{-t}] Sets the waveform sampling interval to \verb@dt@
 seconds (default value: 0.01s).
 \item[\texttt{-w}] Generates actual waveforms rather than phase and
@@ -131,7 +131,7 @@ int lalDebugLevel = 0;
 #define ORDER (4)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f fmin fmax] [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]\n"
+#define USAGE "Usage: %s [-m m1 m2] [-r dist] [-i inc phii]\n\t[-f f_min f_max] [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]\n"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -213,7 +213,7 @@ main(int argc, char **argv)
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0;  /* inclination and coalescence phase */
-  REAL4 fmin = FMIN, fmax=FMAX; /* start and stop frequencies */
+  REAL4 f_min = FMIN, f_max=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
   REAL8 deltat = 0.0;           /* wave sampling interval */
   INT4 order = ORDER;           /* PN order */
@@ -274,8 +274,8 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 2 ) {
 	arg++;
-	fmin = atof( argv[arg++] );
-	fmax = atof( argv[arg++] );
+	f_min = atof( argv[arg++] );
+	f_max = atof( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -376,8 +376,8 @@ main(int argc, char **argv)
   params.inc = inc;
   params.phi = 0.0;
   params.d = dist*LAL_PC_SI*1.0e3;
-  params.fStartIn = fmin;
-  params.fStopIn = fmax;
+  params.fStartIn = f_min;
+  params.fStopIn = f_max;
 
   /* PPN parameter. */
   params.ppn = NULL;

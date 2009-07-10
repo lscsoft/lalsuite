@@ -74,6 +74,7 @@ packages/bank/test/MetricTestPTF
 packages/bank/test/PNTemplates
 packages/bank/test/SpaceCovering
 packages/block/test/BlockTest
+packages/burstsearch/test/SkymapTest
 packages/burstsearch/test/ThresholdsTest
 packages/clremoval/test/CLRTest
 packages/clremoval/test/CLRoutdata.asc
@@ -149,11 +150,8 @@ packages/inject/test/GeneratePulsarSignalTest
 packages/inject/test/GeocentricGeodeticTest
 packages/inject/test/InjectTest
 packages/inject/test/InjectionInterfaceTest
-packages/inject/test/SimulatePopcornTest
-packages/inject/test/SimulateSBTest
 packages/inject/test/SimulateTaylorCWTest
 packages/inject/test/SkyCoordinatesTest
-packages/inject/test/WHITENED-SB?
 packages/inspiral/test/GenerateInspiralWaveform
 packages/inspiral/test/LALHybridTest
 packages/noisemodels/test/FilterTest
@@ -190,10 +188,13 @@ packages/std/test/LALGSLTest
 packages/std/test/LALMallocTest
 packages/std/test/LALVersionTest
 packages/std/test/StringConvertTest
+packages/stochastic/test/??_714382918*.dat
 packages/stochastic/test/AstroOmegaTest
 packages/stochastic/test/CZeroPadAndFFTTest
 packages/stochastic/test/OverlapReductionFunctionTest
 packages/stochastic/test/SZeroPadAndFFTTest
+packages/stochastic/test/SimulatePopcornTest
+packages/stochastic/test/SimulateSBTest
 packages/stochastic/test/StochasticCrossCorrelationSpectrumTest
 packages/stochastic/test/StochasticCrossCorrelationStatisticTest
 packages/stochastic/test/StochasticHeterodynedCrossCorrelationStatisticTest
@@ -201,6 +202,7 @@ packages/stochastic/test/StochasticInverseNoiseTest
 packages/stochastic/test/StochasticOmegaGWTest
 packages/stochastic/test/StochasticOptimalFilterNormalizationTest
 packages/stochastic/test/StochasticOptimalFilterTest
+packages/stochastic/test/WHITENED-SB?
 packages/support/src/PrintFrequencySeries.c
 packages/support/src/PrintTimeSeries.c
 packages/support/src/PrintVector.c

@@ -104,13 +104,13 @@ LALTracksearchFindLambdaMean(
   sumXSqr=0;
   current=0;
   /*
-   * If there was band passing determine regions of F to 
+   * If there was band passing determine regions of F to
    * calculate the Lambda values inside of band passes region
    */
   binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
   if (searchParams->highPass > 0)
     {
-      lowerFRow=floor(binPerHz*searchParams->highPass); 
+      lowerFRow=floor(binPerHz*searchParams->highPass);
     }
   else
     {
@@ -118,7 +118,7 @@ LALTracksearchFindLambdaMean(
     }
   if (searchParams->lowPass > 0)
     {
-      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+      upperFRow=ceil(binPerHz*searchParams->lowPass);
     }
   else
     {
@@ -195,13 +195,13 @@ LALTracksearchFindLambdaMedian(
   INITSTATUS(status,"LALTracksearchFindLambdaMedian", TSDATAC);
   ATTATCHSTATUSPTR (status);
   /*
-   * If there was band passing determine regions of F to 
+   * If there was band passing determine regions of F to
    * calculate the Lambda values inside of band passes region
    */
   binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
   if (searchParams->highPass > 0)
     {
-      lowerFRow=floor(binPerHz*searchParams->highPass); 
+      lowerFRow=floor(binPerHz*searchParams->highPass);
     }
   else
     {
@@ -209,7 +209,7 @@ LALTracksearchFindLambdaMedian(
     }
   if (searchParams->lowPass > 0)
     {
-      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+      upperFRow=ceil(binPerHz*searchParams->lowPass);
     }
   else
     {
@@ -224,7 +224,7 @@ LALTracksearchFindLambdaMedian(
 
   vector=(REAL8*)LALMalloc(count*sizeof(REAL8));
   for (i = 0;i < map.tCol;i++)
-    { 
+    {
       for (j = lowerFRow;j <(upperFRow);j++)
 	{
 	  /*fprintf(stdout,"%i %i %i %i %f\n",i,j,k,count,map.map[i][j]);*/
