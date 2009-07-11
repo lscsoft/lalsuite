@@ -450,7 +450,7 @@ for inj in injcache:
     try: db[cat].append(database)
     except: db[cat] = [database]
     #xml_list = [type+cat+"/S5_HM_INJ_"+timestr+"*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
-    xml_list = ["$(find -name '*"+tag+"*.xml.gz')", "vetoes_"+cat+".xml.gz"]
+    xml_list = ["$(find -name '*"+tag+"*.xml.gz')", url, "vetoes_"+cat+".xml.gz"]
     ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
