@@ -73,6 +73,67 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
+/** Find next node element of given name within the siblings of the given xmlNode.
+ *
+ * Note: if the startNode already complies with the constraints, it is returned, ie
+ * this function does not do stepping from one valid node to the next!
+ *
+ * Note: don't free the returned nodePointer!
+ */
+const xmlNode *
+XLALfindNextNamedNode ( const xmlNode *startNode, const xmlChar *nodeName )
+{
+  static const char *fn = "XLALfindNextNamedNode()";
+  const xmlNode *tmp;
+
+  /* check input consistency */
+  if ( !startNode || !nodeName ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  tmp = startNode;
+  while ( tmp && (tmp->type != XML_ELEMENT_NODE) && (xmlStrcmp(tmp->name, nodeName)) )
+    tmp = tmp->next;
+
+  return tmp;	/* either NULL or the desired named NODE */
+
+} /* XLALfindNextNamedNode() */
+
+/** Count number of named nodes siblings of given startNode.
+ *
+ * Note: if the startNode already complies with the constraints, it is counted as well,
+ * but no previous siblings are counted, ie the count starts at startNode.
+ */
+int
+XLALcountNamedNodes ( const xmlNode *startNode, const xmlChar *nodeName, UINT4 *count )
+{
+  static const char *fn = "XLALcountNamedNodes()";
+  UINT4 counter;
+  const xmlNode *tmp;
+
+  /* check input consistency */
+  if ( !startNode || !nodeName || !count ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  counter = 0;
+  tmp = startNode;
+
+  while ( tmp && ( tmp = XLALfindNextNamedNode ( tmp, nodeName )) != NULL )
+    {
+      counter ++;
+      tmp = tmp->next;	/* step forward to next element */
+    }
+
+  (*count) = counter;
+
+  return XLAL_SUCCESS;
+
+} /* XLALcountNamedNodes() */
+
+
 /**
  * \brief Performs a XPath search on a XML document to retrieve the content of a single %node
  *
