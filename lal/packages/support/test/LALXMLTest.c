@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
@@ -55,7 +56,8 @@
 
 
 
-#define REAL8TOL 1e-15
+#define REAL8TOL 1e-16
+#define REAL4TOL 1e-6
 
 #ifndef LAL_PREFIX
     #define LAL_PREFIX "/usr/local"
@@ -621,14 +623,29 @@ int testTable ( void )
 
   xmlDocPtr xmlDocument = NULL;
   char *xmlString = NULL;
+  UINT4 j;
+#define IN_ROWS 3
+  REAL8 FreqIn[IN_ROWS]   = { 100.1234, 101.234, 102.345 };
+  REAL4 AlphaIn[IN_ROWS]  = { 0.1234, 2.123434, 3.2341 };
+  REAL4 DeltaIn[IN_ROWS]  = { -1.234, -0.5, 1.234 };
+  CHAR *NameIn[IN_ROWS]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
+  INT4  IndexIn[IN_ROWS]  = { 5, 7, 99 };
+  COMPLEX8 FaIn[IN_ROWS]  = { { 1, 2 }, {3, 4}, {5, 6} };
 
+  printf ("--> Input table values ... \n");
+  printf ("FreqIn  = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f%s", FreqIn[j], j<IN_ROWS-1? ", " : "\n" );
+  printf ("AlphaIn = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f%s", AlphaIn[j], j<IN_ROWS-1? ", " : "\n" );
+  printf ("DeltaIn = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f%s", DeltaIn[j], j<IN_ROWS-1? ", " : "\n" );
+  printf ("NameIn  = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%s%s", NameIn[j], j<IN_ROWS-1? ", " : "\n" );
+  printf ("IndexIn = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%d%s", IndexIn[j], j<IN_ROWS-1? ", " : "\n" );
+  printf ("FaIn    = ");
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f %f%s", FaIn[j].re, FaIn[j].im, j<IN_ROWS-1? ", " : "\n" );
 
-  REAL8 Freq[]   = { 100.1234, 101.234, 102.345 };
-  REAL4 Alpha[]  = { 0.1234, 2.123434, 3.2341 };
-  REAL4 Delta[]  = { -1.234, -0.5, 1.234 };
-  CHAR *Name[]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
-  INT4  Index[]  = { 5, 7, 99 };
-  COMPLEX8 Fa[]   = { { 1, 2 }, {3, 4}, {5, 6} };
 
   /* ---------- create FIELDS */
   /* ----- Freq */
@@ -663,15 +680,6 @@ int testTable ( void )
     XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
     return LALXMLC_EFUN;
   }
-  /* ----- Indices */
-  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Index", NULL, VOT_INT4, NULL)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", fn, xlalErrno );
-    return LALXMLC_EFUN;
-  }
-  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
-    return LALXMLC_EFUN;
-  }
   /* ----- Fa */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Fa", NULL, VOT_COMPLEX8, NULL)) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Fa'. xlalErrno = %d\n", fn, xlalErrno );
@@ -682,10 +690,19 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
 
+  /* ----- Indices */
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Index", NULL, VOT_INT4, NULL)) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
 
   xmlNodePtr xmlFragment, xmlTable, xmlTabledataNode;
 
-  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f,%s,%d,%f %f", Freq, Alpha, Delta, Name, Index, Fa )) == NULL ){
+  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.16g,%.7g,%.7g,%s,%g %g,%0d", FreqIn, AlphaIn, DeltaIn, NameIn, FaIn, IndexIn  )) == NULL ){
     XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -747,17 +764,17 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
   numCols = fieldVect->length;
-  printf ("XLALReadVOTFIELDNodes() found %d FIELD nodes\n", numCols );
   for ( i=0; i < numCols; i ++ )
     {
       VOTField *thisField = &fieldVect->data[i];
-
+#if 0
       printf ("i = %d: name='%s', datatype='%s'", i, thisField->name, XLALVOTDatatype2String ( thisField->datatype ) );
       if ( thisField->unit )
         printf ("  unit = '%s'", thisField->unit );
       if ( thisField -> arraysize )
         printf ("  arraysize = '%s' ", thisField->arraysize );
       printf ("\n");
+#endif
 
       /* ----- Freq ----- */
       if ( !strcmp ( (const char*)thisField->name, "Freq" ) ) {
@@ -772,19 +789,11 @@ int testTable ( void )
           XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Alpha'.\n", fn, i );
           return LALXMLC_EFUN;
         }
-        if ( nRows != numRows ) {
-          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Alpha('%d')\n", numRows, nRows );
-          return LALXMLC_EFUN;
-        }
       }
       /* ----- Delta ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Delta" ) ) {
         if ( (DeltaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL4, &nRows )) == NULL ) {
           XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Delta'.\n", fn, i );
-          return LALXMLC_EFUN;
-        }
-        if ( nRows != numRows ) {
-          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Delta('%d')\n", numRows, nRows );
           return LALXMLC_EFUN;
         }
       }
@@ -794,10 +803,6 @@ int testTable ( void )
           XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
           return LALXMLC_EFUN;
         }
-        if ( nRows != numRows ) {
-          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Name('%d')\n", numRows, nRows );
-          return LALXMLC_EFUN;
-        }
       }
       /* ----- Index ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Index" ) ) {
@@ -805,19 +810,11 @@ int testTable ( void )
           XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
           return LALXMLC_EFUN;
         }
-        if ( nRows != numRows ) {
-          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Index('%d')\n", numRows, nRows );
-          return LALXMLC_EFUN;
-        }
       }
       /* ----- Fa ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Fa" ) ) {
         if ( (FaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_COMPLEX8, &nRows )) == NULL ) {
           XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Fa'.\n", fn, i );
-          return LALXMLC_EFUN;
-        }
-        if ( nRows != numRows ) {
-          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Fa('%d')\n", numRows, nRows );
           return LALXMLC_EFUN;
         }
       }
@@ -831,19 +828,58 @@ int testTable ( void )
 
   XLALDestroyVOTFieldVector ( fieldVect );
 
-  UINT4 j;
-  printf ("FreqOut = ");
+  if ( numRows != IN_ROWS ) {
+    XLALPrintError ("%s: some table rows went missing ... input %d rows, read out %d rows\n", fn, IN_ROWS, numRows );
+    return LALXMLC_EFUN;
+  }
+
+  printf ("--> Read back table values ... \n");
+  printf ("FreqOut  = ");
   for ( j=0; j < numRows; j ++ ) printf ("%f%s", FreqOut[j], j<numRows-1? ", " : "\n" );
   printf ("AlphaOut = ");
   for ( j=0; j < numRows; j ++ ) printf ("%f%s", AlphaOut[j], j<numRows-1? ", " : "\n" );
   printf ("DeltaOut = ");
   for ( j=0; j < numRows; j ++ ) printf ("%f%s", DeltaOut[j], j<numRows-1? ", " : "\n" );
+  printf ("NameOut  = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%s%s", NameOut[j], j<numRows-1? ", " : "\n" );
   printf ("IndexOut = ");
   for ( j=0; j < numRows; j ++ ) printf ("%d%s", IndexOut[j], j<numRows-1? ", " : "\n" );
-  printf ("NameOut = ");
-  for ( j=0; j < numRows; j ++ ) printf ("%s%s", NameOut[j], j<numRows-1? ", " : "\n" );
-  printf ("FaOut = ");
+  printf ("FaOut    = ");
   for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", FaOut[j].re, FaOut[j].im, j<numRows-1? ", " : "\n" );
+
+  /* compare input- and output-values */
+  printf ("--> Comparing input values and those parsed back ... ");
+  for ( j=0; j < numRows; j++ )
+    {
+      if ( gsl_fcmp (FreqIn[j], FreqOut[j], REAL8TOL ) ) {
+        XLALPrintError ("Input Freq values %.16f and parsed %.16f in row %d differ by more than eps=%g\n", FreqIn[j], FreqOut[j], j, REAL8TOL);
+        return LALXMLC_EFUN;
+      }
+      if ( gsl_fcmp (AlphaIn[j], AlphaOut[j], REAL4TOL ) ) {
+        XLALPrintError ("Input Alpha values %.6f and parsed %.6f in row %d differ by more than eps=%g\n", AlphaIn[j], AlphaOut[j], j, REAL4TOL);
+        return LALXMLC_EFUN;
+      }
+      if ( gsl_fcmp (DeltaIn[j], DeltaOut[j], REAL4TOL ) ) {
+        XLALPrintError ("Input Delta values %.6f and parsed %.6f in row %d differ by more than eps=%g\n", DeltaIn[j], DeltaOut[j], j, REAL4TOL);
+        return LALXMLC_EFUN;
+      }
+      if ( strcmp (NameIn[j], NameOut[j]) ) {
+        XLALPrintError ("Input Name '%s' differs from parsed '%s' in row %d\n", NameIn[j], NameOut[j], j );
+        return LALXMLC_EFUN;
+      }
+      if ( IndexIn[j] != IndexOut[j] ) {
+        XLALPrintError ("Input Index '%d' differs from parsed '%d' in row %d\n", IndexIn[j], IndexOut[j], j );
+        return LALXMLC_EFUN;
+      }
+      if ( gsl_fcmp (FaIn[j].re, FaOut[j].re, REAL4TOL ) || gsl_fcmp (FaIn[j].im, FaOut[j].im, REAL4TOL ) ) {
+        XLALPrintError ("Input Fa {%.6f,%.6f} and parsed {%.6f,%.6f} in row %d differ by more than eps=%g\n",
+                        FaIn[j].re, FaIn[j].im, FaOut[j].re, FaOut[j].im, j, REAL4TOL);
+        return LALXMLC_EFUN;
+      }
+
+    } /* for j < numRows */
+  printf ("OK. Everything agrees within tolerances.\n");
+
 
   XLALFree ( FreqOut );
   XLALFree ( AlphaOut );
@@ -878,13 +914,13 @@ int validateDocument(const xmlDocPtr xmlDocument)
     /* validate document */
     if(result == XLAL_SUCCESS) {
         strncat(schemaUrl, schemaPath, PATH_MAXLEN);
+        printf ("schema-file: %s ... ", schemaPath );
         result = XLALValidateDocumentByExternalSchema(xmlDocument, BAD_CAST(schemaUrl));
         LALFree(schemaPath);
     }
     else {
-        fprintf(stderr, "Warning: schema definition file not found! "
-                        "Falling back to internal schema definition (online resource)!\n");
-        result = XLALValidateDocumentByInternalSchema(xmlDocument);
+      printf ("schema: document-internal (online) ... ");
+      result = XLALValidateDocumentByInternalSchema(xmlDocument);
     }
 
     return result;
@@ -935,10 +971,8 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
 
     /* LAL_DATA_PATH unavailable */
     if(!dataPathEnv || !strlen(dataPathEnv)) {
-        fprintf(stderr, "Warning: LAL_DATA_PATH not set! Trying working directory...\n");
         fileCheck = LALFopen(filename, "r");
         if(!fileCheck) {
-            fprintf(stderr, "File (%s) not found!\n", filename);
             LALFree(absolutePath);
             return XLAL_FAILURE;
         }
