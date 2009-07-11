@@ -612,7 +612,7 @@ test_gsl_matrix(void)
 } /* test_gsl_matrix() */
 
 
-
+/* generic test for table- writing and parsing tools */
 int testTable ( void )
 {
   const char *fn = "testTable()";
@@ -623,11 +623,12 @@ int testTable ( void )
   char *xmlString = NULL;
 
 
-  REAL8 Freqs[] = { 100.1234, 101.234, 102.345 };
-  REAL8 Alphas[] = { 0.1234, 2.123434, 3.2341 };
-  REAL8 Deltas[] = { -1.234, -0.5, 1.234 };
-  CHAR *Names[] = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
-  INT4  Indices[] = { 5, 7, 99 };
+  REAL8 Freq[]   = { 100.1234, 101.234, 102.345 };
+  REAL4 Alpha[]  = { 0.1234, 2.123434, 3.2341 };
+  REAL4 Delta[]  = { -1.234, -0.5, 1.234 };
+  CHAR *Name[]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
+  INT4  Index[]  = { 5, 7, 99 };
+  COMPLEX8 Fa[]   = { { 1, 2 }, {3, 4}, {5, 6} };
 
   /* ---------- create FIELDS */
   /* ----- Freq */
@@ -636,7 +637,7 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
   /* ----- Alpha */
-  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Alpha", "rad", VOT_REAL8, NULL )) == NULL ) {
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Alpha", "rad", VOT_REAL4, NULL )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Alpha'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -645,7 +646,7 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
   /* ----- Delta */
-  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Delta", "rad", VOT_REAL8, NULL )) == NULL ) {
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Delta", "rad", VOT_REAL4, NULL )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Delta'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -654,7 +655,7 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
   /* ----- Names */
-  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Names", NULL, VOT_CHAR, "*" )) == NULL ) {
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Name", NULL, VOT_CHAR, "*" )) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Names'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -663,7 +664,7 @@ int testTable ( void )
     return LALXMLC_EFUN;
   }
   /* ----- Indices */
-  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Indices", NULL, VOT_INT4, NULL)) == NULL ) {
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Index", NULL, VOT_INT4, NULL)) == NULL ) {
     XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -671,10 +672,20 @@ int testTable ( void )
     XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
     return LALXMLC_EFUN;
   }
+  /* ----- Fa */
+  if ( (newFieldNode = XLALCreateVOTFieldNode ( "Fa", NULL, VOT_COMPLEX8, NULL)) == NULL ) {
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Fa'. xlalErrno = %d\n", fn, xlalErrno );
+    return LALXMLC_EFUN;
+  }
+  if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    return LALXMLC_EFUN;
+  }
+
 
   xmlNodePtr xmlFragment, xmlTable, xmlTabledataNode;
 
-  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f,%s,%d", Freqs, Alphas, Deltas, Names, Indices )) == NULL ){
+  if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.5f,%.1f,%.2f,%s,%d,%f %f", Freq, Alpha, Delta, Name, Index, Fa )) == NULL ){
     XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", fn, xlalErrno );
     return LALXMLC_EFUN;
   }
@@ -723,27 +734,124 @@ int testTable ( void )
   printf ("ok.\n");
 
   /* ---------- de-serialize back into C-struct ---------- */
+  UINT4 i, numCols, numRows, nRows;
+  VOTFieldVector *fieldVect;
+  REAL8 *FreqOut;
+  REAL4 *AlphaOut, *DeltaOut;
+  CHAR **NameOut;
+  INT4 *IndexOut;
+  COMPLEX8 *FaOut;
 
-  /* discover list of FIELDS contained in table */
-  xmlNodeSet *fieldNodeSet;
-
-  if ( (fieldNodeSet = XLALFindVOTElementsAtPath ( xmlDocument, LALXMLC_NAMETEST5".$TABLE.$FIELD" )) == NULL ) {
-    XLALPrintError ( "%s: failed to find list of FIELD elements in table '%s'.\n", fn, LALXMLC_NAMETEST5 );
+  if ( ( fieldVect = XLALReadVOTFIELDNodes ( xmlDocument, LALXMLC_NAMETEST5 )) == NULL ) {
+    XLALPrintError ("%s: XLALReadVOTFIELDNodes() failed to obtain FIELD elements.\n", fn );
     return LALXMLC_EFUN;
   }
-
-  printf ("\nFound %d FIELD elements in table '%s'.\n", fieldNodeSet->nodeNr, LALXMLC_NAMETEST5 );
-  UINT4 i;
-  for ( i = 0 ; i < fieldNodeSet->nodeNr; i ++ )
+  numCols = fieldVect->length;
+  printf ("XLALReadVOTFIELDNodes() found %d FIELD nodes\n", numCols );
+  for ( i=0; i < numCols; i ++ )
     {
-      xmlNode *thisNode = fieldNodeSet->nodeTab[i];
-      xmlChar *name;
-      printf ("i = %d: %s", i, thisNode->name );
-      if ( (name = (char*)xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("name"))) != NULL ) {
-        printf (" name = '%s'", name );
+      VOTField *thisField = &fieldVect->data[i];
+
+      printf ("i = %d: name='%s', datatype='%s'", i, thisField->name, XLALVOTDatatype2String ( thisField->datatype ) );
+      if ( thisField->unit )
+        printf ("  unit = '%s'", thisField->unit );
+      if ( thisField -> arraysize )
+        printf ("  arraysize = '%s' ", thisField->arraysize );
+      printf ("\n");
+
+      /* ----- Freq ----- */
+      if ( !strcmp ( (const char*)thisField->name, "Freq" ) ) {
+        if ( (FreqOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL8, &numRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Freq'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
       }
-      printf("\n");
-    } /* for i < numNodes */
+      /* ----- Alpha ----- */
+      else if ( !strcmp ( (const char*)thisField->name, "Alpha" ) ) {
+        if ( (AlphaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL4, &nRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Alpha'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
+        if ( nRows != numRows ) {
+          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Alpha('%d')\n", numRows, nRows );
+          return LALXMLC_EFUN;
+        }
+      }
+      /* ----- Delta ----- */
+      else if ( !strcmp ( (const char*)thisField->name, "Delta" ) ) {
+        if ( (DeltaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL4, &nRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Delta'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
+        if ( nRows != numRows ) {
+          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Delta('%d')\n", numRows, nRows );
+          return LALXMLC_EFUN;
+        }
+      }
+      /* ----- Name ----- */
+      else if ( !strcmp ( (const char*)thisField->name, "Name" ) ) {
+        if ( (NameOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_CHAR, &nRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
+        if ( nRows != numRows ) {
+          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Name('%d')\n", numRows, nRows );
+          return LALXMLC_EFUN;
+        }
+      }
+      /* ----- Index ----- */
+      else if ( !strcmp ( (const char*)thisField->name, "Index" ) ) {
+        if ( (IndexOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_INT4, &nRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
+        if ( nRows != numRows ) {
+          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Index('%d')\n", numRows, nRows );
+          return LALXMLC_EFUN;
+        }
+      }
+      /* ----- Fa ----- */
+      else if ( !strcmp ( (const char*)thisField->name, "Fa" ) ) {
+        if ( (FaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_COMPLEX8, &nRows )) == NULL ) {
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Fa'.\n", fn, i );
+          return LALXMLC_EFUN;
+        }
+        if ( nRows != numRows ) {
+          XLALPrintError ( "%s: inconsisten number of rows Freq('%d') vs Fa('%d')\n", numRows, nRows );
+          return LALXMLC_EFUN;
+        }
+      }
+      else
+        {
+          XLALPrintError ( "%s: Unknown table column encountered '%s'\n", (const char*)thisField->name );
+          return LALXMLC_EFUN;
+        }
+
+    } /* for i < numCols */
+
+  XLALDestroyVOTFieldVector ( fieldVect );
+
+  UINT4 j;
+  printf ("FreqOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%f%s", FreqOut[j], j<numRows-1? ", " : "\n" );
+  printf ("AlphaOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%f%s", AlphaOut[j], j<numRows-1? ", " : "\n" );
+  printf ("DeltaOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%f%s", DeltaOut[j], j<numRows-1? ", " : "\n" );
+  printf ("IndexOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%d%s", IndexOut[j], j<numRows-1? ", " : "\n" );
+  printf ("NameOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%s%s", NameOut[j], j<numRows-1? ", " : "\n" );
+  printf ("FaOut = ");
+  for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", FaOut[j].re, FaOut[j].im, j<numRows-1? ", " : "\n" );
+
+  XLALFree ( FreqOut );
+  XLALFree ( AlphaOut );
+  XLALFree ( DeltaOut );
+  XLALFree ( IndexOut );
+  for ( j=0; j < numRows; j ++ ) XLALFree ( NameOut[j] );
+  XLALFree ( NameOut );
+  XLALFree ( FaOut );
 
   /* clean up */
   xmlFreeDoc ( xmlDocument );
