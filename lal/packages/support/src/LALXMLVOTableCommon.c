@@ -849,7 +849,6 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
         } /* for j <= columns */
 
       /* TD now points to the right column <TD> node */
-      printf ("row = %d: TD content = '%s'\n", i, (const char*)TD->children->content );
 
       /* parse data-string into output array according to datatype */
       if ( XLALVOTsscanfToArray ( datatype, TD->children->content, ret, i ) != XLAL_SUCCESS ) {
@@ -1682,13 +1681,13 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
       fmtString = "%ld";
       break;
     case VOT_REAL4:
-      fmtString = "%.6g";
+      fmtString = "%.7g";
       break;
     case VOT_REAL8:
       fmtString = "%.16g";
       break;
     case VOT_COMPLEX8:
-      fmtString = "%.6g %.6g";
+      fmtString = "%.7g %.7g";
       break;
     case VOT_COMPLEX16:
       fmtString = "%.16g %.16g";
