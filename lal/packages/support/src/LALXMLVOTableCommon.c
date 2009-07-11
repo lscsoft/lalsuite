@@ -51,17 +51,15 @@
 #define FALSE 0
 
 /* ---------- internal prototypes ---------- */
-const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
-VOTABLE_DATATYPE XLALVOTString2Datatype ( const char *datatypeString );
-const char* XLALVOTElement2String ( VOTABLE_ELEMENT element );
 
-const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
 char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
 const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
+int XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype, const xmlChar *content, void *arrayPtr, UINT4 index );
 
 CHAR * XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attribute );
 CHAR *XLALVOTResourcePath2XPath ( const CHAR *resourcePath );
+void *XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 rowCounter );
 
 /* ---------- function definitions ---------- */
 
@@ -624,6 +622,324 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
 
 } /* XLALCreateVOTTabledataNode () */
 
+/** Function to discover and parse the list of FIELD nodes in a given table,
+ * returns a vector holding the attributes of all read-in FIELD elements (in order)
+ */
+VOTFieldVector *
+XLALReadVOTFIELDNodes ( const xmlDocPtr xmlDocument,	/**< [in] The XML document to be searched */
+                        const CHAR *resourcePath 	/**< [in] hiearchical RESOURCE path 'res1.res2....resN' to table RESOURCE */
+                        )
+{
+  static const char *fn = "XLALReadVOTFIELDNodes()";
+  CHAR ePath[XPATHSTR_MAXLEN];
+  static const CHAR *pathExt = ".$TABLE.$FIELD";
+
+  xmlNodeSet *fieldNodeSet;
+  UINT4 numFields;
+  VOTFieldVector *ret;
+  enum XLALErrorValue err;
+
+  /* check input consistency */
+  if ( !xmlDocument || !resourcePath || !strlen(resourcePath) ) {
+    XLALPrintError ("%s: invalid NULL or empty input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* assemble 'extended resource path' leading to FIELD elements */
+  if ( snprintf ( ePath, XPATHSTR_MAXLEN, "%s%s", resourcePath, pathExt ) >= XPATHSTR_MAXLEN ) {
+    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", resourcePath, pathExt, XPATHSTR_MAXLEN );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( (fieldNodeSet = XLALFindVOTElementsAtPath ( xmlDocument, ePath )) == NULL ) {
+    XLALPrintError ( "%s: failed to find list of FIELD elements in table '%s'.\n", fn, resourcePath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  numFields = fieldNodeSet->nodeNr;
+  if ( (ret = XLALCreateVOTFieldVector ( numFields )) == NULL ) {
+    err = XLAL_EFUNC;
+    goto failed;
+  }
+
+  /* ----- read all FIELD elements and stores in output vector ---------- */
+  UINT4 i;
+  for ( i = 0 ; i < numFields; i ++ )
+    {
+      xmlNode *thisNode = fieldNodeSet->nodeTab[i];
+      VOTField *thisField = &ret->data[i];
+      xmlChar *tmp;
+
+      /* ----- read required attributes, fail if not found */
+      /* name */
+      if ( (thisField->name = xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("name"))) == NULL ) {
+        XLALPrintError ("%s: Required attribute 'name' not found in %d'th FIELD node.\n", fn, i );
+        err = XLAL_EDATA;
+        goto failed;
+      }
+      /* datatype */
+      if ( (tmp = xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
+        XLALPrintError ("%s: Required attribute 'datatype' not found in %d'th FIELD node (name='%s').\n", fn, i, (char*)thisField->name );
+        err = XLAL_EDATA;
+        goto failed;
+      }
+      if ( (thisField->datatype = XLALVOTString2Datatype ( (char*)tmp )) == VOT_DATATYPE_LAST ) {
+        XLALPrintError ("%s: Invalid datatype attribute '%s' in %d'th FIELD node (name='%s').\n", fn, (char*)tmp, i, (char*)thisField->name );
+        xmlFree ( tmp );
+        err = XLAL_EDATA;
+        goto failed;
+      }
+      xmlFree ( tmp );
+
+      /* ----- read optional attributes, ignore if not found */
+      thisField->unit = xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("unit") );
+      thisField->arraysize = xmlGetProp ( thisNode, CAST_CONST_XMLCHAR("arraysize") );
+
+      /* check for presence of any other allowed VOTable attributes and warn if found, as currently not used */
+      const xmlChar *attrib;
+      attrib = CAST_CONST_XMLCHAR("ID");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("precision");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("width");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("ref");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("ucd");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("utype");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+      attrib = CAST_CONST_XMLCHAR("type");
+      if ( ( tmp = xmlGetProp ( thisNode, attrib ) ) != NULL ) {
+        XLALPrintWarning ( "%s: WARNING, %d'th FIELD node (name='%s') contains attribute '%s' ('%s'), which is currently not used.\n",
+                           fn, i, (char*)thisField->name, attrib, (char*)tmp );
+        xmlFree ( tmp );
+      }
+
+    } /* for i < numFields */
+
+  xmlXPathFreeNodeSet ( fieldNodeSet );
+
+  return ret;
+
+
+ failed:
+  if ( fieldNodeSet ) xmlXPathFreeNodeSet ( fieldNodeSet );
+  if ( ret ) XLALDestroyVOTFieldVector ( ret );
+  XLAL_ERROR_NULL ( fn, err );
+
+} /* XLALReadVOTFIELDNodes() */
+
+/** Function to read a given table column of elementary dataype from a TABLEDATA.
+ *
+ * Note: this function does not support general array types in the table column.
+ * Strings are always handled by returning an array of pointers, irrespective of the
+ * arraysize given in the table FIELD.
+ *
+ * Returns an array (of type corresponding to datatype) containing the numRows values
+ * from the given column of the TABLEDATA table.
+ *
+ * Note: caller needs to XLALFree() the returned array.
+ *
+ */
+void *
+XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The XML document to be searched */
+                                   const CHAR *resourcePath, 		/**< [in] hiearchical RESOURCE path 'res1.res2....resN' to table RESOURCE */
+                                   UINT4 column,			/**< [in] index of table-column to read */
+                                   VOTABLE_DATATYPE datatype,		/**< [in] data-type of column to be read */
+                                   UINT4 *numRows			/**< [out] number of successfully read table rows */
+                                   )
+{
+  static const char *fn = "XLALReadVOTTabledataSimpleColumn()";
+  CHAR ePath[XPATHSTR_MAXLEN];
+  static const CHAR *pathExt = ".$TABLE.$DATA.$TABLEDATA";
+  xmlNodeSet *nodeSet;
+  const xmlNode *TR, *TD;	/* pointers to walk around in table elements */
+  void *ret=NULL;
+  UINT4 i, j, nRows;
+
+  /* check input consistency */
+  if ( !xmlDocument || !resourcePath || !strlen(resourcePath) || !numRows ) {
+    XLALPrintError ("%s: invalid NULL or empty input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* assemble 'extended resource path' leading to TABLEDATA element */
+  if ( snprintf ( ePath, XPATHSTR_MAXLEN, "%s%s", resourcePath, pathExt ) >= XPATHSTR_MAXLEN ) {
+    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", resourcePath, pathExt, XPATHSTR_MAXLEN );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( (nodeSet = XLALFindVOTElementsAtPath ( xmlDocument, ePath )) == NULL ) {
+    XLALPrintError ( "%s: failed to find TABLEDATA element in table '%s'.\n", fn, resourcePath );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  if ( nodeSet->nodeNr != 1 ) {
+    XLALPrintError ("%s: more than one TABLEDATA element found in table '%s' ... something went wrong here.\n", fn, resourcePath );
+    xmlXPathFreeNodeSet ( nodeSet );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* initialize TR pointer to first child of TABLEDATA node */
+  TR = nodeSet->nodeTab[0]->children;
+
+  /* count number of table rows (doesn't modify TR) */
+  if ( XLALcountNamedNodes ( TR, CAST_CONST_XMLCHAR("TR"), &nRows ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: failed to count number of table rows (<TR>) in TABLE '%s'\n", fn, resourcePath );
+    xmlXPathFreeNodeSet ( nodeSet );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* allocate output array */
+  if ( ( ret = XLALVOTAllocateArray ( datatype, nRows ) ) == NULL ) {
+    xmlXPathFreeNodeSet ( nodeSet );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* advance to beginning of first table row, ie first <TR> node element */
+  if ( (TR = XLALfindNextNamedNode ( TR, CAST_CONST_XMLCHAR("TR") )) == NULL ) {
+    XLALPrintError ("%s: Something is wrong with the TABLEDATA structure: no <TR> element found!\n", fn );
+    XLALFree(ret);
+    xmlXPathFreeNodeSet ( nodeSet );
+    XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+  }
+
+  for ( i=0; i < nRows; i ++ )
+    {
+      /* initialize TD pointer to first child of TR node */
+      TD = TR->children;
+      /* advance to n'th column, ie n'th <TD> node element */
+
+      for ( j=0; j <= column; j ++ )
+        {
+          /* find next <TD> node element */
+          if ( (TD = XLALfindNextNamedNode ( TD, CAST_CONST_XMLCHAR("TD") )) == NULL ) {
+            XLALPrintError ("%s: Something is wrong with the TABLEDATA: does not contain %d columns\n", fn, column );
+            XLALFree(ret);
+            xmlXPathFreeNodeSet ( nodeSet );
+            XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+          }
+          if ( j < column )
+            TD = TD->next;	/* step forward to next column element */
+
+        } /* for j <= columns */
+
+      /* TD now points to the right column <TD> node */
+      printf ("row = %d: TD content = '%s'\n", i, (const char*)TD->children->content );
+
+      /* parse data-string into output array according to datatype */
+      if ( XLALVOTsscanfToArray ( datatype, TD->children->content, ret, i ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: failed to parse row %d.\n", i );
+        XLALFree ( ret );
+        xmlXPathFreeNodeSet ( nodeSet );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+
+      /* step forward to next row element */
+      TR = TR->next;
+      TR = XLALfindNextNamedNode ( TR, CAST_CONST_XMLCHAR("TR") );
+
+    } /* while TR elements found */
+
+  /* clean up */
+  xmlXPathFreeNodeSet ( nodeSet );
+
+  /* return results */
+  (*numRows) = nRows;
+  return ret;
+
+
+} /* XLALReadVOTTabledataSimpleColumn() */
+
+
+
+
+/** Creator function for a VOTFieldVector of given number of fiels
+ * Should be free'ed using XLALDestroyVOTFieldVector.
+ */
+VOTFieldVector *
+XLALCreateVOTFieldVector ( UINT4 numFields )
+{
+  static const char *fn = "XLALCreateVOTFieldVector()";
+
+  VOTFieldVector *ret;
+
+  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = numFields;
+  if ( ( ret->data = XLALCalloc ( numFields, sizeof(ret->data[0]))) == NULL ) {
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateVOTFieldVector() */
+
+
+/** Destructor function for a VOTFieldVector.
+ * Note: this frees all strings stored in the
+ * VOTField elements using xmlFree(), so they must have been alloce'd
+ * by an libxml2 function such as xmlGetProp(). Don't alloc them using XLALMalloc()!
+ */
+void
+XLALDestroyVOTFieldVector ( VOTFieldVector *vect )
+{
+  if ( !vect )
+    return;
+
+  if ( vect->data )
+    {
+      UINT4 numFields, i;
+      numFields = vect->length;
+
+      for ( i=0; i < numFields; i ++ )
+        {
+          VOTField *thisField = &vect->data[i];
+
+          if ( thisField->name ) xmlFree ( thisField->name );
+          if ( thisField->unit ) xmlFree ( thisField->unit );
+          if ( thisField->arraysize ) xmlFree ( thisField->arraysize );
+
+          /* ... add more here if you extend the VOTField struct ! */
+
+        } /* for i < numFields */
+
+      XLALFree ( vect->data );
+
+    } /* if vect->data */
+
+  XLALFree ( vect );
+
+  return;
+
+} /* XLALDestroyVOTFieldVector() */
 
 
 /**
@@ -1327,7 +1643,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
 } /* XMLCleanVOTTableWhitespace() */
 
 
-/** Get (static & constant!) format string (without leading '%') suitable for writing 'datatype'.
+/** Get (static & constant!) format string suitable for writing 'datatype'.
  * This is used for default printf-format in table writing.
  *
  * Note: the returned string pointer is static const and MUST *NOT* be free'ed!
@@ -1342,7 +1658,7 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
   switch(datatype)
     {
     case VOT_BOOL:
-      fmtString = "%d";
+      fmtString = "%s";
       break;
     case VOT_BIT:
       fmtString = "%d";
@@ -1422,7 +1738,7 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
     {
     case VOT_BOOL:
       val = ((BOOLEAN*)dataPtr)[index];
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, val ? 1 : 0 ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, val ? "t" : "f" ) < 0) {
         XLALPrintError("%s: failed to convert BOOLEAN element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
@@ -1478,13 +1794,13 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
       }
       break;
     case VOT_COMPLEX8:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)dataPtr)[index] ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)dataPtr)[index].re, ((COMPLEX8*)dataPtr)[index].im ) < 0) {
         XLALPrintError("%s: failed to convert COMPLEX8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_COMPLEX16:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)dataPtr)[index] ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)dataPtr)[index].re, ((COMPLEX16*)dataPtr)[index].im ) < 0) {
         XLALPrintError("%s: failed to convert COMPLEX16 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
@@ -1498,6 +1814,133 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
   return textbuf;
 
 } /* XLALVOTprintfFromArray() */
+
+
+/** Parse a string into the n'th entry in a given array, according to the given datatype.
+ *
+ * This function is the 'scanf' analog to XLALVOTprintfFromArray() and is used to parse
+ * table entries into an output array.
+ *
+ * Note: the caller is responible to make sure arrayPtr points to an array of the right
+ * datatype and size! It is recommended to use XLALVOTAllocateArray() to allocate such an array.
+ */
+int
+XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
+                       const xmlChar *content,		/**< [in] content string to be parsed */
+                       void *arrayPtr,			/**< [out] pointer to target array to be written into */
+                       UINT4 index			/**< [in] index of element to write: arrayPtr[index] */
+                       )
+{
+  static const char *fn = "XLALVOTsscanfToArray()";
+
+  UINT4 len;
+  const char *instring = (const char*)content;
+
+  switch ( datatype )
+    {
+    case VOT_BOOL:
+      /* allowed TRUE representations are 't', '1' or 'true', ignoring case */
+      if ( !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("t")) ||
+           !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("1")) ||
+           !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("true")) )
+        ((BOOLEAN*)arrayPtr)[index] = TRUE;
+      /* allowed FALSE representations are 'f', '0' or 'false', ignoring case */
+      else if ( !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("f")) ||
+                !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("0")) ||
+                !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("false")) )
+        ((BOOLEAN*)arrayPtr)[index] = FALSE;
+      else
+        {
+          XLALPrintError ("%s: invalid boolean value encountered '%s' for index=%d\n", fn, instring, index );
+          XLAL_ERROR ( fn, XLAL_EDATA );
+        }
+      break;
+
+    case VOT_BIT:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_BIT' not currently supported!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EFAILED );
+      break;
+
+    case VOT_CHAR:
+      len = strlen ( instring );
+      if ( (((CHAR**)arrayPtr)[index] = XLALMalloc ( len + 1 )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALMalloc(%d).\n", fn, len + 1 );
+        XLAL_ERROR ( fn, XLAL_ENOMEM );
+      }
+      strcpy ( ((CHAR**)arrayPtr)[index], instring );
+      break;
+
+    case VOT_CHAR_UTF:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_CHAR_UTF' not currently supported!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EFAILED );
+      break;
+
+    case VOT_INT1:
+      if ( sscanf( instring, "%hhd", &( ((signed char*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT1 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_INT2:
+      if ( sscanf( instring, "%" LAL_INT2_FORMAT, &( ((INT2*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT2 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_INT4:
+      if ( sscanf( instring, "%" LAL_INT4_FORMAT, &( ((INT4*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT4 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_INT8:
+      if ( sscanf( instring, "%" LAL_INT8_FORMAT, &( ((INT8*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT4 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_REAL4:
+      if ( sscanf( instring, "%" LAL_REAL4_FORMAT, &( ((REAL4*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse REAL4 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_REAL8:
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT, &( ((REAL8*)arrayPtr)[index] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse REAL8 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_COMPLEX8:
+      if ( sscanf( instring, "%" LAL_REAL4_FORMAT "%" LAL_REAL4_FORMAT , &( ((COMPLEX8*)arrayPtr)[index].re ), &( ((COMPLEX8*)arrayPtr)[index].im ) ) != 2 ) {
+        XLALPrintError("%s: failed to parse COMPLEX8 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    case VOT_COMPLEX16:
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( ((COMPLEX16*)arrayPtr)[index].re ), &( ((COMPLEX16*)arrayPtr)[index].im ) ) != 2 ) {
+        XLALPrintError("%s: failed to parse COMPLEX16 element '%s' at index=%d.\n", fn, instring, index );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+      break;
+
+    default:
+      XLALPrintError ("%s: invalid datatype (%d), has to be within [1, %d].\n", fn, datatype, VOT_DATATYPE_LAST - 1 );
+      XLAL_ERROR ( fn, XLAL_EFAILED );
+      break;
+    } /* switch datatype */
+
+  return XLAL_SUCCESS;
+
+} /* XLALVOTsscanfToArray() */
+
 
 
 
@@ -1602,3 +2045,67 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
 
 } /* XLALFindVOTElementsAtPath() */
 
+
+/** Allocate an array of given datatype and number of elements
+ */
+void *
+XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 length )
+{
+  static const char *fn = "XLALVOTAllocateArray()";
+  void *ret;
+  size_t typelen;
+
+  switch ( datatype )
+    {
+    case VOT_BOOL:
+      typelen = sizeof(BOOLEAN);
+      break;
+    case VOT_BIT:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_BIT' not currently supported!\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    case VOT_CHAR:
+      typelen = sizeof(CHAR*);
+      break;
+    case VOT_CHAR_UTF:
+      XLALPrintError ("%s: Sorry, datatype 'VOT_CHAR_UTF' not currently supported!\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    case VOT_INT1:
+      typelen = sizeof(CHAR);
+      break;
+    case VOT_INT2:
+      typelen = sizeof(INT2);
+      break;
+    case VOT_INT4:
+      typelen = sizeof(INT4);
+      break;
+    case VOT_INT8:
+      typelen = sizeof(INT8);
+      break;
+    case VOT_REAL4:
+      typelen = sizeof(REAL4);
+      break;
+    case VOT_REAL8:
+      typelen = sizeof(REAL8);
+      break;
+    case VOT_COMPLEX8:
+      typelen = sizeof(COMPLEX8);
+      break;
+    case VOT_COMPLEX16:
+      typelen = sizeof(COMPLEX16);
+      break;
+    default:
+      XLALPrintError ("%s: invalid datatype (%d), has to be within [1, %d].\n", fn, datatype, VOT_DATATYPE_LAST - 1 );
+      XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      break;
+    } /* switch datatype */
+
+  if ( (ret = LALMalloc ( length * typelen )) == NULL ) {
+    XLALPrintError ( "%s: LALMalloc ( %s ) failed.\n", fn, length * typelen );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALVOTAllocateArray() */

@@ -123,6 +123,29 @@ typedef enum {
 } VOTABLE_SERIALIZATION_TYPE;
 
 
+/* ---------- exported API datatypes ---------- */
+
+/** Type holding the attributes of one FIELD node
+ * Note: currently this only holds the FIELD attributes that are actually used,
+ * but this can further extended as needed. See
+ * http://www.ivoa.net/Documents/REC/VOTable/VOTable-20040811.pdf
+ * for a complete list of allowed FIELD attributes.
+ *
+ */
+typedef struct {
+  xmlChar *name;		/**< name attribute [required] */
+  VOTABLE_DATATYPE datatype;	/**< datatype attribute [required] */
+  xmlChar *unit;		/**< unit attribute [optional] */
+  xmlChar *arraysize;		/**< arraysize attribute [optional] */
+} VOTField;
+
+/** A standard vector of VOTFields
+ */
+typedef struct {
+  UINT4 length;		/**< number of VOTFields */
+  VOTField *data;	/**< array of VOTFields */
+} VOTFieldVector;
+
 
 /* ---------- exported API prototypes ---------- */
 
@@ -152,6 +175,19 @@ xmlNodePtr XLALCreateVOTResourceNode(const char *type,
 
 xmlDoc *XLALCreateVOTDocFromTree(xmlNodePtr xmlTree, BOOLEAN reconcileNamespace );
 
+
+VOTFieldVector *XLALReadVOTFIELDNodes ( const xmlDocPtr xmlDocument, const CHAR *resourcePath );
+
+
+void *
+XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument,
+                                   const CHAR *resourcePath,
+                                   UINT4 column,
+                                   VOTABLE_DATATYPE datatype,
+                                   UINT4 *numRows
+                                   );
+
+
 CHAR *
 XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,
                                        const char *resourcePath,
@@ -168,14 +204,15 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,
 
 CHAR *XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree );
 
+VOTFieldVector *XLALCreateVOTFieldVector ( UINT4 numFields );
+void XLALDestroyVOTFieldVector ( VOTFieldVector *vect );
 
-#if 0
-xmlChar *XLALGetSingleVOTResourceParamAttribute(const xmlDocPtr xmlDocument,
-                                                const char *resourceType,
-                                                const char *resourceName,
-                                                const char *paramName,
-                                                VOTABLE_ATTRIBUTE paramAttribute);
-#endif
+const char* XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype );
+VOTABLE_DATATYPE XLALVOTString2Datatype ( const CHAR *datatypeString );
+const char* XLALVOTElement2String ( VOTABLE_ELEMENT element );
+const char* XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute );
+
+
 
 
 /* C++ protection */
