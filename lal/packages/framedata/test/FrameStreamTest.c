@@ -42,6 +42,8 @@
  *
  **** </lalLaTeX> */
 
+#include <FrameL.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <lal/LALStdlib.h>
