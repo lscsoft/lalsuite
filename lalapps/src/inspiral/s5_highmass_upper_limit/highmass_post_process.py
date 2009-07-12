@@ -419,14 +419,16 @@ timestr = str(start_time) + "-" + str(end_time)
 for type in types:
   for cat in cats:
     #break down the cache to save on parsing
-    grep(type + ".*" + cat, FULLDATACACHE, type + cat + ".cache")
-    try: os.mkdir(type+cat)
+    tag = type + "_" + cat
+    grep('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag + ".cache")
+    try: os.mkdir(tag)
     except: pass
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
-    database = type+cat+"_"+timestr+".sqlite"
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, tag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    database = tag+"_"+timestr+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
-    xml_list = [type+cat+"/S5_HM_"+timestr+"*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
+    #xml_list = [tag+"/S5_HM_"+timestr+"*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
+    xml_list = ["$(find -name '*"+tag+"*.xml.gz')", "vetoes_"+cat+".xml.gz"]
     ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
@@ -435,18 +437,20 @@ for type in types:
 for inj in injcache:
   for cat in cats:
     type = "_".join(inj.description.split("_")[2:])
+    tag = type + "_" + cat
     url = inj.url
-    cachefile = type + cat + ".cache"
-    try: os.mkdir(type+cat)
+    cachefile = tag + ".cache"
+    try: os.mkdir(tag)
     except: pass
     #break down the cache
-    grep(type + '.*' + cat, INJCACHE, cachefile)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]);n+=1
-    database = type+cat+"_"+timestr+".sqlite"
-    db_to_xml_name = type+cat+"_"+timestr+".xml.gz"
+    grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile)
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    database = tag+"_"+timestr+".sqlite"
+    db_to_xml_name = tag +"_"+timestr+".xml.gz"
     try: db[cat].append(database)
     except: db[cat] = [database]
-    xml_list = [type+cat+"/S5_HM_INJ_"+timestr+"*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
+    #xml_list = [type+cat+"/S5_HM_INJ_"+timestr+"*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
+    xml_list = ["$(find -name '*"+tag+"*.xml.gz')", url, "vetoes_"+cat+".xml.gz"]
     ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
@@ -472,9 +476,9 @@ for cat in cats:
 
 #Upper limit jobs
 for cat in ['CAT_3']: 
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 #IFAR plots
 for cat in cats:
