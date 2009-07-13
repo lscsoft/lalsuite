@@ -8,7 +8,7 @@ import ConfigParser
 import subprocess
 
 class wiki(object):
-  def _init_(self,fname="wiki.txt"):
+  def __init__(self,fname="wiki.txt"):
     self.fname = fname
     self.file = open(fname,"w")
 
@@ -82,7 +82,6 @@ page.image_table(image_list,webserver)
 
 try: # see if you want to open the box
   if sys.argv[2] == "open":
-
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
