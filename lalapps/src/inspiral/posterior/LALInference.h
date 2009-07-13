@@ -6,7 +6,6 @@
 
    Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch
 
- Test 123 XYZ test bla
 */
 
 /**
@@ -17,32 +16,72 @@
 #ifndef LALInference_h
 #define LALInference_h
 
-#include <stdio.h>
+# include <math.h>
+# include <stdio.h>
+# include <stdlib.h>
+
+#define VARNAME_MAX 128
+
+# include <lal/LALStdlib.h>
+# include <lal/LALConstants.h>
+# include <lal/SimulateCoherentGW.h>
+# include <lal/GeneratePPNInspiral.h>
+# include <lal/LIGOMetadataTables.h>
+# include <lal/LALDatatypes.h>
+# include <lal/FindChirp.h>
+
+#include <lal/LALDetectors.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_min.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_eigen.h>
+
+
+
 //...other includes
 
-//Structure containing inference run state 
-typedef struct 
-tagLALInferenceRunState
+/*#define NAME_MAX 64*/
+
+struct tagLALInferenceRunState;
+struct tagLALIFOData;
+
+/*Data storage type definitions*/
+
+typedef enum tagVariableType {REAL8_t, REAL4_t, gslMatrix_t} VariableType;  //, ..., ...
+extern size_t typeSize[];
+
+//VariableItem should NEVER be accessed directly, only through special
+//access functions as defined below.
+//Implementation may change from linked list to hashtable for faster access
+typedef struct
+tagVariableItem
 {
-  ProcParamTable * commandLine;
-  LALAlgorithm * algorithm;
-  LALEvolveOneStepFunction * evolve;
-  LALPriorFunction * prior;
-  LALLikelihoodFunction * likelihood;
-  LALProposalFunction * proposal;
-  LALTemplateFunction * template;
-  LALIFOData * data;
-  LALVariables * currentParams, *priorArgs, *proposalArgs;
-} LALInferenceRunState;
+  char name[VARNAME_MAX];
+  void * value;
+  VariableType type;
+  struct tagVariableItem * next;
+}LALVariableItem;
 
+typedef struct
+tagLALVariables
+{
+  LALVariableItem * head;
+  INT4 dimension;
+}LALVariables;
 
-//Main driver function for a run; will distinguish MCMC from NestedSampling
-typedef void (Algorithm) (LALInferenceRunState *);
+void *getVariable(LALVariables * vars, const char * name);
+void setVariable(LALVariables * vars, const char * name, void * value);
+void addVariable(LALVariables * vars, const char * name, void * value, 
+	VariableType type);
 
-//Compute next state along chain; replaces currentParams
-typedef void (LALEvolveOneStepFunction) (LALVariables * currentParams, 
-	LALIFOData * data, LALPriorFunction * prior, 
-	LALLikelihoodFunction * likelihood, LALProposalFunction * proposal);
+//Wrapper for template computation 
+//(relies on LAL libraries for implementation) <- could be a #DEFINE ?
+typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data);
 
 //Jump proposal distribution
 //Computes proposedParams based on currentParams and additional variables
@@ -62,47 +101,42 @@ typedef REAL8 (LALPriorFunction) (LALVariables *currentParams,
 //only once if possible, unless necessary because different IFOs 
 //have different data lengths or sampling rates 
 typedef REAL8 (LALLikelihoodFunction) (LALVariables *currentParams,
-        IFOData * data, LALTemplateFunction * template);
+        struct tagLALIFOData * data, LALTemplateFunction *template);
 
-//Wrapper for template computation 
-//(relies on LAL libraries for implementation) <- could be a #DEFINE ?
-typedef void (LALTemplateFunction) (LALVariables *currentParams,
-	IFOData *data);
 
-LALInferenceRunState * Initialize (ProcParamsTable * commandLine);
 
-IFOData * ReadData (ProcParamsTable * commandLine);
+//Compute next state along chain; replaces currentParams
+typedef void (LALEvolveOneStepFunction) (LALVariables * currentParams, 
+	struct tagLALIFOData *data, LALPriorFunction *prior, 
+	LALLikelihoodFunction * likelihood, LALProposalFunction * proposal);
 
-/*Data storage type definitions*/
 
-typedef enum VariableType {REAL8, REAL4, gslMatrix};  //, ..., ...
+//Main driver function for a run; will distinguish MCMC from NestedSampling
+typedef void (LALAlgorithm) (struct tagLALInferenceRunState *runState);
 
-//VariableItem should NEVER be accessed directly, only through special
-//access functions as defined below.
-//Implementation may change from linked list to hashtable for faster access
-typedef struct
-tagVariableItem
+//Structure containing inference run state 
+typedef struct 
+tagLALInferenceRunState
 {
-  char * name;
-  void * value;
-  VariableType type;
-  VariableItem * next;
-}VariableItem;
+  ProcessParamsTable * commandLine;
+  LALAlgorithm * algorithm;
+  LALEvolveOneStepFunction * evolve;
+  LALPriorFunction * prior;
+  LALLikelihoodFunction * likelihood;
+  LALProposalFunction * proposal;
+  LALTemplateFunction * template;
+  struct tagLALIFOData * data;
+  LALVariables * currentParams, *priorArgs, *proposalArgs;
+} LALInferenceRunState;
+
+
+LALInferenceRunState *Initialize (ProcessParamsTable * commandLine);
+
+struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
+
 
 typedef struct
-tagLALVariables
-{
-  VariableItem * head;
-  INT4 dimension;
-}LALVariables;
-
-void getVariable(LALVariables * vars, char * name);
-void setVariable(LALVariables * vars, char * name, void * value);
-void addVariable(LALVariables * vars, char * name, void * value, 
-	VariableType type);
-
-typedef struct
-tagIFOData
+tagLALIFOData
 {
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
@@ -111,8 +145,10 @@ tagIFOData
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8 fLow, fHigh;	//integration limits;
   LALDetector *detector;
-  IFOData *next;
-}IFOData;
+  struct tagLALIFOData *next;
+}LALIFOData;
+
+
 
 #endif
 
