@@ -58,13 +58,7 @@
 
 #define REAL8TOL 1e-16
 #define REAL4TOL 1e-6
-
-#ifndef LAL_PREFIX
-    #define LAL_PREFIX "/usr/local"
-#endif
-
 #define PATH_MAXLEN 256
-
 
 /* private test prototypes */
 int testLIGOTimeGPS(void);
@@ -139,8 +133,6 @@ int main(void)
 
 int testLIGOTimeGPS(void)
 {
-    static const char *fn = "testLIGOTimeGPS()";
-
     static LIGOTimeGPS timeSource;
     static LIGOTimeGPS timeDestination;
     xmlNodePtr xmlFragment = NULL;
@@ -158,13 +150,13 @@ int testLIGOTimeGPS(void)
     /* serialize structure into VOTable fragment */
     printf( "--> Serializing into XML string ... ");
     if ( (xmlFragment = XLALLIGOTimeGPS2VOTNode ( &timeSource, LALXMLC_NAMETEST1)) == NULL ) {
-      XLALPrintError ( "%s: XLALLIGOTimeGPS2VOTNode() failed.\n", fn );
+      XLALPrintError ( "%s: XLALLIGOTimeGPS2VOTNode() failed.\n", __func__ );
       return LALXMLC_EFUN;
     }
 
     /* convert VOTable tree into XML string */
     if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
-      XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed.\n", fn);
+      XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed.\n", __func__);
       return LALXMLC_EFUN;
     }
     printf ("ok.\n");
@@ -178,7 +170,7 @@ int testLIGOTimeGPS(void)
     /* convert VOTable string back into VOTable document */
     printf ("--> Parsing XML string into xmlDoc ... ");
     if ( (xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-      XLALPrintError( "%s: XLALXMLString2Doc() failed.\n", fn);
+      XLALPrintError( "%s: XLALXMLString2Doc() failed.\n", __func__);
       return LALXMLC_EFUN;
     }
     printf ("ok.\n");
@@ -186,7 +178,7 @@ int testLIGOTimeGPS(void)
     /* validate resulting XML document */
     printf ("--> Validating xmlDoc against VOTable schema ... ");
     if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: validateDocument failed. ret = %d\n", fn, result );
+      XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
       if ( result == XLAL_FAILURE )
         return LALXMLC_EVAL;
       else
@@ -197,7 +189,7 @@ int testLIGOTimeGPS(void)
     /* deserialize VOTable document back into a C-structure */
     printf ("--> Read out LIGOTimeGPSStruct ... ");
     if ( XLALVOTDoc2LIGOTimeGPSByName ( xmlDocument, LALXMLC_NAMETEST1, &timeDestination)) {
-      XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", fn, xlalErrno );
+      XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", __func__, xlalErrno );
       return LALXMLC_EFUN;
     }
     printf( "ok: %s = { %d, %d }\n", LALXMLC_NAMETEST1, timeDestination.gpsSeconds, timeDestination.gpsNanoSeconds );
@@ -207,7 +199,7 @@ int testLIGOTimeGPS(void)
        timeSource.gpsSeconds != timeDestination.gpsSeconds ||
        timeSource.gpsNanoSeconds != timeDestination.gpsNanoSeconds)
       {
-        XLALPrintError ( "%s: LIGOTimeGPS structure differs before and after XML serialization!\n", fn );
+        XLALPrintError ( "%s: LIGOTimeGPS structure differs before and after XML serialization!\n", __func__ );
         return LALXMLC_EVAL;
     }
     else
@@ -226,8 +218,6 @@ int testLIGOTimeGPS(void)
 
 int testPulsarDopplerParams(void)
 {
-    static const char *fn = "testPulsarDopplerParams()";
-
     static BinaryOrbitParams bopSource;
     static PulsarDopplerParams pdpSource;
     static BinaryOrbitParams bopDestination;
@@ -281,12 +271,12 @@ int testPulsarDopplerParams(void)
     /* serialize structure into VOTable fragment */
     printf( "--> Serializing into XML string ... ");
     if ( (xmlFragment = XLALPulsarDopplerParams2VOTNode(&pdpSource, LALXMLC_NAMETEST2)) == NULL ) {
-      XLALPrintError( "%s: XLALPulsarDopplerParams2VOTNode() failed. err = %d\n", fn, xlalErrno );
+      XLALPrintError( "%s: XLALPulsarDopplerParams2VOTNode() failed. err = %d\n", __func__, xlalErrno );
       return LALXMLC_EFUN;
     }
     /* convert VOTable tree into XML string */
     if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
-      XLALPrintError( "%s: XLALCreateVOTStringFromTree() failed. err = %d\n", fn, xlalErrno );
+      XLALPrintError( "%s: XLALCreateVOTStringFromTree() failed. err = %d\n", __func__, xlalErrno );
       return LALXMLC_EFUN;
     }
     printf ("ok.\n");
@@ -299,7 +289,7 @@ int testPulsarDopplerParams(void)
     /* convert XML string back into VOTable document */
     printf ("--> Parsing XML string into xmlDoc ... ");
     if( ( xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-      XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", fn, xlalErrno );
+      XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", __func__, xlalErrno );
       return LALXMLC_EFUN;
     }
     printf ("ok.\n");
@@ -307,7 +297,7 @@ int testPulsarDopplerParams(void)
     /* validate XML document */
     printf ("--> Validating xmlDoc against VOTable schema ... ");
     if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: validateDocument failed. ret = %d\n", fn, result );
+      XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
       if ( result == XLAL_FAILURE )
         return LALXMLC_EVAL;
       else
@@ -318,7 +308,7 @@ int testPulsarDopplerParams(void)
     /* parse VOTable document back into C-structure */
     printf ("--> Read out PulsarDopplerParams struct ... ");
     if ( XLALVOTDoc2PulsarDopplerParamsByName ( xmlDocument, LALXMLC_NAMETEST2, &pdpDestination)) {
-      XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", fn, xlalErrno );
+      XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", __func__, xlalErrno );
       return LALXMLC_EFUN;
     }
 
@@ -360,7 +350,7 @@ int testPulsarDopplerParams(void)
             pdpSource.orbit->ecc != pdpDestination.orbit->ecc ||
             pdpSource.orbit->period != pdpDestination.orbit->period)
     {
-      XLALPrintError ( "%s: PulsarDopplerParams structure differs before and after XML serialization!\n", fn);
+      XLALPrintError ( "%s: PulsarDopplerParams structure differs before and after XML serialization!\n", __func__);
       return LALXMLC_EVAL;
     }
 
@@ -379,8 +369,6 @@ int testPulsarDopplerParams(void)
 int
 test_gsl_vector(void)
 {
-  static const char *fn = "test_gsl_vector()";
-
   int i, dim;
   gsl_vector *in_vect, *out_vect;
   xmlNodePtr xmlChildNodeList = NULL;
@@ -398,7 +386,7 @@ test_gsl_vector(void)
   dim = 1 + (1.0 * rand() / RAND_MAX) * 10;
 
   if ( (in_vect = gsl_vector_alloc ( dim )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_vector_alloc(%d).\n\n", fn, dim );
+    XLALPrintError ("%s: failed to gsl_vector_alloc(%d).\n\n", __func__, dim );
     return XLAL_ENOMEM;
   }
   for (i=0; i < dim; i ++ )
@@ -415,13 +403,13 @@ test_gsl_vector(void)
   /* ---------- serialize gsl_vector into VOTable fragment */
   printf( "--> Serializing into XML string ... ");
   if ( (xmlChildNodeList = XLALgsl_vector2VOTNode(in_vect, "vect", "m")) == NULL ) {
-    XLALPrintError( "%s: XLALgsl_vector2VOTNode() failed. errno = %d.\n", fn, xlalErrno );
+    XLALPrintError( "%s: XLALgsl_vector2VOTNode() failed. errno = %d.\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   /* wrap into a dummy RESOURCE node*/
   if ( (xmlFragment = XLALCreateVOTResourceNode(LALXMLC_TYPETEST3, LALXMLC_NAMETEST3, xmlChildNodeList)) == NULL ) {
     xmlFreeNodeList(xmlChildNodeList);
-    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", fn, LALXMLC_NAMETEST3);
+    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", __func__, LALXMLC_NAMETEST3);
     return LALXMLC_EFUN;
   }
   /* convert VOTable tree into XML string */
@@ -438,7 +426,7 @@ test_gsl_vector(void)
 
   printf ("--> Parsing XML string into xmlDoc ... ");
   if( ( xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", fn, xlalErrno );
+    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   printf ("ok.\n");
@@ -446,7 +434,7 @@ test_gsl_vector(void)
 
   printf ("--> Validating xmlDoc against VOTable schema ... ");
   if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: validateDocument failed. ret = %d\n", fn, result );
+    XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
     if ( result == XLAL_FAILURE )
       return LALXMLC_EVAL;
     else
@@ -472,7 +460,7 @@ test_gsl_vector(void)
       if ( err > maxerr ) maxerr = err;
       if (  err > REAL8TOL ) {
 	XLALPrintError ("%s: element %d in gsl_vector '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
-			fn, i, LALXMLC_NAMETEST3, err, REAL8TOL, in, out );
+			__func__, i, LALXMLC_NAMETEST3, err, REAL8TOL, in, out );
 	return LALXMLC_EVAL;
       }
     } /* for i < dim */
@@ -496,8 +484,6 @@ test_gsl_vector(void)
 int
 test_gsl_matrix(void)
 {
-  static const char *fn = "test_gsl_matrix()";
-
   int row, col, numRows, numCols;
   gsl_matrix *in_matrix, *out_matrix;
   xmlNodePtr xmlChildNodeList = NULL;
@@ -516,7 +502,7 @@ test_gsl_matrix(void)
   numCols = 2 + (1.0 * rand() / RAND_MAX) * 4;
 
   if ( (in_matrix = gsl_matrix_alloc ( numRows, numCols )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d,%d).\n\n", fn, numRows, numCols );
+    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d,%d).\n\n", __func__, numRows, numCols );
     return XLAL_ENOMEM;
   }
   for (row=0; row < numRows; row ++ )
@@ -535,13 +521,13 @@ test_gsl_matrix(void)
   /* ---------- serialize gsl_matrix into VOTable fragment */
   printf( "--> Serializing into XML string ... ");
   if ( (xmlChildNodeList = XLALgsl_matrix2VOTNode(in_matrix, "matrix", "ms")) == NULL ) {
-    XLALPrintError( "%s: XLALgsl_matrix2VOTNode() failed. errno = %d.\n", fn, xlalErrno );
+    XLALPrintError( "%s: XLALgsl_matrix2VOTNode() failed. errno = %d.\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   /* wrap into a dummy RESOURCE node*/
   if ( (xmlFragment = XLALCreateVOTResourceNode(LALXMLC_TYPETEST4, LALXMLC_NAMETEST4, xmlChildNodeList)) == NULL ) {
     xmlFreeNodeList(xmlChildNodeList);
-    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", fn, LALXMLC_NAMETEST4);
+    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", __func__, LALXMLC_NAMETEST4);
     return LALXMLC_EFUN;
   }
   /* convert VOTable tree into XML string */
@@ -558,14 +544,14 @@ test_gsl_matrix(void)
 
   printf ("--> Parsing XML string into xmlDoc ... ");
   if( ( xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", fn, xlalErrno );
+    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   printf ("ok.\n");
 
   printf ("--> Validating xmlDoc against VOTable schema ... ");
   if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: validateDocument failed. ret = %d\n", fn, result );
+    XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
     if ( result == XLAL_FAILURE )
       return LALXMLC_EVAL;
     else
@@ -576,7 +562,7 @@ test_gsl_matrix(void)
   /* ---------- deserialize VOTable document into structure */
   printf ("--> Read out LIGOTimeGPSStruct ... ");
   if( (out_matrix = XLALVOTDoc2gsl_matrixByName ( xmlDocument, LALXMLC_NAMETEST4, "matrix", "ms")) == NULL ) {
-    XLALPrintError ("%s: XLALVOTDoc2gsl_matrixByName() failed. errno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALVOTDoc2gsl_matrixByName() failed. errno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   printf( "ok: %s = ", LALXMLC_NAMETEST4 );
@@ -594,7 +580,7 @@ test_gsl_matrix(void)
 	  if ( err > maxerr ) maxerr = err;
 	  if ( err > REAL8TOL ) {
 	    XLALPrintError ("%s: element (%d,%d) in gsl_matrix '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
-			    fn, row, col, LALXMLC_NAMETEST4, err, REAL8TOL, in, out );
+			    __func__, row, col, LALXMLC_NAMETEST4, err, REAL8TOL, in, out );
 	    return LALXMLC_EVAL;
 	  }
 	} /* for col < numCols */
@@ -617,8 +603,6 @@ test_gsl_matrix(void)
 /* generic test for table- writing and parsing tools */
 int testTable ( void )
 {
-  const char *fn = "testTable()";
-
   xmlNodePtr fieldNodeList = NULL, newFieldNode = NULL;
 
   xmlDocPtr xmlDocument = NULL;
@@ -650,76 +634,76 @@ int testTable ( void )
   /* ---------- create FIELDS */
   /* ----- Freq */
   if ( (fieldNodeList = XLALCreateVOTFieldNode ( "Freq", "Hz", VOT_REAL8, NULL )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Freq'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Freq'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   /* ----- Alpha */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Alpha", "rad", VOT_REAL4, NULL )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Alpha'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Alpha'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", __func__ );
     return LALXMLC_EFUN;
   }
   /* ----- Delta */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Delta", "rad", VOT_REAL4, NULL )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Delta'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Delta'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", __func__ );
     return LALXMLC_EFUN;
   }
   /* ----- Names */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Name", NULL, VOT_CHAR, "*" )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Names'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Names'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", __func__ );
     return LALXMLC_EFUN;
   }
   /* ----- Fa */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Fa", NULL, VOT_COMPLEX8, NULL)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Fa'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Fa'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", __func__ );
     return LALXMLC_EFUN;
   }
 
   /* ----- Indices */
   if ( (newFieldNode = XLALCreateVOTFieldNode ( "Index", NULL, VOT_INT4, NULL)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTFieldNode() failed for 'Indices'. xlalErrno = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   if ( xmlAddSibling ( fieldNodeList, newFieldNode ) == NULL ) {
-    XLALPrintError ("%s: xmlAddSibling() failed.\n", fn );
+    XLALPrintError ("%s: xmlAddSibling() failed.\n", __func__ );
     return LALXMLC_EFUN;
   }
 
   xmlNodePtr xmlFragment, xmlTable, xmlTabledataNode;
 
   if ( (xmlTabledataNode = XLALCreateVOTTabledataNode ( fieldNodeList, 3, "%.16g,%.7g,%.7g,%s,%g %g,%0d", FreqIn, AlphaIn, DeltaIn, NameIn, FaIn, IndexIn  )) == NULL ){
-    XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", fn, xlalErrno );
+    XLALPrintError("%s: XLALCreateVOTTabledataNode() failed. errno = %d.\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
 
   if ( (xmlTable = XLALCreateVOTTableNode ( NULL, fieldNodeList, xmlTabledataNode )) == NULL ) {
-    XLALPrintError("%s: XLALCreateVOTTableNode() failed. errno = %d.\n", fn, xlalErrno );
+    XLALPrintError("%s: XLALCreateVOTTableNode() failed. errno = %d.\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   /* wrap into a dummy RESOURCE node*/
   if ( (xmlFragment = XLALCreateVOTResourceNode(LALXMLC_TYPETEST5, LALXMLC_NAMETEST5, xmlTable)) == NULL ) {
-    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", fn, LALXMLC_NAMETEST5);
+    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", __func__, LALXMLC_NAMETEST5);
     return LALXMLC_EFUN;
   }
 
   /* convert VOTable tree into XML string */
   if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed. errno = %d.\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALCreateVOTStringFromTree() failed. errno = %d.\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
 
@@ -733,7 +717,7 @@ int testTable ( void )
   /* convert XML string back into VOTable document */
   printf ("--> Parsing XML string into xmlDoc ... ");
   if( ( xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", fn, xlalErrno );
+    XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", __func__, xlalErrno );
     return LALXMLC_EFUN;
   }
   printf ("ok.\n");
@@ -742,7 +726,7 @@ int testTable ( void )
   int result;
   printf ("--> Validating xmlDoc against VOTable schema ... ");
   if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: validateDocument failed. ret = %d\n", fn, result );
+    XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
     if ( result == XLAL_FAILURE )
       return LALXMLC_EVAL;
     else
@@ -760,7 +744,7 @@ int testTable ( void )
   COMPLEX8 *FaOut;
 
   if ( ( fieldVect = XLALReadVOTFIELDNodes ( xmlDocument, LALXMLC_NAMETEST5 )) == NULL ) {
-    XLALPrintError ("%s: XLALReadVOTFIELDNodes() failed to obtain FIELD elements.\n", fn );
+    XLALPrintError ("%s: XLALReadVOTFIELDNodes() failed to obtain FIELD elements.\n", __func__ );
     return LALXMLC_EFUN;
   }
   numCols = fieldVect->length;
@@ -779,48 +763,48 @@ int testTable ( void )
       /* ----- Freq ----- */
       if ( !strcmp ( (const char*)thisField->name, "Freq" ) ) {
         if ( (FreqOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL8, &numRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Freq'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Freq'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       /* ----- Alpha ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Alpha" ) ) {
         if ( (AlphaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL4, &nRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Alpha'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Alpha'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       /* ----- Delta ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Delta" ) ) {
         if ( (DeltaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_REAL4, &nRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Delta'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Delta'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       /* ----- Name ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Name" ) ) {
         if ( (NameOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_CHAR, &nRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       /* ----- Index ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Index" ) ) {
         if ( (IndexOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_INT4, &nRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Name'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       /* ----- Fa ----- */
       else if ( !strcmp ( (const char*)thisField->name, "Fa" ) ) {
         if ( (FaOut = XLALReadVOTTabledataSimpleColumn ( xmlDocument, LALXMLC_NAMETEST5, i, VOT_COMPLEX8, &nRows )) == NULL ) {
-          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Fa'.\n", fn, i );
+          XLALPrintError ("%s: XLALReadVOTTableColumn() failed to read column Nr %d: 'Fa'.\n", __func__, i );
           return LALXMLC_EFUN;
         }
       }
       else
         {
-          XLALPrintError ( "%s: Unknown table column encountered '%s'\n", (const char*)thisField->name );
+          XLALPrintError ( "%s: Unknown table column encountered '%s'\n", __func__, (const char*)thisField->name );
           return LALXMLC_EFUN;
         }
 
@@ -829,7 +813,7 @@ int testTable ( void )
   XLALDestroyVOTFieldVector ( fieldVect );
 
   if ( numRows != IN_ROWS ) {
-    XLALPrintError ("%s: some table rows went missing ... input %d rows, read out %d rows\n", fn, IN_ROWS, numRows );
+    XLALPrintError ("%s: some table rows went missing ... input %d rows, read out %d rows\n", __func__, IN_ROWS, numRows );
     return LALXMLC_EFUN;
   }
 
