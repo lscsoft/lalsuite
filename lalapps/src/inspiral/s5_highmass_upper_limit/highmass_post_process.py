@@ -219,7 +219,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
     cline = job.ligolw_sqlite + ' --database ' + database + ' --verbose '
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
-    if cache_pat: cline += " ligolw_sqlite_" + cache_pat + ".cache "
+    if cache_pat: cline += " --input-cache ligolw_sqlite_" + cache_pat + ".cache "
     for xml in xml_list: cline += xml + " "
     fn = "bash_scripts/ligolw_sqlite"+str(id)+".sh"
     f = open(fn,"w")
