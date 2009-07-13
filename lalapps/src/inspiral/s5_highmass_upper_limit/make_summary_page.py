@@ -8,7 +8,7 @@ import ConfigParser
 import subprocess
 
 class wiki(object):
-  def __init__(self,fname="wiki.txt"):
+  def _init_(self,fname="wiki.txt"):
     self.fname = fname
     self.file = open(fname,"w")
 
@@ -94,11 +94,11 @@ try: # see if you want to open the box
     page.image_table(image_list,webserver)
 
     page.section("Full Data Ifar")
-    image_list = ['cbc_plotsummary_4__count_vs_ifar_H1H2L1.png','cbc_plotsummary_4__count_vs_ifar_H1L1.png','cbc_plotsummary_4__count_vs_ifar_H2L1.png']
+    image_list = ['cbc_plotsummary_4_count_vs_ifar_H1H2L1.png','cbc_plotsummary_4_count_vs_ifar_H1L1.png','cbc_plotsummary_4_count_vs_ifar_H2L1.png']
     page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
-    image_list = ['cbc_plotsummary_4__count_vs_snr_H1H2L1.png','cbc_plotsummary_4__count_vs_snr_H1L1.png','cbc_plotsummary_4__count_vs_snr_H2L1.png']
+    image_list = ['cbc_plotsummary_4_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_count_vs_snr_H1L1.png','cbc_plotsummary_4_count_vs_snr_H2L1.png']
     page.image_table(image_list,webserver)
 except: pass
 
