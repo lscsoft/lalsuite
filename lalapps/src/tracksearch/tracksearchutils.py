@@ -2118,7 +2118,7 @@ class candidateList:
                       (segA[1] <= segB[0])
                      ):
                     segA=[segA[0],segB[1]]
-                    print "Right ->",segA
+                #    print "Right ->",segA
                 #Bridge over
                 elif (
                     (segB[0]<=segA[0])
