@@ -342,10 +342,13 @@ class far_plot_node(pipeline.CondorDAGNode):
 
 def ifo_seg_dict(cp):
   out = {}
+  
   out["H1"] = string.strip(cp.get('input','h1vetosegments'))
   out["H2"] = string.strip(cp.get('input','h2vetosegments'))
   out["L1"] = string.strip(cp.get('input','l1vetosegments'))
-  return out
+  cat = "_".join(os.path.basename(out["H1"]).split("_")[1:3])
+  return out, [cat]
+
 
 def grep(string, inname, outname):
     o = open(outname, "w")
@@ -366,7 +369,9 @@ except: pass
 try: os.mkdir("bash_scripts")
 except: pass
 
-cats = ["CAT_3"]
+# get the segments for a given category veto
+seg_dict, cats = ifo_seg_dict(cp)
+
 types = ["FULL_DATA"]
 FULLDATACACHE = string.strip(cp.get('input','fulldatacache'))
 INJCACHE = string.strip(cp.get('input','injcache'))
@@ -391,7 +396,7 @@ n = 0
 #Do the segments node
 segNode = {}
 for cat in cats:
-  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, ifo_seg_dict(cp), "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
+  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict, "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
 
 #Some initialization
 ligolwThincaToCoincNode = {}
