@@ -348,6 +348,32 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 }
 
+REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
+{
+  REAL8 m1,m2,logdl,ampli,a=50,b=21;
+  parameter->logPrior=0.0;
+  REAL8 mc,eta;
+  REAL8 minCompMass = 1.0;
+  REAL8 maxCompMass = 100.0;
+
+  /* Check in range */
+  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  else mc=XLALMCMCGetParameter(parameter,"mchirp");
+
+  eta=XLALMCMCGetParameter(parameter,"eta");
+  m1 = mc2mass1(mc,eta);
+  m2 = mc2mass2(mc,eta);
+
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+  /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
+  ParamInRange(parameter);
+  if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
+  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+  if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
+  return parameter->logPrior;
+}
+
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2,logdl,ampli,a=50,b=21;

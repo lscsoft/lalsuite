@@ -115,6 +115,8 @@ INT4 MCMCPriorTest(
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
+REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
+
 REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 void NestInitInj(LALMCMCParameter *parameter, void *iT);
