@@ -487,7 +487,6 @@ void LALappsTrackSearchInitialize(
       {"inject_space",        required_argument,  0,    'L'},
       {"inject_file",         required_argument,  0,    'M'},
       {"inject_scale",        required_argument,  0,    'N'},
-      {"channel_type",        required_argument,  0,    'O'},
       {"bin_buffer",          required_argument,  0,    'P'},
       {"zcontrast",           required_argument,  0,    'Q'},
       {"zlength",             required_argument,  0,    'R'},
@@ -538,9 +537,7 @@ void LALappsTrackSearchInitialize(
   params->SamplingRate = 1;
   params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
-  params->calChannelType=SimDataChannel;/*See lsd*/
   params->channelName=NULL; /* Leave NULL to avoid frame read problems */
-  params->channelNameType=LAL_ADC_CHAN; /*Default for data analysis */
   params->dataDirPath=NULL;
   params->singleDataCache=NULL;
   params->detectorPSDCache=NULL;
@@ -993,22 +990,6 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
-	case 'O':
-	  {
-	    if(!strcmp(optarg,"LAL_ADC_CHAN"))
-	      params->channelNameType=LAL_ADC_CHAN;
-	    else if(!strcmp(optarg,"LAL_SIM_CHAN"))
-	      params->channelNameType=LAL_SIM_CHAN;
-	    else if(!strcmp(optarg,"LAL_PROC_CHAN"))
-	      params->channelNameType=LAL_PROC_CHAN;
-	    else
-	      {
-		fprintf(stderr,"Invalid channel type specified assuming LAL_ADC_CHAN\n");
-		params->channelNameType=LAL_ADC_CHAN;
-	      };
-	  }
-	  break;
-
 	case 'P':
 	  {
 	    params->colsToClip=atoi(optarg);
@@ -1258,7 +1239,10 @@ void LALappsGetFrameData(LALStatus*          status,
    */
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
-  channelIn.type = params->channelNameType;
+  channelIn.type = LAL_ADC_CHAN;
+  /* Need to allow for other way to enter channelNameType
+   *  channelIn.type = params->channelNameType;
+   */
   /* only try to load frame if name is specified */
   if (dirname || cachefile)
     {
@@ -2864,8 +2848,6 @@ LALappsWriteSearchConfig(LALStatus          *status,
     fprintf(configFile,"channelNamePSD\t: %s\n",
 	    myParams.channelNamePSD);
 
-  fprintf(configFile,"calChannelType\t: %i\n",
-	  myParams.calChannelType);
   if (myParams.calFrameCache == NULL)
     fprintf(configFile,"calFrameCache\t: \n");
   else
