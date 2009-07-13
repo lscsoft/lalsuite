@@ -428,6 +428,9 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
  * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
+ * \note Currently this function does not support writing of arrays, except for strings which
+ * must have arraysize="*".
+ *
  * \author Reinhard Prix\n
  * Albert-Einstein-Institute Hannover, Germany
  */
@@ -512,19 +515,41 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
         dataColumns[col] = va_arg(ap, void *);	/* assemble a list of data-pointers of all data columns */
 
         /* get data-types */
-        char *datatypeStr = NULL;
-        if ( (datatypeStr = (char*)xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
+        xmlChar *datatypeStr = NULL;
+        if ( (datatypeStr = xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
           XLALPrintError ("%s: xmlGetProp() failed to find required attribute 'datatype' in FIELD node Nr %d.\n", fn, col );
           err = XLAL_EINVAL;
           goto failed;
         }
-        if ( ( dataTypes[col] = XLALVOTString2Datatype ( datatypeStr ) ) == VOT_DATATYPE_LAST ) {
-          XLALPrintError ("%s: invalid data-type attribute encountered '%s' in field node Nr %d.\n", fn, datatypeStr, col );
+        if ( ( dataTypes[col] = XLALVOTString2Datatype ( (char*)datatypeStr ) ) == VOT_DATATYPE_LAST ) {
+          XLALPrintError ("%s: invalid data-type attribute encountered '%s' in field node Nr %d.\n", fn, (char*)datatypeStr, col );
           xmlFree ( datatypeStr );
           err = XLAL_EINVAL;
           goto failed;
         }
         xmlFree ( datatypeStr );
+
+        /* FIXME: Currently this function does not support writing of arrays, except for strings which
+         * must have arraysize="*", so here we check that no arraysize was given, except for VOT_CHAR
+         * where it must be arraysize="*"
+         */
+        xmlChar *arraysizeStr = NULL;
+        arraysizeStr = xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("arraysize"));
+        if ( (dataTypes[col] == VOT_CHAR) && arraysizeStr && strcmp ( (char*)arraysizeStr, "*" ) ) {
+          XLALPrintError ("%s: arraysize='%s', sorry this function currently only supports string-writing using arraysize='*'\n",
+                          __func__, (char*)arraysizeStr );
+          err = XLAL_EINVAL;
+          xmlFree ( arraysizeStr );
+          goto failed;
+        }
+        if ( arraysizeStr  && dataTypes[col] != VOT_CHAR ) {
+          XLALPrintError ("%s: arraysize attribute currently not supported by this function for non-strings (got '%s')\n",
+                          __func__, (char*)arraysizeStr );
+          err = XLAL_EINVAL;
+          xmlFree ( arraysizeStr );
+          goto failed;
+        }
+        if ( arraysizeStr ) xmlFree ( arraysizeStr );
 
         /* get format strings for printing */
         if ( fmtList )
