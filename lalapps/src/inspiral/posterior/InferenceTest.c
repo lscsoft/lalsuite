@@ -17,5 +17,9 @@ int main(){
 	setVariable(&variables,numberstr,&five);
 	number=*(REAL8 *)getVariable(&variables,numberstr);
 	fprintf(stdout,"Got %lf\n",number);
+	fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));
+	removeVariable(&variables,"number");
+	fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
+	destroyVariables(&variables);
 	
 }

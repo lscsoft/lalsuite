@@ -54,7 +54,7 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
  if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
 
  LALVariableItem *new=malloc(sizeof(LALVariableItem));
- memset(new,sizeof(LALVariableItem),0);
+ memset(new,0,sizeof(LALVariableItem));
  new->value = (void *)malloc(typeSize[type]);
  if(new==NULL||new->value==NULL) die("Unable to allocate memory for list item\n");
  
@@ -81,6 +81,7 @@ void removeVariable(LALVariables *vars,const char *name)
 	else parent->next=this->next;
 	free(this->value);
 	free(this);
+	vars->dimension--;
 	return;
 }
 
@@ -95,12 +96,14 @@ void destroyVariables(LALVariables *vars){
  LALVariableItem *this,*next;
  if(!vars) return;
  this=vars->head;
- next=this->next;
+ if(this) next=this->next;
  while(this){
   free(this->value);
   free(this);
   this=next;
-  next=this->next;
- } 
+  if(this) next=this->next;
+ }
+ vars->head=NULL;
+ vars->dimension=0;
 return;
 }

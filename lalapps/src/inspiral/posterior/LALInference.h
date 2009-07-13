@@ -45,8 +45,6 @@
 
 //...other includes
 
-/*#define NAME_MAX 64*/
-
 struct tagLALInferenceRunState;
 struct tagLALIFOData;
 
@@ -106,13 +104,10 @@ typedef REAL8 (LALPriorFunction) (LALVariables *currentParams,
 typedef REAL8 (LALLikelihoodFunction) (LALVariables *currentParams,
         struct tagLALIFOData * data, LALTemplateFunction *template);
 
-
-
 //Compute next state along chain; replaces currentParams
 typedef void (LALEvolveOneStepFunction) (LALVariables * currentParams, 
 	struct tagLALIFOData *data, LALPriorFunction *prior, 
 	LALLikelihoodFunction * likelihood, LALProposalFunction * proposal);
-
 
 //Main driver function for a run; will distinguish MCMC from NestedSampling
 typedef void (LALAlgorithm) (struct tagLALInferenceRunState *runState);
