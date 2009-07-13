@@ -50,7 +50,8 @@ return;
 
 void addVariable(LALVariables * vars,const char * name, void *value, VariableType type){
 /* Add the variable name with type type and value value to vars */
- /* Check the name doesn't already exist -TODO */
+ /* Check the name doesn't already exist */
+ if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
 
  LALVariableItem *new=malloc(sizeof(LALVariableItem));
  memset(new,sizeof(LALVariableItem),0);
@@ -64,4 +65,42 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
  vars->head = new;
  vars->dimension++;
  return;
+}
+
+void removeVariable(LALVariables *vars,const char *name)
+{
+	LALVariableItem *this=vars->head;
+	LALVariableItem *parent=NULL;
+	
+	while(this){
+		if(!strcmp(this->name,name)) break;
+		else {parent=this; this=this->next;}
+	}
+	if(!this) {fprintf(stderr,"removeVariable: warning, %s not found to remove\n",name); return;}
+	if(!parent) vars->head=this->next;
+	else parent->next=this->next;
+	free(this->value);
+	free(this);
+	return;
+}
+
+int checkVariable(LALVariables *vars,const char *name){
+/* Check for existance of name */
+if(getItem(vars,name)) return 1;
+else return 0;
+}
+
+/* Free the entire structure */
+void destroyVariables(LALVariables *vars){
+ LALVariableItem *this,*next;
+ if(!vars) return;
+ this=vars->head;
+ next=this->next;
+ while(this){
+  free(this->value);
+  free(this);
+  this=next;
+  next=this->next;
+ } 
+return;
 }

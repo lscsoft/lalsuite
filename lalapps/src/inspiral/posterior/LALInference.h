@@ -78,6 +78,9 @@ void *getVariable(LALVariables * vars, const char * name);
 void setVariable(LALVariables * vars, const char * name, void * value);
 void addVariable(LALVariables * vars, const char * name, void * value, 
 	VariableType type);
+void removeVariable(LALVariables *vars,const char *name);
+int  checkVariable(LALVariables *vars,const char *name);
+void destroyVariables(LALVariables *vars);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
