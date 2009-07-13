@@ -51,11 +51,17 @@ image_list = ['cbc_plotsummary_0_deff_vs_t_H1H2L1.png','cbc_plotsummary_0_deff_v
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = ['cbc_plotsummary_1_mchirp_acc_frac_H1.png','cbc_plotsummary_1_mchirp_acc_frac_H2.png','cbc_plotsummary_1_mchirp_acc_frac_L1.png']
+image_list = ['cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_L1.png']
 page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_eta_acc_frac_H1.png','cbc_plotsummary_1_eta_acc_frac_H2.png','cbc_plotsummary_1_eta_acc_frac_L1.png']
+image_list = ['cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_L1.png']
 page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_t_acc_H1.png','cbc_plotsummary_1_t_acc_H2.png','cbc_plotsummary_1_t_acc_L1.png']
+image_list = ['cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_L1.png']
+page.image_table(image_list,webserver)
+image_list = ['cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_L1.png']
+page.image_table(image_list,webserver)
+image_list = ['cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_L1.png']
+page.image_table(image_list,webserver)
+image_list = ['cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_L1.png']
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
