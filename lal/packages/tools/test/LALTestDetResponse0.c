@@ -1308,13 +1308,13 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_mon  = LALMONTH_MAY;
   utcDate.unixDate.tm_year = 1994 - 1900;
 
-  /*  accuracy = LALLEAPSEC_LOOSE; */
-  LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
+  gps.gpsSeconds = XLALUTCToGPS(&utcDate.unixDate);
+  gps.gpsNanoSeconds = 0;
 
   tmp_uandacc.units = MST_RAD;
   tmp_uandacc.accuracy = accuracy;
 
-  LALGPStoGMST1(&status, &tmpgmst, &gps, &tmp_uandacc);
+  tmpgmst = XLALGreenwichMeanSiderealTime(&gps);
 
   if (verbose_p)
     printf("GMST1 = % 14.9e rad.\n", tmpgmst);
@@ -1359,8 +1359,8 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_mon  = LALMONTH_MAY;
   utcDate.unixDate.tm_year = 1994 - 1900;
 
-  accuracy = LALLEAPSEC_LOOSE;
-  LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
+  gps.gpsSeconds = XLALUTCToGPS(&utcDate.unixDate);
+  gps.gpsNanoSeconds = 0;
 
   det_and_pulsar.pDetector = &detector;
   det_and_pulsar.pSource   = &pulsar;
