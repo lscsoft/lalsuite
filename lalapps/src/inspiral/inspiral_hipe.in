@@ -270,30 +270,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 exttrigUserTag = usertag + "_" + str(inj)
                 injectionFile = injectionFileTemplate % exttrigUserTag
 
-                # check if the inspinj job has already be made
-                inspinj=inspinj_job.check_node(inj)              
-                if not inspinj:
-
-                   # create an inspinj node for the master chunk (once!)
-                   inspinj = inspiral.InspInjNode(inspinj_job)
-                   if not opts.disable_dag_categories:
-                     inspinj.set_category('inspinj')
-                   if not opts.disable_dag_priorities:
-                     inspinj.set_priority(100)
-                   inspinj.set_start(chunk.start())
-                   inspinj.set_end(chunk.end())
-                   inspinj.set_ifo(ifo_name)
-                   inspinj.set_seed(inj)
-                   inspinj.add_var_opt('user-tag',exttrigUserTag)
-                   inspinj.set_output(injectionFile)
-                   if opts.datafind: inspinj.add_parent(df)                 
-                   if (opts.template_bank and not GeoBank):
-                     inspinj.add_parent(bank)
-
-                   # store the node to the DAG AND to the inspinj_job
-                   if opts.inspiral: dag.add_node(inspinj)              
-                   inspinj_job.set_done(inj, inspinj)
-
              # make an inspiral job for the master chunk
              insp = inspiral.InspiralNode(insp_job)
              if not opts.disable_dag_categories:
@@ -322,8 +298,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if opts.datafind: insp.add_parent(df)
              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
-             if inj>0:
-                insp.add_parent(inspinj)
              if opts.inspiral: dag.add_node(insp)
 
              # store this chunk in the list of filtered data

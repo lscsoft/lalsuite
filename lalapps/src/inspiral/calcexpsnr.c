@@ -97,12 +97,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
@@ -402,7 +402,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -701,17 +701,17 @@ int main( int argc, char *argv[] )
           switch ( ifoNumber )
           {
           case 1:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H1_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_H1_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing H1 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
           case 2:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H2_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_H2_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing H2 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
           case 3:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_L1_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_L1_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing L1 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
@@ -835,7 +835,7 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, sizeof(fname), outputFile);
+  snprintf( fname, sizeof(fname), outputFile);
   LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
 
   /* write out the process and process params tables */

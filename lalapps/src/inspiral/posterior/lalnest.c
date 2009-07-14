@@ -79,6 +79,7 @@ int FakeFlag=0;
 int GRBflag=0;
 int SkyLocFlag=0;
 REAL8 SNRfac=1.0;
+int HighMassFlag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -148,9 +149,10 @@ void initialise(int argc, char *argv[]){
 		{"studentt",no_argument,0,'l'},
 		{"RA",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
-		{"SNRfac",required_argument,0,'14'},
+		{"SNRfac",required_argument,0,14},
 	       	{"skyloc",no_argument,0,13},
        		{"channel",required_argument,0,'C'},
+       		{"highmass",no_argument,0,15},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -158,6 +160,9 @@ void initialise(int argc, char *argv[]){
 		case 14:
 			SNRfac=atof(optarg);
 			break;
+	  case 15:
+	    HighMassFlag=1;
+	    break;
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
 			else		CacheFileNames=realloc(CacheFileNames,(nCache+1)*sizeof(char *));
@@ -468,7 +473,6 @@ int main( int argc, char *argv[])
 		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
 		TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; /* Centre the injection */
 
-
 		segmentStart = datastart;
 		XLALGPSAdd(&segmentStart, (REAL8)TrigSegStart/(REAL8)SampleRate);
 		memcpy(&(inputMCMC.epoch),&segmentStart,sizeof(LIGOTimeGPS));
@@ -677,6 +681,8 @@ int main( int argc, char *argv[])
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 	  inputMCMC.funcInit = NestInitGRB;
 	}
+	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
+
 	/* Live is an array of LALMCMCParameter * types */
 	Live = (LALMCMCParameter **)LALMalloc(Nlive*sizeof(LALMCMCParameter *));
 	for (i=0;i<Nlive;i++) Live[i]=(LALMCMCParameter *)LALMalloc(sizeof(LALMCMCParameter));

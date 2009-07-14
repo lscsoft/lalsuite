@@ -42,10 +42,6 @@
  *
  **** </lalLaTeX> */
 
-#pragma GCC system_header
-
-#include <FrameL.h>
-
 #include <lal/LALDatatypes.h>
 #include <lal/FrameCache.h>
 

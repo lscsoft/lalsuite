@@ -205,13 +205,13 @@ int main ( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( bankFileName, optarg, optarg_len );
-        LALSnprintf( procparams.processParamsTable->program, 
+        snprintf( procparams.processParamsTable->program, 
             LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-        LALSnprintf( procparams.processParamsTable->type, 
+        snprintf( procparams.processParamsTable->type, 
             LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( procparams.processParamsTable->param, 
+        snprintf( procparams.processParamsTable->param, 
             LIGOMETA_PARAM_MAX, "--%s", long_options[option_index].name );
-        LALSnprintf( procparams.processParamsTable->value, 
+        snprintf( procparams.processParamsTable->value, 
             LIGOMETA_VALUE_MAX, "%s", optarg );
         break;
 
@@ -232,12 +232,12 @@ int main ( int argc, char *argv[] )
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
             "%s", PROGRAM_NAME );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
             "--%s", long_options[option_index].name );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%d", 
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%d", 
             numOutBanks );
         break;
 
@@ -251,7 +251,7 @@ int main ( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg );
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg );
         }
         break;
 
@@ -259,12 +259,12 @@ int main ( int argc, char *argv[] )
         set_debug_level( optarg );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
             "--%s", long_options[option_index].name );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -276,11 +276,11 @@ int main ( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -296,12 +296,12 @@ int main ( int argc, char *argv[] )
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s",
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s",
             long_options[option_index].name );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e",
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e",
             minMatch );
         break;
 
@@ -424,7 +424,7 @@ int main ( int argc, char *argv[] )
   {
     /* open the output xml file */
     memset( outBankFileName, 0, FILENAME_MAX * sizeof(CHAR) );
-    LALSnprintf( outBankFileName, FILENAME_MAX * sizeof(CHAR), "%s_%2.2d-%s", 
+    snprintf( outBankFileName, FILENAME_MAX * sizeof(CHAR), "%s_%2.2d-%s", 
         bankFileNameHead, i, bankFileNameTail );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, outBankFileName), 
