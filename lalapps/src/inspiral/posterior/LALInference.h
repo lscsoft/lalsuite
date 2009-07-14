@@ -132,7 +132,6 @@ LALInferenceRunState *Initialize (ProcessParamsTable * commandLine);
 
 struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
 
-
 typedef struct
 tagLALIFOData
 {
@@ -146,6 +145,9 @@ tagLALIFOData
   struct tagLALIFOData *next;
 }LALIFOData;
 
+ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
+
+void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 
 #endif
