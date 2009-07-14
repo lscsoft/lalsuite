@@ -138,7 +138,7 @@ tagLALIFOData
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
   REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
-  REAL8TimeSeries *window;
+  REAL8Window *window;
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8 fLow, fHigh;	//integration limits;
   LALDetector *detector;
