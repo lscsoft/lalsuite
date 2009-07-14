@@ -729,11 +729,10 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
     trueLong = (REAL8)injTable->longitude;
     trueLat = (REAL8)injTable->latitude;
   }
-  else
-    {
-      time = manual_end_time;
-      trueLong = manual_RA;
-      trueLat = manual_dec;
+  /*else*/   {
+      if(time!=0) time = manual_end_time;
+      if(manual_RA!=-4200) trueLong = manual_RA;
+      if(manual_dec!=-4200) trueLat = manual_dec;
     }
   double etamin;
   /*etamin = etamin<0.01?0.01:etamin;*/

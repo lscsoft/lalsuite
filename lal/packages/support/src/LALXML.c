@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 2007 Jolien Creighton
  *  Copyright (C) 2009 Oliver Bock
+ *  Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,12 +35,14 @@
 
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
+#include <lal/LALMalloc.h>
 #include <lal/LALXML.h>
 
 
-/* private prototypes */
+/* ---------- private prototypes ---------- */
 INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtPtr xmlSchemaValidator);
 
+/* ---------- function definitions ---------- */
 
 static void print_element_names(xmlNode *node)
 {
@@ -70,6 +73,67 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
+/** Find next node element of given name within the siblings of the given xmlNode.
+ *
+ * Note: if the startNode already complies with the constraints, it is returned, ie
+ * this function does not do stepping from one valid node to the next!
+ *
+ * Note: don't free the returned nodePointer!
+ */
+const xmlNode *
+XLALfindNextNamedNode ( const xmlNode *startNode, const xmlChar *nodeName )
+{
+  static const char *fn = "XLALfindNextNamedNode()";
+  const xmlNode *tmp;
+
+  /* check input consistency */
+  if ( !startNode || !nodeName ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  tmp = startNode;
+  while ( tmp && (tmp->type != XML_ELEMENT_NODE) && (xmlStrcmp(tmp->name, nodeName)) )
+    tmp = tmp->next;
+
+  return tmp;	/* either NULL or the desired named NODE */
+
+} /* XLALfindNextNamedNode() */
+
+/** Count number of named nodes siblings of given startNode.
+ *
+ * Note: if the startNode already complies with the constraints, it is counted as well,
+ * but no previous siblings are counted, ie the count starts at startNode.
+ */
+int
+XLALcountNamedNodes ( const xmlNode *startNode, const xmlChar *nodeName, UINT4 *count )
+{
+  static const char *fn = "XLALcountNamedNodes()";
+  UINT4 counter;
+  const xmlNode *tmp;
+
+  /* check input consistency */
+  if ( !startNode || !nodeName || !count ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  counter = 0;
+  tmp = startNode;
+
+  while ( tmp && ( tmp = XLALfindNextNamedNode ( tmp, nodeName )) != NULL )
+    {
+      counter ++;
+      tmp = tmp->next;	/* step forward to next element */
+    }
+
+  (*count) = counter;
+
+  return XLAL_SUCCESS;
+
+} /* XLALcountNamedNodes() */
+
+
 /**
  * \brief Performs a XPath search on a XML document to retrieve the content of a single %node
  *
@@ -87,7 +151,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \b Important: the caller is responsible to free the allocated memory (when the
  * string isn't needed anymore) using \c xmlFree.
  *
- * \sa XLALGetSingleVOTableResourceParamValue
+ * \sa XLALGetSingleVOTResourceParamValue
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -384,7 +448,7 @@ INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtP
  * \return \c XLAL_SUCCESS if the namespace could be successfully assigned to all elements.
  * Please note that this function can't return anything else than XLAL_SUCCESS.
  *
- * \sa XLALCreateVOTableDocumentFromTree
+ * \sa XLALCreateVOTDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -407,3 +471,73 @@ INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsP
 
     return XLAL_SUCCESS;
 }
+
+
+/** Convert a general (but complete!) XML-string into an xmlDoc representation.
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlDocPtr
+XLALXMLString2Doc ( const char *xmlString )
+{
+  const char *fn = "XLALXMLString2Doc()";
+  xmlDocPtr ret = NULL;
+
+  /* check input consistency */
+  if ( !xmlString ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* parse XML document */
+  if ( (ret = xmlReadMemory((const char*)xmlString, strlen((const char*)xmlString), NULL, "UTF-8", 0)) == NULL ) {
+    XLALPrintError ( "%s: XML document parsing xmlReadMemory() failed!\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* clean up */
+  xmlCleanupParser();
+
+  return ret;
+
+} /* XLALXMLString2Doc() */
+
+
+/** Convert the given xmlDoc representation of a VOTable into a string representation,
+ *  eg for storing the XML into a file.
+ *
+ * Note: the returned string must be free'ed using \c xmlFree !
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar *
+XLALXMLDoc2String ( const xmlDoc *xmlDocument )
+{
+  static const char *fn = "XLALXMLDoc2String()";
+
+  /* set up local variables */
+  int xmlStringBufferSize = 0;
+  xmlChar *xmlString = NULL;
+
+  /* check input consistency */
+  if ( !xmlDocument ) {
+    XLALPrintError ("%s: invalid NULL input 'xmlDocument'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* prepare XML serialization (here: indentation) */
+  xmlThrDefIndentTreeOutput(1);
+
+  /* dump document to a string buffer */
+  xmlDocDumpFormatMemory ( (xmlDocPtr)xmlDocument, &xmlString, &xmlStringBufferSize, 1);
+  if(xmlStringBufferSize <= 0) {
+    XLALPrintError ("%s: XML document dump xmlDocDumpFormatMemory() failed!\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+
+  return xmlString;
+
+} /* XLALXMLDoc2String() */
+

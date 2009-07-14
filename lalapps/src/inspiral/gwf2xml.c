@@ -82,7 +82,7 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     }
 
     /* read data from the frEvt */
-    LALSnprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, frEvt->name);
+    snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, frEvt->name);
     snglEvt->snr = frEvt->amplitude;
     snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
     snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
@@ -101,7 +101,7 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     snglEvt->eta = (snglEvt->mass1 * snglEvt->mass2) /
       (snglEvt->mtotal * snglEvt->mtotal);
     snglEvt->mchirp = pow( snglEvt->eta, 0.6) * snglEvt->mtotal;
-    LALSnprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, ifo);
+    snprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, ifo);
   }
   return( numEvt );
 }
@@ -133,7 +133,7 @@ int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
     }
 
     /* read data from the frSimEvt */
-    LALSnprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, frSimEvt->name);
+    snprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, frSimEvt->name);
     simEvt->geocent_end_time.gpsSeconds = frSimEvt->GTimeS;
     simEvt->geocent_end_time.gpsNanoSeconds = frSimEvt->GTimeN;
     simEvt->v_end_time = simEvt->geocent_end_time;
