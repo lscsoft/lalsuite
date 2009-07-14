@@ -108,6 +108,59 @@ void destroyVariables(LALVariables *vars){
 return;
 }
 
+ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
+{
+ProcessParamsTable *this=procparams;
+while(this!=NULL) 
+ { if(!strcmp(this->param,name)) break;
+   else this=this->next;
+ }
+return(this);
+}
+ 
+void parseCharacterOptionString(char *input, char **strings[], int *n)
+/* parses a character string (passed as one of the options) and decomposes   */
+/* it into individual parameter character strings. Input is of the form      */
+/*   input   :  "[one,two,three]"                                            */
+/* and the resulting output is                                               */
+/*   strings :  {"one", "two", "three"}                                      */
+/* length of parameter names is by now limited to 512 characters.            */
+/* (should 'theoretically' (untested) be able to digest white space as well. */
+/* Irrelevant for command line options, though.) */
+{
+  int i,j,k,l;
+  /* perform a very basic well-formedness-check and count number of parameters: */
+  i=0; j=0;
+  *n = 0;
+  while (input[i] != '\0') {
+    if ((j==0) & (input[i]=='[')) j=1;
+    if ((j==1) & (input[i]==',')) ++*n;
+    if ((j==1) & (input[i]==']')) {++*n; j=2;}
+    ++i;
+  }
+  if (j!=2) printf(" : ERROR: argument vector '%s' not well-formed!\n", input);
+  /* now allocate memory for results: */
+  *strings  = (char**)  malloc(sizeof(char*) * (*n));
+  for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
+  i=0; j=0; 
+  k=0; /* string counter    */
+  l=0; /* character counter */
+  while ((input[i] != '\0') & (j<3)) {
+    /* state transitions: */
+    if ((j==0) & ((input[i]!='[') & (input[i]!=' '))) j=1;
+    if (((j==1)|(j==2)) & (input[i]==',')) {(*strings)[k][l]='\0'; j=2; ++k; l=0;}
+    if ((j==1) & (input[i]==' ')) j=2;
+    if ((j==1) & (input[i]==']')) {(*strings)[k][l]='\0'; j=3;}
+    if ((j==2) & (input[i]==']')) {(*strings)[k][l]='\0'; j=3;}
+    if ((j==2) & ((input[i]!=']') & (input[i]!=',') & (input[i]!=' '))) j=1;
+    /* actual copying: */
+    if (j==1) {
+      if (l>=511) {
+        printf(" : WARNING: character argument too long!\n");
+        printf(" : \"%s\"\n",(*strings)[k]);
+        (*strings)[k][l] = input[i];
+        ++l;
+  } 
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
@@ -121,7 +174,6 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
   head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
   strcpy(head->program, argv[0]);
   ptr = head;
-
   i=1;
   while ((i<argc) & (state<=3)) {
     // check for a double-dash at beginning of argument #i:

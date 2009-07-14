@@ -145,6 +145,9 @@ tagLALIFOData
   struct tagLALIFOData *next;
 }LALIFOData;
 
+ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
+
+void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 
 #endif
