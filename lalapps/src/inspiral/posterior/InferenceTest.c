@@ -9,20 +9,23 @@ int i;
 
 
 int main(int argc, char *argv[]){
-	number = 10.0;
-	five=5.0;
-	variables.head=NULL;
-	variables.dimension=0;
-	addVariable(&variables,"number",&number,REAL4_t);
-	number=*(REAL4 *)getVariable(&variables,"number");
-	fprintf(stdout,"Got %lf\n",number);
-	setVariable(&variables,"number",&five);
-	number=*(REAL4 *)getVariable(&variables,"number");
-	fprintf(stdout,"Got %lf\n",number);
-	fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));	
-	removeVariable(&variables,"number");
-	fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
-	destroyVariables(&variables);
+  // test "LALVariables" stuff:
+  number = 10.0;
+  five=5.0;
+  variables.head=NULL;
+  variables.dimension=0;
+  addVariable(&variables,"number",&number,REAL4_t);
+  number=*(REAL4 *)getVariable(&variables,"number");
+  fprintf(stdout,"Got %lf\n",number);
+  setVariable(&variables,"number",&five);
+  number=*(REAL4 *)getVariable(&variables,"number");
+  fprintf(stdout,"Got %lf\n",number);
+  fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));	
+  removeVariable(&variables,"number");
+  fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
+  destroyVariables(&variables);
+
+  // test "parseCommandLine()" function:
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
   printf("parsed command line arguments:\n");
   ptr = ppt;
