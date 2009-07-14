@@ -132,7 +132,6 @@ LALInferenceRunState *Initialize (ProcessParamsTable * commandLine);
 
 struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
 
-
 typedef struct
 tagLALIFOData
 {
