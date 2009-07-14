@@ -149,6 +149,7 @@ ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *n
 
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 
+ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
 #endif
 
