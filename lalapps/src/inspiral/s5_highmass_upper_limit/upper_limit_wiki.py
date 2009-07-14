@@ -19,7 +19,7 @@ class wiki(object):
     popen = subprocess.Popen(command.split())
     popen.communicate()
     status = popen.returncode
-    s = '[[ImageLink('+webserver+'/'+thumb+','+webserver+'/'+path+',width=400][,alt=none])]]'
+    s = '[[ImageLink('+webserver+'/'+thumb+','+webserver+'/'+path+',width=300][,alt=none])]]'
     self.file.write(s)
 
   def image_table(self,image_list, webserver):
