@@ -521,7 +521,7 @@ main(int argc, char **argv)
       /* Generate waveform at zero epoch. */
       SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
 	   &stat );
-      LALSnprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
+      snprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
           ppnParams.termDescription );
       INFO( message );
       if ( lalDebugLevel & LALINFO )
@@ -532,7 +532,7 @@ main(int argc, char **argv)
             INSPAWGFILEC, ppnParams.fStop );
       }
       if ( ppnParams.dfdt > 2.0 ) {
-        LALSnprintf( message, MSGLEN,
+        snprintf( message, MSGLEN,
 		     "Waveform sampling interval is too large:\n"
 		     "\tmaximum df*dt = %f", ppnParams.dfdt );
 	WARNING( message );

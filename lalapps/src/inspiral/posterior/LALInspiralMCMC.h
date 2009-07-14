@@ -467,6 +467,10 @@ void XLALMCMCRotateSky(
 
 int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
 
+INT4 XLALMCMCCheckParameter(
+			   LALMCMCParameter *parameter,
+			   const char *name);
+
 void
 XLALMCMCAddParam(
    LALMCMCParameter   *parameter,

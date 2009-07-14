@@ -1069,14 +1069,18 @@ int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 {
 	REAL8 eta1,eta2,mc1,mc2;
 	REAL4 randnum;
+	int logflag=0;
 	static LALStatus status;
 	eta1=XLALMCMCGetParameter(parameter,"eta");
-	mc1=XLALMCMCGetParameter(parameter,"mchirp");
+	if(XLALMCMCCheckParameter(parameter,"logM")) {mc1=exp(XLALMCMCGetParameter(parameter,"logM")); logflag=1;}
+	else mc1=XLALMCMCGetParameter(parameter,"mchirp");
 	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 	eta2=0.25*(REAL8)randnum;
 	mc2 = pow(eta2/eta1,3./5.)*mc1;
 	XLALMCMCSetParameter(parameter,"eta",eta2);
-	XLALMCMCSetParameter(parameter,"mchirp",mc2);
+	if(logflag) XLALMCMCSetParameter(parameter,"logM",log(mc2));
+	else XLALMCMCSetParameter(parameter,"mchirp",mc2);
+	
 	return(0);
 }
 
@@ -1248,6 +1252,18 @@ function to keep its proposals inside the parameter space */
 			if(paraHead->core->minVal > paraHead->value) paraHead->value+=2.0*(paraHead->core->minVal - paraHead->value);
 		}
 	}
+}
+
+INT4 XLALMCMCCheckParameter(
+			   LALMCMCParameter *parameter,
+			   const char *name)
+{
+  /* Check for existance of name in parameter */
+  LALMCMCParam *param=NULL;
+  param=parameter->param;
+  while(param) {if(!strcmp(param->core->name, name)) return 1; else param=param->next;}
+  return 0;
+
 }
 
 

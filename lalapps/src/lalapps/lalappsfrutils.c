@@ -49,11 +49,11 @@ FrameH *fr_add_proc_REAL4TimeSeries (
   
   if ( suffix )
   {
-    LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
   }
   else
   {
-    LALSnprintf( chname, sizeof(chname), "%s", chan->name );
+    snprintf( chname, sizeof(chname), "%s", chan->name );
   } 
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
@@ -81,11 +81,11 @@ FrameH *fr_add_proc_REAL8TimeSeries (
   
   if ( suffix )
   {
-    LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
   }
   else
   {
-    LALSnprintf( chname, sizeof(chname), "%s", chan->name );
+    snprintf( chname, sizeof(chname), "%s", chan->name );
   } 
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
@@ -112,7 +112,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
   char          chname[256];
   struct        series fdata;
 
-  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
@@ -137,7 +137,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
   char          chname[256];
   struct        series fdata;
 
-  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
@@ -162,7 +162,7 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
   char          chname[256];
   struct        series fdata;
 
-  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
@@ -197,7 +197,7 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   size_t i;
   const char *channel = fdata.name;
 
-  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );

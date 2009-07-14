@@ -412,13 +412,13 @@ int main(int argc, char *argv[]){
 
   /*  set up ephemeris  */
   if(uvar_ephemDir) {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
+    snprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
   } else {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
+    snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
   }
 
   EphemEarth[MAXFILENAMELENGTH-1] = 0;
@@ -1577,8 +1577,8 @@ void initUserVars (LALStatus *status)
   uvar_fddot = 0.0;
   uvar_fddotBand = 0.0;
   uvar_fddotResolution = 0.0;
-  uvar_dAlpha = 0.2;
-  uvar_dDelta = 0.2;
+  uvar_dAlpha = 0.0;
+  uvar_dDelta = 0.0;
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;

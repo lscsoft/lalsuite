@@ -56,13 +56,13 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   FARl = FAR*0.001
   nbins = 5
   FARS = rate.LogarithmicBins(FARl, FARh, nbins)
-  #gw = rate.gaussian_window2d(3,3,10)
   vA = []
   vA2 = []
   for far in FARS.centres():
     m, f = get_injections(injfnames, far, zero_lag_segments)
     print >>sys.stderr, "computing volume at FAR " + str(far)
     vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, livetime, 1)  
+    # we need to compute derivitive of log according to ul paper
     vAt.array = scipy.log10(vAt.array + 0.001)
     vA.append(vAt)
   # the derivitive is calcuated with respect to FAR * t
@@ -91,6 +91,8 @@ def derivitave_fit(farts, FARt, vAs, twodbin):
         da.append(vAs[farts[f]].array[m1][m2])
       fit = interpolate.splrep(farts.centres(),da,k=4)
       val = 0.0 - interpolate.splev(FARt,fit,der=1)
+      # FIXME this prevents negative derivitives arising from bad fits
+      if val < 0: val = 0
       dA.array[m1][m2] = val # minus the derivitave
   return dA
 
@@ -211,17 +213,17 @@ def scramble_dist(dist,relerr):
   function to handle random calibration error.  Individually srambles the distances
   of injection by an error.
   """
-  #return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
-  return dist * (1-relerr)
+  return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
+  #return dist * (1-relerr)
 
-def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1):
+def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1, derr=0.15):
   """ 
   Compute the search volume in the mass/mass plane, bootstrap
   and measure the first and second moment (assumes the underlying 
   distribution can be characterized by those two parameters) 
   This is gonna be brutally slow
   """
-  wnfunc /= wnfunc[(wnfunc.shape[0]-1) / 2, (wnfunc.shape[1]-1) / 2]
+  if wnfunc: wnfunc /= wnfunc[(wnfunc.shape[0]-1) / 2, (wnfunc.shape[1]-1) / 2]
   x = twodbin.shape[0]
   y = twodbin.shape[1]
   z = dbin.n
@@ -242,18 +244,18 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1)
     if bootnum > 1: sm, sf = scramble_pop(missed, found)
     else: sm, sf = missed, found
     for l in sf:#found:
-      tbin = rArrays[dbin[scramble_dist(l.distance,0.1)]]
+      tbin = rArrays[dbin[scramble_dist(l.distance,derr)]]
       tbin.incnumerator( (l.mass1, l.mass2) )
     for l in sm:#missed:
-      tbin = rArrays[dbin[scramble_dist(l.distance,0.1)]]
+      tbin = rArrays[dbin[scramble_dist(l.distance,derr)]]
       tbin.incdenominator( (l.mass1, l.mass2) )
     
     tmpArray2=rate.BinnedArray(twodbin) #start with a zero array to compute the mean square
     for k in range(z): 
       tbins = rArrays[k]
       tbins.denominator.array += tbins.numerator.array
-      rate.filter_array(tbins.denominator.array,wnfunc)
-      rate.filter_array(tbins.numerator.array,wnfunc)
+      if wnfunc: rate.filter_array(tbins.denominator.array,wnfunc)
+      if wnfunc: rate.filter_array(tbins.numerator.array,wnfunc)
       tbins.regularize()
       # logarithmic(d)
       integrand = 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
@@ -306,8 +308,16 @@ def parse_command_line():
 
   return opts, filenames
 
-# FIXME This should use some lal or pylal official thing
+# FIXME These values should probably be command line arguments or derived from the database
 secs_in_year = 31556926.0
+max_dist = 2000
+min_mass = 1
+max_mass = 99
+min_mtotal = 25
+max_mtotal = 100
+mass_bins = 11
+dist_bins = 50
+
 
 opts, filenames = parse_command_line()
 
@@ -339,16 +349,18 @@ Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose =
 
 
 # restrict the sims to a distance range
-Found = cut_distance(Found, 1, 2000)
-Missed = cut_distance(Missed, 1, 2000)
+Found = cut_distance(Found, 1, max_dist)
+Missed = cut_distance(Missed, 1, max_dist)
 
 # get a 2D mass binning
-twoDMassBins = get_2d_mass_bins(1, 99, 33)
+twoDMassBins = get_2d_mass_bins(min_mass, max_mass, mass_bins)
 
 # get log distance bins
-dBin = rate.LogarithmicBins(0.1,2500,100)
+dBin = rate.LogarithmicBins(0.1,max_dist*1.25,dist_bins)
 
-gw = rate.gaussian_window2d(2,2,8)
+# Someday we could try a Gaussian smoothing function
+#gw = rate.gaussian_window2d(2,2,8)
+gw = None
 
 #Get derivative of volume with respect to FAR
 dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
@@ -361,9 +373,9 @@ vA.array /= secs_in_year
 vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
 
 #Trim the array to have sane values outside the total mass area of interest
-trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
-trim_mass_space(vA, twoDMassBins, scipy.unique(vA.array)[1]/10.0, minM=25.0, maxM=100.0)
-trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
+trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
+trim_mass_space(vA, twoDMassBins, scipy.unique(vA.array)[1]/10.0, minM=min_mtotal, maxM=max_mtotal)
+trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()

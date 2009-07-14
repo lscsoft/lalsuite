@@ -887,7 +887,7 @@ XLALExtractSnglInspiralFromCoinc(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "ExtractSnglInspiralFromCoinc";
+  /*static const char *func = "ExtractSnglInspiralFromCoinc";*/
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
@@ -903,6 +903,9 @@ XLALExtractSnglInspiralFromCoinc(
       );
     return( NULL );
   }
+
+  /* gpsStartTime is unused in this function */
+  gpsStartTime = NULL;
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
@@ -940,7 +943,7 @@ XLALExtractSnglInspiralFromCoinc(
         }
         else if ( eventNum > 99999 )
         {
-          /* put extra digits into overflow area (above slide number) */ 
+          /* put extra digits into overflow area (above slide number) */
           eventId->id = ( LAL_INT8_C(1000000000) * (INT8) (eventNum / 100000) )
           + (INT8) (eventNum % 100000);
         }

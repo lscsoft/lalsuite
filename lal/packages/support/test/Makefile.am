@@ -15,7 +15,8 @@ noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 Conf
 	SFT-test3  SFT-test7  SFT-bad11  SFT-bad2   SFT-bad6	SFT-good   SFT-test4  SFT-bad12  SFT-bad3   SFT-bad7	\
 	SFT-test1  SFT-test5
 
-EXTRA_DIST = $(DATA)
+pkgdata_DATA = VOTable-1.1.xsd
+EXTRA_DIST = $(DATA) VOTable-1.1.xsd
 AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 
 PrintVectorTest_SOURCES = PrintVectorTest.c

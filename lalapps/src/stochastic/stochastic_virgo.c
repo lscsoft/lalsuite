@@ -1008,10 +1008,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   yOpt = 0.; inVarTheoSum = 0.;
   nu=0.;
   /* open output file */
-  LALSnprintf(outputFilename1, LALNameLength,"%s/stat-%s%s-%d-%d.dat",
+  snprintf(outputFilename1, LALNameLength,"%s/stat-%s%s-%d-%d.dat",
               outputFilePath, ifo1, ifo2,(INT4)startTime, (INT4)stopTime);
   /* open output file */
-  LALSnprintf(outputFilename2, LALNameLength,"%s/post-%s%s-%d-%d.dat",
+  snprintf(outputFilename2, LALNameLength,"%s/post-%s%s-%d-%d.dat",
 	      outputFilePath, ifo1, ifo2,(INT4)startTime, (INT4)stopTime);
 
   /* loop over interval */

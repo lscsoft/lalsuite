@@ -97,12 +97,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
@@ -384,7 +384,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -721,42 +721,42 @@ int main( int argc, char *argv[] )
             switch ( ifoNumber )
             {
               case LAL_IFO_G1:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_G1_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing G1 channel time series out to %s\n", chanfilename );
                 LALSPrintTimeSeries(chan, chanfilename );
                 break;
               case LAL_IFO_H1:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_H1_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing H1 channel time series out to %s\n", chanfilename );
                 LALSPrintTimeSeries(chan, chanfilename );
                 break;
               case LAL_IFO_H2:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_H2_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing H2 channel time series out to %s\n", chanfilename );
                 LALSPrintTimeSeries(chan, chanfilename );
                 break;
               case LAL_IFO_L1:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_L1_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing L1 channel time series out to %s\n", chanfilename );
                 LALSPrintTimeSeries(chan, chanfilename );
                 break;
               case LAL_IFO_T1:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_T1_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing T1 channel time series out to %s\n", chanfilename );
                 LALSPrintTimeSeries(chan, chanfilename );
                 break;
               case LAL_IFO_V1:
-                LALSnprintf(chanfilename, FILENAME_MAX,
+                snprintf(chanfilename, FILENAME_MAX,
                     "nonspinning_V1_inj%d.dat", injSimCount+1);
                 if (vrbflg) fprintf( stdout,
                     "writing V1 channel time series out to %s\n", chanfilename );
@@ -823,42 +823,42 @@ int main( int argc, char *argv[] )
           switch ( ifoNumber )
           {
             case LAL_IFO_G1:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_G1_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_G1_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing G1 channel time series out to %s\n", chanfilename );
               LALSPrintTimeSeries(chan, chanfilename );
               break;
             case LAL_IFO_H1:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H1_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_H1_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing H1 channel time series out to %s\n", chanfilename );
               LALSPrintTimeSeries(chan, chanfilename );
               break;
             case LAL_IFO_H2:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_H2_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_H2_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing H2 channel time series out to %s\n", chanfilename );
               LALSPrintTimeSeries(chan, chanfilename );
               break;
             case LAL_IFO_L1:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_L1_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_L1_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing L1 channel time series out to %s\n", chanfilename );
               LALSPrintTimeSeries(chan, chanfilename );
               break;
             case LAL_IFO_T1:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_T1_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_T1_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing T1 channel time series out to %s\n", chanfilename );
               LALSPrintTimeSeries(chan, chanfilename );
               break;
             case LAL_IFO_V1:
-              LALSnprintf( chanfilename, FILENAME_MAX, "spinning_V1_inj%d.dat",
+              snprintf( chanfilename, FILENAME_MAX, "spinning_V1_inj%d.dat",
                   injSimCount+1);
               if (vrbflg) fprintf( stdout,
                   "writing V1 channel time series out to %s\n", chanfilename );
@@ -1151,9 +1151,9 @@ int main( int argc, char *argv[] )
           H1FoundSngl = L1FoundSngl->next = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
         }
         /* H1 entry */
-        LALSnprintf( H1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "H1" );
-        LALSnprintf( H1FoundSngl->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "LSC-STRAIN" );
-        LALSnprintf( H1FoundSngl->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), "sned" );
+        snprintf( H1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "H1" );
+        snprintf( H1FoundSngl->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "LSC-STRAIN" );
+        snprintf( H1FoundSngl->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), "sned" );
         H1FoundSngl->eff_distance = thisInjection->eff_dist_h; 
         H1FoundSngl->end_time = thisInjection->h_end_time;
         H1FoundSngl->mass1 = thisInjection->mass1;
@@ -1170,7 +1170,7 @@ int main( int argc, char *argv[] )
         L1FoundSngl = H1FoundSngl->next = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
         memcpy( L1FoundSngl, H1FoundSngl, sizeof(SnglInspiralTable) );
         L1FoundSngl->next = NULL;
-        LALSnprintf( L1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "L1" );
+        snprintf( L1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "L1" );
         L1FoundSngl->eff_distance = thisInjection->eff_dist_l; 
         L1FoundSngl->end_time = thisInjection->l_end_time;
       }
@@ -1240,7 +1240,7 @@ int main( int argc, char *argv[] )
     /* open and write to the Found xml file */
     if ( vrbflg ) fprintf( stdout, "Opening Found xml file... " );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LALSnprintf( fname, sizeof(fname), "Found_Injections.xml" );
+    snprintf( fname, sizeof(fname), "Found_Injections.xml" );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname ), &status );
 
     /* write out the process and process params tables */
@@ -1284,7 +1284,7 @@ int main( int argc, char *argv[] )
     /* open and write to the Missed xml file */
     if ( vrbflg ) fprintf( stdout, "Opening Missed xml file... ");
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LALSnprintf( fname, sizeof(fname), "Missed_Injections.xml" );
+    snprintf( fname, sizeof(fname), "Missed_Injections.xml" );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname ), &status );
 
     /* write out the process and process params tables */
@@ -1320,7 +1320,7 @@ int main( int argc, char *argv[] )
   {
     /* open the output xml file */
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LALSnprintf( fname, sizeof(fname), outputFile );
+    snprintf( fname, sizeof(fname), outputFile );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname ), &status );
 
     /* write out the process and process params tables */

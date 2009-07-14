@@ -151,7 +151,7 @@ REAL8IIRFilter ALPHASLPFIR;
    {
      ABORT(status, 117, "Upsampling factor != 1, this is not a good filters file.");
    }
- 
+
  /* apply delay (actually an advance) */
  for (p=0; p<(int)output->hR.data->length+input->CinvDelay; p++){
    output->hR.data->data[p]=output->hR.data->data[p-input->CinvDelay];
@@ -332,7 +332,7 @@ REAL8IIRFilter ALPHASLPFIR;
 }
 
 /*******************************************************************************/
- 
+
 void LALMakeFIRLP(LALStatus *status, REAL8IIRFilter *LPFIR, int USF)
 {
   int N=2*N_FIR_LP+1,l;
