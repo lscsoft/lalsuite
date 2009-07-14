@@ -12,6 +12,7 @@
 
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
+#if 0
 static void numericApply(
     XLALSkymap2DirectionPropertiesType* properties,
     double wSw[3],
@@ -131,6 +132,7 @@ static void numerical(void)
     }
 
 }
+#endif
 
 static void injection(void)
 {
@@ -353,7 +355,8 @@ static void injection(void)
 
 }
 
-int main(int argc, char** argv)
+//int main(int argc, char** argv)
+int main(void)
 {
      //numerical();
     injection();
