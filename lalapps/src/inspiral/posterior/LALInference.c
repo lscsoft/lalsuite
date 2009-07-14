@@ -133,7 +133,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         state = 2;
       }
       else {
-        fprintf(stderr, " WARNING (1): orphaned command line argument '%s' in parseCommandLine().\n", argv[i]);
+        fprintf(stderr, " WARNING: orphaned 1st command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }
     } 
@@ -159,21 +159,12 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         state = 2;
       }
       else {
-        fprintf(stderr, " WARNING (2): orphaned command line argument '%s' in parseCommandLine().\n", argv[i]);
+        fprintf(stderr, " WARNING: orphaned command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }     
     }
     ++i;
   }
-  if (0) { // check results:
-    printf("-----\n");
-    ptr = head;
-    i=1;
-    while (ptr != NULL){
-      printf(" (%d)  %s  %s  %s  \"%s\"\n", i, ptr->program, ptr->param, ptr->type, ptr->value);
-      ptr = ptr->next;
-      ++i;
-    }
-  }
+  if (state==4) die(" ERROR: failed parsing command line options.\n");
   return(head);
 }
