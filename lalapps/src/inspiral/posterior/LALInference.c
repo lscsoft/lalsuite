@@ -189,6 +189,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
     if (state==1){ // ('state 1' means handling very 1st argument)
       if (dbldash) {
         strcpy(head->param, argv[i]);
+        strcpy(ptr->type, "string");
         state = 2;
       }
       else { // (very 1st argument needs to start with "--...")
@@ -202,11 +203,11 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         ptr = ptr->next;
         strcpy(ptr->program, argv[0]);
         strcpy(ptr->param, argv[i]);
+        strcpy(ptr->type, "string");
       }
       else {
         state = 3;
         strcpy(ptr->value, argv[i]);          
-        strcpy(ptr->type, "string");
       }
     }
     else if (state==3) { // ('state 3' means last entry was a value)
@@ -215,6 +216,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         ptr = ptr->next;
         strcpy(ptr->program, argv[0]);
         strcpy(ptr->param, argv[i]);
+        strcpy(ptr->type, "string");
         state = 2;
       }
       else {
