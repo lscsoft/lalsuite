@@ -1333,7 +1333,7 @@ static double det3(double z[3][3])
     g = z[2][0];
     h = z[2][1];
     i = z[2][2];
-    
+
     return a * e * i - a * f * h - b * d * i + b * f * g + c * d * h - c * e * g;
 }
 
@@ -1373,9 +1373,9 @@ void XLALSkymap2KernelConstruct(
     XLALSkymap2KernelType* kernel
     )
 {
-    
+
     {
-       
+
         //
         // F(F^T diag(w.S_j^{-1}.w) F + I) F^T
         //
@@ -1388,10 +1388,6 @@ void XLALSkymap2KernelConstruct(
         double fTdiagwSwfeye[2][2];
         double invfTdiagwSwfeye[2][2];
         double finvfTdiagwSwfeye[3][2];        
-        //double finvfTdiagwSwfeyefT[3][3];
-
-        //double fTfinvfTdiagwSwfeye[2][2];
-        //double fTfinvfTdiagwSwfeyeeye[2][2];
 
         // Compute the kernel
 
@@ -1413,22 +1409,22 @@ void XLALSkymap2KernelConstruct(
         mul322(finvfTdiagwSwfeye, properties->f, invfTdiagwSwfeye);
         // F (F^T diag(wSw) F + I)^{-1} . F^T
         mul323(kernel->k, finvfTdiagwSwfeye, fT);
-        
+
     }
-      
-    
-    
+
+
+
     {
-        
+
         // Compute the normalization
-        
+
         double a;
         double b[3][3];
         double c;
         int i, j;
-        
+
         a = wSw[0] * wSw[1] * wSw[2];
-        
+
         for (i = 0; i != 3; ++i)
         {
             for (j = 0; j != 3; ++j)
@@ -1438,22 +1434,11 @@ void XLALSkymap2KernelConstruct(
             b[i][i] += 1. / wSw[i];
         }
         c = det3(b);
-        
+
         kernel->logNormalization = 0.5 * log(a * c);
-        
-        
+
+
     }
-    
-    // Compute the normalization via Sylvester's determinant theorem
-        
-    // Wrong!  Need to recompute it
-    
-    // F^T . F (F^T diag(wSw) F + I)^{-1}
-    //mul232(fTfinvfTdiagwSwfeye, fT, finvfTdiagwSwfeye);
-    // F^T F (F^T diag(wSw) F + I)^{-1} - I
-    //sub22(fTfinvfTdiagwSwfeyeeye, fTfinvfTdiagwSwfeye, eye);
-    // log(sqrt(|F^T F (F^T diag(wSw) F + I)^{-1} - I|))
-    //kernel->logNormalization = log(det22(fTfinvfTdiagwSwfeyeeye)) * 0.5;
 }
 
 static double ip33(double a[3], double b[3][3], double c[3])

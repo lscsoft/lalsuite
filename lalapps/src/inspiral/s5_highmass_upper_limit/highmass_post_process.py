@@ -212,16 +212,19 @@ class far_plot_job(pipeline.CondorDAGJob):
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False):
+  def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False,cache_pat=None):
 
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME add tmp file space
     cline = job.ligolw_sqlite + ' --database ' + database + ' --verbose '
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
+    if cache_pat: cline += " --input-cache ligolw_sqlite_" + cache_pat + ".cache "
     for xml in xml_list: cline += xml + " "
     fn = "bash_scripts/ligolw_sqlite"+str(id)+".sh"
     f = open(fn,"w")
+    if cache_pat: 
+      f.write("find $PWD -name '*" + cache_pat + "*.xml.gz' -print | sed -e 's?^?- - - - file://localhost?' > ligolw_sqlite_" + cache_pat + ".cache\n")
     f.write(cline)
     f.close
     self.add_macro("macroid", id)
@@ -342,10 +345,13 @@ class far_plot_node(pipeline.CondorDAGNode):
 
 def ifo_seg_dict(cp):
   out = {}
+  
   out["H1"] = string.strip(cp.get('input','h1vetosegments'))
   out["H2"] = string.strip(cp.get('input','h2vetosegments'))
   out["L1"] = string.strip(cp.get('input','l1vetosegments'))
-  return out
+  cat = "_".join(os.path.basename(out["H1"]).split("_")[1:3])
+  return out, [cat]
+
 
 def grep(string, inname, outname):
     o = open(outname, "w")
@@ -366,7 +372,9 @@ except: pass
 try: os.mkdir("bash_scripts")
 except: pass
 
-cats = ["CAT_3"]
+# get the segments for a given category veto
+seg_dict, cats = ifo_seg_dict(cp)
+
 types = ["FULL_DATA"]
 FULLDATACACHE = string.strip(cp.get('input','fulldatacache'))
 INJCACHE = string.strip(cp.get('input','injcache'))
@@ -391,7 +399,7 @@ n = 0
 #Do the segments node
 segNode = {}
 for cat in cats:
-  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, ifo_seg_dict(cp), "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
+  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict, "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
 
 #Some initialization
 ligolwThincaToCoincNode = {}
@@ -419,15 +427,17 @@ timestr = str(start_time) + "-" + str(end_time)
 for type in types:
   for cat in cats:
     #break down the cache to save on parsing
-    grep(type + ".*" + cat, FULLDATACACHE, type + cat + ".cache")
-    try: os.mkdir(type+cat)
+    tag = type + "_" + cat
+    grep('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag + ".cache")
+    try: os.mkdir(tag)
     except: pass
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
-    database = type+cat+"_"+timestr+".sqlite"
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, tag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    database = tag+"_"+timestr+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
-    xml_list = [type+cat+"/S5_HM_"+timestr+"*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+    #xml_list = [tag+"/S5_HM_"+timestr+"*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
+    xml_list = ["vetoes_"+cat+".xml.gz"]
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True, cache_pat=tag); n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
@@ -435,19 +445,21 @@ for type in types:
 for inj in injcache:
   for cat in cats:
     type = "_".join(inj.description.split("_")[2:])
+    tag = type + "_" + cat
     url = inj.url
-    cachefile = type + cat + ".cache"
-    try: os.mkdir(type+cat)
+    cachefile = tag + ".cache"
+    try: os.mkdir(tag)
     except: pass
     #break down the cache
-    grep(type + '.*' + cat, INJCACHE, cachefile)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]);n+=1
-    database = type+cat+"_"+timestr+".sqlite"
-    db_to_xml_name = type+cat+"_"+timestr+".xml.gz"
+    grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile)
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    database = tag+"_"+timestr+".sqlite"
+    db_to_xml_name = tag +"_"+timestr+".xml.gz"
     try: db[cat].append(database)
     except: db[cat] = [database]
-    xml_list = [type+cat+"/S5_HM_INJ_"+timestr+"*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+    #xml_list = [type+cat+"/S5_HM_INJ_"+timestr+"*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
+    xml_list = [url, "vetoes_"+cat+".xml.gz"]
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True,cache_pat=tag);n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]);n+=1
@@ -472,9 +484,9 @@ for cat in cats:
 
 #Upper limit jobs
 for cat in ['CAT_3']: 
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATACAT_3_"+timestr+".sqlite", "*INJCAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 #IFAR plots
 for cat in cats:

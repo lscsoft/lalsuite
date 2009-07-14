@@ -88,7 +88,6 @@ LALFree()
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GenerateInspiral.h>
-#include <lal/FrameStream.h>
 #include <lal/NRWaveInject.h>
 #include <lal/GenerateInspRing.h>
 #include <math.h>

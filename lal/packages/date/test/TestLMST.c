@@ -32,10 +32,13 @@ NRCSID (LALTESTLMSTC, "$Id$");
 #define SUCCESS               0
 #define TESTLMSTC_DATESTRING  1
 
+#if 0
 static BOOLEAN mstdate_ok_p(const LALDate *p_date,
                             const LALDate *p_expected_date);
+#endif
 
-int main(int argc, char *argv[])
+/*int main(int argc, char *argv[])*/
+int main(void)
 {
 /* FIXME:  this needs to be ported to test the XLAL replacements */
 #if 0
@@ -450,7 +453,7 @@ int main(int argc, char *argv[])
 #endif
 }
 
-
+#if 0
 /* allow up to 1 sidereal second difference */
 static BOOLEAN mstdate_ok_p(const LALDate *p_date,
                             const LALDate *p_expected_date)
@@ -474,3 +477,4 @@ static BOOLEAN mstdate_ok_p(const LALDate *p_date,
           (*p_date).unixDate.tm_min == (*p_expected_date).unixDate.tm_min &&
           (*p_date).unixDate.tm_hour == (*p_expected_date).unixDate.tm_hour);
 }
+#endif
