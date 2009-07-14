@@ -12,33 +12,32 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include "LALInference.h"
 
 
-void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
+void LALTemplateWrapper(LALVariables *variables, LALIFOData *ifo){
 	
 
 	static LALStatus stat;								/* status structure */
-	REAL4 m1=*(REAL4 *)getVariable(&variables,"m1");			/* binary masses */
-	REAL4 m2=*(REAL4 *)getVariable(&variables,"m2");
+	REAL4 m1=*(REAL4 *)getVariable(variables,"m1");			/* binary masses */
+	REAL4 m2=*(REAL4 *)getVariable(variables,"m2");
 	
-	REAL4 dist=*(REAL4 *)getVariable(&variables,"dist");      /* binary distance */
-	REAL4 inc=*(REAL4 *)getVariable(&variables,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(&variables,"phii");
+	REAL4 dist=*(REAL4 *)getVariable(variables,"dist");      /* binary distance */
+	REAL4 inc=*(REAL4 *)getVariable(variables,"inc");		/* inclination and coalescence phase */
+	REAL4 phii=*(REAL4 *)getVariable(variables,"phii");
 	
 	REAL4 f_min = ifo->fLow, f_max=ifo->fHigh;			/* start and stop frequencies */
-	REAL8 dt = ifo->timeData->deltaT;					/* sampling interval */
-	REAL8 deltat = ifo->timeData->deltaT;				/* wave sampling interval */
-	INT4 order = 5;										/* PN order */
+	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
+	REAL8 deltat = 0.01;//ifo->timeData->deltaT;				/* wave sampling interval */
+	INT4 order = 4;										/* PN order */
 	
 	/* Other variables. */
 	UINT4 i;                      /* index */
-	CHAR message[MSGLENGTH];      /* signal generation output message */
 	PPNParamStruc params;         /* input parameters */
 	CoherentGW waveform;          /* output waveform */
 	
 
 	/* Make sure that values won't crash the system or anything. */
-	CHECKVAL( order, -1, 5 );
-	CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
-	CHECKVAL( deltat, 0.0, LAL_REAL4_MAX );
+//	CHECKVAL( order, -1, 5 );
+//	CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
+//	CHECKVAL( deltat, 0.0, LAL_REAL4_MAX );
 	
 	
 	/*******************************************************************
@@ -59,7 +58,7 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	params.deltaT = dt;
 	params.mTot = m1 + m2;
 	params.eta = m1*m2/( params.mTot*params.mTot );
-	params.inc = *(REAL4 *)getVariable(&variables,"inc");;
+	params.inc = *(REAL4 *)getVariable(variables,"inc");;
 	params.phi = 0.0;
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;
@@ -67,7 +66,7 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	
 	/* PPN parameter. */
 	params.ppn = NULL;
-	SUB( LALSCreateVector( &stat, &(params.ppn), order + 1 ), &stat );
+	LALSCreateVector( &stat, &(params.ppn), order + 1 );
 	params.ppn->data[0] = 1.0;
 	if ( order > 0 )
 		params.ppn->data[1] = 0.0;
@@ -83,7 +82,7 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	 *******************************************************************/
 	
 	/* Generate waveform. */
-	SUB( LALGeneratePPNInspiral( &stat, &waveform, &params ), &stat );
+	LALGeneratePPNInspiral( &stat, &waveform, &params );
 	
 	/* Print termination information. */
 	//snprintf( message, MSGLENGTH, "%d: %s", params.termCode,
@@ -111,10 +110,10 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	
 	/* Check if sampling interval was too large. */
 	if ( params.dfdt > 2.0 ) {
-		snprintf( message, MSGLENGTH,
+		printf(
 				 "Waveform sampling interval is too large:\n"
 				 "\tmaximum df*dt = %f", params.dfdt );
-		WARNING( message );
+		//WARNING( message );
 	}
 	
 	/* Renormalize phase. */
@@ -123,11 +122,11 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 		waveform.phi->data->data[i] += phii;
 	
 	/* Write output. */
-		if ( ( fp = fopen( outfile, "w" ) ) == NULL ) {
-			ERROR( GENERATEPPNINSPIRALTESTC_EFILE,
-				  GENERATEPPNINSPIRALTESTC_MSGEFILE, outfile );
-			return GENERATEPPNINSPIRALTESTC_EFILE;
-		}
+//		if ( ( fp = fopen( outfile, "w" ) ) == NULL ) {
+//			ERROR( GENERATEPPNINSPIRALTESTC_EFILE,
+//				  GENERATEPPNINSPIRALTESTC_MSGEFILE, outfile );
+//			return GENERATEPPNINSPIRALTESTC_EFILE;
+//		}
 		
 		/* Amplitude and phase functions: */
 //		if ( deltat == 0.0 ) {
@@ -156,10 +155,9 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 				REAL8 ap = frac*aData[2*j+2] + ( 1.0 - frac )*aData[2*j];
 				REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
 				
-				fprintf( fp, "%f %.3f %10.3e %10.3e %10.3e\n", t, p, f,
-				ifo->timeModelhPlus->data->data[j]=ap*cos( p );
-				ifo->timeModelhCross->data->data[j]=ac*sin( p );
-
+				if(j<10){
+					fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
+				}
 			}
 		
 		
@@ -168,11 +166,10 @@ void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	 * CLEANUP                                                         *
 	 *******************************************************************/
 	
-	SUB( LALSDestroyVector( &stat, &(params.ppn) ), &stat );
-	SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
-		&stat );
-	SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
-	SUB( LALDDestroyVector( &stat, &(waveform.phi->data) ), &stat );
+	LALSDestroyVector( &stat, &(params.ppn) );
+	LALSDestroyVectorSequence( &stat, &(waveform.a->data) );
+	LALSDestroyVector( &stat, &(waveform.f->data) );
+	LALDDestroyVector( &stat, &(waveform.phi->data) );
 	LALFree( waveform.a );
 	LALFree( waveform.f );
 	LALFree( waveform.phi );
