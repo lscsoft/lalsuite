@@ -451,8 +451,8 @@ int main(int argc,char *argv[]) {
 
   /******** check that the output is OK ********************************/
   if ( genTayParams.dfdt > 2.0 ) {
-    /* LALSnprintf() can't seem to print floating-point formats.
-       LALSnprintf( message, MSGLEN,
+    /* snprintf() can't seem to print floating-point formats.
+       snprintf( message, MSGLEN,
        "Waveform sampling interval is too large:\n"
        "\tmaximum df*dt = %f", params.dfdt );
     */

@@ -57,12 +57,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define INSPAWGFILEC_ENORM  0
 #define INSPAWGFILEC_ESUB   1
@@ -291,7 +291,7 @@ main(int argc, char **argv)
       case 'd':
         /* IFO */
         {
-          LALSnprintf( ifo, sizeof(ifo), optarg);
+          snprintf( ifo, sizeof(ifo), optarg);
           ADD_PROCESS_PARAM( "string", "%s", ifo );
         }
         break;
@@ -585,7 +585,7 @@ main(int argc, char **argv)
       /* Generate waveform at zero epoch. */
       LAL_CALL( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
           &stat );
-      LALSnprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
+      snprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
           ppnParams.termDescription );
       INFO( message );
       if ( lalDebugLevel & LALINFO )
@@ -657,7 +657,7 @@ main(int argc, char **argv)
         prevSimEvent->next = currentSimEvent;
       }
       /* add information about current event */
-      LALSnprintf(currentSimEvent->waveform, sizeof(currentSimEvent->waveform),
+      snprintf(currentSimEvent->waveform, sizeof(currentSimEvent->waveform),
           "GeneratePPNtwoPN");
 
       LALFloatToGPS( &stat, &inj_length, &(ppnParams.tc));
@@ -668,7 +668,7 @@ main(int argc, char **argv)
       currentSimEvent->h_end_time = currentSimEvent->l_end_time = 
         currentSimEvent->geocent_end_time;
       currentSimEvent->end_time_gmst = 0;
-      LALSnprintf(currentSimEvent->source, sizeof(currentSimEvent->waveform),
+      snprintf(currentSimEvent->source, sizeof(currentSimEvent->waveform),
           "HW");
       currentSimEvent->mass1 = m1;
       currentSimEvent->mass2 = m2;
@@ -689,12 +689,12 @@ main(int argc, char **argv)
       {
         if ( !strcmp(ifo,"") )
         {
-          LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d.out", tag, 
+          snprintf( fname, sizeof(fname), "%s_inspiral_%d.out", tag, 
               numinjects);
         }
         else
         {
-          LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
+          snprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
               tag, numinjects, ifo);
         }
       } 
@@ -702,11 +702,11 @@ main(int argc, char **argv)
       {
         if ( !strcmp(ifo,"") )
         {
-          LALSnprintf( fname, sizeof(fname), "inspiral_%d.out", numinjects);
+          snprintf( fname, sizeof(fname), "inspiral_%d.out", numinjects);
         }
         else
         {
-          LALSnprintf( fname, sizeof(fname), "inspiral_%d_%s.out",
+          snprintf( fname, sizeof(fname), "inspiral_%d_%s.out",
               numinjects, ifo);
         }
       }
