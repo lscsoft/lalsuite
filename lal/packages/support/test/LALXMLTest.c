@@ -612,7 +612,7 @@ int testTable ( void )
   REAL8 FreqIn[IN_ROWS]   = { 100.1234, 101.234, 102.345 };
   REAL4 AlphaIn[IN_ROWS]  = { 0.1234, 2.123434, 3.2341 };
   REAL4 DeltaIn[IN_ROWS]  = { -1.234, -0.5, 1.234 };
-  CHAR *NameIn[IN_ROWS]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
+  const CHAR *NameIn[IN_ROWS]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
   INT4  IndexIn[IN_ROWS]  = { 5, 7, 99 };
   COMPLEX8 FaIn[IN_ROWS]  = { { 1, 2 }, {3, 4}, {5, 6} };
 
@@ -736,12 +736,12 @@ int testTable ( void )
 
   /* ---------- de-serialize back into C-struct ---------- */
   UINT4 i, numCols, numRows, nRows;
-  VOTFieldVector *fieldVect;
-  REAL8 *FreqOut;
-  REAL4 *AlphaOut, *DeltaOut;
-  CHAR **NameOut;
-  INT4 *IndexOut;
-  COMPLEX8 *FaOut;
+  VOTFieldVector *fieldVect = NULL;
+  REAL8 *FreqOut = NULL;
+  REAL4 *AlphaOut = NULL, *DeltaOut = NULL;
+  CHAR **NameOut = NULL;
+  INT4 *IndexOut = NULL;
+  COMPLEX8 *FaOut = NULL;
 
   if ( ( fieldVect = XLALReadVOTFIELDNodes ( xmlDocument, LALXMLC_NAMETEST5 )) == NULL ) {
     XLALPrintError ("%s: XLALReadVOTFIELDNodes() failed to obtain FIELD elements.\n", __func__ );
