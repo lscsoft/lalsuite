@@ -138,7 +138,7 @@ tagLALIFOData
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
   REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
-  REAL8TimeSeries *window;
+  REAL8Window *window;
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8 fLow, fHigh;	//integration limits;
   LALDetector *detector;
@@ -149,6 +149,7 @@ ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *n
 
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 
+ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
 #endif
 

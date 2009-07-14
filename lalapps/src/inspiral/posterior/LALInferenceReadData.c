@@ -21,18 +21,40 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	return out;
 }
 
+/* Variables needed from command line *****
+
+[ --channel [channel1,channel2,channel3] ]
+--IFO [IFO1,IFO2,IFO3]
+--cache [cache1,cache2,cache3]
+--PSDstart GPSsecs.GPSnanosecs
+--PSDlength length
+[--srate SampleRate   [4096]]
+--seglen segment_length 
+--trig_time GPSsecs.GPSnanosecs
+[--fLow lower_cutoff [40Hz]]
+[--fHigh high_cutoff [f_Nyquist]]
+
+
+****************************************************/
 
 LALIFOData *ReadData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
 {
- LALIFOData *headIFO,*curIFO,*IFOdata; 
+ ProcessParamsTable *procparam;
+ LALIFOData *headIFO,*curIFO,*IFOdata;
+ REAL8 SampleRate=4096.0,Segment_Length=0,nSegs=0;
+ INT4 seglen=0;
+ REAL8TimeSeries *PSDtimeSeries;
+ REAL8 padding=1.0;
  int Ncache=0,Nifo=0,Nchannel=0;
  int i,j;
  char strainname[]="LSC-STRAIN";
+ char parambuffer[512];
+ char **chartmp;
  char **channels;
  char **caches;
  char **IFOnames;
- LIGOTimeGPS GPSstart;
+ LIGOTimeGPS GPSstart,GPStrig;
  REAL8 PSDdatalength=0;
  if(getProcParamVal(commandLine,"channel")){
 	parseCharacterOptionString(getProcParamVal(commandLine,"channel")->value,channels,&Nchannel);
@@ -43,6 +65,13 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
  if(Nchannels!=0 && Nchannels!=Nifo) die("ERROR: Please specify a channel for all caches, or omit to use the defaults\n");
  IFOdata=headIFO=calloc(sizeof(LALIFOData),Nifo);
  
+ procparam=getProcParamVal(commandLine,"PSDstart");
+ LALStringToGPS(&status,&GPSstart,procparam->value,chartmp);
+ PSDdatalength=atof(getProcParamVal(commandLine,"PSDlength")->value);
+ SegmentLength=atof(getProcParamVal(commandLIne,"seglen")->value);
+ SampleRate=atof(getProcParamVal(commandLine,"srate")->value);
+ seglen=(INT4)(SegmentLength/SampleRate);
+
  if(Nchannels==0)
  {
 	channels=calloc(sizeof(char *),Nifo);
@@ -67,11 +96,23 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
 	}
  }
- 
  /* We now have the number of detectors, let's read the PSD data */
+
  for(i=0;i<Nifo;i++) {
-	readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
+	/* Create FFT plans */
+	IFOData[i].timeToFreqFFTPlan = XLALCreateForwardREAL4FFTPlan( seglen, 0 );
+	IDOData[i].freqToTimeFFTPlan = XLALCreateReverseREAL4FFTPlan(seglen,0);
+	
+	/* Setup windows */
+	IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
+
+	PSDTimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
+	XLALResampleREAL8TimeSeries(PSDTimeSeries,1.0/SampleRate);
+	PSDTimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDTimeSeries,(size_t) 0, (size_t) seglen*nSegs);
+	IFOdata[i].oneSidedNoisePowerSpectrum=XLALCreateREAL8FrequencySeries("inverse spectrum",&PSDTimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+	XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDTimeSeries, seglen, (UINT4)stride, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
  }
 
+ /* Read and FFT the data segment */
 
 }
