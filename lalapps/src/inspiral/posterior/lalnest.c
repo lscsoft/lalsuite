@@ -63,8 +63,8 @@ INT4 event=0;
 REAL8 manual_end_time=0;
 REAL8 manual_mass_low=2.0;
 REAL8 manual_mass_high=35.0;
-REAL8 manual_RA=0;
-REAL8 manual_dec=0;
+REAL8 manual_RA=-4200;
+REAL8 manual_dec=-4200;
 int Nmcmc = 100;
 double injSNR=-1.0;
 extern INT4 seed;
@@ -723,11 +723,11 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
     trueLong = (REAL8)injTable->longitude;
     trueLat = (REAL8)injTable->latitude;
   }
-  else
+/*  else */
     {
-      time = manual_end_time;
-      trueLong = manual_RA;
-      trueLat = manual_dec;
+      if(time!=0) time = manual_end_time;
+      if(manual_RA!=-4200) trueLong = manual_RA;
+      if(manual_dec!=-4200) trueLat = manual_dec;
     }
   double etamin;
   /*etamin = etamin<0.01?0.01:etamin;*/

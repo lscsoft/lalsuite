@@ -111,8 +111,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	PSDTimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDTimeSeries,(size_t) 0, (size_t) seglen*nSegs);
 	IFOdata[i].oneSidedNoisePowerSpectrum=XLALCreateREAL8FrequencySeries("inverse spectrum",&PSDTimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 	XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDTimeSeries, seglen, (UINT4)stride, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
-
  }
 
+ /* Read and FFT the data segment */
 
 }
