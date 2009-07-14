@@ -12,7 +12,7 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include "LALInference.h"
 
 
-void LALInferenceTemplate(LALVariables *variables, tagIFOData *ifo){
+void LALTemplateFunction(LALVariables *variables, tagIFOData *ifo){
 	
 
 	static LALStatus stat;								/* status structure */
@@ -51,8 +51,9 @@ void LALInferenceTemplate(LALVariables *variables, tagIFOData *ifo){
 	params.position.system = COORDINATESYSTEM_EQUATORIAL;
 	params.psi = 0.0;
 	params.lengthIn = 0;
-	I8ToLIGOTimeGPS( &(params.epoch), 0.0 );
-	
+	params.epoch.gpsSeconds = (INT4)(0);
+	params.epoch.gpsNanoSeconds = (INT4)(0);
+
 	/* Variable parameters. */
 
 	params.deltaT = dt;
@@ -180,15 +181,4 @@ void LALInferenceTemplate(LALVariables *variables, tagIFOData *ifo){
 //	INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
 //	return GENERATEPPNINSPIRALTESTC_ENORM;
 	
-}
-	
-	
-/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
-void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
-{
-	INT8 s = input / 1000000000LL;
-	output->gpsSeconds = (INT4)( s );
-	output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
-	return;
 }
