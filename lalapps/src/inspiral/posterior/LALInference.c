@@ -126,7 +126,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
 /*   strings :  {"one", "two", "three"}                                      */
 /* length of parameter names is by now limited to 512 characters.            */
 /* (should 'theoretically' (untested) be able to digest white space as well. */
-/* Irrelevant for command line options, though.) */
+/* Irrelevant for command line options, though.)                             */
 {
   int i,j,k,l;
   /* perform a very basic well-formedness-check and count number of parameters: */
@@ -158,9 +158,16 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
       if (l>=511) {
         printf(" : WARNING: character argument too long!\n");
         printf(" : \"%s\"\n",(*strings)[k]);
+      }
+      else {
         (*strings)[k][l] = input[i];
         ++l;
+      }
+    }
+    ++i;
   } 
+}
+
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
@@ -179,17 +186,17 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
     // check for a double-dash at beginning of argument #i:
     dbldash = ((argv[i][0]=='-') && (argv[i][1]=='-'));
     // react depending on current state:
-    if (state==1){
+    if (state==1){ // ('state 1' means handling very 1st argument)
       if (dbldash) {
         strcpy(head->param, argv[i]);
         state = 2;
       }
-      else {
-        fprintf(stderr, " WARNING (1): orphaned command line argument '%s' in parseCommandLine().\n", argv[i]);
+      else { // (very 1st argument needs to start with "--...")
+        fprintf(stderr, " WARNING: orphaned first command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }
     } 
-    else if (state==2) {
+    else if (state==2) { // ('state 2' means last entry was a parameter starting with "--")
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -202,7 +209,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         strcpy(ptr->type, "string");
       }
     }
-    else if (state==3) {
+    else if (state==3) { // ('state 3' means last entry was a value)
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -211,21 +218,12 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         state = 2;
       }
       else {
-        fprintf(stderr, " WARNING (2): orphaned command line argument '%s' in parseCommandLine().\n", argv[i]);
+        fprintf(stderr, " WARNING: orphaned command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }     
     }
     ++i;
   }
-  if (0) { // check results:
-    printf("-----\n");
-    ptr = head;
-    i=1;
-    while (ptr != NULL){
-      printf(" (%d)  %s  %s  %s  \"%s\"\n", i, ptr->program, ptr->param, ptr->type, ptr->value);
-      ptr = ptr->next;
-      ++i;
-    }
-  }
+  if (state==4) die(" ERROR: failed parsing command line options.\n");
   return(head);
 }
