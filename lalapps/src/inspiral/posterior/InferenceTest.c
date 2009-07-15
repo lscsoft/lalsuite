@@ -12,7 +12,7 @@ int i;
 
 
 int main(int argc, char *argv[]){
-  // test "LALVariables" stuff:
+  /* test "LALVariables" stuff: */
   LALIFOData *IFOdata=NULL;
   number = 10.0;
   five=5.0;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){
   fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
   destroyVariables(&variables);
   
-  // test "parseCommandLine()" function:
+  /* test "parseCommandLine()" function: */
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
   printf("parsed command line arguments:\n");
   ptr = ppt;
@@ -40,27 +40,25 @@ int main(int argc, char *argv[]){
     ++i;
   }
 
-	/* Test the data setup */
-	IFOdata=ReadData(ppt);
-	
-	/*
-	param.head=NULL;
-	param.dimension=5;
-	REAL4 m1 = 1.4;
-	addVariable(&param,"m1",&m1,REAL4_t);
-	REAL4 m2 = 1.4;
-	addVariable(&param,"m2",&m2,REAL4_t);
-	REAL4 inc = 0.0;
-	addVariable(&param,"inc",&m1,REAL4_t);
-	REAL4 phii = 0.0;
-	addVariable(&param,"phii",&m1,REAL4_t);
-	
-	IFOdata->theseParams = &param;
-	//REAL8TimeSeries timeModelhPlus;
-	//REAL8TimeSeries timeModelhCross;
-	
-	
-	LALTemplateWrapper(&IFOdata);
-	*/
-
+  /* Test the data setup */
+  IFOdata=ReadData(ppt);
+  
+  /*
+  param.head=NULL;
+  param.dimension=5;
+  REAL4 m1 = 1.4;
+  addVariable(&param,"m1",&m1,REAL4_t);
+  REAL4 m2 = 1.4;
+  addVariable(&param,"m2",&m2,REAL4_t);
+  REAL4 inc = 0.0;
+  addVariable(&param,"inc",&m1,REAL4_t);
+  REAL4 phii = 0.0;
+  addVariable(&param,"phii",&m1,REAL4_t);
+  
+  IFOdata->theseParams = &param;
+  //REAL8TimeSeries timeModelhPlus;
+  //REAL8TimeSeries timeModelhCross;
+  
+  LALTemplateWrapper(&IFOdata);
+  */
 }
