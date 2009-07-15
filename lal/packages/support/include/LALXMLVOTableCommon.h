@@ -163,7 +163,7 @@ XLALCreateVOTFieldNode ( const char *name,
                          );
 
 xmlNodePtr
-XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, UINT4 numRows, const char *fmt, ... );
+XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, UINT4 numRows, const char *fmt, ... );
 
 xmlNodePtr
 XLALCreateVOTTableNode ( const char *name, xmlNode *fieldNodeList, xmlNode *dataContentNode );

@@ -193,8 +193,8 @@ int main(int argc,char *argv[])
       t0 = CommandLineArgs.GPSStart+InputData.wings;
       dt = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart-2*InputData.wings;
 
-      /* LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL1,site, CommandLineArgs.frametype,"_L1", t0, dt ); */  /* *** DEPRECATED *** */
-      LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL2,site, CommandLineArgs.frametype,"_L2", t0, dt );
+      /* snprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL1,site, CommandLineArgs.frametype,"_L1", t0, dt ); */  /* *** DEPRECATED *** */
+      snprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CommandLineArgs.datadirL2,site, CommandLineArgs.frametype,"_L2", t0, dt );
 
     /*   if (access(fname, F_OK) == 0) { */
 	/* fprintf(stdout, "Frame file %s exists. Exiting.\n",fname); */
@@ -327,8 +327,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   dt = ceil( XLALGPSGetREAL8( &OutputData.h.epoch ) + FrDuration ) - t0;
   if ( t0 < 0 || dt < 1 )
     return 1;  /* Error: invalid time or FrDuration */
-  LALSnprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL1,site, CLA.frametype,"_L1", t0, dt );
-  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+  snprintf( fname, sizeof( fname ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL1,site, CLA.frametype,"_L1", t0, dt );
+  snprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
 
   /* Harwired numbers in call to XLALFrameNew: */
   /* Run number is set to 0, this is an annoying thing to have to
@@ -339,16 +339,16 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Here's where I need to add a bunch of things */
   /* Add cvs header */
-  LALSnprintf( headerinfo, sizeof( headerinfo), "Code header info: %s",CVS_HEADER);
+  snprintf( headerinfo, sizeof( headerinfo), "Code header info: %s",CVS_HEADER);
   FrHistoryAdd( frame, headerinfo);
 
   /* Add lalapps info */
-  LALSnprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
+  snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
 	       LALAPPS_VERSION , LALAPPS_CVS_TAG , LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalappsconfargs);  
 
   /* Add lal info */
-  LALSnprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
+  snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
 	       LAL_VERSION , LAL_CVS_TAG , LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalconfargs);  
 
@@ -365,7 +365,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* hostname and user */
   gethostname(hostname,sizeof(hostname));
   getdomainname(domainname,sizeof(domainname));
-  LALSnprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
+  snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
   
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
@@ -417,8 +417,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
     char fname2[FILENAME_MAX];
     char tmpfname2[FILENAME_MAX];
 
-    LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
-    LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
+    snprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
+    snprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
     
     /* write first to tmpfile then rename it */
     frfile = FrFileONew( tmpfname2, -1); /* 1 = GZIP */

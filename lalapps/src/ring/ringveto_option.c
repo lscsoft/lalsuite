@@ -418,7 +418,7 @@ int ring_params_sanity_check( struct ring_params *params )
 
     /* output file name */
     if ( ! strlen( params->outputFile ) )
-      LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+      snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING-%d-%d.xml", params->ifoName, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
   }

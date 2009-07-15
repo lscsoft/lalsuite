@@ -1903,7 +1903,7 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
     /* print the output */
     if (fpOut) {
 	len =
-	    LALSnprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+	    snprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 		    freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
 	if ((UINT4)len > sizeof(buf))
 	    return(-1);
@@ -3882,7 +3882,7 @@ int main(int argc, char *argv[])
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler=1;
-	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
+	snprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
       }

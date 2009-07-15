@@ -105,17 +105,17 @@ else \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
   LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
-LALSnprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
   PROGRAM_NAME ); \
 this_summ_value->version = 0; \
 this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
 this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
 this_summ_value->value = (REAL4) val; \
 this_summ_value->intvalue = (INT4) intval; \
-LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
+snprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
     sv_name ); \
-LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
-LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
+snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
+snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment ); \
 
 #define rint(x) (floor((x)+0.5))
@@ -326,7 +326,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable = 
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
 	       "data sample rate" );
   this_search_summvar->value = (REAL8) sampleRate;
   
@@ -428,7 +428,7 @@ int main( int argc, char *argv[] )
 		kmax = k; /* final trigger's k value */
 		caseID[k] = 1;
 		memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
-		LALSnprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
+		snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
 		eventID = thisCoinc->snglInspiral[k]->event_id->id;
 		if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
 		
@@ -440,7 +440,7 @@ int main( int argc, char *argv[] )
 		/* Store CData frame name now for reading its frame-file 
 		   later, within thisCoinc-ident loop
 		*/
-		LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
+		snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
 	      }
 	  }/* Closes loop for k; finished noting the participating ifos 
 	      and the eventID for this coincident trigger*/
@@ -755,7 +755,7 @@ int main( int argc, char *argv[] )
 	
 	if ( cohInspFilterParams->cohSNROut )
 	  {
-	    LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+	    snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			 "SNR_%Ld", eventID );
 	    strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
 	    outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
@@ -764,7 +764,7 @@ int main( int argc, char *argv[] )
 	/* save the coherent-snr of the H1-H2 pair */
 	if ( cohInspFilterParams->cohH1H2SNROut )
 	  {
-	    LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+	    snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			 "H1H2SNR_%Ld", eventID );
 	    strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
 	    outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
@@ -773,7 +773,7 @@ int main( int argc, char *argv[] )
 	/* save H1-H2 null-stream statistic in frames */
 	if ( cohInspFilterParams->nullStatH1H2Out )
 	  {
-	    LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+	    snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			 "H1H2_NullStat_%Ld", eventID );
 	    strcpy( cohInspFilterParams->nullStatH1H2Vec->name, "Coherent");
 	    outFrameNullStatH1H2 = fr_add_proc_REAL4TimeSeries( outFrameNullStatH1H2, cohInspFilterParams->nullStatH1H2Vec, "none", cohdataStr );
@@ -782,7 +782,7 @@ int main( int argc, char *argv[] )
 	/* save network null-stream statistic in frames */
 	if ( cohInspFilterParams->nullStatOut )
 	  {
-	    LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+	    snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			 "NullStat_%Ld", eventID );
 	    strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
 	    outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
@@ -882,11 +882,11 @@ int main( int argc, char *argv[] )
       
       /* Write the summary information */
       if ( userTag )	{
-	LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d_%s-%d-%d", cohFileID,
+	snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d_%s-%d-%d", cohFileID,
 		     userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	  {
-	LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d-%d-%d",
+	snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d-%d-%d",
 		     cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
@@ -894,11 +894,11 @@ int main( int argc, char *argv[] )
 	{
 	  if ( outputPath[0] )
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
 	    }
 	  else 
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
 	    }
 	  
 	  if ( vrbflg ) fprintf( stdout, "writing H1-H2 coherent-snr frame data to %s....", framename );
@@ -910,11 +910,11 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )	{
-	LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d_%s-%d-%d", cohFileID,
+	snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d_%s-%d-%d", cohFileID,
 		     userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	{
-	LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d-%d-%d",
+	snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d-%d-%d",
 		     cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
@@ -922,11 +922,11 @@ int main( int argc, char *argv[] )
 	{
 	  if ( outputPath[0] )
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
 	    }
 	  else 
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
 	    }
 	  
 	  if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
@@ -938,11 +938,11 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )    {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%d_%s-%d-%d", ifos, cohFileID,
+	snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%d_%s-%d-%d", ifos, cohFileID,
 		     userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else      {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%d-%d-%d", ifos,
+	snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%d-%d-%d", ifos,
 		     cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
@@ -950,11 +950,11 @@ int main( int argc, char *argv[] )
         {
           if ( outputPath[0] )
             {
-              LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
             }
           else
             {
-              LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
             }
 	  
           if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
@@ -966,11 +966,11 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )	  {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_%d_%s-%d-%d", ifos, cohFileID,
+	snprintf( fileName, FILENAME_MAX, "%s-CHIA_%d_%s-%d-%d", ifos, cohFileID,
 		     userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	{
-	LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_%d-%d-%d", ifos,
+	snprintf( fileName, FILENAME_MAX, "%s-CHIA_%d-%d-%d", ifos,
 		     cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
@@ -978,11 +978,11 @@ int main( int argc, char *argv[] )
 	{
 	  if ( outputPath[0] )
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
 	    }
 	  else 
 	    {
-	      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+	      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
 	    }
 	  
 	  if ( vrbflg ) fprintf( stdout, "writing coherent frame data to %s....", framename );
@@ -1000,22 +1000,22 @@ int main( int argc, char *argv[] )
 	    {
 	      if ( outCompress )
 		{
-		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileName);
+		  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileName);
 		}
 	      else
 		{
-		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
+		  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
 		}
 	    }
 	  else 
 	    {
 	      if ( outCompress )
 		{
-		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );		
+		  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );		
 		}
 	      else 
 		{
-		  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+		  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
 		}	    
 	    }
 	  if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
@@ -1029,7 +1029,7 @@ int main( int argc, char *argv[] )
 	  }
 	  
 	  if ( vrbflg ) fprintf( stdout, "  process table...\n" );
-	  /*      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
+	  /*      snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
 	  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
 	  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
 	  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
@@ -1169,12 +1169,12 @@ int main( int argc, char *argv[] )
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
           long_options[option_index].name ); \
-          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
 #define USAGE1 \
@@ -1376,7 +1376,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'P':
            memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-           LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
+           snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
            break;
 	   
@@ -1566,13 +1566,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    /*  Store optional arguments in the process param table */
    if ( eventsOut == 1 )
      {
-       LALSnprintf( procparams.processParamsTable->program, 
+       snprintf( procparams.processParamsTable->program, 
 		    LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-       LALSnprintf( procparams.processParamsTable->param,
+       snprintf( procparams.processParamsTable->param,
 		    LIGOMETA_PARAM_MAX, "--write-events" );
-       LALSnprintf( procparams.processParamsTable->type, 
+       snprintf( procparams.processParamsTable->type, 
 		    LIGOMETA_TYPE_MAX, "string" );
-       LALSnprintf( procparams.processParamsTable->value, 
+       snprintf( procparams.processParamsTable->value, 
 		    LIGOMETA_VALUE_MAX, " " );
      }
    
@@ -1580,48 +1580,48 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {
        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
 	 calloc( 1, sizeof(ProcessParamsTable) );
-       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+       snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		    "%s", PROGRAM_NAME );
-       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
 		    "--write-cohsnr" );
-       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+       snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
      }
    
    if ( cohH1H2SNROut == 1 )
      {    
        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
 	 calloc( 1, sizeof(ProcessParamsTable) );
-       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+       snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		    "%s", PROGRAM_NAME );
-       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
 		    "--write-cohh1h2snr" );
-       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+       snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
      }
    
    if ( nullStatOut == 1 )
      {
        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
 	 calloc( 1, sizeof(ProcessParamsTable) );
-       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+       snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		    "%s", PROGRAM_NAME );
-       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
 		    "--write-cohnullstat" );
-       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+       snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
      }
 
    if ( nullStatH1H2Out == 1 )
      {
        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
          calloc( 1, sizeof(ProcessParamsTable) );
-       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+       snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
                     "%s", PROGRAM_NAME );
-       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
                     "--write-h1h2nullstat" );
-       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+       snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
      }
 
    /* check validity of input data time if globbing */

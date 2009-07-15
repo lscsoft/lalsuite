@@ -435,7 +435,7 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
  * Albert-Einstein-Institute Hannover, Germany
  */
 xmlNodePtr
-XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked list of FIELD \c xmlNodes (used for datatype information) */
+XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of FIELD \c xmlNodes (used for datatype information) */
                              UINT4 numRows,			/**< [in] number of *rows* in the table [*must* be <= than the lenght of the data arrays!] */
                              const char *fmt,			/**< [in] optional CSV list of printf-format strings to use for writing data (may be NULL) */
                              ...				/**< [in] list of void-pointers to field column data: must match FIELD datatype specs! */
@@ -447,7 +447,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
     va_list ap;	/* pointer to each unnamed argument in turn */
 
     UINT4 row, col, numFields;
-    const xmlNode *xmlChildNode = NULL;
+    xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlTABLEDATAnode = NULL;
     void **dataColumns = NULL;		/* array of void-pointers to variable-length input arguments */
     VOTABLE_DATATYPE *dataTypes = NULL;	/* array of corresponding datatypes, parsed from fieldNodeList */
@@ -516,7 +516,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
 
         /* get data-types */
         xmlChar *datatypeStr = NULL;
-        if ( (datatypeStr = xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
+        if ( (datatypeStr = xmlGetProp ( xmlChildNode, CAST_CONST_XMLCHAR("datatype"))) == NULL ) {
           XLALPrintError ("%s: xmlGetProp() failed to find required attribute 'datatype' in FIELD node Nr %d.\n", fn, col );
           err = XLAL_EINVAL;
           goto failed;
@@ -534,7 +534,7 @@ XLALCreateVOTTabledataNode ( const xmlNode *fieldNodeList, 	/**< [in] linked lis
          * where it must be arraysize="*"
          */
         xmlChar *arraysizeStr = NULL;
-        arraysizeStr = xmlGetProp ( (xmlNodePtr)xmlChildNode, CAST_CONST_XMLCHAR("arraysize"));
+        arraysizeStr = xmlGetProp ( xmlChildNode, CAST_CONST_XMLCHAR("arraysize"));
         if ( (dataTypes[col] == VOT_CHAR) && arraysizeStr && strcmp ( (char*)arraysizeStr, "*" ) ) {
           XLALPrintError ("%s: arraysize='%s', sorry this function currently only supports string-writing using arraysize='*'\n",
                           __func__, (char*)arraysizeStr );
@@ -1161,7 +1161,7 @@ CHAR *
 XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional path of parent-RESOURCES "res1.res2...resN" */
                                    const CHAR *elementName,	/**< [in] name of 'leaf' element to parse */
                                    VOTABLE_ELEMENT elementType,	/**< [in] type of element */
-                                   VOTABLE_ATTRIBUTE attribute	/**< [in] attribute to read out from element */
+                                   VOTABLE_ATTRIBUTE attrib	/**< [in] attribute to read out from element */
                                    )
 {
   static const char *fn = "XLALgetXPathToVOTElementAttibute()";
@@ -1211,7 +1211,7 @@ XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional 
 
   /* finally attach search path matching the attribute */
   const char *attribName;
-  if ( (attribName = XLALVOTAttribute2String ( attribute )) == NULL ) {
+  if ( (attribName = XLALVOTAttribute2String ( attrib )) == NULL ) {
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
   if ( snprintf ( buf, XPATHSTR_MAXLEN, "/@%s", attribName ) < 0 ) {
@@ -1310,7 +1310,7 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 {
   const char *fn = "XLALCreateVOTStringFromTree()";
   xmlChar *xmlString;
-  xmlDocPtr xmlDoc;
+  xmlDocPtr xmlDocTmp;
   CHAR *ret;
 
   /* check input consistency */
@@ -1320,23 +1320,23 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
   }
 
   /* ----- Step 1: convert VOTable tree into full-fledged VOTable document, but skip namespace-reconciliation  */
-  if ( (xmlDoc = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
+  if ( (xmlDocTmp = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
     XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
   /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
-  if ( (xmlString = XLALXMLDoc2String ( xmlDoc )) == NULL ) {
+  if ( (xmlString = XLALXMLDoc2String ( xmlDocTmp )) == NULL ) {
     XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", fn, xlalErrno );
     xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
     xmlSetListDoc ( xmlTree, NULL ); /* unset document info */
-    xmlFreeDoc ( xmlDoc );
+    xmlFreeDoc ( xmlDocTmp );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
   xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
   xmlSetListDoc ( xmlTree, NULL ); /* unset document info */
-  xmlFreeDoc ( xmlDoc );	/* free the document container */
+  xmlFreeDoc ( xmlDocTmp );	/* free the document container */
 
   /* ----- Step 3: post-process string: clean newlines+white-space from table rows */
   if ( ( ret = XMLCleanVOTTableWhitespace ( (const char*)xmlString )) == NULL ) {
@@ -1737,8 +1737,8 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
 const char *
 XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
                          const char *fmt,		/**< [in] format string: if NULL we use default-fmt for datatype */
-                         void *dataPtr,			/**< [in] pointer to array of data values */
-                         UINT4 index			/**< [in] index of element to write: dataPtr[index] */
+                         void *arrayPtr,			/**< [in] pointer to array of data values */
+                         UINT4 arrayIndex		/**< [in] index of element to write: arrayPtr[index] */
                          )
 {
   static const char *fn = "XLALVOTprintfFromArray()";
@@ -1761,9 +1761,9 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
   switch ( datatype )
     {
     case VOT_BOOL:
-      val = ((BOOLEAN*)dataPtr)[index];
+      val = ((BOOLEAN*)arrayPtr)[arrayIndex];
       if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, val ? "t" : "f" ) < 0) {
-        XLALPrintError("%s: failed to convert BOOLEAN element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+        XLALPrintError("%s: failed to convert BOOLEAN element (index=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
@@ -1772,8 +1772,8 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
       XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       break;
     case VOT_CHAR:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR**)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert CHAR element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR**)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert CHAR element (index=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
@@ -1782,50 +1782,50 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
       XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       break;
     case VOT_INT1:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert INT1 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((CHAR*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert INT1 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_INT2:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT2*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert INT2 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT2*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert INT2 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_INT4:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT4*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert INT4 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT4*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert INT4 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_INT8:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT8*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert INT8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((INT8*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert INT8 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_REAL4:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL4*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert REAL4 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL4*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert REAL4 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_REAL8:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL8*)dataPtr)[index] ) < 0) {
-        XLALPrintError("%s: failed to convert REAL8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((REAL8*)arrayPtr)[arrayIndex] ) < 0) {
+        XLALPrintError("%s: failed to convert REAL8 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_COMPLEX8:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)dataPtr)[index].re, ((COMPLEX8*)dataPtr)[index].im ) < 0) {
-        XLALPrintError("%s: failed to convert COMPLEX8 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)arrayPtr)[arrayIndex].re, ((COMPLEX8*)arrayPtr)[arrayIndex].im ) < 0) {
+        XLALPrintError("%s: failed to convert COMPLEX8 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
     case VOT_COMPLEX16:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)dataPtr)[index].re, ((COMPLEX16*)dataPtr)[index].im ) < 0) {
-        XLALPrintError("%s: failed to convert COMPLEX16 element (index=%d) to string using fmt '%s'.\n", fn, index, writeFmt );
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)arrayPtr)[arrayIndex].re, ((COMPLEX16*)arrayPtr)[arrayIndex].im ) < 0) {
+        XLALPrintError("%s: failed to convert COMPLEX16 element (arrayIndex=%d) to string using fmt '%s'.\n", fn, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
       break;
@@ -1852,7 +1852,7 @@ int
 XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of element to write */
                        const xmlChar *content,		/**< [in] content string to be parsed */
                        void *arrayPtr,			/**< [out] pointer to target array to be written into */
-                       UINT4 index			/**< [in] index of element to write: arrayPtr[index] */
+                       UINT4 arrayIndex			/**< [in] index of element to write: arrayPtr[index] */
                        )
 {
   static const char *fn = "XLALVOTsscanfToArray()";
@@ -1867,15 +1867,15 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
       if ( !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("t")) ||
            !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("1")) ||
            !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("true")) )
-        ((BOOLEAN*)arrayPtr)[index] = TRUE;
+        ((BOOLEAN*)arrayPtr)[arrayIndex] = TRUE;
       /* allowed FALSE representations are 'f', '0' or 'false', ignoring case */
       else if ( !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("f")) ||
                 !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("0")) ||
                 !xmlStrcasecmp(content, CAST_CONST_XMLCHAR("false")) )
-        ((BOOLEAN*)arrayPtr)[index] = FALSE;
+        ((BOOLEAN*)arrayPtr)[arrayIndex] = FALSE;
       else
         {
-          XLALPrintError ("%s: invalid boolean value encountered '%s' for index=%d\n", fn, instring, index );
+          XLALPrintError ("%s: invalid boolean value encountered '%s' for index=%d\n", fn, instring, arrayIndex );
           XLAL_ERROR ( fn, XLAL_EDATA );
         }
       break;
@@ -1887,11 +1887,11 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
 
     case VOT_CHAR:
       len = strlen ( instring );
-      if ( (((CHAR**)arrayPtr)[index] = XLALMalloc ( len + 1 )) == NULL ) {
+      if ( (((CHAR**)arrayPtr)[arrayIndex] = XLALMalloc ( len + 1 )) == NULL ) {
         XLALPrintError ("%s: failed to XLALMalloc(%d).\n", fn, len + 1 );
         XLAL_ERROR ( fn, XLAL_ENOMEM );
       }
-      strcpy ( ((CHAR**)arrayPtr)[index], instring );
+      strcpy ( ((CHAR**)arrayPtr)[arrayIndex], instring );
       break;
 
     case VOT_CHAR_UTF:
@@ -1900,57 +1900,57 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
       break;
 
     case VOT_INT1:
-      if ( sscanf( instring, "%hhd", &( ((signed char*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse INT1 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%hhd", &( ((signed char*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT1 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_INT2:
-      if ( sscanf( instring, "%" LAL_INT2_FORMAT, &( ((INT2*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse INT2 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_INT2_FORMAT, &( ((INT2*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT2 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_INT4:
-      if ( sscanf( instring, "%" LAL_INT4_FORMAT, &( ((INT4*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse INT4 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_INT4_FORMAT, &( ((INT4*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT4 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_INT8:
-      if ( sscanf( instring, "%" LAL_INT8_FORMAT, &( ((INT8*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse INT4 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_INT8_FORMAT, &( ((INT8*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse INT4 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_REAL4:
-      if ( sscanf( instring, "%" LAL_REAL4_FORMAT, &( ((REAL4*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse REAL4 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_REAL4_FORMAT, &( ((REAL4*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse REAL4 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_REAL8:
-      if ( sscanf( instring, "%" LAL_REAL8_FORMAT, &( ((REAL8*)arrayPtr)[index] ) ) != 1 ) {
-        XLALPrintError("%s: failed to parse REAL8 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT, &( ((REAL8*)arrayPtr)[arrayIndex] ) ) != 1 ) {
+        XLALPrintError("%s: failed to parse REAL8 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_COMPLEX8:
-      if ( sscanf( instring, "%" LAL_REAL4_FORMAT "%" LAL_REAL4_FORMAT , &( ((COMPLEX8*)arrayPtr)[index].re ), &( ((COMPLEX8*)arrayPtr)[index].im ) ) != 2 ) {
-        XLALPrintError("%s: failed to parse COMPLEX8 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_REAL4_FORMAT "%" LAL_REAL4_FORMAT , &( ((COMPLEX8*)arrayPtr)[arrayIndex].re ), &( ((COMPLEX8*)arrayPtr)[arrayIndex].im ) ) != 2 ) {
+        XLALPrintError("%s: failed to parse COMPLEX8 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
 
     case VOT_COMPLEX16:
-      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( ((COMPLEX16*)arrayPtr)[index].re ), &( ((COMPLEX16*)arrayPtr)[index].im ) ) != 2 ) {
-        XLALPrintError("%s: failed to parse COMPLEX16 element '%s' at index=%d.\n", fn, instring, index );
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( ((COMPLEX16*)arrayPtr)[arrayIndex].re ), &( ((COMPLEX16*)arrayPtr)[arrayIndex].im ) ) != 2 ) {
+        XLALPrintError("%s: failed to parse COMPLEX16 element '%s' at arrayIndex=%d.\n", fn, instring, arrayIndex );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
       break;
@@ -2020,7 +2020,7 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
   }
 
   /* register namespaces */
-  for(i = 0; i < xmlNsVector.count; ++i)
+  for(i = 0; i < (UINT4)xmlNsVector.count; ++i)
     {
       xmlNsPrefix = xmlNsVector.items[i].prefix;
       xmlNsUrl= xmlNsVector.items[i].url;
