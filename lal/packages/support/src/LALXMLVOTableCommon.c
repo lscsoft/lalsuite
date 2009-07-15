@@ -54,10 +54,10 @@
 
 char * XMLCleanVOTTableWhitespace ( const char *xmlString );
 const char *XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype );
-const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *dataPtr, UINT4 index );
-int XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype, const xmlChar *content, void *arrayPtr, UINT4 index );
+const char *XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype, const char *fmt, void *arrayPtr, UINT4 arrayIndex );
+int XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype, const xmlChar *content, void *arrayPtr, UINT4 arrayIndex );
 
-CHAR * XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attribute );
+CHAR * XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath, const CHAR *elementName, VOTABLE_ELEMENT elementType, VOTABLE_ATTRIBUTE attrib );
 CHAR *XLALVOTResourcePath2XPath ( const CHAR *resourcePath );
 void *XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 rowCounter );
 
