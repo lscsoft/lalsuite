@@ -9,6 +9,7 @@ int i;
 
 
 int main(int argc, char *argv[]){
+	LALIFOData *IFOdata=NULL;
 	number = 10.0;
 	five=5.0;
 	variables.head=NULL;
@@ -57,6 +58,9 @@ int main(int argc, char *argv[]){
 	//REAL8TimeSeries timeModelhCross;
 	
 	LALTemplateWrapper(&variables, &ifo);
-
+	
+	/* Test the data setup */
+	IFOdata=ReadData(ppt);
+	
 	
 }
