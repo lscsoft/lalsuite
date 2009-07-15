@@ -1733,10 +1733,14 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
    midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
    for(k=0; k<GV.SFTno; k++)
      { 
+       /* FIXME: loss of precision; consider
+       midTS[k] = timestamps[k];
+       XLALGPSAdd(&midTS[k], 0.5*GV.tsft);
+       */
        REAL8 teemp=0.0;
-       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+       teemp = XLALGPSGetREAL8(&(timestamps[k]));
        teemp += 0.5*GV.tsft;
-       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+       XLALGPSSetREAL8(&(midTS[k]), teemp);
      }
    
    TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 
@@ -1899,7 +1903,7 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
     /* print the output */
     if (fpOut) {
 	len =
-	    LALSnprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+	    snprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 		    freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
 	if ((UINT4)len > sizeof(buf))
 	    return(-1);
@@ -2484,7 +2488,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
      */
     if ( LALUserVarWasSet(&uvar_refTime)) {
-      TRY ( LALFloatToGPS (status->statusPtr, &refTime, &uvar_refTime), status);
+      XLALGPSSetREAL8(&refTime, uvar_refTime);
     } else {
       refTime.gpsSeconds = cfg->Ti; refTime.gpsNanoSeconds = 0;
     }
@@ -3878,7 +3882,7 @@ int main(int argc, char *argv[])
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler=1;
-	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
+	snprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
       }

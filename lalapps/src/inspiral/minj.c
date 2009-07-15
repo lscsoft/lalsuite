@@ -112,9 +112,9 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -232,7 +232,7 @@ int main( int argc, char *argv[] )
 					lalappsGitGitStatus,
 					lalappsGitCommitDate ), &status );
     }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   
@@ -520,25 +520,25 @@ int main( int argc, char *argv[] )
   /* create the output file name */
   if ( userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
         randSeed, userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( userTag && !outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
         randSeed, userTag, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( !userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
         randSeed, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
         randSeed, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
@@ -621,8 +621,7 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
-            &(galacticPar.geocentEndTime), u * timeInterval ), &status );
+      XLALGPSAdd( &(galacticPar.geocentEndTime), u * timeInterval );
     }
 
     /* populate the sim_inspiral table */
@@ -630,13 +629,12 @@ int main( int argc, char *argv[] )
           this_inj, &galacticPar, randParams ), &status );
 
     /* set the source and waveform fields */
-    LALSnprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "MW" );
-    LALSnprintf( this_inj->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+    snprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "MW" );
+    snprintf( this_inj->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
         "GeneratePPNtwoPN" );
 
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd( &gpsStartTime, meanTimeStep );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 
@@ -658,7 +656,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 

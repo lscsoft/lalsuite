@@ -12,6 +12,7 @@ StringConvertTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALVersionTest LALMallocTest LALGSLTest StringConvertTest
+TESTS_ENVIRONMENT = 1>/dev/null
 
 EXTRA_DIST = LALPrimerTest.c
 EXTRA_TEXSOURCES = LALPrimerTest.c

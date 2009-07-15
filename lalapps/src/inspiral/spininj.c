@@ -208,7 +208,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
     exit( 1 );
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
-  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -288,8 +288,7 @@ int main( int argc, char *argv[] )
 	      &status);
 
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &(paramsIn.gpsStartTime), &(paramsIn.gpsStartTime), 
-				paramsIn.meanTimeStep ), &status );
+    XLALGPSAdd( &(paramsIn.gpsStartTime), paramsIn.meanTimeStep );
 
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &(paramsIn.gpsStartTime), 
 			     &(paramsIn.gpsEndTime) ), &status );
@@ -569,16 +568,14 @@ void LALSetSiteParameters(LALStatus *status,
   placeAndGPS.p_detector = &lho;
   LAL_CALL( LALTimeDelayFromEarthCenter( status, &time_diff_ns,
 					 &detTimeAndSource ), status );
-  LAL_CALL( LALAddFloatToGPS( status, &(this_inj->h_end_time),
-			      &(this_inj->h_end_time), time_diff_ns ), status );
-  
+  XLALGPSAdd( &(this_inj->h_end_time), time_diff_ns );
+
   /* llo */
   placeAndGPS.p_detector = &llo;
   LAL_CALL( LALTimeDelayFromEarthCenter( status,  &time_diff_ns,
 					 &detTimeAndSource ), status);
-  LAL_CALL( LALAddFloatToGPS( status,  &(this_inj->l_end_time),
-			      &(this_inj->l_end_time), time_diff_ns ), status);
-  
+  XLALGPSAdd( &(this_inj->l_end_time), time_diff_ns );
+
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO times                */
   
@@ -651,8 +648,7 @@ void LALSetGeoCentricEndTime(LALStatus *status,
   if ( params.timeInterval )
     {
       LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-      LAL_CALL( LALAddFloatToGPS( status, &(this_inj->geocent_end_time),
-				  &(this_inj->geocent_end_time), u * params.timeInterval ), status );
+      XLALGPSAdd( &(this_inj->geocent_end_time), u * params.timeInterval );
     }
 
   gpsAndAcc.gps = this_inj->geocent_end_time;
@@ -695,7 +691,7 @@ void LALParserInspiralInjection(LALStatus *status,
 					lalappsGitGitStatus,
 					lalappsGitCommitDate ), &status );
     }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   
@@ -730,9 +726,9 @@ void LALParserInspiralInjection(LALStatus *status,
   params->mdistr                      = SPININJ_totalMass;
   params->ddistr                      = SPININJ_logDistance;
   params->userTag                     = NULL;
-  LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+  snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
 	       "EOBtwoPN");  
-  LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+  snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
 	       params->randSeed, params->gpsStartTime.gpsSeconds, 
 	       params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
   
@@ -914,7 +910,7 @@ void LALParserInspiralInjection(LALStatus *status,
 	  next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
       else if ( strcmp(argv[i] , "--waveform") == 0 ){
-	LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+	snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
 		     argv[++i]);
         this_proc_param = this_proc_param->next =
           next_process_param( "waveform", "string",
@@ -970,7 +966,7 @@ void LALParserInspiralInjection(LALStatus *status,
     }
   
   if (params->userTag){
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
 		 params->randSeed, params->userTag, params->gpsStartTime.gpsSeconds, 
 		 params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
   }
@@ -986,7 +982,7 @@ void LALParserInspiralInjection(LALStatus *status,
   LAL_CALL( LALOpenLIGOLwXMLFile( status, &xmlfp, fname), status );
   
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( status, &(proctable.processTable->end_time), &accuracy ), status);
   
   

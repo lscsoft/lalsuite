@@ -1077,7 +1077,7 @@ int main(int argc, char**argv) {
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler = 1;
-	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
+	snprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
       }
@@ -1107,7 +1107,7 @@ int main(int argc, char**argv) {
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler = 1;
-	LALSnprintf(commandstring,sizeof(commandstring),"gdb %s %d &", resolved_name ,process_id);
+	snprintf(commandstring,sizeof(commandstring),"gdb %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
       }

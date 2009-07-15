@@ -101,19 +101,22 @@ vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 
 der = dvA[0] #pylab.log10(eA.array)
 
-print bins[15,15]
 pylab.figure(1)
 masses = bins[15,15]
+print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(1)
 masses = bins[50,50]
+print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,99]
+print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,24]
+print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(0)
@@ -138,6 +141,7 @@ pylab.xlim([11, 101])
 pylab.title("Log10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
+pylab.gca().set_aspect(1)
 pylab.grid()
 #pylab.show()
 
@@ -149,6 +153,7 @@ pylab.xlim([11, 101])
 pylab.title("Fractional Error on Volume * Time [std/mean]",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
+pylab.gca().set_aspect(1)
 pylab.grid()
 
 pylab.figure(4)
@@ -159,6 +164,7 @@ pylab.xlim([11, 101])
 pylab.title("Volume derivative, Lambda",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
+pylab.gca().set_aspect(1)
 pylab.grid()
 
 pylab.figure(5)
@@ -170,6 +176,7 @@ pylab.xlim([11, 101])
 pylab.title("Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
+pylab.gca().set_aspect(1)
 pylab.grid()
 
 pylab.show()

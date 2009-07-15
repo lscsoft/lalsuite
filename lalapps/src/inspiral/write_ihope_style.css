@@ -12,12 +12,12 @@ font-size: 0.8em;
 #wrapper {
 position: relative;
 margin: 10px auto 10px auto;
-width: 950px;
+width: 1000px;
 }
 
 #ihope {
 position: absolute;
-width: 150px;
+width: 175px;
 height: 150px;
 top: 0px;
 left: 0px;
@@ -28,7 +28,7 @@ text-align: center;
 
 #header {
 position: absolute;
-width: 800px;
+width: 825px;
 height: 150px;
 right: 0px;
 background-color: #995555;
@@ -38,28 +38,29 @@ text-align: center;
 
 #menubar {
 position: absolute;
-width: 150px;
+width: 175px;
 top: 150px;
 background-color: #aeadac;
 }
 
 #menu {
 position: absolute;
-width: 150px;
+width: 175px;
 background-color: #aeadac;
 }
 
 .menuitem {
 position: relative;
-text-align: right;
+text-align: left;
 font-size: 10pt;
 font-weight: bold;
 right: 0px;
-width: 140px;
+width: 170px;
 top: 5px;
 padding-top: 5px;
 padding-bottom: 5px;
 padding-right: 5px;
+padding-left: 5px;
 }
 
 a.menulink { text-decoration: none; }
@@ -72,9 +73,9 @@ a.menulink:hover { color: #8eebec; }
 
 #iframecontent {
 position: absolute;
-width: 800px;
+width: 825px;
 top: 150px;
-left: 150px;
+left: 175px;
 padding: 0px;
 background-color: #ffffff;
 }

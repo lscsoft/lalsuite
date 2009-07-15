@@ -89,7 +89,9 @@ LALTracksearchFindLambdaMean(
   REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
+#if 0
   REAL8 myFloor=10e20;/*Lowest value in TFR */
+#endif
   INT4        lowerFRow=-1;
   INT4        upperFRow=-1;
   REAL8       binPerHz=0;
@@ -102,13 +104,13 @@ LALTracksearchFindLambdaMean(
   sumXSqr=0;
   current=0;
   /*
-   * If there was band passing determine regions of F to 
+   * If there was band passing determine regions of F to
    * calculate the Lambda values inside of band passes region
    */
   binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
   if (searchParams->highPass > 0)
     {
-      lowerFRow=floor(binPerHz*searchParams->highPass); 
+      lowerFRow=floor(binPerHz*searchParams->highPass);
     }
   else
     {
@@ -116,7 +118,7 @@ LALTracksearchFindLambdaMean(
     }
   if (searchParams->lowPass > 0)
     {
-      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+      upperFRow=ceil(binPerHz*searchParams->lowPass);
     }
   else
     {
@@ -193,13 +195,13 @@ LALTracksearchFindLambdaMedian(
   INITSTATUS(status,"LALTracksearchFindLambdaMedian", TSDATAC);
   ATTATCHSTATUSPTR (status);
   /*
-   * If there was band passing determine regions of F to 
+   * If there was band passing determine regions of F to
    * calculate the Lambda values inside of band passes region
    */
   binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
   if (searchParams->highPass > 0)
     {
-      lowerFRow=floor(binPerHz*searchParams->highPass); 
+      lowerFRow=floor(binPerHz*searchParams->highPass);
     }
   else
     {
@@ -207,7 +209,7 @@ LALTracksearchFindLambdaMedian(
     }
   if (searchParams->lowPass > 0)
     {
-      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+      upperFRow=ceil(binPerHz*searchParams->lowPass);
     }
   else
     {
@@ -222,7 +224,7 @@ LALTracksearchFindLambdaMedian(
 
   vector=(REAL8*)LALMalloc(count*sizeof(REAL8));
   for (i = 0;i < map.tCol;i++)
-    { 
+    {
       for (j = lowerFRow;j <(upperFRow);j++)
 	{
 	  /*fprintf(stdout,"%i %i %i %i %f\n",i,j,k,count,map.map[i][j]);*/
@@ -874,8 +876,7 @@ LALTrackSearchDataSegmenter(
     {
       /*Determine Segment Epoch*/
       kTime=TSSearchData->deltaT*k;
-      LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
-      CHECKSTATUSPTR (status);
+      XLALGPSSetREAL8(&(timeInterval), kTime);
       for (j=0;j<PreparedData->dataSeg[l]->data->length;j++)
 	{
 	  PreparedData->dataSeg[l]->data->data[j]=TSSearchData->data->data[k];

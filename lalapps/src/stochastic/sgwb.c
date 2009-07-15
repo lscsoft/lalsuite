@@ -650,8 +650,8 @@ StochasticTable *stochastic_search(LALStatus *status,
     for (k = 0; k < segs_in_interval; k++)
     {
       /* set segment start time */
-      LAL_CALL(LALAddFloatToGPS(status, &seg_epoch, &series_one->epoch, \
-            (REAL8)((j * segment_shift) + (k * segment_duration))), status);
+      seg_epoch = series_one->epoch;
+      XLALGPSAdd(&seg_epoch, j * segment_shift + k * segment_duration);
 
       /* is this the analysis segment? */
       if (k == middle_segment)
@@ -670,10 +670,10 @@ StochasticTable *stochastic_search(LALStatus *status,
       /* save intermediate products */
       if (debug_flag)
       {
-        LALSnprintf(debug_filename, FILENAME_MAX, "segment_1-%d.dat", \
+        snprintf(debug_filename, FILENAME_MAX, "segment_1-%d.dat", \
             seg_epoch.gpsSeconds);
         LALSPrintTimeSeries(segment_one, debug_filename);
-        LALSnprintf(debug_filename, FILENAME_MAX, "segment_2-%d.dat", \
+        snprintf(debug_filename, FILENAME_MAX, "segment_2-%d.dat", \
             seg_epoch.gpsSeconds);
         LALSPrintTimeSeries(segment_two, debug_filename);
       }
@@ -689,10 +689,10 @@ StochasticTable *stochastic_search(LALStatus *status,
       /* save intermediate products */
       if (debug_flag)
       {
-        LALSnprintf(debug_filename, FILENAME_MAX, "response_1-%d.dat", \
+        snprintf(debug_filename, FILENAME_MAX, "response_1-%d.dat", \
             seg_epoch.gpsSeconds + calibration_offset);
         LALCPrintFrequencySeries(response_one, debug_filename);
-        LALSnprintf(debug_filename, FILENAME_MAX, "response_2-%d.dat", \
+        snprintf(debug_filename, FILENAME_MAX, "response_2-%d.dat", \
             seg_epoch.gpsSeconds + calibration_offset);
         LALCPrintFrequencySeries(response_two, debug_filename);
       }
@@ -753,10 +753,10 @@ StochasticTable *stochastic_search(LALStatus *status,
     /* save intermediate products */
     if (debug_flag)
     {
-      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_1-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "inv_psd_1-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintFrequencySeries(inv_psd_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_2-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "inv_psd_2-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintFrequencySeries(inv_psd_two, debug_filename);
     }
@@ -771,7 +771,7 @@ StochasticTable *stochastic_search(LALStatus *status,
     /* save intermediate products */
     if (debug_flag)
     {
-      LALSnprintf(debug_filename, FILENAME_MAX, "opt_filter-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "opt_filter-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintFrequencySeries(opt_filter, debug_filename);
     }          
@@ -791,10 +791,10 @@ StochasticTable *stochastic_search(LALStatus *status,
     /* save intermediate products */
     if (debug_flag)
     {
-      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_1-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "analysis_segment_1-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintTimeSeries(segment_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_2-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "analysis_segment_2-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintTimeSeries(segment_two, debug_filename);
     }
@@ -811,10 +811,10 @@ StochasticTable *stochastic_search(LALStatus *status,
     /* save intermediate products */
     if (debug_flag)
     {
-      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_1-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "zero_pad_1-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALCPrintFrequencySeries(zero_pad_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_2-%d.dat", \
+      snprintf(debug_filename, FILENAME_MAX, "zero_pad_2-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALCPrintFrequencySeries(zero_pad_two, debug_filename);
     }    
@@ -868,10 +868,10 @@ StochasticTable *stochastic_search(LALStatus *status,
     }
 
     /* populate columns */
-    LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifo_one);
-    LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifo_two);
-    LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channel_one);
-    LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channel_two);
+    snprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifo_one);
+    snprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifo_two);
+    snprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channel_one);
+    snprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channel_two);
     thisStoch->start_time.gpsSeconds = analysis_epoch.gpsSeconds;
     thisStoch->start_time.gpsNanoSeconds = analysis_epoch.gpsNanoSeconds;
     thisStoch->duration.gpsSeconds = segment_duration;
