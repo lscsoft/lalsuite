@@ -237,15 +237,15 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
-// (log-) likelihood function
+// (log-) likelihood function.
+// Returns the non-normalised logarithmic likelihood.
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
   double TwoDeltaToverN;
   double diff2;
-  REAL8 likeli;
+  REAL8 loglikeli;
   REAL8 templateReal, templateImag;
-  REAL8 dataReal, dataImag;
   int i, lower, upper;
   LALIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
@@ -254,7 +254,6 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   LALMSTUnitsAndAcc UandA;
   double chisquared;
   double timeshift;
-  double deltaT=0.0;
   LALStatus status;
 
   // determine source's sky location & orientation parameters:
@@ -276,7 +275,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   dataPtr = data;
   while (dataPtr != NULL) {
     // compute template (deposited in elements of `data'):
-    template(currentParams, data);
+    template(data);
 
     // determine beam pattern response (F_plus and F_cross) for given Ifo:
     XLALComputeDetAMResponse(&Fplus, &Fcross,
@@ -308,6 +307,6 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     }
     dataPtr = dataPtr->next;
   }
-  likeli = -1.0 * chisquared;
-  return(likeli);
+  loglikeli = -1.0 * chisquared;
+  return(loglikeli);
 }
