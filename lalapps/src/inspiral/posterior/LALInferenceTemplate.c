@@ -12,16 +12,16 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include "LALInference.h"
 
 
-void LALTemplateWrapper(LALVariables *variables, LALIFOData *ifo){
+void LALTemplateWrapper(LALIFOData *ifo){
 	
 
 	static LALStatus stat;								/* status structure */
-	REAL4 m1=*(REAL4 *)getVariable(variables,"m1");			/* binary masses */
-	REAL4 m2=*(REAL4 *)getVariable(variables,"m2");
+	REAL4 m1=*(REAL4 *)getVariable(ifo->theseParams,"m1");			/* binary masses */
+	REAL4 m2=*(REAL4 *)getVariable(ifo->theseParams,"m2");
 	
-	REAL4 dist=*(REAL4 *)getVariable(variables,"dist");      /* binary distance */
-	REAL4 inc=*(REAL4 *)getVariable(variables,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(variables,"phii");
+	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->theseParams,"dist");      /* binary distance SET AS FIDUCIAL */
+	REAL4 inc=*(REAL4 *)getVariable(ifo->theseParams,"inc");		/* inclination and coalescence phase */
+	REAL4 phii=*(REAL4 *)getVariable(ifo->theseParams,"phii");
 	
 	REAL4 f_min = ifo->fLow, f_max=ifo->fHigh;			/* start and stop frequencies */
 	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
@@ -45,8 +45,8 @@ void LALTemplateWrapper(LALVariables *variables, LALIFOData *ifo){
 	 *******************************************************************/
 	
 	/* Fixed parameters. Set them when injecting....*/
-	params.position.latitude = 0.0;//*(REAL4 *)getVariable(&variables,"latitude");
-	params.position.longitude = 0.0;//*(REAL4 *)getVariable(&variables,"longitude");
+	params.position.latitude = 0.0;//*(REAL4 *)getVariable(ifo->theseParams,"latitude");
+	params.position.longitude = 0.0;//*(REAL4 *)getVariable(ifo->theseParams,"longitude");
 	params.position.system = COORDINATESYSTEM_EQUATORIAL;
 	params.psi = 0.0;
 	params.lengthIn = 0;
@@ -58,7 +58,7 @@ void LALTemplateWrapper(LALVariables *variables, LALIFOData *ifo){
 	params.deltaT = dt;
 	params.mTot = m1 + m2;
 	params.eta = m1*m2/( params.mTot*params.mTot );
-	params.inc = *(REAL4 *)getVariable(variables,"inc");;
+	params.inc = *(REAL4 *)getVariable(ifo->theseParams,"inc");;
 	params.phi = 0.0;
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;

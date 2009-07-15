@@ -82,7 +82,8 @@ void destroyVariables(LALVariables *vars);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
-typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data);
+//typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data); //Parameter Set is theseParams of LALIFOData
+typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
 
 //Jump proposal distribution
 //Computes proposedParams based on currentParams and additional variables
