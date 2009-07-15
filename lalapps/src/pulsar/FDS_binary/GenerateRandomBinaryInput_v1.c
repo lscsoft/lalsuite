@@ -114,9 +114,9 @@ int main(int argc,char *argv[])
   if (bintempfileflag) {
     if (ReadOrbitalParams(primarytemplatefile,&primaryrandparams)) return 2;
     /* primaryrandparams.start=primarystart; */
-    LALSnprintf(primaryrandparams.noisedir,256,primarynoisedir);
-    LALSnprintf(primaryrandparams.sftbase,256,primarysftbase);
-    LALSnprintf(primaryrandparams.stampsfile,256,primarystampsfile);
+    snprintf(primaryrandparams.noisedir,256,primarynoisedir);
+    snprintf(primaryrandparams.sftbase,256,primarysftbase);
+    snprintf(primaryrandparams.stampsfile,256,primarystampsfile);
     randparams=&primaryrandparams;
 
     /*printf("done primary template read\n");*/
@@ -124,9 +124,9 @@ int main(int argc,char *argv[])
     if (coflag) {
       if (ReadOrbitalParams(secondarytemplatefile,&secondaryrandparams)) return 2;
       /* secondaryrandparams.start=secondarystart; */
-      LALSnprintf(secondaryrandparams.noisedir,256,secondarynoisedir);
-      LALSnprintf(secondaryrandparams.sftbase,256,secondarysftbase);
-      LALSnprintf(secondaryrandparams.stampsfile,256,secondarystampsfile);
+      snprintf(secondaryrandparams.noisedir,256,secondarynoisedir);
+      snprintf(secondaryrandparams.sftbase,256,secondarysftbase);
+      snprintf(secondaryrandparams.stampsfile,256,secondarystampsfile);
       /*printf("done secondary template read\n");*/
 
       if (primaryrandparams.start<secondaryrandparams.start) {
@@ -140,9 +140,9 @@ int main(int argc,char *argv[])
   }
   else {
     randparams=&primaryrandparams;
-    LALSnprintf(randparams->noisedir,256,primarynoisedir);
-    LALSnprintf(randparams->sftbase,256,primarysftbase);
-    LALSnprintf(randparams->stampsfile,256,primarystampsfile);
+    snprintf(randparams->noisedir,256,primarynoisedir);
+    snprintf(randparams->sftbase,256,primarysftbase);
+    snprintf(randparams->stampsfile,256,primarystampsfile);
   }
 
   /*printf("sorted the template boundaries\n");*/
@@ -304,7 +304,7 @@ int ReadOrbitalParams(char *templatefile,RandomParameters *randomparams)
   if (ReadMeshFileHeader(fp,&BMFheader)) return 2;
   
   /* extract the parameters from the header */
-  LALSnprintf(randomparams->detector,256,BMFheader.det);
+  snprintf(randomparams->detector,256,BMFheader.det);
 
   randomparams->sma=(REAL8range *)LALMalloc(sizeof(REAL8range));
   randomparams->sma->min=BMFheader.sma_MIN;
@@ -820,29 +820,29 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *random,RandomParamete
   INT4 i;
 
   /* defining the actual strings to identify in the input file */
-  LALSnprintf(phi0text,256,"phi0");
-  LALSnprintf(psitext,256,"psi");
-  LALSnprintf(longitudetext,256,"longitude");
-  LALSnprintf(latitudetext,256,"latitude");
-  LALSnprintf(ifotext,256,"detector");
-  LALSnprintf(durationtext,256,"duration");
-  LALSnprintf(tsfttext,256,"Tsft");
-  LALSnprintf(tstarttext,256,"startTime");
-  LALSnprintf(reftimetext,256,"refTime");
-  LALSnprintf(aPlustext,256,"aPlus");
-  LALSnprintf(aCrosstext,256,"aCross");
-  LALSnprintf(f0text,256,"f0");
-  LALSnprintf(fbandtext,256,"Band");
-  LALSnprintf(fmintext,256,"fmin");
-  LALSnprintf(stampstext,256,"timestampsFile");
-  LALSnprintf(orbitSemiMajorAxistext,256,"orbitSemiMajorAxis");
-  LALSnprintf(orbitPeriodtext,256,"orbitPeriod");
-  LALSnprintf(orbitEccentricitytext,256,"orbitEccentricity");
-  LALSnprintf(orbitArgPeriapsetext,256,"orbitArgPeriapse");
-  LALSnprintf(orbitTperiSSBsectext,256,"orbitTperiSSBsec");
-  LALSnprintf(orbitTperiSSBnstext,256,"orbitTperiSSBns");
-  LALSnprintf(sftbasetext,256,"outSFTbname");
-  LALSnprintf(noisedirtext,256,"noiseSFTs");
+  snprintf(phi0text,256,"phi0");
+  snprintf(psitext,256,"psi");
+  snprintf(longitudetext,256,"longitude");
+  snprintf(latitudetext,256,"latitude");
+  snprintf(ifotext,256,"detector");
+  snprintf(durationtext,256,"duration");
+  snprintf(tsfttext,256,"Tsft");
+  snprintf(tstarttext,256,"startTime");
+  snprintf(reftimetext,256,"refTime");
+  snprintf(aPlustext,256,"aPlus");
+  snprintf(aCrosstext,256,"aCross");
+  snprintf(f0text,256,"f0");
+  snprintf(fbandtext,256,"Band");
+  snprintf(fmintext,256,"fmin");
+  snprintf(stampstext,256,"timestampsFile");
+  snprintf(orbitSemiMajorAxistext,256,"orbitSemiMajorAxis");
+  snprintf(orbitPeriodtext,256,"orbitPeriod");
+  snprintf(orbitEccentricitytext,256,"orbitEccentricity");
+  snprintf(orbitArgPeriapsetext,256,"orbitArgPeriapse");
+  snprintf(orbitTperiSSBsectext,256,"orbitTperiSSBsec");
+  snprintf(orbitTperiSSBnstext,256,"orbitTperiSSBns");
+  snprintf(sftbasetext,256,"outSFTbname");
+  snprintf(noisedirtext,256,"noiseSFTs");
 
   /* opening the input config file */
   fpin=fopen(infile,"r");

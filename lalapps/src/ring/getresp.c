@@ -86,7 +86,7 @@ COMPLEX8FrequencySeries * get_impulse_response(
 
   /* allocate data memory and set metadata */
   npoints = floor( dataDuration * dataSampleRate + 0.5 ); /* round */
-  LALSnprintf( response->name, sizeof( response->name ),
+  snprintf( response->name, sizeof( response->name ),
       "%s:CAL-RESPONSE", ifoName );
   response->deltaF      = 1.0/dataDuration;
   response->epoch       = *epoch;
@@ -216,7 +216,7 @@ COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
   if ( ! refResponse )
     return NULL;
 
-  LALSnprintf( refResponse->name, sizeof( refResponse->name ),
+  snprintf( refResponse->name, sizeof( refResponse->name ),
       "%s:CAL-RESPONSE", ifoName );
 
   /* make a new cache with only the CAL_REF frames and open a frame stream */
@@ -250,7 +250,7 @@ COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
   if ( ! refSensing )
     return NULL;
 
-  LALSnprintf( refSensing->name, sizeof( refSensing->name ),
+  snprintf( refSensing->name, sizeof( refSensing->name ),
       "%s:CAL-CAV_GAIN", ifoName );
 
   /* make a new cache with only the CAL_REF frames and open a frame stream */
@@ -283,7 +283,7 @@ COMPLEX8TimeSeries * get_cavity_gain_factor( FrCache *calCache,
   alpha       = LALCalloc( 1, sizeof( *alpha ) );
   alpha->data = XLALCreateCOMPLEX8Vector( 1 );  /* only 1 point */
 
-  LALSnprintf( alpha->name, sizeof( alpha->name ), "%s:CAL-CAV_FAC", ifoName );
+  snprintf( alpha->name, sizeof( alpha->name ), "%s:CAL-CAV_FAC", ifoName );
 
   /* make a new cache with only the CAL_FAC frames and open a frame stream */
   sieve.dscRegEx = "CAL_FAC";
@@ -318,7 +318,7 @@ COMPLEX8TimeSeries * get_open_loop_gain_factor( FrCache *calCache,
   alphabeta = LALCalloc( 1, sizeof( *alphabeta ) );
   alphabeta->data = XLALCreateCOMPLEX8Vector( 1 ); /* only 1 point */
 
-  LALSnprintf( alphabeta->name, sizeof( alphabeta->name ),
+  snprintf( alphabeta->name, sizeof( alphabeta->name ),
       "%s:CAL-OLOOP_FAC", ifoName );
 
   /* make a new cache with only the CAL_FAC frames and open a frame stream */

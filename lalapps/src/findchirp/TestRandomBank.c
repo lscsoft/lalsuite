@@ -140,7 +140,7 @@ main (INT4 argc, CHAR **argv )
  /* zero out the checkpoint and output paths */
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-  LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR), "bankefficiency.ckpt");
+  snprintf( outputPath, FILENAME_MAX * sizeof(CHAR), "bankefficiency.ckpt");
         
 
   /* init a random structure using possibly the seed from user input*/
@@ -1853,10 +1853,10 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
       /* --- we sae one line --- */
       tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
 	LALCalloc( 1, sizeof(SnglInspiralTable) );
-      LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
 		   "BankEfficiency" );
-      LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
 		   channelName );
       tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
       tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
@@ -1876,10 +1876,10 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 	{
 	  tmplt = tmplt->next = (SnglInspiralTable *)
 	    LALCalloc( 1, sizeof(SnglInspiralTable) );
-	  LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-	  LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+	  snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+	  snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
 		       "BankEfficiency" );
-	  LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+	  snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
 		       channelName );
 	  tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
 	  tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
@@ -1912,19 +1912,19 @@ BEFillProc(
 #define ADD_PROCESS_PARAM( pptype, format, ppname, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
-  LALSnprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
-  LALSnprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue );
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
+  snprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
+  snprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
+  snprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue );
 
 
 #define ADD_2PROCESS_PARAM( pptype, format, ppname, ppvalue1, ppvalue2 ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
-  LALSnprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
-  LALSnprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue1, ppvalue2 );
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
+  snprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
+  snprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
+  snprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue1, ppvalue2 );
 
   ADD_PROCESS_PARAM("float","%f","--bank-alpha",           
       coarseBankIn.alpha);
@@ -2200,7 +2200,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
-  LALSnprintf( fname, sizeof(fname), 
+  snprintf( fname, sizeof(fname), 
 	       BANKEFFICIENCY_PRINTRESULT_FILEXML ,
 	       userParam.detector,
 	       gpsStartTime.gpsSeconds,
@@ -2234,7 +2234,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
     
     /* write process table */
-    LALSnprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 		 ifoName[0], ifoName[1] );
     LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->end_time),
 			      &accuracy ), &status );
@@ -2362,7 +2362,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
-  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTPROTO_FILEXML ,
+  snprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTPROTO_FILEXML ,
 	       ifo, gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
@@ -2397,7 +2397,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     
     
     /* write process table */
-    LALSnprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 		 ifoName[0], ifoName[1] );
     LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->end_time),
 			      &accuracy ), &status );
@@ -2944,7 +2944,7 @@ LALCreateRealPsd(LALStatus *status,
         status->statusPtr );
 
     /* copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
     chan.epoch          = geoChan.epoch;
     chan.deltaT         = geoChan.deltaT;
     chan.f0             = geoChan.f0;
@@ -3038,7 +3038,7 @@ LALCreateRealPsd(LALStatus *status,
     }
 
     /* re-copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
     chan.epoch          = geoChan.epoch;
     chan.deltaT         = geoChan.deltaT;
     chan.f0             = geoChan.f0;
@@ -3375,14 +3375,14 @@ LALCreateRealPsd(LALStatus *status,
        * This causes no detector site to be found in the injection code so
        * that the injection is done directly overhead (i.e. with a response 
        * function of F+ = 1; Fx = 0) */
-      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
       
-      LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+      snprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
 
 
       LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections, 
             injRespPtr ), status->statusPtr );
-      LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      snprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
           numInjections, injectionFile, chan.name );
@@ -4354,7 +4354,7 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   /* --- first we create the filename --- */
-  LALSnprintf( fname, sizeof(fname), "TMPLTBANK.xml" ,
+  snprintf( fname, sizeof(fname), "TMPLTBANK.xml" ,
 	       ifo, gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   
@@ -4380,7 +4380,7 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   /* write process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 	       ifoName[0], ifoName[1] );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
 			    &accuracy ), &status );

@@ -10,5 +10,6 @@ TfrWvTest_SOURCES = TfrWvTest.c
 TfrWvTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = TfrPswvTest TfrRspTest TfrSpTest TfrWvTest
+TESTS_ENVIRONMENT = 1>/dev/null
 EXTRA_DIST = TfrPswvTest.c TfrRspTest.c TfrSpTest.c TfrWvTest.c
 @DVIMKFILE@

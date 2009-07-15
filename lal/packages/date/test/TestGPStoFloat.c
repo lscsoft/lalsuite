@@ -61,46 +61,15 @@ static int test_random_doubles(unsigned int seed)
 int main(int argc, char *argv[])
 {
   static LALStatus   status;
+#if 0
   LIGOTimeGPS        gpsTime = {0, 0};
   REAL8              realTime = 0.;
+#endif
   LALTimeInterval    interval = {0, 0};
   REAL8              deltaT = 0.;
 
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
-
-  /* 1 */
-  gpsTime.gpsSeconds     = 987654321;
-  gpsTime.gpsNanoSeconds = 123456789;
-  realTime = XLALGPSGetREAL8(&gpsTime);
-  if (lalDebugLevel)
-  {
-    printf("TestGPStoFloat: expected %22.9f\n                got      %22.9f\n",
-           987654321.123456789, realTime);
-  }
-  /* require error to be less than 0.5 nanoseconds */
-  if (fabs(realTime - 987654321.123456789) >= 0.5e-9)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() returned wrong value; expected %.17g, got %.17g\n",
-              987654321.123456789, realTime);
-      return 1;
-    }
-
-
-  /* 2 */
-  realTime = 54321.123456789;
-  XLALGPSSetREAL8(&gpsTime, realTime);
-  if (lalDebugLevel)
-    {
-      printf("TestFloatToGPS: expected (%d, %d)\n                got      (%d, %d)\n",
-             54321, 123456789, gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds);
-    }
-  if (gpsTime.gpsSeconds != 54321 || gpsTime.gpsNanoSeconds != 123456789)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALFloatToGPS() returned wrong value; expected (%d, %d), got (%d, %d)\n",
-	      54321, 123456789, gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds);
-      return 2;
-    }
 
   /* 3 */
   interval.seconds     = 123;
