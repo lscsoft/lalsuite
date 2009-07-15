@@ -155,5 +155,8 @@ void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
+REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template);
+
 #endif
 

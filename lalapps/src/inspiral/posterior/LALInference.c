@@ -10,6 +10,8 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include <stdlib.h>
 /*#include <LAL/LALInspiral.h>*/
 #include "LALInference.h"
+#include <lal/DetResponse.h>
+
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
 
@@ -228,4 +230,84 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
   }
   if (state==4) die(" ERROR: failed parsing command line options.\n");
   return(head);
+}
+
+
+
+
+REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template)
+// (log-) likelihood function
+{
+  double Fplus, Fcross;
+  double FplusScaled, FcrossScaled;
+  double TwoDeltaToverN;
+  double diff2;
+  REAL8 likeli;
+  REAL8 templateReal, templateImag;
+  REAL8 dataReal, dataImag;
+  int i, lower, upper;
+  LALIFOData *dataPtr;
+  double ra, dec, psi, distMpc, gmst;
+  double GPSdouble;
+  LIGOTimeGPS GPSlal;
+  LALMSTUnitsAndAcc UandA;
+  double chisquared;
+  double timeshift;
+  double deltaT=0.0;
+  LALStatus status;
+
+  // determine source's sky location & orientation parameters:
+  ra        = *(REAL8*) getVariable(currentParams, "rightascension");
+  dec       = *(REAL8*) getVariable(currentParams, "declination");
+  psi       = *(REAL8*) getVariable(currentParams, "polarisation");
+  GPSdouble = *(REAL8*) getVariable(currentParams, "time");
+  distMpc   = *(REAL8*) getVariable(currentParams, "distance");
+
+  GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
+  GPSlal.gpsNanoSeconds = 0; //((INT4) round(fmod(GPSdouble,1.0)*1e9));
+  UandA.units = MST_RAD;
+  UandA.accuracy = LALLEAPSEC_LOOSE;
+  LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+
+  chisquared = 0.0;
+
+  // loop over data (different interferometers):
+  dataPtr = data;
+  while (dataPtr != NULL) {
+    // compute template (deposited in elements of `data'):
+    template(currentParams, data);
+
+    // determine beam pattern response (F_plus and F_cross) for given Ifo:
+    XLALComputeDetAMResponse(&Fplus, &Fcross,
+                             dataPtr->detector->response,
+			     ra, dec, psi, gmst);
+    // signal arrival time (relative to geocentre);
+    timeshift = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+                                             ra, dec, GPSlal);
+    // (negative timeshift means signal arrives earlier than at geocenter etc.)
+
+    // include distance (overall amplitude) effect in Fplus/Fcross:
+    FplusScaled  = Fplus  / distMpc;
+    FcrossScaled = Fcross / distMpc;
+
+    // determine frequency range & loop over frequency bins:
+    lower = ceil(dataPtr->fLow * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
+    upper = floor(dataPtr->fHigh * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
+    TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
+    for (i=lower; i<=upper; ++i){
+      // derive template (involving location/orientation parameters) from given plus/cross waveforms:
+      templateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  +  FcrossScaled * data->freqModelhCross->data->data[i].re;
+      templateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  +  FcrossScaled * data->freqModelhCross->data->data[i].im;
+      // (still need to do time-shifting!)
+
+      // squared difference & `chi-squared':
+      diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
+                                + pow(data->freqData->data->data[i].im - templateImag, 2.0));
+      chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
+    }
+    dataPtr = dataPtr->next;
+  }
+  likeli = -1.0 * chisquared;
+  return(likeli);
 }
