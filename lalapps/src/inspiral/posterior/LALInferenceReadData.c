@@ -26,22 +26,18 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	LALFrClose(&status,&stream);
 	return out;
 }
-
-/* Variables needed from command line *****
-
-[ --channel [channel1,channel2,channel3,..] ]
---IFO [IFO1,IFO2,IFO3,..]
---cache [cache1,cache2,cache3,..]
---PSDstart GPSsecs.GPSnanosecs
---PSDlength length
-[--srate SampleRate   [4096]]
---seglen segment_length 
---trig_time GPSsecs.GPSnanosecs
-[--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]]
-[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]
-
-
-****************************************************/
+#define USAGE \
+ "Variables needed from command line to read data:\n\
+[ --channel [channel1,channel2,channel3,..] ] \n\
+--IFO [IFO1,IFO2,IFO3,..] \n\
+--cache [cache1,cache2,cache3,..] \n\
+--PSDstart GPSsecs.GPSnanosecs \n\
+--PSDlength length \n\
+[--srate SampleRate   [4096]] \n\
+--seglen segment_length \n\
+--trig_time GPSsecs.GPSnanosecs \n\
+[--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
+[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n"
 
 LALIFOData *ReadData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
@@ -64,6 +60,12 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
  char **fLows,**fHighs;
  LIGOTimeGPS GPSstart,GPStrig,segStart;
  REAL8 PSDdatalength=0;
+ 
+ if(!getProcParamVal(commandLine,"cache")||!getProcParamVal(commandLine,"IFO")||
+    !getProcParamVal(commandLine,"PSDstart")||!getProcParamVal(commandLine,"trigtime")||
+	!getProcParamVal(commandLine,"PSDlength")||!getProcParamVal(commandLine,"seglen")||
+	!getProcParamVal(commandLine,"srate")) {fprintf(stderr,USAGE); return(NULL);}
+ 
  if(getProcParamVal(commandLine,"channel")){
 	parseCharacterOptionString(getProcParamVal(commandLine,"channel")->value,&channels,&Nchannel);
  }
