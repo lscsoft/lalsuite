@@ -1,14 +1,13 @@
 /* 
 
-LALInference.c:	Bayesian Followup functions
+  LALInference.c:  Bayesian Followup functions
 
-Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+  Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
 
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-/*#include <LAL/LALInspiral.h>*/
 #include "LALInference.h"
 #include <lal/DetResponse.h>
 
@@ -16,110 +15,133 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
 
 
-void die(char *message){
- fprintf(stderr,message);
- exit(1);
+void die(char *message)
+{
+  fprintf(stderr, message);
+  exit(1);
 }
+
 
 /* ============ Accessor functions for the Variable structure ========== */
 
-LALVariableItem *getItem(LALVariables *vars,const char *name){
-LALVariableItem *this=vars->head;
-while(this!=NULL) 
- { if(!strcmp(this->name,name)) break;
-   else this=this->next;
- }
-return(this);
+
+LALVariableItem *getItem(LALVariables *vars,const char *name)
+{
+  LALVariableItem *this=vars->head;
+  while(this!=NULL) { 
+    if(!strcmp(this->name,name)) break;
+    else this=this->next;
+  }
+  return(this);
 }
 
-void *getVariable(LALVariables * vars,const char * name){
+
+
+void *getVariable(LALVariables * vars,const char * name)
 /* Return the value of variable name from the vars structure by walking the list*/
-LALVariableItem *item;
-item=getItem(vars,name);
-if(!item) die("Error: variable not found in getVariable.\n");
-return(item->value);
+{
+  LALVariableItem *item;
+  item=getItem(vars,name);
+  if(!item) die("Error: variable not found in getVariable.\n");
+  return(item->value);
 }
 
-void setVariable(LALVariables * vars,const char * name, void *value){
+
+
+void setVariable(LALVariables * vars,const char * name, void *value)
 /* Set the value of variable name in the vars structure to value */
-LALVariableItem *item;
-item=getItem(vars,name);
-if(!item) die("Error: variable not found in setVariable.\n");
-memcpy(item->value,value,typeSize[item->type]);
-
-return;
+{
+  LALVariableItem *item;
+  item=getItem(vars,name);
+  if(!item) die("Error: variable not found in setVariable.\n");
+  memcpy(item->value,value,typeSize[item->type]);
+  return;
 }
 
-void addVariable(LALVariables * vars,const char * name, void *value, VariableType type){
+
+
+void addVariable(LALVariables * vars,const char * name, void *value, VariableType type)
 /* Add the variable name with type type and value value to vars */
- /* Check the name doesn't already exist */
- if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
+{
+  /* Check the name doesn't already exist */
+  if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
 
- LALVariableItem *new=malloc(sizeof(LALVariableItem));
- memset(new,0,sizeof(LALVariableItem));
- new->value = (void *)malloc(typeSize[type]);
- if(new==NULL||new->value==NULL) die("Unable to allocate memory for list item\n");
+  LALVariableItem *new=malloc(sizeof(LALVariableItem));
+  memset(new,0,sizeof(LALVariableItem));
+  new->value = (void *)malloc(typeSize[type]);
+  if(new==NULL||new->value==NULL) die("Unable to allocate memory for list item\n");
  
- memcpy(new->name,name,VARNAME_MAX);
- new->type = type;
- memcpy(new->value,value,typeSize[type]);
- new->next = vars->head;
- vars->head = new;
- vars->dimension++;
- return;
+  memcpy(new->name,name,VARNAME_MAX);
+  new->type = type;
+  memcpy(new->value,value,typeSize[type]);
+  new->next = vars->head;
+  vars->head = new;
+  vars->dimension++;
+  return;
 }
+
+
 
 void removeVariable(LALVariables *vars,const char *name)
 {
-	LALVariableItem *this=vars->head;
-	LALVariableItem *parent=NULL;
-	
-	while(this){
-		if(!strcmp(this->name,name)) break;
-		else {parent=this; this=this->next;}
-	}
-	if(!this) {fprintf(stderr,"removeVariable: warning, %s not found to remove\n",name); return;}
-	if(!parent) vars->head=this->next;
-	else parent->next=this->next;
-	free(this->value);
-	free(this);
-	vars->dimension--;
-	return;
-}
-
-int checkVariable(LALVariables *vars,const char *name){
-/* Check for existance of name */
-if(getItem(vars,name)) return 1;
-else return 0;
-}
-
-/* Free the entire structure */
-void destroyVariables(LALVariables *vars){
- LALVariableItem *this,*next;
- if(!vars) return;
- this=vars->head;
- if(this) next=this->next;
- while(this){
+  LALVariableItem *this=vars->head;
+  LALVariableItem *parent=NULL;
+  while(this){
+    if(!strcmp(this->name,name)) break;
+    else {parent=this; this=this->next;}
+  }
+  if(!this) {fprintf(stderr,"removeVariable: warning, %s not found to remove\n",name); return;}
+  if(!parent) vars->head=this->next;
+  else parent->next=this->next;
   free(this->value);
   free(this);
-  this=next;
-  if(this) next=this->next;
- }
- vars->head=NULL;
- vars->dimension=0;
-return;
+  vars->dimension--;
+  return;
 }
+
+
+
+int checkVariable(LALVariables *vars,const char *name)
+/* Check for existance of name */
+{
+  if(getItem(vars,name)) return 1;
+  else return 0;
+}
+
+
+
+void destroyVariables(LALVariables *vars)
+/* Free the entire structure */
+{
+  LALVariableItem *this,*next;
+  if(!vars) return;
+  this=vars->head;
+  if(this) next=this->next;
+  while(this){
+    free(this->value);
+    free(this);
+    this=next;
+    if(this) next=this->next;
+  }
+  vars->head=NULL;
+  vars->dimension=0;
+  return;
+}
+
+
 
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
 {
-ProcessParamsTable *this=procparams;
-while(this!=NULL) 
- { if(!strcmp(this->param,name)) break;
-   else this=this->next;
- }
-return(this);
+  ProcessParamsTable *this=procparams;
+  while(this!=NULL) { 
+    if(!strcmp(this->param,name)) break;
+    else this=this->next;
+  }
+  return(this);
 }
- 
+
+
+
 void parseCharacterOptionString(char *input, char **strings[], int *n)
 /* parses a character string (passed as one of the options) and decomposes   */
 /* it into individual parameter character strings. Input is of the form      */
@@ -169,6 +191,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     ++i;
   } 
 }
+
 
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[])
@@ -234,11 +257,10 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 
 
 
-
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
-// (log-) likelihood function.
-// Returns the non-normalised logarithmic likelihood.
+/* (log-) likelihood function.                        */
+/* Returns the non-normalised logarithmic likelihood. */
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
@@ -256,7 +278,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double timeshift;
   LALStatus status;
 
-  // determine source's sky location & orientation parameters:
+  /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) getVariable(currentParams, "rightascension");
   dec       = *(REAL8*) getVariable(currentParams, "declination");
   psi       = *(REAL8*) getVariable(currentParams, "polarisation");
@@ -271,36 +293,36 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
   chisquared = 0.0;
 
-  // loop over data (different interferometers):
+  /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
-    // compute template (deposited in elements of `data'):
+    /* compute template (deposited in elements of `data'): */
     template(data);
 
-    // determine beam pattern response (F_plus and F_cross) for given Ifo:
+    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
                              dataPtr->detector->response,
 			     ra, dec, psi, gmst);
-    // signal arrival time (relative to geocentre);
+    /* signal arrival time (relative to geocenter); */
     timeshift = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, GPSlal);
-    // (negative timeshift means signal arrives earlier than at geocenter etc.)
+    /* (negative timeshift means signal arrives earlier than at geocenter etc.) */
 
-    // include distance (overall amplitude) effect in Fplus/Fcross:
+    /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
-    // determine frequency range & loop over frequency bins:
+    /* determine frequency range & loop over frequency bins: */
     lower = ceil(dataPtr->fLow * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
     upper = floor(dataPtr->fHigh * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
     TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
     for (i=lower; i<=upper; ++i){
-      // derive template (involving location/orientation parameters) from given plus/cross waveforms:
+      /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       templateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  +  FcrossScaled * data->freqModelhCross->data->data[i].re;
       templateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  +  FcrossScaled * data->freqModelhCross->data->data[i].im;
-      // (still need to do time-shifting!)
+      /* (still need to do time-shifting!) */
 
-      // squared difference & `chi-squared':
+      /* squared difference & `chi-squared': */
       diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
                                 + pow(data->freqData->data->data[i].im - templateImag, 2.0));
       chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
