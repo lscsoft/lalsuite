@@ -82,7 +82,7 @@ void destroyVariables(LALVariables *vars);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
-//typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data); //Parameter Set is theseParams of LALIFOData
+//typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data); //Parameter Set is modelParams of LALIFOData
 typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
 
 //Jump proposal distribution
@@ -138,7 +138,7 @@ tagLALIFOData
 {
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
-  LALVariables *theseParams;
+  LALVariables *modelParams;
   REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
   REAL8Window *window;
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
