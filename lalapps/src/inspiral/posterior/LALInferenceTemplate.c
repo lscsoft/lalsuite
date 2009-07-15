@@ -16,12 +16,12 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	
 
 	static LALStatus stat;								/* status structure */
-	REAL4 m1=*(REAL4 *)getVariable(ifo->theseParams,"m1");			/* binary masses */
-	REAL4 m2=*(REAL4 *)getVariable(ifo->theseParams,"m2");
+	REAL4 m1=*(REAL4 *)getVariable(ifo->modelParams,"m1");			/* binary masses */
+	REAL4 m2=*(REAL4 *)getVariable(ifo->modelParams,"m2");
 	
-	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->theseParams,"dist");      /* binary distance SET AS FIDUCIAL */
-	REAL4 inc=*(REAL4 *)getVariable(ifo->theseParams,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(ifo->theseParams,"phii");
+	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
+	REAL4 inc=*(REAL4 *)getVariable(ifo->modelParams,"inc");		/* inclination and coalescence phase */
+	REAL4 phii=*(REAL4 *)getVariable(ifo->modelParams,"phii");
 	
 	REAL4 f_min = ifo->fLow, f_max=ifo->fHigh;			/* start and stop frequencies */
 	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
@@ -45,8 +45,8 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	 *******************************************************************/
 	
 	/* Fixed parameters. Set them when injecting....*/
-	params.position.latitude = 0.0;//*(REAL4 *)getVariable(ifo->theseParams,"latitude");
-	params.position.longitude = 0.0;//*(REAL4 *)getVariable(ifo->theseParams,"longitude");
+	params.position.latitude = 0.0;//*(REAL4 *)getVariable(ifo->modelParams,"latitude");
+	params.position.longitude = 0.0;//*(REAL4 *)getVariable(ifo->modelParams,"longitude");
 	params.position.system = COORDINATESYSTEM_EQUATORIAL;
 	params.psi = 0.0;
 	params.lengthIn = 0;
@@ -58,7 +58,7 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	params.deltaT = dt;
 	params.mTot = m1 + m2;
 	params.eta = m1*m2/( params.mTot*params.mTot );
-	params.inc = *(REAL4 *)getVariable(ifo->theseParams,"inc");;
+	params.inc = inc;
 	params.phi = 0.0;
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;
@@ -145,13 +145,13 @@ void LALTemplateWrapper(LALIFOData *ifo){
 			REAL8 dx = deltat/dt;
 			REAL8 xMax = waveform.a->data->length - 1;
 			REAL8 *phiData = waveform.phi->data->data;
-			REAL4 *fData = waveform.f->data->data;
+			//REAL4 *fData = waveform.f->data->data;
 			REAL4 *aData = waveform.a->data->data;
 			for ( ; x < xMax; x += dx, t += deltat ) {
 				UINT4 j = floor( x );
 				REAL8 frac = x - j;
 				REAL8 p = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
-				REAL8 f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+				//REAL8 f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
 				REAL8 ap = frac*aData[2*j+2] + ( 1.0 - frac )*aData[2*j];
 				REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
 				
