@@ -13,17 +13,22 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 
 
 void LALTemplateWrapper(LALIFOData *ifo){
-	
 
-	static LALStatus stat;								/* status structure */
+	static LALStatus stat;								/* status structure */	
+
 	REAL4 m1=*(REAL4 *)getVariable(ifo->modelParams,"m1");			/* binary masses */
 	REAL4 m2=*(REAL4 *)getVariable(ifo->modelParams,"m2");
 	
 	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
 	REAL4 inc=*(REAL4 *)getVariable(ifo->modelParams,"inc");		/* inclination and coalescence phase */
 	REAL4 phii=*(REAL4 *)getVariable(ifo->modelParams,"phii");
+
 	
 	REAL4 f_min = ifo->fLow, f_max=ifo->fHigh;			/* start and stop frequencies */
+	
+	
+	fprintf(stdout,"%f\t%f\n", f_min, f_max);
+	
 	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
 	REAL8 deltat = 0.01;//ifo->timeData->deltaT;				/* wave sampling interval */
 	INT4 order = 4;										/* PN order */
@@ -63,7 +68,7 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;
 	params.fStopIn = f_max;
-	
+
 	/* PPN parameter. */
 	params.ppn = NULL;
 	LALSCreateVector( &stat, &(params.ppn), order + 1 );
@@ -72,7 +77,6 @@ void LALTemplateWrapper(LALIFOData *ifo){
 		params.ppn->data[1] = 0.0;
 	for ( i = 2; i <= (UINT4)( order ); i++ )
 		params.ppn->data[i] = 1.0;
-	
 	/* Output parameters. */
 	memset( &waveform, 0, sizeof(CoherentGW) );
 	
@@ -80,7 +84,7 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	/*******************************************************************
 	 * OUTPUT GENERATION                                               *
 	 *******************************************************************/
-	
+
 	/* Generate waveform. */
 	LALGeneratePPNInspiral( &stat, &waveform, &params );
 	
