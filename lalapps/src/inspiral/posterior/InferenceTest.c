@@ -39,28 +39,28 @@ int main(int argc, char *argv[]){
     ptr = ptr->next;
     ++i;
   }
-
+	
   /* Test the data setup */
-  //  IFOdata=ReadData(ppt);
-  //if(IFOdata) fprintf(stdout,"Successfully read in the data!");
-  
-  /*
-  param.head=NULL;
-  param.dimension=5;
+  IFOdata=ReadData(ppt);
+  if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
+	
+  IFOdata->modelParams=calloc(1, sizeof(LALVariables));
+	
+  IFOdata->modelParams->head=NULL;
+  IFOdata->modelParams->dimension=5;
   REAL4 m1 = 1.4;
-  addVariable(&param,"m1",&m1,REAL4_t);
+  addVariable(IFOdata->modelParams,"m1",&m1,REAL4_t);
   REAL4 m2 = 1.4;
-  addVariable(&param,"m2",&m2,REAL4_t);
+  addVariable(IFOdata->modelParams,"m2",&m2,REAL4_t);
   REAL4 inc = 0.0;
-  addVariable(&param,"inc",&m1,REAL4_t);
+  addVariable(IFOdata->modelParams,"inc",&inc,REAL4_t);
   REAL4 phii = 0.0;
-  addVariable(&param,"phii",&m1,REAL4_t);
-  
-  IFOdata->theseParams = &param;
+  addVariable(IFOdata->modelParams,"phii",&phii,REAL4_t);
+	
   //REAL8TimeSeries timeModelhPlus;
   //REAL8TimeSeries timeModelhCross;
   
-  LALTemplateWrapper(&IFOdata);
-  */
+  LALTemplateWrapper(IFOdata);
+
   return 0;
 }
