@@ -55,6 +55,7 @@ LALComputeDetAMResponse()
 #include <string.h>
 #include <math.h>
 #include <errno.h>
+#include <time.h>
 #include <lal/LALConfig.h>
 
 #include <lal/AVFactories.h>
@@ -828,7 +829,7 @@ int main(int argc, char *argv[])
   LALFrDetector     frdet;    /* Framelib detector info */
   LALDetector       detector;
   LIGOTimeGPS       gps;
-  LALDate           utcDate;
+  struct tm         utcDate;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   LALGPSandAcc      gps_and_acc;
   LALDetAndSource   det_and_pulsar;
@@ -851,7 +852,6 @@ int main(int argc, char *argv[])
 
   REAL8 tmpgmst;
   REAL8 gmst1;
-  LALMSTUnitsAndAcc tmp_uandacc;
 
   skygrid_t plus;
   skygrid_t cross;
@@ -1301,18 +1301,16 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-  utcDate.unixDate.tm_sec = 46;
-  utcDate.unixDate.tm_min = 20;
-  utcDate.unixDate.tm_hour = 8;
-  utcDate.unixDate.tm_mday = 17;
-  utcDate.unixDate.tm_mon  = LALMONTH_MAY;
-  utcDate.unixDate.tm_year = 1994 - 1900;
+  utcDate.tm_sec = 46;
+  utcDate.tm_min = 20;
+  utcDate.tm_hour = 8;
+  utcDate.tm_mday = 17;
+  utcDate.tm_mon  = LALMONTH_MAY;
+  utcDate.tm_year = 1994 - 1900;
+  utcDate.tm_isdst = 1;
+  mktime(&utcDate);
 
-  gps.gpsSeconds = XLALUTCToGPS(&utcDate.unixDate);
-  gps.gpsNanoSeconds = 0;
-
-  tmp_uandacc.units = MST_RAD;
-  tmp_uandacc.accuracy = accuracy;
+  XLALGPSSet(&gps, XLALUTCToGPS(&utcDate), 0);
 
   tmpgmst = XLALGreenwichMeanSiderealTime(&gps);
 
@@ -1342,7 +1340,6 @@ int main(int argc, char *argv[])
   print_small_separator_maybe();
 
 
-
   /* switch detector to LHO */
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
@@ -1352,15 +1349,16 @@ int main(int argc, char *argv[])
   pulsar.equatorialCoords.latitude  = deg_to_rad(46.475430);
   pulsar.orientation                = -LAL_PI_2;
 
-  utcDate.unixDate.tm_sec = 46;
-  utcDate.unixDate.tm_min = 20;
-  utcDate.unixDate.tm_hour = 8;
-  utcDate.unixDate.tm_mday = 17;
-  utcDate.unixDate.tm_mon  = LALMONTH_MAY;
-  utcDate.unixDate.tm_year = 1994 - 1900;
+  utcDate.tm_sec = 46;
+  utcDate.tm_min = 20;
+  utcDate.tm_hour = 8;
+  utcDate.tm_mday = 17;
+  utcDate.tm_mon  = LALMONTH_MAY;
+  utcDate.tm_year = 1994 - 1900;
+  utcDate.tm_isdst = 1;
+  mktime(&utcDate);
 
-  gps.gpsSeconds = XLALUTCToGPS(&utcDate.unixDate);
-  gps.gpsNanoSeconds = 0;
+  XLALGPSSet(&gps, XLALUTCToGPS(&utcDate), 0);
 
   det_and_pulsar.pDetector = &detector;
   det_and_pulsar.pSource   = &pulsar;
