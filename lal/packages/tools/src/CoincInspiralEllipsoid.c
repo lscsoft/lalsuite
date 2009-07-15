@@ -235,7 +235,6 @@ LALCreateTwoIFOCoincListEllipsoid(
       if ( match )
       {
         REAL8 etp = XLALCalculateEThincaParameter( currentError[0]->trigger,  currentError[1]->trigger, accuracyParams );
-        printf( "%e\n", etp );
         /* create a 2 IFO coinc and store */
         if ( ! coincHead  )
         {
