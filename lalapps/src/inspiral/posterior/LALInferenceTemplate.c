@@ -8,7 +8,7 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <LAL/LALInspiral.h>
+#include <lal/LALInspiral.h>
 #include "LALInference.h"
 
 
