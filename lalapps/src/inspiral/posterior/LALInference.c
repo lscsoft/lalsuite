@@ -267,6 +267,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double TwoDeltaToverN;
   double diff2;
   REAL8 loglikeli;
+  REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
   int i, lower, upper;
   LALIFOData *dataPtr;
@@ -275,7 +276,9 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   LIGOTimeGPS GPSlal;
   LALMSTUnitsAndAcc UandA;
   double chisquared;
-  double timeshift;
+  double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
+  double timeshift;  /* time shift (not necessarily same as above)                   */
+  double NDeltaT, twopit, f, re, im;
   LALStatus status;
 
   /* determine source's sky location & orientation parameters: */
@@ -296,33 +299,50 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
+    /* TODO: update "data->theseParams" slot */
+
     /* compute template (deposited in elements of `data'): */
     template(data);
+    /* TODO: check whether template (re-) computation is actually necessary */
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
                              dataPtr->detector->response,
 			     ra, dec, psi, gmst);
     /* signal arrival time (relative to geocenter); */
-    timeshift = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, GPSlal);
-    /* (negative timeshift means signal arrives earlier than at geocenter etc.) */
+    /* (negative timedelay means signal arrives earlier than at geocenter etc.) */
+
+    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
+    timeshift =  (GPSdouble - (*(REAL8*) getVariable(data->theseParams, "time"))) + timedelay;
+    twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
     /* determine frequency range & loop over frequency bins: */
-    lower = ceil(dataPtr->fLow * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
-    upper = floor(dataPtr->fHigh * dataPtr->timeData->data->length * dataPtr->timeData->deltaT);
+    NDeltaT = dataPtr->timeData->data->length * dataPtr->timeData->deltaT;
+    lower = ceil(dataPtr->fLow * NDeltaT);
+    upper = floor(dataPtr->fHigh * NDeltaT);
     TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      templateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  +  FcrossScaled * data->freqModelhCross->data->data[i].re;
-      templateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  +  FcrossScaled * data->freqModelhCross->data->data[i].im;
-      /* (still need to do time-shifting!) */
+      plainTemplateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  
+                          +  FcrossScaled * data->freqModelhCross->data->data[i].re;
+      plainTemplateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  
+                          +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
-      /* squared difference & `chi-squared': */
+      /* do time-shifting: */
+      f = ((double) i) / NDeltaT;
+      /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
+      re = cos(twopit * f);
+      im = - sin(twopit * f);
+      templateReal = plainTemplateReal*re - plainTemplateImag*im;
+      templateImag = plainTemplateReal*im + plainTemplateImag*re;
+
+      /* squared difference & 'chi-squared': */
       diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
                                 + pow(data->freqData->data->data[i].im - templateImag, 2.0));
       chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
