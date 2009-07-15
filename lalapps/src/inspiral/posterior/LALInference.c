@@ -315,7 +315,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* (negative timedelay means signal arrives earlier than at geocenter etc.) */
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (GPSdouble - (*(REAL8*) getVariable(data->theseParams, "time"))) + timedelay;
+    timeshift =  (GPSdouble - (*(REAL8*) getVariable(data->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
