@@ -42,6 +42,7 @@ int main(int argc, char *argv[]){
 
   /* Test the data setup */
   IFOdata=ReadData(ppt);
+  if(IFOdata) fprintf(stdout,"Successfully read in the data!");
   
   /*
   param.head=NULL;
@@ -61,4 +62,5 @@ int main(int argc, char *argv[]){
   
   LALTemplateWrapper(&IFOdata);
   */
+  return 0;
 }
