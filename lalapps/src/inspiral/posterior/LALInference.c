@@ -38,7 +38,7 @@ void die(char *message)
 
 
 
-/* ============ Accessor functions for the Variable structure ========== */
+/* ============ Accessor functions for the Variable structure: ========== */
 
 
 
@@ -228,6 +228,10 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
 
 
 
+/* ============ Command line parsing functions etc.: ========== */
+
+
+
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
 {
   ProcessParamsTable *this=procparams;
@@ -352,6 +356,10 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
   if (state==4) die(" ERROR: failed parsing command line options.\n");
   return(head);
 }
+
+
+
+/* ============ Likelihood computations: ========== */
 
 
 
