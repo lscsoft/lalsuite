@@ -12,20 +12,20 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include "LALInference.h"
 
 
-void LALTemplateWrapper(LALIFOData *ifo){
+void LALTemplateWrapper(LALIFOData *IFOdata){
 
 	static LALStatus stat;								/* status structure */	
 
-	REAL4 m1=1.4;//*(REAL4 *)getVariable(ifo->modelParams,"m1");			/* binary masses */
-	REAL4 m2=1.4;//*(REAL4 *)getVariable(ifo->modelParams,"m2");
+	REAL4 m1=*(REAL4 *)getVariable(IFOdata->modelParams,"m1");			/* binary masses */	
+	REAL4 m2=*(REAL4 *)getVariable(IFOdata->modelParams,"m2");
 	
-	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
-	REAL4 inc=0.0;//*(REAL4 *)getVariable(ifo->modelParams,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=0.0;//*(REAL4 *)getVariable(ifo->modelParams,"phii");
+	REAL4 dist=1.0;//*(REAL4 *)getVariable(IFOdata->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
+	REAL4 inc=*(REAL4 *)getVariable(IFOdata->modelParams,"inc");		/* inclination and coalescence phase */
+	REAL4 phii=*(REAL4 *)getVariable(IFOdata->modelParams,"phii");
 
 	
-	REAL4 f_min = 40.0;//ifo->fLow, 
-	REAL4 f_max = 500.0;//ifo->fHigh;			/* start and stop frequencies */
+	REAL4 f_min = IFOdata->fLow; 
+	REAL4 f_max = IFOdata->fHigh;			/* start and stop frequencies */
 	
 	
 	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
@@ -120,9 +120,9 @@ void LALTemplateWrapper(LALIFOData *ifo){
 	}
 	
 	/* Renormalize phase. */
-	phii -= waveform.phi->data->data[0];
-	for ( i = 0; i < waveform.phi->data->length; i++ )
-		waveform.phi->data->data[i] += phii;
+	//phii -= waveform.phi->data->data[0];
+	//for ( i = 0; i < waveform.phi->data->length; i++ )
+	//	waveform.phi->data->data[i] += phii;
 	
 	/* Write output. */
 //		if ( ( fp = fopen( outfile, "w" ) ) == NULL ) {
