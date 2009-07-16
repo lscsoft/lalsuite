@@ -59,7 +59,10 @@ void *getVariable(LALVariables * vars,const char * name)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die(" ERROR: variable not found in getVariable().\n");
+  if(!item) {
+    fprintf(stderr, " ERROR in getVariable(): entry \"%s\" not found.\n", name);
+    exit(1)
+  }
   return(item->value);
 }
 
@@ -70,7 +73,10 @@ void setVariable(LALVariables * vars,const char * name, void *value)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die(" ERROR: variable not found in setVariable().\n");
+  if(!item) {
+    fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
+    exit(1)
+  }
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
@@ -81,13 +87,12 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
-  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\"\n",name); exit(1);}
+  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\".\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
   memset(new,0,sizeof(LALVariableItem));
   new->value = (void *)malloc(typeSize[type]);
-  if(new==NULL||new->value==NULL) die("Unable to allocate memory for list item\n");
- 
+  if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
   memcpy(new->value,value,typeSize[type]);
@@ -107,7 +112,7 @@ void removeVariable(LALVariables *vars,const char *name)
     if(!strcmp(this->name,name)) break;
     else {parent=this; this=this->next;}
   }
-  if(!this) {fprintf(stderr,"removeVariable: warning, %s not found to remove\n",name); return;}
+  if(!this) {fprintf(stderr," WARNING in removeVariable(): entry \"%s\" not found.\n",name); return;}
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
   free(this->value);
@@ -372,7 +377,10 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
   double NDeltaT, twopit, f, re, im;
+  double timeTmp;
+  int different;
   LALStatus status;
+  LALVariables intrinsicParams;
 
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
@@ -387,8 +395,16 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
 
-  chisquared = 0.0;
+  intrinsicParams.head = NULL;
+  intrinsicParams.dimension = 0;
+  copyVariables(currentParams, &intrinsicParams);
+  removeVariable(&intrinsicParams, "rightascension");
+  removeVariable(&intrinsicParams, "declination");
+  removeVariable(&intrinsicParams, "polarisation");
+  removeVariable(&intrinsicParams, "time");
+  removeVariable(&intrinsicParams, "distance");
 
+  chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
@@ -399,10 +415,28 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* arrival time parameter value (e.g. something like the trigger */
     /* value).                                                       */
     
-    
-    /* compute template (deposited in elements of `data'): */
-    template(data);
-    /* TODO: check whether template (re-) computation is actually necessary */
+    /* Compare parameter values with parameter values corresponding  */
+    /* to currently stored template; ignore "time" variable:         */
+    if (checkVariable(data->modelParams, "time")) {
+      timeTmp = *(REAL8 *) getVariable(data->modelParams, "time");
+      removeVariable(data->modelParams, "time");
+    }
+    else timeTmp = GPSdouble;
+    different = compareVariables(data->modelParams, &intrinsicParams);
+    /* "different" now may also mean that "data->modelParams" */
+    /* wasn't allocated yet (as in the very 1st iteration).   */
+
+    if (different) { /* template needs to be re-computed: */
+      copyVariables(&intrinsicParams, data->modelParams)
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t)
+      template(data);
+    }
+    else { /* no re-computation necessary. Return "time" value, do nothing else: */
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t)
+    }
+
+    /*-- Template is now in data->freqModelhPlus and data->freqModelhCross. --*/
+    /*-- (Either freshly computed or inherited.)                            --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
