@@ -531,9 +531,12 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  if (irs->data == NULL) die(" ERROR in initialize(): failed to read data.\n");
+  if (irs->data != NULL) 
+    fprintf(stderr, " ERROR in initialize(): failed to read data.\n");
+  else
+    fprintf(stderr, " ERROR in initialize(): failed to read data.\n");
   ifoPtr = irs->data;
-  while (ifoPtr->next != NULL) {
+  while (ifoPtr != NULL) {
     ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
                                                         &(ifoPtr->timeData->epoch),
                                                         0.0,
