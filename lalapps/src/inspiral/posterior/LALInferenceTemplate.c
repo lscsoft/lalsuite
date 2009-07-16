@@ -1,14 +1,29 @@
 /* 
-
-LALInferenceTemplate.c:	Bayesian Followup, template calls to LAL template functions. Temporary GeneratePPN
-
-Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
-
-*/
+ *  LALInferenceTemplate.c:  Bayesian Followup, template calls to LAL template functions. Temporary GeneratePPN
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/SeqFactories.h>
 #include "LALInference.h"
 
 
@@ -16,6 +31,9 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 
 	static LALStatus stat;								/* status structure */	
 
+	IFOdata->modelDomain = timeDomain;
+	
+	
 	REAL4 m1=*(REAL4 *)getVariable(IFOdata->modelParams,"m1");			/* binary masses */	
 	REAL4 m2=*(REAL4 *)getVariable(IFOdata->modelParams,"m2");
 	
@@ -28,8 +46,8 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 	REAL4 f_max = IFOdata->fHigh;			/* start and stop frequencies */
 	
 	
-	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
-	REAL8 deltat = 0.01;//ifo->timeData->deltaT;				/* wave sampling interval */
+	REAL8 dt = IFOdata->timeData->deltaT;					/* sampling interval */
+	REAL8 deltat = IFOdata->timeData->deltaT;				/* wave sampling interval */
 	INT4 order = 4;										/* PN order */
 	
 	/* Other variables. */
@@ -63,7 +81,7 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 	params.mTot = m1 + m2;
 	params.eta = m1*m2/( params.mTot*params.mTot );
 	params.inc = inc;
-	params.phi = 0.0;
+	params.phi = phii;//0.0;
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;
 	params.fStopIn = f_max;
@@ -158,8 +176,10 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 				REAL8 ap = frac*aData[2*j+2] + ( 1.0 - frac )*aData[2*j];
 				REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
 				
-				if(j<10){
-					fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
+				if(j < IFOdata->timeData->data->length ){
+					//fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
+					IFOdata->timeModelhPlus->data->data[j] = ap*cos( p );
+					IFOdata->timeModelhCross->data->data[j] = ac*sin( p );
 				}
 			}
 		

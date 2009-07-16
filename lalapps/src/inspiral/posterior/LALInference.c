@@ -29,6 +29,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -178,11 +179,11 @@ void printVariables(LALVariables *var)
 /* (by now only prints names and types, but no values) */
 {
   LALVariableItem *ptr = var->head;
-  fprintf(stderr, "LALVariables:\n");
-  if (ptr==NULL) fprintf(stderr, "  <empty>\n");
+  fprintf(stdout, "LALVariables:\n");
+  if (ptr==NULL) fprintf(stdout, "  <empty>\n");
   else {
     while (ptr != NULL) {
-      fprintf(stderr, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      fprintf(stdout, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
       ptr = ptr->next;
     }  
   }
@@ -268,7 +269,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-  if (j!=2) printf(" ERROR: argument vector \"%s\" not well-formed!\n", input);
+  if (j!=2) fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
@@ -286,8 +287,8 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     /* actual copying: */
     if (j==1) {
       if (l>=511) {
-        printf(" : WARNING: character argument too long!\n");
-        printf(" : \"%s\"\n",(*strings)[k]);
+        fprintf(stderr, " WARNING: character argument too long!\n");
+        fprintf(stderr, " \"%s\"\n",(*strings)[k]);
       }
       else {
         (*strings)[k][l] = input[i];
@@ -443,6 +444,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       copyVariables(&intrinsicParams, data->modelParams);
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
       template(data);
+      if (data->modelDomain == timeDomain)
+        executeFT(data);
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
@@ -502,7 +505,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
 
 void executeFT(LALIFOData *IFOdata)
-/* execute (forward, time --> freq) Fourier transform */
+/* Execute (forward, time-to-freq) Fourier transform.                           */
+/* Contents of IFOdata->timeModelh... are transformed to IFOdata->freqModelh... */
 {
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
@@ -521,7 +525,8 @@ void executeFT(LALIFOData *IFOdata)
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-/* ... */
+/* calls the "ReadData()" function to gather data & PSD from files, */
+/* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
   LALIFOData *ifoPtr;
@@ -531,36 +536,40 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  if (irs->data == NULL) die(" ERROR in initialize(): failed to read data.\n");
-  ifoPtr = irs->data;
-  while (ifoPtr->next != NULL) {
-    ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-                                                        &(ifoPtr->timeData->epoch),
-                                                        0.0,
-                                                        ifoPtr->timeData->deltaT,
-                                                        &lalDimensionlessUnit,
-                                                        ifoPtr->timeData->data->length);
-    ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-                                                        &(ifoPtr->timeData->epoch),
-                                                        0.0,
-                                                        ifoPtr->timeData->deltaT,
-                                                        &lalDimensionlessUnit,
-                                                        ifoPtr->timeData->data->length);
-    ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-                                                                &(ifoPtr->freqData->epoch),
-                                                                0.0,
-                                                                ifoPtr->freqData->deltaF,
-                                                                &lalDimensionlessUnit,
-                                                                ifoPtr->freqData->data->length);
-    ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-                                                                 &(ifoPtr->freqData->epoch),
-                                                                 0.0,
-                                                                 ifoPtr->freqData->deltaF,
-                                                                 &lalDimensionlessUnit,
-                                                                 ifoPtr->freqData->data->length);
-    ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
-    ifoPtr = ifoPtr->next;
+  if (irs->data != NULL) {
+    fprintf(stdout, " initialize(): successfully read data.\n");
+    ifoPtr = irs->data;
+    while (ifoPtr != NULL) {
+      ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
+                                                          &(ifoPtr->timeData->epoch),
+                                                          0.0,
+                                                          ifoPtr->timeData->deltaT,
+                                                          &lalDimensionlessUnit,
+                                                          ifoPtr->timeData->data->length);
+      ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
+                                                          &(ifoPtr->timeData->epoch),
+                                                          0.0,
+                                                          ifoPtr->timeData->deltaT,
+                                                          &lalDimensionlessUnit,
+                                                          ifoPtr->timeData->data->length);
+      ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
+                                                                  &(ifoPtr->freqData->epoch),
+                                                                  0.0,
+                                                                  ifoPtr->freqData->deltaF,
+                                                                  &lalDimensionlessUnit,
+                                                                  ifoPtr->freqData->data->length);
+      ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
+                                                                   &(ifoPtr->freqData->epoch),
+                                                                   0.0,
+                                                                   ifoPtr->freqData->deltaF,
+                                                                   &lalDimensionlessUnit,
+                                                                   ifoPtr->freqData->data->length);
+      ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
+      ifoPtr = ifoPtr->next;
+    }
   }
+  else
+    fprintf(stdout, " initialize(): no data read.\n");
   return(irs);
 }
 
