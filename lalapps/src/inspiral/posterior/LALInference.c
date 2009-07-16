@@ -168,6 +168,46 @@ void printVariables(LALVariables *var)
 
 
 
+int compareVariables(LALVariables *var1, LALVariables *var2)
+/*  compare contents of "var1" and "var2".                       */
+/*  returns zero for equal entries, and one if difference found. */
+{
+  int result = 0;
+  LALVariableItem *ptr1 = var1->head;
+  LALVariableItem *ptr2 = NULL;
+  if (var1->dimension != var2->dimension) result = 1;  // differing dimension
+  while ((ptr1 != NULL) & (result == 0)) {
+    ptr2 = getItem(var2, ptr1->name);
+    if (ptr2 != NULL) {  // corrsesponding entry exists; now compare type, then value:
+      if (ptr2->type == ptr1->type) {  // entry type identical
+        switch (ptr1->type) {  // do value comparison depending on type:
+          case REAL8_t:
+            result = ((*(REAL8 *) ptr2->value) != (*(REAL8 *) ptr1->value));
+            break;
+          case REAL4_t: 
+            result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
+            break;
+          case gslMatrix_t: 
+            result = 1;
+            fprintf(stderr, " WARNING: compareVariables() cannot yet compare \"gslMatrix\" type entries.\n");
+            fprintf(stderr, "          (entry: \"%s\").\n", ptr1->name);
+            break;
+          default:
+            fprintf(stderr, " ERROR: encountered unknown LALVariables type in compareVariables()\n");
+            fprintf(stderr, "        (entry: \"%s\").\n", ptr1->name);
+            exit(1);
+        }
+      }
+      else result = 1;  // same name but differing type
+    }
+    else result = 1;  // entry of given name doesn't exist in var2
+    ptr1 = ptr1->next;
+  }
+  return(result);
+}
+
+
+
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
 {
   ProcessParamsTable *this=procparams;
@@ -320,11 +360,11 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   LALStatus status;
 
   /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) getVariable(currentParams, "rightascension");
-  dec       = *(REAL8*) getVariable(currentParams, "declination");
-  psi       = *(REAL8*) getVariable(currentParams, "polarisation");
-  GPSdouble = *(REAL8*) getVariable(currentParams, "time");
-  distMpc   = *(REAL8*) getVariable(currentParams, "distance");
+  ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
+  dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
+  psi       = *(REAL8*) getVariable(currentParams, "polarisation");   /* radian      */
+  GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
+  distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
   GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
@@ -344,7 +384,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* arrival time parameter value (e.g. something like the trigger */
     /* value).                                                       */
     
-
+    
     /* compute template (deposited in elements of `data'): */
     template(data);
     /* TODO: check whether template (re-) computation is actually necessary */
