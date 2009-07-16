@@ -65,6 +65,7 @@ struct tagLALIFOData;
 /*Data storage type definitions*/
 
 typedef enum tagVariableType {REAL8_t, REAL4_t, gslMatrix_t} VariableType;  //, ..., ...
+typedef enum {timeDomain, frequencyDomain} LALDomain;
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
@@ -146,7 +147,7 @@ tagLALInferenceRunState
 } LALInferenceRunState;
 
 
-LALInferenceRunState *Initialize (ProcessParamsTable * commandLine);
+LALInferenceRunState *initialize (ProcessParamsTable * commandLine);
 
 struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
 
@@ -156,6 +157,7 @@ tagLALIFOData
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
   LALVariables *modelParams;
+  LALDomain modelDomain;
   REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
   REAL8Window *window;
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
