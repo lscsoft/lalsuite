@@ -47,10 +47,6 @@ and production use of the tracksearch libraries.
 #define _TSDATA_H
 
 #include <lal/Date.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameCalibration.h>
-#include <lal/FrameData.h>
-#include <lal/FrameStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>

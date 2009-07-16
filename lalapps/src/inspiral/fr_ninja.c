@@ -299,18 +299,18 @@ INT4 main(INT4 argc, CHAR **argv)
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &freqStart22, meta_file, "freqStart22", &wasRead), &status);
 
   /* set waveform metadata */
-  LALSnprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
-  LALSnprintf(group, HISTORY_COMMENT, "nr-group:%s", nr_group);
-  LALSnprintf(mail, HISTORY_COMMENT, "email:%s", email);
-  LALSnprintf(ratio, HISTORY_COMMENT, "mass-ratio:%s", mass_ratio);
-  LALSnprintf(s1x, HISTORY_COMMENT, "spin1x:%s", spin1x);
-  LALSnprintf(s1y, HISTORY_COMMENT, "spin1y:%s", spin1y);
-  LALSnprintf(s1z, HISTORY_COMMENT, "spin1z:%s", spin1z);
-  LALSnprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
-  LALSnprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
-  LALSnprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
-  LALSnprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
-  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  snprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
+  snprintf(group, HISTORY_COMMENT, "nr-group:%s", nr_group);
+  snprintf(mail, HISTORY_COMMENT, "email:%s", email);
+  snprintf(ratio, HISTORY_COMMENT, "mass-ratio:%s", mass_ratio);
+  snprintf(s1x, HISTORY_COMMENT, "spin1x:%s", spin1x);
+  snprintf(s1y, HISTORY_COMMENT, "spin1y:%s", spin1y);
+  snprintf(s1z, HISTORY_COMMENT, "spin1z:%s", spin1z);
+  snprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
+  snprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
+  snprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
+  snprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
+  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
 
   /* define frame */
   frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
@@ -351,14 +351,14 @@ INT4 main(INT4 argc, CHAR **argv)
       hcross[l][m] = XLALCreateREAL4TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
 
       /* read ht-data section of metadata file */
-      LALSnprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
+      snprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
       LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[l][m], meta_file, field, &wasRead), &status);
 
       /* read waveform */
       if (wf_name[l][m] != NULL)
       {
         /* get full path to waveform data file */
-        LALSnprintf(file_path, FILENAME_MAX, "%s/%s", nrDataDir, wf_name[l][m]);
+        snprintf(file_path, FILENAME_MAX, "%s/%s", nrDataDir, wf_name[l][m]);
 
         if (vrbflg)
           fprintf(stdout, "reading waveform: %s\n", file_path);

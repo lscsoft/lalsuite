@@ -675,7 +675,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       }
 
       /* set the channel name */
-      LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+      snprintf(channel, LALNameLength, "%s:STRAIN", ifo);
       strncpy(injData[i]->name, channel, LALNameLength);
 
       if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
@@ -800,9 +800,9 @@ static void output_frame(CHAR *ifo,
   /* get frame filename */
   duration = gpsEnd - gpsStart;
   if (outDir)
-    LALSnprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+    snprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
   else
-    LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
+    snprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
 
   /* set detector flags */
   if ( strncmp( ifo, "H2", 2 ) == 0 )
@@ -824,7 +824,7 @@ static void output_frame(CHAR *ifo,
   }
 
   /* set the channel name */
-  LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+  snprintf(channel, LALNameLength, "%s:STRAIN", ifo);
   strncpy(injData->name, channel, LALNameLength);
 
   /* define frame */
@@ -832,7 +832,7 @@ static void output_frame(CHAR *ifo,
       detectorFlags );
 
   /* set creator metadata */
-  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
   /* add channel to frame */
@@ -874,9 +874,9 @@ static void output_multi_channel_frame(INT4 num_ifos,
   /* get frame filename */
   duration = gpsEnd - gpsStart;
   if (outDir)
-    LALSnprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+    snprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
   else
-    LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
+    snprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
 
   /* set detector flags */
   detectorFlags = LAL_GEO_600_DETECTOR_BIT | LAL_LHO_4K_DETECTOR_BIT |
@@ -888,7 +888,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
       detectorFlags );
 
   /* set creator metadata */
-  LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
   /* add channels to frame */

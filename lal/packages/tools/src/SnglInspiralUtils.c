@@ -1118,7 +1118,7 @@ XLALRsqCutSingleInspiral (
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable *eventHead,
-    LALSegList        *vetoSegs, 
+    LALSegList        *vetoSegs,
     const CHAR        *ifo
     )
 /* </lalVerbatim> */
@@ -1460,7 +1460,7 @@ XLALTimeSlideSegList(
   INT8 ringEndNS = 0;	/* initialized to silence warning */
   INT8 slideNS;
   LALSeg tmpSeg;
-  LALSegList tmplist; 
+  LALSegList tmplist;
   unsigned i;
 
   /* make sure the segment list has been properly initialized */
@@ -1481,7 +1481,7 @@ XLALTimeSlideSegList(
   /* initialize segment list */
   XLALSegListInit( &tmplist );
 
-  /* loop over the entries in seglist */  
+  /* loop over the entries in seglist */
   for( i = 0; i < seglist->length; i++ ) {
     /* convert the segment boundaries to nanoseconds */
     INT8 segStartNS = XLALGPSToINT8NS( &seglist->segs[i].start );
@@ -1531,7 +1531,7 @@ XLALTimeSlideSegList(
   }
 
   /* clear the old list */
-  XLALSegListClear( seglist ); 
+  XLALSegListClear( seglist );
 
   /* copy segments from new list into original */
   for ( i = 0; i < tmplist.length; i++)
@@ -1545,7 +1545,7 @@ XLALTimeSlideSegList(
 
   /* done */
   return 0;
-}  
+}
 
 
 /* ======================================= */
@@ -1584,8 +1584,8 @@ XLALTimeSlideSingleInspiral(
 
     /* convert back to LIGOTimeGPS */
     XLALINT8NSToGPS( &triggerList->end_time, trigTimeNS);
-  }         
-}  
+  }
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */

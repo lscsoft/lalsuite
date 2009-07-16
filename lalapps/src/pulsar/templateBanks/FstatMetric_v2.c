@@ -639,13 +639,13 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 
   if ( ephemDir )
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
 
   EphemEarth[FNAME_LENGTH-1] = 0;

@@ -608,13 +608,13 @@ main(int argc, char **argv)
   while ( ok ) {
     TaylorCWParamStruc params; /* wave generation parameters */
     CoherentGW waveform;       /* amplitude and phase structure */
-    REAL4TimeSeries signal;    /* GW signal */
+    REAL4TimeSeries signalvec;    /* GW signal */
     CHAR message[MSGLEN];      /* warning/info messages */
 
     /* Initialize output structures. */
     memset( &waveform, 0, sizeof(CoherentGW) );
-    signal = output;
-    signal.data = NULL;
+    signalvec = output;
+    signalvec.data = NULL;
 
     /* Read and convert input line. */
     memset( &params, 0, sizeof(TaylorCWParamStruc) );
@@ -714,14 +714,14 @@ main(int argc, char **argv)
 	}
         WARNING( message );
       }
-      SUB( LALSCreateVector( &stat, &(signal.data), npt ), &stat );
-      SUB( LALSimulateCoherentGW( &stat, &signal, &waveform,
+      SUB( LALSCreateVector( &stat, &(signalvec.data), npt ), &stat );
+      SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
       if ( params.f )
 	SUB( LALDDestroyVector( &stat, &(params.f) ), &stat );
 
       /* Inject waveform into output. */
-      sigData = signal.data->data;
+      sigData = signalvec.data->data;
       outData = output.data->data;
       for ( i = 0; i < (UINT4)( npt ); i++ )
 	outData[i] += sigData[i];
@@ -736,7 +736,7 @@ main(int argc, char **argv)
       LALFree( waveform.a );
       LALFree( waveform.f );
       LALFree( waveform.phi );
-      SUB( LALSDestroyVector( &stat, &(signal.data) ), &stat );
+      SUB( LALSDestroyVector( &stat, &(signalvec.data) ), &stat );
     }
 
     /* Inject only one signal if there is no sourcefile. */
@@ -805,10 +805,10 @@ choose( UINT4 a, UINT4 b )
 {
   UINT4 numer = 1;
   UINT4 denom = 1;
-  UINT4 index = b + 1;
-  while ( --index ) {
-    numer *= a - b + index;
-    denom *= index;
+  UINT4 lal_index = b + 1;
+  while ( --lal_index ) {
+    numer *= a - b + lal_index;
+    denom *= lal_index;
   }
   return numer/denom;
 }
