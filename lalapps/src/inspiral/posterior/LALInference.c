@@ -397,6 +397,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
+  /* figure out GMST: */
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
   GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
   UandA.units = MST_RAD;
@@ -475,7 +476,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       plainTemplateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
-      /* do time-shifting: */
+      /* do time-shifting... */
       f = ((double) i) / NDeltaT;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       re = cos(twopit * f);
@@ -483,7 +484,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateReal = plainTemplateReal*re - plainTemplateImag*im;
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
-      /* squared difference & 'chi-squared': */
+      /* compute squared difference & 'chi-squared': */
       diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
                                 + pow(data->freqData->data->data[i].im - templateImag, 2.0));
       chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
@@ -492,4 +493,15 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   }
   loglikeli = -1.0 * chisquared;
   return(loglikeli);
+}
+
+
+
+LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
+/* ... */
+{
+  LALInferenceRunState *irs=NULL;
+  irs = calloc(1, sizeof(LALInferenceRunState));
+  irs->data = ReadData(ppt);
+  return(irs);
 }
