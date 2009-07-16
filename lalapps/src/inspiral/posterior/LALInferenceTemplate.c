@@ -16,18 +16,17 @@ void LALTemplateWrapper(LALIFOData *ifo){
 
 	static LALStatus stat;								/* status structure */	
 
-	REAL4 m1=*(REAL4 *)getVariable(ifo->modelParams,"m1");			/* binary masses */
-	REAL4 m2=*(REAL4 *)getVariable(ifo->modelParams,"m2");
+	REAL4 m1=1.4;//*(REAL4 *)getVariable(ifo->modelParams,"m1");			/* binary masses */
+	REAL4 m2=1.4;//*(REAL4 *)getVariable(ifo->modelParams,"m2");
 	
 	REAL4 dist=1.0; //*(REAL4 *)getVariable(ifo->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
-	REAL4 inc=*(REAL4 *)getVariable(ifo->modelParams,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(ifo->modelParams,"phii");
+	REAL4 inc=0.0;//*(REAL4 *)getVariable(ifo->modelParams,"inc");		/* inclination and coalescence phase */
+	REAL4 phii=0.0;//*(REAL4 *)getVariable(ifo->modelParams,"phii");
 
 	
-	REAL4 f_min = ifo->fLow, f_max=ifo->fHigh;			/* start and stop frequencies */
+	REAL4 f_min = 40.0;//ifo->fLow, 
+	REAL4 f_max = 500.0;//ifo->fHigh;			/* start and stop frequencies */
 	
-	
-	fprintf(stdout,"%f\t%f\n", f_min, f_max);
 	
 	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
 	REAL8 deltat = 0.01;//ifo->timeData->deltaT;				/* wave sampling interval */
