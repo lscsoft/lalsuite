@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "LALInference.h"
 #include <lal/DetResponse.h>
+#include <lal/TimeDelay.h>
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -22,7 +23,9 @@ void die(char *message)
 }
 
 
+
 /* ============ Accessor functions for the Variable structure ========== */
+
 
 
 LALVariableItem *getItem(LALVariables *vars,const char *name)
@@ -42,7 +45,7 @@ void *getVariable(LALVariables * vars,const char * name)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die("Error: variable not found in getVariable.\n");
+  if(!item) die(" ERROR: variable not found in getVariable().\n");
   return(item->value);
 }
 
@@ -53,7 +56,7 @@ void setVariable(LALVariables * vars,const char * name, void *value)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die("Error: variable not found in setVariable.\n");
+  if(!item) die(" ERROR: variable not found in setVariable().\n");
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
@@ -64,7 +67,7 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
-  if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
+  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\"\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
   memset(new,0,sizeof(LALVariableItem));
@@ -130,6 +133,81 @@ void destroyVariables(LALVariables *vars)
 
 
 
+void copyVariables(LALVariables *origin, LALVariables *target)
+/*  copy contents of "origin" over to "target"  */
+{
+  LALVariableItem *ptr;
+  /* first dispose contents of "target": */
+  destroyVariables(target);
+  /* then copy over elements of "origin": */
+  ptr = origin->head;
+  while (ptr != NULL) {
+    addVariable(target, ptr->name, ptr->value, ptr->type);
+    ptr = ptr->next;
+  }
+  return;
+}
+
+
+
+void printVariables(LALVariables *var)
+/* output contents of a 'LALVariables' structure       */
+/* (by now only prints names and types, but no values) */
+{
+  LALVariableItem *ptr = var->head;
+  fprintf(stderr, "LALVariables:\n");
+  if (ptr==NULL) fprintf(stderr, "  <empty>\n");
+  else {
+    while (ptr != NULL) {
+      fprintf(stderr, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      ptr = ptr->next;
+    }  
+  }
+  return;
+}
+
+
+
+int compareVariables(LALVariables *var1, LALVariables *var2)
+/*  compare contents of "var1" and "var2".                       */
+/*  returns zero for equal entries, and one if difference found. */
+{
+  int result = 0;
+  LALVariableItem *ptr1 = var1->head;
+  LALVariableItem *ptr2 = NULL;
+  if (var1->dimension != var2->dimension) result = 1;  // differing dimension
+  while ((ptr1 != NULL) & (result == 0)) {
+    ptr2 = getItem(var2, ptr1->name);
+    if (ptr2 != NULL) {  // corrsesponding entry exists; now compare type, then value:
+      if (ptr2->type == ptr1->type) {  // entry type identical
+        switch (ptr1->type) {  // do value comparison depending on type:
+          case REAL8_t:
+            result = ((*(REAL8 *) ptr2->value) != (*(REAL8 *) ptr1->value));
+            break;
+          case REAL4_t: 
+            result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
+            break;
+          case gslMatrix_t: 
+            result = 1;
+            fprintf(stderr, " WARNING: compareVariables() cannot yet compare \"gslMatrix\" type entries.\n");
+            fprintf(stderr, "          (entry: \"%s\").\n", ptr1->name);
+            break;
+          default:
+            fprintf(stderr, " ERROR: encountered unknown LALVariables type in compareVariables()\n");
+            fprintf(stderr, "        (entry: \"%s\").\n", ptr1->name);
+            exit(1);
+        }
+      }
+      else result = 1;  // same name but differing type
+    }
+    else result = 1;  // entry of given name doesn't exist in var2
+    ptr1 = ptr1->next;
+  }
+  return(result);
+}
+
+
+
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
 {
   ProcessParamsTable *this=procparams;
@@ -162,7 +240,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-  if (j!=2) printf(" : ERROR: argument vector '%s' not well-formed!\n", input);
+  if (j!=2) printf(" ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
@@ -202,27 +280,27 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
   int i, state=1;
   int dbldash;
   ProcessParamsTable *head, *ptr=NULL;
-  // always (even for argc==1, i.e. no arguments) put one element in list:
+  /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
   strcpy(head->program, argv[0]);
   ptr = head;
   i=1;
   while ((i<argc) & (state<=3)) {
-    // check for a double-dash at beginning of argument #i:
+    /* check for a double-dash at beginning of argument #i: */
     dbldash = ((argv[i][0]=='-') && (argv[i][1]=='-'));
-    // react depending on current state:
-    if (state==1){ // ('state 1' means handling very 1st argument)
+    /* react depending on current state: */
+    if (state==1){ /* ('state 1' means handling very 1st argument) */
       if (dbldash) {
         strcpy(head->param, argv[i]);
         strcpy(ptr->type, "string");
         state = 2;
       }
-      else { // (very 1st argument needs to start with "--...")
+      else { /* (very 1st argument needs to start with "--...") */
         fprintf(stderr, " WARNING: orphaned first command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }
     } 
-    else if (state==2) { // ('state 2' means last entry was a parameter starting with "--")
+    else if (state==2) { /* ('state 2' means last entry was a parameter starting with "--") */
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -235,7 +313,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         strcpy(ptr->value, argv[i]);          
       }
     }
-    else if (state==3) { // ('state 3' means last entry was a value)
+    else if (state==3) { /* ('state 3' means last entry was a value) */
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -282,14 +360,14 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   LALStatus status;
 
   /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) getVariable(currentParams, "rightascension");
-  dec       = *(REAL8*) getVariable(currentParams, "declination");
-  psi       = *(REAL8*) getVariable(currentParams, "polarisation");
-  GPSdouble = *(REAL8*) getVariable(currentParams, "time");
-  distMpc   = *(REAL8*) getVariable(currentParams, "distance");
+  ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
+  dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
+  psi       = *(REAL8*) getVariable(currentParams, "polarisation");   /* radian      */
+  GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
+  distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
-  GPSlal.gpsNanoSeconds = 0; //((INT4) round(fmod(GPSdouble,1.0)*1e9));
+  GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
   UandA.units = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
@@ -299,8 +377,14 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
-    /* TODO: update "data->theseParams" slot */
-
+    /* The parameters the Likelihood function can handle by itself   */
+    /* (and which shouldn't affect the template function) are        */
+    /* sky location (ra, dec), polarisation and signal arrival time. */
+    /* Note that the template function still needs _some_ reasonable */
+    /* arrival time parameter value (e.g. something like the trigger */
+    /* value).                                                       */
+    
+    
     /* compute template (deposited in elements of `data'): */
     template(data);
     /* TODO: check whether template (re-) computation is actually necessary */
@@ -311,7 +395,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 			     ra, dec, psi, gmst);
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
-                                             ra, dec, GPSlal);
+                                             ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier than at geocenter etc.) */
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
