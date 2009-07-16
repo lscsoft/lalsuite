@@ -9,6 +9,7 @@ Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/SeqFactories.h>
 #include "LALInference.h"
 
 
@@ -21,7 +22,7 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 	
 	REAL4 dist=1.0;//*(REAL4 *)getVariable(IFOdata->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
 	REAL4 inc=*(REAL4 *)getVariable(IFOdata->modelParams,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(IFOdata->modelParams,"phii");
+	//REAL4 phii=*(REAL4 *)getVariable(IFOdata->modelParams,"phii");
 
 	
 	REAL4 f_min = IFOdata->fLow; 

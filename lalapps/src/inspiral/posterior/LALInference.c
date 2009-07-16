@@ -444,6 +444,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       copyVariables(&intrinsicParams, data->modelParams);
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
       template(data);
+      if (data->modelDomain == timeDomain)
+        executeFT(data);
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
@@ -503,7 +505,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
 
 void executeFT(LALIFOData *IFOdata)
-/* execute (forward, time --> freq) Fourier transform */
+/* Execute (forward, time-to-freq) Fourier transform.                           */
+/* Contents of IFOdata->timeModelh... are transformed to IFOdata->freqModelh... */
 {
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
