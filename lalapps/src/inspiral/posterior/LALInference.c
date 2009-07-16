@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "LALInference.h"
 #include <lal/DetResponse.h>
+#include <lal/TimeDelay.h>
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -129,6 +130,20 @@ void destroyVariables(LALVariables *vars)
 }
 
 
+void copyVariables(LALVariables *origin, LALVariables *target)
+/*  copy contents of "origin" over to "target"  */
+{
+  LALVariableItem *ptr;
+  /* first dispose contents of "target": */
+  destroyVariables(target);
+  /* then copy over elements of "origin": */
+  ptr = origin->head;
+  while (ptr != NULL) {
+    addVariable(target, ptr->name, ptr->value, ptr->type);
+  }
+  return;
+}
+
 
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
 {
@@ -202,27 +217,27 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
   int i, state=1;
   int dbldash;
   ProcessParamsTable *head, *ptr=NULL;
-  // always (even for argc==1, i.e. no arguments) put one element in list:
+  /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
   strcpy(head->program, argv[0]);
   ptr = head;
   i=1;
   while ((i<argc) & (state<=3)) {
-    // check for a double-dash at beginning of argument #i:
+    /* check for a double-dash at beginning of argument #i: */
     dbldash = ((argv[i][0]=='-') && (argv[i][1]=='-'));
-    // react depending on current state:
-    if (state==1){ // ('state 1' means handling very 1st argument)
+    /* react depending on current state: */
+    if (state==1){ /* ('state 1' means handling very 1st argument) */
       if (dbldash) {
         strcpy(head->param, argv[i]);
         strcpy(ptr->type, "string");
         state = 2;
       }
-      else { // (very 1st argument needs to start with "--...")
+      else { /* (very 1st argument needs to start with "--...") */
         fprintf(stderr, " WARNING: orphaned first command line argument \"%s\" in parseCommandLine().\n", argv[i]);
         state = 4;
       }
     } 
-    else if (state==2) { // ('state 2' means last entry was a parameter starting with "--")
+    else if (state==2) { /* ('state 2' means last entry was a parameter starting with "--") */
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -235,7 +250,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
         strcpy(ptr->value, argv[i]);          
       }
     }
-    else if (state==3) { // ('state 3' means last entry was a value)
+    else if (state==3) { /* ('state 3' means last entry was a value) */
       if (dbldash) {
         ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
@@ -289,7 +304,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");
 
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
-  GPSlal.gpsNanoSeconds = 0; //((INT4) round(fmod(GPSdouble,1.0)*1e9));
+  GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
   UandA.units = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
@@ -299,7 +314,13 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
-    /* TODO: update "data->theseParams" slot */
+    /* The parameters the Likelihood function can handle by itself   */
+    /* (and which shouldn't affect the template function) are        */
+    /* sky location (ra, dec), polarisation and signal arrival time. */
+    /* Note that the template function still needs _some_ reasonable */
+    /* arrival time parameter value (e.g. something like the trigger */
+    /* value).                                                       */
+    
 
     /* compute template (deposited in elements of `data'): */
     template(data);
@@ -311,7 +332,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 			     ra, dec, psi, gmst);
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
-                                             ra, dec, GPSlal);
+                                             ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier than at geocenter etc.) */
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
