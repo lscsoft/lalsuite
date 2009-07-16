@@ -3,8 +3,7 @@
 
 
 LALVariables variables;
-
-LALVariables param;
+LALVariables variables2;
 
 REAL4 number,five;
 ProcessParamsTable *ppt, *ptr;
@@ -25,9 +24,11 @@ int main(int argc, char *argv[]){
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
   fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));	
+  copyVariables(&variables, &variables2);
   removeVariable(&variables,"number");
   fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
   destroyVariables(&variables);
+  destroyVariables(&variables2);
   
   /* test "parseCommandLine()" function: */
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]){
   }
 	
   /* Test the data setup */
+
   IFOdata=ReadData(ppt);
   if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
 	
