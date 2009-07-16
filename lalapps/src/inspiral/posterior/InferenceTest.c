@@ -3,8 +3,7 @@
 
 
 LALVariables variables;
-
-LALVariables param;
+LALVariables variables2;
 
 REAL4 number,five;
 ProcessParamsTable *ppt, *ptr;
@@ -24,10 +23,15 @@ int main(int argc, char *argv[]){
   setVariable(&variables,"number",&five);
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
-  fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));	
+  fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));
+  printVariables(&variables);
+  copyVariables(&variables, &variables2);
+  printVariables(&variables2);
   removeVariable(&variables,"number");
   fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
   destroyVariables(&variables);
+  destroyVariables(&variables2);
+  printVariables(&variables2);
   
   /* test "parseCommandLine()" function: */
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
@@ -41,9 +45,10 @@ int main(int argc, char *argv[]){
   }
 	
   /* Test the data setup */
-//  IFOdata=ReadData(ppt);
-//  if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
-	
+
+  IFOdata=ReadData(ppt);
+  if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
+
  // IFOdata->modelParams=calloc(1, sizeof(LALVariables));
 	
  // IFOdata->modelParams->head=NULL;
@@ -56,7 +61,6 @@ int main(int argc, char *argv[]){
  // addVariable(IFOdata->modelParams,"inc",&inc,REAL4_t);
   REAL4 phii = 0.0;
  // addVariable(IFOdata->modelParams,"phii",&phii,REAL4_t);
-
 	
   //REAL8TimeSeries timeModelhPlus;
   //REAL8TimeSeries timeModelhCross;
