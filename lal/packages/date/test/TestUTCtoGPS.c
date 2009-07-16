@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
   LIGOTimeGPS          gpsTime;
   LIGOTimeGPS          refGPS;
   LALDate              utcDate;
-  LALLeapSecAccuracy   accuracy = LALLEAPSEC_LOOSE;
   CHARVector          *timestamp = NULL;
   time_t               sec;
 
@@ -63,16 +62,17 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_hour =  0;
   utcDate.unixDate.tm_min  =  0;
   utcDate.unixDate.tm_sec  =  0;
+  utcDate.unixDate.tm_isdst = 0;
   utcDate.residualNanoSeconds = 0;
+  mktime(&utcDate.unixDate);
 
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
               __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
@@ -124,22 +124,23 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_hour = 23;
   utcDate.unixDate.tm_min  = 59;
   utcDate.unixDate.tm_sec  = 50;
-  utcDate.residualNanoSeconds = 123456789;
+  utcDate.unixDate.tm_isdst = 1;
+  utcDate.residualNanoSeconds = 0;
+  mktime(&utcDate.unixDate);
 
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
               __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 457574400;
-  refGPS.gpsNanoSeconds = 123456789;
+  refGPS.gpsNanoSeconds = 0;
   LALDateString(&status, timestamp, &utcDate);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -185,22 +186,23 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_hour =  0;
   utcDate.unixDate.tm_min  =  0;
   utcDate.unixDate.tm_sec  =  0;
-  utcDate.residualNanoSeconds = 123456789;
+  utcDate.unixDate.tm_isdst = 1;
+  utcDate.residualNanoSeconds = 0;
+  mktime(&utcDate.unixDate);
 
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
               __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 457056010;
-  refGPS.gpsNanoSeconds = 123456789;
+  refGPS.gpsNanoSeconds = 0;
   LALDateString(&status, timestamp, &utcDate);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -246,21 +248,22 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_hour = 23;
   utcDate.unixDate.tm_min  = 59;
   utcDate.unixDate.tm_sec  = 58;
-  utcDate.residualNanoSeconds = 123456789;
+  utcDate.unixDate.tm_isdst = 1;
+  utcDate.residualNanoSeconds = 0;
+  mktime(&utcDate.unixDate);
 
   refGPS.gpsSeconds = 457056007;
-  refGPS.gpsNanoSeconds = 123456789;
+  refGPS.gpsNanoSeconds = 0;
 
   for (sec = 0; sec < 5; ++sec)
     {
-      LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-      if (status.statusCode && lalDebugLevel > 0)
+      XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+      if (XLALGetBaseErrno() && lalDebugLevel > 0)
         {
           fprintf(stderr,
-                  "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+                  "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
                   __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
+          return 1;
         }
       if (lalDebugLevel > 0)
         REPORTSTATUS(&status);
@@ -322,22 +325,23 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_hour =  0;
   utcDate.unixDate.tm_min  =  0;
   utcDate.unixDate.tm_sec  =  0;
-  utcDate.residualNanoSeconds = 123456789;
+  utcDate.unixDate.tm_isdst = 0;
+  utcDate.residualNanoSeconds = 0;
+  mktime(&utcDate.unixDate);
 
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
               __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
   if (lalDebugLevel > 0)
     REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 468979210;
-  refGPS.gpsNanoSeconds = 123456789;
+  refGPS.gpsNanoSeconds = 0;
   LALDateString(&status, timestamp, &utcDate);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -384,16 +388,17 @@ int main(int argc, char *argv[])
       utcDate.unixDate.tm_hour =  0;
       utcDate.unixDate.tm_min  =  0;
       utcDate.unixDate.tm_sec  =  0;
+      utcDate.unixDate.tm_isdst = 0;
       utcDate.residualNanoSeconds = 0;
+      mktime(&utcDate.unixDate);
 
-      LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-      if (status.statusCode && lalDebugLevel > 0)
+      XLALGPSSet(&gpsTime, XLALUTCToGPS(&utcDate.unixDate), 0);
+      if (XLALGetBaseErrno() && lalDebugLevel > 0)
         {
           fprintf(stderr,
-                  "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+                  "TestUTCtoGPS: error in XLALUTCToGPS(), line %i, %s\n",
                   __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
+          return 1;
         }
       REPORTSTATUS(&status);
 

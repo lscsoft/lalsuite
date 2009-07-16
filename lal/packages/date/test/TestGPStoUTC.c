@@ -281,14 +281,13 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-  LALUTCtoGPS(&status, &tmpGps, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&tmpGps, XLALUTCToGPS(&utcDate.unixDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
   if (lalDebugLevel > 0)
