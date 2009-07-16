@@ -403,7 +403,6 @@ if opts.run_data_quality:
   hipePlayVetoNode = {}
   hipeAnalysisVetoNode = {}
   hipeInjVetoNode = {}
-  hipeHWinjVetoNode = {}
 
   for category in [2,3,4]:
     hipeInjVetoNode[category] = {}
