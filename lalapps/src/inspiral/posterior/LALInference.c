@@ -25,6 +25,10 @@
 #include "LALInference.h"
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
+
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -501,7 +505,41 @@ LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
 /* ... */
 {
   LALInferenceRunState *irs=NULL;
+  LALIFOData *ifoPtr;
   irs = calloc(1, sizeof(LALInferenceRunState));
+  /* read data from files: */
   irs->data = ReadData(commandLine);
+  /* (this will already initialise each LALIFOData's following elements:  */
+  /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
+  /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
+  if (irs->data == NULL) die(" ERROR in initialize(): failed to read data.\n");
+  ifoPtr = irs->data;
+  while (ifoPtr->next != NULL) {
+    ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
+                                                        &(ifoPtr->timeData->epoch),
+                                                        0.0,
+                                                        ifoPtr->timeData->deltaT,
+                                                        &lalDimensionlessUnit,
+                                                        ifoPtr->timeData->data->length);
+    ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
+                                                        &(ifoPtr->timeData->epoch),
+                                                        0.0,
+                                                        ifoPtr->timeData->deltaT,
+                                                        &lalDimensionlessUnit,
+                                                        ifoPtr->timeData->data->length);
+    ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
+                                                                &(ifoPtr->freqData->epoch),
+                                                                0.0,
+                                                                ifoPtr->freqData->deltaF,
+                                                                &lalDimensionlessUnit,
+                                                                ifoPtr->freqData->data->length);
+    ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
+                                                                 &(ifoPtr->freqData->epoch),
+                                                                 0.0,
+                                                                 ifoPtr->freqData->deltaF,
+                                                                 &lalDimensionlessUnit,
+                                                                 ifoPtr->freqData->data->length);
+    ifoPtr = ifoPtr->next;
+  }
   return(irs);
 }
