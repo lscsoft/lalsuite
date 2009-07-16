@@ -6,6 +6,9 @@
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
 
 #include "LALInference.h"
 
@@ -156,7 +159,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	XLALREAL8TimeFreqFFT(IFOdata[i].freqData,windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
 	XLALDestroyREAL8TimeSeries(windowedTimeData);
  }
- for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+i]);
+ for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
  
  for(i=0;i<Nifo;i++) {
  if(channels) if(channels[i]) free(channels[i]);
