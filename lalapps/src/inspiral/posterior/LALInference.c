@@ -179,11 +179,11 @@ void printVariables(LALVariables *var)
 /* (by now only prints names and types, but no values) */
 {
   LALVariableItem *ptr = var->head;
-  fprintf(stderr, "LALVariables:\n");
-  if (ptr==NULL) fprintf(stderr, "  <empty>\n");
+  fprintf(stdout, "LALVariables:\n");
+  if (ptr==NULL) fprintf(stdout, "  <empty>\n");
   else {
     while (ptr != NULL) {
-      fprintf(stderr, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      fprintf(stdout, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
       ptr = ptr->next;
     }  
   }
@@ -269,7 +269,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-  if (j!=2) printf(" ERROR: argument vector \"%s\" not well-formed!\n", input);
+  if (j!=2) fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
@@ -287,8 +287,8 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     /* actual copying: */
     if (j==1) {
       if (l>=511) {
-        printf(" : WARNING: character argument too long!\n");
-        printf(" : \"%s\"\n",(*strings)[k]);
+        fprintf(stderr, " WARNING: character argument too long!\n");
+        fprintf(stderr, " \"%s\"\n",(*strings)[k]);
       }
       else {
         (*strings)[k][l] = input[i];
@@ -537,7 +537,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
   if (irs->data != NULL) {
-    fprintf(stderr, " initialize(): successfully read data.\n");
+    fprintf(stdout, " initialize(): successfully read data.\n");
     ifoPtr = irs->data;
     while (ifoPtr != NULL) {
       ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
@@ -569,7 +569,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     }
   }
   else
-    fprintf(stderr, " initialize(): no data read.\n");
+    fprintf(stdout, " initialize(): no data read.\n");
   return(irs);
 }
 
