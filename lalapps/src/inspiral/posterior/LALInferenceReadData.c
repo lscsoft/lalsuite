@@ -148,10 +148,11 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
  /* Read and FFT the data segment */
  for(i=0;i<Nifo;i++){
 	IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
+	XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
 	if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOdata[i]); exit(1);}
 	IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
 	windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("temp buffer",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
-	XLALDDVectorMultiply(windowedTimeData,IFOdata[i].timeData,IFOdata[i].window->data);
+	XLALDDVectorMultiply(windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);
 	XLALREAL8TimeFreqFFT(IFOdata[i].freqData,windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
 	XLALDestroyREAL8TimeSeries(windowedTimeData);
  }
