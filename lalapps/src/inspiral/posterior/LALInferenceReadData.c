@@ -6,9 +6,14 @@
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>
+#include <lal/AVFactories.h>
+#include <lal/ResampleTimeSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
+#include <lal/Date.h>
+#include <lal/StringInput.h>
+#include <lal/VectorOps.h>
 
 #include "LALInference.h"
 
@@ -47,16 +52,16 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 {
  LALStatus status;
  ProcessParamsTable *procparam=NULL;
- LALIFOData *headIFO=NULL,*curIFO=NULL,*IFOdata=NULL;
+ LALIFOData *headIFO=NULL,*IFOdata=NULL;
  REAL8 SampleRate=4096.0,SegmentLength=0;
  int nSegs=0;
  int seglen=0;
  REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
  REAL8 padding=1.0;
  int Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
- int i,j;
+ int i;
  char strainname[]="LSC-STRAIN";
- char parambuffer[512];
+
  char *chartmp=NULL;
  char **channels=NULL;
  char **caches=NULL;
@@ -82,8 +87,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
  if(getProcParamVal(commandLine,"--fHigh")){
     parseCharacterOptionString(getProcParamVal(commandLine,"--fHigh")->value,&fHighs,&NfHigh);
  }
- if(Nifo!=Ncache) die("ERROR: Must specify equal number of IFOs and Cache files\n");
- if(Nchannel!=0 && Nchannel!=Nifo) die("ERROR: Please specify a channel for all caches, or omit to use the defaults\n");
+	if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
+	if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
 
  IFOdata=headIFO=calloc(sizeof(LALIFOData),Nifo);
 
@@ -136,7 +141,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
 
 	PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
-	if(!PSDtimeSeries) {fprintf(stderr,"Error reading PSD data for %s\n",IFOdata[i]); exit(1);}
+	if(!PSDtimeSeries) {fprintf(stderr,"Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
 	XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
 	PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
 	IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
@@ -152,7 +157,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
  for(i=0;i<Nifo;i++){
 	IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
 	XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
-	if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOdata[i]); exit(1);}
+	if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOnames[i]); exit(1);}
 	IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
 	windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("temp buffer",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
 	XLALDDVectorMultiply(windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);

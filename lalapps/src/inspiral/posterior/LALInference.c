@@ -28,7 +28,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
-
+#include <lal/TimeFreqFFT.h>
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -499,7 +499,21 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   return(loglikeli);
 }
 
-
+void PopulateFreqDomain(LALIFOData *IFOdata)
+{
+	for(;IFOdata;IFOdata=IFOdata->next){
+		/* h+ */
+		if(!IFOdata->freqModelhPlus)
+				IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
+		XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data);
+		XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan);
+		/* hx */
+		if(!IFOdata->freqModelhCross)
+			IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
+		XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data);
+		XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan);
+	}
+}
 
 LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
 /* ... */
@@ -539,7 +553,9 @@ LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
                                                                  ifoPtr->freqData->deltaF,
                                                                  &lalDimensionlessUnit,
                                                                  ifoPtr->freqData->data->length);
+    ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
     ifoPtr = ifoPtr->next;
   }
   return(irs);
 }
+

@@ -31,12 +31,12 @@
 				{NoiseModel can be LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO, LALEGO to generate design curve noise instead of real noise} \n \
 			   [... -i FC -I IFO for as many data sources as desired] --seed i [integer, default use date] --dataseed i [for fake data]\n \
 				--pad padding (1s) --Nsegs number of segments --deta width of eta window --dt time window (0.01)\n\
-				--XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
+				--XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) --channel [channelname]\n \
 				--event trigNum (0) --end_time GPStime --Mmin m --Mmin M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2)]\n \
 				--timeslide --studentt (use student-t likelihood function)\n \
       [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) \n"
 
-extern CHAR outfile[512];
+extern CHAR outfile[4096];
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;

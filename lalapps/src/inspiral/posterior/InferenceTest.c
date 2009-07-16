@@ -80,24 +80,31 @@ int main(int argc, char *argv[]){
 
   if(runstate->data) fprintf(stdout,"Successfully read in the data!\n");
 
- // IFOdata->modelParams=calloc(1, sizeof(LALVariables));
+	IFOdata->modelParams=calloc(1, sizeof(LALVariables));
+	IFOdata->timeModelhPlus=calloc(1, sizeof(REAL8TimeSeries));
+	IFOdata->timeModelhCross=calloc(1, sizeof(REAL8TimeSeries));
+//	IFOdata->fredModelhPlus=calloc(1, sizeof(COMPLEX16FrequencySeries));
+//	IFOdata->freqModelhCross=calloc(1, sizeof(COMPLEX16FrequencySeries));
 	
- // IFOdata->modelParams->head=NULL;
- // IFOdata->modelParams->dimension=0;
- // REAL4 m1 = 1.4;
- // addVariable(IFOdata->modelParams,"m1",&m1,REAL4_t);
- // REAL4 m2 = 1.4;
- // addVariable(IFOdata->modelParams,"m2",&m2,REAL4_t);
- // REAL4 inc = 0.0;
- // addVariable(IFOdata->modelParams,"inc",&inc,REAL4_t);
- // REAL4 phii = 0.0;
- // addVariable(IFOdata->modelParams,"phii",&phii,REAL4_t);
+	
+	
+	IFOdata->modelParams->head = NULL;
+	IFOdata->modelParams->dimension = 0;
+	
+  REAL4 m1 = 1.4;
+  addVariable(IFOdata->modelParams,"m1",&m1,REAL4_t);
+  REAL4 m2 = 1.4;
+  addVariable(IFOdata->modelParams,"m2",&m2,REAL4_t);
+  REAL4 inc = 0.0;
+  addVariable(IFOdata->modelParams,"inc",&inc,REAL4_t);
+  REAL4 phii = 0.0;
+  addVariable(IFOdata->modelParams,"phii",&phii,REAL4_t);
 	
   //REAL8TimeSeries timeModelhPlus;
   //REAL8TimeSeries timeModelhCross;
   
-	  LALIFOData *ifo=NULL;
+	 // LALIFOData *ifo=NULL;
 	
-  LALTemplateWrapper(ifo);
+  LALTemplateWrapper(IFOdata);
   return 0;
 }

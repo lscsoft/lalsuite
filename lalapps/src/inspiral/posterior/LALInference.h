@@ -166,6 +166,7 @@ tagLALIFOData
   struct tagLALIFOData *next;
 }LALIFOData;
 
+/* Returns the element of the process params table with "name" */
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
 
 LALIFOData *ReadData(ProcessParamsTable *commandLine);
@@ -176,6 +177,8 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
+
+void PopulateFreqDomain(LALIFOData *IFOdata);
 
 #endif
 
