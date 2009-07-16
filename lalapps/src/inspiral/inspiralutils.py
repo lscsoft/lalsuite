@@ -323,13 +323,10 @@ def datafind_segments(ifo, config):
 
 ##############################################################################
 # Function to copy the segments files
-# If the hardwareInj flag is used we add the hardware injection not made
-# flag to Cat1 and remove the Injection flag from cat 2.
 def copyCategoryFiles(config,vetoes,directory,\
-                      infile,analysisDirectory,hardwareInj=False):
+                      infile,analysisDirectory):
   """
   Copy the category files to the directory specified
-  Modify the cat files accordingly if hardware injections specified
   """
   outfile = analysisDirectory + "/" + directory + "/" \
             + os.path.basename(infile)
@@ -340,44 +337,9 @@ def copyCategoryFiles(config,vetoes,directory,\
         "without DQ vetoes"
       outfile += vetoes + "_BLANK.txt"
       rel_outfile += vetoes + "_BLANK.txt"
-      if hardwareInj:
-        injNotMadeCat='cat-'+config.get('hardware-inj','inj-not-made-veto-cat')
-        injNotMadeFlag= config.get('hardware-inj','inj-not-made-veto-flag')
-        if injNotMadeCat in vetoes:
-          open(outfile, "w").write(vetoes[0:2].upper()+ ':' + injNotMadeFlag +\
-                             '\t\t0\t0\n')
-        else:
-          open(outfile, "w").write("")  # touch
-      else:
-        open(outfile, "w").write("")  # touch
+      open(outfile, "w").write("")  # touch
     else:
-      if hardwareInj:
-        injVetoFlag = config.get('hardware-inj','inj-veto-flag')
-        injVetoFlagList = injVetoFlag.split(',')
-        injVetoCat = config.get('hardware-inj','inj-veto-cat')
-        injNotMadeCat= config.get('hardware-inj','inj-not-made-veto-cat')
-        injNotMadeFlag= config.get('hardware-inj','inj-not-made-veto-flag')
-        dqFile = open(infile,'r')
-        dqFileConts = dqFile.read()
-        dqFile.close()
-        if 'cat-' + injNotMadeCat in vetoes:
-          dqFileConts = vetoes[0:2].upper()+':' + injNotMadeFlag + \
-                        '\t\t0\t0\n' + dqFileConts
-        if 'cat-' + injVetoCat in vetoes:
-          dqFileContsList = dqFileConts.split('\n')
-          dqFileConts = ''
-          for line in dqFileContsList:
-            remLine = False
-            for flag in injVetoFlagList:
-              if flag in line:
-                remLine = True
-            if not remLine:
-              dqFileConts += line + '\n'
-        dqHWFile = open(outfile, 'w')
-        dqHWFile.write(dqFileConts)
-        dqHWFile.close()
-      else:
-        shutil.copy(infile, outfile)
+      shutil.copy(infile, outfile)
     config.set("segments", vetoes, rel_outfile)
 
 ##############################################################################
@@ -427,42 +389,6 @@ def downloadDqSegFiles(config,ifo,generate_segments):
             dqSegFile)
       print "done"
   return dqSegFile
-
-##############################################################################
-# Function to download hwInj not made lists and append to dq seg lists
-def downloadDqHWSegFiles(config,ifo,generate_segments,dqSegFile):
-  """
-  Download the dqSegFiles from a html location
-  @param config      : the configParser object with analysis details
-  @param ifo         : name of the ifo
-  @param generate_segments : If False do not download, just return filename  
-  @param dqSegFile   : The dqSegFiles locations (to be appended to the Hw files
-  """
-  start = config.getint("input","gps-start-time")
-  end = config.getint("input","gps-end-time")
-  dqHWSegFile = ifo + "-DQ_HW_SEGMENTS-" + str(start) + "-" + \
-      str(end - start) + ".txt"
-  if generate_segments:
-    dq_url = config.get("segments","dq-server-url")
-    dq_hw_segdb_file = config.get("segments", ifo.lower() + '-hw-dq-file')
-    if dq_hw_segdb_file == "":
-      print >>sys.stderr, "warning: no file provided to %s-hw-dq-file; " \
-          "assuming there are no HW_INJ_NOT_MADE times" % ifo.lower()
-      openHWDQFile = open(dqHWSegFile,'w')
-    else:
-      print "Downloading HW_INJ_NOT_MADE list" + dq_hw_segdb_file
-      sys.stdout.flush()
-      dqHWSegFile, info = urllib.urlretrieve(dq_url + '/' + dq_hw_segdb_file,
-            dqHWSegFile)
-      print "Done,appending this to dqSegFile for hardware-inj"
-      openHWDQFile = open(dqHWSegFile,'a')
-    openDQFile=open(dqSegFile, 'r')
-    dqFileConts = openDQFile.read()
-    openDQFile.close()
-    openHWDQFile.write(dqFileConts)
-    openHWDQFile.close()
-    print "done"
-  return dqHWSegFile
 
 
 ##############################################################################
@@ -567,7 +493,7 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    hardwareInj = False, site = "local", dax=None, tmpltbankCache = None):
+    site = "local", dax=None, tmpltbankCache = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -673,12 +599,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     # set any extra inspiral arguments for the injection
     for item in config.items('-'.join([hipeDir,"inspiral"])):
       hipecp.set("inspiral",item[0],item[1])
-
-  elif hardwareInj and not dataFind and not tmpltBank:
-    hipecp.set("input","hardware-injection","")
-    hipecp.set("inspiral","hardware-injection","")
-    hipecp.set("input", "num-slides", "")
-
   else:
     # add the time slide to the ini file
     numSlides = slide_sanity(config, playOnly)
@@ -695,7 +615,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   print "Running hipe in directory " + hipeDir
   if dataFind or tmpltBank: print "Running datafind / template bank generation"
-  elif hardwareInj: print "Running hardware injection analysis"
   elif injSeed: print "Injection seed: " + injSeed
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
       " time slides"
@@ -733,10 +652,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
-    if hardwareInj:
-      omit = ["disable-dag-categories", "disable-dag-priorities"]
-    else:
-      omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
+    omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
     for (opt, arg) in config.items("hipe-arguments"):
       if opt not in omit:
         hipeCommand += "--" + opt + " " + arg 
@@ -748,7 +664,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   make_external_call(hipeCommand)
 
   # link datafind
-  if not dataFind and not tmpltBank and not vetoCat and not hardwareInj:
+  if not dataFind and not tmpltBank and not vetoCat:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
@@ -891,10 +807,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   analysisstart = plotcp.get("common","gps-start-time")
   analysisend = plotcp.get("common","gps-end-time")
   analysisduration = int(analysisend) - int(analysisstart)
-  if "HARDWARE_INJECTION" in injectionSuffix:
-    inspmissedVetoDir = "../hardware_inj_segments"
-  else:
-    inspmissedVetoDir = "../segments"
+  inspmissedVetoDir = "../segments"
   for ifo in ifos:
     plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
         inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
