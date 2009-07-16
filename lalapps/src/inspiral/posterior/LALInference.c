@@ -23,7 +23,9 @@ void die(char *message)
 }
 
 
+
 /* ============ Accessor functions for the Variable structure ========== */
+
 
 
 LALVariableItem *getItem(LALVariables *vars,const char *name)
@@ -43,7 +45,7 @@ void *getVariable(LALVariables * vars,const char * name)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die("Error: variable not found in getVariable.\n");
+  if(!item) die(" ERROR: variable not found in getVariable().\n");
   return(item->value);
 }
 
@@ -54,7 +56,7 @@ void setVariable(LALVariables * vars,const char * name, void *value)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die("Error: variable not found in setVariable.\n");
+  if(!item) die(" ERROR: variable not found in setVariable().\n");
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
@@ -65,7 +67,7 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
-  if(checkVariable(vars,name)) {fprintf(stderr,"addVariable: Cannot re-add %s\n",name); exit(1);}
+  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\"\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
   memset(new,0,sizeof(LALVariableItem));
@@ -130,6 +132,7 @@ void destroyVariables(LALVariables *vars)
 }
 
 
+
 void copyVariables(LALVariables *origin, LALVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
@@ -140,9 +143,29 @@ void copyVariables(LALVariables *origin, LALVariables *target)
   ptr = origin->head;
   while (ptr != NULL) {
     addVariable(target, ptr->name, ptr->value, ptr->type);
+    ptr = ptr->next;
   }
   return;
 }
+
+
+
+void printVariables(LALVariables *var)
+/* output contents of a 'LALVariables' structure       */
+/* (by now only prints names and types, but no values) */
+{
+  LALVariableItem *ptr = var->head;
+  fprintf(stderr, "LALVariables:\n");
+  if (ptr==NULL) fprintf(stderr, "  <empty>\n");
+  else {
+    while (ptr != NULL) {
+      fprintf(stderr, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      ptr = ptr->next;
+    }  
+  }
+  return;
+}
+
 
 
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
@@ -177,7 +200,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-  if (j!=2) printf(" : ERROR: argument vector '%s' not well-formed!\n", input);
+  if (j!=2) printf(" ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
