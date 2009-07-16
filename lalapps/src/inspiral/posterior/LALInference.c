@@ -1,10 +1,24 @@
 /* 
-
-  LALInference.c:  Bayesian Followup functions
-
-  Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
-
-*/
+ *  LALInference.c:  Bayesian Followup functions
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +38,7 @@ void die(char *message)
 
 
 
-/* ============ Accessor functions for the Variable structure ========== */
+/* ============ Accessor functions for the Variable structure: ========== */
 
 
 
@@ -45,7 +59,10 @@ void *getVariable(LALVariables * vars,const char * name)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die(" ERROR: variable not found in getVariable().\n");
+  if(!item) {
+    fprintf(stderr, " ERROR in getVariable(): entry \"%s\" not found.\n", name);
+    exit(1);
+  }
   return(item->value);
 }
 
@@ -56,7 +73,10 @@ void setVariable(LALVariables * vars,const char * name, void *value)
 {
   LALVariableItem *item;
   item=getItem(vars,name);
-  if(!item) die(" ERROR: variable not found in setVariable().\n");
+  if(!item) {
+    fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
+    exit(1);
+  }
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
@@ -67,13 +87,12 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
-  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\"\n",name); exit(1);}
+  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\".\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
   memset(new,0,sizeof(LALVariableItem));
   new->value = (void *)malloc(typeSize[type]);
-  if(new==NULL||new->value==NULL) die("Unable to allocate memory for list item\n");
- 
+  if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
   memcpy(new->value,value,typeSize[type]);
@@ -93,7 +112,7 @@ void removeVariable(LALVariables *vars,const char *name)
     if(!strcmp(this->name,name)) break;
     else {parent=this; this=this->next;}
   }
-  if(!this) {fprintf(stderr,"removeVariable: warning, %s not found to remove\n",name); return;}
+  if(!this) {fprintf(stderr," WARNING in removeVariable(): entry \"%s\" not found.\n",name); return;}
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
   free(this->value);
@@ -188,9 +207,10 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
             result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
             break;
           case gslMatrix_t: 
-            result = 1;
             fprintf(stderr, " WARNING: compareVariables() cannot yet compare \"gslMatrix\" type entries.\n");
             fprintf(stderr, "          (entry: \"%s\").\n", ptr1->name);
+            fprintf(stderr, "          For now entries are by default assumed different.\n");
+            result = 1;
             break;
           default:
             fprintf(stderr, " ERROR: encountered unknown LALVariables type in compareVariables()\n");
@@ -205,6 +225,10 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
   }
   return(result);
 }
+
+
+
+/* ============ Command line parsing functions etc.: ========== */
 
 
 
@@ -335,6 +359,10 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 
 
 
+/* ============ Likelihood computations: ========== */
+
+
+
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
 /* (log-) likelihood function.                        */
@@ -357,7 +385,10 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
   double NDeltaT, twopit, f, re, im;
+  double timeTmp;
+  int different;
   LALStatus status;
+  LALVariables intrinsicParams;
 
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
@@ -366,14 +397,23 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
+  /* figure out GMST: */
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
   GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
   UandA.units = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
 
-  chisquared = 0.0;
+  intrinsicParams.head = NULL;
+  intrinsicParams.dimension = 0;
+  copyVariables(currentParams, &intrinsicParams);
+  removeVariable(&intrinsicParams, "rightascension");
+  removeVariable(&intrinsicParams, "declination");
+  removeVariable(&intrinsicParams, "polarisation");
+  removeVariable(&intrinsicParams, "time");
+  removeVariable(&intrinsicParams, "distance");
 
+  chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
   while (dataPtr != NULL) {
@@ -384,10 +424,28 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* arrival time parameter value (e.g. something like the trigger */
     /* value).                                                       */
     
-    
-    /* compute template (deposited in elements of `data'): */
-    template(data);
-    /* TODO: check whether template (re-) computation is actually necessary */
+    /* Compare parameter values with parameter values corresponding  */
+    /* to currently stored template; ignore "time" variable:         */
+    if (checkVariable(data->modelParams, "time")) {
+      timeTmp = *(REAL8 *) getVariable(data->modelParams, "time");
+      removeVariable(data->modelParams, "time");
+    }
+    else timeTmp = GPSdouble;
+    different = compareVariables(data->modelParams, &intrinsicParams);
+    /* "different" now may also mean that "data->modelParams" */
+    /* wasn't allocated yet (as in the very 1st iteration).   */
+
+    if (different) { /* template needs to be re-computed: */
+      copyVariables(&intrinsicParams, data->modelParams);
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
+      template(data);
+    }
+    else { /* no re-computation necessary. Return back "time" value, do nothing else: */
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
+    }
+
+    /*-- Template is now in data->freqModelhPlus and data->freqModelhCross. --*/
+    /*-- (Either freshly computed or inherited.)                            --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
@@ -418,7 +476,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       plainTemplateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
-      /* do time-shifting: */
+      /* do time-shifting... */
       f = ((double) i) / NDeltaT;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       re = cos(twopit * f);
@@ -426,7 +484,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateReal = plainTemplateReal*re - plainTemplateImag*im;
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
-      /* squared difference & 'chi-squared': */
+      /* compute squared difference & 'chi-squared': */
       diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
                                 + pow(data->freqData->data->data[i].im - templateImag, 2.0));
       chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
@@ -435,4 +493,15 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   }
   loglikeli = -1.0 * chisquared;
   return(loglikeli);
+}
+
+
+
+LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
+/* ... */
+{
+  LALInferenceRunState *irs=NULL;
+  irs = calloc(1, sizeof(LALInferenceRunState));
+  irs->data = ReadData(commandLine);
+  return(irs);
 }

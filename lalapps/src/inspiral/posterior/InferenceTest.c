@@ -1,3 +1,25 @@
+/* 
+ *  InferenceTest.c:  Bayesian Followup function testing site
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include "LALInference.h"
 
@@ -7,12 +29,13 @@ LALVariables variables2;
 
 REAL4 number,five;
 ProcessParamsTable *ppt, *ptr;
+LALInferenceRunState *runstate=NULL;
 int i;
 
 
 int main(int argc, char *argv[]){
   /* test "LALVariables" stuff: */
-  LALIFOData *IFOdata=NULL;
+  //LALIFOData *IFOdata=NULL;
   number = 10.0;
   five=5.0;
   variables.head=NULL;
@@ -51,9 +74,11 @@ int main(int argc, char *argv[]){
   }
 	
   /* Test the data setup */
+  runstate = initialize(ppt);
 
-  IFOdata=ReadData(ppt);
-  if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
+  //IFOdata=ReadData(ppt);
+
+  if(runstate->data) fprintf(stdout,"Successfully read in the data!\n");
 
 	IFOdata->modelParams=calloc(1, sizeof(LALVariables));
 	IFOdata->timeModelhPlus=calloc(1, sizeof(REAL8TimeSeries));

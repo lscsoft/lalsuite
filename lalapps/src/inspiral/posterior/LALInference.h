@@ -1,12 +1,26 @@
 /*
-
-   LALInference:       		Bayesian Followup        
-   include/LALInference.h:      main header file
-
-
-   Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch
-
-*/
+ *
+ *  LALInference:             Bayesian Followup        
+ *  include/LALInference.h:   main header file
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 /**
  * \file LALInference.h
@@ -51,6 +65,7 @@ struct tagLALIFOData;
 /*Data storage type definitions*/
 
 typedef enum tagVariableType {REAL8_t, REAL4_t, gslMatrix_t} VariableType;  //, ..., ...
+typedef enum {timeDomain, frequencyDomain} LALDomain;
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
@@ -132,7 +147,7 @@ tagLALInferenceRunState
 } LALInferenceRunState;
 
 
-LALInferenceRunState *Initialize (ProcessParamsTable * commandLine);
+LALInferenceRunState *initialize (ProcessParamsTable * commandLine);
 
 struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
 
@@ -142,6 +157,7 @@ tagLALIFOData
   REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
   LALVariables *modelParams;
+  LALDomain modelDomain;
   REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
   REAL8Window *window;
   REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
