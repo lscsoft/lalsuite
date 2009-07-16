@@ -334,8 +334,6 @@ else:
   veto_segments = segments.segmentlistdict()
 
 
-# FIXME:  don't you need to request the min(FAR) for the given "on"
-# instruments?
 FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, instruments=lsctables.ifos_from_instrument_set(opts.instruments),verbose = opts.verbose)
 
 
