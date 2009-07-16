@@ -36,7 +36,7 @@
 				--timeslide --studentt (use student-t likelihood function)\n \
       [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) \n"
 
-extern CHAR outfile[512];
+extern CHAR outfile[4096];
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;
@@ -63,8 +63,8 @@ INT4 event=0;
 REAL8 manual_end_time=0;
 REAL8 manual_mass_low=2.0;
 REAL8 manual_mass_high=35.0;
-REAL8 manual_RA=0;
-REAL8 manual_dec=0;
+REAL8 manual_RA=-4200.0;
+REAL8 manual_dec=-4200.0;
 int Nmcmc = 100;
 double injSNR=-1.0;
 extern INT4 seed;
@@ -717,8 +717,8 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
   SimInspiralTable *injTable = (SimInspiralTable *)iT;
   REAL4 mtot,eta,mwindow,localetawin;
   REAL8 mc,mcmin,mcmax,m1min,m1max,m2min,m2max;
-  REAL8 deltaLong=0.0001;
-  REAL8 deltaLat=0.0001;
+  REAL8 deltaLong=0.01;
+  REAL8 deltaLat=0.01;
   REAL8 trueLong,trueLat;
 
   parameter->param = NULL;
@@ -729,11 +729,10 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
     trueLong = (REAL8)injTable->longitude;
     trueLat = (REAL8)injTable->latitude;
   }
-  else
-    {
-      time = manual_end_time;
-      trueLong = manual_RA;
-      trueLat = manual_dec;
+  /*else*/   {
+      if(time!=0) time = manual_end_time;
+      if(manual_RA!=-4200.0) trueLong = manual_RA;
+      if(manual_dec!=-4200.0) trueLat = manual_dec;
     }
   double etamin;
   /*etamin = etamin<0.01?0.01:etamin;*/

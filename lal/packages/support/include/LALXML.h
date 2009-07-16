@@ -95,7 +95,7 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
 INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsPtr xmlNamespace);
 
 xmlDocPtr XLALXMLString2Doc ( const char *xmlString );
-xmlChar *XLALXMLDoc2String ( const xmlDoc *xmlDocument );
+xmlChar *XLALXMLDoc2String ( xmlDoc *xmlDocument );
 
 /* C++ protection */
 #ifdef __cplusplus

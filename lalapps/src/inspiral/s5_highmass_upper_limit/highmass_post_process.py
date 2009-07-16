@@ -428,7 +428,7 @@ for type in types:
   for cat in cats:
     #break down the cache to save on parsing
     tag = type + "_" + cat
-    grep('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag + ".cache")
+    grep('THINCA.*_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag + ".cache")
     try: os.mkdir(tag)
     except: pass
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, tag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
