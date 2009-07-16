@@ -27,7 +27,7 @@ from pylal.xlal.date import LIGOTimeGPS
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
-def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False):
+def get_far_threshold_and_segments(zerofname, live_time_program, instruments, verbose = False):
   """
   return the false alarm rate of the most rare zero-lag coinc, and a
   dictionary of the thinca segments indexed by instrument.
@@ -38,7 +38,8 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   dbtables.DBTable_set_connection(connection)
 
   # extract false alarm rate threshold
-  query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE (coinc_event.instruments == "' + str(instruments) + '") AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  print query
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
@@ -335,7 +336,7 @@ else:
 
 # FIXME:  don't you need to request the min(FAR) for the given "on"
 # instruments?
-FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, verbose = opts.verbose)
+FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, instruments=lsctables.ifos_from_instrument_set(opts.instruments),verbose = opts.verbose)
 
 
 # times when only exactly the required instruments are on
