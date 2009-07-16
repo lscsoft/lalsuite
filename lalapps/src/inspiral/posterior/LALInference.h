@@ -147,7 +147,7 @@ tagLALInferenceRunState
 } LALInferenceRunState;
 
 
-LALInferenceRunState *initialize (ProcessParamsTable * commandLine);
+LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 
 struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
 
@@ -178,7 +178,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
 
-void PopulateFreqDomain(LALIFOData *IFOdata);
+void executeFT(LALIFOData *IFOdata);
 
 #endif
 
