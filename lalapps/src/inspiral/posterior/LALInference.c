@@ -502,6 +502,6 @@ LALInferenceRunState *initialize (ProcessParamsTable * commandLine)
 {
   LALInferenceRunState *irs=NULL;
   irs = calloc(1, sizeof(LALInferenceRunState));
-  irs->data = ReadData(ppt);
+  irs->data = ReadData(commandLine);
   return(irs);
 }
