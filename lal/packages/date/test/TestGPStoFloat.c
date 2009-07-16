@@ -61,8 +61,10 @@ static int test_random_doubles(unsigned int seed)
 int main(int argc, char *argv[])
 {
   static LALStatus   status;
+#if 0
   LIGOTimeGPS        gpsTime = {0, 0};
   REAL8              realTime = 0.;
+#endif
   LALTimeInterval    interval = {0, 0};
   REAL8              deltaT = 0.;
 

@@ -513,7 +513,7 @@ XLALXMLString2Doc ( const char *xmlString )
  * Albert-Einstein-Institute Hannover, Germany
  */
 xmlChar *
-XLALXMLDoc2String ( const xmlDoc *xmlDocument )
+XLALXMLDoc2String ( xmlDoc *xmlDocument )
 {
   static const char *fn = "XLALXMLDoc2String()";
 
