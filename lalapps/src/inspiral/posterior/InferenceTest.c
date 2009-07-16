@@ -23,12 +23,15 @@ int main(int argc, char *argv[]){
   setVariable(&variables,"number",&five);
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
-  fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));	
-  // copyVariables(&variables, &variables2);
+  fprintf(stdout,"Checkvariable?: %i\n",checkVariable(&variables,"number"));
+  printVariables(&variables);
+  copyVariables(&variables, &variables2);
+  printVariables(&variables2);
   removeVariable(&variables,"number");
   fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
   destroyVariables(&variables);
-  // destroyVariables(&variables2);
+  destroyVariables(&variables2);
+  printVariables(&variables2);
   
   /* test "parseCommandLine()" function: */
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
