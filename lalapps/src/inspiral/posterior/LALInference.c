@@ -1,10 +1,24 @@
 /* 
-
-  LALInference.c:  Bayesian Followup functions
-
-  Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
-
-*/
+ *  LALInference.c:  Bayesian Followup functions
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -188,9 +202,10 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
             result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
             break;
           case gslMatrix_t: 
-            result = 1;
             fprintf(stderr, " WARNING: compareVariables() cannot yet compare \"gslMatrix\" type entries.\n");
             fprintf(stderr, "          (entry: \"%s\").\n", ptr1->name);
+            fprintf(stderr, "          For now entries are by default assumed different.\n");
+            result = 1;
             break;
           default:
             fprintf(stderr, " ERROR: encountered unknown LALVariables type in compareVariables()\n");
