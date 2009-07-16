@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
 
   IFOdata=ReadData(ppt);
   if(IFOdata) fprintf(stdout,"Successfully read in the data!\n");
-	
+
  // IFOdata->modelParams=calloc(1, sizeof(LALVariables));
 	
  // IFOdata->modelParams->head=NULL;
