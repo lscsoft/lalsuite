@@ -27,8 +27,14 @@ int main(int argc, char *argv[]){
   printVariables(&variables);
   copyVariables(&variables, &variables2);
   printVariables(&variables2);
+  fprintf(stdout,"compareVariables?: %i\n",
+          compareVariables(&variables,&variables2));
+
   removeVariable(&variables,"number");
   fprintf(stdout,"Removed, Checkvariable?: %i\n",checkVariable(&variables,"number"));
+  
+  fprintf(stdout,"compareVariables?: %i\n",
+          compareVariables(&variables,&variables2));
   destroyVariables(&variables);
   destroyVariables(&variables2);
   printVariables(&variables2);
