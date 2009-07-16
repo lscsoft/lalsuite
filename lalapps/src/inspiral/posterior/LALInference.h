@@ -81,6 +81,7 @@ int  checkVariable(LALVariables *vars,const char *name);
 void destroyVariables(LALVariables *vars);
 void copyVariables(LALVariables *origin, LALVariables *target);
 void printVariables(LALVariables *var);
+int compareVariables(LALVariables *var1, LALVariables *var2);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
