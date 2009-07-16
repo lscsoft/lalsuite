@@ -16,6 +16,9 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 
 	static LALStatus stat;								/* status structure */	
 
+	IFOdata->modelDomain = timeDomain;
+	
+	
 	REAL4 m1=*(REAL4 *)getVariable(IFOdata->modelParams,"m1");			/* binary masses */	
 	REAL4 m2=*(REAL4 *)getVariable(IFOdata->modelParams,"m2");
 	
@@ -28,8 +31,8 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 	REAL4 f_max = IFOdata->fHigh;			/* start and stop frequencies */
 	
 	
-	REAL8 dt = 0.01;//ifo->timeData->deltaT;					/* sampling interval */
-	REAL8 deltat = 0.01;//ifo->timeData->deltaT;				/* wave sampling interval */
+	REAL8 dt = IFOdata->timeData->deltaT;					/* sampling interval */
+	REAL8 deltat = IFOdata->timeData->deltaT;				/* wave sampling interval */
 	INT4 order = 4;										/* PN order */
 	
 	/* Other variables. */
@@ -63,7 +66,7 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 	params.mTot = m1 + m2;
 	params.eta = m1*m2/( params.mTot*params.mTot );
 	params.inc = inc;
-	params.phi = 0.0;
+	params.phi = phii;//0.0;
 	params.d = dist*LAL_PC_SI*1.0e3;
 	params.fStartIn = f_min;
 	params.fStopIn = f_max;
@@ -158,8 +161,10 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 				REAL8 ap = frac*aData[2*j+2] + ( 1.0 - frac )*aData[2*j];
 				REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
 				
-				if(j<10){
-					fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
+				if(j < IFOdata->timeData->data->length ){
+					//fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
+					IFOdata->timeModelhPlus->data->data[j] = ap*cos( p );
+					IFOdata->timeModelhCross->data->data[j] = ac*sin( p );
 				}
 			}
 		
