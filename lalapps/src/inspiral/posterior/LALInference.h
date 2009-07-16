@@ -79,6 +79,7 @@ void addVariable(LALVariables * vars, const char * name, void * value,
 void removeVariable(LALVariables *vars,const char *name);
 int  checkVariable(LALVariables *vars,const char *name);
 void destroyVariables(LALVariables *vars);
+void copyVariables(LALVariables *origin, LALVariables *target);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
