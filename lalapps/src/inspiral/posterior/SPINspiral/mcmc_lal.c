@@ -343,7 +343,7 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   injParams->f_final = (float)ifo->highCut;  //It seems injParams->f_final gets overwritten by LALGenerateInspiral; it's an output parameter rather than input. This will also somewhat affect SNR comparisons with the Apostolatos waveform.
   injParams->f_lower = (float)f_lower;
   
-  LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");//"SpinTaylortwoPN");
+  snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");//"SpinTaylortwoPN");
   
   /* this is given in Mpc */    
   injParams->distance = (float)exp(plogdl);//d_L;
@@ -535,7 +535,7 @@ void LALHpHc15(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   injParams->f_final = (float)ifo->highCut;  //It seems injParams->f_final gets overwritten by LALGenerateInspiral; it's an output parameter rather than input. This will also somewhat affect SNR comparisons with the Apostolatos waveform.
   injParams->f_lower = (float)f_lower;
   
-  LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");//"SpinTaylortwoPN");
+  snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");//"SpinTaylortwoPN");
   
   /* this is given in Mpc */    
   injParams->distance = (float)exp(par->par[3]);//d_L;

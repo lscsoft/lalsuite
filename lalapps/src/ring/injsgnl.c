@@ -74,7 +74,7 @@ int inject_signal(
   
   /* copy injectFile to injFile (to get rid of const qual) */
   strncpy( injFile, injectFile, sizeof( injFile ) - 1 );
-  LALSnprintf( name, sizeof( name ), "%s_INJ", series->name );
+  snprintf( name, sizeof( name ), "%s_INJ", series->name );
   strncpy( ifoName, series->name, 2 );
   ifoName[2] = 0;
 
@@ -162,7 +162,7 @@ int inject_signal(
         ringinjections.simRingdownTable = ringList;
                  
         /* create the output file name */
-        LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_0-%d-%d.xml", 
+        snprintf( fname, sizeof(fname), "HL-INJECTIONS_0-%d-%d.xml", 
             startSec, stopSec - startSec );
         fprintf( stdout, "Writing the injection details to %s\n", fname);
     

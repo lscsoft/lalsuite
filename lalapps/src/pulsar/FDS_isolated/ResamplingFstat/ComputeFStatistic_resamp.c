@@ -805,19 +805,19 @@ InitEphemeris (LALStatus * status,
   if ( ephemDir )
     {
       if ( isLISA )
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
+	snprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
       else
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+	snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
 
-      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
     {
       if ( isLISA )
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
+	snprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
       else
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+	snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
 
   EphemEarth[FNAME_LENGTH-1]=0;

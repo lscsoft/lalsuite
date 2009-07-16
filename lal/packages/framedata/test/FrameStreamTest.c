@@ -48,6 +48,7 @@
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
+#include <lal/LALFrameL.h>
 
 #include <lal/LALRCSID.h>
 NRCSID (FRAMESTREAMTESTC,"$Id$");

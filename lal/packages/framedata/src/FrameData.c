@@ -136,11 +136,11 @@ LALI2DestroyVector( &status, &dmro.data );
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <FrameL.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrameData.h>
+#include <lal/LALFrameL.h>
 
 NRCSID (FRAMEDATAC, "$Id$");
 
