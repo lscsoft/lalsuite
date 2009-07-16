@@ -29,6 +29,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
 
 
 size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
@@ -521,7 +522,8 @@ void executeFT(LALIFOData *IFOdata)
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-/* ... */
+/* calls the "ReadData()" function to gather data & PSD from files, */
+/* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
   LALIFOData *ifoPtr;
