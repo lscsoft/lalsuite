@@ -61,7 +61,7 @@ void *getVariable(LALVariables * vars,const char * name)
   item=getItem(vars,name);
   if(!item) {
     fprintf(stderr, " ERROR in getVariable(): entry \"%s\" not found.\n", name);
-    exit(1)
+    exit(1);
   }
   return(item->value);
 }
@@ -75,7 +75,7 @@ void setVariable(LALVariables * vars,const char * name, void *value)
   item=getItem(vars,name);
   if(!item) {
     fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
-    exit(1)
+    exit(1);
   }
   memcpy(item->value,value,typeSize[item->type]);
   return;
@@ -427,12 +427,12 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* wasn't allocated yet (as in the very 1st iteration).   */
 
     if (different) { /* template needs to be re-computed: */
-      copyVariables(&intrinsicParams, data->modelParams)
-      addVariable(data->modelParams, "time", &timeTmp, REAL8_t)
+      copyVariables(&intrinsicParams, data->modelParams);
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
       template(data);
     }
-    else { /* no re-computation necessary. Return "time" value, do nothing else: */
-      addVariable(data->modelParams, "time", &timeTmp, REAL8_t)
+    else { /* no re-computation necessary. Return back "time" value, do nothing else: */
+      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
     }
 
     /*-- Template is now in data->freqModelhPlus and data->freqModelhCross. --*/
