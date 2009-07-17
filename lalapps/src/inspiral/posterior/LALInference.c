@@ -508,6 +508,8 @@ void executeFT(LALIFOData *IFOdata)
 /* Execute (forward, time-to-freq) Fourier transform.         */
 /* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
 /* results go into IFOdata->freqModelh...                     */
+int i;
+double norm;
 {
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
@@ -520,6 +522,11 @@ void executeFT(LALIFOData *IFOdata)
       IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
     XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data);
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan);
+	  norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->length);
+	  for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
+		  IFOdata->freqModelhPlus->data->data[i]*=norm;
+		  IFOdata->freqModelhCross->data->data[i]*=norm;
+	  }
   }
 }
 
