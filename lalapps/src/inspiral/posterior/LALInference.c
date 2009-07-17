@@ -403,8 +403,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
   /* figure out GMST: */
-  GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
-  GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
+  XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
   UandA.units    = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);

@@ -231,7 +231,6 @@ void templateStatPhase(LALIFOData *IFOdata)
 /* template.                                                 */
 /*************************************************************/
 {
-  static LALStatus status;
   double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
   double eta  = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
   double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
@@ -267,7 +266,7 @@ void templateStatPhase(LALIFOData *IFOdata)
   plusCoef  = ampliConst * (-0.5*(1.0+pow(cos(iota),2.0)));
   crossCoef = ampliConst * (-1.0*cos(iota));
   //twopitc = 2.0 * pi * (vectorGetValue(parameter,"time") - DF->dataStart);
-  LALGPStoFloat(&status, &dataStart, &(IFOdata->timeData->epoch));
+  dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   twopitc = LAL_TWOPI * (tc - dataStart);
   a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
   a[1] =  exp(log(3715.0/84.0+55.0*eta) - log(1.0/384.0) - log_eta - log_q);
