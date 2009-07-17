@@ -213,10 +213,32 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 void templateLALwrap2(LALIFOData *IFOdata)
 {
-  //static LALStatus status;
-  //static InspiralTemplate params;
-  //static REAL4Vector *LALSignal=NULL;
-  //UINT4 n;
+  static LALStatus status;
+  static InspiralTemplate params;
+  static REAL4Vector *LALSignal=NULL;
+  UINT4 n;
+  long i;
+  double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
+  double eta  = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
+  double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
+  double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
+  double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
+  double chirptime;
+
+  params.OmegaS      = 0.0;     /* (?) */
+  params.Theta       = 0.0;     /* (?) */
+  /* params.Zeta2    = 0.0; */  /* (?) */
+  params.ieta        = 1; 
+  params.nStartPad   = 0;
+  params.nEndPad     = 0;
+  params.massChoice  = m1Andm2;
+  params.approximant = approximant;  /*  TaylorT1, ...              */
+  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
+  params.fLower      = DF->minF * 0.9;
+  params.fCutoff     = (DF->FTSize-1)*DF->FTDeltaF;  /* (Nyquist freq.) */
+  params.tSampling   = 1.0/DF->dataDeltaT;
+  params.startTime   = 0.0;
+
   
   return;
 }
@@ -256,7 +278,7 @@ void templateStatPhase(LALIFOData *IFOdata)
  
   if (checkVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
-  if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 & 2.5 allowed.");
+  if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
   ampliConst  = 0.5*log(5.0)+(5.0/6.0)*log(LAL_G_SI)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(LAL_PI)-1.5*log((double)LAL_C_SI);
   ampliConst  = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)-(log(LAL_PC_SI)+log(1e6)));
   ampliConst /= IFOdata->timeData->deltaT;
@@ -287,7 +309,7 @@ void templateStatPhase(LALIFOData *IFOdata)
       f07 = f06*f01;                /* = f^-7/6  */
       f10 = f06*f04;                /* = f^-10/6 */
       Psi = a[0]*f10 + a[1]*f06 + a[2]*f04 + a[3]*f02;
-      if (PNOrder>2.0)  /*  5th coefficient ignored for 2.0 PN order  */
+      if (PNOrder > 2.0)  /*  5th coefficient ignored for 2.0 PN order  */
         Psi += a[4]*log(f); 
       phaseArg = Psi + twopitc*f + phi;
       plusRe  =  f07 * cos(phaseArg);
