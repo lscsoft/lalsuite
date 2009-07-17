@@ -92,7 +92,11 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	char strainname[]="LSC-STRAIN";
 	
 	typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
-	
+	NoiseFunc *PSD=NULL;
+	REAL8 scalefactor=1;
+
+	RandomParams *datarandparam;
+
 	char *chartmp=NULL;
 	char **channels=NULL;
 	char **caches=NULL;
@@ -101,7 +105,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
 	memset(&status,0,sizeof(LALStatus));
-	
+
 	if(!getProcParamVal(commandLine,"--cache")||!getProcParamVal(commandLine,"--IFO")||
 	   !getProcParamVal(commandLine,"--PSDstart")||!getProcParamVal(commandLine,"--trigtime")||
 	   !getProcParamVal(commandLine,"--PSDlength")||!getProcParamVal(commandLine,"--seglen"))
@@ -182,12 +186,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
 			 && strcmp(caches[i],"LALAdLIGO")))
 		{
-			typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
-			NoiseFunc *PSD=NULL;
 			FakeFlag=1;
-			REAL8 scalefactor=1;
-			RandomParams *datarandparam=XLALCreateRandomParams(0);
-			
+			datarandparam=XLALCreateRandomParams(0);
 			/* Selection of the noise curve */
 			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}
 			if(!strcmp(caches[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}
@@ -208,10 +208,11 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			XLALDestroyRandomParams(datarandparam);
 			/* Create the fake data */
 			for(j=0;j<IFOdata[i].freqData->data->length;j++){
-				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].re*IFOdata[i].freqData->deltaF));
-				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].im*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 			}
-			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries((const char*) "timeData",&segStart,0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
+			const char timename[]="timeData";
+			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(timename,&segStart,0.0,(REAL8)1.0/SampleRate,&lalDimensionlessUnit,(size_t)seglen);
 			XLALREAL8FreqTimeFFT(IFOdata[i].timeData,IFOdata[i].freqData,IFOdata[i].freqToTimeFFTPlan);
 		}
 		else{
