@@ -236,7 +236,7 @@ void templateStatPhase(LALIFOData *IFOdata)
   double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
   double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
   double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
-  double PNOrder=2.5;
+  double PNOrder = 2.5;  /* (default) */
   double root = sqrt(0.25-eta);
   double fraction = (0.5+root) / (0.5-root);
   double inversefraction = (0.5-root) / (0.5+root);
@@ -248,7 +248,6 @@ void templateStatPhase(LALIFOData *IFOdata)
   long i;
   double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
   double ampliConst;
-  //double sineCoef, cosineCoef;
   double plusCoef, crossCoef;
   double NDeltaT, phaseArg;
   double plusRe, plusIm, crossRe, crossIm;
@@ -261,11 +260,8 @@ void templateStatPhase(LALIFOData *IFOdata)
   ampliConst  = 0.5*log(5.0)+(5.0/6.0)*log(LAL_G_SI)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(LAL_PI)-1.5*log((double)LAL_C_SI);
   ampliConst  = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)-(log(LAL_PC_SI)+log(1e6)));
   ampliConst /= IFOdata->timeData->deltaT;
-  //cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(iota),2.0)));
-  //sineCoef   = Fcross * (-1.0*cos(iota));
   plusCoef  = ampliConst * (-0.5*(1.0+pow(cos(iota),2.0)));
   crossCoef = ampliConst * (-1.0*cos(iota));
-  //twopitc = 2.0 * pi * (vectorGetValue(parameter,"time") - DF->dataStart);
   dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   twopitc = LAL_TWOPI * (tc - dataStart);
   a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
@@ -278,19 +274,20 @@ void templateStatPhase(LALIFOData *IFOdata)
   NDeltaT = IFOdata->timeData->data->length * IFOdata->timeData->deltaT;
   lower = ceil(IFOdata->fLow * NDeltaT);
   upper = floor(IFOdata->fHigh * NDeltaT);
+  /* loop over frequency bins: */
   for (i=0; i<IFOdata->timeData->data->length; ++i){
     if ((i > upper) || (i < lower)) /* (no computations outside freq. range) */
       plusRe = plusIm = crossRe = crossIm = 0.0;
     else {
-      f    = ((double)i) / NDeltaT;
-      f01  = pow(f, -1.0/6.0);             /* = f^-1/6  */
-      f02  = f01*f01;                      /* = f^-2/6  */
-      f04  = f02*f02;                      /* = f^-4/6  */
-      f06  = f04*f02;                      /* = f^-6/6  */
-      f07  = f06*f01;                      /* = f^-7/6  */
-      f10  = f06*f04;                      /* = f^-10/6 */
+      f   = ((double)i) / NDeltaT;
+      f01 = pow(f, -1.0/6.0);       /* = f^-1/6  */
+      f02 = f01*f01;                /* = f^-2/6  */
+      f04 = f02*f02;                /* = f^-4/6  */
+      f06 = f04*f02;                /* = f^-6/6  */
+      f07 = f06*f01;                /* = f^-7/6  */
+      f10 = f06*f04;                /* = f^-10/6 */
       Psi = a[0]*f10 + a[1]*f06 + a[2]*f04 + a[3]*f02;
-      if (PNOrder>2.0) /*  5th coefficient ignored for 2.0 PN order  */
+      if (PNOrder>2.0)  /*  5th coefficient ignored for 2.0 PN order  */
         Psi += a[4]*log(f); 
       phaseArg = Psi + twopitc*f + phi;
       plusRe  =  f07 * cos(phaseArg);
@@ -299,12 +296,12 @@ void templateStatPhase(LALIFOData *IFOdata)
       crossIm =  plusRe * crossCoef;
       plusRe  *= plusCoef;
       plusIm  *= plusCoef;
-      /* copy over to IFOdata: */
-      IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
-      IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
-      IFOdata->freqModelhCross->data->data[i].re = crossRe;
-      IFOdata->freqModelhCross->data->data[i].im = crossIm;
     }
+    /* copy f'domain waveform over to IFOdata: */
+    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
+    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
+    IFOdata->freqModelhCross->data->data[i].re = crossRe;
+    IFOdata->freqModelhCross->data->data[i].im = crossIm;
   }
   IFOdata->modelDomain = frequencyDomain;
   return;
