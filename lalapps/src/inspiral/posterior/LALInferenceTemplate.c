@@ -162,13 +162,15 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 				REAL8 ac = frac*aData[2*j+3] + ( 1.0 - frac )*aData[2*j+1];
 				
 				if(j < IFOdata->timeData->data->length ){
-					//fprintf(stdout,"%13.6e\t%13.6e\n",ap*cos( p ),ac*sin( p ));
 					IFOdata->timeModelhPlus->data->data[j] = ap*cos( p );
 					IFOdata->timeModelhCross->data->data[j] = ac*sin( p );
 				}
 			}
-		
-		
+	//INT4 k = 0;
+	//for(k=0 ; k < IFOdata->timeData->data->length; k++ ){
+//		fprintf(stdout,"%d\t%13.6e\t%13.6e\n",k,IFOdata->timeModelhPlus->data->data[k],IFOdata->timeModelhCross->data->data[k]);
+//	    }
+	
 	
 	/*******************************************************************
 	 * CLEANUP                                                         *
