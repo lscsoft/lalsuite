@@ -32,7 +32,12 @@ LALVariables variables;
 LALVariables variables2;
 
 REAL4 number,five;
-REAL8 number2;
+REAL8 numberR8;
+INT4 numberI4;
+INT8 numberI8;
+COMPLEX8 numberC8;
+COMPLEX16 numberC16;
+
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
 int i;
@@ -44,11 +49,20 @@ int main(int argc, char *argv[]){
   five=5.0;
   variables.head=NULL;
   variables.dimension=0;
-  addVariable(&variables,"number",&number,REAL4_t);
-  number2 = 7.0;
-  addVariable(&variables,"seven",&number2,REAL8_t);
-  number2 = LAL_PI;
-  addVariable(&variables,"pi",&number2,REAL8_t);
+  addVariable(&variables, "number", &number, REAL4_t);
+  numberR8 = 7.0;
+  addVariable(&variables, "seven", &numberR8, REAL8_t);
+  numberR8 = LAL_PI;
+  addVariable(&variables, "pi", &numberR8, REAL8_t);
+  numberI4 = 123;
+  addVariable(&variables, "small", &numberI4, INT4_t);
+  numberI8 = 256*256*256*64;
+  addVariable(&variables, "large", &numberI8, INT8_t);
+  numberC8.re = 2.0;  numberC8.im = 3.0;
+  addVariable(&variables, "complex1", &numberC8, COMPLEX8_t);
+  numberC16.re = 1.23;  numberC16.im = -3.45;
+  addVariable(&variables, "complex2", &numberC16, COMPLEX16_t);
+
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
   setVariable(&variables,"number",&five);
@@ -58,6 +72,14 @@ int main(int argc, char *argv[]){
   printVariables(&variables);
   copyVariables(&variables, &variables2);
   printVariables(&variables2);
+  fprintf(stdout,"compareVariables?: %i\n",
+          compareVariables(&variables,&variables2));
+  numberC16.im = 4.56;
+  setVariable(&variables2,"complex2",&numberC16);
+  fprintf(stdout,"compareVariables?: %i\n",
+          compareVariables(&variables,&variables2));
+  numberC16.im = -3.45;
+  setVariable(&variables2,"complex2",&numberC16);
   fprintf(stdout,"compareVariables?: %i\n",
           compareVariables(&variables,&variables2));
 
@@ -112,7 +134,7 @@ int main(int argc, char *argv[]){
     addVariable(runstate->data->modelParams, "inclination", &iota, REAL8_t);
     addVariable(runstate->data->modelParams, "phase",       &phi,  REAL8_t);
     addVariable(runstate->data->modelParams, "time",        &tc,   REAL8_t);
-    //printVariables(runstate->data->modelParams);
+    printVariables(runstate->data->modelParams);
     templateStatPhase(runstate->data);
   }
 
