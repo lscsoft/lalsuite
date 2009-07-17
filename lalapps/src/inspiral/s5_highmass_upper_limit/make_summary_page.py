@@ -8,7 +8,8 @@ import ConfigParser
 import subprocess
 
 class wiki(object):
-  def __init__(self,fname="wiki.txt"):
+  def __init__(self,open_box=False,fname="wiki.txt"):
+    if open_box: fname = "open_box_" + fname
     self.fname = fname
     self.file = open(fname,"w")
 
@@ -42,7 +43,14 @@ except:
   print >>sys.stderr, "YOU MUST SPECIFY A WEBSERVER AS THE FIRST ARGUMENT (e.g. https://ldas-jobs.ligo.caltech.edu/~channa/highmass_months_23-24_summary_page)"
   sys.exit(1)
 
-page = wiki()
+open_box = False
+try: # see if you want to open the box
+  if sys.argv[2] == "open":
+    print >>sys.stderr, "WARNING: OPENING THE BOX"
+    open_box = True
+
+
+page = wiki(open_box)
 
 page.section("Found / Missed")
 image_list = ['cbc_plotsummary_0_deff_vs_mchirp_H1H2L1.png','cbc_plotsummary_0_deff_vs_mchirp_H1L1.png','cbc_plotsummary_0_deff_vs_mchirp_H2L1.png']
@@ -80,8 +88,7 @@ page.section("Playground SNR")
 image_list = ['cbc_plotsummary_4_playground_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_playground_count_vs_snr_H1L1.png','cbc_plotsummary_4_playground_count_vs_snr_H2L1.png']
 page.image_table(image_list,webserver)
 
-try: # see if you want to open the box
-  if sys.argv[2] == "open":
+if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
@@ -125,6 +132,5 @@ try: # see if you want to open the box
     image_list = ['combinedupper_limit.png', 'combinedposterior.png']
     page.image_table(image_list,webserver)
 
-except: pass
 
 page.finish()
