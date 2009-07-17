@@ -1,14 +1,30 @@
 /* 
-
-LALInferenceTemplate.c:	Bayesian Followup, template calls to LAL template functions. Temporary GeneratePPN
-
-Copyright 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
-
-*/
+ *  LALInferenceTemplate.c:  Bayesian Followup, template calls to LAL template functions. Temporary GeneratePPN
+ *
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/SeqFactories.h>
+#include <lal/Date.h>
 #include "LALInference.h"
 
 
@@ -188,4 +204,110 @@ void LALTemplateWrapper(LALIFOData *IFOdata){
 //	INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
 //	return GENERATEPPNINSPIRALTESTC_ENORM;
 	
+}
+
+
+
+/* ============ Christian's attempt of a LAL template wrapper function: ========== */
+
+
+void templateLALwrap2(LALIFOData *IFOdata)
+{
+  //static LALStatus status;
+  //static InspiralTemplate params;
+  //static REAL4Vector *LALSignal=NULL;
+  //UINT4 n;
+  
+  return;
+}
+
+void templateStatPhase(LALIFOData *IFOdata)
+/*************************************************************/
+/* returns the (analytic) frequency-domain template.         */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* 2.5PN stationary-phase approximation                      */
+/* following  Tanaka/Tagoshi (2000), Phys.Rev.D 62(8):082001 */
+/* or Christensen/Meyer (2001), Phys.Rev.D 64(2):022001.     */
+/* By supplying the optional IFOdata->modelParams "PNOrder"  */
+/* parameter, one may request a 2.0PN (insead of 2.5PN)      */
+/* template.                                                 */
+/*************************************************************/
+{
+  double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
+  double eta  = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
+  double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
+  double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
+  double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
+  double PNOrder=2.5;
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  double inversefraction = (0.5-root) / (0.5+root);
+  double mt = mc * ((pow(1+fraction,0.2) / pow(fraction,0.6)) /* (total mass) */
+                    + (pow(1+inversefraction,0.2) / pow(inversefraction,0.6)));
+  double log_q   = log(mt) + log(LAL_PI) + log(LAL_G_SI) - 3.0*log((double) LAL_C_SI);
+  double log_eta = log(eta);
+  double a[5];
+  long i;
+  double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
+  double ampliConst;
+  //double sineCoef, cosineCoef;
+  double plusCoef, crossCoef;
+  double NDeltaT, phaseArg;
+  double plusRe, plusIm, crossRe, crossIm;
+  double dataStart;
+  int lower, upper;
+ 
+  if (checkVariable(IFOdata->modelParams, "PNOrder"))
+    PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
+  if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 & 2.5 allowed.");
+  ampliConst  = 0.5*log(5.0)+(5.0/6.0)*log(LAL_G_SI)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(LAL_PI)-1.5*log((double)LAL_C_SI);
+  ampliConst  = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)-(log(LAL_PC_SI)+log(1e6)));
+  ampliConst /= IFOdata->timeData->deltaT;
+  //cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(iota),2.0)));
+  //sineCoef   = Fcross * (-1.0*cos(iota));
+  plusCoef  = ampliConst * (-0.5*(1.0+pow(cos(iota),2.0)));
+  crossCoef = ampliConst * (-1.0*cos(iota));
+  //twopitc = 2.0 * pi * (vectorGetValue(parameter,"time") - DF->dataStart);
+  dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
+  twopitc = LAL_TWOPI * (tc - dataStart);
+  a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
+  a[1] =  exp(log(3715.0/84.0+55.0*eta) - log(1.0/384.0) - log_eta - log_q);
+  a[2] = -exp(log(48.0*LAL_PI/128.0) - (2.0/3.0)*log_q - log_eta);
+  a[3] =  exp(log(3.0/128.0) - log_eta - (1.0/3.0)*log_q
+              + log(15293365.0/508032.0+(27145.0/504.0)*eta+(3085.0/72.0)*exp(2.0*log_eta)));
+  a[4] =  exp(log(LAL_PI/128.0)-log_eta+log(38645.0/252.0+5.0*eta));
+ 
+  NDeltaT = IFOdata->timeData->data->length * IFOdata->timeData->deltaT;
+  lower = ceil(IFOdata->fLow * NDeltaT);
+  upper = floor(IFOdata->fHigh * NDeltaT);
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    if ((i > upper) || (i < lower)) /* (no computations outside freq. range) */
+      plusRe = plusIm = crossRe = crossIm = 0.0;
+    else {
+      f    = ((double)i) / NDeltaT;
+      f01  = pow(f, -1.0/6.0);             /* = f^-1/6  */
+      f02  = f01*f01;                      /* = f^-2/6  */
+      f04  = f02*f02;                      /* = f^-4/6  */
+      f06  = f04*f02;                      /* = f^-6/6  */
+      f07  = f06*f01;                      /* = f^-7/6  */
+      f10  = f06*f04;                      /* = f^-10/6 */
+      Psi = a[0]*f10 + a[1]*f06 + a[2]*f04 + a[3]*f02;
+      if (PNOrder>2.0) /*  5th coefficient ignored for 2.0 PN order  */
+        Psi += a[4]*log(f); 
+      phaseArg = Psi + twopitc*f + phi;
+      plusRe  =  f07 * cos(phaseArg);
+      plusIm  =  f07 * sin(phaseArg);
+      crossRe =  -1.0*plusIm * crossCoef;
+      crossIm =  plusRe * crossCoef;
+      plusRe  *= plusCoef;
+      plusIm  *= plusCoef;
+      /* copy over to IFOdata: */
+      IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
+      IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
+      IFOdata->freqModelhCross->data->data[i].re = crossRe;
+      IFOdata->freqModelhCross->data->data[i].im = crossIm;
+    }
+  }
+  IFOdata->modelDomain = frequencyDomain;
+  return;
 }

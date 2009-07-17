@@ -103,6 +103,7 @@ int compareVariables(LALVariables *var1, LALVariables *var2);
 //typedef void (LALTemplateFunction) (LALVariables *currentParams, struct tagLALIFOData *data); //Parameter Set is modelParams of LALIFOData
 typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
 
+
 //Jump proposal distribution
 //Computes proposedParams based on currentParams and additional variables
 //stored as proposalArgs, which could include correlation matrix, etc.,
@@ -179,6 +180,11 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
                               LALTemplateFunction *template);
 
 void executeFT(LALIFOData *IFOdata);
+
+void die(char *message);
+void LALTemplateWrapper(LALIFOData *IFOdata);
+void templateLALwrap2(LALIFOData *IFOdata);
+void templateStatPhase(LALIFOData *IFOdata);
 
 #endif
 

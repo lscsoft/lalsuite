@@ -179,11 +179,11 @@ void printVariables(LALVariables *var)
 /* (by now only prints names and types, but no values) */
 {
   LALVariableItem *ptr = var->head;
-  fprintf(stderr, "LALVariables:\n");
-  if (ptr==NULL) fprintf(stderr, "  <empty>\n");
+  fprintf(stdout, "LALVariables:\n");
+  if (ptr==NULL) fprintf(stdout, "  <empty>\n");
   else {
     while (ptr != NULL) {
-      fprintf(stderr, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      fprintf(stdout, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
       ptr = ptr->next;
     }  
   }
@@ -269,7 +269,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-  if (j!=2) printf(" ERROR: argument vector \"%s\" not well-formed!\n", input);
+  if (j!=2) fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input);
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
@@ -287,8 +287,8 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     /* actual copying: */
     if (j==1) {
       if (l>=511) {
-        printf(" : WARNING: character argument too long!\n");
-        printf(" : \"%s\"\n",(*strings)[k]);
+        fprintf(stderr, " WARNING: character argument too long!\n");
+        fprintf(stderr, " \"%s\"\n",(*strings)[k]);
       }
       else {
         (*strings)[k][l] = input[i];
@@ -403,13 +403,12 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
   /* figure out GMST: */
-  GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
-  GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
-  UandA.units = MST_RAD;
+  XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+  UandA.units    = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
 
-  intrinsicParams.head = NULL;
+  intrinsicParams.head      = NULL;
   intrinsicParams.dimension = 0;
   copyVariables(currentParams, &intrinsicParams);
   removeVariable(&intrinsicParams, "rightascension");
@@ -444,6 +443,9 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       copyVariables(&intrinsicParams, data->modelParams);
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
       template(data);
+      if (data->modelDomain == timeDomain)
+        executeFT(data);
+      /* note that the data->modelParams "time" element may have changed here!! */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
@@ -503,7 +505,11 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
 
 void executeFT(LALIFOData *IFOdata)
-/* execute (forward, time --> freq) Fourier transform */
+/* Execute (forward, time-to-freq) Fourier transform.         */
+/* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
+/* results go into IFOdata->freqModelh...                     */
+int i;
+double norm;
 {
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
@@ -516,6 +522,11 @@ void executeFT(LALIFOData *IFOdata)
       IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
     XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data);
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan);
+	  norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->length);
+	  for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
+		  IFOdata->freqModelhPlus->data->data[i]*=norm;
+		  IFOdata->freqModelhCross->data->data[i]*=norm;
+	  }
   }
 }
 
@@ -534,7 +545,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
   if (irs->data != NULL) {
-    fprintf(stderr, " initialize(): successfully read data.\n");
+    fprintf(stdout, " initialize(): successfully read data.\n");
     ifoPtr = irs->data;
     while (ifoPtr != NULL) {
       ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
@@ -566,7 +577,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     }
   }
   else
-    fprintf(stderr, " initialize(): no data read.\n");
+    fprintf(stdout, " initialize(): no data read.\n");
   return(irs);
 }
 
