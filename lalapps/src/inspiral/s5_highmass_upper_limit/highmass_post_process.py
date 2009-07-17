@@ -49,7 +49,7 @@ class sqlite_job(pipeline.CondorDAGJob):
     """
     self.__prog__ = 'sqlite3'
     self.__executable = string.strip(cp.get('condor','sqlite3'))
-    self.__universe = "vanilla"
+    self.__universe = string.strip(cp.get('condor','sqlite3_universe'))
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd("input","$(macroinput)")
     self.add_condor_cmd('getenv','True')
