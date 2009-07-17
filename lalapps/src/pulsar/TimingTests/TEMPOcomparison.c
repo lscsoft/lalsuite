@@ -372,8 +372,8 @@ main(int argc, char *argv[]){
 
   /* deal with ephemeris files and compute leap seconds */
   edat = LALCalloc(1, sizeof(EphemerisData));
-  LALSnprintf(EphemEarth, 1024, "%s/earth%s.dat", uvar.ephemdir, uvar.ephemyear);
-  LALSnprintf(EphemSun, 1024, "%s/sun%s.dat", uvar.ephemdir, uvar.ephemyear);
+  snprintf(EphemEarth, 1024, "%s/earth%s.dat", uvar.ephemdir, uvar.ephemyear);
+  snprintf(EphemSun, 1024, "%s/sun%s.dat", uvar.ephemdir, uvar.ephemyear);
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
   LALLeapSecs (&status, &leap0, &epoch, &formatAndAcc);

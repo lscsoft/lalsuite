@@ -74,8 +74,9 @@ const double earthRadiusEquator = 6378137.0;           /* (WGS84 value)         
 const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.257223563) */
 /*const double earthRadiusPole    = 6356752.314; */    /* (WGS84 value)                    */
 
-/*-- set flag forcing signal into flat part of Tukey window: --*/
+/*-- set flag forcing signal into flat part of Tukey window:     --*/
 const int forceFlatTukey = 1;
+/*-- (otherwise Tukey window may nibble away part of the signal) --*/
 
 /*-- signal "families" available (common parameter sets): --*/
 enum signal {
@@ -907,6 +908,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   vector injectpar;
   int InitialisationOK = 1;
   double startGPS, endGPS;
+  long lhdf = 0;
   static struct option long_options[] = {
     {"template",           required_argument, 0, 't'},
     {"outfilename",        required_argument, 0, 'l'},
@@ -1787,11 +1789,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
 
   /* for (i=0; i<(*coherentN); ++i) printDF(&DF[i]); */
 
-  long lhdf = 0;
   for (i=0; i<*coherentN; ++i)
     lhdf += 2 * (DF[i].maxInd - DF[i].minInd + 1);
-  if (verbose) printf(" : (log-) likelihood degrees-of-freedom: %ld\n",lhdf);
-
   sprintf(logstring, "%ld", lhdf);
   logtoLOGfile(MF, "log-likelihood degrees-of-freedom", logstring);
 
@@ -2789,25 +2788,35 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
     template2535(DF, parameter, Fplus, Fcross, output);
   /*-- LAL templates... --*/
   else if (waveform == iLALTT2PN00)    /* LAL Taylor T2 Newtonian        */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, newtonian);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, newtonian);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT2PN10)    /* LAL Taylor T2 1.0PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE);
   else if (waveform == iLALTT2PN15)    /* LAL Taylor T2 1.5PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePointFivePN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePointFivePN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT2PN20)    /* LAL Taylor T2 2.0PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, twoPN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, twoPN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_TWO);
   else if (waveform == iLALTT3PN00)    /* LAL Taylor T3 Newtonian        */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, newtonian);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, newtonian);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT3PN10)    /* LAL Taylor T3 1.0PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE);
   else if (waveform == iLALTT3PN15)    /* LAL Taylor T3 1.5PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePointFivePN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePointFivePN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT3PN20)    /* LAL Taylor T3 2.0PN            */
-    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, twoPN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, twoPN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_TWO);
   else if (waveform == iLALIMRPhenomA) /* LAL Phenomenological           */
-    templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, pseudoFourPN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, pseudoFourPN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALEOBNR)      /* LAL EOBNR                      */
-    templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, pseudoFourPN);
+    //templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, pseudoFourPN);
+    templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, LAL_PNORDER_PSEUDO_FOUR);
   /* burst: */
   else if (waveform == bSineGaussian)  /* Sine-Gaussian burst            */
     templateSineGaussianBurst(DF, parameter, Fplus, Fcross, output);
@@ -4970,13 +4979,16 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   vectorInit(&proposal);
   vectorSetup(&proposal, MF->parameterset);
 
-  /* create log file:                                                 */
+  /* create log file                                                  */
+  /* (header line only):                                              */
   logtoCSVfile(MF, &state, LONG_MIN, 0, 0.0, 0.0, 0.0);
 
+  
   /* first compute "null" likelihood, for no signal present:          */
   llikeli = loglikelihood(DF, coherentN, MF->template, NULL);
-  /* log as "negative 1st" iteration, with all zero parameter values: */
-  if (verbose) printf(" | 'null' likelihood         :  %.3f\n", llikeli);
+
+    /* log as "negative 1st" iteration, with all zero parameter values:        */
+    /* if (verbose) printf(" | 'null' likelihood         :  %.3f\n", llikeli); */
 
   logtoCSVfile(MF, &state, -1, 0, 0.0, llikeli, 0.0);
   sprintf(logstring, "%.5f", MF->GMST);

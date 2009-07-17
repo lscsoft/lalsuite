@@ -40,10 +40,9 @@ int LALVsnprintf( char *str, size_t size, const char *fmt, va_list ap );
 
 The routines \verb+LALSnprintf()+ and \verb+LALVsnprintf()+ are
 wrappers for \verb+snprintf()+ and \verb+vsnprintf()+, if these functions
-are available, otherwise they are simply sprintf() or vsprintf().
-It is strongly recommended that \verb+LALSnprintf()+ and \verb+LALVsnprintf()+
-be used rather than \verb+sprintf()+ and \verb+vsprintf()+ as the latter are
-prone to buffer-overflow problems.
+are available, otherwise they are simply sprintf() or vsprintf(). As LAL is
+now C99 these functions will soon be deprecated so please use the
+\verb+snprintf()+ and \verb+vsnprintf()+ functions instead.
 
 \vfill{\footnotesize\input{LALStdCV}}
 

@@ -230,11 +230,11 @@ main(int argc, char *argv[])
       + strlen ( lalappsGitID );
     if ( ( gitstr = LALCalloc ( 1, len ) ) == NULL )
       return LISAMAKESFTS_EMEM;
-    LALSnprintf ( gitstr, len, GIT_LOG_FMT, lalGitID, lalappsGitID );
+    snprintf ( gitstr, len, GIT_LOG_FMT, lalGitID, lalappsGitID );
     len = 1 + strlen ( CVS_LOG_STR ) + strlen( gitstr ) + strlen ( logstr );
     if ( ( add_comment = LALCalloc ( 1, len ) ) == NULL )
       return LISAMAKESFTS_EMEM;
-    LALSnprintf ( add_comment, len, "%s%s%s", CVS_LOG_STR, gitstr, logstr );
+    snprintf ( add_comment, len, "%s%s%s", CVS_LOG_STR, gitstr, logstr );
     LALFree ( gitstr );
     LALFree ( logstr );
   } /* assemble comment-string */
@@ -291,7 +291,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 1;
     UINT4 ifo2 = 2;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z4:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "Z4:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -318,7 +318,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 2;
     UINT4 ifo2 = 0;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z5:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "Z5:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -345,7 +345,7 @@ main(int argc, char *argv[])
     UINT4 ifo1 = 0;
     UINT4 ifo2 = 1;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, "Z6:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "Z6:{%s}-{%s}", multiTs->data[ifo1]->name, multiTs->data[ifo2]->name );
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -371,7 +371,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '7';
@@ -412,7 +412,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '8';
@@ -453,7 +453,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '9';
@@ -614,7 +614,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       size_t length = (size_t) thisTs->Length;
 
       /* Naming-convention: channel = {Z1, Z2, Z3} + ts-name + filename */
-      LALSnprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
+      snprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
       /* Workaround for LISAsim metadata error: read start time from t column of data */
