@@ -24,6 +24,7 @@
 /* ./InferenceTest --IFO [H1] --cache [/Users/john/data/triple/H1/frames.cache] --PSDstart 864162143.0 --PSDlength 1000 --srate 1024 --seglen 10 --trigtime 864162943.0  */
 
 #include <stdio.h>
+#include <lal/Date.h>
 #include "LALInference.h"
 
 
@@ -31,6 +32,7 @@ LALVariables variables;
 LALVariables variables2;
 
 REAL4 number,five;
+REAL8 number2;
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
 int i;
@@ -43,6 +45,10 @@ int main(int argc, char *argv[]){
   variables.head=NULL;
   variables.dimension=0;
   addVariable(&variables,"number",&number,REAL4_t);
+  number2 = 7.0;
+  addVariable(&variables,"seven",&number2,REAL8_t);
+  number2 = LAL_PI;
+  addVariable(&variables,"pi",&number2,REAL8_t);
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
   setVariable(&variables,"number",&five);
@@ -77,20 +83,40 @@ int main(int argc, char *argv[]){
   }
 
 	
-  /* Test the data setup */
+  /* Test the data initialisation &c. */
   runstate = initialize(ppt);
+
   
-  if(runstate->data) fprintf(stdout,"Successfully read in the data!\n");
-  
-  REAL4 m1 = 1.4;
-  addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
-  REAL4 m2 = 1.4;
-  addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
-  REAL4 inc = 0.0;
-  addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
-  REAL4 phii = 0.0;
-  addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
-  	
-  LALTemplateGeneratePPN(runstate->data);
+  if(runstate->data) {
+    fprintf(stdout," data found --> trying some template computations etc.\n");
+
+    REAL4 m1 = 1.4;
+    addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
+    REAL4 m2 = 1.4;
+    addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
+    REAL4 inc = 0.0;
+    addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
+    REAL4 phii = 0.0;
+    addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
+    LALTemplateGeneratePPN(runstate->data);
+
+    /* templateStatPhase() test: */
+    REAL8 mc   = 2.0;
+    REAL8 eta  = 0.24;
+    REAL8 iota = 1.0;
+    REAL8 phi  = 2.0;
+    REAL8 tc   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (runstate->data->timeData->data->length / runstate->data->timeData->deltaT) - 1.0;
+    destroyVariables(runstate->data->modelParams);
+    addVariable(runstate->data->modelParams, "chirpmass",   &mc,   REAL8_t);
+    addVariable(runstate->data->modelParams, "massratio",   &eta,  REAL8_t);
+    addVariable(runstate->data->modelParams, "inclination", &iota, REAL8_t);
+    addVariable(runstate->data->modelParams, "phase",       &phi,  REAL8_t);
+    addVariable(runstate->data->modelParams, "time",        &tc,   REAL8_t);
+    //printVariables(runstate->data->modelParams);
+    templateStatPhase(runstate->data);
+  }
+
+
+  printf(" done.\n");
   return 0;
 }

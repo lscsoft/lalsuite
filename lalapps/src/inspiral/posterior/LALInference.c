@@ -183,7 +183,37 @@ void printVariables(LALVariables *var)
   if (ptr==NULL) fprintf(stdout, "  <empty>\n");
   else {
     while (ptr != NULL) {
-      fprintf(stdout, "  \"%s\" (type #%d)\n", ptr->name, ((int) ptr->type));
+      /* print name: */
+      fprintf(stdout, "  \"%s\"", ptr->name); 
+      /* print type: */
+      switch (ptr->type) {
+        case REAL4_t:
+          fprintf(stdout, "  (type #%d, 'REAL4')", ((int) ptr->type));
+          break;
+        case REAL8_t:
+          fprintf(stdout, "  (type #%d, 'REAL8')", ((int) ptr->type));
+          break;
+        case gslMatrix_t:
+          fprintf(stdout, "  (type #%d, 'gslMatrix')", ((int) ptr->type));          
+          break;
+        default:
+          fprintf(stdout, "  (type #%d, <unknown type>)", ((int) ptr->type));          
+      }
+      /* print value: */
+      switch (ptr->type) {
+        case REAL4_t:
+          fprintf(stdout, "  %e", (double) *(REAL4 *) ptr->value);
+          break;
+        case REAL8_t:
+          fprintf(stdout, "  %e", (double) *(REAL8 *) ptr->value);
+          break;
+        case gslMatrix_t:
+          fprintf(stdout, "  <can't print a matrix>");          
+          break;
+        default:
+          fprintf(stdout, "  <can't print>");          
+      }
+      fprintf(stdout, "\n");
       ptr = ptr->next;
     }  
   }
