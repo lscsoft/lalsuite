@@ -28,7 +28,7 @@
 #include "LALInference.h"
 
 
-void LALTemplateWrapper(LALIFOData *IFOdata){
+void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	static LALStatus stat;								/* status structure */	
 

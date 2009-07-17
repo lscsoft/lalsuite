@@ -91,6 +91,6 @@ int main(int argc, char *argv[]){
   REAL4 phii = 0.0;
   addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
   	
-  LALTemplateWrapper(runstate->data);
+  LALTemplateGeneratePPN(runstate->data);
   return 0;
 }
