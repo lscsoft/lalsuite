@@ -49,7 +49,7 @@ class sqlite_job(pipeline.CondorDAGJob):
     """
     self.__prog__ = 'sqlite3'
     self.__executable = string.strip(cp.get('condor','sqlite3'))
-    self.__universe = "vanilla"
+    self.__universe = string.strip(cp.get('condor','sqlite3_universe'))
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd("input","$(macroinput)")
     self.add_condor_cmd('getenv','True')
@@ -208,6 +208,42 @@ class far_plot_job(pipeline.CondorDAGJob):
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
+class ul_plot_job(pipeline.CondorDAGJob):
+  """
+  A ul_plot Job
+  """
+  def __init__(self, cp, tag_base='UL_PLOT'):
+    """
+    """
+    self.__prog__ = 'ul_plot'
+    self.__executable = string.strip(cp.get('condor','ul_plot'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class summary_page_job(pipeline.CondorDAGJob):
+  """
+  A summary page job
+  """
+  def __init__(self, cp, tag_base='SUMMARY_PAGE'):
+    """
+    """
+    self.__prog__ = 'summary_page'
+    self.__executable = string.strip(cp.get('condor','summary_page'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.add_arg(string.strip(cp.get('output','web_page')))
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
@@ -341,6 +377,27 @@ class far_plot_node(pipeline.CondorDAGNode):
       self.add_parent(p)
     dag.add_node(self)
     
+class ul_plot_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, xml_list, id, p_node):
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_macro("macroid", id)
+    self.add_var_arg(xml_list)
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class summary_page_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, open_box, id, p_node):
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_macro("macroid", id)
+    if open_box: self.add_var_arg("open")
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
 
 
 def ifo_seg_dict(cp):
@@ -393,7 +450,9 @@ lalappsNewcorseJobCombined = lalapps_newcorse_combined_job(cp)
 ligolwSegmentsJob = ligolw_segments_job(cp)
 ligolwThincaToCoincJob =  ligolw_thinca_to_coinc_job(cp)
 hmUpperlimitJob = hm_upperlimit_job(cp)
+hmUpperlimitPlotJob = ul_plot_job(cp)
 farPlotJob = far_plot_job(cp)
+summaryPageJob = summary_page_job(cp)
 
 n = 0
 #Do the segments node
@@ -413,7 +472,9 @@ ligolwInspinjfindNode = {}
 lallappsNewcorseNode = {}
 lallappsNewcorseNodeCombined = {}
 hmUpperlimitNode = {}
+hmUpperlimitPlotNode = {}
 farPlotNode = {}
+summaryPageNode = {}
 db = {}
 
 # to get injection file entries from the cache
@@ -483,14 +544,25 @@ for cat in cats:
   lallappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lallappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");n+=1
 
 #Upper limit jobs
-for cat in ['CAT_3']: 
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+for cat in cats: 
+  hmUpperlimitNode[cat+"H1,H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitPlotNode[cat+"H1,H2,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H1H2L1.xml', n, [hmUpperlimitNode[cat+"H1,H2,L1"]]);n+=1
 
-#IFAR plots
+  hmUpperlimitNode[cat+"H1,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitPlotNode[cat+"H1,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H1L1.xml', n, [hmUpperlimitNode[cat+"H1,L1"]]);n+=1
+
+  hmUpperlimitNode[cat+"H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitPlotNode[cat+"H2,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H2L1.xml', n, [hmUpperlimitNode[cat+"H2,L1"]]);n+=1
+
+#IFAR plots and combined upper limit plots and summary page
 for cat in cats:
   farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lallappsNewcorseNodeCombined[cat]]);n+=1
+  fstr = '2Dsearchvolume-' + timestr + '-H1H2L1.xml 2Dsearchvolume-' + timestr + '-H1L1.xml 2Dsearchvolume-' + timestr + '-H2L1.xml'
+  hmUpperlimitPlotNode[cat] = ul_plot_node(hmUpperlimitPlotJob, dag, fstr, n, [hmUpperlimitNode[cat+"H1,H2,L1"],hmUpperlimitNode[cat+"H1,L1"],hmUpperlimitNode[cat+"H2,L1"]]);n+=1
+  # Summary pages (open and closed box)
+  summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, False, n, [hmUpperlimitPlotNode[cat]]);n+=1
+  summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, True, n, [hmUpperlimitPlotNode[cat]]);n+=1
+
 
 dag.write_sub_files()
 dag.write_dag()
