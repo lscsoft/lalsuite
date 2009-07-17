@@ -83,7 +83,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
 	int nSegs=0;
-	int seglen=0;
+	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
 	REAL8 padding=1.0;
 	int Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
@@ -134,7 +134,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	PSDdatalength=atof(getProcParamVal(commandLine,"--PSDlength")->value);
 	SegmentLength=atof(getProcParamVal(commandLine,"--seglen")->value);
 	if(getProcParamVal(commandLine,"--srate")) SampleRate=atof(getProcParamVal(commandLine,"--srate")->value);
-	seglen=(INT4)(SegmentLength*SampleRate);
+	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	
 	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):1.0/SampleRate;}
@@ -228,6 +228,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			
 			/* Read the data segment */
 			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
+			if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s at %i\n",IFOnames[i],segStart.gpsSeconds); exit(1);}
 			XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
 			if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOnames[i]); exit(1);}
 			IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
