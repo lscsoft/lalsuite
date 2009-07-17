@@ -231,6 +231,9 @@ void templateStatPhase(LALIFOData *IFOdata)
 /* By supplying the optional IFOdata->modelParams "PNOrder"  */
 /* parameter, one may request a 2.0PN (insead of 2.5PN)      */
 /* template.                                                 */
+/* Signal's amplitude corresponds to a luminosity distance   */
+/* of 1 Mpc; re-scaling will need to be taken care of e.g.   */
+/* in the calling likelihood function.                       */
 /*************************************************************/
 {
   double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
@@ -239,22 +242,17 @@ void templateStatPhase(LALIFOData *IFOdata)
   double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
   double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
   double PNOrder = 2.5;  /* (default) */
-  double root = sqrt(0.25-eta);
-  double fraction = (0.5+root) / (0.5-root);
-  double inversefraction = (0.5-root) / (0.5+root);
-  double mt = mc * ((pow(1+fraction,0.2) / pow(fraction,0.6)) /* (total mass) */
-                    + (pow(1+inversefraction,0.2) / pow(inversefraction,0.6)));
+  double fraction = (0.5+sqrt(0.25-eta)) / (0.5-sqrt(0.25-eta));
+  double mt = mc * ((pow(1.0+fraction,0.2) / pow(fraction,0.6)) /* (total mass) */
+                    + (pow(1.0+1.0/fraction,0.2) / pow(1.0/fraction,0.6)));
   double log_q   = log(mt) + log(LAL_PI) + log(LAL_G_SI) - 3.0*log((double) LAL_C_SI);
   double log_eta = log(eta);
   double a[5];
-  long i;
+  double ampliConst, plusCoef, crossCoef;
+  double dataStart, NDeltaT, phaseArg;
   double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
-  double ampliConst;
-  double plusCoef, crossCoef;
-  double NDeltaT, phaseArg;
   double plusRe, plusIm, crossRe, crossIm;
-  double dataStart;
-  int lower, upper;
+  int i, lower, upper;
  
   if (checkVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
