@@ -32,7 +32,13 @@
 #include <lal/VectorOps.h>
 
 
-size_t typeSize[]={sizeof(REAL8),sizeof(REAL4),sizeof(gsl_matrix *)};
+size_t typeSize[] = {sizeof(INT4), 
+                     sizeof(INT8), 
+                     sizeof(REAL4), 
+                     sizeof(REAL8), 
+                     sizeof(COMPLEX8), 
+                     sizeof(COMPLEX16), 
+                     sizeof(gsl_matrix *)};
 
 
 void die(char *message)
@@ -182,17 +188,30 @@ void printVariables(LALVariables *var)
   fprintf(stdout, "LALVariables:\n");
   if (ptr==NULL) fprintf(stdout, "  <empty>\n");
   else {
+    /* loop over entries: */
     while (ptr != NULL) {
       /* print name: */
       fprintf(stdout, "  \"%s\"", ptr->name); 
       /* print type: */
       fprintf(stdout, "  (type #%d, ", ((int) ptr->type));
       switch (ptr->type) {
+        case INT4_t:
+          fprintf(stdout, "'INT4'");
+          break;
+        case INT8_t:
+          fprintf(stdout, "'INT8'");
+          break;
         case REAL4_t:
           fprintf(stdout, "'REAL4'");
           break;
         case REAL8_t:
           fprintf(stdout, "'REAL8'");
+          break;
+        case COMPLEX8_t:
+          fprintf(stdout, "'COMPLEX8'");
+          break;
+        case COMPLEX16_t:
+          fprintf(stdout, "'COMPLEX16'");
           break;
         case gslMatrix_t:
           fprintf(stdout, "'gslMatrix'");
@@ -203,11 +222,25 @@ void printVariables(LALVariables *var)
       fprintf(stdout, ")  ");
       /* print value: */
       switch (ptr->type) {
+        case INT4_t:
+          fprintf(stdout, "%d", *(INT4 *) ptr->value);
+          break;
+        case INT8_t:
+          fprintf(stdout, "%lld", *(INT8 *) ptr->value);
+          break;
         case REAL4_t:
-          fprintf(stdout, "%e", (double) *(REAL4 *) ptr->value);
+          fprintf(stdout, "%e", *(REAL4 *) ptr->value);
           break;
         case REAL8_t:
-          fprintf(stdout, "%e", (double) *(REAL8 *) ptr->value);
+          fprintf(stdout, "%e", *(REAL8 *) ptr->value);
+          break;
+        case COMPLEX8_t:
+          fprintf(stdout, "%e + i*%e", 
+                  (REAL4) ((COMPLEX8 *) ptr->value)->re, (REAL4) ((COMPLEX8 *) ptr->value)->im);
+          break;
+        case COMPLEX16_t:
+          fprintf(stdout, "%e + i*%e", 
+                  (REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
           break;
         case gslMatrix_t:
           fprintf(stdout, "<can't print matrix>");          
@@ -225,8 +258,11 @@ void printVariables(LALVariables *var)
 
 
 int compareVariables(LALVariables *var1, LALVariables *var2)
-/*  compare contents of "var1" and "var2".                       */
-/*  returns zero for equal entries, and one if difference found. */
+/*  Compare contents of "var1" and "var2".                       */
+/*  Returns zero for equal entries, and one if difference found. */
+/*  Make sure to only call this function when all entries are    */
+/*  actually comparable. For example, "gslMatrix" type entries   */
+/*  cannot (yet?) be checked for equality.                       */
 {
   int result = 0;
   LALVariableItem *ptr1 = var1->head;
@@ -237,11 +273,25 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
     if (ptr2 != NULL) {  // corrsesponding entry exists; now compare type, then value:
       if (ptr2->type == ptr1->type) {  // entry type identical
         switch (ptr1->type) {  // do value comparison depending on type:
-          case REAL8_t:
-            result = ((*(REAL8 *) ptr2->value) != (*(REAL8 *) ptr1->value));
+          case INT4_t: 
+            result = ((*(INT4 *) ptr2->value) != (*(INT4 *) ptr1->value));
+            break;
+          case INT8_t: 
+            result = ((*(INT8 *) ptr2->value) != (*(INT8 *) ptr1->value));
             break;
           case REAL4_t: 
             result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
+            break;
+          case REAL8_t:
+            result = ((*(REAL8 *) ptr2->value) != (*(REAL8 *) ptr1->value));
+            break;
+          case COMPLEX8_t: 
+            result = (((REAL4) ((COMPLEX8 *) ptr2->value)->re != (REAL4) ((COMPLEX8 *) ptr1->value)->re)
+                      || ((REAL4) ((COMPLEX8 *) ptr2->value)->im != (REAL4) ((COMPLEX8 *) ptr1->value)->im));
+            break;
+          case COMPLEX16_t: 
+            result = (((REAL8) ((COMPLEX16 *) ptr2->value)->re != (REAL8) ((COMPLEX16 *) ptr1->value)->re)
+                      || ((REAL8) ((COMPLEX16 *) ptr2->value)->im != (REAL8) ((COMPLEX16 *) ptr1->value)->im));
             break;
           case gslMatrix_t: 
             fprintf(stderr, " WARNING: compareVariables() cannot yet compare \"gslMatrix\" type entries.\n");

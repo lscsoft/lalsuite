@@ -64,8 +64,21 @@ struct tagLALIFOData;
 
 /*Data storage type definitions*/
 
-typedef enum tagVariableType {REAL8_t, REAL4_t, gslMatrix_t} VariableType;  //, ..., ...
-typedef enum {timeDomain, frequencyDomain} LALDomain;
+typedef enum tagVariableType {
+  INT4_t, 
+  INT8_t, 
+  REAL4_t, 
+  REAL8_t, 
+  COMPLEX8_t, 
+  COMPLEX16_t, 
+  gslMatrix_t
+} VariableType;
+
+typedef enum {
+  timeDomain, 
+  frequencyDomain
+} LALDomain;
+
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
