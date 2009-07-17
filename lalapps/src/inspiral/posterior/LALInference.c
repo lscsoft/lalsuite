@@ -508,9 +508,9 @@ void executeFT(LALIFOData *IFOdata)
 /* Execute (forward, time-to-freq) Fourier transform.         */
 /* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
 /* results go into IFOdata->freqModelh...                     */
-int i;
-double norm;
 {
+  int i;
+  double norm;
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
     if(!IFOdata->freqModelhPlus)
