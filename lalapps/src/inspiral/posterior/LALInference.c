@@ -405,11 +405,11 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   /* figure out GMST: */
   GPSlal.gpsSeconds     = ((INT4) floor(GPSdouble));
   GPSlal.gpsNanoSeconds = 0; /*((INT4) round(fmod(GPSdouble,1.0)*1e9)); */
-  UandA.units = MST_RAD;
+  UandA.units    = MST_RAD;
   UandA.accuracy = LALLEAPSEC_LOOSE;
   LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
 
-  intrinsicParams.head = NULL;
+  intrinsicParams.head      = NULL;
   intrinsicParams.dimension = 0;
   copyVariables(currentParams, &intrinsicParams);
   removeVariable(&intrinsicParams, "rightascension");
@@ -446,6 +446,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       template(data);
       if (data->modelDomain == timeDomain)
         executeFT(data);
+      /* note that the data->modelParams "time" element may have changed here!! */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
@@ -505,8 +506,9 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
 
 void executeFT(LALIFOData *IFOdata)
-/* Execute (forward, time-to-freq) Fourier transform.                           */
-/* Contents of IFOdata->timeModelh... are transformed to IFOdata->freqModelh... */
+/* Execute (forward, time-to-freq) Fourier transform.         */
+/* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
+/* results go into IFOdata->freqModelh...                     */
 {
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
