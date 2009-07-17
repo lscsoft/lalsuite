@@ -161,7 +161,7 @@ void copyVariables(LALVariables *origin, LALVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
   LALVariableItem *ptr;
-  /* first dispose contents of "target": */
+  /* first dispose contents of "target" (if any): */
   destroyVariables(target);
   /* then copy over elements of "origin": */
   ptr = origin->head;
@@ -186,32 +186,34 @@ void printVariables(LALVariables *var)
       /* print name: */
       fprintf(stdout, "  \"%s\"", ptr->name); 
       /* print type: */
+      fprintf(stdout, "  (type #%d, ", ((int) ptr->type));
       switch (ptr->type) {
         case REAL4_t:
-          fprintf(stdout, "  (type #%d, 'REAL4')", ((int) ptr->type));
+          fprintf(stdout, "'REAL4'");
           break;
         case REAL8_t:
-          fprintf(stdout, "  (type #%d, 'REAL8')", ((int) ptr->type));
+          fprintf(stdout, "'REAL8'");
           break;
         case gslMatrix_t:
-          fprintf(stdout, "  (type #%d, 'gslMatrix')", ((int) ptr->type));          
+          fprintf(stdout, "'gslMatrix'");
           break;
         default:
-          fprintf(stdout, "  (type #%d, <unknown type>)", ((int) ptr->type));          
+          fprintf(stdout, "<unknown type>");
       }
+      fprintf(stdout, ")  ");
       /* print value: */
       switch (ptr->type) {
         case REAL4_t:
-          fprintf(stdout, "  %e", (double) *(REAL4 *) ptr->value);
+          fprintf(stdout, "%e", (double) *(REAL4 *) ptr->value);
           break;
         case REAL8_t:
-          fprintf(stdout, "  %e", (double) *(REAL8 *) ptr->value);
+          fprintf(stdout, "%e", (double) *(REAL8 *) ptr->value);
           break;
         case gslMatrix_t:
-          fprintf(stdout, "  <can't print a matrix>");          
+          fprintf(stdout, "<can't print matrix>");          
           break;
         default:
-          fprintf(stdout, "  <can't print>");          
+          fprintf(stdout, "<can't print>");          
       }
       fprintf(stdout, "\n");
       ptr = ptr->next;
