@@ -187,8 +187,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 		XLALDestroyREAL8TimeSeries(windowedTimeData);
 		
 		for(j=0;j<IFOdata[i].freqData->data->length;j++){
-			IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->length);
-			IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->length);
+			IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+			IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
 		}
 	}
 	for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);

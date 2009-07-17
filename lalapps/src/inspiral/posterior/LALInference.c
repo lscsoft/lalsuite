@@ -522,10 +522,12 @@ void executeFT(LALIFOData *IFOdata)
       IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
     XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data);
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan);
-	  norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->length);
+	  norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 	  for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-		  IFOdata->freqModelhPlus->data->data[i]*=norm;
-		  IFOdata->freqModelhCross->data->data[i]*=norm;
+		  IFOdata->freqModelhPlus->data->data[i].re*=norm;
+		  IFOdata->freqModelhPlus->data->data[i].im*=norm;
+		  IFOdata->freqModelhCross->data->data[i].re*=norm;
+		  IFOdata->freqModelhCross->data->data[i].im*=norm;
 	  }
   }
 }
