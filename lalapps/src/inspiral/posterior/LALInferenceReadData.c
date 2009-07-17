@@ -36,6 +36,9 @@
 #include <lal/Date.h>
 #include <lal/StringInput.h>
 #include <lal/VectorOps.h>
+#include <lal/Random.h>
+#include <lal/LALNoiseModels.h>
+
 
 #include "LALInference.h"
 
@@ -61,6 +64,7 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 [ --channel [channel1,channel2,channel3,..] ] \n\
 --IFO [IFO1,IFO2,IFO3,..] \n\
 --cache [cache1,cache2,cache3,..] \n\
+  (Use LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO to simulate these detectors)\n \
 --PSDstart GPSsecs.GPSnanosecs \n\
 --PSDlength length \n\
 [--srate SampleRate   [4096]] \n\
@@ -82,7 +86,10 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	REAL8 padding=1.0;
 	int Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	int i,j;
+	int FakeFlag=0;
 	char strainname[]="LSC-STRAIN";
+	
+	typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
 	
 	char *chartmp=NULL;
 	char **channels=NULL;
@@ -151,46 +158,90 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
 		}
 	}
-	/* We now have the number of detectors, let's read the PSD data */
-	
-	for(i=0;i<Nifo;i++) {
-		fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,seglen,SegmentLength);
+	/* Set up FFT structures and window */
+	for (i=0;i<Nifo;i++){
 		/* Create FFT plans */
 		IFOdata[i].timeToFreqFFTPlan = XLALCreateForwardREAL8FFTPlan((UINT4) seglen, 0 );
 		IFOdata[i].freqToTimeFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) seglen,0);
 		
 		/* Setup windows */
 		IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
-		
-		PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
-		if(!PSDtimeSeries) {fprintf(stderr,"Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
-		XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
-		PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
-		IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-		XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
-		XLALDestroyREAL8TimeSeries(PSDtimeSeries);
-	}
+	}		
+	
 	
 	/* Trigger time = 1 second before end of segment */
 	memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
 	XLALGPSAdd(&segStart,-SegmentLength+1);
 	
-	/* Read and FFT the data segment */
-	for(i=0;i<Nifo;i++){
-		IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
-		XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
-		if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOnames[i]); exit(1);}
-		IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
-		windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("temp buffer",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
-		XLALDDVectorMultiply(windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);
-		XLALREAL8TimeFreqFFT(IFOdata[i].freqData,windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
-		XLALDestroyREAL8TimeSeries(windowedTimeData);
-		
-		for(j=0;j<IFOdata[i].freqData->data->length;j++){
-			IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
-			IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+	
+	/* Read the PSD data */
+	for(i=0;i<Nifo;i++) {
+		/* Check if fake data is requested */
+		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
+			 && strcmp(caches[i],"LALAdLIGO")))
+		{
+			typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
+			NoiseFunc *PSD=NULL;
+			FakeFlag=1;
+			REAL8 scalefactor=1;
+			RandomParams *datarandparam=XLALCreateRandomParams(0);
+			
+			/* Selection of the noise curve */
+			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}
+			if(!strcmp(caches[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}
+			if(!strcmp(caches[i],"LALGEO")) {PSD = &LALGEOPsd; scalefactor=1E-46;}
+			if(!strcmp(caches[i],"LALEGO")) {PSD = &LALEGOPsd; scalefactor=1.0;}
+			if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 10E-49;}
+			if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
+			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
+			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
+			XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
+										   (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+			for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
+			{
+				PSD(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF);
+				IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*=scalefactor;
+			}
+			IFOdata[i].freqData = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&segStart,0.0,IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,&lalDimensionlessUnit,seglen/2 +1);
+			XLALDestroyRandomParams(datarandparam);
+			/* Create the fake data */
+			for(j=0;j<IFOdata[i].freqData->data->length;j++){
+				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].re*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].im*IFOdata[i].freqData->deltaF));
+			}
+			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries((const char*) "timeData",&segStart,0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
+			XLALREAL8FreqTimeFFT(IFOdata[i].timeData,IFOdata[i].freqData,IFOdata[i].freqToTimeFFTPlan);
+		}
+		else{
+			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,seglen,SegmentLength);
+			
+			PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
+			if(!PSDtimeSeries) {fprintf(stderr,"Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
+			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
+			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
+			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+			XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
+			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+			
+			/* Read the data segment */
+			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
+			XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
+			if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOnames[i]); exit(1);}
+			IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
+			windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("temp buffer",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
+			XLALDDVectorMultiply(windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);
+			XLALREAL8TimeFreqFFT(IFOdata[i].freqData,windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
+			XLALDestroyREAL8TimeSeries(windowedTimeData);
+			
+			for(j=0;j<IFOdata[i].freqData->data->length;j++){
+				IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+				IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+			}
+			
 		}
 	}
+	
+
 	for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
 	
 	for(i=0;i<Nifo;i++) {
