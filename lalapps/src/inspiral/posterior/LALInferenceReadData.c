@@ -38,7 +38,7 @@
 #include <lal/VectorOps.h>
 #include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
-
+#include <lal/XLALError.h>
 
 #include "LALInference.h"
 
@@ -50,7 +50,9 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	REAL8TimeSeries *out = NULL;
 	
 	cache  = XLALFrImportCache( cachefile );
-	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file %s\n",cachefile); exit(-1);}
+        int err;
+        err = *XLALGetErrnoPtr();
+	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file \"%s\",\n       XLALError: \"%s\".\n",cachefile, XLALErrorString(err)); exit(-1);}
 	stream = XLALFrCacheOpen( cache );
 	if(stream==NULL) {fprintf(stderr,"ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
 	out = XLALFrInputREAL8TimeSeries( stream, channel, &start, length , 0 );
@@ -69,7 +71,7 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 --PSDlength length \n\
 [--srate SampleRate   [4096]] \n\
 --seglen segment_length \n\
---trig_time GPSsecs.GPSnanosecs \n\
+--trigtime GPSsecs.GPSnanosecs \n\
 [--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
 [--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n"
 

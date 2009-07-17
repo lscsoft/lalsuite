@@ -182,7 +182,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 void executeFT(LALIFOData *IFOdata);
 
 void die(char *message);
-void LALTemplateWrapper(LALIFOData *IFOdata);
+void LALTemplateGeneratePPN(LALIFOData *IFOdata);
 void templateLALwrap2(LALIFOData *IFOdata);
 void templateStatPhase(LALIFOData *IFOdata);
 
