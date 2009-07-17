@@ -208,8 +208,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			XLALDestroyRandomParams(datarandparam);
 			/* Create the fake data */
 			for(j=0;j<IFOdata[i].freqData->data->length;j++){
-				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].re*IFOdata[i].freqData->deltaF));
-				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].freqData->data->data[j].im*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 			}
 			const char timename[]="timeData";
 			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(timename,&segStart,0.0,(REAL8)1.0/SampleRate,&lalDimensionlessUnit,(size_t)seglen);
