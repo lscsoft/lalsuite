@@ -545,13 +545,13 @@ for cat in cats:
 
 #Upper limit jobs
 for cat in cats: 
-  hmUpperlimitNode[cat+"H1,H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat+"H1,H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1",timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
   hmUpperlimitPlotNode[cat+"H1,H2,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H1H2L1.xml', n, [hmUpperlimitNode[cat+"H1,H2,L1"]]);n+=1
 
-  hmUpperlimitNode[cat+"H1,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat+"H1,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
   hmUpperlimitPlotNode[cat+"H1,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H1L1.xml', n, [hmUpperlimitNode[cat+"H1,L1"]]);n+=1
 
-  hmUpperlimitNode[cat+"H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat+"H2,L1"] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
   hmUpperlimitPlotNode[cat+"H2,L1"] = ul_plot_node(hmUpperlimitPlotJob, dag, '2Dsearchvolume-' + timestr + '-H2L1.xml', n, [hmUpperlimitNode[cat+"H2,L1"]]);n+=1
 
 #IFAR plots and combined upper limit plots and summary page
