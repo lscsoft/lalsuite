@@ -209,20 +209,24 @@ def scramble_pop(m, f):
   ix = scipy.random.randint(0,len(inj), (len(inj),))
   return [inj[i] for i in ix if i < len(m) ], [inj[i] for i in ix if i >=len(m) ]
 
-def scramble_dist(dist,relerr):
+def scramble_dist(dist, relerr, syserr):
   """
   function to handle random calibration error.  Individually srambles the distances
   of injection by an error.
   """
-  return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
-  #return dist * (1-relerr)
+  dist *= float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
+  return dist * (1-syserr)
 
-def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1, derr=0.15):
+def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1, derr=0.197, dsys=0.074):
   """ 
   Compute the search volume in the mass/mass plane, bootstrap
   and measure the first and second moment (assumes the underlying 
   distribution can be characterized by those two parameters) 
   This is gonna be brutally slow
+  derr = (0.134**2+.103**2+.102**2)**.5 = 0.197 which is the 3 detector 
+  calibration uncertainty in quadrature.  This is conservative since some injections
+  will be H1L1 and have a lower error of .17
+  the dsys is the DC offset which is the max offset of .074. 
   """
   if wnfunc: wnfunc /= wnfunc[(wnfunc.shape[0]-1) / 2, (wnfunc.shape[1]-1) / 2]
   x = twodbin.shape[0]
@@ -245,10 +249,10 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1,
     if bootnum > 1: sm, sf = scramble_pop(missed, found)
     else: sm, sf = missed, found
     for l in sf:#found:
-      tbin = rArrays[dbin[scramble_dist(l.distance,derr)]]
+      tbin = rArrays[dbin[scramble_dist(l.distance,derr,dsys)]]
       tbin.incnumerator( (l.mass1, l.mass2) )
     for l in sm:#missed:
-      tbin = rArrays[dbin[scramble_dist(l.distance,derr)]]
+      tbin = rArrays[dbin[scramble_dist(l.distance,derr,dsys)]]
       tbin.incdenominator( (l.mass1, l.mass2) )
     
     tmpArray2=rate.BinnedArray(twodbin) #start with a zero array to compute the mean square
