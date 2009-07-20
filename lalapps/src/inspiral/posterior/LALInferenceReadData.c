@@ -216,7 +216,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			XLALREAL8FreqTimeFFT(IFOdata[i].timeData,IFOdata[i].freqData,IFOdata[i].freqToTimeFFTPlan);
 		}
 		else{
-			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,seglen,SegmentLength);
+			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
 			
 			PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
 			if(!PSDtimeSeries) {fprintf(stderr,"Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
