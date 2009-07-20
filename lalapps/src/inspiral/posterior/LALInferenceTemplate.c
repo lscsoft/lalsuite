@@ -232,11 +232,11 @@ void templateLALwrap2(LALIFOData *IFOdata)
   params.nStartPad   = 0;
   params.nEndPad     = 0;
   params.massChoice  = m1Andm2;
-  params.approximant = approximant;  /*  TaylorT1, ...              */
-  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
-  params.fLower      = DF->minF * 0.9;
-  params.fCutoff     = (DF->FTSize-1)*DF->FTDeltaF;  /* (Nyquist freq.) */
-  params.tSampling   = 1.0/DF->dataDeltaT;
+	params.approximant = TaylorT1;//approximant;  /*  TaylorT1, ...              */
+	params.order       = 0;//order;        /*  0=Newtonian, ..., 7=3.5PN  */
+	params.fLower      = 40.0;//DF->minF * 0.9;
+	params.fCutoff     = 500.0;//	(DF->FTSize-1)*DF->FTDeltaF;  /* (Nyquist freq.) */
+	params.tSampling   = 1.0/100.0;//DF->dataDeltaT;
   params.startTime   = 0.0;
 
   
