@@ -274,6 +274,9 @@ for vetoes, infile in cp.items("segments"):
 os.chdir(analysisDirectory)
 os.chdir("segments")
 
+# Determine which veto categories to filter
+veto_categores = [int(cat) for cat in cp.get('segments','veto-categories').split(',')] 
+
 # Download the veto definer xml file
 vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
 
@@ -281,6 +284,21 @@ vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
 inspiralutils.generate_veto_cat_files(cp, vetoDefFile, \
     opts.generate_veto_segments)
 
+# Generate a combined veto file for each ifo for use by pipedown
+gps_start = int(opts.gps_start_time)
+gps_end = int(opts.gps_end_time)
+duration = gps_end - gps_start
+
+for category in [1] + veto_categores:
+  ifos_string = ''
+  veto_cat_files = []
+  veto_cat_filename = str(gps_start) + '-' + str(duration) + '.xml'
+  for ifo in ifos:
+    veto_cat_files.append('-'.join([ifo, 'VETOTIME_CAT' + str(category), veto_cat_filename]))
+    ifos_string += ifo
+  concat_veto_call = ' '.join([ cp.get("condor", "ligolw_add"),
+    "--output", '-'.join([ifos_string, 'VETOTIME_CAT_' + str(category), veto_cat_filename])] + veto_cat_files )
+  inspiralutils.make_external_call(concat_veto_call,show_stdout=True,show_command=True)
 
 segFile = {}
 dqVetoes = {}
@@ -294,7 +312,6 @@ for ifo in ifos:
   cp.set("input", ifo.lower() + "-segments", segFile[ifo])
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
-
 
 os.chdir("..")
 
@@ -404,7 +421,7 @@ if opts.run_data_quality:
   hipeAnalysisVetoNode = {}
   hipeInjVetoNode = {}
 
-  for category in [2,3,4]:
+  for category in veto_categories:
     hipeInjVetoNode[category] = {}
     print "Setting up the category " + str(category) + " veto dags"
 
@@ -462,7 +479,7 @@ if opts.reverse_analysis:
     hipeAnalysisVetoNode = {}
     hipeInjVetoNode = {}
 
-    for category in [2,3,4]:
+    for category in veto_categories:
       print "Setting up the category " + str(category) + " veto dags" + " for reverse chirp analysis"
       cp.set ("inspiral","reverse-chirp-bank","")
       if opts.run_play_analysis:

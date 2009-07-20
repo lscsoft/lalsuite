@@ -176,7 +176,7 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
   end = config.get("input", "gps-end-time")
 
   genVetoCall = executable
-  genVetoCall = ' '.join([ genVetoCall, "--separate-categories", 
+  genVetoCall = ' '.join([ genVetoCall, "--cumulative-categories", 
 	"--segment-url", config.get("segfind", "segment-url"),
 	"--veto-file", vetoDefFile,
 	"--gps-start-time", start,
@@ -306,7 +306,7 @@ def datafind_segments(ifo, config):
   dataFindFile = ifo_type + "-" + str(start) + "-" + \
       str(end - start) + ".txt"
 
-  print "Running LSCdataFind to determine available data from " + type + \
+  print "Running ligo_data_find to determine available data from " + type + \
       " frames for " + ifo
   dataFindCall = executable 
   for opt,arg in config.items("datafind"):
