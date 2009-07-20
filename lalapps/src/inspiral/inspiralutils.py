@@ -250,11 +250,11 @@ def veto_segments(ifo, config, categories, generateVetoes):
   vetoFiles = {}
   
   for category in categories:
-    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "*.xml"
+    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "-" + \
+      str(start) + "-" + str(end - start) + ".xml"
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
-        str(start) + "-" + \
-        str(end - start) + ".txt"
+        str(start) + "-" + str(end - start) + ".txt"
 
     if generateVetoes: 
       return_val = convert_veto_cat_xml_to_txt(config, veto_cat_file, vetoFile)
@@ -394,7 +394,7 @@ def downloadDqSegFiles(config,ifo,generate_segments):
 ##############################################################################
 # Function to determine the segments to analyze 
 #(science segments, data quality, missing segments)
-def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
+def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     use_available_data=False, data_quality_vetoes=False):
   """
   generate segments for the given ifo
@@ -452,9 +452,9 @@ def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
     print "done"
 
   if data_quality_vetoes: 
-    print "Generating cat 2, 3, and 4 veto segments for " + ifo + "..."
+    print "Generating cat " + str(veto_categories) + " veto segments for " + ifo + "..."
     sys.stdout.flush()
-  dqVetoes = veto_segments(ifo, config, [2,3,4], data_quality_vetoes )
+  dqVetoes = veto_segments(ifo, config, veto_categories, data_quality_vetoes )
   if data_quality_vetoes: print "done"
 
   return tuple([segFile, dqVetoes])
@@ -597,8 +597,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("input","injection-seed",injSeed)
     hipecp.set("input", "num-slides", "")
     # set any extra inspiral arguments for the injection
-    for item in config.items('-'.join([hipeDir,"inspiral"])):
-      hipecp.set("inspiral",item[0],item[1])
+    try:
+      for item in config.items('-'.join([hipeDir,"inspiral"])):
+        hipecp.set("inspiral",item[0],item[1])
+    except ConfigParser.NoSectionError:
+      pass
   else:
     # add the time slide to the ini file
     numSlides = slide_sanity(config, playOnly)

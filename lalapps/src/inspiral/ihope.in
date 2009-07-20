@@ -275,7 +275,7 @@ os.chdir(analysisDirectory)
 os.chdir("segments")
 
 # Determine which veto categories to filter
-veto_categores = [int(cat) for cat in cp.get('segments','veto-categories').split(',')] 
+veto_categories = [int(cat) for cat in cp.get('segments','veto-categories').split(',')] 
 
 # Download the veto definer xml file
 vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
@@ -289,7 +289,7 @@ gps_start = int(opts.gps_start_time)
 gps_end = int(opts.gps_end_time)
 duration = gps_end - gps_start
 
-for category in [1] + veto_categores:
+for category in [1] + veto_categories:
   ifos_string = ''
   veto_cat_files = []
   veto_cat_filename = str(gps_start) + '-' + str(duration) + '.xml'
@@ -304,7 +304,8 @@ segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, 
+  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(
+  cp, ifo, veto_categories,
       opts.generate_segments, opts.use_available_data, \
       opts.generate_veto_segments)
   # set correct name as we're in the segments directory:
