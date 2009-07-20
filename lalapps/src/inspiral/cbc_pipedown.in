@@ -170,6 +170,7 @@ for tag in user_tags:
   t2c_job = inspiral.ThincaToCoincJob(cp)
   tosql_job = pipeline.LigolwSqliteJob(cp)
   dbsimplify_job = inspiral.DBSimplifyJob(cp)
+  comp_durs_job = inspiral.ComputeDurationsJob(cp)
   cluster_job = inspiral.ClusterCoincsJob(cp)
   ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
   ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
@@ -184,6 +185,7 @@ for tag in user_tags:
   t2c_job.set_sub_file( '.'.join([ basename, tag, 'thinca_to_coinc', 'sub' ]) )
   tosql_job.set_sub_file( '.'.join([ basename, tag, 'ligolw_sqlite', 'sub' ]) )
   dbsimplify_job.set_sub_file( '.'.join([ basename, tag, 'dbsimplify', 'sub' ]) )
+  comp_durs_job.set_sub_file( '.'.join([ basename, tag, 'compute_durations', 'sub' ]) )
   cluster_job.set_sub_file( '.'.join([ basename, tag, 'cluster_coincs', 'sub' ]) )
   ucfar_job.set_sub_file( '.'.join([ basename, tag, 'uncombined.cfar', 'sub' ]) )
   ccfar_job.set_sub_file( '.'.join([ basename, tag, 'combined.cfar', 'sub' ]) )
@@ -220,8 +222,8 @@ for tag in user_tags:
   # from the distinct_instrument_sets figure out what distinct ifos there are
   distinct_ifos = set()
   for on_instruments in distinct_instrument_sets:
-    distinct_ifos |= lsctables.instrument_set_from_ifos(on_instruments)
-  distinct_ifos = ''.join(sorted(distinct_ifos))
+    distinct_ifo_set |= lsctables.instrument_set_from_ifos(on_instruments)
+  distinct_ifos = ''.join(sorted(distinct_ifo_set))
 
   # get the veto file
   if 'VETO' in tag:
@@ -268,9 +270,7 @@ for tag in user_tags:
         this_cache_file.close()
         # write node
         this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
-        input_instruments = lsctables.ifos_from_instrument_set(
-          lsctables.instrument_set_from_ifos( on_instruments ) )
-        this_t2c_node.set_instruments(input_instruments)
+        this_t2c_node.set_instruments(lsctables.ifos_from_instrument_set( distinct_ifo_set ))
         this_t2c_node.set_input_cache(this_cache_name)
         this_t2c_node.set_veto_segments( veto_file )
         this_t2c_node.set_veto_segments_name( veto_segs_name )
@@ -361,6 +361,20 @@ for tag in user_tags:
   
   dag.add_node( dbsimplify_node )
   
+  ############################################################################
+  # Step 3b: Compute durations in the database
+
+  print "\tsetting up compute_durations node..."
+
+  # set node options
+  comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
+  comp_durs_node.set_tmp_space( tmp_space )
+  comp_durs_node.set_datatbase( raw_result_db )
+
+  # set parent node
+  comp_durs_node.add_parent( dbsimplify_node )
+
+  dag.add_node(comp_durs_node)
   
   ############################################################################
   # Step 3c: If simulation, add injection file.
@@ -374,7 +388,7 @@ for tag in user_tags:
     dbaddinj_node.set_database( raw_result_db )
     dbaddinj_node.set_injection_file( inj_file )
   
-    dbaddinj_node.add_parent( dbsimplify_node )
+    dbaddinj_node.add_parent( comp_durs_node )
   
     dag.add_node( dbaddinj_node )
   
@@ -396,7 +410,7 @@ for tag in user_tags:
   cluster_node.set_output(result_db)
   
   # set parent node
-  cluster_node.add_parent( dbsimplify_node )
+  cluster_node.add_parent( comp_durs_node )
   if simulation:
     cluster_node.add_parent( dbaddinj_node )
   
