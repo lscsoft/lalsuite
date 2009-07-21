@@ -23,6 +23,7 @@ extern void XLALDestroyPSSTimeseries(PSSTimeseries *ts);
 extern void XLALDestroyPSSEventParams(PSSEventParams *ts);
 
 /* open and close a log file */
+/* the PSS functions definitely need a working file pointer they can log to */
 /* opening a log file "-" logs to stderr */
 extern FILE* XLALPSSOpenLog(char*name);
 extern void XLALPSSCloseLog(void);
@@ -32,6 +33,7 @@ extern REAL8TimeSeries
 *XLALConvertPSSTimeseriesToREAL8Timeseries
 (REAL8TimeSeries *ts,
  PSSTimeseries *tsPSS);
+
 extern PSSTimeseries
 *XLALConvertREAL8TimeseriesToPSSTimeseries
 (PSSTimeseries *tsPSS,
@@ -41,6 +43,7 @@ extern REAL4TimeSeries
 *XLALConvertPSSTimeseriesToREAL4Timeseries
 (REAL4TimeSeries *ts,
  PSSTimeseries *tsPSS);
+
 extern PSSTimeseries
 *XLALConvertREAL4TimeseriesToPSSTimeseries
 (PSSTimeseries *tsPSS,
@@ -53,11 +56,13 @@ extern PSSTimeseries
  PSSTimeseries *tsin,
  PSSHeaderParams* hp,
  REAL4 f);
+
 extern PSSEventParams
 *XLALIdentifyPSSCleaningEvents
 (PSSEventParams *events,
  PSSTimeseries *ts,
  PSSHeaderParams* hp);
+
 extern PSSTimeseries
 *XLALSubstractPSSCleaningEvents
 (PSSTimeseries *tsout,
