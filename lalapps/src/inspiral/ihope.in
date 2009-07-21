@@ -127,10 +127,6 @@ parser.add_option("-I", "--skip-injections",action="store_false",\
     default=True, dest="run_injections", \
     help="skip the inspiral analysis with software injections")
 
-parser.add_option("-H", "--run-hardware-injections",action="store_true",\
-    default=False, dest="run_hardware_injections", \
-        help="skip the inspiral analysis with hardware injections")
-
 parser.add_option("-A", "--skip-search",action="store_false",\
     default=True, dest="run_search",
     help="skip the search of the data (i.e. don't run inspiral hipe)")
@@ -181,13 +177,6 @@ if not opts.gps_end_time:
 
 if opts.gps_end_time < opts.gps_start_time:
   print >> sys.stderr, "The GPS end time must be after the GPS start time"
-  sys.exit(1)
-
-#FIXME: run hardware injections option will no longer work with the switch
-# to ligolw_segment_query. For now, will print error message and exit; once
-# fixed, remove this.
-if opts.run_hardware_injections:
-  print >> sys.stderr, "--run-hardware-injections currently does not work"
   sys.exit(1)
 
 ##############################################################################
@@ -276,20 +265,11 @@ sys.stdout.flush()
 # first, copy the segment files and make sure that the ini file reflects the
 # new path, relative to the DAG directories.
 
-if opts.run_hardware_injections:
-  hwcp = copy.deepcopy(cp)
-  inspiralutils.mkdir("hardware_inj_segments")
-  
 inspiralutils.mkdir("segments")
 os.chdir("..")
 for vetoes, infile in cp.items("segments"):
   inspiralutils.copyCategoryFiles(cp,vetoes,"segments",infile,\
                 analysisDirectory)
-
-if opts.run_hardware_injections:
-  for vetoes, infile in hwcp.items("segments"):
-    inspiralutils.copyCategoryFiles(hwcp,vetoes,"hardware_inj_segments",infile,\
-                  analysisDirectory,hardwareInj=True)
 
 os.chdir(analysisDirectory)
 os.chdir("segments")
@@ -314,37 +294,6 @@ for ifo in ifos:
   cp.set("input", ifo.lower() + "-segments", segFile[ifo])
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
-
-
-if opts.run_hardware_injections:
-  # FIXME: This will no longer work
-  dqHWSegFile = {}
-  # Download the dqHWSegFiles
-  for ifo in ifos:
-    os.chdir("../hardware_inj_segments")
-    dqHWSegFile[ifo] = inspiralutils.downloadDqHWSegFiles(hwcp,\
-        ifo,opts.generate_segments,"../segments/" + dqSegFile[ifo])
-    os.chdir("../segments")
-
-  os.chdir("..")
-  os.chdir("hardware_inj_segments")
-  hwInjHtmlLoc = hwcp.get('hardware-inj','hw-inj-file-html-path')
-  hwFileTempName = 'HARDWARE_INJECTIONS.xml'
-  hwFileTempName,hwInfo = urllib.urlretrieve(hwInjHtmlLoc,hwFileTempName)
-  hwcp.set('input','hardware-inj-file',\
-           '../hardware_inj_segments/' + hwFileTempName)
-
-  HWsegFile = {}
-  HWdqVetoes = {}
-
-  for ifo in ifos:
-    HWsegFile[ifo],HWdqVetoes[ifo]=inspiralutils.findSegmentsToAnalyze(hwcp,\
-        ifo,dqHWSegFile[ifo],opts.generate_segments, opts.use_available_data, \
-        opts.generate_veto_segments)
-    HWsegFile[ifo] = "../hardware_inj_segments/" + HWsegFile[ifo]
-    hwcp.set("input", ifo.lower() + "-segments", HWsegFile[ifo])
-    for key in HWdqVetoes[ifo].keys():
-      HWdqVetoes[ifo][key] = "../hardware_inj_segments/" + HWdqVetoes[ifo][key]
 
 
 os.chdir("..")
@@ -391,15 +340,6 @@ if opts.run_search:
     dag.add_node(hipeAnalysisNode)
     if opts.run_datafind or opts.run_tmpltbank:
       hipeAnalysisNode.add_parent(hipeDfNode)
-
-  if opts.run_hardware_injections:
-    hipeHWinjNode = inspiralutils.hipe_setup("hardware_injections", hwcp, ifos,\
-        opts.log_path, hardwareInj = True)
-    for cacheFile in hipeHWinjNode.get_output_files():
-      cachelist.append("hardware_injections/" + cacheFile)
-    dag.add_node(hipeHWinjNode)
-    if opts.run_datafind:
-      hipeHWinjNode.add_parent(hipeDfNode)
 
   if opts.run_injections:
     hipeInjNode = {} 
@@ -463,7 +403,6 @@ if opts.run_data_quality:
   hipePlayVetoNode = {}
   hipeAnalysisVetoNode = {}
   hipeInjVetoNode = {}
-  hipeHWinjVetoNode = {}
 
   for category in [2,3,4]:
     hipeInjVetoNode[category] = {}
@@ -496,20 +435,6 @@ if opts.run_data_quality:
       elif category>2: 
         hipeAnalysisVetoNode[category].add_parent( \
             hipeAnalysisVetoNode[category-1])
-
-    if opts.run_hardware_injections:
-      print "Running inspiral hipe for hardware injections with vetoes"
-      hipeHWinjVetoNode[category] = inspiralutils.hipe_setup( \
-          "hardware_injections",hwcp, ifos, opts.log_path, \
-          vetoCat = category, vetoFiles = HWdqVetoes,hardwareInj=True)
-      for cacheFile in hipeHWinjVetoNode[category].get_output_files():
-        cachelist.append("hardware_injections" + "/" + cacheFile)
-      dag.add_node(hipeHWinjVetoNode[category])
-      if category==2 and opts.run_search:
-        hipeHWinjVetoNode[category].add_parent(hipeHWinjNode)
-      elif category>2:
-        hipeHWinjVetoNode[category].add_parent( \
-            hipeHWinjVetoNode[category-1])
 
 			      
     if opts.run_injections:
@@ -620,44 +545,6 @@ if opts.run_plots:
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
-
-  # Setting up plots for hardware injection run.
-  
-  if opts.run_hardware_injections:
-    print "Making plots depending on the hardware injection"
-    if opts.run_full_data:
-      slideSuffix = "FULL_DATA"
-    elif opts.run_playground:
-      slideSuffix = "PLAYGROUND"
-    else:
-      slideSuffix = "NONE_AVAILABLE"
-    if opts.run_playground:
-      zeroLagSuffix = "PLAYGROUND"
-    else:
-      zeroLagSuffix = "NONE_AVAILABLE"
-    # Set up parent Nodes
-    if opts.run_search:
-      parentNodes=[hipeHWinjNode]
-      if opts.run_full_data:
-        parentNodes.append(hipeAnalysisNode)
-      if opts.run_playground:
-        parentNodes.append(hipePlayNode)
-    else: parentNodes = None
-
-    if opts.run_data_quality:
-      parentVetoNodes = [hipeHWinjVetoNode[4]]
-      if opts.run_full_data:
-        parentVetoNodes.append(hipeAnalysisVetoNode[3])
-      if opts.run_playground:
-        parentVetoNodes.append(hipePlayVetoNode[3])
-    else: parentVetoNodes = None
-    dag = inspiralutils.injZeroSlidePlots(dag,\
-          "hardware_injections" + "_summary_plots", hwcp, opts.log_path,\
-          "HARDWARE_INJECTIONS", zeroLagSuffix, slideSuffix, \
-          "../" + cachefilename, opts.do_dag_categories, parentNodes,
-          parentVetoNodes, 3, ifos)
-    print "Making plots of hardware injection runs"
-
 
   # Setting up plots for software injection run.
   if opts.run_injections:

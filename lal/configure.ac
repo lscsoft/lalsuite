@@ -156,10 +156,6 @@ AH_TOP([
 ])
 AH_TEMPLATE([LAL_SIZEOF_DOUBLE], [The number of bytes in a double.])
 AH_TEMPLATE([LAL_SIZEOF_FLOAT], [The number of bytes in a float.])
-AH_TEMPLATE([LAL_SIZEOF_INT], [The number of bytes in a int.])
-AH_TEMPLATE([LAL_SIZEOF_LONG], [The number of bytes in a long.])
-AH_TEMPLATE([LAL_SIZEOF_LONG_LONG], [The number of bytes in a long long.])
-AH_TEMPLATE([LAL_SIZEOF_SHORT], [The number of bytes in a short.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])

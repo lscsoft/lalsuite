@@ -4,6 +4,8 @@ from pylal import rate
 from pylal import SimInspiralUtils
 import scipy
 import numpy
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 from math import *
 import sys
@@ -101,6 +103,8 @@ vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 
 der = dvA[0] #pylab.log10(eA.array)
 
+fn = sys.argv[1]
+
 pylab.figure(1)
 masses = bins[15,15]
 print masses
@@ -120,13 +124,14 @@ print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(0)
-pylab.title("Combined Posteriors for a few mass bins",fontsize=14)
+pylab.title("Combined posteriors for a few mass bins",fontsize=14)
 pylab.legend(["15,15", "50,50", "1,99", "1,24"])
 pylab.ylabel("Prob (unnormalized)",fontsize=14)
 pylab.xlabel("Rate",fontsize=14)
 pylab.ylim([0.0001, 1])
 pylab.grid()
-
+if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','posterior.png'))
+else: pylab.savefig("combinedposterior.png")
 
 pylab.figure(2)
 pylab.gray()
@@ -143,6 +148,8 @@ pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
+pylab.savefig(fn.split('-')[-1].replace('.xml','volume_time.png'))
+
 #pylab.show()
 
 pylab.figure(3)
@@ -155,6 +162,8 @@ pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
+pylab.savefig(fn.split('-')[-1].replace('.xml','fractional_error.png'))
+
 
 pylab.figure(4)
 pylab.pcolor(X,Y, der )
@@ -166,6 +175,8 @@ pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
+pylab.savefig(fn.split('-')[-1].replace('.xml','lambda.png'))
+
 
 pylab.figure(5)
 pylab.gray()
@@ -178,7 +189,10 @@ pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
+if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','upper_limit.png'))
+else: pylab.savefig("combinedupper_limit.png")
 
-pylab.show()
+
+#pylab.show()
 
 

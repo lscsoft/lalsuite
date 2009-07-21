@@ -1387,7 +1387,7 @@ void XLALSkymap2KernelConstruct(
         double eye[2][2];
         double fTdiagwSwfeye[2][2];
         double invfTdiagwSwfeye[2][2];
-        double finvfTdiagwSwfeye[3][2];        
+        double finvfTdiagwSwfeye[3][2];
 
         // Compute the kernel
 
