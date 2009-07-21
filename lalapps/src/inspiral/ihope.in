@@ -298,15 +298,15 @@ for category in [1] + veto_categories:
     ifos_string += ifo
   concat_veto_call = ' '.join([ cp.get("condor", "ligolw_add"),
     "--output", '-'.join([ifos_string, 'VETOTIME_CAT_' + str(category), veto_cat_filename])] + veto_cat_files )
-  inspiralutils.make_external_call(concat_veto_call,show_stdout=True,show_command=True)
+  inspiralutils.make_external_call(concat_veto_call)
 
 segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
   segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(
-  cp, ifo, veto_categories,
-      opts.generate_segments, opts.use_available_data, \
+      cp, ifo, veto_categories,
+      opts.generate_segments, opts.use_available_data,
       opts.generate_veto_segments)
   # set correct name as we're in the segments directory:
   segFile[ifo] = "../segments/" + segFile[ifo]
