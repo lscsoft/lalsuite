@@ -137,7 +137,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	
-	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):1.0/SampleRate;}
+	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):SampleRate;}
 	
 	if(Nchannel==0)
 	{
