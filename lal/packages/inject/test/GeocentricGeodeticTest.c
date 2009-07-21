@@ -372,7 +372,7 @@ main( int argc, char **argv )
   }
 
   /* Print maximum. */
-  fprintf( stderr, "Maximum error: %.16em\n", ddmax );
+  fprintf( stdout, "Maximum error: %.16em\n", ddmax );
   if ( !xyz && ddmax > 1.0e-6 ) {
     ERROR( GEOCENTRICGEODETICTESTC_ETEST,
 	   GEOCENTRICGEODETICTESTC_MSGETEST, 0 );

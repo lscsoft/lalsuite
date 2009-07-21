@@ -99,12 +99,12 @@
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <FrameL.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
+#include <lal/LALFrameL.h>
 #include <lal/Calibration.h>
 #include <lal/PrintFTSeries.h>
 

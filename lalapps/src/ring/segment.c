@@ -58,7 +58,7 @@ int compute_data_segment(
   verbose( "computing overwhitened data segment %u\n", segmentNumber );
 
   /* name of this segment */
-  LALSnprintf( segment->name, sizeof( segment->name ), "%s_SEG_%u",
+  snprintf( segment->name, sizeof( segment->name ), "%s_SEG_%u",
       series->name, segmentNumber );
 
   /* allocate memory for the data */

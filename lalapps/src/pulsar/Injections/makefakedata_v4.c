@@ -1563,7 +1563,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,
       ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
     }
 
-  LALSnprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
+  snprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
   ret->name[LALNameLength-1]=0;
 
   /* initialize loop */

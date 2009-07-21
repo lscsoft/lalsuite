@@ -15,7 +15,7 @@ import os, sys, re
 import ConfigParser
 from optparse import OptionParser
 import tempfile
-sys.path.append('/home/cdcapano/local/pipedown_speedup/lib/python2.4/site-packages/lalapps')
+sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -98,6 +98,8 @@ if not options.log_path:
 # parse the ini file and initialize
 cp = ConfigParser.ConfigParser()
 cp.read(options.config_file)
+
+tmp_space = cp.get('pipeline', 'node-tmp-dir')
 
 experiment_start = options.gps_start_time
 experiment_duration = str(int(options.gps_end_time) - int(options.gps_start_time))
@@ -300,7 +302,7 @@ for tag in user_tags:
   # set node options
   t2c2sql_node = pipeline.LigolwSqliteNode( tosql_job )
   t2c2sql_node.set_input_cache( t2c_output_cache )
-  t2c2sql_node.set_tmp_space( options.log_path )
+  t2c2sql_node.set_tmp_space( tmp_space )
   # database name has form: 
   # distinct_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
   db_type = 'CBC_TRIGDB_RAW-' + tag
@@ -336,7 +338,7 @@ for tag in user_tags:
   # write node to add the veto file
   veto2sql_node = pipeline.LigolwSqliteNode( tosql_job )
   veto2sql_node.set_input_cache( veto_cache_file )
-  veto2sql_node.set_tmp_space( options.log_path )
+  veto2sql_node.set_tmp_space( tmp_space )
   veto2sql_node.set_database( raw_result_db )
   
   # set parent node
@@ -351,7 +353,7 @@ for tag in user_tags:
   
   # set node options
   dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
-  dbsimplify_node.set_tmp_space( options.log_path )
+  dbsimplify_node.set_tmp_space( tmp_space )
   dbsimplify_node.set_database( raw_result_db )
   
   # set parent node
@@ -368,7 +370,7 @@ for tag in user_tags:
   
     # set node options
     dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
-    dbaddinj_node.set_tmp_space( options.log_path )
+    dbaddinj_node.set_tmp_space( tmp_space )
     dbaddinj_node.set_database( raw_result_db )
     dbaddinj_node.set_injection_file( inj_file )
   
@@ -383,7 +385,7 @@ for tag in user_tags:
   
   # set node options
   cluster_node = inspiral.ClusterCoincsNode( cluster_job )
-  cluster_node.set_tmp_space( options.log_path )
+  cluster_node.set_tmp_space( tmp_space )
   cluster_node.set_input( raw_result_db )
   # output database name has form:
   # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
@@ -408,7 +410,7 @@ for tag in user_tags:
   
   # set node options: output database is same as input
   ucfar_node = inspiral.CFarNode( ucfar_job )
-  ucfar_node.set_tmp_space( options.log_path )
+  ucfar_node.set_tmp_space( tmp_space )
   ucfar_node.set_input( result_db )
   ucfar_node.set_output( result_db )
   
@@ -424,7 +426,7 @@ for tag in user_tags:
   
   # set node options: output database is same as input
   ccfar_node = inspiral.CFarNode( ccfar_job )
-  ccfar_node.set_tmp_space( options.log_path )
+  ccfar_node.set_tmp_space( tmp_space )
   ccfar_node.set_input( result_db )
   ccfar_node.set_output( result_db )
   
@@ -445,7 +447,7 @@ for tag in user_tags:
       plotslides_job.set_plot_playground_only()
     # Write plotslides node
     plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
-    plotslides_node.set_tmp_space( options.log_path )
+    plotslides_node.set_tmp_space( tmp_space )
     plotslides_node.set_input( result_db )
     plotslides_node.set_user_tag( tag )
   
@@ -462,7 +464,7 @@ for tag in user_tags:
         continue
       print "\t\t\t%s..." % datatype
       plotifar_node = inspiral.PlotIfarNode( plotifar_job )
-      plotifar_node.set_tmp_space( options.log_path )
+      plotifar_node.set_tmp_space( tmp_space )
       plotifar_node.set_input( result_db )
       plotifar_node.set_datatype( datatype )
       plotifar_node.set_user_tag( tag )

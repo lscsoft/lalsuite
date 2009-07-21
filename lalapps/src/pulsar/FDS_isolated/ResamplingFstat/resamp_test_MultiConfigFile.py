@@ -3,7 +3,7 @@
 # set as the value, else it is chosen uniformly from _min to _max
 
 # Strength of signal
-h0 = 0.15*0
+h0 = 0.15
 
 # Cosine of iota
 cosi = -0.3
@@ -42,7 +42,7 @@ Ephem = '/Users/ppatel/home/install/lal/share/lal'
 EphemYear = '05-09'
 
 # Noise Sh
-Sh = 0.15
+Sh = 0.15*0
 
 # Duration of Analysis
 TSpan = '36000 36000'
@@ -76,7 +76,7 @@ Fmin = 103.0
 Band = 0.2
 
 # Injection Frequency
-Finj = 103.05
+Finj = 103.03
 Finj_min = 55.0
 Finj_max = 55.1
 
@@ -92,10 +92,11 @@ FDotBand = 2e-8*0
 dFDot = 5e-9
 
 # Optional debug
-debug = 1
+debug = 0
 
 # Resolution
-Res = 1.0/144000/4/2
+#Res = 1.0/144000/4/2
+Res = 1.0/20/1800/10
 
 # OutputTimeSeries
 TimeSeriesOut = 'TSeries'

@@ -1,6 +1,11 @@
 -- remove coincs when H1+H2 are the only instruments on
 
 DELETE FROM
+	coinc_event
+WHERE
+	instruments == "H1,H2";
+
+DELETE FROM
 	coinc_inspiral
 WHERE
 	ifos == "H1,H2";
@@ -23,7 +28,7 @@ WHERE
 			AND coinc_event.instruments == "H1,H2,L1"
 	);
 
--- remove unused rows from the coinc_event table
+-- remove unused rows from the coinc_event and coinc_inspiral tables
 
 DELETE FROM
 	coinc_event
@@ -33,6 +38,16 @@ WHERE
 			coinc_event_id
 		FROM
 			coinc_inspiral
+	);
+
+DELETE FROM
+	coinc_inspiral
+WHERE
+	coinc_event_id NOT IN (
+		SELECT
+			coinc_event_id
+		FROM
+			coinc_event
 	);
 
 -- remove unused rows from the coinc_event_map table

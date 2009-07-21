@@ -20,12 +20,10 @@
 #ifndef _LALFRAMEIO_H
 #define _LALFRAMEIO_H
 
-#pragma GCC system_header
-
-#include <FrameL.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALCalibration.h>
 #include <lal/FrameCache.h>
+#include <lal/LALFrameL.h>
 
 #include <lal/LALRCSID.h>
 NRCSID (LALFRAMEIOH,"$Id$");

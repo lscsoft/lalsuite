@@ -265,7 +265,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
   /* name output file */
-  LALSnprintf(fileName, LALNameLength,"output/stat_%d.dat",job);
+  snprintf(fileName, LALNameLength,"output/stat_%d.dat",job);
   pf3 = fopen(fileName,"w");
   
   

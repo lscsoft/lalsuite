@@ -134,7 +134,6 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
     thisTimeError = getTimeError(currentTrigger, scaleFactor );
     if (thisTimeError > timeError)
     {
-      fprintf( stderr, "New time error = %e\n", thisTimeError );
       timeError = thisTimeError;
     }
   }
