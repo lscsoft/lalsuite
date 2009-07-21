@@ -920,7 +920,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         if cp.has_option('candidatethreshold',optionText):
             newVal=val=cp.get('candidatethreshold',optionText)
             #New shell escape for latest condor 7.2.4
-            if (newVal.__contains__('"'):
+            if newVal.__contains__('"'):
                 newVal=str(newVal).replace('"','""')
                 cp.set('candidatethreshold',optionText,newVal)
         for sec in ['candidatethreshold']:
@@ -1343,9 +1343,10 @@ class tracksearch:
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
             sys.stdout.write("The input options must be WRONG!\n")
-        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+        if self.cp.has_option('condor','datafind_fixcache'):
             sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
-            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
+            sys.stdout.write("Using option condor,datafind_fixcache\n")
+            sys.stdout.write("If fixed cache files option not needed please remove ini file option!\n")
         # Pop first chunk off list to keep from repeating jobs!
         # We do this because the for look has a repeat issue the first job
         # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
@@ -1373,7 +1374,7 @@ class tracksearch:
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
-            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+            if self.cp.has_option('condor','datafind_fixcache'):
                 fixCache=self.cp.get('condor','datafind_fixcache')
                 subCacheFile=self.__buildSubCacheFile__(fixCache,dataFindInitialDir,chunk.start(),chunk.end())
                 tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
