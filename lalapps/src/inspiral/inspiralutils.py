@@ -717,8 +717,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
       hipecp.getint("input", "gps-start-time"), \
       hipecp.getint("input", "gps-end-time")) )
-  # add postscript to deal with rescue dag
-  fix_rescue(hipeNode)
 
   # return to the original directory
   os.chdir("..")
@@ -885,9 +883,6 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
   plotNode = pipeline.CondorDAGNode(plotJob)
-
-  # add postscript to deal with rescue dag
-  fix_rescue(plotNode)
 
   # return to the original directory
   os.chdir("..")
@@ -1122,52 +1117,10 @@ def followup_setup(followupDir, config, opts, hipeDir):
   os.chmod(followupDag + ".pre", 0744)
   followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
 
-  # add postscript to deal with rescue dag
-  fix_rescue(followupNode)
-
   # return to the original directory
   os.chdir("..")
 
   return followupNode
-
-##############################################################################
-# Function to fix the rescue of inner dags
-def fix_rescue(dagNode):
-  """
-  add a postscript to deal with the rescue dag correctly
-
-  dagNode = the node for the subdag
-  """
-  if not os.path.isfile("rescue.sh"):
-    os.symlink("../rescue.sh", "rescue.sh")
-  dagNode.set_post_script( "rescue.sh")
-  dagNode.add_post_script_arg( "$RETURN" )
-  dagNode.add_post_script_arg(
-      dagNode.job().get_sub_file().rstrip(".condor.sub") )
-
-def write_rescue():
-  # Write the rescue post-script
-  # XXX FIXME: This is a hack, required until condor is fixed XXX
-  f = open("rescue.sh", "w")
-  f.write("""#! /bin/bash
-  if [ ! -n "${2}" ]
-  then
-    echo "Usage: `basename $0` DAGreturn DAGfile"
-    exit
-  fi
-
-  if (( ${1}>0 ))
-  then
-    file=${2}
-    if [ -f ${file}.rescue ]
-    then
-      mv ${file} ${file}.orig
-      mv ${file}.rescue ${file}
-    fi
-    exit ${1}
-  fi""")
-  f.close()
-  os.chmod("rescue.sh", 0744)
 
 ##############################################################################
 # plot_hipe helpers
