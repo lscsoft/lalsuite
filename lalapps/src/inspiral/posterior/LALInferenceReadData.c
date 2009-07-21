@@ -205,7 +205,6 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 				IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*=scalefactor;
 			}
 			IFOdata[i].freqData = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&segStart,0.0,IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,&lalDimensionlessUnit,seglen/2 +1);
-			XLALDestroyRandomParams(datarandparam);
 			/* Create the fake data */
 			for(j=0;j<IFOdata[i].freqData->data->length;j++){
 				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
@@ -214,6 +213,8 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 			const char timename[]="timeData";
 			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(timename,&segStart,0.0,(REAL8)1.0/SampleRate,&lalDimensionlessUnit,(size_t)seglen);
 			XLALREAL8FreqTimeFFT(IFOdata[i].timeData,IFOdata[i].freqData,IFOdata[i].freqToTimeFFTPlan);
+			XLALDestroyRandomParams(datarandparam);
+
 		}
 		else{
 			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
