@@ -55,7 +55,6 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	UINT4 i;                      /* index */
 	PPNParamStruc params;         /* input parameters */
 	CoherentGW waveform;          /* output waveform */
-	
 
 	/* Make sure that values won't crash the system or anything. */
 //	CHECKVAL( order, -1, 5 );
@@ -320,10 +319,16 @@ void templateStatPhase(LALIFOData *IFOdata)
       plusIm  *= plusCoef;
     }
     /* copy f'domain waveform over to IFOdata: */
-    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
-    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
-    IFOdata->freqModelhCross->data->data[i].re = crossRe;
-    IFOdata->freqModelhCross->data->data[i].im = crossIm;
+
+/*    if(!IFOdata->freqModelhPlus)
+      IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,
+                IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
+*/
+//These aren't properly allocated yet.
+//    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
+//    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
+//    IFOdata->freqModelhCross->data->data[i].re = crossRe;
+//    IFOdata->freqModelhCross->data->data[i].im = crossIm;
   }
   IFOdata->modelDomain = frequencyDomain;
   return;

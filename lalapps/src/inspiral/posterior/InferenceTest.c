@@ -104,7 +104,7 @@ int main(int argc, char *argv[]){
     ++i;
   }
 
-	
+
   /* Test the data initialisation &c. */
   runstate = initialize(ppt);
 
@@ -122,7 +122,8 @@ int main(int argc, char *argv[]){
     addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
     LALTemplateGeneratePPN(runstate->data);
 
-    /* templateStatPhase() test: */
+/* 
+//  templateStatPhase() test: 
     REAL8 mc   = 2.0;
     REAL8 eta  = 0.24;
     REAL8 iota = 1.0;
@@ -136,6 +137,7 @@ int main(int argc, char *argv[]){
     addVariable(runstate->data->modelParams, "time",        &tc,   REAL8_t);
     printVariables(runstate->data->modelParams);
     templateStatPhase(runstate->data);
+*/
   }
 
 
