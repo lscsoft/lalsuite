@@ -8,10 +8,10 @@
 extern FILE*LOG_INFO;
 
 FILE* XLALPSSOpenLog(char*name) {
-  if (strcmp(name,"-")==0)
+  if (strcmp(name, "-") == 0)
     LOG_INFO = stderr;
   else
-    LOG_INFO=logfile_open("crea_sfdb");
+    LOG_INFO = logfile_open(name);
   return LOG_INFO;
 }
 
@@ -32,7 +32,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
 
 void XLALDestroyPSSEventParams(PSSEventParams *ts) {
   if ( !ts )
-    XLAL_ERROR_VOID( "XLALCreatePSSTimeseries", XLAL_EFAULT );
+    XLAL_ERROR_VOID( "XLALDestroyPSSEventParams", XLAL_EFAULT );
   if(ts->xamed)
     free(ts->xamed);
   if(ts->xastd)
@@ -53,7 +53,7 @@ void XLALDestroyPSSEventParams(PSSEventParams *ts) {
 REAL4TimeSeries *XLALConvertREAL8TimeSeriesToREAL4TimeSeries(REAL4TimeSeries *r4ts, REAL8TimeSeries *r8ts) {
   UINT4 i;
   if (r4ts->data->length != r8ts->data->length)
-    XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EINVAL ); 
+    XLAL_ERROR_NULL( "XLALConvertREAL8TimeSeriesToREAL4TimeSeries", XLAL_EINVAL ); 
   for(i = 0; i < r8ts->data->length; i++)
     r4ts->data->data[i] = r8ts->data->data[i];
   strncpy(r4ts->name, r8ts->name, LALNameLength);
@@ -196,9 +196,9 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
 
 PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PSSHeaderParams* hp, REAL4 f) {
   if ( !tsout || !tsin || !hp )
-    XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
+    XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
   if ( highpass_data_bil(tsout,tsin,hp,f) )
-    XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
+    XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
   return tsout;
 }
 
