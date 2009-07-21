@@ -220,7 +220,7 @@ for tag in user_tags:
   # get distinct on_instruments in the thinca cache
   distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
   # from the distinct_instrument_sets figure out what distinct ifos there are
-  distinct_ifos = set()
+  distinct_ifo_set = set()
   for on_instruments in distinct_instrument_sets:
     distinct_ifo_set |= lsctables.instrument_set_from_ifos(on_instruments)
   distinct_ifos = ''.join(sorted(distinct_ifo_set))
@@ -243,6 +243,7 @@ for tag in user_tags:
   veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
   t2c_output = []
+  t2c_nodes = []
   this_cache = lal.Cache()
   cache_start_time = int(experiment_start)
   for on_instruments in distinct_instrument_sets:
@@ -275,6 +276,7 @@ for tag in user_tags:
         this_t2c_node.set_veto_segments( veto_file )
         this_t2c_node.set_veto_segments_name( veto_segs_name )
         dag.add_node(this_t2c_node)
+        t2c_nodes.append(this_t2c_node)
         # add output files to t2c_output
         t2c_output += this_t2c_node.get_output_from_cache()
         # set end-time of last entry to be start time of next cache
@@ -319,8 +321,7 @@ for tag in user_tags:
   t2c2sql_node.set_database( raw_result_db )
   
   # set parent nodes to be all the thinca_to_coinc nodes
-  [t2c2sql_node.add_parent( node ) for node in dag.get_nodes() \
-    if isinstance(node, inspiral.ThincaToCoincNode)]
+  [t2c2sql_node.add_parent( node ) for node in t2c_nodes]
       
   dag.add_node( t2c2sql_node )
   
@@ -369,7 +370,7 @@ for tag in user_tags:
   # set node options
   comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
   comp_durs_node.set_tmp_space( tmp_space )
-  comp_durs_node.set_datatbase( raw_result_db )
+  comp_durs_node.set_database( raw_result_db )
 
   # set parent node
   comp_durs_node.add_parent( dbsimplify_node )
