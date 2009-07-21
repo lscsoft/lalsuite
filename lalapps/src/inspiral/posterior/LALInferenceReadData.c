@@ -172,7 +172,7 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 		
 		/* Setup windows */
 		IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
-	}		
+	}
 	
 	
 	/* Trigger time = 1 second before end of segment */
@@ -210,9 +210,11 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 			}
+			IFOdata[i].freqData->data->data[0].re=0; 			IFOdata[i].freqData->data->data[0].im=0;
 			const char timename[]="timeData";
 			IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(timename,&segStart,0.0,(REAL8)1.0/SampleRate,&lalDimensionlessUnit,(size_t)seglen);
 			XLALREAL8FreqTimeFFT(IFOdata[i].timeData,IFOdata[i].freqData,IFOdata[i].freqToTimeFFTPlan);
+			if(*XLALGetErrnoPtr()) printf("XLErr: %s\n",XLALErrorString(*XLALGetErrnoPtr()));
 			XLALDestroyRandomParams(datarandparam);
 
 		}
