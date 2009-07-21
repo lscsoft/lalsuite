@@ -237,9 +237,6 @@ fh.close()
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
-# write the file to handle the rescue dags
-inspiralutils.write_rescue()
-
 ##############################################################################
 # Set up the IFOs and get the appropriate segments
 ifos = [] 
