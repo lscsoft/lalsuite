@@ -61,6 +61,22 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
 
+void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
+{
+  bankVetoData->acorr = NULL;
+  bankVetoData->workspace = NULL;
+  bankVetoData->acorrMat = NULL;
+  bankVetoData->revplan = NULL;
+}
+
+void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
+{
+  if (bvdata->acorr) XLALDestroyREAL4Vector(bvdata->acorr);
+  if (bvdata->workspace) XLALDestroyCOMPLEX8Vector(bvdata->workspace);
+  if (bvdata->acorrMat) XLALDestroyREAL4Vector(bvdata->acorrMat);
+  if (bvdata->revplan) XLALDestroyREAL4FFTPlan(bvdata->revplan);
+  return; 
+}
 
 
 /* <lalVerbatim file="FindChirpBankVetoCP"> */
@@ -180,41 +196,30 @@ XLALComputeFullChisq(
 )
 
 {
-  INT4 stIX, fftIX;
-  REAL4 fftNorm, powerNorm, signalPower, Sdothsq, chisq;
+  UINT4 k;
+  REAL4 chisqnorm, tmp, C, chisq;
 
-  /* bankVetoData and i are unused in function */
-  UNUSED(bankVetoData);
-  UNUSED(i);
+  /* input, params and norm are unused */
+  UNUSED(input);
+  UNUSED(params);
+  UNUSED(norm);
 
-  stIX = input->fcTmplt->tmplt.tC / params->deltaT  + 1.0;
-  fftIX = input->segment->dataPower->data->length - 1;
-  fftNorm = (REAL4) fftIX;
-  /* The power norm is stored in the last point of each dataPower vector */
-  /* it is the minimum power of the ~15 segments used in the PSD */
-  /* this helps to avoid negative chisq values for short templates in crappy */
-  /* data */
-
-
-  powerNorm = input->segment->dataPower->data->data[fftIX]
-                  / fftNorm / fftNorm ;
-
-  signalPower = (input->segment->dataPower->data->data[snrIX] -
-                       input->segment->dataPower->data->data[snrIX-stIX])
-                    / fftNorm / fftNorm;
-
-  /* this is just the snr squared */
-  Sdothsq = ( (q[snrIX].re * q[snrIX].re + q[snrIX].im * q[snrIX].im) );
-
-  /* I think their should be a factor of 4 difference in the power computed */
-  /* in the time domain and frequency domain because of the complex matched */
-  /* filter ?? I have used 0.25 * the SNR^2 */
-  chisq =  signalPower*fftNorm/powerNorm - 0.25 * (Sdothsq * norm);
-
-  if (chisq < 1) chisq = 1;
-  *dof = stIX;
-  return chisq;
-
+  /* test isn't being done */
+  if (! bankVetoData->acorrMat) return 0;
+  chisq = 0;
+  chisqnorm = 0;
+  *dof = bankVetoData->acorrMatSize;
+  for (k = 0; k < bankVetoData->acorrMatSize; k++)
+  {
+    C = bankVetoData->acorrMat->data[i * bankVetoData->length + k];
+    tmp = q[snrIX-k].re - C * q[snrIX].re;
+    chisq += tmp * tmp;
+    tmp = q[snrIX-k].im - C * q[snrIX].im;
+    chisq += tmp * tmp;
+    chisqnorm += 1.0 - C * C;
+  }
+  chisq /= 2.0 * chisqnorm;
+  return chisq;  
 }
 
 void
@@ -227,13 +232,24 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                     REAL4 deltaT )
 
 {
-
   UINT4 i,j,k,iMax,jMax,correctFlag;
   UINT4 iSize = bankVetoData->length;
   UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
   REAL4 ABr, ABi, Br, Bi, sqResp;
   UINT4 stIX = floor( fLow / deltaF );
+  /*char fname[30];
+  FILE *FP = NULL;*/
 
+  /* FIXME this should be a command line argument */
+  bankVetoData->acorrMatSize = 30; /*30 points of autocorrelation function stored */
+
+  /* if there isn't alread memory allocated for workspace and the autocorrelation 
+   * then do it
+   */
+  if ( !bankVetoData->acorr ) bankVetoData->acorr = XLALCreateREAL4Vector((tmpLen-1) * 2);
+  if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
+  if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * iSize);
+  if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpLen-1) * 2 , 0);
   /* deltaT is unused in this function */
   UNUSED(deltaT);
 
@@ -276,6 +292,31 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
             ABi+=0.0-Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
                 + Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re;
+          }
+          /* if the templates are the same then do an autocorrelation function */
+          if (i==j) 
+          { 
+            bankVetoData->workspace->data[k].re = ABr;
+            bankVetoData->workspace->data[k].im = ABi;
+          }
+        }
+
+        if (i==j)
+        {
+          /*fprintf(stderr, "\n Computing Autocorrelation \n");*/
+          XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
+          /*fprintf(stderr, "\n storing autocorrelation \n");*/
+          /*sprintf(fname, "chisqtest%d.txt", i);
+          FP = fopen(fname, "w");
+          for (k=0; k < bankVetoData->acorr->length; k++)
+          {
+            fprintf(FP,"%d %e\n",i, bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0]);
+          }
+          fclose(FP);*/
+	  for (k=0; k < bankVetoData->acorrMatSize; k++)
+          {
+            /* Save the last acorrMatSize samples */
+            bankVetoData->acorrMat->data[i*iSize + k] = bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0];
           }
         }
         bankVetoData->ccMat->data[i*iSize + j] = sqrt(ABr*ABr+ABi*ABi);
