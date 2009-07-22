@@ -44,6 +44,7 @@
 #include <processtable.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
+#include <lal/Ring.h>
 
 RCSID( "$Id$" );
 
@@ -70,6 +71,7 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
  *  Definition of the prototypes 
  *  *********************************
  */
+extern int vrbflg;
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... );
 void read_mass_data( char *filename );
@@ -96,6 +98,7 @@ MassDistribution        mDistr;
 InclDistribution        iDistr;
 
 SimInspiralTable *simTable;
+SimRingdownTable *simRingTable;
 
 char *massFileName = NULL;
 char *nrFileName = NULL;
@@ -136,6 +139,7 @@ REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
 INT4 bandPassInj = 0;
+INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
 
 
@@ -326,6 +330,9 @@ static void print_usage(char *program)
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
       "                            (start|end|startend) \n)"\
       "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
+      "\n"\
+      "Output:\n"\
+      " [--write-sim-ring]        Writes a sim_ringdown table\n"\
       "\n");
 }
 
@@ -890,6 +897,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
+  MetadataTable         ringparams;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
 
@@ -907,6 +915,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
+    {"verbose",                 no_argument,       &vrbflg,           1 },
     {"source-file",             required_argument, 0,                'f'},
     {"mass-file",               required_argument, 0,                'm'},
     {"nr-file",                 required_argument, 0,                'c'},
@@ -963,6 +972,7 @@ int main( int argc, char *argv[] )
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
+    {"write-sim-ring",          no_argument,       0,                '{'},
     {0, 0, 0, 0}
   };
   int c;
@@ -1665,6 +1675,14 @@ int main( int argc, char *argv[] )
         bandPassInj = 1;
         break;
 
+      case '{':
+        /* write out a sim_ringdown table */
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        writeSimRing = 1;
+        break;
+
       case '*':
         /* Set injection tapering */
         if ( ! strcmp( "start", optarg ) )
@@ -1699,6 +1717,10 @@ int main( int argc, char *argv[] )
       case '?':
         print_usage(argv[0]);
         exit( 1 );
+        break;
+
+      case 'vv':
+        vrbflg = 1;
         break;
 
       default:
@@ -2065,6 +2087,9 @@ int main( int argc, char *argv[] )
   simTable = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
 
+  simRingTable = ringparams.simRingdownTable = (SimRingdownTable *)
+    calloc( 1, sizeof(SimRingdownTable) );
+
   /* loop over parameter generation until end time is reached */
   ninj = 0;
   currentGpsTime = gpsStartTime;
@@ -2224,6 +2249,34 @@ int main( int argc, char *argv[] )
     
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
+   
+    /* populate the sim_ringdown table */ 
+   if ( writeSimRing )
+   {
+       memcpy( simRingTable->waveform, waveform,
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+       simRingTable->geocent_start_time = simTable->geocent_end_time;
+       simRingTable->h_start_time = simTable->h_end_time;
+       simRingTable->l_start_time = simTable->l_end_time;
+       simRingTable->start_time_gmst = simTable->end_time_gmst;
+       simRingTable->longitude = simTable->longitude;
+       simRingTable->latitude = simTable->latitude;
+       simRingTable->distance = simTable->distance;
+       simRingTable->inclination = simTable->inclination;
+       simRingTable->polarization = simTable->polarization;
+       simRingTable->phase = 0;
+       simRingTable->mass = XLALNonSpinBinaryFinalBHMass(simTable->eta, simTable->mass1, simTable->mass2);
+       simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
+       simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
+       simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
+       simRingTable->epsilon = 0; 
+       simRingTable->amplitude = 0; 
+       simRingTable->eff_dist_h = simTable->eff_dist_h; 
+       simRingTable->eff_dist_l = simTable->eff_dist_l; 
+       simRingTable->hrss = 0;
+       simRingTable->hrss_h = 0;
+       simRingTable->hrss_l = 0;
+    }
 
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
@@ -2231,10 +2284,13 @@ int main( int argc, char *argv[] )
     XLALGPSAdd(&currentGpsTime, ninj * meanTimeStep);
     if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
       break;
-
-    /* allocate and go to next SimInspiralTable */
+    
+  /* allocate and go to next SimInspiralTable */
     simTable = simTable->next = (SimInspiralTable *)
       calloc( 1, sizeof(SimInspiralTable) );
+    simRingTable = simRingTable->next = (SimRingdownTable *)
+      calloc( 1, sizeof(SimRingdownTable) );
+
   }
 
 
@@ -2286,6 +2342,18 @@ int main( int argc, char *argv[] )
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );   
   }
+
+  if ( writeSimRing )
+  { 
+    if ( ringparams.simRingdownTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table ),
+          &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, ringparams,
+          sim_ringdown_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+    }
+  }  
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
