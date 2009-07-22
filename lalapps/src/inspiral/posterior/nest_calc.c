@@ -19,7 +19,7 @@
 
 gsl_matrix *cov_mat;
 
-CHAR outfile[512];
+CHAR outfile[4096];
 double etawindow;
 
 INT4 seed;
@@ -137,7 +137,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	REAL8 logLmax=-DBL_MAX;
 	REAL4 rngseed=0;
 	FILE *fpout=NULL;
-	CHAR outEnd[1000];
+	CHAR outEnd[5010];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
 
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);

@@ -412,13 +412,13 @@ int main(int argc, char *argv[]){
 
   /*  set up ephemeris  */
   if(uvar_ephemDir) {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
+    snprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
   } else {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
+    snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
   }
 
   EphemEarth[MAXFILENAMELENGTH-1] = 0;

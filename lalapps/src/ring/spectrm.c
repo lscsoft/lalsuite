@@ -79,7 +79,7 @@ REAL4FrequencySeries *compute_average_spectrum(
         segmentStride, window, fwdPlan );
   }
 
-  LALSnprintf( spectrum->name, sizeof( spectrum->name ),
+  snprintf( spectrum->name, sizeof( spectrum->name ),
       "%s_SPEC", series->name );
 
   XLALDestroyREAL4Window( window );
@@ -120,7 +120,7 @@ int invert_spectrum(
       segmentLength, truncateLength, fwdPlan, revPlan );
 
   strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
-  LALSnprintf( spectrum->name, sizeof( spectrum->name ),
+  snprintf( spectrum->name, sizeof( spectrum->name ),
       "%s_INV", name );
 
   return 0;
@@ -171,7 +171,7 @@ int calibrate_spectrum(
           &response->sampleUnits );
     }
   strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
-    LALSnprintf( spectrum->name, sizeof( spectrum->name ),
+    snprintf( spectrum->name, sizeof( spectrum->name ),
         "%s_CAL", name );
   }
 

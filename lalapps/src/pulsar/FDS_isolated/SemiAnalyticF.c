@@ -384,13 +384,13 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
      * allows LAL to find the ephemeris in LAL_DATA_PATH */
     if ( LALUserVarWasSet (&(CLA->efiles)) ) 
       {
-	LALSnprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
-	LALSnprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
+	snprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
+	snprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
       }
     else
       {
-	LALSnprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
-	LALSnprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
+	snprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
+	snprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
       }
     filenameE[MAXFILENAME-1] = 0;
     filenameS[MAXFILENAME-1] = 0;

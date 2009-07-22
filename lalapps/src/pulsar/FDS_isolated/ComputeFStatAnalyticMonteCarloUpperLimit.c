@@ -270,12 +270,12 @@ int main(int argc, char *argv[]) {
     
     /* Create the file names */	
     if (ephem_dir) {
-      LALSnprintf(ephemeris.ephiles.earthEphemeris, buf, "%s/earth%s.dat", ephem_dir, ephem_year);
-      LALSnprintf(ephemeris.ephiles.sunEphemeris, buf, "%s/sun%s.dat", ephem_dir, ephem_year);
+      snprintf(ephemeris.ephiles.earthEphemeris, buf, "%s/earth%s.dat", ephem_dir, ephem_year);
+      snprintf(ephemeris.ephiles.sunEphemeris, buf, "%s/sun%s.dat", ephem_dir, ephem_year);
     }
     else {
-      LALSnprintf(ephemeris.ephiles.earthEphemeris, buf, "earth%s.dat", ephem_year);
-      LALSnprintf(ephemeris.ephiles.sunEphemeris, buf, "sun%s.dat", ephem_year);
+      snprintf(ephemeris.ephiles.earthEphemeris, buf, "earth%s.dat", ephem_year);
+      snprintf(ephemeris.ephiles.sunEphemeris, buf, "sun%s.dat", ephem_year);
     }
     
     /* Get the leap seconds */

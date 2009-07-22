@@ -490,6 +490,45 @@ LALSFTdataFind (LALStatus *status,
 } /* LALSFTdataFind() */
 
 
+/** Extract a timstamps-vector from the given SFTVector.
+ *
+ * \note This returns exactly the timestamps corresponding to the SFTs in the input vector,
+ * in the same order.
+ *
+ */
+LIGOTimeGPSVector *
+XLALgetSFTtimestamps ( const SFTVector *sfts )	/**< input SFT-vector (single-IFO) */
+{
+  static const char *fn = "XLALgetSFTtimestamps()";
+
+  UINT4 i, numSFTs;
+  LIGOTimeGPSVector *ret = NULL;
+
+  if ( !sfts || sfts->length == 0 ) {
+    XLALPrintError ("%s: invalid NULL or empty SFT input vector.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  numSFTs = sfts->length;
+
+  /* create timestamps vector */
+  if ( (ret = XLALCreateTimestampVector( numSFTs )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  for ( i=0; i < numSFTs; i ++ )
+    {
+      ret->data[i] = sfts->data[i].epoch;
+    } /* for i < numSFTs */
+
+  ret->deltaT = 1.0 / sfts->data[0].deltaF;	/* TSFT */
+
+  return ret;
+
+} /* XLALgetSFTtimestamps() */
+
+
 
 /** Extract a timstamps-vector from the given SFTCatalog.
  *

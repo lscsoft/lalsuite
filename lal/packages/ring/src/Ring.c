@@ -161,6 +161,22 @@ REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
   return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * M );
 }
 
+/* Formulas for final mass and spin of a non-spinning binary */
+/* Buonanno et al arxiv:0706.3732v3 */
+/* <lalVerbatim file="RingCP"> */
+REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta )
+/* </lalVerbatim> */
+{
+  return sqrt(12.0) * eta - 2.9 * eta *eta;
+}
+
+/* <lalVerbatim file="RingCP"> */
+REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
+/* </lalVerbatim> */
+{
+  return ( 1 + ( sqrt(8.0/9.0) - 1) * eta - 0.498 * eta * eta) * (mass1 + mass2);
+}
+
 
 /* <lalVerbatim file="RingCP"> */
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )

@@ -197,11 +197,11 @@ SnglRingdownTable * ringveto_filter(
              }
           normSnip( Result->tmpSnip.data ); /* normalize the template snip */
           }          
-        LALSnprintf( signal.name, sizeof(signal.name), "BANK_%u_TMPLT_%u", 
+        snprintf( signal.name, sizeof(signal.name), "BANK_%u_TMPLT_%u", 
                   subCounter, tmplt );
         /*write_REAL4TimeSeries( &signal );*/
         XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
-        LALSnprintf( stilde.name, sizeof(stilde.name), "BANK_%u_TMPLT_%u_FFT", 
+        snprintf( stilde.name, sizeof(stilde.name), "BANK_%u_TMPLT_%u_FFT", 
                   subCounter, tmplt );
         /*    write_COMPLEX8FrequencySeries( &stilde );    */
 
@@ -222,7 +222,7 @@ SnglRingdownTable * ringveto_filter(
         { /* guess we better normalize it so it is SNR-like... */
           REAL4 snrFactor = 2 * params->dynRangeFac / sigma;
           UINT4 k;
-          LALSnprintf( Result->result.name, sizeof(Result->result.name), 
+          snprintf( Result->result.name, sizeof(Result->result.name), 
                       "SNR_BANK_%u_TMPLT_%u_SEGMENT_%u",
                   subCounter, tmplt, sgmnt );
           for ( k = 0; k < Result->result.data->length; ++k )
@@ -256,7 +256,7 @@ SnglRingdownTable * ringveto_filter(
             Result->sigma, Result->frequency, Result->quality,
             Result, firstResult, &thisCC, sC, params );
         if ( params->writeFilterOutput ){
-          LALSnprintf( chisqSeries.name, sizeof(chisqSeries.name),
+          snprintf( chisqSeries.name, sizeof(chisqSeries.name),
                       "CHISQ_BANK_%u_TMPLT_%u_SEGMENT_%u",
                        subCounter, sC, sgmnt );
           write_REAL4TimeSeries( &(chisqSeries) );
@@ -335,7 +335,7 @@ static int filter_segment_template(
   char *s;
 
   /* name of rtilde */
-  LALSnprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
+  snprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
       segment->name, stilde->name );
   /* name of result is the same but without the _FFT */
   strncpy( result->name, rtilde->name, sizeof( result->name ) - 1 );

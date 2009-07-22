@@ -240,7 +240,7 @@ static int generate_file_name( char *fname, size_t size, const char *sname, int 
   while ( ( c = strchr( tmp_name, ' ' ) ) )
     *c = '_';
 
-  LALSnprintf( fname, size, "%c-%s-%d-%d.dat", *tmp_name, tmp_name, t, dt );
+  snprintf( fname, size, "%c-%s-%d-%d.dat", *tmp_name, tmp_name, t, dt );
 
   LALFree( tmp_name );
 

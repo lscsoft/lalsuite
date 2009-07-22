@@ -114,9 +114,9 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -248,7 +248,7 @@ int main( int argc, char *argv[] )
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
         lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
   }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   
@@ -583,7 +583,7 @@ int main( int argc, char *argv[] )
         break;
       
       case 'w':
-        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
@@ -591,7 +591,7 @@ int main( int argc, char *argv[] )
         break;
       
       case 'c':
-        LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
             optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
@@ -639,14 +639,14 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
     {
       /* use Ringdown as the default waveform */
-      LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+      snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
           "Ringdown");
       }
   
   if ( !*coordinates )
         {
           /* use equatorial as the default system */
-          LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
+          snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
                               "EQUATORIAL");
                       }
   
@@ -675,13 +675,13 @@ int main( int argc, char *argv[] )
   /* create the output file name */
   if ( userTag )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
         randSeed, userTag, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
         randSeed, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
@@ -914,7 +914,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
