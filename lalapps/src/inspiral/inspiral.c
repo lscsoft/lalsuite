@@ -2174,6 +2174,8 @@ int main( int argc, char *argv[] )
               &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
       }
     }
+    /* set the workspace vectors to null before they are allocated later */
+    XLALInitBankVetoData(&bankVetoData);
 
     /*
      *
@@ -2892,6 +2894,8 @@ int main( int argc, char *argv[] )
     fcFilterParams->qtildeVec = NULL;
   }
 
+  /* Free other bankVeto memory */
+  XLALDestroyBankVetoData(&bankVetoData);
 
   if ( fcFilterParams->filterOutputVetoParams )
   {
