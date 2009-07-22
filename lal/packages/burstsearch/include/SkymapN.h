@@ -96,3 +96,4 @@ void CAT(XLALSkymap2Apply, SKYMAP_N)(
 #undef CAT
 
 #endif // SKYMAP_N
+
