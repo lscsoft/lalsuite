@@ -702,6 +702,11 @@ tagFindChirpBankVetoData
   REAL4Vector		 *normMat;
   REAL4Vector		 *spec;
   COMPLEX8Vector         *resp;
+  REAL4Vector		 *acorr;
+  COMPLEX8Vector	 *workspace;
+  REAL4Vector		 *acorrMat;
+  REAL4FFTPlan		 *revplan;
+  UINT4 		 acorrMatSize;
 }
 FindChirpBankVetoData;
 /* </lalVerbatim> */
@@ -1102,6 +1107,17 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 i,
                      UINT4 snrIX,
                      UINT4 *dof);
+
+
+void
+XLALInitBankVetoData(
+    FindChirpBankVetoData *bvdata
+    );
+
+void 
+XLALDestroyBankVetoData (
+    FindChirpBankVetoData *bvdata
+    );
 
 REAL4
 XLALComputeFullChisq(
