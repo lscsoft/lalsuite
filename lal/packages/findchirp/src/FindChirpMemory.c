@@ -563,23 +563,10 @@ LALCreateFindChirpSegmentVector (
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
-    /* CHAD Jul 5 2007 */
-    segPtr[i].dataPower = (REAL4TimeSeries *)
-      LALCalloc( 1, sizeof(REAL4TimeSeries));
-    if ( ! segPtr[i].dataPower )
-    {
-      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-    }
-
 
     LALCCreateVector (status->statusPtr,
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
-
-    LALCreateVector (status->statusPtr,
-        &segPtr[i].dataPower->data, params->numPoints);
-    CHECKSTATUSPTR (status);
-
 
     if ( params->approximant == BCV )
     {
@@ -703,9 +690,6 @@ LALDestroyFindChirpSegmentVector (
     LALCDestroyVector (status->statusPtr, &segPtr[i].data->data);
     CHECKSTATUSPTR (status);
 
-    LALDestroyVector (status->statusPtr, &segPtr[i].dataPower->data);
-    CHECKSTATUSPTR (status);
-
     if ( segPtr[i].dataBCV && segPtr[i].dataBCV->data )
     {
       LALCDestroyVector (status->statusPtr, &segPtr[i].dataBCV->data);
@@ -735,7 +719,6 @@ LALDestroyFindChirpSegmentVector (
 
     /* frequency series pointer */
     LALFree (segPtr[i].data);
-    LALFree (segPtr[i].dataPower);
     if ( segPtr[i].dataBCV )
     {
       LALFree( segPtr[i].dataBCV );
