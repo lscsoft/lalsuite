@@ -121,13 +121,24 @@ int main(int argc, char *argv[]){
     REAL4 phii = 0.0;
     addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
     LALTemplateGeneratePPN(runstate->data);
-
+	  executeFT(runstate->data);
+	  
 	  FILE *testout=fopen("test_FD.txt","w");
 	  for (i=0;i<runstate->data->freqModelhPlus->data->length;i++){
-		  fprintf(testout,"%g %g %g\n",i*runstate->data->freqModelhPlus->deltaF,runstate->data->freqModelhPlus->data->data[i].re,runstate->data->freqModelhCross->data->data[i].re);
+		  fprintf(testout,"%g %g %g %g %g\n",i*runstate->data->freqModelhPlus->deltaF,
+				  runstate->data->freqModelhPlus->data->data[i].re,
+				  runstate->data->freqModelhPlus->data->data[i].im,
+				  runstate->data->freqModelhCross->data->data[i].re,
+				  runstate->data->freqModelhCross->data->data[i].im);
 	  }
 	  fclose(testout);
-	  
+	  testout=fopen("test_TD.txt","w");
+	  for (i=0;i<runstate->data->timeModelhPlus->data->length;i++){
+		  fprintf(testout,"%g %g %g\n",i*runstate->data->timeModelhPlus->deltaT,
+				  runstate->data->timeModelhPlus->data->data[i],
+				  runstate->data->timeModelhCross->data->data[i]);
+	  }
+	  fclose(testout);
 /* 
 //  templateStatPhase() test: 
     REAL8 mc   = 2.0;
