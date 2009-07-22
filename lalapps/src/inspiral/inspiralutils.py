@@ -176,7 +176,7 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
   end = config.get("input", "gps-end-time")
 
   genVetoCall = executable
-  genVetoCall = ' '.join([ genVetoCall, "--separate-categories", 
+  genVetoCall = ' '.join([ genVetoCall, "--cumulative-categories", 
 	"--segment-url", config.get("segfind", "segment-url"),
 	"--veto-file", vetoDefFile,
 	"--gps-start-time", start,
@@ -250,11 +250,11 @@ def veto_segments(ifo, config, categories, generateVetoes):
   vetoFiles = {}
   
   for category in categories:
-    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "*.xml"
+    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "-" + \
+      str(start) + "-" + str(end - start) + ".xml"
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
-        str(start) + "-" + \
-        str(end - start) + ".txt"
+        str(start) + "-" + str(end - start) + ".txt"
 
     if generateVetoes: 
       return_val = convert_veto_cat_xml_to_txt(config, veto_cat_file, vetoFile)
@@ -306,7 +306,7 @@ def datafind_segments(ifo, config):
   dataFindFile = ifo_type + "-" + str(start) + "-" + \
       str(end - start) + ".txt"
 
-  print "Running LSCdataFind to determine available data from " + type + \
+  print "Running ligo_data_find to determine available data from " + type + \
       " frames for " + ifo
   dataFindCall = executable 
   for opt,arg in config.items("datafind"):
@@ -394,7 +394,7 @@ def downloadDqSegFiles(config,ifo,generate_segments):
 ##############################################################################
 # Function to determine the segments to analyze 
 #(science segments, data quality, missing segments)
-def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
+def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     use_available_data=False, data_quality_vetoes=False):
   """
   generate segments for the given ifo
@@ -452,9 +452,9 @@ def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
     print "done"
 
   if data_quality_vetoes: 
-    print "Generating cat 2, 3, and 4 veto segments for " + ifo + "..."
+    print "Generating cat " + str(veto_categories) + " veto segments for " + ifo + "..."
     sys.stdout.flush()
-  dqVetoes = veto_segments(ifo, config, [2,3,4], data_quality_vetoes )
+  dqVetoes = veto_segments(ifo, config, veto_categories, data_quality_vetoes )
   if data_quality_vetoes: print "done"
 
   return tuple([segFile, dqVetoes])
@@ -597,8 +597,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("input","injection-seed",injSeed)
     hipecp.set("input", "num-slides", "")
     # set any extra inspiral arguments for the injection
-    for item in config.items('-'.join([hipeDir,"inspiral"])):
-      hipecp.set("inspiral",item[0],item[1])
+    try:
+      for item in config.items('-'.join([hipeDir,"inspiral"])):
+        hipecp.set("inspiral",item[0],item[1])
+    except ConfigParser.NoSectionError:
+      pass
   else:
     # add the time slide to the ini file
     numSlides = slide_sanity(config, playOnly)
@@ -714,8 +717,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
       hipecp.getint("input", "gps-start-time"), \
       hipecp.getint("input", "gps-end-time")) )
-  # add postscript to deal with rescue dag
-  fix_rescue(hipeNode)
 
   # return to the original directory
   os.chdir("..")
@@ -882,9 +883,6 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
   plotNode = pipeline.CondorDAGNode(plotJob)
-
-  # add postscript to deal with rescue dag
-  fix_rescue(plotNode)
 
   # return to the original directory
   os.chdir("..")
@@ -1119,52 +1117,10 @@ def followup_setup(followupDir, config, opts, hipeDir):
   os.chmod(followupDag + ".pre", 0744)
   followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
 
-  # add postscript to deal with rescue dag
-  fix_rescue(followupNode)
-
   # return to the original directory
   os.chdir("..")
 
   return followupNode
-
-##############################################################################
-# Function to fix the rescue of inner dags
-def fix_rescue(dagNode):
-  """
-  add a postscript to deal with the rescue dag correctly
-
-  dagNode = the node for the subdag
-  """
-  if not os.path.isfile("rescue.sh"):
-    os.symlink("../rescue.sh", "rescue.sh")
-  dagNode.set_post_script( "rescue.sh")
-  dagNode.add_post_script_arg( "$RETURN" )
-  dagNode.add_post_script_arg(
-      dagNode.job().get_sub_file().rstrip(".condor.sub") )
-
-def write_rescue():
-  # Write the rescue post-script
-  # XXX FIXME: This is a hack, required until condor is fixed XXX
-  f = open("rescue.sh", "w")
-  f.write("""#! /bin/bash
-  if [ ! -n "${2}" ]
-  then
-    echo "Usage: `basename $0` DAGreturn DAGfile"
-    exit
-  fi
-
-  if (( ${1}>0 ))
-  then
-    file=${2}
-    if [ -f ${file}.rescue ]
-    then
-      mv ${file} ${file}.orig
-      mv ${file}.rescue ${file}
-    fi
-    exit ${1}
-  fi""")
-  f.close()
-  os.chmod("rescue.sh", 0744)
 
 ##############################################################################
 # plot_hipe helpers

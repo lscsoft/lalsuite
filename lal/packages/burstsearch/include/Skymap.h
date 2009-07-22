@@ -122,71 +122,84 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
 int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p);
 
 ///////////////////////////////////////////////////////////////////////////
-
-// VERSION 2
+//
+//  VERSION 2
 
 
 typedef double XLALSkymap2SphericalPolarType[2];
 
+#define SKYMAP_N 1
+#include "SkymapN.h"
+#undef SKYMAP_N
+
+#define SKYMAP_N 2
+#include "SkymapN.h"
+#undef SKYMAP_N
+
+#define SKYMAP_N 3
+#include "SkymapN.h"
+#undef SKYMAP_N
+
+#define SKYMAP_N 4
+#include "SkymapN.h"
+#undef SKYMAP_N
+
 //  Stores pre-computed properties of each sky direction
 
-typedef struct
-{
-    double f[3][2];
-    int delay[3];
-} XLALSkymap2DirectionPropertiesType;
+//typedef struct
+//{
+//    double f[3][2];
+//    int delay[3];
+//} XLALSkymap2DirectionPropertiesType;
 
 // Stores pre-computed kernel information for each sky direction
 
-typedef struct
-{
-    double k[3][3];
-    double logNormalization;
-} XLALSkymap2KernelType;
+//typedef struct
+//{
+//    double k[3][3];
+//    double logNormalization;
+//} XLALSkymap2KernelType;
 
 // Stores pre-computed information for generating a sky map
 
-typedef struct
-{
-    int sampleFrequency;
-    LALDetector site[3];
-} XLALSkymap2PlanType;
+//typedef struct
+//{
+//    int sampleFrequency;
+//    LALDetector site[3];
+//} XLALSkymap2PlanType;
 
 // Initialize sample frequency and HLV site information
 
-void XLALSkymap2PlanConstruct(
-    int sampleFrequency,
-    XLALSkymap2PlanType* plan
-    );
+//void XLALSkymap2PlanConstruct(
+//    int sampleFrequency,
+//    XLALSkymap2PlanType* plan
+//    );
 
 // Turn directions into sample delays and antenna patterns
 
-void XLALSkymap2DirectionPropertiesConstruct(
-    XLALSkymap2PlanType* plan,
-    XLALSkymap2SphericalPolarType* direction,
-    XLALSkymap2DirectionPropertiesType* properties
-    );
+//void XLALSkymap2DirectionPropertiesConstruct(
+//    XLALSkymap2PlanType* plan,
+//    XLALSkymap2SphericalPolarType* direction,
+//    XLALSkymap2DirectionPropertiesType* properties
+//    );
 
 // Turn antenna patterns and waveform normalization into kernel matrix
 
-void XLALSkymap2KernelConstruct(
-    XLALSkymap2DirectionPropertiesType* properties,
-    double wSw[3],
-    XLALSkymap2KernelType* kernel
-    );
+//void XLALSkymap2KernelConstruct(
+//    XLALSkymap2DirectionPropertiesType* properties,
+//    double wSw[3],
+//    XLALSkymap2KernelType* kernel
+//    );
 
 // Apply the kernel to some data
 
-void XLALSkymap2Apply(
-    XLALSkymap2DirectionPropertiesType* properties,
-    XLALSkymap2KernelType* kernel,
-    double* xSw[3],
-    int tau,
-    double* logPosterior
-    );
-
-
-
+//void XLALSkymap2Apply(
+//    XLALSkymap2DirectionPropertiesType* properties,
+//    XLALSkymap2KernelType* kernel,
+//    double* xSw[3],
+//   int tau,
+//    double* logPosterior
+//    );
 
 #ifdef __cplusplus
 }
