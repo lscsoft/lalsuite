@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
-  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
+  set_debug_level("ERROR | WARNING | MEMDBG");
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -1274,10 +1274,15 @@ void LALappsGetFrameData(LALStatus*          status,
       else if (cachefile)
 	{
 	  /* Open frame cache */
+	  if (params->verbosity >= verbose)
+	      fprintf(stdout,"Opening cache file: %s",cachefile);
 	  lal_errhandler = LAL_ERR_EXIT;
-	  LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
+	  frameCache=XLALFrCacheImport(cachefile);
 	  stream=XLALFrCacheOpen(frameCache);	  
-	  LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
+	  XLALDestroyFrCache(&frameCache);
+	  if (params->verbosity >= verbose)
+	    fprintf(stdout,"Data stream ready.\n");
+
 	}
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
