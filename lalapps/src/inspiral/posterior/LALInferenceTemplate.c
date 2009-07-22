@@ -72,8 +72,8 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	params.position.system = COORDINATESYSTEM_EQUATORIAL;
 	params.psi = 0.0;
 	params.lengthIn = 0;
-	params.epoch.gpsSeconds = (INT4)(0);
-	params.epoch.gpsNanoSeconds = (INT4)(0);
+	params.epoch.gpsSeconds = 0.0;//IFOdata->timeData->epoch.gpsSeconds;
+	params.epoch.gpsNanoSeconds = 0.0;//IFOdata->timeData->epoch.gpsNanoSeconds;
 
 	/* Variable parameters. */
 
@@ -199,7 +199,11 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	LALFree( waveform.f );
 	LALFree( waveform.phi );
 	
+	
+	
 	LALCheckMemoryLeaks();
+	
+	
 //	INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
 //	return GENERATEPPNINSPIRALTESTC_ENORM;
 	

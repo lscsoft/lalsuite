@@ -112,9 +112,9 @@ int main(int argc, char *argv[]){
   if(runstate->data) {
     fprintf(stdout," data found --> trying some template computations etc.\n");
 
-    REAL4 m1 = 1.4;
+    REAL4 m1 = 10.4;
     addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
-    REAL4 m2 = 1.4;
+    REAL4 m2 = 10.4;
     addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
     REAL4 inc = 0.0;
     addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
@@ -122,6 +122,12 @@ int main(int argc, char *argv[]){
     addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
     LALTemplateGeneratePPN(runstate->data);
 
+	  FILE *testout=fopen("test_FD.txt","w");
+	  for (i=0;i<runstate->data->freqModelhPlus->data->length;i++){
+		  fprintf(testout,"%g %g %g\n",i*runstate->data->freqModelhPlus->deltaF,runstate->data->freqModelhPlus->data->data[i].re,runstate->data->freqModelhCross->data->data[i].re);
+	  }
+	  fclose(testout);
+	  
 /* 
 //  templateStatPhase() test: 
     REAL8 mc   = 2.0;
