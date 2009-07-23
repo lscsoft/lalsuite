@@ -55,6 +55,14 @@ typedef struct
 
 // Initialize sample frequency and HLV site information
 
+// Use detector names from lal/packages/tools/include/LALDetectors.h :
+//	LAL_TAMA_300_DETECTOR	=	0,
+//	LAL_VIRGO_DETECTOR      =	1,
+//	LAL_GEO_600_DETECTOR	=	2,
+//	LAL_LHO_2K_DETECTOR     =	3,
+//	LAL_LHO_4K_DETECTOR     =	4,
+//	LAL_LLO_4K_DETECTOR     =	5,
+
 void CAT(XLALSkymap2PlanConstruct, SKYMAP_N)(
     int sampleFrequency,
     int siteNumbers[SKYMAP_N],
@@ -96,3 +104,4 @@ void CAT(XLALSkymap2Apply, SKYMAP_N)(
 #undef CAT
 
 #endif // SKYMAP_N
+

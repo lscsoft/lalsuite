@@ -187,3 +187,4 @@ void CAT(XLALSkymap2PlanConstruct, SKYMAP_N)(int sampleFrequency, int siteNumber
 #undef CAT2
 
 #endif // SKYMAP_N
+

@@ -76,15 +76,8 @@ static void numericApply3(
 }
 
 static void numerical(void)
-<<<<<<< HEAD:lal/packages/burstsearch/test/SkymapTest.c
-{    
-    
-    XLALSkymap2PlanType3 plan;    
-=======
 {
-
-    XLALSkymap2PlanType plan;
->>>>>>> master:lal/packages/burstsearch/test/SkymapTest.c
+    XLALSkymap2PlanType3 plan;    
     XLALSkymap2SphericalPolarType direction;
     XLALSkymap2DirectionPropertiesType3 properties;
     double wSw[3] = { 100., 100., 100. };
@@ -94,7 +87,6 @@ static void numerical(void)
     RandomParams* rng;
 
     rng = XLALCreateRandomParams(0);
-<<<<<<< HEAD:lal/packages/burstsearch/test/SkymapTest.c
     
     XLALSkymap2PlanConstruct3(8192, siteNumbers, &plan);
     
@@ -105,18 +97,6 @@ static void numerical(void)
         
     XLALSkymap2KernelConstruct3(&properties, wSw, &kernel);
     
-=======
-
-    XLALSkymap2PlanConstruct(8192, &plan);
-
-    direction[0] = LAL_PI * XLALUniformDeviate(rng);
-    direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
-
-    XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
-
-    XLALSkymap2KernelConstruct(&properties, wSw, &kernel);
-
->>>>>>> master:lal/packages/burstsearch/test/SkymapTest.c
     {
         int i;
 
@@ -134,17 +114,10 @@ static void numerical(void)
     {
         double logPosterior;
         double logPosteriorNumerical;
-<<<<<<< HEAD:lal/packages/burstsearch/test/SkymapTest.c
         XLALSkymap2Apply3(&properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);        
         printf("%g\n", exp(logPosterior));
         
         numericApply3(&properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
-=======
-        XLALSkymap2Apply(&properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);
-        printf("%g\n", exp(logPosterior));
-
-        numericApply(&properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
->>>>>>> master:lal/packages/burstsearch/test/SkymapTest.c
         printf("%g\n", exp(logPosteriorNumerical));
 
         printf("%g\n", exp(logPosterior) - exp(logPosteriorNumerical));
@@ -158,7 +131,6 @@ static void numerical(void)
     }
 
 }
-#endif
 
 static void injection(void)
 {    
@@ -239,7 +211,7 @@ static void injection(void)
         {
             double t;
             t = ((double) j) / plan.sampleFrequency;
-            w[j] = 3 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
+            w[j] = 5 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
         }
 
         //printf("%d\n", __LINE__);
