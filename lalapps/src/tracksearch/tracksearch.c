@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
-  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
+  set_debug_level("ERROR | WARNING | MEMDBG");
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -1284,8 +1284,7 @@ void LALappsGetFrameData(LALStatus*          status,
       XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
       memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-      LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
-	       status);
+      bufferedDataStart=XLALGPSGetREAL8(&bufferedDataStartGPS);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
        */
@@ -1340,7 +1339,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  params->SamplingRateOriginal=1/(DataIn->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  /*
-	   * Add the bin_buffer points to the loadpoints variable.
+	   * A the bin_buffer points to the loadpoints variable.
 	   * This will load the correct number of points.
 	   */
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
@@ -2319,11 +2318,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &signalStart,
-			 &signalSeries->epoch),
-	   status);
+  signalStart=XLALGPSGetREAL8(&signalSeries->epoch);
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
@@ -2493,11 +2488,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    *Adjust value of edgeOffsetGPS to be new start point 
    * including col buffer data
    */
-    LAL_CALL(
-	     LALGPStoFloat(status,
-			   &originalFloatTime,
-			   &(params.GPSstart)),
-	     status);
+    originalFloatTime=XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
     LAL_CALL(LALFloatToGPS(status,
 			   &edgeOffsetGPS,
@@ -3009,16 +3000,8 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &startStamp,
-			     &(outCurve.curves[i].gpsStamp[0]))
-	       ,status);
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &stopStamp,
-			     &(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]))
-	       ,status);
+      startStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[0]);
+      stopStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[outCurve.curves[i].n-1]);
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,
