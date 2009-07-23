@@ -52,6 +52,11 @@ def get_far_threshold_and_segments(zerofname, live_time_program, instruments, ve
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
+  if (FAR == 0): 
+    # FIXME lambda = ~inf if loudest event is above loudest timeslide?
+    output = rate.BinnedArray(twoDMassBins)
+    output.array = 10**6 * ones(output.array.shape)
+    return output
   livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
   FARl = FAR*0.001
