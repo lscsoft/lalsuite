@@ -55,7 +55,7 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   if (FAR == 0): 
     # FIXME lambda = ~inf if loudest event is above loudest timeslide?
     output = rate.BinnedArray(twoDMassBins)
-    output.array = 10**6 * ones(output.array.shape)
+    output.array = 10**6 * numpy.ones(output.array.shape)
     return output
   livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
