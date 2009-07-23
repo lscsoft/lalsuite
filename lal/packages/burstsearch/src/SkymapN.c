@@ -18,6 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+static void dummy(void);
+
 #ifdef SKYMAP_N
 
 #define CAT2(A, B) A##B

@@ -1312,7 +1312,3 @@ static double det3(double z[3][3])
 #define SKYMAP_N 4
 #include "SkymapN.c"
 #undef SKYMAP_N
-
-
-
-
