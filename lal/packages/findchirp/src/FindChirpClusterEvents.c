@@ -301,6 +301,7 @@ LALFindChirpClusterEvents (
             LALFindChirpStoreEvent(status->statusPtr, input, params,
                 thisEvent, q, kmax, norm, eventStartIdx, numChisqBins,
                 searchName );
+
             CHECKSTATUSPTR( status );
 
             /* Set bank_chisq and cont_chisq */
