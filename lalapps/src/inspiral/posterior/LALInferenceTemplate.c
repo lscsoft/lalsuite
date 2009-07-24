@@ -41,7 +41,8 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	REAL4 dist=1.0;//*(REAL4 *)getVariable(IFOdata->modelParams,"dist");      /* binary distance SET AS FIDUCIAL */
 	REAL4 inc=*(REAL4 *)getVariable(IFOdata->modelParams,"inc");		/* inclination and coalescence phase */
 	REAL4 phii=*(REAL4 *)getVariable(IFOdata->modelParams,"phii");
-
+	REAL8 chirplen=0;
+	REAL8 end_time_gps = *(REAL8 *)getVariable(IFOdata->modelParams,"time");
 	
 	REAL4 f_min = IFOdata->fLow; 
 	REAL4 f_max = IFOdata->fHigh;			/* start and stop frequencies */
@@ -105,29 +106,12 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	/* Generate waveform. */
 	LALGeneratePPNInspiral( &stat, &waveform, &params );
 	
-	/* Print termination information. */
-	//snprintf( message, MSGLENGTH, "%d: %s", params.termCode,
-	//		 params.termDescription );
-	//INFO( message );
+	chirplen=params.tc;
 	
-	/* Print coalescence phase.
-	 snprintf( message, MSGLENGTH,
-	 "Waveform ends %.3f cycles before coalescence",
-	 -waveform.phi->data->data[waveform.phi->data->length-1]
-	 / (REAL4)( LAL_TWOPI ) ); */
-	/*{
-		INT4 code = sprintf( message,
-							"Waveform ends %.3f cycles before coalescence",
-							-waveform.phi->data->data[waveform.phi->data->length
-													  -1]
-							/ (REAL4)( LAL_TWOPI ) );
-		if ( code >= MSGLENGTH || code < 0 ) {
-			ERROR( GENERATEPPNINSPIRALTESTC_EPRINT,
-				  GENERATEPPNINSPIRALTESTC_MSGEPRINT, 0 );
-			return GENERATEPPNINSPIRALTESTC_EPRINT;
-		}
-	}
-	INFO( message );*/
+	/* This is the difference between the desired start time and the actual start time */
+	REAL8 TimeShift = (end_time_gps-chirplen) - (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
+	
+	
 	
 	/* Check if sampling interval was too large. */
 	if ( params.dfdt > 2.0 ) {
@@ -137,32 +121,11 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 		//WARNING( message );
 	}
 	
-	/* Renormalize phase. */
-	//phii -= waveform.phi->data->data[0];
-	//for ( i = 0; i < waveform.phi->data->length; i++ )
-	//	waveform.phi->data->data[i] += phii;
 	
-	/* Write output. */
-//		if ( ( fp = fopen( outfile, "w" ) ) == NULL ) {
-//			ERROR( GENERATEPPNINSPIRALTESTC_EFILE,
-//				  GENERATEPPNINSPIRALTESTC_MSGEFILE, outfile );
-//			return GENERATEPPNINSPIRALTESTC_EFILE;
-//		}
-		
-		/* Amplitude and phase functions: */
-//		if ( deltat == 0.0 ) {
-//			REAL8 t = 0.0; /* time */
-//			for ( i = 0; i < waveform.a->data->length; i++, t += dt )
-//				fprintf( fp, "%f %.3f %10.3e %10.3e %10.3e\n", t,
-//						waveform.phi->data->data[i],
-//						waveform.f->data->data[i],
-//						waveform.a->data->data[2*i],
-//						waveform.a->data->data[2*i+1] );
-//		}
-		
 		/* Waveform: */
 			REAL8 t = 0.0;
 			REAL8 x = 0.0;
+
 			REAL8 dx = deltat/dt;
 			REAL8 xMax = waveform.a->data->length - 1;
 			REAL8 *phiData = waveform.phi->data->data;

@@ -628,6 +628,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
+  injectSignal(irs->data,commandLine);
   if (irs->data != NULL) {
     fprintf(stdout, " initialize(): successfully read data.\n");
     ifoPtr = irs->data;

@@ -267,3 +267,87 @@ LALIFOData *ReadData(ProcessParamsTable *commandLine)
 	return headIFO;
 }
 
+void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
+{
+	LALStatus status;
+	SimInspiralTable *injTable=NULL;
+	INT4 Ninj=0;
+	INT4 event=0;
+	int i=0,j=0;
+	CoherentGW InjectGW;
+	PPNParamStruc InjParams;
+	LIGOTimeGPS injstart;
+	REAL8 SNR=0,NetworkSNR=0;
+	DetectorResponse det;
+	memset(&injstart,0,sizeof(LIGOTimeGPS));
+	memset(&InjParams,0,sizeof(PPNParamStruc));
+	COMPLEX16FrequencySeries *injF=NULL;
+	
+	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
+	if(getProcParamVal(commandLine,"--event")) event=getProcParamVal(commandLine,"--event")->value;
+	fprintf(stdout,"Injecting event %d\n",event);
+	
+	Ninj=SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(commandLine,"--injXML")->value,0,0);
+	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,getProcParamVal(commandLine,"--injXML")->value);
+	while(i<event) {i++; injTable = injTable->next;} /* Select event */
+
+	memset(&InjectGW,0,sizeof(InjectGW));
+	Approximant injapprox;
+	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
+	LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
+	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!!!\n"); REPORTSTATUS(&status); }
+	
+	/* Begin loop over interferometers */
+	while(IFOdata){
+		memset(&det,0,sizeof(det));
+		InjParams.deltaT = IFOdata->timeData->deltaT;
+		InjParams.fStartIn=(REAL4)IFOdata->fLow;
+		det.site=IFOdata->detector;
+		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("injection",
+																			  &IFOdata->timeData->epoch,
+																			  0.0,
+																			  IFOdata->timeData->deltaT,
+																			  &lalDimensionlessUnit,
+																			  IFOdata->timeData->data->length);
+		LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
+		if(status.statusCode) REPORTSTATUS(&status);
+		REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("injection8",
+																			  &IFOdata->timeData->epoch,
+																			  0.0,
+																			  IFOdata->timeData->deltaT,
+																			  &lalDimensionlessUnit,
+																			  IFOdata->timeData->data->length);
+		for(i=0;i<injWave->data->length;i++) inj8Wave->data->data[i]=(REAL8)injWave->data->data[i];
+		XLALDestroyREAL4TimeSeries(injWave);
+		injF=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("injF",
+																			&IFOdata->timeData->epoch,
+																			0.0,
+																			IFOdata->freqData->deltaF,
+																			&lalDimensionlessUnit,
+																			IFOdata->freqData->data->length);
+		/* Window the data */
+		REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+		for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=IFOdata->window->data->data[j]/WinNorm;
+		XLALREAL8FreqTimeFFT(injF,inj8Wave,IFOdata->timeToFreqFFTPlan);
+		if(IFOdata->oneSidedNoisePowerSpectrum){
+			for(SNR=0.0,j=IFOdata->fLow/injF->deltaF;j<injF->data->length;j++){
+				SNR+=pow(injF->data->data[j].re,2.0)*IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=pow(injF->data->data[j].im,2.0)*IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+			}
+		}
+		NetworkSNR+=SNR;
+		
+		/* Actually inject the waveform */
+		for(j=0;j<inj8Wave->data->length;j++) IFOdata->timeData->data->data[j]+=inj8Wave->data->data[j];
+		for(j=0;j<injF->data->length;j++){
+			IFOdata->freqData->data->data[j].re+=injF->data->data[j].re;
+			IFOdata->freqData->data->data[j].im+=injF->data->data[j].im;
+		}
+		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,SNR);
+		XLALDestroyREAL8TimeSeries(inj8Wave);
+		XLALDestroyCOMPLEX16FrequencySeries(injF);
+		IFOdata=IFOdata->next;
+	}
+	fprintf(stdout,"Network SNR of event %d = %g\n",event,NetworkSNR);
+	return;
+}
