@@ -12,11 +12,12 @@
 
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
-static void numericApply3(
-    XLALSkymap2DirectionPropertiesType3* properties,
-    double wSw[3],
-    XLALSkymap2KernelType3* kernel,
-    double* xSw[3],
+static void numericApply(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    double* wSw,
+    XLALSkymap2KernelType* kernel,
+    double** xSw,
     int tau,
     double* logPosterior
     )
@@ -39,14 +40,14 @@ static void numericApply3(
     {
         for (a[1] = - 5.0; a[1] <= 5.0; a[1] += da)
         {
-            double x[3];
+            double x[XLALSKYMAP2_N];
 
             // start accumulating inner products with the priors
             double q = (a[0] * a[0] + a[1] * a[1]);
 
             // for each detector...
             int j;
-            for (j = 0; j != 3; ++j)
+            for (j = 0; j != plan->n; ++j)
             {
                 int k;
                 // get the time-shifted data
@@ -77,25 +78,25 @@ static void numericApply3(
 
 static void numerical(void)
 {
-    XLALSkymap2PlanType3 plan;    
+    XLALSkymap2PlanType plan;    
     XLALSkymap2SphericalPolarType direction;
-    XLALSkymap2DirectionPropertiesType3 properties;
+    XLALSkymap2DirectionPropertiesType properties;
     double wSw[3] = { 100., 100., 100. };
-    XLALSkymap2KernelType3 kernel;
+    XLALSkymap2KernelType kernel;
     double *xSw[3];
     int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
     RandomParams* rng;
 
     rng = XLALCreateRandomParams(0);
     
-    XLALSkymap2PlanConstruct3(8192, siteNumbers, &plan);
+    XLALSkymap2PlanConstruct(8192, 3, siteNumbers, &plan);
     
     direction[0] = LAL_PI * XLALUniformDeviate(rng);
     direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
 
-    XLALSkymap2DirectionPropertiesConstruct3(&plan, &direction, &properties);
+    XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
         
-    XLALSkymap2KernelConstruct3(&properties, wSw, &kernel);
+    XLALSkymap2KernelConstruct(&plan, &properties, wSw, &kernel);
     
     {
         int i;
@@ -114,10 +115,10 @@ static void numerical(void)
     {
         double logPosterior;
         double logPosteriorNumerical;
-        XLALSkymap2Apply3(&properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);        
+        XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);        
         printf("%g\n", exp(logPosterior));
         
-        numericApply3(&properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
+        numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
         printf("%g\n", exp(logPosteriorNumerical));
 
         printf("%g\n", exp(logPosterior) - exp(logPosteriorNumerical));
@@ -134,18 +135,18 @@ static void numerical(void)
 
 static void injection(void)
 {    
-    XLALSkymap2PlanType3 plan;    
+    XLALSkymap2PlanType plan;    
     XLALSkymap2SphericalPolarType *directions;
-    XLALSkymap2DirectionPropertiesType3 *properties;
+    XLALSkymap2DirectionPropertiesType *properties;
     double S[3] = { 1, 2.0, 4.0 };
     double wSw[3];
-    XLALSkymap2KernelType3 *kernels;
+    XLALSkymap2KernelType *kernels;
     double *xSw[3];
     int n = 8192;
     int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
     //printf("%d\n", __LINE__);
 
-    XLALSkymap2PlanConstruct3(n, siteNumbers, &plan);
+    XLALSkymap2PlanConstruct(n, 3, siteNumbers, &plan);
     
     // generate directions
 
@@ -172,7 +173,7 @@ static void injection(void)
         properties = malloc(sizeof(*properties) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
-            XLALSkymap2DirectionPropertiesConstruct3(
+            XLALSkymap2DirectionPropertiesConstruct(
                 &plan, 
                 directions + i, 
                 properties + i
@@ -282,7 +283,7 @@ static void injection(void)
         kernels = malloc(sizeof(*kernels) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
-            XLALSkymap2KernelConstruct3(properties + i, wSw, kernels + i);
+            XLALSkymap2KernelConstruct(&plan, properties + i, wSw, kernels + i);
         }
     }
 
@@ -334,7 +335,7 @@ static void injection(void)
             for (t = n * 3 / 8; t != n * 5 / 8; ++t)
             {
                 double logPosterior;
-                XLALSkymap2Apply3(properties + i, kernels + i, xSw, t, &logPosterior);
+                XLALSkymap2Apply(&plan, properties + i, kernels + i, xSw, t, &logPosterior);
                 p += exp(logPosterior) / (n / 4);
 
             }
@@ -357,8 +358,8 @@ static void injection(void)
 //int main(int argc, char** argv)
 int main(void)
 {
-    // numerical();
-    injection();
+    numerical();
+    //injection();
 
 
     // ideas for tests:
