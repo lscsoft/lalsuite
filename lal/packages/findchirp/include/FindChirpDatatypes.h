@@ -273,6 +273,7 @@ tagFindChirpSegment
 {
   COMPLEX8FrequencySeries      *data;
   COMPLEX8FrequencySeries      *dataBCV;
+  REAL4TimeSeries              *dataPower;
   UINT4Vector                  *chisqBinVec;
   UINT4Vector                  *chisqBinVecBCV;
   REAL8                         deltaT;
