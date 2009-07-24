@@ -2910,7 +2910,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
-
   /* free the template bank */
   if ( subBankHead )
   {
@@ -2950,7 +2949,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
-
   /* free the random parameters structure */
   if ( randSeedType != unset )
   {
