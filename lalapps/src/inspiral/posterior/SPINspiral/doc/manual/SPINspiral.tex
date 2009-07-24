@@ -1,13 +1,31 @@
 \documentclass[10pt]{article}
 \usepackage[english]{babel}
 \usepackage[letterpaper, top=2.0cm, bottom=2.0cm, left=2.0cm, right=2.0cm]{geometry}
-\usepackage[square,sort&compress]{natbib}
+%\usepackage[square,sort&compress]{natbib}
 
 \title{Documentation \textsc{SPINspiral}:\\
   Parameter estimation on gravitational-wave signals\\
   from spinning binary inspirals}
-\author{Marc van der Sluys, Vivien Raymond, Ilya Mandel\\Northwestern University}
+\author{Marc van der Sluys, Vivien Raymond, Ilya Mandel \\
+  Northwestern University \\
+  \small\texttt{\href{http://www.astro.northwestern.edu/~sluys/index.php?title=SPINspiral}{http://www.astro.northwestern.edu/$\sim$sluys/index.php?title=SPINspiral}}}
 
+
+\usepackage[pdftex=true]{hyperref}  
+\hypersetup{
+  pdftitle = Documentation SPINspiral: Parameter estimation on gravitational-wave signals from spinning binary inspirals,
+  pdfauthor = Marc van der Sluys,
+  pdfsubject = Documentation MCMC code SPINspiral,
+  pdfkeywords = SPINspiral MCMC Documentation,
+  colorlinks = true,
+  linkcolor = blue,
+  anchorcolor = blue,
+  citecolor = blue,
+  filecolor = blue,
+  urlcolor = blue,
+  pdfpagemode=UseThumbs,
+}
+ 
 \begin{document}
 
 \maketitle
@@ -16,8 +34,11 @@
 
 
 \begin{abstract}
-  \textsc{SPINspiral} was adapted from a Markov-chain Monte-Carlo code for non-spinning 
-  binary inspirals written by Christian R\"over~\cite{RoeverThesis2007}.
+  \textsc{SPINspiral} was developed at Northwestern University to analyse gravitational-wave signals from
+  stellar-mass binary inspirals, as can be detected by ground-based interferometers like LIGO and Virgo.  
+  The code performs parameter estimation on such signals, using Markov-chain Monte-Carlo (MCMC) techniques.
+  This analysis includes the spins of the binary components.  \textsc{SPINspiral} was adapted from an MCMC 
+  code for non-spinning binary inspirals written by Christian R\"over~\cite{RoeverThesis2007}.
 \end{abstract}
 
 \tableofcontents
@@ -34,13 +55,13 @@
 \item Check out a working copy from the \texttt{SVN} and cd to the directory \texttt{trunk}, or go to the
   directory \texttt{trunk} and update your working copy (\texttt{svn up}).
 \item Check whether a proper \texttt{Makefile} is in your trunk.  There's an example file in \texttt{doc/}, 
-make sure it is configured for your compiler and type \texttt{make clean all} for the first compilation
-and \texttt{make all} for subsequent ones.  The executable files \texttt{mcmc\_nolal} and \texttt{mcmc\_lal} should be produced.
-\item Make sure you have the configuration files \texttt{mcmc.input*} in your trunk.  There are example
-files in \texttt{doc/input\_*}.  Set \texttt{iter} in \texttt{mcmc.input.mcmc} to 10 or 100 for a first test run.
-Example input files are available for both \texttt{mcmc\_nolal} and \texttt{mcmc\_lal}.
+  make sure it is configured for your compiler and type \texttt{make clean all} for the first compilation
+  and \texttt{make all} for subsequent ones.  The executable files \texttt{mcmc\_nolal} and \texttt{mcmc\_lal} should be produced.
+\item Make sure you have the configuration files \texttt{SPINspiral.input*} in your trunk.  There are example
+  files in \texttt{doc/input\_*}.  Set \texttt{nIter} in \texttt{SPINspiral.input.mcmc} to 10 or 100 for a first test run.
+  Example input files are available for both \texttt{mcmc\_nolal} and \texttt{mcmc\_lal}.
 \item Type \texttt{./mcmc\_nolal} or \texttt{./mcmc\_lal} and \textsc{SPINspiral} should run with the parameters specified
-in the input files.
+  in the input files.
 \end{enumerate}
 
 
@@ -72,20 +93,59 @@ An example Makefile that should compile your code is included in the \texttt{SVN
 The routines are grouped into six source files:
 
 \begin{description}
-\item[mcmc\_main.c] Main routine. The idea is to keep this routine as small as possible and use it to call other routines.
-\item[mcmc\_parameters.c] Contains routines that deal with reading input files and choosing and setting (starting or injection) parameters.
-\item[mcmc\_data.c] Contains routines for data and noise reading and handling.
-\item[mcmc\_templates.c] Contains routines to generate templates or obtain them from LAL.
-\item[mcmc\_signal.c] Contains routines to compute things like overlaps and likelihoods.
-\item[mcmc\_mcmc.c] Contains the MCMC core.
-\item[mcmc\_lal.c] Contains interfaces to LAL routines.
-\item[mcmc\_nolal.c] Contains dummy interfaces to LAL routines, used when not linking against LAL.
-\item[mcmc\_routines.c] Contains more general supporting functions.
-\item[mcmc\_3rdparty.c] Contains third-party routines.
+\item[SPINspiral\_main.c] Main routine. The idea is to keep this routine as small as possible and use it to call other routines.
+\item[SPINspiral\_parameters.c] Contains routines that deal with reading input files and choosing and setting (starting or injection) parameters.
+\item[SPINspiral\_data.c] Contains routines for data and noise reading and handling.
+\item[SPINspiral\_templates.c] Contains routines to generate templates or obtain them from LAL.
+\item[SPINspiral\_signal.c] Contains routines to compute things like overlaps and likelihoods.
+\item[SPINspiral\_mcmc.c] Contains the MCMC core.
+\item[SPINspiral\_lal.c] Contains interfaces to LAL routines.
+\item[SPINspiral\_nolal.c] Contains dummy interfaces to LAL routines, used when not linking against LAL.
+\item[SPINspiral\_routines.c] Contains more general supporting functions.
+\item[SPINspiral\_3rdparty.c] Contains third-party routines.
 \end{description}
 
 
 
+
+
+\pagebreak
+\section{Command-line options}
+
+Most of \textsc{SPINspiral}'s options ($\sim 250-300$) are specified in input files (see Section~\ref{sec:input_files}).
+However, a small --- but possibly growing --- number of options can be passed to the program 
+using command-line options:
+
+\begin{description}
+  \item[\texttt{-i <main input file name>}] override the name of the main input file (Section~\ref{sec:SPINspiral.input})
+  \item[\texttt{--injXMLfilename <file name>}] specify an XML file to read injection data from
+  \item[\texttt{--injXMLnr <0-\ldots>}] specify the injection number in the injection XML file
+
+  \item[\texttt{--mChirp}] specify a trigger value for the chirp mass ($\cal{M}$) in $M_\odot$
+  \item[\texttt{--eta}] specify a trigger value for the mass ratio ($\eta$)
+  \item[\texttt{--tc}] specify a trigger value for the GPS time of coalescence (s)
+  \item[\texttt{--dist}] specify a trigger value for the distance (Mpc)
+    
+  \item[\texttt{--nIter}] specify the desired number of MCMC iterations
+  \item[\texttt{--nSkip}] specify the number of step of which the output should be skipped between two saved iterations
+  \item[\texttt{--network}] specify the network configuration, \textit{e.g.} H1=[1], H1L1=[1,2], H1L1V1=[1,2,3], V1H1=[3,1]
+  \item[\texttt{--downsample}] specify the downsample factor for the data
+  \item[\texttt{--beforetc}] specify the number of seconds of data before $t_\mathrm{c}$ that should be analysed
+  \item[\texttt{--aftertc}] specify the number of seconds of data after $t_\mathrm{c}$ that should be analysed
+  \item[\texttt{--Flow}] specify the low frequency cut-off (Hz)
+  \item[\texttt{--Fhigh}] specify the high frequency cut-off (Hz)
+  \item[\texttt{--nPSDsegment}] specify number of data segments to estimate the PSD
+  \item[\texttt{--lPSDsegment}] specify length of each data segment to estimate the PSD
+  \item[\texttt{--outputPath}] specify the directory where the output will be stored. Default is running directory.
+  \item[\texttt{--cache}] specify the cache files to run. Overrides most of the information form SPINspiral.input.data.
+  \item[\texttt{--channel}] specify the list of channels to run, e.g. [H1:LSC-STRAIN,L1:LSC-STRAIN].
+  \item[\texttt{--PSDstart}] specify the GPS time for the start of the PSD. The default value is the begining of the cache file.
+  
+%  \item[\texttt{-- }] specify 
+  
+\end{description}
+  
+  
 
 
 
@@ -103,15 +163,21 @@ The routines are grouped into six source files:
 
 \pagebreak
 \section{Input files}
+\label{sec:input_files}
 
-\textsc{SPINspiral} has five different input files.  The main input file is assumed to be called
-\texttt{mcmc.input}, but can be specified differently as the only command-line argument.
-The names of the secondary are specified in \texttt{mcmc.input}.
+\textsc{SPINspiral} has six different ASCII input files.  The main input file is assumed to be called
+\texttt{SPINspiral.input}, but can be specified differently using the command-line option \texttt{-i 
+  <main input file name>}.  The names of the other five input files are specified in the main
+input file.  Example input files can be found in the \texttt{doc/input\_*} directories in the svn
+trunk.  The directory \texttt{doc/input\_all} contains the four waveform-independent files, the
+other \texttt{doc/input\_*} directories contain the two files that specify the injection and MCMC
+templates.
 
 
-\subsection{mcmc.input}
+\subsection{SPINspiral.input}
+\label{sec:SPINspiral.input}
 
-The file \texttt{mcmc.input} is the main input file and specifies the main mode of operation 
+The file \texttt{SPINspiral.input} is the main input file and specifies the main mode of operation 
 and the names of the other input files.
 
 \subsubsection{Operation and output}
@@ -127,11 +193,11 @@ and the names of the other input files.
 
 \subsubsection{Secondary input files}
 \begin{description}
-\item[mcmcFilename] Name of the MCMC input file.  Default: mcmc.input.mcmc.
-\item[dataFilename] Name of the data/noise input file.  Default: mcmc.input.data.
-\item[injectionFilename] Name of the software injection input file.  Default: mcmc.input.injection.
-\item[parameterFilename] Name of the MCMC parameter input file.  Default: mcmc.input.parameters.
-\item[systemFilename] Name of the file with system-dependent parameters.  Default: mcmc.input.system.
+\item[mcmcFilename] Name of the MCMC input file.  Default: SPINspiral.input.mcmc.
+\item[dataFilename] Name of the data/noise input file.  Default: SPINspiral.input.data.
+\item[injectionFilename] Name of the software injection input file.  Default: SPINspiral.input.injection.
+\item[parameterFilename] Name of the MCMC parameter input file.  Default: SPINspiral.input.parameters.
+\item[systemFilename] Name of the file with system-dependent parameters.  Default: SPINspiral.input.system.
 \end{description}
 
 
@@ -148,49 +214,50 @@ and the names of the other input files.
 
 
 \pagebreak
-\subsection{mcmc.input.mcmc}                                                                                                                                               
+\subsection{SPINspiral.input.mcmc}                                                                                                                                               
 The MCMC input file                                                                                                                                                 
                                                                                                                                                                     
 
 \subsubsection{Basic settings}
 \begin{description}
-\item[mcmcWaveform] Waveform version used as MCMC template:  1 for 1.5PN 12-parameter Apostolatos, 2 for 3.5PN 12-parameter LAL, 3 for 3.5PN 15-parameter LAL.
-\item[iter] Total number of iterations to be computed, \textit{e.g.} $10^7$.
+\item[nIter] Total number of iterations to be computed, \textit{e.g.} $10^7$.
 \item[thinOutput] Number of iterations to be skipped between stored steps (100 for 1d).
-\item[thinScreenOutput] Number of iterations between screen outputs im the MCMC (1000 for 1d).
+\item[thinScreenOutput] Number of iterations between screen outputs in the MCMC (1000 for 1d).
 \item[MCMCseed] Random number seed to start the MCMC: 0-let system clock determine seed, $>0$: use the specified seed.  Default: 0.
-\item[adapt] Use adaptation: 0-no, 1-yes.  Default: 1.
-\item[blockfrac] Fraction of uncorrelated updates that is updated as a block of all parameters ($\leq 0.0$: none, $\geq 1.0$: all).  Default: 0.1.
+\item[adaptiveMCMC] Use adaptation: 0-no, 1-yes.  Default: 1.
+\item[acceptRateTarget] Target acceptance rate for MCMC (0.0-1.0).  We used 0.25 for a long time.
+\item[minlogL] Minimum value for the log Likelihood to accept a jump. We used 0 for a long time, this number shouldn't be positive! Try -1.e3.
+\item[blockFrac] Fraction of uncorrelated updates that is updated as a block of all parameters ($\leq 0.0$: none, $\geq 1.0$: all).  Default: 0.1.
 \end{description}
 
 
 \subsubsection{Correlated update proposals}
 \begin{description}
-\item[corrupd] Do correlated update proposals: 0-no, 1-yes but update the matrix only once, 2-yes and update the matrix every ncorr iterations.  Default: 2.
-\item[corrfrac] Fraction of update proposals that is correlated (0.0-1.0, ~0.7 seems ok). corrupd must be 2. Should this replace corrupd?  Default: 0.7.
-\item[ncorr] Number of iterations for which the covariance matrix is calculated.  Default: $10^3-10^4$.
-\item[mataccfr] Fraction of elements on the diagonal that must `improve' in order to accept a new covariance matrix. ???~0.6-0.8 for unimodal, 0.0-0.2 for multimodal???  Default: 0.5.
-\item[prmatrixinfo] Print information to screen on proposed matrix updates: 0-none, 1-some (default), 2-add the old and new matrices.  Default: 1.
+\item[correlatedUpdates] Do correlated update proposals: 0-no, 1-yes but update the matrix only once, 2-yes and update the matrix every \texttt{ncorr} iterations.  Default: 2.
+\item[corrFrac] Fraction of update proposals that is correlated (0.0-1.0, ~0.7 seems OK). corrupd must be 2. Should this replace corrupd?  Default: 0.7.
+\item[nCorr] Number of iterations for which the covariance matrix is calculated.  Default: $10^3-10^4$.
+\item[matAccFr] Fraction of elements on the diagonal that must `improve' in order to accept a new covariance matrix. ???~0.6-0.8 for unimodal, 0.0-0.2 for multimodal???  Default: 0.5.
+\item[prMatrixInfo] Print information to screen on proposed matrix updates: 0-none, 1-some (default), 2-add the old and new matrices.  Default: 1.
 \end{description}
 
 \subsubsection{Annealing}
 \begin{description}
-\item[temp0] Starting temperature of the chain, \textit{e.g.} 100.0. Set 1.0 for no temperature effect.  Default: 1.0.
-\item[nburn] Number of iterations for the burn-in phase (1e4) at this number, the temperature drops to 1.0.  Default: $10^5$.
-\item[nburn0] Number of iterations during which temp=temp0 (e.g. 0.1*nburn, should be lower than ~0.9*nburn).  Default: $10^5$.
+\item[annealTemp0] Starting temperature of the chain, \textit{e.g.} 100.0. Set 1.0 for no temperature effect.  Default: 1.0.
+\item[annealNburn] Number of iterations for the burn-in phase (1e4) at this number, the temperature drops to 1.0.  Default: $10^5$.
+\item[annealNburn0] Number of iterations during which temp=temp0 (e.g. 0.1*annealNburn, should be lower than ~0.9*annealNburn).  Default: $10^5$.
 \end{description}
 
 \subsubsection{Parallel tempering}
 \begin{description}
-\item[partemp] Use parallel tempering:  0-no,  1-auto, fixed $T$ ladder,  2-auto, sinusoid $T$ ladder,  3-manual, fixed $T$ ladder,  4-manual, sinusoid $T$ ladder.  For a manual ladder, see near the bottom of the file.  Default: 2.
-\item[ntemps] Number of steps in the temperature ladder for parallel tempering, typically 5-10.  Default: 5.
-\item[tempmax] Maximum temperature in automatic parallel-tempering ladder (equidistant in $\log(T)$), typically 20-100.  Default: 40.
-\item[savehotchains] Save hot ($T>1$) parallel-tempering chains: 0-no (just the $T=1$ chain), $>0$-yes; for every saved $T=1$ point, save every savehotchains-th hot point.  Default: 100.
-\item[prpartempinfo] Print information to screen on the temperature chains: 0-none, 1-some ladder info (default), 2-add chain-swap matrix.  Default: 2.
+\item[parallelTempering] Use parallel tempering:  0-no,  1-auto, fixed $T$ ladder,  2-auto, sinusoid $T$ ladder,  3-manual, fixed $T$ ladder,  4-manual, sinusoid $T$ ladder.  For a manual ladder, see near the bottom of the file.  Default: 2.
+\item[nTemps] Number of steps in the temperature ladder for parallel tempering, typically 5-10.  Default: 5.
+\item[maxTemp] Maximum temperature in automatic parallel-tempering ladder (equidistant in $\log(T)$), typically 20-100.  Default: 40.
+\item[saveHotChains] Save hot ($T>1$) parallel-tempering chains: 0-no (just the $T=1$ chain), $>0$-yes; for every saved $T=1$ point, save every savehotchains-th hot point.  Default: 100.
+\item[prParTempInfo] Print information to screen on the temperature chains: 0-none, 1-some ladder info (default), 2-add chain-swap matrix.  Default: 2.
 \end{description}
 
-\subsubsection{Manual temperature ladder for parallel tempering}
-At least \texttt{ntemps} increasing temerature values, starting with 1.0, \textit{e.g.} \texttt{1.00     2.00     4.00     8.00     16.00}
+\subsubsection{Manual temperature ladder for parallel tempering (tempLadder[])}
+At least \texttt{nTemps} increasing temperature values, starting with 1.0, \textit{e.g.} \texttt{1.00     2.00     4.00     8.00     16.00}
     
 
 
@@ -198,13 +265,14 @@ At least \texttt{ntemps} increasing temerature values, starting with 1.0, \texti
 
 
 \pagebreak
-\subsection{mcmc.input.data}
+\subsection{SPINspiral.input.data}
+\label{sec:input.data}
 The data/noise input file
 
 
 \subsubsection{General}
 \begin{description}
-\item[datasetName] Name of the data set used (for printing purposes), upto 80 characters, \textit{e.g.} NINJA data set
+\item[datasetName] Name of the data set used (for printing purposes), up to 80 characters, \textit{e.g.} NINJA data set
 \end{description}
 
 \subsubsection{Detector network}
@@ -220,20 +288,23 @@ The data/noise input file
 \item[dataaftertc] The stretch of data in seconds after presumed coalescence that is read in as part of the data segment, \textit{e.g.} 1.0.
 \item[lowfrequencycut] Templates and overlap integration start at this frequency, \textit{e.g.} 40.0.
 \item[highfrequencycut] Overlap integration ends at this frequency, \textit{e.g.} 400.0.
-\item[tukeywin] Parameter for Tukey-window used in dataFT (non-flat fraction of window);  Use 0.15 for Virgo data.  Default: 0.15.
+\item[tukeywin] Parameter for Tukey-window used in \texttt{dataFT()} (non-flat fraction of window);  Use 0.15 for Virgo data.  Default: 0.15.
 \end{description}
 
 \subsubsection{Noise PSD estimation}
 \begin{description}
-\item[PSDsegmentNumber] Number of data segments used for the PSD estimation.  Default: 32, quick test runs: 8.
-\item[PSDsegmentLength] Length of each data segment used for PSD estimation.  Default: 8.0 -> 32x8.0s = 256s, quick test runs: 4.0 (8x4.0 = 32s).
+\item[PSDsegmentNumber] Number of data segments used for the PSD estimation.  Default: 32, quick test runs: 8 or 4.
+\item[PSDsegmentLength] Length of each data segment used for PSD estimation.  Default: 8.0 $\rightarrow$ 32x8.0s = 256s, quick test runs: 4.0 or 2.0 (8x2.0 = 16s; 4x1.0s = 4s).
 \end{description}
 
 
 
 
-\subsubsection{IFO $i$}
-Parameters for the location, orientation and data file for each detector used:
+\subsubsection{IFO i}
+\label{sec:input.data.ifo}
+Parameters for the location, orientation and data file for each detector used
+(see also Sect.\,\ref{sec:frame}):
+
 
 \begin{description}
 \item[name] Detector name, \textit{e.g.} Hanford.
@@ -242,22 +313,22 @@ Parameters for the location, orientation and data file for each detector used:
 \item[rightarm] Orientation of the 'right' arm (degrees), \textit{e.g.} 36.80.
 \item[leftarm] Orientation of the 'left' arm (degrees), \textit{e.g.} 126.80.
                                                                                                                                                                                                                
-\item[ch$1$name] Name of the data channel in the Frame file, \textit{e.g.} \texttt{H1:STRAIN}.
-\item[ch$1$filepath] Subdirectory of the path in mcmc.local where the data sits.  Use ``.'' for no subdirectory.  Default: ``.''.
-\item[ch$1$fileprefix] Prefix of the Frame data file name, \textit{e.g.} \texttt{H-H1\_NINJA\_NOISE}.
-\item[ch$1$filesuffix] Suffix of the Frame file name, \textit{e.g.} \texttt{-1024.gwf}.
+\item[ch$1$name] Name of the data channel in the Frame file, \textit{e.g.} \texttt{H1:STRAIN} (see Sect.\,\ref{sec:frame}).
+\item[ch$1$filepath] Subdirectory of the path in \texttt{SPINspiral.input.system} where the data sits.  Use ``.'' for no subdirectory.  Default: ``.''.
+\item[ch$1$fileprefix] Prefix of the Frame data file name, \textit{e.g.} \texttt{H-H1\_NINJA\_NOISE} (see Sect.\,\ref{sec:frame}).
+\item[ch$1$filesuffix] Suffix of the Frame file name, \textit{e.g.} \texttt{-1024.gwf} (see Sect.\,\ref{sec:frame}).
 \item[ch$1$filesize] `Size' (in seconds) of the data in each data Frame file, \textit{e.g.} 1024.
-\item[ch$1$fileoffset] If the Frame filename ends in: -839366009-128.gwf (where 128 is the length of the data stream), \texttt{fileoffset} = \texttt{mod(839366009,128)}, \textit{e.g.} 743.
+\item[ch$1$fileoffset] If the Frame file name ends in: -839366009-128.gwf (where 128 is the length of the data stream), \texttt{fileoffset} = \texttt{mod(839366009,128)}, \textit{e.g.} 743 (see Sect.\,\ref{sec:frame}).
 \item[ch$1$doubleprecision] Data in data Frame file is double precision (1) or not (0).  Default: 0.
 \item[add2channels] Keep 0, unless you want to read a signal from file.  Default: 0.
 
-\item[noiseGPSstart] GPS time to start reading data to gererate a noise PSD,  \textit{e.g.} 894377200.
+\item[noiseGPSstart] GPS time to start reading data to generate a noise PSD,  \textit{e.g.} 894377200.
 \item[noisechannel] Name of the data channel in the Frame file, \textit{e.g.} \texttt{H1:STRAIN}.
-\item[noisefilepath] Directory of the path in mcmc.local where the noise files sit.  Use ``.'' for no subdirectory.  Default: ``.''.
+\item[noisefilepath] Directory of the path in \texttt{SPINspiral.input.system} where the noise files sit.  Use ``.'' for no subdirectory.  Default: ``.''.
 \item[noisefileprefix] Prefix of the Frame data file name, \textit{e.g.} \texttt{H-H1\_NINJA\_NOISE}.
 \item[noisefilesuffix] Suffix of the Frame data file name, \textit{e.g.} \texttt{-1024.gwf}.
 \item[noisefilesize] `Size' (in seconds) of the data in each noise Frame file,  \textit{e.g.} 1024.
-\item[noisefileoffset]  Modulo between the start time and length of a Frame file.  If the Frame filename ends in: \texttt{-839366009-128.gwf}, \texttt{fileoffset} = \texttt{mod(839366009,128)},  \textit{e.g.} 743.
+\item[noisefileoffset]  Modulo between the start time and length of a Frame file.  If the Frame file name ends in: \texttt{-839366009-128.gwf}, \texttt{fileoffset} = \texttt{mod(839366009,128)},  \textit{e.g.} 743.
 \item[noisedoubleprecision] Data in data Frame file is double precision (1) or nor (0).  Default: 0.
 \end{description}
 
@@ -267,7 +338,7 @@ Parameters for the location, orientation and data file for each detector used:
 
 
 \pagebreak
-\subsection{mcmc.input.injection}
+\subsection{SPINspiral.input.injection}
 The software injection input file
 
 
@@ -275,41 +346,28 @@ The software injection input file
 \begin{description}
 \item[injectSignal] Inject a signal into the data (1) or not (0).
 \item[injectionWaveform] Waveform version used for the software injection:  1 for 1.5PN 12-parameter Apostolatos, 2 for 3.5PN 12-parameter LAL, 3 for 3.5PN 15-parameter LAL.
+\item[injectionPNorder] Post-Newtonian order at which the injection signal should be generated, \textit{e.g.} 1.5, 2.0, 3.5.
 \item[injectionSNR] If $>0$: scale the distance such that the injection network SNR becomes injectionSNR.
 \item[injRanSeed] Random number seed for random injection parameters. Don't change between serial chains of the same run!  Default: 12345.
 \end{description}
 
 
 \subsubsection{Table: Parameters}
-%Number:     ID:     InjectionValue:     ranInjPar:     Sigma:     BoundType:     BoundLow:           BoundUp:                        Description:
-%								                                               
-%  1            61      3.0836              0              0.1        1              3.000               12.000                          Mc             chirp mass (Mo)
-%  2            62      0.2222              0              0.1        1              0.03                0.25                            eta            symmetric mass ratio (-)
-%  3            11      894377000.00000     0              0.1        2              -0.05000            0.05000                         t\_c            GPS time of coalescence (s)
-%  4            22      2.8904              0              0.1        1              -6.9                4.6                             log(d\_L)       log of luminosity distance (Mpc)
-%  5            71      0.9000              0              0.1        1              0.000               1.000                           a\_spin1        spin magnitude of object 1 (-)
-%  6            72      0.1000              0              0.1        1              -1.000              1.000                           cos theta1     spin tilt of object 1 (-)
-%  7            31      0.8000              0              0.1        1              0.0                 6.28                            alpha          right ascension (rad)
-%  8            32      0.9000              0              0.1        1              -1.000              1.000                           sin(delta)     sin declination (-)
-%  9            41      1.5000              0              0.1        1              0.0                 6.28                            phi\_c          binary phase at coalescence (rad)
-% 10            53      0.5000              0              0.1        1              -1.000              1.000                           sin(theta\_J0)  orientation of J0 (-)
-% 11            54      2.0000              0              0.1        1              0.0                 6.28                            phi\_J0         orientation of J0 (rad)
-% 12            73      1.5000              0              0.1        1              0.0                 6.28                            phi1           spin phase of object 1 (rad)        
 
 
 Following the ``General'' section is a table with nine columns containing the following data:
 
 \begin{description}
 \item[Number] Currently just to guide the eye in this file.
-\item[ID] a unique number for each parameter.  See Section~\ref{sec:parameter_catalog} for a list of current IDs.
-\item[InjectionValue] injectionvalue for the parameter, can be overwritten depending on ranInjPar.
+\item[ID] a unique number for each parameter.  See Section~\ref{sec:parameter_catalogue} for a list of current IDs.
+\item[InjectionValue] injection value for the parameter, can be overwritten depending on \texttt{ranInjPar}.
 \item[RanInjPar] randomise the injection value:
   \begin{description}
   \item[0] no; inject InjectionValue.
   \item[1] yes; inject random value from a Gaussian distribution with centre InjectionValue and width Sigma (min BoundLow, max BoundUp).
   \item[2] yes; inject random value from range determined by BoundLow-BoundUp (make sure your MCMC prior matches this!).
   \end{description}
-\item[Sigma] width of the Gaussian distribution to draw from for RanInjPar=1, e.g. 0.1.
+\item[Sigma] width of the Gaussian distribution to draw from for \texttt{RanInjPar=1}, \textit{e.g.} 0.1.
 
   
 \item[BoundType] type of boundaries to use for the ranges of the injection parameters:
@@ -318,7 +376,7 @@ Following the ``General'' section is a table with nine columns containing the fo
   \item[2] general range, InjectionValue + BoundLow - InjectionValue + BoundUp; BoundLow must be $\leq 0$, BoundUp must be $\geq 0$.
   \item[3] general range, InjectionValue * BoundLow - InjectionValue * BoundUp; BoundLow must be $\leq 1$, BoundUp must be $\geq 1$.
   \end{description}
-\item[BoundLow] Up: used to determine upper or lower bound for BoundType = 1,2.
+\item[BoundLow, Up]: used to determine upper or lower bound for BoundType = 1,2.
 \item[Description] of the parameter, to increase readability of the file.
 \end{description}                
 
@@ -332,11 +390,13 @@ Following the ``General'' section is a table with nine columns containing the fo
 
 \pagebreak
 
-\subsection{mcmc.input.parameters}
+\subsection{SPINspiral.input.parameters}
 
 
 \subsubsection{General}
 \begin{description}                
+\item[mcmcWaveform] Waveform version used as MCMC template:  1 for 1.5PN 12-parameter Apostolatos, 2 for 3.5PN 12-parameter LAL, 3 for 3.5PN 15-parameter LAL, 4 for non-spinning LAL.
+\item[mcmcPNorder] Post-Newtonian order at which the MCMC template should be used, \textit{e.g.} 1.5, 2.0, 3.5.
 \item[priorSet] Set of priors to use, currently: 1.
 \item[offsetMCMC] Start the MCMC with offset initial parameters: 0-no: use injection parameters, overrules Start below; 1-yes: use Start below.  Default: 1.
 \item[offsetX] Start the MCMC from a Gaussian distribution with a width of (offsetX times Sigma), if Start==2,4 below.  Default: 10.0.
@@ -346,33 +406,15 @@ Following the ``General'' section is a table with nine columns containing the fo
 
 
 
-%Number:     ID:     BestValue:          Fix:     Start:     Sigma:          Type:     BoundLow:           BoundUp:                 
-%
-%  1            61      4.0836              0        4          0.0250          11        1.000               6.000                    Mc             chirp mass (Mo)
-%  2            62      0.2222              0        4          0.0250          11        0.03                0.25                     eta            symmetric mass ratio (-)
-%  3            11      894377000.00000     0        4          0.0100          12        -0.05000            0.05                     t\_c            GPS time of coalescence (s)
-%  4            22      2.8904              0        4          0.1000          11        -6.9                4.6                      log(d\_L)       log of luminosity distance (Mpc)
-%  5            71      0.9000              0        4          0.1000          11        1.0e-10             1.0                      a\_spin1        spin magnitude of object 1 (-)
-%  6            72      0.1000              0        5          0.1000          11        -0.999999           0.999999                 cos theta1     spin tilt of object 1 (-)
-%  7            31      0.8000              0        5          0.1000          21        0.0                 6.28                     alpha          right ascension (rad)
-%  8            32      0.9000              0        5          0.1000          11        -0.999999           0.999999                 sin(delta)     sin declination (-)
-%  9            41      1.5000              0        5          0.1000          21        0.0                 6.28                     phi\_c          binary phase at coalescence (rad)
-% 10            53      0.5000              0        5          0.1000          11        -0.999999           0.999999                 sin(theta\_J0)  orientation of J0 (-)
-% 11            54      2.0000              0        5          0.1000          21        0.0                 6.28                     phi\_J0         orientation of J0 (rad)
-% 12            73      1.5000              0        5          0.1000          21        0.0                 6.28                     phi1           spin phase of object 1 (rad)
-  
-  
-  
 \subsubsection{Parameters}
 \begin{description}                
 \item[Number] Currently just to guide the eye in this file.
-\item[ID] a unique number for a parameter.  See Section~\ref{sec:parameter_catalog} for a list of current IDs.
+\item[ID] a unique number for a parameter.  See Section~\ref{sec:parameter_catalogue} for a list of current IDs.
 \item[BestValue] best value for the parameter, \textit{e.g.} from the trigger;  use to start from or close to.
 \item[Fix] fix an MCMC parameter (i.e., keep it constant throughout the MCMC run):
   \begin{description}                
   \item[0] no.
-  \item[1] fix to BestValue.
-  \item[2] fix to injection value.
+  \item[1] yes; fix to the starting value determined by \texttt{Start}
   \end{description}                
 \item[Start] where to start the Markov chains:
   \begin{description}                
@@ -404,11 +446,11 @@ Following the ``General'' section is a table with nine columns containing the fo
 
 
 \pagebreak
-\subsection{mcmc.input.system}
+\subsection{SPINspiral.input.system}
 A file with system-dependent parameters (well, currently one).
 
 \begin{description}
-\item[datadir] Data directory (actual data files may be in a subdirectory of this, see \texttt{mcmc.data}), \textit{e.g.} \texttt{/home/user/MCMC/data}
+\item[datadir] Data directory (actual data files may be in a subdirectory of this, see \texttt{SPINspiral.input.data}), \textit{e.g.} \texttt{/home/user/MCMC/data}
 \end{description}
 
 
@@ -420,16 +462,23 @@ A file with system-dependent parameters (well, currently one).
 \pagebreak
 \section{Output files}
 
-\subsection{mcmc.output.$abcdef$.$xy$}
+\subsection{SPINspiral.output.abcdef.xy}
 
 
 
 
 
 \pagebreak
-\section{Parameter catalog}
-\label{sec:parameter_catalog}
+\section{Parameter catalogue}
+\label{sec:parameter_catalogue}
 Goal: assign a unique identifier to each possible variable that has been used in \textsc{SPINspiral} so far.
+The identifier is stored in the variable \texttt{parID[]} and \texttt{injID[]} in the \texttt{runPar} and 
+\texttt{mcmcvariables} structs.  The reverse identification is stored in \texttt{parRevID[]} and 
+\texttt{injRevID[]}.  Thus, if the first parameter is $t_\mathrm{c}$, then \texttt{parID[0]}=11 and
+\texttt{parRevID[11]}=0.  Whether a parameter is used (1) or not (0) for the software injection or MCMC 
+is stored in \texttt{injParUse[]} and \texttt{mcmcParUse[]}.  The arrays \texttt{parAbrev[]} and 
+\texttt{parAbrv[]} contain short and ultrashort parameter names respectively. The variable \texttt{parDef[i]} 
+signifies whether the parameter with ID $i$ is defined (1) or not (0).
 
 \subsection{Time}
 \begin{tabular}{lllll}
@@ -477,29 +526,79 @@ Goal: assign a unique identifier to each possible variable that has been used in
   \textbf{64} & $M_2$  & Mass 2 & $M_\odot$ &  $[0,\infty[$ \\
 \end{tabular}
 
-\subsection{Spin}
+\subsection{Spin 1}
 \begin{tabular}{lllll}
   \textbf{Number} & \textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Range} \\
   \textbf{71} & $a_\mathrm{spin,1}$  & Spin magnitude 1 & --- & $[0,1]$ \\
   \textbf{72} & $\cos(\theta_\mathrm{spin,1})$  & Spin tilt 1 & --- & $[-1,1]$ \\
   \textbf{73} & $\varphi_\mathrm{spin,1}$  ($\alpha_\mathrm{c}$)  & Spin phase 1 & rad & $[0,2\pi[$ \\
-  \textbf{74} & $a_\mathrm{spin,2}$  & Spin magnitude 2 & --- & $[0,1]$ \\
-  \textbf{75} & $\cos(\theta_\mathrm{spin,2})$  & Spin tilt 2 & --- & $[-1,1]$ \\
-  \textbf{76} & $\varphi_\mathrm{spin,2}$  & Spin phase 2 & rad & $[0,2\pi[$ \\
+      & & & & \\
+  \textbf{75} & $S_\mathrm{1,x}$  & Spin 1 magnitude, x-component & --- & $[0,1]$ \\
+  \textbf{76} & $S_\mathrm{1,y}$  & Spin 1 magnitude, y-component & --- & $[0,1]$ \\
+  \textbf{77} & $S_\mathrm{1,z}$  & Spin 1 magnitude, z-component & --- & $[0,1]$ \\
+\end{tabular}
+
+\subsection{Spin 2}
+\begin{tabular}{lllll}
+  \textbf{Number} & \textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Range} \\
+  \textbf{81} & $a_\mathrm{spin,2}$  & Spin magnitude 2 & --- & $[0,1]$ \\
+  \textbf{82} & $\cos(\theta_\mathrm{spin,2})$  & Spin tilt 2 & --- & $[-1,1]$ \\
+  \textbf{83} & $\varphi_\mathrm{spin,2}$  & Spin phase 2 & rad & $[0,2\pi[$ \\
+      & & & & \\
+  \textbf{85} & $S_\mathrm{2,x}$  & Spin 2 magnitude, x-component & --- & $[0,1]$ \\
+  \textbf{86} & $S_\mathrm{2,y}$  & Spin 2 magnitude, y-component & --- & $[0,1]$ \\
+  \textbf{87} & $S_\mathrm{2,z}$  & Spin 2 magnitude, z-component & --- & $[0,1]$ \\
 \end{tabular}
 
 \subsection{Merger, ringdown}
 \begin{tabular}{lllll}
   \textbf{Number} & \textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Range} \\
-  \textbf{81} &   & & & $[,]$ \\
+  \textbf{91} &   & & & $[,]$ \\
 \end{tabular}
 
 
 
 
+
+
+
+
+\pagebreak
+\section{Reading Frame files}
+\label{sec:frame}
+
+Frame files are designed to store detector data and are also used to store synthetic noise.
+They can be read using \texttt{libframe} \cite{FrameLibrary}, see \textit{e.g.}
+\texttt{/export/apps/lsc/libframe/} on Fugu.  
+
+\textsc{SPINspiral} can read Frame files.  The parameters in \texttt{SPINspiral.input.data}
+(Sect.\,\ref{sec:input.data.ifo}) determine how this is done.
+
+The name of a Frame file typically looks like \texttt{H-H1\_SOME\_TEXT-123456789-123.gwf}
+(using a file with detector data from H1 as an example).  The first part (\texttt{H-H1\_SOME\_TEXT-})
+goes into the parameter \texttt{ch1fileprefix}, while the last part (\texttt{-123.gwf}) 
+is stored in \texttt{ch1filesuffix}.
+
+The example number \texttt{123456789} indicates the starting GPS time (in seconds) of the 
+data in the file, while \texttt{123} is the length of the data strech in the file, again 
+in seconds (and again an example). In order for the code to know at which GPS time Frame
+files start and stop, we need to feed the modulus of the two numbers (\texttt{mod(123456789,123) = 90}
+here) to the parameter \texttt{ch1fileoffset}.  At the moment, we cannot read subsequent files
+of different length (using \texttt{FrCopy}, which can copy multiple files into one, is a 
+quick-and-dirty solution. The ability to read cache files would be a better one).
+
+One of the more obscure parameters is the channel name \texttt{ch1name}.  It can be found 
+using the program \texttt{FrDump}, which comes with \texttt{libframe}: \\
+\texttt{FrDump -i H-H1\_SOME\_TEXT-123456789-123.gwf |grep ProcData}\\
+The channel name is probably going to look like \texttt{H1:STRAIN} (for the case of
+the H1 detector).
+
+
+
+\pagebreak
 \section*{References}
-%bibliographystyle{iopart-num}
-\bibliographystyle{unsrt}  %Includes titles as well, messes up my et al solutions...
+\bibliographystyle{iopart-num}  %Nicer...
+%\bibliographystyle{unsrt}  %Includes titles as well, messes up my et al solutions, forgets URLs.  Needed for online PDF generation at IOP
 \bibliography{SPINspiral}
 
 

@@ -1,7 +1,7 @@
 #SPINspiral:  Data input file.  The LINE NUMBER for each parameter should not change!!!  The order of IFOs in this file *MUST* be H1, L1, V
 
 #Value:                                                                         Variable:                Description:
-NINJA data set                                                                  datasetName              Name of the data set used (for printing purposes), upto 80 characters
+--------------                                                                  datasetName              Name of the data set used (for printing purposes), upto 80 characters
 
 #Detector network:
 1                                                                               networksize              Set the number of detectors that make up the network; read in networksize block of IFO data below
@@ -30,7 +30,7 @@ Hanford                                                                         
  126.80                                                                         leftarm                  Orientation of the 'left' arm (degrees)
   
 H1:STRAIN                                                                       ch1name                         
-.                                                                               ch1filepath              Subdirectory of the path in mcmc.local where the data sits.  Use "." for no subdirectory
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
 H-H1_NINJA_NOISE-                                                               ch1fileprefix                 
 -1024.gwf                                                                       ch1filesuffix                 
 1024                                                                            ch1filesize                 
@@ -40,7 +40,7 @@ H-H1_NINJA_NOISE-                                                               
 
 894377200                                                                       noiseGPSstart                 
 H1:STRAIN                                                                       noisechannel                 
-.                                                                               noisefilepath            Subdirectory of the path in mcmc.local where the noise files sit.  Use "." for no subdirectory
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
 H-H1_NINJA_NOISE-                                                               noisefileprefix                 
 -1024.gwf                                                                       noisefilesuffix                 
 1024                                                                            noisefilesize                 
@@ -56,7 +56,7 @@ Livingston                                                                      
  198.00                                                                         leftarm                  Orientation of the 'left' arm (degrees)
   
 L1:STRAIN                                                                       ch1name                         
-.                                                                               ch1filepath              Subdirectory of the path in mcmc.local where the data sits.  Use "." for no subdirectory
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
 L-L1_NINJA_NOISE-                                                               ch1fileprefix                 
 -1024.gwf                                                                       ch1filesuffix                 
 1024                                                                            ch1filesize                 
@@ -66,7 +66,7 @@ L-L1_NINJA_NOISE-                                                               
 
 894377200                                                                       noiseGPSstart                 
 L1:STRAIN                                                                       noisechannel                 
-.                                                                               noisefilepath            Subdirectory of the path in mcmc.local where the noise files sit.  Use "." for no subdirectory
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
 L-L1_NINJA_NOISE-                                                               noisefileprefix                 
 -1024.gwf                                                                       noisefilesuffix                 
 1024                                                                            noisefilesize                 
@@ -82,7 +82,7 @@ Pisa                                                                            
   71.50                                                                         leftarm                  Orientation of the 'left' arm (degrees)
   
 V1:STRAIN                                                                       ch1name                         
-.                                                                               ch1filepath              Subdirectory of the path in mcmc.local where the data sits.  Use "." for no subdirectory
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
 V-V1_NINJA_NOISE-                                                               ch1fileprefix                 
 -1024.gwf                                                                       ch1filesuffix                 
 1024                                                                            ch1filesize                 
@@ -92,7 +92,7 @@ V-V1_NINJA_NOISE-                                                               
 
 894377200                                                                       noiseGPSstart                 
 V1:STRAIN                                                                       noisechannel                 
-.                                                                               noisefilepath            Subdirectory of the path in mcmc.local where the noise files sit.  Use "." for no subdirectory
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
 V-V1_NINJA_NOISE-                                                               noisefileprefix                 
 -1024.gwf                                                                       noisefilesuffix                 
 1024                                                                            noisefilesize                 
