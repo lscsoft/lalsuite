@@ -81,56 +81,70 @@ static void numerical(void)
     XLALSkymap2PlanType plan;    
     XLALSkymap2SphericalPolarType direction;
     XLALSkymap2DirectionPropertiesType properties;
-    double wSw[3] = { 100., 100., 100. };
+    double wSw[5] = { 100., 100., 100., 100., 100. };
     XLALSkymap2KernelType kernel;
-    double *xSw[3];
-    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
+    double *xSw[5];
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR, LAL_GEO_600_DETECTOR, LAL_LHO_2K_DETECTOR };
     RandomParams* rng;
+    int n;
 
     rng = XLALCreateRandomParams(0);
     
-    XLALSkymap2PlanConstruct(8192, 3, siteNumbers, &plan);
-    
-    direction[0] = LAL_PI * XLALUniformDeviate(rng);
-    direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
-
-    XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
-        
-    XLALSkymap2KernelConstruct(&plan, &properties, wSw, &kernel);
-    
+    for (n = 1; n != 6; ++n)
     {
-        int i;
+    
+        XLALSkymap2PlanConstruct(8192, n, siteNumbers, &plan);
 
-        for (i = 0; i != 3; ++i)
+        direction[0] = LAL_PI * XLALUniformDeviate(rng);
+        direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
+
+        XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
+
+        XLALSkymap2KernelConstruct(&plan, &properties, wSw, &kernel);
+
         {
-            int j;
-            xSw[i] = malloc(sizeof(*xSw[i]) * plan.sampleFrequency);
-            for (j = 0; j != plan.sampleFrequency; ++j)
+            int i;
+
+            for (i = 0; i != n; ++i)
             {
-                xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
+                int j;
+                xSw[i] = malloc(sizeof(*xSw[i]) * plan.sampleFrequency);
+                for (j = 0; j != plan.sampleFrequency; ++j)
+                {
+                    xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
+                }
             }
         }
-    }
 
-    {
-        double logPosterior;
-        double logPosteriorNumerical;
-        XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);        
-        printf("%g\n", exp(logPosterior));
+        {
+            double logPosteriorAnalytic;
+            double logPosteriorNumerical;
+            
+            XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosteriorAnalytic);        
+            //printf("%g\n", exp(logPosteriorAnalytic));
+
+            numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
+            //printf("%g\n", exp(logPosteriorNumerical));
+
+            //printf("%g\n", 
+            //    logPosteriorAnalytic - logPosteriorNumerical
+            //    );
+            if (abs(logPosteriorAnalytic - logPosteriorNumerical) > 1e-3)
+            {
+                // test failed
+                exit(1);
+            }
+
+        }
+
+        {
+            int i;
+            for(i = 0; i != n; ++i)
+                free(xSw[i]);
+        }
+
+    }
         
-        numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
-        printf("%g\n", exp(logPosteriorNumerical));
-
-        printf("%g\n", exp(logPosterior) - exp(logPosteriorNumerical));
-
-    }
-
-    {
-        int i;
-        for(i = 0; i != 3; ++i)
-            free(xSw[i]);
-    }
-
 }
 
 static void injection(void)
@@ -358,7 +372,15 @@ static void injection(void)
 //int main(int argc, char** argv)
 int main(void)
 {
+    
+    // check the fast analytic bayesian statistic against simpler but 
+    // slower numerical integration
+    
     numerical();
+
+    
+    
+    
     //injection();
 
 
