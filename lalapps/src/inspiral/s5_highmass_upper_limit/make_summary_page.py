@@ -48,7 +48,7 @@ try: # see if you want to open the box
   if sys.argv[2] == "open":
     print >>sys.stderr, "WARNING: OPENING THE BOX"
     open_box = True
-
+except: pass
 
 page = wiki(open_box)
 

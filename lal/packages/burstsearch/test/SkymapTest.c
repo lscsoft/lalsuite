@@ -12,11 +12,10 @@
 
 #define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
 
-#if 0
-static void numericApply(
-    XLALSkymap2DirectionPropertiesType* properties,
+static void numericApply3(
+    XLALSkymap2DirectionPropertiesType3* properties,
     double wSw[3],
-    XLALSkymap2KernelType* kernel,
+    XLALSkymap2KernelType3* kernel,
     double* xSw[3],
     int tau,
     double* logPosterior
@@ -78,26 +77,26 @@ static void numericApply(
 
 static void numerical(void)
 {
-
-    XLALSkymap2PlanType plan;
+    XLALSkymap2PlanType3 plan;    
     XLALSkymap2SphericalPolarType direction;
-    XLALSkymap2DirectionPropertiesType properties;
+    XLALSkymap2DirectionPropertiesType3 properties;
     double wSw[3] = { 100., 100., 100. };
-    XLALSkymap2KernelType kernel;
+    XLALSkymap2KernelType3 kernel;
     double *xSw[3];
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
     RandomParams* rng;
 
     rng = XLALCreateRandomParams(0);
-
-    XLALSkymap2PlanConstruct(8192, &plan);
-
+    
+    XLALSkymap2PlanConstruct3(8192, siteNumbers, &plan);
+    
     direction[0] = LAL_PI * XLALUniformDeviate(rng);
     direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
 
-    XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
-
-    XLALSkymap2KernelConstruct(&properties, wSw, &kernel);
-
+    XLALSkymap2DirectionPropertiesConstruct3(&plan, &direction, &properties);
+        
+    XLALSkymap2KernelConstruct3(&properties, wSw, &kernel);
+    
     {
         int i;
 
@@ -115,10 +114,10 @@ static void numerical(void)
     {
         double logPosterior;
         double logPosteriorNumerical;
-        XLALSkymap2Apply(&properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);
+        XLALSkymap2Apply3(&properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosterior);        
         printf("%g\n", exp(logPosterior));
-
-        numericApply(&properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
+        
+        numericApply3(&properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
         printf("%g\n", exp(logPosteriorNumerical));
 
         printf("%g\n", exp(logPosterior) - exp(logPosteriorNumerical));
@@ -132,22 +131,22 @@ static void numerical(void)
     }
 
 }
-#endif
 
 static void injection(void)
-{
-    XLALSkymap2PlanType plan;
+{    
+    XLALSkymap2PlanType3 plan;    
     XLALSkymap2SphericalPolarType *directions;
-    XLALSkymap2DirectionPropertiesType *properties;
+    XLALSkymap2DirectionPropertiesType3 *properties;
     double S[3] = { 1, 2.0, 4.0 };
     double wSw[3];
-    XLALSkymap2KernelType *kernels;
+    XLALSkymap2KernelType3 *kernels;
     double *xSw[3];
     int n = 8192;
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
     //printf("%d\n", __LINE__);
 
-    XLALSkymap2PlanConstruct(n, &plan);
-
+    XLALSkymap2PlanConstruct3(n, siteNumbers, &plan);
+    
     // generate directions
 
     {
@@ -173,9 +172,9 @@ static void injection(void)
         properties = malloc(sizeof(*properties) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
-            XLALSkymap2DirectionPropertiesConstruct(
-                &plan,
-                directions + i,
+            XLALSkymap2DirectionPropertiesConstruct3(
+                &plan, 
+                directions + i, 
                 properties + i
                 );
         }
@@ -212,7 +211,7 @@ static void injection(void)
         {
             double t;
             t = ((double) j) / plan.sampleFrequency;
-            w[j] = 3 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
+            w[j] = 5 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
         }
 
         //printf("%d\n", __LINE__);
@@ -225,7 +224,7 @@ static void injection(void)
             {
                 wSw[i] += w[j] * w[j] / S[i];
             }
-            //fprintf(stderr, "wSw[%d] = %f = %f^2\n", i, wSw[i], sqrt(wSw[i]));
+            fprintf(stderr, "wSw[%d] = %f = %f^2\n", i, wSw[i], sqrt(wSw[i]));
         }
         //exit(0);
         //printf("%d\n", __LINE__);
@@ -283,7 +282,7 @@ static void injection(void)
         kernels = malloc(sizeof(*kernels) * 180 * 360);
         for (i = 0; i != 180 * 360; ++i)
         {
-            XLALSkymap2KernelConstruct(properties + i, wSw, kernels + i);
+            XLALSkymap2KernelConstruct3(properties + i, wSw, kernels + i);
         }
     }
 
@@ -335,7 +334,7 @@ static void injection(void)
             for (t = n * 3 / 8; t != n * 5 / 8; ++t)
             {
                 double logPosterior;
-                XLALSkymap2Apply(properties + i, kernels + i, xSw, t, &logPosterior);
+                XLALSkymap2Apply3(properties + i, kernels + i, xSw, t, &logPosterior);
                 p += exp(logPosterior) / (n / 4);
 
             }
@@ -358,7 +357,7 @@ static void injection(void)
 //int main(int argc, char** argv)
 int main(void)
 {
-     //numerical();
+    // numerical();
     injection();
 
 

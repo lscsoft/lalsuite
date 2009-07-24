@@ -77,10 +77,13 @@ parser.add_option( "", "--gps-end-time", action = "store", type = "string",
   help =
     "GPS end time of the ihope run."
   )
-parser.add_option( "", "--plot-playground-only", action = "store_true",
+parser.add_option( "", "--generate-all-data-plots", action = "store_true",
   default = False,
   help =
-    "Turn on if want plots of playground data only."
+    "Turn on if want to open the box. Otherwise, only plots of playground " +
+    "data will be made. WARNING: Even if this option is off, all_data and " +
+    "and exclude_play coincs will still exist in the resulting databases " +
+    "(they just won't be plotted)."
   )
 
 (options, args) = parser.parse_args()
@@ -170,6 +173,7 @@ for tag in user_tags:
   t2c_job = inspiral.ThincaToCoincJob(cp)
   tosql_job = pipeline.LigolwSqliteJob(cp)
   dbsimplify_job = inspiral.DBSimplifyJob(cp)
+  comp_durs_job = inspiral.ComputeDurationsJob(cp)
   cluster_job = inspiral.ClusterCoincsJob(cp)
   ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
   ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
@@ -184,6 +188,7 @@ for tag in user_tags:
   t2c_job.set_sub_file( '.'.join([ basename, tag, 'thinca_to_coinc', 'sub' ]) )
   tosql_job.set_sub_file( '.'.join([ basename, tag, 'ligolw_sqlite', 'sub' ]) )
   dbsimplify_job.set_sub_file( '.'.join([ basename, tag, 'dbsimplify', 'sub' ]) )
+  comp_durs_job.set_sub_file( '.'.join([ basename, tag, 'compute_durations', 'sub' ]) )
   cluster_job.set_sub_file( '.'.join([ basename, tag, 'cluster_coincs', 'sub' ]) )
   ucfar_job.set_sub_file( '.'.join([ basename, tag, 'uncombined.cfar', 'sub' ]) )
   ccfar_job.set_sub_file( '.'.join([ basename, tag, 'combined.cfar', 'sub' ]) )
@@ -218,10 +223,10 @@ for tag in user_tags:
   # get distinct on_instruments in the thinca cache
   distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
   # from the distinct_instrument_sets figure out what distinct ifos there are
-  distinct_ifos = set()
+  distinct_ifo_set = set()
   for on_instruments in distinct_instrument_sets:
-    distinct_ifos |= lsctables.instrument_set_from_ifos(on_instruments)
-  distinct_ifos = ''.join(sorted(distinct_ifos))
+    distinct_ifo_set |= lsctables.instrument_set_from_ifos(on_instruments)
+  distinct_ifos = ''.join(sorted(distinct_ifo_set))
 
   # get the veto file
   if 'VETO' in tag:
@@ -241,6 +246,7 @@ for tag in user_tags:
   veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
   t2c_output = []
+  t2c_nodes = []
   this_cache = lal.Cache()
   cache_start_time = int(experiment_start)
   for on_instruments in distinct_instrument_sets:
@@ -268,13 +274,12 @@ for tag in user_tags:
         this_cache_file.close()
         # write node
         this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
-        input_instruments = lsctables.ifos_from_instrument_set(
-          lsctables.instrument_set_from_ifos( on_instruments ) )
-        this_t2c_node.set_instruments(input_instruments)
+        this_t2c_node.set_instruments(lsctables.ifos_from_instrument_set( distinct_ifo_set ))
         this_t2c_node.set_input_cache(this_cache_name)
         this_t2c_node.set_veto_segments( veto_file )
         this_t2c_node.set_veto_segments_name( veto_segs_name )
         dag.add_node(this_t2c_node)
+        t2c_nodes.append(this_t2c_node)
         # add output files to t2c_output
         t2c_output += this_t2c_node.get_output_from_cache()
         # set end-time of last entry to be start time of next cache
@@ -319,8 +324,7 @@ for tag in user_tags:
   t2c2sql_node.set_database( raw_result_db )
   
   # set parent nodes to be all the thinca_to_coinc nodes
-  [t2c2sql_node.add_parent( node ) for node in dag.get_nodes() \
-    if isinstance(node, inspiral.ThincaToCoincNode)]
+  [t2c2sql_node.add_parent( node ) for node in t2c_nodes]
       
   dag.add_node( t2c2sql_node )
   
@@ -361,6 +365,20 @@ for tag in user_tags:
   
   dag.add_node( dbsimplify_node )
   
+  ############################################################################
+  # Step 3b: Compute durations in the database
+
+  print "\tsetting up compute_durations node..."
+
+  # set node options
+  comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
+  comp_durs_node.set_tmp_space( tmp_space )
+  comp_durs_node.set_database( raw_result_db )
+
+  # set parent node
+  comp_durs_node.add_parent( dbsimplify_node )
+
+  dag.add_node(comp_durs_node)
   
   ############################################################################
   # Step 3c: If simulation, add injection file.
@@ -374,7 +392,7 @@ for tag in user_tags:
     dbaddinj_node.set_database( raw_result_db )
     dbaddinj_node.set_injection_file( inj_file )
   
-    dbaddinj_node.add_parent( dbsimplify_node )
+    dbaddinj_node.add_parent( comp_durs_node )
   
     dag.add_node( dbaddinj_node )
   
@@ -396,7 +414,7 @@ for tag in user_tags:
   cluster_node.set_output(result_db)
   
   # set parent node
-  cluster_node.add_parent( dbsimplify_node )
+  cluster_node.add_parent( comp_durs_node )
   if simulation:
     cluster_node.add_parent( dbaddinj_node )
   
@@ -443,7 +461,7 @@ for tag in user_tags:
   if not simulation:
     print "\t\tcreating plotslides node..."
     # set plotslides_job options
-    if options.plot_playground_only or 'PLAYGROUND' in tag:
+    if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
       plotslides_job.set_plot_playground_only()
     # Write plotslides node
     plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
@@ -460,7 +478,7 @@ for tag in user_tags:
     print "\t\tcreating plotifar node for datatypes:"
     for datatype in ['all_data', 'playground', 'exclude_play']: 
       # only create nodes for non-playground if options.plot-playground-only not set
-      if (options.plot_playground_only or 'PLAYGROUND' in tag)  and datatype != 'playground':
+      if (not options.generate_all_data_plots or 'PLAYGROUND' in tag)  and datatype != 'playground':
         continue
       print "\t\t\t%s..." % datatype
       plotifar_node = inspiral.PlotIfarNode( plotifar_job )

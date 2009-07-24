@@ -176,7 +176,7 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
   end = config.get("input", "gps-end-time")
 
   genVetoCall = executable
-  genVetoCall = ' '.join([ genVetoCall, "--separate-categories", 
+  genVetoCall = ' '.join([ genVetoCall, "--cumulative-categories", 
 	"--segment-url", config.get("segfind", "segment-url"),
 	"--veto-file", vetoDefFile,
 	"--gps-start-time", start,
@@ -250,11 +250,11 @@ def veto_segments(ifo, config, categories, generateVetoes):
   vetoFiles = {}
   
   for category in categories:
-    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "*.xml"
+    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "-" + \
+      str(start) + "-" + str(end - start) + ".xml"
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
-        str(start) + "-" + \
-        str(end - start) + ".txt"
+        str(start) + "-" + str(end - start) + ".txt"
 
     if generateVetoes: 
       return_val = convert_veto_cat_xml_to_txt(config, veto_cat_file, vetoFile)
@@ -306,7 +306,7 @@ def datafind_segments(ifo, config):
   dataFindFile = ifo_type + "-" + str(start) + "-" + \
       str(end - start) + ".txt"
 
-  print "Running LSCdataFind to determine available data from " + type + \
+  print "Running ligo_data_find to determine available data from " + type + \
       " frames for " + ifo
   dataFindCall = executable 
   for opt,arg in config.items("datafind"):
@@ -323,13 +323,10 @@ def datafind_segments(ifo, config):
 
 ##############################################################################
 # Function to copy the segments files
-# If the hardwareInj flag is used we add the hardware injection not made
-# flag to Cat1 and remove the Injection flag from cat 2.
 def copyCategoryFiles(config,vetoes,directory,\
-                      infile,analysisDirectory,hardwareInj=False):
+                      infile,analysisDirectory):
   """
   Copy the category files to the directory specified
-  Modify the cat files accordingly if hardware injections specified
   """
   outfile = analysisDirectory + "/" + directory + "/" \
             + os.path.basename(infile)
@@ -340,44 +337,9 @@ def copyCategoryFiles(config,vetoes,directory,\
         "without DQ vetoes"
       outfile += vetoes + "_BLANK.txt"
       rel_outfile += vetoes + "_BLANK.txt"
-      if hardwareInj:
-        injNotMadeCat='cat-'+config.get('hardware-inj','inj-not-made-veto-cat')
-        injNotMadeFlag= config.get('hardware-inj','inj-not-made-veto-flag')
-        if injNotMadeCat in vetoes:
-          open(outfile, "w").write(vetoes[0:2].upper()+ ':' + injNotMadeFlag +\
-                             '\t\t0\t0\n')
-        else:
-          open(outfile, "w").write("")  # touch
-      else:
-        open(outfile, "w").write("")  # touch
+      open(outfile, "w").write("")  # touch
     else:
-      if hardwareInj:
-        injVetoFlag = config.get('hardware-inj','inj-veto-flag')
-        injVetoFlagList = injVetoFlag.split(',')
-        injVetoCat = config.get('hardware-inj','inj-veto-cat')
-        injNotMadeCat= config.get('hardware-inj','inj-not-made-veto-cat')
-        injNotMadeFlag= config.get('hardware-inj','inj-not-made-veto-flag')
-        dqFile = open(infile,'r')
-        dqFileConts = dqFile.read()
-        dqFile.close()
-        if 'cat-' + injNotMadeCat in vetoes:
-          dqFileConts = vetoes[0:2].upper()+':' + injNotMadeFlag + \
-                        '\t\t0\t0\n' + dqFileConts
-        if 'cat-' + injVetoCat in vetoes:
-          dqFileContsList = dqFileConts.split('\n')
-          dqFileConts = ''
-          for line in dqFileContsList:
-            remLine = False
-            for flag in injVetoFlagList:
-              if flag in line:
-                remLine = True
-            if not remLine:
-              dqFileConts += line + '\n'
-        dqHWFile = open(outfile, 'w')
-        dqHWFile.write(dqFileConts)
-        dqHWFile.close()
-      else:
-        shutil.copy(infile, outfile)
+      shutil.copy(infile, outfile)
     config.set("segments", vetoes, rel_outfile)
 
 ##############################################################################
@@ -428,47 +390,11 @@ def downloadDqSegFiles(config,ifo,generate_segments):
       print "done"
   return dqSegFile
 
-##############################################################################
-# Function to download hwInj not made lists and append to dq seg lists
-def downloadDqHWSegFiles(config,ifo,generate_segments,dqSegFile):
-  """
-  Download the dqSegFiles from a html location
-  @param config      : the configParser object with analysis details
-  @param ifo         : name of the ifo
-  @param generate_segments : If False do not download, just return filename  
-  @param dqSegFile   : The dqSegFiles locations (to be appended to the Hw files
-  """
-  start = config.getint("input","gps-start-time")
-  end = config.getint("input","gps-end-time")
-  dqHWSegFile = ifo + "-DQ_HW_SEGMENTS-" + str(start) + "-" + \
-      str(end - start) + ".txt"
-  if generate_segments:
-    dq_url = config.get("segments","dq-server-url")
-    dq_hw_segdb_file = config.get("segments", ifo.lower() + '-hw-dq-file')
-    if dq_hw_segdb_file == "":
-      print >>sys.stderr, "warning: no file provided to %s-hw-dq-file; " \
-          "assuming there are no HW_INJ_NOT_MADE times" % ifo.lower()
-      openHWDQFile = open(dqHWSegFile,'w')
-    else:
-      print "Downloading HW_INJ_NOT_MADE list" + dq_hw_segdb_file
-      sys.stdout.flush()
-      dqHWSegFile, info = urllib.urlretrieve(dq_url + '/' + dq_hw_segdb_file,
-            dqHWSegFile)
-      print "Done,appending this to dqSegFile for hardware-inj"
-      openHWDQFile = open(dqHWSegFile,'a')
-    openDQFile=open(dqSegFile, 'r')
-    dqFileConts = openDQFile.read()
-    openDQFile.close()
-    openHWDQFile.write(dqFileConts)
-    openHWDQFile.close()
-    print "done"
-  return dqHWSegFile
-
 
 ##############################################################################
 # Function to determine the segments to analyze 
 #(science segments, data quality, missing segments)
-def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
+def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     use_available_data=False, data_quality_vetoes=False):
   """
   generate segments for the given ifo
@@ -526,9 +452,9 @@ def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
     print "done"
 
   if data_quality_vetoes: 
-    print "Generating cat 2, 3, and 4 veto segments for " + ifo + "..."
+    print "Generating cat " + str(veto_categories) + " veto segments for " + ifo + "..."
     sys.stdout.flush()
-  dqVetoes = veto_segments(ifo, config, [2,3,4], data_quality_vetoes )
+  dqVetoes = veto_segments(ifo, config, veto_categories, data_quality_vetoes )
   if data_quality_vetoes: print "done"
 
   return tuple([segFile, dqVetoes])
@@ -567,7 +493,7 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    hardwareInj = False, site = "local", dax=None, tmpltbankCache = None):
+    site = "local", dax=None, tmpltbankCache = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -671,14 +597,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("input","injection-seed",injSeed)
     hipecp.set("input", "num-slides", "")
     # set any extra inspiral arguments for the injection
-    for item in config.items('-'.join([hipeDir,"inspiral"])):
-      hipecp.set("inspiral",item[0],item[1])
-
-  elif hardwareInj and not dataFind and not tmpltBank:
-    hipecp.set("input","hardware-injection","")
-    hipecp.set("inspiral","hardware-injection","")
-    hipecp.set("input", "num-slides", "")
-
+    try:
+      for item in config.items('-'.join([hipeDir,"inspiral"])):
+        hipecp.set("inspiral",item[0],item[1])
+    except ConfigParser.NoSectionError:
+      pass
   else:
     # add the time slide to the ini file
     numSlides = slide_sanity(config, playOnly)
@@ -695,7 +618,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   print "Running hipe in directory " + hipeDir
   if dataFind or tmpltBank: print "Running datafind / template bank generation"
-  elif hardwareInj: print "Running hardware injection analysis"
   elif injSeed: print "Injection seed: " + injSeed
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
       " time slides"
@@ -733,10 +655,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
-    if hardwareInj:
-      omit = ["disable-dag-categories", "disable-dag-priorities"]
-    else:
-      omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
+    omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
     for (opt, arg) in config.items("hipe-arguments"):
       if opt not in omit:
         hipeCommand += "--" + opt + " " + arg 
@@ -748,7 +667,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   make_external_call(hipeCommand)
 
   # link datafind
-  if not dataFind and not tmpltBank and not vetoCat and not hardwareInj:
+  if not dataFind and not tmpltBank and not vetoCat:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
@@ -798,8 +717,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
       hipecp.getint("input", "gps-start-time"), \
       hipecp.getint("input", "gps-end-time")) )
-  # add postscript to deal with rescue dag
-  fix_rescue(hipeNode)
 
   # return to the original directory
   os.chdir("..")
@@ -891,10 +808,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   analysisstart = plotcp.get("common","gps-start-time")
   analysisend = plotcp.get("common","gps-end-time")
   analysisduration = int(analysisend) - int(analysisstart)
-  if "HARDWARE_INJECTION" in injectionSuffix:
-    inspmissedVetoDir = "../hardware_inj_segments"
-  else:
-    inspmissedVetoDir = "../segments"
+  inspmissedVetoDir = "../segments"
   for ifo in ifos:
     plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
         inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
@@ -969,9 +883,6 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
   plotNode = pipeline.CondorDAGNode(plotJob)
-
-  # add postscript to deal with rescue dag
-  fix_rescue(plotNode)
 
   # return to the original directory
   os.chdir("..")
@@ -1206,52 +1117,10 @@ def followup_setup(followupDir, config, opts, hipeDir):
   os.chmod(followupDag + ".pre", 0744)
   followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
 
-  # add postscript to deal with rescue dag
-  fix_rescue(followupNode)
-
   # return to the original directory
   os.chdir("..")
 
   return followupNode
-
-##############################################################################
-# Function to fix the rescue of inner dags
-def fix_rescue(dagNode):
-  """
-  add a postscript to deal with the rescue dag correctly
-
-  dagNode = the node for the subdag
-  """
-  if not os.path.isfile("rescue.sh"):
-    os.symlink("../rescue.sh", "rescue.sh")
-  dagNode.set_post_script( "rescue.sh")
-  dagNode.add_post_script_arg( "$RETURN" )
-  dagNode.add_post_script_arg(
-      dagNode.job().get_sub_file().rstrip(".condor.sub") )
-
-def write_rescue():
-  # Write the rescue post-script
-  # XXX FIXME: This is a hack, required until condor is fixed XXX
-  f = open("rescue.sh", "w")
-  f.write("""#! /bin/bash
-  if [ ! -n "${2}" ]
-  then
-    echo "Usage: `basename $0` DAGreturn DAGfile"
-    exit
-  fi
-
-  if (( ${1}>0 ))
-  then
-    file=${2}
-    if [ -f ${file}.rescue ]
-    then
-      mv ${file} ${file}.orig
-      mv ${file}.rescue ${file}
-    fi
-    exit ${1}
-  fi""")
-  f.close()
-  os.chmod("rescue.sh", 0744)
 
 ##############################################################################
 # plot_hipe helpers
