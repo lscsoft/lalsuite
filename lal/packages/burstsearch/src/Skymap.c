@@ -1261,54 +1261,134 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 
 // VERSION 2
 
-/*
-static void eye2(double a[2][2])
+void XLALSkymap2PlanConstruct(int sampleFrequency, int n, int* detectors, XLALSkymap2PlanType* plan)
 {
     int i;
-    int j;
-    for (i = 0; i != 2; ++i)
-        for (j = 0; j != 2; ++j)
-            a[i][j] = (i == j) ? 1. : 0.;
+    static const char func[] = "XLALSkymap2ConstructPlan";
+
+    if (sampleFrequency <= 0)
+    {
+        XLALPrintError("%s(): invalid sample frequency %d\n", func, sampleFrequency);
+        XLAL_ERROR_VOID(func, XLAL_EINVAL);
+    }
+
+    plan->sampleFrequency = sampleFrequency;
+
+    plan->n = n;
+    
+    for (i = 0; i != plan->n; ++i)
+    {
+        plan->site[i] = lalCachedDetectors[detectors[i]];
+    }
+    
 }
 
-static void add22(double a[2][2], double b[2][2], double c[2][2])
+void XLALSkymap2DirectionPropertiesConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2SphericalPolarType* directions,
+    XLALSkymap2DirectionPropertiesType* properties
+    )
 {
-    int i;
+    double x[3];
     int j;
-    for (i = 0; i != 2; ++i)
-        for (j = 0; j != 2; ++j)
-            a[i][j] = b[i][j] + c[i][j];
+    XLALSkymapCartesianFromSpherical(x, *directions);
+    for (j = 0; j != plan->n; ++j)
+    {
+        properties->delay[j] = floor(site_time(plan->site + j, x) * plan->sampleFrequency + 0.5);
+        site_response(properties->f[j], plan->site + j, x);
+    }
 }
 
-static double det3(double z[3][3])
+void XLALSkymap2KernelConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    double* wSw,
+    XLALSkymap2KernelType* kernel
+    )
 {
-    double a, b, c, d, e, f, g, h, i;
-    a = z[0][0];
-    b = z[0][1];
-    c = z[0][2];
-    d = z[1][0];
-    e = z[1][1];
-    f = z[1][2];
-    g = z[2][0];
-    h = z[2][1];
-    i = z[2][2];
-
-    return a * e * i - a * f * h - b * d * i + b * f * g + c * d * h - c * e * g;
+    
+    int i, j, k, l;
+    
+    //
+    // W = diag(w.S_j^{-1}.w)
+    //
+    // F (F^T W F + I) F^T
+    //
+    
+    double a[2][2]; // F^T W F
+    double b[2][2]; // inv(A)
+    
+    // Compute the kernel
+    
+    // F^T W F + I
+    
+    for (i = 0; i != 2; ++i)
+    {
+        for (j = 0; j != 2; ++j)
+        {
+            a[i][j] = ((i == j) ? 1.0 : 0.0);
+            for (k = 0; k != plan->n; ++k)
+            {
+                a[i][j] += properties->f[k][i] * wSw[k] * properties->f[k][j];
+            }
+        }
+    }
+    
+    // (F^T W F + I)^{-1}
+    
+    inv22(b, a);
+    
+    // F (F^T W F + I)^{-1} F^T
+    
+    for (i = 0; i != plan->n; ++i)
+    {
+        for (j = 0; j != plan->n; ++j)
+        {
+            kernel->k[i][j] = 0.0;
+            for (k = 0; k != 2; ++k)
+            {
+                for (l = 0; l != 2; ++l)
+                {
+                    kernel->k[i][j] += properties->f[i][k] * b[k][l] * properties->f[j][l];
+                }
+            }
+        }
+    }
+    
+    kernel->logNormalization = 0.5 * log(det22(b));
+        
 }
-*/
 
-#define SKYMAP_N 1
-#include "SkymapN.c"
-#undef SKYMAP_N
+void XLALSkymap2Apply(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    XLALSkymap2KernelType* kernel,
+    double** xSw,
+    int tau,
+    double* posterior
+    )
+{
+    double a;
+    int i, j;
+    
+    double x[XLALSKYMAP2_N];
+    
+    // Consider replacing this simple lookup with linear or cubic interpolation
+    
+    for (i = 0; i != plan->n; ++i)
+        x[i] = xSw[i][tau + properties->delay[i]];
 
-#define SKYMAP_N 2
-#include "SkymapN.c"
-#undef SKYMAP_N
+    // Consider replacing this evaluation with something that exploits the 
+    // symmetry of K and the reuse of x
+    
+    a = 0;
+    
+    for (i = 0; i != plan->n; ++i)
+        for (j = 0; j != plan->n; ++j)
+            a += x[i] * kernel->k[i][j] * x[j];
+    
+    *posterior = 0.5 * a + kernel->logNormalization;
 
-#define SKYMAP_N 3
-#include "SkymapN.c"
-#undef SKYMAP_N
+}
 
-#define SKYMAP_N 4
-#include "SkymapN.c"
-#undef SKYMAP_N
+
