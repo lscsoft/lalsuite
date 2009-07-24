@@ -55,9 +55,12 @@ NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
+static int compareTemplateByEta (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
+static InspiralTemplate *
+XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
 
@@ -198,24 +201,21 @@ XLALComputeFullChisq(
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq;
-
   /* input, params and norm are unused */
   UNUSED(input);
   UNUSED(params);
-  UNUSED(norm);
-
   /* test isn't being done */
-  if (! bankVetoData->acorrMat) return 0;
+  if (!bankVetoData->acorrMat) return 0.0;
   chisq = 0;
   chisqnorm = 0;
-  *dof = bankVetoData->acorrMatSize;
+  *dof = 2 * bankVetoData->acorrMatSize;
   for (k = 0; k < bankVetoData->acorrMatSize; k++)
   {
     C = bankVetoData->acorrMat->data[i * bankVetoData->length + k];
     tmp = q[snrIX-k].re - C * q[snrIX].re;
-    chisq += tmp * tmp;
+    chisq += tmp * tmp * norm;
     tmp = q[snrIX-k].im - C * q[snrIX].im;
-    chisq += tmp * tmp;
+    chisq += tmp * tmp * norm;
     chisqnorm += 1.0 - C * C;
   }
   chisq /= 2.0 * chisqnorm;
@@ -250,6 +250,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
   if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * iSize);
   if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpLen-1) * 2 , 0);
+
   /* deltaT is unused in this function */
   UNUSED(deltaT);
 
@@ -303,7 +304,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
         if (i==j)
         {
-          /*fprintf(stderr, "\n Computing Autocorrelation \n");*/
           XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
           /*fprintf(stderr, "\n storing autocorrelation \n");*/
           /*sprintf(fname, "chisqtest%d.txt", i);
@@ -316,7 +316,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 	  for (k=0; k < bankVetoData->acorrMatSize; k++)
           {
             /* Save the last acorrMatSize samples */
-            bankVetoData->acorrMat->data[i*iSize + k] = bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0];
+            bankVetoData->acorrMat->data[i*bankVetoData->acorrMatSize + k] = bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0];
           }
         }
         bankVetoData->ccMat->data[i*iSize + j] = sqrt(ABr*ABr+ABi*ABi);
@@ -349,7 +349,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
   UINT4 j = 0;
   REAL4 ii,jj,ji,denomFac,phi_i, phi_j, chi_i, chi_r;
   UINT4 iSize = bankVetoData->length;
-
   iSNR_r = bankVetoData->qVecArray[i]->data[snrIX].re
          * sqrt(bankVetoData->fcInputArray[i]->fcTmplt->norm);
   iSNR_i = bankVetoData->qVecArray[i]->data[snrIX].im
@@ -399,7 +398,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 InspiralTemplate *
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize)
   {
-  bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
+  bankHead = XLALFindChirpSortTemplatesByEta(bankHead,num);
   breakUpRegions(bankHead, num, subbanksize );
   return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   }
@@ -420,6 +419,33 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   }
 
   qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByChirpMass);
+
+  bankFirst = bankHead = bankArray[0];
+  /* repopulate linked list */
+  for (i=1; i < num; i++)
+  {
+    bankHead = bankHead->next = bankArray[i];
+  }
+  bankHead->next = NULL;
+  LALFree(bankArray);
+  return bankFirst;
+}
+
+static InspiralTemplate *
+XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
+  {
+  InspiralTemplate **bankArray = NULL;
+  InspiralTemplate *bankFirst = NULL;
+  UINT4 i = 0;
+  bankFirst = bankHead;
+  bankArray = (InspiralTemplate **) LALCalloc(num, sizeof(InspiralTemplate *));
+
+  for (i = 0; (i < num); bankHead = bankHead->next, i++)
+  {
+    bankArray[i] = bankHead; /* populate pointer array */
+  }
+
+  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByEta);
 
   bankFirst = bankHead = bankArray[0];
   /* repopulate linked list */
@@ -495,6 +521,17 @@ static int compareTemplateByChirpMass (const void * a, const void * b)
 {
   REAL4 mVal1 = (*(InspiralTemplate * const *) a)->chirpMass;
   REAL4 mVal2 = (*(InspiralTemplate * const *) b)->chirpMass;
+
+  if ( mVal1 > mVal2 ) return 1;
+  if ( mVal1 == mVal2 ) return 0;
+  if ( mVal1 < mVal2 ) return -1;
+  return 0;
+}
+
+static int compareTemplateByEta (const void * a, const void * b)
+{
+  const REAL4 mVal1 = ((const InspiralTemplate*)a)->eta;
+  const REAL4 mVal2 = ((const InspiralTemplate*)b)->eta;
 
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
