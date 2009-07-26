@@ -75,7 +75,7 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 [--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
 [--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n"
 
-LALIFOData *ReadData(ProcessParamsTable *commandLine)
+LALIFOData *readData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
 {
 	LALStatus status;

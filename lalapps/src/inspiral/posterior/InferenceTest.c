@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <lal/Date.h>
 #include "LALInference.h"
+#include <lal/StringInput.h>
 
 
 LALVariables variables;
@@ -112,14 +113,22 @@ int main(int argc, char *argv[]){
   if(runstate->data) {
     fprintf(stdout," data found --> trying some template computations etc.\n");
 
-    REAL4 m1 = 10.4;
+    REAL4 m1 = 10.0;
     addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
-    REAL4 m2 = 10.4;
+    REAL4 m2 = 1.4;
     addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
     REAL4 inc = 0.0;
     addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
     REAL4 phii = 0.0;
     addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
+	ProcessParamsTable *procparam=getProcParamVal(ppt,"--trigtime");
+	LIGOTimeGPS trigger_time;
+	char * chartmp;
+	LALStatus status;
+	LALStringToGPS(&status,&trigger_time,procparam->value,&chartmp);
+	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
+	addVariable(runstate->data->modelParams,"time",&tc,REAL8_t);
+	
     LALTemplateGeneratePPN(runstate->data);
 	  executeFT(runstate->data);
 	  

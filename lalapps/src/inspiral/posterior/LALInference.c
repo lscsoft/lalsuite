@@ -98,6 +98,7 @@ void addVariable(LALVariables * vars,const char * name, void *value, VariableTyp
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
+  /* *** If variable already exists, should we just set it?*/
   if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\".\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
@@ -624,7 +625,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   LALIFOData *ifoPtr;
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
-  irs->data = ReadData(commandLine);
+  irs->data = readData(commandLine);
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */

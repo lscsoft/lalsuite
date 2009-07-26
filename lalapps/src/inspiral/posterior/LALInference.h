@@ -163,7 +163,7 @@ tagLALInferenceRunState
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 
-struct tagLALIFOData * ReadData (ProcessParamsTable * commandLine);
+struct tagLALIFOData * readData (ProcessParamsTable * commandLine);
 
 void injectSignal(struct tagLALIFOData *IFOdata, ProcessParamsTable *commandLine);
 
