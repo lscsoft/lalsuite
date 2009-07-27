@@ -200,7 +200,7 @@ XLALComputeFullChisq(
 
 {
   UINT4 k;
-  REAL4 chisqnorm, tmp, C, chisq;
+  REAL4 chisqnorm, tmp, C, chisq, angle, snr, snrk;
   /* input, params and norm are unused */
   UNUSED(input);
   UNUSED(params);
@@ -209,16 +209,19 @@ XLALComputeFullChisq(
   chisq = 0;
   chisqnorm = 0;
   *dof = 2 * bankVetoData->acorrMatSize;
+
+  angle = atan2(q[snrIX].im, q[snrIX].re);
+  snr = q[snrIX].re * cos(angle) + q[snrIX].im * sin(angle);
+
   for (k = 0; k < bankVetoData->acorrMatSize; k++)
   {
+    snrk = q[snrIX-k].re * cos(angle) + q[snrIX-k].im * sin(angle);
     C = bankVetoData->acorrMat->data[i * bankVetoData->length + k];
-    tmp = q[snrIX-k].re - C * q[snrIX].re;
-    chisq += tmp * tmp * norm;
-    tmp = q[snrIX-k].im - C * q[snrIX].im;
+    tmp = snrk - C * snr;
     chisq += tmp * tmp * norm;
     chisqnorm += 1.0 - C * C;
   }
-  chisq /= 2.0 * chisqnorm;
+  chisq /= 1.0 * chisqnorm;
   return chisq;  
 }
 
@@ -259,6 +262,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     correctFlag = 1;
     for ( j = i; j < iSize; j++ )
     {
+      /* FIXME find an XLAL Function to do this?*/
+      if (i == j) memset(bankVetoData->workspace->data, 0, bankVetoData->workspace->length * sizeof(COMPLEX8));
       if ( i >= vetoBank->subBankSize )
       {
         bankVetoData->ccMat->data[i*iSize + j] = 0;
@@ -269,7 +274,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
         iMax = bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal / deltaF;
         jMax = bankVetoData->fcInputArray[j]->fcTmplt->tmplt.fFinal / deltaF;
         ABr = ABi = 0;
-        for ( k = stIX; k < tmpLen; k++ )
+        for ( k = stIX; k < tmpLen-1; k++ )
         {
           if ( (k > iMax) || (k > jMax) ) break;
           sqResp = ( bankVetoData->resp->data[k].re *
@@ -279,6 +284,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
           if ( bankVetoData->spec->data[k] != 0 && sqResp != 0 )
           {
+            /* FIXME set spec to 1 for testing */
+             /*bankVetoData->spec->data[k] = 1.0; */
             /* Convention is that i is 'in the data' */
             Br = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re /
                  ( bankVetoData->spec->data[k] * sqResp ) *
@@ -297,20 +304,20 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
           /* if the templates are the same then do an autocorrelation function */
           if (i==j) 
           { 
-            bankVetoData->workspace->data[k].re = ABr;
-            bankVetoData->workspace->data[k].im = ABi;
+            bankVetoData->workspace->data[k].re = ABi;
+            bankVetoData->workspace->data[k].im = 0.0; /* must be 0 */
           }
         }
 
         if (i==j)
         {
           XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
-          /*fprintf(stderr, "\n storing autocorrelation \n");*/
-          /*sprintf(fname, "chisqtest%d.txt", i);
+          /*fprintf(stderr, "\n storing autocorrelation \n");
+          sprintf(fname, "chisqtest%d.txt", i);
           FP = fopen(fname, "w");
           for (k=0; k < bankVetoData->acorr->length; k++)
           {
-            fprintf(FP,"%d %e\n",i, bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0]);
+            fprintf(FP,"%d %e\n",k, bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0]);
           }
           fclose(FP);*/
 	  for (k=0; k < bankVetoData->acorrMatSize; k++)
