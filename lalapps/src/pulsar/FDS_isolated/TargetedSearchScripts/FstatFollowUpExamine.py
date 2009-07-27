@@ -24,6 +24,7 @@ def usage():
 Usage: FstatFollowUpExamine.py [options]
 
   -h, --help               display this message
+  -c, --configFile         File which has default parameters for the follow-ups
   -o, --OutputDirectory    Base name for the directory
   -j, --TotalJobs          Total number of jobs in search
   -d, --InputDirectory     Directory where jobs are stored
@@ -46,9 +47,10 @@ Usage: FstatFollowUpExamine.py [options]
 #################################################
 #This section reads in the command line arguments
 
-shortop = "ho:j:d:b:i:t:D:I:T:e:y:L:C:A:N:"
+shortop = "hc:o:j:d:b:i:t:D:I:T:e:y:L:C:A:N:"
 longop = [
   "help",
+  "ConfigFile=",
   "OutputDirectory=",
   "TotalJobs=",
   "InputDirectory=",
@@ -77,6 +79,8 @@ for o, a in opts:
   if o in ("-h", "--help"):
     usage()
     sys.exit(0)
+  elif o in ("-c","--ConfigFile"):
+    config_file = str(a)   
   elif o in ("-o","--OutputDirectory"):
     output_dir = str(a)
   elif o in ("-j","--TotalJobs"):
@@ -124,6 +128,61 @@ logFile.close()
 #Parses the config file, if any
 #The config file is overriden by command line parameters
 
+# Import the Configuration File into config
+config = __import__(config_file);
+
+# Variables Structure/Dictionary
+Vars = {}
+
+# First GPS time to be considered for data selection
+try:
+  Vars['start_time'] = config.start_time
+except:
+  print "start_time cannot be read"
+  sys.exit(1)
+  
+# Last GPS time to be considered for data selection
+try:
+  Vars['end_time'] = config.end_time
+except:
+  print "end_time cannot be read"
+  sys.exit(1)
+
+# Maximum 1-D mismatch between template and possible signal
+try:
+  Vars['mismatch'] = config.mismatch
+except:
+  print "mismatch cannot be read"
+  sys.exit(1)
+    
+# Earth and Sun Ephemeris directory
+try:
+  Vars['ephem_dir'] = config.ephem_dir
+except:
+  print "ephem_dir cannot be read"
+  sys.exit(1)
+
+# Earth and Sun Ephemeris year to use
+try:
+  Vars['ephem_year'] = config.ephem_year
+except:
+  print "ephem_year cannot be read"
+  sys.exit(1)
+
+# Number of top candidates to keep per job
+try:
+  Vars['num_candidates_to_keep'] = config.num_candidates_to_keep
+except:
+  print "num_candidates_to_keep cannot be read"
+  sys.exit(1)
+
+# Which % of the largest 2F values to average to get the location of the signal
+try:
+  Vars['percent_largest_to_average'] = config.percent_largest_to_average
+except:
+  print "percent_largest_to_average cannot be read"
+  sys.exit(1)
+
 
 ###################################
 #Checks to see if all the results files exist
@@ -137,6 +196,7 @@ input_dir = ''.join([input_dir,'/'])
 output_dir = output_dir.rstrip('/')
 output_dir = ''.join([output_dir,'/'])
 new_base_name = ''.join([base_name,'_',str(run),'_loudest_'])
+new_results_base_name = ''.join([base_name,'_',str(run),'_results_'])
 
 
 loudest2F = 0
@@ -195,6 +255,39 @@ for job in range(0,jobs):
         loudestF2dot = tempF2dot
         loudestF3dot = tempF3dot
 
+#Finds all 2F values greater than or equal to a percentage (90%) of the loudest 2F value, and
+#takes a weighted average to find the most likely source position in frequency, spindown and sky position
+#parameter space
+
+average_cutoff = float(loudest2F) * float(config.percent_largest_to_average)
+average
+
+
+for job in range(0,jobs):
+  fullResultsFile = open(''.join([input_dir,new_results_base_name,str(job)]),'r')
+  for line in fullResultsFile:
+    if not (line[0] == '%'):
+      #Tests to see if 2F greater than required cutoff, then records data if true
+      if float(line.split(' ')[6].strip()) >= average_cutoff:
+        array2F= append(array2F,float(line.split(' ')[6].strip()))
+        arrayFreq = append(arrayFreq, float(line.split(' ')[0].strip()))
+        arrayRA = append(arrayRA,float(line.split(' ')[1].strip()))
+        arrayDEC = append(arrayDEC,float(line.split(' ')[2].strip()))
+        arrayF1dot = append(arrayF1dot,float(line.split(' ')[3].strip()))
+        arrayF2dot = append(arrayF2dot,float(line.split(' ')[4].strip()))
+        arrayF3dot = append(arrayF3dot,float(line.split(' ')[5].strip()))
+
+#Calculate the weighted mean of all the parameters (weighted by 2F value)
+total2Fsum = sum(array2F)
+meanFreq = sum(array2F*arrayFreq)/total2Fsum
+meanRA = sum(array2F*arrayRA)/total2Fsum
+meanDEC = sum(array2F*arrayDEC)/total2Fsum
+meanF1dot = sum(array2F*arrayF1dot)/total2Fsum
+meanF2dot = sum(array2F*arrayF2dot)/total2Fsum
+meanF3dot = sum(array2F*arrayF3dot)/total2Fsum
+
+#Use the calculated average parameters to generate the parameter space for the next longer coherent step
+
 Tcoh = float(tcoh)
 F_band = param_space_mult*1.0/Tcoh
 F_dot_band = param_space_mult*1.0/Tcoh**2
@@ -227,15 +320,15 @@ os.system(''.join(['mv node_',base_name,'* ./node-',str(run)]))
 os.system('source /opt/lscsoft/lalapps/etc/lalapps-user-env.sh')
 
 command_string = ''.join([code,' -o ',base_name,' -i ',str(run+1),
-                          ' -a ',str(loudestRA),' -d ',str(loudestDEC),
+                          ' -a ',str(meanRA),' -d ',str(meanDEC),
                           ' -z ', str(RA_band), ' -c ', str(DEC_band),
-                          ' -f ', str(loudestFreq), ' -b ', str(F_band),
+                          ' -f ', str(meanFreq), ' -b ', str(F_band),
                           ' -D ', str(list_files), ' -I ', str(ifos),
                           ' -S ', str(start_time), ' -E ', str(end_time),
-                          ' -T ', str(param_time), ' -s ', str(loudestF1dot),
+                          ' -T ', str(param_time), ' -s ', str(meanF1dot),
                           ' -m ', str(F_dot_band), ' -M ', str(mismatch),
                           ' -e ', str(ephem_dir), ' -y ', str(ephem_year),
-                          ' -F ', str(cutoff2F), ' -C ', str(search_code),
+                          ' -N ', str(num_candidates_to_keep), ' -X ', str(search_code),
                           ' -L ', str(user_log)])
 
 os.system(command_string)
