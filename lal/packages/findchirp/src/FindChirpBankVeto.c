@@ -304,7 +304,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
           /* if the templates are the same then do an autocorrelation function */
           if (i==j) 
           { 
-            bankVetoData->workspace->data[k].re = ABi;
+            bankVetoData->workspace->data[k].re = Br * bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re 
+                                                + Bi * bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im;
             bankVetoData->workspace->data[k].im = 0.0; /* must be 0 */
           }
         }
