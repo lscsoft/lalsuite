@@ -21,6 +21,7 @@
  */
 
 #include "tracksearch.h"
+#include "lal/FrameStream.h"
 
 #define PROGRAM_NAME "tracksearch"
 
@@ -1277,9 +1278,9 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (params->verbosity >= verbose)
 	      fprintf(stdout,"Opening cache file: %s",cachefile);
 	  lal_errhandler = LAL_ERR_EXIT;
-	  frameCache=XLALFrCacheImport(cachefile);
+	  frameCache=XLALFrImportCache(cachefile);
 	  stream=XLALFrCacheOpen(frameCache);	  
-	  XLALDestroyFrCache(&frameCache);
+	  XLALFrDestroyCache(&frameCache);
 	  if (params->verbosity >= verbose)
 	    fprintf(stdout,"Data stream ready.\n");
 
