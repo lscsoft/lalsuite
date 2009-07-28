@@ -195,7 +195,10 @@ int main(int argc, char *argv[]){
 	  
 	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
 	  
-	  fprintf(stdout,"likelihood=%f\n",likelihood);
+	  double nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
+	  
+	  fprintf(stdout,"likelihood %g, null likelihood %g, relative likelihood %g",likelihood, nulllikelihood, likelihood-nulllikelihood);
+	  
 	  
   }
 
