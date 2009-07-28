@@ -47,9 +47,12 @@ int i;
 int main(int argc, char *argv[]){
   /* test "LALVariables" stuff: */
   number = 10.0;
+  LALStatus status;	
   five=5.0;
   variables.head=NULL;
   variables.dimension=0;
+	
+	memset(&status,0,sizeof(status));
   addVariable(&variables, "number", &number, REAL4_t);
   numberR8 = 7.0;
   addVariable(&variables, "seven", &numberR8, REAL8_t);
@@ -124,7 +127,6 @@ int main(int argc, char *argv[]){
 	ProcessParamsTable *procparam=getProcParamVal(ppt,"--trigtime");
 	LIGOTimeGPS trigger_time;
 	char * chartmp;
-	LALStatus status;
 	LALStringToGPS(&status,&trigger_time,procparam->value,&chartmp);
 	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
 	addVariable(runstate->data->modelParams,"time",&tc,REAL8_t);
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]){
 	  fclose(testout);
 	  testout=fopen("test_TD.txt","w");
 	  for (i=0;i<runstate->data->timeModelhPlus->data->length;i++){
-		  fprintf(testout,"%g %g %g\n",i*runstate->data->timeModelhPlus->deltaT,
+		  fprintf(testout,"%10.10lf %g %g\n",runstate->data->timeData->epoch.gpsSeconds+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeModelhPlus->deltaT,
 				  runstate->data->timeModelhPlus->data->data[i],
 				  runstate->data->timeModelhCross->data->data[i]);
 	  }
