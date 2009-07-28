@@ -507,9 +507,9 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* The parameters the Likelihood function can handle by itself   */
     /* (and which shouldn't affect the template function) are        */
     /* sky location (ra, dec), polarisation and signal arrival time. */
-    /* Note that the template function still needs _some_ reasonable */
-    /* arrival time parameter value (e.g. something like the trigger */
-    /* value).                                                       */
+    /* Note that the template function shifts the waveform to so that*/
+	/* t_c corresponds to the "time" parameter in                    */
+	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
     /* Compare parameter values with parameter values corresponding  */
     /* to currently stored template; ignore "time" variable:         */

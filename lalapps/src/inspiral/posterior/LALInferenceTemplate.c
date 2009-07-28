@@ -105,11 +105,8 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	/* Generate waveform. */
 	LALGeneratePPNInspiral( &stat, &waveform, &params );
 	
-	/* *** for testing only!*/
-	desired_tc-=5.0;
-	
 	REAL8 chirplength=params.tc;	/*The waveform duration up to tc */
-	printf("desired_tc %g chirplength %g epoch %g\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
+	printf("desired_tc %10.10f chirplength %g epoch %10.10f\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
 	
 	
 	/* This is the difference between the desired start time and the actual start time */
@@ -121,9 +118,12 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 		fprintf(stderr, "ERROR: Desired tc is before start of segment\n");
 		exit(1);
 	}
-	if(timeShift > 0){ //If we rightshift, how do we zero-pad at start without windowing first?
-		fprintf(stderr, "ERROR: Desired tc is greater than generated tc; can't right-shift waveform\n");
-		exit(1);
+	if(timeShift > 0){ //If we rightshift, we should window first
+		//if(!IFOData->window)
+		//	IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
+		//XLALDDVectorMultiply(waveform.a->data->data,waveform.a->data->data,IFOdata[i].window->data);
+		//fprintf(stderr, "ERROR: Desired tc is greater than generated tc; can't right-shift waveform\n");
+		//exit(1);
 	}
 	
 	/* Check if sampling interval was too large. */
@@ -147,9 +147,10 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	UINT4 length = IFOdata->timeData->data->length;//waveform.a->data->length-1;  //Why are waveform.a and waveform.phi of same length, yet .a contains both plus and cross?
 	REAL8 *phiData = waveform.phi->data->data;
 	REAL4 *aData = waveform.a->data->data;
-
+	
 	for(i=0; i<length; i++){
-		if(deltaT*i>desired_tc || i+integerLeftShift+1>=waveform.a->data->length - 1){	//set waveform to zero after desired tc
+		if(deltaT*i>desired_tc || i+integerLeftShift+1>=waveform.phi->data->length - 1
+			|| i+integerLeftShift<0){	//set waveform to zero after desired tc, or if need to go past end of input
 			IFOdata->timeModelhPlus->data->data[i] = 0;
 			IFOdata->timeModelhCross->data->data[i] = 0;
 		}
