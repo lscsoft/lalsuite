@@ -109,7 +109,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	desired_tc-=5.0;
 	
 	REAL8 chirplength=params.tc;	/*The waveform duration up to tc */
-	printf("desired_tc %g chirplength %g epoch %g\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
+	printf("desired_tc %10.10f chirplength %g epoch %10.10f\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
 	
 	
 	/* This is the difference between the desired start time and the actual start time */
