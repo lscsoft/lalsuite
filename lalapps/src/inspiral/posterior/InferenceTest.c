@@ -152,6 +152,20 @@ int main(int argc, char *argv[]){
 				  runstate->data->timeModelhCross->data->data[i]);
 	  }
 	  fclose(testout);
+	  testout=fopen("PSD.txt","w");
+	  for (i=0;i<runstate->data->oneSidedNoisePowerSpectrum->data->length;i++){
+		  fprintf(testout,"%g %g\n",i*runstate->data->oneSidedNoisePowerSpectrum->deltaF,
+				  runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
+	  }
+	  fclose(testout);
+	  testout=fopen("noise_TD.txt","w");
+	  for (i=0;i<runstate->data->timeData->data->length;i++){
+		  fprintf(testout,"%10.10lf %g\n",runstate->data->timeData->epoch.gpsSeconds+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeData->deltaT,
+				  runstate->data->timeData->data->data[i]);
+	  }
+	  fclose(testout);
+	  
+	  
 /* 
 //  templateStatPhase() test: 
     REAL8 mc   = 2.0;
