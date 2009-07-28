@@ -1,11 +1,28 @@
 #!/usr/bin/python
 # Resampling Test Code. This code is much more readable and reusable than its predecessor. Author - Pinkesh Patel
-import sys,random,commands,math
+import sys,random,commands,math,shutil,os,re
 
 def main():
     
     # Import the Configuration File into config
-    config = __import__(sys.argv[1]);
+    # Import the Configuration File into config
+    if(len(sys.argv) < 2):
+        print "Insufficient command line arguments "
+        print " Usage is ",sys.argv[0]," <ConfigFile> {Job Number} "
+        print " Exiting ........."
+        sys.exit(1)
+    
+    try:
+        config = __import__(sys.argv[1]);
+    except:
+        print "Cannot import Config file '",sys.argv[1],"' exiting ...."
+        sys.exit(1)
+
+    UniqueID = ''
+
+    # Compute Unique ID Number
+    if(len(sys.argv) >= 3):
+        UniqueID += '_' + sys.argv[2]
    
     # Variables Structure/Dictionary
     Vars = {}
@@ -102,7 +119,7 @@ def main():
 
     # Output Directory
     try:
-        Vars['Out'] = config.Out
+        Vars['Out'] = config.Out + UniqueID
     except:
         print "Out cannot be read"
         sys.exit(1)
@@ -286,6 +303,14 @@ def main():
     except:
         Vars['ResampOutput'] = "MyTS"
 
+     # Optional Use Your Own TimeStampsFile
+    try:
+        Vars['TimeStampsFile'] = config.TimeStampsFile
+        TimeStampsFile_Is_Set = True
+    except:
+        Vars['TimeStampsFile'] = 'TimeStampsFile' + UniqueID
+        TimeStampsFile_Is_Set = False
+
     # Print out all the variables (if Debug is on)
     if(Vars['debug']):
         print "---------- Configuration Variables --------- "
@@ -293,11 +318,23 @@ def main():
         print "-------------------------------------------- \n \n"
 
     # Create the Time Stamp File
-    CreateTimeStampFile(Vars)
+    if(not(TimeStampsFile_Is_Set)):
+        CreateTimeStampFile(Vars)
 
     # If running multiple time, delete all the old SFTs
-    RMOLD = 'rm ' + Vars['Out'] + '/*'
-    commands.getoutput(RMOLD)
+    if(os.path.exists("./"+Vars['Out'])):
+        try:
+            shutil.rmtree(Vars['Out'])
+        except:
+            print "Could not delete old directory\n"
+            sys.exit(1)
+
+    try:
+        os.mkdir(Vars['Out'])
+    except:
+        print "Something went wrong creating new directory\n"
+        print "Permission trouble maybe\n"
+        sys.exit(1)
 
     # Generate Fake data string
     for ifo in range(NumofIFOs):
@@ -315,8 +352,8 @@ def main():
             sys.exit(1)
 
     # Run v2()
-    OutputFile = "OutputV"
-    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + "  "
+    OutputFileV = "OutputV" + UniqueID
+    startstring = "lalapps_ComputeFStatistic_v2 --outputLoudest " + OutputFileV + " -F " + str(Vars['FThres']) + "  "
     endstring = " "
     V2DataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
@@ -325,18 +362,19 @@ def main():
         print "----------------------------------\n\n"
         print "----------- Running V2 -----------"
     
-    try:
-        G = commands.getoutput(V2DataString)
-    except:
-        print "V2 failed"
-        sys.exit(0)
+    
+    (status,Voutput) = commands.getstatusoutput(V2DataString)
+    if(status):
+        print "V2 failed, Output was \n\n"
+        print Voutput
+        sys.exit(1)
     
     if(Vars['debug']):
         print "---------- V2 Done ---------------\n\n"
 
     # Run Resamp
-    OutputFile = "OutputR"
-    startstring = "./lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + "  "
+    OutputFileR = "OutputR" + UniqueID
+    startstring = "./lalapps_ComputeFStatistic_resamp --outputLoudest " + OutputFileR + " -F " + str(Vars['FThres']) + "  "
     endstring = "  --outputTimeSeries "  + str(Vars['ResampOutput']) + " > plot1 "
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
@@ -345,19 +383,53 @@ def main():
         print "----------------------------------\n\n"
         print "--------- Running Resamp ---------"
     
-    try:
-        G = commands.getoutput(RDataString)
-    except:
-        print "Resamp failed"
+    (status,Routput) = commands.getstatusoutput(RDataString)
+    if(status):
+        print "Resamp failed, Output was\n\n"
+        print Routput
         sys.exit(0)
     
     if(Vars['debug']):
         print "---------- Resamp Done -----------\n\n"
-        print "---------- Output was ------------\n\n"
-        print G,"\n"
-    
+
+    if(Vars['debug']):
+        print "---------- Deleting SFT Folder ---------\n\n"
+    #try:
+    #    shutil.rmtree(Vars['Out'])
+    #except:
+    #    print " Could not delete SFT folder \n\n"
+    #    sys.exit(1)
+    AnalyzeLoudest(OutputFileR,OutputFileV)
     return(0)
 
+def AnalyzeLoudest(Filename1,Filename2):
+    File1 = open(Filename1,'r')
+    File2 = open(Filename2,'r')
+    File1lines = File1.readlines()
+    File2lines = File2.readlines()
+    
+    expression = re.compile(r'(\D*)(\d*.\d*|\d*)')
+
+    for line in File1lines:
+        if(expression.search(line)):
+            linesplit = expression.search(line).groups()
+            if(re.match('twoF',linesplit[0])):
+                twoF1 = float(linesplit[1])
+            
+            if(re.match('Freq',linesplit[0])):
+                Freq1 = float(linesplit[1])
+    
+    for line in File2lines:
+        if(expression.search(line)):
+            linesplit = expression.search(line).groups()
+            if(re.match('twoF',linesplit[0])):
+                twoF2 = float(linesplit[1])
+            
+            if(re.match('Freq',linesplit[0])):
+                Freq2 = float(linesplit[1])    
+    
+    print Freq1,twoF1,Freq2,twoF2
+            
 def PrintValues(Dict):
     for key in Dict.keys():
         print key," = ",Dict[key]
@@ -431,7 +503,7 @@ def GenFakeDataString(addtonoise,Vars,ifo):
     return(S)
                          
 def GenDataString(beginstring,endstring,Vars):
-    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dotBand ' + str(Vars['FDotBand']) + ' --df1dot ' + str(Vars['dFDot']) +  endstring
+    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dotBand ' + str(Vars['FDotBand']) + ' -S --df1dot ' + str(Vars['dFDot']) +  endstring
     return(S)
 
 #' --f1dot ' + str(Vars['FDot']) + 

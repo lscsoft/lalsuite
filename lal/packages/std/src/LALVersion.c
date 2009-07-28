@@ -54,6 +54,7 @@ is also provided if the verbose flag is set.
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdio.h>
 #include <lal/LALVersion.h>
+#include <lal/LALVCSInfo.h>
 
 NRCSID( LALVERSIONC, "$Id$" );
 
@@ -78,13 +79,15 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
   nchar = verbose ?
     snprintf( message, size,
         "LAL Version:         %s\n"
-        "CVS Tag:             %s\n"
+        "Git ID:              %s\n"
+        "Git Tag:             %s\n"
         "Build Date:          %s\n"
         "Configure Date:      %s\n"
         "Configure Arguments: %s\n"
         "(RCS %s)\n",
-        lalVersion, LAL_CVS_TAG, lalBuildDate, lalConfigureDate,
-        lalConfigureArgs, LALVERSIONC ) :
+        lalVersion, lalHeaderVCSInfo.vcsId, lalHeaderVCSInfo.vcsTag,
+        lalBuildDate, lalConfigureDate, lalConfigureArgs,
+        LALVERSIONC ) :
     snprintf( message, size, "LAL Version: %s\n", lalVersion ) ;
 
   if ( nchar < 0 )

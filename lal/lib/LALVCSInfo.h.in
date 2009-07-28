@@ -22,6 +22,8 @@
 #ifndef _LALVCSINFO_H
 #define _LALVCSINFO_H
 
+#include "config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +38,7 @@ extern "C" {
 #define LAL_VCS_STATUS "$@STATUS@ $"
 
 /* global variables for vcs information, defined in LALVCSInfo.c */
+extern const char *lalVCSVersion;
 extern const char *lalVCSId;
 extern const char *lalVCSDate;
 extern const char *lalVCSBranch;
@@ -47,6 +50,7 @@ extern const char *lalVCSStatus;
 /* define vcs information structure */
 typedef struct tagLALVCSInfo
 {
+  const char *version;
   const char *vcsId;
   const char *vcsDate;
   const char *vcsBranch;
@@ -58,7 +62,7 @@ typedef struct tagLALVCSInfo
 
 /* header and library vcs information structures */
 extern struct tagLALVCSInfo lalLibraryVCSInfo;
-static struct tagLALVCSInfo lalHeaderVCSInfo = {LAL_VCS_ID, \
+static struct tagLALVCSInfo lalHeaderVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
   LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
   LAL_VCS_COMMITTER, LAL_VCS_STATUS};
 

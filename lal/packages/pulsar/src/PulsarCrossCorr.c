@@ -37,7 +37,7 @@
 
 RCSID( "$Id$");
 
-
+/* this function is currently unused (20/07/09) */
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTListElement     *in,
@@ -211,6 +211,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
 
 /** Calculate the frequency of the SFT at a given epoch */
+/* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
 				LIGOTimeGPS		 *epoch,
@@ -260,6 +261,8 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 
 
 /** Get signal phase at a given epoch */
+/* This is according to Eqn 2.13 in Dhurandar et al 2008 */
+/* and includes the 2nd order term that is left out in the paper */
 void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
 			    LIGOTimeGPS 	    *epoch,
@@ -350,6 +353,8 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 }
 
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
+/* G_IJ is calculated according to Eqn 3.17 in Dhurandhar et al 2008
+ * and Ualpha is calculated according to Eqn 4.10 of the same paper */
 void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     phiI,
@@ -381,6 +386,10 @@ void LALCalculateAveUalpha(LALStatus *status,
 
 }
 /** Calculate pair weights (U_alpha) for the general case **/
+/* G_IJ is calculated according to Eqn 3.10 of Dhurandar et al 2008.
+ * deltaPhi is calculated from Eqn 3.11, and Ualpha is calculated according to
+ * Eqn 4.10 of the same paper.
+ * The Fplus, Fcross terms are calculated according to Eqns 2.9a and 2.9b */
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
@@ -451,7 +460,8 @@ void LALCalculateUalpha(LALStatus *status,
 }
 
 
-
+/* Calculate rho, the cross correlation power, 
+ * according to Eqn 4.4 in Dhurandhar et al 2008 */
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
 				COMPLEX16Vector *yalpha,
@@ -481,6 +491,8 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 
 }
 
+/* Calculate the variance of the cross correlation power.
+ * The variance is given by sigma^2 in Eqn 4.6 of Dhurandhar et al 2008 */
 void LALNormaliseCrossCorrPower(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
