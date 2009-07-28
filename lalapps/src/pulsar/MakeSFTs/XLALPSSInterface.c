@@ -7,6 +7,8 @@
 
 extern FILE*LOG_INFO;
 
+static const char* captionString = "count";
+
 FILE* XLALPSSOpenLog(char*name) {
   if (strcmp(name, "-") == 0)
     LOG_INFO = stderr;
@@ -68,7 +70,7 @@ PSSTimeseries *XLALCreatePSSTimeseries(UINT4 length) {
   PSSTimeseries *pssGD;
   if ( length == 0 )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EINVAL );
-  pssGD = crea_gd(length,0,0,"byXLALCreatePSSTimeseries");
+  pssGD = crea_gd(length,0,0,captionString); /* unit of a timeseries should be seconds */
   if( !pssGD )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
   return(pssGD);
@@ -81,10 +83,11 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
     free(ts->x);
   if(ts->y)
     free(ts->y);
-  /* where does the caption come from if it can't be freed?
+  /* where does the caption come from if it can't be freed? */
   if(ts->capt)
-    free(ts->capt);
-  */
+    if(ts->capt != captionString)
+      free(ts->capt);
+  /**/
   free(ts);
 }
 
@@ -101,9 +104,17 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
 
   strncpy(ts->name, tsPSS->name, LALNameLength);
   XLALGPSSetREAL8(&(ts->epoch), tsPSS->ini);
+  if (xlalErrno)
+    fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALGPSSetREAL8 %s,%d\n",__FILE__,__LINE__);
   ts->deltaT = tsPSS->dx;
   ts->f0     = 0.0; /* no heterodyning */
   XLALParseUnitString( &(ts->sampleUnits), tsPSS->capt );
+  if (xlalErrno) {
+    fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALParseUnitString:%d %s,%d\n",xlalErrno,__FILE__,__LINE__);
+    if (tsPSS->capt)
+      fprintf(stderr,"[DEBUG] PSS caption: '%s'\n", tsPSS->capt); 
+    xlalErrno = 0;
+  }
 
   return ts;
 }
@@ -124,6 +135,7 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
     if( !tsPSS->capt )
       XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_ENOMEM );
     strncpy(tsPSS->capt,unit,strlen(unit)+1);
+    fprintf(stderr,"[DEBUG] PSS caption: '%s'\n", tsPSS->capt); 
   } else {
     tsPSS->capt = NULL;
   }
@@ -197,18 +209,18 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
 PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PSSHeaderParams* hp, REAL4 f) {
   if ( !tsout || !tsin || !hp )
     XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
-  if ( highpass_data_bil(tsout,tsin,hp,f) )
-    XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
+  fprintf(stderr, "[DEBUG] highpass_data_bil: %d\n", highpass_data_bil(tsout,tsin,hp,f) );
+  /* XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT ); */
   return tsout;
 }
 
 PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
   if ( !events || !ts )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
-  if ( sn_medsig(ts,events,hp) )
-    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
-  if ( even_anst(ts,events) )
-    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
+  fprintf(stderr, "[DEBUG] sn_medsig: %d\n", sn_medsig(ts,events,hp) );
+  /* XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC ); */
+  fprintf(stderr, "[DEBUG] even_anst: %d\n", even_anst(ts,events) );
+  /* XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC ); */
   return events;
 }
 
@@ -217,7 +229,7 @@ PSSTimeseries *XLALSubstractPSSCleaningEvents(PSSTimeseries *tsout, PSSTimeserie
 					      PSSHeaderParams* hp) {
   if ( !tsout || !tsin || !tshp || !events )
     XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFAULT );
-  if ( purge_data_subtract(tsout,tsin,tshp,events,hp) )
-    XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC );
+  fprintf(stderr, "[DEBUG] purge_data_subtract: %d\n", purge_data_subtract(tsout,tsin,tshp,events,hp) );
+  /* XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC ); */
   return tsout;
 }
