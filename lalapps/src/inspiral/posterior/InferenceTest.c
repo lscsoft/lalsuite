@@ -31,6 +31,7 @@
 
 LALVariables variables;
 LALVariables variables2;
+LALVariables currentParams;
 
 REAL4 number,five;
 REAL8 numberR8;
@@ -38,6 +39,7 @@ INT4 numberI4;
 INT8 numberI8;
 COMPLEX8 numberC8;
 COMPLEX16 numberC16;
+REAL8 likelihood;
 
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
@@ -166,6 +168,35 @@ int main(int argc, char *argv[]){
     printVariables(runstate->data->modelParams);
     templateStatPhase(runstate->data);
 */
+	  
+	  // Parameters for which I am going to compute the likelihood
+	  
+	  REAL4 m1_current = 10.0;
+	  REAL4 m2_current = 1.4;
+	  REAL4 inc_current = 0.0;
+	  REAL4 phii_current = 0.0;
+	  REAL8 tc_current = tc;
+	  REAL8 ra_current        = 0.0;	/* radian      */
+	  REAL8 dec_current       = 0.0;	/* radian      */
+	  REAL8 psi_current       = 0.0;	/* radian      */
+	  REAL8 distMpc_current   = 10.0;	/* Mpc         */
+	  
+	  addVariable(&currentParams,"m1",&m1_current,REAL4_t);
+	  addVariable(&currentParams,"m2",&m2_current,REAL4_t);
+	  addVariable(&currentParams,"inc",&inc_current,REAL4_t);
+	  addVariable(&currentParams,"phii",&phii_current,REAL4_t);
+	  addVariable(&currentParams,"time",&tc_current,REAL8_t);
+	  addVariable(&currentParams,"rightascension",&ra_current,REAL8_t);
+	  addVariable(&currentParams,"declination",&dec_current,REAL8_t);
+	  addVariable(&currentParams,"polarisation",&psi_current,REAL8_t);
+	  addVariable(&currentParams,"distance",&distMpc_current,REAL8_t);
+	  
+	  likelihood = 0.0;
+	  
+	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
+	  
+	  fprintf(stdout,"likelihood=%f\n",likelihood);
+	  
   }
 
 

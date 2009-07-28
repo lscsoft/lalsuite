@@ -39,6 +39,8 @@
 #include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/XLALError.h>
+#include <lal/GenerateInspiral.h>
+#include <lal/LIGOLwXMLRead.h>
 
 #include "LALInference.h"
 
@@ -294,7 +296,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	InjParams.fStartIn=(REAL4)minFlow;
 	
 	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
-	if(getProcParamVal(commandLine,"--event")) event=getProcParamVal(commandLine,"--event")->value;
+	if(getProcParamVal(commandLine,"--event")) event= (INT4) getProcParamVal(commandLine,"--event")->value;
 	fprintf(stdout,"Injecting event %d\n",event);
 	
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(commandLine,"--injXML")->value,0,0);
