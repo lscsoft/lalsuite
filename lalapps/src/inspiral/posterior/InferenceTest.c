@@ -164,6 +164,14 @@ int main(int argc, char *argv[]){
 				  runstate->data->timeData->data->data[i]);
 	  }
 	  fclose(testout);
+	  testout=fopen("noise_FD.txt","w");
+	  for (i=0;i<runstate->data->freqData->data->length;i++){
+		  fprintf(testout,"%g %g %g %g %g\n",i*runstate->data->freqData->deltaF,
+				  runstate->data->freqData->data->data[i].re,
+				  runstate->data->freqData->data->data[i].im,
+				  runstate->data->freqData->data->data[i].re,
+				  runstate->data->freqData->data->data[i].im);
+	  }
 	  
 	  
 /* 
