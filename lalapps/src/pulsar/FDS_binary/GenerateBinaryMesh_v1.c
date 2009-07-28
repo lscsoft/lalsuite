@@ -1335,7 +1335,13 @@ int CheckInput(GlobVar GV)
     endDate.tm_year=110;
   }
 
-  /* populate tm_wday, tm_yday */
+  /* populate tm_wday, tm_yday.  NOTE:  this function does not understand
+   * leap seconds;  if tm_sec is set to 60 it will "normalize" it by
+   * settting it to 0 and bumping the minutes, which is not the same time
+   * if the previous minute had 61 seconds in it.  you can use these
+   * functions to populate the yday and wday fields, and then set the
+   * seconds, minutes, etc., *after* to avoid corrupting the time, but here
+   * we don't care because the times aren't leap seconds (see above). */
   mktime(&beginDate);
   mktime(&endDate);
  
