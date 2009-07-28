@@ -211,6 +211,16 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 
 /* ============ Christian's attempt of a LAL template wrapper function: ========== */
+void mc2masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m2 >= m1).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m1 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m2 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+}
 
 
 void templateLALwrap2(LALIFOData *IFOdata)
@@ -222,11 +232,16 @@ void templateLALwrap2(LALIFOData *IFOdata)
   long i;
   double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
   double eta  = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
-  double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
+  double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
   double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
+  double m1, m2;
+  // TODO:
+    int approximant = TaylorT2;
+    int order = LAL_PNORDER_TWO;
   double chirptime;
 
+  mc2masses(mc, eta, &m1, &m2);
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
   /* params.Zeta2    = 0.0; */  /* (?) */
@@ -234,16 +249,78 @@ void templateLALwrap2(LALIFOData *IFOdata)
   params.nStartPad   = 0;
   params.nEndPad     = 0;
   params.massChoice  = m1Andm2;
-	params.approximant = TaylorT1;//approximant;  /*  TaylorT1, ...              */
-	params.order       = 0;//order;        /*  0=Newtonian, ..., 7=3.5PN  */
-	params.fLower      = 40.0;//DF->minF * 0.9;
-	params.fCutoff     = 500.0;//	(DF->FTSize-1)*DF->FTDeltaF;  /* (Nyquist freq.) */
-	params.tSampling   = 1.0/100.0;//DF->dataDeltaT;
+  params.approximant = approximant;  /*  TaylorT1, ...              */
+  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
+  params.fLower      = IFOdata->fLow * 0.9;
+  params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */                             
+  params.tSampling   = 1.0 / IFOdata->timeData->deltaT;
   params.startTime   = 0.0;
 
-  
+  /* actual inspiral parameters: */
+  params.mass1       = m1;
+  params.mass2       = m2;
+  params.startPhase  = phi;
+  if ((params.approximant == EOB) 
+      || (params.approximant == EOBNR)
+      || (params.approximant == TaylorT3)
+      || (params.approximant == IMRPhenomA))
+    params.distance  = LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  else if ((params.approximant == TaylorT1)
+           || (params.approximant == TaylorT2)
+           || (params.approximant == PadeT1)
+           || (params.approximant == TaylorF1)
+           || (params.approximant == TaylorF2)
+           || (params.approximant == PadeF1)
+           || (params.approximant == BCV))
+    params.distance  = 1.0;                                          /* distance in Mpc */
+  else                                                     
+    params.distance  = LAL_PC_SI * 1.0e6 / ((double) LAL_C_SI);  /* distance in seconds */
+
+  /* ensure proper "fCutoff" setting: */
+  if (params.fCutoff >= 0.5*params.tSampling)
+    params.fCutoff = 0.5*params.tSampling - 0.5*IFOdata->freqData->deltaF;
+  if (! (params.tSampling > 2.0*params.fCutoff)){
+    fprintf(stderr," WARNING: 'LALInspiralSetup()' (called within 'LALInspiralWavelength()')\n");
+    fprintf(stderr,"          requires (tSampling > 2 x fCutoff) !!\n");
+    fprintf(stderr," (settings are:  tSampling = %f s,  fCutoff = %f Hz)  \n");
+    exit(1);
+  }
+
+  /* ensure compatible sampling rate: */
+  if ((params.approximant == EOBNR)
+      && (fmod(log((double)params.tSampling)/log(2.0),1.0) != 0.0)) {
+    printf(" WARNING: \"EOBNR\" templates require power-of-two sampling rates!!\n");
+    printf("          (params.tSampling = %f Hz)\n", params.tSampling);
+  }
+
+  /* compute other elements of `params', check out the `.tC' value, */
+  /* shift the start time to match the coalescence time,            */
+  /* and eventually re-do parameter calculations:                   */
+
+  LALInspiralParameterCalc(&status, &params);
+  chirptime = params.tC;
+  if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
+    params.startTime = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
+    LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
+  }
+
+  /* compute "params.signalAmplitude" slot: */
+  LALInspiralRestrictedAmplitude(&status, &params);
+
+  /* figure out inspiral length & set `n': */
+  /* LALInspiralWaveLength(&status, &n, params); */
+  n = DF->dataSize;
+  /* allocate waveform vector: */
+  LALCreateVector(&status, &LALSignal, n);
+  for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
+
+  /* REPORTSTATUS(&status); */
+  LALInspiralWave(&status, LALSignal, &params);
+  /* REPORTSTATUS(&status); */
+
   return;
 }
+
 
 void templateStatPhase(LALIFOData *IFOdata)
 /*************************************************************/
