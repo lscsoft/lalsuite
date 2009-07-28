@@ -216,9 +216,9 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 void templateLALwrap2(LALIFOData *IFOdata)
 {
-  static LALStatus status;
+//  static LALStatus status;
   static InspiralTemplate params;
-  static REAL4Vector *LALSignal=NULL;
+/*  static REAL4Vector *LALSignal=NULL;
   UINT4 n;
   long i;
   double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
@@ -226,7 +226,7 @@ void templateLALwrap2(LALIFOData *IFOdata)
   double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");
   double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
   double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
-  double chirptime;
+  double chirptime;*/
 
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
