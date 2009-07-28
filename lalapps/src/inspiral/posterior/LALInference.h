@@ -193,6 +193,8 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
+							  
+REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData * data);							  
 
 void executeFT(LALIFOData *IFOdata);
 

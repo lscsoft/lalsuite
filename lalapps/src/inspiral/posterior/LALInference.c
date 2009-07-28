@@ -458,7 +458,6 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
-  double TwoDeltaToverN;
   double diff2;
   REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
@@ -472,7 +471,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double NDeltaT, twopit, f, re, im;
+  double df, twopit, f, re, im;
   double timeTmp;
   int different;
   LALStatus status;
@@ -555,10 +554,12 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     FcrossScaled = Fcross / distMpc;
 
     /* determine frequency range & loop over frequency bins: */
-    NDeltaT = dataPtr->timeData->data->length * dataPtr->timeData->deltaT;
-    lower = ceil(dataPtr->fLow * NDeltaT);
-    upper = floor(dataPtr->fHigh * NDeltaT);
-    TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
+    //NDeltaT = dataPtr->timeData->data->length * dataPtr->timeData->deltaT;
+	df=1.0 / (((double)dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
+	printf("df %g, Nt %d, deltaT %g\n", df, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
+    lower = ceil(dataPtr->fLow /df);
+    upper = floor(dataPtr->fHigh /df);
+    //TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  
@@ -567,7 +568,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
                           +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
       /* do time-shifting... */
-      f = ((double) i) / NDeltaT;
+      f = ((double) i) * df;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       re = cos(twopit * f);
       im = - sin(twopit * f);
@@ -575,8 +576,42 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
       /* compute squared difference & 'chi-squared': */
-      diff2 = TwoDeltaToverN * (pow(data->freqData->data->data[i].re - templateReal, 2.0) 
-                                + pow(data->freqData->data->data[i].im - templateImag, 2.0));
+      diff2 = 2.0*df * ((data->freqData->data->data[i].re - templateReal) *(data->freqData->data->data[i].re - templateReal)
+                                + (data->freqData->data->data[i].im - templateImag)*(data->freqData->data->data[i].im - templateImag));
+      chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
+    }
+    dataPtr = dataPtr->next;
+  }
+  loglikeli = -1.0 * chisquared;
+  return(loglikeli);
+}
+
+
+REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData * data)
+/* Null (log-) likelihood function.                        */
+/* Returns the logarithmic likelihood for no-signal model. */
+{
+  double diff2;
+  REAL8 loglikeli;
+  int i, lower, upper;
+  LALIFOData *dataPtr;
+  double chisquared;
+  double df;
+
+  chisquared = 0.0;
+  /* loop over data (different interferometers): */
+  dataPtr = data;
+  while (dataPtr != NULL) {
+    /* determine frequency range & loop over frequency bins: */
+    //NDeltaT = dataPtr->timeData->data->length * dataPtr->timeData->deltaT;
+	df=1.0 / (((double) dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
+    lower = ceil(dataPtr->fLow /df);
+    upper = floor(dataPtr->fHigh /df);
+    //TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
+    for (i=lower; i<=upper; ++i){
+      /* compute squared difference & 'chi-squared': */
+      diff2 = 2.0*df * ((data->freqData->data->data[i].re) *(data->freqData->data->data[i].re)
+                                + (data->freqData->data->data[i].im)*(data->freqData->data->data[i].im));
       chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
     }
     dataPtr = dataPtr->next;
