@@ -90,6 +90,7 @@ an overview of the format at
 
 </lalLaTeX> */
 
+/*#include <time.h>*/	/* for strftime() */
 #include <lal/LALRCSID.h>
 #include <lal/Date.h>
 
