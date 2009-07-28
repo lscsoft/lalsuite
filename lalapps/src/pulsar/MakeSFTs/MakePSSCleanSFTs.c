@@ -236,6 +236,9 @@ REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data contai
 COMPLEX8Vector *fftDataSingle = NULL;
 
 CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
+
+int testpao = 0;
+
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -1444,7 +1447,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 int HighPass(struct CommandLineArgsTag CLA)
 {
-  INT4 itest=1;
   INT4 i;
   FILE *out;
 
@@ -1485,11 +1487,11 @@ int HighPass(struct CommandLineArgsTag CLA)
         TESTSTATUS( &status );
    
         
-    if(itest==1){
-             out=fopen("dataDligoHP.dat","w");
-             for(i=0; i< (int)dataDouble.data->length; i++)fprintf(out,"%23.16e\n",dataDouble.data->data[i]);
-             fclose(out);
-       }
+	if(testpao){
+	  out=fopen("dataDligoHP.dat","w");
+	  for(i=0; i< (int)dataDouble.data->length; i++)fprintf(out,"%23.16e\n",dataDouble.data->data[i]);
+	  fclose(out);
+	}
 
 
 
@@ -1514,8 +1516,6 @@ int WindowData(struct CommandLineArgsTag CLA)
 {
   REAL8 r = 0.001;
   INT4 k, N, kl, kh;
-
-  int testpao=1;
   FILE *OUTpao;
   
   /* This implementation of a Tukey window is describes 
@@ -1554,7 +1554,7 @@ int WindowData(struct CommandLineArgsTag CLA)
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
     #endif  
 
-   if(testpao == 1){
+   if(testpao){
      OUTpao=fopen("windowT.dat","w");
      for(k =0; k < N; k++)fprintf(OUTpao,"%23.16e\n",dataDouble.data->data[k]);
      fclose(OUTpao);
