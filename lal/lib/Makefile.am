@@ -41,13 +41,15 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	@touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
 	@echo "creating LALVCSInfo.h"
-	@./git_version --sed $(abs_srcdir) $(abs_builddir)
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+	./git_version --sed $$sourced $$buildd
 	@-rm -f .vcsinfo
 
 all-local: include-link
 include-link: LALVCSInfo.h
-	@targetdir="$(abs_top_builddir)/include/lal"; \
+	@d=`pwd`; \
+		targetdir=`cd $(top_builddir)/include/lal && pwd`; \
 		if test ! -r $$targetdir/LALVCSInfo.h ; then \
 			rm -f $$targetdir/LALVCSInfo.h; \
-			$(LN_S) $(abs_builddir)/LALVCSInfo.h $$targetdir; \
+			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
 		fi
