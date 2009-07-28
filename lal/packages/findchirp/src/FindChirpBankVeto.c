@@ -208,20 +208,28 @@ XLALComputeFullChisq(
   if (!bankVetoData->acorrMat) return 0.0;
   chisq = 0;
   chisqnorm = 0;
-  *dof = 2 * bankVetoData->acorrMatSize;
 
   angle = atan2(q[snrIX].im, q[snrIX].re);
   snr = q[snrIX].re * cos(angle) + q[snrIX].im * sin(angle);
 
-  for (k = 0; k < bankVetoData->acorrMatSize; k++)
+  /*Start at k=1 because k=0 is Gauranteed to be zero by construction */
+  for (k = 1; k < bankVetoData->acorrMatSize; k++)
   {
     snrk = q[snrIX-k].re * cos(angle) + q[snrIX-k].im * sin(angle);
-    C = bankVetoData->acorrMat->data[i * bankVetoData->length + k];
+    C = bankVetoData->acorrMat->data[i * bankVetoData->acorrMatSize + k];
+    *dof++;
+    /*FIXME what? This should never happen, and it probably doesn't but if it did it would screw the whole value */
+    if (C >=1 ) continue;
     tmp = snrk - C * snr;
     chisq += tmp * tmp * norm;
-    chisqnorm += 1.0 - C * C;
+    chisqnorm += 1.0 / (1.0 - C * C);
   }
-  chisq /= 1.0 * chisqnorm;
+  chisq /= chisqnorm;
+  if (chisq <= 0 )
+  {
+    fprintf(stderr,"chisq < 0");
+    exit(1);
+  }
   return chisq;  
 }
 
@@ -325,6 +333,12 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
           {
             /* Save the last acorrMatSize samples */
             bankVetoData->acorrMat->data[i*bankVetoData->acorrMatSize + k] = bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0];
+            if (bankVetoData->acorrMat->data[i*bankVetoData->acorrMatSize + k] > 1.0) 
+            {
+              fprintf(stderr, "Autocorrelation > 1.0\n");
+              exit(1);
+            }
+           
           }
         }
         bankVetoData->ccMat->data[i*iSize + j] = sqrt(ABr*ABr+ABi*ABi);
