@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
 	  fclose(testout);
 	  testout=fopen("test_TD.txt","w");
 	  for (i=0;i<runstate->data->timeModelhPlus->data->length;i++){
-		  fprintf(testout,"%g %g %g\n",i*runstate->data->timeModelhPlus->deltaT,
+		  fprintf(testout,"%10.10lf %g %g\n",runstate->data->timeData->epoch.gpsSeconds+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeModelhPlus->deltaT,
 				  runstate->data->timeModelhPlus->data->data[i],
 				  runstate->data->timeModelhCross->data->data[i]);
 	  }
