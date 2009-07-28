@@ -282,6 +282,16 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
 	memset(&InjParams,0,sizeof(PPNParamStruc));
 	COMPLEX16FrequencySeries *injF=NULL;
+	LALIFOData *thisData=IFOdata->next;
+	REAL8 minFlow=IFOdata->fLow;
+	REAL8 MindeltaT=IFOdata->timeData->deltaT;
+	
+	while(thisData){
+		minFlow=minFlow>thisData->fLow?thisData->fLow:minFlow;
+		MindeltaT=MindeltaT>thisData->timeData->deltaT?thisData->timeData->deltaT:MindeltaT;
+	}
+	InjParams.deltaT = MindeltaT;
+	InjParams.fStartIn=(REAL4)minFlow;
 	
 	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(getProcParamVal(commandLine,"--event")) event=getProcParamVal(commandLine,"--event")->value;
@@ -300,8 +310,6 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	/* Begin loop over interferometers */
 	while(IFOdata){
 		memset(&det,0,sizeof(det));
-		InjParams.deltaT = IFOdata->timeData->deltaT;
-		InjParams.fStartIn=(REAL4)IFOdata->fLow;
 		det.site=IFOdata->detector;
 		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("injection",
 																			  &IFOdata->timeData->epoch,
@@ -328,7 +336,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 		/* Window the data */
 		REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 		for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=IFOdata->window->data->data[j]/WinNorm;
-		XLALREAL8FreqTimeFFT(injF,inj8Wave,IFOdata->timeToFreqFFTPlan);
+		XLALREAL8TimeFreqFFT(injF,inj8Wave,IFOdata->timeToFreqFFTPlan);
 		if(IFOdata->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=IFOdata->fLow/injF->deltaF;j<injF->data->length;j++){
 				SNR+=pow(injF->data->data[j].re,2.0)*IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
