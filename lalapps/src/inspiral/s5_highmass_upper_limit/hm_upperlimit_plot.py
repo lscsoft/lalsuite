@@ -62,7 +62,9 @@ def posterior(VT, sigmasq, Lambda):
 
 def integrate_posterior(mu, post, conf):
         cumpost = post.cumsum()/post.sum()
-        val = [idx for idx in range(len(cumpost)) if cumpost[idx] >= conf][0]
+	#if you can do it, maybe you can't cause the volume is zero
+        try: val = [idx for idx in range(len(cumpost)) if cumpost[idx] >= conf][0]
+	except: val = 0
         return mu[val]
 
 # test case
