@@ -80,7 +80,8 @@ install: build
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
 	    --enable-nightly=no                                               \
 	    --enable-frame --enable-metaio                                    \
-	    --disable-debug ;                                                        \
+	    --disable-debug                                                   \
+	    --disable-gcc-flags ;                                             \
 	PYTHON="python$$v"                                                    \
 	$(MAKE) ;                                                                    \
 	echo "tree after build:" ;                                                   \

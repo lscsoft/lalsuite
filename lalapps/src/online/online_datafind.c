@@ -40,8 +40,6 @@
 
 #include <lalapps.h>
 
-extern double round ( double );
-
 /* flags for getopt_long */
 extern int vrbflg;
 
@@ -281,6 +279,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 wait_time;
   CHAR *ptimeout;
   INT4 total_wait = 0;
+  INT4 found = 0;
 
   /* get maximum wait time from ONLINEHOFT_TIMEOUT */
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
@@ -393,10 +392,28 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       else
       {
-        /* data is available, break do-while loop */
-        break;
+        /* check that all files have been transferred, stat frames */
+        if (XLALAggregationStatFiles(ifo, &gps_start, duration) == 0)
+        {
+          /* data is available, break do-while loop */
+          found = 1;
+          break;
+        }
       }
     } while(total_wait < timeout);
+  }
+
+  /* check that timeout has not been exceeded, exit if appropriate */
+  if ((found == 0) && (total_wait > timeout))
+  {
+    fprintf(stdout, "error: timeout exceeded\n");
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
+    exit(1);
   }
 
   /* get frame cache */
@@ -404,6 +421,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (cache == NULL)
   {
     fprintf(stderr, "error: failed to get frame cache\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
@@ -412,6 +437,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (type == NULL)
   {
     fprintf(stderr, "error: failed to get frame type\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
