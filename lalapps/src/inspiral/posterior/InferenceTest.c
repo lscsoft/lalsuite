@@ -225,6 +225,6 @@ int main(int argc, char *argv[]){
   }
 
 
-  printf(" done.\n");
+  printf(" main(): finished.\n");
   return 0;
 }

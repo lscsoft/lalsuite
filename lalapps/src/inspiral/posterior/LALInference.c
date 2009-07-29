@@ -660,13 +660,19 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   LALIFOData *ifoPtr;
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
+  fprintf(stdout, " readData(): started.\n");
   irs->data = readData(commandLine);
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  injectSignal(irs->data,commandLine);
+  fprintf(stdout, " readData(): finished.\n");
   if (irs->data != NULL) {
     fprintf(stdout, " initialize(): successfully read data.\n");
+
+    fprintf(stdout, " injectSignal(): started.\n");
+    injectSignal(irs->data,commandLine);
+    fprintf(stdout, " injectSignal(): finished.\n");
+
     ifoPtr = irs->data;
     while (ifoPtr != NULL) {
       ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",

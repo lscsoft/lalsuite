@@ -214,6 +214,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 
 /* ============ Christian's attempt of a LAL template wrapper function: ========== */
+
 void mc2masses(double mc, double eta, double *m1, double *m2)
 /*  Compute individual companion masses (m1, m2)   */
 /*  for given chirp mass (m_c) & mass ratio (eta)  */
@@ -236,18 +237,23 @@ void templateLALwrap2(LALIFOData *IFOdata)
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
   long i;
-  double mc   = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
-  double eta  = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
-  double phi  = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
-  // double iota = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
-  double tc   = *(REAL8*) getVariable(IFOdata->modelParams, "time");
-  double m1, m2;
-  int FDomain;  /* (domain of the LAL template) */
+  double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
+  double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
+  double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
+  double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
+  double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
+  int approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+  int order       = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
+  int FDomain;    /* (denotes domain of the _LAL_ template!) */
+  double m1, m2, chirptime;
   // TODO:
-    int approximant = TaylorT2;
-    int order = LAL_PNORDER_TWO;
-  double chirptime;
+  double plusCoef  = -0.5*(1.0+pow(cos(iota),2.0));
+  double crossCoef = -1.0*cos(iota);
 
+  if (IFOdata->timeData==NULL) 
+    die(" ERROR: encountered unallocated 'timeData' in \"templateLALwrap()\".\n");
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
+    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateLALwrap()\".\n");
   mc2masses(mc, eta, &m1, &m2);
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
@@ -259,7 +265,7 @@ void templateLALwrap2(LALIFOData *IFOdata)
   params.approximant = approximant;  /*  TaylorT1, ...              */
   params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
   params.fLower      = IFOdata->fLow * 0.9;
-  params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */                             
+  params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
   params.tSampling   = 1.0 / IFOdata->timeData->deltaT;
   params.startTime   = 0.0;
 
@@ -308,7 +314,6 @@ void templateLALwrap2(LALIFOData *IFOdata)
   LALInspiralParameterCalc(&status, &params);
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
-    // LALGPStoFloat(&status, &epoch, &IFOdata->timeData->epoch);
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
     LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
   }
@@ -318,7 +323,6 @@ void templateLALwrap2(LALIFOData *IFOdata)
 
   /* figure out inspiral length & set `n': */
   /* LALInspiralWaveLength(&status, &n, params); */
-  /* n = DF->dataSize; */
   n = IFOdata->timeData->data->length;
 
   /* domain of LAL template as returned by LAL function: */
@@ -332,7 +336,7 @@ void templateLALwrap2(LALIFOData *IFOdata)
     exit(1);
   }
 
-  /* allocate waveform vector: */
+  /* allocate (temporary) waveform vector: */
   LALCreateVector(&status, &LALSignal, n);
   for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
 
@@ -356,9 +360,9 @@ void templateLALwrap2(LALIFOData *IFOdata)
   }
 
   else {             /*  (LAL function returns frequency-domain template)  */
+    /* copy over, normalise: */
     IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]) * ((REAL8) n);
     IFOdata->freqModelhPlus->data->data[0].im = 0.0;
-    /* copy over, normalise: */
     for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
       IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]) * ((REAL8) n);
       IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]) * ((REAL8) n);
@@ -372,6 +376,11 @@ void templateLALwrap2(LALIFOData *IFOdata)
   for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
     IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
     IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
+    // consider inclination angle's effect:
+    IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
+    IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
+    IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
+    IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
   }
   /*
    * NOTE: the dirty trick here is to assume the LAL waveform to constitute
@@ -394,7 +403,7 @@ void templateStatPhase(LALIFOData *IFOdata)
 /* following  Tanaka/Tagoshi (2000), Phys.Rev.D 62(8):082001 */
 /* or Christensen/Meyer (2001), Phys.Rev.D 64(2):022001.     */
 /* By supplying the optional IFOdata->modelParams "PNOrder"  */
-/* parameter, one may request a 2.0PN (insead of 2.5PN)      */
+/* parameter, one may request a 2.0PN (instead of 2.5PN)     */
 /* template.                                                 */
 /* Signal's amplitude corresponds to a luminosity distance   */
 /* of 1 Mpc; re-scaling will need to be taken care of e.g.   */
@@ -419,6 +428,12 @@ void templateStatPhase(LALIFOData *IFOdata)
   double plusRe, plusIm, crossRe, crossIm;
   int i, lower, upper;
  
+  if (IFOdata->timeData==NULL)
+    die(" ERROR: encountered unallocated 'timeData' in \"templateStatPhase()\".\n");
+  //if (IFOdata->freqData==NULL)
+  //  die(" ERROR: encountered unallocated 'freqData' in \"templateStatPhase()\".\n");
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
+    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateStatPhase()\".\n");
   if (checkVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
   if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
@@ -440,7 +455,7 @@ void templateStatPhase(LALIFOData *IFOdata)
   lower = ceil(IFOdata->fLow * NDeltaT);
   upper = floor(IFOdata->fHigh * NDeltaT);
   /* loop over frequency bins: */
-  for (i=0; i<IFOdata->timeData->data->length; ++i){
+  for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
     if ((i > upper) || (i < lower)) /* (no computations outside freq. range) */
       plusRe = plusIm = crossRe = crossIm = 0.0;
     else {
@@ -463,17 +478,47 @@ void templateStatPhase(LALIFOData *IFOdata)
       plusIm  *= plusCoef;
     }
     /* copy f'domain waveform over to IFOdata: */
-
-/*    if(!IFOdata->freqModelhPlus)
-      IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,
-                IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
-*/
-//These aren't properly allocated yet.
-//    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
-//    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
-//    IFOdata->freqModelhCross->data->data[i].re = crossRe;
-//    IFOdata->freqModelhCross->data->data[i].im = crossIm;
+    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
+    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
+    IFOdata->freqModelhCross->data->data[i].re = crossRe;
+    IFOdata->freqModelhCross->data->data[i].im = crossIm;
   }
   IFOdata->modelDomain = frequencyDomain;
+  return;
+}
+
+
+void templateNullFreqdomain(LALIFOData *IFOdata)
+/************************************************************/
+/* returns a frequency-domain 'null' template (all zeroes). */
+/************************************************************/
+{
+  int i;
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
+    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateNullFreq()\".\n");
+  for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
+    IFOdata->freqModelhPlus->data->data[i].re  = 0.0;
+    IFOdata->freqModelhPlus->data->data[i].im  = 0.0;
+    IFOdata->freqModelhCross->data->data[i].re = 0.0;
+    IFOdata->freqModelhCross->data->data[i].im = 0.0;
+  }
+  IFOdata->modelDomain = frequencyDomain;
+  return;
+}
+
+
+void templateNullTimedomain(LALIFOData *IFOdata)
+/*******************************************************/
+/* returns a time-domain 'null' template (all zeroes). */
+/*******************************************************/
+{
+  int i;
+  if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) 
+    die(" ERROR: encountered unallocated 'timeModelhPlus/-Cross' in \"templateNullTime()\".\n");
+  for (i=0; i<IFOdata->timeModelhPlus->data->length; ++i){
+    IFOdata->timeModelhPlus->data->data[i]  = 0.0;
+    IFOdata->timeModelhCross->data->data[i] = 0.0;
+  }
+  IFOdata->modelDomain = timeDomain;
   return;
 }
