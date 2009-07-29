@@ -391,8 +391,12 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       else
       {
-        /* data is available, break do-while loop */
-        break;
+        /* check that all files have been transferred, stat frames */
+        if (XLALAggregationStatFiles(ifo, &gps_start, duration) == 0)
+        {
+          /* data is available, break do-while loop */
+          break;
+        }
       }
     } while(total_wait < timeout);
   }
