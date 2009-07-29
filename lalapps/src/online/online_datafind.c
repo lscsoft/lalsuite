@@ -406,6 +406,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (cache == NULL)
   {
     fprintf(stderr, "error: failed to get frame cache\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
@@ -414,6 +422,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (type == NULL)
   {
     fprintf(stderr, "error: failed to get frame type\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
