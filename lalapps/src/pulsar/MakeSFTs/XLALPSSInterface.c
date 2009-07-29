@@ -28,9 +28,14 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EINVAL ); 
   ep = crea_evenparam(length);
   if ( ep == NULL )
-    XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EFAULT ); 
+    XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EFAULT );
+  /* values that differ from the defaults set in crea_evenpar() */
+  ep->absvalue = 0;        /* 1 uses abs values. Else uses values with sign */
+  ep->tau = 20.0;          /* memory time of the autoregressive average */
+  ep->cr = 5.0;            /* CR of the threshold */
+  ep->edge = 0.00061035;   /* how many seconds around (before and after) the event have to be "purged" */
   return ep;
-} 
+}
 
 void XLALDestroyPSSEventParams(PSSEventParams *ts) {
   if ( !ts )
