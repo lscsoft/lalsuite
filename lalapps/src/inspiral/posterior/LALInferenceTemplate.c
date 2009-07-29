@@ -266,9 +266,9 @@ void templateLAL(LALIFOData *IFOdata)
   double crossCoef = -1.0*cos(iota);
 
   if (IFOdata->timeData==NULL) 
-    die(" ERROR: encountered unallocated 'timeData' in \"templateLALwrap()\".\n");
+    die(" ERROR in templateLALwrap(): encountered unallocated 'timeData'.\n");
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateLALwrap()\".\n");
+    die(" ERROR in templateLALwrap(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
   mc2masses(mc, eta, &m1, &m2);
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
@@ -370,7 +370,11 @@ void templateLAL(LALIFOData *IFOdata)
     }
     LALDestroyVector(&status, &LALSignal);
     /* apply window & execute FT of plus component: */
+    if (IFOdata->window==NULL) 
+      die(" ERROR in templateLALwrap(): ran into uninitialized 'IFOdata->window'.\n");
     XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
+    if (IFOdata->timeToFreqFFTPlan==NULL)
+      die(" ERROR in templateLALwrap(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }
 
@@ -386,6 +390,8 @@ void templateLAL(LALIFOData *IFOdata)
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
     LALDestroyVector(&status, &LALSignal);
   }
+
+  /* (now frequency-domain plus-waveform has been computed, either directly or via FFT) */
 
   /*  cross waveform is "i x plus" :  */
   for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
@@ -452,9 +458,9 @@ void templateStatPhase(LALIFOData *IFOdata)
   int i, lower, upper;
  
   if (IFOdata->timeData==NULL)
-    die(" ERROR: encountered unallocated 'timeData' in \"templateStatPhase()\".\n");
+    die(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateStatPhase()\".\n");
+    die(" ERROR in templateStatPhase(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
   if (checkVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
   if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
@@ -511,13 +517,14 @@ void templateStatPhase(LALIFOData *IFOdata)
 
 
 void templateNullFreqdomain(LALIFOData *IFOdata)
-/************************************************************/
-/* returns a frequency-domain 'null' template (all zeroes). */
-/************************************************************/
+/**********************************************/
+/* returns a frequency-domain 'null' template */
+/* (all zeroes, implying no signal present).  */
+/**********************************************/
 {
   int i;
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR: encountered unallocated 'freqModelhPlus/-Cross' in \"templateNullFreqdomain()\".\n");
+    die(" ERROR in templateNullFreqdomain(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
     IFOdata->freqModelhPlus->data->data[i].re  = 0.0;
     IFOdata->freqModelhPlus->data->data[i].im  = 0.0;
@@ -531,13 +538,14 @@ void templateNullFreqdomain(LALIFOData *IFOdata)
 
 
 void templateNullTimedomain(LALIFOData *IFOdata)
-/*******************************************************/
-/* returns a time-domain 'null' template (all zeroes). */
-/*******************************************************/
+/*********************************************/
+/* returns a time-domain 'null' template     */
+/* (all zeroes, implying no signal present). */
+/*********************************************/
 {
   int i;
   if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) 
-    die(" ERROR: encountered unallocated 'timeModelhPlus/-Cross' in \"templateNullTimedomain()\".\n");
+    die(" ERROR in templateNullTimedomain(): encountered unallocated 'timeModelhPlus/-Cross'.\n");
   for (i=0; i<IFOdata->timeModelhPlus->data->length; ++i){
     IFOdata->timeModelhPlus->data->data[i]  = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;

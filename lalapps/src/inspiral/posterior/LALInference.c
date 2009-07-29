@@ -587,6 +587,35 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 }
 
 
+
+REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
+/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
+/* with the `templateNullFreqdomain()' template in order to return */
+/* the "Null likelihood" without having to bother specifying       */
+/* parameters or template while ensuring computations are exactly  */
+/* the same as in usual likelihood calculations.                   */
+{
+  LALVariables dummyParams;
+  double dummyValue;
+  double loglikeli;
+  /* set some (basically arbitrary) dummy values for intrinsic parameters */
+  /* (these don't make a difference, but need to be present):             */
+  dummyParams.head      = NULL;
+  dummyParams.dimension = 0;
+  dummyValue = 0.5;
+  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t);
+  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) + 1.0;
+  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t);
+  loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
+  destroyVariables(&dummyParams);
+  return(loglikeli);
+}
+
+
+
 REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData * data)
 /* Null (log-) likelihood function.                        */
 /* Returns the logarithmic likelihood for no-signal model. */
