@@ -55,18 +55,18 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
   ],)
 ])
 
-AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
-[AC_ARG_WITH([gcc_flags],
-  AC_HELP_STRING([--with-gcc-flags],[turn on strict gcc warning flags]),
-  [case $withval in
-     yes) DO_ENABLE_LALAPPS_WITH_GCC_FLAGS;;
+AC_DEFUN([LALAPPS_ENABLE_GCC_FLAGS],
+[AC_ARG_ENABLE([gcc_flags],
+  AC_HELP_STRING([--enable-gcc-flags],[turn on strict gcc warning flags (default=yes)]),
+  [case "${enableval}" in
+     yes) DO_ENABLE_LALAPPS_GCC_FLAGS;;
      no) ;;
-     *) DO_ENABLE_LALAPPS_WITH_GCC_FLAGS($withval);;
+     *) DO_ENABLE_LALAPPS_GCC_FLAGS;;
    esac ],
-   [ DO_ENABLE_LALAPPS_WITH_GCC_FLAGS ] )
+   [ DO_ENABLE_LALAPPS_GCC_FLAGS ] )
 ])
 
-AC_DEFUN([DO_ENABLE_LALAPPS_WITH_GCC_FLAGS],
+AC_DEFUN([DO_ENABLE_LALAPPS_GCC_FLAGS],
 [
   lalapps_gcc_flags="-g3 -O4 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -Wno-format-zero-length"
 ])
