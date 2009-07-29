@@ -441,7 +441,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
     }
     ++i;
   }
-  if (state==4) die(" ERROR: failed parsing command line options.\n");
+  if (state==4) die(" ERROR in parseCommandLine(): failed parsing command line options.\n");
   return(head);
 }
 
@@ -599,7 +599,7 @@ REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
   double dummyValue;
   double loglikeli;
   /* set some (basically arbitrary) dummy values for intrinsic parameters */
-  /* (these don't make a difference, but need to be present):             */
+  /* (these shouldn't make a difference, but need to be present):         */
   dummyParams.head      = NULL;
   dummyParams.dimension = 0;
   dummyValue = 0.5;
@@ -607,7 +607,8 @@ REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
   addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t);
   addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t);
   addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t);
-  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) + 1.0;
+  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
+               + (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
   addVariable(&dummyParams, "time",           &dummyValue, REAL8_t);
   loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
   destroyVariables(&dummyParams);
