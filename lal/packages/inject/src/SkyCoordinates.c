@@ -273,7 +273,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 } /* LALConvertSkyCoordinates */
 
-
+
 
 /** LAL interface to XLALNormalizeSkyPosition()
  */

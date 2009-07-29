@@ -206,7 +206,7 @@ void LALComputeCalibrationFactors(
 
   output->exc=EXC;
 
-  if (( fabs( EXC.re ) < tiny && fabs( EXC.im ) < tiny )) /* check on DARM_CTRL and/or AS_Q too?? */
+  if (( fabs( EXC.re ) < tiny && fabs( EXC.im ) < tiny )) /* check on DARM_CTRL too?? */
   {
     output->alphabeta.re=0.0;
     output->alphabeta.im=0.0;

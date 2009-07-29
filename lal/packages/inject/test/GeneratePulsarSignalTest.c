@@ -179,7 +179,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
 
   /* The input and output structs used by the functions being tested */
   PulsarSignalParams *pPulsarSignalParams = NULL;
-  REAL4TimeSeries *signal = NULL;
+  REAL4TimeSeries *signalvec = NULL;
   SFTParams *pSFTParams = NULL;
   SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
   SFTandSignalParams *pSFTandSignalParams;
@@ -550,11 +550,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        testNumber++; /* Update count of which test we about to do. */
 
        /* FIRST: Use LALGeneratePulsarSignal and LALSignalToSFTs to generate outputSFTs */
-       signal = NULL;
-       LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
+       signalvec = NULL;
+       LALGeneratePulsarSignal(status->statusPtr, &signalvec, pPulsarSignalParams);
        CHECKSTATUSPTR (status);
        outputSFTs = NULL;
-       LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
+       LALSignalToSFTs(status->statusPtr, &outputSFTs, signalvec, pSFTParams);
        CHECKSTATUSPTR (status);
 
        #ifdef PRINT_OUTPUTSFT
@@ -698,9 +698,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        LALDestroySFTVector(status->statusPtr, &outputSFTs);
        CHECKSTATUSPTR (status);
 
-       LALFree(signal->data->data);
-       LALFree(signal->data);
-       LALFree(signal);
+       LALFree(signalvec->data->data);
+       LALFree(signalvec->data);
+       LALFree(signalvec);
 
      } /* END for(iFreq=0;iFreq<nBinsSGNL;iFreq++) */
      /****************************************************/

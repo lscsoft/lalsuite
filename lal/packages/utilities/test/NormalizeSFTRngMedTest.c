@@ -118,7 +118,7 @@ char *lalWatch;
 int main(int argc, char *argv[]){
   static LALStatus    status;  /* LALStatus pointer */
 
-  static SFTVector  *sft=NULL;
+  /*static SFTVector  *sft=NULL;*/
 
   static MultiSFTVector *multsftvect=NULL;
   static MultiPSDVector *multpsdvect=NULL;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
   BOOLEAN uvar_help;
   CHAR *uvar_inputSFTDir;    /* directory for unclean sfts */
   CHAR *uvar_outputSFTDir;   /* directory for cleaned sfts */
-  REAL8 uvar_fmin, uvar_fmax;
+  /* REAL8 uvar_fmin, uvar_fmax; */
   INT4 uvar_blockSize;
   /* set defaults */
 

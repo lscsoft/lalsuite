@@ -19,7 +19,8 @@
 
 #ifndef _FRAMESTREAMDEF_H
 #define _FRAMESTREAMDEF_H
-#include <FrameL.h>
+
+#include <lal/LALFrameL.h>
 #include <lal/LALDatatypes.h>
 
 #include <lal/LALRCSID.h>

@@ -93,7 +93,7 @@ LALDR_CrossProd3Vector(REAL8 result[3],
   return;
 } /* END: LALDR_CrossProd3Vector() */
 
-
+
 
 /*
  * Dot product of two 3-vectors
@@ -110,7 +110,7 @@ LALDR_DotProd3Vector(REAL8 a[3], REAL8 b[3])
   return result;
 } /* END: LALDR_DotProd3Vector() */
 
-
+
 
 /*
  * Scalar product of two 3x3 matrices
@@ -128,7 +128,7 @@ LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
   return result;
 } /* END: LALDR_DotProd33Matrix() */
 
-
+
 
 
 /*
@@ -149,7 +149,7 @@ LALDR_Set33Matrix(REAL8 matrix[3][3],
   return;
 } /* END: LALDR_Set33Matrix() */
 
-
+
 
 /*
  * Copy matrix source to matrix target
@@ -166,7 +166,7 @@ LALDR_Copy33Matrix(REAL8 target[3][3], const REAL8 source[3][3])
   return;
 } /* END: LALDR_Copy33Matrix() */
 
-
+
 
 /*
  * Zero matrix
@@ -181,7 +181,7 @@ LALDR_Zero33Matrix(REAL8 matrix[3][3])
   return;
 }
 
-
+
 
 /*
  * Matrix multiply
@@ -213,7 +213,7 @@ LALDR_Multiply33Matrix(REAL8 product[3][3],
   return;
 }
 
-
+
 
 /*
  * Scalar multiply
@@ -232,7 +232,7 @@ LALDR_ScalarMult33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Add matrix
@@ -251,7 +251,7 @@ LALDR_Add33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Subtract matrices (M1 - M2)
@@ -270,7 +270,7 @@ LALDR_Subtract33Matrix(REAL8 result[3][3],
   return;
 }
 
-
+
 
 /*
  * Transpose matrix
@@ -296,7 +296,7 @@ LALDR_Transpose33Matrix(REAL8 transpose[3][3],
   return;
 }
 
-
+
 
 /*
  * The L2 norm of a matrix
@@ -317,7 +317,7 @@ LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
 }
 
 
-
+
 
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
@@ -337,7 +337,7 @@ LALDR_RMSNorm33Matrix(const REAL8 matrix[3][3])
     return rmsnorm;
 }
 
-
+
 
 /*
  * The "infinity" norm of a matrix: max over all elems
@@ -356,7 +356,7 @@ LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
     return infnorm;
 }
 
-
+
 
 /*
  * Print out matrix
@@ -434,7 +434,7 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
   return;
 }
 
-
+
 
 
 
@@ -481,7 +481,7 @@ LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
   return;
 }
 
-
+
 
 
 /*
@@ -1614,87 +1614,6 @@ void AM_Eq2Hor(Status                 *status,
         srcHorizon->longitude = 0.;
 
     RETURN (status);
-}
-
-/*
- * Converts src orientation angle from Equatorial reference frame to
- * orientation in Horizon (alt-azi) reference frame reltaive to IFO.
- * See notes p.56-57, and file Maple/am_coords_5.ms
- *
- * Inputs:
- *  date     -- pointer to date
- *  lst_sec  -- LST in seconds.
- *              If lst_sec < 0., use date to figure out LST,
- *              else, use lst_sec as sidereal time.
- */
-void AM_ConvertSrc(Status                *status,
-                   LALSource             *sourceHor,
-                   const LALSource       *source,
-                   const LALPlaceAndDate *p_detAndDate,
-                   REAL8                 lst_sec)
-{
-  double lat_r;
-  REAL8 tmp;
-  SkyPosition horCoords;
-  EarthPosition ifoPosition;
-
-  INITSTATUS (status, "ConvertSrcOrien", LALTESTDETRESPONSEC);
-
-  /*
-   * Compute horizon coordinates for source
-   */
-  if (lst_sec < 0.)
-    LALLMST1(status, &lst_sec, p_detAndDate, MST_SEC);
-
-  ifoPosition.geodetic.latitude =
-    deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLatitudeDegrees);
-  ifoPosition.geodetic.longitude =
-    deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLongititudeDegrees);
-
-
-  AM_Eq2Hor(status, &horCoords, &(source->coords),
-            &(p_detAndDate->p_detector->frDetector.vertexLocation), lst_sec);
-
-  lat_r = deg_to_rad(ifo->frDetector.vertexLatitudeDegrees);
-
-  /*
-   * Convert angles to radians
-   */
-  alt_r = horCoords.latitude;
-  azi_r = horCoords.longitude;
-  dec_r = source->equatorialCoords.latitude;
-
-  /*
-   * Check for special angles
-   */
-  if (horCoords.latitude == (REAL8)LAL_PI_2 || dec_r == (REAL8)LAL_PI_2)
-    tmp = 0.;
-  else
-    {
-      /* From my notes using spherical trig, Xi = Omega - tmp
-       *             { (sin(lat) - sin(alt)*sin(dec)) }
-       * : tmp = acos{ ------------------------------ }
-       *             {         cos(alt)*cos(dec)      } */
-      tmp =
-        acos((sin((double)lat_r) - sin((double)alt_r) * sin((double)dec_r)) /
-             (cos((double)alt_r) * cos((double)dec_r)));
-    }
-
-  /* "azimuthal angle" of source is measured from the bisector of the
-   * arms */
-  sourceHor->equatorialCoords.longitude = horCoords.longitude - (REAL8)LAL_PI -
-    (REAL8)0.5 * (p_detAndDate->p_detector->frDetector.xArmAzimuthRadians +
-                  p_detAndDate->p_detector->frDetector.yArmAzimuthRadians);
-
-  if (sourceHor->equatorialCoords.longitude < 0.)
-    sourceHor->equatorialCoords.longitude += (REAL8)LAL_2_PI;
-
-  sourceHor->coords.alt = horCoords.alt;
-
-  /* this orientation is w.r.t. vertical circle */
-  sourceHor->orientation = source->orientation - tmp;
-
-  RETURN (status);
 }
 
 

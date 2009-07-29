@@ -67,8 +67,8 @@
  *
  * The metric relies on approximations that make it valid only for a binary
  * system with a total mass $<15M\odot$ where the larger body's minimum mass
- * is at least twice the smaller body's maximum mass.  Using 
- * that violate these conditions will result in an error message.   
+ * is at least twice the smaller body's maximum mass.  Using
+ * that violate these conditions will result in an error message.
  *
  * The issue of linked lists vs.\ arrays needs to be seriously addressed. As
  * our experience with this code shows, multidimensional tiling of
@@ -122,11 +122,11 @@ LALInspiralSpinBankMetric(
 
   INITSTATUS( status, "LALInspiralSpinBankMetric", INSPIRALSPINBANKWNDTEMPLATEBANKC );
   ATTATCHSTATUSPTR( status );
-  
-  
+
+
   inspiralTemplate.fLower  = 30;        /* These are arbitrarily chosen for now */
   inspiralTemplate.fCutoff = 2000;      /* They are necessary for LALInspiralGetMoments() */
-  
+
   LALGetInspiralMoments( status->statusPtr, &moments, input->PSD, &inspiralTemplate );
 
   /* Rescale the moments to F0 = Noise Curve Minimum */
@@ -143,7 +143,7 @@ LALInspiralSpinBankMetric(
   J12 = moments.j[12];
   J14 = moments.j[14];
   J17 = moments.j[17];
-                                                                                                                                                
+
   /* Set metric components as functions of moments. */
   metric->data[0] = (REAL4) (1.5)*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
   metric->data[1] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
@@ -154,7 +154,7 @@ LALInspiralSpinBankMetric(
   metric->data[6] = (REAL4) 0.0;
   metric->data[7] = (REAL4) 0.0;
   metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
-  
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALInspiralSpinBankMetric */
@@ -171,7 +171,7 @@ LALInspiralSpinBankwNDTemplateBank(
     )
 /* </lalVerbatim> */
 {
-  
+
   /* Initialize variables */
   REAL4Array *metric = 		  NULL; /* parameter-space metric */
   UINT4Vector *metricDimensions = NULL;	/* contains the dimension of metric */
@@ -181,24 +181,24 @@ LALInspiralSpinBankwNDTemplateBank(
   NDTemplateBankFunctionPtrs NDFunctionPtrs;
   INT4 cnt = 0;
   REAL4 f0, m1Max, m1Min, m2Max, m2Min;
- 
+
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBankwNDTemplateBank", INSPIRALSPINBANKWNDTEMPLATEBANKC );
   ATTATCHSTATUSPTR( status );
-  
+
   /* Check to make sure that all the parameters are okay */
   if (coarseIn.mmCoarse <= 0){
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
     }
 
-  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || 
+  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) ||
       (coarseIn.mMin >= coarseIn.MMax) || (3.0*coarseIn.MMax >= 15.0)){
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
     }
 
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
   /*
-    if (coarseIn.betaMax < 0) 
+    if (coarseIn.betaMax < 0)
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   */
 
@@ -207,7 +207,7 @@ LALInspiralSpinBankwNDTemplateBank(
   /* BEN: do it by hand, since it's so simple? */
 
   /* allocate memory for the metric */
-  LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 ); 
+  LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
   metricDimensions->data[0] = 3;
   metricDimensions->data[1] = 3;
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
@@ -219,7 +219,7 @@ LALInspiralSpinBankwNDTemplateBank(
   m1Min = NDinput.minParameters[0] = 2.0*m2Max;
   m1Max = NDinput.maxParameters[0] = 15.0*LAL_MTSUN_SI - m2Max;
   f0 = NDinput.f0 = 153.0; /*FIX THIS FIX THIS FIX THIS FIX THIS FIX THIS */
-  
+
   /* Set NDinput parameters */
   NDinput.mm = coarseIn.mmCoarse;
   NDinput.type = PrecessingType;
@@ -237,10 +237,10 @@ LALInspiralSpinBankwNDTemplateBank(
   /* Set the function pointers for NDTemplate */
   NDFunctionPtrs.metric = LALInspiralSpinBankMetric;
   NDFunctionPtrs.test = LALInspiralSpinBankBoundary;
-  
+
   printf("\ncalling LALNDTemplateBank()...\n");
   LALNDTemplateBank(status->statusPtr, &NDinput, &NDFunctionPtrs, &NDFirst);
-  
+
   printf("\nconverting output...\n");
   NDoutput = NDFirst;
   while(NDoutput->next){
@@ -253,7 +253,7 @@ LALInspiralSpinBankwNDTemplateBank(
   *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList));
   NDoutput = NDFirst;
   cnt = 0;
-  
+
   for (cnt = 0; cnt < *ntiles; cnt++)
   {
     (*tiles)[cnt].params.mass1 = NDoutput->parameterVals[0];
@@ -265,7 +265,7 @@ LALInspiralSpinBankwNDTemplateBank(
     (*tiles)[cnt].params.chirpMass = tmplt->chirpMass;*/
     NDoutput = NDoutput->next;
   } /* for(tmplt...) */
-                                                                                                                                                
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -289,7 +289,7 @@ LALInspiralSpinBankBoundary(
   m2Max = input->maxParameters[1];
   betaMax = input->maxParameters[2];
   *testFlag =  1;
- 
+
   mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
   eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
   if (eta > 0.25 || eta < 0)
@@ -302,7 +302,7 @@ LALInspiralSpinBankBoundary(
   if (z > betaMax)
     *testFlag = 0;
   }
-  
+
 
 
 

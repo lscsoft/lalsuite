@@ -110,10 +110,10 @@ SnglRingdownTable * ring_filter(
 
     /* make template and fft it */
     XLALComputeRingTemplate( &signal, thisTmplt );
-    LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
+    snprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
 /* write_REAL4TimeSeries( &signal ); */
     XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
-    LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
+    snprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
 /* write_COMPLEX8FrequencySeries( &stilde ); */
 
     /* compute sigma for this template */
@@ -192,7 +192,7 @@ static int filter_segment_template(
   char *s;
 
   /* name of rtilde */
-  LALSnprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
+  snprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
       segment->name, stilde->name );
   /* name of result is the same but without the _FFT */
   strncpy( result->name, rtilde->name, sizeof( result->name ) - 1 );

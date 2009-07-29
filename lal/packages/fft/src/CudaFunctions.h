@@ -14,28 +14,28 @@ void XLALCudaFree(void *);
 
 #ifdef __cplusplus
 extern "C" int cudafft_execute_r2c(cufftHandle plan,
-    cufftComplex *output, const cufftReal *input, 
+    cufftComplex *output, const cufftReal *input,
     cufftComplex *d_output, cufftReal *d_input, UINT4 size);
 
-extern "C" int cudafft_execute_c2r(cufftHandle plan, 
-    cufftReal *output, const cufftComplex *input, 
+extern "C" int cudafft_execute_c2r(cufftHandle plan,
+    cufftReal *output, const cufftComplex *input,
     cufftReal *d_output, cufftComplex *d_input, UINT4 size);
 
 extern "C" int cudafft_execute_c2c(cufftHandle plan,
-  cufftComplex *output, const cufftComplex *input, 
-  cufftComplex *d_output, cufftComplex *d_input, 
+  cufftComplex *output, const cufftComplex *input,
+  cufftComplex *d_output, cufftComplex *d_input,
   INT4 direction, UINT4 size);
 #else
 int cudafft_execute_r2c(cufftHandle plan,
-    cufftComplex *output, const cufftReal *input, 
+    cufftComplex *output, const cufftReal *input,
     cufftComplex *d_output, cufftReal *d_input, UINT4 size);
 
-int cudafft_execute_c2r(cufftHandle plan, 
-    cufftReal *output, const cufftComplex *input, 
+int cudafft_execute_c2r(cufftHandle plan,
+    cufftReal *output, const cufftComplex *input,
     cufftReal *d_output, cufftComplex *d_input, UINT4 size);
 
 int cudafft_execute_c2c(cufftHandle plan,
-  cufftComplex *output, const cufftComplex *input, 
-  cufftComplex *d_output, cufftComplex *d_input, 
+  cufftComplex *output, const cufftComplex *input,
+  cufftComplex *d_output, cufftComplex *d_input,
   INT4 direction, UINT4 size);
 #endif

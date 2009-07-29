@@ -19,9 +19,11 @@
  * Copyright (C) 2009 Adam Mercer
  */
 
-#include "LALVCSInfo.h"
+#include "config.h"
+#include <LALVCSInfo.h>
 
 /* global variables for vcs information */
+const char *lalVCSVersion = LAL_VERSION;
 const char *lalVCSId = LAL_VCS_ID;
 const char *lalVCSDate = LAL_VCS_DATE;
 const char *lalVCSBranch = LAL_VCS_BRANCH;
@@ -31,7 +33,7 @@ const char *lalVCSCommitter = LAL_VCS_COMMITTER;
 const char *lalVCSStatus = LAL_VCS_STATUS;
 
 /* library vcs information structure */
-struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VCS_ID, \
+struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
   LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
   LAL_VCS_COMMITTER, LAL_VCS_STATUS};
 

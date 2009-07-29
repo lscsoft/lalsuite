@@ -1,8 +1,8 @@
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpACTDTemplateCV">
 Author: Brown, D. A., Creighton, J. D. E. and Mckechan, D. J. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpACTDTemplate.c}}
@@ -17,7 +17,7 @@ form that can be used by the \texttt{FindChirpACTDFilter()} function.
 \idx{LALFindChirpACTDTemplate()}
 \idx{LALFindChirpACTDNormalize()}
 
-The function \texttt{LALFindChirpACTDTemplate()} creates a time 
+The function \texttt{LALFindChirpACTDTemplate()} creates a time
 domain template using LALGeneratePPNAmpCorInspiral().
 
 \subsubsection*{Algorithm}
@@ -35,7 +35,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpACTDTemplateCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <math.h>
@@ -84,35 +84,35 @@ LALFindChirpACTDTemplate(
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, 
+  ASSERT( fcTmplt, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
   ASSERT( fcTmplt->ACTDtilde, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( fcTmplt->ACTDtilde->length == NACTDVECS, status, 
+  ASSERT( fcTmplt->ACTDtilde->length == NACTDVECS, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( fcTmplt->ACTDtilde->data, status, 
+  ASSERT( fcTmplt->ACTDtilde->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->ACTDVecs, status, 
+  ASSERT( params->ACTDVecs, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->ACTDVecs->length == NACTDVECS, status, 
+  ASSERT( params->ACTDVecs->length == NACTDVECS, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->ACTDVecs->data, status, 
+  ASSERT( params->ACTDVecs->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
 
   /* check we have an fft plan for the template */
-  ASSERT( params->fwdPlan, status, 
+  ASSERT( params->fwdPlan, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check that the timestep is positive */
-  ASSERT( params->deltaT > 0, status, 
+  ASSERT( params->deltaT > 0, status,
       FINDCHIRPTDH_EDELT, FINDCHIRPTDH_MSGEDELT );
 
   /* check that the input exists */
@@ -128,7 +128,7 @@ LALFindChirpACTDTemplate(
   if( params->approximant != AmpCorPPN )
   {
     ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
-  }  
+  }
 
   /* store deltaT and zero out the time domain waveform vector */
   deltaT = params->deltaT;
@@ -170,24 +170,24 @@ LALFindChirpACTDTemplate(
 
 
   /* ACTD specific */
-  ppnParams.inc = LAL_PI_4; 
+  ppnParams.inc = LAL_PI_4;
   ppnParams.ampOrder = ( INT4 )( tmplt->ampOrder );
 
-  /* XXX Uncomment below for extra testing XXX 
-  fprintf( stderr, " ppnParams.deltaT   = %e\n", ppnParams.deltaT ); 
-  fprintf( stderr, " ppnParams.mTot     = %e\n", ppnParams.mTot ); 
-  fprintf( stderr, " ppnParams.eta      = %e\n", ppnParams.eta ); 
-  fprintf( stderr, " ppnParams.d        = %e\n", ppnParams.d ); 
-  fprintf( stderr, " ppnParams.fStartIn = %e\n", ppnParams.fStartIn ); 
-  fprintf( stderr, " ppnParams.fStopIn  = %e\n", ppnParams.fStopIn ); 
-  fprintf( stderr, " ppnParams.inc      = %e\n", ppnParams.inc ); 
-  fprintf( stderr, " ppnParams.amporder = %d\n", ppnParams.ampOrder ); 
+  /* XXX Uncomment below for extra testing XXX
+  fprintf( stderr, " ppnParams.deltaT   = %e\n", ppnParams.deltaT );
+  fprintf( stderr, " ppnParams.mTot     = %e\n", ppnParams.mTot );
+  fprintf( stderr, " ppnParams.eta      = %e\n", ppnParams.eta );
+  fprintf( stderr, " ppnParams.d        = %e\n", ppnParams.d );
+  fprintf( stderr, " ppnParams.fStartIn = %e\n", ppnParams.fStartIn );
+  fprintf( stderr, " ppnParams.fStopIn  = %e\n", ppnParams.fStopIn );
+  fprintf( stderr, " ppnParams.inc      = %e\n", ppnParams.inc );
+  fprintf( stderr, " ppnParams.amporder = %d\n", ppnParams.ampOrder );
   for( i = 0; i < tmplt->order + 1; ++i )
   {
-    fprintf( stderr, " ppnParams.ppn->data[%d] = %e\n", i, 
+    fprintf( stderr, " ppnParams.ppn->data[%d] = %e\n", i,
                                     ppnParams.ppn->data[i] );
   }
-     XXX Uncomment above for extra testing XXX */ 
+     XXX Uncomment above for extra testing XXX */
 
 
   /* generate waveform amplitude and phase */
@@ -207,8 +207,8 @@ LALFindChirpACTDTemplate(
   }
 
   memset( params->ACTDVecs->data, 0, NACTDVECS * numPoints * sizeof( REAL4 ) );
-  memset( fcTmplt->ACTDtilde->data, 0, 
-                        NACTDVECS * (numPoints / 2 + 1) * sizeof( COMPLEX8 ) ); 
+  memset( fcTmplt->ACTDtilde->data, 0,
+                        NACTDVECS * (numPoints / 2 + 1) * sizeof( COMPLEX8 ) );
 
   for( i=0; i < NACTDVECS; ++i )
   {
@@ -238,8 +238,8 @@ LALFindChirpACTDTemplate(
   CHECKSTATUSPTR( status );
 
   LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
-   
-   
+
+
   CHECKSTATUSPTR( status );
 
   LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
@@ -252,30 +252,30 @@ LALFindChirpACTDTemplate(
   LALFree( waveform.a );
   LALFree( waveform.f );
   LALFree( waveform.phi );
-    
+
   /* waveform parameters needed for findchirp filter */
   tmplt->approximant = params->approximant;
   tmplt->tC = ppnParams.tc;
   tmplt->fFinal = ppnParams.fStop;
-    
+
   fcTmplt->tmpltNorm = params->dynRange / ( cannonDist * 1.0e6 * LAL_PC_SI );
   fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
 
-  /* 
+  /*
    *
    * Loop over each template and apply tapering/band passing etc
    *
    */
-    
+
   /* Create a temporary vector to avoid mishaps */
   if( ( tmpACTDVec = XLALCreateREAL4Vector( numPoints ) ) == NULL )
   {
     ABORTXLAL( status );
   }
-  
+
   for( i = 0; i < NACTDVECS; i++ )
   {
-    memcpy( tmpACTDVec->data, ACTDVecs[i].data,  
+    memcpy( tmpACTDVec->data, ACTDVecs[i].data,
                numPoints * sizeof( *( ACTDVecs[i].data ) ) );
 
     /* Taper the waveform if required */
@@ -310,7 +310,7 @@ LALFindChirpACTDTemplate(
       /* We want to shift the template to the middle of the vector so */
       /* that band-passing will work properly */
       shift = ( numPoints - j ) / 2;
-      memmove( tmpACTDVec->data + shift, tmpACTDVec->data, 
+      memmove( tmpACTDVec->data + shift, tmpACTDVec->data,
                                        j * sizeof( *( tmpACTDVec->data ) ) );
 
       memset( tmpACTDVec->data, 0, shift * sizeof( *( tmpACTDVec->data ) ) );
@@ -335,7 +335,7 @@ LALFindChirpACTDTemplate(
         bpVector.length = numPoints;
         bpVector.data   = tmpACTDVec->data;
       }
-      
+
      /* Adjust frequencies according to the harmonic */
       bpfLow = 0.98 * tmplt->fLower ;
       bpfFinal = 1.02 * tmplt->fFinal * ( ( REAL4 )( i ) + 1. ) / 2.;
@@ -356,10 +356,10 @@ LALFindChirpACTDTemplate(
 
       /* Now we need to do the shift to the end. */
       memcpy( tmpACTDVec->data, tmpACTDVec->data + ( numPoints + j ) / 2,
-         ( numPoints - ( numPoints + j ) / 2 )  
+         ( numPoints - ( numPoints + j ) / 2 )
                * sizeof( *(tmpACTDVec->data) ) );
       memcpy( tmpACTDVec->data + numPoints - ( numPoints + j ) / 2,
-         tmpACTDVec->data, ( numPoints + j ) /2 
+         tmpACTDVec->data, ( numPoints + j ) /2
                * sizeof( *( tmpACTDVec->data ) ) );
 
     }
@@ -367,13 +367,13 @@ LALFindChirpACTDTemplate(
     {
       /* No need for so much shifting around if not band passing */
       /* shift chirp to end of vector so it is the correct place for filter */
-        memmove( tmpACTDVec->data + numPoints - j, tmpACTDVec->data, 
+        memmove( tmpACTDVec->data + numPoints - j, tmpACTDVec->data,
                                         j * sizeof( *( tmpACTDVec->data ) ) );
-        memset( tmpACTDVec->data, 0, 
+        memset( tmpACTDVec->data, 0,
                         ( numPoints - j ) * sizeof( *( tmpACTDVec->data ) ) );
     }
 
-    memcpy( ACTDVecs[i].data, tmpACTDVec->data, 
+    memcpy( ACTDVecs[i].data, tmpACTDVec->data,
                            numPoints * sizeof( *( tmpACTDVec->data ) ) );
 
   }
@@ -391,7 +391,7 @@ LALFindChirpACTDTemplate(
   /* fft harmonics */
   for( i = 0; i < NACTDVECS; ++i)
   {
-    if ( XLALREAL4ForwardFFT( &ACTDtilde[i], &ACTDVecs[i], 
+    if ( XLALREAL4ForwardFFT( &ACTDtilde[i], &ACTDVecs[i],
          params->fwdPlan ) == XLAL_FAILURE )
     {
       ABORTXLAL( status );
@@ -404,7 +404,7 @@ LALFindChirpACTDTemplate(
   /* print the template normalization constant */
   if ( lalDebugLevel & LALINFO )
   {
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
     LALInfo( status, infomsg );
   }
@@ -429,10 +429,10 @@ LALFindChirpACTDNormalize(
   UINT4          i, k;
   UINT4          numPoints;
   UINT4          numTDPoints;
-  REAL8          deltaT; 
+  REAL8          deltaT;
   COMPLEX8Vector ACTDtilde[NACTDVECS];
   COMPLEX8      *wtilde;
- 
+
   /* Inner Products */
   /* Dominant 2nd Harmonic */
   REAL4   H2H2;
@@ -475,7 +475,7 @@ LALFindChirpACTDNormalize(
 
   numPoints   = fcTmplt->ACTDtilde->vectorLength;
   numTDPoints = 2 * ( numPoints - 1 );
- 
+
   deltaT = tmpltParams->deltaT;
 
   for( i = 0; i < NACTDVECS; ++i )
@@ -486,23 +486,23 @@ LALFindChirpACTDNormalize(
 
 
 
-   
-  /* 
-   * Start with dominant harmonic. 
-   * Calculate H2 
+
+  /*
+   * Start with dominant harmonic.
+   * Calculate H2
    */
-  H2H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[1], &ACTDtilde[1], 
+  H2H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[1], &ACTDtilde[1],
                              wtilde, tmpltParams->fLow, deltaT, numTDPoints );
   norm = pow( H2H2, -0.5 );
   for( k = 1; k < numPoints; ++k )
   {
-    ACTDtilde[1].data[k].re *= norm; 
-    ACTDtilde[1].data[k].im *= norm; 
+    ACTDtilde[1].data[k].re *= norm;
+    ACTDtilde[1].data[k].im *= norm;
   }
 
 
-  /* 
-   * Calculate H1 
+  /*
+   * Calculate H1
    */
   h1H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[1], &ACTDtilde[0],
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
@@ -517,8 +517,8 @@ LALFindChirpACTDNormalize(
   norm = pow( H1H1, -0.5 );
   for( k = 1; k < numPoints; ++k )
   {
-    ACTDtilde[0].data[k].re *=  norm;                  
-    ACTDtilde[0].data[k].im *=  norm;                  
+    ACTDtilde[0].data[k].re *=  norm;
+    ACTDtilde[0].data[k].im *=  norm;
   }
 
   /*
@@ -530,18 +530,18 @@ LALFindChirpACTDNormalize(
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
   for( k = 1; k < numPoints; ++k )
   {
-    ACTDtilde[2].data[k].re -=  h3H1 * ACTDtilde[0].data[k].re; 
-    ACTDtilde[2].data[k].re -=  h3H2 * ACTDtilde[1].data[k].re; 
+    ACTDtilde[2].data[k].re -=  h3H1 * ACTDtilde[0].data[k].re;
+    ACTDtilde[2].data[k].re -=  h3H2 * ACTDtilde[1].data[k].re;
     ACTDtilde[2].data[k].im -=  h3H1 * ACTDtilde[0].data[k].im;
-    ACTDtilde[2].data[k].im -=  h3H2 * ACTDtilde[1].data[k].im; 
+    ACTDtilde[2].data[k].im -=  h3H2 * ACTDtilde[1].data[k].im;
   }
   H3H3 = XLALFindChirpACTDInnerProduct( &ACTDtilde[2], &ACTDtilde[2],
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
   norm = pow( H3H3, -0.5 );
   for( k = 1; k < numPoints; ++k )
   {
-    ACTDtilde[2].data[k].re *=  norm;                  
-    ACTDtilde[2].data[k].im *=  norm;                  
+    ACTDtilde[2].data[k].re *=  norm;
+    ACTDtilde[2].data[k].im *=  norm;
   }
 
  /* XXX UNCOMMENT BELOW TO TEST ORTHONORMALISATION XXX */
@@ -553,9 +553,9 @@ LALFindChirpACTDNormalize(
   H3H3 = XLALFindChirpACTDInnerProduct( &ACTDtilde[2], &ACTDtilde[2],
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
 
-  fprintf( stderr, "\n\n  H1H1 = %.4f  H2H2 = %.4f  H3H3 = %.4f\n", 
+  fprintf( stderr, "\n\n  H1H1 = %.4f  H2H2 = %.4f  H3H3 = %.4f\n",
                                           H1H1, H2H2, H3H3 );
-  
+
   h1H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[1], &ACTDtilde[0],
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
   h3H1 = XLALFindChirpACTDInnerProduct( &ACTDtilde[2], &ACTDtilde[0],
@@ -563,7 +563,7 @@ LALFindChirpACTDNormalize(
   h3H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[2], &ACTDtilde[1],
                               wtilde, tmpltParams->fLow, deltaT, numTDPoints );
 
-  fprintf( stderr, "  h1H2 = %.4f  h3H1 = %.4f  h3H2 = %.4f\n", 
+  fprintf( stderr, "  h1H2 = %.4f  h3H1 = %.4f  h3H2 = %.4f\n",
                                           h1H2, h3H1, h3H2 );
   fprintf( stderr, "                                        " );
   */

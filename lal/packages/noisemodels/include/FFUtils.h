@@ -54,18 +54,18 @@ NRCSID (FFUTILSH,"$Id$");
 
 /*  !!!!!  Structures to define   !!!!  */
 
- 
+
 
 RandomSignalIn
 
 
 
 
-/*    !!!!      functions to define    !!!!  */ 
+/*    !!!!      functions to define    !!!!  */
 
-/* this function should compute the max length of template in the bank 
+/* this function should compute the max length of template in the bank
   and padd this size to the nearest power of 2 */
-GetMaximumTemplateSize(&status, &bankIn , &checkLength); 
+GetMaximumTemplateSize(&status, &bankIn , &checkLength);
 
 /* should compute the expected sensitivity (psd) using f-ns in the noise models */
 GetNoisePSD(&status, bankIn.shf, ifo, df);

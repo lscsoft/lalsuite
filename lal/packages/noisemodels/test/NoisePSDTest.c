@@ -61,7 +61,7 @@ NRCSID (NOISEPSDTESTC,"$Id$");
 
 INT4 lalDebugLevel=1;
 /*  <lalVerbatim file="NoisePSDTestCP"> */
-int main ( void ) 
+int main ( void )
 {  /*  </lalVerbatim>  */
 
    static LALStatus status;
@@ -75,7 +75,7 @@ int main ( void )
    fprintf(stderr, "NoisePSDTest.out in a format suitable for \n");
    fprintf(stderr, "display with xmgr/xgrace\n");
 
-   if ( (NoisePsdFile = fopen("NoisePSDTest.out", "w")) == NULL) 
+   if ( (NoisePsdFile = fopen("NoisePSDTest.out", "w")) == NULL)
    {
       fprintf(stderr, "Can't open output file\n");
       exit(0);
@@ -86,28 +86,28 @@ int main ( void )
    LALDCreateVector(&status, &psd, length);
    fprintf(stderr, "Length of vector=%d\n", psd->length);
 
-   LALNoiseSpectralDensity(&status, psd, &LALGEOPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALGEOPsd, df);
 
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, psd, &LALLIGOIPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALLIGOIPsd, df);
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, psd, &LALVIRGOPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALVIRGOPsd, df);
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, psd, &LALTAMAPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALTAMAPsd, df);
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, psd, &LALAdvLIGOPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALAdvLIGOPsd, df);
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }

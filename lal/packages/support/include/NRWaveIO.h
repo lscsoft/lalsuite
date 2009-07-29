@@ -12,26 +12,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \defgroup NRWaveIO
  * \ingroup support
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
- * 
+ *
  * \brief Module for reading/writing Numrel waveforms
  *
 
  *
  */
- 
+
 /** \file NRWaveIO.h
- *  \ingroup NRWaveIO   
+ *  \ingroup NRWaveIO
  * \date $Date$
  *
- * 
+ *
  */
 
 #ifndef _NRWAVEIO_H  	/* Double-include protection. */
@@ -81,12 +81,12 @@ NRCSID (NRWAVEIOH, "$Id$");
 
 
 
-/** Struct containing metadata information about a 
+/** Struct containing metadata information about a
     single numerical relativity waveform.  This information
-    will be read from a metadata file. It is expected that 
+    will be read from a metadata file. It is expected that
     more elements will be added to this struct as required.
-*/ 
-typedef struct 
+*/
+typedef struct
 {
   REAL8 massRatio; /**< Mass ratio m1/m2 where we assume m1 >= m2*/
   REAL8 spin1[3];  /**< Spin of m1 */
@@ -94,7 +94,7 @@ typedef struct
   INT4  mode[2];   /**< l and m values */
   CHAR  filename[LALNameLength]; /**< filename where data is stored */
   /*   NumRelGroup group; */
-} 
+}
 NRWaveMetaData;
 
 
@@ -123,7 +123,7 @@ void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, cons
 
 void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *dir, const CHAR *cfgstr);
 
-void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain, 
+void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain,
 		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, const SimInspiralTable *thisInj);
 
 void LALDriveNRInject( LALStatus *status, REAL4TimeSeries *injData, SimInspiralTable *injections, NumRelInjectParams *params );

@@ -41,8 +41,8 @@ be kept in the template list.
 \end{itemize}
 
 \subsubsection*{Description}
-Given the parameter values $\tau_{0}$ and $\tau_{2(3)}$ this code 
-checks to see if they correspond to physical values of the masses of 
+Given the parameter values $\tau_{0}$ and $\tau_{2(3)}$ this code
+checks to see if they correspond to physical values of the masses of
 a binary and their symmetric mass ratio $\eta.$ The parameter values
 will be accepted as valid parameters {\em even though} they
 may not lie within the search space but their span does, as described below.
@@ -80,19 +80,19 @@ NRCSID (LALINSPIRALVALIDTEMPLATEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralValidTemplateCP">  */
 
-void 
+void
 LALInspiralValidTemplate(
   LALStatus            *status,
   INT4                 *valid,
-  InspiralBankParams   bankParams, 
+  InspiralBankParams   bankParams,
   InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
 
   INITSTATUS( status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC );
   ATTATCHSTATUSPTR( status );
-  
-  ASSERT( coarseIn.fLower > 0, status, 
+
+  ASSERT( coarseIn.fLower > 0, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
   *valid = 0;
@@ -102,26 +102,26 @@ LALInspiralValidTemplate(
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
-  
+
   /* We have a valid template either if the template itself, or one     */
   /* of the vertices of the 'ambiguity rectangle', is in the region of  */
   /* interest                                                           */
 
-  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn ); 
+  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn );
   CHECKSTATUSPTR( status );
 
-  if ( *valid == 1 ) 
+  if ( *valid == 1 )
   {
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
 
   bankParams.x1 = bankParams.x1 - bankParams.dx1/2.;
-  
-  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn ); 
+
+  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn );
   CHECKSTATUSPTR( status );
-  
-  if ( *valid == 1 ) 
+
+  if ( *valid == 1 )
   {
     DETATCHSTATUSPTR( status );
     RETURN( status );
@@ -129,25 +129,25 @@ LALInspiralValidTemplate(
 
 #if 0
   bankParams.x0 = bankParams.x0 - 2.*bankParams.dx0;
-  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
+  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn);
   CHECKSTATUSPTR(status);
-  if (*valid == 1) 
+  if (*valid == 1)
   {
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
   bankParams.x1 = bankParams.x1 + bankParams.dx1;
-  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
+  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn);
   CHECKSTATUSPTR(status);
-  if (*valid == 1) 
+  if (*valid == 1)
   {
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
   bankParams.x1 = bankParams.x1 - 2.*bankParams.dx1;
-  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
+  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn);
   CHECKSTATUSPTR(status);
-  if (*valid == 1) 
+  if (*valid == 1)
   {
     DETATCHSTATUSPTR(status);
     RETURN(status);

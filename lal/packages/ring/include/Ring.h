@@ -23,7 +23,7 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \section{Header \texttt{Ring.h}}
  * \label{sec:Ring.h}
  *
@@ -33,7 +33,7 @@
  * \begin{verbatim}
  * #include <lal/Ring.h>
  * \end{verbatim}
- * 
+ *
  * Routines for generating waveforms for black hole ringdown.
  *
  * The ringdown waveform is an exponentially-damped sinusoid
@@ -100,7 +100,7 @@
  * entire range of~$Q$ has been covered; the collection of templates should now
  * cover the entire parameter region with no point in the region being farther
  * than~$ds^2_{\mathrm{\scriptstyle threshold}}$ from the nearest template.
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _RING_H
@@ -174,7 +174,7 @@ RingTemplateBankInput;
  *     (in Hz).
  * \item[\texttt{maxFrequency}] The minimum central frequency in the bank
  *     (in Hz).
- * \item[\texttt{maxMismatch}] The maximum mismatch allowed between templates 
+ * \item[\texttt{maxMismatch}] The maximum mismatch allowed between templates
  *     in the bank.
  * \item[\texttt{templatePhase}] The phase of the ringdown templates, in
  *     radians.  Zero is a cosine-phase template; $-\pi/2$ is a sine-phase
@@ -187,23 +187,25 @@ REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
 REAL4 XLALBlackHoleRingQuality( REAL4 a );
 REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a );
+REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta );
+REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 );
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude );
 REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb );
 REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt );
-  
-int XLALComputeRingTemplate( 
+
+int XLALComputeRingTemplate(
     REAL4TimeSeries *output, SnglRingdownTable *input );
-int XLALComputeBlackHoleRing( 
+int XLALComputeBlackHoleRing(
     REAL4TimeSeries *output, SnglRingdownTable *input, REAL4 dynRange );
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
 
 /**** <lalLaTeX>
- * 
+ *
  * \vfill{\footnotesize\input{RingHV}}
  * \newpage\input{RingC}
- * 
+ *
  **** </lalLaTeX> */
 
 #ifdef  __cplusplus

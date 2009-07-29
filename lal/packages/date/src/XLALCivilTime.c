@@ -202,7 +202,7 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
     XLAL_ERROR( func, XLAL_EFUNC );
   /* compute unix epoch time: seconds since 1970 JAN 1 0h UTC */
   /* POSIX:2001 definition of seconds since the (UNIX) Epoch */
-  unixsec = utc->tm_sec + utc->tm_min*60 + utc->tm_hour*3600 
+  unixsec = utc->tm_sec + utc->tm_min*60 + utc->tm_hour*3600
     + utc->tm_yday*86400 + (utc->tm_year-70)*31536000
     + ((utc->tm_year-69)/4)*86400 - ((utc->tm_year-1)/100)*86400
     + ((utc->tm_year+299)/400)*86400;
@@ -316,7 +316,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
     XLAL_ERROR_REAL8( func, XLAL_EDOM );
   }
 
-  year  = utc->tm_year + 1900; 
+  year  = utc->tm_year + 1900;
   month = utc->tm_mon + 1;     /* month is in range 1-12 */
   day   = utc->tm_mday;        /* day is in range 1-31 */
   sec   = utc->tm_sec + 60*(utc->tm_min + 60*(utc->tm_hour)); /* seconds since midnight */

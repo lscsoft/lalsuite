@@ -44,12 +44,12 @@ RCSID("$Id$");
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
@@ -399,11 +399,11 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -417,7 +417,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -699,11 +699,11 @@ int main( int argc, char *argv[] )
   /* fill the comment, if a user has specified it, or leave it blank */
   if ( ! *comment )
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   }
   else
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -780,12 +780,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
       calloc( 1, sizeof(ProcessParamsTable) ); 
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
         PROGRAM_NAME ); 
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--sort-triggers" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" ); 
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" ); 
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /*

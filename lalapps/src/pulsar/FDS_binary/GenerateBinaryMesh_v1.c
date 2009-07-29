@@ -29,10 +29,12 @@
 /*                         BIRMINGHAM UNIVERISTY -  2005                            */
 /************************************************************************************/
 
+#include <time.h>
 #include "GenerateBinaryMesh_v1.h"
 #include "ReadSourceFile_v1.h"
 /*#include "PeriapseShift_v1.h"*/
 #include "ComputeFStatisticBinary_v2.h"
+#include <lal/Date.h>
 
 LIGOTimeGPS tperi_0_new;
 LIGOTimeGPS tperi_MIN_new;
@@ -627,10 +629,12 @@ int SetupPspaceParams(GlobVar GV,RTparameterspace *RTspace,XYparameterspace *XYs
     if (PeriapseShift(GV.tperi_MAX,&(tperi_MAX_new),GV.tstartSSB,GV.period)) return 2;*/
 
   /* try to solve straddling problem where pspace straddles a periapse passage time */
-  LALDeltaFloatGPS(&status,&tperi_err,&(GV.tperi_MIN),&(GV.tperi_0));
-  LALAddFloatToGPS(&status,&tperi_MIN_new,&tperi_0_new,tperi_err);
-  LALDeltaFloatGPS(&status,&tperi_err,&(GV.tperi_MAX),&(GV.tperi_0));
-  LALAddFloatToGPS(&status,&tperi_MAX_new,&tperi_0_new,tperi_err);
+  tperi_err = XLALGPSDiff(&(GV.tperi_MIN),&(GV.tperi_0));
+  tperi_MIN_new = tperi_0_new;
+  XLALGPSAdd(&tperi_MIN_new, tperi_err);
+  tperi_err = XLALGPSDiff(&(GV.tperi_MAX),&(GV.tperi_0));
+  tperi_MAX_new = tperi_0_new;
+  XLALGPSAdd(&tperi_MAX_new, tperi_err);
 
   /*  printf("old tperi 0 %d %d\n",GV.tperi_0.gpsSeconds,GV.tperi_0.gpsNanoSeconds);
   printf("new tperi 0 %d %d\n",tperi_0_new.gpsSeconds,tperi_0_new.gpsNanoSeconds);
@@ -1236,11 +1240,10 @@ int CheckInput(GlobVar GV)
 
   /* this routine takes the CLA inputs and does some basic validity checks */
 
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  LALDate beginDate;
-  LALDate endDate;
-  LIGOTimeGPS beginGPS;
-  LIGOTimeGPS endGPS;
+  struct tm beginDate;
+  struct tm endDate;
+  INT4 beginGPS;
+  INT4 endGPS;
   INT4 i;
  
   /* check that each of the f_max values are positive */
@@ -1257,87 +1260,99 @@ int CheckInput(GlobVar GV)
   }
   
   /* set up some unix date variables */
-  beginDate.unixDate.tm_sec=0;
-  beginDate.unixDate.tm_min=0;
-  beginDate.unixDate.tm_hour=0;
-  beginDate.unixDate.tm_mday=0;
-  beginDate.unixDate.tm_mon=0;
-  endDate.unixDate.tm_sec=0;
-  endDate.unixDate.tm_min=0;
-  endDate.unixDate.tm_hour=0;
-  endDate.unixDate.tm_mday=0;
-  endDate.unixDate.tm_mon=0;
+  beginDate.tm_sec=0;
+  beginDate.tm_min=0;
+  beginDate.tm_hour=0;
+  beginDate.tm_mday=0;
+  beginDate.tm_mon=0;
+  beginDate.tm_isdst=0;
+  endDate.tm_sec=0;
+  endDate.tm_min=0;
+  endDate.tm_hour=0;
+  endDate.tm_mday=0;
+  endDate.tm_mon=0;
+  endDate.tm_isdst=0;
 
   /* set the start and end times for the given year */
   if (strcmp(GV.yr,"98")==0) {
-    beginDate.unixDate.tm_year=98;
-    endDate.unixDate.tm_year=99;
+    beginDate.tm_year=98;
+    endDate.tm_year=99;
   }
   if (strcmp(GV.yr,"99")==0) {
-    beginDate.unixDate.tm_year=99;
-    endDate.unixDate.tm_year=100;
+    beginDate.tm_year=99;
+    endDate.tm_year=100;
   }
   if (strcmp(GV.yr,"00")==0) {
-    beginDate.unixDate.tm_year=100;
-    endDate.unixDate.tm_year=101;
+    beginDate.tm_year=100;
+    endDate.tm_year=101;
   }
   if (strcmp(GV.yr,"01")==0) {
-    beginDate.unixDate.tm_year=101;
-    endDate.unixDate.tm_year=102;
+    beginDate.tm_year=101;
+    endDate.tm_year=102;
   }
   if (strcmp(GV.yr,"02")==0) {
-    beginDate.unixDate.tm_year=102;
-    endDate.unixDate.tm_year=103;
+    beginDate.tm_year=102;
+    endDate.tm_year=103;
   }
   if (strcmp(GV.yr,"03")==0) {
-    beginDate.unixDate.tm_year=103;
-    endDate.unixDate.tm_year=104;
+    beginDate.tm_year=103;
+    endDate.tm_year=104;
   }
   if (strcmp(GV.yr,"04")==0) {
-    beginDate.unixDate.tm_year=104;
-    endDate.unixDate.tm_year=105;
+    beginDate.tm_year=104;
+    endDate.tm_year=105;
   }
   if (strcmp(GV.yr,"05")==0) {
-    beginDate.unixDate.tm_year=105;
-    endDate.unixDate.tm_year=106;
+    beginDate.tm_year=105;
+    endDate.tm_year=106;
   }
   if (strcmp(GV.yr,"06")==0) {
-    beginDate.unixDate.tm_year=106;
-    endDate.unixDate.tm_year=107;
+    beginDate.tm_year=106;
+    endDate.tm_year=107;
   }
   if (strcmp(GV.yr,"07")==0) {
-    beginDate.unixDate.tm_year=107;
-    endDate.unixDate.tm_year=108;
+    beginDate.tm_year=107;
+    endDate.tm_year=108;
   }
   if (strcmp(GV.yr,"08")==0) {
-    beginDate.unixDate.tm_year=108;
-    endDate.unixDate.tm_year=109;
+    beginDate.tm_year=108;
+    endDate.tm_year=109;
   }
   if (strcmp(GV.yr,"09")==0) {
-    beginDate.unixDate.tm_year=109;
-    endDate.unixDate.tm_year=110;
+    beginDate.tm_year=109;
+    endDate.tm_year=110;
   }
   if (strcmp(GV.yr,"00-04")==0) {
-    beginDate.unixDate.tm_year=100;
-    endDate.unixDate.tm_year=105;
+    beginDate.tm_year=100;
+    endDate.tm_year=105;
   }
   if (strcmp(GV.yr,"03-06")==0) {
-    beginDate.unixDate.tm_year=100;
-    endDate.unixDate.tm_year=106;
+    beginDate.tm_year=100;
+    endDate.tm_year=106;
   }
   if (strcmp(GV.yr,"05-09")==0) {
-    beginDate.unixDate.tm_year=105;
-    endDate.unixDate.tm_year=110;
+    beginDate.tm_year=105;
+    endDate.tm_year=110;
   }
+
+  /* populate tm_wday, tm_yday.  NOTE:  this function does not understand
+   * leap seconds;  if tm_sec is set to 60 it will "normalize" it by
+   * settting it to 0 and bumping the minutes, which is not the same time
+   * if the previous minute had 61 seconds in it.  you can use these
+   * functions to populate the yday and wday fields, and then set the
+   * seconds, minutes, etc., *after* to avoid corrupting the time, but here
+   * we don't care because the times aren't leap seconds (see above). */
+  mktime(&beginDate);
+  mktime(&endDate);
  
   /* convert the beginning and end of the relevant year(s) to a GPS time */
-  LALUTCtoGPS(&status,&beginGPS,&beginDate,&(formatAndAcc.accuracy));
-  LALUTCtoGPS(&status,&endGPS,&endDate,&(formatAndAcc.accuracy));
+  beginGPS = XLALUTCToGPS(&beginDate);
+  endGPS = XLALUTCToGPS(&endDate);
  
   /* check that the start time lies within the ephemeris span */
-  if ((GV.tstart.gpsSeconds<beginGPS.gpsSeconds)||(GV.tstart.gpsSeconds+(INT4)GV.tspan>endGPS.gpsSeconds)) {
+  if ((GV.tstart.gpsSeconds<beginGPS)||(GV.tstart.gpsSeconds+(INT4)GV.tspan>endGPS)) {
     fprintf(stderr,"Start time (+ observation span) must lie within time of ephemeris file\n");
-    fprintf(stderr,"start time = %d beginGPS = %d endGPS = %d tobs = %f\n",GV.tstart.gpsSeconds,beginGPS.gpsSeconds,endGPS.gpsSeconds,GV.tspan);
+    fprintf(stderr,"start time = %d beginGPS = %d endGPS = %d tobs = %f\n",GV.tstart.gpsSeconds,beginGPS,endGPS,GV.tspan);
     exit(1);
   }
   /* check that the RA is sensible */
@@ -1376,7 +1391,7 @@ int CheckInput(GlobVar GV)
     exit(1);
   }
   /* check that the periapse passage time lies within the ephemeris span */ 
-  if ((GV.tperi_0.gpsSeconds<beginGPS.gpsSeconds)||(GV.tperi_0.gpsSeconds>endGPS.gpsSeconds)) {
+  if ((GV.tperi_0.gpsSeconds<beginGPS)||(GV.tperi_0.gpsSeconds>endGPS)) {
     fprintf(stderr,"Central value of periapse passage time must lie within time of ephemeris file\n");
     exit(1);
   }

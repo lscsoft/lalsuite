@@ -75,12 +75,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
         long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
@@ -354,14 +354,14 @@ int main( int argc, char *argv[] )
 
       if ( ! prevEvent )
       {
-        LALGPStoINT8( &stat, &ta, &(thisEvent->h_start_time) );
+        ta = XLALGPSToINT8NS( &(thisEvent->h_start_time) );
         prevEvent = thisEvent;
         thisEvent = thisEvent->next;
         ++numEventsKept;
       }
       else
       {
-        LALGPStoINT8( &stat, &tb, &(thisEvent->h_start_time) );
+        tb = XLALGPSToINT8NS( &(thisEvent->h_start_time) );
         if( ta!=tb)
         {
           prevEvent = thisEvent;

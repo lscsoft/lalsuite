@@ -371,7 +371,7 @@ int XLALREAL8AverageSpectrumWelch(
 }
 
 
-/* 
+/*
  *
  * Median Method: use median average rather than mean.
  *
@@ -509,7 +509,7 @@ int XLALREAL4AverageSpectrumMedian(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL4ModifiedPeriodogram( work + seg, tseries, window, plan );
-    
+
     /* restore the time series data vector to its original state */
     *tseries->data = savevec;
 
@@ -639,7 +639,7 @@ int XLALREAL8AverageSpectrumMedian(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
-    
+
     /* restore the time series data vector to its original state */
     *tseries->data = savevec;
 
@@ -697,7 +697,7 @@ int XLALREAL8AverageSpectrumMedian(
 }
 
 
-/* 
+/*
  *
  * Median-Mean Method
  *
@@ -822,7 +822,7 @@ int XLALREAL4AverageSpectrumMedianMean(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL4ModifiedPeriodogram( even + seg, tseries, window, plan );
-    
+
     /* now check for failure of the XLAL routine */
     if ( code == XLAL_FAILURE )
     {
@@ -993,7 +993,7 @@ int XLALREAL8AverageSpectrumMedianMean(
 
     /* compute the modified periodogram for the even segment */
     code = XLALREAL8ModifiedPeriodogram( even + seg, tseries, window, plan );
-    
+
     /* now check for failure of the XLAL routine */
     if ( code == XLAL_FAILURE )
     {

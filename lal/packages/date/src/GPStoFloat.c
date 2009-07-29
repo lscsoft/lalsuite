@@ -18,7 +18,7 @@
 */
 
 /* <lalVerbatim file="GPStoFloatCV">
-   
+
 Author: Berukoff, S.J.  <steveb@aei-potsdam.mpg.de>
 $Id$
 
@@ -29,29 +29,18 @@ $Id$
 \subsection{Module \texttt{GPStoFloat.c}}
 \label{ss:GPStoFloat.c}
 
-Converts between \texttt{LIGOTimeGPS} and \texttt{REAL8} formats, and also
-to/from \texttt{LALTimeInterval} and \texttt{REAL8} formats.
+Converts between \texttt{LALTimeInterval} and \texttt{REAL8} formats.
 
 
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{GPStoFloatCP}
-\idx{LALGPStoFloat()}
-\idx{LALFloatToGPS()}
 \idx{LALFloatToInterval()}
 \idx{LALIntervalToFloat()}
 
 \subsubsection*{Description}
 
-This modules contains two routines, one of which converts from 
-\texttt{LIGOTimeGPS} to \texttt{REAL8}, and the other, from 
-\texttt{REAL8} to \texttt{LIGOTimeGPS}.  Accuracy is on par with what one
-expects from a typical IEEE-compliant machine epsilon; thus, conversion 
-into the \texttt{REAL8} values incurs an error of approximately 1.e-7.
-
 \begin{itemize}
-  \item \texttt{LALGPStoFloat()} converts a \texttt{LIGOTimeGPS} to \texttt{REAK8}
-  \item \texttt{LALFloatToGPS()} converts a time in \texttt{REAL8} to a \texttt{LIGOTimeGPS}
   \item \texttt{LALFloatToInterval()} converts a time interval in \texttt{REAL8} to a \texttt{LALTimeInterval}
   \item \texttt{LALIntervalToFloat()} converts a time interval in \texttt{LALTimeInterval} to \texttt{REAL8}
 \end{itemize}
@@ -78,53 +67,6 @@ NRCSID(GPSTOFLOATC, "$Id$");
 static const INT4 oneBillion = 1000000000;
 
 /* <lalVerbatim file="GPStoFloatCP"> */
-void
-LALGPStoFloat( LALStatus         *stat,
-               REAL8             *p_flt_time, /* output - floating point GPS seconds */
-               const LIGOTimeGPS *p_gps_time) /* input - GPS seconds */
-{  /* </lalVerbatim> */
-  INITSTATUS(stat, "GPStoFloat", GPSTOFLOATC);
-  ATTATCHSTATUSPTR(stat);
-
-  ASSERT(p_gps_time != NULL, stat, DATEH_ENULLINPUT,
-         DATEH_MSGENULLINPUT);
-
-  ASSERT(p_flt_time != NULL, stat, DATEH_ENULLOUTPUT,
-         DATEH_MSGENULLOUTPUT);
-
-  XLALPrintDeprecationWarning("LALGPStoFloat", "XLALGPSGetREAL8");
-
-  *p_flt_time = XLALGPSGetREAL8(p_gps_time);
-
-  DETATCHSTATUSPTR(stat);  
-  RETURN(stat);
-}  /* END: GPStoFloat() */
-
-
-/* <lalVerbatim file="GPStoFloatCP"> */
-void
-LALFloatToGPS( LALStatus   *stat,
-               LIGOTimeGPS *p_gps_time,  /* output - GPS time */
-               const REAL8 *p_flt_time)  /* input - floating point GPS seconds */
-{  /* </lalVerbatim> */
-  INITSTATUS(stat, "LALFloatToGPS", GPSTOFLOATC);
-  ATTATCHSTATUSPTR(stat);
-  
-  ASSERT(p_flt_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-  ASSERT(p_gps_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  XLALPrintDeprecationWarning("LALFloatToGPS", "XLALGPSSetREAL8");
-
-  XLALGPSSetREAL8(p_gps_time, *p_flt_time);
-
-  DETATCHSTATUSPTR(stat);
-  RETURN(stat);
-}  /* END: FloatToGPS() */
-
-  
-
-
-/* <lalVerbatim file="GPStoFloatCP"> */
 void LALFloatToInterval(LALStatus *status,
                         LALTimeInterval *pInterval,  /* output: deltaT in LALTimeInterval format */
                         const REAL8 *pDeltaT) /* input: time interval in floating point */
@@ -139,14 +81,12 @@ void LALFloatToInterval(LALStatus *status,
   pInterval->nanoSeconds = (INT4)rint((*pDeltaT -
                                        (REAL8)(pInterval->seconds)) *
                                       (REAL8)oneBillion);
-  
-  
+
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* END: FloatToInterval() */
 
-
-
 
 /* <lalVerbatim file="GPStoFloatCP"> */
 void LALIntervalToFloat(LALStatus *status,
@@ -161,7 +101,7 @@ void LALIntervalToFloat(LALStatus *status,
 
   *pDeltaT = (REAL8)(pInterval->seconds) +
     ((REAL8)(pInterval->nanoSeconds) / (REAL8)oneBillion);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

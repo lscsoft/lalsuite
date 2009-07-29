@@ -136,8 +136,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   df_job = the condor job to find the data
   prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
-  exttrigInjections = specifies the number of external trigger injections 
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the job names
   inspinjNode = the inspinj node to be added as a parent to inspirals
   """
@@ -172,7 +172,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     data_opts = 'ligo-data'
     try: 
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','ligo-channel')
@@ -270,30 +270,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 exttrigUserTag = usertag + "_" + str(inj)
                 injectionFile = injectionFileTemplate % exttrigUserTag
 
-                # check if the inspinj job has already be made
-                inspinj=inspinj_job.check_node(inj)              
-                if not inspinj:
-
-                   # create an inspinj node for the master chunk (once!)
-                   inspinj = inspiral.InspInjNode(inspinj_job)
-                   if not opts.disable_dag_categories:
-                     inspinj.set_category('inspinj')
-                   if not opts.disable_dag_priorities:
-                     inspinj.set_priority(100)
-                   inspinj.set_start(chunk.start())
-                   inspinj.set_end(chunk.end())
-                   inspinj.set_ifo(ifo_name)
-                   inspinj.set_seed(inj)
-                   inspinj.add_var_opt('user-tag',exttrigUserTag)
-                   inspinj.set_output(injectionFile)
-                   if opts.datafind: inspinj.add_parent(df)                 
-                   if (opts.template_bank and not GeoBank):
-                     inspinj.add_parent(bank)
-
-                   # store the node to the DAG AND to the inspinj_job
-                   if opts.inspiral: dag.add_node(inspinj)              
-                   inspinj_job.set_done(inj, inspinj)
-
              # make an inspiral job for the master chunk
              insp = inspiral.InspiralNode(insp_job)
              if not opts.disable_dag_categories:
@@ -322,8 +298,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if opts.datafind: insp.add_parent(df)
              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
-             if inj>0:
-                insp.add_parent(inspinj)
              if opts.inspiral: dag.add_node(insp)
 
              # store this chunk in the list of filtered data
@@ -387,8 +361,8 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   dag = the DAG to attach the nodes to
   do_coinc = whether we should add the thinca jobs to the dag
   do_insp  = whether previous inspiral jobs are in the dag
-  exttrigInjections = specifies the number of external trigger injections 
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the output file name
   coire_job = coire node to join to the output of each thinca node
   do_coire  = whether we should add the coire jobs to the dag
@@ -472,8 +446,8 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   trig_job = the triggered bank job we should use 
   insp_veto_job = the condor job that we should use to analyze data
   dag = the DAG to attach the nodes to
-  exttrigInjections = specifies the number of external trigger injections  
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the job names
   """
 
@@ -1488,7 +1462,8 @@ else:
 # create the Condor jobs that will be used in the DAG
 
 # check number of exttrig injections
-try:
+doExtTrig = cp.has_option('pipeline', 'exttrig-inj-start') and cp.has_option('pipeline', 'exttrig-inj-stop')
+if doExtTrig:
   startExttrig=int(cp.get('pipeline','exttrig-inj-start'))
   stopExttrig=int(cp.get('pipeline','exttrig-inj-stop'))
   exttrigInjections=[startExttrig, stopExttrig]
@@ -1501,11 +1476,8 @@ try:
     print >> sys.stderr, "exttrig-inj-stop must be larger than "\
                          "exttrig-inj-start."
     sys.exit(1)
-
-  doExtTrig = True
-except:
+else:
   exttrigInjections=[0,0]
-  doExtTrig = False
 
 
 # datafind:
@@ -1750,14 +1722,14 @@ play_jobs.extend(trig_coh_jobs.values())
 if play_data_mask == 'playground_only':
   playground_only = 2
   
-  single_inca_job.add_opt('playground-only',' ')
+  single_inca_job.add_opt('playground-only','')
   for job in play_jobs:
     job.add_opt('data-type','playground_only')
 
 elif play_data_mask == 'exclude_playground':
   playground_only = 0
   
-  single_inca_job.add_opt('no-playground',' ')
+  single_inca_job.add_opt('no-playground','')
   for job in play_jobs:
     job.add_opt('data-type','exclude_play')
 
@@ -1765,7 +1737,7 @@ elif play_data_mask == 'exclude_playground':
 elif play_data_mask == 'all_data':
   playground_only = 0
 
-  single_inca_job.add_opt('all-data',' ')
+  single_inca_job.add_opt('all-data','')
   for job in play_jobs:
     job.add_opt('data-type','all_data')
 
@@ -1880,16 +1852,16 @@ if not gps_end_time:
 #   Step 2: determine analyzable times
 
 # Select on-source vs off-source (for triggered searches)
-try:
+if doExtTrig:
   exttrig_analyze = cp.get('input', 'exttrig-analyze')
-except:
+else:
   exttrig_analyze = None
 
 # Read segments for external trigger analysis
 exttrig_segments = pipeline.ScienceData()
-try:
+if doExtTrig:
   exttrig_segments.read(cp.get('input', 'exttrig-segments'), 0)
-except:
+else:
   assert (exttrig_analyze == 'all') or (exttrig_analyze is None), \
     "To use exttrig-analyze, exttrig-segments must point to a valid "\
     "segment file."

@@ -451,8 +451,8 @@ int main(int argc,char *argv[]) {
 
   /******** check that the output is OK ********************************/
   if ( genTayParams.dfdt > 2.0 ) {
-    /* LALSnprintf() can't seem to print floating-point formats.
-       LALSnprintf( message, MSGLEN,
+    /* snprintf() can't seem to print floating-point formats.
+       snprintf( message, MSGLEN,
        "Waveform sampling interval is too large:\n"
        "\tmaximum df*dt = %f", params.dfdt );
     */
@@ -625,7 +625,7 @@ int compute_SSBtimes(LALStatus* status) {
     LALBarycenterEarth(status, &earth, &timestamps[i], edat);
     LALBarycenter(status, &emit, &baryinput, &earth);
     floatTime= emit.deltaT + Ts + Tns*1.E-9;
-    LALFloatToGPS(status,&ssb, &floatTime);
+    XLALGPSSetREAL8(&ssb, floatTime);
     SSBtimestamps[i]=ssb;
     
   }

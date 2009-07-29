@@ -61,6 +61,9 @@ None.
 
 #include <lal/LALInspiral.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 struct RungeGSLParams {
   rk4In *input;
   void  *params;
@@ -227,6 +230,9 @@ static int derivativeGSLWrapper(
   struct RungeGSLParams *in = (struct RungeGSLParams *)params;
   REAL8Vector dyVect;
   REAL8Vector *yVect = in->input->yt;
+
+  /* t is unused in this function */
+  UNUSED(t);
 
   memcpy(yVect->data, y, in->input->n * sizeof(REAL8));
 

@@ -156,7 +156,7 @@ Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
 
 \subsubsection*{Uses}
 
-\noindent LALCalloc, LALFree, LALGPStoINT8, LALINT8NanoSecIsPlayground.
+\noindent LALCalloc, LALFree, LALINT8NanoSecIsPlayground.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -316,8 +316,8 @@ LALCompareSnglRingdownByTime (
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->start_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   if ( ta > tb )
   {
@@ -376,8 +376,8 @@ LALCompareRingdowns (
   ifoaNum = XLALIFONumber( aPtr->ifo );
   ifobNum = XLALIFONumber( bPtr->ifo );
 
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->start_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   /* compare on trigger time coincidence */
   aAcc = params->ifoAccuracy[ifoaNum];
@@ -523,11 +523,9 @@ LALClusterSnglRingdownTable (
     INT8 prevTime;
 
     /* compute the time in nanosec for each event trigger */
-    LALGPStoINT8(status->statusPtr, &currTime, &(thisEvent->start_time));
-    CHECKSTATUSPTR(status);
+    currTime = XLALGPSToINT8NS(&(thisEvent->start_time));
 
-    LALGPStoINT8(status->statusPtr, &prevTime, &(prevEvent->start_time));
-    CHECKSTATUSPTR(status);
+    prevTime = XLALGPSToINT8NS(&(prevEvent->start_time));
 
     /* find events within the cluster window */
     if ( (currTime - prevTime) < dtimeNS )
@@ -835,21 +833,20 @@ LALTimeSlideSingleRingdown(
 
   if ( startTime )
   {
-    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
+    startTimeNS = XLALGPSToINT8NS( startTime );
   }
 
   if ( endTime )
   {
-    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
+    endTimeNS = XLALGPSToINT8NS( endTime );
   }
 
   for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
   {
     /* calculate the slide time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &slideNS,
-        &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
+    slideNS = XLALGPSToINT8NS( &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
     /* and trig time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->start_time));
+    trigTimeNS = XLALGPSToINT8NS( &(thisEvent->start_time));
     trigTimeNS += slideNS;
 
     while ( startTimeNS && trigTimeNS < startTimeNS )
@@ -864,7 +861,7 @@ LALTimeSlideSingleRingdown(
     }
 
     /* convert back to LIGOTimeGPS */
-    LALINT8toGPS( status->statusPtr, &(thisEvent->start_time), &trigTimeNS );
+    XLALINT8NSToGPS( &(thisEvent->start_time), trigTimeNS );
   }
 
   DETATCHSTATUSPTR (status);

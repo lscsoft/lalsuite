@@ -26,7 +26,7 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralValidParams.c}}
-Module which checks whether or not a pair of parameter 
+Module which checks whether or not a pair of parameter
 values are consistent with the search space.
 
 \subsubsection*{Prototypes}
@@ -39,7 +39,7 @@ values are consistent with the search space.
    \item \texttt{coarseIn,} Input
 \end{itemize}
 
-Module which checks whether or not a pair of parameter 
+Module which checks whether or not a pair of parameter
 values $\tau_{0}$ and $\tau_{2(3)}$ correspond to
 a user specified range of component masses \texttt{(mMin,mMax)} OR to a
 minimum value of the component masses \texttt{mMin} and maximum total
@@ -47,7 +47,7 @@ mass \texttt{MMax.} In the first case chirptimes satisfying the
 constraint \texttt{mMin}~$\le m_1, m_2 \le$~\texttt{mMax} are accepted
 as valid systems. In the second cases chirptimes satisfying the
 constraint \texttt{mMin}~$\le m_1, m_2,$ and \texttt{MMax}$\le m=m_1+m_2$
-are treated as valid. 
+are treated as valid.
 
 \subsubsection*{Description}
 
@@ -106,7 +106,7 @@ then the other object must have mass
 \begin{equation}
 m_{2} = \frac{m - \sqrt{m^{2}(1-4 \eta)}}{2}
 \end{equation}
-This function is also given \texttt{mMin} and \texttt{MMax} as inputs, which it may 
+This function is also given \texttt{mMin} and \texttt{MMax} as inputs, which it may
 use to calculate the minimum value of $\eta$ which is possible with those inputs,
 \begin{equation}
 \eta_{min} = \mathtt{ \frac{mMin(MMax - mMin)}{MMax^{2}} }
@@ -147,7 +147,7 @@ NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
 void LALInspiralValidParams(
     LALStatus            *status,
     INT4                 *valid,
-    InspiralBankParams   bankParams, 
+    InspiralBankParams   bankParams,
     InspiralCoarseBankIn coarseIn
     )
 /* </lalVerbatim> */
@@ -157,8 +157,8 @@ void LALInspiralValidParams(
 
   INITSTATUS( status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC );
   ATTATCHSTATUSPTR( status );
-  
-  ASSERT( coarseIn.fLower > 0.L, status, 
+
+  ASSERT( coarseIn.fLower > 0.L, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
   *valid = 0;
@@ -179,7 +179,7 @@ void LALInspiralValidParams(
   /* First set the chirp times of Pars to be as in bankParams */
   Pars->t0 = bankParams.x0;
   Pars->fLower = coarseIn.fLower;
-  switch ( coarseIn.space ) 
+  switch ( coarseIn.space )
   {
     case Tau0Tau2:
       Pars->t2 = bankParams.x1;
@@ -199,30 +199,30 @@ void LALInspiralValidParams(
   CHECKSTATUSPTR( status );
 
   /* If the masses are in the correct range accept as valid parameters */
-  switch (coarseIn.massRange) 
+  switch (coarseIn.massRange)
   {
     case MinComponentMassMaxTotalMass:
       if (
           Pars->mass1 >= coarseIn.mMin &&
           Pars->mass2 >= coarseIn.mMin &&
           Pars->totalMass <= coarseIn.MMax &&
-          Pars->eta <= 0.25 && 
+          Pars->eta <= 0.25 &&
           Pars->eta >= coarseIn.etamin
-         ) 
+         )
       {
         *valid = 1;
       }
       break;
-    
+
     case MinMaxComponentMass:
       if (
           Pars->mass1 >= coarseIn.mMin &&
           Pars->mass2 >= coarseIn.mMin &&
           Pars->mass1 <= coarseIn.mMax &&
           Pars->mass2 <= coarseIn.mMax &&
-          Pars->eta <= 0.25 && 
+          Pars->eta <= 0.25 &&
           Pars->eta >= coarseIn.etamin
-         ) 
+         )
       {
         *valid = 1;
       }
@@ -241,7 +241,7 @@ void LALInspiralValidParams(
         *valid = 1;
       }
       break;
-      
+
     default:
       ABORT(status, 999, "Invalid choice for enum InspiralBankMassRange");
   }

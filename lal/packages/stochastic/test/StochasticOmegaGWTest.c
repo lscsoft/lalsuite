@@ -58,7 +58,7 @@ h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)
 \right)^\alpha
 \end{equation}
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
@@ -218,10 +218,10 @@ ParseOptions (int argc, char *argv[]);
 int main( int argc, char *argv[] )
 {
   static LALStatus                status;
-  
+
   StochasticOmegaGWParameters   parameters;
   REAL4FrequencySeries     omegaGW;
-  
+
   REAL4FrequencySeries     dummyOutput;
 
   REAL4                *tempPtr;
@@ -231,7 +231,7 @@ int main( int argc, char *argv[] )
   INT4 code;
 
   /* define valid parameters */
-  
+
   parameters.alpha    = STOCHASTICOMEGAGWTESTC_ALPHA;
   parameters.fRef     = STOCHASTICOMEGAGWTESTC_FREF;
   parameters.omegaRef = STOCHASTICOMEGAGWTESTC_OMEGAREF;
@@ -246,7 +246,7 @@ int main( int argc, char *argv[] )
   ParseOptions( argc, argv );
 
   LALSCreateVector(&status, &(omegaGW.data), STOCHASTICOMEGAGWTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICOMEGAGWTESTC_EFLS,
 			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
   {
@@ -259,7 +259,7 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to real frequency series for output */
     LALStochasticOmegaGW(&status, NULL, &parameters);
-    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			      STOCHASTICOMEGAGWTESTC_ECHK,
 			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -272,7 +272,7 @@ int main( int argc, char *argv[] )
 
     /* test behavior for null pointer to parameter structure */
     LALStochasticOmegaGW(&status, &omegaGW, NULL);
-    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			      STOCHASTICOMEGAGWTESTC_ECHK,
 			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -286,7 +286,7 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of real frequency
        series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			      STOCHASTICOMEGAGWTESTC_ECHK,
 			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -311,7 +311,7 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of
        real frequency series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			      STOCHASTICOMEGAGWTESTC_ECHK,
 			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -322,7 +322,7 @@ int main( int argc, char *argv[] )
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* clean up */
-    
+
     dummyOutput.data->data = tempPtr;
     LALSDestroyVector(&status, &(dummyOutput.data));
     if ( ( code = CheckStatus(&status, 0 , "",
@@ -389,15 +389,15 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: negative start frequency results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
-  
+
   /* reassign valid start frequency */
   parameters.f0 = STOCHASTICOMEGAGWTESTC_F0;
 
-  /* test behavior for length of data member of real frequency series 
+  /* test behavior for length of data member of real frequency series
      for output not equal to length specified in input parameters */
   parameters.length += 1;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN, 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
 			    STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
 			    STOCHASTICOMEGAGWTESTC_ECHK,
 			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -408,11 +408,11 @@ int main( int argc, char *argv[] )
 	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   /* reassign valid length to data member of dummy output */
   parameters.length -= 1;
-  
+
   /* test behavior for fRef < deltaf */
   parameters.fRef = 0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF, 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF,
                           STOCHASTICCROSSCORRELATIONH_MSGEOORFREF,
 			  STOCHASTICOMEGAGWTESTC_ECHK,
 			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -422,11 +422,11 @@ int main( int argc, char *argv[] )
   printf("  PASS: zero reference frequency results in error:       \n\"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   parameters.fRef = STOCHASTICOMEGAGWTESTC_FREF;
-  
+
   /* test behavior for omegaRef <=0 */
   parameters.omegaRef = -1.0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
+  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
                           STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,
 			  STOCHASTICOMEGAGWTESTC_ECHK,
 			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -435,10 +435,10 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: negative amplitude parameter results in error:       \n\"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
-  
+
   parameters.omegaRef = 0.0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
+  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
 			    STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,
 			    STOCHASTICOMEGAGWTESTC_ECHK,
 			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
@@ -448,12 +448,12 @@ int main( int argc, char *argv[] )
   printf("  PASS: zero amplitude parameter results in error:       \n\"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
   parameters.omegaRef = STOCHASTICOMEGAGWTESTC_OMEGAREF;
-  
+
   /* TEST VALID DATA HERE -------------------------------------------- */
 
   /* generate omegaGW */
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( ( code = CheckStatus(&status,0, "", 
+  if ( ( code = CheckStatus(&status,0, "",
 			    STOCHASTICOMEGAGWTESTC_EFLS,
 			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
   {
@@ -462,12 +462,12 @@ int main( int argc, char *argv[] )
 
   /* test values */
 
-  for (i=0; i<STOCHASTICOMEGAGWTESTC_LENGTH; ++i) 
+  for (i=0; i<STOCHASTICOMEGAGWTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICOMEGAGWTESTC_DELTAF;
-    omega = STOCHASTICOMEGAGWTESTC_OMEGAREF 
+    omega = STOCHASTICOMEGAGWTESTC_OMEGAREF
       * pow(f/STOCHASTICOMEGAGWTESTC_FREF,STOCHASTICOMEGAGWTESTC_ALPHA);
-    if (optVerbose) 
+    if (optVerbose)
     {
       printf("Omega(%f Hz)=%g, should be %g\n",
              f, omegaGW.data->data[i], omega);
@@ -495,7 +495,7 @@ int main( int argc, char *argv[] )
 
   /* test values */
 
-  for (i=0; i<STOCHASTICOMEGAGWTESTC_LENGTH; ++i) 
+  for (i=0; i<STOCHASTICOMEGAGWTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICOMEGAGWTESTC_DELTAF;
     if (optVerbose) {
@@ -513,7 +513,7 @@ int main( int argc, char *argv[] )
 
   /* clean up valid data */
   LALSDestroyVector(&status, &(omegaGW.data));
-  if ( ( code = CheckStatus(&status, 0 , "", 
+  if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICOMEGAGWTESTC_EFLS,
 			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
   {
@@ -612,19 +612,19 @@ ParseOptions (int argc, char *argv[])
       case 'o': /* specify output file */
         strncpy (optFile, optarg, LALNameLength);
         break;
-        
+
       case 'n': /* specify number of points in frequency series */
         optLength = atoi (optarg);
         break;
-        
+
       case 'e': /* specify frequency resolution */
         optDeltaF = atof (optarg);
         break;
-        
+
       case 'f': /* specify start frequency */
         optF0 = atof (optarg);
         break;
-        
+
       case 'O': /* specify amplitude at reference frequency */
         optOmegaR = atof (optarg);
         break;

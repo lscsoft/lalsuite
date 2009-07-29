@@ -50,13 +50,13 @@ value of the cross-correlation statistic is \cite{stochastic:Allen:1999}
 \begin{equation}
 \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
 \int_{-\infty}^{\infty} df\, |f|^{-3}\,
-\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f) 
+\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)
 \widetilde{Q}{}^{\scriptstyle{\rm C}}(f) = \Omega_{\scriptstyle{\rm R}} T
 \label{stochastic:e:mu}
 \end{equation}
 where $T$ is the integration time
 (\textit{cf.}~(\ref{stochastic:e:ymax})), $w_1$ and $w_2$ are the functions
-used to window the data, and 
+used to window the data, and
 $\Omega_{\scriptstyle{\rm R}} =\Omega_{\scriptstyle{\rm
     GW}}(f_{\scriptstyle{\rm R}})$ is the overall strength of the
 stochastic background (see
@@ -67,7 +67,7 @@ value at
 \lambda = \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
                {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
-      \int_{-\infty}^\infty \frac{df}{f^6} 
+      \int_{-\infty}^\infty \frac{df}{f^6}
       \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
 \right)^{-1}
 \end{equation}
@@ -76,15 +76,15 @@ The same integral used to calculate $\lambda$ also allows one to
 calculate the expected variance per unit integration time of the
 cross-correlation statistic, since
 \begin{eqnarray}
-  \frac{\sigma^2}{T} 
+  \frac{\sigma^2}{T}
   &=& \frac{\overline{(w_1w_2)^2}}{4T}\int_{-\infty}^{\infty} df
   \, P^{\scriptstyle{\rm C}}_1(f)\, P^{\scriptstyle{\rm C}}_2(f)\,
   \left(
     \widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
   \right)^2
-  = \frac{\lambda}{4T} \overline{(w_1w_2)^2} 
+  = \frac{\lambda}{4T} \overline{(w_1w_2)^2}
 \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
-  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}{}^{\scriptstyle{\rm C}}(f) 
+  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
   \nonumber
   \\
 \label{stochastic:e:variance}
@@ -128,7 +128,7 @@ heterodyned data, the integral is approximated by the sum
 &\approx&
 \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
 \left(
-      \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6} 
+      \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6}
       \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
 \right)^{-1}
 \end{eqnarray}
@@ -234,14 +234,14 @@ LALUnitCompare()
 
 \vfill{\footnotesize\input{StochasticOptimalFilterNormalizationCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /**************************** <lalLaTeX file="StochasticOptimalFilterNormalizationCB">
 \bibitem{stochastic:Allen:1997}
   B.~Allen
   ``The stochastic gravity-wave background: sources and detection''
-  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of 
-  Gravitational Waves}, 
+  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
+  Gravitational Waves},
   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 \bibitem{stochastic:Allen:1999}
@@ -292,9 +292,9 @@ LALStochasticOptimalFilterNormalization(
   REAL8 freq1;
   REAL8 freq2;
   REAL4 exponent;
-  REAL4 omegaRef;   
+  REAL4 omegaRef;
   REAL8 lambdaInv;
-  REAL8 f6; 
+  REAL8 f6;
 
   /* windowing */
   REAL4 w2, meanW2, meanW4;
@@ -330,7 +330,7 @@ LALStochasticOptimalFilterNormalization(
   ASSERT(parameters != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
- 
+
   /* overlap member of input */
   ASSERT(input->overlapReductionFunction != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -399,12 +399,12 @@ LALStochasticOptimalFilterNormalization(
     ASSERT(parameters->window1 != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* window 2 parameter */
     ASSERT(parameters->window2 != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* data member of window 1 */
     ASSERT(parameters->window1->data != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -414,13 +414,13 @@ LALStochasticOptimalFilterNormalization(
     ASSERT(parameters->window2->data != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     winLength = parameters->window1->length;
 
     ASSERT(winLength != 0, status, \
         STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
-    
+
     /* Check that windows are the same length */
     if (parameters->window2->length != winLength)
     {
@@ -456,56 +456,56 @@ LALStochasticOptimalFilterNormalization(
 
   /** check for mismatches **/
   /* length */
-  if (input->omegaGW->data->length != length) 
+  if (input->omegaGW->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->inverseNoisePSD1->data->length != length) 
+  if (input->inverseNoisePSD1->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->inverseNoisePSD2->data->length != length) 
+  if (input->inverseNoisePSD2->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* initial frequency */
-  if (input->omegaGW->f0 != f0) 
+  if (input->omegaGW->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->inverseNoisePSD1->f0 != f0) 
+  if (input->inverseNoisePSD1->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->inverseNoisePSD2->f0 != f0) 
+  if (input->inverseNoisePSD2->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->omegaGW->deltaF != deltaF) 
+  if (input->omegaGW->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->inverseNoisePSD1->deltaF != deltaF) 
+  if (input->inverseNoisePSD1->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->inverseNoisePSD2->deltaF != deltaF) 
+  if (input->inverseNoisePSD2->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  /** check for reference frequency lower and upper limits **/ 
+  /** check for reference frequency lower and upper limits **/
   if (parameters->fRef < f0 + deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF, \
@@ -556,7 +556,7 @@ LALStochasticOptimalFilterNormalization(
 
   /** unitPair.unitOne = &tmpUnit1; **/
   /** Commented out because it's redundant with the last assignment **/
-  
+
   unitPair.unitTwo = &tmpUnit2;
 
   TRY(LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status);
@@ -611,35 +611,35 @@ LALStochasticOptimalFilterNormalization(
    * since we still use it as an intermediate; we do so here to
    * minimize the BEGINFAIL/ENDFAIL pairs needed */
 
-  if (output->normalization != NULL) 
+  if (output->normalization != NULL)
   {
     lamPtr = output->normalization;
   }
-  else 
+  else
   {
     lamPtr = (REAL4WithUnits*)LALMalloc(sizeof(REAL4WithUnits));
   }
 
   unitPair.unitOne = &tmpUnit2;
-  
+
   /* unitPair.unitTwo = &checkUnit; */
   /** Commented out because it's redundant with the last assignment **/
 
   LALUnitMultiply(status->statusPtr, &(lamPtr->units), &unitPair);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     if (output->normalization == NULL) LALFree(lamPtr);
   ENDFAIL(status);
 
-  if (output->variance != NULL) 
+  if (output->variance != NULL)
   {
     /******* assign correct units to variance per time of CC stat ********/
     unitPair.unitOne = &(lamPtr->units);
     unitPair.unitTwo = &tmpUnit1;
-    
+
     LALUnitMultiply(status->statusPtr, &(output->variance->units), &unitPair);
-    
-    BEGINFAIL(status) 
+
+    BEGINFAIL(status)
       if (output->normalization == NULL) LALFree(lamPtr);
     ENDFAIL(status);
   }
@@ -681,7 +681,7 @@ LALStochasticOptimalFilterNormalization(
   {
     omega1 = input->omegaGW->data->data[xRef];
     omega2 = input->omegaGW->data->data[xRef+1];
-    freq1 = f0 + xRef * deltaF; 
+    freq1 = f0 + xRef * deltaF;
     freq2 = f0 + (xRef + 1) * deltaF;
     if (omega1 <= 0)
     {
@@ -696,7 +696,7 @@ LALStochasticOptimalFilterNormalization(
   }
 
   /* calculate inverse lambda value */
-  lambdaInv = 0.0; 
+  lambdaInv = 0.0;
 
   for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
   {
@@ -704,7 +704,7 @@ LALStochasticOptimalFilterNormalization(
 
     f3 = f * f * f;
     f6 = f3 * f3;
-    
+
     omegaTimesGamma = input->omegaGW->data->data[i] * \
                       input->overlapReductionFunction->data->data[i];
     p1Inv = input->inverseNoisePSD1->data->data[i];
@@ -717,10 +717,10 @@ LALStochasticOptimalFilterNormalization(
 
   if (!parameters->heterodyned)
     lambdaInv *= 2.0;
-  
+
   lamPtr->value = 1 / lambdaInv;
 
-  if (output->variance != NULL) 
+  if (output->variance != NULL)
   {
     output->variance->value = (meanW4/meanW2) * ((5.0L * LAL_PI * LAL_PI) / \
         (3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18))) * \
@@ -728,7 +728,7 @@ LALStochasticOptimalFilterNormalization(
   }
   if (output->normalization == NULL)
     LALFree(lamPtr);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

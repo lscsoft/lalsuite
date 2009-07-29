@@ -668,7 +668,7 @@ SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable          *eventHead,
     LALSegList                 *vetoSegs,
-    CHAR 		       *ifo
+    const CHAR                 *ifo
     );
 
 SnglInspiralTable *
@@ -712,22 +712,20 @@ LALIfoCountSingleInspiral(
     InterferometerNumber        ifoNumber
     );
 
-void
-LALTimeSlideSegList(
-    LALStatus                  *status,
+int
+XLALTimeSlideSegList(
     LALSegList                 *seglist,
-    LIGOTimeGPS                *startTime,
-    LIGOTimeGPS                *endTime,
-    LIGOTimeGPS                *slideTimes
+    const LIGOTimeGPS          *ringStartTime,
+    const LIGOTimeGPS          *ringEndTime,
+    const LIGOTimeGPS          *slideTimes
     );
 
 void
-LALTimeSlideSingleInspiral(
-    LALStatus                  *status,
+XLALTimeSlideSingleInspiral(
     SnglInspiralTable          *input,
-    LIGOTimeGPS                *startTime,
-    LIGOTimeGPS                *endTime,
-    LIGOTimeGPS                 slideTimes[]
+    const LIGOTimeGPS          *ringStartTime,
+    const LIGOTimeGPS          *ringEndTime,
+    const LIGOTimeGPS           slideTimes[]
     );
 
 SnglInspiralTable *

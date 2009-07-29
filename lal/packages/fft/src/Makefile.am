@@ -3,7 +3,7 @@
 if QTHREAD
 QTHREADSRC = qthread.c
 else
-QTHREADSRC = 
+QTHREADSRC =
 endif
 
 if INTELFFT
@@ -11,7 +11,7 @@ FFTSRC = IntelComplexFFT.c IntelRealFFT.c $(QTHREADSRC)
 EXTRA_TEXSOURCES = ComplexFFT.c RealFFT.c FFTWMutex.c
 else
 FFTSRC = ComplexFFT.c RealFFT.c FFTWMutex.c
-EXTRA_TEXSOURCES = 
+EXTRA_TEXSOURCES =
 endif
 
 noinst_LTLIBRARIES = libfft.la

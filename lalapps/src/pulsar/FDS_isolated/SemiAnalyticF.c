@@ -384,13 +384,13 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
      * allows LAL to find the ephemeris in LAL_DATA_PATH */
     if ( LALUserVarWasSet (&(CLA->efiles)) ) 
       {
-	LALSnprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
-	LALSnprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
+	snprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
+	snprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
       }
     else
       {
-	LALSnprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
-	LALSnprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
+	snprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
+	snprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
       }
     filenameE[MAXFILENAME-1] = 0;
     filenameS[MAXFILENAME-1] = 0;
@@ -448,10 +448,14 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   midTS = (LIGOTimeGPS *)LALCalloc(CLA->nTsft,sizeof(LIGOTimeGPS));
   for(k=0; k < CLA->nTsft; k++)
     {
+      /* FIXME:  loss of precision; consider
+      midTS[k] = timestamps->data[k];
+      XLALGPSAdd(&midTS[k], 0.5*CLA->Tsft);
+      */
       REAL8 teemp=0.0;
-      TRY ( LALGPStoFloat(status->statusPtr, &teemp, &(timestamps->data[k])), status);
+      teemp = XLALGPSGetREAL8(&(timestamps->data[k]));
       teemp += 0.5*CLA->Tsft;
-      TRY ( LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+      XLALGPSSetREAL8(&(midTS[k]), teemp);
     }
   
   TRY ( LALComputeAM(status->statusPtr, &amc, midTS, amParams), status);

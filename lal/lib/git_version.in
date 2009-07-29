@@ -5,6 +5,7 @@
 # Based on generateGitID.sh by Reinhard Prix
 #
 # Copyright (C) 2009, Adam Mercer <adam.mercer@ligo.org>
+# Copyright (C) 2009, Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>
 # Copyright (C) 2008-2009, John T. Whelan <john.whelan@ligo.org>
 # Copyright (C) 2008, Reinhard Prix <reinhard.ligo.org>
 #
@@ -29,18 +30,22 @@
 __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
 # import required system modules
+import exceptions
 import os
 import sys
 import time
 import re
 import optparse
+import filecmp
+import shutil
 try:
   import subprocess
 except ImportError:
   sys.exit("Python-2.4, or higher is required")
 
-# output file
-outfile = 'git_info.sed'
+#
+# class definitions
+#
 
 # version info class
 class git_info:
@@ -53,10 +58,18 @@ class git_info:
     committer = None
     status = None
 
+# git invocation error exception handler
+class GitInvocationError(exceptions.Exception):
+  pass
+
+#
+# helper methods
+#
+
 # command line option parsing
 def parse_args():
   # usage information
-  usage = '%prog [options]'
+  usage = '%prog [options] src_dir build_dir'
 
   # define option parser
   parser = optparse.OptionParser(usage=usage)
@@ -69,17 +82,17 @@ def parse_args():
   opts, args = parser.parse_args()
 
   # check for positional arguments
-  if (len(args) != 0):
+  if (len(args) != 2):
     parser.error('incorrect number of command line options specified')
 
   # check that both --sed and --file are not specified
   if (opts.sed is True) and (opts.file is True):
     parser.error('cannot specify both --sed and --file')
 
-  return opts
+  return opts, args[0], args[1]
 
 #
-# process management method
+# process management methods
 #
 
 # return output from running given command
@@ -97,28 +110,11 @@ def run_external_command(command, honour_ret_code=True):
     p.stdout.close()
     p.stderr.close()
 
-  # write stderr and exit if process failed
+  # throw exception if process failed
   if honour_ret_code and (ret_code != 0):
-    sys.stderr.write(err)
-    sys.exit('error: failed to run "%s"' % command)
+    raise GitInvocationError, 'failed to run "%s"' % command
 
-  return output
-
-
-# get return code from running given command
-def external_command_retcode(command):
-  # start external command process
-  p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE, close_fds=True)
-
-  # get process id and return code
-  ret_code = p.wait()
-
-  # close stdout and stderr
-  p.stdout.close()
-  p.stderr.close()
-
-  return ret_code
+  return ret_code, output
 
 #
 # git version method
@@ -131,11 +127,11 @@ def generate_git_version_info():
 
   # determine git id
   id_cmd = 'git log -1 --pretty="format:%H"'
-  git_id = run_external_command(id_cmd)
+  git_id = run_external_command(id_cmd)[1].strip()
 
   # determine commit date, iso utc
   date_cmd = 'git log -1 --pretty="format:%ct"'
-  git_udate = float(run_external_command(date_cmd))
+  git_udate = float(run_external_command(date_cmd)[1].strip())
   git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(git_udate))
 
   # escape '+' in date
@@ -144,7 +140,7 @@ def generate_git_version_info():
   # determine branch
   branch_cmd = 'git branch --no-color'
   branch_regexp = re.compile(r"\* ((?!\(no branch\)).*)", re.MULTILINE)
-  branch_match = branch_regexp.search(run_external_command(branch_cmd))
+  branch_match = branch_regexp.search(run_external_command(branch_cmd)[1].strip())
   if branch_match is None:
     git_branch = None
   else:
@@ -152,9 +148,9 @@ def generate_git_version_info():
 
   # determine tag
   tag_cmd = 'git describe --exact-match --tags %s' % git_id
-  if external_command_retcode(tag_cmd) == 0:
-    git_tag = run_external_command(tag_cmd).strip()
-  else:
+  ret_code, git_tag = run_external_command(tag_cmd, honour_ret_code=False)
+  git_tag = git_tag.strip()
+  if ret_code != 0:
     git_tag = None
 
   # determine author and committer
@@ -162,16 +158,16 @@ def generate_git_version_info():
   author_email_cmd = 'git log -1 --pretty="format:%ae"'
   committer_name_cmd = 'git log -1 --pretty="format:%cn"'
   committer_email_cmd = 'git log -1 --pretty="format:%ce"'
-  git_author_name = run_external_command(author_name_cmd)
-  git_author_email = run_external_command(author_email_cmd)
+  git_author_name = run_external_command(author_name_cmd)[1].strip()
+  git_author_email = run_external_command(author_email_cmd)[1].strip()
   git_author = '%s <%s>' % (git_author_name, git_author_email)
-  git_committer_name = run_external_command(committer_name_cmd)
-  git_committer_email = run_external_command(committer_email_cmd)
+  git_committer_name = run_external_command(committer_name_cmd)[1].strip()
+  git_committer_email = run_external_command(committer_email_cmd)[1].strip()
   git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
 
   # determine tree status
   status_cmd = 'git status'
-  status_output = run_external_command(status_cmd, honour_ret_code=False).strip()
+  status_output = run_external_command(status_cmd, honour_ret_code=False)[1].strip()
   if status_output.endswith('no changes added to commit (use "git add" and/or "git commit -a")'):
       git_status = 'UNCLEAN: Some modifications not committed'
   else:
@@ -193,15 +189,34 @@ def generate_git_version_info():
 #
 
 # parse command line options
-options = parse_args()
+options, src_dir, build_dir = parse_args()
+
+# filenames
+basename= 'LALVCSInfo.h'
+infile = '%s/%s.in' % (src_dir, basename)
+tmpfile= '%s/%s.tmp' % (build_dir, basename)
+srcfile = '%s/%s' % (src_dir, basename)
+dstfile = '%s/%s' % (build_dir, basename)
+
+# copy LALVCSInfo.h to build_dir, if appropriate
+if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
+  shutil.copy(srcfile, dstfile)
+
+# change to src_dir
+os.chdir(src_dir)
+
+# check if git is available
+ret_code, output = run_external_command('which git', honour_ret_code=False)
+git_ok = (ret_code != 1) and not output.startswith('no')
 
 # check if we are in a git repo
-# FIXME: 128 seems to be a magic number that indicates the the git
-# status command has failed
-git_ok = (external_command_retcode('git status') != 128)
+if git_ok:
+  # FIXME: 128 seems to be a magic number that indicates that the git
+  # status command has failed
+  git_ok = (run_external_command('git status', honour_ret_code=False)[0] != 128)
 
-# generate sed command file, if appropriate
-if git_ok is True:
+# generate version information output, if appropriate
+if git_ok:
   info = generate_git_version_info()
 
   if options.file:
@@ -214,7 +229,7 @@ if git_ok is True:
     print 's+@COMMITTER@+%s+g' % info.committer
     print 's+@STATUS@+%s+g' % info.status
   elif options.sed:
-    # output sed command line options to stdout
+    # generate sed command line options
     sed_cmd = '-e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
     sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
@@ -222,7 +237,6 @@ if git_ok is True:
     sed_cmd += ' -e "s/@AUTHOR@/%s/"' % info.author
     sed_cmd += ' -e "s/@COMMITTER@/%s/"' % info.committer
     sed_cmd += ' -e "s/@STATUS@/%s/"' % info.status
-    print sed_cmd
   else:
     # output version info
     print info.id
@@ -233,5 +247,18 @@ if git_ok is True:
     print info.committer
     print info.status
 
+  # create tmp file
+  cmd = 'sed %s %s > %s' % (sed_cmd, infile, tmpfile)
+  p = subprocess.Popen(cmd, shell=True)
+  os.waitpid(p.pid, 0)
+
+  # update LALVCSInfo.h, if appropriate
+  if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
+    os.rename(tmpfile, dstfile)
+  else:
+    os.remove(tmpfile)
+
 # exit
 sys.exit(0)
+
+# vim: syntax=python tw=72 ts=2 et

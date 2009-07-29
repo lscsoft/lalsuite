@@ -18,11 +18,11 @@
 */
 
 /************************************ <lalVerbatim file="ComputeSkyBinaryHV">
-Author: Messenger, C.J., Berukoff, S.J., Papa, M.A. 
+Author: Messenger, C.J., Berukoff, S.J., Papa, M.A.
 $Id$
 ************************************* </lalVerbatim> */
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 \section{Header \texttt{ComputeSkyBinary.h}}
 \label{s:ComputeSkyBinary.h}
 Computes phase coefficients necessary for a correct demodulation for a source in a binary system.
@@ -32,14 +32,14 @@ Computes phase coefficients necessary for a correct demodulation for a source in
 #include <lal/ComputeSkyBinary.h>
 \end{verbatim}
 
-\noindent  The methods employed here follow very closely those used within \verb@ComputeSky()@.  
-Note that at present this code simply corrects for the Doppler modulation present in a polynomial 
-frequency function for signals from sources in elliptical orbits.  It does not account for general 
+\noindent  The methods employed here follow very closely those used within \verb@ComputeSky()@.
+Note that at present this code simply corrects for the Doppler modulation present in a polynomial
+frequency function for signals from sources in elliptical orbits.  It does not account for general
 relativistic effects.
 
-At the risk of repeating existing documentation, but in the interests of clarity much of the 
-following can also be found in the \verb@ComputeSky()@ documentation.  Recall that a demodulated 
-Fourier Transform (DeFT) is given by 
+At the risk of repeating existing documentation, but in the interests of clarity much of the
+following can also be found in the \verb@ComputeSky()@ documentation.  Recall that a demodulated
+Fourier Transform (DeFT) is given by
 
 \begin{equation}
 \hat{x}_b({\vec{\lambda}})=
@@ -53,8 +53,8 @@ is a time index that runs on each SFT.  As shown in section
 \ref{s:LALDemod.h}, the next step in the development of the demodulation
 technique involves Taylor expanding the phase model about the temporal
 midpoint of each short segment of data, while retaining only first order
-terms.  At this point it is neccessary to clearly define some quantities. 
-Times as defined at the chosen detector are denoted by $t$, times defined at the 
+terms.  At this point it is neccessary to clearly define some quantities.
+Times as defined at the chosen detector are denoted by $t$, times defined at the
 solar system barycenter (SSB) are denoted by $T$, and the retarded time measured at an inertial
 reference point (chosen as the SSB) at a distance from the source are denote by $t^{\prime}$.
 
@@ -65,7 +65,7 @@ $t_{\alpha,1/2}$ is
 \Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\label{taylor2} \\
 \end{equation}
 
-For each value of $\alpha$, this expression consists of either constant or linear terms in time.  
+For each value of $\alpha$, this expression consists of either constant or linear terms in time.
 With the particular time discretization chosen in this code, $t=t_{0}+(N\alpha+j)\ T_{obs}/NM$, we have
 
 \begin{equation}
@@ -92,13 +92,13 @@ the phase terms described in Eq .\ref{taylor2} become (neglecting constants)
 \end{eqnarray}
 
 Note that the polynomial phase function is expressed as a function of the retarded time $t^{\prime}$ and subsequently
-the intrinsic frequency and it`s derivitives ($f_{i}$) are defined at the chosen inertial reference frame (SSB). 
+the intrinsic frequency and it`s derivitives ($f_{i}$) are defined at the chosen inertial reference frame (SSB).
 
 In order to calculate, for each value of $\alpha$, the quantities $\dot{t^{\prime}}_{\alpha}$ and
 $\Delta t^{\prime}_{\alpha}$, we must now look at the binary system in more detail.  At present
 we reference section \ref{s:GenerateSpinOrbitCW.h} where the definition of all the following orbital variables
 can be found.  For a given set of orbital input parameters we obtain the eccentric anomoly $E$ by
-numerically solving 
+numerically solving
 
 \begin{eqnarray}\label{bintime}
   T(t_{\alpha})-T_{p}&=&\frac{P}{2\pi}\left[E+\left(p\sin{E}+q\left(\cos{E}-1\right)\right)\right].
@@ -113,12 +113,12 @@ p&=&\frac{2\pi}{P}\frac{a}{c}\sin{i}\sqrt{1-e^{2}}\cos{\omega}-e \nonumber \\
 q&=&\frac{2\pi}{P}\frac{a}{c}\sin{i}\sin{\omega}.
 \end{eqnarray}
 
-$T(t_{\alpha})$ is returned via a call to \verb@LALBarycenter@ and $a\sin{i},P,T_{p},\omega,e$ 
-are the projected semi-major axis (projected along the line of sight), the orbital period, the 
-time of observed periapse passage as measured 
-in the SSB, the argument of periapse, and the orbital eccentricity respectively.  Having defined $E$ 
-(where the source is in it`s orbit) at a given detector time $t_{\alpha}$ we can calculate the derivitive 
-of the retarded source time $\prime{t}$ with respect to the SSB time $T$.  This is given by 
+$T(t_{\alpha})$ is returned via a call to \verb@LALBarycenter@ and $a\sin{i},P,T_{p},\omega,e$
+are the projected semi-major axis (projected along the line of sight), the orbital period, the
+time of observed periapse passage as measured
+in the SSB, the argument of periapse, and the orbital eccentricity respectively.  Having defined $E$
+(where the source is in it`s orbit) at a given detector time $t_{\alpha}$ we can calculate the derivitive
+of the retarded source time $\prime{t}$ with respect to the SSB time $T$.  This is given by
 
 \begin{equation}\label{binderiv}
  \frac{dt^{\prime}}{dT}=\frac{[1-e\cos{E}]}{\left[1+pcos{E}-q\sin{E}\right]}.
@@ -143,7 +143,7 @@ in $t$) in order to save computations, we have
 where $n_{spin}$ is the maximum order of spindown parameter.
 
 Thus, for a given sky position and set of orbital parameters, the quantities $\dot{t^{\prime}}_{\alpha}$ and
-$\Delta t^{\prime}_{\alpha}$ are calculated only once, just as in \verb@ComputeSky()@.  The analytical constants 
+$\Delta t^{\prime}_{\alpha}$ are calculated only once, just as in \verb@ComputeSky()@.  The analytical constants
 defined in Eq \ref{phasecalc} now become
 
 \begin{equation}
@@ -159,25 +159,25 @@ It is these constants that form the input to the function \verb@LALDemod()@.
 
 #ifndef _COMPUTESKYBINARY_H
 #define _COMPUTESKYBINARY_H
- 
+
 #include <lal/LALStdlib.h>
 #include <lal/LALBarycenter.h>
 #include <lal/Date.h>
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
   NRCSID( COMPUTESKYBINARYH, "$Id$" );
-  
+
   /* Author-defined error codes */
-  /* <lalLaTeX>  
+  /* <lalLaTeX>
      \subsection*{Error conditions}
      \vspace{0.1in}
      \input{ComputeSkyBinaryHErrorTable}
-     
+
      </lalLaTeX> */
-  
+
 /* <lalErrTable file="ComputeSkyBinaryHErrorTable"> */
 #define COMPUTESKYBINARYH_ENULL 1
 #define COMPUTESKYBINARYH_ENNUL 2
@@ -230,7 +230,7 @@ tagCSBParams
         REAL8           OrbitalEccentricity; /* Orbital eccentricy */
         REAL8           ArgPeriapse;    /* Argument of Periapse */
         LIGOTimeGPS     TperiapseSSB;   /* Instance of periapse passage measured in the SSB frame */
-	BarycenterInput *baryinput;	
+	BarycenterInput *baryinput;
 	EmissionTime *emit;
 	EarthState *earth;
 	EphemerisData *edat;
@@ -242,11 +242,11 @@ CSBParams;
 \newpage\input{ComputeSkyBinaryC}
 </lalLaTeX> */
 
-void LALComputeSkyBinary (LALStatus *status, 
-			REAL8 		*skyConst, 
+void LALComputeSkyBinary (LALStatus *status,
+			REAL8 		*skyConst,
 			INT8 		iSkyCoh,
 			CSBParams 	*params);
-		
+
 
 #ifdef __cplusplus
 }

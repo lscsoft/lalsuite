@@ -16,7 +16,7 @@ values to intialize a search. It creates a structure of type
 \texttt{FindChirpSPDataParams} as described above and returns its address.
 
 \item[\texttt{LALFindChirpSPDataFinalize()}] takes as the address
-of a structure of type \texttt{FindChirpSPDataParams} destroys this 
+of a structure of type \texttt{FindChirpSPDataParams} destroys this
 structure and sets the address to NULL.
 
 \item[\texttt{LALFindChirpSPData()}] conditions the interferometer data
@@ -52,7 +52,7 @@ $k_{\mathrm{low}}$ is set to unity if this quantity is less than one.
 
 The uncallibrated input data channel $v_j$ is Fourier transformed into the
 frequency domain to obtain $\tilde{v}_k$. This is then converted into strain
-$\tilde{h}_k$ by computing 
+$\tilde{h}_k$ by computing
 \begin{equation}
 \tilde{h}_k = \mathtt{dynRange} \times R(f_k) \tilde{v}_k.
 \end{equation}
@@ -66,7 +66,7 @@ set to zero.
 
 Recall that the FFT we use to compute the match filter treats the data as
 being periodic and that we had to ignore part of the filter output that was
-corrupted due to wraparound of the filter output from the chirp signal. 
+corrupted due to wraparound of the filter output from the chirp signal.
 
 As well as the chirp, we are also filtering the data against the inverse power
 spectrum. The chirp has a duration that is typically much less than then
@@ -91,7 +91,7 @@ $\sqrt{S^{-1}_v(|f_k|)}$.
 \item Set the Nyquist, $k = N/2$ and DC $k = 0$ components of this to zero.
 \item Inverse FFT to to obtain the time domain inverse PSD of length $N$
 points.
-\item Zero the spectrum between the points $j = \mathtt{invSpecTrunc}/2$ and 
+\item Zero the spectrum between the points $j = \mathtt{invSpecTrunc}/2$ and
 $j = N - \mathtt{invSpecTrunc}/2$. This sets the length of the inverse
 spectrum in the time domain to be \texttt{invSpecTrunc} points.
 \item FFT the time domain quantity back to the frequency domain.
@@ -110,14 +110,14 @@ S^{-1}_h(|f_k|) = \frac{1}{\left|\mathtt{dynRange} \times R(f_k)\right|^2}
 \paragraph*{Output Data}
 The quantity \texttt{segNorm} is computed by
 \begin{equation}
-\mathtt{segNorm} = 
+\mathtt{segNorm} =
    \sum_{k = k_{\mathrm{low}}}^{N/2} \frac{k^{-\frac{7}{3}}}
    {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
 \end{equation}
 
 The output data is given by
 \begin{equation}
-\mathtt{outputData[k]} = 
+\mathtt{outputData[k]} =
 \frac{k^{-7/6} \times \mathtt{dynRange} \times R(f_k)\tilde{v}_k}
 {\left|\mathtt{dynRange} \times R(f_k)\right|^2 S_v(|f_k|)}
 \end{equation}

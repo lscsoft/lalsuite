@@ -51,7 +51,7 @@
  * 	REAL8FrequencySeries *series;
  * 	LIGOTimeGPS epoch = {772847291, 500000000};
  * 	int i;
- * 
+ *
  * 	memset(&stat, 0, sizeof(stat));
  *
  * 	series = XLALCreateREAL8FrequencySeries("PSD", &epoch, 0.0, 1.0 / 16384, &lalVoltUnit, 16384);

@@ -81,7 +81,7 @@ int main() {
     injParams.f_final = 500.0;
     injParams.f_lower = 40.;;
 
-    LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+    snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
 
     /* this is given in Mpc */
     injParams.distance = 100.;

@@ -2618,7 +2618,9 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     /* work out phase */
     deltat2 = deltat*deltat;
     phis->data[i] = 2.*deltat*(params.f0 + 0.5*params.f1*deltat +
-      SIXTH*params.f2*deltat2 + TWENTYFOURTH*params.f3*deltat*deltat2);
+      SIXTH*params.f2*deltat2 + TWENTYFOURTH*params.f3*deltat*deltat2 
+      + (1./120.)*params.f4*deltat2*deltat2 
+      + (1./720.)*params.f5*deltat2*deltat2*deltat);
   }
 
   return phis;
@@ -2697,6 +2699,9 @@ void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data){
   pulsarParams->Pb3 = data[29].val;
   pulsarParams->w03 = data[30].val;
   pulsarParams->xpbdot = data[31].val;
+  pulsarParams->f3 = data[32].val;
+  pulsarParams->f4 = data[33].val;
+  pulsarParams->f5 = data[34].val;
 
   if( pulsarParams->model != NULL && !strcmp(pulsarParams->model, "ELL1") ){
     pulsarParams->eps1 = data[8].val;
@@ -2965,7 +2970,8 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
     { "x2",  0., 0., 0 },{ "e2",  0., 0., 0 },{ "T02", 0., 0., 0 },
     { "Pb2", 0., 0., 0 },{ "Om2", 0., 0., 0 },{ "x3",  0., 0., 0 },
     { "e3",  0., 0., 0 },{ "T03", 0., 0., 0 },{ "Pb3", 0., 0., 0 },
-    { "Om3", 0., 0., 0 },{ "Xpbd",0., 0., 0 }
+    { "Om3", 0., 0., 0 },{ "Xpbd",0., 0., 0 },{ "f3",  0., 0., 0 },
+    { "f4",  0., 0., 0 },{ "f5",  0., 0., 0 }
   };
 
   /* set the values */
@@ -3001,6 +3007,9 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
   paramData[29].val = params.Pb3;    paramData[29].sigma = params.Pb3Err;
   paramData[30].val = params.w03;    paramData[30].sigma = params.w03Err;
   paramData[31].val = params.xpbdot; paramData[31].sigma = params.xpbdotErr;
+  paramData[32].val = params.f3;     paramData[32].sigma = params.f3Err;
+  paramData[33].val = params.f4;     paramData[33].sigma = params.f4Err;
+  paramData[34].val = params.f5;     paramData[34].sigma = params.f5Err;
 
   arraySize = MAXPARAMS;
 

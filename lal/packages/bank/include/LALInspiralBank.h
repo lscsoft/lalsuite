@@ -1383,7 +1383,7 @@ LALListAppend(
 UINT4
 GetIdFromIndex(
     CellList *head,
-    INT4 index
+    INT4 lal_index
     );
 
 void

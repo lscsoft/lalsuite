@@ -20,7 +20,7 @@
 /* <lalVerbatim file="LALMath3DPlotCV">
  * Author: Hanna, C. R.
  * $Id$
- * </lalVerbatim> */ 
+ * </lalVerbatim> */
 
 /* <lalLaTeX>
  * \subsection{Module \texttt{LALMath3DPlot.c}}
@@ -30,7 +30,7 @@
  * \input{LALMath3DPlotCP}
  * \idx{LALMath3DPlot()}
  * \noindent\texttt{*stat} LALStatus structure pointer\\
- * \\\texttt{*first} Math3DPointList stucture pointer\\ 
+ * \\\texttt{*first} Math3DPointList stucture pointer\\
  * \\\texttt{*ntiles} INT4 pointer to the number of templates you
  * \emph{plan} to plot.  This may be called as NULL.  If it is called with a
  * value this function will check to see if the Math3DPointList has the
@@ -88,10 +88,10 @@ NRCSID(LALMATH3DPLOTC, "$Id$");
 
 /* <lalVerbatim file="LALMath3DPlotCP"> */
 void
-LALMath3DPlot( LALStatus *stat, 
-               Math3DPointList *first, 
+LALMath3DPlot( LALStatus *stat,
+               Math3DPointList *first,
                INT4 *ntiles,
-               REAL4 *pointSize) 
+               REAL4 *pointSize)
 /* </lalVerbatim>*/
 {
   FILE *nb; 				/* pointer to the notebook file */
@@ -101,8 +101,8 @@ LALMath3DPlot( LALStatus *stat,
   INT4 counter = 0;
   REAL4 xmax, ymax, zmax; /* maximum values plotted */
   INT2 xlog, ylog, zlog;  /* log10 of axis scaling factors */
-  
-  INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
+
+  INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC );
 
   if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
@@ -111,7 +111,7 @@ LALMath3DPlot( LALStatus *stat,
   if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
- 
+
   if (!pointSize){
     if (!ntiles){
       list=first;
@@ -130,12 +130,12 @@ LALMath3DPlot( LALStatus *stat,
       if (*ntiles != counter)
         printf("\nWARNING!!! The value of argument ntiles (%i) != the Math3DPointList length (%i)\n",
                *ntiles, counter);
-      }  
+      }
     if (*ntiles <=0) {
       ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
     }
     PtSize = 0.50*(1.0/(pow((*ntiles),0.333333)));
-    if (*ntiles > 10000) 
+    if (*ntiles > 10000)
       printf("\nWARNING!!! More than 10,000 tiles may crash Mathematica:)\n");
   }
 
@@ -162,10 +162,10 @@ LALMath3DPlot( LALStatus *stat,
   ylog = (INT2)(log(ymax)/log(10));
   zlog = (INT2)(log(zmax)/log(10));
 
-  /* The code that generates the notebook */  
+  /* The code that generates the notebook */
   BEG_NOTEBOOK;
     BEG_TITLECELL;
-      fprintf(nb, "LALMath3D Output");  
+      fprintf(nb, "LALMath3D Output");
     END_TITLECELL;
     BEG_SECTIONCELL;
       fprintf(nb, "Instructions");
@@ -211,14 +211,14 @@ LALMath3DPlot( LALStatus *stat,
       END_INPUTCELL;
       BEG_INPUTCELL;
         fprintf(nb, "frames\t= 30;");
-      END_INPUTCELL; 
+      END_INPUTCELL;
       BEG_INPUTCELL;
         fprintf(nb, "FrameTime\t= 0.2;");
       END_INPUTCELL;
       BEG_INPUTCELL;
         fprintf(nb, "XAxisLabel = \"Psi0 / 1e%d\"", xlog );
       END_INPUTCELL;
-      BEG_INPUTCELL; 
+      BEG_INPUTCELL;
         fprintf(nb, "YAxisLabel = \"Psi3 / 1e%d\"", ylog );
       END_INPUTCELL;
       BEG_INPUTCELL;
@@ -234,7 +234,7 @@ LALMath3DPlot( LALStatus *stat,
         fprintf(nb, "StillName:\t\tWhat to name the final still image - extension determined by StillType\n");
         fprintf(nb, "StillType:\t\tThe file type and extension for the still image\n");
         fprintf(nb, "\t\t\tChoose any standard format (e.g. JPG, GIF, PDF, EPS, etc.)\n");
-        fprintf(nb, "frames:\t\tThe number of frames for each rotation of the image.\n"); 
+        fprintf(nb, "frames:\t\tThe number of frames for each rotation of the image.\n");
         fprintf(nb, "\t\t\tThe final image will have 2 times the number frames\n");
         fprintf(nb, "FrameTime:\t\tSets the delay time in seconds between each frame in the animated gif\n");
         fprintf(nb, "\t\t\tApplications seem to interpret this differently.  You may have to adjust this setting\n");
@@ -250,10 +250,10 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "Point List");
         END_SECTIONCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "TILES  = \n"); 
-          fprintf(nb, "Graphics3D[{PointSize[PtSize]"); 
+          fprintf(nb, "TILES  = \n");
+          fprintf(nb, "Graphics3D[{PointSize[PtSize]");
           list = first;
-          while(list->next) 
+          while(list->next)
           {
             fprintf( nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
                      list->grayLevel, list->x/pow(10,xlog),
@@ -279,7 +279,7 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "ViewPoint -> {1-(.99 T/frames)^2, T/(4 frames), 2 (T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}],\n");
           fprintf(nb, "Do[tile[frames+T]=Show[TILES, Background -> RGBColor[.93, .91, .89], ViewPoint -> {.005+(T/frames)^2, ");
           fprintf(nb, "0.25-T/(4 frames), 2-2 (.99 T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}]}];\n");
-        END_INPUTCELL_;  
+        END_INPUTCELL_;
       END_GROUPCELLC;
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
@@ -288,7 +288,7 @@ LALMath3DPlot( LALStatus *stat,
         BEG_INPUTCELL;
           fprintf(nb, "If[AnimationPlot,{images = Evaluate[Table[tile[j], {j, 0, 2 frames, 1}]]}];\n");
         END_INPUTCELL;
-        BEG_INPUTCELL; 
+        BEG_INPUTCELL;
           fprintf(nb, "Export[StillName<>\".\"<>ToLowerCase[StillType], still, StillType, ImageSize->StillSize, ");
           fprintf(nb, "ConversionOptions->{\"ColorReductionDither\" -> False}]");
         END_INPUTCELL;
@@ -297,9 +297,9 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "Export[AnimationName, images, \"GIF\", ImageSize -> AnimationSize, ");
           fprintf(nb, "ConversionOptions -> {\"Loop\" -> True,\"AnimationDisplayTime\" -> FrameTime, ");
           fprintf(nb, "\"ColorReductionDither\" -> False}]]");
-        END_INPUTCELL_;   
+        END_INPUTCELL_;
       END_GROUPCELLC_;
-    END_GROUPCELLC_;    
+    END_GROUPCELLC_;
   END_NOTEBOOK;
   fclose(nb);
   RETURN(stat);

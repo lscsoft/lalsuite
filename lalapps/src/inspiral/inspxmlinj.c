@@ -91,10 +91,10 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
     exit( 1 );
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
-  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
-  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
   return pp;
 }
@@ -159,7 +159,7 @@ int main ( int argc, char *argv[] )
 					lalappsGitGitStatus,
 					lalappsGitCommitDate ), &status );
     }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -316,7 +316,7 @@ int main ( int argc, char *argv[] )
 	break;
 
       case 'l':
-	LALSnprintf( &(injParams.waveform), 
+	snprintf( &(injParams.waveform), 
             LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", optarg );
 	this_proc_param = this_proc_param->next = 
 	  next_process_param( long_options[option_index].name, "string", 
@@ -331,11 +331,11 @@ int main ( int argc, char *argv[] )
 
 	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
 	  calloc( 1, sizeof(ProcessParamsTable) );
-	LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+	snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
 	    PROGRAM_NAME );
-	LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+	snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+	snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+	snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
 	    optarg );
 	break;
 
@@ -359,7 +359,7 @@ int main ( int argc, char *argv[] )
   if ( ! *waveform )
   {
     /* default to Tev's GeneratePPNInspiral as used in */
-    LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+    snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
 	"GeneratePPNtwoPN" );
   }
 

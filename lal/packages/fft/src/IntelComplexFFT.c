@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: IntelComplexFFT.c
  *
  * Author: Brown D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -97,7 +97,7 @@ LALCreateForwardComplexFFTPlan(
   CHECKINTELFFTSTATUS( fftStat );
 
   /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
       DFTI_NOT_INPLACE );
   CHECKINTELFFTSTATUS( fftStat );
 
@@ -147,7 +147,7 @@ LALCreateReverseComplexFFTPlan(
   CHECKINTELFFTSTATUS( fftStat );
 
   /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT, 
+  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
       DFTI_NOT_INPLACE );
   CHECKINTELFFTSTATUS( fftStat );
 
@@ -186,7 +186,7 @@ LALDestroyComplexFFTPlan (
 
   RETURN( status );
 }
-  
+
 void
 LALCOMPLEX8VectorFFT (
     LALStatus      *status,

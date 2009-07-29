@@ -42,8 +42,8 @@ of two stars each of mass {\tt mMin.}
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALInspiralParameterCalc 
-LALInspiralWaveLength 
+LALInspiralParameterCalc
+LALInspiralWaveLength
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -53,14 +53,14 @@ LALInspiralWaveLength
 </lalLaTeX>  */
 
 #include <lal/LALInspiralBank.h>
- 
+
 NRCSID (INSPIRALSEARCHC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralLongestTemplateInBankCP"> */
 void
 LALInspiralLongestTemplateInBank
    (
-   LALStatus            *status, 
+   LALStatus            *status,
    UINT4                *templateLength,
    InspiralCoarseBankIn *coarseIn
    )

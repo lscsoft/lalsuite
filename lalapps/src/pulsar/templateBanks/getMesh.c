@@ -420,7 +420,7 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uva
   ATTATCHSTATUSPTR (status);
 
   /* ----- set up Tspan */
-  TRY ( LALFloatToGPS (status->statusPtr, &(cfg->startTimeGPS), &uvar->startTime), status);
+  XLALGPSSetREAL8(&(cfg->startTimeGPS), uvar->startTime);
 
   if ( LALUserVarWasSet (&uvar->endTime) )
     cfg->duration = uvar->endTime - uvar->startTime;

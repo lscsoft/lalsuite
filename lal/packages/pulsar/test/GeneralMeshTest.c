@@ -18,32 +18,32 @@
 */
 
 /************************************** <lalVerbatim file="GeneralMeshTestCV">
-Author: Jones, D. I.,   Owen, B. J.  
+Author: Jones, D. I.,   Owen, B. J.
 $Id$
 ********************************************************** </lalVerbatim> */
- 
+
 /**************************************************************** <lalLaTeX>
- 
+
 \subsection{Program \texttt{GeneralMeshTest.c}}
 \label{ss:GeneralMeshTest}
- 
+
 Tests and showcases the combination of a LAL metric function (of the
 user's specification) and \texttt{TwoDMesh} modules by producing a
 template mesh.
- 
+
 \subsubsection*{Usage}
 \begin{verbatim}
 GeneralMeshTest
 \end{verbatim}
- 
+
 \subsubsection*{Description}
 
 The \texttt{-a} option determines which LAL metric code is used.  The
-options are: 
+options are:
 
-\hspace{1cm} 1 = PtoleMetric (default), 
+\hspace{1cm} 1 = PtoleMetric (default),
 
-\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic), 
+\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic),
 
 \hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
 
@@ -57,17 +57,17 @@ given in hh:mm:ss:dd:mm:ss format.  (Default is the center of the
 globular cluster 47 Tuc).
 
 The \texttt{-d} option sets the detector to the option argument. The
-options are: 
- 
-\hspace{1cm} 1 = LIGO Hanford 
+options are:
+
+\hspace{1cm} 1 = LIGO Hanford
 
 \hspace{1cm} 2 = LIGO Livingston
 
-\hspace{1cm} 3 = VIRGO 
+\hspace{1cm} 3 = VIRGO
 
 \hspace{1cm} 4 = GEO600 (default)
 
-\hspace{1cm} 5 = TAMA300 
+\hspace{1cm} 5 = TAMA300
 
 The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
 
@@ -84,9 +84,9 @@ automatically overrides whatever is specified by the \texttt{-r} option.
 The \texttt{-m} option sets the maximum mismatch of the mesh to the option
 argument. (Default is 0.02.)
 
-The texttt{-p} option causes the coordinates of the nodes to be written to 
-a file \texttt{mesh.dat}, for the benifit of users who don't have 
-\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
+The texttt{-p} option causes the coordinates of the nodes to be written to
+a file \texttt{mesh.dat}, for the benifit of users who don't have
+\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC),
 with the angles in degrees.
 
 The \texttt{-r} option sets the radius (in arcminutes) of the circular
@@ -95,8 +95,8 @@ rectangular region whose limits in RA and dec are specified by the
 \texttt{-l} option.  (The default value is the radius of the globular
 cluster 47 Tuc).
 
-The \texttt{-t} option sets the duration of integration in seconds. (The 
-default is $39600$ seconds $= 11$ hours, which is chosen because it is of 
+The \texttt{-t} option sets the duration of integration in seconds. (The
+default is $39600$ seconds $= 11$ hours, which is chosen because it is of
 the right size for S2 analyses).
 
 The \texttt{-x} option makes a plot of the mesh points on the sky patch using a
@@ -117,9 +117,9 @@ system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
 #define GENERALMESHTESTC_MSGEOPT "unknown command-line option"
 #define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
 /************************************************** </lalErrTable><lalLaTeX>
- 
+
 \subsubsection*{Algorithm}
- 
+
 \subsubsection*{Uses}
 
 \begin{verbatim}
@@ -129,10 +129,10 @@ LALProjectMetric()           LALGetEarthTimes()
 LALPtoleMetric()             LALInitBarycenter()
 LALCreateTwoDMesh()          LALDestroyTwoDMesh()
 LALFree()                    LALCoherentMetric()
-\end{verbatim}     
+\end{verbatim}
 
-          
- 
+
+
 \subsubsection*{Notes}
 
 For most regions of parameter space the three metric codes seem to
@@ -142,7 +142,7 @@ points very close to the equator.
 
 
 \vfill{\footnotesize\input{GeneralMeshTestCV}}
- 
+
 ************************************************************* </lalLaTeX> */
 
 
@@ -167,10 +167,10 @@ NRCSID( GENERALMESHTESTC, "$Id$" );
 
 /* IAN: Clumsy way of specifying rectangular search region if */
 /* the r=0 option is invoked.                                 */
-REAL4 ra_min;      
-REAL4 ra_max;     
-REAL4 dec_min;      
-REAL4 dec_max;      
+REAL4 ra_min;
+REAL4 ra_max;
+REAL4 dec_min;
+REAL4 dec_max;
 
 
 char *optarg = NULL;     /* option argument for getopt() */
@@ -190,8 +190,8 @@ static SkyPosition center;  /* center of search */
 REAL4              radius;  /* radius of search, in arcminutes */
 
 REAL8Vector *tevlambda;   /* (f, a, d) input for CoherentMetric */
-                          /* I've made it global so getMetric can see it */ 
-                             
+                          /* I've made it global so getMetric can see it */
+
 int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
@@ -218,8 +218,8 @@ int main( int argc, char **argv )
   BOOLEAN rectangular;            /* is the search region rectangular? */
   char earth[] = "earth00-04.dat";
   char sun[] = "sun00-04.dat";
-  
-  
+
+
   /* Set default values. */
   metric_code = 1;
   errors = 0; /* BEN: this is unused right now */
@@ -273,7 +273,7 @@ int main( int argc, char **argv )
       fMax = atof( optarg );
       break;
     case 'l':
-      if( sscanf( optarg, "%f:%f:%f:%f", 
+      if( sscanf( optarg, "%f:%f:%f:%f",
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
 	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees\n" );
@@ -326,7 +326,7 @@ int main( int argc, char **argv )
     mesh.metricParams = (void *) &search;
   if(metric_code==2 || metric_code==3)
     mesh.metricParams = (void *) &tevparam;
-  if( radius == 0 ) 
+  if( radius == 0 )
     {
       mesh.domain[0] = dec_min;
       mesh.domain[1] = dec_max;
@@ -338,7 +338,7 @@ int main( int argc, char **argv )
 	  mesh.rangeParams = (void *) &tevparam;
 	}
     }
-  else 
+  else
     {
       mesh.domain[0] = center.latitude - radius;
       mesh.domain[1] = center.latitude + radius;
@@ -394,12 +394,12 @@ int main( int argc, char **argv )
   eph->ephiles.earthEphemeris = earth;
   eph->ephiles.sunEphemeris = sun;
   eph->leap = 13; /* OK for 2000-2004 */
- 
+
 
   LALInitBarycenter( &stat, eph );
-  
+
   tevpulse.ephemeris = eph;
- 
+
   /* Choose CoherentMetric timing function */
   if(metric_code==1)
     {
@@ -440,7 +440,7 @@ int main( int argc, char **argv )
       fprintf( fp, "@s0 symbol 8\n");
       fprintf( fp, "@s0 symbol size 0.300000\n");
       for( node = firstNode; node; node = node->next )
-      fprintf( fp, "%e %e\n", 
+      fprintf( fp, "%e %e\n",
 	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
       fclose( fp );
     }
@@ -455,7 +455,7 @@ int main( int argc, char **argv )
       return GENERALMESHTESTC_EFIO;
 
     for( node = firstNode; node; node = node->next )
-      fprintf( fp, "%e %e\n", 
+      fprintf( fp, "%e %e\n",
 	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
     fclose( fp );
   }
@@ -503,14 +503,14 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
   /* Set up shop. */
   INITSTATUS( stat, "getRange", GENERALMESHTESTC );
   ATTATCHSTATUSPTR( stat );
-  
+
   /* Search a circle. BEN: The 1.001 is a kludge. */
   y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
 				  - pow( x-center.latitude, 2 ) );
   y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
 				  - pow( x-center.latitude, 2 ) );
-    
-  if( unused ) 
+
+  if( unused )
     {
       y[0] = ra_min;
       y[1] = ra_max;
@@ -543,29 +543,29 @@ void getMetric( LALStatus *stat,
 
   if(metric_code==1)
     Ppatch = params;
-  
+
   if(metric_code==2 || metric_code==3)
     Cpatch = params;
-  
+
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", GENERALMESHTESTC );
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
-  
+
   /* Translate input. */
   if(metric_code==1)
     {
       Ppatch->position.longitude = x[1];
       Ppatch->position.latitude =  x[0];
     }
-  
+
   if(metric_code==2 || metric_code==3)
     {
       tevlambda->data[1] = x[1];
       tevlambda->data[2] = x[0];
     }
-  
+
 
   /* Call the real metric function. */
   if(metric_code==1)
@@ -595,12 +595,12 @@ void getMetric( LALStatus *stat,
   g[1] = metric->data[2];
   g[0] = metric->data[5];
   g[2] = metric->data[4];
- 
-  
+
+
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
-  
+
 
 } /* getMetric() */

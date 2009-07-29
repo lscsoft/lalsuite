@@ -13,15 +13,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
- * \file 
+ * \file
  * \ingroup pulsar
  * \brief LAL routines for CW cross-correlation searches
  *
@@ -37,22 +37,22 @@
 
 RCSID( "$Id$");
 
-
+/* this function is currently unused (20/07/09) */
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTListElement     *in,
 					     REAL8	        lag,
-					     INT4		listLength,	
+					     INT4		listLength,
 					     DetChoice 		detChoice,
 					     BOOLEAN	 	autoCorrelate)
 {
-  
+
   INT4 i, j, numPairs, initj;
   INT4 thisPair;
   INT4 sameDet = 0;
   INT4Vector *List1, *List2;
   INT4VectorSequence *ret;
-  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
+  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;
   LIGOTimeGPS t1, t2;
   REAL8 timeDiff;
   SFTListElement *sfttmp;
@@ -64,7 +64,7 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
   *out = NULL;
 
-  
+
   List1 = XLALCreateINT4Vector(listLength);
   List2 = XLALCreateINT4Vector(listLength);
 
@@ -72,7 +72,7 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
   thisPair = 0;
   sfttmp = in;
-  
+
   /*just need to check the first sft against the others */
   thisSFT1 = &(sfttmp->sft);
   i = 0;
@@ -89,20 +89,20 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
       if (j > 0) {
 	sfttmp = (SFTListElement *)sfttmp->nextSFT;
       }
- 
+
       thisSFT2 = &(sfttmp->sft);
-      /* calculate time difference */      
+      /* calculate time difference */
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
       timeDiff = XLALGPSDiff( &t1, &t2);
-      
+
       /*strcmp returns 0 if strings are equal, >0 if strings are different*/
       sameDet = strcmp(thisSFT1->name, thisSFT2->name);
 
       /* if they are different, set sameDet to 1 so that it will match if
 	 detChoice == DIFFERENT */
       if (sameDet != 0) { sameDet = 1; }
-      
+
       /* however, if detChoice = ALL, then we want sameDet to match it */
       if (detChoice == ALL) { sameDet = detChoice; }
 
@@ -113,12 +113,12 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 	List1->data[thisPair] = i;
 	List2->data[thisPair++] = j;
       } /* if ( numPairs < out->length)  */
-	
+
       thisSFT2 = NULL;
     } /* end loop over second sft set */
-     
+
     thisSFT1 = NULL;
- /* } end loop over first sft set */ 
+ /* } end loop over first sft set */
 
 
   /* initialise pair list vector, if we have pairs*/
@@ -142,14 +142,20 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   sfttmp = NULL;
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 } /* CreateSFTPairsIndicesFrom2SFTvectors */
 
 
-/** Correlate a single pair of SFT at a parameter space point*/
+/** Correlate a single pair of SFT at a parameter space point. This function calculates Y_alpha
+ *  according to Eqn 4.1 in Dhurandar et al 2008, where
+ *  Y_alpha = (xI* xJ)/Delta T^2
+ *  sft1 and sft2 have been normalised by LALNormalizeSFT in pulsar_crosscorr.c, so they are actually
+ *  sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2)
+ *  Therefore, when calculating the output, we need to have
+ *  out = sft1*sqrt(psd1)*sft2*sqrt(psd2)/Delta T^2 */
 void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX16                *out,
 			       COMPLEX8FrequencySeries  *sft1,
@@ -158,7 +164,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       REAL8FrequencySeries     *psd2,
 			       REAL8                    freq1,
 			       REAL8                    freq2)
-{  
+{
   INT4 bin1, bin2;
   REAL8 deltaF;
   REAL8 re1, re2, im1, im2;
@@ -195,8 +201,8 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 }
@@ -205,30 +211,31 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
 
 /** Calculate the frequency of the SFT at a given epoch */
+/* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
 				LIGOTimeGPS		 *epoch,
 				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel)
-{  
+				REAL8Vector              *vel_c)
+{
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 vDotn, fhat, factor, timeDiff;
-  
+  REAL8 vDotn_c, fhat, factor, timeDiff;
+
   INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT(vel, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(vel_c, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
 
-  vDotn = cos(delta) * cos(alpha) * vel->data[0]
-    + cos(delta) * sin(alpha)  * vel->data[1]
-    + sin(delta) * vel->data[2];
+  vDotn_c = cos(delta) * cos(alpha) * vel_c->data[0]
+    + cos(delta) * sin(alpha)  * vel_c->data[1]
+    + sin(delta) * vel_c->data[2];
 
   /* now calculate the intrinsic signal frequency in the SFT */
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
@@ -239,53 +246,54 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
   for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
-    factor *= timeDiff / k;  
+    factor *= timeDiff / k;
     fhat += dopp->fkdot[k] * factor;
   }
-  *out = fhat * (1 + vDotn);  
+  *out = fhat * (1 + vDotn_c);
 
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 }
 
 
 
 /** Get signal phase at a given epoch */
+/* This is according to Eqn 2.13 in Dhurandar et al 2008 */
+/* and includes the 2nd order term that is left out in the paper */
 void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
 			    LIGOTimeGPS 	    *epoch,
 			    PulsarDopplerParams     *dopp,
-			    REAL8Vector             *pos)
-{  
+			    REAL8Vector             *r_c)
+{
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 rDotn, phihat, factor, timeDiff;
+  REAL8 rDotn_c, phihat, factor, timeDiff;
   LIGOTimeGPS ssbt;
-  
+
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT(pos, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(r_c, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn = cos(delta) * cos(alpha) * pos->data[0]
-    + cos(delta) * sin(alpha) * pos->data[1]
-    + sin(delta) * pos->data[2];
+  rDotn_c = cos(delta) * cos(alpha) * r_c->data[0]
+    + cos(delta) * sin(alpha) * r_c->data[1]
+    + sin(delta) * r_c->data[2];
 
 
   /* now calculate the phase of the SFT */
   /* phi(t) = phi_0 + 2pi(f_0 t + 0.5 f_1 t^2) + 2pi (f_0 + f_1 t) r.n/c */
-  /* this is an approximation... need to change in the future? */
 
   /* this is the sft reference time  - the pulsar reference time */
-  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn);
+  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn_c);
 
   timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime) );
 
@@ -294,30 +302,35 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
   factor = 1.0;
 
- for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
-    factor *= timeDiff / k;  
+ for (k = 1;  k <= PULSAR_MAX_SPINS; k++) {
+    factor *= timeDiff / k;
     phihat += dopp->fkdot[k-1] * factor;
 
   }
 
-    factor *= timeDiff / k;
-    phihat += dopp->fkdot[k-1] * factor;
-
   *out = LAL_TWOPI * ( phihat );
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 }
 
+/* This function calculates sigma_alpha^2 according to Eqn 4.13 in Dhurandar
+ * et al 2008, where
+ * sigma_alpha^2 = Sn1*Sn2/(4 DeltaT^2)
+ * psd1 and psd2 as returned by LALNormalizeSFT are
+ * psd1 = DeltaT*Sn1/2, psd2 = DeltaT*Sn2/2
+ * so when calculating the output, we need to compute
+ * out = psd1*psd2/DeltaT^4
+ * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
 			      REAL8                freq1,
 			      REAL8                freq2,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2)
-{			   
+{
   INT8 bin1, bin2;
   REAL8 deltaF;
 
@@ -333,13 +346,15 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
   bin2 = (INT8)ceil( ((freq2 - psd2->f0)/ (deltaF)) - 0.5);
   *out = SQUARE(deltaF)*SQUARE(deltaF) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 }
 
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
+/* G_IJ is calculated according to Eqn 3.17 in Dhurandhar et al 2008
+ * and Ualpha is calculated according to Eqn 4.10 of the same paper */
 void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     phiI,
@@ -364,13 +379,17 @@ void LALCalculateAveUalpha(LALStatus *status,
 
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 
 }
 /** Calculate pair weights (U_alpha) for the general case **/
+/* G_IJ is calculated according to Eqn 3.10 of Dhurandar et al 2008.
+ * deltaPhi is calculated from Eqn 3.11, and Ualpha is calculated according to
+ * Eqn 4.10 of the same paper.
+ * The Fplus, Fcross terms are calculated according to Eqns 2.9a and 2.9b */
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
@@ -385,7 +404,7 @@ void LALCalculateUalpha(LALStatus *status,
   REAL8 re, im;
   REAL8 FplusI, FplusJ, FcrossI, FcrossJ;
   REAL8 FpIFpJ, FcIFcJ, FpIFcJ, FcIFpJ;
-	    
+
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
@@ -396,7 +415,7 @@ void LALCalculateUalpha(LALStatus *status,
     FplusI = (beamfnsI.a * cos(2.0*(*psi))) + (beamfnsI.b * sin(2.0*(*psi)));
     FplusJ = (beamfnsJ.a * cos(2.0*(*psi))) + (beamfnsJ.b * sin(2.0*(*psi)));
     FcrossI = (beamfnsI.b * cos(2.0 * (*psi))) - (beamfnsI.a * sin(2.0 * (*psi)));
-    FcrossJ = (beamfnsJ.b * cos(2.0 * (*psi))) - (beamfnsJ.a * sin(2.0 * (*psi)));;	
+    FcrossJ = (beamfnsJ.b * cos(2.0 * (*psi))) - (beamfnsJ.a * sin(2.0 * (*psi)));;
 
     /*calculate G_IJ*/
     re = 0.25 * ( (cos(deltaPhi)*
@@ -405,7 +424,7 @@ void LALCalculateUalpha(LALStatus *status,
 
 
     im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
-	          - (sin(deltaPhi) * 
+	          - (sin(deltaPhi) *
 		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
 
 
@@ -423,7 +442,7 @@ void LALCalculateUalpha(LALStatus *status,
 
 
     im = 0.25 * ( -(cos(deltaPhi) * ((FpIFcJ - FcIFpJ)*amplitudes.AplusAcross))
-	       - (sin(deltaPhi) * 
+	       - (sin(deltaPhi) *
 		   ((FpIFpJ * amplitudes.Aplussq) + (FcIFcJ * amplitudes.Acrosssq))) );
 
   }
@@ -434,14 +453,15 @@ void LALCalculateUalpha(LALStatus *status,
 
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 }
 
 
-
+/* Calculate rho, the cross correlation power, 
+ * according to Eqn 4.4 in Dhurandhar et al 2008 */
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
 				COMPLEX16Vector *yalpha,
@@ -457,7 +477,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   *out = 0;
-  
+
   for (i=0; i < (INT4)yalpha->length; i++) {
 
   *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
@@ -465,12 +485,14 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   }
 
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 }
 
+/* Calculate the variance of the cross correlation power.
+ * The variance is given by sigma^2 in Eqn 4.6 of Dhurandhar et al 2008 */
 void LALNormaliseCrossCorrPower(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
@@ -491,12 +513,12 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 	variance += (SQUARE(ualpha->data[i].re) + SQUARE(ualpha->data[i].im)) * sigmaAlphasq->data[i];
 
   }
-  
+
   variance *= 2.0;
   *out = variance;
   DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
+
+  /* normal exit */
   RETURN (status);
 
 

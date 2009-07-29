@@ -234,7 +234,7 @@ FillAllDataBlocks (
   buffer->nextBlock    = 0;
   buffer->deltaPoints  = 0;
   buffer->newLock      = 0; /* new lock no longer pending */
-  
+
   /* normal exit */
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -445,7 +445,7 @@ LALGetData (
   }
   output->newCal = 0;
 
-  /* 
+  /*
    * does next block contain continuous data?  (only need to check if
    * buffer->nextData is not at the beginning of a block)
    */
@@ -472,7 +472,7 @@ LALGetData (
     }
   }
 
-  /* 
+  /*
    * do we need to fill another block of data? (only do so if a
    * buffer->newLock flag is not pending)
    */

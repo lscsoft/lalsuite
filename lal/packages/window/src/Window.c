@@ -69,7 +69,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 
 	if(!orig)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		
+
 	new = XLALMalloc(sizeof(*new));
 	data = XLALCreateREAL4Sequence(orig->data->length);
 

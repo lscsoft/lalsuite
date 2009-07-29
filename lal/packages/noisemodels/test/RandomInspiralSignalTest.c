@@ -95,7 +95,7 @@ LALRandomInspiralSignal
 
 NRCSID (RANDOMINSPIRALSIGNALTESTC,"$Id$");
 
-void printf_timeseries(INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0, FILE *file);
+void printf_timeseries(INT4 n, REAL4 *signal1, REAL8 delta, REAL8 t0, FILE *file);
 
 INT4 lalDebugLevel=1;
 
@@ -117,7 +117,7 @@ main ( void )
    REAL8 dt;
    REAL8 df;
    REAL8 t0;
-   REAL4Vector signal;
+   REAL4Vector signalvec;
    REAL4Vector correlation;
    static RandomInspiralSignalIn randIn;
    InspiralWaveOverlapIn overlapin;
@@ -195,20 +195,20 @@ main ( void )
 
    dt = 1./randIn.param.tSampling;
    t0 = 0.0;
-   LALInspiralWaveLength (&status, &signal.length, randIn.param);
-   correlation.length = signal.length;
-   randIn.psd.length = signal.length/2 + 1;
+   LALInspiralWaveLength (&status, &signalvec.length, randIn.param);
+   correlation.length = signalvec.length;
+   randIn.psd.length = signalvec.length/2 + 1;
 
-   signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*signal.length);
+   signalvec.data = (REAL4*) LALMalloc(sizeof(REAL4)*signalvec.length);
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    randIn.psd.data = (REAL8*) LALMalloc(sizeof(REAL8)*randIn.psd.length);
-   df = randIn.param.tSampling/(float) signal.length;
+   df = randIn.param.tSampling/(float) signalvec.length;
    LALNoiseSpectralDensity (&status, &randIn.psd, &LALLIGOIPsd, df);
 
    overlapin.psd = randIn.psd;
 /*------------------------ create the fft plans --------------------*/
-   LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
-   LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
+   LALCreateForwardRealFFTPlan(&status, &fwdp, signalvec.length, 0);
+   LALCreateReverseRealFFTPlan(&status, &revp, signalvec.length, 0);
 
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
@@ -223,18 +223,18 @@ main ( void )
    i=4;
    while (i--) {
       randIn.type = 0;
-      LALRandomInspiralSignal(&status, &signal, &randIn);
+      LALRandomInspiralSignal(&status, &signalvec, &randIn);
       fprintf(stderr, "%d %e %e\n", i, randIn.param.mass1, randIn.param.mass2);
       if (TimeDomain)
       {
-	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      LALREAL4VectorFFT(&status, &correlation, &signalvec, revp);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
       }
       else
       {
 	      randIn.param.approximant = PadeT1;
 	      LALInspiralParameterCalc(&status, &randIn.param);
-	      overlapin.signal = signal;
+	      overlapin.signal = signalvec;
 	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      overlapin.param = randIn.param;
               overlapin.ifExtOutput = 0;
@@ -245,16 +245,16 @@ main ( void )
       }
 
       randIn.type = 1;
-      LALRandomInspiralSignal(&status, &signal, &randIn);
+      LALRandomInspiralSignal(&status, &signalvec, &randIn);
       if (TimeDomain)
       {
-	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      LALREAL4VectorFFT(&status, &correlation, &signalvec, revp);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
       }
       else
       {
 	      LALInspiralParameterCalc(&status, &randIn.param);
-	      overlapin.signal = signal;
+	      overlapin.signal = signalvec;
 	      overlapin.param = randIn.param;
 	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
               overlapin.ifExtOutput = 0;
@@ -268,17 +268,17 @@ main ( void )
       randIn.param.approximant = TaylorT1;
       randIn.param.massChoice = m1Andm2;
       randIn.param.nStartPad = 3000;
-      LALRandomInspiralSignal(&status, &signal, &randIn);
+      LALRandomInspiralSignal(&status, &signalvec, &randIn);
       randIn.param.nStartPad = 0;
       if (TimeDomain)
       {
-	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      LALREAL4VectorFFT(&status, &correlation, &signalvec, revp);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
       }
       else
       {
 	      if (randIn.param.approximant != BCV) LALInspiralParameterCalc(&status, &randIn.param);
-	      overlapin.signal = signal;
+	      overlapin.signal = signalvec;
 	      overlapin.param = randIn.param;
 	      if (randIn.param.approximant !=BCV)
 		      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
@@ -291,7 +291,7 @@ main ( void )
 			      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2,
 			      randIn.param.psi0, randIn.param.psi3,
 			      overlapout.phase, overlapout.bin, overlapout.max);
-	      findeventsin.signal = signal;
+	      findeventsin.signal = signalvec;
 	      findeventsin.param = randIn.param;
 	      LALInspiralFindEventsCluster (&status, &nEvents, &eventlist, &findeventsin);
 	      fprintf(stderr, "Number of Events=%d\n", nEvents);
@@ -313,7 +313,7 @@ main ( void )
 
 /* destroy the plans, correlation and signal */
 
-   LALFree(signal.data);
+   LALFree(signalvec.data);
    LALFree(randIn.psd.data);
    LALFree(correlation.data);
    LALDestroyRealFFTPlan (&status, &fwdp);
@@ -323,13 +323,13 @@ main ( void )
    return(0);
 }
 
-void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0, FILE *file)
+void printf_timeseries (INT4 n, REAL4 *signal1, double delta, double t0, FILE *file)
 {
    int i=0;
 
 
    do
-      fprintf (file, "%e %e\n", i*delta+t0, *(signal+i));
+      fprintf (file, "%e %e\n", i*delta+t0, *(signal1+i));
    while (n-++i);
 
    fprintf(file, "&\n");

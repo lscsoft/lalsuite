@@ -86,6 +86,8 @@ in Equation (\ref{eq:ode2}).
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 /* structure to provide M and eta. */
 typedef struct
@@ -338,9 +340,9 @@ LALInspiralEccentricityForInjection(
       waveform->position = ppnParams->position;
       waveform->psi = ppnParams->psi;
 
-      LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
-      LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
+      snprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
+      snprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
+      snprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
 
       /* --- fill some output ---*/
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
@@ -415,6 +417,10 @@ LALInspiralEccentricityEngine(
    REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
+
+   /* ff and phi are unused in this function */
+   UNUSED(ff);
+   UNUSED(phi);
 
    INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
    ATTATCHSTATUSPTR(status);
@@ -590,7 +596,7 @@ LALInspiralEccentricityEngine(
         h1 = amp * ( ( 2. * cos(twoPhim2Beta) + 2.5 * orbital_element_e * cos(phim2Beta)
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
-        if ((f>=params->fLower) & (done==0))
+        if ((f >= params->fLower) && (done == 0))
         {
         /*fprintf(stderr, "freq=%e p=%e, e=%e, phase = %e\n", f,orbital_element_p, orbital_element_e, phase);fflush(stderr);
 */

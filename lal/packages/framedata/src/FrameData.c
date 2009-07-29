@@ -136,11 +136,11 @@ LALI2DestroyVector( &status, &dmro.data );
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <FrameL.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrameData.h>
+#include <lal/LALFrameL.h>
 
 NRCSID (FRAMEDATAC, "$Id$");
 
@@ -234,7 +234,7 @@ LALInitializeFrameData (
           FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 }
 
 
@@ -273,7 +273,7 @@ LALFinalizeFrameData (
   *frameData = NULL;
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 }
 
 
@@ -402,7 +402,7 @@ GetNewFrame (
     frameData->fileOpen = 0;
   }
 
-  RETURN (status);  
+  RETURN (status);
 }
 
 
@@ -454,7 +454,7 @@ LALGetFrameData (
         /* we are done */
         frameData->endOfData = 1;
         DETATCHSTATUSPTR (status);
-        RETURN (status);  
+        RETURN (status);
       }
 
       /* open next file in list */
@@ -572,7 +572,7 @@ LALGetFrameData (
   }
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 }
 
 
@@ -613,7 +613,7 @@ SplineFit (
   ypp = yppvec->data;
 
   { /* setup second derivative array */
-    
+
     REAL4Vector *uvec = NULL;
     REAL4       *u;
 
@@ -639,7 +639,7 @@ SplineFit (
       REAL4 ddydx = dy1/dx1 - dy0/dx0;
       REAL4 sigma = dx0/dx2;
       REAL4 fac   = 1/(sigma*ypp[i-1] + 2);
-      
+
       ypp[i] = fac*(sigma - 1);
       u[i]   = fac*(6*ddydx/dx2 - sigma*u[i-1]);
     }
@@ -698,7 +698,7 @@ SplineFit (
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 }
 
 
@@ -769,7 +769,7 @@ LALGetFrameDataResponse (
 
   /* demand DC is zero */
   response->data->data[0].re = response->data->data[0].im = 0;
-  
+
   /* other components (including possible Nyquist) */
   for (i = 1; i < response->data->length; ++i)
   {
@@ -794,5 +794,5 @@ LALGetFrameDataResponse (
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);  
+  RETURN (status);
 }

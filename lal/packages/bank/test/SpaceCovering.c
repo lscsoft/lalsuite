@@ -81,7 +81,6 @@ INT4 lalDebugLevel=33;
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;
   /* Structure specifying the nature of the bank needed */
@@ -89,15 +88,17 @@ main(int argc, char **argv)
   /* Template bank lists */
   static InspiralTemplateList *list1, *list2;
   /* Number of templates in list1 and list2 */
-  INT4 nlist1=0, nlist2=0;
+  INT4 nlist1=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=16384/2;
+  INT4   j, numPSDpts=16384/2;
   FILE *fpr;
   UserParams userParams;
   INT4 i=1;
   double scaling = sqrt(2.);
 
+  /* initiliase userParams.calque */
+  userParams.calque = TaylorT1;
 
   while(i < argc)
     {
@@ -255,28 +256,28 @@ main(int argc, char **argv)
   fprintf(fpr, "&\n");
 
   {
-    UINT4 j;
+    INT4 k;
     UINT4 valid;
     static RectangleIn RectIn;
     static RectangleOut RectOut;
     static HexagonOut HexaOut;
 
     /* Print out the template parameters */
-    for (j=0; j<nlist1; j++)
+    for (k=0; k<nlist1; j=k++)
     {
-      RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g00 );
-      RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g11 );
+      RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[k].metric.g00 );
+      RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[k].metric.g11 );
       RectIn.theta = list1[j].metric.theta  ;
 
       if (userParams.calque == BCV)
       {
-        RectIn.x0 = (REAL8) list1[j].params.psi0;
-        RectIn.y0 = (REAL8) list1[j].params.psi3;
+        RectIn.x0 = (REAL8) list1[k].params.psi0;
+        RectIn.y0 = (REAL8) list1[k].params.psi3;
       }
       else
       {
-        RectIn.x0 = (REAL8) list1[j].params.t0;
-        RectIn.y0 = (REAL8) list1[j].params.t3;
+        RectIn.x0 = (REAL8) list1[k].params.t0;
+        RectIn.y0 = (REAL8) list1[k].params.t3;
       }
       /*
        * LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
@@ -297,8 +298,8 @@ main(int argc, char **argv)
         }
         else if (coarseIn.gridSpacing == Hexagonal || coarseIn.gridSpacing == HybridHexagonal)
         {
-          RectIn.dx = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g00 );
-          RectIn.dy = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[j].metric.g11 );
+          RectIn.dx = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[k].metric.g00 );
+          RectIn.dy = sqrt(3.0 * (1. - coarseIn.mmCoarse)/list1[k].metric.g11 );
           /*RectIn.theta = list1[j].metric.theta + LAL_PI/6;*/
           LALHexagonVertices(&status, &HexaOut, &RectIn);
           fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n",

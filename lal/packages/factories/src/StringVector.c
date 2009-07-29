@@ -97,7 +97,7 @@ XLALAppendString2Vector (LALStringVector *vect,		/**< input string-vector to app
 } /* XLALAppendString2Vector() */
 
 
-
+
 
 /** Create a StringVector from the list of strings passed as arguments
  * \note All arguments MUST be CHAR* strings.

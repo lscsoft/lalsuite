@@ -23,11 +23,11 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALInspiralFindLoudestEvent.c}}
-Module to find events in a given data set with an SNR 
+Module to find events in a given data set with an SNR
 larger than a pre-specified threshold. The module uses
-two orthogonal inspiral signals of specified parameters 
+two orthogonal inspiral signals of specified parameters
 with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr, 
+the number of events found, and for each event the snr,
 the bin number and the phase of the template at that bin.
 
 \subsubsection*{Prototypes}
@@ -55,7 +55,7 @@ NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralFindLoudestEventCP"> */
 void
-LALInspiralFindLoudestEvent 
+LALInspiralFindLoudestEvent
    (
    LALStatus            *status,
    INT4                 *nEvents,
@@ -64,8 +64,8 @@ LALInspiralFindLoudestEvent
    )
 {  /*  </lalVerbatim>  */
 
-   /* 
-    * We shall assume that the number of events to be found in 
+   /*
+    * We shall assume that the number of events to be found in
     * each template is no more than 100000.
    */
    INT4 i;
@@ -185,17 +185,17 @@ LALInspiralFindLoudestEvent
 	   case PadeT1:
 	   case EOB:
 	   case SpinTaylorT3:
-	   
+
 		   findeventsin->param.startPhase = LAL_PI_2;
 		   LALInspiralWave(status->statusPtr, &output2, &findeventsin->param);
 		   CHECKSTATUSPTR(status);
 		   findeventsin->param.startPhase = 0.;
 		   LALInspiralWave(status->statusPtr, &output1, &findeventsin->param);
 		   CHECKSTATUSPTR(status);
-	   
+
 		   if (findeventsin->displayTemplates)
 		   {
-			   for (i=0;i<(INT4)output1.length;i++) 
+			   for (i=0;i<(INT4)output1.length;i++)
 				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
 		   }
 		   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
@@ -203,28 +203,28 @@ LALInspiralFindLoudestEvent
 		   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
 		   CHECKSTATUSPTR(status);
 		   break;
-	   
+
 	   case TaylorF1:
 	   case TaylorF2:
 	   case PadeF1:
 	   case BCV:
-	   
+
 		   findeventsin->param.startPhase = LAL_PI_2;
 		   LALInspiralWave(status->statusPtr, &filter2, &findeventsin->param);
 		   CHECKSTATUSPTR(status);
 		   findeventsin->param.startPhase = 0.;
 		   LALInspiralWave(status->statusPtr, &filter1, &findeventsin->param);
 		   CHECKSTATUSPTR(status);
-	   
+
 		   if (findeventsin->displayTemplates)
 		   {
 			   LALREAL4VectorFFT(status->statusPtr, &output1, &filter1, findeventsin->revp);
 			   CHECKSTATUSPTR(status);
 			   LALREAL4VectorFFT(status->statusPtr, &output2, &filter2, findeventsin->revp);
 			   CHECKSTATUSPTR(status);
-			   for (i=0;i<(INT4)output1.length;i++) 
+			   for (i=0;i<(INT4)output1.length;i++)
 				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
-		   
+
 			   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
 			   CHECKSTATUSPTR(status);
 			   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
@@ -234,7 +234,7 @@ LALInspiralFindLoudestEvent
            default:
                    ABORT( status, 9999, "Unknown case in switch." );
    }
-   
+
    normin.psd = &(findeventsin->psd);
    normin.df = df;
    normin.fCutoff = findeventsin->param.fFinal;
@@ -257,31 +257,31 @@ LALInspiralFindLoudestEvent
    CHECKSTATUSPTR(status);
 
 
-   for (i=nBegin;i<nEnd;i++) 
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output1.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
    CHECKSTATUSPTR(status);
-	   
-   for (i=nBegin;i<nEnd;i++) 
+
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output2.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
    CHECKSTATUSPTR(status);
 
    if (findeventsin->displayCorrelationStats)
    {
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
-   
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);
+
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);
    }
-   
+
    if (findeventsin->displayCorrelation)
    {
-      for (i=nBegin;i<nEnd;i++) 
+      for (i=nBegin;i<nEnd;i++)
          {
-            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
+            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5);
             printf("%e %e\n", i*dt, x);
          }
-         printf("&\n");   
+         printf("&\n");
    }
    msevenby3 = -7.L/3.L;
    distanceNorm = 0.;
@@ -301,17 +301,17 @@ LALInspiralFindLoudestEvent
    */
 
    *nEvents = 0;
-   
+
    x = output1.data[nBegin];
    y = output2.data[nBegin];
    z = sqrt(x*x + y*y);
    if (z>findeventsin->Threshold) (*nEvents)++;
-       
+
    eventlist->snr = z;
    eventlist->param = findeventsin->param;
    eventlist->phase = atan2(y,x);
    eventlist->bin = nBegin;
-          
+
    dist = distanceNorm/ z;
    eventlist->effDistance = LAL_C_SI * dist / LAL_PC_SI /1.e6;
    eventlist->amplitude = 4.*eta*(totalMass/dist)*pow(LAL_PI*totalMass*100.,2.L/3.L);
@@ -324,14 +324,14 @@ LALInspiralFindLoudestEvent
    eventlist->endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
    eventlist->sigmasq = (statsout1.var + statsout2.var)/2.;
 
-   for (i=nBegin+1; i<nEnd; i++) 
+   for (i=nBegin+1; i<nEnd; i++)
    {
        x = output1.data[i];
        y = output2.data[i];
        z = sqrt(x*x + y*y);
        if (z>findeventsin->Threshold) (*nEvents)++;
-       if (z>eventlist->snr) 
-       { 
+       if (z>eventlist->snr)
+       {
           eventlist->snr = z;
           eventlist->param = findeventsin->param;
           eventlist->phase = atan2(y,x);
@@ -352,9 +352,9 @@ LALInspiralFindLoudestEvent
 
    }
 
-          
+
    /* Now call the chi-squared code */
-  
+
    params.lag = eventlist->bin;
    params.phase = eventlist->phase;
    params.deltaT = 1.0/findeventsin->param.tSampling;
@@ -368,7 +368,7 @@ LALInspiralFindLoudestEvent
    chisqParams.fLower = findeventsin->param.fLower;
    chisqParams.deltaT = params.deltaT;
    chisqParams.nBins = 20;
-   LALInspiralComputeChisq(status->statusPtr, &chisq, &chisqDataVec, &chisqParams); 
+   LALInspiralComputeChisq(status->statusPtr, &chisq, &chisqDataVec, &chisqParams);
 
    eventlist->chisq = chisq;
    eventlist->chisqDOF = 2*(chisqParams.nBins-1);

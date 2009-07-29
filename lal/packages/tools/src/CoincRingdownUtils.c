@@ -266,13 +266,11 @@ LALCreateTwoIFORingdownCoincList(
   {
 
     /* calculate the time of the trigger */
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[0],
-        &(currentTrigger[0]->start_time) );
+    currentTriggerNS[0] = XLALGPSToINT8NS( &(currentTrigger[0]->start_time) );
 
     /* set next trigger for comparison */
     currentTrigger[1] = currentTrigger[0]->next;
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-          &(currentTrigger[1]->start_time) );
+    currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->start_time) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
@@ -310,8 +308,7 @@ LALCreateTwoIFORingdownCoincList(
 
       if ( (currentTrigger[1] = currentTrigger[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentTrigger[1]->start_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->start_time) );
       }
       else
       {
@@ -1474,7 +1471,7 @@ XLALGenerateCoherentBank(
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
         /* set the ifo */
-        LALSnprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
+        snprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )

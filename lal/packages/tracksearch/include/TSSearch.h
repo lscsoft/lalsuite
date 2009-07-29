@@ -26,10 +26,6 @@ $Id$
 #define _TSSEARCH_H
 
 #include <lal/Date.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameCalibration.h>
-#include <lal/FrameData.h>
-#include <lal/FrameStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Interpolate.h>
 #include <lal/LALDatatypes.h>
@@ -87,19 +83,13 @@ extern "C" {
     {
       quiet, verbose, printFiles, all
     }TSDiagnosticType;
-  
-/*   typedef enum tagTSSearchLogic */
-/*     { */
-/*       abortLogic, */
-/*       Lgtl_AND_Pgtp,Lltl_AND_Pgtp,Lgtl_AND_Pltp,Lltl_AND_Pltp, */
-/*       Lgtl_OR_Pgtp,Lltl_OR_Pgtp,Lgtl_OR_Pltp,Lltl_OR_Pltp */
-/*     }TSSearchLogic; */
+
 
   /*
    * Structure to hold a collection of data segments which may be
    * overlapped by n points
    */
-  typedef struct 
+  typedef struct
   tagTSSegmentVector
   {
     UINT4               length;  /* Number of segments long */
@@ -108,15 +98,15 @@ extern "C" {
 					  * and after which are buffer
 					  * to remove TFR artifacts.
 					  */
-    REAL4TimeSeries   **dataSeg; /* 
+    REAL4TimeSeries   **dataSeg; /*
 				  * Structure for individual data
-				  * segments 
+				  * segments
 				  */
   }TSSegmentVector;
-  
+
   /*
    * Structure that holds all possible parameters for the tracksearch
-   * library functions collectively not just LALTracksearch 
+   * library functions collectively not just LALTracksearch
    */
   typedef struct
   tagTSSearchParams
@@ -129,11 +119,11 @@ extern "C" {
     UINT4             TimeLengthPoints; /* Product of NumSeg&SegLenthPoints*/
     UINT4             discardTLP;/* Points that need to be
 				  * discarded given
-				  * input map overlap 
+				  * input map overlap
 				  */
     UINT4             SegLengthPoints;/*Data Seg Length*/
     UINT4             colsToClip;/*
-				  * Should be colsToClip before and 
+				  * Should be colsToClip before and
 				  * after region of interest.
 				  */
     UINT4             SegBufferPoints;/*
@@ -171,8 +161,8 @@ extern "C" {
 				   * Number of points to overlap the
 				   * individual data segments by. This
 				   * is apart from implicit Segment
-				   * buffer for TFR clipping option 
-				   */ 
+				   * buffer for TFR clipping option
+				   */
     UINT4             whiten;/*Flags typ of whitening to do*/
     AvgSpecMethod     avgSpecMethod;/*Type of PSD averaging to do*/
     WindowType        avgSpecWindow;/*Type of PSD averaging window*/
@@ -183,12 +173,10 @@ extern "C" {
     WindowType        window; /*Window to use in TF map creation*/
     UINT4             numEvents; /*Does map have features*/
     CHAR             *channelName; /*Data Channel Name */
-    ChannelType       channelNameType; /*Type of data channel to use */
     CHAR             *dataDirPath; /*Path to data frames */
     CHAR             *singleDataCache; /*Explicit name to 1 data cache*/
     CHAR             *detectorPSDCache;/*Explicit cache for PSD*/
     CHAR             *channelNamePSD;/*DO NOT USE*/
-    FrChanType        calChannelType;/*Frame channel for calibration*/
     CHAR             *calFrameCache;/*Cache file for cal frames*/
     BOOLEAN           calibrate;/*Calibration flag Y/N */
     CHAR              calibrateIFO[3];/*3LetterName of IFO*/

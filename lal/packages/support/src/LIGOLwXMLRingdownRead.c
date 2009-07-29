@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXMLRingdownRead.c
  *
  * Author: Brown, D. A., and Goggin, L. M.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LIGOLwXMLRingdownReadCV">
 Author: Brown, D. A. and Goggin, L. M.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <lal/LALStdio.h>
@@ -113,7 +113,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - unable to open sngl_ringdown table: "
         "metaio error code %d\n", mioStatus );
-    XLAL_ERROR_NULL( func, XLAL_EDATA ); 
+    XLAL_ERROR_NULL( func, XLAL_EDATA );
    /* return 0;*/
   }
 
@@ -128,7 +128,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
@@ -136,12 +136,12 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
     /* allocate memory for the ringdown structure we are about to read in */
     if ( ! eventHead )
     {
-      thisEvent = eventHead = (SnglRingdownTable *) 
+      thisEvent = eventHead = (SnglRingdownTable *)
         LALCalloc( 1, sizeof(SnglRingdownTable) );
     }
     else
     {
-      thisEvent = thisEvent->next = (SnglRingdownTable *) 
+      thisEvent = thisEvent->next = (SnglRingdownTable *)
         LALCalloc( 1, sizeof(SnglRingdownTable) );
     }
     if ( ! thisEvent )
@@ -164,18 +164,18 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
 
       /* dereference the data stored in the table */
       r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
+      r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
       i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
       i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+        snprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+        snprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -248,7 +248,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 19 )
       {
-        thisEvent->event_id = (EventIDColumn *) 
+        thisEvent->event_id = (EventIDColumn *)
           LALCalloc( 1, sizeof(EventIDColumn) );
         sscanf( env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data, "sngl_ringdown:event_id:%" LAL_UINT8_FORMAT, &(thisEvent->event_id->id) );
         thisEvent->event_id->snglRingdownTable = thisEvent;
@@ -320,7 +320,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
 
   /* loop over the rows in the file */
   i = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     /* count the rows in the file */
     i++;
@@ -328,7 +328,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     /* check the injection time is withing the requested inteval */
     if ( tableDir[2].pos < 0 )
     {
-      XLALPrintError( "XLAL Error - bad table directory for element %d\n", j );
+      XLALPrintError( "XLAL Error - bad table directory for element %d\n", i );
       XLAL_CLOBBER_EVENTS;
       XLAL_ERROR_NULL( func, XLAL_EIO );
     }
@@ -340,12 +340,12 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
       /* allocate memory for the template we are about to read in */
       if ( ! eventHead )
       {
-        thisEvent = eventHead = (SimRingdownTable *) 
+        thisEvent = eventHead = (SimRingdownTable *)
           LALCalloc( 1, sizeof(SimRingdownTable) );
       }
       else
       {
-        thisEvent = thisEvent->next = (SimRingdownTable *) 
+        thisEvent = thisEvent->next = (SimRingdownTable *)
           LALCalloc( 1, sizeof(SimRingdownTable) );
       }
       if ( ! thisEvent )
@@ -373,14 +373,14 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->waveform, 
-              LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", 
+          snprintf( thisEvent->waveform,
+              LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
               env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->coordinates, 
-              LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
+          snprintf( thisEvent->coordinates,
+              LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 2 )
@@ -524,12 +524,12 @@ INT4 XLALReadRingdownTriggerFile (
   SearchSummaryTable  *inputSummary = NULL;
   SearchSummaryTable  *thisSearchSumm = NULL;
   SearchSummvarsTable *thisInputFile = NULL;
-  
+
   /* store the file name in search summvars */
   XLALPrintInfo(
       "XLALReadRingdownTriggerFile(): storing input file name %s\n"
       "in search summvars table\n", fileName );
-  
+
   if ( ! *inputFileList )
   {
     *inputFileList = thisInputFile = (SearchSummvarsTable *)
@@ -547,19 +547,19 @@ INT4 XLALReadRingdownTriggerFile (
     XLALPrintError( "XLAL Error - could not allocate search_summvars table\n" );
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
-  
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, "%s", fileName );
-  
+
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX, "input_file" );
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX, "%s", fileName );
+
   /* read in the search summary and store */
   XLALPrintInfo( "XLALReadRingdownTriggerFile(): "
       "Reading search_summary table\n");
-  
+
   inputSummary = XLALSearchSummaryTableFromLIGOLw( fileName );
   if ( ! inputSummary )
   {
     LALFree( thisInputFile );
-    XLALPrintError( "XLAL Error - error reading search_summary table from %s\n", 
+    XLALPrintError( "XLAL Error - error reading search_summary table from %s\n",
         fileName );
     XLAL_ERROR( func, XLAL_EIO );
   }
@@ -577,7 +577,7 @@ INT4 XLALReadRingdownTriggerFile (
       thisSearchSumm = thisSearchSumm->next = inputSummary;
     }
   }
-  
+
   /* read in the triggers */
   XLAL_TRY( inputData = XLALSnglRingdownTableFromLIGOLw( fileName ), errnum);
   if ( ! inputData )
@@ -606,11 +606,11 @@ INT4 XLALReadRingdownTriggerFile (
       /* trigger to the first trigger of the list being appended */
       *lastTrigger = (*lastTrigger)->next = inputData;
     }
-  
+
     /* scroll to the end of the linked list of triggers */
     for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next )
       numFileTriggers++;
   }
-  
+
   return numFileTriggers;
 }

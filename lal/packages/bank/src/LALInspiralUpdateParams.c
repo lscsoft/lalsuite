@@ -26,8 +26,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralUpdateParams.c}}
 
-Module to update the parameters used in creating a coarse bank 
-based on a square lattice. 
+Module to update the parameters used in creating a coarse bank
+based on a square lattice.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
@@ -39,14 +39,14 @@ based on a square lattice.
 \end{itemize}
 
 \subsubsection*{Description}
-While scanning the $\tau_0$-direction after reaching the 
-boundary of the parameter space, we have to return to the 
+While scanning the $\tau_0$-direction after reaching the
+boundary of the parameter space, we have to return to the
 starting point of the same line and use the metric there
-to increment one step upwards in the direction of $\tau_{2(3)}.$ 
+to increment one step upwards in the direction of $\tau_{2(3)}.$
 to a {\it template list}.
 
 
-The $dx_i$ returned by this function gives the spacing for a 
+The $dx_i$ returned by this function gives the spacing for a
 square lattice (e.g., $dx_i$ as given in Owen PRD 53).
 
 \subsubsection*{Algorithm}
@@ -86,7 +86,7 @@ void LALInspiralUpdateParams(LALStatus          *status,
    ASSERT (minimalmatch > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (metric.theta < LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (metric.theta > -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   
+
    /* This dx0, dx1 are linked to a square placement only !! */
    dx0 = sqrt(2.L * (1.L - minimalmatch)/metric.g00 );
    dx1 = sqrt(2.L * (1.L - minimalmatch)/metric.g11 );
@@ -104,7 +104,7 @@ void LALInspiralUpdateParams(LALStatus          *status,
 		   fac = cos(theta);
 		   bankParams->dx0 = dx0 / fac;
 		   bankParams->dx1 = dx1 * fac;
-	   } 
+	   }
 	   else {
 		   fac = sin(theta);
 		   bankParams->dx0 = dx1 / fac;

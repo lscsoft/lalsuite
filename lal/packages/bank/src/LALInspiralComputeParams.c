@@ -28,7 +28,7 @@ $Id$
 
 This function takes as input $\tau_{0}$, $\tau_{3}$ and $f_a$ (the lower frequency of the detectors
 sensitivity). It then calculates $m$ (the total mass of the binary), $\eta$ (the
-symmetric mass ratio) and the individual mass of the compact objects. 
+symmetric mass ratio) and the individual mass of the compact objects.
 
 
 \subsubsection*{Prototypes}
@@ -37,7 +37,7 @@ symmetric mass ratio) and the individual mass of the compact objects.
 \begin{itemize}
    \item \texttt{pars,} Output, inspiral wave parameter structure
    \item \texttt{bankParams,} Input, the parameters of the template bank
-   \item \texttt{coarseIn,} Input, input parameters specifying the coarse bank 
+   \item \texttt{coarseIn,} Input, input parameters specifying the coarse bank
 \end{itemize}
 \idx{LALInspiralComputeParams()}
 
@@ -116,7 +116,7 @@ NRCSID (LALINSPIRALCOMPUTEPARAMSC, "$Id$");
 /*  <lalVerbatim file="LALInspiralComputeParamsCP"> */
 
 void LALInspiralComputeParams(LALStatus            *status,
-                              InspiralTemplate     *pars, 
+                              InspiralTemplate     *pars,
                               InspiralBankParams   bankParams,
                               InspiralCoarseBankIn coarseIn)
 { /*  </lalVerbatim>  */

@@ -26,7 +26,7 @@
  * \subsection{Program \texttt{MakeFrames.c}}
  *
  * Make some frames with random Gaussian noise.
- * 
+ *
  * \subsubsection*{Usage}
  *
  * \begin{verbatim}
@@ -63,10 +63,10 @@ int main( void )
 {
   static LALStatus      status;
   static INT4TimeSeries series;
-  const UINT4   time = 60;          /* duration of frame file */
+  const UINT4   duration = 60;      /* duration of frame file */
   const INT4    seed = 10;          /* random number seed     */
   const REAL4   rate = 16384;       /* sample rate (Hz)       */
-  const UINT4   npts = time * rate; /* number of points       */
+  const UINT4   npts = duration * rate; /* number of points       */
   FrOutPar      opar = { "F", "TEST", ADCDataChannel, 6, 0, 0 };
   RandomParams *rpar = NULL;
   UINT4 count = 0;
@@ -105,7 +105,7 @@ int main( void )
 
   /* generate second frame file worth of data and write it */
 
-  series.epoch.gpsSeconds += time;
+  series.epoch.gpsSeconds += duration;
   /*
   LALNormalDeviates( &status, series.data, rpar );
   TESTSTATUS( &status );
@@ -125,7 +125,7 @@ int main( void )
 
   /* generate third frame file worth of data and write it */
 
-  series.epoch.gpsSeconds += time;
+  series.epoch.gpsSeconds += duration;
   /*
   LALNormalDeviates( &status, series.data, rpar );
   TESTSTATUS( &status );

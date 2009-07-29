@@ -58,14 +58,14 @@ LALInspiralBCVSpinRandomBank(
   float *MCbank;
   SnglInspiralTable *bank=NULL;
   MetricFunc *thisMetric;
-	
+
   INITSTATUS(status, "LALInspiralBCVSpinRandomBank", LALINSPIRALBCVSPINRANDOMBANKC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
   ASSERT( *tiles == NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 
-  /* 
+  /*
    * coarseIn structure knows about the range of beta, psi0,
    * and psi3. It also provides the power spectrum of noise,
    * minimal match (in mmCoarse), upper and lower freq cutoffs.
@@ -89,21 +89,21 @@ LALInspiralBCVSpinRandomBank(
   bankIn.pMax = (float *) malloc(sizeof(float) * bankIn.dim);
   bankIn.pMin = (float *) malloc(sizeof(float) * bankIn.dim);
 
-	
+
   /* we will use a one-d array to store the bank. The convention is
    * that the first bankIn.dim-elements of bank store the coordinates of
    * the first template, the bankIn.dim+1 element is reserved for a tag to
    * indicate if the random template is retained or rejected. We
-   * therefore use an initial array of size nIni*(bankIn.dim+1).  
+   * therefore use an initial array of size nIni*(bankIn.dim+1).
    */
 
   MCbank = (float *) malloc(sizeof(float)*bankIn.nIni*(bankIn.dim+1));
 
-  /* We first convert minimal match to maximum mismatch, as 
-  the random bank uses the latter, and we multiply by a 
-  factor of 2 because the Tagoshi metric gives an overefficient 
-  bank. This corresponds to increasing the distance between 
-  templates by a factor of sqrt(2). 
+  /* We first convert minimal match to maximum mismatch, as
+  the random bank uses the latter, and we multiply by a
+  factor of 2 because the Tagoshi metric gives an overefficient
+  bank. This corresponds to increasing the distance between
+  templates by a factor of sqrt(2).
   */
 
   bankIn.MM=(1-coarseIn->mmCoarse)*2.;
@@ -140,8 +140,8 @@ LALInspiralBCVSpinRandomBank(
     newSn.data[m]/=ratio;
     }
     newSn.data[N] = coarseIn->shf.data->data[N*ratio];
-    Sn = newSn.data; 
-     
+    Sn = newSn.data;
+
   }
 else
 {
@@ -155,10 +155,10 @@ else
   MonteCarloBank(thisMetric, &bankIn, MCbank);
 
 
-	
+
   if (bankIn.verbose)
   {
-    fprintf(stdout, "Numtemplates=%d MaxMismatch=%e\n", bankIn.nFin, bankIn.MM); 
+    fprintf(stdout, "Numtemplates=%d MaxMismatch=%e\n", bankIn.nFin, bankIn.MM);
     for (i=0; i<bankIn.nIni; i++)
     {
        if ((int)MCbank[i*(bankIn.dim+1)+bankIn.dim])
@@ -176,7 +176,7 @@ else
   }
 
   *tiles = bank;
-  
+
   for( k = 0; k < bankIn.nIni; k++ )
   {
 	  if ((int)MCbank[k*(bankIn.dim+1)+bankIn.dim])
@@ -191,15 +191,15 @@ else
 		  bank->beta = MCbank[k*(bankIn.dim+1)+2];
 	  }
   }
-    
+
   /* Free tiles template, which is blank. */
-    
+
   *ntiles = bankIn.nFin;
   bank = (*tiles)->next;
-  LALFree( *tiles ); 
-  free(bankIn.pMax); 
-  free(bankIn.pMin); 
-  free(bankIn.p); 
+  LALFree( *tiles );
+  free(bankIn.pMax);
+  free(bankIn.pMin);
+  free(bankIn.p);
 
   *tiles = bank;
 
@@ -214,7 +214,7 @@ else
 
 void MonteCarloBank(
 		MetricFunc metric,
-		MCBankIn *in, 
+		MCBankIn *in,
 		float *bank)
 {
 	int i, j;
@@ -233,14 +233,14 @@ void MonteCarloBank(
 		}
 		fprintf(stdout, "nIni=%d\n", in->nIni);
 	}
-	
+
 	/* Throw away unwanted templates */
 	FilterRandomBank(metric, in, bank);
 
 	/* If everything works well return with error=0 */
 	in->error = 0;
 	return;
-}	
+}
 
 /*
 void EstimateNumberOfTemplates(
@@ -253,7 +253,7 @@ void EstimateNumberOfTemplates(
 
 
 void CreateRandomBank(
-		MCBankIn *in, 
+		MCBankIn *in,
 		float *bank)
 {
 	int i, j, k;
@@ -270,7 +270,7 @@ void CreateRandomBank(
 		}
 		/* We shall choose the last element in the series for a tag
 		 * to tell us whether or not the current template is rejected;
-		 * To begin with every template is a member of the bank 
+		 * To begin with every template is a member of the bank
 		 */
 		bank[k+in->dim] = 1;
 	}
@@ -279,7 +279,7 @@ void CreateRandomBank(
 
 void FilterRandomBank(
 		MetricFunc metric,
-		MCBankIn *in, 
+		MCBankIn *in,
 		float *bank)
 {
 	int i, j, m, dimp, dimpnIni, diag, sze;
@@ -294,7 +294,7 @@ void FilterRandomBank(
 	x = (float *) malloc(sizeof(float) * in->dim);
 	y = (float *) malloc(sizeof(float) * in->dim);
 
-	if (diag) 
+	if (diag)
 		gij = (float *) malloc(sizeof(float) * in->dim);
 	else
 		gij = (float *) malloc(sizeof(float) * sze);
@@ -304,7 +304,7 @@ void FilterRandomBank(
 		if (bank[i+in->dim])
 		{
 		/* coordinates of first point */
-		for (j=0; j<in->dim; j++) x[j] = in->p[j] = bank[i+j]; 
+		for (j=0; j<in->dim; j++) x[j] = in->p[j] = bank[i+j];
 		/* compute the metric at the point (in->p) in question */
 		metric(*in, &diag, gij);
 		/* inner loop over test points */
@@ -314,7 +314,7 @@ void FilterRandomBank(
 			if (bank[m+in->dim])
 			{
 				/* coordinates of m-th point */
-				for (j=0; j<in->dim; j++) 
+				for (j=0; j<in->dim; j++)
 				{
 					y[j] = bank[m+j];
 					if (in->verbose) fprintf(stdout, "%e %e %e ", x[j],y[j],gij[j]);
@@ -322,7 +322,7 @@ void FilterRandomBank(
 				MCComputeDistance(in->dim, diag, x, y, gij, &dist);
 				if (in->verbose) fprintf(stdout, "%e %d %d\n", dist, i, m);
 
-				if (dist<in->MM) 
+				if (dist<in->MM)
 				{
 					bank[m+in->dim] = 0;
 					--(in->nFin);
@@ -344,8 +344,8 @@ void FilterRandomBank(
 void MCComputeDistance(
 		int   dim,
 		int   diag,
-		float *x, 
-		float *y, 
+		float *x,
+		float *y,
 		float *gij,
 		float *dist
 		)
@@ -356,7 +356,7 @@ void MCComputeDistance(
         k = 0;
 	if (diag)
 	{
-		for (i=0; i<dim; i++) 
+		for (i=0; i<dim; i++)
 		{
 			dxi = x[i]-y[i];
 			*dist += gij[i] * dxi * dxi;
@@ -374,7 +374,7 @@ void MCComputeDistance(
 				dxj = x[j]-y[j];
 				*dist += 2. * gij[k+j-i] * dxi *dxj;
 			}
-		        k += dim - i; 
+		        k += dim - i;
                 }
 	return;
 }
@@ -382,7 +382,7 @@ void MCComputeDistance(
 /*
 void BankStats(
 		MetricFunc metric,
-		MCBankIn *in, 
+		MCBankIn *in,
 		float *bank)
 {
 	return;
@@ -390,8 +390,8 @@ void BankStats(
 */
 
 void SchwarzschildMetric(
-		MCBankIn in, 
-		int *diag, 
+		MCBankIn in,
+		int *diag,
 		float *gij)
 {
 	*diag = 1;
@@ -403,8 +403,8 @@ void SchwarzschildMetric(
 }
 
 void TwoSphereMetric(
-		MCBankIn in, 
-		int *diag, 
+		MCBankIn in,
+		int *diag,
 		float *gij)
 {
 	*diag = 1;
@@ -415,8 +415,8 @@ void TwoSphereMetric(
 }
 
 void FlatSpaceMetric(
-		MCBankIn in, 
-		int *diag, 
+		MCBankIn in,
+		int *diag,
 		float *gij)
 {
 	int i;
@@ -427,8 +427,8 @@ void FlatSpaceMetric(
 }
 
 void TwoDFlatSpacePolarMetric(
-		MCBankIn in, 
-		int *diag, 
+		MCBankIn in,
+		int *diag,
 		float *gij)
 {
 	*diag = 1;
@@ -441,20 +441,20 @@ void TwoDFlatSpacePolarMetric(
 #ifndef _HT_BCVSPINMETRIC_C_
 #define _HT_BCVSPINMETRIC_C_
 #define PI (3.141592653589793238462643383279502)
-#define DTRENORM (200)  /* The renormalization factor for the time derivative 
-                           of the template. This is introduced to have 
-			   an agreement with Yanbei's mathematica code. 
+#define DTRENORM (200)  /* The renormalization factor for the time derivative
+                           of the template. This is introduced to have
+			   an agreement with Yanbei's mathematica code.
                            This value does not affect the results.
                            This can be set to 1. */
-#define N_RANDOM (100)  /* The number of monte carlo to generate 
+#define N_RANDOM (100)  /* The number of monte carlo to generate
                            the 6 phase factor */
-#define JJ (150)       /* The number of direction of contour 
+#define JJ (150)       /* The number of direction of contour
                            for which the fitting is done. */
 double cont_data[JJ+1][4];
 
 void BCVSpinMetric(
-		MCBankIn in, 
-		int *diag, 
+		MCBankIn in,
+		int *diag,
 		float *gij)
 {
 	int dbg=0, dim=4, N, i;
@@ -485,7 +485,7 @@ void BCVSpinMetric(
 	fmin = 40.;
 
 	BCVspin_metric(MinMatch, N, in.Sn, fmin, fmax, beta, bcv2metric, dbg);
-  	
+
 	gij[0] = (float) bcv2metric[1][1];
 	gij[1] = (float) bcv2metric[1][2];
 	gij[2] = (float) bcv2metric[1][3];
@@ -495,7 +495,7 @@ void BCVSpinMetric(
 
 	for (i=0; i<dim; i++)
 	{
-		free(bcv2metric[i]); 
+		free(bcv2metric[i]);
 	}
 	free(bcv2metric);
 	return;
@@ -507,7 +507,7 @@ static double determinant3BCVSpinRandomBank(gsl_matrix *matrix)
 {
 	int i,j;
   double tmp, a[4][4];
-	
+
 	for (i = 0; i < 3; i++){
 		for (j = 0; j < 3; j++){
 			a[i+1][j+1]= gsl_matrix_get (matrix, i, j);
@@ -536,28 +536,28 @@ int matrix3_determinant_plus(gsl_matrix *matrix,gsl_vector *eig)
   if(det<0){
 		gsl_matrix *V = gsl_matrix_alloc (3, 3);
 		gsl_vector *v= gsl_vector_alloc (3);
-    		
+
 		for (i = 0; i < 3; i++){
       gsl_vector_set (v, i, gsl_vector_get(eig, i));
 		}
-		
+
 		for (i = 0; i < 3; i++){
 		for (j = 0; j < 3; j++){
 			gsl_matrix_set (V, i, j,gsl_matrix_get (matrix, i, j));
 		}
 		}
-		
-		
+
+
 		    gsl_vector_set (eig, 0, gsl_vector_get(v, 0));
 			gsl_vector_set (eig, 1, gsl_vector_get(v, 2));
     		gsl_vector_set (eig, 2, gsl_vector_get(v, 1));
-				
+
 		for(j=0;j<3;j++){
 			gsl_matrix_set (matrix, j, 0,gsl_matrix_get (V, j, 0));
 			gsl_matrix_set (matrix, j, 1,gsl_matrix_get (V, j, 2));
 		    gsl_matrix_set (matrix, j, 2,gsl_matrix_get (V, j, 1));
 		}
-	
+
     gsl_matrix_free(V);
     gsl_vector_free(v);
 	}
@@ -588,7 +588,7 @@ int three_metric(/* input */
       for(i=1;i<=6;i++)
 	for(j=1;j<=6;j++)
 	  tmp1+=alpha[i]*alpha[j]*funcG[i][j][a][b];
-      
+
       tmp2=0;
       for(i=1;i<=6;i++)
 	for(j=1;j<=6;j++)
@@ -596,7 +596,7 @@ int three_metric(/* input */
 	    for(m=1;m<=6;m++)
 	      tmp2+=alpha[i]*alpha[j]*funcG[i][j][0][a]
 		*alpha[l]*alpha[m]*funcG[l][m][0][b];
-      
+
       metric3[a][b]=0.5*(tmp1-tmp2/tmp3);
     }
 
@@ -604,7 +604,7 @@ int three_metric(/* input */
 }
 
 int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
-			int ndata, 
+			int ndata,
 			/*output*/ double **fit_point)
 {
   const gsl_rng_type * T;
@@ -615,12 +615,12 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
   gsl_vector *eig = gsl_vector_alloc(3);
   gsl_matrix *V = gsl_matrix_alloc(3, 3);
   gsl_eigen_symmv_workspace * w = gsl_eigen_symmv_alloc (3);
-	
+
   gsl_rng_env_setup();
   T = gsl_rng_default;
   r = gsl_rng_alloc (T);
-	
-	
+
+
   sum=0;
   for(i=1;i<=6;i++)
   {
@@ -633,17 +633,17 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 	  alpha[i]=alpha[i]/sum;
   }
   three_metric(funcG,alpha,metric3);
-	
-	
+
+
   for(i=1;i<=3;i++)
 	  for(j=1;j<=3;j++)
 		  gsl_matrix_set (a, i-1, j-1,metric3[i][j]);
-		
+
   gsl_eigen_symmv (a, eig,V,w);
   gsl_eigen_symmv_free (w);
   matrix3_determinant_plus(V,eig);
-		
-	
+
+
   for(i=1;i<=ndata;i++){
     x[1]=gsl_rng_uniform_pos (r)-0.5;
     x[2]=gsl_rng_uniform_pos (r)-0.5;
@@ -659,12 +659,12 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 	fit_point[i][j]+=gsl_matrix_get (V, j-1, k-1) *xd[k];
     }
   }
-	
+
   gsl_rng_free (r);
   gsl_vector_free(eig);
   gsl_matrix_free(a);
   gsl_matrix_free(V);
-	
+
 	return 0;
 }
 
@@ -723,8 +723,8 @@ int innerC(/* input */
 int generate_metric_data(/* input */double MinMatch,
 			 double funcG[7][7][4][4])
 {
-	
-  extern double cont_data[JJ+1][4];  
+
+  extern double cont_data[JJ+1][4];
   int i,k,i2,j2;
   double x[4],maxr;
   double alpha[7],metric3[N_RANDOM+1][4][4],sum,rr[N_RANDOM+1],distance;
@@ -735,8 +735,8 @@ int generate_metric_data(/* input */double MinMatch,
   double fit_point[JJ+1][4];
   */
   double **fit_point;
-	
-	
+
+
 
   fit_point = (double **) malloc(sizeof(double *)*(JJ+1));
   for (i=0; i<4; i++)
@@ -745,12 +745,12 @@ int generate_metric_data(/* input */double MinMatch,
   }
 
   generate_fit_points(MinMatch,funcG,JJ,fit_point);
-	
+
 	gsl_rng_env_setup();
 
   T = gsl_rng_default;
    r = gsl_rng_alloc (T);
-	
+
   for(k=1;k<=N_RANDOM;k++){
     sum=0;
     for(i2=1;i2<=6;i2++){
@@ -763,7 +763,7 @@ int generate_metric_data(/* input */double MinMatch,
     }
     three_metric(funcG,alpha,metric3[k]);
   }
- 
+
   norm = sqrt(1.-MinMatch);
 
   for(i=1;i<=JJ;i++){
@@ -787,9 +787,9 @@ int generate_metric_data(/* input */double MinMatch,
     cont_data[i][2]=x[2]/maxr*norm;
     cont_data[i][3]=x[3]/maxr*norm;
   }
-	
+
 	gsl_rng_free (r);
-	
+
 	return 0;
 }
 
@@ -826,8 +826,8 @@ void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *
 	double wmax,tmp,thresh,sum,*afunc;
 	gsl_vector *b= gsl_vector_alloc (ndata);
 	gsl_vector *ws= gsl_vector_alloc (ma);
-	
-	
+
+
 	if ( (afunc = (double *)malloc(sizeof(double) * (ma+1))) == NULL)
 	{
 		afunc = NULL;
@@ -843,19 +843,19 @@ void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *
 		}
 		gsl_vector_set(b,i-1,y[i]*tmp);
 	}
-	
+
 	gsl_linalg_SV_decomp (u, v,w, ws);
-	
+
 	wmax=0.0;
 	for (j=1;j<=ma;j++)
 		if (gsl_vector_get(w,j-1) > wmax) wmax=gsl_vector_get(w,j-1) ;
 	thresh=TOL*wmax;
 	for (j=1;j<=ma;j++)
 	if (gsl_vector_get(w,j-1)  < thresh) gsl_vector_set(w,j-1,0.0);
-	
-	
+
+
 	gsl_linalg_SV_solve (u, v,w, b, a);
-	
+
 	*chisq=0.0;
 	for (i=1;i<=ndata;i++) {
 		(*funcs)(x[i],afunc);
@@ -873,7 +873,7 @@ void model_func(double xx,double afunc[])
 {
   int i,j,k;
   double x[4];
-  extern double cont_data[JJ+1][4];  
+  extern double cont_data[JJ+1][4];
 
   x[1]=cont_data[(int)xx][1];
   x[2]=cont_data[(int)xx][2];
@@ -886,7 +886,7 @@ void model_func(double xx,double afunc[])
       k++;
     }
 
-}  
+}
 
 int metric_by_fit(/* input */
 		  double MinMatch,int ndata,
@@ -895,13 +895,13 @@ int metric_by_fit(/* input */
 {
   int i, j, k, ma=9, *ia;
   double *x, *y, *sig;
-  double chisq; 
-	
+  double chisq;
+
   gsl_matrix *u = gsl_matrix_alloc (ndata,ma);
   gsl_matrix *v = gsl_matrix_alloc (ma,ma);
   gsl_vector *w = gsl_vector_alloc (ma);
   gsl_vector *a= gsl_vector_alloc (ma);
-	  
+
   if ( ( ia = (int *)    malloc(sizeof(int)*(ma+1)))  == NULL ||
        (  x = (double *) malloc(sizeof(double)*(ndata+1))) == NULL ||
        (  y = (double *) malloc(sizeof(double)*(ndata+1)))  == NULL ||
@@ -927,7 +927,7 @@ int metric_by_fit(/* input */
   }
 
   svdfit_d_test(x,y,sig,ndata,a,ma,u,v,w,&chisq,&model_func);
-	
+
   k=1;
   for(i=1;i<=3;i++)
     for(j=1;j<=3;j++){
@@ -963,7 +963,7 @@ int cos_sin_func(/* input */
     costerm[i]=cos(beta*freq2);
     sinterm[i]=sin(beta*freq2);
   }
-  
+
   return 0;
 }
 
@@ -984,7 +984,7 @@ int coef_A(/* input */
     A2[i]=A1[i]*costerm[i];
     A3[i]=A1[i]*sinterm[i];
   }
-  
+
   return 0;
 }
 
@@ -1004,7 +1004,7 @@ int dA2dbeta(/* input */
     dtA2[i]=dA2[i]-inner*hA1[i];
 
   innerR(N,tA2,dtA2,Sn,fmin,fmax,&inner2);
-  
+
   norm = pow(normtA2, 3.);
   for(i=0;i<=N;i++)
     dhA2[i]=dtA2[i]/normtA2-tA2[i]*inner2/norm;
@@ -1081,7 +1081,7 @@ int calc_function_G(/* input */
 
   df=(fmax)/N;
   imin=fmin/df;
-  
+
   for(i=0;i<=N;i++){
     A[1][i]=DComplex(A1[i],0.);
     A[2][i]=DComplex(A2[i],0.);
@@ -1090,7 +1090,7 @@ int calc_function_G(/* input */
     A[5][i]=DComplex(0.,A2[i]);
     A[6][i]=DComplex(0.,A3[i]);
   }
- 
+
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
       freq=df*i;
@@ -1114,7 +1114,7 @@ int calc_function_G(/* input */
     freq=df*i;
     freq2[i]=pow(freq,-5./3.);
   }
-  
+
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
       ctmp=DComplex(0.,freq2[i]);
@@ -1201,7 +1201,7 @@ int orthonormalized_A(/* input */
   }
 
   innerR(N,tA2,tA2,Sn,fmin,fmax,&tmp);
-  *normtA2=sqrt(tmp);  
+  *normtA2=sqrt(tmp);
 
   for(i=0;i<=N;i++)
     hA2[i]=tA2[i]/(*normtA2);
@@ -1214,7 +1214,7 @@ int orthonormalized_A(/* input */
   }
 
   innerR(N,tA3,tA3,Sn,fmin,fmax,&tmp);
-  *normtA3=sqrt(tmp);  
+  *normtA3=sqrt(tmp);
 
   for(i=0;i<=N;i++)
     hA3[i]=tA3[i]/(*normtA3);
@@ -1238,7 +1238,7 @@ int deriv_A(/* input */
     dA2[i]=-freq2*sinterm[i];
     dA3[i]=freq2*costerm[i];
   }
-  
+
   return 0;
 }
 int functionG(/* input */
@@ -1250,7 +1250,7 @@ int functionG(/* input */
   double *costerm,*sinterm;
   double *dA2,*dA3,*dhA2,*dhA3;
   double normtA2,normtA3;
-  
+
 
   A1 = (double *) malloc(sizeof(double)*(N+1));
   A2 = (double *) malloc(sizeof(double)*(N+1));
@@ -1301,7 +1301,7 @@ int functionG(/* input */
 }
 
 
-/* Calculate the BCVspin metric. 
+/* Calculate the BCVspin metric.
    Input:
    MinMatch : The minimal match of the template space
    N            : The number of frequency bin between f=0..fmax .
@@ -1313,7 +1313,7 @@ int functionG(/* input */
                   will be displayed. Otherwise, nothing is displayed.
 
    Output:
-   bcv2metric[1..3][1..3] 
+   bcv2metric[1..3][1..3]
                 : The metric of the BCVspin template.
 		: The coordinate system is (\psi_0,\psi_{3/2},\beta).
 */
@@ -1332,7 +1332,7 @@ int BCVspin_metric(/*input*/
 
   if(dbg==1) fprintf(stderr,"metric data .....................\n");
   generate_metric_data(MinMatch,funcG);
-	
+
   for(i=1;i<=JJ;i++){
     metric_data3[i][1]=cont_data[i][1];
     metric_data3[i][2]=cont_data[i][2];
@@ -1343,7 +1343,7 @@ int BCVspin_metric(/*input*/
 
   metric_by_fit(MinMatch,JJ,metric_fit);
 
-  if(dbg==1) 
+  if(dbg==1)
     for(i=1;i<=3;i++)
       fprintf(stderr,"%e %e %e\n",
 	      metric_fit[i][1],metric_fit[i][2],metric_fit[i][3]);
@@ -1370,9 +1370,9 @@ int BCVspin_metric(/*input*/
 
 /* 2006.3.3  H. Takahashi
 
-   The example program to calculate the value of beta 
+   The example program to calculate the value of beta
    of the template space with given beta_min and beta_max .
-   This program also calculates the 2dim (\psi_0, \Psi_{3/2}) effective metric 
+   This program also calculates the 2dim (\psi_0, \Psi_{3/2}) effective metric
    at the beta value which is calculated above.
 
 */

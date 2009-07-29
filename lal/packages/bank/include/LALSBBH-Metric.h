@@ -1,4 +1,4 @@
-/* Header file for SBBH-Metric.c   
+/* Header file for SBBH-Metric.c
    ver 3.0   2005/3/8 H.Tagoshi
 ver 3.1   2005/3/21 H.Tagoshi
 ver6.5 2006/2/23  NR functions was replaced with GSL functions H. Takahashi
@@ -102,7 +102,7 @@ int three_metric(/* input */
 	      double metric3[4][4]);
 
 int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
-			int ndata, 
+			int ndata,
 			/*output*/ double **fit_point);
 
 int generate_metric_data(/* input */double MinMatch,

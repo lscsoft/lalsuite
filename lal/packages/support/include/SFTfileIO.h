@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -29,7 +29,7 @@
  - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
  - SFT-checking: LALCheckSFTs(): complete check of SFT-validity including CRC64 checksum
  - free SFT-catalog: LALDestroySFTCatalog()
- - general manipulation of SFTVectors: 
+ - general manipulation of SFTVectors:
  	- LALDestroySFTVector(): free up a complete SFT-vector
 	- LALDestroyMultiSFTVector(): free a multi-IFO vector of SFT-vectors
 	- LALConcatSFTVectors(): concatenate two ::SFTVector's
@@ -37,21 +37,21 @@
 
  <p>
  <h2>Usage: Reading of SFT-files</h2>
-  
+
  The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
 
  	-# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with LALDestroySFTCatalog())
 	-# LALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
 	LALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
 
- <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files. 
- This might be extended in the future to support further file-formats (frames?). 
+ <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files.
+ This might be extended in the future to support further file-formats (frames?).
  None of the following API depends on the details of the underlying file-format. This will ensure that
  codes using the following functions will NOT have to be changed irrespective of SFT file-format used.
 
- <b>Note 2:</b> irrespective of the underlying SFT file-format, the returned SFTs (::SFTVector) will 
- <em>ALWAYS</em> be normalized according the the LAL-specification for frequency-series 
- (<tt>LIGO-T010095-00</tt>), that is the pure DFT of the time-series \f$x_j\f$ is <em>multiplied</em> 
+ <b>Note 2:</b> irrespective of the underlying SFT file-format, the returned SFTs (::SFTVector) will
+ <em>ALWAYS</em> be normalized according the the LAL-specification for frequency-series
+ (<tt>LIGO-T010095-00</tt>), that is the pure DFT of the time-series \f$x_j\f$ is <em>multiplied</em>
  by the time-step \f$\Delta t\f$:
  \f[
  \mathrm{data}[k] = X^\mathrm{d}_k = \Delta t \,\sum_{j=0}^{N-1} x_j \,e^{-i2\pi \,k \,j / N}
@@ -63,26 +63,26 @@
  LALSFTdataFind(LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
  \endcode
 
- This function returns an SFTCatalog of matching SFTs for a given file-pattern 
- (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints. 
+ This function returns an SFTCatalog of matching SFTs for a given file-pattern
+ (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints.
 
  The optional constraints are:
  - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)  [\em required for v1-SFTs!]
  - GPS start-time + end-time
  - a list of GPS-timestamps
 
- <b>Note 1:</b> Any constraint can be specified as \c NULL, all given constraints will be 
- combined by logical \c AND. 
+ <b>Note 1:</b> Any constraint can be specified as \c NULL, all given constraints will be
+ combined by logical \c AND.
 
- <b>Note 2:</b> if a timestamps-list is given, *ALL* timestamps within 
+ <b>Note 2:</b> if a timestamps-list is given, *ALL* timestamps within
  <tt>[startTime, endTime]</tt> MUST be found!]
 
- <b>Note 3:</b> LALSFTdataFind() will refuse to return any SFTs without their detector-name 
- properly set. This applies only to v1-SFTs, for which you have to use constraints->detector, 
- so that the detector-name gets properly set. 
+ <b>Note 3:</b> LALSFTdataFind() will refuse to return any SFTs without their detector-name
+ properly set. This applies only to v1-SFTs, for which you have to use constraints->detector,
+ so that the detector-name gets properly set.
 
- <b>Note 4:</b> One special constraint->detector is "??", which acts as if 
- constraints->detector==NULL, except that it allows v1-SFTs to be returned with 
+ <b>Note 4:</b> One special constraint->detector is "??", which acts as if
+ constraints->detector==NULL, except that it allows v1-SFTs to be returned with
  detector-name set to "??"'.
 
 
@@ -93,7 +93,7 @@
  - \c numBins: the number of frequency-bins in the SFT
  - \c version: version-number of SFT file-format
  - \c crc64: the crc64 checksum reported by this SFT
- 
+
 
  One can use the following catalog-handling API functions:
  - LALDestroySFTCatalog(): free up a complete SFT-catalog
@@ -101,11 +101,11 @@
  - LALDestroyTimestampVector(): free up a timestamps-vector (::LIGOTimeGPSVector)
  - XLALshowSFTLocator(): [*debugging only*] show a static string describing the 'locator'
 
- 
- <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to 
+
+ <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to
  - be sorted in order of increasing GPS-epoch
  - contain a valid detector-name, except if constraints->detector=="??"
- 
+
 
  <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
 
@@ -114,9 +114,9 @@
  \endcode
 
  This function takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
- from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the 
+ from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the
  SFTCatalog contains SFTs from different detectors, for which LALLoadMultiSFTs() must be used.
- 
+
  The frequency-bounds are optional and \c -1 can be used to specify an 'open bound', i.e.<br>
  <tt>[-1, fMax]</tt>: read from first frequency-bin in the SFT up to \c fMax.<br>
  <tt>[fMin, -1]</tt>: read from \c fMin up to last frequency-bin in the SFTS<br>
@@ -125,14 +125,14 @@
  \code
  LALLoadMultiSFTs ( LALStatus *, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
  \endcode
- 
- This function is similar to the above, except that it accepts an ::SFTCatalog with different detectors, 
- and returns corresponding multi-IFO vector of SFTVectors. 
+
+ This function is similar to the above, except that it accepts an ::SFTCatalog with different detectors,
+ and returns corresponding multi-IFO vector of SFTVectors.
 
  <p><h2>Usage: Writing of SFT-files</h2>
 
  For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFTs):
- 	- LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2 
+ 	- LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2
 	(<tt>LIGO-T040164-01-Z</tt>).
 
 	- LALWrite_v2SFT_to_v1file(): write a single ::SFTtype into an SFT-v1 file. Note: this is provided
@@ -146,8 +146,8 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 
  *
  */
- 
-/** \file 
+
+/** \file
  * \ingroup SFTfileIO
  * \date $Date$
  * \brief Header file defining the API for the SFTfileIO modules.
@@ -157,7 +157,7 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
  * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
  * A previous non-LAL implementation of this standard is found in the "SFT reference library"
  * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
- * 
+ *
  */
 
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
@@ -199,7 +199,7 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_EGLOB 	15
 #define SFTFILEIO_EDIFFLENGTH 	17
 #define SFTFILEIO_ESFTFORMAT	18
-#define SFTFILEIO_ESFTWRITE	19 
+#define SFTFILEIO_ESFTWRITE	19
 #define SFTFILEIO_ECONSTRAINTS  20
 #define SFTFILEIO_EMERGEDSFT  	21
 #define SFTFILEIO_ECRC64  	22
@@ -226,8 +226,8 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_MSGECRC64	"Invalid CRC64 checksum in SFT"
 /*@}*/
 
-/** 'Constraints' for SFT-matching: which detector, within which time-stretch and which 
- * timestamps exactly should be loaded ? 
+/** 'Constraints' for SFT-matching: which detector, within which time-stretch and which
+ * timestamps exactly should be loaded ?
  * Any of the entries is optional, and they will be combined by logical AND.
  * Note however, that *ALL* timestamps within [startTime, endTime] MUST be found if specified.
  */
@@ -243,7 +243,7 @@ typedef struct
 /** A 'descriptor' of an SFT: basically containing the header-info plus an opaque description
  * of where exactly to load this SFT from.
  */
-typedef struct 
+typedef struct
 {
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
@@ -255,7 +255,7 @@ typedef struct
 
 
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
-typedef struct 
+typedef struct
 {
   UINT4 length;			/**< number of SFTs in catalog */
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
@@ -271,15 +271,15 @@ extern const SFTCatalog empty_SFTCatalog;
  */
 
 /*================================================================================
- * NEW API: allowing for SFT-v2 
+ * NEW API: allowing for SFT-v2
  *================================================================================*/
 void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
 
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
-void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment ); 
-void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description); 
+void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment );
+void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
 
 void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
@@ -290,6 +290,7 @@ void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const C
 void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
+LIGOTimeGPSVector *XLALgetSFTtimestamps ( const SFTVector *sfts );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
@@ -298,7 +299,7 @@ const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
  *================================================================================*/
 
 
-/** [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification 
+/** [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification
  * version v1.0.
  */
 typedef struct tagSFTHeader {
@@ -312,16 +313,16 @@ typedef struct tagSFTHeader {
 
 
 
-void LALReadSFTheader (LALStatus *, SFTHeader *header, const CHAR *fname); 
+void LALReadSFTheader (LALStatus *, SFTHeader *header, const CHAR *fname);
 void LALReadSFTdata (LALStatus *, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
 
 void LALReadSFTfiles (LALStatus *,
-		      SFTVector **sftvect, 
-		      REAL8 fMin, 
-		      REAL8 fMax, 
-		      UINT4 wingBins, 
+		      SFTVector **sftvect,
+		      REAL8 fMin,
+		      REAL8 fMax,
+		      UINT4 wingBins,
 		      const CHAR *fpattern);
 
 void

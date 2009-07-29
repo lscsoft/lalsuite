@@ -57,7 +57,7 @@
 #endif /* EZXML_NOMMAP */
 #include <sys/stat.h>
 
-#include <lal/LALStdio.h>  /* for LALSnprintf() drop-in */
+#include <lal/LALStdio.h>  /* for snprintf() drop-in */
 
 #include "ezxml.h"
 
@@ -181,10 +181,10 @@ ezxml_t ezxml_err(ezxml_root_t root, char *s, const char *err, ...)
     char *t, fmt[EZXML_ERRL];
     
     for (t = root->s; t < s; t++) if (*t == '\n') line++;
-    LALSnprintf(fmt, EZXML_ERRL, "[error near line %d]: %s", line, err);
+    snprintf(fmt, EZXML_ERRL, "[error near line %d]: %s", line, err);
 
     va_start(ap, err);
-    LALVsnprintf(root->err, EZXML_ERRL, fmt, ap);
+    vsnprintf(root->err, EZXML_ERRL, fmt, ap);
     va_end(ap);
 
     return &root->xml;

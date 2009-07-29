@@ -355,9 +355,9 @@ LALInspiralWave2ForInjection(
       waveform->position = ppnParams->position;
       waveform->psi = ppnParams->psi;
 
-      LALSnprintf( waveform->a->name, LALNameLength,   "T2 inspiral amplitude" );
-      LALSnprintf( waveform->f->name, LALNameLength,   "T2 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T2 inspiral phase" );
+      snprintf( waveform->a->name, LALNameLength,   "T2 inspiral amplitude" );
+      snprintf( waveform->f->name, LALNameLength,   "T2 inspiral frequency" );
+      snprintf( waveform->phi->name, LALNameLength, "T2 inspiral phase" );
 
 
       /* --- fill some output ---*/
@@ -384,7 +384,7 @@ LALInspiralWave2ForInjection(
         memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
         waveform->h->deltaT = 1./params->tSampling;
         waveform->h->sampleUnits   = lalStrainUnit;
-        LALSnprintf( waveform->h->name, LALNameLength,   "T2 inspiral polarizations" );
+        snprintf( waveform->h->name, LALNameLength,   "T2 inspiral polarizations" );
         LALSDestroyVector(status->statusPtr, &h);
         CHECKSTATUSPTR(status);
       }

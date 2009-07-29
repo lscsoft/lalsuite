@@ -31,7 +31,7 @@ Author C. Torres
 \label{s:TSData.h}
 
 Provides an intermediate level of functions and structures for testing
-and production use of the tracksearch libraries.  
+and production use of the tracksearch libraries.
 
 \begin{verbatim}
 #include <lal/TSData.h>
@@ -47,10 +47,6 @@ and production use of the tracksearch libraries.
 #define _TSDATA_H
 
 #include <lal/Date.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameCalibration.h>
-#include <lal/FrameData.h>
-#include <lal/FrameStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>
@@ -83,7 +79,7 @@ NRCSID (TSDATAH, "$Id$");
 
 #define TSDATA_MSGENULL "Null pointer"
 #define TSDATA_MSGENNUL "Non-null pointer"
-#define TSDATA_MSGEALOC "Memory allocation error"   
+#define TSDATA_MSGEALOC "Memory allocation error"
 #define TSDATA_MSGESEGZ "Invalid number of segments"
 #define TSDATA_MSGENUMZ "Invalid number of points in segment"
 #define TSDATA_MSGESUBR "Condition Data Internal Subroutine Failure"
@@ -122,7 +118,7 @@ tagTSDatagen
 }TSDatagen;
 
 
-/* 
+/*
  * Struture used by the line connection subroutine
  * we want to take all event candidates and match them via param SIGMA
  */
@@ -149,7 +145,7 @@ tagTSWhitenParams
 }TSWhitenParams;
 
 /*
- * Routine to determine the best Lh and set Ll given Lrelative.  
+ * Routine to determine the best Lh and set Ll given Lrelative.
  */
 void
 LALTracksearchFindLambdaMean(
@@ -164,7 +160,7 @@ LALTracksearchFindLambdaMedian(
 			       TSSearchParams           *searchParams
 			       );
 /*
- * Routine to break up time series input and make a collection of 
+ * Routine to break up time series input and make a collection of
  * segments which overlap by the overlap(points) parameter
  */
 void
@@ -183,7 +179,7 @@ LALDestroyTSDataSegmentVector (
 			       TSSegmentVector            *vector
 			       );
 
-/* 
+/*
  * This routine will handle a great deal of data conditioning
  * Whitening and calibration will occur in this function
  */
@@ -234,7 +230,7 @@ LALTrackSearchConnectSigma(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    );
@@ -244,7 +240,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
  * wasting CPU time on FFTs
  */
 
-void 
+void
 LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 					    LALStatus                *status,
 					    COMPLEX8FrequencySeries  *fSeries,
@@ -260,7 +256,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
  */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response);
 
 /*
@@ -286,8 +282,8 @@ LALSVectorPolynomialInterpolation(
 				  REAL4Sequence    *Domain,
 				  REAL4Sequence    *Range
 				  );
-/* 
- * Noncompliant code 
+/*
+ * Noncompliant code
  * Local function not meant for general use
  */
 void connect2Segments(
@@ -295,33 +291,6 @@ void connect2Segments(
 		      Curve          *curveA,
 		      Curve          *curveB
 		      );
-
-void WriteMap(
-	      TimeFreqRep       map,
-	      REAL4Vector       signal
-	      );
-
-void DumpTFImage(
-		 REAL4         **image,
-		 const CHAR           *filename,
-		 INT4           height,
-		 INT4           width,
-		 BOOLEAN        killNeg
-		 );
-
-void DumpTFImageCHAR(
-		 CHAR         **image,
-		 const CHAR           *filename,
-		 INT4           height,
-		 INT4           width,
-		 BOOLEAN        killNeg
-		 );
-
-void DumpREAL8KernelMask(
-			 REAL8      *kernel,
-			 const CHAR       *filename,
-			 INT4        ksize
-			 );
 
 void cleanLinkedList(
 		     TrackSearchOut      *inList,
