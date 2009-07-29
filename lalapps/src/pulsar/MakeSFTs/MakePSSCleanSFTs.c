@@ -2510,6 +2510,9 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
+  /* that parameter needs to be set in the headerParams */
+  headerParams.tsamplu = samples;
+
   if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
     fprintf(stderr,"XLALPSSHighpassData call failed %s,%d\n",__FILE__,__LINE__);
     retval = -2;
