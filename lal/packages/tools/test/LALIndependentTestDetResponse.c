@@ -56,7 +56,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 10/14/04 gam: Update definition of lal_gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
-10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
+10/15/04 gam: Fix bug M_PI not defined when configuring lal with --enable-gcc-flags.
               WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
