@@ -279,6 +279,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 wait_time;
   CHAR *ptimeout;
   INT4 total_wait = 0;
+  INT4 found = 0;
 
   /* get maximum wait time from ONLINEHOFT_TIMEOUT */
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
@@ -395,10 +396,24 @@ INT4 main(INT4 argc, CHAR *argv[])
         if (XLALAggregationStatFiles(ifo, &gps_start, duration) == 0)
         {
           /* data is available, break do-while loop */
+          found = 1;
           break;
         }
       }
     } while(total_wait < timeout);
+  }
+
+  /* check that timeout has not been exceeded, exit if appropriate */
+  if ((found == 0) && (total_wait > timeout))
+  {
+    fprintf(stdout, "error: timeout exceeded\n");
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
+    exit(1);
   }
 
   /* get frame cache */
