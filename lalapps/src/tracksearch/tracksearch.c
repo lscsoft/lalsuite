@@ -101,7 +101,7 @@ int main (int argc, char *argv[])
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
-  set_debug_level("ERROR | WARNING | MEMDBG");
+  /*set_debug_level("ERROR | WARNING | MEMDBG | TRACE");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -1276,14 +1276,36 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  /* Open frame cache */
 	  if (params->verbosity >= verbose)
-	      fprintf(stdout,"Opening cache file: %s",cachefile);
+	    {
+	      fprintf(stdout,"Importing cache file: %s\n",cachefile);
+	      fflush(stdout);
+	    }
 	  lal_errhandler = LAL_ERR_EXIT;
 	  frameCache=XLALFrImportCache(cachefile);
-	  stream=XLALFrCacheOpen(frameCache);	  
-	  XLALFrDestroyCache(&frameCache);
+	  if (frameCache == NULL)
+	    {
+	      fprintf(stderr,"Error importing frame cache file!\n");
+	      fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	      fflush(stderr);
+	      exit(TRACKSEARCHC_EDATA);
+	    }
 	  if (params->verbosity >= verbose)
-	    fprintf(stdout,"Data stream ready.\n");
-
+	    {
+	      fprintf(stdout,"Creating data stream.\n");
+	      fflush(stdout);
+	    }
+	  stream=XLALFrCacheOpen(frameCache);	  
+	  if (params->verbosity >= verbose)
+	    {
+	      fprintf(stdout,"Clearing imported cache file.\n");
+	      fflush(stdout);
+	    }
+	  XLALFrDestroyCache(frameCache);
+	  if (params->verbosity >= verbose)
+	    {
+	      fprintf(stdout,"Data stream ready.\n");
+	      fflush(stdout);
+	    }
 	}
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
@@ -3065,7 +3087,7 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
 	{
 	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
 	}
-      /* Need to gracdfully exit here by unallocating later */
+      /* Need to gracefully exit here by unallocating later */
     };
   DETATCHSTATUSPTR(status);
   RETURN(status);
