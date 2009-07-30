@@ -140,33 +140,31 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	
 	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):SampleRate/2.0;}
-	
-	// if(Nchannel==0)
-	if(Nchannel!=0)
-	{
-		channels=calloc(Nifo,sizeof(char *));
-		for(i=0;i<Nifo;i++) {
-			channels[i]=malloc(VARNAME_MAX);
-			IFOdata[i].detector=calloc(1,sizeof(LALDetector));
-			if(!strcmp(IFOnames[i],"H1")) {			
-				memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
-			sprintf((channels[i]),"H1:%s",strainname); continue;}
-			if(!strcmp(IFOnames[i],"H2")) {
-				memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
-			sprintf((channels[i]),"H2:%s",strainname); continue;}
-			if(!strcmp(IFOnames[i],"LLO")||!strcmp(IFOnames[i],"L1")) {
-				memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLLODIFF],sizeof(LALDetector));
-			sprintf((channels[i]),"L1:%s",strainname); continue;}
-			if(!strcmp(IFOnames[i],"V1")||!strcmp(IFOnames[i],"VIRGO")) {
-				memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexVIRGODIFF],sizeof(LALDetector));
-			sprintf((channels[i]),"V1:h_16384Hz");}
-			if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
-				memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
-			sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
-			/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]; continue;}*/
-			fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
-		}
+	/* Only allocate this array if there weren't channels read in from the command line */
+	if(!Nchannel) channels=calloc(Nifo,sizeof(char *));
+	for(i=0;i<Nifo;i++) {
+		if(!Nchannel) channels[i]=malloc(VARNAME_MAX);
+		IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+		
+		if(!strcmp(IFOnames[i],"H1")) {			
+			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
+			if(!Nchannel) sprintf((channels[i]),"H1:%s",strainname); continue;}
+		if(!strcmp(IFOnames[i],"H2")) {
+			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
+			if(!Nchannel) sprintf((channels[i]),"H2:%s",strainname); continue;}
+		if(!strcmp(IFOnames[i],"LLO")||!strcmp(IFOnames[i],"L1")) {
+			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLLODIFF],sizeof(LALDetector));
+			if(!Nchannel) sprintf((channels[i]),"L1:%s",strainname); continue;}
+		if(!strcmp(IFOnames[i],"V1")||!strcmp(IFOnames[i],"VIRGO")) {
+			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexVIRGODIFF],sizeof(LALDetector));
+			if(!Nchannel) sprintf((channels[i]),"V1:h_16384Hz"); continue;}
+		if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
+			memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
+			if(!Nchannel) sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
+		/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]; continue;}*/
+		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
 	}
+	
 	/* Set up FFT structures and window */
 	for (i=0;i<Nifo;i++){
 		/* Create FFT plans */
