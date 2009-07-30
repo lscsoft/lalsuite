@@ -441,7 +441,7 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
     }
     ++i;
   }
-  if (state==4) die(" ERROR: failed parsing command line options.\n");
+  if (state==4) die(" ERROR in parseCommandLine(): failed parsing command line options.\n");
   return(head);
 }
 
@@ -587,6 +587,36 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 }
 
 
+
+REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
+/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
+/* with the `templateNullFreqdomain()' template in order to return */
+/* the "Null likelihood" without having to bother specifying       */
+/* parameters or template while ensuring computations are exactly  */
+/* the same as in usual likelihood calculations.                   */
+{
+  LALVariables dummyParams;
+  double dummyValue;
+  double loglikeli;
+  /* set some (basically arbitrary) dummy values for intrinsic parameters */
+  /* (these shouldn't make a difference, but need to be present):         */
+  dummyParams.head      = NULL;
+  dummyParams.dimension = 0;
+  dummyValue = 0.5;
+  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t);
+  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
+               + (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
+  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t);
+  loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
+  destroyVariables(&dummyParams);
+  return(loglikeli);
+}
+
+
+
 REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData * data)
 /* Null (log-) likelihood function.                        */
 /* Returns the logarithmic likelihood for no-signal model. */
@@ -660,13 +690,19 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   LALIFOData *ifoPtr;
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
+  fprintf(stdout, " readData(): started.\n");
   irs->data = readData(commandLine);
   /* (this will already initialise each LALIFOData's following elements:  */
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  injectSignal(irs->data,commandLine);
+  fprintf(stdout, " readData(): finished.\n");
   if (irs->data != NULL) {
     fprintf(stdout, " initialize(): successfully read data.\n");
+
+    fprintf(stdout, " injectSignal(): started.\n");
+    injectSignal(irs->data,commandLine);
+    fprintf(stdout, " injectSignal(): finished.\n");
+
     ifoPtr = irs->data;
     while (ifoPtr != NULL) {
       ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",

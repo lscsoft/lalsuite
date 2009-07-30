@@ -208,7 +208,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			}
 			IFOdata[i].freqData = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&segStart,0.0,IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			/* Create the fake data */
-			for(j=0;j<IFOdata[i].freqData->data->length;j++){
+			int j_Lo = (int) IFOdata[i].fLow/IFOdata[i].freqData->deltaF;
+			for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
 				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
 			}
