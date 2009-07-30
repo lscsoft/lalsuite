@@ -683,7 +683,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     inspiral_hipe_file.close()
 
   hipeDag = iniFile.rstrip("ini") + usertag + ".dag"  
-  hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir)
+  hipeDax = iniFile.rstrip("ini") + usertag + ".dax"  
+  hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGNode(hipeJob)
 
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
