@@ -1261,6 +1261,9 @@ if ( vrbflg)
 
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
     {
+      if ( vetoSegs[ifoNumber].initMagic != SEGMENTSH_INITMAGICVAL )
+        /* no veto segs */
+        continue;
       if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
                                  &slideTimes[ifoNumber] ) < 0 )
         exit(1);
