@@ -245,7 +245,7 @@ void templateLALwrap2(LALIFOData *IFOdata)
   int FDomain;  /* (domain of the LAL template) */
   // TODO:
     int approximant = TaylorT2;
-    int order = LAL_PNORDER_TWO;
+    int order = 0;//LAL_PNORDER_TWO;  /* *** Temporarily disabled so Ilya can compile :) */
   double chirptime;
 
   mc2masses(mc, eta, &m1, &m2);
