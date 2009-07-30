@@ -1328,11 +1328,32 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fprintf(stderr,"Start           : %f\n",bufferedDataStart);
 	  fprintf(stderr,"Stop            : %f\n",bufferedDataStop);
 	  fprintf(stderr,"Interval length : %f\n",bufferedDataTimeInterval);
+	  fflush(stderr);
 	}
-
-      LAL_CALL( LALFrSeek(status, &(bufferedDataStopGPS),stream),status);
-
-      LAL_CALL( LALFrSeek(status, &(bufferedDataStartGPS), stream), status);
+      errCode=XLALFrSeek(stream,&bufferedDataStopGPS);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Can not seek to start time  %10.2f in data stream.\n",bufferedDataStart);
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fflush(stderr);
+	  exit(TRACKSEARCHC_EDATA);
+	}
+      errCode=XLALFrSeek(stream,&bufferedDataStartGPS);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Can not seek to end time %10.2f in data stream.\n",bufferedDataStart);
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fflush(stderr);
+	  exit(TRACKSEARCHC_EDATA);
+	}
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Can not rewind data stream to read.\n");
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fflush(stderr);
+	  exit(TRACKSEARCHC_EDATA);
+	}
+      
       /*
        * Determine the variable type of data in the frame file.
        */
@@ -1340,6 +1361,7 @@ void LALappsGetFrameData(LALStatus*          status,
       if (params->verbosity > quiet)
 	{
 	  fprintf(stdout,"Checking data stream variable type for :%s \n",channelIn.name);
+	  fprintf(stdout,"Data type code found is :%i\n",dataTypeCode);
 	  fflush(stdout);
 	}
       
@@ -1348,14 +1370,17 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Proceed as usual reading in REAL4 data type information */
 	  /* Load the metadata to check the frame sampling rate */
 	  if (params->verbosity >= verbose)
-	    fprintf(stderr,"NO conversion of frame REAL4 data needed.\n");
-
+	    {
+	      fprintf(stderr,"NO conversion of frame REAL4 data needed.\n");
+	      fflush(stderr);
+	    }
 	  lal_errhandler = LAL_ERR_EXIT;
 	  /*Make sure label of fseries matches channel to read!*/
 	  errcode=XLALFrGetREAL4TimeSeriesMetadata(DataIn,stream);
 	  if (errcode!=0)
 	    {
 	      fprintf(stderr,"Failure getting REAL4 metadata.\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 
@@ -1382,6 +1407,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (errcode !=0)
 	    {
 	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 
@@ -1390,6 +1416,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (errcode != 0)
 	    {
 	      fprintf(stderr,"The span of REAL4TimeSeries data is not available in frame stream!\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 	} /*End of reading type REAL4TimeSeries*/
@@ -1401,7 +1428,10 @@ void LALappsGetFrameData(LALStatus*          status,
 	   */
 	  /* Create temporary space use input REAL4TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
-	    fprintf(stderr,"Must convert frame REAL8 data to REAL4 data for analysis!\n");
+	    {
+	      fprintf(stderr,"Must convert frame REAL8 data to REAL4 data for analysis!\n");
+	      fflush(stderr);
+	    }
 	  tmpREAL8Data=XLALCreateREAL8TimeSeries(params->channelName,
 						 &(bufferedDataStartGPS),
 						 0,
@@ -1414,7 +1444,8 @@ void LALappsGetFrameData(LALStatus*          status,
 	  errcode=XLALFrGetREAL8TimeSeriesMetadata(tmpREAL8Data,stream);
 	  if (errcode != 0)
 	    {
-	      fprintf(stderr,"Can not load the interval of data requested.\n");
+	      fprintf(stderr,"Can not load the REAL8 metadata for the interval of data requested.\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 
@@ -1437,12 +1468,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (errcode !=0)
 	    {
 	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 	  errcode=XLALFrGetREAL8TimeSeries(convertibleREAL8Data,stream);
 	  if (errcode !=0)
 	    {
-	      fprintf(stderr,"Could not load data from frame stream.\n");
+	      fprintf(stderr,"Could not load REAL8 data from frame stream.\n");
+	      fflush(stderr);
 	      exit(errcode);
 	    }
 	  /*
@@ -1524,7 +1557,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (params->highPass < 30)
 	    {
 	      fprintf(stdout,"WARNING! Input data should be high pass filtered!\n");
-	      fprintf(stdout,"Use knee frequency of 30Hz minimum on DARM data!\n");
+	      fprintf(stdout,"Use low frequency cutoff of 30Hz minimum on DARM data!\n");
 	      fprintf(stderr,"Without this the PSD estimate and results are questionable!\n");
 	      fflush(stdout);
 	    };
