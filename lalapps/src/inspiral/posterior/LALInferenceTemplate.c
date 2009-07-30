@@ -253,6 +253,7 @@ void templateLAL(LALIFOData *IFOdata)
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
   long i;
+
   double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
   double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
   double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
@@ -269,6 +270,7 @@ void templateLAL(LALIFOData *IFOdata)
     die(" ERROR in templateLALwrap(): encountered unallocated 'timeData'.\n");
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
     die(" ERROR in templateLALwrap(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+
   mc2masses(mc, eta, &m1, &m2);
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
