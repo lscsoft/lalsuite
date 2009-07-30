@@ -91,6 +91,11 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH", \
     help="directory to write condor log file, should be a local directory")
 
+parser.add_option("-l", "--node-local-dir",action="store",type="string",\
+    metavar=" NODEPATH", \
+    help='''directory to write the temporary sql databases. This must be a
+directory that is local to all nodes.''')
+
 parser.add_option("-s", "--gps-start-time",action="store",type="int",\
     metavar=" GPS_START", help="begin analysis at GPS_START")
 
@@ -141,6 +146,9 @@ parser.add_option("-Z", "--skip-plots",action="store_false",\
 parser.add_option("-U", "--skip-followup",action="store_false",\
     default=True, dest="run_followup",  help="skip the inspiral followup")
 
+parser.add_option("-H", "--skip-pipedown",action="store_false",\
+    default=True, dest="run_pipedown",  help="skip running pipedown")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
@@ -164,6 +172,13 @@ if not opts.log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
+
+if opts.run_pipedown:
+  if not opts.node_local_dir:
+    print >> sys.stderr, "No local dir specified. If running with pipedown"
+    print >> sys.stderr, "use --node-local-dir to specify a local directory"
+    print >> sys.stderr, "Use --help for more information"
+    sys.exit(1)
 
 if not opts.gps_start_time:
   print >> sys.stderr, "No GPS start time specified for the analysis"
@@ -203,6 +218,10 @@ cp.set("input", "gps-end-time", str(opts.gps_end_time) )
 opts.do_dag_categories = not cp.has_option(
               "hipe-arguments","disable-dag-categories")
 
+# Add local dir to pipeline
+
+if opts.run_pipedown:
+  cp.set("pipeline","node-tmp-dir",opts.node_local_dir)
 
 ##############################################################################
 # create a directory called executables and copy them over
@@ -525,6 +544,54 @@ if opts.reverse_analysis:
                 hipeInjVetoNode[injDir][category-1])
 
 ##############################################################################
+# cat the cache files together
+  
+
+if len(cachelist):
+  command = "cat " + " ".join(cachelist) + " > " + cachefilename
+  os.popen(command)
+  
+##############################################################################
+# Run lalapps_pipedown
+
+if opts.run_pipedown:
+  # Set up parents correctly
+  parentNodes = []
+  if opts.run_search:
+    if opts.run_full_data:
+      parentNodes.append(hipeAnalysisNode)
+    if opts.run_playground:
+      parentNodes.append(hipePlayNode)
+
+  if opts.run_data_quality:
+    if opts.run_playground:
+      for category in veto_categories:
+        parentNodes.append(hipePlayVetoNode[category])
+    if opts.run_full_data:
+      for category in veto_categories:
+        parentNodes.append(hipeAnalysisVetoNode[category])
+
+  if opts.run_injections:
+    for (injDir, injSeed) in cp.items("injections"):
+      if opts.run_search:
+        parentNodes.append(hipeInjNode[injDir])
+      if opts.run_data_quality:
+        for category in veto_categories:
+          parentNodes.append(hipeInjVetoNode[category][injDir])
+
+  if len(parentNodes) == 0:
+    parentNodes = None
+
+  if opts.generate_results_plots:
+    playgroundOnly = False
+  else:
+    playgroundOnly = True
+
+  print "Running lalapps_pipedown"
+  dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
+                            "../" + cachefilename,parentNodes,playgroundOnly)
+
+##############################################################################
 # Set up the directories for plotting and run lalapps_plot
 if opts.run_plots:
   if opts.run_playground:
@@ -688,14 +755,6 @@ print """\n  from a condor submit machine
     grid-cert-info -all -file /tmp/x509up_u`id -u`
   
   This will also give the expiry time of the proxy."""
-
-##############################################################################
-# cat the cache files together
-
-
-if len(cachelist):
-  command = "cat " + " ".join(cachelist) + " > " + cachefilename
-  os.popen(command)
 
 ##############################################################################
 # write out a log file for this script
