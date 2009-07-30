@@ -587,8 +587,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
       /* compute squared difference & 'chi-squared': */
-      diffRe      = data->freqData->data->data[i].re - templateReal/deltaF;
-      diffIm      = data->freqData->data->data[i].im - templateImag/deltaF;
+      diffRe      = data->freqData->data->data[i].re - templateReal;
+      diffIm      = data->freqData->data->data[i].im - templateImag;
       diffSquared = TwoDeltaToverN * (diffRe * diffRe + diffIm * diffIm);
       chisquared += (diffSquared / data->oneSidedNoisePowerSpectrum->data->data[i]);
     }
