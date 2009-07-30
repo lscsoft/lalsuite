@@ -453,12 +453,21 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
-/* (log-) likelihood function.                        */
-/* Returns the non-normalised logarithmic likelihood. */
+/***************************************************************/
+/* (log-) likelihood function.                                 */
+/* Returns the non-normalised logarithmic likelihood.          */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
-  double diff2;
+  double diffRe, diffIm, diffSquared;
   REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
@@ -471,7 +480,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double df, twopit, f, re, im;
+  double TwoDeltaToverN, deltaF, twopit, f, re, im;
   double timeTmp;
   int different;
   LALStatus status;
@@ -498,6 +507,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   removeVariable(&intrinsicParams, "polarisation");
   removeVariable(&intrinsicParams, "time");
   removeVariable(&intrinsicParams, "distance");
+  // TODO: add pointer to template function here.
+  // (otherwise same parameters but different template will lead to no re-computation!!)
 
   chisquared = 0.0;
   /* loop over data (different interferometers): */
@@ -543,7 +554,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, &GPSlal);
-    /* (negative timedelay means signal arrives earlier than at geocenter etc.) */
+    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(data->modelParams, "time"))) + timedelay;
@@ -554,12 +565,12 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     FcrossScaled = Fcross / distMpc;
 
     /* determine frequency range & loop over frequency bins: */
-    //NDeltaT = dataPtr->timeData->data->length * dataPtr->timeData->deltaT;
-	df=1.0 / (((double)dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
-	printf("df %g, Nt %d, deltaT %g\n", df, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
-    lower = ceil(dataPtr->fLow /df);
-    upper = floor(dataPtr->fHigh /df);
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
+    // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
+    lower = ceil(dataPtr->fLow / deltaF);
+    upper = floor(dataPtr->fHigh / deltaF);
     //TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
+    TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  
@@ -568,7 +579,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
                           +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
       /* do time-shifting... */
-      f = ((double) i) * df;
+      f = ((double) i) * deltaF;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       re = cos(twopit * f);
       im = - sin(twopit * f);
@@ -576,13 +587,14 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
       /* compute squared difference & 'chi-squared': */
-      diff2 = 2.0*df * ((data->freqData->data->data[i].re - templateReal) *(data->freqData->data->data[i].re - templateReal)
-                                + (data->freqData->data->data[i].im - templateImag)*(data->freqData->data->data[i].im - templateImag));
-      chisquared += (diff2 / data->oneSidedNoisePowerSpectrum->data->data[i]);
+      diffRe      = data->freqData->data->data[i].re - templateReal;
+      diffIm      = data->freqData->data->data[i].im - templateImag;
+      diffSquared = TwoDeltaToverN * (diffRe * diffRe + diffIm * diffIm);
+      chisquared += (diffSquared / data->oneSidedNoisePowerSpectrum->data->data[i]);
     }
     dataPtr = dataPtr->next;
   }
-  loglikeli = -1.0 * chisquared;
+  loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
   return(loglikeli);
 }
 

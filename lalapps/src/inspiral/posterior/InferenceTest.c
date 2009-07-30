@@ -32,7 +32,7 @@
 LALVariables variables;
 LALVariables variables2;
 LALVariables currentParams;
-
+LALIFOData *IfoPtr;
 REAL4 number,five;
 REAL8 numberR8;
 INT4 numberI4;
@@ -43,10 +43,11 @@ REAL8 likelihood;
 
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
-int i;
+int i, j, k;
 
 
 int main(int argc, char *argv[]){
+
   /* test "LALVariables" stuff: */
   number = 10.0;
   LALStatus status;	
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]){
   variables.head=NULL;
   variables.dimension=0;
 	
-	memset(&status,0,sizeof(status));
+  memset(&status,0,sizeof(status));
   addVariable(&variables, "number", &number, REAL4_t);
   numberR8 = 7.0;
   addVariable(&variables, "seven", &numberR8, REAL8_t);
@@ -113,10 +114,34 @@ int main(int argc, char *argv[]){
 
   /* Test the data initialisation &c. */
   runstate = initialize(ppt);
-
   
   if(runstate->data) {
     fprintf(stdout," data found --> trying some template computations etc.\n");
+    
+    /* print some information on individual "runstate->data" elements: */
+    IfoPtr = runstate->data;  i = 1;
+    while (IfoPtr != NULL) {
+      if (IfoPtr->timeData)
+        fprintf(stdout, " [%d] timeData (\"%s\"): length=%d, deltaT=%f, epoch=%.3f\n", 
+                i, IfoPtr->timeData->name, IfoPtr->timeData->data->length, IfoPtr->timeData->deltaT, 
+                XLALGPSGetREAL8(&IfoPtr->timeData->epoch));
+      if (IfoPtr->freqData)
+        fprintf(stdout, "     freqData (\"%s\"): length=%d, deltaF=%f\n", 
+                IfoPtr->freqData->name, IfoPtr->freqData->data->length, IfoPtr->freqData->deltaF);
+      fprintf(stdout, "     fLow=%.1f Hz,  fHigh=%.1f Hz  (%d freq bins w/in range)\n", 
+              IfoPtr->fLow, IfoPtr->fHigh, 
+              (int) (floor(IfoPtr->fHigh / IfoPtr->freqData->deltaF) - ceil(IfoPtr->fLow / IfoPtr->freqData->deltaF)));
+      fprintf(stdout, "     detector location: (%.1f, %.1f, %.1f)\n",
+              IfoPtr->detector->location[0], IfoPtr->detector->location[1], IfoPtr->detector->location[2]);
+      fprintf(stdout, "     detector response matrix:\n");
+      for (j=0; j<3; ++j){
+        fprintf(stdout, "     ");
+        for (k=0; k<3; ++k)
+          fprintf(stdout, "%f  ", IfoPtr->detector->response[j][k]);
+        fprintf(stdout, "\n");
+      }
+      IfoPtr = IfoPtr->next;
+    }
 
     REAL4 m1 = 10.0;
     addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
@@ -174,22 +199,24 @@ int main(int argc, char *argv[]){
 	  }
 	  
 	  
-/* 
-//  templateStatPhase() test: 
+
+    //  templateStatPhase() test: 
+    fprintf(stdout, " trying out 'templateStatPhase()'...\n");
     REAL8 mc   = 2.0;
     REAL8 eta  = 0.24;
     REAL8 iota = 1.0;
     REAL8 phi  = 2.0;
-    REAL8 tc   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (runstate->data->timeData->data->length / runstate->data->timeData->deltaT) - 1.0;
+    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (runstate->data->timeData->data->length / runstate->data->timeData->deltaT) - 1.0;
     destroyVariables(runstate->data->modelParams);
-    addVariable(runstate->data->modelParams, "chirpmass",   &mc,   REAL8_t);
-    addVariable(runstate->data->modelParams, "massratio",   &eta,  REAL8_t);
-    addVariable(runstate->data->modelParams, "inclination", &iota, REAL8_t);
-    addVariable(runstate->data->modelParams, "phase",       &phi,  REAL8_t);
-    addVariable(runstate->data->modelParams, "time",        &tc,   REAL8_t);
+    addVariable(runstate->data->modelParams, "chirpmass",   &mc,    REAL8_t);
+    addVariable(runstate->data->modelParams, "massratio",   &eta,   REAL8_t);
+    addVariable(runstate->data->modelParams, "inclination", &iota,  REAL8_t);
+    addVariable(runstate->data->modelParams, "phase",       &phi,   REAL8_t);
+    addVariable(runstate->data->modelParams, "time",        &tcoal, REAL8_t);
     printVariables(runstate->data->modelParams);
     templateStatPhase(runstate->data);
-*/
+    fprintf(stdout, " ...done.\n");
+
 	  
 	  // Parameters for which I am going to compute the likelihood
 	  
@@ -215,15 +242,36 @@ int main(int argc, char *argv[]){
 	  
 	  likelihood = 0.0;
 	  
+ fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
 	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
-	  
+ fprintf(stdout, " ...done.\n");
+
 	  double nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
 	  
-	  fprintf(stdout,"likelihood %g, null likelihood %g, relative likelihood %g",likelihood, nulllikelihood, likelihood-nulllikelihood);
-	  
-	  
-  }
+	  fprintf(stdout,"likelihood %g, null likelihood %g, relative likelihood %g\n",likelihood, nulllikelihood, likelihood-nulllikelihood);
 
+
+    fprintf(stdout, " trying 'FreqDomainNullLogLikelihood'...\n");
+    likelihood = FreqDomainNullLogLikelihood(runstate->data);
+    fprintf(stdout, " ...done.\n");
+    fprintf(stdout," null log-likelihood %e\n", likelihood);
+   
+    fprintf(stdout, " trying 'templateStatPhase' likelihood...\n");
+    destroyVariables(&currentParams);
+    addVariable(&currentParams, "chirpmass",      &mc,              REAL8_t);
+    addVariable(&currentParams, "massratio",      &eta,             REAL8_t);
+    addVariable(&currentParams, "inclination",    &iota,            REAL8_t);
+    addVariable(&currentParams, "phase",          &phi,             REAL8_t);
+    addVariable(&currentParams, "time",           &tcoal,           REAL8_t); 
+    addVariable(&currentParams, "rightascension", &ra_current,      REAL8_t);
+    addVariable(&currentParams, "declination",    &dec_current,     REAL8_t);
+    addVariable(&currentParams, "polarisation",   &psi_current,     REAL8_t);
+    addVariable(&currentParams, "distance",       &distMpc_current, REAL8_t);
+    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateStatPhase);
+    fprintf(stdout, " ...done.\n");
+    fprintf(stdout," StatPhase log-likelihood %e\n", likelihood);
+      
+  }
 
   printf(" main(): finished.\n");
   return 0;

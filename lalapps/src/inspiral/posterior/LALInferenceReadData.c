@@ -141,7 +141,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	
 	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):SampleRate/2.0;}
 	
-	if(Nchannel==0)
+	// if(Nchannel==0)
+	if(Nchannel!=0)
 	{
 		channels=calloc(Nifo,sizeof(char *));
 		for(i=0;i<Nifo;i++) {
