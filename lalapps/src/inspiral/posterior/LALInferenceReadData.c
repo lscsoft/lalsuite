@@ -209,8 +209,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			/* Create the fake data */
 			int j_Lo = (int) IFOdata[i].fLow/IFOdata[i].freqData->deltaF;
 			for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
-				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
-				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
+				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
 			}
 			IFOdata[i].freqData->data->data[0].re=0; 			IFOdata[i].freqData->data->data[0].im=0;
 			const char timename[]="timeData";
