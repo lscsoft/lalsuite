@@ -724,6 +724,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
   if hipeDir == "datafind":
+    # grab the segment files managed by hipe and put them in the df cache
+    # since it is inherited by all the other sub-workflows
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
+      'segment_files.cache', '../segments/*txt' )))
     hipeJob.set_pegasus_exec_dir(os.path.join(
       logPath, '/'.join(os.getcwd().split('/')[-2:])))
   else:
