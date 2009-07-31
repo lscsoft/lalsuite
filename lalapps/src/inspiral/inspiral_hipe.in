@@ -774,6 +774,7 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
+      sire.add_input_file(output)
       if do_sire: f.write('%s\n' % output)
     else:
       # set up glob
@@ -873,6 +874,7 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
+      coire.add_input_file(output)
       if do_coire: f.write('%s\n' % output)
     else:
       # set up glob
