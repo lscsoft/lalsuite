@@ -23,7 +23,7 @@ class InspiralError(exceptions.Exception):
 #############################################################################
 
 
-class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   An inspiral analysis job captures some of the common features of the specific
   inspiral jobs that appear below.  Spcecifically, the universe and exec_name
@@ -496,7 +496,7 @@ class InspInjFindJob(InspiralAnalysisJob):
 #############################################################################
 
 
-class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
   """
   An InspiralNode runs an instance of the inspiral code in a Condor DAG.
   """
