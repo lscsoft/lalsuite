@@ -686,6 +686,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeDax = iniFile.rstrip("ini") + usertag + ".dax"  
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGNode(hipeJob)
+  hipeNode.set_user_tag(usertag)
 
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
       hipecp.getint("input", "gps-start-time"), \
@@ -861,6 +862,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
   plotNode = pipeline.CondorDAGNode(plotJob)
+  plotNode.set_user_tag(usertag)
 
   # return to the original directory
   os.chdir("..")
