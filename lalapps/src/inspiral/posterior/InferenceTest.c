@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
                 IfoPtr->freqData->name, IfoPtr->freqData->data->length, IfoPtr->freqData->deltaF);
       fprintf(stdout, "     fLow=%.1f Hz,  fHigh=%.1f Hz  (%d freq bins w/in range)\n", 
               IfoPtr->fLow, IfoPtr->fHigh, 
-              (int) (floor(IfoPtr->fHigh / IfoPtr->freqData->deltaF) - ceil(IfoPtr->fLow / IfoPtr->freqData->deltaF)));
+              ((int) (floor(IfoPtr->fHigh / IfoPtr->freqData->deltaF) - ceil(IfoPtr->fLow / IfoPtr->freqData->deltaF)))+1);
       fprintf(stdout, "     detector location: (%.1f, %.1f, %.1f)\n",
               IfoPtr->detector->location[0], IfoPtr->detector->location[1], IfoPtr->detector->location[2]);
       fprintf(stdout, "     detector response matrix:\n");
@@ -191,10 +191,11 @@ int main(int argc, char *argv[]){
 	  fclose(testout);
 	  testout=fopen("noise_FD.txt","w");
 	  for (i=0;i<runstate->data->freqData->data->length;i++){
-		  fprintf(testout,"%g %g %g %g %g\n",i*runstate->data->freqData->deltaF,
+	          //fprintf(testout,"%g %g %g %g %g\n",i*runstate->data->freqData->deltaF,
+		  fprintf(testout,"%g %g %g\n",i*runstate->data->freqData->deltaF,
 				  runstate->data->freqData->data->data[i].re,
-				  runstate->data->freqData->data->data[i].im,
-				  runstate->data->freqData->data->data[i].re,
+			          //runstate->data->freqData->data->data[i].im,
+				  //runstate->data->freqData->data->data[i].re,
 				  runstate->data->freqData->data->data[i].im);
 	  }
 	  
@@ -242,9 +243,9 @@ int main(int argc, char *argv[]){
 	  
 	  likelihood = 0.0;
 	  
- fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
-	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
- fprintf(stdout, " ...done.\n");
+// fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
+//	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
+// fprintf(stdout, " ...done.\n");
 
 	  double nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
 	  

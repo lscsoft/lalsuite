@@ -564,6 +564,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
+ FILE *testout=fopen("test_likeli.txt","w");
+ fprintf(testout, "f PSD dataRe dataIm signalRe signalIm\n");
     /* determine frequency range & loop over frequency bins: */
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
     // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
@@ -587,12 +589,17 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       templateImag = plainTemplateReal*im + plainTemplateImag*re;
 
       /* compute squared difference & 'chi-squared': */
-      diffRe      = data->freqData->data->data[i].re - templateReal;
-      diffIm      = data->freqData->data->data[i].im - templateImag;
-      diffSquared = TwoDeltaToverN * (diffRe * diffRe + diffIm * diffIm);
-      chisquared += (diffSquared / data->oneSidedNoisePowerSpectrum->data->data[i]);
+      diffRe      = data->freqData->data->data[i].re - templateReal;  // Difference in real parts...
+      diffIm      = data->freqData->data->data[i].im - templateImag;  // ...and imaginary parts, and...
+      diffSquared = diffRe*diffRe + diffIm*diffIm;                    // ...squared difference of the 2 complex figures.
+      chisquared += ((TwoDeltaToverN * diffSquared) / data->oneSidedNoisePowerSpectrum->data->data[i]);
+ fprintf(testout, "%e %e %e %e %e %e\n",
+         f, data->oneSidedNoisePowerSpectrum->data->data[i], 
+         data->freqData->data->data[i].re, data->freqData->data->data[i].im,
+         templateReal, templateImag);
     }
     dataPtr = dataPtr->next;
+ fclose(testout);
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
   return(loglikeli);
