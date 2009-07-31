@@ -721,7 +721,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   # sweep up the .input files hipe generates
   hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
-    'hipe-input-files.%s.cache' % usertag,'*%s-*input' % usertag)))
+    'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
   if hipeDir == "datafind":
     hipeJob.set_pegasus_exec_dir(os.path.join(
