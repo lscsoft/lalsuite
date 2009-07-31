@@ -506,6 +506,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   vetoFiles = dictionary of veto files
   tmpltbankCache = lal.Cache of template bank files
   """
+  # remember what directory we are in to construct the pegasus exec dir
+  ihopeDir = os.path.split(os.getcwd())[-1]
+
   # make the directory for running hipe
   mkdir(hipeDir)
 
@@ -682,9 +685,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     symlinkedCache.tofile(inspiral_hipe_file)
     inspiral_hipe_file.close()
 
-  hipeDag = iniFile.rstrip("ini") + usertag + ".dag"  
-  hipeDax = iniFile.rstrip("ini") + usertag + ".dax"  
+  iniBase = iniFile.rstrip("ini")
+  hipeDag = iniBase + usertag + ".dag"  
+  hipeDax = iniBase + usertag + ".dax"  
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
+
+  hipeJob.set_pegasus_exec_dir(os.path.join(
+    logPath, '/'.join(os.getcwd().split('/')[-2:]), usertag))
+
   hipeNode = pipeline.CondorDAGNode(hipeJob)
   hipeNode.set_user_tag(usertag)
 
