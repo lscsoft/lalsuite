@@ -3386,12 +3386,9 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   /* shift the start time to match the coalescence time,            */
   /* and eventually re-do parameter calculations:                   */
 
-  /*printf(":: LALInspiralWave(..., approximant=%d, order=%d)\n", params.approximant, params.order);
-    printf(" :  tC way before: %f\n", params.tC);*/
-
+  /* printf(":: LALInspiralWave(..., approximant=%d, order=%d)\n", params.approximant, params.order); */
 
   LALInspiralParameterCalc(&status, &params);
-  /*printf(" :  tC wee before: %f\n", params.tC);*/
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
     params.startTime = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
@@ -3409,14 +3406,10 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
 for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   /* compute actual waveform: */
 
-/*rams.tC = 0.0;
- printf(" :  tC before    : %f\n", params.tC);*/
-
   /* REPORTSTATUS(&status); */
   LALInspiralWave(&status, LALSignal, &params);
   /* REPORTSTATUS(&status); */
 
-  /*printf(" :  tC after     : %f\n", params.tC);*/
   /* REPORTSTATUS(&status);*/
   /* frequency domain or time domain waveform? */
   FDomain = ((params.approximant == TaylorF1)
