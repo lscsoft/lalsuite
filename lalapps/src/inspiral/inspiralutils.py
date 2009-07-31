@@ -523,7 +523,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
-        "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
+        "tmpltbank", "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
         "sire-inj", "condor-max-jobs", "calibration"]
   else:
@@ -559,6 +559,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   else:
     usertag = hipeDir.upper()
 
+  hipecp.set("tmpltbank","user-tag","")
+
   if vetoCat:
     # set the old usertag in inspiral and inspinj, 
     # so that we pick up the correct xml inputs
@@ -581,7 +583,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("thinca", "do-veto", "")
 
   # set the usertag
-  hipecp.set("pipeline", "user-tag",usertag)
+  if hipeDir == "datafind":
+    # we don't set a usertag for the datafind directory
+    pass
+  else:
+    hipecp.set("pipeline", "user-tag",usertag)
 
   if injSeed:
     # copy over the arguments from the relevant injection section
@@ -686,15 +692,23 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     inspiral_hipe_file.close()
 
   iniBase = iniFile.rstrip("ini")
-  hipeDag = iniBase + usertag + ".dag"  
-  hipeDax = iniBase + usertag + ".dax"  
+  if hipeDir == "datafind":
+    hipeDag = iniBase + "dag"  
+    hipeDax = iniBase + "dax"  
+  else:
+    hipeDag = iniBase + usertag + ".dag"  
+    hipeDax = iniBase + usertag + ".dax"  
+
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
-
-  hipeJob.set_pegasus_exec_dir(os.path.join(
-    logPath, '/'.join(os.getcwd().split('/')[-2:]), usertag))
-
   hipeNode = pipeline.CondorDAGNode(hipeJob)
-  hipeNode.set_user_tag(usertag)
+
+  if hipeDir == "datafind":
+    hipeJob.set_pegasus_exec_dir(os.path.join(
+      logPath, '/'.join(os.getcwd().split('/')[-2:])))
+  else:
+    hipeJob.set_pegasus_exec_dir(os.path.join(
+      logPath, '/'.join(os.getcwd().split('/')[-2:]), usertag))
+    hipeNode.set_user_tag(usertag)
 
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
       hipecp.getint("input", "gps-start-time"), \
