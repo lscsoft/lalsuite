@@ -8,7 +8,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import os, sys, copy, shutil
+import os, sys, copy, shutil, glob
 import ConfigParser
 import optparse
 import tempfile
@@ -76,6 +76,23 @@ def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
       str(gps_end_time - gps_start_time)  + ".cache"
 
   return hipeCache
+
+##############################################################################
+def hipe_pfn_cache(cachename,globpat):
+  """
+  create and return the name of a pfn cache containing files that match
+  globpat. This is needed to manage the .input files that hipe creates.
+  
+  cachename = the name of the pfn cache file
+  globpat = the pattern to search for
+  """
+  cache_fh = open(cachename,"w")
+  for file in glob.glob(globpat):
+    lfn = os.path.basename(file)
+    pfn = "file://" + os.path.join(os.getcwd(),file)
+    print >> cache_fh, ' '.join([lfn,pfn,' pool = "local"'])
+  cache_fh.close()
+  return cachename
 
 ##############################################################################
 def tmpltbank_cache(datafind_filename):
@@ -701,6 +718,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGNode(hipeJob)
+
+  # sweep up the .input files hipe generates
+  hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
+    'hipe-input-files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
   if hipeDir == "datafind":
     hipeJob.set_pegasus_exec_dir(os.path.join(
