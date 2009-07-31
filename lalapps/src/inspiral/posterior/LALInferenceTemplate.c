@@ -259,17 +259,25 @@ void templateLAL(LALIFOData *IFOdata)
   double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
   double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
-  int approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
-  int order       = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
+  int approximant, order;
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
-  double m1, m2, chirptime;
-  double plusCoef  = -0.5*(1.0+pow(cos(iota),2.0));
-  double crossCoef = -1.0*cos(iota);
+  double m1, m2, chirptime, deltaT;
+  double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
+  double crossCoef = -1.0 * cos(iota);
+
+  if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
+    approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+  else die(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+
+  if (checkVariable(IFOdata->modelParams, "LAL_PNORDER"))
+    order = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
+  else die(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 
   if (IFOdata->timeData==NULL) 
-    die(" ERROR in templateLALwrap(): encountered unallocated 'timeData'.\n");
+    die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR in templateLALwrap(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+    die(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+  deltaT = IFOdata->timeData->deltaT;
 
   mc2masses(mc, eta, &m1, &m2);
   params.OmegaS      = 0.0;     /* (?) */
@@ -283,7 +291,7 @@ void templateLAL(LALIFOData *IFOdata)
   params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
   params.fLower      = IFOdata->fLow * 0.9;
   params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
-  params.tSampling   = 1.0 / IFOdata->timeData->deltaT;
+  params.tSampling   = 1.0 / deltaT;
   params.startTime   = 0.0;
 
   /* actual inspiral parameters: */
@@ -373,23 +381,28 @@ void templateLAL(LALIFOData *IFOdata)
     LALDestroyVector(&status, &LALSignal);
     /* apply window & execute FT of plus component: */
     if (IFOdata->window==NULL) 
-      die(" ERROR in templateLALwrap(): ran into uninitialized 'IFOdata->window'.\n");
+      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
     XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
     if (IFOdata->timeToFreqFFTPlan==NULL)
-      die(" ERROR in templateLALwrap(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
+      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }
 
   else {             /*  (LAL function returns frequency-domain template)  */
-    /* copy over, normalise: */
-    IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]) * ((REAL8) n);
+    /* copy over: */
+    IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
     IFOdata->freqModelhPlus->data->data[0].im = 0.0;
     for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
-      IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]) * ((REAL8) n);
-      IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]) * ((REAL8) n);
+      IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]);
+      IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]);
     }
-    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1] * ((double) n);
+    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
+    /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
+    for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+      IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
+      IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
+    }
     LALDestroyVector(&status, &LALSignal);
   }
 
@@ -480,7 +493,6 @@ void templateStatPhase(LALIFOData *IFOdata)
   a[3] =  exp(log(3.0/128.0) - log_eta - (1.0/3.0)*log_q
               + log(15293365.0/508032.0 + ((27145.0/504.0) + (3085.0/72.0)*eta)*eta));
   a[4] =  exp(log(LAL_PI/128.0)-log_eta+log(38645.0/252.0+5.0*eta));
- 
   NDeltaT = ((double) IFOdata->timeData->data->length) * IFOdata->timeData->deltaT;
   lower = ceil(IFOdata->fLow * NDeltaT);
   upper = floor(IFOdata->fHigh * NDeltaT);

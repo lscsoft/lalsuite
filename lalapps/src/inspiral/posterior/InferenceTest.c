@@ -260,19 +260,27 @@ int main(int argc, char *argv[]){
    
     fprintf(stdout, " trying 'templateStatPhase' likelihood...\n");
     destroyVariables(&currentParams);
-    addVariable(&currentParams, "chirpmass",      &mc,              REAL8_t);
-    addVariable(&currentParams, "massratio",      &eta,             REAL8_t);
-    addVariable(&currentParams, "inclination",    &iota,            REAL8_t);
-    addVariable(&currentParams, "phase",          &phi,             REAL8_t);
-    addVariable(&currentParams, "time",           &tcoal,           REAL8_t); 
-    addVariable(&currentParams, "rightascension", &ra_current,      REAL8_t);
-    addVariable(&currentParams, "declination",    &dec_current,     REAL8_t);
-    addVariable(&currentParams, "polarisation",   &psi_current,     REAL8_t);
-    addVariable(&currentParams, "distance",       &distMpc_current, REAL8_t);
+    addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
+    addVariable(&currentParams, "time",            &tcoal,           REAL8_t); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateStatPhase);
     fprintf(stdout, " ...done.\n");
     fprintf(stdout," StatPhase log-likelihood %f\n", likelihood);
-      
+
+    fprintf(stdout, " trying 'templateLAL' likelihood...\n");
+    numberI4 = TaylorF1;
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    numberI4 = LAL_PNORDER_TWO;
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
+    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
+    fprintf(stdout, " ...done.\n");
+    fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);      
   }
 
   printf(" main(): finished.\n");

@@ -202,7 +202,7 @@ void executeFT(LALIFOData *IFOdata);
 
 void die(char *message);
 void LALTemplateGeneratePPN(LALIFOData *IFOdata);
-void templateLALwrap2(LALIFOData *IFOdata);
+void templateLAL(LALIFOData *IFOdata);
 void templateStatPhase(LALIFOData *IFOdata);
 void templateNullFreqdomain(LALIFOData *IFOdata);
 void templateNullTimedomain(LALIFOData *IFOdata);
