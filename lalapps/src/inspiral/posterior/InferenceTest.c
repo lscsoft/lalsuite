@@ -207,7 +207,8 @@ int main(int argc, char *argv[]){
     REAL8 eta  = 0.24;
     REAL8 iota = 1.0;
     REAL8 phi  = 2.0;
-    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (runstate->data->timeData->data->length / runstate->data->timeData->deltaT) - 1.0;
+    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
+    printf("TCOAL: %f\n",tcoal);
     destroyVariables(runstate->data->modelParams);
     addVariable(runstate->data->modelParams, "chirpmass",   &mc,    REAL8_t);
     addVariable(runstate->data->modelParams, "massratio",   &eta,   REAL8_t);
@@ -243,9 +244,9 @@ int main(int argc, char *argv[]){
 	  
 	  likelihood = 0.0;
 	  
-// fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
-//	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
-// fprintf(stdout, " ...done.\n");
+ fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
+	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
+ fprintf(stdout, " ...done.\n");
 
 	  double nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
 	  
@@ -255,7 +256,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout, " trying 'FreqDomainNullLogLikelihood'...\n");
     likelihood = FreqDomainNullLogLikelihood(runstate->data);
     fprintf(stdout, " ...done.\n");
-    fprintf(stdout," null log-likelihood %e\n", likelihood);
+    fprintf(stdout," null log-likelihood %f\n", likelihood);
    
     fprintf(stdout, " trying 'templateStatPhase' likelihood...\n");
     destroyVariables(&currentParams);
@@ -270,7 +271,7 @@ int main(int argc, char *argv[]){
     addVariable(&currentParams, "distance",       &distMpc_current, REAL8_t);
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateStatPhase);
     fprintf(stdout, " ...done.\n");
-    fprintf(stdout," StatPhase log-likelihood %e\n", likelihood);
+    fprintf(stdout," StatPhase log-likelihood %f\n", likelihood);
       
   }
 

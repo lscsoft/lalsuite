@@ -468,6 +468,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
   double diffRe, diffIm, diffSquared;
+  double dataReal, dataImag;
   REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
@@ -480,7 +481,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double TwoDeltaToverN, deltaF, twopit, f, re, im;
+  double deltaT, TwoDeltaToverN, deltaF, twopit, f, re, im;
   double timeTmp;
   int different;
   LALStatus status;
@@ -564,15 +565,16 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
- FILE *testout=fopen("test_likeli.txt","w");
- fprintf(testout, "f PSD dataRe dataIm signalRe signalIm\n");
+ //FILE *testout=fopen("test_likeli.txt","w");
+ //fprintf(testout, "f PSD dataRe dataIm signalRe signalIm\n");
     /* determine frequency range & loop over frequency bins: */
-    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * dataPtr->timeData->deltaT);
+    deltaT = dataPtr->timeData->deltaT;
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
     lower = ceil(dataPtr->fLow / deltaF);
     upper = floor(dataPtr->fHigh / deltaF);
     //TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
-    TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
+    TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  
@@ -580,26 +582,28 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       plainTemplateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * data->freqModelhCross->data->data[i].im;
 
-      /* do time-shifting... */
+      /* do time-shifting...             */
+      /* (also un-do 1/deltaT scaling): */
       f = ((double) i) * deltaF;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       re = cos(twopit * f);
       im = - sin(twopit * f);
-      templateReal = plainTemplateReal*re - plainTemplateImag*im;
-      templateImag = plainTemplateReal*im + plainTemplateImag*re;
-
+      templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
+      templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
+      dataReal     = data->freqData->data->data[i].re / deltaT;
+      dataImag     = data->freqData->data->data[i].im / deltaT;
       /* compute squared difference & 'chi-squared': */
-      diffRe      = data->freqData->data->data[i].re - templateReal;  // Difference in real parts...
-      diffIm      = data->freqData->data->data[i].im - templateImag;  // ...and imaginary parts, and...
-      diffSquared = diffRe*diffRe + diffIm*diffIm;                    // ...squared difference of the 2 complex figures.
-      chisquared += ((TwoDeltaToverN * diffSquared) / data->oneSidedNoisePowerSpectrum->data->data[i]);
- fprintf(testout, "%e %e %e %e %e %e\n",
-         f, data->oneSidedNoisePowerSpectrum->data->data[i], 
-         data->freqData->data->data[i].re, data->freqData->data->data[i].im,
-         templateReal, templateImag);
+      diffRe       = dataReal - templateReal;         // Difference in real parts...
+      diffIm       = dataImag - templateImag;         // ...and imaginary parts, and...
+      diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
+      chisquared  += ((TwoDeltaToverN * diffSquared) / data->oneSidedNoisePowerSpectrum->data->data[i]);
+ //fprintf(testout, "%e %e %e %e %e %e\n",
+ //        f, data->oneSidedNoisePowerSpectrum->data->data[i], 
+ //        data->freqData->data->data[i].re, data->freqData->data->data[i].im,
+ //        templateReal, templateImag);
     }
     dataPtr = dataPtr->next;
- fclose(testout);
+ //fclose(testout);
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
   return(loglikeli);

@@ -449,7 +449,7 @@ void templateStatPhase(LALIFOData *IFOdata)
   double PNOrder = 2.5;  /* (default) */
   double fraction = (0.5+sqrt(0.25-eta)) / (0.5-sqrt(0.25-eta));
   double mt = mc * ((pow(1.0+fraction,0.2) / pow(fraction,0.6))
-                    + (pow(1.0+1.0/fraction,0.2) / pow(1.0/fraction,0.6)));  /* (total mass) */
+                    + (pow(1.0+1.0/fraction,0.2) / pow(1.0/fraction,0.6))) *  LAL_MSUN_SI;  /* (total mass, kg (!)) */
   double log_q   = log(mt) + log(LAL_PI) + log(LAL_G_SI) - 3.0*log((double) LAL_C_SI);
   double log_eta = log(eta);
   double a[5];
@@ -466,21 +466,22 @@ void templateStatPhase(LALIFOData *IFOdata)
   if (checkVariable(IFOdata->modelParams, "PNOrder"))
     PNOrder = *(REAL8*) getVariable(IFOdata->modelParams, "PNOrder");
   if ((PNOrder!=2.5) && (PNOrder!=2.0)) die(" ERROR in templateStatPhase(): only PN orders 2.0 or 2.5 allowed.");
-  ampliConst  = 0.5*log(5.0)+(5.0/6.0)*log(LAL_G_SI)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(LAL_PI)-1.5*log((double)LAL_C_SI);
-  ampliConst  = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)-(log(LAL_PC_SI)+log(1e6)));
-  ampliConst /= IFOdata->timeData->deltaT;
-  plusCoef  = ampliConst * (-0.5*(1.0+pow(cos(iota),2.0)));
-  crossCoef = ampliConst * (-1.0*cos(iota));
+  ampliConst  = 0.5*log(5.0) + (5.0/6.0)*log(LAL_G_SI) - log(2.0) - 0.5*log(6.0) - (2.0/3.0)*log(LAL_PI) - 1.5*log((double)LAL_C_SI);
+  ampliConst  = exp(ampliConst + 0.5*log_eta + (5.0/6.0)*log(mt) - (log(LAL_PC_SI)+log(1.0e+6)));
+  /* leaving out the following term makes freqDomain template scaling match that of "XLALREAL8TimeFreqFFT()" output: */
+  /* ampliConst /= IFOdata->timeData->deltaT; */
+  plusCoef  = (-0.5*(1.0+pow(cos(iota),2.0)));
+  crossCoef = (-1.0*cos(iota));
   dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   twopitc = LAL_TWOPI * (tc - dataStart);
   a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
-  a[1] =  exp(log(3715.0/84.0+55.0*eta) - log(1.0/384.0) - log_eta - log_q);
+  a[1] =  exp(log(3715.0/84.0+55.0*eta) - log(384.0) - log_eta - log_q);
   a[2] = -exp(log(48.0*LAL_PI/128.0) - (2.0/3.0)*log_q - log_eta);
   a[3] =  exp(log(3.0/128.0) - log_eta - (1.0/3.0)*log_q
-              + log(15293365.0/508032.0+(27145.0/504.0)*eta+(3085.0/72.0)*exp(2.0*log_eta)));
+              + log(15293365.0/508032.0 + ((27145.0/504.0) + (3085.0/72.0)*eta)*eta));
   a[4] =  exp(log(LAL_PI/128.0)-log_eta+log(38645.0/252.0+5.0*eta));
  
-  NDeltaT = IFOdata->timeData->data->length * IFOdata->timeData->deltaT;
+  NDeltaT = ((double) IFOdata->timeData->data->length) * IFOdata->timeData->deltaT;
   lower = ceil(IFOdata->fLow * NDeltaT);
   upper = floor(IFOdata->fHigh * NDeltaT);
   /* loop over frequency bins: */
@@ -499,8 +500,8 @@ void templateStatPhase(LALIFOData *IFOdata)
       if (PNOrder > 2.0)  /*  5th coefficient ignored for 2.0 PN order  */
         Psi += a[4]*log(f); 
       phaseArg = Psi + twopitc*f + phi;
-      plusRe  =  f07 * cos(phaseArg);
-      plusIm  =  f07 * sin(phaseArg);
+      plusRe  =  ampliConst * f07 * cos(phaseArg);
+      plusIm  =  ampliConst * f07 * (-sin(phaseArg));
       crossRe =  -1.0*plusIm * crossCoef;
       crossIm =  plusRe * crossCoef;
       plusRe  *= plusCoef;
