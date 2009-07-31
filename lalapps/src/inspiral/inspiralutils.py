@@ -90,7 +90,7 @@ def hipe_pfn_cache(cachename,globpat):
   for file in glob.glob(globpat):
     lfn = os.path.basename(file)
     pfn = "file://" + os.path.join(os.getcwd(),file)
-    print >> cache_fh, ' '.join([lfn,pfn,' pool = "local"'])
+    print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
   cache_fh.close()
   return cachename
 
