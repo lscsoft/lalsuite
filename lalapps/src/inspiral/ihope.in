@@ -348,7 +348,7 @@ if opts.complete_cache:
   # We need to get the names of the template bank files that are generated in
   # the datafind step, so we can link them into all the search directories
   datafind_cache_filename = "datafind/" + inspiralutils.hipe_cache(ifos, \
-      "DATAFIND", opts.gps_start_time, opts.gps_end_time)
+      None, opts.gps_start_time, opts.gps_end_time)
   tmpltbank_cache = inspiralutils.tmpltbank_cache(datafind_cache_filename)
 
   if opts.run_playground:
