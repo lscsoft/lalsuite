@@ -1333,7 +1333,7 @@ void LALappsGetFrameData(LALStatus*          status,
       errCode=XLALFrSeek(stream,&bufferedDataStopGPS);
       if (errCode != 0)
 	{
-	  fprintf(stderr,"Can not seek to start time  %10.2f in data stream.\n",bufferedDataStart);
+	  fprintf(stderr,"Can not seek to end time %10.2f in data stream.\n",bufferedDataStart);
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
@@ -1341,7 +1341,7 @@ void LALappsGetFrameData(LALStatus*          status,
       errCode=XLALFrSeek(stream,&bufferedDataStartGPS);
       if (errCode != 0)
 	{
-	  fprintf(stderr,"Can not seek to end time %10.2f in data stream.\n",bufferedDataStart);
+	  fprintf(stderr,"Can not seek to start time  %10.2f in data stream.\n",bufferedDataStart);
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
