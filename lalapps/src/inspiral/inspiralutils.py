@@ -889,6 +889,78 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 
   return plotNode
 
+##############################################################################
+# Function to set up and run pipedown
+
+def pipedownSetup(dag,config,logPath,pipedownDir,\
+                  cacheFile,parentNodes,playgroundOnly):
+  """
+  Set up and run pipedown
+  dag      = the dag
+  config   = the config object
+  logPath  = Location where log files will be written
+  pipedownDir = Directory to run pipedown in
+  cacheFile = The input ihope cache file
+  parentNodes = Name of parent dags to add
+  playgroundOnly = Are we opening the box?
+  """
+  # Get necessary information from the config object
+  gpsStart = config.get("input","gps-start-time")
+  gpsEnd = config.get("input","gps-end-time")
+
+  # Make directory
+
+  mkdir(pipedownDir)
+  os.chdir(pipedownDir)
+
+  # Create the necessary ini file
+
+  pipeCp = copy.deepcopy(config) 
+  pipeCp.set("condor","universe","vanilla")
+
+  # Create input section
+
+  pipeCp.remove_section("input")
+  pipeCp.add_section("input")
+  pipeCp.set("input","ihope-segments-directory","../segments")
+
+  # Write ini file to folder
+
+  iniFile = pipedownDir
+  iniFile += ".ini"
+  
+  pipeCp.write(file(iniFile,"w"))
+
+  # Set up the command to run pipedown
+
+  pipeCommand = config.get("condor","pipedown")
+  pipeCommand += " --log-path " + logPath
+  pipeCommand += " --config-file " + iniFile
+  pipeCommand += " --gps-start-time " + gpsStart
+  pipeCommand += " --gps-end-time " + gpsEnd
+  pipeCommand += " --ihope-cache " + cacheFile
+  if not playgroundOnly:
+    pipeCommand += " --generate-all-data-plots"
+    # Need to add playground command
+
+  # run lalapps_pipedown
+  make_external_call(pipeCommand)
+
+  # make pipedown job/node
+  pipeDag = iniFile.rstrip("ini") + "dag"
+  pipeJob = pipeline.CondorDAGManJob(pipeDag, pipedownDir)
+  pipeNode = pipeline.CondorDAGNode(pipeJob)
+  dag.add_node(pipeNode)
+  if parentNodes: 
+    for thisDag in parentNodes:
+      pipeNode.add_parent(thisDag)
+
+  # return to the original directory
+  os.chdir("..")
+
+  return dag
+
+
 
 ##############################################################################
 # Function to set up zero/slide plots:
