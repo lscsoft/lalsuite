@@ -576,7 +576,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   else:
     usertag = hipeDir.upper()
 
-  hipecp.set("tmpltbank","user-tag","")
+  # template banks should not have a usertag so they can be 
+  # passed between sub-dags more easily
+  if hipeDir == "datafind":
+    hipecp.remove_option("pipeline","user-tag")
+  else:
+    hipecp.set("tmpltbank","user-tag","")
 
   if vetoCat:
     # set the old usertag in inspiral and inspinj, 
