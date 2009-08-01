@@ -1335,6 +1335,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  fprintf(stderr,"Can not seek to end time %10.2f in data stream.\n",bufferedDataStart);
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fprintf(stderr,"XLALFrSeek Error Code %i\n",errCode);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
@@ -1343,6 +1344,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  fprintf(stderr,"Can not seek to start time  %10.2f in data stream.\n",bufferedDataStart);
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fprintf(stderr,"XLALFrSeek Error Code %i\n",errCode);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
@@ -2385,12 +2387,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    * should be the stop time of the clipped TFR.
    */
   signalStop=(signalSeries->deltaT*(signalSeries->data->length))+signalStart;
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &(mapMarkerParams.mapStopGPS),
-			 &signalStop),
-			 
-	   status);
+  XLALGPSSetREAL8(&(mapMarkerParams.mapStopGPS),signalStop);
   mapMarkerParams.mapTimeBins=tfmap->tCol;
   mapMarkerParams.mapFreqBins=((tfmap->fRow/2)+1);
   /*This is the map time resolution*/
