@@ -1644,9 +1644,18 @@ else:
 # datafind:
 try:
   lsync_file = cp.get('pipeline','lsync-cache-file')
+  frame_types = []
+  try: frame_types.append(cp.get('input','ligo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','virgo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','geo-type'))
+  except: pass
+  frame_types = [t for t in frame_types if t]
 except:
   lsync_file = None
-df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax,lsync_file)
+df_job = pipeline.LSCDataFindJob(
+  'cache','logs',cp,opts.dax,lsync_file,'|'.join(frame_types))
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
