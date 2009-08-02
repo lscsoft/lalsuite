@@ -1642,7 +1642,11 @@ else:
 
 
 # datafind:
-df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
+try:
+  lsync_file = cp.get('pipeline','lsync-cache-file')
+except:
+  lsync_file = None
+df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax,lsync_file)
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
@@ -2633,10 +2637,6 @@ if cp.has_option("pipeline", "retry-jobs"):
 # Step 14: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
-if opts.dax:
-  pass
-  #print "writing rls cache" 
-  dag.write_pegasus_rls_cache(cp.get('ldgsubmitdax','gsiftp'),cp.get('ldgsubmitdax','pool'))
 
 if opts.write_script:
   dag.write_script()
