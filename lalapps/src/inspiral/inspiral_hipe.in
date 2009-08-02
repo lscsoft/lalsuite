@@ -1642,9 +1642,9 @@ else:
 
 
 # datafind:
+frame_types = []
 try:
   lsync_file = cp.get('pipeline','lsync-cache-file')
-  frame_types = []
   try: frame_types.append(cp.get('input','ligo-type'))
   except: pass
   try: frame_types.append(cp.get('input','virgo-type'))

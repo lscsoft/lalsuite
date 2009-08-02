@@ -235,6 +235,10 @@ os.chdir(analysisDirectory)
 # create a log file that the Condor jobs will write to
 basename = opts.config_file.rstrip(".ini")
 logname = basename + '.dag.log.'
+try:
+  os.mkdir(opts.log_path)
+except:
+  pass
 tempfile.tempdir = opts.log_path
 logfile = tempfile.mktemp(prefix=logname)
 fh = open( logfile, "w" )
@@ -328,7 +332,8 @@ os.chdir("..")
 if opts.run_datafind or opts.run_tmpltbank:
   print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
-      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank)
+      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
+      dax=opts.dax)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
