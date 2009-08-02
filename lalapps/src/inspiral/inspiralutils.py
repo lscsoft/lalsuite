@@ -657,6 +657,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeCommand = config.get("condor","hipe")
   hipeCommand += " --log-path " + logPath
   hipeCommand += " --config-file " + iniFile
+  if dax:
+    hipeCommand += " --dax "
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
     hipeCommand += " --" + item[0] + " " + item[1]
