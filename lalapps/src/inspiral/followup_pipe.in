@@ -419,8 +419,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
   #   first, get the path to the scripts
   scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
 
-  scriptPath = scriptPath.strip('\n')
-  scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
+  scriptPath = scriptPath.strip('analyseQscan.py\n')
   os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
   os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
   os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
