@@ -444,6 +444,8 @@ void vectorCopy(vector *vec1, vector *vec2)
     if (vec1->dimension > 0) {
       vec2->value = (double*) malloc(sizeof(double)*vec1->dimension);
       vec2->name  = (char**) malloc(sizeof(char*)*vec1->dimension);
+      for (i=0; i<vec2->dimension; ++i)
+        vec2->name[i] = NULL;
     }
   }
   if (vec1->dimension > 0) {
@@ -451,6 +453,7 @@ void vectorCopy(vector *vec1, vector *vec2)
       vec2->value[i] = vec1->value[i];
       j=0;
       while (vec1->name[i][j] != '\0') ++j;
+      if (vec2->name[i] != NULL) free(vec2->name[i]);
       vec2->name[i] = (char*) malloc(sizeof(char)*(j+1));
       for (k=0; k<j; ++k)
         vec2->name[i][k] = vec1->name[i][k];
@@ -471,13 +474,13 @@ void vectorSetValue(vector *vec, char name[], double value)
     i=0;
     while ((i<vec->dimension) && (notfound=(strcmp(vec->name[i], name)!=0))) ++i;
     if (notfound)
-      printf(" : ERROR: attempt to set unknown vector element in 'vectorGetValue(...,\"%s\")'!\n", 
+      printf(" : ERROR: attempt to set unknown vector element in 'vectorSetValue(...,\"%s\")'!\n", 
              name);
     else
       vec->value[i] = value;
   }
   else
-    printf(" : ERROR: attempt to set element of empty vector in 'vectorGetValue(...,\"%s\")'!\n", 
+    printf(" : ERROR: attempt to set element of empty vector in 'vectorSetValue(...,\"%s\")'!\n", 
            name);
 }
 
