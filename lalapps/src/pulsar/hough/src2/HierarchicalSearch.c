@@ -137,6 +137,8 @@ RCSID( "$Id$");
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
 #define REARRANGE_SFT_DATA
+#define INITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
@@ -931,6 +933,8 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
 
+  INITIALIZE_COPROCESSOR_DEVICE;
+
 #ifdef OUTPUT_TIMING
     clock0 = time(NULL);
 #endif 
@@ -1221,6 +1225,7 @@ int MAIN( int argc, char *argv[]) {
   }
 #endif
   
+  UNINITIALIZE_COPROCESSOR_DEVICE;
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
