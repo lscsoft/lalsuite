@@ -31,8 +31,15 @@ DROP TABLE _idmap_;
 
 
 CREATE TEMPORARY TABLE time_slide_ids AS SELECT DISTINCT time_slide_id AS time_slide_id FROM time_slide;
+CREATE INDEX ts_ioid_index ON time_slide (instrument, offset, time_slide_id);
 CREATE INDEX ts_io_index ON time_slide (instrument, offset);
-CREATE INDEX tsi_index ON time_slide_ids (time_slide_id);
+CREATE INDEX ts_iid_index ON time_slide (instrument, time_slide_id);
+CREATE INDEX ts_oid_index ON time_slide (offset, time_slide_id);
+CREATE INDEX ts_i_index ON time_slide (instrument);
+CREATE INDEX ts_o_index ON time_slide (offset);
+CREATE INDEX ts_o_index ON time_slide (time_slide_id);
+CREATE INDEX tsid_id_index ON time_slide_ids (time_slide_id);
+
 CREATE TABLE _idmap_ AS
 	SELECT
 		old_ids.time_slide_id AS old,
@@ -57,8 +64,17 @@ CREATE TABLE _idmap_ AS
 		) AS new
 	FROM
 		time_slide_ids AS old_ids;
-DROP INDEX tsi_index;
+
+DROP INDEX ts_ioid_index;
 DROP INDEX ts_io_index;
+DROP INDEX ts_iid_index;
+DROP INDEX ts_oid_index;
+DROP INDEX ts_i_index;
+DROP INDEX ts_o_index;
+DROP INDEX ts_id_index;
+DROP INDEX tsid_id_index;
+
+
 DROP TABLE time_slide_ids;
 
 CREATE INDEX idm_o_index ON _idmap_ (old);
