@@ -84,10 +84,11 @@ print integrate_posterior(mu, post, 0.90)
 # that bins, and ulA are overwritten in each call. vA, vA2 and dvA are the important ones
 bins, vA, ulA = get_combined_array("2DsearchvolumeFirstMoment", 0)
 #FIXME Hack to give volume that is zero a value = 0.01
+vA[vA==0] = 0.01
 for i, l in enumerate(vA):
   for j, m in enumerate(l):
     for k, n in enumerate(m):
-      if n == 0: vA[i][j][k] = 0.01
+      if n == 0: print i,j,k,n #vA[i][j][k] = 0.01
     #if k = 0 k = 0.01
 
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
