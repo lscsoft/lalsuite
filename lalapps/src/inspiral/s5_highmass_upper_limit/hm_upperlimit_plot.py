@@ -83,6 +83,14 @@ print integrate_posterior(mu, post, 0.90)
 # that can hold the upperlimit when we get around to computing it later, so it is okay
 # that bins, and ulA are overwritten in each call. vA, vA2 and dvA are the important ones
 bins, vA, ulA = get_combined_array("2DsearchvolumeFirstMoment", 0)
+#FIXME Hack to give volume that is zero a value = 0.01
+vA[vA==0] = 0.01
+for i, l in enumerate(vA):
+  for j, m in enumerate(l):
+    for k, n in enumerate(m):
+      if n == 0: print i,j,k,n #vA[i][j][k] = 0.01
+    #if k = 0 k = 0.01
+
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
 bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
 
@@ -98,8 +106,8 @@ for m1 in range(len(bins.lower()[0])):
     ulA.array[m1][m2] = integrate_posterior(mu, post, 0.90)
 
 log_vol = pylab.log10(vA[0])
-log_ul = pylab.log10(ulA.array)
 
+log_ul = pylab.log10(ulA.array)
 
 vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 
