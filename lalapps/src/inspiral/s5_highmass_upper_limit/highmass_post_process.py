@@ -416,13 +416,25 @@ def ifo_combos(ifosegdict):
   return combos
 
 def ifo_seg_dict(cp):
-  out = {} 
-  out["H1"] = string.strip(cp.get('input','h1vetosegments'))
-  out["H2"] = string.strip(cp.get('input','h2vetosegments'))
-  out["L1"] = string.strip(cp.get('input','l1vetosegments'))
-  out["V1"] = string.strip(cp.get('input','v1vetosegments'))
+  out = {}
+  instruments = []
+  if string.strip(cp.get('input','h1vetosegments')):
+    out["H1"] = string.strip(cp.get('input','h1vetosegments'))
+    instruments.append("H1")
+  if string.strip(cp.get('input','h2vetosegments')):
+    out["H2"] = string.strip(cp.get('input','h2vetosegments'))
+    instruments.append("H2")
+  if string.strip(cp.get('input','l1vetosegments')):
+    out["L1"] = string.strip(cp.get('input','l1vetosegments'))
+    instruments.append("L1")
+  if string.strip(cp.get('input','v1vetosegments')):
+    out["V1"] = string.strip(cp.get('input','v1vetosegments'))
+    instruments.append("V1")
+  #FIXME use proper instruments utilities
+  instruments.sort()
+  #FIXME probably won't work on CAT2
   cat = "_".join(os.path.basename(out["H1"]).split("_")[1:3])
-  return out, [cat], ifo_combos(out)
+  return out, [cat], ifo_combos(out), ",".join(instruments)
 
 def grep(string, inname, outname):
     o = open(outname, "w")
@@ -463,7 +475,7 @@ try: os.mkdir("bash_scripts")
 except: pass
 
 # get the segments for a given category veto
-seg_dict, cats, ifo_combinations = ifo_seg_dict(cp)
+seg_dict, cats, ifo_combinations, instruments = ifo_seg_dict(cp)
 
 types = ["FULL_DATA"]
 FULLDATACACHE = string.strip(cp.get('input','fulldatacache'))
@@ -526,7 +538,7 @@ for type in types:
     cnt = 0;
     node_list = []
     for otag in out_tags:
-      ligolwThincaToCoincNode[type+cat+str(cnt)] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, otag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", otag+timestr, n, start_time, end_time, effsnrfac=string.strip(cp.get('input',"eff_snr_fac")), p_node=[segNode[cat]]); n+=1
+      ligolwThincaToCoincNode[type+cat+str(cnt)] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, otag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", otag+timestr, n, start_time, end_time, effsnrfac=string.strip(cp.get('input',"eff_snr_fac")), instruments=instruments, p_node=[segNode[cat]]); n+=1
       node_list.append(ligolwThincaToCoincNode[type+cat+str(cnt)])
       cnt+=1
     database = tag+"_"+timestr+".sqlite"
@@ -548,7 +560,7 @@ for inj in injcache:
     except: pass
     #break down the cache
     grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, instruments=instruments, p_node=[segNode[cat]]);n+=1
     database = tag+"_"+timestr+".sqlite"
     db_to_xml_name = tag +"_"+timestr+".xml.gz"
     try: db[cat].append(database)
