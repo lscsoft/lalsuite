@@ -438,7 +438,7 @@ void vectorCopy(vector *vec1, vector *vec2)
 /* Copy vec1 over to (pre-initialised!!) vec2 */
 {
   int i,j,k;
-  if (vec2->dimension != vec1->dimension) {
+  if (vec2->dimension != vec1->dimension) { /* unequal dimension --> set up vec2: */
     vectorDispose(vec2);
     vec2->dimension = vec1->dimension;
     if (vec1->dimension > 0) {
@@ -448,12 +448,15 @@ void vectorCopy(vector *vec1, vector *vec2)
         vec2->name[i] = NULL;
     }
   }
+  else /* vec2 already correct dimension --> only free names entries: */
+    for (i=0; i<vec2->dimension; ++i)
+      free(vec2->name[i]);
+  /* vec2 is now set up, copy over (values & names): */
   if (vec1->dimension > 0) {
     for (i=0; i<vec1->dimension; ++i){
       vec2->value[i] = vec1->value[i];
       j=0;
       while (vec1->name[i][j] != '\0') ++j;
-      if (vec2->name[i] != NULL) free(vec2->name[i]);
       vec2->name[i] = (char*) malloc(sizeof(char)*(j+1));
       for (k=0; k<j; ++k)
         vec2->name[i][k] = vec1->name[i][k];
