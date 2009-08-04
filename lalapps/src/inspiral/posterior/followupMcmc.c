@@ -2791,34 +2791,24 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
     template2535(DF, parameter, Fplus, Fcross, output);
   /*-- LAL templates... --*/
   else if (waveform == iLALTT2PN00)    /* LAL Taylor T2 Newtonian        */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, newtonian);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT2PN10)    /* LAL Taylor T2 1.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE);
   else if (waveform == iLALTT2PN15)    /* LAL Taylor T2 1.5PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePointFivePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT2PN20)    /* LAL Taylor T2 2.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, twoPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_TWO);
   else if (waveform == iLALTT3PN00)    /* LAL Taylor T3 Newtonian        */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, newtonian);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT3PN10)    /* LAL Taylor T3 1.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE);
   else if (waveform == iLALTT3PN15)    /* LAL Taylor T3 1.5PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePointFivePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT3PN20)    /* LAL Taylor T3 2.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, twoPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_TWO);
   else if (waveform == iLALIMRPhenomA) /* LAL Phenomenological           */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, pseudoFourPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALEOBNR)      /* LAL EOBNR                      */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, pseudoFourPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, LAL_PNORDER_PSEUDO_FOUR);
   /* burst: */
   else if (waveform == bSineGaussian)  /* Sine-Gaussian burst            */
