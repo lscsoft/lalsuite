@@ -1825,7 +1825,7 @@ int Bil2( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *seriesHP, ParamOfEvent
   ts=ceil(even_param->tau/seriesHP->deltaT);
 
   FILE *OUTtest;
-  itest=1;
+  itest=0;
 
   seriesHPbil2->data->length=(seriesHP->data->length+ts);
   seriesHPbil2->deltaT=seriesHP->deltaT; 
