@@ -656,8 +656,9 @@ in the frequency domain */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
-
-		for(idx=lowBin;idx<Nmodel/2;idx++){
+		if(highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		
+		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
@@ -685,7 +686,7 @@ that LAL uses. Please check this whenever any change is made */
 		#if DEBUGMODEL !=0
 			fclose(modelout);
 		#endif
-		/*		chisq+=topdown_sum[det_i]->data[highBin+1];*/
+		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
 		/* add the normalisation constant */
 
