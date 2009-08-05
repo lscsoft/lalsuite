@@ -40,18 +40,25 @@ CREATE INDEX ns_tsid_index ON new_slides (time_slide_id);
 CREATE INDEX ns_tsidv_index ON new_slides (time_slide_id, vec);
 CREATE INDEX ns_v_index ON new_slides (vec);
 
+CREATE TABLE ts_vecs AS SELECT DISTINCT(vec) AS vec FROM new_slides;
+CREATE TABLE unique_ts AS SELECT  ts_vecs.vec, (SELECT MIN(time_slide_id) FROM new_slides WHERE new_slides.vec == ts_vecs.vec) AS time_slide_id FROM ts_vecs;
+CREATE INDEX ut_v_index ON unique_ts(vec);
+
 CREATE TABLE _idmap_ AS
 	SELECT 
-		old_slide.time_slide_id AS old,
-		MIN(new_slide.time_slide_id) AS new
-	FROM new_slides AS old_slide
-	JOIN new_slides AS new_slide 
-	ON (old_slide.vec == new_slide.vec);
+		new_slides.time_slide_id AS old,
+		unique_ts.time_slide_id AS new
+	FROM new_slides JOIN unique_ts 
+		ON (new_slides.vec == unique_ts.vec);
 
+DROP INDEX ut_v_index;
 DROP INDEX ns_tsid_index;
 DROP INDEX ns_tsidv_index;
-DROP INDEX ns_v_index;
+DROP INDEX ns_v_indexi;
+
 DROP TABLE new_slides;
+DROP TABLE ts_vecs;
+DROP TABLE unique_ts;
 
 --- END CHADS CHANGES
 
