@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdio.h>
+#include <errno.h>
 #include "XLALPSSInterface.h"
 #include "lal/XLALError.h"
 #include "lal/Units.h"
@@ -94,6 +96,74 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
       free(ts->capt);
   /**/
   free(ts);
+}
+
+PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UINT4 n) {
+  UINT4 i;
+  FILE*fp;
+  LIGOTimeGPS gpsepoch;
+
+  if ( !tsPSS || !name )
+    XLAL_ERROR_NULL( "XLALPrintPSSTimeseriesToFile", XLAL_EFAULT );
+
+  fp = fopen(name,"w");
+  if ( !fp ) {
+    fprintf(stderr,"XLALPrintPSSTimeseriesToFile: can't open file '%s'(%d)\n",name,errno);
+    XLAL_ERROR_NULL( "XLALPrintPSSTimeseriesToFile", XLAL_EFAULT );
+  }
+
+  XLALGPSSetREAL8(&gpsepoch, tsPSS->ini);
+  if (xlalErrno) {
+    fprintf(stderr,"XLALPrintPSSTimeseriesToFile: unhandled XLAL Error in XLALGPSSetREAL8 %s,%d\n",__FILE__,__LINE__);
+    XLAL_ERROR_NULL( "XLALPrintPSSTimeseriesToFile", XLAL_EFAULT );
+  }
+
+  fprintf(fp,"Length: %ld\n",tsPSS->n);
+  fprintf(fp,"deltaT: %f\n",tsPSS->dx);
+  fprintf(fp,"gpsSeconds: %i\n",gpsepoch.gpsSeconds);
+  fprintf(fp,"gpsNanoSeconds: %i\n",gpsepoch.gpsNanoSeconds);
+  if(tsPSS->name)
+    fprintf(fp,"Name: '%s'\n",tsPSS->name);
+  if(tsPSS->capt)
+    fprintf(fp,"Capt: '%s'\n",tsPSS->capt);
+  fprintf(fp,"First %d values:\n", n);
+  for(i = 0; i < n; i++)
+    fprintf(fp,"  %23.16e\n",tsPSS->y[i]);
+  fclose(fp);
+
+  xlalErrno = 0;
+  return tsPSS;
+}
+
+REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, UINT4 n) {
+  UINT4 i;
+  FILE*fp;
+  char unit[LALNameLength];
+
+  if ( !ts || !name )
+    XLAL_ERROR_NULL( "XLALPrintREAL8TimeSeriesToFile", XLAL_EFAULT );
+
+  fp = fopen(name,"w");
+  if ( !fp ) {
+    fprintf(stderr,"XLALPrintREAL8TimeSeriesToFile: can't open file '%s'(%d)\n",name,errno);
+    XLAL_ERROR_NULL( "XLALPrintREAL8TimeSeriesToFile", XLAL_EFAULT );
+  }
+
+  fprintf(fp,"Length: %d\n",ts->data->length);
+  fprintf(fp,"deltaT: %f\n",ts->deltaT);
+  fprintf(fp,"gpsSeconds: %i\n",ts->epoch.gpsSeconds);
+  fprintf(fp,"gpsNanoSeconds: %i\n",ts->epoch.gpsNanoSeconds);
+  if(ts->name)
+    fprintf(fp,"Name: '%s'\n",ts->name);
+  if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) )
+    fprintf(fp,"Unit: '%s'\n",unit);
+  fprintf(fp,"First %d values:\n", n);
+  for(i = 0; i < n; i++)
+    fprintf(fp,"  %23.16e\n",ts->data->data[i]);
+  fclose(fp);
+
+  xlalErrno = 0;
+  return ts;
 }
 
 REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, PSSTimeseries *tsPSS) {

@@ -49,6 +49,19 @@ extern PSSTimeseries
 (PSSTimeseries *tsPSS,
  REAL4TimeSeries *ts);
 
+/* debug: write PSS timeseries data to a file */
+extern PSSTimeseries
+*XLALPrintPSSTimeseriesToFile
+(PSSTimeseries *tsPSS,
+ char*name,
+ UINT4 n);
+
+extern REAL8TimeSeries
+*XLALPrintREAL8TimeSeriesToFile
+(REAL8TimeSeries *ts,
+ char*name,
+ UINT4 n);
+
 /* functions for time domain cleaning */
 extern PSSTimeseries
 *XLALPSSHighpassData
