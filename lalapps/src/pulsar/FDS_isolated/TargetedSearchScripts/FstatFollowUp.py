@@ -20,9 +20,6 @@ time_per_SFT_per_template = 1e-6 #seconds
 max_number_of_jobs = 500
 number_of_events_to_follow_up = 1
 
-grid_type = 2
-metric_type = 1
-
 valid_IFOs = ['H1','H2','L1','V1']
 
 alpha = None
@@ -43,8 +40,6 @@ Usage: FstatFollowUp.py [options]
   -o, --OutputLabel        Base name for the directories and files to be generated
   -i, --Iteration          Iteration number, used to differentiate steps, generally starts at 0
   -C, --ConfigFile         Config file name
-  -D, --DataFileLocation   Location(s) of data file indicating location of SFTs on the cluster, seperated by commas
-                           i.e. "./H1ListOfDataOnNodes,./H2ListOfDataOnNodes,./L1ListOfDataOnNodes"
   -I, --IFOs               Which IFOs: 'H1','H2','L1','H1H2','H1L1','H2L1','H1H2L1', etc
   -a, --Alpha              Sky position alpha (equatorial coordinates) in radians
   -d, --Delta              Sky position delta (equatorial coordinates) in radians 
@@ -58,28 +53,20 @@ Usage: FstatFollowUp.py [options]
       --F2Band             2nd spin down band (from -band/2 to +band/2 centered on F2)
       --F3                 3rd spin down central frequency/second^3 to be searched (in Hz/s^3)
       --F3Band             3rd spin down band (from -band/2 to +band/2 centered on F3)
-  -S, --StartTime          Earliest time that a follow can use data from (in GPS seconds)
-  -E, --EndTime            Latest time that a follow up can use data from (in GPS seconds)
   -T, --ParameterTime      Time which the Freq, dFreq, parameters come from (in GPS seconds)
   -t, --CoherenceTime      Desired span of data actually integrated to look for signals (in seconds)
-  -e, --EphemerisDirectory Directory containing Sun and Earth ephemeris files
-  -y, --EphemerisYear      Year of ephemeris files needed, i.e. "03-06"
-  -N, --NumCandidatesToKeep  Set the total number of top list candidates to keep
-  -M, --MetricMismatch     Maximal allowd mismatch for metric tiling (on a per dimension basis)
-  -X, --ExecutableCode     Location of the exectuable to perform search, i.e. ./lalapps_ComputeFStatistic
   -L, --LogFileDirectory   Location where the condor .sub log file will be placed
 """
   print >> sys.stderr, msg
 
 ################################################
 #This section reads in the command line arguments
-shortop = "ho:i:C:D:I:a:d:z:c:f:b:s:m:S:E:T:t:e:y:N:M:X:L:"
+shortop = "ho:i:C:I:a:d:z:c:f:b:s:m:T:t:L:"
 longop = [
   "help",
   "OutputLabel=",
   "Iteration=",
   "ConfigFile",
-  "DataFileLocation=",
   "IFOs=",
   "Alpha=",
   "Delta=",
@@ -93,15 +80,8 @@ longop = [
   "F2Band=",
   "F3=",
   "F3Band=",
-  "StartTime=",
-  "EndTime=",
   "ParameterTime=",
   "CoherenceTime=",
-  "EphemerisDirectory=",
-  "EphemerisYear=",
-  "NumCandidatesToKeep=",
-  "MetricMismatch=",
-  "ExectuableCode=",
   "LogFileDirectory=",
   ]
 
@@ -146,38 +126,38 @@ for o, a in opts:
     f3 = float(a)
   elif o in ("--F3Band"):
     f3_band = float(a)
-  elif o in ("-D","--DataFileLocation"):
-    data_location_file = str(a).split(',')
   elif o in ("-I","--IFOs"):
     IFOs = str(a)
-  elif o in ("-S","--StartTime"):
-    start_time = int(a)
-  elif o in ("-E","--EndTime"):
-    end_time = int(a)
   elif o in ("-T","--ParameterTime"):
     time_of_params = int(a)
   elif o in ("-t","--CoherenceTime"):
-    coherence_time = int(a)
-  elif o in ("-e","--EphemerisDirectory"):
-    ephemeris_directory = str(a)
-  elif o in ("-y","--EphemerisYear"):
-    ephemeris_year = str(a)
+    coherence_time= int(a)
   elif o in ("-N","--NumCandidatesToKeep"):
     num_candidates_to_keep = str(a)
-  elif o in ("-M","--MetricMismatch"):
-    metric_mismatch = float(a)
-  elif o in ("-C","--ExecutableCode"):
-    code = str(a)
   elif o in ("-L","--LogFileDirectory"):
     log_file_directory = str(a)
   else:
-a    print >> sys.stderr, "Unknown option:", o
+    print >> sys.stderr, "Unknown option:", o
     usage()
     sys.exit(1)
 
+#################################################
+#Makes a folder for this search iteration and moves to it
+output_main_directory = './' + output_label
+if not (os.path.exists(output_main_directory)):
+  os.mkdir(output_main_directory)
+
+base_label = output_label + '_' + str(iteration)
+
+run_directory = output_main_directory +"/" + base_label + "_run/"
+try:
+  os.mkdir(run_directory)
+except:
+  print "Warning: Run directory already exists, but continuing with DAG generation anyways"
+
 ###########################################
 #Create a log file with the input parameters
-run_log_file = ''.join([output_label,'_commands_',str(iteration),'.log'])
+run_log_file = ''.join([output_main_directory,'/',output_label,'_commands_',str(iteration),'.log'])
 rlf = open(run_log_file,'w')
 rlf.write(' '.join(sys.argv))
 rlf.write('\n')
@@ -187,25 +167,98 @@ rlf.close()
 #Parses the config file, if any
 #The config file is overriden by command line parameters
 
+# Import the Configuration File into config
 
+config_file = os.path.abspath(config_file)
+sys.path.append(os.path.dirname(config_file))
+config = __import__(os.path.basename(config_file.strip('.py')));
 
+# First GPS time to be considered for data selection
+try:
+  config.start_time
+except:
+  print "start_time cannot be read"
+  sys.exit(1)
+    
+# Last GPS time to be considered for data selection
+try:
+  config.end_time
+except:
+  print "end_time cannot be read"
+  sys.exit(1)
+      
+# Maximum 1-D mismatch between template and possible signal
+try:
+  config.mismatch
+except:
+  print "mismatch cannot be read"
+  sys.exit(1)
+        
+# Earth and Sun Ephemeris directory
+try:
+  config.ephem_dir
+except:
+  print "ephem_dir cannot be read"
+  sys.exit(1)
+      
+# Earth and Sun Ephemeris year to use
+try:
+  config.ephem_year
+except:
+  print "ephem_year cannot be read"
+  sys.exit(1)
+
+# Number of candidates to keep per job 
+try:
+  config.num_candidates_to_keep
+except:
+  print "num_candidates_to_keep cannot be read"
+  sys.exit(1)
+
+# Grid type used by CommputeFStatistic
+try:
+  config.grid_type
+except:
+  print "grid_type cannot be read"
+  sys.exit(1)
+
+# Metric type used by ComputeFStatistic
+try:
+  config.metric_type
+except:
+  print "metric_type cannot be read"
+  sys.exit(1)    
+
+# Max number of jobs to run per event per step
+try:
+  config.max_number_of_jobs
+except:
+  print "max_number_of_jobs cannot be read"
+  sys.exit(1)
+
+# Location of data files, in comma seperated format
+try:
+  config.data_location_file = config.data_location_file.split(',')
+except:
+  print "data_location_file cannot be read"
+  sys.exit(1)
+
+# Location of the python files
+try:
+  config.python_dir
+except:
+  print "python_dir cannot be read"
+  sys.exit(1)
 
 #############################
 #End user input section
-
-#################################################
-#Makes a folder for this search iteration and moves to it
-base_label = output_label + '_' + str(iteration)
-
-run_directory = "./" + base_label + "_run/"
-os.mkdir(run_directory)
 
 
 #############################################
 #Calculate some derived parameters and names
 #Also performs some basic sanity checks
 
-total_time = end_time - start_time
+total_time = config.end_time - config.start_time
 
 if total_time < 0:
   print "No valid times: check your start and end times"
@@ -213,7 +266,6 @@ if total_time < 0:
 
 #Need to double check this calculation
 #Performs a coarse estimate
-
 
 if coherence_time > total_time:
   coherence_time = total_time
@@ -238,8 +290,8 @@ time_array = numpy.array([])
 psd_array = numpy.array([])
 for this_IFO in valid_IFOs:
   found_file = False
-  if this_IFO in IFOs:
-    for file_name in data_location_file:
+  if this_IFO in config.IFOs:
+    for file_name in config.data_location_file:
       if this_IFO in file_name.split('/')[-1]:
         try:
           data_file = open(file_name,'r')
@@ -254,7 +306,7 @@ for this_IFO in valid_IFOs:
 
     #If a file containing the noise in band per sft does not exist,
     #create it
-    psd_file_name = ''.join(['./Full_psd_',base_label,'_',str(this_IFO),'.txt'])
+    psd_file_name = ''.join([output_main_directory,'/Full_psd_',base_label,'_',str(this_IFO),'.txt'])
     
     if (not os.path.exists(psd_file_name)):
       node_directory = ''
@@ -265,17 +317,17 @@ for this_IFO in valid_IFOs:
         new_node_directory = '/'.join(line.split('/')[0:-1])
         if (new_node_directory != node_directory):
           node_directory = new_node_directory
-          freq_avg_command = ''.join(['lalapps_FreqAverager_v2 -i "',
+          freq_avg_command = ''.join([config.python_dir.rstrip('/'),'/lalapps_FreqAverager_v2 -i "',
                                       node_directory,'/*',str(this_IFO),'*" -f ',
-                                      str(freq - freq_band/2.0 - 0.1),
-                                      ' -b ',str(freq_band + 0.2),
-                                      ' -o ./psd_',str(this_IFO),'_',
+                                      str(f0 - f0_band/2.0 - 0.1),
+                                      ' -b ',str(f0_band + 0.2),
+                                      ' -o ', output_main_directory,'/psd_',str(this_IFO),'_',
                                       str(directory_count),'.txt'])
           directory_count = directory_count + 1
           print freq_avg_command
           os.system(freq_avg_command)
 
-      cat_psd_files = ''.join(['cat ./psd_',str(this_IFO),'_* > ',psd_file_name])
+      cat_psd_files = ''.join(['cat ',output_main_directory,'/psd_',str(this_IFO),'_* > ',psd_file_name])
       os.system(cat_psd_files)
       rm_temp_psd_files = 'rm psd_*_*.txt'
       os.system(rm_temp_psd_files)
@@ -294,8 +346,8 @@ for this_IFO in valid_IFOs:
     
     for line in psd_file:
       sft_start_time = int(line.split(' ')[0])
-      if ((sft_start_time > start_time) and
-          (sft_start_time + SFT_length < end_time)):
+      if ((sft_start_time > config.start_time) and
+          (sft_start_time + SFT_length < config.end_time)):
         time_array = numpy.append(time_array,sft_start_time)
         psd_value = float(line.split(' ')[2])
         psd_array = numpy.append(psd_array,psd_value)
@@ -307,7 +359,7 @@ for this_IFO in valid_IFOs:
 ############################################################################################
 #This section determines the best set of SFTs to use given the noise of each SFT in the band
 
-best_start_time = start_time
+best_start_time = config.start_time
 best_noise_weight = 1
 invert_psd_array = 1./psd_array
 first_time_pass = True
@@ -321,15 +373,15 @@ for x in time_array:
       first_time_pass = False
 
 #Determine what the frequency we should be band passing around is
-parameter_time_difference = best_start time = time_or_params
+parameter_time_difference = best_start_time - time_of_params
 freq_current = f0 + (f1 * parameter_time_difference) + (f2 * parameter_time_difference**2) + (f3 * parameter_time_difference**3) 
 
 print "Best start time is = " + str(best_start_time)
 
 for this_IFO in ['H1','H2','L1']:
   found_file = False
-  if this_IFO in IFOs:
-    for file_name in data_location_file:
+  if this_IFO in config.IFOs:
+    for file_name in config.data_location_file:
       if this_IFO in file_name.split('/')[-1]:
         try:
           data_file = open(file_name,'r')
@@ -348,13 +400,13 @@ for this_IFO in ['H1','H2','L1']:
     os.mkdir(band_passed_directory)
     
     #Use ConvertToSFTv2 to band pass the data and place in the just created directory    
-    lowest_freq = freq_current - freq_band/2.0 - 1.0
-    highest_freq = freq_current + freq_band/2.0 + 1.0
+    lowest_freq = freq_current - f0_band/2.0 - 1.0
+    highest_freq = freq_current + f0_band/2.0 + 1.0
     print "Freq bandpass from: " + str(lowest_freq) + " to " + str(highest_freq)
     for line in data_file:
       sft_start_time = int(line.split('-')[-2])
-      if (sft_start_time > best_start_time) and (sft_start_time < (best_start_time + Tcoh)):
-        band_pass_command = ('lalapps_ConvertToSFTv2 ' + '-i ' + line.strip() + 
+      if (sft_start_time > best_start_time) and (sft_start_time < (best_start_time + coherence_time)):
+        band_pass_command = (config.python_dir.rstrip('/') + '/lalapps_ConvertToSFTv2 ' + '-i ' + line.strip() + 
                              ' -I ' + this_IFO + ' -o ' + band_passed_directory + 
                              ' -f ' + str(lowest_freq) + ' -F ' + str(highest_freq))
         os.system(band_pass_command)
@@ -362,7 +414,7 @@ for this_IFO in ['H1','H2','L1']:
     
     
     #Merge stripped SFTs into a single file - remove any prior attempts
-    cat_file_name = final_sft_directory + this_IFO + '-' + str(best_start_time) + '-' + str(Tcoh)
+    cat_file_name = final_sft_directory + this_IFO + '-' + str(best_start_time) + '-' + str(coherence_time)
     print cat_file_name
     try:
       os.remove('cat_file_name')
@@ -370,8 +422,8 @@ for this_IFO in ['H1','H2','L1']:
       pass
 
               
-    for time_section in range(int((best_start_time / 1000000)),int((best_start_time+Tcoh)/ 1000000)+1):
-      cat_file_name = final_sft_directory + this_IFO + '-' + base_name + '.sft'
+    for time_section in range(int((best_start_time / 1000000)),int((best_start_time+coherence_time)/ 1000000)+1):
+      cat_file_name = final_sft_directory + this_IFO + '-' + base_label + '.sft'
       cat_command = ('cat ' + band_passed_directory + '*' + str(time_section) + 
                      ('?'*6) + '-' + str(SFT_length) + '.sft >> ' + cat_file_name)
       os.system(cat_command)
@@ -385,9 +437,9 @@ for this_IFO in ['H1','H2','L1']:
 #It first calculates the various step sizes and how the parameter space is 
 #divided into the jobs
 
-dag_file_name = base_label + '.dag'
-sub_file_name = base_label + '.sub'
-sub_file_name_examine = base_label + '_examine.sub'
+dag_file_name = output_main_directory + '/' + base_label + '.dag'
+sub_file_name = output_main_directory + '/' + base_label + '.sub'
+sub_file_name_examine = output_main_directory + '/' + base_label + '_examine.sub'
 
 output_results_dir = run_directory + 'output_results_' + base_label +'/'
 os.mkdir(output_results_dir)
@@ -400,29 +452,29 @@ os.mkdir(output_results_dir)
 #by Reinhard Prix which can be found at: 
 #http://www.lsc-group.phys.uwm.edu/cgi-bin/enote.pl?nb=puls3knownpulsardemod&action=view&page=2
 
-freq_resolution = 2*(3*mismatch/((math.pi**2)*(Tcoh**2)))**0.5
-dfreq_resolution = 2*(4*5*9*mismatch/((math.pi**2)*(Tcoh**4)))**0.5
+freq_resolution = 2*(3*config.mismatch/((math.pi**2)*(coherence_time**2)))**0.5
+dfreq_resolution = 2*(4*5*9*config.mismatch/((math.pi**2)*(coherence_time**4)))**0.5
 
 #Determine spacing in right ascension (alpha), declination (delta), 
 #using the template grid of the actual code
 
-sky_template_count_file = ''.join(['SkyTemplateCount_',base_label,'.txt'])
-find_angular_resolution = ' '.join([code,
+sky_template_count_file = ''.join([output_main_directory,'/SkyTemplateCount_',base_label,'.txt'])
+find_angular_resolution = ' '.join([config.code,
                            '--Alpha', str(alpha - alpha_band/2.0),
                            '--Delta', str(delta - delta_band/2.0),
                            '--AlphaBand', str(alpha_band),
                            '--DeltaBand', str(delta_band),
-                           '--Freq', str(freq),
+                           '--Freq', str(f0),
                            '--FreqBand', str(0.0),
-                           '--f1dot', str(f_dot),
+                           '--f1dot', str(f1),
                            '--f1dotBand', str(0.0),
-                           '--DataFiles', ''.join([final_sft_directory,'*']),
-                           '--ephemDir', ephemeris_directory,
-                           '--ephemYear', ephemeris_year,
+                           '--DataFiles', ''.join([os.path.abspath(final_sft_directory),'/*']),
+                           '--ephemDir', config.ephem_dir,
+                           '--ephemYear', config.ephem_year,
                            '--refTime',str(time_of_params),
-                           '--gridType',str(grid_type),
-                           '--metricType',str(metric_type),
-                           '--metricMismatch',str(mismatch),
+                           '--gridType',str(config.grid_type),
+                           '--metricType',str(config.metric_type),
+                           '--metricMismatch',str(config.mismatch),
                            '--countTemplates',
                            '>',sky_template_count_file])
                            
@@ -434,7 +486,7 @@ for line in ar_file:
 
 angular_resolution = (alpha_band*delta_band/sky_grid_templates)**0.5
 
-total_templates = sky_grid_templates * freq_band * f_dot_band / (freq_resolution * dfreq_resolution)
+total_templates = sky_grid_templates * f0_band * f1_band / (freq_resolution * dfreq_resolution)
 
 alpha_steps = int(math.ceil(alpha_band/angular_resolution))
 delta_steps = int(math.ceil(delta_band/angular_resolution))
@@ -443,19 +495,19 @@ if (alpha_steps*delta_steps < math.floor(max_number_of_jobs)/2):
   alpha_step_size = angular_resolution
   delta_step_size = angular_resolution
   dfreq_steps = int(math.floor(max_number_of_jobs/(alpha_steps*delta_steps)))
-  dfreq_step_size = f_dot_band/dfreq_steps
+  dfreq_step_size = f1_band/dfreq_steps
 elif (alpha_steps*delta_steps > max_number_of_jobs):
   alpha_steps = int(math.floor(max_number_of_jobs**0.5))
   delta_steps = alpha_steps
   alpha_step_size = alpha_band/alpha_steps
   delta_step_size = delta_band/delta_steps
   dfreq_steps = 1
-  dfreq_step_size = f_dot_band
+  dfreq_step_size = f1_band
 else:
   alpha_step_size = angular_resolution
   delta_step_size = angular_resolution
   dfreq_steps = 1
-  dfreq_step_size = f_dot_band
+  dfreq_step_size = f1_band
 
 dag_file_handle = open(dag_file_name,'w')
 
@@ -471,52 +523,46 @@ for alpha_count in range(0,alpha_steps):
                            '--Delta', str(delta - delta_band/2.0 + delta_step_size*delta_count),
                            '--AlphaBand', str(alpha_step_size),
                            '--DeltaBand', str(delta_step_size),
-                           '--Freq', str(freq - freq_band/2.0),
-                           '--FreqBand', str(freq_band),
+                           '--Freq', str(f0 - f0_band/2.0),
+                           '--FreqBand', str(f0_band),
                            '--dFreq', str(freq_resolution),
-                           '--f1dot', str(f_dot - f_dot_band/2.0 + dfreq_step_size*dfreq_count),
+                           '--f1dot', str(f1 - f1_band/2.0 + dfreq_step_size*dfreq_count),
                            '--f1dotBand', str(dfreq_step_size),
                            '--df1dot', str(dfreq_resolution),
-                           '--DataFiles', ''.join([final_sft_directory,'*']),
-                           '--ephemDir', ephemeris_directory,
-                           '--ephemYear', ephemeris_year,
-                           '--NumCandidatesToKeep',str(num_candidates_to_keep),
+                           '--DataFiles', ''.join([os.path.abspath(final_sft_directory),'/*']),
+                           '--ephemDir', config.ephem_dir,
+                           '--ephemYear', config.ephem_year,
+                           '--NumCandidatesToKeep',str(config.num_candidates_to_keep),
                            '--refTime',str(time_of_params),
-                           '--gridType',str(grid_type),
-                           '--metricType',str(metric_type),
-                           '--metricMismatch',str(mismatch),
-                           '--outputFstat', ''.join([output_results_dir,
+                           '--gridType',str(config.grid_type),
+                           '--metricType',str(config.metric_type),
+                           '--metricMismatch',str(config.mismatch),
+                           '--outputFstat', ''.join([os.path.abspath(output_results_dir),'/',
                                                      base_label,'_result_',str(job)]),
-                           '--outputLoudest', ''.join([output_results_dir,
+                           '--outputLoudest', ''.join([os.path.abspath(output_results_dir),'/',
                                                        base_label,'_loudest_',str(job)]),
                            '"'])
                            
-      dag_file_handle.write('JOB A' + str(job) + ' ' + sub_file_name +'\n')
+      dag_file_handle.write('JOB A' + str(job) + ' ' + os.path.basename(sub_file_name) +'\n')
       dag_file_handle.write('VARS A' + str(job) + ' ' + 'JobID="' + str(job) + '" ' + arg_list + '\n')
       dag_file_handle.write('\n')
       job += 1
 
-arg_list_examine = ' '.join([' argList=" ',
-                             '--temp"'])
 
 ##############################################
 #Call followup script after dag searches finish
-dag_file_handle.write('JOB B0 ' + sub_file_name_examine + '\n')
+dag_file_handle.write('JOB B0 ' + os.path.basename(sub_file_name_examine) + '\n')
 
 arg_list_examine = ' '.join([' argList=" ',
-                             '-o ./',
+                             '-o', str(os.path.abspath(output_results_dir)),
+                             '-C', str(config_file),
                              '-j', str(job),
                              '-b', str(output_label),
-                             '-d', str(output_results_dir),
+                             '-d', str(os.path.abspath(output_results_dir)),
                              '-i', str(iteration),
-                             '-t', str(Tcoh),
-                             '-D', ','.join(data_location_file),
-                             '-I', str(IFOs),
+                             '-t', str(coherence_time),
                              '-T', str(best_start_time),
-                             '-e', str(ephemeris_directory),
-                             '-y', str(ephemeris_year),
                              '-L', ''.join([log_file_directory.rstrip('/') + '/']),
-                             '-C', str(code),
                              '-A', str(angular_resolution),
                              '-N', str(total_templates),
                              '"'])
@@ -537,7 +583,7 @@ dag_file_handle.close()
 #This sub file is used to perform the actual search
 sub_file_handle = open(sub_file_name,'w')
 sub_file_handle.write('universe = standard \n')
-sub_file_handle.write('executable = ' + code +'\n')
+sub_file_handle.write('executable = ' + config.code +'\n')
 sub_file_handle.write('output = node_' + base_label + '_A.out.$(JobID)\n')
 sub_file_handle.write('error = node_' + base_label + '_A.err.$(JobID)\n')
 sub_file_handle.write('log = ' + log_file_directory.rstrip('/') + '/' + base_label + '.log\n' )
@@ -550,7 +596,7 @@ sub_file_handle.close()
 #This sub file handles examination of the output
 sub_file_examine_handle = open(sub_file_name_examine,'w')
 sub_file_examine_handle.write('universe = vanilla \n')
-sub_file_examine_handle.write('executable = ./FstatFollowUpExamine.py \n')
+sub_file_examine_handle.write('executable = ' + config.python_dir + '/FstatFollowUpExamine.py \n')
 sub_file_examine_handle.write('output = node_examine_' + base_label + '.out.$(JobID)\n')
 sub_file_examine_handle.write('error = node_examine_' + base_label + '.out.$(JobID)\n')
 sub_file_examine_handle.write('log = ' + log_file_directory.rstrip('/') + '/' + base_label + '.log\n')
@@ -563,3 +609,8 @@ sub_file_examine_handle.close()
 
 ######################################
 #This step submits the job to Condor
+
+os.chdir(output_main_directory)
+
+condor_command = 'condor_submit_dag -outfile_dir ' + log_file_directory + ' ' + os.path.basename(dag_file_name)
+os.system(condor_command)
