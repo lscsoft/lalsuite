@@ -36,7 +36,7 @@
 				--timeslide --studentt (use student-t likelihood function)\n \
       [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) \n"
 
-extern CHAR outfile[512];
+extern CHAR outfile[4096];
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;
@@ -423,7 +423,7 @@ int main( int argc, char *argv[])
 		insptemplate.totalMass=InjParams.mTot;
 		insptemplate.eta = InjParams.eta;
 		insptemplate.approximant = TaylorF2;
-		insptemplate.order = LAL_PNORDER_TWO_POINT_FIVE;
+		insptemplate.order = LAL_PNORDER_THREE_POINT_FIVE;
 		insptemplate.fLower = inputMCMC.fLow;
 		insptemplate.massChoice = totalMassAndEta;
 		LALInspiralParameterCalc(&status,&insptemplate);

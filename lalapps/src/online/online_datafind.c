@@ -40,8 +40,6 @@
 
 #include <lalapps.h>
 
-extern double round ( double );
-
 /* flags for getopt_long */
 extern int vrbflg;
 
@@ -117,17 +115,17 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        fprintf(stdout, "Usage: lalapps_online_datafind [options]\n");
-        fprintf(stdout, " --help                 print this message\n");
-        fprintf(stdout, " --verbose              run in verbose mode\n");
-        fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
-        fprintf(stdout, " --ifo IFO              set IFO\n");
-        fprintf(stdout, " --gps-start-time GPS   start of GPS time range\n");
-        fprintf(stdout, " --gps-end-time GPS     end of GPS time range\n");
-        fprintf(stdout, " --timeout TIME         set timeout\n");
-        fprintf(stdout, " --output FILE          output to FILE\n");
-        fprintf(stdout, " --observatory SITE     set SITE\n");
-        fprintf(stdout, " --type FRAME_TYPE      set FRAME_TYPE\n");
+        fprintf(stderr, "Usage: lalapps_online_datafind [options]\n");
+        fprintf(stderr, " --help                 print this message\n");
+        fprintf(stderr, " --verbose              run in verbose mode\n");
+        fprintf(stderr, " --debug-level N        set lalDebugLevel\n");
+        fprintf(stderr, " --ifo IFO              set IFO\n");
+        fprintf(stderr, " --gps-start-time GPS   start of GPS time range\n");
+        fprintf(stderr, " --gps-end-time GPS     end of GPS time range\n");
+        fprintf(stderr, " --timeout TIME         set timeout\n");
+        fprintf(stderr, " --output FILE          output to FILE\n");
+        fprintf(stderr, " --observatory SITE     set SITE\n");
+        fprintf(stderr, " --type FRAME_TYPE      set FRAME_TYPE\n");
         exit(0);
         break;
 
@@ -233,14 +231,14 @@ static void parse_options(INT4 argc, CHAR *argv[])
   if (((observatory != NULL) && (frame_type == NULL)) || \
       ((observatory == NULL) && (frame_type != NULL)))
   {
-    fprintf(stdout, "both --observatory and --type must be specified\n");
+    fprintf(stderr, "both --observatory and --type must be specified\n");
     exit(1);
   }
 
   /* are ifo and observatory both specified */
   if ((ifo != NULL) && (observatory != NULL))
   {
-    fprintf(stdout, "--ifo and --observatory are both specified\n");
+    fprintf(stderr, "--ifo and --observatory are both specified\n");
     exit(1);
   }
 
@@ -281,6 +279,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 wait_time;
   CHAR *ptimeout;
   INT4 total_wait = 0;
+  INT4 found = 0;
 
   /* get maximum wait time from ONLINEHOFT_TIMEOUT */
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
@@ -324,11 +323,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* report time info */
   if (vrbflg)
   {
-    fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
-    fprintf(stdout, "latest data available: %d\n", latest_time->gpsSeconds);
-    fprintf(stdout, "requested start:       %d\n", gps_start.gpsSeconds);
-    fprintf(stdout, "requested end:         %d\n", gps_end.gpsSeconds);
-    fprintf(stdout, "requested duration:    %9d\n", duration);
+    fprintf(stderr, "current time:          %d\n", time_now.gpsSeconds);
+    fprintf(stderr, "latest data available: %d\n", latest_time->gpsSeconds);
+    fprintf(stderr, "requested start:       %d\n", gps_start.gpsSeconds);
+    fprintf(stderr, "requested end:         %d\n", gps_end.gpsSeconds);
+    fprintf(stderr, "requested duration:    %9d\n", duration);
   }
 
   /* is requested data in the future? */
@@ -338,7 +337,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     wait_time = (INT4)round(XLALGPSDiff(&gps_end, &time_now));
 
     /* wait for data to be available */
-    fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait_time);
+    fprintf(stderr, "requested data is in the future, waiting: %ds\n", wait_time);
     sleep(wait_time);
   }
 
@@ -356,7 +355,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* wait for data to be available */
-    fprintf(stdout, "data unavailable, waiting %ds\n", wait_time);
+    fprintf(stderr, "data unavailable, waiting %ds\n", wait_time);
     sleep(wait_time);
     total_wait += wait_time;
 
@@ -387,16 +386,34 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         /* wait for data to be available */
-        fprintf(stdout, "data unavailable, waiting %ds\n", wait_time);
+        fprintf(stderr, "data unavailable, waiting %ds\n", wait_time);
         sleep(wait_time);
         total_wait += wait_time;
       }
       else
       {
-        /* data is available, break do-while loop */
-        break;
+        /* check that all files have been transferred, stat frames */
+        if (XLALAggregationStatFiles(ifo, &gps_start, duration) == 0)
+        {
+          /* data is available, break do-while loop */
+          found = 1;
+          break;
+        }
       }
     } while(total_wait < timeout);
+  }
+
+  /* check that timeout has not been exceeded, exit if appropriate */
+  if ((found == 0) && (total_wait > timeout))
+  {
+    fprintf(stderr, "error: timeout exceeded\n");
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
+    exit(1);
   }
 
   /* get frame cache */
@@ -404,6 +421,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (cache == NULL)
   {
     fprintf(stderr, "error: failed to get frame cache\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
@@ -412,9 +437,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (type == NULL)
   {
     fprintf(stderr, "error: failed to get frame type\n");
+
+    /* free memory and exit */
+    if (ifo)
+      free(ifo);
+    if (observatory)
+      free(observatory);
+    if (frame_type)
+      free(frame_type);
     exit(xlalErrno);
   }
 
+  /* create a standard file name if none specified */
   if (output_filename == NULL)
   {
     /* allocate memory for filename */
@@ -423,7 +457,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* create name for cache file */
     snprintf(output_filename, FILENAME_MAX, "%c-%s-%d-%d.cache", \
         ifo[0], type, gps_start.gpsSeconds, gps_end.gpsSeconds);
-    fprintf(stdout, "output filename not specified, using: %s\n", \
+    fprintf(stderr, "output filename not specified, using: %s\n", \
         output_filename);
   }
 

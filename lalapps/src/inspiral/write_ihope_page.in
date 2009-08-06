@@ -97,7 +97,7 @@ def functionId(nFramesUp):
     if msg.startswith("?") is False:
       print "-->ERROR in function: " + msg
   except:
-    msg=[]
+    msg="?"
 
   return msg
 
@@ -131,7 +131,7 @@ def logText(logfile, text, tag="done"):
         logfile.write("</"+tag+">\n")
         msg=[]
       i=i+1
-    print >>sys.stderr, msg
+    print >>sys.stderr, text
   else :
     msg = "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write( msg )

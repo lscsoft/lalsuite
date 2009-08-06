@@ -1996,6 +1996,31 @@ class DBSimplifyNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
+class ComputeDurationsJob(pipeline.SqliteJob):
+  """
+  A ComputeDurations job. The static options are read from the section
+  [compute_durations] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'compute_durations'
+    sections = ['compute_durations']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class ComputeDurationsNode(pipeline.SqliteNode):
+  """
+  A ComputeDurations node.
+  """
+  def __init__(self, job):
+    """
+    @job: a ComputeDurationsJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
 class DBAddInjJob(pipeline.SqliteJob):
   """
   A DBAddInj job. The static options are read from the section

@@ -68,7 +68,6 @@ TrigScan and E-thinca have completed.
 </lalLaTeX>
 #endif
 
-static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch);
 
 /* <lalVerbatim file="TrigScanEThincaCommonCP"> */
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
@@ -131,7 +130,7 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
       XLALDestroyTriggerErrorList( errorListHead );
       XLAL_ERROR_NULL( func, XLAL_EFUNC );
     }
-    thisTimeError = getTimeError(currentTrigger, scaleFactor );
+    thisTimeError = XLALSnglInspiralTimeError(currentTrigger, scaleFactor );
     if (thisTimeError > timeError)
     {
       timeError = thisTimeError;
@@ -165,27 +164,33 @@ void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
   }
 }
 
-static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch)
+
+/**
+ * Using the waveform metric components, translate an "e-thinca" treshold
+ * into a \Delta t error interval.
+ */
+
+
+REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch)
 {
-  REAL8 a11;
-  REAL8 a23;
-  REAL8 a22;
-  REAL8 a33;
-  REAL8 a12;
-  REAL8 a13;
+  static const char func[] = "XLALSnglInspiralTimeError";
+  REAL8 a11 = table->Gamma[0] / eMatch;
+  REAL8 a12 = table->Gamma[1] / eMatch;
+  REAL8 a13 = table->Gamma[2] / eMatch;
+  REAL8 a22 = table->Gamma[3] / eMatch;
+  REAL8 a23 = table->Gamma[4] / eMatch;
+  REAL8 a33 = table->Gamma[5] / eMatch;
   REAL8 x;
   REAL8 denom;
-
-  a11 = table->Gamma[0] / eMatch;
-  a12 = table->Gamma[1] / eMatch;
-  a13 = table->Gamma[2] / eMatch;
-  a22 = table->Gamma[3] / eMatch;
-  a23 = table->Gamma[4] / eMatch;
-  a33 = table->Gamma[5] / eMatch;
 
   x = (a23 * a23 - a22 * a33) * a22;
   denom = (a12*a23 - a22*a13) * (a12*a23 - a22*a13)
               - (a23*a23 - a22*a33) * (a12*a12 - a22*a11);
 
-  return ( sqrt( x / denom ));
+  if (denom == 0)
+    XLAL_ERROR_REAL8(func, XLAL_EFPDIV0);
+  if ((x < 0) ^ (denom < 0))
+    XLAL_ERROR_REAL8(func, XLAL_EFPINVAL);
+
+  return sqrt( x / denom );
 }

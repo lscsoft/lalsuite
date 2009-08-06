@@ -234,7 +234,9 @@ LALCreateTwoIFOCoincListEllipsoid(
       /* Check whether the event was coincident */
       if ( match )
       {
+#if 0
         REAL8 etp = XLALCalculateEThincaParameter( currentError[0]->trigger,  currentError[1]->trigger, accuracyParams );
+#endif
         /* create a 2 IFO coinc and store */
         if ( ! coincHead  )
         {
