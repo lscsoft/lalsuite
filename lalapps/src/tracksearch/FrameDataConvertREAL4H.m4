@@ -24,6 +24,7 @@
 
 #ifndef FRAMEDATACONVERTERREAL4_H
 #define FRAMEDATACONVERTERREAL4_H
+
 #include "tracksearch.h"
 #include "tracksearchAverager.h"
 #include "tracksearchToolbox.h"
@@ -54,5 +55,4 @@ include(`CreateConverterTypeDef.m4')
 define(`TYPECODE',`U8')
 include(`CreateConverterTypeDef.m4')
 
-define(`TYPECODE',`')
-include(`CreateConverterTypeDef.m4')
+#endif

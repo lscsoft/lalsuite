@@ -45,15 +45,3 @@ include(`CreateConverter.m4')
 
 define(`TYPECODE',`I8')
 include(`CreateConverter.m4')
-
-define(`TYPECODE',`U2')
-include(`CreateConverter.m4')
-
-define(`TYPECODE',`U4')
-include(`CreateConverter.m4')
-
-define(`TYPECODE',`U8')
-include(`CreateConverter.m4')
-
-define(`TYPECODE',`')
-include(`CreateConverter.m4')

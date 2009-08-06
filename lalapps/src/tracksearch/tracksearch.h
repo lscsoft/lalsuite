@@ -64,6 +64,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <tracksearchToolbox.h>
+#include <FrameDataConvert.h>
 #include <tracksearchAverager.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/LALRunningMedian.h>
