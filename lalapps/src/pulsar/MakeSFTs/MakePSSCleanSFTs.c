@@ -2069,8 +2069,8 @@ standard deviation computed in an autoregressive way and it registers the event 
 int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
 {
 
- /* REAL8 r = 60.0;
-  INT8 ts, secstep;*/
+  /* REAL8 r = 60.0;
+     INT8 ts, secstep;*/
 
   INT4 i,j,i_start;
   REAL8 ad,rd,rdend,rdst;
@@ -2081,14 +2081,9 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
   appo=even_param->deadtime/series->deltaT;
   samples_deadtime=floor(appo+0.5); /*lround(appo);*/
 
- printf("deadtime, cr_th, fcut,samples_deadtime, deltaT, SerieLength = %f %f %f %ld %23.16e %i\n",even_param->deadtime,myparams->crt,myparams->fcut,samples_deadtime,series->deltaT,series->data->length);
+  printf("deadtime, cr_th, fcut,samples_deadtime, deltaT, SerieLength = %f %f %f %ld %23.16e %i\n",even_param->deadtime,myparams->crt,myparams->fcut,samples_deadtime,series->deltaT,series->data->length);
 
- 
- /* ts=ceil(r/series->deltaT);
-  secstep=series->data->length-ts-1;*/
-
-  /*int itest=1;
-  FILE *OUTtest;*/
+  int itest=0;
   FILE *energy;
   FILE *ALLEVENT; 
   FILE *EVENDATone;
@@ -2096,19 +2091,19 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
   FILE *EVENDATthree;
   FILE *EVENDATfour;
 
- /*float numfl=1;
- double numdou=0.000215;
- float trial;
- double trial2;
- long int sd,sdf;
- trial=numfl/numdou;
- trial2=numfl/numdou;
- sdf=lroundf(trial);
- sd=floor(trial2+0.5); 
- printf("sdf sd: %ld %ld\n",sdf,sd);*/
-energy=fopen("energy.dat","w");
-    for(i=0;i<(int) series->data->length;i++){
-    /*for(i=ts;i<(int) (series->data->length-ts);i++){*/
+  /*float numfl=1;
+    double numdou=0.000215;
+    float trial;
+    double trial2;
+    long int sd,sdf;
+    trial=numfl/numdou;
+    trial2=numfl/numdou;
+    sdf=lroundf(trial);
+    sd=floor(trial2+0.5); 
+    printf("sdf sd: %ld %ld\n",sdf,sd);*/
+
+  energy=fopen("energy.dat","w");
+  for(i=0;i<(int) series->data->length;i++){
     even_param->begin[i]=-1;
     even_param->duration[i]=0;
     even_param->imax[i]=0; 
@@ -2117,161 +2112,107 @@ energy=fopen("energy.dat","w");
   }
   even_param->iflev=0;
   time_below=0.;
-  
-  
 
-ALLEVENT=fopen("AllEvents.dat","w");
   j=-1;
-EVENDATone=fopen("ARmean.dat","w");
-EVENDATtwo=fopen("ARstd.dat","w");
-EVENDATthree=fopen("NOAbsHp.dat","w");
-EVENDATfour=fopen("CR.dat","w");
-/*for(i=15730;i<=15743;i++)printf("(ad,abs(ser(i)) %i %23.16e \n",i,fabs(series->data->data[i]));*/
 
-  /*fprintf(EVENDAT,"%s %s %s %s %s %s\n","%", "i", "ad", "xamed", "xastd", "rd");*/
-  /*for(i=ts; i<(int) (series->data->length-ts);i++){*/
+  if(itest) { 
+    ALLEVENT=fopen("AllEvents.dat","w");
+    EVENDATone=fopen("ARmean.dat","w");
+    EVENDATtwo=fopen("ARstd.dat","w");
+    EVENDATthree=fopen("NOAbsHp.dat","w");
+    EVENDATfour=fopen("CR.dat","w");
+  }
   
   for(i=0; i<(int) series->data->length;i++){
-     /* ad=fabs(series->data->data[i]);*/
-      ad=series->data->data[i];
-      /*printf("ad %23.16e\n",ad);*/
-      /*printf("cr %f\n",myparams->crt);*/
-       rd=fabs((ad-even_param->med[i])/(even_param->std[i]+1e-25));
-       /*if((rd>3.0))printf("rd %f\n",rd);*/
-       /*printf("rd %23.16e\n",rd);*/
-       /*if(even_param->xastd[i]<1e-20)printf("xastd %23.16e\n",even_param->xastd[i]);*/
-       /*printf("i ad,xamed,xastd,rd %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd); */
-       
+    ad=series->data->data[i];
+    rd=fabs((ad-even_param->med[i])/(even_param->std[i]+1e-25));
+
+    if(itest) { 
+      fprintf(EVENDATone,"%23.16e \n",even_param->med[i]);
+      fprintf(EVENDATtwo,"%23.16e \n",even_param->std[i]);
+      fprintf(EVENDATthree,"%23.16e \n",series->data->data[i]);
+      fprintf(EVENDATfour,"%23.16e \n",rd);
+    }
+
+    if((even_param->iflev==0) && (rd>=myparams->crt) && (ad !=0)){  
+      j+=1;
+      even_param->iflev=1;
+      even_param->begin[j]=i;
+      even_param->duration[j]=1;
+      even_param->ener[j]+=ad*ad;
+      even_param->imax[j]=i;
+      even_param->crmax[j]=rd;
+      xmax=ad;
+      fprintf(energy,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",even_param->ener[j],ad,even_param->crmax[j],even_param->med[j],even_param->std[j]);
+      time_below=0;
+    }
+
+    if((even_param->iflev==2)&&(rd>=myparams->crt)){
+      time_below=0;
+      even_param->duration[j]+=1;
+      even_param->ener[j]+=ad*ad;
+      if(ad>=xmax)even_param->imax[j]=i;
+      if(ad>=xmax)even_param->crmax[j]=rd;
+      if(ad>=xmax)xmax=ad;
+    }
+
+    if((even_param->iflev==2)&&(rd<myparams->crt)){
+      time_below+=1.;
+      even_param->duration[j]+=1;
+      even_param->ener[j]+=ad*ad;
+    }
+
+    if(time_below==samples_deadtime){
+      even_param->iflev=3;
+      time_below=0.;
+    } 
+
+    if(time_below>samples_deadtime){
+      even_param->duration[j]-=1;
+      even_param->iflev=3;
+      /*puts("PAY ATTENTION: time_below is greater than samples_deadtime !!");*/
+      time_below=0.;
+    }
+
+    if(even_param->iflev==1)
+      even_param->iflev=2;
+    if(even_param->iflev==3){
+      even_param->duration[j]-=(int) samples_deadtime; 
+      if(even_param->duration[j]<=0) even_param->duration[j]=1;    
+      /*if(j==0)*/ 
+      /*  printf("End of an event (j,i,dur,ad,med,std,rd) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,even_param->duration[j],xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
+      /*EventNumber, Beg, Dur(samples), End, Dur(seconds), xmax, rd, mean, std;*/
         
-    /*  fprintf(EVENDAT,"%i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+      i_start=i-samples_deadtime-even_param->duration[j]+1;
+      rdend=(xmax-even_param->med[i])/(even_param->std[i]+1e-25);
+      rdst=(fabs(series->data->data[i_start])-even_param->med[i_start])/(even_param->std[i_start]+1e-25);
 
+      even_param->iflev=0;
 
- fprintf(EVENDATone,"%23.16e \n",even_param->med[i]);
- fprintf(EVENDATtwo,"%23.16e \n",even_param->std[i]);
- fprintf(EVENDATthree,"%23.16e \n",series->data->data[i]);
- fprintf(EVENDATfour,"%23.16e \n",rd);
-
-
-/*if(i==0)printf("(i=0) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
-if(i==1)printf("(i=1) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
-if(i==26184400)printf("(i=26184400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
-if(i==26214399)printf("(i=26204399) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
-if(i==26214400)printf("(i=26214400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
-         if((even_param->iflev==0) && (rd>=myparams->crt) && (ad !=0)){  
-	   j+=1;
-	   even_param->iflev=1;
-          /* if(j==0) */       
-        /* printf("Beginning of an event (j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e\n",j,i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
-          /* if(j==100) printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
-         /* printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
-         /*part*/
-         /* printf("(j,i,med,std,rd) %i %i %23.16e %23.16e %23.16e \n",j,i,even_param->xamed[i],even_param->xastd[i],rd);*/
-          /* printf("(START:j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rd);*/
-	   even_param->begin[j]=i;
-	   even_param->duration[j]=1;
-	   even_param->ener[j]+=ad*ad;
- /*if(j==74)printf("(1st) %23.16e %23.16e %23.16e %23.16e\n",even_param->ener[j],ad*ad,xmax,xmax*xmax);*/
-   
-/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series NOT including the samples in the deadtime!*/
-	   even_param->imax[j]=i;
-	   even_param->crmax[j]=rd;
-	   xmax=ad;
-fprintf(energy,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",even_param->ener[j],ad,even_param->crmax[j],even_param->med[j],even_param->std[j]);
-/*fprintf(energy,"%23.16e \n",xmax);*/
-        /*  if(j==0) printf("j, xmax %i %23.16e\n",j,xmax);
-          if(j==3) printf("j, xmax %i %23.16e\n",j,xmax);
-          if(j==289) printf("j, xmax %i %23.16e\n",j,xmax); */
-           time_below=0;
-         }
-	 if((even_param->iflev==2)&&(rd>=myparams->crt)){
-	   time_below=0;
-	   even_param->duration[j]+=1;
-	   even_param->ener[j]+=ad*ad;
-/*if(j==74)printf("(2nd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
-	   if(ad>=xmax)even_param->imax[j]=i;
-	   if(ad>=xmax)even_param->crmax[j]=rd;
-	   if(ad>=xmax)xmax=ad;
-          /* printf("(j,xmax,med,std,rd) %d %23.16e %23.16e %23.16e %23.16e\n",j,xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
-	 }
-	 if((even_param->iflev==2)&&(rd<myparams->crt)){
-	   time_below+=1.;
-	   even_param->duration[j]+=1;
-	   even_param->ener[j]+=ad*ad;
-  /*  if(j==74)printf("(3rd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
-
-        
-	 }
-	 if(time_below==samples_deadtime){
-           even_param->iflev=3;
-	   time_below=0.;
-	 } 
-	 if(time_below>samples_deadtime){
-	   even_param->duration[j]-=1;
-	   even_param->iflev=3;
-           /*puts("PAY ATTENTION: time_below is greater than samples_deadtime !!");*/
-      	   time_below=0.;
-          
-	 }
-	 if(even_param->iflev==1)even_param->iflev=2;
-         if(even_param->iflev==3){
-           even_param->duration[j]-=(int) samples_deadtime; 
-	    if(even_param->duration[j]<=0) even_param->duration[j]=1;    
-          /*if(j==0)*/ 
-       /*  printf("End of an event (j,i,dur,ad,med,std,rd) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,even_param->duration[j],xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
-  
-        /*EventNumber, Beg, Dur(samples), End, Dur(seconds), xmax, rd, mean, std;*/
-        
-/*printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,xmax,ad,fabs(series->data->data[i]),fabs(series->data->data[i_start]));*/
-/*ad close to 'part' is = fabs(series->data->data[i_start]); while ad here is = fabs(series->data->data[i] because i here means the final event; i close to 'part' means the beginning and here the beginning of an event is i_start.)*/
-
-/* rdend=(fabs(series->data->data[i])-even_param->xamed[i])/(even_param->xastd[i]+1e-25);*/
-i_start=i-samples_deadtime-even_param->duration[j]+1;
-rdend=(xmax-even_param->med[i])/(even_param->std[i]+1e-25);
-rdst=(fabs(series->data->data[i_start])-even_param->med[i_start])/(even_param->std[i_start]+1e-25);
-/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,rd,rdst,rdend,fabs(series->data->data[i_start]),fabs(series->data->data[i]));*/
-/*rd here is = rdend; rdst here is = to rd in 'part'*/
-/*i_start here is = i in 'part'*/
-
-/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,even_param->xamed[i_start],even_param->xastd[i_start],even_param->xamed[i],even_param->xastd[i],rd);*/
-/*Med and Std are = at the begin and the end of an event, but rd is different because ad is different!*/
-
-/*printf("(END) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rdend);
-printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst);*/
-/*xamed[i_start] and xastd[i_start] are = to xamed[i] and xastd[i] close to 'part', respectively.*/
-
-
-
-      /* printf("%i %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),rdst,even_param->xamed[i_start],even_param->xastd[i_start],fabs(series->data->data[i]),rdend,even_param->xamed[i],even_param->xastd[i]);*/
-
-/*for(i_start=15730;i_start<=15743;i_start++)printf("(abs(series(i_start),abs(series(i)) %i %i %23.16e %23.16e \n",i_start,i,fabs(series->data->data[i_start]),fabs(series->data->data[i]));paolapaola*/
-
-/*printf("%i %23.16e %23.16e\n",i,xmax,fabs(series->data->data[i])); */
-
-/* fprintf(ALLEVENT,"%i %23.16e %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->ener[j],i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst,xmax,even_param->xamed[i],even_param->xastd[i],rdend);*/
- 
- 
-
-	    even_param->iflev=0;
-
-fprintf(ALLEVENT,"%i %i %i %i %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->begin[j],even_param->duration[j],even_param->imax[j],even_param->crmax[j],even_param->med[j],even_param->std[j],even_param->ener[j],ad*ad,xmax);
-/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series including the samples in the deadtime!*/
-
-	 }
-
-  
-     /*  if(itest==1){ 
-         OUTtest=fopen("testsn.dat","w");
-         fprintf(OUTtest,"%i %i %i %f\n",j,i,even_param->duration[j],xmax);
-         fclose(OUTtest);
-       }*/
+      if(itest)
+	fprintf(ALLEVENT,"%i %i %i %i %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",
+		j,even_param->begin[j],
+		even_param->duration[j],
+		even_param->imax[j],
+		even_param->crmax[j],
+		even_param->med[j],
+		even_param->std[j],
+		even_param->ener[j],
+		ad*ad,xmax);
+    }
   }
-  fclose(EVENDATone);  
-fclose(EVENDATtwo); 
-fclose(EVENDATthree); 
-fclose(EVENDATfour); 
+
   even_param->number=j+1;  /*Total number of events found (j starts from 0)*/
-fclose(ALLEVENT);
-fclose(energy);
+
+  if(itest) { 
+    fclose(EVENDATone);  
+    fclose(EVENDATtwo); 
+    fclose(EVENDATthree); 
+    fclose(EVENDATfour); 
+    fclose(ALLEVENT);
+    fclose(energy);
+  }
+
   return i;
 }
 
@@ -2334,7 +2275,7 @@ int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, 
   REAL8 su,su2,su3,cl;
   REAL8 st1,st2,st3,hp,wr,diffs;
   
-  int itest = 1;
+  int itest = 0;
   FILE *outputtest;
   FILE *EnergyInfo;
   FILE *EventInfo;
