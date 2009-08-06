@@ -54,13 +54,14 @@ extern PSSTimeseries
 *XLALPrintPSSTimeseriesToFile
 (PSSTimeseries *tsPSS,
  char*name,
- UINT4 n);
+ UINT4 numToPrint);
 
 extern REAL8TimeSeries
 *XLALPrintREAL8TimeSeriesToFile
 (REAL8TimeSeries *ts,
  char*name,
- UINT4 n);
+ UINT4 numToPrint,
+ BOOLEAN scaleToREAL4);
 
 /* functions for time domain cleaning */
 extern PSSTimeseries

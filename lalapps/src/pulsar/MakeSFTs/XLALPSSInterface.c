@@ -98,7 +98,7 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
   free(ts);
 }
 
-PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UINT4 n) {
+PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UINT4 numToPrint) {
   UINT4 i;
   FILE*fp;
   LIGOTimeGPS gpsepoch;
@@ -126,8 +126,8 @@ PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UIN
     fprintf(fp,"Name: '%s'\n",tsPSS->name);
   if(tsPSS->capt)
     fprintf(fp,"Capt: '%s'\n",tsPSS->capt);
-  fprintf(fp,"First %d values:\n", n);
-  for(i = 0; i < n; i++)
+  fprintf(fp,"First %d values:\n", numToPrint);
+  for(i = 0; i < numToPrint; i++)
     fprintf(fp,"  %23.16e\n",tsPSS->y[i]);
   fclose(fp);
 
@@ -135,7 +135,7 @@ PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UIN
   return tsPSS;
 }
 
-REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, UINT4 n) {
+REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, UINT4 numToPrint, BOOLEAN scaleToREAL4) {
   UINT4 i;
   FILE*fp;
   char unit[LALNameLength];
@@ -157,9 +157,13 @@ REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, 
     fprintf(fp,"Name: '%s'\n",ts->name);
   if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) )
     fprintf(fp,"Unit: '%s'\n",unit);
-  fprintf(fp,"First %d values:\n", n);
-  for(i = 0; i < n; i++)
-    fprintf(fp,"  %23.16e\n",ts->data->data[i]);
+  fprintf(fp,"First %d values:\n", numToPrint);
+  for(i = 0; i < numToPrint; i++)
+    if(scaleToREAL4) {
+      REAL4 val = ts->data->data[i];
+      fprintf(fp,"  %23.16e\n",val);
+    } else
+      fprintf(fp,"  %23.16e\n",ts->data->data[i]);
   fclose(fp);
 
   xlalErrno = 0;
