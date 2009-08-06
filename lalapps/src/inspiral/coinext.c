@@ -337,13 +337,8 @@ int checkCGNtrigger( void )
   char inputGPS[256];
   char input1[256];
   char input2[256];
-  LIGOTimeGPS* gps;
-  LALDate* date;
+  struct tm date;
   FILE* fileTrigger;
-
-  /* initialize date */
-  date=(LALDate*)LALCalloc(1, sizeof(LALDate));
-  gps=(LIGOTimeGPS*)LALCalloc(1, sizeof(LIGOTimeGPS));
 
   /* check if to get some trigger file or not */
   if (!flagTriggerFile) {
@@ -451,16 +446,14 @@ int checkCGNtrigger( void )
 	memcpy( extList[numberStoredCGN].table, thisExt, sizeof(ExtTriggerTable));
 
 	/* getting user friendly date and time */
-	gps->gpsSeconds=thisExt->start_time;
-	gps->gpsNanoSeconds=thisExt->start_time_ns;
-	LALGPStoUTC(&status, date, gps, &accuracy); 
+	XLALGPSToUTC(&date, thisExt->start_time);
 
 	/* generate output saying that there is a new CGN trigger */
 	sprintf(message,"New CGN trigger occured at %d-%02d-%02d %d:%02d:%02d (%d)",
-		date->unixDate.tm_year+1900, date->unixDate.tm_mon+1,
-		date->unixDate.tm_mday,date->unixDate.tm_hour,
-		date->unixDate.tm_min, date->unixDate.tm_sec, 
-		gps->gpsSeconds);
+		date.tm_year+1900, date.tm_mon+1,
+		date.tm_mday,date.tm_hour,
+		date.tm_min, date.tm_sec, 
+		thisExt->start_time);
 	printOut(3, message);
 
 	/* start special analysis job if data should be recalculated */
