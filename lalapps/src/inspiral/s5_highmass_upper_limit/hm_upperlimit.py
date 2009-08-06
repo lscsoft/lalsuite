@@ -52,6 +52,12 @@ def get_far_threshold_and_segments(zerofname, live_time_program, instruments, ve
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
+  if (FAR == 0):
+    print "\n\nFAR = 0\n \n"
+    # FIXME lambda = ~inf if loudest event is above loudest timeslide?
+    output = rate.BinnedArray(twoDMassBins)
+    output.array = 10**6 * numpy.ones(output.array.shape)
+    return output
   livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
   FARl = FAR*0.001
@@ -376,8 +382,10 @@ vA.array /= secs_in_year
 vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
 
 #Trim the array to have sane values outside the total mass area of interest
+try: minvol = scipy.unique(vA.array)[1]/10.0
+except: minvol = 0
 trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
-trim_mass_space(vA, twoDMassBins, scipy.unique(vA.array)[1]/10.0, minM=min_mtotal, maxM=max_mtotal)
+trim_mass_space(vA, twoDMassBins, minthresh=minvol, minM=min_mtotal, maxM=max_mtotal)
 trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
 
 #output an XML file with the result

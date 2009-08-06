@@ -18,6 +18,7 @@
 */
 
 #include <stdlib.h>
+#include <time.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
