@@ -573,8 +573,12 @@ int main(int argc,char *argv[])
       }
 
       /* Time Domain cleaning procedure */
-      if (CommandLineArgs.TDcleaningProc==1) {   
-         if(PSSTDCleaningDouble(CommandLineArgs)) return 6;   
+      if (CommandLineArgs.TDcleaningProc == 1) {
+         if(TDCleaning(CommandLineArgs))
+	   return 6;   
+      } else if (CommandLineArgs.TDcleaningProc == 2) {
+         if(PSSTDCleaningDouble(CommandLineArgs))
+	   return 6;   
       }
   
       /* create an SFT */
@@ -855,7 +859,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       return 1;
     }
 
-  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 1) )
+  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 2) )
     {
       fprintf(stderr,"Illegal specification of TDcleaningProc.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
@@ -984,7 +988,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
 
-      if (CommandLineArgs.TDcleaningProc==1) {  
+      if (CommandLineArgs.TDcleaningProc > 0) {  
   
       LALCreateVector(&status,&dataSingleFirstHP.data,(UINT4)((CLA.T/dataSingle.deltaT +0.5)+1));
       TESTSTATUS( &status );
@@ -1014,7 +1018,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
-      if (CommandLineArgs.TDcleaningProc==1) {  
+      if (CommandLineArgs.TDcleaningProc > 0) {  
   
       LALDCreateVector(&status,&dataDoubleFirstHP.data,(UINT4)((CLA.T/dataDouble.deltaT +0.5)+1));
       TESTSTATUS( &status );
@@ -2506,7 +2510,11 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
     retval = -2;
     goto PSSTDCleaningREAL8FreeAll;
   }
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
+  XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",100,-1);
+  XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",100);
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
@@ -2515,6 +2523,9 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
     retval = -2;
     goto PSSTDCleaningREAL8FreeAll;
   }
+
+  XLALPrintPSSTimeseriesToFile(originalTS,"highpassTS.dat",100);
+
   if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
     fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
     retval = -2;
@@ -2662,9 +2673,10 @@ int TDCleaning(struct CommandLineArgsTag CLA)
   bilparam.fcut    = CLA.fc;
   bilparam.crt     = CLA.cr;
   
-     
   EventParamInit(dataDouble.data->length, even_param);
   j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
   Evenbil2(even_param, &dataDouble );
   j=Bil2( &databil2, &dataDoubleHP, even_param);
   j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, even_param, &bilparam);
@@ -3029,7 +3041,7 @@ int FreeMem(struct CommandLineArgsTag CLA)
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
 
-    if (CommandLineArgs.TDcleaningProc==1) {  
+    if (CommandLineArgs.TDcleaningProc > 0) {  
     
     LALDestroyVector(&status,&dataSingleFirstHP.data);
     TESTSTATUS( &status );
@@ -3050,7 +3062,7 @@ int FreeMem(struct CommandLineArgsTag CLA)
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
 
-    if (CommandLineArgs.TDcleaningProc==1) {  
+    if (CommandLineArgs.TDcleaningProc > 0) {  
     
     LALDDestroyVector(&status,&dataDoubleFirstHP.data);
     TESTSTATUS( &status );
