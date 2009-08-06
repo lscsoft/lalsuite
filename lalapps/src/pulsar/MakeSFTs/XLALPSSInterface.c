@@ -296,12 +296,17 @@ PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PS
 }
 
 PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
+  long ret;
   if ( !events || !ts )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
-  fprintf(stderr, "[DEBUG] sn_medsig: %d\n", sn_medsig(ts,events,hp) );
-  /* XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC ); */
-  fprintf(stderr, "[DEBUG] even_anst: %d\n", even_anst(ts,events) );
-  /* XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC ); */
+  if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] sn_medsig: %d\n", ret);
+    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
+  }
+  if ((ret = even_anst(ts,events)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] even_anst: %d\n", ret );
+    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
+  }
   return events;
 }
 
