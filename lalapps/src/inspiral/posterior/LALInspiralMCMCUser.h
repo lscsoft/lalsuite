@@ -136,7 +136,7 @@ void MCMCInit1IFO(LALMCMCParameter *parameter, SnglInspiralTable *inspiralTable)
 
 extern REAL4Vector *model;
 extern REAL4Vector *Tmodel;
-extern REAL8Sequence **topdown_sum;
+extern REAL8Vector **topdown_sum;
 extern REAL8 *normalisations;
 
 

@@ -30,399 +30,118 @@ INT4 lalDebugLevel = 0;
 
 NRCSID (LALTESTUTCTOGPSC, "$Id$");
 
+static int test(struct tm *t, int correct_gps, int line)
+{
+  int gps = XLALUTCToGPS(t);
+ 
+  if (XLALGetBaseErrno())
+    {
+      fprintf(stderr, "TestUTCtoGPS: error in XLALUTCToGPS(), line %i\n", line);
+      return -1;
+    }
+
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "Input = %s\tOutput =   %d\n\tExpected = %d\n",
+      asctime(t), gps, correct_gps);
+    }
+
+  if (gps != correct_gps)
+    {
+      if (lalDebugLevel > 0)
+        fprintf(stderr, "TestUTCtoGPS: error, line %i\n", line);
+      return -1;
+    }
+
+  return 0;
+}
+
+#define TEST(t, correct_gps) test(t, correct_gps, __LINE__)
+
+
 int main(int argc, char *argv[])
 {
-  static LALStatus     status;
-  LIGOTimeGPS          gpsTime;
-  LIGOTimeGPS          refGPS;
-  LALDate              utcDate;
-  LALLeapSecAccuracy   accuracy = LALLEAPSEC_LOOSE;
-  CHARVector          *timestamp = NULL;
-  time_t               sec;
+  struct tm utcDate;
+  time_t sec;
 
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
 
-  LALCHARCreateVector(&status, &timestamp, (UINT4)64);
-  if (status.statusCode && lalDebugLevel > 0)
+  utcDate.tm_year = 80;
+  utcDate.tm_yday =  5;
+  utcDate.tm_wday = -1;	/* unused */
+  utcDate.tm_mon  =  0;	/* unused */
+  utcDate.tm_mday =  6;	/* unused */
+  utcDate.tm_hour =  0;
+  utcDate.tm_min  =  0;
+  utcDate.tm_sec  =  0;
+  utcDate.tm_isdst = 0;
+  if (TEST(&utcDate, 0))
+    return 1;
+
+  utcDate.tm_year =  94;
+  utcDate.tm_yday = 186;
+  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_mon  =   6;	/* unused */
+  utcDate.tm_mday =   6;	/* unused */
+  utcDate.tm_hour =  23;
+  utcDate.tm_min  =  59;
+  utcDate.tm_sec  =  50;
+  utcDate.tm_isdst =  1;
+  if (TEST(&utcDate, 457574400))
+    return 1;
+
+  utcDate.tm_year =  94;
+  utcDate.tm_yday = 181;
+  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_mon  =   6;	/* unused */
+  utcDate.tm_mday =   1;	/* unused */
+  utcDate.tm_hour =   0;
+  utcDate.tm_min  =   0;
+  utcDate.tm_sec  =   0;
+  utcDate.tm_isdst =  1;
+  if (TEST(&utcDate, 457056010))
+    return 1;
+
+  for (sec = 457056007; sec < 457056012; sec++)
     {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALCHARCreateVector, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  /* Set the date */
-  utcDate.unixDate.tm_year = 80;
-  utcDate.unixDate.tm_mon  =  0;
-  utcDate.unixDate.tm_mday =  6;
-  utcDate.unixDate.tm_hour =  0;
-  utcDate.unixDate.tm_min  =  0;
-  utcDate.unixDate.tm_sec  =  0;
-  utcDate.residualNanoSeconds = 0;
-
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  refGPS.gpsSeconds = 0;
-  refGPS.gpsNanoSeconds = 0;
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  if (lalDebugLevel > 0)
-    {
-      fprintf(stderr, "For: %s\n", timestamp->data);
-      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-              refGPS.gpsNanoSeconds);
-      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
-    }
-
-  if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
-      gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
-    {
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
+      utcDate.tm_year =  94;
+      utcDate.tm_wday =  -1;	/* unused */
+      utcDate.tm_sec  =  58 + (sec - 457056007);
+      if (utcDate.tm_sec <= 60)
         {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
+          utcDate.tm_yday = 180;
+          utcDate.tm_mon  =   5;	/* unused */
+          utcDate.tm_mday =  30;	/* unused */
+          utcDate.tm_hour =  23;
+          utcDate.tm_min  =  59;
         }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
-      return 1;
-    }
-
-  /* Set the date */
-  utcDate.unixDate.tm_year = 94;
-  utcDate.unixDate.tm_mon  =  6;
-  utcDate.unixDate.tm_mday =  6;
-  utcDate.unixDate.tm_hour = 23;
-  utcDate.unixDate.tm_min  = 59;
-  utcDate.unixDate.tm_sec  = 50;
-  utcDate.residualNanoSeconds = 123456789;
-
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  refGPS.gpsSeconds = 457574400;
-  refGPS.gpsNanoSeconds = 123456789;
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  if (lalDebugLevel > 0)
-    {
-      fprintf(stderr, "For: %s\n", timestamp->data);
-      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-              refGPS.gpsNanoSeconds);
-      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
-    }
-
-  if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
-      gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
-    {
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
+      else
         {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
+          utcDate.tm_sec -=  61;
+          utcDate.tm_yday = 181;
+          utcDate.tm_mon  =   6;	/* unused */
+          utcDate.tm_mday =   1;	/* unused */
+          utcDate.tm_hour =  00;
+          utcDate.tm_min  =  00;
         }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
-      return 1;
+      utcDate.tm_isdst =  1;
+      if (TEST(&utcDate, sec))
+        return 1;
     }
 
-  /* Set the date */
-  utcDate.unixDate.tm_year = 94;
-  utcDate.unixDate.tm_mon  =  6;
-  utcDate.unixDate.tm_mday =  1;
-  utcDate.unixDate.tm_hour =  0;
-  utcDate.unixDate.tm_min  =  0;
-  utcDate.unixDate.tm_sec  =  0;
-  utcDate.residualNanoSeconds = 123456789;
+  utcDate.tm_year =  94;
+  utcDate.tm_yday = 319;
+  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_mon  =  10;	/* unused */
+  utcDate.tm_mday =  16;	/* unused */
+  utcDate.tm_hour =   0;
+  utcDate.tm_min  =   0;
+  utcDate.tm_sec  =   0;
+  utcDate.tm_isdst =  0;
+  if (TEST(&utcDate, 468979210))
+    return 1;
 
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  refGPS.gpsSeconds = 457056010;
-  refGPS.gpsNanoSeconds = 123456789;
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  if (lalDebugLevel > 0)
-    {
-      fprintf(stderr, "For: %s\n", timestamp->data);
-      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-              refGPS.gpsNanoSeconds);
-      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
-    }
-
-  if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
-      gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
-    {
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
-      return 1;
-    }
-
-  /* Set the date */
-  utcDate.unixDate.tm_year = 94;
-  utcDate.unixDate.tm_mon  =  5;
-  utcDate.unixDate.tm_mday = 30;
-  utcDate.unixDate.tm_hour = 23;
-  utcDate.unixDate.tm_min  = 59;
-  utcDate.unixDate.tm_sec  = 58;
-  utcDate.residualNanoSeconds = 123456789;
-
-  refGPS.gpsSeconds = 457056007;
-  refGPS.gpsNanoSeconds = 123456789;
-
-  for (sec = 0; sec < 5; ++sec)
-    {
-      LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      if (lalDebugLevel > 0)
-        REPORTSTATUS(&status);
-
-      LALDateString(&status, timestamp, &utcDate);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      if (lalDebugLevel > 0)
-        REPORTSTATUS(&status);
-
-      if (lalDebugLevel > 0)
-        {
-          fprintf(stderr, "For: %s\n", timestamp->data);
-          fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-                  refGPS.gpsNanoSeconds);
-          fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-                  gpsTime.gpsNanoSeconds);
-        }
-
-      if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
-          gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
-        {
-          LALCHARDestroyVector(&status, &timestamp);
-          if (status.statusCode && lalDebugLevel > 0)
-            {
-              fprintf(stderr,
-                      "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-                      __LINE__, LALTESTUTCTOGPSC);
-              REPORTSTATUS(&status);
-              return status.statusCode;
-            }
-          REPORTSTATUS(&status);
-          LALCheckMemoryLeaks();
-          return 1;
-        }
-
-      utcDate.unixDate.tm_sec++;
-      if (utcDate.unixDate.tm_sec == 61)
-        {
-          utcDate.unixDate.tm_mon++;
-          utcDate.unixDate.tm_mday = 1;
-          utcDate.unixDate.tm_hour = 0;
-          utcDate.unixDate.tm_min = 0;
-          utcDate.unixDate.tm_sec = 0;
-        }
-      refGPS.gpsSeconds++;
-    }
-
-  /* Set the date */
-  utcDate.unixDate.tm_year = 94;
-  utcDate.unixDate.tm_mon  = 10;
-  utcDate.unixDate.tm_mday = 16;
-  utcDate.unixDate.tm_hour =  0;
-  utcDate.unixDate.tm_min  =  0;
-  utcDate.unixDate.tm_sec  =  0;
-  utcDate.residualNanoSeconds = 123456789;
-
-  LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  refGPS.gpsSeconds = 468979210;
-  refGPS.gpsNanoSeconds = 123456789;
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
-
-  if (lalDebugLevel > 0)
-    {
-      fprintf(stderr, "For: %s\n", timestamp->data);
-      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-              refGPS.gpsNanoSeconds);
-      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
-    }
-
-  if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
-      gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
-    {
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
-      return 1;
-    }
-
-  if (lalDebugLevel > 0)
-    {
-      utcDate.unixDate.tm_year = 72;
-      utcDate.unixDate.tm_mon  =  0;
-      utcDate.unixDate.tm_mday =  1;
-      utcDate.unixDate.tm_hour =  0;
-      utcDate.unixDate.tm_min  =  0;
-      utcDate.unixDate.tm_sec  =  0;
-      utcDate.residualNanoSeconds = 0;
-
-      LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-
-      LALDateString(&status, timestamp, &utcDate);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestUTCtoGPS: error in LALDateString, line %i, %s\n",
-                  __LINE__, LALTESTUTCTOGPSC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-
-      fprintf(stderr, "%s = GPS %10d\n", timestamp->data, gpsTime.gpsSeconds);
-    }
-
-
-  LALCHARDestroyVector(&status, &timestamp);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestUTCtoGPS: error in LALCHARDestroyVector, line %i, %s\n",
-              __LINE__, LALTESTUTCTOGPSC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
   LALCheckMemoryLeaks();
   return 0;
 }
