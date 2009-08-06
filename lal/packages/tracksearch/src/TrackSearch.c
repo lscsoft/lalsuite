@@ -1224,13 +1224,9 @@ void LALTrackSearchInsertMarkers(
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
 	     );
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
-	  LALAddFloatToGPS(status->statusPtr,
-			   &tmpGPS,
-			   &(input->mapStartGPS),
-			   currentRelativeFloatTime);
-	  CHECKSTATUSPTR(status);
-	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
-	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;
+	  output->curves[i].gpsStamp[j].gpsSeconds=input->mapStartGPS.gpsSeconds;
+	  output->curves[i].gpsStamp[j].gpsNanoSeconds=input->mapStartGPS.gpsNanoSeconds;
+	  XLALGPSAdd(&(output->curves[i].gpsStamp[j]),currentRelativeFloatTime);
 	}
     }
   DETATCHSTATUSPTR (status);
