@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([lal/configure.ac])
 AC_CONFIG_AUX_DIR([lal/misc])
 AC_CONFIG_MACRO_DIR([lal/misc])
