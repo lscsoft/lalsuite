@@ -24,20 +24,15 @@ def usage():
 Usage: FstatFollowUpExamine.py [options]
 
   -h, --help               display this message
-  -c, --configFile         File which has default parameters for the follow-ups
+  -C, --configFile         File which has default parameters for the follow-ups
   -o, --OutputDirectory    Base name for the directory
   -j, --TotalJobs          Total number of jobs in search
   -d, --InputDirectory     Directory where jobs are stored
   -b, --BaseName           Base file name of the jobs to be examined (no result/loudest, just base)
   -i, --Iteration          Indicates which run this is
   -t, --Tcoh               Coherent time of the jobs just run
-  -D, --DataFileLocation   Location of lists of sft files on nodes
-  -I, --IFOs               IFOs used in search
   -T, --Time               Time of calculated ephemeris (start time of search)
-  -e, --EphemerisDirectory Directory containing Sun and Earth ephemeris files
-  -y, --EphemerisYear      Year of ephemeris files needed, i.e. "03-06"
   -L, --UserLogDirectory   Location to place condor log files
-  -C, --SearchCode         Name and location of search code, i.e. ./lalapps_ComputeFStatisic_v2
   -A, --AngularResolution  Spacing in Right Ascension or Declination (radians) of templates from previous iteration
   -N, --TemplateNumber     Total number of templates in the previous iteration
 """
@@ -47,7 +42,7 @@ Usage: FstatFollowUpExamine.py [options]
 #################################################
 #This section reads in the command line arguments
 
-shortop = "hc:o:j:d:b:i:t:D:I:T:e:y:L:C:A:N:"
+shortop = "hC:o:j:d:b:i:t:T:L:A:N:"
 longop = [
   "help",
   "ConfigFile=",
@@ -57,13 +52,8 @@ longop = [
   "BaseName=",
   "Iteration=",
   "Tcoh=",
-  "DataFileLocation=",
-  "IFOs=",
   "Time=",
-  "EphemerisDirectory=",
-  "EphemerisYear=",
   "UserLogDirectory=",
-  "SearchCode=",
   "AngularResolution=",
   "TemplateNumber=",
   ]
@@ -79,7 +69,7 @@ for o, a in opts:
   if o in ("-h", "--help"):
     usage()
     sys.exit(0)
-  elif o in ("-c","--ConfigFile"):
+  elif o in ("-C","--ConfigFile"):
     config_file = str(a)   
   elif o in ("-o","--OutputDirectory"):
     output_dir = str(a)
@@ -93,26 +83,16 @@ for o, a in opts:
     run = int(a)
   elif o in ("-t","--Tcoh"):
     tcoh = float(a)
-  elif o in ("-D","DataFileLocation"):
-    list_files = str(a)
-  elif o in ("-I","IFOs"):
-    ifos = str(a)
   elif o in ("-T","Time"):
     param_time = int(float(a))
-  elif o in ("-e","EphemerisDirectory"):
-    ephem_dir = str(a)
-  elif o in ("-y","EphemerisYear"):
-    ephem_year = str(a)
   elif o in ("-L","UserLogDirectory"):
     user_log = str(a)
-  elif o in ("-C","SearchCode"):
-    search_code = str(a)
   elif o in ("-A","AngularResolution"):
     angular_resolution = float(a)
   elif o in ("-N","TemplateNumber"):
     total_templates = float(a)
   else:
-    print >> sys.stderr, "Unkonwon option:", o
+    print >> sys.stderr, "Unknown option:", o
     usage()
     sys.exit(1)
 
@@ -122,67 +102,98 @@ logFile.write('\n')
 logFile.close()
 
 
-
-
 ###################################
 #Parses the config file, if any
 #The config file is overriden by command line parameters
 
 # Import the Configuration File into config
-config = __import__(config_file);
-
-# Variables Structure/Dictionary
-Vars = {}
+config_file = os.path.abspath(config_file)
+sys.path.append(os.path.dirname(config_file))
+config = __import__(os.path.basename(config_file.strip('.py')));
 
 # First GPS time to be considered for data selection
 try:
-  Vars['start_time'] = config.start_time
+  config.start_time
 except:
   print "start_time cannot be read"
   sys.exit(1)
-  
+    
 # Last GPS time to be considered for data selection
 try:
-  Vars['end_time'] = config.end_time
+  config.end_time
 except:
   print "end_time cannot be read"
   sys.exit(1)
-
+      
 # Maximum 1-D mismatch between template and possible signal
 try:
-  Vars['mismatch'] = config.mismatch
+  config.mismatch
 except:
   print "mismatch cannot be read"
   sys.exit(1)
-    
+        
 # Earth and Sun Ephemeris directory
 try:
-  Vars['ephem_dir'] = config.ephem_dir
+  config.ephem_dir
 except:
   print "ephem_dir cannot be read"
   sys.exit(1)
-
+      
 # Earth and Sun Ephemeris year to use
 try:
-  Vars['ephem_year'] = config.ephem_year
+  config.ephem_year
 except:
   print "ephem_year cannot be read"
   sys.exit(1)
 
-# Number of top candidates to keep per job
+# Number of candidates to keep per job 
 try:
-  Vars['num_candidates_to_keep'] = config.num_candidates_to_keep
+  config.num_candidates_to_keep
 except:
   print "num_candidates_to_keep cannot be read"
   sys.exit(1)
 
+# Grid type used by CommputeFStatistic
+try:
+  config.grid_type
+except:
+  print "grid_type cannot be read"
+  sys.exit(1)
+
+# Metric type used by ComputeFStatistic
+try:
+  config.metric_type
+except:
+  print "metric_type cannot be read"
+  sys.exit(1)    
+
+# Max number of jobs to run per event per step
+try:
+  config.max_number_of_jobs
+except:
+  print "max_number_of_jobs cannot be read"
+  sys.exit(1)
+
+# Location of data files, in comma seperated format
+try:
+  config.data_location_file = config.data_location_file.split(',')
+except:
+  print "data_location_file cannot be read"
+  sys.exit(1)
+
+# Location of the python files
+try:
+  config.python_dir
+except:
+  print "python_dir cannot be read"
+  sys.exit(1)
+
 # Which % of the largest 2F values to average to get the location of the signal
 try:
-  Vars['percent_largest_to_average'] = config.percent_largest_to_average
+  config.percent_largest_to_average
 except:
   print "percent_largest_to_average cannot be read"
   sys.exit(1)
-
 
 ###################################
 #Checks to see if all the results files exist
@@ -193,10 +204,9 @@ except:
 
 input_dir = input_dir.rstrip('/')
 input_dir = ''.join([input_dir,'/'])
-output_dir = output_dir.rstrip('/')
-output_dir = ''.join([output_dir,'/'])
+output_dir = output_dir.rstrip('/') + '/'
 new_base_name = ''.join([base_name,'_',str(run),'_loudest_'])
-new_results_base_name = ''.join([base_name,'_',str(run),'_results_'])
+new_results_base_name = ''.join([base_name,'_',str(run),'_result_'])
 
 
 loudest2F = 0
@@ -215,7 +225,7 @@ arrayF1dot = array([])
 arrayF2dot = array([])
 arrayF3dot = array([])
 
-loudestResultFile = ''.join([output_dir,'loudestResult_',str(run),'.txt'])
+loudestResultFile = ''.join(['./' + 'loudestResult_',str(run),'.txt'])
 lrf = open(loudestResultFile,'w')
 
 for job in range(0,jobs):
@@ -260,7 +270,7 @@ for job in range(0,jobs):
 #parameter space
 
 average_cutoff = float(loudest2F) * float(config.percent_largest_to_average)
-average
+
 
 
 for job in range(0,jobs):
@@ -295,40 +305,63 @@ F_dot_band = param_space_mult*1.0/Tcoh**2
 RA_band = param_space_mult*angular_resolution
 DEC_band = param_space_mult*angular_resolution
 
+new_Tcoh = Tcoh * 4.0
+
 
 F_c = float(loudest2F)/2.0
 Prob_below = (1 - ((1 + F_c)/2.0)*math.exp(-F_c))
 FA = 1 - Prob_below**total_templates
 
+
+
+FA_file = open(''.join(['../false_alarms/FA_',base_name,'.txt']),'a')
+if run == 0:
+  FA_file.write('2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA Name Run\n')
+FA_file.write(' '.join([loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(total_templates),str(FA),str(base_name),str(run)]))
+FA_file.close()
+
+sleep(1)
+
+#Delete the previous run to save space
+os.system(''.join(['rm -rf ',base_name,'_',str(run),'_run']))
+
+#Delete condor log files to save space
+os.system(''.join(['rm node_',base_name,'*']))
+
+
 if FA < 0.01:
-  event_file = open(''.join([base_name,'_event_',str(run),'.txt']),'w')
-  event_file.write('2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA\n')
-  event_file.write(' '.join([loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(total_templates),str(FA)]))
-  event_file.close()
+  interesting_event_file = open(''.join(['../events/',base_name,'_event_',str(run),'.txt']),'w')
+  interesting_event_file.write('2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA\n')
+  interesting_event_file.write(' '.join([loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(total_templates),str(FA)]))
+  interesting_event_file.close()
+
   
+  if float(Tcoh) >= (config.end_time - config.start_time):
+    print "Last search used all available data - no further iterations"
+    sys.exit(0)
+
+  code = config.python_dir.rstrip('/') + '/FstatFollowUp.py '
 
 
-code = './FstatFollowUp.py '
-start_time = 0
-end_time = 999999999
-mismatch = 0.15
-cutoff2F = 30
-
-os.system(''.join(['mkdir node-',str(run)]))
-os.system(''.join(['mv node_',base_name,'* ./node-',str(run)]))
-
-os.system('source /opt/lscsoft/lalapps/etc/lalapps-user-env.sh')
-
-command_string = ''.join([code,' -o ',base_name,' -i ',str(run+1),
-                          ' -a ',str(meanRA),' -d ',str(meanDEC),
-                          ' -z ', str(RA_band), ' -c ', str(DEC_band),
-                          ' -f ', str(meanFreq), ' -b ', str(F_band),
-                          ' -D ', str(list_files), ' -I ', str(ifos),
-                          ' -S ', str(start_time), ' -E ', str(end_time),
-                          ' -T ', str(param_time), ' -s ', str(meanF1dot),
-                          ' -m ', str(F_dot_band), ' -M ', str(mismatch),
-                          ' -e ', str(ephem_dir), ' -y ', str(ephem_year),
-                          ' -N ', str(num_candidates_to_keep), ' -X ', str(search_code),
-                          ' -L ', str(user_log)])
-
-os.system(command_string)
+  #Command string for the next iteration to run
+  command_string = ' '.join([code,
+                             '-o',base_name,
+                             '-C',config_file,
+                             '-i',str(run+1),
+                             '-a',str(meanRA),
+                             '-d',str(meanDEC),
+                             '-z',str(RA_band),
+                             '-c', str(DEC_band),
+                             '-f', str(meanFreq),
+                             '-b',str(F_band),
+                             '-T', str(param_time),
+                             '-s', str(meanF1dot),
+                             '-m', str(F_dot_band),
+                             '--F2', str(0),
+                             '--F2Band', str(0),
+                             '--F3', str(0),
+                             '--F3Band', str(0),
+                             '-t',str(new_Tcoh),
+                             '-L', str(user_log)])
+  
+  os.system(command_string)
