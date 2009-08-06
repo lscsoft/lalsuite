@@ -24,12 +24,9 @@
 
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
-#include "unistd.h"
+#include <unistd.h>
 NRCSID( TRACKSEARCHC, "tracksearch $Id$");
 RCSID( "tracksearch $Id$");
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
 
 define(`TYPECODE',`D')
 include(`CreateConverter.m4')

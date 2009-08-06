@@ -21,7 +21,7 @@
  */
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
-#include "unistd.h"
+#include <unistd.h>
 
 /* Code Identifying information */
 NRCSID( TRACKSEARCHC, "tracksearch $Id$");
