@@ -346,19 +346,8 @@ static volatile const char *rcsid="$Id$";
 
 \item[Description]
 \verb$PRINT_VERSION$ prints the version information for \verb$program$ in a
-standard format, along with the RCS Id information.  For example, for the
-program \verb$lalapps_hello$, the version information
-\begin{indented}
-\verb+lalapps hello version 0.1+\\
-\verb+$+\verb+Id+\verb+$+
-\end{indented}
-is printed with the command \verb$lalapps_hello -V$.  The source code to
-print this is
-\begin{indented}
-\verb$PRINT_VERSION( "hello" );$
-\end{indented}
-
-Note that \verb$PRINT_VERSION$ requires the string variable \verb$rcsid$ to be
+standard format, along with the RCS Id information. Note that
+\verb$PRINT_VERSION$ requires the string variable \verb$rcsid$ to be
 set.
 
 \end{entry}
@@ -484,23 +473,11 @@ int main( void )
 \end{entry}
 
 \newpage
-\section{Source \texttt{hello.c}}
-\label{source:hello.c}
-\idx[Source]{hello.c}
-
-\begin{indented}
-This is the source code for the program \verb$lalapps_hello$:
-
-\listinginput[10]{1}{hello.c}
-\end{indented}
-
-\newpage
 
 %%
 %% INCLUDE YOUR DOCUMENTATION BELOW
 %%
 
-\include{hello}
 \include{animate}
 \include{calibration}
 \include{python}
