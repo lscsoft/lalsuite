@@ -21,6 +21,7 @@
  */
 
 #include "tracksearch.h"
+#include "lal/FrameStream.h"
 
 #define PROGRAM_NAME "tracksearch"
 
@@ -100,7 +101,7 @@ int main (int argc, char *argv[])
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
-  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
+  /*set_debug_level("ERROR | WARNING | MEMDBG | TRACE");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -201,21 +202,12 @@ int main (int argc, char *argv[])
   /* 
    * Done freeing for search params struct memory
    */
-  /* 
-   * Added CVT Only as hack until memory leak found, seems related to
-   * segmentation not sure.
-   */
-
   /*LALCheckMemoryLeaks();*/
   return 0;
 }
 /* End Main Code Body */
 
 
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
 
 /* ********************************************************************** */
 /*
@@ -381,7 +373,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
 	   */
-	  /*DO I CONVERT TO XLALish type?*/
 	  LAL_CALL(LALTrackSearchDataSegmenter(status,
 					       dataSet,
 					       dataSegments,
@@ -1087,10 +1078,6 @@ void LALappsTrackSearchInitialize(
    * Check for valid overlap number which < segment length number 
    */
   /* 
-   * Cristina Fri-May-30-2008:200805302036 
-   * Fix code that calculates segment lengths given overlap params
-   */
-  /* 
    *If doing a MAP analysis skip these checks these options should
    *not be invoked
    */
@@ -1260,14 +1247,7 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
   UINT4                 errcode=0;
-  /*
-   * Clean up this section of code via a m4 file which is compiled
-   * as a set of possible functions using 
-   * **REAL4TimeSeries
-   * TSSearchParams
-   * FrStream
-   * FrChanIn
-   */
+
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1279,10 +1259,37 @@ void LALappsGetFrameData(LALStatus*          status,
   else if (cachefile)
     {
       /* Open frame cache */
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Importing cache file: %s\n",cachefile);
+	  fflush(stdout);
+	}
       lal_errhandler = LAL_ERR_EXIT;
-      LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
+      frameCache=XLALFrImportCache(cachefile);
+      if (frameCache == NULL)
+	{
+	  fprintf(stderr,"Error importing frame cache file!\n");
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
+	  fflush(stderr);
+	  exit(TRACKSEARCHC_EDATA);
+	}
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Creating data stream.\n");
+	  fflush(stdout);
+	}
       stream=XLALFrCacheOpen(frameCache);	  
-      LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Clearing imported cache file.\n");
+	  fflush(stdout);
+	}
+      XLALFrDestroyCache(frameCache);
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Data stream ready.\n");
+	  fflush(stdout);
+	}
     }
   else 
     {
@@ -1440,10 +1447,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
     }
 }
-
-/* End frame reading code */
-
-/* MISSING CLOSE } */
+  /* End frame reading code */
 
 
 /*
@@ -1526,11 +1530,6 @@ void LALappsDoTrackSearch(
    * We want to apply thresholds in a seperate routine 
    */
   /*
-   * if the tssearchparams 'params' variable contains the directive
-   * to apply auto determined lambda thresholds, calculate them for
-   * the map and use them to run the analysis
-   */
-  /*
    * DO THE AUTO ADJUSTMENTS!!!
    */
   if (params.autoLambda)
@@ -1555,7 +1554,6 @@ void LALappsDoTrackSearch(
       outputCurves.linePThreshCut=tsInputs.low;
 
     }
-  /*fprintf(stdout,"Code Marker 03\n");fflush(stdout);*/
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
   lal_errhandler = LAL_ERR_RTRN;
@@ -1966,22 +1964,13 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
-  LAL_CALL(
-	   LALGPStoFloat(status,
-			 &signalStart,
-			 &signalSeries->epoch),
-	   status);
+  signalStart=XLALGPSGetREAL8(&signalSeries->epoch);
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
    */
   signalStop=(signalSeries->deltaT*(signalSeries->data->length))+signalStart;
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &(mapMarkerParams.mapStopGPS),
-			 &signalStop),
-			 
-	   status);
+  XLALGPSSetREAL8(&(mapMarkerParams.mapStopGPS),signalStop);
   mapMarkerParams.mapTimeBins=tfmap->tCol;
   mapMarkerParams.mapFreqBins=((tfmap->fRow/2)+1);
   /*This is the map time resolution*/
@@ -1997,11 +1986,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   tmpTSA->clippedWith=0;
   tmpTSA->imageBorders=mapMarkerParams;
   tmpTSA->imageRep=tfmap;
-/*   /\* */
-/*    * Dump out PGM of map before we crop it! */
-/*    *\/ */
-/*   if (params.verbosity >= verbose) */
-/*     LALappsTSAWritePGM(status,tmpTSA,NULL);  */
   if ((params.verbosity > quiet) && (params.colsToClip > 0))
     {
       fprintf(stdout,"Cropping TFR ");
@@ -2074,11 +2058,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	      mapMarkerParams.mapStartGPS.gpsNanoSeconds,
 	      mapMarkerParams.mapStopGPS.gpsSeconds,
 	      mapMarkerParams.mapStopGPS.gpsNanoSeconds);
-      /*
-       *LALappsTSAWriteMapFile(status,
-       *		     mapBuilder,
-       *		     binaryFilename);
-       */
       LALappsTSAWriteMapFile(status,
 			     mapBuilder,
 			     NULL);
@@ -2140,11 +2119,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    *Adjust value of edgeOffsetGPS to be new start point 
    * including col buffer data
    */
-    LAL_CALL(
-	     LALGPStoFloat(status,
-			   &originalFloatTime,
-			   &(params.GPSstart)),
-	     status);
+    originalFloatTime=XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
     LAL_CALL(LALFloatToGPS(status,
 			   &edgeOffsetGPS,
@@ -2656,16 +2631,8 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &startStamp,
-			     &(outCurve.curves[i].gpsStamp[0]))
-	       ,status);
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &stopStamp,
-			     &(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]))
-	       ,status);
+      startStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[0]);
+      stopStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[outCurve.curves[i].n-1]);
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,
@@ -2723,7 +2690,7 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
 	{
 	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
 	}
-      /* Need to gracdfully exit here by unallocating later */
+      /* Need to gracefully exit here by unallocating later */
     };
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -3216,8 +3183,6 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	  fprintf(stdout,"Removing requested coherent lines, if possible.\n");
 	  fflush(stdout);
 	}
-      /* Iterative over each line to remove, subtracting one at a time*/
-      /* START OF NEW LOOP TO REMOVE ONE LINE AT A TIME */
       for (l=0;l<params.numLinesToRemove;l++)
 	{
 	  /*Setup the proper number of harmonics that should be done!*/
@@ -3973,9 +3938,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 
 
 /****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
 
 /* ********************************************************************** */
 
@@ -4143,6 +4105,4 @@ void fakeDataGeneration(LALStatus              *status,
  */
 
 /****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
+
