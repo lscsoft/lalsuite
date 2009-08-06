@@ -2675,8 +2675,11 @@ int TDCleaning(struct CommandLineArgsTag CLA)
   
   EventParamInit(dataDouble.data->length, even_param);
   j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
+
+  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",100,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",100,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",100,-1);
+
   Evenbil2(even_param, &dataDouble );
   j=Bil2( &databil2, &dataDoubleHP, even_param);
   j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, even_param, &bilparam);
