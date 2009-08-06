@@ -294,6 +294,8 @@ static void print_usage(char *program)
       "                           gaussian: gaussian mass distribution\n"\
       "                           log: log distribution in comonent mass\n"\
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
+      "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
+      "                                  and uniform in total mass ratio\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
@@ -1255,11 +1257,14 @@ int main( int argc, char *argv[] )
         {
           mDistr=uniformTotalMassRatio;
         }
+        else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
+          mDistr=logMassUniformTotalMassRatio;
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
-              "(source, nrwaves, totalMass, componentMass, gaussian, log, totalMassRatio)\n", 
+              "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
+              "totalMassRatio, logTotalMassUniformMassRatio)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1949,11 +1954,12 @@ int main( int argc, char *argv[] )
   }
 
   /* check if mass ratios are specified */
-  if ( mDistr==uniformTotalMassRatio && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
+  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio)
+      && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
-        " --m-distr=totalMassRatio\n");
+        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio\n");
     exit( 1 );
   }
 
@@ -2128,8 +2134,14 @@ int main( int argc, char *argv[] )
     else if ( mDistr==uniformTotalMassRatio )
     {
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams, 
-          minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
+    else if ( mDistr==logMassUniformTotalMassRatio )
+    {
+      simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+    }
+
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
