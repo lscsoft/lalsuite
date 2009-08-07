@@ -155,8 +155,8 @@ if open_box:
     image_list = ['combinedupper_limit.png', 'combinedposterior.png']
     page.image_table(image_list,webserver)
 
-  try: 
-    for l in open("plotsummary.txt").readlines(): page.write(l)
-  except: print >>sys.stderr, "WARNING couldn't find plotsummary.txt"
+try: 
+  for l in open("plotsummary.txt").readlines(): page.write(l)
+except: print >>sys.stderr, "WARNING couldn't find plotsummary.txt"
 
 page.finish()
