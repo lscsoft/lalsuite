@@ -131,7 +131,7 @@ print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,99]
-wiki.write("||1,99||%f||\n" % (masses[0],masses[1]],) )
+wiki.write("||1,99||%f||\n" % (vAD[masses[0],masses[1]],) )
 print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
