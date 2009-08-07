@@ -144,6 +144,7 @@ typedef struct
 {
     double f[XLALSKYMAP2_N][2];
     int delay[XLALSKYMAP2_N];
+	double weight[XLALSKYMAP2_N][4];
 } XLALSkymap2DirectionPropertiesType;
 
 // Stores pre-computed kernel information for each sky direction
@@ -174,6 +175,10 @@ void XLALSkymap2PlanConstruct(
     XLALSkymap2PlanType* plan
     );
 
+void XLALSkymap2InterpolationWeights(double t, double* w);
+
+double XLALSkymap2Interpolate(double* x, double* w);
+	
 // Turn directions into sample delays and antenna patterns
 
 void XLALSkymap2DirectionPropertiesConstruct(
