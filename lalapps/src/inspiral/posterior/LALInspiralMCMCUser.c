@@ -190,49 +190,6 @@ if(!inrange) parameter->logPrior = -DBL_MAX;
 return inrange;
 }
 
-void NestInitInj(LALMCMCParameter *parameter, void *iT){
-REAL8 time;
-SimInspiralTable *injTable = (SimInspiralTable *)iT;
-REAL4 mtot,eta,mwindow,localetawin;
- REAL8 mc,mcmin,mcmax,lmmin,lmmax;
-parameter->param = NULL;
-parameter->dimension = 0;
-time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
-mtot = injTable->mass1 + injTable->mass2;
-eta = injTable->eta;
-mwindow = 0.2;
-double etamin;
-/*etamin = etamin<0.01?0.01:etamin;*/
-etamin=0.01;
-double etamax = 0.25;
-mc=m2mc(injTable->mass1,injTable->mass2);
-mcmin=m2mc(1.0,1.0);
-mcmax=m2mc(17.5,17.5);
-
- lmmin=log(mcmin);
- lmmax=log(mcmax);
-localetawin=etamax-etamin;
-
- XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
- /*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
-
-
-XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
-XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + time ,time-0.5*timewindow,time+0.5*timewindow,0);
-XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-
-XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
-
-
-XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
-XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
-
-
-return;
-}
-
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT){
 REAL8 time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
