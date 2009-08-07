@@ -689,6 +689,7 @@ that LAL uses. Please check this whenever any change is made */
 			fclose(modelout);
 		#endif
 		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
+		else if(highBin<=lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
 		/* add the normalisation constant */
 
