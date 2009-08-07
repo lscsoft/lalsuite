@@ -121,22 +121,22 @@ pylab.figure(1)
 #FIXME don't hardcode masses
 masses = bins[15,15]
 print masses
-wiki.write("||%s||%f||\n" % (str(masses),vAD[0,masses[0],masses[1]]) )
+wiki.write("||15,15||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(1)
 masses = bins[50,50]
-wiki.write("||%s||%f||\n" % (str(masses),vAD[0,masses[0],masses[1]]))
+wiki.write("||50,50||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,99]
-wiki.write("||%s||%f||\n" % (str(masses),vAD[0,masses[0],masses[1]]))
+wiki.write("||1,99||%f||\n" % (masses[0],masses[1]],) )
 print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,24]
-wiki.write("||%s||%f||\n" % (str(masses),vAD[0,masses[0],masses[1]]))
+wiki.write("||1,24||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 print masses
 wiki.close()
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
