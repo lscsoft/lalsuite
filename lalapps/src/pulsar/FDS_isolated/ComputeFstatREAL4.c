@@ -116,7 +116,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   UINT4 numSegments, n;
   REAL8 f0, deltaF;
   REAL4 Fstat;
-  REAL8 Freq0, Freq;
 
   /* check input consistency */
   if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !cfvBuffer ) {
@@ -154,25 +153,43 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s;
-  Freq = Freq0 = doppler->fkdot[0];
-  fkdot4.FreqMain = (INT4)Freq0;
-  /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
-  fkdot4.fkdot[0] = (REAL4)( Freq0 - (REAL8)fkdot4.FreqMain );
-  /* the remaining spins are simply down-cast to REAL4 */
-  for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
-    fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
-  UINT4 maxs;
-  /* find highest non-zero spindown-entry */
-  for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
-    if ( fkdot4.fkdot[maxs] != 0 )
-      break;
-  fkdot4.spdnOrder = maxs;
-
   /* make sure sin/cos lookup-tables are initialized */
   init_sin_cos_LUT_REAL4();
+
+  /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
+  PulsarSpinsREAL4 *fkdot4V;
+  if ( (fkdot4V = XLALCalloc ( numSegments, sizeof(*fkdot4V) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc (%d, %d)\n", fn, numSegments, sizeof(*fkdot4V) );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  /* find highest non-zero spindown-entry */
+  UINT4 maxs;
+  for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
+    if ( doppler->fkdot[maxs] != 0 )
+      break;
+
+  /* translate spin-parameters to start of each segment, then convert to REAL4-friendly struct*/
+  for ( n=0; n < numSegments; n ++ )
+    {
+      PulsarSpins fkdot_n;
+      REAL8 deltaT = XLALGPSDiff ( &fstatBandV->data[n].epoch, &doppler->refTime );
+      XLALExtrapolatePulsarSpins ( fkdot_n, doppler->fkdot, deltaT );
+
+      /* now translate into REAL4-friendly format ... */
+      REAL8 Freq0 = fkdot_n[0];
+
+      fkdot4V[n].refTime = fstatBandV->data[n].epoch;
+      fkdot4V[n].spdnOrder = maxs;
+
+      fkdot4V[n].FreqMain = (INT4)Freq0;
+      /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
+      fkdot4V[n].fkdot[0] = (REAL4)( Freq0 - (REAL8)fkdot4V[n].FreqMain );
+      /* the remaining spins are simply down-cast to REAL4 */
+      UINT4 s;
+      for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
+        fkdot4V[n].fkdot[s] = (REAL4) fkdot_n[s];
+
+    } /* for n < numSegments */
 
   /* ---------- Buffering quantities that don't need to be recomputed ---------- */
 
@@ -211,7 +228,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
       for ( n=0; n < numSegments; n ++ )
         {
           /* compute new SSB timings over all segments */
-          if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
+          if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, fkdot4V[n].refTime)) == NULL ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
             XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -241,7 +258,9 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   for ( n = 0; n < numSegments; n ++ )
     {
 
-      Freq = Freq0;	/* reset frequency to start value for next segment */
+      PulsarSpinsREAL4 fkdot4;
+      memcpy ( &fkdot4, &fkdot4V[n], sizeof(fkdot4) );
+      REAL8 Freq = fkdot4.FreqMain + fkdot4.fkdot[0];
 
       /* loop over frequency values and fill up values in fstatVector */
       for ( k = 0; k < numBins; k++)
@@ -269,6 +288,9 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
         } /* for k < numBins */
 
     } /* for n < numSegments */
+
+  /* free memory */
+  XLALFree ( fkdot4V );
 
   return XLAL_SUCCESS;
 
