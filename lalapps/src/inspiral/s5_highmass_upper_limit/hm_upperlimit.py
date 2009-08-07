@@ -393,5 +393,8 @@ xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
-xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml((vA / live_time / (4.0/3.0 * math.pi) )**(1.0/3.0), "2DsearchvolumeDistance"))
+# DONE with vA, so it is okay to mess it up...
+# Compute range 
+vA.array = (vA.array * secs_in_year / live_time / (4.0/3.0 * pi)) **(1.0/3.0)
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeDistance"))
 utils.write_filename(xmldoc, "2Dsearchvolume-%s-%s.xml" % (opts.output_name_tag, "".join(sorted(opts.instruments))))
