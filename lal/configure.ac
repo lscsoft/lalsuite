@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -9,6 +9,7 @@ AC_CONFIG_FILES([ \
                  lalframe.pc \
                  lalmetaio.pc \
                  lalxml.pc \
+                 lalstochastic.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -82,11 +83,6 @@ AC_CONFIG_FILES([ \
                  packages/clremoval/include/Makefile \
                  packages/clremoval/src/Makefile \
                  packages/clremoval/test/Makefile \
-                 packages/stochastic/Makefile \
-                 packages/stochastic/doc/Makefile \
-                 packages/stochastic/include/Makefile \
-                 packages/stochastic/src/Makefile \
-                 packages/stochastic/test/Makefile \
                  packages/inspiral/Makefile \
                  packages/inspiral/doc/Makefile \
                  packages/inspiral/include/Makefile \
@@ -137,6 +133,11 @@ AC_CONFIG_FILES([ \
                  packages/timefreq/include/Makefile \
                  packages/timefreq/src/Makefile \
                  packages/timefreq/test/Makefile \
+                 packages/stochastic/Makefile \
+                 packages/stochastic/doc/Makefile \
+                 packages/stochastic/include/Makefile \
+                 packages/stochastic/src/Makefile \
+                 packages/stochastic/test/Makefile \
                  packages/support/Makefile \
                  packages/support/doc/Makefile \
                  packages/support/include/Makefile \
@@ -155,10 +156,6 @@ AH_TOP([
 ])
 AH_TEMPLATE([LAL_SIZEOF_DOUBLE], [The number of bytes in a double.])
 AH_TEMPLATE([LAL_SIZEOF_FLOAT], [The number of bytes in a float.])
-AH_TEMPLATE([LAL_SIZEOF_INT], [The number of bytes in a int.])
-AH_TEMPLATE([LAL_SIZEOF_LONG], [The number of bytes in a long.])
-AH_TEMPLATE([LAL_SIZEOF_LONG_LONG], [The number of bytes in a long long.])
-AH_TEMPLATE([LAL_SIZEOF_SHORT], [The number of bytes in a short.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])
@@ -171,7 +168,7 @@ LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
-LAL_WITH_GCC_FLAGS
+LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME

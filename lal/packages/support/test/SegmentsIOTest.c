@@ -109,8 +109,8 @@ int main( int argc, char *argv[] )
   INT4 nfailures = 0;
   static LALStatus status;
   INT4 xstatus;
-  LALSegList seglist1, seglist2;
-  LALSeg seg, *segp;
+  LALSegList seglist1;
+  LALSeg seg;
   LIGOTimeGPS segstart1 = {710000000, 123456789};
   LIGOTimeGPS segend1 =   {710000234, 555555555};
 

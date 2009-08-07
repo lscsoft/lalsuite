@@ -44,6 +44,7 @@
 #include <processtable.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
+#include <lal/Ring.h>
 
 RCSID( "$Id$" );
 
@@ -57,12 +58,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
 /* 
@@ -70,6 +71,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
  *  Definition of the prototypes 
  *  *********************************
  */
+extern int vrbflg;
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... );
 void read_mass_data( char *filename );
@@ -96,6 +98,7 @@ MassDistribution        mDistr;
 InclDistribution        iDistr;
 
 SimInspiralTable *simTable;
+SimRingdownTable *simRingTable;
 
 char *massFileName = NULL;
 char *nrFileName = NULL;
@@ -136,6 +139,7 @@ REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
 INT4 bandPassInj = 0;
+INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
 
 
@@ -205,10 +209,10 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
     exit( 1 );
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
-  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
-  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
   return pp;
 }
@@ -290,6 +294,8 @@ static void print_usage(char *program)
       "                           gaussian: gaussian mass distribution\n"\
       "                           log: log distribution in comonent mass\n"\
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
+      "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
+      "                                  and uniform in total mass ratio\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
@@ -326,6 +332,9 @@ static void print_usage(char *program)
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
       "                            (start|end|startend) \n)"\
       "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
+      "\n"\
+      "Output:\n"\
+      " [--write-sim-ring]        Writes a sim_ringdown table\n"\
       "\n");
 }
 
@@ -890,6 +899,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
+  MetadataTable         ringparams;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
 
@@ -907,6 +917,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
+    {"verbose",                 no_argument,       &vrbflg,           1 },
     {"source-file",             required_argument, 0,                'f'},
     {"mass-file",               required_argument, 0,                'm'},
     {"nr-file",                 required_argument, 0,                'c'},
@@ -963,6 +974,7 @@ int main( int argc, char *argv[] )
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
+    {"write-sim-ring",          no_argument,       0,                '{'},
     {0, 0, 0, 0}
   };
   int c;
@@ -989,7 +1001,7 @@ int main( int argc, char *argv[] )
 					lalappsGitGitStatus,
 					lalappsGitCommitDate ), &status );
     }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -1150,7 +1162,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'w':
-        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
@@ -1197,11 +1209,11 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -1210,11 +1222,11 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
         if (!strcmp(dummy, "source")) 
@@ -1245,11 +1257,14 @@ int main( int argc, char *argv[] )
         {
           mDistr=uniformTotalMassRatio;
         }
+        else if (!strcmp(dummy, "logTotalMassUniformMassRatio"))
+          mDistr=logMassUniformTotalMassRatio;
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
-              "(source, nrwaves, totalMass, componentMass, gaussian, log, totalMassRatio)\n", 
+              "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
+              "totalMassRatio, logTotalMassUniformMassRatio)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1336,7 +1351,7 @@ int main( int argc, char *argv[] )
         maxMassRatio = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", minMassRatio );
+              "float", "%le", maxMassRatio );
         break;
 
       case 'p':
@@ -1376,11 +1391,11 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--d-distr" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--d-distr" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
         if (!strcmp(dummy, "source")) 
@@ -1415,11 +1430,11 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--l-distr" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--l-distr" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
         if (!strcmp(dummy, "source")) 
@@ -1503,11 +1518,11 @@ int main( int argc, char *argv[] )
         memcpy( dummy, optarg, optarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--i-distr" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--i-distr" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
         if (!strcmp(dummy, "uniform")) 
@@ -1665,6 +1680,14 @@ int main( int argc, char *argv[] )
         bandPassInj = 1;
         break;
 
+      case '{':
+        /* write out a sim_ringdown table */
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        writeSimRing = 1;
+        break;
+
       case '*':
         /* Set injection tapering */
         if ( ! strcmp( "start", optarg ) )
@@ -1699,6 +1722,10 @@ int main( int argc, char *argv[] )
       case '?':
         print_usage(argv[0]);
         exit( 1 );
+        break;
+
+      case 'vv':
+        vrbflg = 1;
         break;
 
       default:
@@ -1927,11 +1954,12 @@ int main( int argc, char *argv[] )
   }
 
   /* check if mass ratios are specified */
-  if ( mDistr==uniformTotalMassRatio && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
+  if ( (mDistr==uniformTotalMassRatio || mDistr==logMassUniformTotalMassRatio)
+      && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
   {
     fprintf( stderr,
         "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
-        " --m-distr=totalMassRatio\n");
+        " --m-distr=totalMassRatio or --m-distr=logTotalMassUniformMassRatio\n");
     exit( 1 );
   }
 
@@ -2027,27 +2055,27 @@ int main( int argc, char *argv[] )
   
   if ( userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( userTag && !outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( !userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
         rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml", 
         rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   if ( outputFileName ) 
   {
-    LALSnprintf( fname, sizeof(fname), "%s", 
+    snprintf( fname, sizeof(fname), "%s", 
         outputFileName);
   }
 
@@ -2064,6 +2092,9 @@ int main( int argc, char *argv[] )
   /* create the first injection */
   simTable = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
+
+  simRingTable = ringparams.simRingdownTable = (SimRingdownTable *)
+    calloc( 1, sizeof(SimRingdownTable) );
 
   /* loop over parameter generation until end time is reached */
   ninj = 0;
@@ -2103,8 +2134,14 @@ int main( int argc, char *argv[] )
     else if ( mDistr==uniformTotalMassRatio )
     {
       simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams, 
-          minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
     }
+    else if ( mDistr==logMassUniformTotalMassRatio )
+    {
+      simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams,
+          mDistr, minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+    }
+
     else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
@@ -2200,19 +2237,19 @@ int main( int argc, char *argv[] )
         switch (taperInj)
         {
             case INSPIRAL_TAPER_NONE:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
                          "%s", "TAPER_NONE"); 
                  break;
             case INSPIRAL_TAPER_START:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
                          "%s", "TAPER_START"); 
                  break;
             case INSPIRAL_TAPER_END:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
                          "%s", "TAPER_END"); 
                  break;
             case INSPIRAL_TAPER_STARTEND:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
                          "%s", "TAPER_STARTEND"); 
                  break;
             default: /* Never reach here */
@@ -2224,6 +2261,34 @@ int main( int argc, char *argv[] )
     
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
+   
+    /* populate the sim_ringdown table */ 
+   if ( writeSimRing )
+   {
+       memcpy( simRingTable->waveform, waveform,
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+       simRingTable->geocent_start_time = simTable->geocent_end_time;
+       simRingTable->h_start_time = simTable->h_end_time;
+       simRingTable->l_start_time = simTable->l_end_time;
+       simRingTable->start_time_gmst = simTable->end_time_gmst;
+       simRingTable->longitude = simTable->longitude;
+       simRingTable->latitude = simTable->latitude;
+       simRingTable->distance = simTable->distance;
+       simRingTable->inclination = simTable->inclination;
+       simRingTable->polarization = simTable->polarization;
+       simRingTable->phase = 0;
+       simRingTable->mass = XLALNonSpinBinaryFinalBHMass(simTable->eta, simTable->mass1, simTable->mass2);
+       simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
+       simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
+       simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
+       simRingTable->epsilon = 0; 
+       simRingTable->amplitude = 0; 
+       simRingTable->eff_dist_h = simTable->eff_dist_h; 
+       simRingTable->eff_dist_l = simTable->eff_dist_l; 
+       simRingTable->hrss = 0;
+       simRingTable->hrss_h = 0;
+       simRingTable->hrss_l = 0;
+    }
 
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
@@ -2231,10 +2296,13 @@ int main( int argc, char *argv[] )
     XLALGPSAdd(&currentGpsTime, ninj * meanTimeStep);
     if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
       break;
-
-    /* allocate and go to next SimInspiralTable */
+    
+  /* allocate and go to next SimInspiralTable */
     simTable = simTable->next = (SimInspiralTable *)
       calloc( 1, sizeof(SimInspiralTable) );
+    simRingTable = simRingTable->next = (SimRingdownTable *)
+      calloc( 1, sizeof(SimRingdownTable) );
+
   }
 
 
@@ -2286,6 +2354,18 @@ int main( int argc, char *argv[] )
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );   
   }
+
+  if ( writeSimRing )
+  { 
+    if ( ringparams.simRingdownTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table ),
+          &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, ringparams,
+          sim_ringdown_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+    }
+  }  
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 

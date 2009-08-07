@@ -51,12 +51,12 @@ include
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+  snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
       long_options[option_index].name ); \
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 /*******************************
   structures
@@ -337,13 +337,8 @@ int checkCGNtrigger( void )
   char inputGPS[256];
   char input1[256];
   char input2[256];
-  LIGOTimeGPS* gps;
-  LALDate* date;
+  struct tm date;
   FILE* fileTrigger;
-
-  /* initialize date */
-  date=(LALDate*)LALCalloc(1, sizeof(LALDate));
-  gps=(LIGOTimeGPS*)LALCalloc(1, sizeof(LIGOTimeGPS));
 
   /* check if to get some trigger file or not */
   if (!flagTriggerFile) {
@@ -451,16 +446,14 @@ int checkCGNtrigger( void )
 	memcpy( extList[numberStoredCGN].table, thisExt, sizeof(ExtTriggerTable));
 
 	/* getting user friendly date and time */
-	gps->gpsSeconds=thisExt->start_time;
-	gps->gpsNanoSeconds=thisExt->start_time_ns;
-	LALGPStoUTC(&status, date, gps, &accuracy); 
+	XLALGPSToUTC(&date, thisExt->start_time);
 
 	/* generate output saying that there is a new CGN trigger */
 	sprintf(message,"New CGN trigger occured at %d-%02d-%02d %d:%02d:%02d (%d)",
-		date->unixDate.tm_year+1900, date->unixDate.tm_mon+1,
-		date->unixDate.tm_mday,date->unixDate.tm_hour,
-		date->unixDate.tm_min, date->unixDate.tm_sec, 
-		gps->gpsSeconds);
+		date.tm_year+1900, date.tm_mon+1,
+		date.tm_mday,date.tm_hour,
+		date.tm_min, date.tm_sec, 
+		thisExt->start_time);
 	printOut(3, message);
 
 	/* start special analysis job if data should be recalculated */
@@ -903,9 +896,9 @@ int createInspiralTable( int lifo, int dag )
       }
 
       /* setting values in the summ-value table */
-      LALSnprintf( tailSumm->name, LIGOMETA_SUMMVALUE_NAME_MAX, "length" ); 
+      snprintf( tailSumm->name, LIGOMETA_SUMMVALUE_NAME_MAX, "length" ); 
       tailSumm->value=summary->end_time.gpsSeconds - summary->start_time.gpsSeconds;
-      LALSnprintf( tailSumm->comment, LIGOMETA_SUMMVALUE_COMM_MAX, "%s",inspiralList[lifo][insp].filename ); 
+      snprintf( tailSumm->comment, LIGOMETA_SUMMVALUE_COMM_MAX, "%s",inspiralList[lifo][insp].filename ); 
 
       if (flagVerbose) {
 	sprintf(comment, "+++ Adding %d-%d triggers from file %s ", 
@@ -1746,47 +1739,47 @@ int arg_parse_check( int argc, char *argv[])
   if ( flagRestart ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		 "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
 		 "--restart" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   
   /* test-flag */
   if ( flagTest ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		 "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--test" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--test" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   
   /* recalc-flag */
   if ( flagRecalc ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
 		 "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
 		 "--recalc" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* verbose-flag */
   if ( flagRecalc ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
                  "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
                  "--verbose" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   

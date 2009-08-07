@@ -319,9 +319,9 @@ double XLALSkymapLogTotalExp(double* begin, double* end)
 
 /* coordinate transformations */
 
-void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi)
+void XLALSkymapCartesianFromSpherical(double a[3], double b[2])
 {
-    set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+    set3(a, sin(b[0]) * cos(b[1]), sin(b[0]) * sin(b[1]), cos(b[0]));
 }
 
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3])
@@ -505,10 +505,11 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
                 double direction[3];
                 int k;
                 /* compute theta and phi */
-                double theta = acos(1. - (i + 0.5) * (2. / plan->m));
-                double phi   = (j + 0.5) * (2. * pi / plan->n);
+                double thetaphi[2];
+                thetaphi[0] = acos(1. - (i + 0.5) * (2. / plan->m));
+                thetaphi[1]   = (j + 0.5) * (2. * pi / plan->n);
                 /* compute direction */
-                XLALSkymapCartesianFromSpherical(direction, theta, phi);
+                XLALSkymapCartesianFromSpherical(direction, thetaphi);
                 /* determine the corresponding pixel */
                 k = XLALSkymapIndexFromDirection(plan, direction);
                 /* increase the total area */
@@ -761,13 +762,15 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
 
 int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes)
 {
-    int delay_limits[6];
+    int delay_limits[8];
     delay_limits[0] = -plan->hl;
     delay_limits[1] =  plan->hl;
     delay_limits[2] = -plan->hv;
     delay_limits[3] =  plan->hv;
     delay_limits[4] = -plan->lv - 1;
     delay_limits[5] =  plan->lv + 1;
+    delay_limits[6] = 0;
+    delay_limits[7] = 1;
     return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
 }
 
@@ -857,6 +860,10 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                     ((hv - hl) >= delay_limits[4])
                     &&
                     ((hv - hl) <= delay_limits[5])
+                    &&
+                    (hemisphere >= delay_limits[6])
+                    &&
+                    (hemisphere <= delay_limits[7])
                     )
                 {
                     /* compute the begin and end times */
@@ -1217,10 +1224,11 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
             double direction[3];
             int k;
             /* compute theta and phi */
-            double theta = acos(1. - (i + 0.5) * (2. / plan->m));
-            double phi   = (j + 0.5) * (2. * pi / plan->n);
+            double thetaphi[2];
+            thetaphi[0] = acos(1. - (i + 0.5) * (2. / plan->m));
+            thetaphi[1] = (j + 0.5) * (2. * pi / plan->n);
             /* compute direction */
-            XLALSkymapCartesianFromSpherical(direction, theta, phi);
+            XLALSkymapCartesianFromSpherical(direction, thetaphi);
             /* determine the corresponding pixel */
             k = XLALSkymapIndexFromDirection(plan, direction);
 
@@ -1248,4 +1256,139 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 
     return 0;
 }
+
+/////////////////////////////////////////////////////////////////////
+
+// VERSION 2
+
+void XLALSkymap2PlanConstruct(int sampleFrequency, int n, int* detectors, XLALSkymap2PlanType* plan)
+{
+    int i;
+    static const char func[] = "XLALSkymap2ConstructPlan";
+
+    if (sampleFrequency <= 0)
+    {
+        XLALPrintError("%s(): invalid sample frequency %d\n", func, sampleFrequency);
+        XLAL_ERROR_VOID(func, XLAL_EINVAL);
+    }
+
+    plan->sampleFrequency = sampleFrequency;
+
+    plan->n = n;
+    
+    for (i = 0; i != plan->n; ++i)
+    {
+        plan->site[i] = lalCachedDetectors[detectors[i]];
+    }
+    
+}
+
+void XLALSkymap2DirectionPropertiesConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2SphericalPolarType* directions,
+    XLALSkymap2DirectionPropertiesType* properties
+    )
+{
+    double x[3];
+    int j;
+    XLALSkymapCartesianFromSpherical(x, *directions);
+    for (j = 0; j != plan->n; ++j)
+    {
+        properties->delay[j] = floor(site_time(plan->site + j, x) * plan->sampleFrequency + 0.5);
+        site_response(properties->f[j], plan->site + j, x);
+    }
+}
+
+void XLALSkymap2KernelConstruct(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    double* wSw,
+    XLALSkymap2KernelType* kernel
+    )
+{
+    
+    int i, j, k, l;
+    
+    //
+    // W = diag(w.S_j^{-1}.w)
+    //
+    // F (F^T W F + I) F^T
+    //
+    
+    double a[2][2]; // F^T W F
+    double b[2][2]; // inv(A)
+    
+    // Compute the kernel
+    
+    // F^T W F + I
+    
+    for (i = 0; i != 2; ++i)
+    {
+        for (j = 0; j != 2; ++j)
+        {
+            a[i][j] = ((i == j) ? 1.0 : 0.0);
+            for (k = 0; k != plan->n; ++k)
+            {
+                a[i][j] += properties->f[k][i] * wSw[k] * properties->f[k][j];
+            }
+        }
+    }
+    
+    // (F^T W F + I)^{-1}
+    
+    inv22(b, a);
+    
+    // F (F^T W F + I)^{-1} F^T
+    
+    for (i = 0; i != plan->n; ++i)
+    {
+        for (j = 0; j != plan->n; ++j)
+        {
+            kernel->k[i][j] = 0.0;
+            for (k = 0; k != 2; ++k)
+            {
+                for (l = 0; l != 2; ++l)
+                {
+                    kernel->k[i][j] += properties->f[i][k] * b[k][l] * properties->f[j][l];
+                }
+            }
+        }
+    }
+    
+    kernel->logNormalization = 0.5 * log(det22(b));
+        
+}
+
+void XLALSkymap2Apply(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    XLALSkymap2KernelType* kernel,
+    double** xSw,
+    int tau,
+    double* posterior
+    )
+{
+    double a;
+    int i, j;
+    
+    double x[XLALSKYMAP2_N];
+    
+    // Consider replacing this simple lookup with linear or cubic interpolation
+    
+    for (i = 0; i != plan->n; ++i)
+        x[i] = xSw[i][tau + properties->delay[i]];
+
+    // Consider replacing this evaluation with something that exploits the 
+    // symmetry of K and the reuse of x
+    
+    a = 0;
+    
+    for (i = 0; i != plan->n; ++i)
+        for (j = 0; j != plan->n; ++j)
+            a += x[i] * kernel->k[i][j] * x[j];
+    
+    *posterior = 0.5 * a + kernel->logNormalization;
+
+}
+
 

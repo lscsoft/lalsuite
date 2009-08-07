@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([lal/configure.ac])
 AC_CONFIG_AUX_DIR([lal/misc])
 AC_CONFIG_MACRO_DIR([lal/misc])
@@ -20,6 +20,8 @@ LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUITE_BUILD LAL_LIBS LAL_CFLAGS
 LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
 export LALSUPPORT_LIBS
+LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lal/packages/stochastic/src/liblalstochastic.la"
+export LALSTOCHASTIC_LIBS
 
 if test "$frame" = "true" ; then
 	LIBS_save="$LIBS"

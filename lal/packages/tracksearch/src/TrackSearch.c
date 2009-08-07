@@ -758,8 +758,8 @@ ConnectLinePoints(LALStatus *status,
 	  /* check whether the pixel is a multiple response*/
 	  nextIndex=label[nextRow][nextCol]-1;
 	  differ=(REAL4)fabs((double)linePoints[lal_index].angle - linePoints[nextIndex].angle);
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
+	  /*if(differ>LAL_PI/2.0)
+	    differ=LAL_PI - differ;*/
 	  if(differ<MAX_ANGLE_DIFFERENCE){
 	    linePoints[nextIndex].flag=0;
 	    /* check if one of the rejected points is the original starting point and if it is not then we
@@ -786,8 +786,16 @@ ConnectLinePoints(LALStatus *status,
 	  /* check if the pixel is a valid continuation */
 	  nextIndex=label[nextRow][nextCol]-1;
 	  differ=(REAL4)fabs((double)linePoints[lal_index].angle-linePoints[nextIndex].angle);
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
+	  /**
+	   * Cristina:Tue-Jun-09-2009:200906091041
+	   * The if(differ>LAL_PI/2.0) IF I think allows for
+	   * connection of zig-zaggy type triggers.  I think this if
+	   * should be removed permanently Lines 787,821
+	   * Comments cause lines to be shortened slight but they
+	   * appear more continuous in appearance.
+	   */
+	  /*	  if(differ>LAL_PI/2.0)
+		  differ=LAL_PI - differ;*/
 	  if(differ>MAX_ANGLE_DIFFERENCE){
 	    lineFlag[i]=0;
 	  }
@@ -1211,10 +1219,8 @@ void LALTrackSearchInsertMarkers(
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
 	     );
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
-	  LALAddFloatToGPS(status->statusPtr,
-			   &tmpGPS,
-			   &(input->mapStartGPS),
-			   currentRelativeFloatTime);
+	  tmpGPS = input->mapStartGPS;
+	  XLALGPSAdd(&tmpGPS, currentRelativeFloatTime);
 	  CHECKSTATUSPTR(status);
 	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;

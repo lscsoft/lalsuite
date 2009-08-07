@@ -76,7 +76,7 @@ LALInspiralComputeBCVMetric(
 );
 
 int
-main()
+main(void)
 {
   UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */

@@ -127,15 +127,15 @@ SummValueTable **add_summvalue_table(SummValueTable **newTable,
 {
   /* add value to summ_value table */
   *newTable = (SummValueTable *) LALCalloc( 1, sizeof(SummValueTable) );
-  LALSnprintf( (*newTable)->program, LIGOMETA_PROGRAM_MAX, 
+  snprintf( (*newTable)->program, LIGOMETA_PROGRAM_MAX, 
       "%s", programName );
   (*newTable)->version = 0;
   (*newTable)->start_time = gpsStartTime;
   (*newTable)->end_time = gpsEndTime;
-  LALSnprintf( (*newTable)->ifo, LIGOMETA_IFO_MAX, "%s", ifoName );
-  LALSnprintf( (*newTable)->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+  snprintf( (*newTable)->ifo, LIGOMETA_IFO_MAX, "%s", ifoName );
+  snprintf( (*newTable)->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
       "%s", summValueName );
-  LALSnprintf( (*newTable)->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
+  snprintf( (*newTable)->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
       "%s", comment );
   (*newTable)->value = value;
 
@@ -340,7 +340,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
 	  fprintf(stdout, "injection %s has a snr of %f\n", thisInj->numrel_data, thisSNR);	  
 
 	  /* set channel name */
-	  LALSnprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+	  snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
 		       "%s:STRAIN", ifo ); 
 
 	  if ((thisSNR < snrHigh) && (thisSNR > snrLow))

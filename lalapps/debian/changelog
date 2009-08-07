@@ -1,3 +1,15 @@
+lalapps (6.2-1lscsoft1) unstable; urgency=low
+
+  * LALApps 6.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 6 Aug 2009 12:02:09 -0600
+
+lalapps (6.1-1lscsoft1) unstable; urgency=low
+
+  * LALApps 6.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 1 Jul 2009 13:33:17 -0600
+
 lalapps (6.0-1lscsoft1) unstable; urgency=low
 
   * LALapps 6.0 (based on branch 9d93e994822c8dc61f2a62233e017d71866564f9)

@@ -402,12 +402,9 @@ LALUpdateCalibration(
   output->sensingFunction->epoch = params->epoch;
 
   /* locate correct values of a and ab */
-  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)),
-      status );
-  TRY( LALGPStoFloat( status->statusPtr, &first_cal,
-    &(params->sensingFactor->epoch)), status );
-  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)),
-      status );
+  epoch = XLALGPSGetREAL8(&(params->epoch));
+  first_cal = XLALGPSGetREAL8(&(params->sensingFactor->epoch));
+  duration = XLALGPSGetREAL8(&(params->duration));
 
   dt = epoch - first_cal;
 

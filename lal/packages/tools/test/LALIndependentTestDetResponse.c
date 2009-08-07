@@ -33,7 +33,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 /* Changes:
 05/14/03 gam: Change vertexLongitudeDegrees and vertexLatitudeDegrees to vertexLongitudeRadians vertexLatitudeRadians when using FrDetector structure.
-05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; gamma is the angle to the bisector of the arms, measured
+05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; lal_gamma is the angle to the bisector of the arms, measured
               counterclockwise from East.
 05/20/03 gam: Make code compatible with LAL instead of LALapps.
 05/20/03 gam: Last argument in LALGPStoLMST1 changed to type LALMSTUnitsAndAcc.
@@ -53,10 +53,10 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time.
 10/13/03 gam: Include GEO detector as an option.
 10/13/03 gam: Use constants independent of LAL.
-10/14/04 gam: Update definition of gamma when angle between arms, zeta, != pi/2.
+10/14/04 gam: Update definition of lal_gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
-10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
+10/15/04 gam: Fix bug M_PI not defined when configuring lal with --enable-gcc-flags.
               WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
@@ -474,11 +474,8 @@ int main( int argc, char *argv[] )
   place_and_gps.p_gps = &gpsTime;
 
   /* Compute Local Sidereal Time at the start of the data set*/
-  /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, &uandacc); */  /* 10/13/03 gam*/
-  /* if(lalDebugLevel > 1) fprintf( stderr, "LMST (radians)= %f\n", phiStart ); */ /* 10/13/03 gam*/
-  /* 10/13/03 gam */
-  LALGPStoLMST1(&status, &phiStartLAL,  &place_and_gps, &uandacc);
+
+  phiStartLAL = XLALGreenwichMeanSiderealTime(place_and_gps.p_gps) + atan2(place_and_gps.p_detector->location[1], place_and_gps.p_detector->location[0]);
   phiStartLAL = fmod(phiStartLAL,LAL_TWOPI);  /* put into interval 0 to 2pi */
   if(lalDebugLevel > 0) {
      fprintf(stdout, "Local Mean Sidereal Time from LAL (radians) = %f\n", phiStartLAL);
@@ -689,9 +686,9 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRa
 
 void PrintLALDetector(LALDetector *detector)
 {
-  /* REAL8 gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
-  /* REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
-  REAL8 gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
+  /* REAL8 lal_gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
+  /* REAL8 lal_gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  REAL8 lal_gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
   REAL8 computedZeta = fabs(detector->frDetector.xArmAzimuthRadians - detector->frDetector.yArmAzimuthRadians); /* 10/14/04 gam */
 
   /* 10/14/04 gam; add in rest of structure and reformat: */
@@ -719,7 +716,7 @@ void PrintLALDetector(LALDetector *detector)
            detector->frDetector.xArmAltitudeRadians,
            detector->frDetector.yArmAltitudeRadians);
 
-  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, gamma);
+  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, lal_gamma);
   fprintf( stdout, "\n" );
   return;
 }
@@ -761,9 +758,7 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   det_and_pulsar.pDetector = detector;
   det_and_pulsar.pSource   = pulsar;
 
-  /* LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  LALGPStoLMST1(status->statusPtr, &lmsthours, &place_and_gps, &uandacc);
-  CHECKSTATUSPTR (status);
+  lmsthours = XLALGreenwichMeanSiderealTime(place_and_gps.p_gps) + atan2(place_and_gps.p_detector->location[1], place_and_gps.p_detector->location[0]);
 
   if (lalDebugLevel > 1)  {
     fprintf(stdout, "In GenerateResponseFuncUsingLAL LMST = %7e \n", lmsthours); /* 10/13/04 gam */

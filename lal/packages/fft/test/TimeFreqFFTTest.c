@@ -129,7 +129,7 @@ int main( int argc, char *argv[] )
 
   UINT4 j, sr, np, vr;
 
-  CHAR fname[2048];
+  /*CHAR fname[2048];*/
 
   ParseOptions( argc, argv );
 

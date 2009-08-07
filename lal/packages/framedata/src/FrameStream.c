@@ -664,7 +664,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
   /* find first file after time */
   while ( 1 )
   {
-    if ( fileinfo - stream->flist >= stream->nfile )
+    if ( fileinfo - stream->flist >= (ptrdiff_t)stream->nfile )
     {
       /* end of file list, time not yet found */
       stream->fnum   = stream->nfile;

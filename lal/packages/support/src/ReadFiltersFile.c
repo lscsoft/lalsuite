@@ -30,15 +30,15 @@
 /*
  * A common check in the code when reading the filters file.
  */
-#define CHECK(VAR, NAME)			\
-    do {					\
-	if (strcmp(VAR, NAME) != 0) {		\
-	    fprintf(stderr,						\
-		    "ERROR: Line (%s) of file %s is not properly terminated " \
-		    "by '%s' marker!\n\n", thisline, filterfile, NAME); \
-	    XLALDestroyParsedDataFile(&Filters);			\
-	    return -1;							\
-	}								\
+#define CHECK(VAR, NAME)                                                \
+    do {                                                                \
+        if (strcmp(VAR, NAME) != 0) {                                   \
+            fprintf(stderr,                                             \
+                    "ERROR: Line (%s) of file %s is not properly terminated " \
+                    "by '%s' marker!\n\n", thisline, filterfile, NAME); \
+            XLALDestroyParsedDataFile(&Filters);                        \
+            return -1;                                                  \
+        }                                                               \
     } while (0)
 
 
@@ -63,17 +63,17 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
 
     err = XLALParseDataFile(&Filters, filterfile);
     if (err) {
-	fprintf(stderr, "Error parsing data file %s\n", filterfile);
-	return err;
+        fprintf(stderr, "Error parsing data file %s\n", filterfile);
+        return err;
     }
 
     numlines = Filters->lines->nTokens; /* how many lines of data */
 
     /* Check that file is not empty */
     if (numlines == 0) {
-	fprintf(stderr, "File %s has no contents!\n", filterfile);
-	XLALDestroyParsedDataFile(&Filters);
-	return -2;
+        fprintf(stderr, "File %s has no contents!\n", filterfile);
+        XLALDestroyParsedDataFile(&Filters);
+        return -2;
     }
 
     /**------------------------------------------------------------------**/
@@ -84,7 +84,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
 
     /**------------------------------------------------------------------**/
     /* Read sensing function info */
-    thisline = Filters->lines->tokens[++i];     /* get next line */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
     sscanf(thisline, "%s", sensingstr);
     CHECK(sensingstr, "SENSING");
 
@@ -116,8 +116,8 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < NCinv-1; l++)  InputData->Cinv->history->data[l]    = 0.0;
 
     for (n = 0; n < NCinv; n++) {   /* read direct coeffs */
-	thisline = Filters->lines->tokens[++i];   /* get next line */
-	InputData->Cinv->directCoef->data[n] = strtod(thisline, NULL);
+        thisline = Filters->lines->tokens[++i];   /* get next line */
+        InputData->Cinv->directCoef->data[n] = strtod(thisline, NULL);
     }
 
     /**--------------------------------------------------------------------**/
@@ -144,8 +144,8 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < ND-1; l++)  InputData->D->history->data[l]    = 0.0;
 
     for (n = 0; n < ND; n++) {   /* read direct coeffs */
-	thisline = Filters->lines->tokens[++i];   /* get next line */
-	InputData->D->directCoef->data[n] = strtod(thisline, NULL);
+        thisline = Filters->lines->tokens[++i];   /* get next line */
+        InputData->D->directCoef->data[n] = strtod(thisline, NULL);
     }
 
     /**--------------------------------------------------------------------**/
@@ -172,8 +172,8 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < NA-1; l++)  InputData->A->history->data[l]    = 0.0;
 
     for (n = 0; n < NA; n++) {   /* read direct coeffs */
-	thisline = Filters->lines->tokens[++i];
-	InputData->A->directCoef->data[n] = strtod(thisline, NULL);
+        thisline = Filters->lines->tokens[++i];
+        InputData->A->directCoef->data[n] = strtod(thisline, NULL);
     }
 
     /**-------------------------------------------------------------------**/
@@ -200,15 +200,15 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < NAW-1; l++)  InputData->AW->history->data[l]    = 0.0;
 
     for (n = 0; n < NAW; n++) {   /* read direct coeffs */
-	thisline = Filters->lines->tokens[++i];   /* get next line */
-	InputData->AW->directCoef->data[n] = strtod(thisline, NULL);
+        thisline = Filters->lines->tokens[++i];   /* get next line */
+        InputData->AW->directCoef->data[n] = strtod(thisline, NULL);
     }
 
     /**--------------------------------------------------------------------**/
     err = XLALDestroyParsedDataFile(&Filters);
     if (err) {
-	fprintf(stderr, "Error freeing parsed data file %s\n", filterfile);
-	return err;
+        fprintf(stderr, "Error freeing parsed data file %s\n", filterfile);
+        return err;
     }
 
     return 0;
@@ -230,10 +230,10 @@ int XLALDestroyFiltersFile(StrainIn* InputData)
     filters[3] = InputData->D;
 
     for (i = 0; i < 4; i++) {
-	XLALDestroyREAL8Vector(filters[i]->directCoef);
-	XLALDestroyREAL8Vector(filters[i]->recursCoef);
-	XLALDestroyREAL8Vector(filters[i]->history);
-	LALFree(filters[i]);
+        XLALDestroyREAL8Vector(filters[i]->directCoef);
+        XLALDestroyREAL8Vector(filters[i]->recursCoef);
+        XLALDestroyREAL8Vector(filters[i]->history);
+        LALFree(filters[i]);
     }
 
     return 0;

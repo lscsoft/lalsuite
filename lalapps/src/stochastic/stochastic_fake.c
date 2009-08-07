@@ -256,11 +256,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                           calloc(1, sizeof(ProcessParamsTable));
-        LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
             PROGRAM_NAME);
-        LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
-        LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-        LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
+        snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
+        snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
         break;
 
       case 'e':
@@ -274,7 +274,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         else
         {
-          LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -756,12 +756,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   else if (userTag)
   {
-    LALSnprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC_%s_%d-%d", \
+    snprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC_%s_%d-%d", \
         ifoOne, ifoTwo, userTag, startTime, (endTime - startTime));
   }
   else
   {
-    LALSnprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC-%d-%d", \
+    snprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC-%d-%d", \
         ifoOne, ifoTwo, startTime, (endTime - startTime));
   }
 

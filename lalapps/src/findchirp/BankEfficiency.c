@@ -95,6 +95,19 @@ main (INT4 argc, CHAR **argv )
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
+  memset( &templateBank, 0, sizeof( MetadataTable ) );
+  memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
+  memset( &signal, 0, sizeof( REAL4Vector ) );
+  memset( &mybank, 0, sizeof( Mybank ) );
+  memset( &insptmplt, 0, sizeof( InspiralTemplate ) );
+  memset( &coarseBankIn, 0, sizeof( InspiralCoarseBankIn ) );
+  memset( &correlation, 0, sizeof( REAL4Vector ) );
+  memset( &bankefficiencyBCV, 0, sizeof( BankEfficiencyBCV ) );
+  memset( &overlapin, 0, sizeof( InspiralWaveOverlapIn ) );
+  memset( &overlapOutputThisTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &overlapOutputBestTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &simulation, 0, sizeof( BankEfficiencySimulation ) );
+
 
   /* --- Initialization of structures related to all the user parameters --- */
   BankEfficiencyParametersInitialization(&coarseBankIn, &randIn, &userParam);
@@ -1271,19 +1284,19 @@ void BankEfficiencyFillProc(
 #define ADD_PROCESS_PARAM( pptype, format, ppname, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
-  LALSnprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
-  LALSnprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue );
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
+  snprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
+  snprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
+  snprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue );
 
 
 #define ADD_2PROCESS_PARAM( pptype, format, ppname, ppvalue1, ppvalue2 ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
-  LALSnprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
-  LALSnprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue1, ppvalue2 );
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
+  snprintf( this_proc_param->param,   LIGOMETA_PARAM_MAX,   "%-20s", ppname); \
+  snprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
+  snprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue1, ppvalue2 );
 
   ADD_PROCESS_PARAM("float","%f","--bank-alpha",
       coarseBankIn.alpha);
@@ -1291,7 +1304,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.LowGM, coarseBankIn.HighGM);
   if (coarseBankIn.numFcutTemplates>0)
   {
-    ADD_PROCESS_PARAM("float","%f","--bank-number-fcut",
+    ADD_PROCESS_PARAM("int","%d","--bank-number-fcut",
       coarseBankIn.numFcutTemplates);
   }
   ADD_PROCESS_PARAM("float","%d ","--bank-inside-polygon",
@@ -1312,7 +1325,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       BankEfficiencyGetStringFromGridType(coarseBankIn.gridSpacing));
   ADD_2PROCESS_PARAM("float","%f %f","--bank-eccentricity-range",
       userParam.eccentricBank.min, userParam.eccentricBank.max);
-  ADD_PROCESS_PARAM("float","%f","--bank-eccentricity-bins",
+  ADD_PROCESS_PARAM("int","%d","--bank-eccentricity-bins",
       userParam.eccentricBank.bins);
   ADD_PROCESS_PARAM("float","%f","--fl",
       coarseBankIn.fLower);
@@ -1441,13 +1454,13 @@ CHAR* BankEfficiencyGetStringFromSimulationType(
 
   switch (input){
     case 0:
-      LALSnprintf(this, sizeof(this), "SignalOnly");
+      snprintf(this, sizeof(this), "SignalOnly");
       break;
     case 1:
-      LALSnprintf(this, sizeof(this), "NoiseOnly");
+      snprintf(this, sizeof(this), "NoiseOnly");
       break;
     case 2:
-      LALSnprintf(this, sizeof(this), "NoiseAndSignal");
+      snprintf(this, sizeof(this), "NoiseAndSignal");
       break;
   }
 
@@ -1460,13 +1473,13 @@ CHAR* BankEfficiencyGetStringFromFastSimulation(INT4 input)
 
   switch (input){
     case None:
-      LALSnprintf(this, sizeof(this), "None");
+      snprintf(this, sizeof(this), "None");
       break;
     case EMatch:
-      LALSnprintf(this, sizeof(this), "EMatch");
+      snprintf(this, sizeof(this), "EMatch");
       break;
     case Heuristic1:
-      LALSnprintf(this, sizeof(this), "Heuristic1");
+      snprintf(this, sizeof(this), "Heuristic1");
       break;
   }
   return this;
@@ -1479,46 +1492,46 @@ CHAR* BankEfficiencyGetStringFromTemplate(INT4 input)
 
   switch (input){
     case EOBNR:
-      LALSnprintf(this, sizeof(this), "EOBNR");
+      snprintf(this, sizeof(this), "EOBNR");
       break;
     case EOB:
-      LALSnprintf(this, sizeof(this), "EOB");
+      snprintf(this, sizeof(this), "EOB");
       break;
     case AmpCorPPN:
-      LALSnprintf(this, sizeof(this),"AmpCorPPN");
+      snprintf(this, sizeof(this),"AmpCorPPN");
       break;
     case TaylorT1:
-      LALSnprintf(this, sizeof(this),"TaylorT1");
+      snprintf(this, sizeof(this),"TaylorT1");
       break;
     case Eccentricity:
-      LALSnprintf(this, sizeof(this),"Eccentricity");
+      snprintf(this, sizeof(this),"Eccentricity");
       break;
     case TaylorT2:
-      LALSnprintf(this,  sizeof(this),"TaylorT2");
+      snprintf(this,  sizeof(this),"TaylorT2");
       break;
     case TaylorT3:
-      LALSnprintf(this, sizeof(this), "TaylorT3");
+      snprintf(this, sizeof(this), "TaylorT3");
       break;
     case PadeT1:
-      LALSnprintf(this, sizeof(this), "PadeT1");
+      snprintf(this, sizeof(this), "PadeT1");
       break;
     case TaylorF2:
-      LALSnprintf(this, sizeof(this), "TaylorF2");
+      snprintf(this, sizeof(this), "TaylorF2");
       break;
     case BCV:
-      LALSnprintf(this, sizeof(this), "BCV");
+      snprintf(this, sizeof(this), "BCV");
       break;
     case SpinTaylor:
-      LALSnprintf(this, sizeof(this), "SpinTaylor");
+      snprintf(this, sizeof(this), "SpinTaylor");
       break;
     case TaylorEt:
-      LALSnprintf(this, sizeof(this), "TaylorEt");
+      snprintf(this, sizeof(this), "TaylorEt");
       break;
     case TaylorN:
-      LALSnprintf(this, sizeof(this), "TaylorN");
+      snprintf(this, sizeof(this), "TaylorN");
       break;
     case TaylorT4:
-      LALSnprintf(this, sizeof(this), "TaylorT4");
+      snprintf(this, sizeof(this), "TaylorT4");
       break;
   }
   return this;
@@ -1531,19 +1544,19 @@ CHAR* BankEfficiencyGetStringFromGridType(INT4 input)
 
   switch (input){
   case Square:
-    LALSnprintf(this, sizeof(this), "Square");
+    snprintf(this, sizeof(this), "Square");
     break;
   case SquareNotOriented:
-    LALSnprintf(this, sizeof(this), "SquareNotOriented");
+    snprintf(this, sizeof(this), "SquareNotOriented");
     break;
   case HexagonalNotOriented:
-    LALSnprintf(this,  sizeof(this), "HexagonalNotOriented");
+    snprintf(this,  sizeof(this), "HexagonalNotOriented");
     break;
   case Hexagonal:
-    LALSnprintf(this, sizeof(this),"Hexagonal");
+    snprintf(this, sizeof(this),"Hexagonal");
     break;
   case HybridHexagonal:
-    LALSnprintf(this, sizeof(this),"HybridHexagonal");
+    snprintf(this, sizeof(this),"HybridHexagonal");
     break;
   }
 
@@ -1558,28 +1571,28 @@ CHAR* BankEfficiencyGetStringFromNoiseModel(
 
   switch (input){
   case LIGOI:
-    LALSnprintf(this, sizeof(this),"LIGOI");
+    snprintf(this, sizeof(this),"LIGOI");
     break;
   case LIGOA:
-    LALSnprintf(this, sizeof(this),"LIGOA");
+    snprintf(this, sizeof(this),"LIGOA");
     break;
   case VIRGO:
-    LALSnprintf(this, sizeof(this),"VIRGO");
+    snprintf(this, sizeof(this),"VIRGO");
     break;
   case EGO:
-    LALSnprintf(this, sizeof(this),"EGO");
+    snprintf(this, sizeof(this),"EGO");
     break;
   case GEO:
-    LALSnprintf(this, sizeof(this),"GEO");
+    snprintf(this, sizeof(this),"GEO");
     break;
   case TAMA:
-    LALSnprintf(this, sizeof(this),"TAMA");
+    snprintf(this, sizeof(this),"TAMA");
     break;
   case UNITY:
-    LALSnprintf(this, sizeof(this),"UNITY");
+    snprintf(this, sizeof(this),"UNITY");
     break;
   case REALPSD:
-    LALSnprintf(this, sizeof(this),"REALPSD");
+    snprintf(this, sizeof(this),"REALPSD");
     break;
   }
   return this;
@@ -1594,7 +1607,6 @@ void BankEfficiencyPrintResultsXml(
   BankEfficiencySimulation     simulation)
 {
   LALStatus             status = blank_status;
-  CHAR                 *dest;
   MetadataTable         templateBank;
   CHAR                  ifo[3];               /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
@@ -1607,7 +1619,7 @@ void BankEfficiencyPrintResultsXml(
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
-  LALSnprintf( fname, sizeof(fname),
+  snprintf( fname, sizeof(fname),
            BANKEFFICIENCY_XMLRESULTS ,
            "simulation",
            gpsStartTime.gpsSeconds,
@@ -1650,7 +1662,7 @@ void BankEfficiencyPrintResultsXml(
     memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
     /* --- write process table --- */
-    LALSnprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
          ifoName[0], ifoName[1] );
     XLALGPSTimeNow ( &(templateBank.processTable->end_time) );
 
@@ -1670,7 +1682,7 @@ void BankEfficiencyPrintResultsXml(
 
     /* finally write sngl inspiral table column's names */
 
-    dest = (CHAR*)(PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp));
+    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
   }
   else
   {
@@ -1712,7 +1724,7 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    dest = (CHAR*)(PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp));
+    PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
     PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
@@ -1792,7 +1804,7 @@ BankEfficiencyPrintProtoXml(
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
   /* write process table */
-  LALSnprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+  snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
          ifoName[0], ifoName[1] );
   XLALGPSTimeNow(&(templateBank.processTable->end_time));
 
@@ -2419,11 +2431,14 @@ void BankEfficiencyBankPrintXML(
   strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   memset( ifo, 0, sizeof(ifo) );
+  memset( comment, 0, sizeof( comment ) );
+  memset( &proctable, 0, sizeof( proctable ) );
+  memset( &processParamsTable, 0, sizeof( processParamsTable ) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
-
+  
 
   /* --- first we create the filename --- */
-  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
+  snprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
            ifo, gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
@@ -2439,12 +2454,12 @@ void BankEfficiencyBankPrintXML(
 
   if (strcmp(CVS_REVISION_C, "$Revi" "sion$"))
   {
-    XLALPopulateProcessTable(templateBank.processTable, \
+    XLALPopulateProcessTable(proctable.processTable, \
     PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C, 0);
   }
   else
   {
-    XLALPopulateProcessTable(templateBank.processTable, \
+    XLALPopulateProcessTable(proctable.processTable, \
       PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, \
       lalappsGitCommitDate, 0);
   }
@@ -2459,7 +2474,7 @@ void BankEfficiencyBankPrintXML(
 
 
   /* write process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
            ifoName[0], ifoName[1] );
   XLALGPSTimeNow(&(proctable.processTable->end_time));
 
@@ -3633,7 +3648,6 @@ void BankEfficiencyAscii2Xml(void)
   FILE *bank;
   FILE *output;
 
-  CHAR *dest;
 
   SnglInspiralTable     *inputData = NULL;
 
@@ -3669,7 +3683,7 @@ void BankEfficiencyAscii2Xml(void)
     {
       fprintf(stderr,"error while opening input file %s\n", fname);
       fprintf(stderr,"the xml file will not contains parameters information\n");
-      dest = (CHAR*)PRINT_LIGOLW_XML_HEADER(output);
+      PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
     }
   else
@@ -3699,7 +3713,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
       fprintf(stderr," done %d\n", numFileTriggers);
-      dest = (CHAR*)myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+      myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
       while(inputData)
       {
       /*      id = inputData->event_id->id;*/
@@ -3766,11 +3780,11 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(output, "\n");
 
     }
-       dest = (CHAR*)myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
+       myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
 
     }
 
-  dest = (CHAR*)PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
+  PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
@@ -3801,7 +3815,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
   fprintf(stderr,"read %d lines...done\n", countline);
-  dest = (CHAR*)PRINT_LIGOLW_XML_TABLE_FOOTER(output);
+  PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
   fclose(output);

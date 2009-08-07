@@ -1,4 +1,4 @@
-PRAGMA temp_store_directory = '/tmp';
+-- PRAGMA temp_store_directory = '/tmp';
 
 SELECT
 	"Number of coincs before clustering: " || count(*)
@@ -120,7 +120,7 @@ WHERE
 			coinc_event_b.time_slide_id == coinc_event_a.time_slide_id
 			AND coinc_inspiral_b.snr >= coinc_inspiral_a.snr
 			AND coinc_event_b.instruments == coinc_event_a.instruments
-			AND is_playground_a.is_playground == is_playground_b.is_playground
+			AND is_playground_b.is_playground == is_playground_a.is_playground
 			AND coinc_event_b.coinc_def_id == coinc_event_a.coinc_def_id
 			-- apply fine \Delta t cut
 			AND abs((coinc_inspiral_b.end_time - coinc_inspiral_a.end_time) + (coinc_inspiral_b.end_time_ns - coinc_inspiral_a.end_time_ns) * 1e-9) < 10.0

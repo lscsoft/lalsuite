@@ -335,7 +335,7 @@ int main( int argc, char *argv[] )
 						{0.0,-0.5, 0.0},
 						{0.0, 0.0, 0.0} },
 					      LALDETECTORTYPE_ABSENT,
-					      { "", 0, 0, 0, 0, 0, 0, 0}
+					      { "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0}
                                              };
   /*   LALDetector         crossAtOrigin = { {0.0, 0.0, 0.0},
                                         { {0.0, 0.5, 0.0},
@@ -350,14 +350,14 @@ int main( int argc, char *argv[] )
 						{0.0,-0.5, 0.0},
 						{0.0, 0.0, 0.0} },
 					      LALDETECTORTYPE_ABSENT,
-					      { "", 0, 0, 0, 0, 0, 0, 0}
+					      { "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0}
                                              };
   const LALDetector         crossOnZAxis  = { {0.0, 0.0, OVERLAPREDUCTIONFUNCTIONTESTC_Z},
 					      { {0.0, 0.5, 0.0},
 						{0.5, 0.0, 0.0},
 						{0.0, 0.0, 0.0} },
 					      LALDETECTORTYPE_ABSENT,
-					      { "", 0, 0, 0, 0, 0, 0, 0}
+					      { "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0}
                                              };
   UINT4 i;
   REAL4 overlapVal, f;

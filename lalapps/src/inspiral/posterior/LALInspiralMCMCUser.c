@@ -194,7 +194,7 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 REAL8 time;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
 REAL4 mtot,eta,mwindow,localetawin;
-REAL8 mc,mcmin,mcmax;
+ REAL8 mc,mcmin,mcmax,lmmin,lmmax;
 parameter->param = NULL;
 parameter->dimension = 0;
 time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
@@ -209,9 +209,12 @@ mc=m2mc(injTable->mass1,injTable->mass2);
 mcmin=m2mc(1.0,1.0);
 mcmax=m2mc(17.5,17.5);
 
+ lmmin=log(mcmin);
+ lmmax=log(mcmax);
 localetawin=etamax-etamin;
 
-XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);
+ XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+ /*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 
 
 XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
@@ -329,12 +332,12 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 #define m1max 3.0
 #define m2min 1.0
 #define m2max 35.0
-
-  mc=XLALMCMCGetParameter(parameter,"mchirp");
+  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  else mc=XLALMCMCGetParameter(parameter,"mchirp");
   eta=XLALMCMCGetParameter(parameter,"eta");
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-  parameter->logPrior-=logJacobianMcEta(mc,eta);
+  parameter->logPrior+=logJacobianMcEta(mc,eta);
   parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
   ParamInRange(parameter);
   /*check GRB component masses */
@@ -345,12 +348,39 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 }
 
+REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
+{
+  REAL8 m1,m2,logdl,ampli,a=50,b=21;
+  parameter->logPrior=0.0;
+  REAL8 mc,eta;
+  REAL8 minCompMass = 1.0;
+  REAL8 maxCompMass = 100.0;
+
+  /* Check in range */
+  if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+  else mc=XLALMCMCGetParameter(parameter,"mchirp");
+
+  eta=XLALMCMCGetParameter(parameter,"eta");
+  m1 = mc2mass1(mc,eta);
+  m2 = mc2mass2(mc,eta);
+
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+  /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
+  ParamInRange(parameter);
+  if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
+  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+  if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
+  return parameter->logPrior;
+}
+
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2,logdl,ampli,a=50,b=21;
 	parameter->logPrior=0.0;
 	REAL8 mc,eta;
 	REAL8 minCompMass = 1.0;
+	REAL8 maxCompMass = 35.0;
 	/* copied from alex's function */
 /*	logdl=2.0*XLALMCMCGetParameter(parameter,"distMpc");
 	parameter->logPrior+=2.0*logdl;
@@ -360,15 +390,20 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
     parameter->logPrior+= -log( 1.0+exp((ampli-a)/b) );
 */
 /* Check in range */
-	mc=XLALMCMCGetParameter(parameter,"mchirp");
+	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else mc=XLALMCMCGetParameter(parameter,"mchirp");
+
 	eta=XLALMCMCGetParameter(parameter,"eta");
+	m1 = mc2mass1(mc,eta);
+	m2 = mc2mass2(mc,eta);
 
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-	/*	parameter->logPrior-=logJacobianMcEta(mc,eta);*/
+	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-	if(mc2mass1(mc,eta)<minCompMass) parameter->logPrior=-DBL_MAX;
+	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
 }
 
@@ -394,7 +429,8 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 	Fdomain = 1;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
-	Mchirp = XLALMCMCGetParameter(parameter,"mchirp");
+	if(XLALMCMCCheckParameter(parameter,"logM")) Mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else Mchirp = XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 	template.totalMass = mc2mt(Mchirp,eta);
 	template.eta = eta;
@@ -418,7 +454,7 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 XLALClearErrno();*/
 
 /* Is this the correct way to set the end time? */
-/*	XLALFloatToGPS((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
+/*	XLALGPSSetREAL8((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
 /* Fill the rest of the mass/tc parameters in */
 	LALInspiralParameterCalc(&status,&template);
 
@@ -498,7 +534,9 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
-	mchirp=XLALMCMCGetParameter(parameter,"mchirp");
+	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+        else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
+
 	eta = XLALMCMCGetParameter(parameter,"eta");
 	mtot=mc2mt(mchirp,eta);
 	template.totalMass = mtot;
@@ -618,8 +656,9 @@ in the frequency domain */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
-
-		for(idx=lowBin;idx<Nmodel/2;idx++){
+		if(highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		
+		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
@@ -647,7 +686,7 @@ that LAL uses. Please check this whenever any change is made */
 		#if DEBUGMODEL !=0
 			fclose(modelout);
 		#endif
-		/*		chisq+=topdown_sum[det_i]->data[highBin+1];*/
+		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
 		/* add the normalisation constant */
 
@@ -689,7 +728,8 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
-	mchirp=XLALMCMCGetParameter(parameter,"mchirp");
+	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 	mtot=mc2mt(mchirp,eta);
 	template.totalMass = mtot;
@@ -870,8 +910,8 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	REAL4FFTPlan *FFTplan;
 	REAL8 mchirp=0;
 	REAL8 eta=0;
-
-	mchirp=XLALMCMCGetParameter(parameter,"mchirp");
+        if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 
 
@@ -903,7 +943,7 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	/* Adjust time */
 	REAL8 tC=XLALMCMCGetParameter(parameter,"time");
 	tC-=PPNparams.tc; /* tC is now the time the wave reaches the low frequency */
-	LALFloatToGPS(&status,&(co_wave.a->epoch),&tC); /* which is the starting epoch of the co_wave */
+	XLALGPSSetREAL8(&(co_wave.a->epoch),tC); /* which is the starting epoch of the co_wave */
 	memcpy(&(co_wave.f->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 	memcpy(&(co_wave.phi->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
 

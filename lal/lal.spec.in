@@ -35,7 +35,7 @@ as well as the documentation for the library.
 %build
 source /opt/lscsoft/lscsoft-user-env.sh
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-debug
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
 %{__make}
 
 %install

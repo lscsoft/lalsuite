@@ -54,7 +54,7 @@ extern int errno;
 extern int _doserrno;
 
 /* snprintf */
-#define LALSnprintf _snprintf
+#define snprintf _snprintf
 
 /* fsync */
 #define fsync _commit
@@ -291,7 +291,7 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 /* Prints a Tooplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, int buflen) {
-  return(LALSnprintf(buf, buflen,
+  return(snprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
 		   * Freq:1e-13 
 		   * Alpha,Delta:1e-7 

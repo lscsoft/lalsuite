@@ -904,7 +904,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       t0 = cfg->timestamps->data[0];
       t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
 
-      TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
+      duration = XLALGPSDiff(&t1, &t0);
       duration += uvar_Tsft;
 
       cfg->startTimeGPS = cfg->timestamps->data[0];
@@ -1121,7 +1121,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     }
   else if (LALUserVarWasSet(&uvar_refTime))
     {
-      TRY ( LALFloatToGPS(status->statusPtr, &(cfg->pulsar.Doppler.refTime), &uvar_refTime), status);
+      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar_refTime);
     }
   else if (LALUserVarWasSet(&uvar_refTimeMJD))
     {
@@ -1563,7 +1563,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,
       ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
     }
 
-  LALSnprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
+  snprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
   ret->name[LALNameLength-1]=0;
 
   /* initialize loop */

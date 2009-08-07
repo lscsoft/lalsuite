@@ -97,7 +97,7 @@ def functionId(nFramesUp):
     if msg.startswith("?") is False:
       print "-->ERROR in function: " + msg
   except:
-    msg=[]
+    msg="?"
 
   return msg
 
@@ -131,7 +131,7 @@ def logText(logfile, text, tag="done"):
         logfile.write("</"+tag+">\n")
         msg=[]
       i=i+1
-    print >>sys.stderr, msg
+    print >>sys.stderr, text
   else :
     msg = "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write( msg )
@@ -294,7 +294,7 @@ def write_results(page, opts, section,injection=None):
     page=write_analysis(page,opts,thisSearch='full_data')
   elif section=='upperlimit': 	
     page = write_upperlimit(page, opts)
-  elif section=='summary files': 
+  elif section=='summary_files': 
     page = write_summaryFiles(page, opts)
   elif section=='logfile':
     page = write_logfile(page, opts)
@@ -359,8 +359,10 @@ def write_general(page,opts):
     print "Extracting the version and tag of the executables..." 
   
   # todo : get the list of executables  from the ini file
-  executables = ("inspiral", "tmpltbank", "sire",\
-                 "thinca", "trigbank", "coire" , "inspinj")
+  executables = []
+  for item,value in hipecp.items('condor'):
+    if item != 'universe':
+      executables.append([item,os.path.split(value)[1]])     
 
   heading(page, "The search used the following resources:")
 
@@ -368,10 +370,9 @@ def write_general(page,opts):
   # first section with version number
   # get the version of each executables
   try:
-    page.add("<li> LAL/LALApps "+get_version("inspiral"))
     page.ul()
     for exe in executables:
-      text = "<b>lalapps_"+exe+ "</b>    "+get_version(exe)
+      text = "<b>"+exe[0]+ ': ' + exe[1] + "</b> "+get_version(exe[1])
       page.li(text)   
     page.ul.close()
     page.li.close()
@@ -397,30 +398,33 @@ def write_general(page,opts):
     # let us give the ihope.ini and log file.
     # we also need to copy some files to the webdir
     cmd = 'cp '+opts.datadir + '/*.pipeline.log  '+opts.physdir
-    make_external_call(cmd, opts.debug, opts.debug, False)
-    pipelinelogs = glob.glob( opts.datadir + '/*.pipeline.log' )
+    make_external_call(cmd, opts.debug, opts.debug, True)
+    cmd = 'cp '+opts.datadir + '/*.ini  '+opts.physdir
+    make_external_call(cmd, opts.debug, opts.debug, True)
+    pipelinelogs = glob.glob( opts.physdir + '/*.pipeline.log' )
+    iniFiles = glob.glob( opts.physdir + '/*.ini' )
   except:pass
 
   try:
-    page.add("<li>The configuration parameters are contained within the file ")
-    page = add_href(page, href=webdir+"/"+ini, name=ini)
-    page.add(", which was used by lalapps_ihope as reported in the file(s):")
+    page.add("<li>The configuration parameters are contained within the file(s) ")
+    page.ul()
+    for file in iniFiles:
+      cmd = 'mv ' + file + ' ' + file + '.txt'
+      make_external_call(cmd, opts.debug, opts.debug, True)
+      logname = file.replace( opts.physdir, '' ) 
+      page.li( e.a( logname, href=webdir + "/" + logname + '.txt', rel="external" ) )
+    page.ul.close()
+    page.add("which was/were used by lalapps_ihope as reported in the file(s):")
     page.ul()
     for file in pipelinelogs:
-      logname = file.replace( opts.datadir, '' )
-      page.li( e.a( logname, href=webdir + "/" + logname, rel="external" ) )
+      cmd = 'mv ' + file + ' ' + file + '.txt'
+      make_external_call(cmd, opts.debug, opts.debug, True)
+      logname = file.replace( opts.physdir, '' )
+      page.li( e.a( logname, href=webdir + "/" + logname + '.txt', rel="external" ) )
     page.ul.close()
     page.li.close()
   except:pass
   
-  try:  
-    page.add("<li>The list of category files is stored in the directory ")
-    page = add_href(page, href=webdir+"/catlists/" , name="[catlists]")
-    page.add(", and listed in the ini file.")
-    page.li.close()
-  except:
-    logText(logfile, """Problem with the log file or segment list: cannot find them ? """, "warning")
-    pass
   page.ol.close() # end enumerate
 
   logText(logfile,  "...Get the executables version...")
@@ -435,7 +439,7 @@ def write_general(page,opts):
 
 
 # ***************************************************************************
-def write_table(page, segs, keys):
+def write_table(page, segs, keys,printKeys = True):
   """
   print a table in html format, where keys is the first column and 
   keys to the dictionary "segs"
@@ -450,7 +454,8 @@ def write_table(page, segs, keys):
   for key in keys:
     if segs.has_key(key):
       page.tr()
-      page.td(key)
+      if printKeys:
+        page.td(key)
       page.td(segs[key])
       page.tr.close()
   page.table.close()
@@ -631,22 +636,36 @@ def write_datainfo(page,opts):
   # with the time analysed.
   i=0
   for cat in ("CATEGORY_1_VETO_SEGS","CATEGORY_2_VETO_SEGS",\
-      "CATEGORY_3_VETO_SEGS","CATEGORY_4_VETO_SEGS"):
+      "CATEGORY_3_VETO_SEGS","CATEGORY_4_VETO_SEGS","CATEGORY_5_VETO_SEGS",):
     i=i+1
     msg = "Category " +str(i) + " veto segments (flags and time)"
     page = heading(page, msg) 
     try:
       msg = "This category includes the following flags : "
       page.add(msg)
-
+      key = 0
+      keys = []
+      formFlags = {}
+      keys.append(str(key))
+      formFlags[str(key)] = ['Ifo','Flag','Version','Start padding (s)', 'End padding (s)']
+      key += 1
       for ifo in ifos:
-        command  = 'awk \'{ if ($1 != "#' + '$I' + 'd:" ) print $1;'
-        command += ' else printf("%s %s %s %s %s %s %s %s",'
-        command += ' $1, $2, $3, $4, $5, $6, $7, $8 $9)}\' '
-        command += datadir +'/segments/' + ifo + "cat"+str(i)+"*.txt"
+        command = 'ligolw_print -t veto_definer -c ifo -c name -c version '
+        command += '-c start_pad -c end_pad -c category '
+        command += datadir +'/segments/' + hipecp.get("segments", "veto-def-file")
+        command += """ -d " " | awk '{ if ($6 == '""" + str(i) + """' && """
+        command += '''$1 == "''' + ifo + '''")'''
+        command += """ printf("%s %s %s %s %s\\n",$1,$2,$3,$4,$5) }'"""      
         flags, status = \
           make_external_call(command, opts.debug, opts.debug, True)
-        page.pre(flags)
+        flags = flags.split('\n') 
+        flags.pop()
+        for flag in flags:
+          keys.append(str(key))
+          formFlags[str(key)] = flag.split(' ')
+          key += 1
+
+      page = write_table(page, formFlags,keys,printKeys = False)
 
       msg="The veto times (category "+str(i)+") according to hipe ( "+cat+")"
       page.add(msg)
@@ -656,10 +675,9 @@ def write_datainfo(page,opts):
       page = write_table(page, segs, keys) 
       page.div.close()
     except:     
-      msg = "Problems parsing category veto segment list "+str(i), "warning"
-      logText(logfile, msg)
-      page.div.close()
-     
+      msg = "Problems parsing category veto segment list "+str(i)
+      logText(logfile, msg,"warning")
+      page.div.close()    
 
   for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2", "MISSED_SEGS"] :
     page = heading(page, tag +" summary ")
@@ -1608,45 +1626,21 @@ def get_version(executable):
   output=[]
   try:
     # this is surely useless now to make a distinction with trigbank 
-    if executable=="trigbank":
-      pathname = hipecp.get("condor", "trigbank") 
-    else:
-      pathname = hipecp.get("condor", executable) 
-    s =  os.path.split(pathname)
-    if len(s[0])==0:
-      cmd = opts.ihope_directory + "/" + opts.gps_start_time + "-" + \
-      opts.gps_end_time + "/executables/" + s[1] + " --version"
-    else:
-      cmd = s[1] + " --version "
+    cmd = opts.ihope_directory + "/" + opts.gps_start_time + "-" + \
+    opts.gps_end_time + "/executables/" + executable + " --version"
     output,status = make_external_call(cmd, opts.debug, opts.debug, True)
   except:  
     output= '(not found)' 
-    pass
 
-  output = output.split()
+  output = output.split('\n')
   
-  #searching for the tagname, which may be empty(undefined)
-  try:
-    index=  output.index("Tag:")
-    tagname = output[index+2]
-    # found the "Tag" string. Is it different from $ ?
-    if tagname=="$":
-      tagname = ' Undefined tag name.'
-    else:
-      tagname = ', tag name is '+tagname+'. '
-  except:
-    tagname = ' Cannot find the tag name'
-
-
   #searching for the version, which may be empty(undefined)
-  try:
-    index=  output.index("Version:")
-    version = output[index+3]
-    version = 'Version is '+ version +'.'
-  except:
-    version = '. Undefined version.'
+  version = '. Undefined version (does this executable have --version?).'
+  for entry in output:
+    if entry.startswith('$lalappsCommitID'):
+      version = 'Version is '+ entry.split(' ')[1] +'.'
 
-  return tagname+' '+version
+  return version
 
 # ***************************************************************************
 def copy_segments():
@@ -2023,7 +2017,7 @@ html_order = ['general', 'datainfo', 'fullsummary', 'playsummary',\
     'playground', 'full_data', \
     'full_data_slide', 'injection', 'hardware_injections', \
     'followup', 'upperlimit', \
-    'summary files', 'logfile', 'about']
+    'summary_files', 'logfile', 'about']
 
 html_sections['general'] = "General Information"
 html_sections['datainfo'] = "Data Information"
@@ -2047,7 +2041,7 @@ if opts.hardware_injection is True:
 if opts.full_data is True: html_sections['full_data'] = "Full Data"
 if opts.followup is True: html_sections['followup'] = "Followup"
 if opts.upperlimit is True: html_sections['upperlimit']	= "Upper Limit"
-html_sections['summary files'] = "Summary files"
+html_sections['summary_files'] = "Summary files"
 html_sections['logfile'] = "Log File"
 html_sections['about'] = "About"
 

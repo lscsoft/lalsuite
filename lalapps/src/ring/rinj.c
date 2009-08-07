@@ -114,12 +114,12 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
-  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
   return pp;
 }
@@ -248,7 +248,7 @@ int main( int argc, char *argv[] )
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
         lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
   }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   
@@ -583,7 +583,7 @@ int main( int argc, char *argv[] )
         break;
       
       case 'w':
-        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
@@ -591,7 +591,7 @@ int main( int argc, char *argv[] )
         break;
       
       case 'c':
-        LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
             optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
@@ -639,14 +639,14 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
     {
       /* use Ringdown as the default waveform */
-      LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+      snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
           "Ringdown");
       }
   
   if ( !*coordinates )
         {
           /* use equatorial as the default system */
-          LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
+          snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
                               "EQUATORIAL");
                       }
   
@@ -675,13 +675,13 @@ int main( int argc, char *argv[] )
   /* create the output file name */
   if ( userTag )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
         randSeed, userTag, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
         randSeed, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
@@ -723,8 +723,7 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_start_time),
-          &(this_inj->geocent_start_time), u * timeInterval ), &status );
+      XLALGPSAdd(&(this_inj->geocent_start_time), u * timeInterval);
     }    
 
  
@@ -846,8 +845,7 @@ int main( int argc, char *argv[] )
     placeAndGPS.p_detector = &lho;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff_ns,
           &detTimeAndSource ), &status );
-    LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->h_start_time),
-          &(this_inj->h_start_time), time_diff_ns ), &status );
+    XLALGPSAdd(&(this_inj->h_start_time), time_diff_ns);
 
     /* compute the response of the LHO detectors */
     detAndSource.pDetector = &lho;
@@ -869,8 +867,7 @@ int main( int argc, char *argv[] )
     placeAndGPS.p_detector = &llo;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
           &detTimeAndSource ), &status);
-    LAL_CALL( LALAddFloatToGPS( &status,  &(this_inj->l_start_time),
-          &(this_inj->l_start_time), time_diff_ns ), &status);
+    XLALGPSAdd(&(this_inj->l_start_time), time_diff_ns);
 
     /* compute the response of the LLO detector */
     detAndSource.pDetector = &llo;
@@ -889,8 +886,7 @@ int main( int argc, char *argv[] )
           /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
         
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd(&gpsStartTime, meanTimeStep);
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 
@@ -918,7 +914,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 

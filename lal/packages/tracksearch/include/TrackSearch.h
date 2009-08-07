@@ -66,20 +66,10 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #ifndef SQRT_2_PI_INV
 #define SQRT_2_PI_INV 0.39894228040143272L  /* (1.0 / sqrt(2.0 * pi))  */
 #endif
-  /* Permanent Swap out of below line Wed-Dec-17-2008:200812171305 */
-#define MAX_ANGLE_DIFFERENCE (LAL_PI/4.0) /* the max angle differene between 2 adjacent line points */
-  /*
-   * Need to study if we should loosen this angle differenc
-   * requirement to try and building longer lines that are less
-   * straight so that chirps are easier to follow!
-   * Currently 30Deg consider considering relax to 45Deg
-   */
+#define MAX_ANGLE_DIFFERENCE (LAL_PI/6.0) /* the max angle differene between 2 adjacent line points */
 #define MASK_SIZE 4      /* size of the Gaussian mask in units of sigma (std. deviation) */
 #define PIXEL_BOUNDARY (0.6)
-  /* Permanent Swap out of below Wed-Dec-17-2008:200812171543 Used to
-     use 4.0*/
-#define MAX_ANGLE_DIFF (LAL_PI/6.0) /* maximum one sided angle within which to search
-				   for a continuation of the line */
+#define MAX_ANGLE_DIFF (LAL_PI/6.0) /* maximum one sided angle within which to search for a continuation of the line */
 #define LENGTH_THRESHOLD 3  /* A LOWER threshold on the length of the curves in pixels to process*/
 #define MAX_CURVE_LENGTH 16384 /* the maximum length allowed */
 #define MAX_NUMBER_OF_CURVES 65536 /* the maximum number of curves allowed */

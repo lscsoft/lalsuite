@@ -1233,12 +1233,14 @@ InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg
 
   for(ic=0; ic< ntimestamps; ic++)
     { 
+      /* FIXME:  loss of precision; consider
+      bfparams->midTS[ic] = timestamps[ic];
+      XLALGPSAdd(&bfparams->midTS[ic], 0.5*(cfg->tsft));
+      */
       REAL8 teemp=0.0;
-      LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[ic]));
-      BEGINFAIL(status) {TRY( FreeMem(status->statusPtr, cfg,bfparams),status); } ENDFAIL(status);
+      teemp = XLALGPSGetREAL8(&(timestamps[ic]));
       teemp += 0.5*(cfg->tsft);
-      LALFloatToGPS(status->statusPtr, &(bfparams->midTS[ic]), &teemp);
-      BEGINFAIL(status) {TRY( FreeMem(status->statusPtr, cfg,bfparams),status); } ENDFAIL(status);
+      XLALGPSSetREAL8(&(bfparams->midTS[ic]), teemp);
     }
 
   LALFree(timestamps);

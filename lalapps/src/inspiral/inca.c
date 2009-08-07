@@ -121,12 +121,12 @@ RCSID("$Id$");
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+  snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
       long_options[option_index].name ); \
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int main( int argc, char *argv[] )
 {
@@ -323,13 +323,13 @@ int main( int argc, char *argv[] )
 
       case 'a':
         /* name of interferometer a */
-        LALSnprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", optarg );
+        snprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* name of interferometer b */
-        LALSnprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", optarg );
+        snprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -504,7 +504,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -542,11 +542,11 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -662,15 +662,15 @@ int main( int argc, char *argv[] )
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
         " " );
   } 
   else 
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -679,12 +679,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--write-uniq-triggers" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the ifo b range cut option */
@@ -692,12 +692,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--ifo-b-range-cut" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the single ifo option */
@@ -705,12 +705,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--single-ifo" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   if ( trigBankFile || slideDataNS )
@@ -724,25 +724,25 @@ int main( int argc, char *argv[] )
   else
   {
     /* store the playground argument in the process_params */
-    LALSnprintf( processParamsTable.processParamsTable->program, 
+    snprintf( processParamsTable.processParamsTable->program, 
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( processParamsTable.processParamsTable->type, 
+    snprintf( processParamsTable.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( processParamsTable.processParamsTable->value, 
+    snprintf( processParamsTable.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, " " );
     if ( usePlayground )
     {
-      LALSnprintf( processParamsTable.processParamsTable->param, 
+      snprintf( processParamsTable.processParamsTable->param, 
           LIGOMETA_PARAM_MAX, "--playground-only" );
     }
     else if ( !usePlayground && !allData )
     {
-      LALSnprintf( processParamsTable.processParamsTable->param, 
+      snprintf( processParamsTable.processParamsTable->param, 
           LIGOMETA_PARAM_MAX, "--no-playground" );
     }
     else
     {
-      LALSnprintf( processParamsTable.processParamsTable->param, 
+      snprintf( processParamsTable.processParamsTable->param, 
           LIGOMETA_PARAM_MAX, "--all-data" );
     }       
   }
@@ -759,7 +759,7 @@ int main( int argc, char *argv[] )
   }
 
   /* calculate the slide time in nanoseconds */
-  LAL_CALL( LALGPStoINT8( &status, &slideDataNS, &slideData ), &status );
+  slideDataNS = XLALGPSToINT8NS( &slideData );
 
 
   /*
@@ -790,9 +790,9 @@ int main( int argc, char *argv[] )
         thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
           LALCalloc( 1, sizeof(SearchSummvarsTable) );
       }
-      LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
+      snprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
           "input_file" );
-      LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
+      snprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
           "%s", argv[i] );      
 
 
@@ -899,17 +899,13 @@ int main( int argc, char *argv[] )
                           "Doing a time slide of %d sec %d nanosec on IFOB\n",
                           slideData.gpsSeconds, slideData.gpsNanoSeconds );
 
-                      LAL_CALL( LALGPStoINT8( &status, &startNS, 
-                            &(thisSummValue->start_time) ), &status );
+                      startNS = XLALGPSToINT8NS( &(thisSummValue->start_time) );
                       startNS += slideDataNS;
-                      LAL_CALL( LALINT8toGPS( &status, 
-                            &(thisSummValue->start_time), &startNS ), &status );
+                      XLALINT8NSToGPS( &(thisSummValue->start_time), startNS );
 
-                      LAL_CALL( LALGPStoINT8( &status, &endNS, 
-                            &(thisSummValue->end_time) ), &status );
+                      endNS = XLALGPSToINT8NS( &(thisSummValue->end_time) );
                       endNS += slideDataNS;
-                      LAL_CALL( LALINT8toGPS( &status, 
-                            &(thisSummValue->end_time), &endNS ), &status );
+                      XLALINT8NSToGPS( &(thisSummValue->end_time), endNS );
                       if ( vrbflg ) 
                       {
                         fprintf( stdout, "inspiral effective distance of %f ", 
@@ -1008,12 +1004,9 @@ int main( int argc, char *argv[] )
               if ( slideDataNS && j == 1 )
               {
                 INT8 trigTimeNS = 0;
-                LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-                      &(currentTrigger[j]->end_time) ), &status );
+                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
                 trigTimeNS += slideDataNS;
-                LAL_CALL( LALINT8toGPS( &status, 
-                      &(currentTrigger[j]->end_time), &trigTimeNS ), 
-                    &status );
+                XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
               }     
               currentTrigger[j] = currentTrigger[j]->next;
             }
@@ -1022,11 +1015,9 @@ int main( int argc, char *argv[] )
             if ( slideDataNS && j == 1)
             {
               INT8 trigTimeNS = 0;
-              LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-                    &(currentTrigger[j]->end_time) ), &status );
+              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
               trigTimeNS += slideDataNS;
-              LAL_CALL( LALINT8toGPS( &status, &(currentTrigger[j]->end_time), 
-                    &trigTimeNS ), &status );
+              XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
             }
 
             /* store number of triggers from ifo a for trigtotmplt algorithm */
@@ -1318,8 +1309,7 @@ int main( int argc, char *argv[] )
         currentTrigger[0]->end_time.gpsSeconds, 
         ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
 
-    LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
-        &status );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
 
@@ -1368,8 +1358,7 @@ int main( int argc, char *argv[] )
       /* window of the current ifo a trigger                            */
       while ( currentTrigger[1] )
       {
-        LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
-            &status );
+        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
         if ( tb > ta - errorParams.dt )
         {
@@ -1401,10 +1390,8 @@ int main( int argc, char *argv[] )
             while ( currentEffRange[j] )
             {
               INT8 ts, te;
-              LAL_CALL( LALGPStoINT8( &status, &ts, 
-                    &(currentEffRange[j]->start_time) ), &status );
-              LAL_CALL( LALGPStoINT8( &status, &te, 
-                    &(currentEffRange[j]->end_time) ), &status );
+              ts = XLALGPSToINT8NS( &(currentEffRange[j]->start_time) );
+              te = XLALGPSToINT8NS( &(currentEffRange[j]->end_time) );
 
               if ( (ts <= ta) && (ta < te) )
               {
@@ -1480,8 +1467,7 @@ int main( int argc, char *argv[] )
 
           while ( currentTrigger[1] )
           {
-            LAL_CALL( LALGPStoINT8( &status, &tb, 
-                  &(currentTrigger[1]->end_time) ), &status );
+            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
             if (tb > ta + errorParams.dt )
             {
@@ -1612,48 +1598,48 @@ cleanexit:
     {
       if ( userTag && ifoTag && outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml.gz",
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml.gz",
             ifoName[j], ifoTag, userTag, startCoincidence,
             endCoincidence - startCoincidence );
       }
       else if ( userTag && !ifoTag && outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
             ifoName[j], userTag, startCoincidence,
             endCoincidence - startCoincidence );
       }
       else if ( !userTag && ifoTag && outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml.gz",
             ifoName[j], ifoTag, startCoincidence,
             endCoincidence - startCoincidence );
       }
       else if ( !userTag && !ifoTag && outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml.gz",
+        snprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml.gz",
             ifoName[j], startCoincidence, endCoincidence - startCoincidence );
       }
       else if ( userTag && ifoTag && !outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
             ifoName[j], ifoTag, userTag, startCoincidence, 
             endCoincidence - startCoincidence );
       }
       else if ( userTag && !ifoTag && !outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
             ifoName[j], userTag, startCoincidence, 
             endCoincidence - startCoincidence );
       }
       else if ( !userTag && ifoTag && !outCompress )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+        snprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
             ifoName[j], ifoTag, startCoincidence, 
             endCoincidence - startCoincidence );
       }
       else
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
+        snprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
             startCoincidence, endCoincidence - startCoincidence );
       }
 
@@ -1669,12 +1655,12 @@ cleanexit:
     /* write process table */
     if ( trigBankFile || singleIfo )
     {
-      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", 
+      snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", 
           ifoName[0] );
     }
     else
     {
-      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+      snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
           ifoName[0], ifoName[1] );
     }
     LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),

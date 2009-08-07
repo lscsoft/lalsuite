@@ -12,7 +12,6 @@ SUBDIRS = \
 	window \
 	fft \
 	clremoval \
-	stochastic \
 	inspiral \
 	noisemodels \
 	bank \
@@ -23,6 +22,7 @@ SUBDIRS = \
 	burstsearch \
 	tracksearch \
 	timefreq \
+	stochastic \
 	support \
 	framedata
 

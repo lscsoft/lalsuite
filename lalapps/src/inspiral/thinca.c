@@ -75,12 +75,12 @@ RCSID("$Id$");
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
@@ -878,7 +878,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
       
@@ -979,11 +979,11 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
         
@@ -1267,18 +1267,18 @@ int main( int argc, char *argv[] )
     {
       /* write ifo name in ifoName list */
       XLALReturnIFO(ifo,ifoNumber);
-      LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifo );
+      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifo );
       numIFO++;
 
       /* store the argument in the process_params table */
       this_proc_param = this_proc_param->next = (ProcessParamsTable *)
         calloc( 1, sizeof(ProcessParamsTable) );
-      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
           "%s", PROGRAM_NAME );
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", 
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", 
           ifoArg[ifoNumber]);
-      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-      LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+      snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
 
       /* check that a non-zero timing accuracy was specified */
       if ( accuracyParams.test != ellipsoid &&
@@ -1332,16 +1332,16 @@ int main( int argc, char *argv[] )
   /* set ifos to be the alphabetical list of the ifos with triggers */
   if( numIFO == 2 )
   {
-    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s", ifoName[0], ifoName[1] );
+    snprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s", ifoName[0], ifoName[1] );
   }
   else if ( numIFO == 3 )
   {
-    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s", ifoName[0], ifoName[1],
+    snprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s", ifoName[0], ifoName[1],
         ifoName[2] );
   }
   else if ( numIFO == 4 )
   {
-    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s", ifoName[0], ifoName[1],
+    snprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s", ifoName[0], ifoName[1],
         ifoName[2], ifoName[3]);
   }
 
@@ -1404,15 +1404,15 @@ int main( int argc, char *argv[] )
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
         " " );
   } 
   else 
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -1421,22 +1421,22 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--write-compress" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--write-compress" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   /* store the check-times in the process_params table */
   if ( checkTimes )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--check-times" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--check-times" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the multi-ifo-coinc in the process_params table */
@@ -1444,12 +1444,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--multi-ifo-coinc" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the distance cut in the process_params table */
@@ -1457,12 +1457,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--h1-h2-distance-cut" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the h1h2 consistency option */ 
@@ -1477,12 +1477,12 @@ int main( int argc, char *argv[] )
     
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--h1-h2-consistency" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   
   /* store the veto option */ 
@@ -1490,12 +1490,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--do-veto" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
   
   /* store the H1H2 snr cut for BCVSpin */
@@ -1503,12 +1503,12 @@ int main( int argc, char *argv[] )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--do-bcvspin-h1h2-veto");
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
   
 
@@ -1524,12 +1524,12 @@ int main( int argc, char *argv[] )
 
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--complete-coincs");
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
 
 
@@ -1674,7 +1674,7 @@ int main( int argc, char *argv[] )
   /* perform the alphaf-cut */
   if (doBCVC & doAlphaFCut)
     {
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
          "--do-alphaf-cut" );
     if ( vrbflg ) fprintf( stdout,
        "Discarding triggers in H1 with alphaF > %f OR alphaF < %f (BCVC case) \n", 
@@ -1896,15 +1896,23 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf(stdout, "Performing time slide %d\n", slideNum );
     
     /* slide the data for any case */
-    LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
-              &startCoinc, &endCoinc, slideTimes), &status) ;      
+    XLALTimeSlideSingleInspiral( inspiralEventList, &startCoinc, &endCoinc,
+                                 slideTimes);
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
               LALCompareSnglInspiralByTime ), &status );
     
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) 
-    {   
-      LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
-                &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+    {
+      /* FIXME:  this code is executed even if there are no veto segments
+       * (!?), so this function call fails.  It failed in the old code,
+       * too, but there was no error checking so the code would keep
+       * running.  Someone else will have to figure out how to untangle
+       * this, for now I turn off error checking here too and clear the
+       * error flag (this reproduces the old behaviour, but clearly
+       * something else should be done) */
+      if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+                                 &slideTimes[ifoNumber] ) < 0 )
+        /*exit(1)*/ XLALClearErrno();
     }
 
     /* don't analyze zero-lag if numSlides>0 */
@@ -1953,7 +1961,7 @@ int main( int argc, char *argv[] )
     /* BCV case */  
     if (doBCVC)
     {     
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
          "--bcvc" );
       /* perform the iota cut */
       if( iotaCut  ) 
@@ -1971,7 +1979,7 @@ int main( int argc, char *argv[] )
     
     if ( doPsi0Psi3Cut ) 
     {
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
          "--psi0-psi3-cut" );
       if ( vrbflg ) fprintf( stdout,
          "Discarding triggers using Dpsi0Dpsi3 cut \n");
@@ -2121,8 +2129,8 @@ int main( int argc, char *argv[] )
       {
  
         /* the output triggers should be slid back to original time */
-        LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
-              &startCoinc, &endCoinc, slideReset), &status) ;
+        XLALTimeSlideSingleInspiral( slideOutput, &startCoinc, &endCoinc,
+                                     slideReset);
         LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
               LALCompareSnglInspiralByTime ), &status );
       }
@@ -2188,61 +2196,61 @@ cleanexit:
 
   if ( userTag && ifoTag && !outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml", 
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
   else if ( !userTag && ifoTag && !outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( userTag && !ifoTag && !outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( userTag && ifoTag && outCompress )
-  {     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml.gz",
+  {     snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml.gz",
         ifos, ifoTag, userTag, startCoincidence,
         endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml.gz",
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml.gz",
         ifos, ifoTag, userTag, startCoincidence,
         endCoincidence - startCoincidence );
   }
   else if ( !userTag && ifoTag && outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz", ifos,
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
         ifos, ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( userTag && !ifoTag && outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz",
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml.gz",
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml.gz",
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( !userTag && !ifoTag && outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml.gz", ifos,
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml.gz", ifos,
         startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml.gz", ifos,
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml.gz", ifos,
         startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifos,
+    snprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifos,
         startCoincidence, endCoincidence - startCoincidence );
-    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml", ifos,
+    snprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml", ifos,
         startCoincidence, endCoincidence - startCoincidence );
   }
   searchsumm.searchSummaryTable->nevents = numCoinc;
@@ -2261,7 +2269,7 @@ cleanexit:
   }
   /* write process table */
 
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
 
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
@@ -2279,7 +2287,7 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
-  LALSnprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
 
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
         search_summary_table ), &status );

@@ -34,6 +34,7 @@ TestStrToGPS_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC \
         TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
+TESTS_ENVIRONMENT = 1>/dev/null
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

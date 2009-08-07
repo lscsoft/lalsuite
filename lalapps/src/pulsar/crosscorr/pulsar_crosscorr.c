@@ -412,13 +412,13 @@ int main(int argc, char *argv[]){
 
   /*  set up ephemeris  */
   if(uvar_ephemDir) {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
+    snprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
 		uvar_ephemDir, uvar_ephemYear);
   } else {
-    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
-    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
+    snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
+    snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
   }
 
   EphemEarth[MAXFILENAMELENGTH-1] = 0;
@@ -819,6 +819,7 @@ int main(int argc, char *argv[]){
       XLALDestroyCOMPLEX16Vector(ualpha);
 
       XLALDestroyREAL8Vector(sigmasq);
+
 
     } /*end if listLength > 1 */
   } /* finish loop over all sfts */
@@ -1499,27 +1500,13 @@ void CalculateFdots (LALStatus *status,
 		     REAL8 q2,
 		     REAL8 n)
 {
-  REAL8 grav, rstar, inertia, c, mu0;
-
-
   INITSTATUS (status, "CalculateFdots", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(fdots->length >= 6, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
 
-  grav = 6.67e-11;
-  rstar = 1e4;
-  c = 2.998e8;
-  inertia = 0.4*1.4*1.99e30*rstar*rstar;
-  mu0 = 1.2566e-6;
 
-  /*q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
-
-  q2 = 2*CUBE(LAL_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
-  */
-  /* multiply q2 by the (pi R/c)^n-3 term*/
-  /*q2 = q2*pow(LAL_PI*rstar/c, n-3);*/
-
+ 
   q1 = q1/pow(uvar_fRef,5);
   q2 = q2/pow(uvar_fRef, n);
 
@@ -1590,8 +1577,8 @@ void initUserVars (LALStatus *status)
   uvar_fddot = 0.0;
   uvar_fddotBand = 0.0;
   uvar_fddotResolution = 0.0;
-  uvar_dAlpha = 0.2;
-  uvar_dDelta = 0.2;
+  uvar_dAlpha = 0.0;
+  uvar_dDelta = 0.0;
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;

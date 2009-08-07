@@ -455,28 +455,28 @@ int ring_params_sanity_check( struct ring_params *params )
     {
       if ( strlen( params->userTag ) && strlen( params->ifoTag ) )
       {
-        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+        snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s_%s-%d-%d.xml", params->ifoName, 
           params->ifoTag, params->userTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
       else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) )
       {
-        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+        snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml", params->ifoName, 
           params->userTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
       else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) )
       {
-        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+        snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml", params->ifoName, 
           params->ifoTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
       else 
       {
-        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+        snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING-%d-%d.xml", params->ifoName, 
           params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
