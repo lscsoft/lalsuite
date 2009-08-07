@@ -115,7 +115,7 @@ der = dvA[0] #pylab.log10(eA.array)
 
 fn = sys.argv[1]
 
-wiki = open(fn.split('-')[-1].replace('.xml','.txt'),"w")
+wiki = open(fn.split('-')[-1].replace('.xml','range_summary.txt'),"w")
 wiki.write("||Masses||Range||\n")
 pylab.figure(1)
 #FIXME don't hardcode masses
