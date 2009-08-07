@@ -125,7 +125,7 @@ if open_box:
     page.section("Volume x time H1H2L1, H1L1, H2L1")
     try:
       files = [open("H1H2L1range_summary.txt").readlines(), open("H1L1range_summary.txt").readlines(), open("H2L1range_summary.txt").readlines()]
-      page.write("||<-2> H1H2L1||||<-2> H1L1||||<-2> H2L1||\n")
+      page.write("|| || H1H2L1|||| || H1L1|||| || H2L1||\n")
       for i in range(len(files[0])):
         for f in files: 
           page.write(f[i].strip())
