@@ -1283,6 +1283,33 @@ void XLALSkymap2PlanConstruct(int sampleFrequency, int n, int* detectors, XLALSk
     
 }
 
+void XLALSkymap2InterpolationWeights(double t, double* w)
+{
+	double h[4];
+	
+	h[0] = (1. + 2. * t) * (1. - t) * (1. - t);
+	h[1] = t * (1. - t) * (1. - t);
+	h[2] = t * t * (3. - 2. * t);
+	h[3] = t * t * (t - 1.);
+	
+	w[0] = -0.5 * h[1];
+	w[1] = h[0] - 0.5 * h[3];
+	w[2] = h[2] + 0.5 * h[1];
+	w[3] = 0.5 * h[3];
+}
+
+double XLALSkymap2Interpolate(double* x, double* w)
+{
+	double y;
+	int i;
+	
+	y = 0;
+	for (i = 0; i != 4; ++i)
+		y += x[i] * w[i];
+
+    return y;
+}
+
 void XLALSkymap2DirectionPropertiesConstruct(
     XLALSkymap2PlanType* plan,
     XLALSkymap2SphericalPolarType* directions,
@@ -1294,8 +1321,16 @@ void XLALSkymap2DirectionPropertiesConstruct(
     XLALSkymapCartesianFromSpherical(x, *directions);
     for (j = 0; j != plan->n; ++j)
     {
-        properties->delay[j] = floor(site_time(plan->site + j, x) * plan->sampleFrequency + 0.5);
-        site_response(properties->f[j], plan->site + j, x);
+        // properties->delay[j] = floor(site_time(plan->site + j, x) * plan->sampleFrequency + 0.5);
+        
+		double delay = site_time(plan->site + j, x) * plan->sampleFrequency;
+		properties->delay[j] = floor(delay);
+		
+		double t = delay - properties->delay[j];
+		
+		XLALSkymap2InterpolationWeights(t, properties->weight[j]);
+		
+		site_response(properties->f[j], plan->site + j, x);
     }
 }
 
@@ -1373,10 +1408,12 @@ void XLALSkymap2Apply(
     
     double x[XLALSKYMAP2_N];
     
-    // Consider replacing this simple lookup with linear or cubic interpolation
+    // Consider replacing linear with cubic interpolation
     
     for (i = 0; i != plan->n; ++i)
-        x[i] = xSw[i][tau + properties->delay[i]];
+	{
+		x[i] = XLALSkymap2Interpolate(xSw[i] + tau + properties->delay[i] - 1, properties->weight[i]);
+	}
 
     // Consider replacing this evaluation with something that exploits the 
     // symmetry of K and the reuse of x
