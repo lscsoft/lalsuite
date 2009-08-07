@@ -131,6 +131,7 @@ if open_box:
           page.write(f[i].strip())
         page.write("\n")
     except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
+    page.write("\n")
     image_list = ['H1H2L1volume_time.png', 'H1L1volume_time.png','H2L1volume_time.png']
     page.image_table(image_list,webserver)
 
