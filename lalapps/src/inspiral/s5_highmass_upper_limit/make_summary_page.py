@@ -55,6 +55,10 @@ except: pass
 
 page = wiki(open_box)
 
+page.section("Injection Parameters")
+image_list = ['cbc_plotsummary_5_sim_dist_m1_m2_EOBNRpseudoFourPN.png','cbc_plotsummary_5_sim_dist_m1_m2_IMRPhenomAtwoPN.png']
+page.image_table(image_list,webserver)
+
 page.section("Found / Missed")
 image_list = ['cbc_plotsummary_0_deff_vs_mchirp_H1H2L1.png','cbc_plotsummary_0_deff_vs_mchirp_H1L1.png','cbc_plotsummary_0_deff_vs_mchirp_H2L1.png']
 page.image_table(image_list,webserver)
