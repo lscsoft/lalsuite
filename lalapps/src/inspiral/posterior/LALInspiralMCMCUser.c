@@ -656,7 +656,7 @@ in the frequency domain */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
-		if(highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
 		
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
