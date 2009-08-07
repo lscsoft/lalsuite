@@ -602,7 +602,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         phi_alpha_rem = f0 * dT;
         phi_alpha_rem += T0rem * df;
         phi_alpha_rem += df * dT;
-        phi_alpha_rem = REM ( phi_alpha_rem );
         Dphi_alpha_int = f0;
         Dphi_alpha_rem = df + Freq * TdotM1;
 
@@ -614,7 +613,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	    Dphi_alpha_rem += fsdot * Tas * inv_fact[s]; 	/* here: Tas = DT^s */
 	    Tas *= deltaT;					/* now:  Tas = DT^(s+1) */
 	    phi_alpha_rem += fsdot * Tas * inv_fact[s+1];
-            phi_alpha_rem = REM ( phi_alpha_rem );
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factor of Tsft to complete Dphi_alpha */
