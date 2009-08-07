@@ -118,8 +118,8 @@ if open_box:
     image_list = ['cbc_plotsummary_4_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_count_vs_snr_H1L1.png','cbc_plotsummary_4_count_vs_snr_H2L1.png']
     page.image_table(image_list,webserver)
     try:
-      for l in open("playground_summary_table.txt").readlines(): page.write(l)
-    except: print >>sys.stderr, "WARNING: couldn't find playground summary, continuing"
+      for l in open("summary_table.txt").readlines(): page.write(l)
+    except: print >>sys.stderr, "WARNING: couldn't find summary, continuing"
 
     # UPPER LIMIT PLOTS
     page.section("Volume x time H1H2L1, H1L1, H2L1")
