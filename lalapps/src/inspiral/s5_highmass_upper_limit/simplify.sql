@@ -33,36 +33,33 @@ CREATE TEMPORARY TABLE time_slide_ids AS SELECT DISTINCT time_slide_id AS time_s
 CREATE INDEX tsid_id_index ON time_slide_ids (time_slide_id);
 
 -- BEGIN CHADS CHANGES TO SPEED UP TIME SLIDE ID FIXING
-CREATE TABLE new_slide AS
-        SELECT time_slide_id, instrument + offset AS vec FROM time_slide;
-CREATE INDEX ns_tsid_index ON new_slide (time_slide_id);
-CREATE INDEX ns_tsidv_index ON new_slide (time_slide_id, vec);
-CREATE INDEX ns_v_index ON new_slide (vec);
+
+CREATE TEMPORARY TABLE new_slides AS SELECT tsa.time_slide_id AS time_slide_id, (SELECT group_concat(tsb.instrument || "," || tsb.offset) FROM time_slide AS tsb WHERE (tsb.time_slide_id == tsa.time_slide_id) ORDER BY tsb.instrument, tsb.offset) AS vec FROM time_slide_ids AS tsa;
+
+CREATE INDEX ns_tsid_index ON new_slides (time_slide_id);
+CREATE INDEX ns_tsidv_index ON new_slides (time_slide_id, vec);
+CREATE INDEX ns_v_index ON new_slides (vec);
+
+CREATE TABLE ts_vecs AS SELECT DISTINCT(vec) AS vec FROM new_slides;
+CREATE TABLE unique_ts AS SELECT  ts_vecs.vec, (SELECT MIN(time_slide_id) FROM new_slides WHERE new_slides.vec == ts_vecs.vec) AS time_slide_id FROM ts_vecs;
+CREATE INDEX ut_v_index ON unique_ts(vec);
+
 CREATE TABLE _idmap_ AS
-        SELECT
-                old_ids.time_slide_id AS old,
-                (
-                        SELECT
-                                MIN(new_ids.time_slide_id)
-                        FROM
-                                time_slide_ids AS new_ids
-                        WHERE
-                                NOT EXISTS (
-                                        SELECT
-                                                *
-                                        FROM
-                                                new_slide AS alink
-                                                JOIN new_slide AS blink
-                                        WHERE
-                                                alink.time_slide_id == old_ids.time_slide_id
-                                                AND blink.vec == new_ids.vec
-                                )
-                ) AS new
-        FROM
-                time_slide_ids AS old_ids;
+	SELECT 
+		new_slides.time_slide_id AS old,
+		unique_ts.time_slide_id AS new
+	FROM new_slides JOIN unique_ts 
+		ON (new_slides.vec == unique_ts.vec);
+
+DROP INDEX ut_v_index;
 DROP INDEX ns_tsid_index;
 DROP INDEX ns_tsidv_index;
-DROP INDEX ns_v_index;
+DROP INDEX ns_v_indexi;
+
+DROP TABLE new_slides;
+DROP TABLE ts_vecs;
+DROP TABLE unique_ts;
+
 --- END CHADS CHANGES
 
 DROP TABLE time_slide_ids;

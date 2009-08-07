@@ -93,7 +93,7 @@ for i, l in enumerate(vA):
 
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
 bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
-
+bins, vAD, ulA = get_combined_array("2DsearchvolumeDistance", 3)
  
 #bin edges Number of bins + 1 for pcolor
 X = numpy.array( list(bins.lower()[0]) + [bins.upper()[0][-1]] )
@@ -115,22 +115,30 @@ der = dvA[0] #pylab.log10(eA.array)
 
 fn = sys.argv[1]
 
+wiki = open(fn.split('-')[-1].replace('.xml','range_summary.txt'),"w")
+wiki.write("||Masses||Range||\n")
 pylab.figure(1)
+#FIXME don't hardcode masses
 masses = bins[15,15]
 print masses
+wiki.write("||15,15||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(1)
 masses = bins[50,50]
+wiki.write("||50,50||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,99]
+wiki.write("||1,99||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 print masses
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 masses = bins[1,24]
+wiki.write("||1,24||%f||\n" % (vAD[0,masses[0],masses[1]],) )
 print masses
+wiki.close()
 mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
 pylab.loglog(mu,post/post.max())
 pylab.hold(0)
