@@ -17,13 +17,13 @@ from optparse import *
 import tempfile
 import ConfigParser
 import urlparse
-import glue
 from UserDict import UserDict
 sys.path.append('@PYTHONLIBDIR@')
 import subprocess
 
 ##############################################################################
 # import the modules we need to build the pipeline
+from glue import iterutils
 from glue import pipeline
 from glue import lal
 from glue.ligolw import lsctables
@@ -408,7 +408,7 @@ def ifo_combos(ifosegdict):
     if ifosegdict[ifo]: ifos.append(ifo)
   ifos.sort()
   for i in range(2, len(ifos)+1):
-    combos.extend([j for j in glue.iterutils.choices(ifos,i)])
+    combos.extend([j for j in iterutils.choices(ifos,i)])
   l = [i for i in combos]
   combos = []
   for i in l: combos.append(",".join(i))
