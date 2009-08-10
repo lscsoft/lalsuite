@@ -413,7 +413,7 @@ def ifo_combos(ifosegdict):
   combos = []
   for i in l: combos.append(",".join(i))
   #FIXME assumes we don't look at H1H2
-  combos.remove('H1,H2')
+  if 'H1,H2' in combos: combos.remove('H1,H2')
   print combos
   return combos
 
