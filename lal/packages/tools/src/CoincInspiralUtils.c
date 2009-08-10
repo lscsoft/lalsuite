@@ -904,9 +904,6 @@ XLALExtractSnglInspiralFromCoinc(
     return( NULL );
   }
 
-  /* gpsStartTime is unused in this function */
-  gpsStartTime = NULL;
-
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
       ++eventNum)
