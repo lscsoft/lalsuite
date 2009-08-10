@@ -130,6 +130,10 @@ int global_cpu_type;
 /** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
+#ifdef EAH_CUDA
+/** CUDA device id */
+int cuda_device_id = 0;
+#endif
 
 /** FLOPS estimation - may be set by command line option --WUfpops=.
     When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
@@ -798,7 +802,7 @@ static void worker (void) {
     /* if building a CUDA App, handle --device option given by BOINC client */
     else if (MATCH_START("--device",argv[arg],l)) {
       arg++; /* next argument */
-      /* select_cuda_device(atoi(argv[arg])); */ /* not yet supported by new CUDA code */
+      cuda_device_id = atoi(argv[arg]);
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 #endif

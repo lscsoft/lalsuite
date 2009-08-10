@@ -56,10 +56,14 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 #ifdef EAH_CUDA
 #include <cuda_runtime_api.h>
+
+extern int cuda_device_id = 0;
+
 typedef struct {
   REAL4 fkdot16[PULSAR_MAX_SPINS-1];     /**< remaining
 					    spin-parameters, excluding *fractional* part of Freq = fkdot[0] */
 } PulsarSpinsExREAL4;
+
 extern void HostWrapperCUDAComputeFstatFaFb    (REAL4 *Fstat,
                                                 UINT4 Fstat_pitch,
 
@@ -372,7 +376,7 @@ XLALComputeFStatFreqBandVector (REAL4FrequencySeriesVector *fstatBandV,         
     }
 
     // TODO: Get device with max GFLOPs (now device with zero ID)
-    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, 0) )
+    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
     {
         XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
         XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
