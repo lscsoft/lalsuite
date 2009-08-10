@@ -938,16 +938,22 @@ XLALExtractSnglInspiralFromCoinc(
           /* event id number exists, use it */
           eventId->id = thisCoincEntry->event_id->id;
         }
-        else if ( eventNum > 99999 )
+        else if ( gpsStartTime )
         {
-          /* put extra digits into overflow area (above slide number) */
-          eventId->id = ( LAL_INT8_C(1000000000) * (INT8) (eventNum / 100000) )
-          + (INT8) (eventNum % 100000);
+          eventId->id = LAL_INT8_C(1000000000) *
+            (INT8) gpsStartTime->gpsSeconds + (INT8) eventNum;
         }
         else
         {
-          /* just set eventId equal to eventNum */
-          eventId->id = (INT8) eventNum;
+          XLALPrintError(
+              "Event does not have id and no GPS start time given" );
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglInspiral( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EIO);
         }
 
         if ( slideNum < 0 )
