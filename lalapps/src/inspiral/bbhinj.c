@@ -174,9 +174,6 @@ int main( int argc, char *argv[] )
   RandomParams *randParams = NULL;
   REAL4  u, exponent, d2;
   REAL4  deltaM, mtotal;
-  /* XXX CHECK XXX */
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-  /* XXX END CHECK XXX */
 
 
   /* waveform */
@@ -677,8 +674,13 @@ int main( int argc, char *argv[] )
     }
 
     /* set gmst */
-    LAL_CALL( LALGPStoGMST1( &status, &(this_inj->end_time_gmst),
-          &(this_inj->geocent_end_time), &gmstUnits ), &status);
+    this_inj->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+        &this_inj->geocent_end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+    if( XLAL_IS_REAL8_FAIL_NAN(this_inj->end_time_gmst) )
+    {
+      fprintf(stderr, "XLALGreenwichMeanSiderealTime() failed\n");
+      exit(1);
+    }
     /* XXX END CHECK XXX */
 
     /* populate the sim_inspiral table */
