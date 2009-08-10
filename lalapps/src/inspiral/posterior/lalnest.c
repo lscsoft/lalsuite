@@ -34,7 +34,7 @@
 				--XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
 				--event trigNum (0) --end_time GPStime --Mmin m --Mmin M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2)]\n \
 				--timeslide --studentt (use student-t likelihood function)\n \
-      [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) \n"
+      [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
 
 extern CHAR outfile[4096];
 extern double etawindow;
@@ -80,6 +80,8 @@ int GRBflag=0;
 int SkyLocFlag=0;
 REAL8 SNRfac=1.0;
 int HighMassFlag=0;
+int decohereflag=0;
+REAL8 offset=0.0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -89,6 +91,8 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT);
 void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT);
 void NestInitGRB(LALMCMCParameter *parameter, void *iT);
 void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT);
+void NestInitInj(LALMCMCParameter *parameter, void *iT);
+
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -153,12 +157,17 @@ void initialise(int argc, char *argv[]){
 	       	{"skyloc",no_argument,0,13},
        		{"channel",required_argument,0,'C'},
        		{"highmass",no_argument,0,15},
+			{"decohere",required_argument,0,16},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
 		case 14:
 			SNRfac=atof(optarg);
+			break;
+		case 16:
+			decohereflag=1;
+			offset=atof(optarg);
 			break;
 	  case 15:
 	    HighMassFlag=1;
@@ -423,7 +432,7 @@ int main( int argc, char *argv[])
 		insptemplate.totalMass=InjParams.mTot;
 		insptemplate.eta = InjParams.eta;
 		insptemplate.approximant = TaylorF2;
-		insptemplate.order = LAL_PNORDER_THREE_POINT_FIVE;
+		insptemplate.order = LAL_PNORDER_TWO_POINT_FIVE;
 		insptemplate.fLower = inputMCMC.fLow;
 		insptemplate.massChoice = totalMassAndEta;
 		LALInspiralParameterCalc(&status,&insptemplate);
@@ -570,12 +579,23 @@ int main( int argc, char *argv[])
 		if(NULL!=injXMLFile && fakeinj==0 && NINJA==0) {
 			DetectorResponse det;
 			REAL8 SNR=0.0;
+			LIGOTimeGPS realSegStart;
 			memset(&det,0,sizeof(DetectorResponse));
 			det.site=inputMCMC.detector[i];
+			/* Inject incoherently */
+			if(decohereflag){
+				memcpy(&realSegStart,&segmentStart,sizeof(realSegStart));
+				XLALGPSAdd(&segmentStart,((REAL8) i+1)*offset);
+				fprintf(stdout,"Offset injection by %lf s\n",((REAL8) i+1)*offset);
+			}
 			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("injection",&(segmentStart),0.0,inputMCMC.deltaT,&lalDimensionlessUnit,(size_t)seglen);
-			REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("injection",&segmentStart,0.0,inputMCMC.deltaT,&lalDimensionlessUnit,(size_t)seglen);
 			LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
 			REPORTSTATUS(&status);
+			if(decohereflag) {
+				memcpy(&segmentStart,&realSegStart,sizeof(realSegStart));
+				memcpy(&(injWave->epoch),&realSegStart,sizeof(realSegStart));
+			}
+			REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("injection",&segmentStart,0.0,inputMCMC.deltaT,&lalDimensionlessUnit,(size_t)seglen);
 			for (j=0;j<injWave->data->length;j++) inj8Wave->data->data[j]=(REAL8)injWave->data->data[j]; /* Move into a REAL8 vector */
 			/* Compute the frequency domain wave for SNR calculation */
 			RealFFTPlan *inj_plan = XLALCreateForwardREAL4FFTPlan( seglen, 0 );
@@ -888,4 +908,48 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 
 
   return;
+}
+
+void NestInitInj(LALMCMCParameter *parameter, void *iT){
+	REAL8 time;
+	SimInspiralTable *injTable = (SimInspiralTable *)iT;
+	REAL4 mtot,eta,mwindow,localetawin;
+	REAL8 mc,mcmin,mcmax,lmmin,lmmax;
+	parameter->param = NULL;
+	parameter->dimension = 0;
+	time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
+	mtot = injTable->mass1 + injTable->mass2;
+	eta = injTable->eta;
+	mwindow = 0.2;
+	double etamin;
+	/*etamin = etamin<0.01?0.01:etamin;*/
+	etamin=0.01;
+	double etamax = 0.25;
+	mc=m2mc(injTable->mass1,injTable->mass2);
+	mcmin=m2mc(1.0,1.0);
+	
+	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	
+	lmmin=log(mcmin);
+	lmmax=log(mcmax);
+	localetawin=etamax-etamin;
+	
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
+	
+	
+	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
+	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + time ,time-0.5*timewindow,time+0.5*timewindow,0);
+	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
+	
+	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	
+	
+	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
+	
+	
+	return;
 }

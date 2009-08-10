@@ -351,11 +351,10 @@ FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_ti
 seglists -= veto_segments
 zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
-print FAR, float(abs(zero_lag_segments))
-
+live_time = float(abs(zero_lag_segments))
+print FAR, live_time
 
 Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
-
 
 # restrict the sims to a distance range
 Found = cut_distance(Found, 1, max_dist)
@@ -375,7 +374,7 @@ gw = None
 dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), bootnum=int(opts.bootstrap_iterations))
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, live_time, bootnum=int(opts.bootstrap_iterations))
 
 # FIXME convert to years (use some lal or pylal thing in the future)
 vA.array /= secs_in_year
@@ -394,4 +393,8 @@ xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
+# DONE with vA, so it is okay to mess it up...
+# Compute range 
+vA.array = (vA.array * secs_in_year / live_time / (4.0/3.0 * pi)) **(1.0/3.0)
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeDistance"))
 utils.write_filename(xmldoc, "2Dsearchvolume-%s-%s.xml" % (opts.output_name_tag, "".join(sorted(opts.instruments))))
