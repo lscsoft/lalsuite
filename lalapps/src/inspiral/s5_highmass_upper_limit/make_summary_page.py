@@ -15,7 +15,7 @@ class wiki(object):
 
   def image_link(self,path,webserver):
     thumb = "thumb_" + path
-    command = 'convert ' + path + ' -resize 300x300 ' + thumb
+    command = 'convert ' + path + ' -resize 300x300 -antialias ' + thumb
     print command
     popen = subprocess.Popen(command.split())
     popen.communicate()
@@ -25,11 +25,19 @@ class wiki(object):
 
   def image_table(self,image_list, webserver):
     if not image_list: return
-    self.file.write("||")
-    for i in image_list:
+    for j, i in enumerate(image_list):
+      if not (j) % 3: self.file.write("\n\n||")
       self.image_link(i, webserver)
       self.file.write("||")
-    self.file.write("\n")
+    self.file.write("\n\n")
+  
+  def image_glob(self, pat):
+    image_list = []
+    for image in glob.glob(pat):
+      if 'thumb' in image: continue
+      else: image_list.append(image)
+    image_list.sort()
+    return image_list
 
   def section(self,title):
     s = "=== "+title.strip()+" ===\n"
@@ -56,43 +64,38 @@ except: pass
 page = wiki(open_box)
 
 page.section("Injection Parameters")
-image_list = ['cbc_plotsummary_5_sim_dist_m1_m2_EOBNRpseudoFourPN.png','cbc_plotsummary_5_sim_dist_m1_m2_IMRPhenomAtwoPN.png']
+
+image_list = page.image_glob('cbc_plotsummary_5_sim_dist*.png') 
 page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
-image_list = ['cbc_plotsummary_0_deff_vs_mchirp_H1H2L1.png','cbc_plotsummary_0_deff_vs_mchirp_H1L1.png','cbc_plotsummary_0_deff_vs_mchirp_H2L1.png']
+image_list = page.image_glob('cbc_plotsummary_0_deff_vs_mchirp_*.png')
 page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_0_deff_vs_t_H1H2L1.png','cbc_plotsummary_0_deff_vs_t_H1L1.png','cbc_plotsummary_0_deff_vs_t_H2L1.png']
+image_list = page.image_glob('cbc_plotsummary_0_deff_vs_t_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = ['cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_mchirp_acc_frac_IMRPhenomAtwoPN_L1.png']
+image_list = page.image_glob('cbc_plotsummary_1_mchirp_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_eta_acc_frac_IMRPhenomAtwoPN_L1.png']
+image_list = page.image_glob('cbc_plotsummary_1_eta_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_H1.png','cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_H2.png','cbc_plotsummary_1_t_acc_IMRPhenomAtwoPN_L1.png']
-page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_mchirp_acc_frac_EOBNRpseudoFourPN_L1.png']
-page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_eta_acc_frac_EOBNRpseudoFourPN_L1.png']
-page.image_table(image_list,webserver)
-image_list = ['cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_H1.png','cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_H2.png','cbc_plotsummary_1_t_acc_EOBNRpseudoFourPN_L1.png']
+image_list = page.image_glob('cbc_plotsummary_1_t_acc_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
-image_list = ['cbc_plotsummary_2_playground_chi2_vs_rho_H1.png', 'cbc_plotsummary_2_playground_chi2_vs_rho_H2.png', 'cbc_plotsummary_2_playground_chi2_vs_rho_L1.png']
+image_list = page.image_glob('cbc_plotsummary_2_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-image_list = ['cbc_plotsummary_3_playground_rho_H1_vs_L1.png', 'cbc_plotsummary_3_playground_rho_H1_vs_H2.png', 'cbc_plotsummary_3_playground_rho_H2_vs_L1.png']
-page.image_table(image_list,webserver)
-
-page.section("Playground Ifar")
-image_list = ['cbc_plotsummary_4_playground_count_vs_ifar_H1H2L1.png','cbc_plotsummary_4_playground_count_vs_ifar_H1L1.png','cbc_plotsummary_4_playground_count_vs_ifar_H2L1.png']
+image_list = page.image_glob('cbc_plotsummary_3_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
-image_list = ['cbc_plotsummary_4_playground_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_playground_count_vs_snr_H1L1.png','cbc_plotsummary_4_playground_count_vs_snr_H2L1.png']
+image_list = page.image_glob('cbc_plotsummary_4_playground_count_vs_snr_*.png')
+page.image_table(image_list,webserver)
+
+page.section("Playground Ifar")
+image_list = page.image_glob('cbc_plotsummary_4_playground_count_vs_ifar*.png')
 page.image_table(image_list,webserver)
 
 try:
@@ -103,52 +106,60 @@ if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
-    image_list = ['cbc_plotsummary_2_chi2_vs_rho_H1.png', 'cbc_plotsummary_2_chi2_vs_rho_H2.png', 'cbc_plotsummary_2_chi2_vs_rho_L1.png']
+    image_list = page.image_glob('cbc_plotsummary_2_chi2_vs_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Effective SNR scatter")
-    image_list = ['cbc_plotsummary_3_rho_H1_vs_L1.png', 'cbc_plotsummary_3_rho_H1_vs_H2.png', 'cbc_plotsummary_3_rho_H2_vs_L1.png']
-    page.image_table(image_list,webserver)
-
-    page.section("Full Data Ifar")
-    image_list = ['cbc_plotsummary_4_count_vs_ifar_H1H2L1.png','cbc_plotsummary_4_count_vs_ifar_H1L1.png','cbc_plotsummary_4_count_vs_ifar_H2L1.png']
+    image_list = page.image_glob('cbc_plotsummary_3_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
-    image_list = ['cbc_plotsummary_4_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_count_vs_snr_H1L1.png','cbc_plotsummary_4_count_vs_snr_H2L1.png']
+    image_list = page.image_glob('cbc_plotsummary_4_count_vs_snr_*.png')
     page.image_table(image_list,webserver)
+
+    page.section("Full Data Ifar")
+    image_list = page.image_glob('cbc_plotsummary_4_count_vs_ifar_*.png')
+    page.image_table(image_list,webserver)
+
     try:
       for l in open("summary_table.txt").readlines(): page.write(l)
     except: print >>sys.stderr, "WARNING: couldn't find summary, continuing"
 
     # UPPER LIMIT PLOTS
-    page.section("Volume x time H1H2L1, H1L1, H2L1")
+    ifos_list = [f.replace('volume_time.png','') for f in page.image_glob('*volume_time.png')]
+    ifos_string = ",".join(ifos_list)
+    page.section("Volume x time " + ifos_string)
     try:
-      files = [open("H1H2L1range_summary.txt").readlines(), open("H1L1range_summary.txt").readlines(), open("H2L1range_summary.txt").readlines()]
-      page.write("|| || H1H2L1|||| || H1L1|||| || H2L1||\n")
+      filenames = page.image_glob('*range_summary.txt"')
+      files = [open(f).readlines() for f in filenames]
+      for f in filenames:
+        page.write("|| || %s ||" % (f.replace('range_summary.txt',''),) )
+      page.write("\n")
       for i in range(len(files[0])):
         for f in files: 
           page.write(f[i].strip())
         page.write("\n")
     except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
+
     page.write("\n")
-    image_list = ['H1H2L1volume_time.png', 'H1L1volume_time.png','H2L1volume_time.png']
+    image_list = page.image_glob('*volume_time.png') 
     page.image_table(image_list,webserver)
 
-    page.section("error on Volume x time H1H2L1, H1L1, H2L1")
-    image_list = ['H1H2L1fractional_error.png', 'H1L1fractional_error.png','H2L1fractional_error.png']
+    page.section("error on Volume x time " + ifos_string)
+    image_list = page.image_glob()#
+    ['H1H2L1fractional_error.png', 'H1L1fractional_error.png','H2L1fractional_error.png']
     page.image_table(image_list,webserver)
 
-    page.section("lambda H1H2L1, H1L1, H2L1")
-    image_list = ['H1H2L1lambda.png', 'H1L1lambda.png','H2L1lambda.png']
+    page.section("lambda " + ifos_string)
+    image_list = page.image_glob('*lambda.png')
     page.image_table(image_list,webserver)
 
-    page.section("Selected posteriors H1H2L1, H1L1, H2L1")
-    image_list = ['H1H2L1posterior.png', 'H1L1posterior.png','H2L1posterior.png']
+    page.section("Selected posteriors " + ifos_string)
+    image_list = page.image_glob('*posterior.png') 
     page.image_table(image_list,webserver)
 
-    page.section("upper limit H1H2L1, H1L1, H2L1")
-    image_list = ['H1H2L1upper_limit.png', 'H1L1upper_limit.png','H2L1upper_limit.png']
+    page.section("upper limit " + ifos_string)
+    image_list = page.image_glob('*upper_limit.png') 
     page.image_table(image_list,webserver)
 
     page.section("Combined upper limit")

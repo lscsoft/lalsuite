@@ -413,7 +413,7 @@ def ifo_combos(ifosegdict):
   combos = []
   for i in l: combos.append(",".join(i))
   #FIXME assumes we don't look at H1H2
-  combos.remove('H1,H2')
+  if 'H1,H2' in combos: combos.remove('H1,H2')
   print combos
   return combos
 
@@ -600,7 +600,7 @@ for cat in cats:
   for ifo_combination in ifo_combinations:
     #FIXME use a different function
     ifo_combination = str(ifo_combination)
-    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','')
+    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','') + '.xml'
     upperlimit_fnames[cat].append(fname)
     print fname, ifo_combination, ifo_combination
 
