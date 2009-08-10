@@ -17,13 +17,13 @@ from optparse import *
 import tempfile
 import ConfigParser
 import urlparse
-import glue
 from UserDict import UserDict
 sys.path.append('@PYTHONLIBDIR@')
 import subprocess
 
 ##############################################################################
 # import the modules we need to build the pipeline
+from glue import iterutils
 from glue import pipeline
 from glue import lal
 from glue.ligolw import lsctables
@@ -408,12 +408,12 @@ def ifo_combos(ifosegdict):
     if ifosegdict[ifo]: ifos.append(ifo)
   ifos.sort()
   for i in range(2, len(ifos)+1):
-    combos.extend([j for j in glue.iterutils.choices(ifos,i)])
+    combos.extend([j for j in iterutils.choices(ifos,i)])
   l = [i for i in combos]
   combos = []
   for i in l: combos.append(",".join(i))
   #FIXME assumes we don't look at H1H2
-  combos.remove('H1,H2')
+  if 'H1,H2' in combos: combos.remove('H1,H2')
   print combos
   return combos
 
@@ -600,7 +600,7 @@ for cat in cats:
   for ifo_combination in ifo_combinations:
     #FIXME use a different function
     ifo_combination = str(ifo_combination)
-    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','')
+    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','') + '.xml'
     upperlimit_fnames[cat].append(fname)
     print fname, ifo_combination, ifo_combination
 
