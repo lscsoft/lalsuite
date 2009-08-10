@@ -167,7 +167,7 @@ void init_sin_cos_LUT_REAL4(void);
 
 #ifdef EAH_CUDA
 int
-XLALComputeFStatFreqBandVector_cuda (REAL4FrequencySeriesVector *fstatBandV,         /**< [out] Vector of Fstat frequency-bands */
+XLALComputeFStatFreqBandVector (REAL4FrequencySeriesVector *fstatBandV,         /**< [out] Vector of Fstat frequency-bands */
                                 const PulsarDopplerParams *doppler,             /**< parameter-space point to compute F for */
                                 const MultiSFTVectorSequence *multiSFTsV,       /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
                                 const MultiNoiseWeightsSequence *multiWeightsV, /**< noise-weights of all SFTs */
@@ -786,7 +786,8 @@ XLALComputeFStatFreqBandVector_cuda (REAL4FrequencySeriesVector *fstatBandV,    
     return XLAL_SUCCESS;
 
 } /* XLALComputeFStatFreqBandVector_cuda() */
-#endif /* EAH_CUDA */
+
+#else /* EAH_CUDA */
 
 /** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
  *
@@ -961,6 +962,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
 
 } /* XLALComputeFStatFreqBandVector() */
 
+#endif /* EAH_CUDA */
 
 
 /** Host-bound 'driver' function for the central F-stat computation
