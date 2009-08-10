@@ -15,7 +15,7 @@ cfs_sources = 	$(lalappsDIR)/lalapps.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 
 ## start with some common defaults
-eah_sources = $(cfs_sources)
+eah_sources = $(cfs_sources) @CUDA_SOURCES@
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
@@ -72,3 +72,7 @@ ACLOCAL_AMFLAGS = -I m4
 starsphere_CPPFLAGS = -Wall -DUSE_BOINC -DBOINC_APP_GRAPHICS -DBOINC_APIV6 -DBOINC_GRAPHICS=0 @GRAPHICS_CFLAGS@ -Igraphics -I/usr/X11R6/include
 starsphere_LDADD    = -lboinc_graphics2 -lboinc_api -lboinc @GRAPHICS_LIBS@ @MAC_LIBS@ # -lglut
 starsphere_SOURCES  = graphics/starlist.C graphics/snr_list.C graphics/user_text.C graphics/pulsar_list.C graphics/search_info.C graphics/starsphere.C graphics/main.C
+
+NVCC ?= nvcc
+%.o: %.cu
+	$(NVCC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
