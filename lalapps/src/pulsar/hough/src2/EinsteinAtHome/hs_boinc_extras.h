@@ -43,11 +43,11 @@
 #include "../HierarchicalSearch.h"
 #include <cuda_fstat.h>
 #define GPUREADY_DEFAULT 1
-#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define INITIALIZE_COPROCESSOR_DEVICE
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #define REARRANGE_SFT_DATA
-#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g) ComputeFStatFreqBand(a,b,c,d,e,f,g,k)
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 #else
 #define REARRANGE_SFT_DATA
 #define INITIALIZE_COPROCESSOR_DEVICE
