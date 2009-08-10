@@ -5,6 +5,7 @@ cfsHOME = @CFS_DIR@
 hsHOME = @HS_DIR@
 eaHOME = $(hsHOME)/EinsteinAtHome
 lalappsDIR = @LALAPPS_DIR@
+CUDAkernel = @CUDA_KERNEL@
 CLEANFILES = 
 
 cfs_sources = 	$(lalappsDIR)/lalapps.c \
@@ -15,7 +16,7 @@ cfs_sources = 	$(lalappsDIR)/lalapps.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 
 ## start with some common defaults
-eah_sources = $(cfs_sources) @CUDA_SOURCES@
+eah_sources = $(cfs_sources) $(CUDAkernel)
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
