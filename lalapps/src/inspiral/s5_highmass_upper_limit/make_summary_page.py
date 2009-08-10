@@ -35,6 +35,9 @@ class wiki(object):
     s = "=== "+title.strip()+" ===\n"
     self.file.write(s)
 
+  def write(self,val):
+    self.file.write(val)
+
   def finish(self):
     self.file.close()  
 
@@ -51,6 +54,10 @@ try: # see if you want to open the box
 except: pass
 
 page = wiki(open_box)
+
+page.section("Injection Parameters")
+image_list = ['cbc_plotsummary_5_sim_dist_m1_m2_EOBNRpseudoFourPN.png','cbc_plotsummary_5_sim_dist_m1_m2_IMRPhenomAtwoPN.png']
+page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
 image_list = ['cbc_plotsummary_0_deff_vs_mchirp_H1H2L1.png','cbc_plotsummary_0_deff_vs_mchirp_H1L1.png','cbc_plotsummary_0_deff_vs_mchirp_H2L1.png']
@@ -88,6 +95,10 @@ page.section("Playground SNR")
 image_list = ['cbc_plotsummary_4_playground_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_playground_count_vs_snr_H1L1.png','cbc_plotsummary_4_playground_count_vs_snr_H2L1.png']
 page.image_table(image_list,webserver)
 
+try:
+  for l in open("playground_summary_table.txt").readlines(): page.write(l)
+except: print >>sys.stderr, "WARNING: couldn't find playground summary, continuing"
+
 if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
@@ -106,9 +117,21 @@ if open_box:
     page.section("Full Data SNR")
     image_list = ['cbc_plotsummary_4_count_vs_snr_H1H2L1.png','cbc_plotsummary_4_count_vs_snr_H1L1.png','cbc_plotsummary_4_count_vs_snr_H2L1.png']
     page.image_table(image_list,webserver)
+    try:
+      for l in open("summary_table.txt").readlines(): page.write(l)
+    except: print >>sys.stderr, "WARNING: couldn't find summary, continuing"
 
     # UPPER LIMIT PLOTS
     page.section("Volume x time H1H2L1, H1L1, H2L1")
+    try:
+      files = [open("H1H2L1range_summary.txt").readlines(), open("H1L1range_summary.txt").readlines(), open("H2L1range_summary.txt").readlines()]
+      page.write("|| || H1H2L1|||| || H1L1|||| || H2L1||\n")
+      for i in range(len(files[0])):
+        for f in files: 
+          page.write(f[i].strip())
+        page.write("\n")
+    except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
+    page.write("\n")
     image_list = ['H1H2L1volume_time.png', 'H1L1volume_time.png','H2L1volume_time.png']
     page.image_table(image_list,webserver)
 
@@ -132,5 +155,8 @@ if open_box:
     image_list = ['combinedupper_limit.png', 'combinedposterior.png']
     page.image_table(image_list,webserver)
 
+try: 
+  for l in open("plotsummary.txt").readlines(): page.write(l)
+except: print >>sys.stderr, "WARNING couldn't find plotsummary.txt"
 
 page.finish()

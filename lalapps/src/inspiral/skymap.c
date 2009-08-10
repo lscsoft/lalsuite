@@ -22,88 +22,84 @@
 #include <lal/LIGOMetadataTables.h>
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))
+#define NSIGMA 3
 
-// Use detector names from lal/packages/tools/include/LALDetectors.h :
-//      LAL_TAMA_300_DETECTOR   =       0,
-//      LAL_VIRGO_DETECTOR      =       1,
-//      LAL_GEO_600_DETECTOR    =       2,
-//      LAL_LHO_2K_DETECTOR     =       3,
-//      LAL_LHO_4K_DETECTOR     =       4,
-//      LAL_LLO_4K_DETECTOR     =       5,
+typedef struct 
+{
+    XLALSkymap2SphericalPolarType *directions;
+    double* logPosteriors;
+    double total_logPosterior;
+    int count;
+} SkyMapProperties;
+
+/* 
+ * Use detector names from lal/packages/tools/include/LALDetectors.h :
+ *
+ *      LAL_TAMA_300_DETECTOR   =       0,
+ *      LAL_VIRGO_DETECTOR      =       1,
+ *      LAL_GEO_600_DETECTOR    =       2,
+ *      LAL_LHO_2K_DETECTOR     =       3,
+ *      LAL_LHO_4K_DETECTOR     =       4,
+ *      LAL_LLO_4K_DETECTOR     =       5,
+ *
+ *-------------------------------------------------------
+ *
+ *  Array of pointers to the matched-filtered data z[t]
+ * 
+ *       x[0] = real(z_H)
+ *       x[1] = real(z_L)
+ *       x[2] = real(z_V)
+ *          ... etc ...
+ *       x[ MAXOBS + 0 ] = imag(z_H)
+ *       x[ MAXOBS + 1 ] = imag(z_L)
+ *       x[ MAXOBS + 2 ] = imag(z_V)
+ *          ... etc ...
+ */
+typedef struct 
+{
+    int N;
+    int* detectors;
+    double* wSw;
+    double** x;    
+} NetworkProperties;
 
 /*
  *  File names for input and output
  */
 char* frame_file[6] = { 0, 0, 0, 0, 0, 0};
-
 char* xml_file[6] = { 0, 0, 0, 0, 0, 0 };
 typedef const char* cp;
 cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
-
 const char* output_file = "skymap.txt";
 
-char* event_id = 0;
-
 /*
- *  Resolution of output sky map
+ *  Global Variables...
  */
-int ra_res = 512;
-int dec_res = 256;
-
-/*
- * Number of Detectors Used
- */
-int numObs;
-
-/*
- * Network Info...
- */
-double *wSw;
-int *detectors;
-
-/*
- *  Sampling frequency of analysis, which determines sky tiling
- */
-int frequency = 0;
-
-/*
- *  Number of samples to analyze
- */
-int samples = 512;
-
-/*
- *  Array of pointers to the matched-filtered data z[t]
- * 
- *  x[0] = real(z_H)
- *  x[1] = real(z_L)
- *  x[2] = real(z_V)
- *  ... etc ...
- *  x[ MAXOBS + 0 ] = imag(z_H)
- *  x[ MAXOBS + 1 ] = imag(z_L)
- *  x[ MAXOBS + 2 ] = imag(z_V)
- *  ... etc ...
- */
-double** x;
-
-/*
- * Orientation of the earth at the event time
- */
-double greenwich = 0;
+char* event_id = 0;    // Event ID
+int ra_res = 512;      // resolution of output skyMap
+int dec_res = 256;     // ""
+int frequency = 0;     // sampling freq. of analysis (det's sky tilting)
+int samples = 512;     // Number of samples to analyze
+double greenwich = 0;  // Orientation of Earth at event time
 
 /*
  * Functions
  */
-void load_metadata(char* file, int detector);
-void load_data(int detector, const char* file, const char* initial);
-void dump_data_to_file(FILE*);
-void analyze(void);
+void  load_metadata( NetworkProperties* network,
+                     int slot);
+void      load_data( NetworkProperties* network,
+                     int slot );
+void writeSkymapOut( SkyMapProperties* skyMap );
+void        analyze( NetworkProperties* network, 
+                     SkyMapProperties* skyMap );
 
+/*
+ *  MAIN
+ */
 int main(int argc, char** argv)
 {
   fprintf( stderr , "#INSIDE MAIN!!!\n");//<<-----------------FIXME
-  int c;
-  
-  numObs = 0;
+  int c,numObs = 0;
  
   while (1)
     {
@@ -199,7 +195,10 @@ int main(int argc, char** argv)
           exit(1);
         }//end if
       if( xml_file[i] && frame_file[i] )
-           ++numObs; 
+        {
+           ++numObs;
+           printf("NUM OBS: %d\n" , numObs ); 
+        }// end if
     }// end i for
   }// end code block
   
@@ -209,26 +208,37 @@ int main(int argc, char** argv)
       exit(1);
     }
   
+  /* examine one second of data around the injection */
+  samples = frequency;
+
+  
   fprintf( stderr , "#Cleared Sanity Check!!!\n");//<<-----------------FIXME
   
-  /* figure out how many observatories and allocate memory for x and wSw */
+  /* 
+   *  We create numObs + 1 networks... one for the whole system, and one network
+   *  for each single detector:
+   */
+  NetworkProperties* network;
+  NetworkProperties* singleObs;
+
   {
     int i,k=0;
-
-    wSw = malloc( sizeof(double) * numObs ); 
-    detectors = malloc( sizeof(int) * numObs );    
+    
+    network = malloc(sizeof(*network));
+    network->N = numObs; 
+    
+    network->wSw = malloc( sizeof(double) * numObs ); 
+    network->detectors = malloc( sizeof(int) * numObs );    
     
     for( i = 0 ; i < 6 ; ++i )
         if( frame_file[i] )
-            detectors[k++] = i;
+            network->detectors[k++] = i;
 
-    x = malloc( sizeof( double* ) * numObs * 2 );
-    
+    network->x = malloc( sizeof( double* ) * numObs * 2 );
   }// end code block
 
-  /* examine one second of data around the injection */
-  samples = frequency;
-  
+   
+ 
   /*
    * Load metadata from XML files
    */
@@ -236,25 +246,129 @@ int main(int argc, char** argv)
     int i;
     for( i = 0 ; i < numObs ; ++i )
       {
-        load_metadata( xml_file[ detectors[i] ] , i );
-        load_data( i , frame_file[ detectors[i] ] , channel_name[ detectors[i] ] ); 
+        load_metadata(network , i);
+        load_data(network , i);
       }// end i for
    }
-  
+
+  {
+      int j;
+      double maxwSw = 0;
+      for( j = 0 ; j < network->N ; ++j )
+        if( network->wSw[j] > maxwSw )
+          maxwSw = network->wSw[j];
+      for( j = 0 ; j < network->N ; ++j )
+          network->wSw[j] /= maxwSw;
+  }// end code block
+    
+  if( numObs > 1 )
+    {
+      singleObs = malloc( sizeof(*network) * numObs );
+      
+      int i;
+      for( i = 0 ; i != numObs ; ++i )
+        {
+          singleObs[i].N = 1;
+          singleObs[i].wSw = malloc(sizeof(double));
+          singleObs[i].wSw[0] = network->wSw[i];
+
+          singleObs[i].detectors = malloc(sizeof(int));
+          singleObs[i].detectors[0] = network->detectors[i];
+
+          singleObs[i].x = malloc(sizeof(double*) * 2 );
+          singleObs[i].x[0] = network->x[i];
+          singleObs[i].x[1] = network->x[i + numObs]; 
+        }//end for
+    }//end if 
+
   fprintf( stderr , "#Entering Analsis...\n");//<<-----------------FIXME
   
   /*
-   * Analyze the data and save the skymap
+   *  Analyze the data and save the skymap for the N-Detector Case
    */
-  analyze();
+  SkyMapProperties* skyMap;
+  skyMap = malloc(sizeof(*skyMap));
+  skyMap->count = ra_res * dec_res;
+  skyMap->directions = malloc(sizeof(*(skyMap->directions))*skyMap->count);
+  skyMap->logPosteriors = malloc(sizeof(*(skyMap->logPosteriors)) * skyMap->count );
 
-  fprintf( stderr , "#Fully Analyzed... destorying last few arrays...\n");
+  /*
+   *  Analyze the data for the N single-detector cases, and store the net
+   *  log posteriors...
+   */
+  double* total_logPosteriors;
+  if( numObs > 1 )
+    {
+      total_logPosteriors = malloc(sizeof(double) * numObs );
+      int i;
+      for( i = 0 ; i != numObs ; ++i )
+        {
+          analyze(  singleObs + i , skyMap );
+          total_logPosteriors[i] = skyMap->total_logPosterior;
+          fprintf(stderr,"total_logPosterior[%d] = %e\n", i , total_logPosteriors[i]);
+        }// end i for
+    }//end if
+  
+  /*
+   *   Analyze the full network, write out the skymap, and 
+   *   then print the final summary...
+   */
+
+  analyze( network , skyMap );
+  writeSkymapOut( skyMap );
+
+  {
+    int i,iMode = 0;
+    for( i = 0 ; i < skyMap->count ; ++i )
+      {
+        if(skyMap->logPosteriors[i] > skyMap->logPosteriors[iMode])
+          iMode = i;
+      }
+
+    double raMax = fmod( skyMap->directions[iMode][0] + greenwich , LAL_TWOPI );
+    double longMax = fmod( skyMap->directions[iMode][0] , LAL_TWOPI );
+    double decMax = skyMap->directions[iMode][1];
+
+    printf("#EVENT ID \t FOUND RA \t FOUND DEC \t");
+    printf(" TOTAL PROB \t LONG \t LAT\t");
+    if( numObs > 1 )
+        for( i = 0 ; i != numObs ; ++i )
+            printf(" Detector_%d \t " , i );
+    printf("\n");
+    printf("%s  %f \t %f \t %e \t %f \t %f\t" ,
+           event_id , raMax , decMax , skyMap->total_logPosterior ,
+           longMax , decMax );
+    if( numObs > 1 )
+        for( i = 0 ; i != numObs ; ++i )
+            printf(" %e \t",total_logPosteriors[i]);
+    printf("\n");
+  }// end summary block 
+ 
+   
+  /*
+   *  Raw data free'd
+   */
+  {
+    int i;
+    for (i = 0; i != 2*numObs; ++i)
+      free(network->x[i]); 
+  }
+  
+  
+  /*
+   *  posterior data free'd
+   */
+  free( skyMap->logPosteriors );
+  free( skyMap->directions );
+  free( singleObs );
 
   return 0;
 }// end main
 
-void load_metadata(char* file, int slot )
+void load_metadata(NetworkProperties* network , int slot)
 {
+  char* file = xml_file[ network->detectors[slot] ];
+  
   if (file)
     {
       SnglInspiralTable* a = 0;
@@ -264,13 +378,16 @@ void load_metadata(char* file, int slot )
 	  fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
 	  exit(1);
         }
-      wSw[slot] = a->sigmasq;
+      network->wSw[slot] = a->sigmasq;
       greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
     }//end file if
 }// end load_metadata
 
-void load_data(int slot, const char* file, const char* initial)
+void load_data(NetworkProperties* network , int slot )
 {
+   const char* file = frame_file[ network->detectors[slot] ];
+   const char* initial = channel_name[ network->detectors[slot] ];
+  
   if (file)
     {
       /* 
@@ -298,118 +415,157 @@ void load_data(int slot, const char* file, const char* initial)
       XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
       XLALFrClose(stream);
       
-      /*
-       *  Allocate memory to repack the data in
+      /* 
+       * real/complex or waveform one/two  
        */
-      
-      /* real, or waveform one */
-      x[slot         ] = (double*) malloc(samples * sizeof(double));
-      /* complex, or waveform two */
-      x[slot + numObs] = (double*) malloc(samples * sizeof(double));     
-      
+      network->x[slot              ] = (double*) malloc(samples * sizeof(double));
+      network->x[slot + network->N ] = (double*) malloc(samples * sizeof(double));     
+
       for (i = 0; i != samples; ++i)
         {
-	  x[slot         ][i] = H1series.data->data[i].re;
-	  x[slot + numObs][i] = H1series.data->data[i].im;
+	  network->x[slot              ][i] = H1series.data->data[i].re;
+	  network->x[slot + network->N ][i] = H1series.data->data[i].im;
         }// end i for
     }// end file if
 }// end load_data
 
-#define NSIGMA 3
+void writeSkymapOut( SkyMapProperties* skyMap )
+{
+    int i;
+    /*
+     *  Write a gzipped ascii file describing the sky map
+     */
+    gzFile* h = NULL;
+    h = gzopen(output_file, "wb");
+    if (h == NULL)
+      {
+        fprintf(stderr,"cannot gzopen() %s\n",output_file);
+        exit(1);
+      }
 
-void analyze(void)
+    for ( i = 0; i != skyMap->count ; ++i )
+      {
+        double phi,ra,dec,longitude;
+        phi = skyMap->directions[i][1];
+        ra  = fmod(phi + greenwich, LAL_TWOPI);
+        longitude = fmod( phi , LAL_TWOPI);
+        while (ra < 0)
+          ra += LAL_TWOPI;
+        while ( longitude < 0 )
+          longitude += LAL_TWOPI;
+        while (ra >= LAL_TWOPI)
+          ra -= LAL_TWOPI;
+        while ( longitude >= LAL_TWOPI )
+          longitude -= LAL_TWOPI;
+        dec = LAL_PI_2 - skyMap->directions[i][0];
+        gzprintf( h, "%.10e %.10e %.10e %.10e %.10e\n", 
+                  ra, dec, (skyMap->logPosteriors[i]) , longitude , dec );
+      }// end i for
+    gzclose(h);
+}// end writeSkyMapOut
+
+
+
+/*
+ *  ANALYZE
+ */
+void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
 {
   int i,j;
-   
+  
   XLALSkymap2PlanType* plan;
-  XLALSkymap2SphericalPolarType *directions;
   XLALSkymap2DirectionPropertiesType *properties;   
   XLALSkymap2KernelType *kernels;
   
-  double* logPosteriors;
-  double** xSw = malloc( sizeof( double* ) * numObs );
-  double** xSw2 = malloc( sizeof( double* ) * numObs ); 
+  double** xSw = malloc( sizeof( double* ) * network->N );
+  double** xSw2 = malloc( sizeof( double* ) * network->N ); 
   
   /* 
    *  The characteristic size of the signal 
    */
 
   /* Validate the input */    
-  for (i = 0; i != numObs; ++i)
+  for (i = 0; i != network->N; ++i)
     {
-      if (x[i])
+      if (network->x[i])
         {
           for (j = 0; j != samples; ++j)
             {
-              if (!((x[i][j] > log(0)) && (x[i][j] < -log(0))))
+              if (!( ( network->x[i][j] >  log(0) )  && 
+                     ( network->x[i][j] < -log(0) )      ))
 	        {
-	          fprintf(stderr, "error: x[%d][%d] = %e\n", i, j, x[i][j]);
+	          fprintf(stderr, "error: x[%d][%d] = %e\n", i, j, network->x[i][j]);
 	          exit(1);
 	        }// end if
-	      if (!((x[i + numObs][j] > log(0)) && (x[i + numObs][j] < -log(0))))
+	      if (!(  (network->x[i + network->N][j] > log(0)) && 
+                      (network->x[i + network->N][j] < -log(0))   ))
 	        {
-	          fprintf(stderr, "error: x[%d][%d] = %e\n", i + numObs, j, x[i + numObs][j]);
+	          fprintf( stderr , "error: x[%d][%d] = %e\n", 
+                           i + network->N, j, network->x[i + network->N][j]);
 	          exit(1);
 	        }//end if
 	    }//end j for
 	}// end if
+       else
+         {
+           fprintf(stderr , "Data not supplied for detector %d\n" , i );
+           exit(1);
+         }// end else
     }//end i for
   
   fprintf( stderr , "#Input Validated...\n");//<<-----------------FIXME
-  
-  double log_pglitch;
-  
-  {
     
     /*
-     * Compute the glitch hypotheses
-     */
-    double log_pglitches[numObs];
+     * Compute the glitch hypotheses  //<----------- TEMP REMOVED FIXME
+     *
+  {
+    double log_pglitches[network->N];
     
-    for (i = 0; i != numObs; ++i)
+    for (i = 0; i != network->N; ++i)
       {
 	log_pglitches[i] = log(0.0);
-	if (x[i])
+	if (network->x[i])
 	  {
 	    for (j = 0; j != samples; ++j)
 	      {
 		double log_p = -1.0 * log( 1 + pow( 1 , 2 )) + 
-		.5 * pow( 1 + pow( 1 , -2 ) , -1 ) * ( pow( x[i][j] , 2 ) + pow( x[i+2][j] , 2 ) );
+		.5 * pow(1 + pow(1,-2),-1) * (pow(x[i][j],2) + pow(x[i+network->N][j],2));
 		log_pglitches[i] = XLALSkymapLogSumExp( log_pglitches[i] , log_p );
 	      }// end j for
 	    log_pglitches[i] -= log( samples );
 	  }// end x if
       }// end i for
     
-    log_pglitch = 0.0;
-    for (i = 0; i != numObs; ++i)
+    skyMap->log_pGlitch = 0.0;
+    for (i = 0; i != network->N ; ++i)
       {
 	if (x[i])
 	  {
-	    log_pglitch += log_pglitches[i];
+	    skyMap->log_pGlitch += log_pglitches[i];
 	  }//end if
       }//end i for
   }// end code block
   
-  fprintf( stderr , "#Glitch Hypothesis Found...\n");//<<-----------------FIXME
+  ----------- FIXME END TEMP REMOVED FIXME 
+ 
+  */
   
   /*   
    *  the sky tiles implied by the frequency) 
    */
   plan = malloc(sizeof(*plan));
-  XLALSkymap2PlanConstruct( frequency , numObs , detectors , plan ); 
+  XLALSkymap2PlanConstruct( frequency , network->N , network->detectors , plan ); 
   
   /*
    *  Directions assigned for each pixel, using sine proj.
    */
   {
-    directions = malloc(sizeof(*directions) * dec_res * ra_res );
     for ( i = 0 ; i != dec_res ; ++i )
       {
 	for ( j = 0 ; j != ra_res ; ++j )
 	  {
-	    directions[i*ra_res + j][0] = acos((i - dec_res/2.0 + 0.5)/dec_res*2);
-	    directions[i*ra_res + j][1] = ( j + .5 )/ra_res * 2 * LAL_PI;
+	    skyMap->directions[i*ra_res + j][0] = acos((i - dec_res/2.0 + 0.5)/dec_res*2);
+	    skyMap->directions[i*ra_res + j][1] = (j + .5)/ra_res*2*LAL_PI;
 	  }//end j for
       }// end i for
   }// end code block
@@ -419,69 +575,73 @@ void analyze(void)
   /*
    *  Properties Constructed
    */    
-  properties = malloc(sizeof(*properties) * dec_res * ra_res );
-  for (i = 0 ; i != ra_res*dec_res ; ++i)
+  properties = malloc(sizeof(*properties) * skyMap->count );
+  for (i = 0 ; i != skyMap->count ; ++i)
     {
       XLALSkymap2DirectionPropertiesConstruct(
  		                              plan, 
-				              directions + i,
+				              skyMap->directions + i,
 				              properties + i
 				              );
     }// end i for
   
+  fprintf(stderr,"#Properties Constructed, N = %d \n" , network->N); 
   
   /*
    *  Posterior probabilities found for 4 different signal amplitudes,
    *  at each pixel in the sky, over all arrival times...
    */
   {
-    int n;
+    for (i = 0; i != network->N; ++i)
     {
-      double maxwSw = 0;
-      for( j = 0 ; j < numObs ; ++j )
-	if( wSw[j] > maxwSw )
-	  maxwSw = wSw[j];
-      for( j = 0 ; j < numObs ; ++j )
-	wSw[j] /= maxwSw;
-    }// end code block
-    
-    for (i = 0; i != numObs; ++i)
-    {
-      xSw[i] = malloc(sizeof(*xSw[i]) * samples);
-      xSw2[i] = malloc(sizeof(*xSw2[i]) * samples);
+      xSw[i] = malloc(sizeof(double) * samples);
+      xSw2[i] = malloc(sizeof(double) * samples);
       for (j = 0; j != samples; ++j)
-         xSw[i][j] = x[i][j] * sqrt( wSw[i] );
-         xSw2[i][j] = x[i + numObs ][j] * sqrt( wSw[i] );
+        {
+          xSw[i][j]  = network->x[i][j]               * sqrt( network->wSw[i] );
+          xSw2[i][j] = network->x[i + network->N ][j] * sqrt( network->wSw[i] );
+        }// end j for
     }// end i for
 
     fprintf( stderr , "#Commencing kernel calculations...\n");//<<-----------------FIXME    
 
-    kernels = malloc(sizeof(*kernels) * dec_res * ra_res);
-    logPosteriors = malloc(sizeof(*logPosteriors) * ra_res * dec_res );
-    for( j = 0 ; j < ra_res * dec_res ; ++j )
-      logPosteriors[j] = log(0);
+    kernels = malloc( sizeof(*kernels) * skyMap->count );
+    for( j = 0 ; j != skyMap->count ; ++j )
+      skyMap->logPosteriors[j] = log(0);
     double* buffer = malloc(sizeof(double) * samples);
     
-    fprintf( stderr , "#Memory Allocated... btw's numObs == %d\n" , numObs ); //<<--------- FIXME
+    fprintf( stderr , "#Memory Allocated... btw's numObs == %d\n" , network->N );//<<--- FIXME
     
     {
-      for( n = 0 ; n < 4 ; ++n ) /* over 4 waveForm amplitudes */
+      int k;
+      double* wSw;
+      wSw = malloc( sizeof(double) * network->N );
+      for( i = 0 ; i < network->N ; ++i )
         {
-  	  for (i = 0; i != ra_res * dec_res; ++i) /* over all pixels */
+          wSw[i] = network->wSw[i];
+        }// end i for
+
+      for( k = 0 ; k < 4 ; ++k ) /* over 4 waveForm amplitudes */
+        {
+  	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
 	    XLALSkymap2KernelConstruct( plan , properties + i, wSw, kernels + i );
-          fprintf( stderr , "#samples = %d\n" , samples ); //<<--------------------- FIXME	
-	  for (i = 0; i != ra_res * dec_res; ++i) /* over all pixels */
+          fprintf( stderr , "#samples = %d\n#count= %d\n" , samples , skyMap->count); //<< FIXME	
+          
+	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
 	    {
 	      int t;
+              //fprintf(stderr, "%d: i = %d\n", __LINE__, i);
 	      for( t = samples/4 ; t < 3 * samples / 4 ; ++t ) /* over all sample times */
 	        {
                   double real , imag;
+                  //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
 		  XLALSkymap2Apply( plan , 
                                     properties + i , 
                                     kernels + i , 
                                     xSw  , 
                                     t , 
                                     &real );       
+                  //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
 		  XLALSkymap2Apply( plan , 
                                     properties + i , 
                                     kernels + i , 
@@ -490,14 +650,20 @@ void analyze(void)
                                     &imag );
 		  buffer[t] = real + imag;  
 	        }// end t for
-	      logPosteriors[i] = XLALSkymapLogSumExp( logPosteriors[i] , 
-	                                              XLALSkymapLogTotalExp( buffer + samples / 4 , buffer + 3 * samples / 4 ) - log(4) - log(samples/2) );
-	    }//end i for
-          fprintf( stderr , "#N = %d\n" , n );	
+                //if( isnan(skyMap->logPosteriors[i] ) )
+                //  {
+                //    fprintf( stderr , "NAN @ i = %d\n" , i );
+                //    exit(1);
+                //  }//end if
+	      skyMap->logPosteriors[i] = XLALSkymapLogSumExp( skyMap->logPosteriors[i] , 
+	                                 XLALSkymapLogTotalExp( buffer + samples / 4 , 
+                                         buffer + 3*samples/4) - log(4) - log(samples/2) );
+            }//end i for
+          fprintf( stderr , "#N = %d\n" , k );	
 	  /*
 	   *  For the next loop, look for a signal sqrt(10) larger...
 	   */
-	  for( i = 0 ; i < numObs ; ++i )
+	  for( i = 0 ; i < network->N ; ++i )
 	  {
 	    wSw[i] *= 10.0;
 	    for( j = 0 ; j != samples; ++j )
@@ -513,89 +679,34 @@ void analyze(void)
     free(buffer);
   }// end posterior computing code block
  
-  fprintf( stderr , "#Posterior Found, writing...\n");//<<-----------------FIXME 
+  fprintf( stderr , "#Posterior Found, writing...\n");//<<--------FIXME 
  
-  /*  Allocate a chunk of memory to hold the sky map in the internal 
-   *  timing format
-   */
-  
   /* validate the output */
-  for (i = 0; i != ra_res * dec_res; ++i)
+  for (i = 0; i != skyMap->count ; ++i)
     {
-      if( isnan(logPosteriors[i]) )
+      if( isnan(skyMap->logPosteriors[i]) )
 	{
-	  fprintf(stderr, "BAD DIRECTION :( THETA: %f PHI: %f i:%d\n", directions[i][0],directions[i][1],i);
+	  fprintf(stderr, "BAD DIRECTION :( THETA: %f PHI: %f i:%d\n", 
+                  skyMap->directions[i][0],skyMap->directions[i][1],i);
 	  exit(1);
-	}
-    }
-  
-  int iMode = 0;
-  for( i = 0 ; i < ra_res * dec_res ; ++i )
-    {
-      if(logPosteriors[i] > logPosteriors[iMode])
-	iMode = i;
-    }
-  
-  /*
-   *  Write a gzipped ascii file describing the sky map
-   */
-  gzFile* h = NULL;
-  h = gzopen(output_file, "wb");
-  if (h == NULL) 
-    {
-      fprintf(stderr,"cannot gzopen() %s\n",output_file);
-      exit(1);
-    }
-  
-  for ( i = 0; i != ra_res * dec_res ; ++i )
-    {
-      double phi,ra,dec,longitude;
-      phi = directions[i][1];
-      ra  = fmod(phi + greenwich, LAL_TWOPI);
-      longitude = fmod( phi , LAL_TWOPI);
-      while (ra < 0)
-     	ra += LAL_TWOPI;
-      while ( longitude < 0 )
-        longitude += LAL_TWOPI;
-      while (ra >= LAL_TWOPI)
-	ra -= LAL_TWOPI;
-      while ( longitude >= LAL_TWOPI )
-        longitude -= LAL_TWOPI;
-      dec = LAL_PI_2 - directions[i][0];
-      gzprintf(h, "%.10e %.10e %.10e %.10e %.10e\n", ra, dec, (logPosteriors[i]) , longitude , dec );
+	}//end if
     }// end i for
-  gzclose(h);
- 
-  fprintf( stderr , "#Written to file... writing summary...\n");//<<-----------------FIXME
-   
-  /*
-   * Summary of Results printed to log file
-   */
   {
-    double log_totalProb = XLALSkymapLogTotalExp( logPosteriors , logPosteriors + ra_res*dec_res );
-    log_totalProb -= log( ra_res * dec_res );
-    double raMax = fmod( directions[iMode][0] + greenwich , LAL_TWOPI );
-    double longMax = fmod( directions[iMode][0] , LAL_TWOPI );
-    double decMax = directions[iMode][1];    
-    printf("#EVENT ID \t\t FOUND RA \t\t FOUND DEC \t\t TOTAL PROB \t\t GLITCH PROB \t\t LONG \t\t LAT\n");
-    printf("%s \t\t %f \t\t %f \t\t %e \t\t %e \t\t %f \t\t %f\n" , event_id , raMax , decMax , log_totalProb , log_pglitch , longMax , decMax ); 
-  }// end summary print block       
-  
+    double log_totalProb = XLALSkymapLogTotalExp( skyMap->logPosteriors ,
+                                                  skyMap->logPosteriors + skyMap->count );
+    skyMap->total_logPosterior = log_totalProb - log( skyMap->count );
+    fprintf( stderr , "#TOTAL PROB: %e\n" , skyMap->total_logPosterior );
+  }
   /*
    *  Free the data
    */
   free(plan);
-  for (i = 0; i != 2*numObs; ++i)
-    free(x[i]);
-  free(logPosteriors);
-  for(i = 0; i != numObs; ++i)
+  for(i = 0; i != network->N; ++i)
   {
      free(xSw2[i]);
      free(xSw[i]);    
   }// end i for
   free(kernels);
   free(properties);
-  free(directions);    
-  
 }// end analyze(void)
 

@@ -349,9 +349,9 @@ typedef enum
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
 \idx[Type]{LALLeapSecAccuracy}
 
-This enumerated type is used as a parameter for \texttt{LALGPStoUTC()},
-\texttt{LALUTCtoGPS()}, and \texttt{LALLeapSecs()} to specify if complete
-accuracy is required in use of leap seconds.  The allowed values are:
+This enumerated type is used as a parameter for \texttt{LALLeapSecs()} to
+specify if complete accuracy is required in use of leap seconds.  The
+allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
@@ -623,19 +623,6 @@ void LALGPStoGMST1( LALStatus         *status,
 /* <lalLaTeX>
 \newpage\input{GPStoUTCC}
 </lalLaTeX> */
-void
-LALGPStoUTC (LALStatus                *status,
-             LALDate                  *pUtcDate,
-             const LIGOTimeGPS        *pGpsTime,
-             const LALLeapSecAccuracy *pAccuracy);
-
-void
-LALUTCtoGPS (LALStatus                *status,
-             LIGOTimeGPS              *pGpsTime,
-             const LALDate            *pUtcDate,
-             const LALLeapSecAccuracy *pAccuracy);
-
-
 void
 LALLeapSecs (LALStatus                    *status,
              INT4                         *p_leapSecs,
