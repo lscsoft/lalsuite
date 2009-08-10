@@ -1344,14 +1344,22 @@ void LALappsGetFrameData(LALStatus*          status,
   errcode=XLALFrSeek(stream,&bufferedDataStopGPS);
   if (errcode!=0)
     {
-      fprintf(stderr,"Error seeking stream to %f\n",bufferedDataStart);
+      fprintf(stderr,"Error seeking stream to end time: %f\n",XLALGPSGetREAL8(&bufferedDataStopGPS));
+      fprintf(stderr,"GPS Seconds: %i GPS NanoSeconds: %i\n",
+	      bufferedDataStopGPS.gpsSeconds,
+	      bufferedDataStopGPS.gpsNanoSeconds);
+      fprintf(stderr,"Error code %i",errcode);
       fflush(stderr);
       exit(errcode);
     }
   errcode=XLALFrSeek(stream,&bufferedDataStartGPS);
   if (errcode!=0)
     {
-      fprintf(stderr,"Error seeking stream to %f\n",bufferedDataStop);
+      fprintf(stderr,"Error seeking stream to start time: %f\n",XLALGPSGetREAL8(&bufferedDataStartGPS));
+      fprintf(stderr,"GPS Seconds: %i GPS NanoSeconds: %i\n",
+	      bufferedDataStopGPS.gpsSeconds,
+	      bufferedDataStopGPS.gpsNanoSeconds);
+      fprintf(stderr,"Error code %i",errcode);
       fflush(stderr);
       exit(errcode);
     }
@@ -2183,7 +2191,6 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   UINT4             newPointLength=0;
   LIGOTimeGPS       edgeOffsetGPS;
   REAL8             originalFloatTime=0;
-  REAL8             revisedSamplingRate=0;/*Account for Fhet*/
   REAL8             newFloatTime=0;
   CHARVector       *dataLabel=NULL;
   /* Set to zero to use ascii files */
