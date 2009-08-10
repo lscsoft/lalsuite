@@ -1976,6 +1976,21 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*This is the map time resolution*/
   mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
   mapMarkerParams.dataDeltaT=signalSeries->deltaT;
+  /*
+   *If initial data was heterodyned set f0 to the heterodyning F
+   *else put the value to 0
+   */
+  if (params.HeterodyneFrequency > 0)
+    {
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"Adjust the Map Marking Offset of f0 to %f Hz\n",params.HeterodyneFrequency);
+	  fflush(stdout);
+	}
+      mapMarkerParams.f0=params.HeterodyneFrequency;
+    }
+  else
+    mapMarkerParams.f0=0;
   /* 
    * Properly CROP TFR due to buffered segments used to create the
    * TFR.  MAKE SURE to account for proper TFR dims and time/freq

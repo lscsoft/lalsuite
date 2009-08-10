@@ -230,8 +230,20 @@ class tracksearchCheckIniFile:
         if self.iniOpts.has_option('tracksearchtime','sample_rate'):
             sampleRate=float(self.iniOpts.get('tracksearchtime','sample_rate'))
         else:
-            self.errList.append('It appears that sample_rate option is missing in ini file!.');
+            self.errList.append('It appears that sample_rate option is missing in ini file!.')
             sampleRate=float(0)
+        #If INI has heterodyne options then both must be present
+        heterodyneFrequency=0
+        if self.iniOpts.has_option('tracksearchtime','heterodyne_frequency'):
+            heterodyneFrequency=float(self.iniOpts.get('tracksearchtime','heterodyne_frequency'))
+            if heterodyneFrequency > sampleRate/2:
+                self.errList.append('It appears that the heterodyne \
+frequency requested exceeds the original data nyquist frequency')
+            if self.iniOpts.has_option('tracksearchtime','heterodyne_sample_rate'):
+                heterodyneRate=float(self.iniOpts.get('tracksearchtime','heterodyne_sample_rate'))
+                if heterodyneRate > sampleRate:
+                    self.errList.append('The effective sampling rate \
+after heterodyning can not exceed the original sampling rate!\n')
         #Check for consistent PSD smoothing bin count!
         if self.iniOpts.has_option('tracksearchtime','whiten_level'):
             if self.iniOpts.get('tracksearchtime','whiten_level') > 0:
@@ -249,12 +261,17 @@ class tracksearchCheckIniFile:
                     LOSS=0
                 #Tabulate the width in Hz of the features we will be suppressing...
                 #RunBlockSize > X * (t+(2/fs))
-                if sampleRate > 0:
-                    ##removeWidth=(1+(sampleRate*LoTS)/2)/(LoTS+(2/sampleRate))
-                    removeWidth=((sampleRate/2)*SAP)/(1+(sampleRate*LoTS)/2)
+                rateUsed=0
+                if heterodyneRate>0:
+                    rateUsed=heterodyneRate
+                else:
+                    rateUsed=sampleRate
+                if rateUsed > 0:
+                    ##removeWidth=(1+(rateUsed*LoTS)/2)/(LoTS+(2/rateUsed))
+                    removeWidth=((rateUsed/2)*SAP)/(1+(rateUsed*LoTS)/2)
                     self.smoothingWidthEstimate=removeWidth
-                if (((LOSS*LoTS*sampleRate)/2)<SAP):
-                    trySAP=int(((LoTS*sampleRate)/2.0)*0.05)
+                if (((LOSS*LoTS*rateUsed)/2)<SAP):
+                    trySAP=int(((LoTS*rateUsed)/2.0)*0.05)
                     self.errList.append('It appears that smooth_average_spectrum option is inconsistent! Try this value '+str(trySAP)+'. One rule of thumb is: ((fs*dT)/2)*0.05')
                 
         #Check [multichannel] section if present
@@ -625,7 +642,12 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
         #Read expected job sampling rate
-        sampleRate=float(cp.get('tracksearchtime','sample_rate'))
+        #This value is either the true sampling rate or the effective
+        #rate after heterodyning
+        if cp.has_option('tracksearchtime','heterodyne_sample_rate'):
+            sampleRate=float(cp.get('tracksearchtime','heterodyne_sample_rate'))
+        else:
+            sampleRate=float(cp.get('tracksearchtime','sample_rate'))
         #Read expected TF overlapping percentage
         overlapPercentage=float(cp.get('layerconfig','layerOverlapPercent'))
         #Set each trials total_time_point
