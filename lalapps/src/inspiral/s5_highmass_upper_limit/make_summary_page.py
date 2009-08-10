@@ -15,7 +15,7 @@ class wiki(object):
 
   def image_link(self,path,webserver):
     thumb = "thumb_" + path
-    command = 'convert ' + path + ' -resize 300x300 ' + thumb
+    command = 'convert ' + path + ' -resize 300x300 -antialias ' + thumb
     print command
     popen = subprocess.Popen(command.split())
     popen.communicate()
@@ -87,7 +87,7 @@ image_list = page.image_glob('cbc_plotsummary_2_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-page.image_glob('cbc_plotsummary_3_playground_rho_*.png')
+image_list = page.image_glob('cbc_plotsummary_3_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
