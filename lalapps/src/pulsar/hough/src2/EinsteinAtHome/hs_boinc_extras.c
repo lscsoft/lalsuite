@@ -798,7 +798,7 @@ static void worker (void) {
     /* if building a CUDA App, handle --device option given by BOINC client */
     else if (MATCH_START("--device",argv[arg],l)) {
       arg++; /* next argument */
-      select_cuda_device(atoi(argv[arg]));
+      /* select_cuda_device(atoi(argv[arg])); */ /* not yet supported by new CUDA code */
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 #endif
