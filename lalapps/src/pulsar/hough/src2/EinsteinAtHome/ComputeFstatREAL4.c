@@ -57,7 +57,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #ifdef EAH_CUDA
 #include <cuda_runtime_api.h>
 
-extern int cuda_device_id = 0;
+extern int cuda_device_id;
 
 typedef struct {
   REAL4 fkdot16[PULSAR_MAX_SPINS-1];     /**< remaining
