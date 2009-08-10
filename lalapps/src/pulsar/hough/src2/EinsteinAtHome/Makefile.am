@@ -5,8 +5,11 @@ cfsHOME = @CFS_DIR@
 hsHOME = @HS_DIR@
 eaHOME = $(hsHOME)/EinsteinAtHome
 lalappsDIR = @LALAPPS_DIR@
-CUDAkernel = @CUDA_KERNEL@
 CLEANFILES = 
+
+NVCC ?= nvcc
+.cu.o:
+	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
 ## start with some common defaults
 eah_sources = 	$(lalappsDIR)/lalapps.c \
@@ -74,7 +77,3 @@ ACLOCAL_AMFLAGS = -I m4
 starsphere_CPPFLAGS = -Wall -DUSE_BOINC -DBOINC_APP_GRAPHICS -DBOINC_APIV6 -DBOINC_GRAPHICS=0 @GRAPHICS_CFLAGS@ -Igraphics -I/usr/X11R6/include
 starsphere_LDADD    = -lboinc_graphics2 -lboinc_api -lboinc @GRAPHICS_LIBS@ @MAC_LIBS@ # -lglut
 starsphere_SOURCES  = graphics/starlist.C graphics/snr_list.C graphics/user_text.C graphics/pulsar_list.C graphics/search_info.C graphics/starsphere.C graphics/main.C
-
-NVCC ?= nvcc
-%.o: %.cu
-	$(NVCC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
