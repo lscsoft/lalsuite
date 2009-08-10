@@ -680,30 +680,25 @@ int main(int argc, char *argv[]){
     /* now output the total signal to frames */
     if (write_frames) {
 
-	static FrFile *oFile = NULL;
+	static int counter = 0;
+	static FrFile *oFile;
 	FrameH *frame;
 	FrSimData *sim;
 
 	int m, level = 0;
 	double sampleRate = SRATE;
 	long ndata = BLOCKSIZE;
-
 	char framename[256];
-	static int counter=0;
 	struct stat statbuf;
 	
-	/* Create next frame file. This leads to a names like:
-	   CW_Injection-921517800-60.gwf
-	*/
+	/* This leads to a names like: CW_Injection-921517800-60.gwf */
 	sprintf(framename, "CW_Injection");
-
-	/* sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime); */
 	frame = FrameHNew(framename);
 	if (!frame) {
 	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
 	    exit(1);
 	}
-	
+
 	/* set up GPS time, sample interval, copy data */
 	frame->GTimeS = gpstime + counter;
 	frame->GTimeN = 0;
@@ -712,45 +707,56 @@ int main(int argc, char *argv[]){
 	for (m=0; m < ndata; m++) {
 	    sim->data->dataF[m] = total[m];
 	}
-    
 	
-	/* open file, write file, close file */
-	if  (!(counter % secs_per_framefile)) {
-	    if (oFile) {
-		FrFileOEnd(oFile);
-		oFile = NULL;
-	    }
-
-	    /* Does the user want us to keep a limited set of frames on disk? */
-	    if (write_frames>1) {
-		char listname[256];
-		int watchtime = gpstime + secs_per_framefile*(counter/secs_per_framefile - write_frames + 1);
-		sprintf(listname, "CW_Injection-%d-%d.gwf",  watchtime, secs_per_framefile);
-		while (!stat(listname, &statbuf)) {
-		    /* if enough files in place, sleep 0.1 seconds */
-		    struct timespec rqtp;
-		    rqtp.tv_sec = 0;
-		    rqtp.tv_nsec = 100000000; 
-		    nanosleep(&rqtp, NULL);
-		}
-	    }
+	/* open framefile, to contain secs_per_framefile of data */
+	if (!counter) {
 	    oFile = FrFileONewM(framename, level, argv[0], secs_per_framefile);
+	    if (!oFile) {
+		syserror(1, "Cannot open output file %s\n", framename);
+		exit(1);
+	    }
+	    /* Turn off the 'framefile boundary alignment'.  Without this one gets: 
+	       CW_Injection-921517807-3.gwf
+	       CW_Injection-921517810-10.gwf
+	       CW_Injection-921517820-10.gwf
+	       ...
+	       With this one gets 
+	       CW_Injection-921517807-10.gwf
+	       CW_Injection-921517817-10.gwf
+	       ... 
+	    */
+	    oFile->aligned  = FR_NO;
 	}
-
-	if (!oFile) {
-	    syserror(1, "Cannot open output file %s\n", framename);
-	    exit(1);
-	}
+	
+	/* write data to framefile */
 	if (FR_OK != FrameWrite(frame, oFile)) {
 	    syserror(1, "Error during frame write\n"
-		   "  Last errors are:\n%s", FrErrorGetHistory());
+		     "  Last errors are:\n%s", FrErrorGetHistory());
 	    exit(1);
-	}  
-	/* FrFileOEnd(oFile); */
+	}
+	
+	/* free memory for frames and for simdata structures */
 	FrameFree(frame);
+	
+	/* Do we keep a limited set of frames on disk? */
+	if (write_frames>1) {
+	    char listname[256];
+	    int watchtime = gpstime + secs_per_framefile*(counter/secs_per_framefile - write_frames + 1);
+	    sprintf(listname, "CW_Injection-%d-%d.gwf",  watchtime, secs_per_framefile);
+	    /* syserror(0, "Watching for file %s to disappear....\n", listname); */
+	    while (!stat(listname, &statbuf)) {
+		/* if enough files already in place, then sleep 0.1 seconds */
+		struct timespec rqtp;
+		rqtp.tv_sec = 0;
+		rqtp.tv_nsec = 100000000; 
+		nanosleep(&rqtp, NULL);
+	    }
+	}
 
+	/* increment counter for the next second */
 	counter++;
-    }
+
+    } /* if (write_frames) */
 
     /* now output the total signal... */
     else if (channel){
