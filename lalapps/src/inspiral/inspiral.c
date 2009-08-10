@@ -201,6 +201,14 @@ enum
   specType_undefined
 } specType = specType_undefined;
 
+/* set the spectrum for colored Gaussian noise */
+enum
+{
+  colorSpec_LIGO,
+  colorSpec_AdvLIGO,
+  colorSpec_undefined
+} colorSpec = colorSpec_undefined;
+
 INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
@@ -248,8 +256,6 @@ INT4  randomSeed        = 0;            /* value of sim rand seed       */
 REAL4 gaussVar          = 64.0;         /* variance of Gaussian noise   */
 INT4  whiteGaussian     = 0;            /* make input data Gaussian     */
 INT4  unitResponse      = 0;            /* set the response to unity    */
-INT4  colorSpec         = 0;            /* set the spectrum for colored */
-                                        /* Gaussian noise               */
 INT4  coloredGaussian   = 0;            /* generate colored Gaussian    */
                                         /* noise                        */
 /* template bank simulation params */
@@ -974,7 +980,7 @@ int main( int argc, char *argv[] )
         &status );
     LAL_CALL( LALDCreateVector( &status, &spectrum, length / 2 + 1 ),
         &status );
-    if (colorSpec == 3 )
+    if (colorSpec == colorSpec_LIGO )
     {
       /* set the spectrum to the Initial LIGO design noise curve */
       REAL8 psd_value;
@@ -990,7 +996,7 @@ int main( int argc, char *argv[] )
         spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
       }
     }
-    else if( colorSpec == 4)
+    else if( colorSpec == colorSpec_AdvLIGO )
     {
       /* set the spectrum to the Advanced LIGO design noise curve */
       REAL8 psd_value;
@@ -4429,17 +4435,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '.':
-        colorSpec = (INT4) atoi( optarg );
         if ( ! strcmp( "LIGO", optarg ) )
         {
-          colorSpec = 3;
+          colorSpec = colorSpec_LIGO;
           fprintf( stderr,
               "WARNING: replacing input data with colored Gaussian noise: "
               "psd = Initial LIGO\n");
         }
         else if ( ! strcmp( "AdvLIGO", optarg ) )
         {
-          colorSpec = 4;
+          colorSpec = colorSpec_AdvLIGO;
           fprintf( stderr,
               "WARNING: replacing input data with colored Gaussian noise: "
               "psd = Advanced LIGO\n");
@@ -4447,7 +4452,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else
         {
           fprintf(stderr,"invalid power spectrum for colored Gaussian noise;"
-              "colorSpec must be either LIGO or advLIGO");
+		  "colorSpec must be either LIGO or advLIGO "
+		  "(%f specified)", colorSpec);
+          exit( 1 );
         }
         coloredGaussian = 1;
         break;
