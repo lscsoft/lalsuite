@@ -91,6 +91,11 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH", \
     help="directory to write condor log file, should be a local directory")
 
+parser.add_option("-l", "--node-local-dir",action="store",type="string",\
+    metavar=" NODEPATH", \
+    help='''directory to write the temporary sql databases. This must be a
+directory that is local to all nodes.''')
+
 parser.add_option("-s", "--gps-start-time",action="store",type="int",\
     metavar=" GPS_START", help="begin analysis at GPS_START")
 
@@ -141,6 +146,9 @@ parser.add_option("-Z", "--skip-plots",action="store_false",\
 parser.add_option("-U", "--skip-followup",action="store_false",\
     default=True, dest="run_followup",  help="skip the inspiral followup")
 
+parser.add_option("-H", "--skip-pipedown",action="store_false",\
+    default=True, dest="run_pipedown",  help="skip running pipedown")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
@@ -164,6 +172,13 @@ if not opts.log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
+
+if opts.run_pipedown:
+  if not opts.node_local_dir:
+    print >> sys.stderr, "No local dir specified. If running with pipedown"
+    print >> sys.stderr, "use --node-local-dir to specify a local directory"
+    print >> sys.stderr, "Use --help for more information"
+    sys.exit(1)
 
 if not opts.gps_start_time:
   print >> sys.stderr, "No GPS start time specified for the analysis"
@@ -203,6 +218,10 @@ cp.set("input", "gps-end-time", str(opts.gps_end_time) )
 opts.do_dag_categories = not cp.has_option(
               "hipe-arguments","disable-dag-categories")
 
+# Add local dir to pipeline
+
+if opts.run_pipedown:
+  cp.set("pipeline","node-tmp-dir",opts.node_local_dir)
 
 ##############################################################################
 # create a directory called executables and copy them over
@@ -236,9 +255,6 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
-
-# write the file to handle the rescue dags
-inspiralutils.write_rescue()
 
 ##############################################################################
 # Set up the IFOs and get the appropriate segments
@@ -274,6 +290,9 @@ for vetoes, infile in cp.items("segments"):
 os.chdir(analysisDirectory)
 os.chdir("segments")
 
+# Determine which veto categories to filter
+veto_categories = [int(cat) for cat in cp.get('segments','veto-categories').split(',')] 
+
 # Download the veto definer xml file
 vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
 
@@ -281,20 +300,35 @@ vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
 inspiralutils.generate_veto_cat_files(cp, vetoDefFile, \
     opts.generate_veto_segments)
 
+# Generate a combined veto file for each ifo for use by pipedown
+gps_start = int(opts.gps_start_time)
+gps_end = int(opts.gps_end_time)
+duration = gps_end - gps_start
+
+for category in [1] + veto_categories:
+  ifos_string = ''
+  veto_cat_files = []
+  veto_cat_filename = str(gps_start) + '-' + str(duration) + '.xml'
+  for ifo in ifos:
+    veto_cat_files.append('-'.join([ifo, 'VETOTIME_CAT' + str(category), veto_cat_filename]))
+    ifos_string += ifo
+  concat_veto_call = ' '.join([ cp.get("condor", "ligolw_add"),
+    "--output", '-'.join([ifos_string, 'VETOTIME_CAT_' + str(category), veto_cat_filename])] + veto_cat_files )
+  inspiralutils.make_external_call(concat_veto_call)
 
 segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, 
-      opts.generate_segments, opts.use_available_data, \
+  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(
+      cp, ifo, veto_categories,
+      opts.generate_segments, opts.use_available_data,
       opts.generate_veto_segments)
   # set correct name as we're in the segments directory:
   segFile[ifo] = "../segments/" + segFile[ifo]
   cp.set("input", ifo.lower() + "-segments", segFile[ifo])
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
-
 
 os.chdir("..")
 
@@ -323,7 +357,7 @@ if opts.run_search:
     print "Running inspiral hipe for playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
          opts.log_path, playOnly = True, dax=opts.dax, \
-         site=cp.get("sites","playground"), tmpltbankCache = tmpltbank_cache)
+         tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -333,7 +367,7 @@ if opts.run_search:
   if opts.run_full_data:
     print "Running inspiral hipe for analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data", cp, ifos, \
-        opts.log_path,dax=opts.dax,site=cp.get("sites","full_data"), \
+        opts.log_path,dax=opts.dax, \
         tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data/" + cacheFile)
@@ -347,7 +381,7 @@ if opts.run_search:
     for (injDir, injSeed) in cp.items("injections"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           site=cp.get("sites",injDir), tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -364,7 +398,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         site = cp.get("sites","playground"), tmpltbankCache = tmpltbank_cache)
+         tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -375,7 +409,7 @@ if opts.reverse_analysis:
     cp.set ("inspiral","reverse-chirp-bank","")
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
-        opts.log_path, dax=opts.dax, site = cp.get("sites","full_data"), \
+        opts.log_path, dax=opts.dax, \
         tmpltbankCache = tmpltbank_cache)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
@@ -390,7 +424,7 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           site= cp.get("sites",injDir), tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -404,7 +438,7 @@ if opts.run_data_quality:
   hipeAnalysisVetoNode = {}
   hipeInjVetoNode = {}
 
-  for category in [2,3,4]:
+  for category in veto_categories:
     hipeInjVetoNode[category] = {}
     print "Setting up the category " + str(category) + " veto dags"
 
@@ -412,8 +446,8 @@ if opts.run_data_quality:
       print "Running inspiral hipe for play with vetoes"
       hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground", cp, \
           ifos, opts.log_path, playOnly = True, vetoCat = category, \
-          vetoFiles = dqVetoes, dax=opts.dax, \
-          site=cp.get("sites","playground"))
+          vetoFiles = dqVetoes, dax=opts.dax )
+          
       for cacheFile in hipePlayVetoNode[category].get_output_files():
         cachelist.append("playground/" + cacheFile)
       dag.add_node(hipePlayVetoNode[category])
@@ -426,7 +460,7 @@ if opts.run_data_quality:
     if opts.run_full_data:
       print "Running inspiral hipe for full data with vetoes"
       hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("full_data", \
-          cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, dax = opts.dax, site=cp.get("sites","full_data"))
+          cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, dax = opts.dax)
       for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
         cachelist.append("full_data/" + cacheFile)
       dag.add_node(hipeAnalysisVetoNode[category])
@@ -443,7 +477,7 @@ if opts.run_data_quality:
         hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(injDir, \
             cp, ifos, opts.log_path, \
             injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
-            dax=opts.dax, site=cp.get("sites",injDir))
+            dax=opts.dax )
         for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
           cachelist.append(injDir + "/" + cacheFile)
         dag.add_node(hipeInjVetoNode[category][injDir])
@@ -462,7 +496,7 @@ if opts.reverse_analysis:
     hipeAnalysisVetoNode = {}
     hipeInjVetoNode = {}
 
-    for category in [2,3,4]:
+    for category in veto_categories:
       print "Setting up the category " + str(category) + " veto dags" + " for reverse chirp analysis"
       cp.set ("inspiral","reverse-chirp-bank","")
       if opts.run_play_analysis:
@@ -508,6 +542,54 @@ if opts.reverse_analysis:
           elif category>2:
             hipeInjVetoNode[injDir][category].add_parent(\
                 hipeInjVetoNode[injDir][category-1])
+
+##############################################################################
+# cat the cache files together
+  
+
+if len(cachelist):
+  command = "cat " + " ".join(cachelist) + " > " + cachefilename
+  os.popen(command)
+  
+##############################################################################
+# Run lalapps_pipedown
+
+if opts.run_pipedown:
+  # Set up parents correctly
+  parentNodes = []
+  if opts.run_search:
+    if opts.run_full_data:
+      parentNodes.append(hipeAnalysisNode)
+    if opts.run_playground:
+      parentNodes.append(hipePlayNode)
+
+  if opts.run_data_quality:
+    if opts.run_playground:
+      for category in veto_categories:
+        parentNodes.append(hipePlayVetoNode[category])
+    if opts.run_full_data:
+      for category in veto_categories:
+        parentNodes.append(hipeAnalysisVetoNode[category])
+
+  if opts.run_injections:
+    for (injDir, injSeed) in cp.items("injections"):
+      if opts.run_search:
+        parentNodes.append(hipeInjNode[injDir])
+      if opts.run_data_quality:
+        for category in veto_categories:
+          parentNodes.append(hipeInjVetoNode[category][injDir])
+
+  if len(parentNodes) == 0:
+    parentNodes = None
+
+  if opts.generate_results_plots:
+    playgroundOnly = False
+  else:
+    playgroundOnly = True
+
+  print "Running lalapps_pipedown"
+  dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
+                            "../" + cachefilename,parentNodes,playgroundOnly)
 
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
@@ -673,14 +755,6 @@ print """\n  from a condor submit machine
     grid-cert-info -all -file /tmp/x509up_u`id -u`
   
   This will also give the expiry time of the proxy."""
-
-##############################################################################
-# cat the cache files together
-
-
-if len(cachelist):
-  command = "cat " + " ".join(cachelist) + " > " + cachefilename
-  os.popen(command)
 
 ##############################################################################
 # write out a log file for this script

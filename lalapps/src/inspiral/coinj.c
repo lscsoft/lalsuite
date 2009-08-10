@@ -393,10 +393,35 @@ calcSNRandwriteFrames:
 /*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
  NetworkSNR=sqrt(NetworkSNR);
  if(NetworkSNR!=0.0){ /* Check the SNR if we did this injection */
-   if(targetSNR!=0.0 && repeatLoop==0 && hitTarget==0) { injTable->distance*=(REAL4)(NetworkSNR/targetSNR); rewriteXML=1; repeatLoop=1; hitTarget=1;} else {repeatLoop=0; hitTarget=0;}
-   if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(0.99*NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;}
+   if(targetSNR!=0.0 && repeatLoop==0 && hitTarget==0) {
+	injTable->distance*=(REAL4)(NetworkSNR/targetSNR);
+	   injTable->eff_dist_h*=(REAL4)(NetworkSNR/targetSNR);
+	   injTable->eff_dist_l*=(REAL4)(NetworkSNR/targetSNR);
+	   injTable->eff_dist_v*=(REAL4)(NetworkSNR/targetSNR);
+	   injTable->eff_dist_g*=(REAL4)(NetworkSNR/targetSNR);
+	   injTable->eff_dist_t*=(REAL4)(NetworkSNR/targetSNR);
+	rewriteXML=1; repeatLoop=1; hitTarget=1;}
+   else {repeatLoop=0; hitTarget=0;}
+   if(targetSNR==0.0 && minSNR>NetworkSNR) {
+	injTable->distance*=(REAL4)(0.99*NetworkSNR/minSNR);
+	injTable->eff_dist_h*=(REAL4)(0.99*NetworkSNR/minSNR);
+	injTable->eff_dist_l*=(REAL4)(0.99*NetworkSNR/minSNR);
+	injTable->eff_dist_v*=(REAL4)(0.99*NetworkSNR/minSNR);
+	injTable->eff_dist_t*=(REAL4)(0.99*NetworkSNR/minSNR);
+	injTable->eff_dist_g*=(REAL4)(0.99*NetworkSNR/minSNR);
+	rewriteXML=1; repeatLoop=1;}
    else {
-     if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(1.01*NetworkSNR/maxSNR); injTable->distance+=0.01; rewriteXML=1; repeatLoop=1; fprintf(stderr,"Multiplying by %lf to get from %lf to target\n",1.01*(NetworkSNR/maxSNR),NetworkSNR);}
+     if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {
+		injTable->distance*=(1.01*NetworkSNR/maxSNR);
+		injTable->eff_dist_h*=(1.01*NetworkSNR/maxSNR);
+		 injTable->eff_dist_l*=(1.01*NetworkSNR/maxSNR);
+		 injTable->eff_dist_v*=(1.01*NetworkSNR/maxSNR);
+		 injTable->eff_dist_t*=(1.01*NetworkSNR/maxSNR);
+		 injTable->eff_dist_g*=(1.01*NetworkSNR/maxSNR);
+		/*injTable->distance+=0.01;*/
+		rewriteXML=1;
+		repeatLoop=1;
+		fprintf(stderr,"Multiplying by %lf to get from %lf to target\n",1.01*(NetworkSNR/maxSNR),NetworkSNR);}
    }
  }
  if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);

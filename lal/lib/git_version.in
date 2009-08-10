@@ -237,6 +237,17 @@ if git_ok:
     sed_cmd += ' -e "s/@AUTHOR@/%s/"' % info.author
     sed_cmd += ' -e "s/@COMMITTER@/%s/"' % info.committer
     sed_cmd += ' -e "s/@STATUS@/%s/"' % info.status
+
+    # create tmp file
+    cmd = 'sed %s %s > %s' % (sed_cmd, infile, tmpfile)
+    p = subprocess.Popen(cmd, shell=True)
+    os.waitpid(p.pid, 0)
+
+    # update LALVCSInfo.h, if appropriate
+    if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
+      os.rename(tmpfile, dstfile)
+    else:
+      os.remove(tmpfile)
   else:
     # output version info
     print info.id
@@ -246,17 +257,6 @@ if git_ok:
     print info.author
     print info.committer
     print info.status
-
-  # create tmp file
-  cmd = 'sed %s %s > %s' % (sed_cmd, infile, tmpfile)
-  p = subprocess.Popen(cmd, shell=True)
-  os.waitpid(p.pid, 0)
-
-  # update LALVCSInfo.h, if appropriate
-  if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
-    os.rename(tmpfile, dstfile)
-  else:
-    os.remove(tmpfile)
 
 # exit
 sys.exit(0)
