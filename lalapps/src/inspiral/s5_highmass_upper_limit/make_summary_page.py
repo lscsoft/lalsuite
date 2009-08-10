@@ -146,8 +146,7 @@ if open_box:
     page.image_table(image_list,webserver)
 
     page.section("error on Volume x time " + ifos_string)
-    image_list = page.image_glob()#
-    ['H1H2L1fractional_error.png', 'H1L1fractional_error.png','H2L1fractional_error.png']
+    image_list = page.image_glob('*fractional_error.png')
     page.image_table(image_list,webserver)
 
     page.section("lambda " + ifos_string)

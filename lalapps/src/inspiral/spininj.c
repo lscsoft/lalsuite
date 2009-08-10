@@ -52,6 +52,7 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/lalGitID.h>
+#include <lal/LALErrno.h>
 #include <lalappsGitID.h>
 
 
@@ -637,10 +638,7 @@ void LALSetGeoCentricEndTime(LALStatus *status,
 			     InspiralInjectionParameters params,
 			     SimInspiralTable *this_inj)
 {
-  LALGPSandAcc          gpsAndAcc;
   REAL4 u;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-
   
   /* set the geocentric end time of the injection */
   /* XXX CHECK XXX */
@@ -650,12 +648,11 @@ void LALSetGeoCentricEndTime(LALStatus *status,
       LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
       XLALGPSAdd( &(this_inj->geocent_end_time), u * params.timeInterval );
     }
-
-  gpsAndAcc.gps = this_inj->geocent_end_time;
   
   /* set gmst */
-  LAL_CALL( LALGPStoGMST1( status, &(this_inj->end_time_gmst),
-			   &(this_inj->geocent_end_time), &gmstUnits ), status);
+  this_inj->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+      &this_inj->geocent_end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(this_inj->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 }
 
 

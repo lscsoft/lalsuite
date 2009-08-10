@@ -842,7 +842,6 @@ void drawFromSource( REAL8 *rightAscension,
 void drawLocationFromExttrig( SimInspiralTable* table )
 {
   LIGOTimeGPS timeGRB;  /* real time of the GRB */
-  LALMSTUnitsAndAcc unitsAndAcc; 
   REAL4 ra_rad, de_rad;
   REAL8 gmst1, gmst2;  
 
@@ -850,16 +849,12 @@ void drawLocationFromExttrig( SimInspiralTable* table )
   ra_rad = exttrigHead->event_ra  * LAL_PI_180;
   de_rad = exttrigHead->event_dec * LAL_PI_180;
 
-  /* set units and accuracy for GMST calculation*/
-  unitsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  unitsAndAcc.units = MST_RAD;
-
   /* populate the time structures */
   timeGRB.gpsSeconds     = exttrigHead->start_time;
   timeGRB.gpsNanoSeconds = exttrigHead->start_time_ns;
 
-  LALGPStoGMST1( &status, &gmst1, &timeGRB, &unitsAndAcc );
-  LALGPStoGMST1( &status, &gmst2, &table->geocent_end_time, &unitsAndAcc );
+  gmst1 = XLALGreenwichMeanSiderealTime(&timeGRB);
+  gmst2 = XLALGreenwichMeanSiderealTime(&table->geocent_end_time);
 
   /* populate the table */
   table->longitude = ra_rad- gmst1 + gmst2;

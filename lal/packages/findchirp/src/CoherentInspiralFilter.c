@@ -2921,7 +2921,6 @@ LALCoherentInspiralFilterSegment (
       { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
 	/*Now the last 3 cases will involve the looping over the coefficients*/
 	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
-	LALMSTUnitsAndAcc pUnitsAndAcc;
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
@@ -2934,9 +2933,7 @@ LALCoherentInspiralFilterSegment (
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
 	/* Convert GPS time of trigger to GMST time in radians
 	   for computing F+, Fx */
-	pUnitsAndAcc.units = MST_RAD;
-	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
-	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	gmstInRadians = XLALGreenwichMeanSiderealTime(&triggerGPSEndTime);
 
 	/* Following needed because XLALArrivalTimeDiff() uses doubles */
 	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
@@ -3643,7 +3640,6 @@ LALCoherentInspiralFilterSegment (
   case 4: /* Network: 4 detectors */
     {
 	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
-	LALMSTUnitsAndAcc pUnitsAndAcc;
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
@@ -3656,9 +3652,7 @@ LALCoherentInspiralFilterSegment (
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
 	/* Convert GPS time of trigger to GMST time in radians
 	   for computing F+, Fx */
-	pUnitsAndAcc.units = MST_RAD;
-	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
-	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	gmstInRadians = XLALGreenwichMeanSiderealTime(&triggerGPSEndTime);
 
 	/* Following needed because XLALArrivalTimeDiff() uses doubles */
 	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
