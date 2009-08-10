@@ -157,6 +157,7 @@ extern "C" {
 					     * data
 					     */
     REAL8             HeterodyneFrequency; /* If used to adjust f0 */
+    REAL8             HeterodyneSamplingRate; /*New effect fSamp*/
     LIGOTimeGPS       Tlength;/*Data set time length*/
     TimeFreqRepType   TransformType;/*Type of TF rep to make */
     INT4              LineWidth;/* Sigma-convolution kernel width*/

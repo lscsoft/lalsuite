@@ -112,7 +112,7 @@ if (tmpData2)
 errcode=XLALResampleREAL4TimeSeries (tmpData3,inputSeries->deltaT);
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %f Hz to %f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
+   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %6.2f Hz to %6.2f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
    fflush(stderr);
    return errcode;
    }
@@ -208,7 +208,7 @@ if (tmpData2)
 errcode=XLALResampleREAL4TimeSeries (tmpData3,inputSeries->deltaT);
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %f Hz to %f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
+   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %6.2f Hz to %6.2f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
    fflush(stderr);
    return errcode;
    }
@@ -304,7 +304,7 @@ if (tmpData2)
 errcode=XLALResampleREAL4TimeSeries (tmpData3,inputSeries->deltaT);
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %f Hz to %f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
+   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %6.2f Hz to %6.2f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
    fflush(stderr);
    return errcode;
    }
@@ -400,7 +400,7 @@ if (tmpData2)
 errcode=XLALResampleREAL4TimeSeries (tmpData3,inputSeries->deltaT);
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %f Hz to %f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
+   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %6.2f Hz to %6.2f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
    fflush(stderr);
    return errcode;
    }
@@ -496,7 +496,7 @@ if (tmpData2)
 errcode=XLALResampleREAL4TimeSeries (tmpData3,inputSeries->deltaT);
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %f Hz to %f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
+   fprintf(stderr,"XLALResampleREAL4TimeSeries : Error resampling from %6.2f Hz to %6.2f Hz\n.",(1/tmpData2->deltaT),(1/inputSeries->deltaT));
    fflush(stderr);
    return errcode;
    }

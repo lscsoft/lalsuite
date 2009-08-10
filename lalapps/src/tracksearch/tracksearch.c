@@ -264,6 +264,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   /* 
    *End calibration conditional 
    */
+
   if ((params.highPass > 0)||(params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
@@ -485,7 +486,8 @@ void LALappsTrackSearchInitialize(
       {"remove_line",         required_argument,  0,    'S'},
       {"max_harmonics",       required_argument,  0,    'T'},
       {"snr",                 required_argument,  0,    'U'},
-      {"heterodyne_rate",     required_argument,  0,    'V'},
+      {"heterodyne_frequency",required_argument,  0,    'V'},
+      {"heterodyne_sample_rate",required_argument, 0,   'W'},
       {0,                     0,                  0,      0}
     };
   
@@ -529,6 +531,7 @@ void LALappsTrackSearchInitialize(
   params->TimeLengthPoints = 0;
   params->SamplingRate = 1;
   params->HeterodyneFrequency=0;
+  params->HeterodyneSamplingRate=0;
   params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
   params->calChannelType=SimDataChannel;/*See lsd*/
@@ -916,6 +919,7 @@ void LALappsTrackSearchInitialize(
 	case 'E':
 	  {
 	    params->SamplingRate=atof(optarg);
+	    params->SamplingRateOriginal=atof(optarg);
 	    injectParams->sampleRate=params->SamplingRate;
 	  }
 	  break;
@@ -1060,6 +1064,12 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'W':
+	  {
+	    params->HeterodyneSamplingRate=atof(optarg);
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1081,6 +1091,11 @@ void LALappsTrackSearchInitialize(
    *If doing a MAP analysis skip these checks these options should
    *not be invoked
    */
+  if ((params->HeterodyneFrequency > 0) || (params->HeterodyneSamplingRate > 0))
+    {
+      fprintf(stdout,"WARNING: All measure such as segment length are assumed relative to the effective sampling rate of the heterodyned data.\n");
+      fflush(stdout);
+    }
   if ( params->tSeriesAnalysis == 1)
     {
       fprintf(stderr,"Checking tSeries parameters.\n");
@@ -1159,14 +1174,20 @@ void LALappsTrackSearchInitialize(
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EARGS);
 	}
-      if (params->HeterodyneFrequency < 0 )
+      if ((params->HeterodyneFrequency < 0 ) || (2*params->HeterodyneFrequency > params->SamplingRate))
 	{
-	  fprintf(stderr,"Heterodyne frequency less than zero!\n");
+	  fprintf(stderr,"Heterodyne frequency invalid!\n");
+	  fprintf(stderr,"Heterodyne frequency %9.2f Hz must lie between 0 and %9.3f.\n",params->HeterodyneFrequency,0.5*params->SamplingRate);
 	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EARGS);
 	}
-
+      if (2*params->HeterodyneSamplingRate > params->SamplingRate)
+	{
+	  fprintf(stderr,"WARNING: New Heterodyne sampling rate should never exceed half of the frame data sampling rate of %9.3f.\n",params->SamplingRate);
+	  fprintf(stderr,"The Heterodyned time series will have some undesired artifacts for frequencies above %9.3f and the frequency axis of the time-frequency plot will be wrong above this frequency.\n",(params->SamplingRate)/2); 
+	  fflush(stderr);
+	}
     }  /*
    * Do following checks
    */
@@ -1240,14 +1261,13 @@ void LALappsGetFrameData(LALStatus*          status,
   FrCache              *frameCache = NULL;
   FrChanIn              channelIn;
   LALTYPECODE           dataTypeCode=0;
-  ResampleTSParams      resampleParams;
   LIGOTimeGPS           bufferedDataStartGPS;
   REAL8                 bufferedDataStart=0;
   LIGOTimeGPS           bufferedDataStopGPS;
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
   UINT4                 errcode=0;
-
+  UINT4                 index=0;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1444,6 +1464,61 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  fprintf(stderr,"Problem trying to close the frame stream!\n");
 	  exit(errcode);
+	}
+    }
+  /*
+   * Heterodyne the signal if requested by user.
+   */
+  if (params->HeterodyneFrequency > 0)
+    {
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Heterodying with reference signal %9.3f.\n",params->HeterodyneFrequency);
+	  fprintf(stdout,"Preparing to heterodyne the loaded time series.\n");
+	  fflush(stdout);
+	}
+      /*H-dyne*/
+      errcode=LALappsQuickHeterodyneTimeSeries(DataIn,params->HeterodyneFrequency);
+      /*
+       * Resample the data to the relative rate specified.
+       */
+      if ((1/DataIn->deltaT) > params->HeterodyneSamplingRate)
+	{
+	  if (params->verbosity >= verbose)
+	    {
+	      fprintf(stdout,"A resampling of frame data is required.\n");
+	      fprintf(stdout,"Current sample rate           :%9.3f\n",1/DataIn->deltaT);
+	      fprintf(stdout,"Heterodyned down to frequency :%9.3f\n",params->HeterodyneFrequency);
+	      fprintf(stdout,"New effective sample rate     :%9.3f\n",params->HeterodyneSamplingRate);
+	      fprintf(stdout,"Will resample to requested rate.\n");
+	      fflush(stdout);
+	    }
+	  errcode=XLALResampleREAL4TimeSeries(DataIn,(1/params->HeterodyneSamplingRate));
+	  params->SamplingRateOriginal=params->SamplingRate;
+	  params->SamplingRate=params->HeterodyneSamplingRate;
+
+	  if (DataIn->data->length != params->TimeLengthPoints)
+	    {
+	      fprintf(stdout,"Warning some REAL4TimeSeries resizeing required.\n");
+	      fprintf(stdout,"Vector has %i points but should actually have %i.\n",
+		      DataIn->data->length,
+		      params->TimeLengthPoints);
+	      fprintf(stdout,"Zero padding where appropriate.\n");
+	      DataIn=XLALResizeREAL4TimeSeries(DataIn,0,params->TimeLengthPoints);
+	      for (index = DataIn->data->length+1; 
+		   index < params->TimeLengthPoints;
+		   index++)
+		DataIn->data->data[index]=0;
+	      fprintf(stdout,"Resizing completed.\n");
+	    }
+	}
+      /*
+       * Dump the heterodyned and resampled data to disk if printFiles
+       */
+      if (params->verbosity >= printFiles)
+	{
+	  print_real4tseries(DataIn,"HeterodynedAndResampleTimeSeriesFrameData.diag");
+	  print_lalUnit(DataIn->sampleUnits,"HeterodynedAndResampleTimeSeriesFrameData_Units.diag");
 	}
     }
 }
@@ -2105,8 +2180,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   UINT4             i;  /* Counter for data breaking */
   INT4              j;
   UINT4             productioncode = 1; /* Variable for ascii or frame */
+  UINT4             newPointLength=0;
   LIGOTimeGPS       edgeOffsetGPS;
   REAL8             originalFloatTime=0;
+  REAL8             revisedSamplingRate=0;/*Account for Fhet*/
   REAL8             newFloatTime=0;
   CHARVector       *dataLabel=NULL;
   /* Set to zero to use ascii files */
@@ -2140,13 +2217,29 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 			   &edgeOffsetGPS,
 			   &newFloatTime),
 	     status);
-    
+    /*
+     * To handle special case where data is hetordyned and resampled
+     * we determine the interval of time that the data would have spanned 
+     * at params->HeterodyneSamplingRate then we determine how many points
+     * are needed to properly read in this amount of data at the a sampling
+     * rate of params->SamplingRate
+     */
+    newPointLength=params.TimeLengthPoints+(2*params.SegBufferPoints);
+    if ((params.HeterodyneFrequency > 0) && 
+	(params.HeterodyneSamplingRate > 0))
+      {
+	newPointLength=floor(
+			     (params.TimeLengthPoints+
+			      (2*params.SegBufferPoints))
+			     /params.HeterodyneSamplingRate*
+			     params.SamplingRate);
+      }
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,
 				      0,
 				      1/params.SamplingRate,
 				      &lalADCCountUnit,
-				      (params.TimeLengthPoints+(2*params.SegBufferPoints)));
+				      newPointLength);
   if (productioncode == 1) /* Use production frame file inputs */
     {
       if (params.makenoise < 1 )
@@ -3463,7 +3556,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 {
   UINT4                    planLength=0;
   REAL4TimeSeries          *tmpSignalPtr=NULL;
-  LALWindowParams           windowParamsPSD;
   LALUnit                   originalFrequecyUnits;
   AverageSpectrumParams     avgPSDParams;
   REAL8                     smoothingAveragePSDBias=0;
@@ -3480,13 +3572,12 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   UINT4                     i=0;
   UINT4                     halfBlock=0;
   UINT4                     j=0;
-  REAL4                     meanValue=0;
   UINT4                     stride=0;
   INT4                      segCount=0;
   INT4                      originalDataLength=0;
-  INT4                      segmentLength=0;
+  UINT4                     segmentLength=0;
   int                       errcode=0;
-  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+  const LIGOTimeGPS         gps_zero = LIGOTIMEGPSZERO;
 
   if (params.verbosity >= verbose )
     {
@@ -3946,7 +4037,39 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
  * End Whiten data segments
  */
 
+int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
+				     REAL8            fHet)
+{
+  REAL4 a=0;
+  REAL4 b=0;
+  REAL4 c=0;
+  REAL4 d=0;
+  REAL4 t=0;
+  COMPLEX8 z;
+  UINT4 index=0;
 
+  if ((1/data->deltaT) < 1/fHet)
+    {
+      fprintf(stderr,"Error the heterodyne frequency %9.2f Hz exceeds the input data sampling rate %9.2f.\n",fHet,(1/data->deltaT));
+      return TRACKSEARCHC_ESUB;
+    }
+
+  for (index=0;index<data->data->length;index++)
+    {
+      t=index*data->deltaT;
+      a=data->data->data[index];
+      b=0;
+      c=cos(2*LAL_PI*fHet*t);
+      d=sin(2*LAL_PI*fHet*t);
+      z.re=((a*c)-(b*d));
+      z.im=((b*d)+(b*c));
+      /*
+       *Keeping only REAL(Data*LocalOscillator)
+       */
+      data->data->data[index]=z.re;
+    }
+  return 0;
+}
 /*
  * End of Semi Private functions
  */
@@ -4110,8 +4233,6 @@ void fakeDataGeneration(LALStatus              *status,
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-
-
  
 /*
  * End local scratch functions
@@ -4120,4 +4241,3 @@ void fakeDataGeneration(LALStatus              *status,
  */
 
 /****************************************************************************/
-

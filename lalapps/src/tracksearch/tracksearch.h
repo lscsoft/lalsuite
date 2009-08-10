@@ -100,6 +100,9 @@ LALappsTrackSearchPrepareData(
 			      TSSegmentVector*,
 			      TSSearchParams);
 
+int
+LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries*,
+				 REAL8);
 
 void 
 LALappsTrackSearchCalibrate( LALStatus*,
