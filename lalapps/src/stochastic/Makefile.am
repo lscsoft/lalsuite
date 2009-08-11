@@ -25,9 +25,10 @@ gitID:
 	cd $(top_builddir)/misc && $(MAKE) gitID
 BUILT_SOURCES = gitID
 
-## frame library dependant programs
+## frame and stochastic library dependant programs
 if FRAME
 if LALFRAME
+if LALSTOCHASTIC
 FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_fake lalapps_stochastic_virgo lalapps_stochastic_preprocess
 lalapps_stochastic_SOURCES      = $(STOCH_SRCS)
 lalapps_stochastic_fake_SOURCES = $(STOCH_FAKE_SRCS)
@@ -35,28 +36,38 @@ lalapps_stochastic_virgo_SOURCES = $(STOCH_VIRGO_SRCS)
 lalapps_stochastic_preprocess_SOURCES = $(STOCH_PREPROCESS_SRCS)
 endif
 endif
+endif
 
-## metaio library dependant programs
+## metaio and stochastic library dependant programs
 if LALMETAIO
+if LALSTOCHASTIC
 METAIOPROGRAMS = lalapps_stopp lalapps_stopp_bayes
 lalapps_stopp_SOURCES           = $(STOPP_SRCS)
 lalapps_stopp_bayes_SOURCES     = $(STOPP_BAYES_SRCS)
 endif
+endif
 
-## other programs
+## stochastic library programs
+if LALSTOCHASTIC
+STOCHASTICPROGRAMS = lalapps_olapredfcn
 lalapps_olapredfcn_SOURCES      = $(OLAPREDFCN_SRCS)
+endif
 
-bin_PROGRAMS      = lalapps_olapredfcn ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
+bin_PROGRAMS      = ${STOCHASTICPROGRAMS} ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
 
+if LALSTOCHASTIC
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 pkgpython_DATA = stochastic.py
+endif
 endif
 
 INCLUDES          = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD             = $(top_builddir)/src/lalapps/liblalapps.la
 
+if LALSTOCHASTIC
 EXTRA_DIST        = stochastic.py stochastic_pipe.in stochastic_bayes.in
+endif
 MOSTLYCLEANFILES  = *STOCHASTIC*.xml *CCSPECTRA*.gwf
 CLEANFILES        = python_config.sed lalapps_stochastic_pipe \
                     lalapps_stochastic_bayes
