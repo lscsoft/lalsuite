@@ -156,7 +156,6 @@ int main( int argc, char *argv[] )
   RandomParams *randParams = NULL;
   REAL4  u, exponent, expt;
   REAL4  deltaM;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
   SkyPosition           skyPos;
   LALSource             source;
@@ -798,9 +797,14 @@ int main( int argc, char *argv[] )
     gpsAndAcc.gps = this_inj->geocent_start_time;
 
     /* set gmst */
-    LAL_CALL( LALGPStoGMST1( &status, &(this_inj->start_time_gmst),
-          &(this_inj->geocent_start_time), &gmstUnits ), &status);
-    
+    this_inj->start_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+        &this_inj->geocent_start_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+    if( XLAL_IS_REAL8_FAIL_NAN(this_inj->start_time_gmst) )
+    {
+      fprintf(stderr, "XLALGreenwichMeanSiderealTime() failed\n");
+      exit(1);
+    }
+
     memset( &skyPos, 0, sizeof(SkyPosition) );
     memset( &source, 0, sizeof(LALSource) );
     memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
