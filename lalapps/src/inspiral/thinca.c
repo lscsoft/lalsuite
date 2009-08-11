@@ -1002,6 +1002,7 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 

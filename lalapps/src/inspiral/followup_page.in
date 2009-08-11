@@ -152,7 +152,7 @@ def setup(dest, server):
   # Make a destination directory if it doesn't exist
   if not os.path.isdir(dest):
     print "destination:" + dest + " does not exist, I'll make it for you..."
-    os.mkdir(dest)
+    os.makedirs(dest)
 
   # copy the data to the webspace - sort of painful probably could omit some
   for sec in sections:
