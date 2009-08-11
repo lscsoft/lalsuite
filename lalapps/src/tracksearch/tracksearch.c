@@ -1487,6 +1487,11 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /*H-dyne*/
       errcode=LALappsQuickHeterodyneTimeSeries(DataIn,params->HeterodyneFrequency);
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Heterodying completed!\n");
+	  fflush(stdout);
+	}
       /*
        * Resample the data to the relative rate specified.
        */

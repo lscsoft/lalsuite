@@ -234,6 +234,7 @@ class tracksearchCheckIniFile:
             sampleRate=float(0)
         #If INI has heterodyne options then both must be present
         heterodyneFrequency=0
+        heterodyneRate=0
         if self.iniOpts.has_option('tracksearchtime','heterodyne_frequency'):
             heterodyneFrequency=float(self.iniOpts.get('tracksearchtime','heterodyne_frequency'))
             if heterodyneFrequency > sampleRate/2:
