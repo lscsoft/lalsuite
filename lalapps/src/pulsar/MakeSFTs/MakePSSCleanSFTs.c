@@ -265,6 +265,7 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 
 /* Time Domain Cleaning Procedure */
 int TDCleaning(struct CommandLineArgsTag CLA);
+int TDCleaning_R4(struct CommandLineArgsTag CLA);
 
 /* Time Domain Cleaning with PSS functions */
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
@@ -579,6 +580,9 @@ int main(int argc,char *argv[])
       } else if (CommandLineArgs.TDcleaningProc == 2) {
          if(PSSTDCleaningDouble(CommandLineArgs))
 	   return 6;   
+      } else if (CommandLineArgs.TDcleaningProc == 3) {
+         if(TDCleaning_R4(CommandLineArgs))
+	   return 6;   
       }
   
       /* create an SFT */
@@ -859,7 +863,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       return 1;
     }
 
-  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 2) )
+  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 3) )
     {
       fprintf(stderr,"Illegal specification of TDcleaningProc.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
@@ -1774,10 +1778,19 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
         FILE *OUTtest;
         itest=0;
 	 
+	/* FIXME:
+	  with timeseries allocated outside the function this should be checked
+	  and an error should be returned if they are unequal, but a length should
+	  never be modified !
+	*/
         seriesHP->data->length=series->data->length;
-       /* seriesHP->data->length=series->data->length;*/
+	/* seriesHP->data->length=series->data->length;*/
 	seriesHP->deltaT=series->deltaT; 
-	w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
+	if(0)
+	  w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
+	else
+	  w=exp(-2*PSS_PI*(myparams->fcut)*(series->deltaT));
+	fprintf(stderr,"BilHighpass_dataDouble(): f:%23.16e, n:%23.16e, w:%23.16e\n",myparams->fcut,series->deltaT,w);
 	w1=(1+w)/2;
 	b0=w1;
 	b1=-w1;
@@ -1795,7 +1808,7 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 	}
 
             
-      /* firsthighpass->data->data[ts]=b0*series->data->data[ts]; 
+	/* firsthighpass->data->data[ts]=b0*series->data->data[ts]; 
 	for(i=ts;i<(series->data->length-ts);i++){
 	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
 	}
@@ -1816,6 +1829,54 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 
 }
 
+int BilHighpass_dataDouble_R4( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthighpass, REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+{
+        INT4 i,k,last;
+	REAL4 w,w1,b0,b1,a1;
+	REAL4 val;
+        
+        if(seriesHP->data->length != series->data->length) {
+	  fprintf(stderr,"ERROR: BilHighpass_dataDouble_R4(): length of timeseries differs: %u != %u\n",
+		  seriesHP->data->length, series->data->length);
+	  return -1;
+	}
+        if(firsthighpass->data->length <= series->data->length) {
+	  fprintf(stderr,"ERROR: BilHighpass_dataDouble_R4(): length of firsthighpass timeseries too short: %u <= %u\n",
+		  firsthighpass->data->length, series->data->length);
+	  return -1;
+	}
+
+	seriesHP->deltaT=series->deltaT; 
+
+	w  = exp(-2.0f * 3.1415926f * (myparams->fcut) * (series->deltaT));
+	w1 = (1.0f + w) / 2.0f;
+	b0 = w1;
+	b1 = -w1;
+	a1 = -w;
+
+	fprintf(stderr,"BilHighpass_dataDouble(): f:%23.16e, n:%23.16e, w:%23.16e\n",myparams->fcut,series->deltaT,w);
+
+	val = b0 * (REAL4)series->data->data[0]; 
+        firsthighpass->data->data[0] = val; 
+	for(i = 1; i < (INT4)series->data->length; i++) {
+	  val = b0 * (REAL4)series->data->data[i]
+	    +   b1 * (REAL4)series->data->data[i-1]
+	    -   a1 * (REAL4)firsthighpass->data->data[i-1];        
+	  firsthighpass->data->data[i] = val;
+	}
+
+        last = series->data->length - 1;
+	val = b0 * (REAL4)firsthighpass->data->data[last]; 
+	seriesHP->data->data[last] = val;
+        for(i = last - 1; i >= 0; i--) {
+	  val = b0 * (REAL4)firsthighpass->data->data[i]
+	    +   b1 * (REAL4)firsthighpass->data->data[i+1]
+	    -   a1 * (REAL4)seriesHP->data->data[i+1];
+	  seriesHP->data->data[i] = val;
+	}
+
+	return 0;
+}
 /********************************************************************************************************************************************/
 /*BILATERAL PAOLA HIGHPASS FILTER: the DOUBLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
 /********************************************************************************************************************************************/
@@ -2454,8 +2515,8 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
-  XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",100,-1);
-  XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",100);
+  XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",50,-1);
+  XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",50);
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
@@ -2465,7 +2526,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
     goto PSSTDCleaningREAL8FreeAll;
   }
 
-  XLALPrintPSSTimeseriesToFile(originalTS,"highpassTS.dat",100);
+  XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",50);
 
   if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
     fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
@@ -2603,11 +2664,11 @@ int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
 }
 
 int TDCleaning(struct CommandLineArgsTag CLA)
-{       
+{
+  /* FIXME: Memory leak even_param */
   INT4 j, k;
   ParamOfEvent *even_param;
   even_param=(ParamOfEvent *)calloc(1,sizeof(ParamOfEvent)); 
- 
 
   BilHP bilparam;
 
@@ -2617,13 +2678,42 @@ int TDCleaning(struct CommandLineArgsTag CLA)
   EventParamInit(dataDouble.data->length, even_param);
   j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
 
-  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",100,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",100,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",100,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
 
   Evenbil2(even_param, &dataDouble );
   j=Bil2( &databil2, &dataDoubleHP, even_param);
   j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, even_param, &bilparam);
+  dataDouble.data->length=dataDoubleClean.data->length;   
+  dataDouble.deltaT=dataDoubleClean.deltaT;
+
+  for (k = 0; k < (int)dataDoubleClean.data->length; k++) {
+    dataDouble.data->data[k] = dataDoubleClean.data->data[k];
+  }
+
+  return 0;
+}
+
+int TDCleaning_R4(struct CommandLineArgsTag CLA)
+{       
+  INT4 j, k;
+  ParamOfEvent even_param;
+  BilHP bilparam;
+
+  bilparam.fcut    = CLA.fc;
+  bilparam.crt     = CLA.cr;
+  
+  EventParamInit(dataDouble.data->length, &even_param);
+  j=BilHighpass_dataDouble_R4( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, &even_param, &bilparam );
+
+  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
+
+  Evenbil2(&even_param, &dataDouble );
+  j=Bil2( &databil2, &dataDoubleHP, &even_param);
+  j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, &even_param, &bilparam);
   dataDouble.data->length=dataDoubleClean.data->length;   
   dataDouble.deltaT=dataDoubleClean.deltaT;
 
