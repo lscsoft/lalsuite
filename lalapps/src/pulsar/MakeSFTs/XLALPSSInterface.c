@@ -118,17 +118,20 @@ PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UIN
     XLAL_ERROR_NULL( "XLALPrintPSSTimeseriesToFile", XLAL_EFAULT );
   }
 
-  fprintf(fp,"Length: %ld\n",tsPSS->n);
-  fprintf(fp,"deltaT: %f\n",tsPSS->dx);
-  fprintf(fp,"gpsSeconds: %i\n",gpsepoch.gpsSeconds);
-  fprintf(fp,"gpsNanoSeconds: %i\n",gpsepoch.gpsNanoSeconds);
+  fprintf(fp,"%% Length: %ld\n",tsPSS->n);
+  fprintf(fp,"%% deltaT: %f\n",tsPSS->dx);
+  fprintf(fp,"%% gpsSeconds: %i\n",gpsepoch.gpsSeconds);
+  fprintf(fp,"%% gpsNanoSeconds: %i\n",gpsepoch.gpsNanoSeconds);
   if(tsPSS->name)
-    fprintf(fp,"Name: '%s'\n",tsPSS->name);
+    fprintf(fp,"%% Name: '%s'\n",tsPSS->name);
   if(tsPSS->capt)
-    fprintf(fp,"Capt: '%s'\n",tsPSS->capt);
-  fprintf(fp,"First %d values:\n", numToPrint);
+    fprintf(fp,"%% Capt: '%s'\n",tsPSS->capt);
+  fprintf(fp,"%% First %d values:\n", numToPrint);
   for(i = 0; i < numToPrint; i++)
-    fprintf(fp,"  %23.16e\n",tsPSS->y[i]);
+    fprintf(fp,"%23.16e\n",tsPSS->y[i]);
+  fprintf(fp,"%% Last %d values:\n", numToPrint);
+  for(i = tsPSS->n - numToPrint; i < tsPSS->n; i++)
+    fprintf(fp,"%23.16e\n",tsPSS->y[i]);
   fclose(fp);
 
   xlalErrno = 0;
@@ -149,21 +152,28 @@ REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, 
     XLAL_ERROR_NULL( "XLALPrintREAL8TimeSeriesToFile", XLAL_EFAULT );
   }
 
-  fprintf(fp,"Length: %d\n",ts->data->length);
-  fprintf(fp,"deltaT: %f\n",ts->deltaT);
-  fprintf(fp,"gpsSeconds: %i\n",ts->epoch.gpsSeconds);
-  fprintf(fp,"gpsNanoSeconds: %i\n",ts->epoch.gpsNanoSeconds);
+  fprintf(fp,"%% Length: %d\n",ts->data->length);
+  fprintf(fp,"%% deltaT: %f\n",ts->deltaT);
+  fprintf(fp,"%% gpsSeconds: %i\n",ts->epoch.gpsSeconds);
+  fprintf(fp,"%% gpsNanoSeconds: %i\n",ts->epoch.gpsNanoSeconds);
   if(ts->name)
-    fprintf(fp,"Name: '%s'\n",ts->name);
+    fprintf(fp,"%% Name: '%s'\n",ts->name);
   if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) )
-    fprintf(fp,"Unit: '%s'\n",unit);
-  fprintf(fp,"First %d values:\n", numToPrint);
+    fprintf(fp,"%% Unit: '%s'\n",unit);
+  fprintf(fp,"%% First %d values:\n", numToPrint);
   for(i = 0; i < numToPrint; i++)
     if(scaleToREAL4) {
       REAL4 val = ts->data->data[i];
-      fprintf(fp,"  %23.16e\n",val);
+      fprintf(fp,"%23.16e\n",val);
     } else
-      fprintf(fp,"  %23.16e\n",ts->data->data[i]);
+      fprintf(fp,"%23.16e\n",ts->data->data[i]);
+  fprintf(fp,"%% Last %d values:\n", numToPrint);
+  for(i = ts->data->length - numToPrint; i < ts->data->length; i++)
+    if(scaleToREAL4) {
+      REAL4 val = ts->data->data[i];
+      fprintf(fp,"%23.16e\n",val);
+    } else
+      fprintf(fp,"%23.16e\n",ts->data->data[i]);
   fclose(fp);
 
   xlalErrno = 0;
