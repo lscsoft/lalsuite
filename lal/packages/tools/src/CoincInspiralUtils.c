@@ -938,6 +938,21 @@ XLALExtractSnglInspiralFromCoinc(
           /* event id number exists, use it */
           eventId->id = thisCoincEntry->event_id->id;
         }
+        else if ( eventNum > 99999 )
+        { 
+          /* FIXME: This is a temporary measure, until we are sure that the
+           * plotting codes and coire can handle a different event id */
+          XLALPrintError(
+              "Can only handle 99999 coincidences, this is number 100,000");
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglInspiral( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EMAXITER);
+        }
+
         else if ( gpsStartTime )
         {
           eventId->id = LAL_INT8_C(1000000000) *
