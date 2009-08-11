@@ -16,6 +16,8 @@ typedef GD           PSSTimeseries;
 typedef EVEN_PARAM   PSSEventParams;
 typedef HEADER_PARAM PSSHeaderParams;
 
+#define PSS_PI PIG
+
 /* creator & destructor functions */
 extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length);
 extern PSSTimeseries  *XLALCreatePSSTimeseries(UINT4 length);
