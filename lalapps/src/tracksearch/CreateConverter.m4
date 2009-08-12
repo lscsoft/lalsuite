@@ -1,5 +1,7 @@
 define(`SCALE',`0')
+define(`SKIP',`0')
 ifelse(TYPECODE,`D', `define(`SCALE',`20')')
+ifelse(TYPECODE,`D', `define(`SKIP',`1')')
 ifelse(TYPECODE,`D', `define(`TYPE',`REAL8')')
 ifelse(TYPECODE,`S', `define(`TYPE',`REAL4')')
 ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
@@ -21,8 +23,9 @@ VARTYPE *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=CREATESERIES (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -61,10 +64,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,SCALE));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-SCALE;
+if (SCALE > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-SCALE;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -72,8 +73,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,SCALE));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    DESTROYSERIES (tmpData2);

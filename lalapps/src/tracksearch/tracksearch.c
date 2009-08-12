@@ -4052,12 +4052,12 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 				     REAL8            fHet)
 {
-  REAL4 a=0;
-  REAL4 b=0;
-  REAL4 c=0;
-  REAL4 d=0;
-  REAL4 t=0;
-  COMPLEX8 z;
+/*   REAL4 a=0; */
+/*   REAL4 b=0; */
+/*   REAL4 c=0; */
+/*   REAL4 d=0; */
+/*   REAL4 t=0; */
+/*   COMPLEX8 z; */
   UINT4 index=0;
 
   if ((1/data->deltaT) < 1/fHet)
@@ -4068,18 +4068,31 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 
   for (index=0;index<data->data->length;index++)
     {
-      t=index*data->deltaT;
-      a=data->data->data[index];
-      b=0;
-      c=cos(2*LAL_PI*fHet*t);
-      d=sin(2*LAL_PI*fHet*t);
-      z.re=((a*c)-(b*d));
-      z.im=((b*d)+(b*c));
+      /*ToBeStripped<Start>*/
+      if ((INT4) fmod(index,(INT4)((data->data->length)/100.0)) == 0)
+	{
+	  fprintf(stdout,".");
+	  fflush(stdout);
+	}
+      /*<End>*/
+/*       t=index*data->deltaT; */
+/*       a=data->data->data[index]; */
+/*       b=0; */
+/*       c=cos(2*LAL_PI*fHet*t); */
+/*       d=sin(2*LAL_PI*fHet*t); */
+/*       z.re=((a*c)-(b*d)); */
+/*       z.im=((b*d)+(b*c)); */
       /*
        *Keeping only REAL(Data*LocalOscillator)
        */
-      data->data->data[index]=z.re;
+/*       data->data->data[index]=z.re; */
+      data->data->data[index]=(data->data->data[index]*
+			       cos(2*LAL_PI*fHet*(index*data->deltaT)));			       
     }
+  /*ToBeStripped<Start>*/
+  fprintf(stdout,"\n");
+  fflush(stdout);
+  /*<End<*/
   return 0;
 }
 /*
