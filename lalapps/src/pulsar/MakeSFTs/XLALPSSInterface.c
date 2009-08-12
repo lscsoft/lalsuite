@@ -7,9 +7,11 @@
 #include "lal/Date.h"
 #include "pss_serv.h"
 
+/* variables in PSS that aren't exported in the headers */
 extern FILE*LOG_INFO;
+extern float notzero;
 
-static const char* captionString = "count";
+static char* captionString = "count";
 
 FILE* XLALPSSOpenLog(char*name) {
   if (strcmp(name, "-") == 0)
@@ -36,6 +38,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   ep->tau = 20.0;          /* memory time of the autoregressive average */
   ep->cr = 5.0;            /* CR of the threshold */
   ep->edge = 0.00061035;   /* how many seconds around (before and after) the event have to be "purged" */
+  notzero = 1e-25;
   return ep;
 }
 
@@ -130,7 +133,7 @@ PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UIN
   for(i = 0; i < numToPrint; i++)
     fprintf(fp,"%23.16e\n",tsPSS->y[i]);
   fprintf(fp,"%% Last %d values:\n", numToPrint);
-  for(i = tsPSS->n - numToPrint; i < tsPSS->n; i++)
+  for(i = tsPSS->n - numToPrint; i < (UINT4)tsPSS->n; i++)
     fprintf(fp,"%23.16e\n",tsPSS->y[i]);
   fclose(fp);
 
@@ -344,11 +347,11 @@ PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeser
   if ( !events || !ts )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
   if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
-    fprintf(stderr, "[DEBUG] sn_medsig: %d\n", ret);
+    fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
   }
   if ((ret = even_anst(ts,events)) != ts->n ) {
-    fprintf(stderr, "[DEBUG] even_anst: %d\n", ret );
+    fprintf(stderr, "[DEBUG] even_anst: %ld\n", ret );
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
   }
   return events;
