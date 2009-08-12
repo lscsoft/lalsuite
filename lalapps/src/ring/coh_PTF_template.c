@@ -320,6 +320,8 @@ cohPTFNormalize(
     }
   }
 
+  /* A routine to print out the M^IJ information */
+ 
   FILE *outfile;
   outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
@@ -331,6 +333,7 @@ cohPTFNormalize(
   fprintf(outfile,"\n");
   }
   fclose(outfile);
+  
   
 
   for ( i = 0; i < 5; ++i )
@@ -349,8 +352,8 @@ cohPTFNormalize(
       x = PTFQtilde[i * (numPoints / 2 + 1) + k].re;
       y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
 
-      qtilde[k].re = 2 * (r*x - s*y);
-      qtilde[k].im = 2 * (r*y + s*x);
+      qtilde[k].re = 4. * (r*x - s*y)*deltaF;
+      qtilde[k].im = 4. * (r*y + s*x)*deltaF;
     }
 
     qVec.data = PTFqVec->data + (i * numPoints);
@@ -359,6 +362,8 @@ cohPTFNormalize(
     XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invPlan );
   }
 
+  /* Routines for printing the A and B time series */
+  
   outfile = fopen("A_timeseries.dat","w");
   for ( i = 0; i < numPoints; ++i)
   {
@@ -372,6 +377,7 @@ cohPTFNormalize(
     fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
   }
   fclose(outfile);
+  
 
   /* Currently unused function to invert M */
 /*  LALSMatrixInverse ( status->statusPtr,

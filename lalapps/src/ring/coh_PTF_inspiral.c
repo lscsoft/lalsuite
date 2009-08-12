@@ -134,7 +134,7 @@ int main( int argc, char **argv )
   l1segments = ring_get_segments( l1channel,  l1invspec, fwdplan, params );
   v1segments = ring_get_segments( v1channel,  v1invspec, fwdplan, params );
 
-  /* Now I'm going to define an example template */
+  /* Create the relevant structures that will be needed */
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
   fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
   PTFtemplate = LALCalloc( 1, sizeof( *PTFtemplate ) );
@@ -151,17 +151,38 @@ int main( int argc, char **argv )
   fcTmpltParams->PTFe2 = XLALCreateVectorSequence( 3, numPoints );
   fcTmpltParams->fwdPlan =
         XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT = 1.0/params->sampleRate;
+
+  /* Create an inverser FFT plan */
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
+
+  /* Create storage vectors for the PTF filters */
   h1PTFM = XLALCreateArrayL( 2, 5, 5 );
   h1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
-  fake_template (PTFtemplate);
-  generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
-  /* And we will need to calculate B_ij for every ifo */
+  l1PTFM = XLALCreateArrayL( 2, 5, 5 );
+  l1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+  v1PTFM = XLALCreateArrayL( 2, 5, 5 );
+  v1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
   memset( h1PTFM->data, 0, 25 * sizeof(REAL4) );
   memset( h1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
+  memset( l1PTFM->data, 0, 25 * sizeof(REAL4) );
+  memset( l1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
+  memset( v1PTFM->data, 0, 25 * sizeof(REAL4) );
+  memset( v1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
+
+  /* A temporary call to create a template with specified values */
+  fake_template (PTFtemplate);
+
+  /* Generate the Q freq series of the template */
+  generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
+
+  /* And calculate A^I B^I and M^IJ for every IFO */
   cohPTFNormalize(fcTmplt,h1invspec,h1PTFM,h1PTFqVec,
-                  &h1segments->sgmnt[0],invPlan);
+                  &h1segments->sgmnt[13],invPlan);
+/*  cohPTFNormalize(fcTmplt,l1invspec,l1PTFM,l1PTFqVec,
+                  &l1segments->sgmnt[0],invPlan);
+  cohPTFNormalize(fcTmplt,h1invspec,v1PTFM,v1PTFqVec,
+                  &v1segments->sgmnt[0],invPlan);*/
  
   exit(0);
 
