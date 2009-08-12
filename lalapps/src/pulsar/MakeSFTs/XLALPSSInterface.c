@@ -180,6 +180,40 @@ REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, 
   return ts;
 }
 
+REAL4TimeSeries *XLALPrintREAL4TimeSeriesToFile(REAL4TimeSeries *ts, char*name, UINT4 numToPrint) {
+  UINT4 i;
+  FILE*fp;
+  char unit[LALNameLength];
+
+  if ( !ts || !name )
+    XLAL_ERROR_NULL( "XLALPrintREAL8TimeSeriesToFile", XLAL_EFAULT );
+
+  fp = fopen(name,"w");
+  if ( !fp ) {
+    fprintf(stderr,"XLALPrintREAL8TimeSeriesToFile: can't open file '%s'(%d)\n",name,errno);
+    XLAL_ERROR_NULL( "XLALPrintREAL8TimeSeriesToFile", XLAL_EFAULT );
+  }
+
+  fprintf(fp,"%% Length: %d\n",ts->data->length);
+  fprintf(fp,"%% deltaT: %f\n",ts->deltaT);
+  fprintf(fp,"%% gpsSeconds: %i\n",ts->epoch.gpsSeconds);
+  fprintf(fp,"%% gpsNanoSeconds: %i\n",ts->epoch.gpsNanoSeconds);
+  if(ts->name)
+    fprintf(fp,"%% Name: '%s'\n",ts->name);
+  if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) )
+    fprintf(fp,"%% Unit: '%s'\n",unit);
+  fprintf(fp,"%% First %d values:\n", numToPrint);
+  for(i = 0; i < numToPrint; i++)
+    fprintf(fp,"%23.16e\n",ts->data->data[i]);
+  fprintf(fp,"%% Last %d values:\n", numToPrint);
+  for(i = ts->data->length - numToPrint; i < ts->data->length; i++)
+    fprintf(fp,"%23.16e\n",ts->data->data[i]);
+  fclose(fp);
+
+  xlalErrno = 0;
+  return ts;
+}
+
 REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, PSSTimeseries *tsPSS) {
   UINT4 i;
 

@@ -51,6 +51,12 @@ extern PSSTimeseries
 (PSSTimeseries *tsPSS,
  REAL4TimeSeries *ts);
 
+/* debug: convert a LAL REAL8 Timeseries to a REAL4 one */
+REAL4TimeSeries
+*XLALConvertREAL8TimeSeriesToREAL4TimeSeries
+(REAL4TimeSeries *r4ts,
+ REAL8TimeSeries *r8ts);
+
 /* debug: write PSS timeseries data to a file */
 extern PSSTimeseries
 *XLALPrintPSSTimeseriesToFile
@@ -64,6 +70,12 @@ extern REAL8TimeSeries
  char*name,
  UINT4 numToPrint,
  BOOLEAN scaleToREAL4);
+
+extern REAL4TimeSeries
+*XLALPrintREAL4TimeSeriesToFile
+(REAL4TimeSeries *ts,
+ char*name,
+ UINT4 numToPrint);
 
 /* functions for time domain cleaning */
 extern PSSTimeseries
