@@ -2597,6 +2597,8 @@ int main( int argc, char *argv[] )
 
                   if ( trigTime >= lowerBound && trigTime <= upperBound )
                   {
+                    REAL8 sigmasq = 0.0;
+
                     tempTmplt = (SnglInspiralTable *)
                       LALCalloc(1, sizeof(SnglInspiralTable) );
                     tempTmplt->event_id = (EventIDColumn *)
@@ -2608,7 +2610,39 @@ int main( int argc, char *argv[] )
                       bankCurrent->end_time.gpsNanoSeconds;
                     tempTmplt->event_id->id = bankCurrent->event_id->id;
 
-                    tempTmplt->sigmasq = eventList->sigmasq;
+                    if ( ! eventList ) {
+                      UINT4 kmax;
+                      REAL8 deltaF=0.0;
+
+                      /* Compute sigmasq for coherent statistic */
+                      deltaF = 1.0 / ( (REAL4) fcFilterParams->deltaT *
+                                      (REAL4) fcFilterParams->qVec->length );
+
+                      kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF <
+                               fcFilterParams->qVec->length/2 ?
+                               fcFilterInput->fcTmplt->tmplt.fFinal / deltaF :
+                               fcFilterParams->qVec->length/2;
+
+                      sigmasq = fcFilterInput->segment->segNorm->data[kmax] * 
+                                  fcFilterInput->segment->segNorm->data[kmax] *
+                                  fcFilterInput->fcTmplt->tmpltNorm *
+                                  fcFilterInput->fcTmplt->norm;
+
+                      /* If sigmasq is still zero */
+                      if ( (sigmasq == 0.0) )
+                      {
+                        REAL4 totalMass = bankCurrent->mass1 + bankCurrent->mass2;
+                        REAL4 mu = bankCurrent->mass1 * bankCurrent->mass2 / totalMass;
+
+                        sigmasq = candle.sigmasq * pow( totalMass /
+                                    (REAL4) candle.tmplt.totalMass,2.0/3.0);
+                        sigmasq *= mu / candle.tmplt.mu;
+                      }
+                      tempTmplt->sigmasq = sigmasq;
+                    }
+                    else {
+                      tempTmplt->sigmasq = eventList->sigmasq;
+                    }
 
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,

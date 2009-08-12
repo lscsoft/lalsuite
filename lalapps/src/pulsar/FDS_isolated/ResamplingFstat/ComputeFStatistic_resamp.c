@@ -199,6 +199,7 @@ CHAR *uvar_outputLogfile;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_outputTimeSeries;
+BOOLEAN uvar_countTemplates;
 
 INT4 uvar_NumCandidatesToKeep;
 INT4 uvar_clusterOnScanline;
@@ -444,6 +445,8 @@ int main(int argc,char *argv[])
 
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
+  if(uvar_countTemplates)
+    printf("%%%% Number of templates: %0.0f\n",numTemplates);
 
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
@@ -460,7 +463,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
-  while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
+  while ( !uvar_countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
       LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,&Vars), &status );
@@ -675,6 +678,7 @@ initUserVars (LALStatus *status)
   uvar_df2dot    = 0.0;
   uvar_df3dot    = 0.0;
 
+  uvar_countTemplates = FALSE;
 
   uvar_TwoFthreshold = 10.0;
   uvar_NumCandidatesToKeep = 0;
@@ -775,6 +779,7 @@ initUserVars (LALStatus *status)
 
   LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserVar(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+  LALregBOOLUserVar(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -3038,7 +3043,13 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       FaInSpinCorrected = XLALCreateFFTWCOMPLEXSeries(new_length);
       FbInSpinCorrected = XLALCreateFFTWCOMPLEXSeries(new_length);
 
-      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],uvar_refTime-StartTime,FaInSpinCorrected,FbInSpinCorrected);
+      for(p=0;p<new_length;p++)
+	{
+	  FaInSpinCorrected->data[p][0] = 0;
+	  FaInSpinCorrected->data[p][1] = 0;
+	  FbInSpinCorrected->data[p][0] = 0;
+	  FbInSpinCorrected->data[p][1] = 0;
+	} 
 
       /* Allocate Memory for FaOut and FbOut*/
       FaOut = XLALCreateFFTWCOMPLEXSeries(new_length);
@@ -3047,7 +3058,9 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       /* Make Plans */
       plan_a = fftw_plan_dft_1d(FaInSpinCorrected->length,FaInSpinCorrected->data,FaOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
       plan_b = fftw_plan_dft_1d(FbInSpinCorrected->length,FbInSpinCorrected->data,FbOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
- 
+
+      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],uvar_refTime-StartTime,FaInSpinCorrected,FbInSpinCorrected);
+
       /* FFT!! */
       fftw_execute(plan_a);
       fftw_execute(plan_b);
