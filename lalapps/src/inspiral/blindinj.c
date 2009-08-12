@@ -517,15 +517,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -639,7 +639,7 @@ int main( int argc, char *argv[] )
             "Stephen Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 

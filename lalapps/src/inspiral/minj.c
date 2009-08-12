@@ -196,7 +196,7 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
-    {"time-interval",		required_argument, 0,		     'i'},
+    {"time-interval",                required_argument, 0,                     'i'},
     {"seed",                    required_argument, 0,                's'},
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
@@ -222,15 +222,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 

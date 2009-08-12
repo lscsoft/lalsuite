@@ -151,8 +151,8 @@ REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
 REAL4   psi3Max         = 0;            /* maximum value of psi3        */
 REAL4   alpha           = 0;            /* BCV amplitude correction     */
-REAL4	betaMin		= 0;		/* minimum BCV spin parameter	*/
-REAL4	betaMax		= 0;		/* maximum BCV spin parameter	*/
+REAL4   betaMin         = 0;            /* minimum BCV spin parameter   */
+REAL4   betaMax         = 0;            /* maximum BCV spin parameter   */
 INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
 REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
@@ -160,8 +160,8 @@ REAL4   chiMin          = 0.0;          /* minimum value of chi for PTF */
 REAL4   chiMax          = 1.0;          /* maximum value of chi for PTF */
 REAL4   kappaMin        = -1.0;         /* minimum value of kappa for PTF */
 REAL4   kappaMax        = 1.0;          /* maximum value of kappa for PTF */
-INT4    nPointsChi      = 3;            /* PTF template bank density */
-INT4    nPointsKappa    = 5;            /* PTF templated bank density */
+INT4    nPointsChi      = 3;            /* PTF template bank density    */
+INT4    nPointsKappa    = 5;            /* PTF templated bank density   */
 LALPNOrder order;                       /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
@@ -179,9 +179,9 @@ INT4  unitResponse      = 0;            /* set the response to unity    */
 
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
-REAL4   candleSnr = -1;                 /* candle signal to noise ratio */
-REAL4   candleMass1 = -1;               /* standard candle mass (solar) */
-REAL4   candleMass2 = -1;               /* standard candle mass (solar) */
+REAL4   candleSnr     = -1;             /* candle signal to noise ratio */
+REAL4   candleMass1   = -1;             /* standard candle mass (solar) */
+REAL4   candleMass2   = -1;             /* standard candle mass (solar) */
 
 /* TD follow up filenames */
 CHAR **tdFileNames = NULL;
@@ -194,7 +194,7 @@ int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeStrainSpec  = 0;            /* write computed stain spec    */
-INT4  outCompress      = 0;
+INT4   outCompress      = 0;
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -287,15 +287,15 @@ int main ( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -1362,8 +1362,8 @@ fprintf(a, "  --maximum-psi3 PSI3          set maximum range of BCV parameter ps
 fprintf(a, "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n");\
 fprintf(a, "  --disable-polygon-fit        disable the polygon fitting for BCV bank\n");\
 fprintf(a, "  --alpha ALPHA                set alpha for the BCV bank generation\n");\
-fprintf(a, "  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n");\
-fprintf(a, "  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n");\
+fprintf(a, "  --minimum-beta BETA          set minimum BCV spin parameter beta to BETA\n");\
+fprintf(a, "  --maximum-beta BETA          set maximum BCV spin parameter beta to BETA\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --minimum-spin1 SPIN1_MIN    set minimum value of chi for PTF to SPIN1_MIN (0.0)\n");\
 fprintf(a, "  --maximum-spin1 SPIN1_MAX    set maximum value of chi for PTF to SPIN1_MAX (1.0)\n");\
@@ -1445,8 +1445,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"minimum-psi3",            required_argument, 0,                'R'},
     {"maximum-psi3",            required_argument, 0,                'S'},
     {"maximum-fcut-tmplts",     required_argument, 0,                'U'},
-    {"minimum-beta",		required_argument, 0,                'o'},
-    {"maximum-beta",		required_argument, 0,                'O'},
+    {"minimum-beta",            required_argument, 0,                'o'},
+    {"maximum-beta",            required_argument, 0,                'O'},
     {"alpha",                   required_argument, 0,                'T'},
     {"minimum-spin1",           required_argument, 0,                '4'},
     {"maximum-spin1",           required_argument, 0,                '5'},
@@ -1466,8 +1466,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"max-total-mass",          required_argument, 0,                'y'},
     {"min-total-mass",          required_argument, 0,                'W'},
     {"chirp-mass-cutoff",       required_argument, 0,                'q'},
-    {"disable-polygon-fit",     no_argument, 	   &polygonFit,       0 },
-    {"disable-compute-moments", no_argument, 	   &computeMoments,   0 },
+    {"disable-polygon-fit",     no_argument,            &polygonFit,       0 },
+    {"disable-compute-moments", no_argument,            &computeMoments,   0 },
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
     {"candle-mass1",            required_argument, 0,                'l'},
@@ -2310,7 +2310,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           optind++;
 
         }
-	break;
+        break;
 
       case 'Y':
         /* create storaged for the ifo-tag */

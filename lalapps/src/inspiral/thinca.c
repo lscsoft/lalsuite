@@ -1197,7 +1197,7 @@ int main( int argc, char *argv[] )
         sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( sourceFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-      	accuracyParams.exttrig=1;
+        accuracyParams.exttrig=1;
         break;
        
       default:
