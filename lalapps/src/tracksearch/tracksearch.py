@@ -1278,6 +1278,8 @@ class tracksearch:
             buildDir(dataFindSubFileDir)
             currentDataFindJob=pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
             filename="/datafind--"+str(self.blockID)+".sub"
+            if self.cp.has_option('condor','datafind_universe'):
+                currentDataFindJob.set_universe(self.cp.get('condor','datafind_universe'))
             currentDataFindJob.set_sub_file(os.path.normpath(dataFindSubFileDir+filename))
             currentDataFindJob.add_condor_cmd('initialdir',str(dataFindInitialDir))
             currentDataFindNodeList=list()
@@ -1406,7 +1408,8 @@ class tracksearch:
                 tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
             else:
                 #Setup a traditional pipe with a real data finding job
-                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd)
+                #A workaround for cache file since [start,stop) is the data
+                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd+1)
                 tracksearchTime_node.add_parent(df_node)
                 outputFileList=df_node.get_output_files()
                 tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
