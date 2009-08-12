@@ -1134,6 +1134,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin1-min (%f) and spin1-max (%f) must be > 0 \n",
                "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
+
       exit( 1 );
     }
 
@@ -1142,6 +1143,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin1-min (%f) must be < spin1-max (%f) \n",
                "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
+
       exit( 1 );
     }
 
@@ -1150,6 +1152,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin2-min (%f) and spin2-max (%f) must be > 0 \n",
                "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
+
       exit( 1 );
     }
 
@@ -1158,6 +1161,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin2-min (%f) must be < spin2-max (%f) \n",
                "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
+
       exit( 1 );
     }
 

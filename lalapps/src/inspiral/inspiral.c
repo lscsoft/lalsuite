@@ -451,6 +451,7 @@ int main( int argc, char *argv[] )
   INT4    thisTemplateIndex = 0;
   UINT4   analyseTag;
 
+
   /*
    *
    * initialization
@@ -1559,13 +1560,13 @@ int main( int argc, char *argv[] )
   /* store the start and end time of the filter channel in the search summ */
   /* noting that we don't look for events in the first and last quarter    */
   /* of each findchirp segment of the input data                           */
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-            &status );
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, (REAL8) (numPoints / 4) * chan.deltaT);
+  */
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
-  LAL_CALL( LALFloatToGPS( &status,
-                           &(searchsumm.searchSummaryTable->out_start_time),
-                           &tsLength ),
-            &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_start_time), tsLength );
 
   outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
@@ -3183,6 +3184,7 @@ int main( int argc, char *argv[] )
 
   /* free the search summary table after the summ_value table is written */
   free( searchsumm.searchSummaryTable );
+
 
   /* write sngl_inspiral table */
   if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );

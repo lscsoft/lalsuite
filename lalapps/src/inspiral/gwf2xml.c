@@ -389,6 +389,7 @@ int main( int argc, char *argv[] )
           search_summary_table );
     LALEndLIGOLwXMLTable ( &stat, &xmlStream );
 
+
   /* Write the results to the inspiral table */
   if ( snglInspiralEvent )
   {
