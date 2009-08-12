@@ -393,7 +393,13 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
   /* the remaining spins are simply down-cast to REAL4 */
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
-
+  /* find largest non-zero spindown order */
+  UINT4 maxs;
+  for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
+    if ( doppler->fkdot[maxs] != 0 )
+      break;
+  fkdot4.spdnOrder = maxs;
+  fkdot4.refTime = doppler->refTime;
 
   /* call the core function to compute one multi-IFO F-statistic */
 
