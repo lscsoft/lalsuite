@@ -100,7 +100,7 @@ int main( int argc, char *argv[] )
   numEvents = LALSnglInspiralTableFromLIGOLw( &events, inFile, 0, -1 );
   if ( numEvents < 0 ) {
     fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-	     inFile );
+             inFile );
     exit( 1 );
   }
 
