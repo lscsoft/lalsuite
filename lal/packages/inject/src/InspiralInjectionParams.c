@@ -307,7 +307,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
     ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
   }
-  else if ( mDist=logMassUniformTotalMassRatio)
+  else if ( mDist==logMassUniformTotalMassRatio)
   {
     mtotal = exp( log(minTotalMass) +  XLALUniformDeviate(randParams) *
             ( log(maxTotalMass) - log(minTotalMass) ) );
