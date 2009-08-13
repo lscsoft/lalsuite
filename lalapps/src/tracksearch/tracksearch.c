@@ -280,7 +280,8 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
     }
   else if (params.verbosity >= verbose)
     {
-      fprintf(stdout,"No bandpassing requensted.\n");
+      fprintf(stdout,"No bandpassing requested.\n");
+      fprintf(stdout,"Fhigh %f Hz, Flow %f Hz\n",params.highPass,params.lowPass);
       fflush(stdout);
     }
 
@@ -1623,7 +1624,6 @@ void LALappsDoTrackSearch(
   if (params.autoLambda)
     {
       /* Do the calculate of Lh given parameters */
-      lal_errhandler = LAL_ERR_RTRN;
       /*      errCode = LAL_CALL( LALTracksearchFindLambdaMean(status,*tfmap,&params),
 	      status);*/
       errCode = LAL_CALL( LALTracksearchFindLambdaMedian(status,*tfmap,&params),
@@ -1644,7 +1644,6 @@ void LALappsDoTrackSearch(
     }
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
-  lal_errhandler = LAL_ERR_RTRN;
   errCode = LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	    status);
   if ( errCode != 0 )
@@ -1968,9 +1967,11 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		fflush(stdout);
 	      }
 	    /* Required from deprication of LALWindow function */
+
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
+	    lal_errhandler = LAL_ERR_RTRN;
 	    errCode=LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
 			      status);
 	    if ( errCode != 0 )
@@ -1980,7 +1981,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		fprintf(stderr,"Function  : %s\n",status->function);
 		fprintf(stderr,"File      : %s\n",status->file);
 		fprintf(stderr,"Line      : %i\n",status->line);
+		exit(TRACKSEARCHC_ESUB);
 	      }
+	    lal_errhandler = LAL_ERR_DFLT;
 	  }
 	  break;
 	case WignerVille:
@@ -2027,6 +2030,11 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       XLALDestroyREAL4Window(tempWindow);
       LAL_CALL( LALDestroyTimeFreqParam(status,&autoparams),
 		status);
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"Created!\n");
+	  fflush(stdout);
+	}
     }
   /*
    * End preparing map from time series data
@@ -2095,7 +2103,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       fflush(stdout);
     }
   LALappsTSACropMap(status,&tmpTSA,params.colsToClip);
-    
   /* 
    *Copy information from cropping procedure to relevant structures.
    */
@@ -2105,7 +2112,12 @@ LALappsDoTSeriesSearch(LALStatus         *status,
     LALappsTSAWritePGM(status,tmpTSA,NULL); 
   tfmap=tmpTSA->imageRep;
   XLALFree(tmpTSA);
-
+  if ((params.verbosity > quiet) && (params.colsToClip > 0))
+    {
+      fprintf(stdout," Done.\n");
+      fflush(stdout);
+    }
+    
   /*
    * Fill in LALSignalTrackSearch params structure via the use of
    * the TSSearch huge struct elements.  These options have been
@@ -2118,14 +2130,14 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   inputs.height=tfmap->tCol;
 
   /* If requested to the auto lambda determination */
-  if (params.verbosity > quiet)
-    {
-      fprintf(stdout,"Created TFR. \n");
-      fflush(stdout);
-    }
   /*
    * Call subroutine to run the search
    */
+  if (params.verbosity > quiet)
+    {
+      fprintf(stdout,"Starting TFR analysis ");
+      fflush(stdout);
+    }
   LALappsDoTrackSearch(status,
 		       tfmap,
 		       inputs,
@@ -3210,7 +3222,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
       errcode=XLALButterworthREAL4TimeSeries(dataSet,&bandPassParams);
       if (errcode !=0)
 	{
-	  fprintf(stderr,"Error trying to Butterworth filter data (lowPass).\n");
+	  fprintf(stderr,"Error trying to Butterworth filter data (highPass).\n");
 	  exit(errcode);
 	}
     }
