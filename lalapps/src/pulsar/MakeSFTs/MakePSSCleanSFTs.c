@@ -2187,8 +2187,13 @@ int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, B
   j=-1;
   
   for(i=0; i<(int) series->data->length;i++){
+#ifdef PSS_STYLE_RD
        ad=fabs(series->data->data[i]);
        rd=(ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25);
+#else
+       ad=(series->data->data[i]);
+       rd=fabs((ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25));
+#endif
          if((even_param->iflev==0)&&(rd>=myparams->crt) && (ad !=0)){  
 	   j+=1;
 	   even_param->iflev=1;
