@@ -2762,6 +2762,8 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
     goto PSSTDCleaningREAL8FreeAll;
   }
 
+  XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",50);
+
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (before convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
