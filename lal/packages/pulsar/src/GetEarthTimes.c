@@ -73,7 +73,7 @@ the \verb@REAL8@ time variables may suffer loss of precision.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALGPStoGMST1()
+XLALGreenwichMeanSiderealTime()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -83,6 +83,8 @@ LALGPStoGMST1()
 ******************************************************* </lalLaTeX> */
 
 #include <math.h>
+#include <lal/LALErrno.h>
+#include <lal/XLALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
@@ -108,7 +110,6 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
 { /* </lalVerbatim> */
   LIGOTimeGPS epoch;   /* local copy of times->epoch */
   REAL8 t;             /* time as a floating-point number (s) */
-  LALMSTUnitsAndAcc p; /* parameter to LALGPStoGMST() */
 
   INITSTATUS( stat, "GetEarthTimes", GETEARTHTIMESC );
   ATTATCHSTATUSPTR( stat );
@@ -118,9 +119,8 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   epoch = times->epoch;
 
   /* Find the next sidereal midnight. */
-  p.units = MST_SEC;
-  p.accuracy = LALLEAPSEC_LOOSE;
-  TRY( LALGPStoGMST1( stat->statusPtr, &t, &epoch, &p ), stat );
+  t = fmod(XLALGreenwichMeanSiderealTime(&epoch), LAL_TWOPI) * 86400.0 / LAL_TWOPI;
+  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(t), stat, LAL_FAIL_ERR, LAL_FAIL_MSG );
   times->tMidnight = 86400.0 - t;
 
   /* Find the next autumnal equinox. */
