@@ -1850,7 +1850,7 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 
 }
 
-int BilHighpass_dataDouble_R4( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthighpass, REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+int BilHighpass_dataDouble_R4( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthighpass, REAL4TimeSeries *series, BilHP *myparams )
 {
         INT4 i,last;
 	REAL4 w,w1,b0,b1,a1;
@@ -1866,7 +1866,7 @@ int BilHighpass_dataDouble_R4( REAL4TimeSeries *seriesHP, REAL4TimeSeries *first
 	  return -1;
 	}
 
-	seriesHP->deltaT=series->deltaT; 
+	seriesHP->deltaT = series->deltaT; 
 
 	w  = exp(-2.0f * 3.1415926f * (myparams->fcut) * (series->deltaT));
 	w1 = (1.0f + w) / 2.0f;
@@ -1937,9 +1937,9 @@ int Bil2( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *seriesHP, ParamOfEvent
 
 int Bil2_R4( REAL4TimeSeries *seriesHPbil2, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param )
 {
-  INT4 i,ts;
+  UINT4 i, ts;
 
-  ts = ceil(even_param->tau/seriesHP->deltaT);
+  ts = ceil(even_param->tau / seriesHP->deltaT);
 
   seriesHPbil2->data->length=(seriesHP->data->length+ts);
   seriesHPbil2->deltaT=seriesHP->deltaT; 
@@ -2168,7 +2168,7 @@ int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, B
 {
   INT4 i,j;
   REAL4 ad,rd;
-  REAL4 xmax;
+  REAL4 xmax = 0;
   INT8 time_below; /*Number of samples below*/
   INT8 samples_deadtime;
   REAL4 appo;
@@ -2250,7 +2250,7 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
 
   INT4 i,j,i_start;
   REAL8 ad,rd,rdend,rdst;
-  REAL8 xmax;
+  REAL8 xmax = 0;
   long int time_below; /*Number of samples below*/
   long int samples_deadtime;
   REAL8 appo; /*REAL8 appo;*/
@@ -2569,8 +2569,6 @@ int EventRemoval_R4(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4Tim
   REAL4 su,su2,su3,cl;
   REAL4 st1,st2,st3,hp,wr,diffs;
   
-  int itest = 0;
-  FILE *outputtest;
   FILE *EnergyInfo;
   FILE *EventInfo;
   FILE *TM;
