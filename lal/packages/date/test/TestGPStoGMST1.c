@@ -33,18 +33,15 @@ NRCSID (TESTGPSTOGMST1C, "$Id$");
 int main(void)
 {
   static LALStatus status;
-  LALMSTUnitsAndAcc mstUnitsAndAcc;
   LIGOTimeGPS      gps = {0., 0.};
   REAL8            gmst;
 
   gps.gpsSeconds = 61094;
-  mstUnitsAndAcc.units = MST_RAD;
-  mstUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
 
   for (gps.gpsNanoSeconds =99999999; gps.gpsNanoSeconds < 1000000000;
        gps.gpsNanoSeconds+=10000000)
     {
-      LALGPStoGMST1(&status, &gmst, &gps, &mstUnitsAndAcc);
+      gmst = XLALGreenwichMeanSiderealTime(&gps);
       printf("nSec = %d\tgmst = %g\n", gps.gpsNanoSeconds, gmst);
     }
 
