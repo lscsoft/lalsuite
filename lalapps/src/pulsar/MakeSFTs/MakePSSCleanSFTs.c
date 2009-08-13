@@ -3308,46 +3308,47 @@ int FreeMem(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   /* 11/19/05 gam */
-  if(CLA.useSingle) {
+  if(CLA.useSingle || (CLA.TDcleaningProc == 3)) {
 
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
 
     if (CommandLineArgs.TDcleaningProc > 0) {  
     
-    LALDestroyVector(&status,&dataSingleFirstHP.data);
-    TESTSTATUS( &status );
+      LALDestroyVector(&status,&dataSingleFirstHP.data);
+      TESTSTATUS( &status );
 
-    LALDestroyVector(&status,&dataSingleHP.data);
-    TESTSTATUS( &status ); 
+      LALDestroyVector(&status,&dataSingleHP.data);
+      TESTSTATUS( &status ); 
 
-    LALDestroyVector(&status,&dataSingleClean.data);
-    TESTSTATUS( &status );
+      LALDestroyVector(&status,&dataSingleClean.data);
+      TESTSTATUS( &status );
     }
 
 
     LALDestroyRealFFTPlan( &status, &fftPlanSingle );
     TESTSTATUS( &status );
      
-  } else {
+  }
+
+  if(!CLA.useSingle) {
 
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
 
-    if (CommandLineArgs.TDcleaningProc > 0) {  
+    if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc != 3)) {  
     
-    LALDDestroyVector(&status,&dataDoubleFirstHP.data);
-    TESTSTATUS( &status );
+      LALDDestroyVector(&status,&dataDoubleFirstHP.data);
+      TESTSTATUS( &status );
 
-    LALDDestroyVector(&status,&dataDoubleHP.data);
-    TESTSTATUS( &status ); 
+      LALDDestroyVector(&status,&dataDoubleHP.data);
+      TESTSTATUS( &status ); 
 
+      LALDDestroyVector(&status,&databil2.data);
+      TESTSTATUS( &status ); 
 
-    LALDDestroyVector(&status,&databil2.data);
-    TESTSTATUS( &status ); 
-
-    LALDDestroyVector(&status,&dataDoubleClean.data);
-    TESTSTATUS( &status );
+      LALDDestroyVector(&status,&dataDoubleClean.data);
+      TESTSTATUS( &status );
     }
     
     LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
