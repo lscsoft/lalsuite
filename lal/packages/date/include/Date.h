@@ -601,14 +601,6 @@ LALMSTUnitsAndAcc;
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
-/* <lalLaTeX>
-\newpage\input{DateStringC}
-</lalLaTeX> */
-
-void LALDateString (LALStatus     *status,
-                    CHARVector    *timestamp,
-                    const LALDate *date);
-
 
 /* <lalLaTeX>
 \newpage\input{LMST1C}
