@@ -2157,7 +2157,7 @@ int main( int argc, char *argv[] )
         LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
       /* create ccMat for bank veto */
       bankVetoData.ccMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateCOMPLEX8Vector( bankVetoData.length * bankVetoData.length );
       bankVetoData.normMat =
         XLALCreateVector( bankVetoData.length * bankVetoData.length );
       /* point to response and spectrum */
@@ -2520,14 +2520,6 @@ int main( int argc, char *argv[] )
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
           dynRange, fLow, spec.deltaF, chan.deltaT);
           ccFlag = 0;
-          /*char filename[10];
-          sprintf(filename, "ccmat%d.dat",i);
-          FILE *FP = NULL;
-          FP = fopen(filename,"w");
-          for(j = 0; j < bankVetoData.ccMat->length; ++j)
-          {
-            fprintf(FP, "%e\n",bankVetoData.ccMat->data[j]);
-          }*/
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
@@ -2887,7 +2879,7 @@ int main( int argc, char *argv[] )
     LALFree( bankVetoData.qVecArray );
     LALFree( bankVetoData.qtildeVecArray );
     LALFree( bankVetoData.fcInputArray );
-    XLALDestroyVector( bankVetoData.ccMat );
+    XLALDestroyCOMPLEX8Vector( bankVetoData.ccMat );
     XLALDestroyVector( bankVetoData.normMat );
     /* XLALDestroyVector( bankVetoData.normMat ); */
     fcFilterParams->qVec = NULL;
