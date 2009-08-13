@@ -299,7 +299,8 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     REAL4  maxMassRatio      /**< maximum mass ratio */
     )
 {
-  REAL4 mtotal, ratio;
+  REAL4 mtotal = -1.0;
+  REAL4 ratio = -1.0;
 
   /* generate uniformly distributed total mass and mass ratio */
   if ( mDist==uniformTotalMassRatio)
