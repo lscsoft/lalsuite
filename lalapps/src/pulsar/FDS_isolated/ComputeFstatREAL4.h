@@ -40,6 +40,7 @@ extern "C" {
 typedef struct {
   REAL4 FreqMain;			/**< "main" part of frequency fkdot[0], normally just the integral part */
   REAL4 fkdot[PULSAR_MAX_SPINS];	/**< remaining spin-parameters, including *fractional* part of Freq = fkdot[0] */
+  UINT4 spdnOrder;			/**< highest non-zero spindown order (ie maximal value of 'k' in fkdot = df^(k)/dt^k */
 } PulsarSpinsREAL4;
 
 

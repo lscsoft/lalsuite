@@ -164,6 +164,12 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   /* the remaining spins are simply down-cast to REAL4 */
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
+  UINT4 maxs;
+  /* find highest non-zero spindown-entry */
+  for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
+    if ( fkdot4.fkdot[maxs] != 0 )
+      break;
+  fkdot4.spdnOrder = maxs;
 
   /* make sure sin/cos lookup-tables are initialized */
   init_sin_cos_LUT_REAL4();
@@ -365,7 +371,12 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
   /* the remaining spins are simply down-cast to REAL4 */
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
-
+  /* find largest non-zero spindown order */
+  UINT4 maxs;
+  for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
+    if ( doppler->fkdot[maxs] != 0 )
+      break;
+  fkdot4.spdnOrder = maxs;
 
   /* call the core function to compute one multi-IFO F-statistic */
 
@@ -498,7 +509,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   static const char *fn = "XLALComputeFaFbREAL4()";
 
   UINT4 alpha;                 	/* loop index over SFTs */
-  UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX8 Fa, Fb;
   REAL4 Tsft; 			/* length of SFTs in seconds */
@@ -541,11 +551,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   REAL4 f0 = fkdot4->FreqMain;
   REAL4 df = fkdot4->fkdot[0];
-
-  /* find highest non-zero spindown-entry */
-  for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
-    if ( fkdot4->fkdot[spdnOrder] )
-      break;
+  REAL4 tau = 1.0f / df;
+  REAL4 Freq = f0 + df;
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -596,14 +603,16 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         deltaT = T0 + dT;
 
         /* phi_alpha = f * Tas; */
-        phi_alpha_rem = f0 * dT + df * T0 + df * dT;
-        phi_alpha_rem = REM ( phi_alpha_rem );
+        REAL4 T0rem = fmodf ( T0, tau );
+        phi_alpha_rem = f0 * dT;
+        phi_alpha_rem += T0rem * df;
+        phi_alpha_rem += df * dT;
         Dphi_alpha_int = f0;
-        Dphi_alpha_rem = df * (1.0f + TdotM1) + f0 * TdotM1;
+        Dphi_alpha_rem = df + Freq * TdotM1;
 
         /* higher-order spindowns */
         Tas = deltaT;
-	for (s=1; s <= spdnOrder; s++)
+	for (s=1; s <= fkdot4->spdnOrder; s++)
 	  {
 	    REAL4 fsdot = fkdot4->fkdot[s];
 	    Dphi_alpha_rem += fsdot * Tas * inv_fact[s]; 	/* here: Tas = DT^s */
