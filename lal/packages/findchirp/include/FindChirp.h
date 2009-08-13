@@ -698,7 +698,7 @@ tagFindChirpBankVetoData
   COMPLEX8Vector        **qtildeVecArray;
   COMPLEX8Vector        **qVecArray;
   FindChirpFilterInput  **fcInputArray;
-  REAL4Vector            *ccMat;
+  COMPLEX8Vector         *ccMat;
   REAL4Vector		 *normMat;
   REAL4Vector		 *spec;
   COMPLEX8Vector         *resp;
