@@ -12,7 +12,7 @@ NVCC ?= nvcc
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
 ## start with some common defaults
-eah_sources = 	$(lalappsDIR)/lalapps.c \
+eah_sources = 	lalappsGitID.h $(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
 		$(hsHOME)/HoughFStatToplist.c \
 		$(cfsHOME)/HeapToplist.c $(eaHOME)/ComputeFstatREAL4.c \
@@ -25,6 +25,10 @@ eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTA
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
 
+lalappsGitID.h:
+	sh $(lalappsDIR)/../../misc/generateGitID.sh $(lalappsDIR)/../.. lalapps
+	cp $(lalappsDIR)/../../misc/lalappsGitID.h .
+
 ## ----------
 ## some Mac-specific stuff to allow setting of app-icon
 if MAC_BUILD
@@ -32,12 +36,12 @@ if MAC_BUILD
 endif
 
 if MINGW32_BUILD
-   eah_sources += $(hsHOME)/win_lib.cpp exchndl.c
+   eah_sources += $(eaHOME)/win_lib.cpp $(eaHOME)/exchndl.c
    eah_ldadd += -lbfd -liberty -lintl
 endif
 
 if LINUX_BUILD
-   eah_sources += erp_execinfo_plus.c
+   eah_sources += $(eaHOME)/erp_execinfo_plus.c
    eah_ldadd += -lbfd -liberty
 endif
 
