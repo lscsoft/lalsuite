@@ -151,6 +151,7 @@ static void numerical(void)
         
 }
 
+#if 0
 static void injection(void)
 {    
     XLALSkymap2PlanType plan;    
@@ -391,6 +392,7 @@ static void interpolation(void)
 	}
 	
 }
+#endif
 
 //int main(int argc, char** argv)
 int main(void)
