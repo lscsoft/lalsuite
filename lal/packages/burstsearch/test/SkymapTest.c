@@ -35,6 +35,9 @@ static void numericApply(
     // accumulate probability in this
     double p = 0.0;
 
+    // kernel is unused
+    kernel = NULL;
+
     // range from +/- 5 sigma in prior on a[i] for adequate accuracy
     for (a[0] = -5.0; a[0] <= 5.0; a[0] += da)
     {
