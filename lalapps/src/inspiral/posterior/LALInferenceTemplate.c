@@ -273,6 +273,8 @@ void templateLAL(LALIFOData *IFOdata)
     order = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
   else die(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 
+  /*fprintf(stdout, " templateLAL() - approximant = %d,  PN order = %d\n", approximant, order);*/
+
   if (IFOdata->timeData==NULL) 
     die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
@@ -372,10 +374,11 @@ void templateLAL(LALIFOData *IFOdata)
   /* REPORTSTATUS(&status); */
 
 
-  if (! FDomain) {   /*  (LAL function returns time-domain template)       */
+  if (! FDomain) {   /*  (LAL function returns TIME-DOMAIN template)       */
     /* copy over, normalise: */
     for (i=0; i<n; ++i) {
-      IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i] * ((REAL8) n);
+      /*IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i] * ((REAL8) n);*/
+      IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
       IFOdata->timeModelhCross->data->data[i] = 0.0;  /* (no cross waveform) */
     }
     LALDestroyVector(&status, &LALSignal);
@@ -388,7 +391,7 @@ void templateLAL(LALIFOData *IFOdata)
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
   }
 
-  else {             /*  (LAL function returns frequency-domain template)  */
+  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
     /* copy over: */
     IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
     IFOdata->freqModelhPlus->data->data[0].im = 0.0;
@@ -398,12 +401,12 @@ void templateLAL(LALIFOData *IFOdata)
     }
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
+    LALDestroyVector(&status, &LALSignal);
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
     for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
       IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
       IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
     }
-    LALDestroyVector(&status, &LALSignal);
   }
 
   /* (now frequency-domain plus-waveform has been computed, either directly or via FFT) */

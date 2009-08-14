@@ -196,9 +196,15 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data,
 							  
 REAL8 FreqDomainNullLogLikelihood(LALIFOData * data);
 
+void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
+                            LALTemplateFunction *template, char *filename);
+void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
+                            LALTemplateFunction *template, char *filename);
+
 REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData *data);							  
 
 void executeFT(LALIFOData *IFOdata);
+void executeInvFT(LALIFOData *IFOdata);
 
 void die(char *message);
 void LALTemplateGeneratePPN(LALIFOData *IFOdata);

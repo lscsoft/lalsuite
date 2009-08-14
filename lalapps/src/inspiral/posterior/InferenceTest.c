@@ -47,6 +47,7 @@ int i, j, k;
 
 
 int main(int argc, char *argv[]){
+  fprintf(stdout," ========== InferenceTest.c ==========\n");
 
   /* test "LALVariables" stuff: */
   number = 10.0;
@@ -99,6 +100,7 @@ int main(int argc, char *argv[]){
   destroyVariables(&variables2);
   printVariables(&variables2);
 
+  fprintf(stdout," ----------\n");
   
   /* test "parseCommandLine()" function: */
   ppt = (ProcessParamsTable*) parseCommandLine(argc,argv);
@@ -111,6 +113,7 @@ int main(int argc, char *argv[]){
     ++i;
   }
 
+  fprintf(stdout," ----------\n");
 
   /* Test the data initialisation &c. */
   runstate = initialize(ppt);
@@ -200,12 +203,13 @@ int main(int argc, char *argv[]){
 	  }
 	  
 	  
+    fprintf(stdout," ----------\n");
 
     //  templateStatPhase() test: 
     fprintf(stdout, " trying out 'templateStatPhase()'...\n");
     REAL8 mc   = 2.0;
     REAL8 eta  = 0.24;
-    REAL8 iota = 1.0;
+    REAL8 iota = 0.8;
     REAL8 phi  = 2.0;
     REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
     printf("TCOAL: %f\n",tcoal);
@@ -229,7 +233,7 @@ int main(int argc, char *argv[]){
 	  REAL8 tc_current = tc;
 	  REAL8 ra_current        = 0.0;	/* radian      */
 	  REAL8 dec_current       = 0.0;	/* radian      */
-	  REAL8 psi_current       = 0.0;	/* radian      */
+	  REAL8 psi_current       = 0.8;	/* radian      */
 	  REAL8 distMpc_current   = 10.0;	/* Mpc         */
 	  
 	  addVariable(&currentParams,"m1",&m1_current,REAL4_t);
@@ -274,15 +278,28 @@ int main(int argc, char *argv[]){
     fprintf(stdout," StatPhase log-likelihood %f\n", likelihood);
 
     fprintf(stdout, " trying 'templateLAL' likelihood...\n");
-    numberI4 = TaylorF1;
+    numberI4 = TaylorT1;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
     numberI4 = LAL_PNORDER_TWO;
     addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
     fprintf(stdout, " ...done.\n");
-    fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);      
+    fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);  
+    
+    fprintf(stdout," ----------\n");
+
+    fprintf(stdout," generating templates & writing to files...:\n");
+    dumptemplateFreqDomain(&currentParams, runstate->data, templateStatPhase, "test_FTemplate25SP.csv");
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateStatPhase, "test_TTemplate25SP.csv");
+
+    numberI4 = TaylorT1;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    dumptemplateFreqDomain(&currentParams, runstate->data, templateLAL, "test_FTemplateLAL-TT1.csv");
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT1.csv");
+
+    fprintf(stdout," ----------\n");
   }
 
-  printf(" main(): finished.\n");
+  printf(" ========== main(): finished. ==========\n");
   return 0;
 }

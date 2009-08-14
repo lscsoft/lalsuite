@@ -606,12 +606,12 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
  //fclose(testout);
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
+  destroyVariables(&intrinsicParams);
   return(loglikeli);
 }
 
 
-
-REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
+REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
 /* with the `templateNullFreqdomain()' template in order to return */
 /* the "Null likelihood" without having to bother specifying       */
@@ -638,6 +638,82 @@ REAL8 FreqDomainNullLogLikelihood(LALIFOData * data)
   return(loglikeli);
 }
 
+
+void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
+                            LALTemplateFunction *template, char *filename)
+/* de-bugging function writing (frequency-domain) template to a CSV file */
+/* File contains real & imaginary parts of plus & cross components.      */
+/* Template amplitude is scaled to 1Mpc distance.                        */
+{
+  FILE *outfile=NULL; 
+  LALIFOData *dataPtr;
+  double deltaT, deltaF, f;
+  int i;
+
+  copyVariables(currentParams, data->modelParams);
+  dataPtr = data;
+  while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
+    template(data);
+    if (data->modelDomain == timeDomain)
+      executeFT(data);
+
+    outfile = fopen(filename, "w");
+    /*fprintf(outfile, "f PSD dataRe dataIm signalPlusRe signalPlusIm signalCrossRe signalCrossIm\n");*/
+    fprintf(outfile, "\"f\",\"PSD\",\"signalPlusRe\",\"signalPlusIm\",\"signalCrossRe\",\"signalCrossIm\"\n");
+    deltaT = dataPtr->timeData->deltaT;
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+    for (i=0; i<data->freqModelhPlus->data->length; ++i){
+      f = ((double) i) * deltaF;
+      fprintf(outfile, "%f,%e,%e,%e,%e,%e\n",
+              f, data->oneSidedNoisePowerSpectrum->data->data[i],
+              /*data->freqData->data->data[i].re, data->freqData->data->data[i].im,*/
+              data->freqModelhPlus->data->data[i].re,
+              data->freqModelhPlus->data->data[i].im,
+              data->freqModelhCross->data->data[i].re,
+              data->freqModelhCross->data->data[i].im);
+    }
+    fclose(outfile);
+    dataPtr = NULL;
+  }
+  fprintf(stdout, " wrote (f'domain) template to CSV file \"%s\".\n", filename);
+}
+
+
+void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
+                            LALTemplateFunction *template, char *filename)
+/* de-bugging function writing (frequency-domain) template to a CSV file */
+/* File contains real & imaginary parts of plus & cross components.      */
+/* Template amplitude is scaled to 1Mpc distance.                        */
+{
+  FILE *outfile=NULL; 
+  LALIFOData *dataPtr;
+  double deltaT, deltaF, t, epoch;
+  int i;
+
+  copyVariables(currentParams, data->modelParams);
+  dataPtr = data;
+  while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
+    template(data);
+    if (data->modelDomain == frequencyDomain)
+      executeInvFT(data);
+
+    outfile = fopen(filename, "w");
+    fprintf(outfile, "\"t\",\"signalPlus\",\"signalCross\"\n");
+    deltaT = dataPtr->timeData->deltaT;
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+    epoch = XLALGPSGetREAL8(&data->timeData->epoch);
+    for (i=0; i<data->timeModelhPlus->data->length; ++i){
+      t =  epoch + ((double) i) * deltaT;
+      fprintf(outfile, "%f,%e,%e\n",
+              t,
+              data->timeModelhPlus->data->data[i],
+              data->timeModelhCross->data->data[i]);
+    }
+    fclose(outfile);
+    dataPtr = NULL;
+  }
+  fprintf(stdout, " wrote (t'domain) template to CSV file \"%s\".\n", filename);
+}
 
 
 REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData * data)
@@ -679,6 +755,7 @@ void executeFT(LALIFOData *IFOdata)
 /* Execute (forward, time-to-freq) Fourier transform.         */
 /* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
 /* results go into IFOdata->freqModelh...                     */
+/*  CHECK: keep or drop normalisation step here ?!?  */
 {
   int i;
   double norm;
@@ -700,6 +777,26 @@ void executeFT(LALIFOData *IFOdata)
 		  IFOdata->freqModelhCross->data->data[i].re*=norm;
 		  IFOdata->freqModelhCross->data->data[i].im*=norm;
 	  }
+  }
+}
+
+
+
+void executeInvFT(LALIFOData *IFOdata)
+/* Execute inverse (freq-to-time) Fourier transform. */
+/* Results go into 'IFOdata->timeModelh...'          */
+{
+  while (IFOdata != NULL) {
+    if (IFOdata->freqToTimeFFTPlan==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqToTimeFFTPlan'.\n");
+    /*  h+ :  */
+    if (IFOdata->timeModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhPlus'.\n");
+    if (IFOdata->freqModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
+    XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
+    /*  hx :  */
+    if (IFOdata->timeModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
+    if (IFOdata->freqModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
+    XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
+    IFOdata=IFOdata->next;
   }
 }
 
