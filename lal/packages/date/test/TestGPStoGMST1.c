@@ -32,7 +32,6 @@ NRCSID (TESTGPSTOGMST1C, "$Id$");
 
 int main(void)
 {
-  static LALStatus status;
   LIGOTimeGPS      gps = {0., 0.};
   REAL8            gmst;
 
