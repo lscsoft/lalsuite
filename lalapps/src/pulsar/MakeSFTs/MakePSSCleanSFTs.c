@@ -2762,7 +2762,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
     goto PSSTDCleaningREAL8FreeAll;
   }
 
-  XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",50);
+  XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",0);
 
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (before convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
@@ -2957,7 +2957,7 @@ int TDCleaning_R4(struct CommandLineArgsTag CLA)
   EventRemoval_R4( &dataSingleClean, &dataSingle, &dataSingleHP, &databil2Single, &even_param, &bilparam);
 
   /* write out the cleaned data */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"dataSingleClean.dat",50);
+  XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"dataSingleClean.dat",0);
 
   /* copy the cleaned data back to dataDouble */
   for (k = 0; k < (int)dataSingleClean.data->length; k++) {
