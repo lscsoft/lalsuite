@@ -151,7 +151,7 @@ static void numerical(void)
         
 }
 
-static void injection(void)
+void injection(void)
 {    
     XLALSkymap2PlanType plan;    
     XLALSkymap2SphericalPolarType *directions;
@@ -378,7 +378,7 @@ static void injection(void)
 
 }
 
-void interpolation()
+static void interpolation(void)
 {
 
 	double x[] = { 0, 2, 1, 3, 5, 7, 6, 8 };
