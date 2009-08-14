@@ -151,7 +151,7 @@ static void numerical(void)
         
 }
 
-void injection(void)
+static void injection(void)
 {    
     XLALSkymap2PlanType plan;    
     XLALSkymap2SphericalPolarType *directions;
