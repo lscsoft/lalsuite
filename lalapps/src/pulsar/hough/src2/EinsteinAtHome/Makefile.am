@@ -12,7 +12,7 @@ NVCC ?= nvcc
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
 ## start with some common defaults
-eah_sources = 	lalappsGitID.h $(lalappsDIR)/lalapps.c \
+eah_sources = 	$(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
 		$(hsHOME)/HoughFStatToplist.c \
 		$(cfsHOME)/HeapToplist.c $(eaHOME)/ComputeFstatREAL4.c \
@@ -24,10 +24,6 @@ endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
-
-lalappsGitID.h:
-	sh $(lalappsDIR)/../../misc/generateGitID.sh $(lalappsDIR)/../.. lalapps
-	cp $(lalappsDIR)/../../misc/lalappsGitID.h .
 
 ## ----------
 ## some Mac-specific stuff to allow setting of app-icon
@@ -52,7 +48,7 @@ endif
 eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CPPFLAGS@
 eah_ldadd += @CUDA_LIBS@
 
-bin_PROGRAMS = cfsBOINC
+bin_PROGRAMS = lalappsGitID.h cfsBOINC
 
 if USE_GRAPHICS
    bin_PROGRAMS += starsphere
@@ -81,3 +77,7 @@ ACLOCAL_AMFLAGS = -I m4
 starsphere_CPPFLAGS = -Wall -DUSE_BOINC -DBOINC_APP_GRAPHICS -DBOINC_APIV6 -DBOINC_GRAPHICS=0 @GRAPHICS_CFLAGS@ -Igraphics -I/usr/X11R6/include
 starsphere_LDADD    = -lboinc_graphics2 -lboinc_api -lboinc @GRAPHICS_LIBS@ @MAC_LIBS@ # -lglut
 starsphere_SOURCES  = graphics/starlist.C graphics/snr_list.C graphics/user_text.C graphics/pulsar_list.C graphics/search_info.C graphics/starsphere.C graphics/main.C
+
+lalappsGitID.h:
+	sh $(lalappsDIR)/../../misc/generateGitID.sh $(lalappsDIR)/../.. lalapps
+	cp $(lalappsDIR)/../../misc/lalappsGitID.h .
