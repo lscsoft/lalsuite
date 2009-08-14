@@ -252,7 +252,9 @@ void templateLAL(LALIFOData *IFOdata)
   static InspiralTemplate params;
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
-  long i;
+  long i; 
+  long j, jmax;
+  double pj, pmax, pleft, pright;
 
   double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
   double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
@@ -264,6 +266,9 @@ void templateLAL(LALIFOData *IFOdata)
   double m1, m2, chirptime, deltaT;
   double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
   double crossCoef = -1.0 * cos(iota);
+  double instant;
+  int forceTimeLocation=0;
+  double twopit, f, deltaF, re, im, templateReal, templateImag;
 
   if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
     approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
@@ -409,7 +414,7 @@ void templateLAL(LALIFOData *IFOdata)
     }
   }
 
-  /* (now frequency-domain plus-waveform has been computed, either directly or via FFT) */
+  /* (now frequency-domain plus-waveform has been computed, either directly or via FFT)   */
 
   /*  cross waveform is "i x plus" :  */
   for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
@@ -421,6 +426,7 @@ void templateLAL(LALIFOData *IFOdata)
     IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
     IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
   }
+
   /*
    * NOTE: the dirty trick here is to assume the LAL waveform to constitute
    *       the cosine chirp and then derive the corresponding sine chirp 
@@ -428,6 +434,83 @@ void templateLAL(LALIFOData *IFOdata)
    *       In general they should not necessarily be only related 
    *       by a mere phase shift though...
    */
+
+  /* Now...template is not (necessarily) located at specified coalescence time  */
+  /* and/or we don't know even where it actually is located...                  */
+  /* Figure out time location corresponding to template just computed:          */
+
+  /* default:                                                 */
+  /* (Roughly OK for "TaylorT1" and "TaylorF1" templates.     */
+  /* May still by off by tens of milliseconds.)               */
+  instant = tc;
+
+  /* signal simply evolved from start of template on,         */
+  /* for approximately "chirptime" seconds:                   */
+  if ((params.approximant == TaylorT2) 
+      || (params.approximant == TaylorF2))
+    instant = XLALGPSGetREAL8(&IFOdata->timeData->epoch) + chirptime;
+
+  /* no idea where signal lies; search for amplitude peak:    */
+  else {
+    /* Inv-FT back to time domain: */
+    executeInvFT(IFOdata);
+    /* find amplitude peak & neighbouring bins: */
+    pmax = 0.0;
+    for (j=0; j<IFOdata->timeModelhPlus->data->length; ++j) {
+      pj = IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+           + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j];
+      if (pj > pmax){
+        pmax = pj;
+        jmax = j;
+      }
+    }
+    j = (jmax>0) ? jmax-1 : IFOdata->timeModelhPlus->data->length;
+    pleft = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+                 + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
+    j = (jmax<IFOdata->timeModelhPlus->data->length) ? jmax+1 : 0;
+    pright = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+                  + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
+    pmax = sqrt(pmax);
+    /* do some ad-hoc corrections to ensure having an actual peak: */
+    if (!((pleft<pmax) || (pright<pmax)))
+      pleft = pright = pmax - 1.0;
+    else if (!(pleft<pmax)) pleft = 0.5*(pmax+pright);
+    else if (!(pright<pmax)) pright = 0.5*(pmax+pleft);
+    /* do quadratic approximation to determine peak location: */
+    instant = (pleft-pright) / (2.0*pleft-4.0*pmax+2.0*pright);
+    instant = (XLALGPSGetREAL8(&IFOdata->timeData->epoch) + jmax*deltaT) + instant*deltaT;
+    /* fprintf(stdout, " interpolated location: %.8f GPS sec.\n", instant); */
+  }
+
+  /* now either time-shift template or just store the time value: */
+  /* (time-shifting should not be necessary in general,           */
+  /* but may be neat to have for de-bugging etc.)                 */
+  forceTimeLocation = 0;
+  if (instant != tc) {
+    if (forceTimeLocation) { /* time-shift the frequency-domain template: */
+      twopit = LAL_TWOPI * (tc - instant);
+      deltaF = 1.0 / (((double)IFOdata->timeData->data->length) * deltaT);
+      for (i=1; i<IFOdata->freqModelhPlus->data->length; ++i){
+        f = ((double) i) * deltaF;
+        /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
+        re = cos(twopit * f);
+        im = - sin(twopit * f);
+        templateReal = IFOdata->freqModelhPlus->data->data[i].re;
+        templateImag = IFOdata->freqModelhPlus->data->data[i].im;
+        IFOdata->freqModelhPlus->data->data[i].re = templateReal*re - templateImag*im;
+        IFOdata->freqModelhPlus->data->data[i].im = templateReal*im + templateImag*re;
+        templateReal = IFOdata->freqModelhCross->data->data[i].re;
+        templateImag = IFOdata->freqModelhCross->data->data[i].im;
+        IFOdata->freqModelhCross->data->data[i].re = templateReal*re - templateImag*im;
+        IFOdata->freqModelhCross->data->data[i].im = templateReal*im + templateImag*re;
+      }
+    }
+    else {
+      /* store template (time axis) location in "->modelParams" so that other */
+      /* functions may time-shift template to where they want it:             */
+      setVariable(IFOdata->modelParams, "time", &instant);
+    }
+  }
 
   IFOdata->modelDomain = frequencyDomain;
   return;
