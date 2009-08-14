@@ -59,7 +59,6 @@ NRCSID (GPSTOUTCC, "$Id$");
 
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
-#include "date_value.h"
 #include <lal/XLALError.h>
 
 #define INFOSTR_LEN 256

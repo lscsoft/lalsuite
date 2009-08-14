@@ -299,7 +299,8 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     REAL4  maxMassRatio      /**< maximum mass ratio */
     )
 {
-  REAL4 mtotal, ratio;
+  REAL4 mtotal = -1.0;
+  REAL4 ratio = -1.0;
 
   /* generate uniformly distributed total mass and mass ratio */
   if ( mDist==uniformTotalMassRatio)
@@ -307,11 +308,16 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
     ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
   }
-  else if ( mDist=logMassUniformTotalMassRatio)
+  else if ( mDist==logMassUniformTotalMassRatio)
   {
     mtotal = exp( log(minTotalMass) +  XLALUniformDeviate(randParams) *
             ( log(maxTotalMass) - log(minTotalMass) ) );
     ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
+  }
+  else
+  {
+    /* unsupported distribution type */
+    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassRatio", XLAL_EINVAL);
   }
   inj->mass1 = (ratio * mtotal) / (ratio + 1);
   inj->mass2 = mtotal / (ratio + 1);

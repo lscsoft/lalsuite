@@ -130,7 +130,8 @@ if open_box:
     ifos_string = ",".join(ifos_list)
     page.section("Volume x time " + ifos_string)
     try:
-      filenames = page.image_glob('*range_summary.txt"')
+      filenames = page.image_glob('*range_summary.txt')
+      print filenames
       files = [open(f).readlines() for f in filenames]
       for f in filenames:
         page.write("|| || %s ||" % (f.replace('range_summary.txt',''),) )

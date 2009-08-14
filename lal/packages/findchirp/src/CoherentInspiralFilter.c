@@ -41,7 +41,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/DetectorSite.h>
-#include <lal/StochasticCrossCorrelation.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
