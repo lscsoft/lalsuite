@@ -65,37 +65,37 @@ page = wiki(open_box)
 
 page.section("Injection Parameters")
 
-image_list = page.image_glob('cbc_plotsummary_5_sim_dist*.png') 
+image_list = page.image_glob('cbc_plotsummary_*_sim_dist*.png') 
 page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
-image_list = page.image_glob('cbc_plotsummary_0_deff_vs_mchirp_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_deff_vs_mchirp_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_0_deff_vs_t_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_deff_vs_t_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = page.image_glob('cbc_plotsummary_1_mchirp_acc_frac_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_mchirp_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_1_eta_acc_frac_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_eta_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_1_t_acc_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_t_acc_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
-image_list = page.image_glob('cbc_plotsummary_2_playground_chi2_vs_rho_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-image_list = page.image_glob('cbc_plotsummary_3_playground_rho_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
-image_list = page.image_glob('cbc_plotsummary_4_playground_count_vs_snr_*.png')
+image_list = page.image_glob('cbc_plotsummary_*_playground_count_vs_snr_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Ifar")
-image_list = page.image_glob('cbc_plotsummary_4_playground_count_vs_ifar*.png')
+image_list = page.image_glob('cbc_plotsummary_*_playground_count_vs_ifar*.png')
 page.image_table(image_list,webserver)
 
 try:
@@ -106,19 +106,19 @@ if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
-    image_list = page.image_glob('cbc_plotsummary_2_chi2_vs_rho_*.png')
+    image_list = page.image_glob('cbc_plotsummary_*_chi2_vs_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Effective SNR scatter")
-    image_list = page.image_glob('cbc_plotsummary_3_rho_*.png')
+    image_list = page.image_glob('cbc_plotsummary_*_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
-    image_list = page.image_glob('cbc_plotsummary_4_count_vs_snr_*.png')
+    image_list = page.image_glob('cbc_plotsummary_*_count_vs_snr_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Ifar")
-    image_list = page.image_glob('cbc_plotsummary_4_count_vs_ifar_*.png')
+    image_list = page.image_glob('cbc_plotsummary_*_count_vs_ifar_*.png')
     page.image_table(image_list,webserver)
 
     try:
