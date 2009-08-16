@@ -468,7 +468,7 @@ fi
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
 fi
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk

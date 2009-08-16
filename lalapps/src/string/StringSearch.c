@@ -168,8 +168,6 @@ StringTemplate strtemplate[MAXTEMPLATES];
 
 int NTemplates;
 
-LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
-
 SnglBurst *events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
@@ -416,7 +414,6 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 int OutputEvents(struct CommandLineArgsTag CLA)
 {  
   LIGOLwXMLStream xml;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   MetadataTable myTable;
 
   if (!CLA.outputFileName)
@@ -436,7 +433,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   /* process table */
   snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+  XLALGPSTimeNow(&(procTable.processTable->end_time));
   if(XLALWriteLIGOLwXMLProcessTable(&xml, procTable.processTable)) {
     return -1;
   }
@@ -1048,7 +1045,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* set up xml output stuff */
   /* create the process and process params tables */
   procTable.processTable = XLALCreateProcessTableRow();
-  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+  XLALGPSTimeNow(&(procTable.processTable->start_time));
 	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
 	{
 		if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
