@@ -9,7 +9,7 @@
 
 /* variables in PSS that aren't exported in the headers */
 extern FILE*LOG_INFO;
-extern float notzero;
+/* extern */ float notzero;
 
 static char* captionString = "count";
 
