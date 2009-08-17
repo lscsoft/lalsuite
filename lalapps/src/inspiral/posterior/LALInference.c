@@ -524,29 +524,29 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     
     /* Compare parameter values with parameter values corresponding  */
     /* to currently stored template; ignore "time" variable:         */
-    if (checkVariable(data->modelParams, "time")) {
-      timeTmp = *(REAL8 *) getVariable(data->modelParams, "time");
-      removeVariable(data->modelParams, "time");
+    if (checkVariable(dataPtr->modelParams, "time")) {
+      timeTmp = *(REAL8 *) getVariable(dataPtr->modelParams, "time");
+      removeVariable(dataPtr->modelParams, "time");
     }
     else timeTmp = GPSdouble;
-    different = compareVariables(data->modelParams, &intrinsicParams);
-    /* "different" now may also mean that "data->modelParams" */
-    /* wasn't allocated yet (as in the very 1st iteration).   */
+    different = compareVariables(dataPtr->modelParams, &intrinsicParams);
+    /* "different" now may also mean that "dataPtr->modelParams" */
+    /* wasn't allocated yet (as in the very 1st iteration).      */
 
     if (different) { /* template needs to be re-computed: */
-      copyVariables(&intrinsicParams, data->modelParams);
-      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
+      copyVariables(&intrinsicParams, dataPtr->modelParams);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
       template(data);
-      if (data->modelDomain == timeDomain)
+      if (dataPtr->modelDomain == timeDomain)
         executeFT(data);
-      /* note that the data->modelParams "time" element may have changed here!! */
+      /* note that the dataPtr->modelParams "time" element may have changed here!! */
       /* (during "template()" computation)                                      */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(data->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
     }
 
-    /*-- Template is now in data->freqModelhPlus and data->freqModelhCross. --*/
+    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
     /*-- (Either freshly computed or inherited.)                            --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
@@ -559,7 +559,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (GPSdouble - (*(REAL8*) getVariable(data->modelParams, "time"))) + timedelay;
+    timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
@@ -574,14 +574,13 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
     lower = ceil(dataPtr->fLow / deltaF);
     upper = floor(dataPtr->fHigh / deltaF);
-    //TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double)(upper-lower+1));
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * data->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * data->freqModelhCross->data->data[i].re;
-      plainTemplateImag = FplusScaled * data->freqModelhPlus->data->data[i].im  
-                          +  FcrossScaled * data->freqModelhCross->data->data[i].im;
+      plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
+                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
+      plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
+                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
@@ -591,16 +590,16 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
       im = - sin(twopit * f);
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      dataReal     = data->freqData->data->data[i].re / deltaT;
-      dataImag     = data->freqData->data->data[i].im / deltaT;
+      dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
+      dataImag     = dataPtr->freqData->data->data[i].im / deltaT;
       /* compute squared difference & 'chi-squared': */
       diffRe       = dataReal - templateReal;         // Difference in real parts...
       diffIm       = dataImag - templateImag;         // ...and imaginary parts, and...
       diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-      chisquared  += ((TwoDeltaToverN * diffSquared) / data->oneSidedNoisePowerSpectrum->data->data[i]);
+      chisquared  += ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
  //fprintf(testout, "%e %e %e %e %e %e\n",
- //        f, data->oneSidedNoisePowerSpectrum->data->data[i], 
- //        data->freqData->data->data[i].re, data->freqData->data->data[i].im,
+ //        f, dataPtr->oneSidedNoisePowerSpectrum->data->data[i], 
+ //        dataPtr->freqData->data->data[i].re, dataPtr->freqData->data->data[i].im,
  //        templateReal, templateImag);
     }
     dataPtr = dataPtr->next;
