@@ -371,32 +371,32 @@ void mc2masses(double mc, double eta, double *m1, double *m2)
 
 
 void templateLAL(LALIFOData *IFOdata)
-/*********************************************************************************************/
-/* Wrapper function to call LAL functions for waveform generation.                           */
-/* Will always return frequency-domain templates (numerically FT'ed                          */
-/* in case the LAL function returns time-domain).                                            */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* Required (`IFOdata->modelParams') parameters are:                                         */
-/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
-/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
-/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
-/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
-/*   - "inclination"      (inclination angle, REAL8, radians)                                */
-/*   - "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition         */
-/*                         in `LALInspiral.h'.                                               */
-/*                         Templates that (seem to) work by now are:                         */
-/*                         TaylorF2, TaylorT1, TaylorT2, TaylorT3, IMRPhenomA, EOB)          */
-/*   - "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition          */
-/*                         in `LALInspiral.h'.)                                              */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* 'problematic' templates are:                                                              */
-/*  - Taylor F1 :  returns with error ("Maximum iterations exceeded")                        */
-/*  - Taylor T2 :  fails at low mass (error: "Attempting to write beyond the end of vector") */
-/*  - Taylor T4 :  funny scaling, ~ 16 orders of magnitude too large                         */
-/*  - EOBNR     :  returns with error.                                                       */
-/*  - BCV       :  amplitude is "arbitrary" (as stated in documentation)                     */
-/*                                                                                           */
-/*********************************************************************************************/
+/*************************************************************************************************/
+/* Wrapper function to call LAL functions for waveform generation.                               */
+/* Will always return frequency-domain templates (numerically FT'ed                              */
+/* in case the LAL function returns time-domain).                                                */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`IFOdata->modelParams') parameters are:                                             */
+/*   - "chirpmass"        (REAL8,units of solar masses)                                          */
+/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                        */
+/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)            */
+/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)      */
+/*   - "inclination"      (inclination angle, REAL8, radians)                                    */
+/*   - "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition             */
+/*                         in `LALInspiral.h'.                                                   */
+/*                         Templates that (seem to) work by now are:                             */
+/*                         TaylorF2, TaylorT1, TaylorT2, TaylorT3, BCV, IMRPhenomA, EOB, EOBNR)  */
+/*   - "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition              */
+/*                         in `LALInspiral.h'.)                                                  */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* 'problematic' templates are:                                                                  */
+/*  - Taylor F1 :  returns with error ("Maximum iterations exceeded")                            */
+/*  - Taylor T2 :  fails at low mass (error: "Attempting to write beyond the end of vector")     */
+/*  - Taylor T4 :  funny scaling, ~ 16 orders of magnitude too large                             */
+/*  - EOBNR     :  fails for low masses (e.g.: mc=3, eta=0.24)                                   */
+/*  - BCV       :  amplitude is "arbitrary" (as stated in documentation)                         */
+/*                                                                                               */
+/*************************************************************************************************/
 {
   static LALStatus status;
   static InspiralTemplate params;

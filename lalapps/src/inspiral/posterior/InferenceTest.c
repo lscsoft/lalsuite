@@ -207,7 +207,7 @@ int main(int argc, char *argv[]){
 
     //  templateStatPhase() test: 
     fprintf(stdout, " trying out 'templateStatPhase()'...\n");
-    REAL8 mc   = 20.1;
+    REAL8 mc   = 4.0;
     REAL8 eta  = 0.24;
     REAL8 iota = 0.0;
     REAL8 phi  = 2.0;
@@ -331,11 +331,11 @@ int main(int argc, char *argv[]){
     setVariable(&currentParams, "LAL_PNORDER",     &numberI4);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-BCV.csv");
 
-    /*numberI4 = EOBNR;
+    numberI4 = EOBNR;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_PSEUDO_FOUR;
     setVariable(&currentParams, "LAL_PNORDER", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOBNR.csv");*/
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOBNR.csv");
 
     fprintf(stdout," ----------\n");
   }
