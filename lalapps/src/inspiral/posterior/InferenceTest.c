@@ -207,7 +207,7 @@ int main(int argc, char *argv[]){
 
     //  templateStatPhase() test: 
     fprintf(stdout, " trying out 'templateStatPhase()'...\n");
-    REAL8 mc   = 1.7;
+    REAL8 mc   = 20.1;
     REAL8 eta  = 0.24;
     REAL8 iota = 0.0;
     REAL8 phi  = 2.0;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]){
 	  
 	  // Parameters for which I am going to compute the likelihood
 	  
-	  REAL4 m1_current = 10.0;
+	  REAL4 m1_current = 20.0;
 	  REAL4 m2_current = 1.4;
 	  REAL4 inc_current = 0.0;
 	  REAL4 phii_current = 0.0;
@@ -288,27 +288,54 @@ int main(int argc, char *argv[]){
     
     fprintf(stdout," ----------\n");
     /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
+    /*       for aligning (time domain) templates.                                    */
     fprintf(stdout," generating templates & writing to files...:\n");
     dumptemplateFreqDomain(&currentParams, runstate->data, templateStatPhase, "test_FTemplate25SP.csv");
     dumptemplateTimeDomain(&currentParams, runstate->data, templateStatPhase, "test_TTemplate25SP.csv");
 
+    fprintf(stdout," ----------\n");
+    /* These are the LAL templates that (...seem to...) work right now: */
+    /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
     numberI4 = LAL_PNORDER_TWO;
     setVariable(&currentParams, "LAL_PNORDER",     &numberI4);
+    numberI4 = TaylorF2;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TF2.csv");
     numberI4 = TaylorT1;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT1.csv");
     numberI4 = TaylorT2;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT2.csv");
-    numberI4 = TaylorF1;
+    numberI4 = TaylorT3;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TF1.csv");
-    numberI4 = TaylorF2;
-    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TF2.csv");
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TT3.csv");
+
     numberI4 = IMRPhenomA;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-TPhenom.csv");
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-Phenom.csv");
+
+    numberI4 = PadeT1;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-PadeT1.csv");
+
+    numberI4 = EOB;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    numberI4 = LAL_PNORDER_PSEUDO_FOUR;
+    setVariable(&currentParams, "LAL_PNORDER", &numberI4);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOB.csv");
+
+    numberI4 = BCV;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    numberI4 = LAL_PNORDER_TWO;
+    setVariable(&currentParams, "LAL_PNORDER",     &numberI4);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-BCV.csv");
+
+    /*numberI4 = EOBNR;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
+    numberI4 = LAL_PNORDER_PSEUDO_FOUR;
+    setVariable(&currentParams, "LAL_PNORDER", &numberI4);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOBNR.csv");*/
 
     fprintf(stdout," ----------\n");
   }

@@ -213,310 +213,6 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 
 
-/* ============ Christian's attempt of a LAL template wrapper function: ========== */
-
-
-void mc2masses(double mc, double eta, double *m1, double *m2)
-/*  Compute individual companion masses (m1, m2)   */
-/*  for given chirp mass (m_c) & mass ratio (eta)  */
-/*  (note: m2 >= m1).                              */
-{
-  double root = sqrt(0.25-eta);
-  double fraction = (0.5+root) / (0.5-root);
-  *m1 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
-  *m2 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
-}
-
-
-
-void templateLAL(LALIFOData *IFOdata)
-/*********************************************************************************************/
-/* Wrapper function to call LAL functions for waveform generation.                           */
-/* Will always return frequency-domain templates (numerically FT'ed                          */
-/* in case the LAL function returns time-domain).                                            */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* Required (`IFOdata->modelParams') parameters are:                                         */
-/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
-/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
-/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
-/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
-/*   - "inclination"      (inclination angle, REAL8, radians)                                */
-/*   - "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition         */
-/*                         in `LALInspiral.h'. Allowed values by now are:                    */
-/*                         TaylorT2, TaylorT3, EOBNR)                                        */
-/*   - "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition          */
-/*                         in `LALInspiral.h'.)                                              */
-/*********************************************************************************************/
-{
-  static LALStatus status;
-  static InspiralTemplate params;
-  static REAL4Vector *LALSignal=NULL;
-  UINT4 n;
-  long i; 
-  long j, jmax;
-  double pj, pmax, pleft, pright;
-
-  double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
-  double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
-  double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
-  double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
-  double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
-  int approximant, order;
-  int FDomain;    /* (denotes domain of the _LAL_ template!) */
-  double m1, m2, chirptime, deltaT;
-  double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
-  double crossCoef = -1.0 * cos(iota);
-  double instant;
-  int forceTimeLocation=0;
-  double twopit, f, deltaF, re, im, templateReal, templateImag;
-
-  if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
-    approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
-  else die(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
-
-  if (checkVariable(IFOdata->modelParams, "LAL_PNORDER"))
-    order = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
-  else die(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
-
-  /*fprintf(stdout, " templateLAL() - approximant = %d,  PN order = %d\n", approximant, order);*/
-
-  if (IFOdata->timeData==NULL) 
-    die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
-  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
-    die(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
-  deltaT = IFOdata->timeData->deltaT;
-
-  mc2masses(mc, eta, &m1, &m2);
-  params.OmegaS      = 0.0;     /* (?) */
-  params.Theta       = 0.0;     /* (?) */
-  /* params.Zeta2    = 0.0; */  /* (?) */
-  params.ieta        = 1; 
-  params.nStartPad   = 0;
-  params.nEndPad     = 0;
-  params.massChoice  = m1Andm2;
-  params.approximant = approximant;  /*  TaylorT1, ...              */
-  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
-  params.fLower      = IFOdata->fLow * 0.9;
-  params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
-  params.tSampling   = 1.0 / deltaT;
-  params.startTime   = 0.0;
-
-  /* actual inspiral parameters: */
-  params.mass1       = m1;
-  params.mass2       = m2;
-  params.startPhase  = phi;
-  if ((params.approximant == EOB) 
-      || (params.approximant == EOBNR)
-      || (params.approximant == TaylorT3)
-      || (params.approximant == IMRPhenomA))
-    params.distance  = LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
-  else if ((params.approximant == TaylorT1)
-           || (params.approximant == TaylorT2)
-           || (params.approximant == PadeT1)
-           || (params.approximant == TaylorF1)
-           || (params.approximant == TaylorF2)
-           || (params.approximant == PadeF1)
-           || (params.approximant == BCV))
-    params.distance  = 1.0;                                          /* distance in Mpc */
-  else                                                     
-    params.distance  = LAL_PC_SI * 1.0e6 / ((double) LAL_C_SI);  /* distance in seconds */
-
-  /* ensure proper "fCutoff" setting: */
-  if (params.fCutoff >= 0.5*params.tSampling)
-    params.fCutoff = 0.5*params.tSampling - 0.5*IFOdata->freqData->deltaF;
-  if (! (params.tSampling > 2.0*params.fCutoff)){
-    fprintf(stderr," WARNING: 'LALInspiralSetup()' (called within 'LALInspiralWavelength()')\n");
-    fprintf(stderr,"          requires (tSampling > 2 x fCutoff) !!\n");
-    fprintf(stderr," (settings are:  tSampling = %f s,  fCutoff = %f Hz)  \n", params.tSampling, params.fCutoff);
-    exit(1);
-  }
-
-  /* ensure compatible sampling rate: */
-  if ((params.approximant == EOBNR)
-      && (fmod(log((double)params.tSampling)/log(2.0),1.0) != 0.0)) {
-    fprintf(stderr, " ERROR: \"EOBNR\" templates require power-of-two sampling rates!\n");
-    fprintf(stderr, "        (params.tSampling = %f Hz)\n", params.tSampling);
-    exit(1);
-  }
-
-  /* compute other elements of `params', check out the `.tC' value, */
-  /* shift the start time to match the coalescence time,            */
-  /* and eventually re-do parameter calculations:                   */
-
-  LALInspiralParameterCalc(&status, &params);
-  chirptime = params.tC;
-  if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
-    params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
-    LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
-  }
-
-  /* compute "params.signalAmplitude" slot: */
-  LALInspiralRestrictedAmplitude(&status, &params);
-
-  /* figure out inspiral length & set `n': */
-  /* LALInspiralWaveLength(&status, &n, params); */
-  n = IFOdata->timeData->data->length;
-
-  /* domain of LAL template as returned by LAL function: */
-  FDomain = ((params.approximant == TaylorF1)
-             || (params.approximant == TaylorF2)
-             || (params.approximant == PadeF1)
-             || (params.approximant == BCV));
-  if (FDomain && (n % 2 != 0)){
-    fprintf(stderr, " ERROR: frequency-domain LAL waveforms require even number of samples!\n");
-    fprintf(stderr, "        (n = %d)\n", n);
-    exit(1);
-  }
-
-  /* allocate (temporary) waveform vector: */
-  LALCreateVector(&status, &LALSignal, n);
-  for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
-
-
-  /*--  ACTUAL WAVEFORM COMPUTATION:  --*/
-  /* REPORTSTATUS(&status); */
-  LALInspiralWave(&status, LALSignal, &params);
-  /* REPORTSTATUS(&status); */
-
-
-  if (! FDomain) {   /*  (LAL function returns TIME-DOMAIN template)       */
-    /* copy over, normalise: */
-    for (i=0; i<n; ++i) {
-      /*IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i] * ((REAL8) n);*/
-      IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
-      IFOdata->timeModelhCross->data->data[i] = 0.0;  /* (no cross waveform) */
-    }
-    LALDestroyVector(&status, &LALSignal);
-    /* apply window & execute FT of plus component: */
-    if (IFOdata->window==NULL) 
-      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
-    XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
-    if (IFOdata->timeToFreqFFTPlan==NULL)
-      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
-    XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
-  }
-
-  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
-    /* copy over: */
-    IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
-    IFOdata->freqModelhPlus->data->data[0].im = 0.0;
-    for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
-      IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]);
-      IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]);
-    }
-    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
-    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
-    LALDestroyVector(&status, &LALSignal);
-    /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
-    for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-      IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
-      IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
-    }
-  }
-
-  /* (now frequency-domain plus-waveform has been computed, either directly or via FFT)   */
-
-  /*  cross waveform is "i x plus" :  */
-  for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
-    IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
-    IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
-    // consider inclination angle's effect:
-    IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
-    IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
-    IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
-    IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
-  }
-
-  /*
-   * NOTE: the dirty trick here is to assume the LAL waveform to constitute
-   *       the cosine chirp and then derive the corresponding sine chirp 
-   *       as the orthogonal ("i x cosinechirp") waveform.
-   *       In general they should not necessarily be only related 
-   *       by a mere phase shift though...
-   */
-
-  /* Now...template is not (necessarily) located at specified coalescence time  */
-  /* and/or we don't know even where it actually is located...                  */
-  /* Figure out time location corresponding to template just computed:          */
-
-  /* default:                                                 */
-  /* (Roughly OK for "TaylorT1" and "TaylorF1" templates.     */
-  /* May still by off by tens of milliseconds.)               */
-  instant = tc;
-
-  /* signal simply evolved from start of template on,         */
-  /* for approximately "chirptime" seconds:                   */
-  if ((params.approximant == TaylorT2) 
-      || (params.approximant == TaylorF2))
-    instant = XLALGPSGetREAL8(&IFOdata->timeData->epoch) + chirptime;
-
-  /* no idea where signal lies; search for amplitude peak:    */
-  else {
-    /* Inv-FT back to time domain: */
-    executeInvFT(IFOdata);
-    /* find amplitude peak & neighbouring bins: */
-    pmax = 0.0;
-    for (j=0; j<IFOdata->timeModelhPlus->data->length; ++j) {
-      pj = IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
-           + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j];
-      if (pj > pmax){
-        pmax = pj;
-        jmax = j;
-      }
-    }
-    j = (jmax>0) ? jmax-1 : IFOdata->timeModelhPlus->data->length;
-    pleft = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
-                 + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
-    j = (jmax<IFOdata->timeModelhPlus->data->length) ? jmax+1 : 0;
-    pright = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
-                  + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
-    pmax = sqrt(pmax);
-    /* do some ad-hoc corrections to ensure having an actual peak: */
-    if (!((pleft<pmax) || (pright<pmax)))
-      pleft = pright = pmax - 1.0;
-    else if (!(pleft<pmax)) pleft = 0.5*(pmax+pright);
-    else if (!(pright<pmax)) pright = 0.5*(pmax+pleft);
-    /* do quadratic approximation to determine peak location: */
-    instant = (pleft-pright) / (2.0*pleft-4.0*pmax+2.0*pright);
-    instant = (XLALGPSGetREAL8(&IFOdata->timeData->epoch) + jmax*deltaT) + instant*deltaT;
-    /* fprintf(stdout, " interpolated location: %.8f GPS sec.\n", instant); */
-  }
-
-  /* now either time-shift template or just store the time value: */
-  /* (time-shifting should not be necessary in general,           */
-  /* but may be neat to have for de-bugging etc.)                 */
-  forceTimeLocation = 0;
-  if (instant != tc) {
-    if (forceTimeLocation) { /* time-shift the frequency-domain template: */
-      twopit = LAL_TWOPI * (tc - instant);
-      deltaF = 1.0 / (((double)IFOdata->timeData->data->length) * deltaT);
-      for (i=1; i<IFOdata->freqModelhPlus->data->length; ++i){
-        f = ((double) i) * deltaF;
-        /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-        re = cos(twopit * f);
-        im = - sin(twopit * f);
-        templateReal = IFOdata->freqModelhPlus->data->data[i].re;
-        templateImag = IFOdata->freqModelhPlus->data->data[i].im;
-        IFOdata->freqModelhPlus->data->data[i].re = templateReal*re - templateImag*im;
-        IFOdata->freqModelhPlus->data->data[i].im = templateReal*im + templateImag*re;
-        templateReal = IFOdata->freqModelhCross->data->data[i].re;
-        templateImag = IFOdata->freqModelhCross->data->data[i].im;
-        IFOdata->freqModelhCross->data->data[i].re = templateReal*re - templateImag*im;
-        IFOdata->freqModelhCross->data->data[i].im = templateReal*im + templateImag*re;
-      }
-    }
-    else {
-      /* store template (time axis) location in "->modelParams" so that other */
-      /* functions may time-shift template to where they want it:             */
-      setVariable(IFOdata->modelParams, "time", &instant);
-    }
-  }
-
-  IFOdata->modelDomain = frequencyDomain;
-  return;
-}
-
-
 
 void templateStatPhase(LALIFOData *IFOdata)
 /*************************************************************/
@@ -652,5 +348,351 @@ void templateNullTimedomain(LALIFOData *IFOdata)
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
   IFOdata->modelDomain = timeDomain;
+  return;
+}
+
+
+
+/* ============ LAL template wrapper function: ========== */
+
+
+
+void mc2masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m2 >= m1).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m1 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m2 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+}
+
+
+
+void templateLAL(LALIFOData *IFOdata)
+/*********************************************************************************************/
+/* Wrapper function to call LAL functions for waveform generation.                           */
+/* Will always return frequency-domain templates (numerically FT'ed                          */
+/* in case the LAL function returns time-domain).                                            */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`IFOdata->modelParams') parameters are:                                         */
+/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
+/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
+/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
+/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
+/*   - "inclination"      (inclination angle, REAL8, radians)                                */
+/*   - "LAL_APPROXIMANT"  (INT4 value corresponding to `enum approximant' definition         */
+/*                         in `LALInspiral.h'.                                               */
+/*                         Templates that (seem to) work by now are:                         */
+/*                         TaylorF2, TaylorT1, TaylorT2, TaylorT3, IMRPhenomA, EOB)          */
+/*   - "LAL_PNORDER"      (INT4 value corresponding to `enum LALPNOrder' definition          */
+/*                         in `LALInspiral.h'.)                                              */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* 'problematic' templates are:                                                              */
+/*  - Taylor F1 :  returns with error ("Maximum iterations exceeded")                        */
+/*  - Taylor T2 :  fails at low mass (error: "Attempting to write beyond the end of vector") */
+/*  - Taylor T4 :  funny scaling, ~ 16 orders of magnitude too large                         */
+/*  - EOBNR     :  returns with error.                                                       */
+/*  - BCV       :  amplitude is "arbitrary" (as stated in documentation)                     */
+/*                                                                                           */
+/*********************************************************************************************/
+{
+  static LALStatus status;
+  static InspiralTemplate params;
+  static REAL4Vector *LALSignal=NULL;
+  UINT4 n;
+  long i; 
+  long j, jmax;
+  double pj, pmax, pleft, pright;
+
+  double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
+  double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
+  double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
+  double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
+  double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
+  int approximant, order;
+  int FDomain;    /* (denotes domain of the _LAL_ template!) */
+  double m1, m2, chirptime, deltaT;
+  double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
+  double crossCoef = -1.0 * cos(iota);
+  double instant;
+  int forceTimeLocation;
+  double twopit, f, deltaF, re, im, templateReal, templateImag;
+
+  if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
+    approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+  else die(" ERROR in templateLAL(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+
+  if (checkVariable(IFOdata->modelParams, "LAL_PNORDER"))
+    order = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
+  else die(" ERROR in templateLAL(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+
+  /*fprintf(stdout, " templateLAL() - approximant = %d,  PN order = %d\n", approximant, order);*/
+
+  /* little consistency check (otherwise no output without warning): */
+  if (((approximant==EOBNR) || (approximant==EOB)) && (order!=LAL_PNORDER_PSEUDO_FOUR))
+    die(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require the \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");
+  
+
+  if (IFOdata->timeData==NULL) 
+    die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
+  if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
+    die(" ERROR in templateLAL(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
+  deltaT = IFOdata->timeData->deltaT;
+
+  mc2masses(mc, eta, &m1, &m2);
+  params.OmegaS      = 0.0;     /* (?) */
+  params.Theta       = 0.0;     /* (?) */
+  /* params.Zeta2    = 0.0; */  /* (?) */
+  params.ieta        = 1; 
+  params.nStartPad   = 0;
+  params.nEndPad     = 0;
+  params.massChoice  = m1Andm2;
+  params.approximant = approximant;  /*  TaylorT1, ...              */
+  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
+  params.fLower      = IFOdata->fLow * 0.9;
+  params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
+  params.tSampling   = 1.0 / deltaT;
+  params.startTime   = 0.0;
+
+  /* actual inspiral parameters: */
+  params.mass1       = m1;
+  params.mass2       = m2;
+  params.startPhase  = phi;
+  if ((params.approximant == EOB) 
+      || (params.approximant == EOBNR)
+      || (params.approximant == TaylorT3)
+      || (params.approximant == IMRPhenomA))
+    params.distance  = LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  else if ((params.approximant == TaylorT1)
+           || (params.approximant == TaylorT2)
+           || (params.approximant == PadeT1)
+           || (params.approximant == TaylorF1)
+           || (params.approximant == TaylorF2)
+           || (params.approximant == PadeF1)
+           || (params.approximant == BCV))
+    params.distance  = 1.0;                                          /* distance in Mpc */
+  else                                                     
+    params.distance  = LAL_PC_SI * 1.0e6 / ((double) LAL_C_SI);  /* distance in seconds */
+
+  /* ensure proper "fCutoff" setting: */
+  if (params.fCutoff >= 0.5*params.tSampling)
+    params.fCutoff = 0.5*params.tSampling - 0.5*IFOdata->freqData->deltaF;
+  if (! (params.tSampling > 2.0*params.fCutoff)){
+    fprintf(stderr," WARNING: 'LALInspiralSetup()' (called within 'LALInspiralWavelength()')\n");
+    fprintf(stderr,"          requires (tSampling > 2 x fCutoff) !!\n");
+    fprintf(stderr," (settings are:  tSampling = %f s,  fCutoff = %f Hz)  \n", params.tSampling, params.fCutoff);
+    exit(1);
+  }
+
+  /* ensure compatible sampling rate: */
+  if ((params.approximant == EOBNR)
+      && (fmod(log((double)params.tSampling)/log(2.0),1.0) != 0.0)) {
+    fprintf(stderr, " ERROR: \"EOBNR\" templates require power-of-two sampling rates!\n");
+    fprintf(stderr, "        (params.tSampling = %f Hz)\n", params.tSampling);
+    exit(1);
+  }
+
+  /* compute other elements of `params', check out the `.tC' value, */
+  /* shift the start time to match the coalescence time,            */
+  /* and eventually re-do parameter calculations:                   */
+
+  LALInspiralParameterCalc(&status, &params);
+  chirptime = params.tC;
+  if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
+    params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
+    LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
+  }
+
+  /* compute "params.signalAmplitude" slot: */
+  LALInspiralRestrictedAmplitude(&status, &params);
+
+  /* figure out inspiral length & set `n': */
+  /* LALInspiralWaveLength(&status, &n, params); */
+  n = IFOdata->timeData->data->length;
+
+  /* domain of LAL template as returned by LAL function: */
+  FDomain = ((params.approximant == TaylorF1)
+             || (params.approximant == TaylorF2)
+             || (params.approximant == PadeF1)
+             || (params.approximant == BCV));
+  if (FDomain && (n % 2 != 0)){
+    fprintf(stderr, " ERROR: frequency-domain LAL waveforms require even number of samples!\n");
+    fprintf(stderr, "        (N = IFOdata->timeData->data->length = %d)\n", n);
+    exit(1);
+  }
+
+  /* allocate (temporary) waveform vector: */
+  LALCreateVector(&status, &LALSignal, n);
+  for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
+
+
+  /*--  ACTUAL WAVEFORM COMPUTATION:  --*/
+  if (status.statusCode != 0) {
+    fprintf(stderr, " ERROR in templateLAL(): encountered non-zero status code.\n");
+    fprintf(stderr, " Template parameters:\n");
+    printVariables(IFOdata->modelParams);
+    fprintf(stderr, " LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
+  /* REPORTSTATUS(&status); */
+  LALInspiralWave(&status, LALSignal, &params);
+  /* REPORTSTATUS(&status); */
+  if (status.statusCode != 0) {
+    fprintf(stderr, "\n ERROR in templateLAL(): \"LALInspiralWave()\" call returned with non-zero status.\n");
+    fprintf(stderr, " Template parameters:\n");
+    printVariables(IFOdata->modelParams);
+    fprintf(stderr, " LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
+
+  if (! FDomain) {   /*  (LAL function returns TIME-DOMAIN template)       */
+    /* copy over, normalise: */
+    for (i=0; i<n; ++i) {
+      IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
+      IFOdata->timeModelhCross->data->data[i] = 0.0;  /* (no cross waveform) */
+    }
+    LALDestroyVector(&status, &LALSignal);
+    /* apply window & execute FT of plus component: */
+    if (IFOdata->window==NULL) 
+      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
+    XLALDDVectorMultiply(IFOdata->timeModelhPlus->data, IFOdata->timeModelhPlus->data, IFOdata->window->data);
+    if (IFOdata->timeToFreqFFTPlan==NULL)
+      die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
+    XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
+  }
+
+  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
+    /* copy over: */
+    IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
+    IFOdata->freqModelhPlus->data->data[0].im = 0.0;
+    for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
+      IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]);
+      IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]);
+    }
+    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
+    IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
+    LALDestroyVector(&status, &LALSignal);
+    /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
+    for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+      IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
+      IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
+    }
+  }
+
+  /* (now frequency-domain plus-waveform has been computed, either directly or via FFT)   */
+
+  /*  cross waveform is "i x plus" :  */
+  for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
+    IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
+    IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
+    // consider inclination angle's effect:
+    IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
+    IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
+    IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
+    IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
+  }
+
+  /*
+   * NOTE: the dirty trick here is to assume the LAL waveform to constitute
+   *       the cosine chirp and then derive the corresponding sine chirp 
+   *       as the orthogonal ("i x cosinechirp") waveform.
+   *       In general they should not necessarily be only related 
+   *       by a mere phase shift though...
+   */
+
+  /* Now...template is not (necessarily) located at specified coalescence time  */
+  /* and/or we don't know even where it actually is located...                  */
+  /* Figure out time location corresponding to template just computed:          */
+
+  /* default: assume template to have correctly considered              */
+  /* the supplied "params.tC" value                                     */
+  /* (Roughly OK for "TaylorF1" (?), "TaylorT1", "TaylorT3", "EOB"      */
+  /* and "PadeT1". May still by off by tens/hundreds of milliseconds.): */
+  /* */
+  instant = tc;
+
+  /* Signal simply evolved from start of template on,         */
+  /* for approximately "chirptime" seconds:                   */
+  if ((params.approximant == TaylorT2) 
+      || (params.approximant == TaylorF2))
+    instant = XLALGPSGetREAL8(&IFOdata->timeData->epoch) + chirptime;
+
+  /* Coalescence happens at very end of signal template:      */
+  else if (params.approximant == BCV) 
+    instant = XLALGPSGetREAL8(&IFOdata->timeData->epoch) + ((double) IFOdata->timeData->data->length) * deltaT;
+
+  /* No idea where signal lies; brute-force search for amplitude peak: */
+  /* (this is time-comsuming and should be avoided where possible!!)   */
+  else {
+    /* Inv-FT back to time domain: */
+    /* (admittedly, this extra FT is time-consuming not elegant...  */
+    /* but might be ok given that once generated, templates may be  */
+    /* re-used at different timeshifts/skylocations/etc.)           */
+    executeInvFT(IFOdata);
+    /* find amplitude peak & two neighbouring bins: */
+    pmax = 0.0;
+    for (j=0; j<IFOdata->timeModelhPlus->data->length; ++j) {
+      pj = IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+           + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j];
+      if (pj > pmax){
+        pmax = pj;
+        jmax = j;
+      }
+    }
+    j = (jmax>0) ? jmax-1 : IFOdata->timeModelhPlus->data->length;
+    pleft = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+                 + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
+    j = (jmax<IFOdata->timeModelhPlus->data->length) ? jmax+1 : 0;
+    pright = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
+                  + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
+    pmax = sqrt(pmax);
+    /* do some ad-hoc corrections to ensure actually having a peak: */
+    if (!((pleft<pmax) || (pright<pmax)))
+      pleft = pright = pmax - 1.0;
+    else if (!(pleft<pmax)) pleft = 0.5*(pmax+pright);
+    else if (!(pright<pmax)) pright = 0.5*(pmax+pleft);
+    /*  do a quadratic interpolation                        */
+    /*  to determine peak location to sub-deltaT accuracy:  */
+    instant = (pleft-pright) / (2.0*pleft-4.0*pmax+2.0*pright);
+    instant = (XLALGPSGetREAL8(&IFOdata->timeData->epoch) + jmax*deltaT) + instant*deltaT;
+    /* fprintf(stdout, " interpolated location: %.8f GPS sec.\n", instant); */
+  }
+
+  /* now either time-shift template or just store the time value: */
+  /* (time-shifting should not be necessary in general,           */
+  /* but may be neat to have for de-bugging etc.)                 */
+  forceTimeLocation = 0;  /* default: zero! */
+  if (instant != tc) {
+    if (forceTimeLocation) { /* time-shift the frequency-domain template: */
+      twopit = LAL_TWOPI * (tc - instant);
+      deltaF = 1.0 / (((double)IFOdata->timeData->data->length) * deltaT);
+      for (i=1; i<IFOdata->freqModelhPlus->data->length; ++i){
+        f = ((double) i) * deltaF;
+        /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
+        re = cos(twopit * f);
+        im = - sin(twopit * f);
+        templateReal = IFOdata->freqModelhPlus->data->data[i].re;
+        templateImag = IFOdata->freqModelhPlus->data->data[i].im;
+        IFOdata->freqModelhPlus->data->data[i].re = templateReal*re - templateImag*im;
+        IFOdata->freqModelhPlus->data->data[i].im = templateReal*im + templateImag*re;
+        templateReal = IFOdata->freqModelhCross->data->data[i].re;
+        templateImag = IFOdata->freqModelhCross->data->data[i].im;
+        IFOdata->freqModelhCross->data->data[i].re = templateReal*re - templateImag*im;
+        IFOdata->freqModelhCross->data->data[i].im = templateReal*im + templateImag*re;
+      }
+    }
+    else {
+      /* write template (time axis) location in "->modelParams" so that     */
+      /* template corresponds to stored parameter values                    */
+      /* and other functions may time-shift template to where they want it: */
+      setVariable(IFOdata->modelParams, "time", &instant);
+    }
+  }
+
+  IFOdata->modelDomain = frequencyDomain;
   return;
 }
