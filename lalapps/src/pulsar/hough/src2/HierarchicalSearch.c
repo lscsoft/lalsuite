@@ -538,10 +538,12 @@ int MAIN( int argc, char *argv[]) {
     CHAR *id1, *id2;
     id1 = XLALClearLinebreaks ( lalGitID );
     id2 = XLALClearLinebreaks ( lalappsGitID );
-    UINT4 len = strlen ( id1 ) + strlen ( id2 ) + 20;
-    if ( ( version_string = XLALMalloc ( len )) == NULL ) {
-      XLALPrintError ("Failed to XLALMalloc ( %d ).\n", len );
-      return( HIERARCHICALSEARCH_EMEM );
+    {
+      UINT4 len = strlen ( id1 ) + strlen ( id2 ) + 20;
+      if ( ( version_string = XLALMalloc ( len )) == NULL ) {
+	XLALPrintError ("Failed to XLALMalloc ( %d ).\n", len );
+	return( HIERARCHICALSEARCH_EMEM );
+      }
     }
     sprintf (version_string, "%%%% %s\n%%%% %s\n", id1, id2 );
     XLALFree ( id1 );
