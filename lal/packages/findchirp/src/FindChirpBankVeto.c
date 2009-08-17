@@ -254,7 +254,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   UINT4 stIX = floor( fLow / deltaF );
 
   /* FIXME this should be a command line argument */
-  bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
+  bankVetoData->acorrMatSize = 300; /*300 points of autocorrelation function stored */
 
   /* if there isn't alread memory allocated for workspace and the autocorrelation 
    * then do it
@@ -408,7 +408,10 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     if ( ijsq == 0 ) continue; 
     denomFac =  1.0 / (1.0 - ijsq);
 
-    if ( denomFac > 0.0 )
+    /* only count templates that are not very correlated 
+     * Note that the dof is incremented only if this is true 
+     */
+    if ( denomFac > 1.0  && denomFac < 3.0)
     {
       bankNorm += denomFac;
       jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
