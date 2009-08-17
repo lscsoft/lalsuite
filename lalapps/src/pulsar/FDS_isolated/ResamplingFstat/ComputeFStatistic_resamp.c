@@ -83,7 +83,7 @@ NRCSID(TEMPORARY,"$Blah$");
 #define FALSE (1==0)
 
 /*----- SWITCHES -----*/
-#define NUM_SPINS 4		/* number of spin-values to consider: {f, fdot, f2dot, ... } */
+#define NUM_SPINS 3		/* number of spin-values to consider: {f, fdot, f2dot, ... } */
 
 /*----- Error-codes -----*/
 #define COMPUTEFSTATISTIC_ENULL 	1
@@ -110,6 +110,7 @@ NRCSID(TEMPORARY,"$Blah$");
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define LAL_INT4_MAX 2147483647
+UINT4 FactorialLookup[7] = {1,1,2,6,24,120,720,5040};
 
 /*---------- internal types ----------*/
 
@@ -309,7 +310,6 @@ void XLALDestroyMultiCmplxAMCoeffs(MultiCmplxAMCoeffs *X);
 REAL8Sequence* XLALCreateREAL8Sequence(UINT4 length);
 MultiFFTWCOMPLEXSeries *XLALCreateMultiFFTWCOMPLEXSeries(UINT4 length);
 FFTWCOMPLEXSeries *XLALCreateFFTWCOMPLEXSeries(UINT4 length);
-UINT4 factorial(UINT4 x);
 REAL8 magsquare(fftw_complex f);
 INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,INT4 startindex);
 void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X);
@@ -446,7 +446,10 @@ int main(int argc,char *argv[])
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   if(uvar_countTemplates)
-    printf("%%%% Number of templates: %0.0f\n",numTemplates);
+    {
+      printf("%%%% Number of templates: %0.0f\n",numTemplates);
+      exit(0);
+    }
 
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
@@ -463,7 +466,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
-  while ( !uvar_countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
+  while ((XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
       LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,&Vars), &status );
@@ -1776,17 +1779,6 @@ void XLALDestroyReSampBuffer ( ReSampBuffer *cfb)
 } /* XLALDestroyReSampBuffer() */
 
 
-/* Calculates the factorial of an integer */
-UINT4 factorial(UINT4 x)
-{
-  UINT4 prod = 1,i;
-  if(x==0 || x==1)
-    return(1);
-  for(i=2;i<=x;i++)
-    prod = prod*i;
-  return(prod);
-}
-
 
 /* Returns the magnitude square of a complex number */
 REAL8 magsquare(fftw_complex f)
@@ -2545,11 +2537,10 @@ void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSer
       /* Phi is the sum of all terms */
       Phi = 0;
 
-      for(j=1;j<PULSAR_MAX_SPINS;j++)
+      for(j=1;j<NUM_SPINS;j++)
 	{
-	  Phi += 2.0*LAL_PI* (*SpinDowns)[j] *pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M* (*SpinDowns)[j] * pow(DT,j)/factorial(j);
-	}   
-
+	  Phi += 2.0*LAL_PI* (*SpinDowns)[j] *pow(DT,j+1)/FactorialLookup[j+1] + 2.0*LAL_PI*Phi_M* (*SpinDowns)[j] * pow(DT,j)/FactorialLookup[j];
+	}
       
       sinphi = sin(Phi);
       cosphi = cos(Phi);
