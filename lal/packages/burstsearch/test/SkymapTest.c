@@ -35,6 +35,9 @@ static void numericApply(
     // accumulate probability in this
     double p = 0.0;
 
+    // kernel is unused
+    kernel = NULL;
+
     // range from +/- 5 sigma in prior on a[i] for adequate accuracy
     for (a[0] = -5.0; a[0] <= 5.0; a[0] += da)
     {
@@ -148,6 +151,7 @@ static void numerical(void)
         
 }
 
+#if 0
 static void injection(void)
 {    
     XLALSkymap2PlanType plan;    
@@ -375,7 +379,7 @@ static void injection(void)
 
 }
 
-void interpolation()
+static void interpolation(void)
 {
 
 	double x[] = { 0, 2, 1, 3, 5, 7, 6, 8 };
@@ -388,6 +392,7 @@ void interpolation()
 	}
 	
 }
+#endif
 
 //int main(int argc, char** argv)
 int main(void)

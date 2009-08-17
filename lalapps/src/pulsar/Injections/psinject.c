@@ -26,7 +26,11 @@
 
    2005/02 - Reinhard Prix removed the actuation scaling options
 
-   28 May 2009: renamed this code from 's3inject' to 'psinject' in lalsuite-GIT
+   28 May 2009 - renamed this code from 's3inject' to 'psinject' in lalsuite-GIT
+
+   19 March - 10 August: Bruce Allen, added ability to output FRAME format files
+              for VIRGO real-time hardware injections.   Code version XXX reviewed
+              by YYY.
 */
 
 #define _GNU_SOURCE
@@ -682,6 +686,7 @@ int main(int argc, char *argv[]){
 
 	static int counter = 0;
 	static FrFile *oFile;
+
 	FrameH *frame;
 	FrSimData *sim;
 

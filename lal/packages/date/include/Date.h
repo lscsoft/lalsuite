@@ -273,36 +273,6 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 </lalLaTeX> */
 
 /* <lalLaTeX>
-
-\subsection*{Types}
-
-\subsubsection*{Enumeration \texttt{LALMSTUnits}}
-\idx[Type]{LALMSTUnits}
-
-This enumerated type is used as a parameter for Mean Sidereal Time
-routines to specify the units in which to return the Mean Sidereal
-Time. The allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+MST_SEC+ & arc-seconds \\
-  \verb+MST_HRS+ & arc-hours (\textit{i.e.} units of Right Ascension)\\
-  \verb+MST_DEG+ & degrees \\
-  \verb+MST_RAD+ & radians
-\end{tabular}
-\bigskip
-
-</lalLaTeX> */
-
-typedef enum
-{
-  MST_SEC,       /* arc seconds */
-  MST_HRS,       /* arc hours (i.e. units of Right Ascension) */
-  MST_DEG,       /* degrees */
-  MST_RAD        /* radians */
-} LALMSTUnits;
-
-/* <lalLaTeX>
 \subsubsection*{Enumeration \texttt{LALMonth}}
 \idx[Type]{LALMonth}
 
@@ -576,23 +546,6 @@ tagLALLeapSecFormatAndAcc
 LALLeapSecFormatAndAcc;
 
 
-/* <lalLaTeX>
-\subsubsection{Structure \texttt{LALMSTUnitsAndAcc}}
-\index[Type]{LALMSTUnitsAndAcc}
-
-This structure aggregates the \texttt{LALMSTUnits} and
-\texttt{LALLeapSecAccuracy} parameters for passing to
-\texttt{LALGPStoGMST1()}.
-</lalLaTeX> */
-typedef struct
-tagLALMSTUnitsAndAcc
-{
-  LALMSTUnits        units;
-  LALLeapSecAccuracy accuracy;
-}
-LALMSTUnitsAndAcc;
-
-
 
 /*
  * Function prototypes
@@ -601,24 +554,6 @@ LALMSTUnitsAndAcc;
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
-/* <lalLaTeX>
-\newpage\input{DateStringC}
-</lalLaTeX> */
-
-void LALDateString (LALStatus     *status,
-                    CHARVector    *timestamp,
-                    const LALDate *date);
-
-
-/* <lalLaTeX>
-\newpage\input{LMST1C}
-</lalLaTeX> */
-
-void LALGPStoGMST1( LALStatus         *status,
-                    REAL8             *gmst,      /* output - GMST1 */
-                    const LIGOTimeGPS *gps,       /* input - GPS time */
-                    const LALMSTUnitsAndAcc *pUnitsAndAcc); /* GMST1 units and
-                                                        leapsec accuracy */
 
 /* <lalLaTeX>
 \newpage\input{GPStoUTCC}

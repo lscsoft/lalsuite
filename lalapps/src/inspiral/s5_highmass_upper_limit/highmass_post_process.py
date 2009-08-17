@@ -613,8 +613,9 @@ for cat in cats:
     print fname, ifo_combination, ifo_combination
 
     hmUpperlimitNode[cat+ifo_combination] = hm_upperlimit_node(hmUpperlimitJob, dag, ifo_combination,timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
-    upperlimit_nodes[cat].append(hmUpperlimitNode[cat+ifo_combination])
     hmUpperlimitPlotNode[cat+ifo_combination] = ul_plot_node(hmUpperlimitPlotJob, dag, fname, n, [hmUpperlimitNode[cat+ifo_combination]]);n+=1
+    upperlimit_nodes[cat].append(hmUpperlimitPlotNode[cat+ifo_combination])
+
 
 #IFAR plots and combined upper limit plots and summary page
 for cat in cats:
