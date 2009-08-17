@@ -610,9 +610,9 @@ void templateLAL(LALIFOData *IFOdata)
 
   /* default: assume template to have correctly considered              */
   /* the supplied "params.tC" value                                     */
-  /* (Roughly OK for "TaylorF1" (?), "TaylorT1", "TaylorT3", "EOB"      */
-  /* and "PadeT1". May still by off by tens/hundreds of milliseconds.): */
-  /* */
+  /* (Roughly OK for "TaylorF1" (?), "TaylorT1", "TaylorT3", "EOB",     */
+  /* "EOBNR", and "PadeT1".                                             */
+  /* May still by off by tens/hundreds of milliseconds.):               */
   instant = tc;
 
   /* Signal simply evolved from start of template on,         */
@@ -627,7 +627,7 @@ void templateLAL(LALIFOData *IFOdata)
 
   /* No idea where signal lies; brute-force search for amplitude peak: */
   /* (this is time-comsuming and should be avoided where possible!!)   */
-  else {
+  else  if (params.approximant == IMRPhenomA) {
     /* Inv-FT back to time domain: */
     /* (admittedly, this extra FT is time-consuming not elegant...  */
     /* but might be ok given that once generated, templates may be  */
