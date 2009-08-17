@@ -155,7 +155,6 @@ static void print_usage(char *program)
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   extern int vrbflg;
 
@@ -302,8 +301,7 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION, "$Revi" "sion$"))
   {
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
@@ -1505,8 +1503,7 @@ cleanexit:
 
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
 
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
