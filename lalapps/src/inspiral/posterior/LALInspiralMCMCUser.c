@@ -350,10 +350,12 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 /* Check in range */
 	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
-
+	double logmc=log(mc);
 	eta=XLALMCMCGetParameter(parameter,"eta");
 	m1 = mc2mass1(mc,eta);
 	m2 = mc2mass2(mc,eta);
+	/* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
+	parameter->logPrior+=-(5.0/6.0)*logmc;
 
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));

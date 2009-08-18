@@ -36,7 +36,7 @@
 --timeslide --studentt (use student-t likelihood function)\n \
 [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
 
-extern CHAR outfile[4096];
+extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;
