@@ -104,6 +104,10 @@ int
 LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries*,
 				 REAL8);
 
+int
+LALappsSmoothWithRunningMedian(REAL4Vector*,
+			       UINT4);
+
 void 
 LALappsTrackSearchCalibrate( LALStatus*,
 			     REAL4TimeSeries*,
