@@ -338,7 +338,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
 /*   input   :  "[one,two,three]"                                            */
 /* and the resulting output is                                               */
 /*   strings :  {"one", "two", "three"}                                      */
-/* length of parameter names is by now limited to 512 characters.            */
+/* length of parameter names is for now limited to 512 characters.           */
 /* (should 'theoretically' (untested) be able to digest white space as well. */
 /* Irrelevant for command line options, though.)                             */
 {
@@ -514,6 +514,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
+
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself   */
     /* (and which shouldn't affect the template function) are        */
@@ -675,7 +676,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
     fclose(outfile);
     dataPtr = NULL;
   }
-  fprintf(stdout, " wrote (f'domain) template to CSV file \"%s\".\n", filename);
+  fprintf(stdout, " wrote (frequency-domain) template to CSV file \"%s\".\n", filename);
 }
 
 
@@ -712,7 +713,7 @@ void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data,
     fclose(outfile);
     dataPtr = NULL;
   }
-  fprintf(stdout, " wrote (t'domain) template to CSV file \"%s\".\n", filename);
+  fprintf(stdout, " wrote (time-domain) template to CSV file \"%s\".\n", filename);
 }
 
 
