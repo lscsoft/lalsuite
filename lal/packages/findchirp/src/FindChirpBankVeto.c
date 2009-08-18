@@ -254,7 +254,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   UINT4 stIX = floor( fLow / deltaF );
 
   /* FIXME this should be a command line argument */
-  bankVetoData->acorrMatSize = 300; /*300 points of autocorrelation function stored */
+  bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
 
   /* if there isn't alread memory allocated for workspace and the autocorrelation 
    * then do it
@@ -410,8 +410,14 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     /* only count templates that are not very correlated 
      * Note that the dof is incremented only if this is true 
+     * The denomFac is constrained to be between 1.0 and infinity
+     * where 1.0 corresponds to orthogonal templates and 
+     * infinity corresponds to parallel templates
+     * Choosing to make the domain between 1.0 and 2.0 restricts
+     * the inner product to be between 0 and 0.7 
+     * 1 / (1-0.7^2) ~ 2.0 
      */
-    if ( denomFac > 1.0  && denomFac < 3.0)
+    if ( denomFac > 1.0  && denomFac < 2.0)
     {
       bankNorm += denomFac;
       jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
@@ -424,12 +430,8 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
       chisq += chi_r*chi_r + chi_i*chi_i;
       (*dof)++;
     }
-    else 
-    {
-      fprintf(stderr, "denom fac < 0 ij.re %e partial denom_fac %e\n", ij.re, denomFac);
-      exit(1);
-    }
   }
+  fprintf(stderr, "%d\n", *dof);
 
   /*FIXME Normalization now not necessarily chisquare distributed */
   return (REAL4) chisq / bankNorm;
@@ -439,10 +441,10 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 InspiralTemplate *
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize)
   {
-  bankHead = XLALFindChirpSortTemplatesByMass(bankHead,num);
+  bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   return bankHead;
-  /*breakUpRegions(bankHead, num, subbanksize );
-  return XLALFindChirpSortTemplatesByLevel(bankHead,num);*/
+  breakUpRegions(bankHead, num, subbanksize );
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   }
 
 
