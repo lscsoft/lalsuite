@@ -3622,19 +3622,14 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   REAL4TimeSeries          *tmpSignalPtr=NULL;
   LALUnit                   originalFrequecyUnits;
   AverageSpectrumParams     avgPSDParams;
-  REAL8                     smoothingAveragePSDBias=0;
-  LALRunningMedianPar       smoothingPSDparams;
   CHARVector               *dataLabel=NULL;
   COMPLEX8FrequencySeries  *signalFFT=NULL;
   REAL4FFTPlan             *reversePlan=NULL;
   REAL4FFTPlan             *forwardPlan=NULL;
   REAL4FFTPlan             *averagePSDPlan=NULL;
   REAL4FrequencySeries     *averagePSD=NULL;
-  REAL4Vector              *smoothedAveragePSD=NULL;
-  REAL4Vector              *tmpExtendedAveragePSD=NULL;
   REAL4Window              *windowPSD=NULL;
   UINT4                     i=0;
-  UINT4                     halfBlock=0;
   UINT4                     j=0;
   UINT4                     stride=0;
   INT4                      segCount=0;
@@ -3880,67 +3875,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	  print_lalUnit(averagePSD->sampleUnits,
 			"Pre_SmoothingAveragePSD_Units.diag");
 	}
-	  
-      /*
-       * Perform running median on the average PSD using
-       * blocks of size n
-       * Needs to be extended to account for PSD wrapping...
-       * Add floor(blocksize/2) points then cut them later.
-       */
-      halfBlock=(UINT4) floor(params.smoothAvgPSD/2);
-      smoothedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length+halfBlock);
-      tmpExtendedAveragePSD=XLALCreateREAL4Vector(smoothedAveragePSD->length+params.smoothAvgPSD-1);
-      /*
-       * Build a buffered PSD rep so that median estimate
-       * returned will have m points equal to the n points of the 
-       * original average PSD
-       */
-      /* 
-       * Insert time --> The freq shift equals nPoint \def block/2
-       * points WRAP PSD around for this.
-       */
-      /* Need error check for blocksize < averagePSD */
-      for (i=0;i<halfBlock;i++)
-	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[halfBlock-i-1];
-      for (i=0;i<averagePSD->data->length;i++)
-	tmpExtendedAveragePSD->data[i+halfBlock]=averagePSD->data->data[i];
-      for (i=0;i<params.smoothAvgPSD-1;i++)
-	tmpExtendedAveragePSD->data[i+averagePSD->data->length+halfBlock]=
-	  averagePSD->data->data[averagePSD->data->length-i-1];
-      /*
-       * Setup running median parameters
-       */
-      smoothingPSDparams.blocksize=params.smoothAvgPSD;
-      LAL_CALL(LALSRunningMedian(status,
-				 smoothedAveragePSD,
-				 tmpExtendedAveragePSD,
-				 smoothingPSDparams),
-	       status);
-      LAL_CALL(LALRngMedBias(status,
-			     &smoothingAveragePSDBias,
-			     smoothingPSDparams.blocksize),
-	       status);
-      /*
-       * Fix possible bias of the running median
-       */
-      for (i=0;i<smoothedAveragePSD->length;i++)
-	smoothedAveragePSD->data[i]=
-	  smoothingAveragePSDBias*smoothedAveragePSD->data[i];
-      /*
-       * The newly setup smoothed PSD has been shifted to remove the
-       * previous frequency shifts.  In points the shift is halfBlock
-       * which is implicity downshifted into the proper position by 
-       * artifically wrapping the original PSD see above code for
-       * how it is done.
-       */
-      for (i=0;i<averagePSD->data->length;i++)
-	averagePSD->data->data[i]=smoothedAveragePSD->data[i];
-      if (smoothedAveragePSD)
-	XLALDestroyREAL4Vector(smoothedAveragePSD);
-
-      if (tmpExtendedAveragePSD)
-	XLALDestroyREAL4Vector(tmpExtendedAveragePSD);
-	  
+      LALappsSmoothWithRunningMedian(averagePSD->data,(UINT4) params.smoothAvgPSD);
     }
   if (params.verbosity == printFiles)
     {
@@ -4147,6 +4082,90 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
   /*<End<*/
   return 0;
 }
+
+int LALappsSmoothWithRunningMedian(REAL4Vector *data,
+				   UINT4   blocksize)
+{
+  UINT4                halfBlock=0;
+  REAL4Vector         *smoothedDataVector=NULL;
+  REAL4Vector         *tmpExtendedDataVector=NULL;
+  REAL8                medianBiasFactor=0;
+  LALRunningMedianPar  smoothingMedianParams;
+  UINT4                i=0;
+  LALStatus            status;
+  UINT4                errcode=0;
+  /*
+   * Error check that median block size < data->length
+   *
+   * Perform running median on data with blocksize but
+   * extend the data vector by floor(blocksize/2) to 
+   * wrap data for smoother median estimates
+   */
+  memset(&status, 0, sizeof(status));
+  halfBlock=(UINT4) floor(blocksize/2);
+  smoothedDataVector=XLALCreateREAL4Vector(data->length+halfBlock);
+  tmpExtendedDataVector=XLALCreateREAL4Vector(smoothedDataVector->length+blocksize-1);
+  /*
+   * Use tmp vector to make a buffer of smoothed input data vector
+   *
+   * Insert time --> The point shift equals nPoint \def block/2
+   * points wraped on input data vector
+   */
+  for (i=0;i<halfBlock;i++)
+    tmpExtendedDataVector->data[i]=data->data[halfBlock-i-1];
+  for (i=0;i<data->length;i++)
+    tmpExtendedDataVector->data[i+halfBlock]=data->data[i];
+  for (i=0;i<blocksize-1;i++)
+    tmpExtendedDataVector->data[i+data->length+halfBlock]=
+      data->data[data->length-i-1];
+  /*
+   * Setup running median parameters
+   */
+  smoothingMedianParams.blocksize=blocksize;
+  errcode=LAL_CALL(LALSRunningMedian(&status,
+			     smoothedDataVector,
+			     tmpExtendedDataVector,
+			     smoothingMedianParams),
+	   &status);
+  if (errcode!=0)
+    {
+      fprintf(stderr,"Error calling LALSRunningMedian\n");
+      fprintf(stderr,"%s\n",status.statusDescription);
+      fflush(stderr);
+      return TRACKSEARCHC_ESUB;
+    }
+  errcode=LAL_CALL(LALRngMedBias(&status,
+			 &medianBiasFactor,
+			 blocksize),
+	   &status);
+  if (errcode!=0)
+    {
+      fprintf(stderr,"Error calling LALRngMedBias\n");
+      fprintf(stderr,"%s\n",status.statusDescription);
+      fflush(stderr);
+      return TRACKSEARCHC_ESUB;
+    }
+
+  /*
+   * Fix possible bias of the running median
+   */
+  for (i=0;i<smoothedDataVector->length;i++)
+    smoothedDataVector->data[i]=
+      medianBiasFactor*smoothedDataVector->data[i];
+  /*
+   * Remove the shifted data points from the tmpExtendedDataVector
+   */
+  for (i=0;i<data->length;i++)
+    data->data[i]=smoothedDataVector->data[i];
+  if (smoothedDataVector)
+    XLALDestroyREAL4Vector(smoothedDataVector);
+
+  if (tmpExtendedDataVector)
+    XLALDestroyREAL4Vector(tmpExtendedDataVector);
+
+  return 0;
+}
+
 /*
  * End of Semi Private functions
  */
