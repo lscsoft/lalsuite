@@ -1344,14 +1344,22 @@ void LALappsGetFrameData(LALStatus*          status,
   errcode=XLALFrSeek(stream,&bufferedDataStopGPS);
   if (errcode!=0)
     {
-      fprintf(stderr,"Error seeking stream to %f\n",bufferedDataStart);
+      fprintf(stderr,"Error seeking stream to end time: %f\n",XLALGPSGetREAL8(&bufferedDataStopGPS));
+      fprintf(stderr,"GPS Seconds: %i GPS NanoSeconds: %i\n",
+	      bufferedDataStopGPS.gpsSeconds,
+	      bufferedDataStopGPS.gpsNanoSeconds);
+      fprintf(stderr,"Error code %i",errcode);
       fflush(stderr);
       exit(errcode);
     }
   errcode=XLALFrSeek(stream,&bufferedDataStartGPS);
   if (errcode!=0)
     {
-      fprintf(stderr,"Error seeking stream to %f\n",bufferedDataStop);
+      fprintf(stderr,"Error seeking stream to start time: %f\n",XLALGPSGetREAL8(&bufferedDataStartGPS));
+      fprintf(stderr,"GPS Seconds: %i GPS NanoSeconds: %i\n",
+	      bufferedDataStopGPS.gpsSeconds,
+	      bufferedDataStopGPS.gpsNanoSeconds);
+      fprintf(stderr,"Error code %i",errcode);
       fflush(stderr);
       exit(errcode);
     }
@@ -1479,6 +1487,11 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /*H-dyne*/
       errcode=LALappsQuickHeterodyneTimeSeries(DataIn,params->HeterodyneFrequency);
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,"Heterodying completed!\n");
+	  fflush(stdout);
+	}
       /*
        * Resample the data to the relative rate specified.
        */
@@ -2051,6 +2064,21 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*This is the map time resolution*/
   mapMarkerParams.deltaT=(signalStop-signalStart)/mapMarkerParams.mapTimeBins;
   mapMarkerParams.dataDeltaT=signalSeries->deltaT;
+  /*
+   *If initial data was heterodyned set f0 to the heterodyning F
+   *else put the value to 0
+   */
+  if (params.HeterodyneFrequency > 0)
+    {
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"Adjust the Map Marking Offset of f0 to %f Hz\n",params.HeterodyneFrequency);
+	  fflush(stdout);
+	}
+      mapMarkerParams.f0=params.HeterodyneFrequency;
+    }
+  else
+    mapMarkerParams.f0=0;
   /* 
    * Properly CROP TFR due to buffered segments used to create the
    * TFR.  MAKE SURE to account for proper TFR dims and time/freq
@@ -2168,7 +2196,6 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   UINT4             newPointLength=0;
   LIGOTimeGPS       edgeOffsetGPS;
   REAL8             originalFloatTime=0;
-  REAL8             revisedSamplingRate=0;/*Account for Fhet*/
   REAL8             newFloatTime=0;
   CHARVector       *dataLabel=NULL;
   /* Set to zero to use ascii files */
@@ -3960,12 +3987,12 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 				     REAL8            fHet)
 {
-  REAL4 a=0;
-  REAL4 b=0;
-  REAL4 c=0;
-  REAL4 d=0;
-  REAL4 t=0;
-  COMPLEX8 z;
+/*   REAL4 a=0; */
+/*   REAL4 b=0; */
+/*   REAL4 c=0; */
+/*   REAL4 d=0; */
+/*   REAL4 t=0; */
+/*   COMPLEX8 z; */
   UINT4 index=0;
 
   if ((1/data->deltaT) < 1/fHet)
@@ -3976,18 +4003,31 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 
   for (index=0;index<data->data->length;index++)
     {
-      t=index*data->deltaT;
-      a=data->data->data[index];
-      b=0;
-      c=cos(2*LAL_PI*fHet*t);
-      d=sin(2*LAL_PI*fHet*t);
-      z.re=((a*c)-(b*d));
-      z.im=((b*d)+(b*c));
+      /*ToBeStripped<Start>*/
+      if ((INT4) fmod(index,(INT4)((data->data->length)/100.0)) == 0)
+	{
+	  fprintf(stdout,".");
+	  fflush(stdout);
+	}
+      /*<End>*/
+/*       t=index*data->deltaT; */
+/*       a=data->data->data[index]; */
+/*       b=0; */
+/*       c=cos(2*LAL_PI*fHet*t); */
+/*       d=sin(2*LAL_PI*fHet*t); */
+/*       z.re=((a*c)-(b*d)); */
+/*       z.im=((b*d)+(b*c)); */
       /*
        *Keeping only REAL(Data*LocalOscillator)
        */
-      data->data->data[index]=z.re;
+/*       data->data->data[index]=z.re; */
+      data->data->data[index]=(data->data->data[index]*
+			       cos(2*LAL_PI*fHet*(index*data->deltaT)));			       
     }
+  /*ToBeStripped<Start>*/
+  fprintf(stdout,"\n");
+  fflush(stdout);
+  /*<End<*/
   return 0;
 }
 

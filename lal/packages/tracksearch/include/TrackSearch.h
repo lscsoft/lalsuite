@@ -168,6 +168,7 @@ typedef struct tagTrackSearchMapMarkingParams
 {
   REAL4 deltaT;/*The time bin resolution dur/#bins */
   REAL4 dataDeltaT;/*Sampling rate of data used*/
+  REAL4 f0;/*An offset induced by heterodyning(norm f0=0)*/
   LIGOTimeGPS mapStartGPS;
   LIGOTimeGPS mapStopGPS;
   INT4 mapTimeBins;

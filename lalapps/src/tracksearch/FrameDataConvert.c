@@ -45,6 +45,8 @@ RCSID( "tracksearch $Id$");
 
 
 
+
+
 int XLALFrGetREAL8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream)
 {
 REAL8TimeSeries *tmpData=NULL;
@@ -52,8 +54,9 @@ REAL8TimeSeries *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=XLALCreateREAL8TimeSeries (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -92,10 +95,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,20));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-20;
+if (20 > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-20;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -103,8 +104,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,20));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    XLALDestroyREAL8TimeSeries (tmpData2);
@@ -141,6 +143,8 @@ return 0;
 
 
 
+
+
 int XLALFrGetREAL4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream)
 {
 REAL4TimeSeries *tmpData=NULL;
@@ -148,8 +152,9 @@ REAL4TimeSeries *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=XLALCreateREAL4TimeSeries (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -188,10 +193,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,0));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
+if (0 > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -199,8 +202,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,0));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    XLALDestroyREAL4TimeSeries (tmpData2);
@@ -237,6 +241,8 @@ return 0;
 
 
 
+
+
 int XLALFrGetINT2FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream)
 {
 INT2TimeSeries *tmpData=NULL;
@@ -244,8 +250,9 @@ INT2TimeSeries *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=XLALCreateINT2TimeSeries (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -284,10 +291,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,0));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
+if (0 > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -295,8 +300,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,0));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    XLALDestroyINT2TimeSeries (tmpData2);
@@ -333,6 +339,8 @@ return 0;
 
 
 
+
+
 int XLALFrGetINT4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream)
 {
 INT4TimeSeries *tmpData=NULL;
@@ -340,8 +348,9 @@ INT4TimeSeries *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=XLALCreateINT4TimeSeries (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -380,10 +389,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,0));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
+if (0 > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -391,8 +398,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,0));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    XLALDestroyINT4TimeSeries (tmpData2);
@@ -429,6 +437,8 @@ return 0;
 
 
 
+
+
 int XLALFrGetINT8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream)
 {
 INT8TimeSeries *tmpData=NULL;
@@ -436,8 +446,9 @@ INT8TimeSeries *tmpData2=NULL;
 REAL4TimeSeries *tmpData3=NULL;
 
 UINT4  i=0;
-INT4  errcode=0;
+INT4   errcode=0;
 UINT4  loadPoints=0;
+REAL8  factor=1;
 
 tmpData=XLALCreateINT8TimeSeries (inputSeries->name,
 		     &(inputSeries->epoch),
@@ -476,10 +487,8 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-for (i=0;i<tmpData2->data->length;i++)
-tmpData2->data->data[i]=tmpData2->data->data[i]*(1/pow(10,0));
-
-tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
+if (0 > 0)
+  tmpData2->sampleUnits.powerOfTen=tmpData2->sampleUnits.powerOfTen-0;
 
 tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   &(tmpData2->epoch),
@@ -487,8 +496,9 @@ tmpData3=XLALCreateREAL4TimeSeries (tmpData2->name,
 				   tmpData2->deltaT,
 				   &(tmpData2->sampleUnits),
 				   tmpData2->data->length);
+factor=(1/pow(10,0));
 for (i=0;i<tmpData3->data->length;i++)
-    tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]);
+  tmpData3->data->data[i]=((REAL4) tmpData2->data->data[i]*factor);
 
 if (tmpData2)
    XLALDestroyINT8TimeSeries (tmpData2);

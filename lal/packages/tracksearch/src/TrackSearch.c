@@ -1222,7 +1222,7 @@ void LALTrackSearchInsertMarkers(
 	  output->curves[i].fBinHz[j]=
 	    (output->curves[i].col[j]*
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
-	     );
+	     )+input->f0;
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
 	  output->curves[i].gpsStamp[j].gpsSeconds=input->mapStartGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=input->mapStartGPS.gpsNanoSeconds;
