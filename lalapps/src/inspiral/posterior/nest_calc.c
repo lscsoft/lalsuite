@@ -350,7 +350,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 			else  XLALMCMCDifferentialEvolution(MCMCInput,temp);
 			/* Evaluate MH ratio */
 		}
-		else if( (jump_select=gsl_rng_uniform(RNG))<0.8/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
+		else if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
 		/*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
 		else XLALMCMCJump(MCMCInput,temp,covM);
 		
