@@ -322,7 +322,7 @@ cohPTFNormalize(
 
   /* A routine to print out the M^IJ information */
  
-  FILE *outfile;
+  /*FILE *outfile;
   outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
   {
@@ -332,7 +332,7 @@ cohPTFNormalize(
     }
   fprintf(outfile,"\n");
   }
-  fclose(outfile);
+  fclose(outfile);*/
   
   
 
@@ -364,7 +364,7 @@ cohPTFNormalize(
 
   /* Routines for printing the A and B time series */
   
-  outfile = fopen("A_timeseries.dat","w");
+  /*outfile = fopen("A_timeseries.dat","w");
   for ( i = 0; i < numPoints; ++i)
   {
     fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
@@ -376,7 +376,7 @@ cohPTFNormalize(
   {
     fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
   }
-  fclose(outfile);
+  fclose(outfile);*/
   
 
   /* Currently unused function to invert M */

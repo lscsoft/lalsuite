@@ -70,6 +70,15 @@ cohPTFNormalize(
     COMPLEX8FrequencySeries    *sgmnt,
     COMPLEX8FFTPlan            *invPlan
     );
+void cohPTFStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec
+    );
+
 
 int main( int argc, char **argv )
 {
@@ -178,11 +187,13 @@ int main( int argc, char **argv )
 
   /* And calculate A^I B^I and M^IJ for every IFO */
   cohPTFNormalize(fcTmplt,h1invspec,h1PTFM,h1PTFqVec,
-                  &h1segments->sgmnt[13],invPlan);
-/*  cohPTFNormalize(fcTmplt,l1invspec,l1PTFM,l1PTFqVec,
+                  &h1segments->sgmnt[0],invPlan);
+  cohPTFNormalize(fcTmplt,l1invspec,l1PTFM,l1PTFqVec,
                   &l1segments->sgmnt[0],invPlan);
   cohPTFNormalize(fcTmplt,h1invspec,v1PTFM,v1PTFqVec,
-                  &v1segments->sgmnt[0],invPlan);*/
+                  &v1segments->sgmnt[0],invPlan);
+
+  cohPTFStatistic(h1PTFM,h1PTFqVec,l1PTFM,l1PTFqVec,v1PTFM,v1PTFqVec);
  
   exit(0);
 
@@ -472,3 +483,74 @@ void generate_PTF_template(
 {
   cohPTFTemplate( fcTmplt,PTFtemplate, fcTmpltParams );
 }
+
+void cohPTFStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec)
+{
+  UINT4 numPoints,i,j,k;
+  REAL4 MsumH,MsumL,MsumV,Msum;
+  REAL4Vector *Asum,*Bsum,*SNR;
+  FILE *outfile;
+  REAL4 deltaT = 1./4076.;
+  numPoints = h1PTFqVec->vectorLength;
+
+  Asum = XLALCreateREAL4Vector( numPoints );
+  Bsum = XLALCreateREAL4Vector( numPoints );
+  SNR = XLALCreateREAL4Vector( numPoints );
+  
+  memset( Asum->data, 0, Asum->length * sizeof(REAL4) );
+  memset( Bsum->data, 0, Bsum->length * sizeof(REAL4) );
+  memset( SNR->data, 0, Bsum->length * sizeof(REAL4) );
+
+  for ( i = 0; i < numPoints ; i++ ) 
+  {
+    for ( j = 0; j < 5; j++ )
+    {
+      Asum->data[i] += 1. * h1PTFqVec->data[i + j*numPoints].re;
+      Asum->data[i] += 1. * l1PTFqVec->data[i + j*numPoints].re;
+      Asum->data[i] += 1. * v1PTFqVec->data[i + j*numPoints].re;
+      Bsum->data[i] += 1. * h1PTFqVec->data[i + j*numPoints].im;
+      Bsum->data[i] += 1. * l1PTFqVec->data[i + j*numPoints].im;
+      Bsum->data[i] += 1. * v1PTFqVec->data[i + j*numPoints].im;
+    }
+  }
+  
+  MsumH = 0;
+  MsumL = 0;
+  MsumV = 0;
+  Msum  = 0;
+  for ( i = 0; i < 5 ; i++ )
+  {
+    for ( j = 0; j < 5; j++ )
+    {
+      MsumH += 1.* 1.* h1PTFM->data[i + j*5];
+      MsumL += 1.* 1.* l1PTFM->data[i + j*5];
+      MsumV += 1.* 1.* v1PTFM->data[i + j*5];
+    }
+  }
+  
+  Msum = pow(MsumH*MsumH+MsumL*MsumL+MsumV+MsumV,0.5);
+  for ( i = 0; i < numPoints ; i++ )
+  {
+    SNR->data[i] = (pow(Asum->data[i],2.) + pow(Bsum->data[i],2))/Msum;
+    SNR->data[i] = pow(SNR->data[i],0.5);
+  }
+
+  outfile = fopen("cohSNR_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,SNR->data[i]);
+  }
+  fclose(outfile);
+
+}
+  
+    
+
+  
+
