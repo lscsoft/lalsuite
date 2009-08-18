@@ -281,7 +281,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   else if (params.verbosity >= verbose)
     {
       fprintf(stdout,"No bandpassing requested.\n");
-      fprintf(stdout,"Fhigh %f Hz, Flow %f Hz\n",params.highPass,params.lowPass);
       fflush(stdout);
     }
 
@@ -1486,7 +1485,13 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fprintf(stdout,"Preparing to heterodyne the loaded time series.\n");
 	  fflush(stdout);
 	}
+      if (params->verbosity >= printFiles)
+	{
+	  print_real4tseries(DataIn,"Pre_HeterodynedAndResampleTimeSeriesFrameData.diag");
+	  print_lalUnit(DataIn->sampleUnits,"Pre_HeterodynedAndResampleTimeSeriesFrameData_Units.diag");
+	}
       /*H-dyne*/
+      /*Create a sliding FFT ring version in FDomain of below routine*/
       errcode=LALappsQuickHeterodyneTimeSeries(DataIn,params->HeterodyneFrequency);
       if (params->verbosity >= verbose)
 	{
@@ -1507,10 +1512,27 @@ void LALappsGetFrameData(LALStatus*          status,
 	      fprintf(stdout,"Will resample to requested rate.\n");
 	      fflush(stdout);
 	    }
+
+	  if (params->verbosity >= printFiles)
+	    {
+	      print_real4tseries(DataIn,"Pre_Het_ResampleTimeSeriesFrameData.diag");
+	      print_lalUnit(DataIn->sampleUnits,"Pre_Het_ResampleTimeSeriesFrameData_Units.diag");
+	    }
 	  errcode=XLALResampleREAL4TimeSeries(DataIn,(1/params->HeterodyneSamplingRate));
 	  params->SamplingRateOriginal=params->SamplingRate;
 	  params->SamplingRate=params->HeterodyneSamplingRate;
-
+	  if (params->verbosity >= printFiles)
+	    {
+	      print_real4tseries(DataIn,"Post_Het_ResampleTimeSeriesFrameData.diag");
+	      print_lalUnit(DataIn->sampleUnits,"Post_Het_ResampleTimeSeriesFrameData_Units.diag");
+	    }
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Resampling of heterodyned data error!\n");
+	      fprintf(stderr,"Func: XLALResampleREAL4TimeSeries\n");
+	      fprintf(stderr,"Error code %i\n",errcode);
+	      fflush(stderr);
+	    }
 	  if (DataIn->data->length != params->TimeLengthPoints)
 	    {
 	      fprintf(stdout,"Warning some REAL4TimeSeries resizeing required.\n");
@@ -1531,8 +1553,8 @@ void LALappsGetFrameData(LALStatus*          status,
        */
       if (params->verbosity >= printFiles)
 	{
-	  print_real4tseries(DataIn,"HeterodynedAndResampleTimeSeriesFrameData.diag");
-	  print_lalUnit(DataIn->sampleUnits,"HeterodynedAndResampleTimeSeriesFrameData_Units.diag");
+	  print_real4tseries(DataIn,"Post_HeterodynedAndResampleTimeSeriesFrameData.diag");
+	  print_lalUnit(DataIn->sampleUnits,"Post_HeterodynedAndResampleTimeSeriesFrameData_Units.diag");
 	}
     }
 }
@@ -1626,6 +1648,7 @@ void LALappsDoTrackSearch(
       /* Do the calculate of Lh given parameters */
       /*      errCode = LAL_CALL( LALTracksearchFindLambdaMean(status,*tfmap,&params),
 	      status);*/
+      lal_errhandler = LAL_ERR_RTRN;
       errCode = LAL_CALL( LALTracksearchFindLambdaMedian(status,*tfmap,&params),
 			  status);
 
@@ -1635,6 +1658,7 @@ void LALappsDoTrackSearch(
 	  fprintf(stderr,"%s\n",status->statusDescription);
 	  fflush(stderr);
 	}
+
       tsInputs.high=params.StartThresh;
       tsInputs.low=params.LinePThresh;
       /*Reset to show the auto selected values.*/
@@ -1642,6 +1666,11 @@ void LALappsDoTrackSearch(
       outputCurves.linePThreshCut=tsInputs.low;
 
     }
+  /*Determine MAP file name to save output to.*/
+    LALappsDetermineFilename(status,
+			   tsMarkers,
+			   &outputCandidateFilename,
+			   ".candidates");
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
   errCode = LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
@@ -1657,6 +1686,19 @@ void LALappsDoTrackSearch(
       fprintf(stderr,"Start  point count: %i\n",outputCurves.store.numLStartPoints);
       fprintf(stderr,"Member point count: %i\n",outputCurves.store.numLPoints);
       fprintf(stderr,"Curves returned   : %i\n",outputCurves.numberOfCurves);
+      fprintf(stdout,"MAP file may be corrupted?\n");
+      fprintf(stdout,"Moving corrupted MAP from %s",outputCandidateFilename->data);
+      LALappsDetermineFilename(status,
+			       tsMarkers,
+			       &outputCandidateFilename,
+			       ".corruptedF");
+      fprintf(stdout," to %s\n",outputCandidateFilename->data);
+      fflush(stdout);
+      fprintf(stderr,"Detaching status pointer.\n");
+      DETATCHSTATUSPTR(status);
+      fflush(stderr);
+      fprintf(stderr,"Attaching status pointer.\n");
+      ATTATCHSTATUSPTR (status);
       fflush(stderr);
     }
   
@@ -1665,8 +1707,14 @@ void LALappsDoTrackSearch(
    * variable outputCurves which is no longer required
    */
   tsInputs.allocFlag = 2;
-  LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
-	     status);
+  errCode = LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+		       status);
+  if ( errCode != 0 )
+    {
+      fprintf(stderr,"Error calling LALSignalTracksearch to clear memory structs.\n");
+      fprintf(stderr,"%s\n",status->statusDescription);
+      fflush(stderr);
+    }
   /*
    * Setup for call to function to do map marking
    * We mark maps is convert Tbin and Fbin to 
@@ -1750,17 +1798,9 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
-  LALappsDetermineFilename(status,
-			   tsMarkers,
-			   &outputCandidateFilename,
-			   ".candidates");
   LALappsWriteSearchResults(status,
 			    outputCandidateFilename->data,
 			    outputCurvesThreshold);
-
-/*   LALAPPSWRITESEARCHRESULTS(status, */
-/* 			    outputCandidateFilename->data, */
-/* 			    outputCurves); */
 
   if (params.verbosity >= printFiles)
     LALappsWriteCurveList(status,
