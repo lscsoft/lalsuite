@@ -488,6 +488,7 @@ void LALappsTrackSearchInitialize(
       {"snr",                 required_argument,  0,    'U'},
       {"heterodyne_frequency",required_argument,  0,    'V'},
       {"heterodyne_sample_rate",required_argument, 0,   'W'},
+      {"dc_remove",           no_argument,        0,    'X'},
       {0,                     0,                  0,      0}
     };
   
@@ -532,6 +533,7 @@ void LALappsTrackSearchInitialize(
   params->SamplingRate = 1;
   params->HeterodyneFrequency=0;
   params->HeterodyneSamplingRate=0;
+  params->dcDetrend=-1;
   params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
   params->calChannelType=SimDataChannel;/*See lsd*/
@@ -1070,6 +1072,13 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'X':
+	  {
+	    /*Using int like a bool*/
+	    params->dcDetrend=1;
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1174,6 +1183,14 @@ void LALappsTrackSearchInitialize(
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EARGS);
 	}
+
+      if ((params->dcDetrend < -1) || (params->dcDetrend == 0))
+	{
+	  fprintf(stderr,"Invalid point size specified on command line for dc_detrend option\n");
+	  fflush(stderr);
+	  exit(TRACKSEARCHC_EARGS);
+	}
+
       if ((params->HeterodyneFrequency < 0 ) || (2*params->HeterodyneFrequency > params->SamplingRate))
 	{
 	  fprintf(stderr,"Heterodyne frequency invalid!\n");
@@ -1268,6 +1285,8 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 bufferedDataTimeInterval=0;
   UINT4                 errcode=0;
   UINT4                 index=0;
+  REAL8                 elementSum=0;
+  REAL8                 elementAvg=0;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1472,6 +1491,35 @@ void LALappsGetFrameData(LALStatus*          status,
 	{
 	  fprintf(stderr,"Problem trying to close the frame stream!\n");
 	  exit(errcode);
+	}
+    }
+  /*
+   * If DC_Detrend option is requested detrend the time series
+   */
+  if (params->dcDetrend > 0)
+    {
+      if (params->verbosity >= verbose)
+	{
+	  fprintf(stdout,
+		  "DC offset removal invoked.");
+	  fflush(stdout);
+	}
+      if (params->verbosity >= printFiles)
+	{
+	  print_real4tseries(DataIn,"Pre_dcDetrendFrameData.diag");
+	  print_lalUnit(DataIn->sampleUnits,"Pre_dcDetrendFrameData_Units.diag");
+	}
+
+      for (index=0;index<DataIn->data->length;index++)
+	elementSum=elementSum+DataIn->data->data[index];
+      elementAvg=elementSum/DataIn->data->length;
+      for (index=0;index<DataIn->data->length;index++)
+	DataIn->data->data[index]=DataIn->data->data[index]-elementAvg;
+	  
+      if (params->verbosity >= printFiles)
+	{
+	  print_real4tseries(DataIn,"Post_dcDetrendFrameData.diag");
+	  print_lalUnit(DataIn->sampleUnits,"Post_dcDetrendFrameData_Units.diag");
 	}
     }
   /*
