@@ -315,6 +315,7 @@ int main(int argc, char *argv[]){
     numberI4 = IMRPhenomA;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-Phenom.csv");
+	dumptemplateFreqDomain(&currentParams, runstate->data, templateLAL, "test_FTemplateLAL-Phenom.csv");
 
     numberI4 = PadeT1;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
