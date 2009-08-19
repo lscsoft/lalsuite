@@ -175,7 +175,15 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	XLALMCMCSetParameter(temp,"distMpc",DBL_MAX);
 	MCMCinput->funcPrior(MCMCinput,temp);
 	MCMCinput->funcLikelihood(MCMCinput,temp);
-	logZnoise = temp->logLikelihood;
+/*	logZnoise = temp->logLikelihood; */
+/* Calculate this from the tables instead of calling logL with dist = DBL_MAX */
+	logZnoise=0.0;
+	for (j=0;j<MCMCinput->numberDataStreams;j++){
+		int lowBin=(int)MCMCinput->fLow/MCMCinput->deltaF;
+		logZnoise+=topdown_sum[j]->data[lowBin];
+	}
+	logZnoise*=-2.0*MCMCinput->deltaF;
+	
 	fprintf(stdout,"Noise evidence: %lf\n",logZnoise);
 	fprintf(stderr,"Sprinkling initial points, may take a while");
 	/* Set up the parameters for the live points */

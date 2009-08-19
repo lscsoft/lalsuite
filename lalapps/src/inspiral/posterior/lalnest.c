@@ -579,7 +579,7 @@ int main( int argc, char *argv[])
 		} /* End if(!FakeFlag) */
 		
 		/* Perform injection in time domain */
-		if(NULL!=injXMLFile && fakeinj==0 && NINJA==0) {
+		if(NULL!=injXMLFile && fakeinj==0) {
 			DetectorResponse det;
 			REAL8 SNR=0.0;
 			LIGOTimeGPS realSegStart;
