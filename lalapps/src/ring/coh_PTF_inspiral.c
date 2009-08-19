@@ -33,23 +33,23 @@ RCSID( "$Id$" );
 #define CVS_SOURCE   "$Source$"
 #define CVS_DATE     "$Date$"
 
-static struct ring_params *ring_get_params( int argc, char **argv );
-static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params );
-static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params );
-static REAL4TimeSeries *ring_get_data( struct ring_params *params,\
+static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
+static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
+static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
+static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
                        char *ifoChannel, char *dataCache );
-static REAL4FrequencySeries *ring_get_invspec(
+static REAL4FrequencySeries *coh_PTF_get_invspec(
     REAL4TimeSeries         *channel,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
-    struct ring_params      *params
+    struct coh_PTF_params   *params
     );
 void rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor);
-static RingDataSegments *ring_get_segments(
+static RingDataSegments *coh_PTF_get_segments(
     REAL4TimeSeries         *channel,
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
-    struct ring_params      *params
+    struct coh_PTF_params      *params
     );
 static int is_in_list( int i, const char *list );
 void fake_template (InspiralTemplate *template);
@@ -83,17 +83,20 @@ void cohPTFStatistic(
 int main( int argc, char **argv )
 {
   static LALStatus      status;
-  struct ring_params      *params    = NULL;
+  struct coh_PTF_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
   REAL4FFTPlan            *revplan   = NULL;
   COMPLEX8FFTPlan          *invPlan   = NULL;
+  REAL4TimeSeries         *channel[LAL_NUM_IFO];
   REAL4TimeSeries         *h1channel   = NULL;
   REAL4TimeSeries         *l1channel   = NULL;
   REAL4TimeSeries         *v1channel   = NULL;
+  REAL4FrequencySeries    *invspec[LAL_NUM_IFO];
   REAL4FrequencySeries    *h1invspec   = NULL;
   REAL4FrequencySeries    *l1invspec   = NULL;
   REAL4FrequencySeries    *v1invspec   = NULL;
+  RingDataSegments        *segments[LAL_NUM_IFO];
   RingDataSegments        *h1segments  = NULL;
   RingDataSegments        *l1segments  = NULL;
   RingDataSegments        *v1segments  = NULL;
@@ -101,7 +104,9 @@ int main( int argc, char **argv )
   FindChirpTemplate       *fcTmplt     = NULL;
   FindChirpTmpltParams     *fcTmpltParams      = NULL;
   FindChirpInitParams     *fcInitParams = NULL;
-  UINT4                   numPoints;
+  UINT4                   numPoints,ifoNumber;
+  REAL4Array              *PTFM[LAL_NUM_IFO];
+  COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO];
   REAL4Array              *h1PTFM = NULL;
   COMPLEX8VectorSequence  *h1PTFqVec = NULL;
   REAL4Array              *l1PTFM = NULL;
@@ -114,34 +119,51 @@ int main( int argc, char **argv )
 
   /* options are parsed and debug level is set here... */
   /* no lal mallocs before this! */
-  params = ring_get_params( argc, argv );
+  params = coh_PTF_get_params( argc, argv );
 
   /* create process params */
 /*  procpar = create_process_params( argc, argv, PROGRAM_NAME );*/
 
   /* create forward and reverse fft plans */
-  fwdplan = ring_get_fft_fwdplan( params );
-  revplan = ring_get_fft_revplan( params );
+  fwdplan = coh_PTF_get_fft_fwdplan( params );
+  revplan = coh_PTF_get_fft_revplan( params );
 
-  /* Read in data from the various ifos */
-  params->doubleData = 1;
-  h1channel = ring_get_data( params,params->h1_channel,params->h1_dataCache );
-  rescale_data (h1channel,1E20);
-  l1channel = ring_get_data( params,params->l1_channel,params->l1_dataCache );
-  rescale_data (l1channel,1E20);
-  params->doubleData = 0;
-  v1channel = ring_get_data( params,params->v1_channel,params->v1_dataCache );
-  rescale_data (v1channel,1E20);
+  fprintf (stdout, "HELLO!!");
+  fflush (stdout);
 
-  /* compute the spectrum */
-  h1invspec = ring_get_invspec( h1channel, fwdplan, revplan, params );
-  l1invspec = ring_get_invspec( l1channel, fwdplan, revplan, params );
-  v1invspec = ring_get_invspec( v1channel, fwdplan, revplan, params );
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    fprintf (stdout,"%d \n", params->haveTrig[ifoNumber]);
+    if ( params->haveTrig[ifoNumber] )
+    {
+      /* Initialize some of the structures */
+      channel[ifoNumber] = NULL;
+      invspec[ifoNumber] = NULL;
+      segments[ifoNumber] = NULL;
+      PTFM[ifoNumber] = NULL;
+      PTFqVec[ifoNumber] = NULL;
+      /* Read in data from the various ifos */
+      params->doubleData = 1;
+      if ( ifoNumber == LAL_IFO_V1 )
+      {
+        params->doubleData = 0;
+      }
+      channel[ifoNumber] = coh_PTF_get_data(params,params->channel[ifoNumber],\
+                               params->dataCache[ifoNumber] );
+      rescale_data (channel[ifoNumber],1E20);
 
-  /* create the segments */
-  h1segments = ring_get_segments( h1channel,  h1invspec, fwdplan, params );
-  l1segments = ring_get_segments( l1channel,  l1invspec, fwdplan, params );
-  v1segments = ring_get_segments( v1channel,  v1invspec, fwdplan, params );
+      /* compute the spectrum */
+      invspec[ifoNumber] = coh_PTF_get_invspec( channel[ifoNumber], fwdplan,\
+                               revplan, params );
+
+      /* create the segments */
+      segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
+           invspec[ifoNumber], fwdplan, params );
+    }
+  }
+
+  fprintf (stdout, "HELLOOO!!");
+  fflush (stdout);
 
   /* Create the relevant structures that will be needed */
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
@@ -165,35 +187,37 @@ int main( int argc, char **argv )
   /* Create an inverser FFT plan */
   invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
-  /* Create storage vectors for the PTF filters */
-  h1PTFM = XLALCreateArrayL( 2, 5, 5 );
-  h1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
-  l1PTFM = XLALCreateArrayL( 2, 5, 5 );
-  l1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
-  v1PTFM = XLALCreateArrayL( 2, 5, 5 );
-  v1PTFqVec = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
-  memset( h1PTFM->data, 0, 25 * sizeof(REAL4) );
-  memset( h1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
-  memset( l1PTFM->data, 0, 25 * sizeof(REAL4) );
-  memset( l1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
-  memset( v1PTFM->data, 0, 25 * sizeof(REAL4) );
-  memset( v1PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
-
   /* A temporary call to create a template with specified values */
   fake_template (PTFtemplate);
 
   /* Generate the Q freq series of the template */
   generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
 
-  /* And calculate A^I B^I and M^IJ for every IFO */
-  cohPTFNormalize(fcTmplt,h1invspec,h1PTFM,h1PTFqVec,
-                  &h1segments->sgmnt[0],invPlan);
-  cohPTFNormalize(fcTmplt,l1invspec,l1PTFM,l1PTFqVec,
-                  &l1segments->sgmnt[0],invPlan);
-  cohPTFNormalize(fcTmplt,h1invspec,v1PTFM,v1PTFqVec,
-                  &v1segments->sgmnt[0],invPlan);
+  fprintf (stdout, "HELLOOO!!");
+  fflush (stdout);
 
-  cohPTFStatistic(h1PTFM,h1PTFqVec,l1PTFM,l1PTFqVec,v1PTFM,v1PTFqVec);
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+
+      /* Create storage vectors for the PTF filters */
+      PTFM[ifoNumber] = XLALCreateArrayL( 2, 5, 5 );
+      PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+      memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL4) );
+      memset( PTFqVec[ifoNumber]->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
+
+      /* And calculate A^I B^I and M^IJ */
+      cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],PTFqVec[ifoNumber],
+                      &segments[ifoNumber]->sgmnt[0],invPlan);
+    }
+  }
+
+  fprintf (stdout, "HELLOOO!!");
+  fflush (stdout);
+
+
+  cohPTFStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
  
   exit(0);
 
@@ -202,15 +226,15 @@ int main( int argc, char **argv )
 /* warning: returns a pointer to a static variable... not reenterant */
 /* only call this routine once to initialize params! */
 /* also do not attempt to free this pointer! */
-static struct ring_params *ring_get_params( int argc, char **argv )
+static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
 {
-  static struct ring_params params;
+  static struct coh_PTF_params params;
   static char programName[] = PROGRAM_NAME;
   static char cvsRevision[] = CVS_REVISION;
   static char cvsSource[]   = CVS_SOURCE;
   static char cvsDate[]     = CVS_DATE;
-  ring_parse_options( &params, argc, argv );
-  ring_params_sanity_check( &params ); /* this also sets various params */
+  coh_PTF_parse_options( &params, argc, argv );
+  coh_PTF_params_sanity_check( &params ); /* this also sets various params */
   params.programName = programName;
   params.cvsRevision = cvsRevision;
   params.cvsSource   = cvsSource;
@@ -219,7 +243,7 @@ static struct ring_params *ring_get_params( int argc, char **argv )
 }
 
 /* gets the data, performs any injections, and conditions the data */
-static REAL4TimeSeries *ring_get_data( struct ring_params *params,\
+static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
                        char *ifoChannel, char *dataCache  )
 {
   int stripPad = 0;
@@ -238,7 +262,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params,\
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
           params->strainData,
-          params->geoHighpassFrequency, params->geoScale );
+          params->highpassFrequency, 1. );
       stripPad = 1;
     }
     else
@@ -284,7 +308,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params,\
 }
 
 /* gets the forward fft plan */
-static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params )
+static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
 {
   REAL4FFTPlan *plan = NULL;
   if ( params->segmentDuration > 0.0 )
@@ -298,7 +322,7 @@ static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params )
 
 
 /* gets the reverse fft plan */
-static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
+static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
 {
   REAL4FFTPlan *plan = NULL;
   if ( params->segmentDuration > 0.0 )
@@ -311,11 +335,11 @@ static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
 }
 
 /* computes the inverse power spectrum */
-static REAL4FrequencySeries *ring_get_invspec(
+static REAL4FrequencySeries *coh_PTF_get_invspec(
     REAL4TimeSeries         *channel,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
-    struct ring_params      *params
+    struct coh_PTF_params   *params
     )
 {
   REAL4FrequencySeries *invspec = NULL;
@@ -351,11 +375,11 @@ void rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor)
 }
 
 /* creates the requested data segments (those in the list of segments to do) */
-static RingDataSegments *ring_get_segments(
+static RingDataSegments *coh_PTF_get_segments(
     REAL4TimeSeries         *channel,
     REAL4FrequencySeries    *invspec,
     REAL4FFTPlan            *fwdplan,
-    struct ring_params      *params
+    struct coh_PTF_params   *params
     )
 {
   RingDataSegments *segments = NULL;

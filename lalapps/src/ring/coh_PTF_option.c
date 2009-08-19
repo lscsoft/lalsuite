@@ -34,14 +34,19 @@
 RCSID( "$Id$" );
 
 extern int vrbflg;
-static int ring_usage( const char *program );
-static int ring_default_params( struct ring_params *params );
+static int coh_PTF_usage( const char *program );
+static int coh_PTF_default_params( struct coh_PTF_params *params );
 
 
 /* parse command line arguments using getopt_long to get ring params */
-int ring_parse_options( struct ring_params *params, int argc, char **argv )
+int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
-  static struct ring_params localparams;
+  static struct coh_PTF_params localparams;
+  memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
+  const CHAR                  *ifoArg[LAL_NUM_IFO] =
+                                   {"g1-triggers", "h1-triggers",
+                                    "h2-triggers", "l1-triggers",
+                                    "t1-triggers", "v1-triggers"};
   struct option long_options[] =
   {
     { "verbose", no_argument, &vrbflg, 1 },
@@ -49,18 +54,22 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "simulated-data", no_argument, &localparams.simData, 1 },
     { "zero-data", no_argument, &localparams.zeroData, 1 },
     { "white-spectrum", no_argument, &localparams.whiteSpectrum, 1 },
-    { "bank-only", no_argument, &localparams.bankOnly, 1 },
     { "write-raw-data",     no_argument, &localparams.writeRawData, 1 },
     { "write-data",         no_argument, &localparams.writeProcessedData, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
+/*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
+    {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
+/*    {"h2-data",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },*/
+    {"l1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_L1]),   1 },
+/*    {"t1-data",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },*/
+    {"v1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_V1]),   1 },
     { "help",                    no_argument,       0, 'h' },
     { "version",                 no_argument,       0, 'V' },
     { "gps-start-time",          required_argument, 0, 'a' },
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
-    { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "h1-channel-name",            required_argument, 0, 'c' },
     { "h1-frame-cache",             required_argument, 0, 'D' },
     { "l1-channel-name",            required_argument, 0, 'y' },
@@ -70,29 +79,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "debug-level",             required_argument, 0, 'd' },
     { "cutoff-frequency",        required_argument, 0, 'e' },
     { "highpass-frequency",      required_argument, 0, 'E' },
-    { "bank-min-frequency",      required_argument, 0, 'f' },
-    { "bank-max-frequency",      required_argument, 0, 'F' },
-    { "geo-highpass-frequency",  required_argument, 0, 'g' },
-    { "geo-data-scale",          required_argument, 0, 'G' },
-    { "injection-type",          required_argument, 0, 'J' },
-    { "injection-file",          required_argument, 0, 'i' },
-    { "inject-mdc-frame",        required_argument, 0, 'I' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
-    { "bank-max-mismatch",       required_argument, 0, 'm' },
-    { "maximize-duration",       required_argument, 0, 'M' },
     { "only-segment-numbers",    required_argument, 0, 'n' },
     { "only-template-numbers",   required_argument, 0, 'N' },
     { "output-file",             required_argument, 0, 'o' },
-    { "bank-file",               required_argument, 0, 'O' },
-    { "bank-template-phase",     required_argument, 0, 'p' },
-    { "bank-min-quality",        required_argument, 0, 'q' },
-    { "bank-max-quality",        required_argument, 0, 'Q' },
     { "random-seed",             required_argument, 0, 'r' },
     { "dynamic-range-factor",    required_argument, 0, 'R' },
     { "sample-rate",             required_argument, 0, 's' },
     { "segment-duration",        required_argument, 0, 'S' },
-    { "threshold",               required_argument, 0, 't' },
     { "inverse-spec-length",     required_argument, 0, 'T' },
     { "trig-start-time",         required_argument, 0, 'u' },
     { "trig-end-time",           required_argument, 0, 'U' },
@@ -100,11 +95,11 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:Vw:W:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:h:k:K:n:N:o:r:R:s:S:T:u:U:V:w:W:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
-  ring_default_params( &localparams );
+  coh_PTF_default_params( &localparams );
 
   while ( 1 )
   {
@@ -135,23 +130,23 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'B': /* gps-end-time-ns */
         localparams.endTime.gpsNanoSeconds = atol( optarg );
         break;
-      case 'c': /* channel-name */
-        localparams.h1_channel = optarg;
+      case 'c': /* h1 channel-name */
+        localparams.channel[LAL_IFO_H1] = optarg;
         break;
-      case 'D': /* frame-cache */
-        localparams.h1_dataCache = optarg;
+      case 'D': /* h1 frame-cache */
+        localparams.dataCache[LAL_IFO_H1] = optarg;
         break;
-      case 'y': /* channel-name */
-        localparams.l1_channel = optarg;
+      case 'y': /* l1 channel-name */
+        localparams.channel[LAL_IFO_L1] = optarg;
         break;
-      case 'Y': /* frame-cache */
-        localparams.l1_dataCache = optarg;
+      case 'Y': /* l1 frame-cache */
+        localparams.dataCache[LAL_IFO_L1] = optarg;
         break;
-      case 'z': /* channel-name */
-        localparams.v1_channel = optarg;
+      case 'z': /* v1 channel-name */
+        localparams.channel[LAL_IFO_V1] = optarg;
         break;
-      case 'Z': /* frame-cache */
-        localparams.v1_dataCache = optarg;
+      case 'Z': /* v1 frame-cache */
+        localparams.dataCache[LAL_IFO_V1] = optarg;
         break;
       case 'd': /* debug-level */
         set_debug_level( optarg );
@@ -162,63 +157,14 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
         break;
-      case 'f': /* bank min frequency */
-        localparams.bankParams.minFrequency = atof( optarg );
-        break;
-      case 'F': /* bank max frequency */
-        localparams.bankParams.maxFrequency = atof( optarg );
-        break;
-      case 'g': /* geo-highpass-frequency */
-        localparams.geoHighpassFrequency = atof( optarg );
-        break;
-      case 'G': /* geo-data-scale */
-        localparams.geoScale = atof( optarg );
-        break;
       case 'h': /* help */
-        ring_usage( program );
+        coh_PTF_usage( program );
         exit( 0 );
-      case 'i': /* injection-file */
-        localparams.injectFile = optarg;
-        break;
-      case 'J': /* injection type */
-        if( ! strcmp( "ringdown", optarg ) )
-        { 
-          localparams.injectType = 0;
-        }
-        else if( ! strcmp( "imr", optarg ) )
-        {
-          localparams.injectType = 1;
-        }
-        else if( ! strcmp( "imr_ringdown", optarg ) )
-        {
-          localparams.injectType = 2;
-        }
-        else if( ! strcmp( "EOBNR", optarg ) )
-        {
-          localparams.injectType = 3;
-        }
-        else
-        {
-          localparams.injectType = -1;
-          fprintf( stderr, "invalid --injection_type:\n"
-              "(must be ringdown, imr, imr_ringdown or EOBNR\n" );
-          exit( 1 );
-        }
-        break;
-      case 'I': /* inject-mdc-frame */
-        error( "currently unsupported option: --inject-mdc-frame\n" );
-        break;
       case 'k': /* user-tag */
         strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
         break;
       case 'K': /* ifo-tag */
         strncpy( localparams.ifoTag, optarg, sizeof( localparams.ifoTag ) - 1 );
-        break;
-      case 'm': /* bank max mismatch */
-        localparams.bankParams.maxMismatch = atof( optarg );
-        break;
-      case 'M': /* maximize duration */
-        localparams.maximizeEventDuration = atof( optarg );
         break;
       case 'n': /* only-segment-numbers */
         localparams.segmentsToDoList = optarg;
@@ -228,18 +174,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'o': /* output-file */
         strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
-        break;
-      case 'O': /* bank-file */
-        strncpy( localparams.bankFile, optarg, sizeof( localparams.bankFile ) - 1 );
-        break;
-      case 'p': /* bank template phase */
-        localparams.bankParams.templatePhase = atof( optarg );
-        break;
-      case 'q': /* bank min quality */
-        localparams.bankParams.minQuality = atof( optarg );
-        break;
-      case 'Q': /* bank max quality */
-        localparams.bankParams.maxQuality = atof( optarg );
         break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
@@ -252,9 +186,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'S': /* segment-duration */
         localparams.segmentDuration = atof( optarg );
-        break;
-      case 't': /* threshold */
-        localparams.threshold = atof( optarg );
         break;
       case 'T': /* inverse-spec-length */
         localparams.invSpecLen = atof( optarg );
@@ -294,25 +225,17 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
   return 0;
 }
 
-
 /* sets default values for parameters */
-static int ring_default_params( struct ring_params *params )
+static int coh_PTF_default_params( struct coh_PTF_params *params )
 {
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
 
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
-  params->geoScale    = 1.0;
-
-  /* generate a template at 1 Mpc with an epsilon of 0.01 */
-  params->bankParams.templateDistance = 1.0;
-  params->bankParams.templateEpsilon  = 0.01;
 
   /* negative value means use the "default" values */
   params->highpassFrequency     = -1.0; /* use low-frequency cutoff */
-  params->geoHighpassFrequency  = -1.0; /* use low-frequency cutoff */
-  params->maximizeEventDuration = -1.0; /* use filter duration */
 
   /* segments and templates to do: all of them */
   params->segmentsToDoList  = "^-$";
@@ -324,39 +247,28 @@ static int ring_default_params( struct ring_params *params )
   params->getSpectrum = 1;
   params->doFilter    = 1;
   
-  params->injectType  = -1;
-
   return 0;
 }
-
 
 /* macro for testing validity of a condition that prints an error if invalid */
 #define sanity_check( condition ) \
   ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
 
 /* check sanity of parameters and sets appropriate values of unset parameters */
-int ring_params_sanity_check( struct ring_params *params )
+int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
 {
   UINT4 recordLength = 0;
   UINT4 segmentLength = 0;
   UINT4 segmentStride = 0;
   UINT4 truncateLength = 0;
+  UINT4 ifoNumber;
   INT8 startTime;
   INT8 endTime;
   int validChannelIFO;
 
-  if ( params->bankOnly )
-  {
-    params->getData     = 0;
-    params->getSpectrum = 0;
-    params->doFilter    = 0;
-  }
-
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
-  if ( params->doFilter ) /* need data, bank, and spectrum */
-    sanity_check( params->getData && params->getBank && params->getSpectrum );
 
   /* parameters required to get data */
   if ( params->getData )
@@ -373,34 +285,14 @@ int ring_params_sanity_check( struct ring_params *params )
     sanity_check( params->sampleRate > 0 );
     recordLength = params->duration * params->sampleRate;
     sanity_check( recordLength > 0 );
-
-    /* record ifo name */
-/*    validChannelIFO = sscanf( params->channel, "%2[A-Z1-9]", params->ifoName );
-    sanity_check( validChannelIFO );
-    sanity_check( params->ifoName ); */
-
-    /* check that injection type is specified if an injection file is given */
-
-    if ( params->injectFile ) /* geo data parameters */
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
     {
-      sanity_check( params->injectType >= 0.0 );
+      if ( params->haveTrig[ifoNumber] )
+      {
+        sanity_check(params->channel[ifoNumber]);
+        sanity_check(params->dataCache[ifoNumber]);
+      }
     }
-    
-    /* will need response to do injections unless strain data */
-    sanity_check( params->injectFile == NULL || params->strainData );
-
-    sanity_check( params->geoScale > 0.0 );
-    if ( params->geoHighpassFrequency < 0.0 )
-    {
-      if ( params->highpassFrequency < 0.0 )
-        params->geoHighpassFrequency = params->highpassFrequency;
-      else
-        params->geoHighpassFrequency = params->lowCutoffFrequency;
-    }
-    sanity_check( params->geoHighpassFrequency > 0.0 );
-      
-    /* if using geo data then set the dynamic range factor to geo scale factor */
-    params->dynRangeFac = params->geoScale;
   }
 
   /* parameters required to get spectrum */
@@ -425,73 +317,11 @@ int ring_params_sanity_check( struct ring_params *params )
     /*sanity_check( params->channel );*/
     sanity_check( params->dynRangeFac > 0.0 );
   }
-
-  /* parameters required to do filtering */
-  if ( params->doFilter )
-  {
-    /* checks on low-cutoff and highpass frequencies */
-    sanity_check( params->lowCutoffFrequency > 0 );
-    sanity_check( params->lowCutoffFrequency < 0.5 * params->sampleRate );
-    if ( params->highpassFrequency < 0 )
-      params->highpassFrequency = params->lowCutoffFrequency;
-    sanity_check( params->lowCutoffFrequency >= params->highpassFrequency );
-
-    /* checks on filter threshold */
-    sanity_check( params->threshold > 0.0 );
-
-    /* output file name */
-    if ( ! strlen( params->outputFile ) )
-    {
-      if ( strlen( params->userTag ) && strlen( params->ifoTag ) )
-      {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s_%s-%d-%d.xml", params->ifoName, 
-          params->ifoTag, params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
-      }
-      else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) )
-      {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s-%d-%d.xml", params->ifoName, 
-          params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
-      }
-      else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) )
-      {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s-%d-%d.xml", params->ifoName, 
-          params->ifoTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
-      }
-      else 
-      {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING-%d-%d.xml", params->ifoName, 
-          params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
-      }
-    }
-
-  }
-
-  /*
-  if ( params->getBank )
-  {
-    sanity_check( params->bankParams.minFrequency > params->lowCutoffFrequency );
-    sanity_check( params->bankParams.maxFrequency > params->bankParams.minFrequency );
-    sanity_check( params->bankParams.maxFrequency < 0.5 * params->sampleRate );
-    sanity_check( params->bankParams.minQuality >= 2.0 );
-    sanity_check( params->bankParams.maxQuality > params->bankParams.minQuality );
-    sanity_check( params->bankParams.maxMismatch > 0.0 );
-    sanity_check( params->bankParams.maxMismatch < 1.0 );
-  }
-  */
   return 0;
 }
 
-
 /* prints a help message */
-static int ring_usage( const char *program )
+static int coh_PTF_usage( const char *program )
 {
   fprintf( stderr, "usage: %s options\n", program );
   fprintf( stderr, "\ngeneral options:\n" );
@@ -507,12 +337,6 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--gps-start-time-ns=tstartns  nanosecond residual of start time\n" );
   fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-end-time-ns=tstopns  nanosecond residual of stop time\n" );
-
-  fprintf( stderr, "\nGEO data reading options:\n" );
-  fprintf( stderr, "--geo-data                 GEO data is double precision\n" );
-  fprintf( stderr, "--geo-highpass-frequency=fgeo  highpass GEO data at freq fgeo (Hz)\n" );
-  fprintf( stderr, "--geo-data-scale=geoscale  scale GEO data by factor geoscale\n" );
-
   fprintf( stderr, "\nsimulated data options:\n" );
   fprintf( stderr, "--simulated-data           create simulated white Gaussian noise\n" );
   fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
@@ -522,11 +346,6 @@ static int ring_usage( const char *program )
   fprintf( stderr, "\ndata conditioning options:\n" );
   fprintf( stderr, "--highpass-frequency=fhi   high-pass filter data at frequency fhi (Hz)\n" );
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
-
-  fprintf( stderr, "\nsimulated injection options:\n" );
-  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [ringdown, imr, imr_ringdown, EOBNR] \n \t and must be accompanied by the appropriate injection file\n" );
-  fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n \t \t should a sim_ringdown table for 'ringdown' injections \n \t \t and a sim_inspiral table for the other types\n" );
-  fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
 
   fprintf( stderr, "\ncalibration options:\n" );
   fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
@@ -542,18 +361,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
 
-  fprintf( stderr, "\nbank generation options:\n" );
-  fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );
-  fprintf( stderr, "--bank-min-quality=qmin    minimum Q of bank\n" );
-  fprintf( stderr, "--bank-max-quality=qmax    maximum Q of bank\n" );
-  fprintf( stderr, "--bank-min-frequency=fmin  minimum central frequency of bank (Hz)\n" );
-  fprintf( stderr, "--bank-max-frequency=fmax  maximum central frequency of bank (Hz)\n" );
-  fprintf( stderr, "--bank-max-mismatch=maxmm  maximum template mismatch in bank\n" );
-  fprintf( stderr, "--bank-file=name           write template bank to LIGO_LW XML file\n" );
-  fprintf( stderr, "--bank-only                generate bank only -- do not read data or filter\n" );
-
   fprintf( stderr, "\nfiltering options:\n" );
-  fprintf( stderr, "--threshold                SNR threshold to identify triggers\n" );
   fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );

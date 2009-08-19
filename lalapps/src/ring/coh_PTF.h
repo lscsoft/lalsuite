@@ -24,13 +24,14 @@
 
 enum { write_frame, write_ascii };
 
-struct ring_params {
+struct coh_PTF_params {
   char        *programName;
   char        *cvsRevision;
   char        *cvsSource;
   char        *cvsDate;
   char         ifoName[3];
   INT4         randomSeed;
+  INT4         haveTrig[LAL_NUM_IFO];
   LIGOTimeGPS  startTime;
   LIGOTimeGPS  endTime;
   INT8         trigStartTimeNS;
@@ -38,14 +39,9 @@ struct ring_params {
   LIGOTimeGPS  frameDataStartTime;
   REAL8        frameDataDuration;
   REAL8        duration;
-  const char  *h1_channel;
-  const char  *l1_channel;
-  const char  *v1_channel;
-  const char  *h1_dataCache;
-  const char  *l1_dataCache;
-  const char  *v1_dataCache;
+  const char  *channel[LAL_NUM_IFO];
+  const char  *dataCache[LAL_NUM_IFO];
   const char  *injectFile;
-  INT4         injectType;
   REAL8        sampleRate;
   REAL8        padData;
   REAL8        segmentDuration;
@@ -56,31 +52,18 @@ struct ring_params {
   REAL4        lowCutoffFrequency;
   REAL4        highpassFrequency;
   REAL4        invSpecLen;
-  char         bankFile[256];
-  RingTemplateBankInput bankParams;
-  REAL4        bankMinFrequency;
-  REAL4        bankMaxFrequency;
-  REAL4        bankMinQuality;
-  REAL4        bankMaxQuality;
-  REAL4        bankMaxMismatch;
-  REAL4        bankTemplatePhase;
-  REAL4        threshold;
-  REAL4        maximizeEventDuration;
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
   UINT4        numEvents;
   char         outputFile[256];
   char         userTag[256];
   char         ifoTag[256];
-  REAL8        geoHighpassFrequency;
-  REAL8        geoScale;
   /* flags */
   int          strainData;
   int          doubleData;
   int          simData;
   int          zeroData;
   int          whiteSpectrum;
-  int          bankOnly;
   int          getData;
   int          getSpectrum;
   int          getBank;
@@ -101,31 +84,15 @@ typedef struct tagRingDataSegments
 RingDataSegments;
 
 /* routines in ring_option */
-int ring_parse_options( struct ring_params *params, int argc, char **argv );
-int ring_params_sanity_check( struct ring_params *params );
+int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv );
+int coh_PTF_params_sanity_check( struct coh_PTF_params *params );
 
 /* routines in ring_output */
 ProcessParamsTable * create_process_params( int argc, char **argv,
     const char *program );
-int ring_output_events_xml( 
-    char               *outputFile,
-    SnglRingdownTable  *events,
-    ProcessParamsTable *processParamsTable,
-    struct ring_params *params
-    );
 
 /* routines to write intermediate results in ring_output */
 int write_REAL4TimeSeries( REAL4TimeSeries *series );
 int write_REAL4FrequencySeries( REAL4FrequencySeries *series );
 int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
-int write_bank( RingTemplateBank *bank );
 
-/* routines in ring_filter */
-SnglRingdownTable * ring_filter(
-    RingDataSegments         *segments,
-    RingTemplateBank         *bank,
-    REAL4FrequencySeries     *invSpectrum,
-    REAL4FFTPlan             *fwdPlan,
-    REAL4FFTPlan             *revPlan,
-    struct ring_params       *params
-    );
