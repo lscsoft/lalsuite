@@ -292,6 +292,8 @@ int main(int argc, char *argv[]){
     fprintf(stdout," generating templates & writing to files...:\n");
     dumptemplateFreqDomain(&currentParams, runstate->data, templateStatPhase, "test_FTemplate25SP.csv");
     dumptemplateTimeDomain(&currentParams, runstate->data, templateStatPhase, "test_TTemplate25SP.csv");
+    dumptemplateFreqDomain(&currentParams, runstate->data, template3525TD, "test_FTemplate3525TD.csv");
+    dumptemplateTimeDomain(&currentParams, runstate->data, template3525TD, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
     /* These are the LAL templates that (...seem to...) work right now: */
