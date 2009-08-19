@@ -208,10 +208,11 @@ void executeInvFT(LALIFOData *IFOdata);
 
 void die(char *message);
 void LALTemplateGeneratePPN(LALIFOData *IFOdata);
-void templateLAL(LALIFOData *IFOdata);
 void templateStatPhase(LALIFOData *IFOdata);
 void templateNullFreqdomain(LALIFOData *IFOdata);
 void templateNullTimedomain(LALIFOData *IFOdata);
+void templateLAL(LALIFOData *IFOdata);
+void template3525TD(LALIFOData *IFOdata);
 
 #endif
 

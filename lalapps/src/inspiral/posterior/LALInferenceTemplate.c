@@ -436,8 +436,7 @@ void templateLAL(LALIFOData *IFOdata)
 
   /* little consistency check (otherwise no output without warning): */
   if (((approximant==EOBNR) || (approximant==EOB)) && (order!=LAL_PNORDER_PSEUDO_FOUR))
-    die(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require the \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");
-  
+    die(" ERROR in templateLAL(): \"EOB\" and \"EOBNR\" templates require \"LAL_PNORDER_PSEUDO_FOUR\" PN order!\n");  
 
   if (IFOdata->timeData==NULL) 
     die(" ERROR in templateLAL(): encountered unallocated 'timeData'.\n");
@@ -453,8 +452,8 @@ void templateLAL(LALIFOData *IFOdata)
   params.nStartPad   = 0;
   params.nEndPad     = 0;
   params.massChoice  = m1Andm2;
-  params.approximant = approximant;  /*  TaylorT1, ...              */
-  params.order       = order;        /*  0=Newtonian, ..., 7=3.5PN  */
+  params.approximant = approximant;  /*  TaylorT1, ...   */
+  params.order       = order;        /*  Newtonian, ...  */
   params.fLower      = IFOdata->fLow * 0.9;
   params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
   params.tSampling   = 1.0 / deltaT;
@@ -484,8 +483,8 @@ void templateLAL(LALIFOData *IFOdata)
   if (params.fCutoff >= 0.5*params.tSampling)
     params.fCutoff = 0.5*params.tSampling - 0.5*IFOdata->freqData->deltaF;
   if (! (params.tSampling > 2.0*params.fCutoff)){
-    fprintf(stderr," WARNING: 'LALInspiralSetup()' (called within 'LALInspiralWavelength()')\n");
-    fprintf(stderr,"          requires (tSampling > 2 x fCutoff) !!\n");
+    fprintf(stderr," ERROR in templateLAL(): 'LALInspiralSetup()' (called within 'LALInspiralWavelength()')\n");
+    fprintf(stderr,"                         requires (tSampling > 2 x fCutoff) !!\n");
     fprintf(stderr," (settings are:  tSampling = %f s,  fCutoff = %f Hz)  \n", params.tSampling, params.fCutoff);
     exit(1);
   }
@@ -493,8 +492,8 @@ void templateLAL(LALIFOData *IFOdata)
   /* ensure compatible sampling rate: */
   if ((params.approximant == EOBNR)
       && (fmod(log((double)params.tSampling)/log(2.0),1.0) != 0.0)) {
-    fprintf(stderr, " ERROR: \"EOBNR\" templates require power-of-two sampling rates!\n");
-    fprintf(stderr, "        (params.tSampling = %f Hz)\n", params.tSampling);
+    fprintf(stderr, " ERROR in templateLAL(): \"EOBNR\" templates require power-of-two sampling rates!\n");
+    fprintf(stderr, "                         (params.tSampling = %f Hz)\n", params.tSampling);
     exit(1);
   }
 
@@ -522,8 +521,8 @@ void templateLAL(LALIFOData *IFOdata)
              || (params.approximant == PadeF1)
              || (params.approximant == BCV));
   if (FDomain && (n % 2 != 0)){
-    fprintf(stderr, " ERROR: frequency-domain LAL waveforms require even number of samples!\n");
-    fprintf(stderr, "        (N = IFOdata->timeData->data->length = %d)\n", n);
+    fprintf(stderr, " ERROR in templateLAL(): frequency-domain LAL waveforms require even number of samples!\n");
+    fprintf(stderr, "                         (N = IFOdata->timeData->data->length = %d)\n", n);
     exit(1);
   }
 
@@ -647,10 +646,10 @@ void templateLAL(LALIFOData *IFOdata)
         jmax = j;
       }
     }
-    j = (jmax>0) ? jmax-1 : IFOdata->timeModelhPlus->data->length;
+    j = (jmax>0) ? jmax-1 : IFOdata->timeModelhPlus->data->length-1;
     pleft = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
                  + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
-    j = (jmax<IFOdata->timeModelhPlus->data->length) ? jmax+1 : 0;
+    j = (jmax<IFOdata->timeModelhPlus->data->length-1) ? jmax+1 : 0;
     pright = sqrt(IFOdata->timeModelhPlus->data->data[j] * IFOdata->timeModelhPlus->data->data[j]
                   + IFOdata->timeModelhCross->data->data[j] * IFOdata->timeModelhCross->data->data[j]);
     pmax = sqrt(pmax);
@@ -699,4 +698,226 @@ void templateLAL(LALIFOData *IFOdata)
 
   IFOdata->modelDomain = frequencyDomain;
   return;
+}
+
+
+
+void template3525TD(LALIFOData *IFOdata)
+/*****************************************************************/
+/* 3.5PN phase / 2.5PN amplitude time-domain inspiral templates  */
+/* following                                                     */
+/*   Blanchet et al. 2001   gr-qc/0104084                        */
+/*   Blanchet at al. 2002   PRD 65(6):061501    gr-qc/0105099    */
+/*   Blanchet at al. 2005   PRD 71(12):129902                    */
+/*   Arun et al. 2004       CQG 21(15):3771                      */
+/*   Arun et al. 2004       CQG 22(14):3115                      */
+/*   Blanchet et al. 2004   PRL 93(9):091101                     */
+/* This is basically the implementation that was also used in    */
+/* the "Roever/Meyer/Guidi/Vicere/Christensen (2007)" paper      */
+/* (CQG 24(19):S607).                                            */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Formula numbers (x.xx) refer to the 2001 Blanchet paper,      */
+/* numbers (xx) refer to the more recent 2002 paper.             */
+/* Numbers referring to Arun et al (2004) are explicitly marked. */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *****************************/
+/* Required (`IFOdata->modelParams') parameters are:                                         */
+/*   - "chirpmass"        (REAL8,units of solar masses)                                      */
+/*   - "massratio"        (symmetric mass ratio:  0 < eta <= 0.25, REAL8)                    */
+/*   - "phase"            (here: 'startPhase', not coalescence phase; REAL8, radians)        */
+/*   - "time"             (coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)  */
+/*   - "inclination"      (inclination angle, REAL8, radians)                                */
+/*********************************************************************************************/
+{
+  double mc    = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");  /* chirp mass m_c, solar masses  */
+  double eta   = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");  /* mass ratio eta, dimensionless */
+  double tc    = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* coalescence time, GPS sec.    */
+  double phase = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* coalescence phase, rad        */
+  double m1, m2;
+  mc2masses(mc, eta, &m1, &m2);                   /* (in units of Msun) */
+  double mt         = m1 + m2;
+  double dmm        = (m2-m1)/mt;                 /*  = (delta m) / mt  (dimensionless) */
+  double log_mt     = log(mt) + log(LAL_MSUN_SI); /* (in Kg) */
+  double log_eta    = log(eta);
+  double eta2       = eta * eta;
+  double eta3       = eta2 * eta;
+  double log_mu     = log_eta + log_mt;
+  double log_omega0 = log(4.0*LAL_PI);
+  double log_tau0   = 0.0;  /* = log(1.0) */
+  double t, phi, psi;
+  double taucoef = 3.0*log((double) LAL_C_SI)-log(5.0)-log(LAL_G_SI) + log_eta - log_mt; /*  (4.17) or (11) */
+  double log_tau, tau18, tau28, tau38, tau48, tau58, tau68, tau78;
+  double ci  =  cos(*(REAL8*) getVariable(IFOdata->modelParams, "inclination"));
+  double ci2 = ci*ci,     ci4 = ci2*ci2,   ci6 = ci4*ci2;
+  double si2 = (1.0-ci2), si  = sqrt(si2), si4 = si2*si2, si5 = si4*si;
+  double h_plus, h_cross;
+  double Hp00, Hp05, Hp10, Hp15, Hp20, Hp25;
+  double Hc00, Hc05, Hc10, Hc15, Hc20, Hc25;
+  double plus10a  = (1.0/6.0)*((19.0+9.0*ci2-2.0*ci4)-eta*(19.0-11.0*ci2-6.0*ci4));   /* (6.4) */
+  double plus10b  = (4.0/3.0)*si2*(1.0+ci2)*(1.0-3.0*eta);
+  double plus15a  = ((57.0 + 60.0*ci2-ci4) - 2.0*eta*(49.0-12.0*ci2-ci4));            /* (6.5) */
+  double plus15b  = 13.5*((73.0+40.0*ci2-9.0*ci4) - 2.0*eta*(25.0-8.0*ci2-9.0*ci4));
+  double plus15c  = 312.5*(1.0-2.0*eta)*si2*(1.0+ci2);
+  double plus20a  = (1.0/120.0)*((22.0+396.0*ci2+145.0*ci4-5.0*ci6)                   /* (6.6) */
+                    + (5.0/3.0)*eta*(706.0-216.0*ci2-251.0*ci4+15.0*ci6)
+	            -5.0*eta2*(98.0-108.0*ci2+7.0*ci4+5.0*ci6));
+  double plus20b  = (2.0/15.0)*si2*((59.0+35.0*ci2-8.0*ci4)
+	            -(5.0/3.0)*eta*(131.0+59.0*ci2-24.0*ci4)
+	            +5.0*eta2*(21.0-3.0*ci2-8.0*ci4));
+  double plus20c  = 2.025*(1.0-5.0*eta+5.0*eta2)*si4*(1.0+ci2);
+  double plus20d  = (11.0+7.0*ci2+10.0*(5.0+ci2)*LAL_LN2);
+  double plus20e  = 27.0*(7.0-10.0*log(1.5));
+  double plus25a  = si*dmm*((1771.0/5120.0)-(1667.0/5120.0)*ci2+(217.0/9216.0)*ci4-(1.0/9216.0)*ci6
+                            +eta*((681.0/256.0)+(13.0/768.0)*ci2-(35.0/768.0)*ci4+(1.0/2304.0)*ci6)
+                            +eta2*(-(3451.0/9216.0)+(673.0/3072.0)*ci2-(5.0/9216.0)*ci4-(1.0/3072.0)*ci6)); /* Arun (5.9) */
+  double plus25b  = LAL_PI*((19.0/3.0)+3.0*ci2-(2.0/3.0)*ci4
+                            +eta*(-(16.0/3.0)+(14.0/3.0)*ci2+2.0*ci4));
+  double plus25c  = si*dmm*((3537.0/1024.0)-(22977.0/5120.0)*ci2-(15309.0/5120.0)*ci4+(729.0/5120.0)*ci6
+                            +eta*(-(23829.0/1280.0)+(5529.0/1280.0)*ci2+(7749.0/1280.0)*ci4-(729.0/1280.0)*ci6)
+	                    +eta2*((29127.0/5120.0)-(27267.0/5120.0)*ci2-(1647.0/5120.0)*ci4+(2187.0/5120.0)*ci6));
+  double plus25d  = (-(16.0/3.0)*LAL_PI*(1.0+ci2)*si2*(1.0-3.0*eta));
+  double plus25e  = si*dmm*(-(108125.0/9216.0)+(40625.0/9216.0)*ci2+(83125.0/9216.0)*ci4-(15625.0/9216.0)*ci6
+                            +eta*((8125.0/265.0)-(40625.0/2304.0)*ci2-(48125.0/2304.0)*ci4+(15625.0/2304.0)*ci6)
+                            +eta2*(-(119375.0/9216.0)+(40625.0/3072.0)*ci2+(44375.0/9216.0)*ci4-(15625.0/3072.0)*ci6));
+  double plus25f  = dmm*((117649.0/46080.0)*si5*(1.0+ci2)*(1.0-4.0*eta+3.0*eta2));
+  double plus25g  = (-1.8+2.8*ci2+1.4*ci4+eta*(19.2-1.6*ci2-5.6*ci4));
+  double plus25h  = si2*(1.0+ci2)*(11.2 - 32.0*LAL_LN2/3.0 - eta*(1193.0/30.0 - 32.0*LAL_LN2));
+
+  double cross10a = (ci/3.0)*((17.0-4.0*ci2)-eta*(13.0-12.0*ci2));                    /* (6.9) */
+  double cross10b = (8.0/3.0)*(1.0-3.0*eta)*ci*si2;
+  double cross15a = ((63.0-5.0*ci2)-2.0*eta*(23.0-5.0*ci2));                          /* (6.10) */
+  double cross15b = 13.5*((67.0-15.0*ci2)-2.0*eta*(19.0-15.0*ci2));
+  double cross15c = 312.5*(1.0-2.0*eta)*si2;
+  double cross20a = (ci/60.0)*((68.0+226.0*ci2-15.0*ci4)+(5.0/3.0)*eta*(572.0-490.0*ci2+45.0*ci4)
+                    -5.0*eta2*(56.0-70.0*ci2+15.0*ci4));                              /* (6.11) */
+  double cross20b = (4.0/15.0)*ci*si2*((55.0-12.0*ci2)-(5.0/3.0)*eta*(119.0-36.0*ci2)
+                    +5.0*eta2*(17.0-12.0*ci2));
+  double cross20c = 4.05*(1.0-5.0*eta+5.0*eta2)*ci*si4;
+  double cross20d = 3.0+10*LAL_LN2;
+  double cross20e = 9.0*(7.0-10.0*log(1.5));
+  double cross25a = 1.2*si2*ci*eta;                                                   /* Arun (5.10) */
+  double cross25b = ci*(2.0-4.4*ci2+eta*(-30.8+18.8*ci2));
+  double cross25c = ci*si2*((-112.0/5.0 + (64.0/3.0)*LAL_LN2)+eta*(1193.0/15.0 - 64.0*LAL_LN2));
+  double cross25d = si*ci*dmm*(-(913.0/7680.0)+(1891.0/11520.0)*ci2-(7.0/4608.0)*ci4
+                               +eta*((1165.0/384.0)-(235.0/576.0)*ci2+(7.0/1152.0)*ci4)
+                               +eta2*(-(1301.0/4608.0)+(301.0/2304.0)*ci2-(7.0/1536.0)*ci4));
+  double cross25e = LAL_PI*ci*((34.0/3.0)-(8.0/3.0)*ci2-eta*((20.0/3.0)-8.0*ci2));
+  double cross25f = si*ci*dmm*((12501.0/2560.0)-(12069.0/1260.0)*ci2+(1701.0/2560.0)*ci4
+                               +eta*(-(19581.0/640.0)+(7821.0/320.0)*ci2-(1701.0/640.0)*ci4)
+                               +eta2*((18903.0/2560.0)-(11403.0/1280.0)*ci2+(5103.0/2560.0)*ci4));
+  double cross25g = si2*ci*(-((32.0/3.0)*LAL_PI)*(1.0-3.0*eta));
+  double cross25h = dmm*si*ci*(-(101875.0/4608.0)+(6875.0/256.0)*ci2-(21875.0/4608.0)*ci4
+                               +eta*((66875.0/1152.0)-(44375.0/576.0)*ci2+(21875.0/1152.0)*ci4)
+                               +eta2*(-(100625.0/4608.0)+(83125.0/2304.0)*ci2-(21875.0/1536.0)*ci4));
+  double cross25i = dmm*si5*ci*((117649.0/23040.0)*(1.0-4.0*eta+3.0*eta2));
+  double sin1psi, sin2psi, sin3psi, sin4psi, sin5psi, sin6psi, sin7psi;
+  double cos1psi, cos2psi, cos3psi, cos4psi, cos5psi, cos6psi, cos7psi;
+  double constfactor = exp(LAL_LN2+log(LAL_G_SI)-2.0*log((double)LAL_C_SI) + log_mu - log(LAL_PC_SI*1.0e6));  
+                                                                                      /* (6.01); distance is 1 Mpc here. */
+  double x, sqrtx, oldx=0.0;
+  double omega, omegacoef=exp(3.0*log((double) LAL_C_SI) - log(LAL_G_SI) - log_mt);   /* = (c^3)/(G*mt) */
+  double EulerGamma = 0.57721566490153286; /* Euler constant */
+  double xi     = -9871.0/9240.0;          /* Blanchet et al (2004): PRL 93(9):091101 */
+  double kappa  = 0.0;                     /* (ibid.)                                 */
+  double zeta   = -7.0/33.0;               /* (ibid.)                                 */
+  double theta  = xi + 2.0*kappa + zeta;    
+  double lambda = -(1987.0/3080);           
+  double PI2    = LAL_PI * LAL_PI;
+  double xcoef1 =    (743.0/4032.0)   +    (11.0/48.0)    *eta;                       /* (12) */
+  double xcoef2 =  (19583.0/254016.0) + (24401.0/193536.0)*eta + (31.0/288.0)*eta2;
+  double xcoef3 = -(11891.0/53760.0)  +   (109.0/1920.0)  *eta;
+  double xcoef4 = (-10052469856691.0/6008596070400.0 + PI2/6.0 + (107.0/420.0)*EulerGamma)
+                  + (15335597827.0/3901685760.0 - (451.0/3072.0)*PI2 - (77.0/72.0)*lambda + (11.0/24.0)*theta) *eta 
+                  - (15211.0/442368.0)*eta2 + (25565.0/331776.0)*eta3;
+  double xcoef5 = -(113868647.0/433520640.0)*LAL_PI - (31821.0/143360.0)*LAL_PI*eta + (294941.0/3870720.0)*LAL_PI*eta2;
+  double log256 = 8.0 * LAL_LN2;
+  double phicoef1 =  (3715.0/8064.0)  +  (55.0/96.0) *eta;                            /* (13) */
+  double phicoef2 =  (9275495.0/14450688.0) + (284875.0/258048.0)*eta + (1855.0/2048.0)*eta2;
+  double phicoef3 = -(38645.0/172032.0)*LAL_PI + (65.0/2048.0)*LAL_PI*eta;
+  double phicoef4 = (831032450749357.0/57682522275840.0 - (53.0/40.0)*PI2 - (107.0/56.0)*EulerGamma)
+                    + (-123292747421.0/4161798144.0 + (2255.0/2048.0)*PI2 + (385.0/48.0)*lambda - (55.0/16.0)*theta) * eta 
+                    + (154565.0/1835008.0)*eta2 - (1179625/1769472)*eta3;
+  double phicoef5 =  (188516689.0/173408256.0)*LAL_PI  +  (488825.0/516096.0)*LAL_PI*eta - (141769.0/516096.0)*LAL_PI*eta2;
+  double x_isco = 1.0/6.0; /* pow( (pi * f_isco)/omegacoef , 2.0/3.0); */
+  int i, terminate=0;
+  double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
+
+  /* fill `timeModelhPlus' & `timeModelhCross' with time-domain template: */
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    /* determine time left until coalescence, "(t_c-t)" in (4.17)/(11): */
+    t = (tc - epochGPS) - ((double)i)*IFOdata->timeData->deltaT; 
+    if ((t>0.0) && (!terminate)) {  /*  (before t_c and before frequency reaches its maximum) */
+      /*  determine `dimensionless time variable' tau: */
+      log_tau = taucoef + log(t);                                                /*  (4.17), (11) */
+      tau18   = exp(0.125 * log_tau);   /* = tau ^ (1/8) */
+      tau28   = exp(0.25  * log_tau);   /* = tau ^ (2/8) */
+      tau38   = exp(0.375 * log_tau);   /* = tau ^ (3/8) */
+      tau48   = exp(0.5   * log_tau);   /* = tau ^ (4/8) */
+      tau58   = exp(0.625 * log_tau);   /* = tau ^ (5/8) */
+      tau68   = exp(0.75  * log_tau);   /* = tau ^ (6/8) */
+      tau78   = exp(0.875 * log_tau);   /* = tau ^ (7/8) */
+      /* determine (dimensionless) `frequency' x: */
+      x = (0.25/tau28) * (1.0 + xcoef1/tau28 - (LAL_PI/5.0)/tau38
+                          + xcoef2/tau48 + xcoef3/tau58
+                          + (xcoef4-(107.0/3360.0)*(log_tau-log256))/tau68 
+                          + xcoef5/tau78);                                        /*  (12)  */
+      if ((x > x_isco) || (x < oldx)){  /* (frequency decreases  ==>  signal is terminated) */
+        h_plus = h_cross = 0.0; 
+        terminate = 1;
+      }
+      else {                    /*  (frequency still increasing  ==>  keep on computing...) */
+        oldx    = x;
+        sqrtx   = sqrt(x);
+        /* derive angular frequency omega: (omega/pi gives frequency in Hz) */
+        omega   = omegacoef*x*sqrtx;   /*  = ((c^3)/(G*mt)) * x^(3/2)                (4.13) */
+        /* determine phase phi: */
+	phi     = phase - (1.0/eta) * 
+                  (tau58 + phicoef1*tau38 - (0.75*LAL_PI)*tau28
+		   + phicoef2*tau18 + phicoef3*(log_tau-log_tau0)
+                   + (phicoef4 + (107.0/448.0)*(log_tau-log256))/tau18
+                   + phicoef5/tau28);                                             /*  (13)    */
+        /* derive `basic phase' psi: */
+        /* psi     = phi - 2.0*x*sqrtx * (log(omega)-log_omega0); */              /*  (6.12)  */
+	psi     = phi - 2.0*x*sqrtx * (log(omega)-log_omega0) * (1.0-(eta/2.0)*x); /* Arun et al. (5.6) */
+	sin1psi = sin(psi);      cos1psi = cos(psi);
+	sin2psi = sin(2.0*psi);  cos2psi = cos(2.0*psi);
+	sin3psi = sin(3.0*psi);  cos3psi = cos(3.0*psi);
+	sin4psi = sin(4.0*psi);  cos4psi = cos(4.0*psi);
+	sin5psi = sin(5.0*psi);  cos5psi = cos(5.0*psi);
+	sin6psi = sin(6.0*psi);  cos6psi = cos(6.0*psi);
+	sin7psi = sin(7.0*psi);  cos7psi = cos(7.0*psi);
+        /* determine PN plus- & cross-terms: */
+	Hp00    = -(1.0+ci2)*cos2psi - (si2/96.0)*(17.0+ci2);                     /*  (6.02), Arun et al (5.7a) */
+	Hp05    = -(si/8.0)*dmm * ((5.0+ci2)*cos1psi - 9.0*(1.0+ci2)*cos3psi);    /*  (6.03)  */
+	Hp10    = plus10a*cos2psi - plus10b*cos4psi;                              /*  (6.04)  */
+	Hp15    = (si/192.0)*dmm * (plus15a*cos1psi - plus15b*cos3psi + plus15c*cos5psi) 
+                  - LAL_TWOPI*(1.0+ci2)*cos2psi;                          /*  (6.05)  */
+	Hp20    = plus20a*cos2psi + plus20b*cos4psi - plus20c*cos6psi
+	          +si/40.0*dmm*(plus20d*sin1psi-(5.0*LAL_PI)*(5.0+ci2)*cos1psi 
+                  -plus20e*(1.0+ci2)*sin3psi+(135.0*LAL_PI)*(1.0+ci2)*cos3psi);   /*  (6.06)  */
+        Hp25    = cos1psi*plus25a + cos2psi*plus25b + cos3psi*plus25c
+                  + cos4psi*plus25d + cos5psi*plus25e + cos7psi*plus25f
+                  + sin2psi*plus25g + sin4psi*plus25h;                            /*  Arun & al. (5.09) */
+	Hc00    = -2.0*ci*sin2psi;                                                /*  (6.07)  */
+	Hc05    = -0.75*si*ci*dmm*(sin1psi-3.0*sin3psi);                          /*  (6.08)  */
+	Hc10    = cross10a*sin2psi - cross10b*sin4psi;                            /*  (6.09)  */
+	Hc15    = ((si*ci)/96.0)*dmm * 
+                  (cross15a*sin1psi - cross15b*sin3psi + cross15c*sin5psi)
+                  -(4.0*LAL_PI)*ci*sin2psi;                                       /*  (6.10)  */
+	Hc20    = cross20a*sin2psi + cross20b*sin4psi - cross20c*sin6psi
+	          -0.15*si*ci*dmm*(cross20d*cos1psi+(5.0*LAL_PI)*sin1psi
+	          -cross20e*cos3psi - (45.0*LAL_PI)*sin3psi);                     /*  (6.11)  */
+        Hc25    = cross25a + cos2psi*cross25b + cos4psi*cross25c
+                  + sin1psi*cross25d + sin2psi*cross25e + sin3psi*cross25f
+                  + sin4psi*cross25g + sin5psi*cross25h + sin7psi*cross25i;       /*  Arun & al. (5.10) */
+        /* and finally - the actual signal: */
+	h_plus  = h_cross = constfactor * x;
+	h_plus  *= Hp00 + sqrtx*(Hp05 + sqrtx*(Hp10 + sqrtx*(Hp15 + sqrtx*(Hp20 + sqrtx*Hp25))));
+	h_cross *= Hc00 + sqrtx*(Hc05 + sqrtx*(Hc10 + sqrtx*(Hc15 + sqrtx*(Hc20 + sqrtx*Hc25))));/* (6.01) */
+      }
+    }
+    else h_plus = h_cross = 0.0;  /*  (after t_c or after termination) */
+    IFOdata->timeModelhPlus->data->data[i]  = h_plus;
+    IFOdata->timeModelhCross->data->data[i] = h_cross;
+  }
+  IFOdata->modelDomain = timeDomain;
 }
