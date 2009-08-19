@@ -51,47 +51,6 @@ These routines will not work for times before 1980-01-06 00:00:00 UTC (GPS
 the end of 2005-Dec. % UPDATEME %  These routines have accurate leap second
 information until 2006-Dec-31. % UPDATEME %
 
-\textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
-
-\begin{verbatim}
-
-#include <lal/LALStdlib.h>
-#include <lal/Date.h>
-
-struct tm *gmtime_r( const time_t *, struct tm * );
-char *asctime_r( const struct tm *, char *, int );
-
-int main(int argc, char *argv[])
-{
-    static LALStatus   status;
-    LIGOTimeGPS        gps = {615081613, 123456789};
-    LALDate            date;
-    LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
-    CHARVector        *timestamp = NULL;
-
-    LALCHARCreateVector(&status, &timestamp, (UINT4)128);
-
-    LALGPStoUTC(&status, &date, &gps, &accuracy);
-
-    LALDateString(&status, timestamp, &date);
-
-    printf("GPS (%d, %d) = %s\n", gps.gpsSeconds, gps.gpsNanoSeconds,
-           timestamp->data);
-
-    LALUTCtoGPS(&status, &gps, &date, &accuracy);
-
-    printf("%s = GPS (%d, %d)\n", timestamp->data, gps.gpsSeconds,
-           gps.gpsNanoSeconds);
-
-    return 0;
-}
-
-\end{verbatim}
-
-For an example of how \texttt{LALLeapSecs()} is used, see the test program
-\texttt{TestLeapSecs.c} in the \texttt{packages/date/test} directory.
-
-
 </lalLaTeX> */
 
 #include <lal/LALRCSID.h>
@@ -100,7 +59,6 @@ NRCSID (GPSTOUTCC, "$Id$");
 
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
-#include "date_value.h"
 #include <lal/XLALError.h>
 
 #define INFOSTR_LEN 256

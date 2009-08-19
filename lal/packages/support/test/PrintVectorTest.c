@@ -250,7 +250,7 @@ int main( void )
   *(ch++) = 'e';
   *(ch++) = '+';
   *(ch++) = '\a';
-  *(ch++) = 179;
+  *(ch++) = 127;
   *(ch++) = '\0';
 
   LALCHARPrintVector(charVector);
