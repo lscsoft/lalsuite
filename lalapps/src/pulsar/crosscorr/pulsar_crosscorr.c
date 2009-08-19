@@ -181,7 +181,7 @@ int main(int argc, char *argv[]){
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
   PulsarDopplerParams thisPoint;
-  static REAL8Vector *rho, *stddev;
+  static REAL8Vector *rho, *variance;
   REAL8 tmpstat, freq1, phase1, freq2, phase2;
 
 
@@ -480,11 +480,11 @@ int main(int argc, char *argv[]){
   }
 
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
-  stddev = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  variance = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   rho->length = nParams;
-  stddev->length = nParams;
+  variance->length = nParams;
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
-  stddev->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+  variance->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
   /*initialise detector choice*/
   detChoice = uvar_detChoice;
@@ -807,7 +807,7 @@ int main(int argc, char *argv[]){
 	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
 
-	        stddev->data[counter] += tmpstat;
+	        variance->data[counter] += tmpstat;
 	      }
 
 	      counter++;
@@ -861,11 +861,13 @@ int main(int argc, char *argv[]){
 	        thisPoint.Alpha = skyAlpha[skyCounter]; 
 	        thisPoint.Delta = skyDelta[skyCounter]; 
 
-	        /*normalise rho*/
-	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	        /*normalise rho by sqrt(2)*stddev */
+
+	        rho->data[counter] = rho->data[counter]/sqrt(2.0*variance->data[counter]);
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
+
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -887,7 +889,7 @@ int main(int argc, char *argv[]){
 	    thisPoint.Alpha = skyAlpha[skyCounter]; 
 	    thisPoint.Delta = skyDelta[skyCounter]; 
 	    /*normalise rho*/
-	    rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	    rho->data[counter] = rho->data[counter]/sqrt(2.0*variance->data[counter]);
 	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		  thisPoint.Delta, f_current,
 		  fdot_current, fddot_current, rho->data[counter]);
@@ -917,7 +919,7 @@ int main(int argc, char *argv[]){
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
-  XLALDestroyREAL8Vector(stddev);
+  XLALDestroyREAL8Vector(variance);
   XLALDestroyREAL8Vector(rho);
 
   if (uvar_QCoeffs) {
