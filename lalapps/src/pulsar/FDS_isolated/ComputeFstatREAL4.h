@@ -30,11 +30,30 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/ComputeFstat.h>
 
-#include "../hough/src2/HierarchicalSearch.h"
-
 /* ---------- exported defines and macros ---------- */
 
 /* ---------- exported types ---------- */
+
+
+// FIXME: the following types might be useful to move into LAL at some point
+/** sequence of MultiSFT vectors -- for each segment */
+typedef struct tagMultiSFTVectorSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiSFTVector **data; 	/**< the SFT vectors */
+} MultiSFTVectorSequence;
+
+/** sequence of Multi-noise weights vectors -- for each segment */
+typedef struct tagMultiNoiseWeightsSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiNoiseWeights **data; 	/**< the noise weights */
+} MultiNoiseWeightsSequence;
+
+/** sequence of Multi-detector state vectors -- for each segment */
+typedef struct tagMultiDetectorStateSeriesSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiDetectorStateSeries **data; /**< the detector state series */
+} MultiDetectorStateSeriesSequence;
+
 
 /** REAL4 version of pulsar spins fkdot[] */
 typedef struct {
@@ -95,7 +114,6 @@ typedef struct {
   MultiSSBtimesREAL4 **multiSSB4V;				/**< array[numSegments] of SSB timings computed in previous search */
   MultiAMCoeffs **multiAMcoefV;					/**< array[numSegments] of antenna-pattern coeffs computed in previous search */
 } ComputeFBufferREAL4V;
-
 
 
 /* ---------- exported global variables ---------- */

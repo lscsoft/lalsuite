@@ -114,7 +114,7 @@
 #include <lalappsGitID.h>
 
 
-#include "EinsteinAtHome/ComputeFstatREAL4.h"
+#include "ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 
 
@@ -3492,7 +3492,6 @@ void GetXiInSingleStack (LALStatus         *status,
   REAL8   f0;  /* frequency corresponding to f0Bin */
   INT8    f0Bin;
   REAL8   deltaF;  /*  df=1/TCOH  */
-  REAL8   delta;
   REAL8   vFactor, xFactor;
   REAL8   xiX, xiY, xiZ;
   REAL8   modXi,invModXi;

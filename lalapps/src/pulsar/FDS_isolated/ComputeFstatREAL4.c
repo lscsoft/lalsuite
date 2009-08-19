@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Reinhard Prix
+ * Copyright (C) 2009 Reinhard Prix, Bernd Machenschalk, Anton Obukhov
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
  * Copyright (C) 2005, 2006, 2007 Reinhard Prix
@@ -44,13 +44,82 @@
 
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LogPrintf.h>
+
 
 #include "ComputeFstatREAL4.h"
-#include "../hough/src2/HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
+#ifdef EAH_OPTIMIZATION
+#include "LocalOptimizationFlags.h"
+#endif
+
+#ifdef EAH_CUDA
+#include <cuda_runtime_api.h>
+
+extern int cuda_device_id;
+
+typedef struct {
+  REAL4 fkdot16[PULSAR_MAX_SPINS-1];     /**< remaining
+					    spin-parameters, excluding *fractional* part of Freq = fkdot[0] */
+} PulsarSpinsExREAL4;
+
+extern void HostWrapperCUDAComputeFstatFaFb    (REAL4 *Fstat,
+                                                UINT4 Fstat_pitch,
+
+                                                UINT4 sfts_data_data_length,
+                                                COMPLEX8 *ifo0_sfts_data_data_data,
+                                                COMPLEX8 *ifo1_sfts_data_data_data,
+                                                UINT4 sfts_data_data_data_pitch,
+                                                REAL4 Tsft,
+                                                REAL4 dFreq,
+                                                INT4 freqIndex0,
+
+                                                REAL4 *fkdot4_FreqMain,
+                                                REAL4 *fkdot4_fkdot0,
+                                                PulsarSpinsExREAL4 fkdot4ex,
+
+                                                REAL4 *ifo0_tSSB_DeltaT_int,
+                                                REAL4 *ifo1_tSSB_DeltaT_int,
+                                                REAL4 *ifo0_tSSB_DeltaT_rem,
+                                                REAL4 *ifo1_tSSB_DeltaT_rem,
+                                                REAL4 *ifo0_tSSB_TdotM1,
+                                                REAL4 *ifo1_tSSB_TdotM1,
+
+                                                REAL4 *ifo0_amcoe_a,
+                                                REAL4 *ifo1_amcoe_a,
+                                                REAL4 *ifo0_amcoe_b,
+                                                REAL4 *ifo1_amcoe_b,
+
+                                                UINT4 *ifo0_sfts_length,
+                                                UINT4 *ifo1_sfts_length,
+
+                                                REAL4 *Ad,
+                                                REAL4 *Bd,
+                                                REAL4 *Cd,
+                                                REAL4 *InvDd,
+
+                                                UINT4 Dterms,
+
+                                                UINT4 numBins,
+                                                UINT4 numSegments);
+#endif
+
+/*----- SIN/COS Lookup table code inserted here -----*/
+/* In particular this defines
+  - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
+  - a function void local_sin_cos_2PI_LUT_init(void) that inits the lookup tables
+  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x) that uses the
+    lookup tables to evaluate sin and cos values of 2*Pi*x
+  - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
+*/
+#include "../hough/src2/EinsteinAtHome/sincos.ci"
+
 /*---------- local DEFINES ----------*/
+#define TRUE  (1==1)
+#define FALSE (1==0)
+
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -67,12 +136,6 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 /*---------- Global variables ----------*/
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
-/* global sin-cos lookup table */
-#define LUT_RES         	64      /* resolution of lookup-table */
-#define OO_LUT_RES		(1.0f / LUT_RES )
-
-static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
@@ -88,13 +151,642 @@ const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 const FcomponentsREAL4 empty_FcomponentsREAL4;
 
+
 /*---------- internal prototypes ----------*/
+/* don't use finite() from win_lib.cpp here for performance reasons */
+#ifdef _MSC_VER
+#define finite _finite
+#else
 int finite(double x);
-void sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x);
-void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
-void init_sin_cos_LUT_REAL4 (void);
+#endif
+void init_sin_cos_LUT_REAL4(void);
+
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+#ifdef EAH_CUDA
+int
+XLALComputeFStatFreqBandVector (REAL4FrequencySeriesVector *fstatBandV,         /**< [out] Vector of Fstat frequency-bands */
+                                const PulsarDopplerParams *doppler,             /**< parameter-space point to compute F for */
+                                const MultiSFTVectorSequence *multiSFTsV,       /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                                const MultiNoiseWeightsSequence *multiWeightsV, /**< noise-weights of all SFTs */
+                                const MultiDetectorStateSeriesSequence *multiDetStatesV, /**< 'trajectories' of the different IFOs */
+                                UINT4 Dterms,                                   /**< number of Dirichlet kernel Dterms to use */
+                                ComputeFBufferREAL4V *cfvBuffer                 /**< buffer quantities that don't need to be recomputed */
+                                )
+{
+    static const char *fn = "XLALComputeFStatFreqBandVector()";
+
+    UINT4 numBins, k;
+    UINT4 numSegments, n;
+    REAL8 f0, deltaF;
+    REAL8 Freq0, Freq;
+    PulsarSpinsExREAL4 fkdot4ex;
+    UINT4 s;
+    UINT4 m;
+
+    //////////////////////////////////////////////////////////////////////////
+    //CUDA related
+
+    cudaError_t res;
+
+    UINT4 constIFOs = multiSFTsV->data[0]->length;
+    UINT4 constSftsDataDataLength = multiSFTsV->data[0]->data[0]->data->data->length;
+    UINT4 maxNumSFTs = 0;
+
+    REAL8 constSftsDataDeltaF = multiSFTsV->data[0]->data[0]->data->deltaF;
+    REAL8 constSftsDataF0 = multiSFTsV->data[0]->data[0]->data->f0;
+
+    REAL4 constTsft = (REAL4)(1.0 / constSftsDataDeltaF);                       /* length of SFTs in seconds */
+    REAL4 constDFreq = (REAL4)constSftsDataDeltaF;
+    INT4 constFreqIndex0 = (UINT4)(constSftsDataF0 / constDFreq + 0.5);         /* index of first frequency-bin in SFTs */
+
+    struct cudaDeviceProp curDevProps;
+
+
+    /* check input consistency */
+    if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !cfvBuffer ) {
+        XLALPrintError ("%s: illegal NULL input pointer.\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    if ( !fstatBandV || !fstatBandV->length ) {
+        XLALPrintError ("%s: illegal NULL or empty output pointer 'fstatBandV'.\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    numSegments = fstatBandV->length;
+
+    if ( (multiSFTsV->length != numSegments) || (multiDetStatesV->length != numSegments ) ) {
+        XLALPrintError ("%s: inconsistent number of segments between fstatBandV (%d), multiSFTsV(%d) and multiDetStatesV (%d)\n",
+            fn, numSegments, multiSFTsV->length, multiDetStatesV->length );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+    if ( multiWeightsV->length != numSegments ) {
+        XLALPrintError ("%s: inconsistent number of segments between fstatBandV (%d) and multiWeightsV (%d)\n",
+            fn, numSegments, multiWeightsV->length );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    numBins = fstatBandV->data[0].data->length;
+    f0      = fstatBandV->data[0].f0;
+    deltaF  = fstatBandV->data[0].deltaF;
+
+    /* a check that the f0 values from thisPoint and fstatVector are
+    * at least close to each other -- this is only meant to catch
+    * stupid errors but not subtle ones */
+    if ( fabs(f0 - doppler->fkdot[0]) >= deltaF ) {
+        XLALPrintError ("%s: fstatVector->f0 = %f differs from doppler->fkdot[0] = %f by more than deltaF = %g\n", fn, f0, doppler->fkdot[0], deltaF );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    /* ---------- prepare REAL4 version of PulsarSpins (without FreqMain and fkdot[0] to be passed into core functions */
+    Freq = Freq0 = doppler->fkdot[0];
+    /* the remaining spins are simply down-cast to REAL4 */
+    for (s=0; s < PULSAR_MAX_SPINS - 1; s++)
+    {
+        fkdot4ex.fkdot16[s] = (REAL4)doppler->fkdot[s+1];
+    }
+
+    /* ---------- Buffering quantities that don't need to be recomputed ---------- */
+
+    /* check if for this skyposition and data, the SSB+AMcoefs were already buffered */
+    if ( cfvBuffer->Alpha != doppler->Alpha ||
+        cfvBuffer->Delta != doppler->Delta ||
+        cfvBuffer->multiDetStatesV != multiDetStatesV ||
+        cfvBuffer->numSegments != numSegments
+        )
+    { /* no ==> compute and buffer */
+
+        SkyPosition skypos;
+        skypos.system =   COORDINATESYSTEM_EQUATORIAL;
+        skypos.longitude = doppler->Alpha;
+        skypos.latitude  = doppler->Delta;
+
+        /* prepare buffer */
+        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+
+        /* store new precomputed quantities in buffer */
+        cfvBuffer->Alpha = doppler->Alpha;
+        cfvBuffer->Delta = doppler->Delta;
+        cfvBuffer->multiDetStatesV = multiDetStatesV ;
+        cfvBuffer->numSegments = numSegments;
+
+        if ( (cfvBuffer->multiSSB4V = XLALCalloc ( numSegments, sizeof(*cfvBuffer->multiSSB4V) )) == NULL ) {
+            XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numSegments, sizeof(*cfvBuffer->multiSSB4V) );
+            XLAL_ERROR ( fn, XLAL_ENOMEM );
+        }
+        if ( (cfvBuffer->multiAMcoefV = XLALCalloc ( numSegments, sizeof(*cfvBuffer->multiAMcoefV) )) == NULL ) {
+            XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+            XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numSegments, sizeof(*cfvBuffer->multiAMcoefV) );
+            XLAL_ERROR ( fn, XLAL_ENOMEM );
+        }
+
+        for ( n=0; n < numSegments; n ++ )
+        {
+            LALStatus status = empty_LALStatus;
+
+            /* compute new SSB timings over all segments */
+            if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
+                XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
+                XLAL_ERROR ( fn, XLAL_EFUNC );
+            }
+
+            LALGetMultiAMCoeffs ( &status, &(cfvBuffer->multiAMcoefV[n]), multiDetStatesV->data[n], skypos );
+            if ( status.statusCode ) {
+                XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                XLALPrintError ("%s: LALGetMultiAMCoeffs() failed with statusCode=%d, '%s'\n", fn, status.statusCode, status.statusDescription );
+                XLAL_ERROR ( fn, XLAL_EFAILED );
+            }
+
+            /* apply noise-weights to Antenna-patterns and compute A,B,C */
+            if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
+                XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
+                XLAL_ERROR ( fn, XLAL_EFUNC );
+            }
+
+        } /* for n < numSegments */
+
+    } /* if we could NOT reuse previously buffered quantities */
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Initializations and Assertions
+    //
+
+    // Check numIFOs is equal to hardcoded value
+    if (constIFOs != 2)
+    {
+        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: numIFOs is not equal to 2. Consider upgrading the client\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    for (n = 0; n < numSegments; n++)
+    {
+        // Check numIFOs is constant
+        if (constIFOs != multiSFTsV->data[n]->length)
+        {
+            XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+            XLALPrintError ("%s: numIFOs is not constant across data set\n", fn );
+            XLAL_ERROR ( fn, XLAL_EINVAL );
+        }
+
+        for (k = 0; k < constIFOs; k++)
+        {
+            // Determine max sfts length
+            if (maxNumSFTs < multiSFTsV->data[n]->data[k]->length)
+            {
+                maxNumSFTs = multiSFTsV->data[n]->data[k]->length;
+            }
+
+            // Assert constant fields consistency
+            for (m=0; m<multiSFTsV->data[n]->data[k]->length; m++)
+            {
+                // Check deltaF is constant
+                if (constSftsDataDeltaF != multiSFTsV->data[n]->data[k]->data[m].deltaF)
+                {
+                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                    XLALPrintError ("%s: deltaF is not constant across data set\n", fn );
+                    XLAL_ERROR ( fn, XLAL_EINVAL );
+                }
+
+                if (constSftsDataF0 != multiSFTsV->data[n]->data[k]->data[m].f0)
+                {
+                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                    XLALPrintError ("%s: f0 is not constant across data set\n", fn );
+                    XLAL_ERROR ( fn, XLAL_EINVAL );
+                }
+
+                if (constSftsDataDataLength != multiSFTsV->data[n]->data[k]->data[m].data->length)
+                {
+                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+                    XLALPrintError ("%s: sftsDataDataDataLength is not constant across data set\n", fn );
+                    XLAL_ERROR ( fn, XLAL_EINVAL );
+                }
+            }
+        }
+    }
+
+    // TODO: Get device with max GFLOPs (now device with zero ID)
+    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
+    {
+        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    // align to warp size
+    maxNumSFTs = (maxNumSFTs + curDevProps.warpSize - 1) & (~(curDevProps.warpSize - 1));
+
+    // Check that (sfts_length rounded to warp size) x numIFOs <= MAX_THREADS_IN_BLOCK
+    if (maxNumSFTs * constIFOs > (UINT4)curDevProps.maxThreadsPerBlock)
+    {
+        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Flatten structures
+    //
+    {
+    #define UNIPITCH256(type, numElems)     ((numElems * sizeof(type) + 255) & (~255))
+
+    // calculate pitch for Fstat output (256-bytes alignment)
+    UINT4 unipitch_Fstat = UNIPITCH256(REAL4, numBins);
+
+    // calculate pitch for sfts_data_data_data (256-bytes alignment)
+    UINT4 unipitch_sfts_data_data_data = UNIPITCH256(COMPLEX8, constSftsDataDataLength);
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Declaration
+
+    REAL4 *Fstat;
+
+    COMPLEX8 *ifo0_sfts_data_data_data;
+    COMPLEX8 *ifo1_sfts_data_data_data;
+
+    REAL4 *fkdot4_FreqMain;
+    REAL4 *fkdot4_fkdot_0;
+
+    REAL4 *ifo0_tSSB_DeltaT_int;
+    REAL4 *ifo1_tSSB_DeltaT_int;
+    REAL4 *ifo0_tSSB_DeltaT_rem;
+    REAL4 *ifo1_tSSB_DeltaT_rem;
+    REAL4 *ifo0_tSSB_TdotM1;
+    REAL4 *ifo1_tSSB_TdotM1;
+
+    REAL4 *ifo0_amcoe_a;
+    REAL4 *ifo1_amcoe_a;
+    REAL4 *ifo0_amcoe_b;
+    REAL4 *ifo1_amcoe_b;
+
+    UINT4 *ifo0_sfts_length;
+    UINT4 *ifo1_sfts_length;
+    REAL4 *antenna_pattern_Ad;
+    REAL4 *antenna_pattern_Bd;
+    REAL4 *antenna_pattern_Cd;
+    REAL4 *antenna_pattern_DdInv;
+
+    //REAL4 *debugREAL4;
+    //UINT4 *debugUINT4;
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Declaration
+
+    //1
+    REAL4 *dev_Fstat;
+
+    //2
+    COMPLEX8 *dev_ifo0_sfts_data_data_data;
+    COMPLEX8 *dev_ifo1_sfts_data_data_data;
+
+    //3
+    REAL4 *dev_fkdot4_FreqMain;
+    REAL4 *dev_fkdot4_fkdot0;
+
+    //4
+    REAL4 *dev_ifo0_tSSB_DeltaT_int;
+    REAL4 *dev_ifo1_tSSB_DeltaT_int;
+    REAL4 *dev_ifo0_tSSB_DeltaT_rem;
+    REAL4 *dev_ifo1_tSSB_DeltaT_rem;
+    REAL4 *dev_ifo0_tSSB_TdotM1;
+    REAL4 *dev_ifo1_tSSB_TdotM1;
+
+    //5
+    REAL4 *dev_ifo0_amcoe_a;
+    REAL4 *dev_ifo1_amcoe_a;
+    REAL4 *dev_ifo0_amcoe_b;
+    REAL4 *dev_ifo1_amcoe_b;
+
+    UINT4 *dev_ifo0_sfts_length;
+    UINT4 *dev_ifo1_sfts_length;
+    REAL4 *dev_antenna_pattern_Ad;
+    REAL4 *dev_antenna_pattern_Bd;
+    REAL4 *dev_antenna_pattern_Cd;
+    REAL4 *dev_antenna_pattern_DdInv;
+
+    //REAL4 *dev_debugREAL4;
+    //UINT4 *dev_debugUINT4;
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Allocation
+
+    Fstat                    = malloc(unipitch_Fstat * numSegments);
+
+    ifo0_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+    ifo1_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+
+    fkdot4_FreqMain          = malloc(numBins * sizeof(REAL4));
+    fkdot4_fkdot_0           = malloc(numBins * sizeof(REAL4));
+
+    ifo0_tSSB_DeltaT_int     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_DeltaT_int     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_tSSB_DeltaT_rem     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_DeltaT_rem     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_tSSB_TdotM1         = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_TdotM1         = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+
+    ifo0_amcoe_a             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_amcoe_a             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_amcoe_b             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_amcoe_b             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
+
+    ifo0_sfts_length         = malloc(numSegments * sizeof(UINT4));
+    ifo1_sfts_length         = malloc(numSegments * sizeof(UINT4));
+    antenna_pattern_Ad       = malloc(numSegments * sizeof(REAL4));
+    antenna_pattern_Bd       = malloc(numSegments * sizeof(REAL4));
+    antenna_pattern_Cd       = malloc(numSegments * sizeof(REAL4));
+    antenna_pattern_DdInv    = malloc(numSegments * sizeof(REAL4));
+//#define NUM_INTERMEDIATES_PER_THREAD    4
+//    debugREAL4 = malloc((64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
+//    debugUINT4 = malloc((64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST meminit
+
+    memset(ifo0_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+    memset(ifo1_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+
+    memset(ifo0_tSSB_DeltaT_int, 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo1_tSSB_DeltaT_int, 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo0_tSSB_DeltaT_rem, 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo1_tSSB_DeltaT_rem, 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo0_tSSB_TdotM1    , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo1_tSSB_TdotM1    , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+
+    memset(ifo0_amcoe_a        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo1_amcoe_a        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo0_amcoe_b        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+    memset(ifo1_amcoe_b        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
+
+    //memset(debugUINT4        , 0xCC, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
+    //memset(debugREAL4        , 0xCC, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
+
+    /* REAL4-split frequency value */
+    for (k = 0, Freq = Freq0; k < numBins; k++)
+    {
+        // TODO: Are we cool with this line?
+        fkdot4_FreqMain[k] = (REAL4)((INT4)Freq);
+        fkdot4_fkdot_0[k] = (REAL4)(Freq - (REAL8)fkdot4_FreqMain[k]);
+
+        /* increase frequency by deltaF */
+        Freq += deltaF;
+    }
+
+    for (n=0; n<numSegments; n++)
+    {
+        UINT4 i;
+
+        ifo0_sfts_length[n] = multiSFTsV->data[n]->data[0]->length;
+        ifo1_sfts_length[n] = multiSFTsV->data[n]->data[1]->length;
+
+        for (i=0; i<ifo0_sfts_length[n]; i++)
+        {
+            memcpy(((char *)ifo0_sfts_data_data_data) + (n * maxNumSFTs + i) * unipitch_sfts_data_data_data,
+                   multiSFTsV->data[n]->data[0]->data[i].data->data,
+                   constSftsDataDataLength * sizeof(COMPLEX8));
+        }
+        for (i=0; i<ifo1_sfts_length[n]; i++)
+        {
+            memcpy(((char *)ifo1_sfts_data_data_data) + (n * maxNumSFTs + i) * unipitch_sfts_data_data_data,
+                   multiSFTsV->data[n]->data[1]->data[i].data->data,
+                   constSftsDataDataLength * sizeof(COMPLEX8));
+        }
+
+        memcpy(ifo0_tSSB_DeltaT_int + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[0]->DeltaT_int->data, multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
+        memcpy(ifo1_tSSB_DeltaT_int + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[1]->DeltaT_int->data, multiSFTsV->data[n]->data[1]->length * sizeof(REAL4));
+        memcpy(ifo0_tSSB_DeltaT_rem + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[0]->DeltaT_rem->data, multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
+        memcpy(ifo1_tSSB_DeltaT_rem + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[1]->DeltaT_rem->data, multiSFTsV->data[n]->data[1]->length * sizeof(REAL4));
+        memcpy(ifo0_tSSB_TdotM1     + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[0]->TdotM1->data,     multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
+        memcpy(ifo1_tSSB_TdotM1     + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[1]->TdotM1->data,     multiSFTsV->data[n]->data[1]->length * sizeof(REAL4));
+
+        memcpy(ifo0_amcoe_a + n * maxNumSFTs, cfvBuffer->multiAMcoefV[n]->data[0]->a->data, multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
+        memcpy(ifo1_amcoe_a + n * maxNumSFTs, cfvBuffer->multiAMcoefV[n]->data[1]->a->data, multiSFTsV->data[n]->data[1]->length * sizeof(REAL4));
+        memcpy(ifo0_amcoe_b + n * maxNumSFTs, cfvBuffer->multiAMcoefV[n]->data[0]->b->data, multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
+        memcpy(ifo1_amcoe_b + n * maxNumSFTs, cfvBuffer->multiAMcoefV[n]->data[1]->b->data, multiSFTsV->data[n]->data[1]->length * sizeof(REAL4));
+
+        antenna_pattern_Ad[n] = (REAL4)cfvBuffer->multiAMcoefV[n]->Mmunu.Ad;
+        antenna_pattern_Bd[n] = (REAL4)cfvBuffer->multiAMcoefV[n]->Mmunu.Bd;
+        antenna_pattern_Cd[n] = (REAL4)cfvBuffer->multiAMcoefV[n]->Mmunu.Cd;
+        antenna_pattern_DdInv[n] = 1.0f / (REAL4)cfvBuffer->multiAMcoefV[n]->Mmunu.Dd;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Allocation (gridDim.x = numBins, gridDim.x = numSegments)
+
+    //1
+    res = cudaMalloc((void **)&dev_Fstat, unipitch_Fstat * numSegments);
+
+    //2
+    res = cudaMalloc((void **)&dev_ifo0_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+    res = cudaMalloc((void **)&dev_ifo1_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
+
+    //3
+    res = cudaMalloc((void **)&dev_fkdot4_FreqMain, numBins * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_fkdot4_fkdot0, numBins * sizeof(REAL4));
+
+    //4
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_TdotM1, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_TdotM1, numSegments * maxNumSFTs * sizeof(REAL4));
+
+    //5
+    res = cudaMalloc((void **)&dev_ifo0_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4));
+
+    //extra
+    res = cudaMalloc((void **)&dev_ifo0_sfts_length, numSegments * sizeof(UINT4));
+    res = cudaMalloc((void **)&dev_ifo1_sfts_length, numSegments * sizeof(UINT4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Ad, numSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Bd, numSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Cd, numSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_DdInv, numSegments * sizeof(REAL4));
+
+    //res = cudaMalloc((void **)&dev_debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
+    //res = cudaMalloc((void **)&dev_debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE to HOST memcpy
+
+    //2
+    res = cudaMemcpy(dev_ifo0_sfts_data_data_data, ifo0_sfts_data_data_data, maxNumSFTs * unipitch_sfts_data_data_data * numSegments, cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_sfts_data_data_data, ifo1_sfts_data_data_data, maxNumSFTs * unipitch_sfts_data_data_data * numSegments, cudaMemcpyHostToDevice);
+
+    //3
+    res = cudaMemcpy(dev_fkdot4_FreqMain, fkdot4_FreqMain, numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_fkdot4_fkdot0,   fkdot4_fkdot_0,  numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
+
+    //4
+    res = cudaMemcpy(dev_ifo0_tSSB_DeltaT_int, ifo0_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_tSSB_DeltaT_int, ifo1_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo0_tSSB_DeltaT_rem, ifo0_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_tSSB_DeltaT_rem, ifo1_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo0_tSSB_TdotM1,     ifo0_tSSB_TdotM1,     numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_tSSB_TdotM1,     ifo1_tSSB_TdotM1,     numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+
+    //5
+    res = cudaMemcpy(dev_ifo0_amcoe_a, ifo0_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_amcoe_a, ifo1_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo0_amcoe_b, ifo0_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_amcoe_b, ifo1_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
+
+    //extra
+    res = cudaMemcpy(dev_ifo0_sfts_length, ifo0_sfts_length, numSegments * sizeof(UINT4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_ifo1_sfts_length, ifo1_sfts_length, numSegments * sizeof(UINT4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_antenna_pattern_Ad, antenna_pattern_Ad, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_antenna_pattern_Bd, antenna_pattern_Bd, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_antenna_pattern_Cd, antenna_pattern_Cd, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_antenna_pattern_DdInv, antenna_pattern_DdInv, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
+
+    res = cudaMemset(dev_Fstat, 0, unipitch_Fstat * numSegments);
+
+    //res = cudaMemcpy(dev_debugREAL4, debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyHostToDevice);
+    //res = cudaMemcpy(dev_debugUINT4, debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4), cudaMemcpyHostToDevice);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Kernel Launch
+
+    HostWrapperCUDAComputeFstatFaFb/*_debug*/(dev_Fstat,
+                                    unipitch_Fstat,
+
+                                    constSftsDataDataLength,
+                                    dev_ifo0_sfts_data_data_data,
+                                    dev_ifo1_sfts_data_data_data,
+                                    unipitch_sfts_data_data_data,
+                                    constTsft,
+                                    constDFreq,
+                                    constFreqIndex0,
+
+                                    dev_fkdot4_FreqMain,
+                                    dev_fkdot4_fkdot0,
+                                    fkdot4ex,
+
+                                    dev_ifo0_tSSB_DeltaT_int,
+                                    dev_ifo1_tSSB_DeltaT_int,
+                                    dev_ifo0_tSSB_DeltaT_rem,
+                                    dev_ifo1_tSSB_DeltaT_rem,
+                                    dev_ifo0_tSSB_TdotM1,
+                                    dev_ifo1_tSSB_TdotM1,
+
+                                    dev_ifo0_amcoe_a,
+                                    dev_ifo1_amcoe_a,
+                                    dev_ifo0_amcoe_b,
+                                    dev_ifo1_amcoe_b,
+
+                                    dev_ifo0_sfts_length,
+                                    dev_ifo1_sfts_length,
+
+                                    dev_antenna_pattern_Ad,
+                                    dev_antenna_pattern_Bd,
+                                    dev_antenna_pattern_Cd,
+                                    dev_antenna_pattern_DdInv,
+
+                                    Dterms,
+                                    //dev_debugREAL4,
+                                    //dev_debugUINT4,
+
+                                    numBins,
+                                    numSegments);
+    res = cudaGetLastError();
+    res = cudaThreadSynchronize();
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST to DEVICE memcpy
+
+    res = cudaMemcpy(Fstat, dev_Fstat, unipitch_Fstat * numSegments, cudaMemcpyDeviceToHost);
+    for (n=0; n<numSegments; n++)
+    {
+        for (k=0; k<numBins; k++)
+        {
+            fstatBandV->data[n].data->data[k] = ((REAL4 *)(((char *)Fstat) + n * unipitch_Fstat))[k];
+        }
+    }
+
+    //res = cudaMemcpy(debugREAL4, dev_debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyDeviceToHost);
+    //res = cudaMemcpy(debugUINT4, dev_debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyDeviceToHost);
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Deallocation
+
+    //1
+    cudaFree(dev_Fstat);
+
+    //2
+    cudaFree(dev_ifo0_sfts_data_data_data);
+    cudaFree(dev_ifo1_sfts_data_data_data);
+
+    //3
+    cudaFree(dev_fkdot4_FreqMain);
+    cudaFree(dev_fkdot4_fkdot0);
+
+    //4
+    cudaFree(dev_ifo0_tSSB_DeltaT_int);
+    cudaFree(dev_ifo1_tSSB_DeltaT_int);
+    cudaFree(dev_ifo0_tSSB_DeltaT_rem);
+    cudaFree(dev_ifo1_tSSB_DeltaT_rem);
+    cudaFree(dev_ifo0_tSSB_TdotM1);
+    cudaFree(dev_ifo1_tSSB_TdotM1);
+
+    //5
+    cudaFree(dev_ifo0_amcoe_a);
+    cudaFree(dev_ifo1_amcoe_a);
+    cudaFree(dev_ifo0_amcoe_b);
+    cudaFree(dev_ifo1_amcoe_b);
+
+    //extra
+    cudaFree(dev_ifo0_sfts_length);
+    cudaFree(dev_ifo1_sfts_length);
+    cudaFree(dev_antenna_pattern_Ad);
+    cudaFree(dev_antenna_pattern_Bd);
+    cudaFree(dev_antenna_pattern_Cd);
+    cudaFree(dev_antenna_pattern_DdInv);
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Deallocation
+
+    free(Fstat);
+
+    free(ifo0_sfts_data_data_data);
+    free(ifo1_sfts_data_data_data);
+
+    free(fkdot4_FreqMain);
+    free(fkdot4_fkdot_0);
+
+    free(ifo0_tSSB_DeltaT_int);
+    free(ifo1_tSSB_DeltaT_int);
+    free(ifo0_tSSB_DeltaT_rem);
+    free(ifo1_tSSB_DeltaT_rem);
+    free(ifo0_tSSB_TdotM1);
+    free(ifo1_tSSB_TdotM1);
+
+    free(ifo0_amcoe_a);
+    free(ifo1_amcoe_a);
+    free(ifo0_amcoe_b);
+    free(ifo1_amcoe_b);
+
+    free(ifo0_sfts_length);
+    free(ifo1_sfts_length);
+    free(antenna_pattern_Ad);
+    free(antenna_pattern_Bd);
+    free(antenna_pattern_Cd);
+    free(antenna_pattern_DdInv);
+    }
+
+    return XLAL_SUCCESS;
+
+} /* XLALComputeFStatFreqBandVector_cuda() */
+
+#else /* EAH_CUDA */
 
 /** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
  *
@@ -117,6 +809,8 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   REAL8 f0, deltaF;
   REAL4 Fstat;
   REAL8 Freq0, Freq;
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s, maxs;
 
   /* check input consistency */
   if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !cfvBuffer ) {
@@ -155,8 +849,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   }
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s;
   Freq = Freq0 = doppler->fkdot[0];
   fkdot4.FreqMain = (INT4)Freq0;
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
@@ -164,7 +856,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   /* the remaining spins are simply down-cast to REAL4 */
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
-  UINT4 maxs;
   /* find highest non-zero spindown-entry */
   for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
     if ( fkdot4.fkdot[maxs] != 0 )
@@ -183,7 +874,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
        cfvBuffer->numSegments != numSegments
        )
     { /* no ==> compute and buffer */
-
       SkyPosition skypos;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
@@ -210,6 +900,8 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
 
       for ( n=0; n < numSegments; n ++ )
         {
+          LALStatus status = empty_LALStatus;
+
           /* compute new SSB timings over all segments */
           if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -217,7 +909,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
-          LALStatus status = empty_LALStatus;
           LALGetMultiAMCoeffs ( &status, &(cfvBuffer->multiAMcoefV[n]), multiDetStatesV->data[n], skypos );
           if ( status.statusCode ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -274,6 +965,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
 
 } /* XLALComputeFStatFreqBandVector() */
 
+#endif /* EAH_CUDA */
 
 
 /** Host-bound 'driver' function for the central F-stat computation
@@ -297,13 +989,16 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
   MultiSSBtimesREAL4 *multiSSB4 = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s, maxs;
+  UINT4 numIFOs;
 
   /* check input consistency */
   if ( !Fstat || !doppler || !multiSFTs || !multiDetStates || !cfBuffer ) {
     XLALPrintError("%s: Illegal NULL pointer input.\n", fn );
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
-  UINT4 numIFOs = multiSFTs->length;
+  numIFOs = multiSFTs->length;
   if ( multiDetStates->length != numIFOs ) {
     XLALPrintError("%s: inconsistent number of IFOs in SFTs (%d) and detector-states (%d).\n", fn, numIFOs, multiDetStates->length);
     XLAL_ERROR (fn, XLAL_EINVAL );
@@ -324,6 +1019,9 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
     }
   else
     {
+      SkyPosition skypos;
+      LALStatus status = empty_LALStatus;
+
       /* compute new SSB timings */
       if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
         XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
@@ -331,8 +1029,6 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
       }
 
       /* compute new AM-coefficients */
-      SkyPosition skypos;
-      LALStatus status = empty_LALStatus;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
@@ -363,8 +1059,6 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s;
   fkdot4.FreqMain = (INT4)doppler->fkdot[0];
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
   fkdot4.fkdot[0] = (REAL4)( doppler->fkdot[0] - (REAL8)fkdot4.FreqMain );
@@ -372,7 +1066,6 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
   /* find largest non-zero spindown order */
-  UINT4 maxs;
   for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
     if ( doppler->fkdot[maxs] != 0 )
       break;
@@ -414,6 +1107,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 
   UINT4 numIFOs, X;
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
+  REAL4 Ad, Bd, Cd, Dd_inv;
 
 #ifndef LAL_NDEBUG
   /* check input consistency */
@@ -472,10 +1166,10 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
   /* ----- compute final Fstatistic-value ----- */
 
   /* convenient shortcuts */
-  REAL4 Ad = multiAMcoef->Mmunu.Ad;
-  REAL4 Bd = multiAMcoef->Mmunu.Bd;
-  REAL4 Cd = multiAMcoef->Mmunu.Cd;
-  REAL4 Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
+  Ad = multiAMcoef->Mmunu.Ad;
+  Bd = multiAMcoef->Mmunu.Bd;
+  Cd = multiAMcoef->Mmunu.Cd;
+  Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
@@ -522,6 +1216,12 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   REAL4 norm = OOTWOPI_FLOAT;
 
+  REAL4 dFreq;
+  REAL4 f0;
+  REAL4 df;
+  REAL4 tau;
+  REAL4 Freq;
+
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
@@ -545,14 +1245,14 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   numSFTs = sfts->length;
   Tsft = (REAL4)( 1.0 / sfts->data[0].deltaF );
 
-  REAL4 dFreq = sfts->data[0].deltaF;
+  dFreq = sfts->data[0].deltaF;
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
-  REAL4 f0 = fkdot4->FreqMain;
-  REAL4 df = fkdot4->fkdot[0];
-  REAL4 tau = 1.0f / df;
-  REAL4 Freq = f0 + df;
+  f0 = fkdot4->FreqMain;
+  df = fkdot4->fkdot[0];
+  tau = 1.0f / df;
+  Freq = f0 + df;
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -595,6 +1295,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
         REAL4 phi_alpha_rem;
         REAL4 TdotM1;		/* defined as Tdot_al - 1 */
+        REAL4 T0rem;
+        REAL4 tmp;
 
         /* 1st oder: s = 0 */
         TdotM1 = *TdotM1_al;
@@ -603,7 +1305,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         deltaT = T0 + dT;
 
         /* phi_alpha = f * Tas; */
-        REAL4 T0rem = fmodf ( T0, tau );
+        T0rem = fmodf ( T0, tau );
         phi_alpha_rem = f0 * dT;
         phi_alpha_rem += T0rem * df;
         phi_alpha_rem += df * dT;
@@ -624,11 +1326,13 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         Dphi_alpha_int *= Tsft;
 	Dphi_alpha_rem *= Tsft;
 
-        REAL4 tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
+        tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
 	lambda_alpha = phi_alpha_rem - tmp;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
+	/* the sin/cos LUT calculations are woven into the hotloop for performance reasons
+	   sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
+	*/
 
         kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
 	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
@@ -651,8 +1355,10 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
-      c_alpha -= 1.0f;
+      /* the sin/cos LUT calculations are woven into the hotloop for performance reasons
+	 sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
+	 c_alpha -= 1.0f;
+      */
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
@@ -671,7 +1377,27 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
+#ifdef __GNUC__
+	/** somehow the branch prediction of gcc-4.1.2 terribly failes
+	    with the current case distinction in the hot-loop,
+	    having a severe impact on runtime of the E@H Linux App.
+	    So let's allow to give gcc a hint which path has a higher probablility */
+      if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
+#else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+#endif
+
+#ifdef AUTOVECT_HOTLOOP
+#include "hotloop_autovect.ci"
+#elif __ALTIVEC__
+#include "hotloop_altivec.ci"
+#elif __SSE__
+#ifdef _MSC_VER
+#include "hotloop_sse_msc.ci"
+#else
+#include "hotloop_precalc.ci"
+#endif /* MSC_VER */
+#else
 	{
 	  /* improved hotloop algorithm by Fekete Akos:
 	   * take out repeated divisions into a single common denominator,
@@ -689,16 +1415,17 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	    {
 	      Xalpha_l ++;
 
-	      pn = pn - 1.0f; 			/* p_(n+1) */
+	      pn = pn - 1.0f; 				/* p_(n+1) */
 	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
-	      qn *= pn;				/* q_(n+1) */
+	      qn *= pn;					/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
-          REAL4 qn_inv = 1.0f / qn;
-
-	  U_alpha = Sn * qn_inv;
-	  V_alpha = Tn * qn_inv;
+	  {
+	    REAL4 qn_inv = 1.0f / qn;
+	    U_alpha = Sn * qn_inv;
+	    V_alpha = Tn * qn_inv;
+	  }
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
@@ -706,13 +1433,34 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  }
 #endif
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  {
+	    REAL8 kstar8 = kappa_star;
+	    SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kstar8);
+	  }
+	  c_alpha -= 1.0f;
+
+ 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+ 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+
+	  {
+	    REAL8 _lambda_alpha = -lambda_alpha;
+	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+	  }
 
 	} /* if |remainder| > LD_SMALL4 */
+
+#endif /* hotloop variant */
+
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	  UINT4 ind0;
+
+	  /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
+	  REAL8 _lambda_alpha = -lambda_alpha;
+	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
@@ -990,11 +1738,14 @@ XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 void
 XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 {
+  UINT4 numSegments;
+  UINT4 i;
+
   if ( !cfbv )
     return;
 
-  UINT4 numSegments = cfbv->numSegments;
-  UINT4 i;
+  numSegments = cfbv->numSegments;
+
   for (i=0; i < numSegments; i ++ )
     {
       XLALDestroyMultiSSBtimesREAL4 ( cfbv->multiSSB4V[i] );
@@ -1015,86 +1766,28 @@ XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 
 /* ---------- pure REAL4 version of sin/cos lookup tables */
 
-/** REAL4 version of sin_cos_LUT()
- *
- * Calculate sin(x) and cos(x) to roughly 1e-7 precision using
- * a lookup-table and Taylor-expansion.
- *
- * NOTE: this function will fail for arguments larger than
- * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
- *
- * return = 0: OK, nonzero=ERROR
- */
-void
-sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x)
-{
-  sin_cos_2PI_LUT_REAL4 ( sinx, cosx, x * OOTWOPI_FLOAT );
-  return;
+void init_sin_cos_LUT_REAL4(void) {
+  static int firstcall = TRUE;
+  if (firstcall) {
+    /* init sin/cos lookup tables */
+    local_sin_cos_2PI_LUT_init();
+
+    /* write out optimization settings */
+
+#ifdef EAH_OPTIMIZATION
+
+    fprintf(stderr,
+	    "\n$Revision$ REV:%s, OPT:%d, "
+	    "SCVAR:%d, SCTRIM:%d, "
+	    "HOTVAR:%d, HOTDIV:%d, "
+	    "HGHPRE:%d, HGHBAT:%d\n",
+	    EAH_OPTIMIZATION_REVISION, EAH_OPTIMIZATION,
+	    EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
+	    EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
+	    EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
+
+#endif /* def EAH_OPTIMIZATION */
+
+    firstcall = FALSE;
+  }
 }
-
-/* initialize the global sin/cos lookup table */
-void
-init_sin_cos_LUT_REAL4 (void)
-{
-  UINT4 k;
-  static int firstCall = 1;
-
-  if ( !firstCall )
-    return;
-
-  for (k=0; k <= LUT_RES; k++)
-    {
-      sinVal[k] = sin( LAL_TWOPI * k / LUT_RES );
-      cosVal[k] = cos( LAL_TWOPI * k / LUT_RES );
-    }
-
-  firstCall = 0;
-
-  return;
-
-} /* init_sin_cos_LUT_REAL4() */
-
-
-/* REAL4 version of sin_cos_2PI_LUT() */
-void
-sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x)
-{
-  REAL4 xt;
-  INT4 i0;
-  REAL4 d, d2;
-  REAL4 ts, tc;
-
-  /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that
-   * will be somewhat slower...
-   */
-  xt = x - (INT8)x;	/* xt in (-1, 1) */
-
-  if ( xt < 0.0 )
-    xt += 1.0f;			/* xt in [0, 1 ) */
-
-#ifndef LAL_NDEBUG
-  if ( xt < 0.0 || xt > 1.0 )
-    {
-      XLALPrintError("\nFailed numerics in sin_cos_2PI_LUT_REAL4(): xt = %f not in [0,1)\n\n", xt );
-      XLAL_ERROR_VOID ( "sin_cos_2PI_LUT_REAL4()", XLAL_EFPINEXCT );
-    }
-#endif
-
-  i0 = (INT4)( xt * LUT_RES + 0.5f );	/* i0 in [0, LUT_RES ] */
-  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
-  d2 *= 0.5f * d;
-
-  ts = sinVal[i0];
-  tc = cosVal[i0];
-
-  /* use Taylor-expansions for sin/cos around LUT-points */
-  (*sin2pix) = ts + d * tc - d2 * ts;
-  (*cos2pix) = tc - d * ts - d2 * tc;
-
-  return;
-
-} /* sin_cos_2PI_LUT_REAL4() */
