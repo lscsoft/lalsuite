@@ -73,7 +73,7 @@ int finite(double);
 /* local includes */
 #include "HeapToplist.h"
 
-#include "ComputeFstatREAL4.h"
+#include "OptimizedCFS/ComputeFstatREAL4.h"
 
 RCSID( "$Id$");
 

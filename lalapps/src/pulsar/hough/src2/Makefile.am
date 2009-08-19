@@ -30,7 +30,7 @@ lalapps_HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
 			  HoughFStatToplist.c HoughFStatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h \
-			  ../../FDS_isolated/ComputeFstatREAL4.c ../../FDS_isolated/ComputeFstatREAL4.h
+			  ../../FDS_isolated/OptimizedCFS/ComputeFstatREAL4.c ../../FDS_isolated/OptimizedCFS/ComputeFstatREAL4.h
 
 lalapps_HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \

@@ -114,7 +114,7 @@ extern void HostWrapperCUDAComputeFstatFaFb    (REAL4 *Fstat,
     lookup tables to evaluate sin and cos values of 2*Pi*x
   - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
 */
-#include "../hough/src2/EinsteinAtHome/sincos.ci"
+#include "sincos.ci"
 
 /*---------- local DEFINES ----------*/
 #define TRUE  (1==1)

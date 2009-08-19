@@ -114,7 +114,7 @@
 #include <lalappsGitID.h>
 
 
-#include "ComputeFstatREAL4.h"
+#include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 
 

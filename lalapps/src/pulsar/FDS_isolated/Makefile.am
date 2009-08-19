@@ -49,7 +49,7 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h ComputeFstatREAL4.c ComputeFstatREAL4.h
+lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
