@@ -195,10 +195,10 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			if(!strcmp(caches[i],"LALGEO")) {PSD = &LALGEOPsd; scalefactor=1E-46;}
 			if(!strcmp(caches[i],"LALEGO")) {PSD = &LALEGOPsd; scalefactor=1.0;}
 			if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 10E-49;}
-			if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
+			//if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
 			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
 			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
-			XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
+						XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
 										   (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 			for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
 			{
@@ -296,16 +296,18 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	InjParams.fStartIn=(REAL4)minFlow;
 	
 	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
-	if(getProcParamVal(commandLine,"--event")) event= (INT4) getProcParamVal(commandLine,"--event")->value;
+	if(getProcParamVal(commandLine,"--event")) event= atoi(getProcParamVal(commandLine,"--event")->value);
 	fprintf(stdout,"Injecting event %d\n",event);
 	
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(commandLine,"--injXML")->value,0,0);
+	printf("Ninj %d\n", Ninj);
 	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,getProcParamVal(commandLine,"--injXML")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 
 	memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
+	printf("Approximant %d\n", injapprox);
 	LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
 	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!!!\n"); REPORTSTATUS(&status); }
 	

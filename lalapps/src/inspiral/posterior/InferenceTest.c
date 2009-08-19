@@ -39,7 +39,7 @@ INT4 numberI4;
 INT8 numberI8;
 COMPLEX8 numberC8;
 COMPLEX16 numberC16;
-REAL8 likelihood;
+REAL8 likelihood, nulllikelihood;
 
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
@@ -205,6 +205,7 @@ int main(int argc, char *argv[]){
 	  
     fprintf(stdout," ----------\n");
 
+
     //  templateStatPhase() test: 
     fprintf(stdout, " trying out 'templateStatPhase()'...\n");
     REAL8 mc   = 4.0;
@@ -252,7 +253,7 @@ int main(int argc, char *argv[]){
 	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
  fprintf(stdout, " ...done.\n");
 
-	  double nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
+	  nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
 	  
 	  fprintf(stdout,"likelihood %g, null likelihood %g, relative likelihood %g\n",likelihood, nulllikelihood, likelihood-nulllikelihood);
 

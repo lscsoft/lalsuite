@@ -54,7 +54,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	INT4 order = 4;										/* PN order */
 	
 	/* Other variables. */
-	UINT4 i;                      /* index */
+	INT4 i;                      /* index */
 	PPNParamStruc params;         /* input parameters */
 	CoherentGW waveform;          /* output waveform */
 
@@ -108,13 +108,13 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	LALGeneratePPNInspiral( &stat, &waveform, &params );
 	
 	REAL8 chirplength=params.tc;	/*The waveform duration up to tc */
-	printf("desired_tc %10.10f chirplength %g epoch %10.10f\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
+	//printf("desired_tc %10.10f chirplength %g epoch %10.10f\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
 	
 	
 	/* This is the difference between the desired start time and the actual start time */
 	REAL8 timeShift = desired_tc - (chirplength + IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
 	
-	printf("Timeshift %g\n", timeShift);
+	//printf("Timeshift %g\n", timeShift);
 	
 	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
 		fprintf(stderr, "ERROR: Desired tc is before start of segment\n");
@@ -140,21 +140,25 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	/* Shifting waveform to account for timeShift: */
 			
 	REAL8 p, ap, ac;
-	UINT4 integerLeftShift = ceil(-timeShift/deltaT);
+	INT4 integerLeftShift = ceil(-timeShift/deltaT);
 	REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
 		
 	//printf("deltaT %g, iLS %d, fRS %g\n", deltaT, integerLeftShift, fractionalRightShift);
 	//printf("t %d, a %d, phi %d\n", IFOdata->timeData->data->length, waveform.a->data->length, waveform.phi->data->length);
 	
-	UINT4 length = IFOdata->timeData->data->length;//waveform.a->data->length-1;  //Why are waveform.a and waveform.phi of same length, yet .a contains both plus and cross?
+	UINT4 length = IFOdata->timeData->data->length;//waveform.a->data->length-1; 
 	REAL8 *phiData = waveform.phi->data->data;
 	REAL4 *aData = waveform.a->data->data;
+
+	//printf("iLS %d, fRS %g, length %d\n", integerLeftShift, fractionalRightShift, length);
 	
 	for(i=0; i<length; i++){
-		if(deltaT*i>desired_tc || i+integerLeftShift+1>=waveform.phi->data->length - 1
-			|| i+integerLeftShift<0){	//set waveform to zero after desired tc, or if need to go past end of input
+		//printf("i %d integerLeftShift %d (waveform.phi->data->length) %d i+integerLeftShift %d\n", 
+			//i, integerLeftShift, (waveform.phi->data->length), i+integerLeftShift);
+		if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1)
+			|| (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
 			IFOdata->timeModelhPlus->data->data[i] = 0;
-			IFOdata->timeModelhCross->data->data[i] = 0;
+			IFOdata->timeModelhCross->data->data[i] = 0;		
 		}
 		else{
 			p = (1.0-fractionalRightShift)*phiData[i+integerLeftShift] + fractionalRightShift*phiData[i+integerLeftShift+1];
