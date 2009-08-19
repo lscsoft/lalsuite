@@ -136,6 +136,8 @@ typedef struct
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
+  REAL8 Alpha;                              /**< sky position alpha in radians */
+  REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   /* -------------------- Resampling -------------------- */
@@ -168,9 +170,11 @@ REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
 REAL8 uvar_Alpha;
+CHAR* uvar_RA;
 REAL8 uvar_dAlpha;
 REAL8 uvar_AlphaBand;
 REAL8 uvar_Delta;
+CHAR* uvar_Dec;
 REAL8 uvar_dDelta;
 REAL8 uvar_DeltaBand;
 /* 1st spindown */
@@ -659,6 +663,8 @@ initUserVars (LALStatus *status)
   uvar_AlphaBand = 0;
   uvar_DeltaBand = 0;
   uvar_skyRegion = NULL;
+  uvar_RA = NULL;
+  uvar_Dec = NULL;
 
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_ephemYear, EPHEM_YEARS);
@@ -725,6 +731,8 @@ initUserVars (LALStatus *status)
 
   LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
+  LALregSTRINGUserVar(status,Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
   LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
   LALregREALUserVar(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
@@ -1059,12 +1067,26 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       }
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
-
-
+ 
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
     LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
     PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta)) || (LALUserVarWasSet(&uvar_RA) && LALUserVarWasSet(&uvar_Dec));
+
+    /* define sky position variables from user input */
+    if (LALUserVarWasSet(&uvar_RA)) 
+      {
+	/* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+	cfg->Alpha = LALDegsToRads(uvar_RA, "alpha");
+      }
+    else cfg->Alpha = uvar_Alpha;
+    if (LALUserVarWasSet(&uvar_Dec)) 
+      {
+	/* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+	cfg->Delta = LALDegsToRads(uvar_Dec, "delta");
+      }
+    else cfg->Delta = uvar_Delta;
+    
 
     if (uvar_skyRegion)
       {
@@ -1077,7 +1099,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,	uvar_AlphaBand, uvar_DeltaBand), status);
+				cfg->Alpha, cfg->Delta,	uvar_AlphaBand, uvar_DeltaBand), status);
       }
 
     if ( LALUserVarWasSet ( &uvar_internalRefTime ) ) {
