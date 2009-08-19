@@ -612,6 +612,32 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 }
 
 
+void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template, COMPLEX16FrequencySeries *freqData)
+/***************************************************************/
+/* Frequency-domain single-IFO response computation.           */
+/* Computes response for a given template.                     */
+/* Will re-compute template only if necessary                  */
+/* (i.e., if previous, as stored in data->freqModelhCross,     */
+/* was based on different parameters or template function).    */
+/* Carries out timeshifting for a given detector               */
+/* and projection onto this detector.                          */
+/* Result stored in freqResponse, assumed to be correctly      */
+/* initialized												   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/							  
+{
+}
+							  
+
+/*
+
 REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
 /* with the `templateNullFreqdomain()' template in order to return */
@@ -808,7 +834,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
-  LALIFOData *ifoPtr;
+  LALIFOData *ifoPtr, *ifoListStart;
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
   fprintf(stdout, " readData(): started.\n");
@@ -825,33 +851,52 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fprintf(stdout, " injectSignal(): finished.\n");
 
     ifoPtr = irs->data;
+	ifoListStart = irs->data;
     while (ifoPtr != NULL) {
-      ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
+		/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
+			freqModelh*, and modelParams variables to avoid excess computation 
+			in model waveform generation in the future*/
+		LALIFOdata * ifoPtrCompare=ifoListStart;
+		int foundIFOwithSameSampleRate=0;
+		while(ifoPtrCompare != NULL) {
+			if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
+				ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
+				ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
+				ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
+				ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
+				ifoPtr->modelParams=ifoPtrCompare->modelParams;	
+				foundIFOwithSameSampleRate=1;	
+				break;
+			}
+		}
+		if(!foundIFOwithSameSampleRate){
+				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
                                                           &(ifoPtr->timeData->epoch),
                                                           0.0,
                                                           ifoPtr->timeData->deltaT,
                                                           &lalDimensionlessUnit,
                                                           ifoPtr->timeData->data->length);
-      ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
+				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
                                                           &(ifoPtr->timeData->epoch),
                                                           0.0,
                                                           ifoPtr->timeData->deltaT,
                                                           &lalDimensionlessUnit,
                                                           ifoPtr->timeData->data->length);
-      ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
+				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
                                                                   &(ifoPtr->freqData->epoch),
                                                                   0.0,
                                                                   ifoPtr->freqData->deltaF,
                                                                   &lalDimensionlessUnit,
                                                                   ifoPtr->freqData->data->length);
-      ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
+				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
                                                                    &(ifoPtr->freqData->epoch),
                                                                    0.0,
                                                                    ifoPtr->freqData->deltaF,
                                                                    &lalDimensionlessUnit,
                                                                    ifoPtr->freqData->data->length);
-      ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
-      ifoPtr = ifoPtr->next;
+				ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
+		}
+		ifoPtr = ifoPtr->next;
     }
   }
   else
