@@ -71,7 +71,7 @@ install: build
 	dh_installdirs
 
 	set -e; \
-	for v in 2.5 2.4; do                                                         \
+	for v in 2.4 2.5; do                                                         \
 	PYTHON="python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
 	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig \
@@ -80,7 +80,8 @@ install: build
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
 	    --enable-nightly=no                                               \
 	    --enable-frame --enable-metaio                                    \
-	    --disable-debug ;                                                        \
+	    --disable-debug                                                   \
+	    --disable-gcc-flags ;                                             \
 	PYTHON="python$$v"                                                    \
 	$(MAKE) ;                                                                    \
 	echo "tree after build:" ;                                                   \
@@ -102,11 +103,11 @@ install: build
 	set -e; \
 	for i in `find debian/lalapps/$(PREFIX)/bin -type f`; do      \
 	        echo $$i;                                                \
-	        if head -n1 $$i | grep -q '^#!.*python$$' ; then         \
-	                sed -i '1s/python$$/python2.4/' $$i;             \
+	        if head -n1 $$i | grep -q '^#!.*python2\..' ; then         \
+	                sed -i '1s/python2\../python/' $$i;             \
 	        fi ;                                                     \
 	done
-
+	cp -p debian/lalapps-user-env.* $(CURDIR)/debian/lalapps/$(PREFIX)/etc/
 
 binary-common: build install
 	dh_testdir

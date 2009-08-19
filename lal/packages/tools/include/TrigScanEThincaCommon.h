@@ -67,6 +67,8 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 
 void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead );
 
+REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch);
+
 #ifdef  __cplusplus
 }
 #endif

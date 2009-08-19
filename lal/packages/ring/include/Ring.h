@@ -187,6 +187,8 @@ REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
 REAL4 XLALBlackHoleRingQuality( REAL4 a );
 REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a );
+REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta );
+REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 );
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude );
 REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb );

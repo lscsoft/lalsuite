@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -168,7 +168,7 @@ LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
-LAL_WITH_GCC_FLAGS
+LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME
@@ -468,7 +468,7 @@ fi
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
 fi
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk

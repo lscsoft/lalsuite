@@ -226,15 +226,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -358,6 +358,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "Single Inspiral Reader and Injection Analysis\n"
             "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n" );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -759,9 +760,9 @@ int main( int argc, char *argv[] )
     /* read in the input file names */
     for ( j = 0; j < numInFiles; ++j )
       {
-	inFileNameList[j] = (char *) LALCalloc( MAX_PATH, sizeof(char) );
-	get_next_line( line, sizeof(line), fp );
-	strncpy( inFileNameList[j], line, strlen(line) - 1);
+        inFileNameList[j] = (char *) LALCalloc( MAX_PATH, sizeof(char) );
+        get_next_line( line, sizeof(line), fp );
+        strncpy( inFileNameList[j], line, strlen(line) - 1);
       }
     
     fclose( fp );
@@ -780,7 +781,7 @@ int main( int argc, char *argv[] )
       MultiInspiralTable   *thisFileTrigger  = NULL;
       
       numFileTriggers = XLALReadMultiInspiralTriggerFile( &inspiralFileList,
-	  &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
+          &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
       numEvents += numFileTriggers;
       
 
@@ -789,17 +790,17 @@ int main( int argc, char *argv[] )
       
     if (numFileTriggers < 0)
       {
-	fprintf(stderr, "Error reading triggers from file %s\n",
-		inFileNameList[j]);
-	exit( 1 );
+        fprintf(stderr, "Error reading triggers from file %s\n",
+                inFileNameList[j]);
+        exit( 1 );
       }
     else
       {
-	if ( vrbflg )
-	  {
-	    fprintf(stdout, "Read %d reading triggers from file %s\n",
-		    numFileTriggers, inFileNameList[j]);
-	  }
+        if ( vrbflg )
+          {
+            fprintf(stdout, "Read %d reading triggers from file %s\n",
+                    numFileTriggers, inFileNameList[j]);
+          }
       }
     
     /* read the summ value table as well. */
