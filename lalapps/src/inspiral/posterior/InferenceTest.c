@@ -344,13 +344,19 @@ int main(int argc, char *argv[]){
 
     fprintf(stdout," ----------\n");
 
-    numberR8 = 0.01;
-    addVariable(&currentParams, "sigma", &numberR8, REAL8_t);
     numberR8 = 440;
     addVariable(&currentParams, "frequency", &numberR8, REAL8_t);
     numberR8 = 1e-19;
     addVariable(&currentParams, "amplitude", &numberR8, REAL8_t);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateSinc, "test_TTemplateSinc.csv");
+
+    numberR8 = 0.01;
+    addVariable(&currentParams, "sigma", &numberR8, REAL8_t);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateSineGaussian, "test_TTemplateSineGauss.csv");
+
+    numberR8 = 0.01;
+    addVariable(&currentParams, "tau", &numberR8, REAL8_t);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateDampedSinusoid, "test_TTemplateDampedSinus.csv");
 
     destroyVariables(&currentParams);
     fprintf(stdout," ----------\n");

@@ -933,6 +933,8 @@ void templateSineGaussian(LALIFOData *IFOdata)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* The (plus-) waveform is:                          */
 /*   a * exp(-((t-mu)/sigma)^2) * sin(2*pi*f*t-phi)  */
+/* Note that by setting f=0, phi=pi/2 you also get   */
+/* a `pure' Gaussian template.                       */
 /*                                                   */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * ************************************/
 /* Required (`IFOdata->modelParams') parameters are:                                    */
@@ -943,22 +945,114 @@ void templateSineGaussian(LALIFOData *IFOdata)
 /*   - "amplitude"  (amplitude, REAL8)                                                  */
 /****************************************************************************************/
 {
-  double time   = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
-  double sigma  = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
-  double f      = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
-  double phi    = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
-  double a      = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
-  double logamp = log(a);
+  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double sigma = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
+  double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
+  double phi   = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
+  double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
   double t, tsigma, twopif = LAL_TWOPI*f;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   long i;
+  if (sigma <= 0.0) {
+    fprintf(stderr, " ERROR in templateSineGaussian(): zero or negative \"sigma\" parameter (sigma=%e).\n", sigma);
+    exit(1);
+  }
+  if (f < 0.0)
+    fprintf(stderr, " WARNING in templateSineGaussian(): negative \"frequency\" parameter (f=%e).\n", f);
+  if (a < 0.0)
+    fprintf(stderr, " WARNING in templateSineGaussian(): negative \"amplitude\" parameter (a=%e).\n", a);
   for (i=0; i<IFOdata->timeData->data->length; ++i){
     t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu         */
     tsigma = t/sigma;                                             /* (t-mu)/sigma */
     if (fabs(tsigma) < 5.0)   /*  (only do computations within a 10 sigma range)  */
-      IFOdata->timeModelhPlus->data->data[i] = exp(logamp - 0.5*tsigma*tsigma) * sin(twopif*t-phi);
+      IFOdata->timeModelhPlus->data->data[i] = a * exp(-0.5*tsigma*tsigma) * sin(twopif*t+phi);
     else 
       IFOdata->timeModelhPlus->data->data[i] = 0.0;
+    IFOdata->timeModelhCross->data->data[i] = 0.0;
+  }
+  IFOdata->modelDomain = timeDomain;
+  return;
+}
+
+
+
+void templateDampedSinusoid(LALIFOData *IFOdata)
+/*****************************************************/
+/* Damped Sinusoid (burst) template.                 */
+/* Signal is linearly polarized,                     */
+/* i.e., cross term is zero.                         */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* The (plus-) waveform is an exponentially decaying */
+/* sine wave:                                        */
+/*   a * exp((t-time)/tau) * sin(2*pi*f*(t-time))    */
+/* where "time" is the time parameter denoting the   */
+/* instant where the signal starts.                  */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * **************************/
+/* Required (`IFOdata->modelParams') parameters are:                          */
+/*   - "time"       (the instant at which the signal starts; REAL8, GPS sec.) */
+/*   - "tau"        (width parameter; REAL8, seconds)                         */
+/*   - "frequency"  (frequency of the sine part; REAL8, Hertz)                */
+/*   - "amplitude"  (amplitude, REAL8)                                        */
+/******************************************************************************/
+{
+  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double tau   = *(REAL8*) getVariable(IFOdata->modelParams, "tau");        /* width parameter, seconds         */
+  double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
+  double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
+  double t, ttau, twopif = LAL_TWOPI*f;
+  double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
+  long i;
+  if (tau <= 0.0) {
+    fprintf(stderr, " ERROR in templateDampedSinusoid(): zero or negative \"tau\" parameter (tau=%e).\n", tau);
+    exit(1);
+  }
+  if (f < 0.0)
+    fprintf(stderr, " WARNING in templateDampedSinusoid(): negative \"frequency\" parameter (f=%e).\n", f);
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu       */
+    if ((t>0.0) && ((ttau=t/tau) < 10.0)) /*  (only do computations within a 10 tau range)  */
+      IFOdata->timeModelhPlus->data->data[i] = a * exp(-ttau) * sin(twopif*t);
+    else 
+      IFOdata->timeModelhPlus->data->data[i] = 0.0;
+    IFOdata->timeModelhCross->data->data[i] = 0.0;
+  }
+  IFOdata->modelDomain = timeDomain;
+  return;
+}
+
+
+void templateSinc(LALIFOData *IFOdata)
+/*****************************************************/
+/* Sinc function (burst) template.                   */
+/* Signal is linearly polarized,                     */
+/* i.e., cross term is zero.                         */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* The (plus-) waveform is a sinc function of given  */
+/* frequency:                                        */
+/*   a*sinc(2*pi*f*(t-time))                         */
+/*   = a*sin(2*pi*f*(t-time)) / (2*pi*f*(t-time))    */
+/* where "time" is the time parameter denoting the   */
+/* signal's central peak location.                   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * *************************/
+/* Required (`IFOdata->modelParams') parameters are:                         */
+/*   - "time"       (the instant at which the signal peaks; REAL8, GPS sec.) */
+/*   - "frequency"  (frequency of the sine part; REAL8, Hertz)               */
+/*   - "amplitude"  (amplitude, REAL8)                                       */
+/*****************************************************************************/
+{
+  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
+  double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
+  double t, sinArg, sinc, twopif = LAL_TWOPI*f;
+  double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
+  long i;
+  if (f < 0.0)
+    fprintf(stderr, " WARNING in templateSinc(): negative \"frequency\" parameter (f=%e).\n", f);
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu       */
+    sinArg = twopif*t;
+    sinc = (sinArg==0.0) ? 1.0 : sin(sinArg)/sinArg;    
+    IFOdata->timeModelhPlus->data->data[i] = a * sinc;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
   }
   IFOdata->modelDomain = timeDomain;

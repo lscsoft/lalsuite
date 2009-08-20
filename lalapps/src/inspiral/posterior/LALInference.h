@@ -222,6 +222,8 @@ void templateNullTimedomain(LALIFOData *IFOdata);
 void templateLAL(LALIFOData *IFOdata);
 void template3525TD(LALIFOData *IFOdata);
 void templateSineGaussian(LALIFOData *IFOdata);
+void templateDampedSinusoid(LALIFOData *IFOdata);
+void templateSinc(LALIFOData *IFOdata);
 
 #endif
 
