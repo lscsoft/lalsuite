@@ -4,6 +4,7 @@
 cfsHOME = @CFS_DIR@
 hsHOME = @HS_DIR@
 eaHOME = $(hsHOME)/EinsteinAtHome
+optHOME = $(cfsHOME)/OptimizedCFS
 lalappsDIR = @LALAPPS_DIR@
 CLEANFILES = 
 
@@ -15,11 +16,11 @@ NVCC ?= nvcc
 eah_sources = 	$(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
 		$(hsHOME)/HoughFStatToplist.c \
-		$(cfsHOME)/HeapToplist.c $(eaHOME)/ComputeFstatREAL4.c \
-		$(eaHOME)/LocalComputeFstat.c $(eaHOME)/LocalComputeFstatHoughMap.c \
+		$(cfsHOME)/HeapToplist.c $(optHOME)/ComputeFstatREAL4.c \
+		$(optHOME)/LocalComputeFstat.c $(eaHOME)/LocalComputeFstatHoughMap.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 if USE_CUDA
-    eah_sources += $(eaHOME)/FStatCUDA.cu
+    eah_sources += $(optHOME)/FStatCUDA.cu
 endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
