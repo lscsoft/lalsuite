@@ -370,6 +370,7 @@ void mc2masses(double mc, double eta, double *m1, double *m2)
   double fraction = (0.5+root) / (0.5-root);
   *m1 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
   *m2 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
 }
 
 
@@ -812,8 +813,7 @@ void template3525TD(LALIFOData *IFOdata)
   double sin1psi, sin2psi, sin3psi, sin4psi, sin5psi, sin6psi, sin7psi;
   double cos1psi, cos2psi, cos3psi, cos4psi, cos5psi, cos6psi, cos7psi;
   double constfactor = exp(LAL_LN2+log(LAL_G_SI)-2.0*log((double)LAL_C_SI) + log_mu - log(LAL_PC_SI*1.0e6));  
-                                                                                      /* (6.01); distance is 1 Mpc here. */
-  double x, sqrtx, oldx=0.0;
+  double x, sqrtx, oldx=0.0;                                                          /* (6.01); distance is 1 Mpc here. */
   double omega, omegacoef=exp(3.0*log((double) LAL_C_SI) - log(LAL_G_SI) - log_mt);   /* = (c^3)/(G*mt) */
   double EulerGamma = 0.57721566490153286; /* Euler constant */
   double xi     = -9871.0/9240.0;          /* Blanchet et al (2004): PRL 93(9):091101 */
@@ -920,4 +920,47 @@ void template3525TD(LALIFOData *IFOdata)
     IFOdata->timeModelhCross->data->data[i] = h_cross;
   }
   IFOdata->modelDomain = timeDomain;
+  return;
+}
+
+
+
+void templateSineGaussian(LALIFOData *IFOdata)
+/*****************************************************/
+/* Sine-Gaussian (burst) template.                   */
+/* Signal is (by now?) linearly polarised,           */
+/* i.e., the cross-waveform remains zero.            */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* The (plus-) waveform is:                          */
+/*   a * exp(-((t-mu)/sigma)^2) * sin(2*pi*f*t-phi)  */
+/*                                                   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * ************************************/
+/* Required (`IFOdata->modelParams') parameters are:                                    */
+/*   - "time"       (the "mu" parameter of the Gaussian part; REAL8, GPS sec.)          */
+/*   - "sigma"      (width, the "sigma" parameter of the Gaussian part; REAL8, seconds) */
+/*   - "frequency"  (frequency of the sine part; REAL8, Hertz)                          */
+/*   - "phase"      (phase (at above "mu"); REAL8, radians)                             */
+/*   - "amplitude"  (amplitude, REAL8)                                                  */
+/****************************************************************************************/
+{
+  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double sigma = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
+  double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
+  double phi   = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
+  double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
+  double loga  = log(a);
+  double t, tsigma, twopif = LAL_TWOPI*f;
+  double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
+  long i;
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time); 
+    tsigma = t/sigma;
+    if (fabs(tsigma) < 10.0)   /*  (only do computations within 10 sigma range)  */
+      IFOdata->timeModelhPlus->data->data[i] = exp(loga - 0.5*tsigma*tsigma) * sin(twopif*t-phi);
+    else 
+      IFOdata->timeModelhPlus->data->data[i] = 0.0;
+    IFOdata->timeModelhCross->data->data[i] = 0.0;
+  }
+  IFOdata->modelDomain = timeDomain;
+  return;
 }

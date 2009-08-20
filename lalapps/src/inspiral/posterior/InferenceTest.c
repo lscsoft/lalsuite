@@ -297,6 +297,7 @@ int main(int argc, char *argv[]){
     dumptemplateTimeDomain(&currentParams, runstate->data, template3525TD, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
+
     /* These are the LAL templates that (...seem to...) work right now: */
     /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
     numberI4 = LAL_PNORDER_TWO;
@@ -340,6 +341,17 @@ int main(int argc, char *argv[]){
     setVariable(&currentParams, "LAL_PNORDER", &numberI4);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateLAL, "test_TTemplateLAL-EOBNR.csv");
 
+    fprintf(stdout," ----------\n");
+
+    numberR8 = 0.01;
+    addVariable(&currentParams, "sigma", &numberR8, REAL8_t);
+    numberR8 = 440;
+    addVariable(&currentParams, "frequency", &numberR8, REAL8_t);
+    numberR8 = 1e-19;
+    addVariable(&currentParams, "amplitude", &numberR8, REAL8_t);
+    dumptemplateTimeDomain(&currentParams, runstate->data, templateSineGaussian, "test_TTemplateSineGauss.csv");
+
+    destroyVariables(&currentParams);
     fprintf(stdout," ----------\n");
   }
 

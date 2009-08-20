@@ -213,6 +213,7 @@ void templateNullFreqdomain(LALIFOData *IFOdata);
 void templateNullTimedomain(LALIFOData *IFOdata);
 void templateLAL(LALIFOData *IFOdata);
 void template3525TD(LALIFOData *IFOdata);
+void templateSineGaussian(LALIFOData *IFOdata);
 
 #endif
 
