@@ -127,15 +127,15 @@ SummValueTable **add_summvalue_table(SummValueTable **newTable,
 {
   /* add value to summ_value table */
   *newTable = (SummValueTable *) LALCalloc( 1, sizeof(SummValueTable) );
-  LALSnprintf( (*newTable)->program, LIGOMETA_PROGRAM_MAX, 
+  snprintf( (*newTable)->program, LIGOMETA_PROGRAM_MAX, 
       "%s", programName );
   (*newTable)->version = 0;
   (*newTable)->start_time = gpsStartTime;
   (*newTable)->end_time = gpsEndTime;
-  LALSnprintf( (*newTable)->ifo, LIGOMETA_IFO_MAX, "%s", ifoName );
-  LALSnprintf( (*newTable)->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+  snprintf( (*newTable)->ifo, LIGOMETA_IFO_MAX, "%s", ifoName );
+  snprintf( (*newTable)->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
       "%s", summValueName );
-  LALSnprintf( (*newTable)->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
+  snprintf( (*newTable)->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
       "%s", comment );
   (*newTable)->value = value;
 
@@ -145,8 +145,8 @@ SummValueTable **add_summvalue_table(SummValueTable **newTable,
 
 
 void AddNumRelStrainModes(  LALStatus              *status,
-			    REAL4TimeVectorSeries  **outStrain, /** [out]  h+, hx data    */
-			    SimInspiralTable *thisinj     /** [in]   injection data */)
+                            REAL4TimeVectorSeries  **outStrain, /** [out]  h+, hx data    */
+                            SimInspiralTable *thisinj     /** [in]   injection data */)
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
   INT4 len, lenPlus, lenCross, k, lenIni;
@@ -188,7 +188,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
     /* loop over m values */
     for ( modeM = -modeL; modeM <= modeL; modeM++ ) {
-			     
+                             
       /* read numrel waveform */ 
       /* first the plus polarization */
       channel_name_plus = XLALGetNinjaChannelName("plus", modeL, modeM);      
@@ -204,10 +204,10 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
       /* skip on to next mode if mode doesn't exist */
       if ( (lenPlus <= 0) || (lenCross <= 0) || (lenPlus != lenCross) ) {
-	XLALClearErrno();
-	LALFree(channel_name_plus);
-	LALFree(channel_name_cross);
-	continue;
+        XLALClearErrno();
+        LALFree(channel_name_plus);
+        LALFree(channel_name_cross);
+        continue;
       }
 
       /* note: lenPlus and lenCross must be equal if we got this far*/
@@ -230,7 +230,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
       LALFree(channel_name_cross);
       
       /* allocate memory for tempStrain */
-      tempStrain = LALCalloc(1, sizeof(*tempStrain));	
+      tempStrain = LALCalloc(1, sizeof(*tempStrain));        
       tempStrain->data = XLALCreateREAL4VectorSequence(2, len);
       tempStrain->deltaT = LAL_MTSUN_SI * (thisinj->mass1 + thisinj->mass2) * seriesPlus->deltaT ;
       tempStrain->f0 = seriesPlus->f0;
@@ -240,8 +240,8 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
       /* now copy the data and scale amplitude corresponding to distance of 1Mpc*/ 
       for (k = 0; k < len; k++) {
-	tempStrain->data->data[k] = massMpc * seriesPlus->data->data[k];
-	tempStrain->data->data[len + k] = massMpc * seriesCross->data->data[k];	
+        tempStrain->data->data[k] = massMpc * seriesPlus->data->data[k];
+        tempStrain->data->data[len + k] = massMpc * seriesCross->data->data[k];        
       }
       
       /* we are done with seriesPlus and Cross for this iteration */
@@ -249,32 +249,32 @@ void AddNumRelStrainModes(  LALStatus              *status,
       XLALDestroyREAL4TimeSeries (seriesCross);
       seriesPlus = NULL;
       seriesCross = NULL;
-	  
+          
       /* compute the h+ and hx for given inclination and coalescence phase*/
       XLALOrientNRWave( tempStrain, modeL, modeM, thisinj->inclination, thisinj->coa_phase );
       
       if (sumStrain == NULL) {
-	
-	sumStrain = LALCalloc(1, sizeof(*sumStrain));	
-	sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength);
-	sumStrain->deltaT = tempStrain->deltaT;
-	sumStrain->f0 = tempStrain->f0;
-	sumStrain->sampleUnits = tempStrain->sampleUnits;
-	
-	memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
-	
-	sumStrain = XLALSumStrain( sumStrain, tempStrain );
+        
+        sumStrain = LALCalloc(1, sizeof(*sumStrain));        
+        sumStrain->data =  XLALCreateREAL4VectorSequence(2, tempStrain->data->vectorLength);
+        sumStrain->deltaT = tempStrain->deltaT;
+        sumStrain->f0 = tempStrain->f0;
+        sumStrain->sampleUnits = tempStrain->sampleUnits;
+        
+        memset(sumStrain->data->data,0.0,2*tempStrain->data->vectorLength*sizeof(REAL4));
+        
+        sumStrain = XLALSumStrain( sumStrain, tempStrain );
       }
       
       else {
-	sumStrain = XLALSumStrain( sumStrain, tempStrain );
+        sumStrain = XLALSumStrain( sumStrain, tempStrain );
       }
       
       /* clear memory for strain */
       if (tempStrain->data != NULL) {
-	XLALDestroyREAL4VectorSequence ( tempStrain->data );
-	LALFree( tempStrain );
-	tempStrain = NULL;
+        XLALDestroyREAL4VectorSequence ( tempStrain->data );
+        LALFree( tempStrain );
+        tempStrain = NULL;
       }
     } /* end loop over modeM values */
   
@@ -297,14 +297,14 @@ void AddNumRelStrainModes(  LALStatus              *status,
     timeseries for a specified ifo and a dynamic range factor.
 */
 void InjectNumRelWaveforms (LALStatus           *status,
-			    REAL4TimeSeries     *chan,         /**< [out] the output time series */
-			    SimInspiralTable    *injections,   /**< [in] list of injections */
-			    CHAR                ifo[3],        /**< [in] 2 char code for interferometer */
-			    REAL8               dynRange,      /**< [in] dynamic range factor for scaling time series */ 
-			    REAL8               freqLowCutoff, /**< [in] Lower cutoff frequency */  
-			    REAL8               snrLow,        /**< [in] lower cutoff value of snr */
-			    REAL8               snrHigh,
-			    CHAR                *fname)       /**< [in] higher cutoff value of snr */
+                            REAL4TimeSeries     *chan,         /**< [out] the output time series */
+                            SimInspiralTable    *injections,   /**< [in] list of injections */
+                            CHAR                ifo[3],        /**< [in] 2 char code for interferometer */
+                            REAL8               dynRange,      /**< [in] dynamic range factor for scaling time series */ 
+                            REAL8               freqLowCutoff, /**< [in] Lower cutoff frequency */  
+                            REAL8               snrLow,        /**< [in] lower cutoff value of snr */
+                            REAL8               snrHigh,
+                            CHAR                *fname)       /**< [in] higher cutoff value of snr */
 {
 
   REAL4TimeVectorSeries *tempStrain=NULL;
@@ -331,44 +331,44 @@ void InjectNumRelWaveforms (LALStatus           *status,
       startFreqHz = startFreq / ( LAL_TWOPI * massTotal);
       
       if (startFreqHz < freqLowCutoff) 
-	{
-	  TRY( AddNumRelStrainModes( status->statusPtr, &tempStrain, thisInj), 
-	       status);
-	  
-	  thisSNR = calculate_ligo_snr_from_strain( tempStrain, thisInj, ifo);
+        {
+          TRY( AddNumRelStrainModes( status->statusPtr, &tempStrain, thisInj), 
+               status);
+          
+          thisSNR = calculate_ligo_snr_from_strain( tempStrain, thisInj, ifo);
 
-	  fprintf(stdout, "injection %s has a snr of %f\n", thisInj->numrel_data, thisSNR);	  
+          fprintf(stdout, "injection %s has a snr of %f\n", thisInj->numrel_data, thisSNR);          
 
-	  /* set channel name */
-	  LALSnprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-		       "%s:STRAIN", ifo ); 
+          /* set channel name */
+          snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+                    "%s:STRAIN", ifo ); 
 
-	  if ((thisSNR < snrHigh) && (thisSNR > snrLow))
-	    {	      
+          if ((thisSNR < snrHigh) && (thisSNR > snrLow))
+            {              
 
-	      /* simTableOut will be null only the first time */
-	      if ( simTableOut == NULL) {
-		simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
-		memcpy(simTableOut, thisInj, sizeof(*thisInj));
-		simTableOut->next = NULL;
-		thisInjOut = simTableOut;
-	      }
-	      else {
-		thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
-		memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
-		thisInjOut->next->next = NULL;
-		thisInjOut = thisInjOut->next;
-	      }
+              /* simTableOut will be null only the first time */
+              if ( simTableOut == NULL) {
+                simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+                memcpy(simTableOut, thisInj, sizeof(*thisInj));
+                simTableOut->next = NULL;
+                thisInjOut = simTableOut;
+              }
+              else {
+                thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+                memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
+                thisInjOut->next->next = NULL;
+                thisInjOut = thisInjOut->next;
+              }
 
-	      TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
-				      ifo, dynRange), status);
-	    }
+              TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
+                                      ifo, dynRange), status);
+            }
 
-	  XLALDestroyREAL4VectorSequence ( tempStrain->data);
-	  tempStrain->data = NULL;
-	  LALFree(tempStrain);
-	  tempStrain = NULL;
-	}
+          XLALDestroyREAL4VectorSequence ( tempStrain->data);
+          tempStrain->data = NULL;
+          LALFree(tempStrain);
+          tempStrain = NULL;
+        }
 
     } /* loop over injectionsj */
 
@@ -386,10 +386,10 @@ void InjectNumRelWaveforms (LALStatus           *status,
     TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
     
     TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
-	      status );
+              status );
 
     TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
-				      sim_inspiral_table ), status );
+                                      sim_inspiral_table ), status );
 
     TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
     
@@ -451,8 +451,8 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
 
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
-				       SimInspiralTable      *thisInj, 
-				       CHAR                  ifo[3])
+                                       SimInspiralTable      *thisInj, 
+                                       CHAR                  ifo[3])
 {
 
   REAL8 ret = -1, snrSq, freq, psdValue;
@@ -469,8 +469,8 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   deltaF = chan->deltaT * strain->data->vectorLength;
 
   fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name,  &(chan->epoch), 
-					       0, deltaF, &lalDimensionlessUnit, 
-					       chan->data->length/2 + 1 );
+                                               0, deltaF, &lalDimensionlessUnit, 
+                                               chan->data->length/2 + 1 );
 
   /* perform the fft */
   pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );

@@ -111,17 +111,17 @@ else \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
   LALCalloc( 1, sizeof(SummValueTable) );\
 } \
-LALSnprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
   PROGRAM_NAME );\
 this_summ_value->version = 0;\
 this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time;\
 this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time;\
 this_summ_value->value = (REAL4) val;\
 this_summ_value->intvalue = (INT4) intval;\
-LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
+snprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
     sv_name );\
-LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
-LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
+snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
+snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment );\
 
 double rint(double x);
@@ -201,6 +201,14 @@ enum
   specType_undefined
 } specType = specType_undefined;
 
+/* set the spectrum for colored Gaussian noise */
+enum
+{
+  colorSpec_LIGO,
+  colorSpec_AdvLIGO,
+  colorSpec_undefined
+} colorSpec = colorSpec_undefined;
+
 INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
@@ -248,8 +256,6 @@ INT4  randomSeed        = 0;            /* value of sim rand seed       */
 REAL4 gaussVar          = 64.0;         /* variance of Gaussian noise   */
 INT4  whiteGaussian     = 0;            /* make input data Gaussian     */
 INT4  unitResponse      = 0;            /* set the response to unity    */
-INT4  colorSpec         = 0;            /* set the spectrum for colored */
-                                        /* Gaussian noise               */
 INT4  coloredGaussian   = 0;            /* generate colored Gaussian    */
                                         /* noise                        */
 /* template bank simulation params */
@@ -333,7 +339,7 @@ int main( int argc, char *argv[] )
   FrameHNode *thisCoherentFrame = NULL;
   UINT4          nRhosqFr = 0;
   UINT4          nChisqFr = 0;
-  REAL4TimeSeries 		templateTimeSeries;
+  REAL4TimeSeries                 templateTimeSeries;
   REAL4Vector                  *templateTimeSeriesVector = NULL;
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -444,7 +450,7 @@ int main( int argc, char *argv[] )
   UINT4  *analyseThisTmplt = NULL;
   INT4    thisTemplateIndex = 0;
   UINT4   analyseTag;
-  
+
 
   /*
    *
@@ -464,15 +470,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -501,61 +507,61 @@ int main( int argc, char *argv[] )
   /* can use LALMalloc() and LALCalloc() from here onwards */
 
   /* populate the filter table */
-  LALSnprintf( filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s",
-      PROGRAM_NAME );
+  snprintf( filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s",
+            PROGRAM_NAME );
   filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
-  LALSnprintf( filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
+  snprintf( filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
       "%s%s", approximantName, orderName );
 
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    LALSnprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX, " " );
   }
   else
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-        "%s", comment );
-    LALSnprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
-        "%s", comment );
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+              "%s", comment );
+    snprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
+              "%s", comment );
   }
 
   /* put the name of the search in the search_summary comment */
-  LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-       "%s%s", approximantName, orderName );
+  snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+            "%s%s", approximantName, orderName );
 
   /* set the name of the output file */
   if ( userTag && ifoTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s_%s-%d-%d", ifo,
-        ifoTag, userTag, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    snprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s_%s-%d-%d", ifo,
+              ifoTag, userTag, gpsStartTime.gpsSeconds,
+              gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( userTag && !ifoTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo,
-        userTag,  gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    snprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo,
+              userTag,  gpsStartTime.gpsSeconds,
+              gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( !userTag && ifoTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo,
-        ifoTag,  gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    snprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo,
+              ifoTag,  gpsStartTime.gpsSeconds,
+              gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL-%d-%d", ifo,
-        gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    snprintf( fileName, FILENAME_MAX, "%s-INSPIRAL-%d-%d", ifo,
+              gpsStartTime.gpsSeconds,
+              gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
 
   /* fill the ifos field of the search summary table */
-  LALSnprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo );
 
   /* make sure all the output table pointers are null */
   savedEvents.snglInspiralTable = NULL;
@@ -601,27 +607,23 @@ int main( int argc, char *argv[] )
     searchsumm.searchSummaryTable->out_start_time.gpsSeconds =
       gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
 
-    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-          &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+    outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
     if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
     {
-      LAL_CALL( LALINT8toGPS( &status,
-            &(searchsumm.searchSummaryTable->out_start_time),
-            &trigStartTimeNS ), &status );
+      XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_start_time),
+                       trigStartTimeNS );
     }
 
     searchsumm.searchSummaryTable->out_end_time.gpsSeconds =
       gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
 
-    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-          &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+    outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_end_time) );
 
     if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
     {
-      LAL_CALL( LALINT8toGPS( &status,
-            &(searchsumm.searchSummaryTable->out_end_time),
-            &trigEndTimeNS ), &status );
+      XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_end_time),
+                       trigEndTimeNS );
     }
   }
 
@@ -674,9 +676,9 @@ int main( int argc, char *argv[] )
 
     /* sieve out the requested data type */
     memset( &sieve, 0, sizeof(FrCacheSieve) );
-    LALSnprintf( ifoRegExPattern,
-        sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
-        fqChanName[0] );
+    snprintf( ifoRegExPattern,
+              sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
+              fqChanName[0] );
     sieve.srcRegEx = ifoRegExPattern;
     sieve.dscRegEx = frInType;
     LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ),
@@ -721,8 +723,8 @@ int main( int argc, char *argv[] )
           frStream ), &status );
 
     /* copy the data paramaters from the h(t) channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
+              strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -738,7 +740,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "raw data sample rate" );
   this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -818,8 +820,8 @@ int main( int argc, char *argv[] )
     }
 
     /* re-copy the data paramaters from the h(t) channel to input data channel*/
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
+              strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -846,12 +848,14 @@ int main( int argc, char *argv[] )
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* store the start and end time of the raw channel in the search summary */
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+  */
   searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * (REAL8) chan.data->length;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+  XLALGPSSetREAL8(&(searchsumm.searchSummaryTable->in_end_time), tsLength );
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -879,7 +883,7 @@ int main( int argc, char *argv[] )
     /* store the seed in the search summvars table */
     this_search_summvar = this_search_summvar->next =
       (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
         "template bank simulation seed" );
 
     if ( randSeedType == urandom )
@@ -976,7 +980,7 @@ int main( int argc, char *argv[] )
         &status );
     LAL_CALL( LALDCreateVector( &status, &spectrum, length / 2 + 1 ),
         &status );
-    if (colorSpec == 3 )
+    if (colorSpec == colorSpec_LIGO )
     {
       /* set the spectrum to the Initial LIGO design noise curve */
       REAL8 psd_value;
@@ -992,7 +996,7 @@ int main( int argc, char *argv[] )
         spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
       }
     }
-    else if( colorSpec == 4)
+    else if( colorSpec == colorSpec_AdvLIGO )
     {
       /* set the spectrum to the Advanced LIGO design noise curve */
       REAL8 psd_value;
@@ -1080,8 +1084,7 @@ int main( int argc, char *argv[] )
   else
   {
     durationNS = gpsEndTimeNS - gpsStartTimeNS;
-    LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration),
-          &durationNS ), &status );
+    XLALINT8NSToGPS( &(calfacts.duration), durationNS );
   }
 
   if ( calData )
@@ -1101,8 +1104,8 @@ int main( int argc, char *argv[] )
     if ( globCalData )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-          "*CAL*%s*.gwf", ifo );
+      snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
+                "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -1123,11 +1126,11 @@ int main( int argc, char *argv[] )
     {
       this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
-          "calibration frame %d", i );
-      LALSnprintf( this_search_summvar->string,
-          LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
-          calCache->frameFiles[i].url );
+      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+                "calibration frame %d", i );
+      snprintf( this_search_summvar->string,
+                LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+                calCache->frameFiles[i].url );
     }
 
     /* get the response from the frame data */
@@ -1296,15 +1299,14 @@ int main( int argc, char *argv[] )
           /* initialize the inj_calfacts */
           memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
           inj_calfacts.ifo = ifo;
-          LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration),
-                &durationNS ), &status );
+          XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
 
           /* create the lal calibration frame cache */
           if ( globCalData )
           {
             calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-            LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-                "*CAL*%s*.gwf", ifo );
+            snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
+                      "*CAL*%s*.gwf", ifo );
             if ( vrbflg ) fprintf( stdout,
                 "globbing for %s calibration frame files "
                 "in current directory\n", calGlobPattern );
@@ -1327,12 +1329,12 @@ int main( int argc, char *argv[] )
             this_search_summvar = this_search_summvar->next =
               (SearchSummvarsTable *)
               LALCalloc( 1, sizeof(SearchSummvarsTable) );
-            LALSnprintf( this_search_summvar->name,
-                LIGOMETA_NAME_MAX * sizeof(CHAR),
-                "injection calibration frame %d", i );
-            LALSnprintf( this_search_summvar->string,
-                LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
-                calCache->frameFiles[i].url );
+            snprintf( this_search_summvar->name,
+                      LIGOMETA_NAME_MAX * sizeof(CHAR),
+                      "injection calibration frame %d", i );
+            snprintf( this_search_summvar->string,
+                      LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+                      calCache->frameFiles[i].url );
           }
 
           /* extract the calibration from frames */
@@ -1377,7 +1379,7 @@ int main( int argc, char *argv[] )
       }
 
       /* inject the signals, preserving the channel name (Tev mangles it) */
-      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
 
       /* if injectOverhead option, then set chan.name to "ZENITH".
        * This causes no detector site to be found in the injection code so
@@ -1385,21 +1387,21 @@ int main( int argc, char *argv[] )
        * function of F+ = 1; Fx = 0) */
       if ( injectOverhead )
       {
-        LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+        snprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
       }
 
       /* read the event waveform approximant to see if we've been asked to
        perform NumRel injections */
       LAL_CALL( LALGetApproximantFromString( &status, injections->waveform,
-				  &injApproximant ), &status);
+                                  &injApproximant ), &status);
 
       if (injApproximant == NumRel)
       {
         REAL4TimeVectorSeries *tempStrain=NULL;
 
-	/* loop over injections */
+        /* loop over injections */
         for ( thisInj = injections; thisInj; thisInj = thisInj->next )
-	  {
+          {
             LAL_CALL( AddNumRelStrainModes( &status, &tempStrain, thisInj),
                       &status);
 
@@ -1415,10 +1417,10 @@ int main( int argc, char *argv[] )
       }
       else
       {
-	LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections,
-					       injRespPtr ), &status );
+        LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections,
+                                             injRespPtr ), &status );
       }
-      LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      snprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
           numInjections, injectionFile, chan.name );
@@ -1466,7 +1468,7 @@ int main( int argc, char *argv[] )
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
@@ -1484,12 +1486,12 @@ int main( int argc, char *argv[] )
     condor_compress_ckpt = 1;
     if ( ckptPath[0] )
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
-          ckptPath, fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
+                ckptPath, fileName );
     }
     else
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
@@ -1558,40 +1560,38 @@ int main( int argc, char *argv[] )
   /* store the start and end time of the filter channel in the search summ */
   /* noting that we don't look for events in the first and last quarter    */
   /* of each findchirp segment of the input data                           */
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, (REAL8) (numPoints / 4) * chan.deltaT);
+  */
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->out_start_time), &tsLength ),
-      &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_start_time), tsLength );
 
-  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-        &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+  outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
   if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
   {
     /* override with trigger start time */
-    LAL_CALL( LALINT8toGPS( &status,
-          &(searchsumm.searchSummaryTable->out_start_time),
-          &trigStartTimeNS ), &status );
+    XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_start_time),
+          trigStartTimeNS );
   }
 
-  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
-      &status );
+  /* FIXME:  loss of precision;  consider
+  searchsumm.searchSummaryTable->out_end_time = chan.epoch;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4)));
+  */
+  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
-  LAL_CALL( LALFloatToGPS( &status,
-        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ),
-      &status );
+  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
 
-  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-        &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+  outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_end_time) );
 
   if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
   {
     /* override with trigger end time */
-    LAL_CALL( LALINT8toGPS( &status,
-          &(searchsumm.searchSummaryTable->out_end_time),
-          &trigEndTimeNS ), &status );
+    XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_end_time),
+                     trigEndTimeNS );
   }
 
   /*
@@ -2260,7 +2260,7 @@ int main( int argc, char *argv[] )
         REAL4FFTPlan *plan = NULL;
         REAL8 deltaF;
         INT4 kmax, numPoints, nb2;
-        LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR),
+        snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
                   "TEMPLATE");
         memcpy(&templateTimeSeries, &chan, sizeof(REAL4TimeSeries));
         strcpy( templateTimeSeries.name, chan.name );
@@ -2315,8 +2315,7 @@ int main( int argc, char *argv[] )
         INT8 fcSegStartTimeNS;
         INT8 fcSegEndTimeNS;
 
-        LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS,
-              &(fcSegVec->data[i].data->epoch) ), &status );
+        fcSegStartTimeNS = XLALGPSToINT8NS( &(fcSegVec->data[i].data->epoch) );
         fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
           ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
 
@@ -2455,8 +2454,8 @@ int main( int argc, char *argv[] )
             if ( writeRhosq )
             {
               CHAR snrsqStr[LALNameLength];
-              LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR),
-                  "SNRSQ_%d", nRhosqFr++ );
+              snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
+                        "SNRSQ_%d", nRhosqFr++ );
               strcpy( fcFilterParams->rhosqVec->name, chan.name );
               outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
                   fcFilterParams->rhosqVec, "none", snrsqStr );
@@ -2576,7 +2575,7 @@ int main( int argc, char *argv[] )
                 {
                   CHAR chisqStr[LALNameLength];
                   REAL4TimeSeries chisqts;
-                  LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR),
+                  snprintf( chisqStr, LALNameLength*sizeof(CHAR),
                       "CHISQ_%d", nChisqFr++ );
                   chisqts.epoch = fcFilterInput->segment->data->epoch;
                   memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
@@ -2598,6 +2597,8 @@ int main( int argc, char *argv[] )
 
                   if ( trigTime >= lowerBound && trigTime <= upperBound )
                   {
+                    REAL8 sigmasq = 0.0;
+
                     tempTmplt = (SnglInspiralTable *)
                       LALCalloc(1, sizeof(SnglInspiralTable) );
                     tempTmplt->event_id = (EventIDColumn *)
@@ -2609,7 +2610,39 @@ int main( int argc, char *argv[] )
                       bankCurrent->end_time.gpsNanoSeconds;
                     tempTmplt->event_id->id = bankCurrent->event_id->id;
 
-                    tempTmplt->sigmasq = eventList->sigmasq;
+                    if ( ! eventList ) {
+                      UINT4 kmax;
+                      REAL8 deltaF=0.0;
+
+                      /* Compute sigmasq for coherent statistic */
+                      deltaF = 1.0 / ( (REAL4) fcFilterParams->deltaT *
+                                      (REAL4) fcFilterParams->qVec->length );
+
+                      kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF <
+                               fcFilterParams->qVec->length/2 ?
+                               fcFilterInput->fcTmplt->tmplt.fFinal / deltaF :
+                               fcFilterParams->qVec->length/2;
+
+                      sigmasq = fcFilterInput->segment->segNorm->data[kmax] * 
+                                  fcFilterInput->segment->segNorm->data[kmax] *
+                                  fcFilterInput->fcTmplt->tmpltNorm *
+                                  fcFilterInput->fcTmplt->norm;
+
+                      /* If sigmasq is still zero */
+                      if ( (sigmasq == 0.0) )
+                      {
+                        REAL4 totalMass = bankCurrent->mass1 + bankCurrent->mass2;
+                        REAL4 mu = bankCurrent->mass1 * bankCurrent->mass2 / totalMass;
+
+                        sigmasq = candle.sigmasq * pow( totalMass /
+                                    (REAL4) candle.tmplt.totalMass,2.0/3.0);
+                        sigmasq *= mu / candle.tmplt.mu;
+                      }
+                      tempTmplt->sigmasq = sigmasq;
+                    }
+                    else {
+                      tempTmplt->sigmasq = eventList->sigmasq;
+                    }
 
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,
@@ -2621,9 +2654,9 @@ int main( int argc, char *argv[] )
                     if ( coherentInputData )
                     {
                       cDataForFrame = 1;
-                      LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                      snprintf( cdataStr, LALNameLength*sizeof(CHAR),
                                    "%Ld", bankCurrent->event_id->id );
-                      LALSnprintf( coherentInputData->name,
+                      snprintf( coherentInputData->name,
                                    LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
                       if ( ! coherentFrames )
@@ -2807,11 +2840,6 @@ int main( int argc, char *argv[] )
     /* point the saved events to the linked list of loudest events */
     savedEvents.snglInspiralTable = loudestEventHead;
   }
-  else
-  {
-    /* save the number of events in the search summary table */
-    searchsumm.searchSummaryTable->nevents = numEvents;
-  }
 
 
   /*
@@ -2925,12 +2953,12 @@ int main( int argc, char *argv[] )
   {
     if ( outputPath[0] )
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
-          outputPath, fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+                outputPath, fileName );
     }
     else
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
     frOutFile = FrFileONew( fname, 0 );
@@ -2951,18 +2979,128 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
+  /* cut triggers based on start/end times and do trig_scan clustering */
+  if ( savedEvents.snglInspiralTable )
+  {
+    SnglInspiralTable *tmpEventHead = NULL;
+    SnglInspiralTable *lastEvent = NULL;
+
+    /* sort the inspiral events by time */
+    if ( vrbflg ) fprintf( stdout, "  sorting events by time... " );
+    LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
+          LALCompareSnglInspiralByTime), &status );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* discard any triggers outside the trig start/end time window */
+    event = savedEvents.snglInspiralTable;
+    if ( ! bankSim && ( trigStartTimeNS || trigEndTimeNS ) )
+    {
+      if ( vrbflg ) fprintf( stdout,
+          "  discarding triggers outside trig start/end time... " );
+
+      while ( event )
+      {
+        INT8 trigTimeNS;
+        trigTimeNS = XLALGPSToINT8NS( &(event->end_time) );
+
+        if ( trigTimeNS &&
+            ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
+             (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
+        {
+          /* throw this trigger away */
+          SnglInspiralTable *tmpEvent = event;
+
+          if ( lastEvent )
+          {
+            lastEvent->next = event->next;
+          }
+
+          /* increment the linked list by one and free the event */
+          event = event->next;
+          LALFree( tmpEvent );
+        }
+        else
+        {
+          /* store the first event as the head of the new linked list */
+          if ( ! tmpEventHead ) tmpEventHead = event;
+
+          /* save the last event and increment the linked list by one */
+          lastEvent = event;
+          event = event->next;
+        }
+      }
+
+      savedEvents.snglInspiralTable = tmpEventHead;
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+
+    if (maximizationInterval)
+    {
+      XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
+          maximizationInterval);
+    }
+
+    /* trigScanClustering */ 
+    if ( trigScanMethod ) 
+    { 
+        if ( savedEvents.snglInspiralTable) 
+        { 
+            
+           /* Call the clustering routine */ 
+           if (XLALTrigScanClusterTriggers( &(savedEvents.snglInspiralTable),
+                                       trigScanMethod,
+                                       trigScanMetricScalingFac,
+                                       trigScanAppendStragglers ) == XLAL_FAILURE )
+           {
+             fprintf( stderr, "New trig scan has failed!!\n" );
+             exit(1);
+           }
+
+        }
+        else
+        {
+            if ( vrbflg )
+                  fprintf (stderr,
+                          "The event head appears to be null containing %d triggers \n",
+                          XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
+        }
+    }
+  }
+
+  /* After clustering, count the number of triggers left. */
+  if ( ! bankSim)
+  {
+    if (savedEvents.snglInspiralTable)
+    {
+      numEvents = 1;
+      eventList = savedEvents.snglInspiralTable;
+      while ( eventList->next )
+      {
+        eventList = eventList->next;
+        ++numEvents;
+      }
+      searchsumm.searchSummaryTable->nevents = numEvents;
+    }
+    else
+    {
+      searchsumm.searchSummaryTable->nevents = 0;
+    }
+  }
+
+
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( outputPath[0] )
   {
     if ( outCompress )
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
           outputPath, fileName );
     }
     else
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
           outputPath, fileName );
     }
   }
@@ -2970,11 +3108,11 @@ int main( int argc, char *argv[] )
   {
     if ( outCompress )
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
     }
      else
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
     }
   }
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
@@ -2982,7 +3120,7 @@ int main( int argc, char *argv[] )
 
   /* write the process table */
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
@@ -3081,95 +3219,6 @@ int main( int argc, char *argv[] )
   /* free the search summary table after the summ_value table is written */
   free( searchsumm.searchSummaryTable );
 
-  /* cut triggers based on start/end times and do trig_scan clustering */
-  if ( savedEvents.snglInspiralTable )
-  {
-    SnglInspiralTable *tmpEventHead = NULL;
-    SnglInspiralTable *lastEvent = NULL;
-
-    /* sort the inspiral events by time */
-    if ( vrbflg ) fprintf( stdout, "  sorting events by time... " );
-    LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
-          LALCompareSnglInspiralByTime), &status );
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-    /* discard any triggers outside the trig start/end time window */
-    event = savedEvents.snglInspiralTable;
-    if ( ! bankSim && ( trigStartTimeNS || trigEndTimeNS ) )
-    {
-      if ( vrbflg ) fprintf( stdout,
-          "  discarding triggers outside trig start/end time... " );
-
-      while ( event )
-      {
-        INT8 trigTimeNS;
-        LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(event->end_time) ),
-            &status );
-
-        if ( trigTimeNS &&
-            ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
-             (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
-        {
-          /* throw this trigger away */
-          SnglInspiralTable *tmpEvent = event;
-
-          if ( lastEvent )
-          {
-            lastEvent->next = event->next;
-          }
-
-          /* increment the linked list by one and free the event */
-          event = event->next;
-          LALFree( tmpEvent );
-        }
-        else
-        {
-          /* store the first event as the head of the new linked list */
-          if ( ! tmpEventHead ) tmpEventHead = event;
-
-          /* save the last event and increment the linked list by one */
-          lastEvent = event;
-          event = event->next;
-        }
-      }
-
-      savedEvents.snglInspiralTable = tmpEventHead;
-
-      if ( vrbflg ) fprintf( stdout, "done\n" );
-    }
-
-    if (maximizationInterval)
-    {
-      XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
-          maximizationInterval);
-    }
-
-    /* trigScanClustering */ 
-    if ( trigScanMethod ) 
-    { 
-        if ( savedEvents.snglInspiralTable) 
-        { 
-            
-           /* Call the clustering routine */ 
-           if (XLALTrigScanClusterTriggers( &(savedEvents.snglInspiralTable),
-                                       trigScanMethod,
-                                       trigScanMetricScalingFac,
-                                       trigScanAppendStragglers ) == XLAL_FAILURE )
-           {
-             fprintf( stderr, "New trig scan has failed!!\n" );
-             exit(1);
-           }
-
-        }
-        else
-        {
-            if ( vrbflg )
-                  fprintf (stderr,
-                          "The event head appears to be null containing %d triggers \n",
-                          XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
-        }
-    }
-  }
 
   /* write sngl_inspiral table */
   if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
@@ -3275,12 +3324,12 @@ int main( int argc, char *argv[] )
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) );\
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME );\
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name );\
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype );\
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype );\
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE(a) \
 fprintf( a,   "lalapps_inspiral [options]\n\n");\
@@ -3552,7 +3601,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   INT4 haveClusterMethod = 0;
   INT4 haveBankSimApprox = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
-  LALStatus             status = blank_status;
 
 
   /*
@@ -4197,7 +4245,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -4421,17 +4469,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '.':
-        colorSpec = (INT4) atoi( optarg );
         if ( ! strcmp( "LIGO", optarg ) )
         {
-          colorSpec = 3;
+          colorSpec = colorSpec_LIGO;
           fprintf( stderr,
               "WARNING: replacing input data with colored Gaussian noise: "
               "psd = Initial LIGO\n");
         }
         else if ( ! strcmp( "AdvLIGO", optarg ) )
         {
-          colorSpec = 4;
+          colorSpec = colorSpec_AdvLIGO;
           fprintf( stderr,
               "WARNING: replacing input data with colored Gaussian noise: "
               "psd = Advanced LIGO\n");
@@ -4439,14 +4486,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else
         {
           fprintf(stderr,"invalid power spectrum for colored Gaussian noise;"
-              "colorSpec must be either LIGO or advLIGO");
+                  "colorSpec must be either LIGO or advLIGO "
+                  "(%f specified)", colorSpec);
+          exit( 1 );
         }
         coloredGaussian = 1;
         break;
 
       case 'N':
-        if ( LALSnprintf( ckptPath, FILENAME_MAX * sizeof(CHAR),
-              "%s", optarg ) < 0 )
+        if ( snprintf( ckptPath, FILENAME_MAX * sizeof(CHAR),
+                       "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "local path %s too long: string truncated\n",
@@ -4456,8 +4505,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
 
       case 'O':
-        if ( LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
-              "%s", optarg ) < 0 )
+        if ( snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
+                       "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "output path %s too long: string truncated\n",
@@ -4479,11 +4528,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
-            PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+                  PROGRAM_NAME );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -4501,7 +4550,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -4529,8 +4578,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, maxms );
             exit( 1 );
           }
-	  /* internally we require maximizationInterval to be in nano seconds */
- 	  /* This will be passed as an argument in the call to                */
+          /* internally we require maximizationInterval to be in nano seconds */
+           /* This will be passed as an argument in the call to                */
           /* XLALMaxSnglInspiralOverIntervals (). Therefore multiply by       */
           /* 1000000 to convert msec to nano seconds                          */
           maximizationInterval = (INT4) maxms * 1000000;
@@ -4738,16 +4787,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '?':
- 	bankSimParams.f_lower = (REAL4) atof( optarg );
- 	if (bankSimParams.f_lower <= 0 )
- 	{
- 		fprintf( stderr, "invalid argument to --%s:\n"
- 				"bank-sim-flower must be > 0.0 : "
- 				"(%f specified)\n",
- 				long_options[option_index].name, bankSimParams.f_lower );
- 		exit( 1 );
- 	}
- 	ADD_PROCESS_PARAM( "float", "%e", bankSimParams.f_lower );
+         bankSimParams.f_lower = (REAL4) atof( optarg );
+         if (bankSimParams.f_lower <= 0 )
+         {
+                 fprintf( stderr, "invalid argument to --%s:\n"
+                                 "bank-sim-flower must be > 0.0 : "
+                                 "(%f specified)\n",
+                                 long_options[option_index].name, bankSimParams.f_lower );
+                 exit( 1 );
+         }
+         ADD_PROCESS_PARAM( "float", "%e", bankSimParams.f_lower );
         break;
 
       case '(':
@@ -4868,30 +4917,30 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* enable output is stored in the first process param row */
   if ( enableOutput == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program,
-        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
-        LIGOMETA_PARAM_MAX, "--enable-output" );
-    LALSnprintf( procparams.processParamsTable->type,
-        LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value,
-        LIGOMETA_VALUE_MAX, " " );
+    snprintf( procparams.processParamsTable->program,
+              LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    snprintf( procparams.processParamsTable->param,
+              LIGOMETA_PARAM_MAX, "--enable-output" );
+    snprintf( procparams.processParamsTable->type,
+              LIGOMETA_TYPE_MAX, "string" );
+    snprintf( procparams.processParamsTable->value,
+              LIGOMETA_VALUE_MAX, " " );
   }
   else if ( enableOutput == 0 )
   {
-    LALSnprintf( procparams.processParamsTable->program,
-        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
-        LIGOMETA_PARAM_MAX, "--disable-output" );
-    LALSnprintf( procparams.processParamsTable->type,
-        LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value,
-        LIGOMETA_VALUE_MAX, " " );
+    snprintf( procparams.processParamsTable->program,
+              LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    snprintf( procparams.processParamsTable->param,
+              LIGOMETA_PARAM_MAX, "--disable-output" );
+    snprintf( procparams.processParamsTable->type,
+              LIGOMETA_TYPE_MAX, "string" );
+    snprintf( procparams.processParamsTable->value,
+              LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
     fprintf( stderr, "--enable-output or --disable-output "
-        "argument must be specified\n" );
+             "argument must be specified\n" );
     exit( 1 );
   }
 
@@ -4900,12 +4949,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--inject-overhead" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--inject-overhead" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* store point calibration option */
@@ -4913,24 +4962,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
         "--point-calibration" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   if ( outCompress)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--write-compress" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--write-compress" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /*
@@ -4947,15 +4996,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ),
-      &status );
+  XLALINT8NSToGPS( &gpsStartTime, gpsStartTimeNS );
   if ( ! gpsEndTimeNS )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ),
-      &status );
+  XLALINT8NSToGPS( &gpsEndTime, gpsEndTimeNS );
   if ( gpsEndTimeNS <= gpsStartTimeNS )
   {
     fprintf( stderr, "invalid gps time range: "
@@ -5020,12 +5067,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--disable-high-pass" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--disable-high-pass" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
@@ -5086,8 +5133,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   if ( fLow < bankSimParams.f_lower )
   {
-	  fprintf( stderr, "--low-frequency-cutoff must be greater than bank sim injection starting frequency\n" );
-	  exit( 1 );
+          fprintf( stderr, "--low-frequency-cutoff must be greater than bank sim injection starting frequency\n" );
+          exit( 1 );
   }
 
   /* check filter parameters have been specified */
@@ -5231,12 +5278,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--glob-frame-data" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--glob-frame-data" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check we can calibrate the data if it's not h(t) */
@@ -5270,12 +5317,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--glob-calibration-data" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--glob-calibration-data" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check that a template bank has been specified */
@@ -5296,12 +5343,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
         "--reverse-chirp-bank" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check that a random seed for gaussian noise generation has been given */
@@ -5434,12 +5481,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--disable-rsq-veto" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--disable-rsq-veto" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else if ( enableRsqVeto == 1 )
   {
@@ -5453,12 +5500,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--enable-rsq-veto" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--enable-rsq-veto" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
@@ -5503,12 +5550,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
         "--do-rsq-veto" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check to filter injection segments only */
@@ -5516,23 +5563,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--enable-filter-inj-only" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--enable-filter-inj-only" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else if ( flagFilterInjOnly == 0 )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
-        "--disable-filter-inj-only" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+              "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+              "--disable-filter-inj-only" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else if ( flagFilterInjOnly == -1 && injectionFile )
   {

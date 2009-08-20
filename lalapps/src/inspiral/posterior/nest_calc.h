@@ -5,7 +5,7 @@
 
 extern gsl_matrix *cov_mat;
 
-extern CHAR outfile[512];
+extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
 
 double logadd(double a,double b);

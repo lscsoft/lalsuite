@@ -36,6 +36,8 @@ import sys
 import time
 import re
 import optparse
+import filecmp
+import shutil
 try:
   import subprocess
 except ImportError:
@@ -67,7 +69,7 @@ class GitInvocationError(exceptions.Exception):
 # command line option parsing
 def parse_args():
   # usage information
-  usage = '%prog [options]'
+  usage = '%prog [options] src_dir build_dir'
 
   # define option parser
   parser = optparse.OptionParser(usage=usage)
@@ -80,14 +82,14 @@ def parse_args():
   opts, args = parser.parse_args()
 
   # check for positional arguments
-  if (len(args) != 0):
+  if (len(args) != 2):
     parser.error('incorrect number of command line options specified')
 
   # check that both --sed and --file are not specified
   if (opts.sed is True) and (opts.file is True):
     parser.error('cannot specify both --sed and --file')
 
-  return opts
+  return opts, args[0], args[1]
 
 #
 # process management methods
@@ -187,13 +189,31 @@ def generate_git_version_info():
 #
 
 # parse command line options
-options = parse_args()
+options, src_dir, build_dir = parse_args()
 
-# check if we are in a git repo from return codes of 'git status'
-# 128 indicates that the git status command failed
-# 127 indicates that the git command is not available
-ret_code = run_external_command('git status', honour_ret_code=False)[0]
-git_ok = ret_code not in (127, 128)
+# filenames
+basename= 'LALVCSInfo.h'
+infile = '%s/%s.in' % (src_dir, basename)
+tmpfile= '%s/%s.tmp' % (build_dir, basename)
+srcfile = '%s/%s' % (src_dir, basename)
+dstfile = '%s/%s' % (build_dir, basename)
+
+# copy LALVCSInfo.h to build_dir, if appropriate
+if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
+  shutil.copy(srcfile, dstfile)
+
+# change to src_dir
+os.chdir(src_dir)
+
+# check if git is available
+ret_code, output = run_external_command('which git', honour_ret_code=False)
+git_ok = (ret_code != 1) and not output.startswith('no')
+
+# check if we are in a git repo
+if git_ok:
+  # FIXME: 128 seems to be a magic number that indicates that the git
+  # status command has failed
+  git_ok = (run_external_command('git status', honour_ret_code=False)[0] != 128)
 
 # generate version information output, if appropriate
 if git_ok:
@@ -209,7 +229,7 @@ if git_ok:
     print 's+@COMMITTER@+%s+g' % info.committer
     print 's+@STATUS@+%s+g' % info.status
   elif options.sed:
-    # output sed command line options to stdout
+    # generate sed command line options
     sed_cmd = '-e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
     sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
@@ -217,7 +237,17 @@ if git_ok:
     sed_cmd += ' -e "s/@AUTHOR@/%s/"' % info.author
     sed_cmd += ' -e "s/@COMMITTER@/%s/"' % info.committer
     sed_cmd += ' -e "s/@STATUS@/%s/"' % info.status
-    print sed_cmd
+
+    # create tmp file
+    cmd = 'sed %s %s > %s' % (sed_cmd, infile, tmpfile)
+    p = subprocess.Popen(cmd, shell=True)
+    os.waitpid(p.pid, 0)
+
+    # update LALVCSInfo.h, if appropriate
+    if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
+      os.rename(tmpfile, dstfile)
+    else:
+      os.remove(tmpfile)
   else:
     # output version info
     print info.id

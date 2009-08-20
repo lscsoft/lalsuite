@@ -125,13 +125,8 @@ LALComputeSingleAnnulus (
 		  )
      /* </lalVerbatim> */
 {
-
-
-
-
   INT4 i,j, myindex;
   REAL4 alpha, delta;
-  REAL8 time1, time2;
   REAL8 dt, dtLow, dtUpp;
   REAL8 deltat;
 
@@ -145,9 +140,7 @@ LALComputeSingleAnnulus (
   LALI2CreateVector( status, &sky, nx*ny);
 
   /* calculate allowed area of time difference */
-  LALGPStoFloat( status, &time1, placetime1->p_gps );
-  LALGPStoFloat( status, &time2, placetime2->p_gps );
-  dt=time2-time1;
+  dt = XLALGPSDiff(placetime2->p_gps, placetime1->p_gps);
   dtLow=dt-dtErr;
   dtUpp=dt+dtErr;
 
@@ -199,10 +192,6 @@ LALComputeTripleAnnuli (
 		  )
   /* </lalVerbatim>  */
 {
-
-
-
-
   INT4 i,j, myindex;
 
   INITSTATUS( status, "LALComputeTripleAnnuli", SKYANNULUSSC );
@@ -251,10 +240,6 @@ LALExistTripleAnnuli(
 		     )
      /* </lalVerbatim> */
 {
-
-
-
-
   INT4 i,j,myindex;
   static INT2Vector* sky[4];
 

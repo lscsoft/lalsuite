@@ -1,7 +1,7 @@
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
@@ -9,6 +9,415 @@
 #include <lal/Sort.h>
 
 #include <fftw3.h>
+
+#define TEST(A) if (!(A)) { printf("FAIL: %s\n", #A); exit(1); }
+
+static void numericApply(
+    XLALSkymap2PlanType* plan,
+    XLALSkymap2DirectionPropertiesType* properties,
+    double* wSw,
+    XLALSkymap2KernelType* kernel,
+    double** xSw,
+    int tau,
+    double* logPosterior
+    )
+{
+    // this function has almost the same interface as XLALSkymap2Apply,
+    // but is implemented with numerical integration that should converge
+    // on the result from XLALSkymap2Apply
+
+    // parameters
+    double a[2];
+
+    // the step over them
+    double da = 0.01;
+
+    // accumulate probability in this
+    double p = 0.0;
+
+    // kernel is unused
+    kernel = NULL;
+
+    // range from +/- 5 sigma in prior on a[i] for adequate accuracy
+    for (a[0] = -5.0; a[0] <= 5.0; a[0] += da)
+    {
+        for (a[1] = - 5.0; a[1] <= 5.0; a[1] += da)
+        {
+            double x[XLALSKYMAP2_N];
+
+            // start accumulating inner products with the priors
+            double q = (a[0] * a[0] + a[1] * a[1]);
+
+            // for each detector...
+            int j;
+            for (j = 0; j != plan->n; ++j)
+            {
+                int k;
+                // get the time-shifted data
+                x[j] = XLALSkymap2Interpolate(xSw[j] + tau + properties->delay[j] - 1, properties->weight[j]);
+
+				// subtract the inner product
+                q -= x[j] * x[j] / wSw[j];
+                // for each polarization
+                for (k = 0; k != 2; ++k)
+                {
+                    // subtract the postulated signal out
+                    x[j] -= a[k] * properties->f[j][k] * wSw[j];
+                }
+                // add the inner product after signal removed
+                q += x[j] * x[j] / wSw[j];
+            }
+            // accumulate the piece of the integral
+            p += da * da * exp(-0.5*q);
+        }
+    }
+
+    // normalization from the priors on a
+    p *= pow(LAL_TWOPI, -1);
+
+    // return the log
+    *logPosterior = log(p);
+
+}
+
+static void numerical(void)
+{
+    XLALSkymap2PlanType plan;    
+    XLALSkymap2SphericalPolarType direction;
+    XLALSkymap2DirectionPropertiesType properties;
+    double wSw[5] = { 100., 100., 100., 100., 100. };
+    XLALSkymap2KernelType kernel;
+    double *xSw[5];
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR, LAL_GEO_600_DETECTOR, LAL_LHO_2K_DETECTOR };
+    RandomParams* rng;
+    int n;
+
+    rng = XLALCreateRandomParams(0);
+    
+    for (n = 1; n != 6; ++n)
+    {
+    
+        XLALSkymap2PlanConstruct(8192, n, siteNumbers, &plan);
+
+        direction[0] = LAL_PI * XLALUniformDeviate(rng);
+        direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
+
+        XLALSkymap2DirectionPropertiesConstruct(&plan, &direction, &properties);
+
+        XLALSkymap2KernelConstruct(&plan, &properties, wSw, &kernel);
+
+        {
+            int i;
+
+            for (i = 0; i != n; ++i)
+            {
+                int j;
+                xSw[i] = malloc(sizeof(*xSw[i]) * plan.sampleFrequency);
+                for (j = 0; j != plan.sampleFrequency; ++j)
+                {
+                    xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
+                }
+            }
+        }
+
+        {
+            double logPosteriorAnalytic;
+            double logPosteriorNumerical;
+            
+            XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosteriorAnalytic);        
+            //printf("%g\n", exp(logPosteriorAnalytic));
+
+            numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
+            //printf("%g\n", exp(logPosteriorNumerical));
+
+            //printf("%g\n", 
+            //    logPosteriorAnalytic - logPosteriorNumerical
+            //    );
+            if (abs(logPosteriorAnalytic - logPosteriorNumerical) > 1e-3)
+            {
+                // test failed
+                exit(1);
+            }
+
+        }
+
+        {
+            int i;
+            for(i = 0; i != n; ++i)
+                free(xSw[i]);
+        }
+
+    }
+        
+}
+
+#if 0
+static void injection(void)
+{    
+    XLALSkymap2PlanType plan;    
+    XLALSkymap2SphericalPolarType *directions;
+    XLALSkymap2DirectionPropertiesType *properties;
+    double S[3] = { 1, 2.0, 4.0 };
+    double wSw[3];
+    XLALSkymap2KernelType *kernels;
+    double *xSw[3];
+    int n = 8192;
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR };
+    //printf("%d\n", __LINE__);
+
+    XLALSkymap2PlanConstruct(n, 3, siteNumbers, &plan);
+    
+    // generate directions
+
+    {
+        //printf("%d\n", __LINE__);
+        int i;
+        directions = malloc(sizeof(*directions) * 180 * 360);
+        for (i = 0; i != 180; ++i)
+        {
+            int j;
+            for (j = 0; j != 360; ++j)
+            {
+                directions[i * 360 + j][0] = (i + 0.5) / 180. * LAL_PI;
+                directions[i * 360 + j][1] = (j + 0.5) / 180. * LAL_PI;
+            }
+        }
+    }
+
+    // compute properties of the directions
+
+    {
+        //printf("%d\n", __LINE__);
+        int i;
+        properties = malloc(sizeof(*properties) * 180 * 360);
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            XLALSkymap2DirectionPropertiesConstruct(
+                &plan, 
+                directions + i, 
+                properties + i
+                );
+			//for (int j = 0; j != 3; ++j)
+			//{
+			//	properties[i].weight[j][0] = 1;
+			//	properties[i].weight[j][1] = 0;
+			//}
+        }
+    }
+
+    // make some data
+
+    {
+        int i, j;
+        RandomParams* rng;
+        double* x[3];
+        double* w;
+        rng = XLALCreateRandomParams(0);
+
+        // one second of data
+        //printf("%d\n", __LINE__);
+
+        for (i = 0; i != 3; ++i)
+        {
+            x[i] = malloc(sizeof(*x[i]) * n);
+            for (j = 0; j != n; ++j)
+            {
+                //printf("%d\n", __LINE__);
+                x[i][j] = XLALNormalDeviate(rng) * sqrt(S[i]);
+            }
+        }
+
+        //printf("%d\n", __LINE__);
+
+        // half a second of waveform
+
+        w = malloc(sizeof(*w) * n / 2);
+        for (j = 0; j != n / 2; ++j)
+        {
+            double t;
+            t = ((double) j) / plan.sampleFrequency;
+            w[j] = 5 * exp(- 0.5 * pow(t - 0.25, 2) / pow(0.003, 2)) * sin(LAL_TWOPI * t * 256.0);
+        }
+
+        //printf("%d\n", __LINE__);
+        // compute wSw
+
+        for (i = 0; i != 3; ++i)
+        {
+            wSw[i] = 0;
+            for (j = 0; j != n/2; ++j)
+            {
+                wSw[i] += w[j] * w[j] / S[i];
+            }
+            fprintf(stderr, "wSw[%d] = %f = %f^2\n", i, wSw[i], sqrt(wSw[i]));
+        }
+        //exit(0);
+        //printf("%d\n", __LINE__);
+
+        // make an injection
+
+        {
+            int k;
+            double a[2];
+            //k = (int) floor(XLALUniformDeviate(rng) * 360 * 180);
+            k = 120 * 360 + 120;
+            a[0] = XLALNormalDeviate(rng);
+            a[1] = XLALNormalDeviate(rng);
+            //fprintf(stderr, "a = { %f, %f }\n", a[0], a[1]);
+            for (i = 0; i != 3; ++i)
+            {
+                for (j = 0; j != n/2; ++j)
+                {
+                    int q;
+                    for (q = 0; q != 2; ++q)
+                    {
+                        x[i][j + n / 4 + properties[k].delay[i]] += a[q] * w[j] * properties[k].f[i][q];
+                    }
+                }
+            }
+
+        }
+
+
+        // compute xSw (filtering)
+
+        for (i = 0; i != 3; ++i)
+        {
+            xSw[i] = malloc(sizeof(*xSw[i]) * n);
+            for (j = 0; j != n / 2; ++j)
+            {
+                int k;
+                double a = 0;
+                for (k = 0; k != n / 2; ++k)
+                {
+                    a += x[i][j + k] * w[k] / S[i];
+                }
+                xSw[i][j + n / 4] = a;
+            }
+        }
+        //printf("%d\n", __LINE__);
+
+
+    }
+
+    // compute the kernels
+
+    {
+        int i;
+        kernels = malloc(sizeof(*kernels) * 180 * 360);
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            XLALSkymap2KernelConstruct(&plan, properties + i, wSw, kernels + i);
+        }
+    }
+
+    /*
+    {
+        int i;
+        RandomParams* rng;
+        rng = XLALCreateRandomParams(0);
+        for (i = 0; i != 3; ++i)
+        {
+            int j;
+            xSw[i] = malloc(sizeof(*xSw[i]) * plan->sampleFrequency);
+            for (j = 0; j != plan->sampleFrequency; ++j)
+            {
+                xSw[i][j] = XLALNormalDeviate(rng) * sqrt(wSw[i]);
+            }
+        }
+        // injection
+        {
+            double h[2];
+            int k;
+            h[0] = XLALNormalDeviate(rng);
+            h[1] = XLALNormalDeviate(rng);
+            // k = (int) floor(XLALUniformDeviate(rng) * 360 * 180);
+            k = 120 * 360 + 120;
+            for (i = 0; i != 3; ++i)
+            {
+                int j;
+                for (j = 0; j != 2; ++j)
+                {
+                    xSw[i][
+                        plan->sampleFrequency / 2 +
+                        properties[k].delay[i]
+                        ] += h[j] * properties[k].f[i][j] * wSw[i];
+                }
+            }
+
+        }
+
+    }
+    */
+
+    {
+        int i;
+        for (i = 0; i != 180 * 360; ++i)
+        {
+            int t;
+            double p = 0;
+            for (t = n * 3 / 8; t != n * 5 / 8; ++t)
+            {
+                double logPosterior;
+                XLALSkymap2Apply(&plan, properties + i, kernels + i, xSw, t, &logPosterior);
+                p += exp(logPosterior) / (n / 4);
+
+            }
+            printf("%g %g %g\n", directions[i][0], directions[i][1], log(p));
+        }
+    }
+
+    {
+        int i;
+        for(i = 0; i != 3; ++i)
+            free(xSw[i]);
+    }
+
+    free(kernels);
+    free(properties);
+    free(directions);
+
+}
+
+static void interpolation(void)
+{
+
+	double x[] = { 0, 2, 1, 3, 5, 7, 6, 8 };
+	
+	for (double t = 1.; t < 6.; t += 0.01)
+	{
+		double w[4];
+		XLALSkymap2InterpolationWeights(t - floor(t), w);
+		printf("%g %g\n", t, XLALSkymap2Interpolate(x + (int) floor(t) - 1, w));
+	}
+	
+}
+#endif
+
+//int main(int argc, char** argv)
+int main(void)
+{
+    
+    // check the fast analytic bayesian statistic against simpler but 
+    // slower numerical integration
+    
+	numerical();
+
+    //injection();
+
+	//interpolation();
+
+    // ideas for tests:
+
+    // compare a numerical integral over a_+ and a_x with the normalized
+    // majig
+
+    // mock up some co-located detectors
+
+    return 0;
+}
+
+#if 0
 
 int main(int argc, char** argv)
 {
@@ -86,6 +495,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
+#endif
 
 #if 0
 #include <stdlib.h>
@@ -174,10 +584,10 @@ int main(int argc, char** argv)
 
 #if 0
 
-#include <malloc.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>

@@ -56,8 +56,8 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   struct FrProcData *proc;
 
   /* set frame filename */
-  LALSnprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
-  LALSnprintf(fname, sizeof(fname), "%s-%s-%d-%d.gwf", source, \
+  snprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
+  snprintf(fname, sizeof(fname), "%s-%s-%d-%d.gwf", source, \
       frame_type, epoch.gpsSeconds, duration);
 
   /* setup frame file */
@@ -136,89 +136,89 @@ void save_xml_file(LALStatus *status,
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--middle-segment");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (apply_mask_flag)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--apply-mask");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (high_pass_flag)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--high-pass-filter");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (overlap_hann_flag)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--overlap-hann");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (recentre_flag)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--recentre");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (cc_spectra_flag)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--cc-spectra");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
   if (vrbflg)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                       calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
         program_name);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+    snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--verbose");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+    snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
 
   /* add the xml comment, if specified */
   if (!*comment)
   {
-    LALSnprintf(proc_table.processTable->comment, \
+    snprintf(proc_table.processTable->comment, \
         LIGOMETA_COMMENT_MAX, " ");
   }
   else
   {
-    LALSnprintf(proc_table.processTable->comment, \
+    snprintf(proc_table.processTable->comment, \
         LIGOMETA_COMMENT_MAX, "%s", comment);
   }
 
@@ -230,12 +230,12 @@ void save_xml_file(LALStatus *status,
   /* set xml output file */
   if (output_path)
   {
-    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+    snprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
         output_path, base_name);
   }
   else
   {
-    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s.xml",
+    snprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s.xml",
         base_name);
   }
 

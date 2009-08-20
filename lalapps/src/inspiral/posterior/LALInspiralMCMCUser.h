@@ -115,9 +115,9 @@ INT4 MCMCPriorTest(
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
-REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
+REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
-void NestInitInj(LALMCMCParameter *parameter, void *iT);
+REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT);
 
@@ -134,7 +134,7 @@ void MCMCInit1IFO(LALMCMCParameter *parameter, SnglInspiralTable *inspiralTable)
 
 extern REAL4Vector *model;
 extern REAL4Vector *Tmodel;
-extern REAL8Sequence **topdown_sum;
+extern REAL8Vector **topdown_sum;
 extern REAL8 *normalisations;
 
 

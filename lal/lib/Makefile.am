@@ -19,7 +19,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/window/src/libwindow.la \
 	$(top_builddir)/packages/fft/src/libfft.la \
 	$(top_builddir)/packages/clremoval/src/libclremoval.la \
-	$(top_builddir)/packages/stochastic/src/libstochastic.la \
 	$(top_builddir)/packages/inspiral/src/libinspiral.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
 	$(top_builddir)/packages/bank/src/libbank.la \
@@ -42,8 +41,8 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	@touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
 	@echo "creating LALVCSInfo.h"
-	@d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
-	@test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+	./git_version --sed $$sourced $$buildd
 	@-rm -f .vcsinfo
 
 all-local: include-link

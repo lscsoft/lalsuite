@@ -938,6 +938,8 @@ LALSTPNWaveformEngine (
 				 -(110.0/9.0) * (-1987.0/3080.0) ) * params->eta
 			      -(155.0/96.0)*params->eta*params->eta - (35.0/5184.0)*params->eta*params->eta*params->eta );
     break;
+  default:
+    ABORT( status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING );
   }
 
   if (params->order == LAL_PNORDER_THREE)

@@ -39,27 +39,33 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 
 
-xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
-INT4 XLALVOTableDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *name, LIGOTimeGPS *ltg);
+xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *name);
+INT4 XLALVOTDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *name, LIGOTimeGPS *ltg);
 
-xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop, const char *name);
-INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
+xmlNodePtr XLALBinaryOrbitParams2VOTNode(const BinaryOrbitParams *const bop, const char *name);
+INT4 XLALVOTDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
 
-xmlNodePtr XLALPulsarSpins2VOTableNode(const PulsarSpins *const spins, const char *name);
-INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
-                                      const char *resourceType,
-                                      const char *resourceName,
-                                      const char *paramName,
-                                      PulsarSpins spins);
+xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *name);
+INT4 XLALVOTDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
+                                  const char *resourcePath,
+                                  const char *paramName,
+                                  PulsarSpins spins);
 
-xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const pdp, const char *name);
-INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
+xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp, const char *name);
+INT4 XLALVOTDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
-xmlNodePtr XLALgsl_vector2VOTableNode(const gsl_vector *vect, const char *name, const CHAR *unitName );
-gsl_vector *XLALVOTableDoc2gsl_vectorByName(const xmlDocPtr xmlDocument, const char *resourceType, const char *resourceName, const char *paramName, const CHAR *unitName);
+xmlNodePtr XLALgsl_vector2VOTNode(const gsl_vector *vect, const char *name, const CHAR *unitName );
 
-xmlNodePtr XLALgsl_matrix2VOTableNode(const gsl_matrix *vect, const char *name, const CHAR *unitName );
-gsl_matrix *XLALVOTableDoc2gsl_matrixByName(const xmlDocPtr xmlDocument, const char *resourceType, const char *resourceName, const char *paramName, const CHAR *unitName);
+gsl_vector *XLALVOTDoc2gsl_vectorByName(const xmlDocPtr xmlDocument,
+                                        const char *resourcePath,
+                                        const char *paramName,
+                                        const CHAR *unitName);
+
+xmlNodePtr XLALgsl_matrix2VOTNode(const gsl_matrix *vect, const char *name, const CHAR *unitName );
+gsl_matrix *XLALVOTDoc2gsl_matrixByName(const xmlDocPtr xmlDocument,
+                                        const char *resourcePath,
+                                        const char *paramName,
+                                        const CHAR *unitName);
 
 
 

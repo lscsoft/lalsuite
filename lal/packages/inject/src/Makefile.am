@@ -8,9 +8,8 @@ libinject_la_SOURCES =	\
 	GenerateTaylorCW.c		SimulateCoherentGW.c \
 	InjectVector.c			InjectTimeSeries.c \
 	CelestialCoordinates.c		TerrestrialCoordinates.c \
-	SkyCoordinates.c		SimulateSB.c \
-	SimulateInspiral.c              SimulatePopcorn.c \
-        StochasticMC.c                  GenerateBurst.c\
+	SkyCoordinates.c		SimulateInspiral.c \
+	GenerateBurst.c\
 	GenerateInspiral.c		GenerateInspiralSmooth.c  \
 	GeneratePulsarSignal.c		SimulatePulsarSignal.c	 \
 	CelestialCoordinatesLaldoc.c    NRWaveInject.c \

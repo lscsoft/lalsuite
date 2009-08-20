@@ -150,8 +150,7 @@ int main( int argc, char **argv )
   while ( checkEvents )
   {
     INT8 trigTimeNS;
-    LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(checkEvents->start_time) ), 
-        &status );
+    trigTimeNS = XLALGPSToINT8NS( &(checkEvents->start_time) );
     if ( trigTimeNS &&  ((params->trigStartTimeNS && 
             (trigTimeNS < params->trigStartTimeNS)) ||
           (params->trigEndTimeNS && (trigTimeNS >= params->trigEndTimeNS))) )

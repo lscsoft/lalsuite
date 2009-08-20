@@ -479,7 +479,6 @@ void LALappsTrackSearchInitialize(
       {"inject_space",        required_argument,  0,    'L'},
       {"inject_file",         required_argument,  0,    'M'},
       {"inject_scale",        required_argument,  0,    'N'},
-      {"channel_type",        required_argument,  0,    'O'},
       {"bin_buffer",          required_argument,  0,    'P'},
       {"zcontrast",           required_argument,  0,    'Q'},
       {"zlength",             required_argument,  0,    'R'},
@@ -536,9 +535,7 @@ void LALappsTrackSearchInitialize(
   params->dcDetrend=-1;
   params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
-  params->calChannelType=SimDataChannel;/*See lsd*/
   params->channelName=NULL; /* Leave NULL to avoid frame read problems */
-  params->channelNameType=LAL_ADC_CHAN; /*Default for data analysis */
   params->dataDirPath=NULL;
   params->singleDataCache=NULL;
   params->detectorPSDCache=NULL;
@@ -613,11 +610,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    /*XLALFloatToGPS(&tempGPS,startTime);*/
-	    LAL_CALL(LALFloatToGPS(status,
-				   &tempGPS,
-				   &startTime),
-		     status);
+	    XLALGPSSetREAL8(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -996,22 +989,6 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
-	case 'O':
-	  {
-	    if(!strcmp(optarg,"LAL_ADC_CHAN"))
-	      params->channelNameType=LAL_ADC_CHAN;
-	    else if(!strcmp(optarg,"LAL_SIM_CHAN"))
-	      params->channelNameType=LAL_SIM_CHAN;
-	    else if(!strcmp(optarg,"LAL_PROC_CHAN"))
-	      params->channelNameType=LAL_PROC_CHAN;
-	    else
-	      {
-		fprintf(stderr,"Invalid channel type specified assuming LAL_ADC_CHAN\n");
-		params->channelNameType=LAL_ADC_CHAN;
-	      };
-	  }
-	  break;
-
 	case 'P':
 	  {
 	    params->colsToClip=atoi(optarg);
@@ -1312,6 +1289,19 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
+      lal_errhandler = LAL_ERR_EXIT;
+      /* Set verbosity of stream so user sees frame read problems! */
+      XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
+      memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
+      bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
+      /* 
+       * Seek to end of requested data makes sure that all stream is complete!
+       */
+      bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
+      XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
+      bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
+
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,"Creating data stream.\n");
@@ -2148,7 +2138,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
+
   signalStart=XLALGPSGetREAL8(&signalSeries->epoch);
+
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
@@ -2346,6 +2338,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 			     /params.HeterodyneSamplingRate*
 			     params.SamplingRate);
       }
+=======
+    XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
+
+>>>>>>> master:lalapps/src/tracksearch/tracksearch.c
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,
 				      0,
@@ -2730,8 +2726,6 @@ LALappsWriteSearchConfig(LALStatus          *status,
     fprintf(configFile,"channelNamePSD\t: %s\n",
 	    myParams.channelNamePSD);
 
-  fprintf(configFile,"calChannelType\t: %i\n",
-	  myParams.calChannelType);
   if (myParams.calFrameCache == NULL)
     fprintf(configFile,"calFrameCache\t: \n");
   else

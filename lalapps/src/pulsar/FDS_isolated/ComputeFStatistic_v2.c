@@ -882,19 +882,19 @@ InitEphemeris (LALStatus * status,
   if ( ephemDir )
     {
       if ( isLISA )
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
+	snprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
       else
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+	snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
       
-      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
     {
       if ( isLISA )
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
+	snprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
       else
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+	snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
   
   EphemEarth[FNAME_LENGTH-1]=0;
@@ -984,7 +984,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar->refTime)) 
     {
-      TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar->refTime), status);
+      XLALGPSSetREAL8(&(cfg->refTime), uvar->refTime);
     } 
   else if (LALUserVarWasSet(&uvar->refTimeMJD)) 
     {
@@ -1186,7 +1186,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       }
 
     if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
-      TRY ( LALFloatToGPS (status->statusPtr, &(internalRefTime), &uvar->internalRefTime), status);
+      XLALGPSSetREAL8(&(internalRefTime), uvar->internalRefTime);
     }
     else
       internalRefTime = startTime;
@@ -1295,7 +1295,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   /* add code version ID (only useful for git-derived versions) */
   id1 = XLALClearLinebreaks ( lalGitID );
   id2 = XLALClearLinebreaks ( lalappsGitID );
-  LALSnprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
+  snprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
   LALFree ( id1 );
   LALFree ( id2 );
   ret = append_string ( ret, line );

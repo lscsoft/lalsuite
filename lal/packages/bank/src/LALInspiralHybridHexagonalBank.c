@@ -444,24 +444,28 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[2]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[3]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[4]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+			  case Edge:             break;
 			  }
 			}
 
@@ -511,7 +515,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     *nlist = 0 ;
     for (i=0; i<cellEvolution.nTemplate; i++)
     {
-      if (cells[i].position == In & cells[i].t0>0)
+      if ((cells[i].position == In) && (cells[i].t0 > 0))
       {
         tempPars->t0  = cells[i].t0;
         tempPars->t3  = cells[i].t3;

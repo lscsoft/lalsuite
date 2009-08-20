@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define _GNU_SOURCE
@@ -40,7 +41,7 @@
 #define LHO_LONGITUDE_RAD_E (LAL_PI*(-119.0+(24.0+27.5657/60.0)/60.0)/180.0)
 #define LLO_LONGITUDE_RAD_E (LAL_PI*(-90.0+(46.0+27.2654/60.0)/60.0)/180.0)
 
-const char * skip_space( const char *s )
+static const char * skip_space( const char *s )
 {
   while ( s && *s && isspace( *s ) )
     ++s;
@@ -183,7 +184,7 @@ int main( int argc, char *argv[] )
 }
 
 
-void output_secs( int gps_sec )
+static void output_secs( int gps_sec )
 {
   time_t unix_sec;
   int leap;
@@ -215,7 +216,7 @@ void output_secs( int gps_sec )
   return;
 }
 
-void output_date( int gps_sec )
+static void output_date( int gps_sec )
 {
   char date_string[256];
   struct tm *tp;
@@ -238,7 +239,7 @@ void output_date( int gps_sec )
   return;
 }
 
-void output_date_utc( int gps_sec )
+static void output_date_utc( int gps_sec )
 {
   int utc_flag_save = utc_flag;
   utc_flag = 1;
@@ -249,7 +250,7 @@ void output_date_utc( int gps_sec )
   return;
 }
 
-void output_date_local( int gps_sec )
+static void output_date_local( int gps_sec )
 {
   int utc_flag_save = utc_flag;
   utc_flag = 0;
@@ -260,7 +261,7 @@ void output_date_local( int gps_sec )
   return;
 }
 
-void output_lho_date( int gps_sec )
+static void output_lho_date( int gps_sec )
 {
   set_zone_lho();
   if ( verbose )
@@ -269,7 +270,7 @@ void output_lho_date( int gps_sec )
   set_zone( tz );
 }
 
-void output_llo_date( int gps_sec )
+static void output_llo_date( int gps_sec )
 {
   set_zone_llo();
   if ( verbose )
@@ -278,7 +279,7 @@ void output_llo_date( int gps_sec )
   set_zone( tz );
 }
 
-void output_date_site( int gps_sec )
+static void output_date_site( int gps_sec )
 {
   switch ( site )
   {
@@ -298,7 +299,7 @@ void output_date_site( int gps_sec )
   return;
 }
 
-void output_jd( int gps_sec )
+static void output_jd( int gps_sec )
 {
   struct tm utc;
   double jd;
@@ -310,7 +311,7 @@ void output_jd( int gps_sec )
   return;
 }
 
-void output_mjd( int gps_sec )
+static void output_mjd( int gps_sec )
 {
   struct tm utc;
   double jd;
@@ -324,7 +325,7 @@ void output_mjd( int gps_sec )
   return;
 }
 
-void output_leaps( int gps_sec )
+static void output_leaps( int gps_sec )
 {
   int leaps;
   leaps = XLALLeapSeconds( gps_sec );
@@ -334,7 +335,7 @@ void output_leaps( int gps_sec )
   return;
 }
 
-void output_sidereal_time( double sidereal_time_rad )
+static void output_sidereal_time( double sidereal_time_rad )
 {
   double sidereal_time_hrs;
   double sidereal_time_min;
@@ -366,7 +367,7 @@ void output_sidereal_time( double sidereal_time_rad )
   return;
 }
 
-void output_gmst( int gps_sec )
+static void output_gmst( int gps_sec )
 {
   LIGOTimeGPS ligo_time;
   double gmst_rad;
@@ -379,7 +380,7 @@ void output_gmst( int gps_sec )
   return;
 }
 
-void output_local_sidereal_time_lho( int gps_sec )
+static void output_local_sidereal_time_lho( int gps_sec )
 {
   LIGOTimeGPS ligo_time;
   double sidereal_time_rad;
@@ -392,7 +393,7 @@ void output_local_sidereal_time_lho( int gps_sec )
   output_sidereal_time( sidereal_time_rad );
 }
 
-void output_local_sidereal_time_llo( int gps_sec )
+static void output_local_sidereal_time_llo( int gps_sec )
 {
   LIGOTimeGPS ligo_time;
   double sidereal_time_rad;
@@ -405,7 +406,7 @@ void output_local_sidereal_time_llo( int gps_sec )
   output_sidereal_time( sidereal_time_rad );
 }
 
-void output_sidereal_time_site( int gps_sec )
+static void output_sidereal_time_site( int gps_sec )
 {
   switch ( site )
   {

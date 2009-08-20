@@ -138,15 +138,15 @@ int main ( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -167,7 +167,7 @@ int main ( int argc, char *argv[] )
   /* store the seed in the search summvars table */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  LALSnprintf( this_search_summvar->name,
+  snprintf( this_search_summvar->name,
       LIGOMETA_NAME_MAX * sizeof(CHAR), "template bank simulation seed" );
 
   if ( randSeedType == urandom )
@@ -202,7 +202,7 @@ int main ( int argc, char *argv[] )
   }
 
   this_search_summvar->value = randomSeed;
-  LALSnprintf( this_search_summvar->string, LIGOMETA_STRING_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX * sizeof(CHAR),
       "%d", randomSeed );
   if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
 
@@ -275,10 +275,10 @@ int main ( int argc, char *argv[] )
     thisTmplt->f_final = newTmplt.fFinal;
     thisTmplt->eta = newTmplt.eta;
     thisTmplt->beta = newTmplt.beta;
-    LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "P1" );
-    LALSnprintf( thisTmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+    snprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "P1" );
+    snprintf( thisTmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
         "randombank" );
-    LALSnprintf( thisTmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+    snprintf( thisTmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
         "SIM-BANK" );
   }
 
@@ -293,32 +293,32 @@ int main ( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag && !outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
+    snprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
         userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml.gz",
         userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( !userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml.gz",
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml",
+    snprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml",
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "P1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "P1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
@@ -392,12 +392,12 @@ int main ( int argc, char *argv[] )
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
           long_options[option_index].name ); \
-          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
 "  --help                       display this message\n"\
@@ -492,11 +492,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 

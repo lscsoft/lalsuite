@@ -62,7 +62,7 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
   SnglInspiralTable    *snglEvt = NULL;
   int                   numEvt  = 0;
   double                timeAfter = 0;
-	
+
   /* If we already have events in snglInspiralEvent, 
    * wind on to the end of the list */
   for( snglEvt = *snglInspiralEvent; snglEvt; snglEvt=snglEvt->next);
@@ -82,12 +82,12 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     }
 
     /* read data from the frEvt */
-    LALSnprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, frEvt->name);
+    snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, frEvt->name);
     snglEvt->snr = frEvt->amplitude;
     snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
     snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
-		timeAfter = frEvt->timeAfter;
-		XLALGPSAdd(&snglEvt->end_time,timeAfter);
+    timeAfter = frEvt->timeAfter;
+    XLALGPSAdd(&snglEvt->end_time,timeAfter);
     snglEvt->eff_distance = FrEventGetParam ( frEvt, "distance (Mpc)");
     snglEvt->mass1 = FrEventGetParam ( frEvt, "mass1");
     snglEvt->mass2 = FrEventGetParam ( frEvt, "mass2" );
@@ -95,13 +95,13 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     snglEvt->tau3 = FrEventGetParam ( frEvt, "tau1p5" );
     snglEvt->coa_phase = FrEventGetParam ( frEvt, "phase" );
     snglEvt->chisq = FrEventGetParam ( frEvt, "chi2" );
-		
+
     /* populate additional colums */
     snglEvt->mtotal = snglEvt->mass1 + snglEvt->mass2;
     snglEvt->eta = (snglEvt->mass1 * snglEvt->mass2) /
       (snglEvt->mtotal * snglEvt->mtotal);
     snglEvt->mchirp = pow( snglEvt->eta, 0.6) * snglEvt->mtotal;
-    LALSnprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, ifo);
+    snprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, ifo);
   }
   return( numEvt );
 }
@@ -133,7 +133,7 @@ int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
     }
 
     /* read data from the frSimEvt */
-    LALSnprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, frSimEvt->name);
+    snprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, frSimEvt->name);
     simEvt->geocent_end_time.gpsSeconds = frSimEvt->GTimeS;
     simEvt->geocent_end_time.gpsNanoSeconds = frSimEvt->GTimeN;
     simEvt->v_end_time = simEvt->geocent_end_time;
@@ -202,7 +202,7 @@ int main( int argc, char *argv[] )
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"snr-threshold",           required_argument,      0,              's'},
-			{"ifo",                     required_argument,      0,              'd'},
+      {"ifo",                     required_argument,      0,              'd'},
       {0, 0, 0, 0}
     };
     int c;
@@ -253,13 +253,13 @@ int main( int argc, char *argv[] )
         memcpy( outputFileName, optarg, optarg_len );
         break;
 
-			case 'd':
+    case 'd':
         /* create storage for the output file name */
         optarg_len = strlen( optarg ) + 1;
         ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( ifo, optarg, optarg_len );
         break;
-	
+
       case 's':
         snrMin = (double) atof( optarg );
         if ( snrMin < 0 )
@@ -341,36 +341,36 @@ int main( int argc, char *argv[] )
   FrSimEventFree(frSimEvent);
 
 
-	/* 
-	 *
-	 * write a search summary table
-	 *
-	 */
+        /* 
+         *
+         * write a search summary table
+         *
+         */
 
-	/* create the search summary and zero out the summvars table */
+        /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
-	  
-	/* create the search summary and zero out the summvars table */
+          
+        /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
-	searchsumm.searchSummaryTable->in_start_time.gpsSeconds = tStart;
+        searchsumm.searchSummaryTable->in_start_time.gpsSeconds = tStart;
   searchsumm.searchSummaryTable->in_end_time.gpsSeconds = tEnd;
   
   searchsumm.searchSummaryTable->out_start_time.gpsSeconds = tStart;
-	searchsumm.searchSummaryTable->out_end_time.gpsSeconds = tEnd;
+        searchsumm.searchSummaryTable->out_end_time.gpsSeconds = tEnd;
   searchsumm.searchSummaryTable->nnodes = 1;
-	if (numEvt)
-	{
-    searchsumm.searchSummaryTable->nevents = numEvt;
-	}
-	else if (numSim)
-	{
-		searchsumm.searchSummaryTable->nevents = numSim;
-	}
-	
+        if (numEvt)
+        {
+          searchsumm.searchSummaryTable->nevents = numEvt;
+        }
+        else if (numSim)
+        {
+          searchsumm.searchSummaryTable->nevents = numSim;
+        }
+        
 
   /*
    *
@@ -382,14 +382,14 @@ int main( int argc, char *argv[] )
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   LALOpenLIGOLwXMLFile( &stat, &xmlStream, outputFileName );
 
-	/* Write search_summary table */
+        /* Write search_summary table */
     LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
           search_summary_table );
     LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
           search_summary_table );
     LALEndLIGOLwXMLTable ( &stat, &xmlStream );
 
-	
+
   /* Write the results to the inspiral table */
   if ( snglInspiralEvent )
   {

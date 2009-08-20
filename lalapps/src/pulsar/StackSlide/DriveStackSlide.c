@@ -1372,21 +1372,21 @@ params->numFDeriv5   =   0;
             /* write the process table */
 	    proctable.processTable = (ProcessTable *) LALCalloc( 1, sizeof(ProcessTable) );
             /* JUST SET SOME VALUES TO 0 OR BLANK FOR NOW */
-            LALSnprintf( proctable.processTable->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-            LALSnprintf( proctable.processTable->version, LIGOMETA_VERSION_MAX, "%s", CVS_ID_STRING );
-            LALSnprintf( proctable.processTable->cvs_repository, LIGOMETA_CVS_REPOSITORY_MAX, "%s", CVS_SOURCE );
+            snprintf( proctable.processTable->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+            snprintf( proctable.processTable->version, LIGOMETA_VERSION_MAX, "%s", CVS_ID_STRING );
+            snprintf( proctable.processTable->cvs_repository, LIGOMETA_CVS_REPOSITORY_MAX, "%s", CVS_SOURCE );
             proctable.processTable->cvs_entry_time.gpsSeconds = 0;   
             proctable.processTable->cvs_entry_time.gpsNanoSeconds = 0;
-	    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", BLANK );
+	    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", BLANK );
 	    proctable.processTable->is_online = 0;
-	    LALSnprintf( proctable.processTable->node, LIGOMETA_NODE_MAX, "%s", BLANK );
-	    LALSnprintf( proctable.processTable->username, LIGOMETA_USERNAME_MAX, "%s", BLANK );
+	    snprintf( proctable.processTable->node, LIGOMETA_NODE_MAX, "%s", BLANK );
+	    snprintf( proctable.processTable->username, LIGOMETA_USERNAME_MAX, "%s", BLANK );
 	    LALGPSTimeNow ( status->statusPtr, &(proctable.processTable->start_time), &accuracy );
             LALGPSTimeNow ( status->statusPtr, &(proctable.processTable->end_time), &accuracy );
 	    proctable.processTable->jobid = 0;
-            LALSnprintf( proctable.processTable->domain, LIGOMETA_DOMAIN_MAX, "%s", BLANK );
+            snprintf( proctable.processTable->domain, LIGOMETA_DOMAIN_MAX, "%s", BLANK );
 	    proctable.processTable->unix_procid = 0;
-            LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
+            snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
 	    proctable.processTable->next = NULL;
 
             LALBeginLIGOLwXMLTable( status->statusPtr, params->xmlStream, process_table );
@@ -1399,9 +1399,9 @@ params->numFDeriv5   =   0;
 	    
             /* write the process params table */
 	    procparams.processParamsTable = (ProcessParamsTable *) LALCalloc( 1, sizeof(ProcessParamsTable) );
-            LALSnprintf( procparams.processParamsTable->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-            LALSnprintf( procparams.processParamsTable->param, LIGOMETA_PARAM_MAX, "%s", "cmd line args" );
-            LALSnprintf( procparams.processParamsTable->type, LIGOMETA_TYPE_MAX, "%s", "string" );
+            snprintf( procparams.processParamsTable->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+            snprintf( procparams.processParamsTable->param, LIGOMETA_PARAM_MAX, "%s", "cmd line args" );
+            snprintf( procparams.processParamsTable->type, LIGOMETA_TYPE_MAX, "%s", "string" );
 	    strcpy(procparams.processParamsTable->value," ");
             for (i = 1; i < argc; i++) {	    
 	       strcat(procparams.processParamsTable->value,argv[i]);
@@ -1812,9 +1812,9 @@ void StackSlideConditionData(
 	    stksldSFTsSearchSummaryTable = (StackSlideSFTsSearchSummaryTable *) LALCalloc( 1, sizeof(StackSlideSFTsSearchSummaryTable) );
             
 	    /* 02/12/04 gam; Add num_sums = numSUMsTotal, freq_index =f0SUM*params->tEffSUM, and num_bins = nBinsPerSUM to StackSlideSFTsSearchSummaryTable */
-	    LALSnprintf( stksldSFTsSearchSummaryTable->ifo, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
-	    LALSnprintf( stksldSFTsSearchSummaryTable->data_directory, LIGOMETA_STRING_MAX, "%s", params->sftDirectory );
-	    LALSnprintf( stksldSFTsSearchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
+	    snprintf( stksldSFTsSearchSummaryTable->ifo, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
+	    snprintf( stksldSFTsSearchSummaryTable->data_directory, LIGOMETA_STRING_MAX, "%s", params->sftDirectory );
+	    snprintf( stksldSFTsSearchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
             stksldSFTsSearchSummaryTable->start_time = params->gpsStartTimeSec;
             stksldSFTsSearchSummaryTable->start_time_ns =params->gpsStartTimeNan;
             stksldSFTsSearchSummaryTable->duration = params->duration;
@@ -2762,7 +2762,7 @@ void StackSlideFinalizeSearch(
 
       /* write the search summary table */
       searchsumm.searchSummaryTable = (SearchSummaryTable *) LALCalloc( 1, sizeof(SearchSummaryTable) );
-      LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
+      snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
       searchsumm.searchSummaryTable->in_start_time.gpsSeconds = params->gpsStartTimeSec;
       searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds = params->gpsStartTimeNan;
       searchsumm.searchSummaryTable->out_start_time.gpsSeconds = params->actualStartTime.gpsSeconds;   
@@ -2785,8 +2785,8 @@ void StackSlideFinalizeSearch(
 
       /* write the search summ vars table */
       searchsummvars.searchSummvarsTable = (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      LALSnprintf( searchsummvars.searchSummvarsTable->name,LIGOMETA_NAME_MAX, "%s","max_power");
-      LALSnprintf( searchsummvars.searchSummvarsTable->string,LIGOMETA_STRING_MAX, "%s"," ");
+      snprintf( searchsummvars.searchSummvarsTable->name,LIGOMETA_NAME_MAX, "%s","max_power");
+      snprintf( searchsummvars.searchSummvarsTable->string,LIGOMETA_STRING_MAX, "%s"," ");
       searchsummvars.searchSummvarsTable->value = (REAL8)(params->maxPower);
       searchsummvars.searchSummvarsTable->next = NULL;
 
