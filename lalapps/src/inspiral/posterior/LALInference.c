@@ -636,7 +636,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * data,
 }
 							  
 
-/*
+
 
 REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
@@ -856,9 +856,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
 			freqModelh*, and modelParams variables to avoid excess computation 
 			in model waveform generation in the future*/
-		LALIFOdata * ifoPtrCompare=ifoListStart;
+		LALIFOData * ifoPtrCompare=ifoListStart;
 		int foundIFOwithSameSampleRate=0;
-		while(ifoPtrCompare != NULL) {
+		while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
 			if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
 				ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
 				ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
