@@ -26,6 +26,11 @@ from pylal.xlal.date import LIGOTimeGPS
 
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
+class bsim(object):
+  def __init__(self,stup):
+    self.mass1 = float(stup[0])
+    self.mass2 = float(stup[1])
+    self.distance = float(stup[2])
 
 def get_far_threshold_and_segments(zerofname, live_time_program, instruments, verbose = False):
   """
@@ -49,6 +54,8 @@ def get_far_threshold_and_segments(zerofname, live_time_program, instruments, ve
   connection.close()
   dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
   dbtables.DBTable_set_connection(None)
+  print >>sys.stderr, "WARNING replacing far with 10^-7"
+  far = 1.0e-7
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
@@ -75,7 +82,15 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   # the derivitive is calcuated with respect to FAR * t
   FARS = rate.LogarithmicBins(FARl * livetime, FARh * livetime, nbins)
   return derivitave_fit(FARS, FAR * livetime, vA, twoDMassBins)
-  
+
+def get_burst_injections(fname):
+  s = []
+  for l in open(fname).readlines():
+    if '#' in l: continue
+    s.append(bsim(l.split()))
+  print >>sys.stderr, "\n%s has %d injections\n" % (fname, len(s))
+  return s    
+     
   
 def derivitave_fit(farts, FARt, vAs, twodbin):
   '''
@@ -308,6 +323,9 @@ def parse_command_line():
   parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "integer", type = "int", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
   parser.add_option("--veto-segments-name", help = "Set the name of the veto segments to use from the XML document.")
   parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
+  parser.add_option("--burst-found", default=None, help = "use a burst input file")
+  parser.add_option("--burst-missed", default=None, help = "use a burst input file")
+
 
   opts, filenames = parser.parse_args()
 
@@ -343,22 +361,28 @@ if opts.veto_segments_name is not None:
 else:
   veto_segments = segments.segmentlistdict()
 
+if not opts.burst_found and not opts.burst_missed:
+  FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, instruments=lsctables.ifos_from_instrument_set(opts.instruments),verbose = opts.verbose)
 
-FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, instruments=lsctables.ifos_from_instrument_set(opts.instruments),verbose = opts.verbose)
 
+  # times when only exactly the required instruments are on
+  seglists -= veto_segments
+  zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
-# times when only exactly the required instruments are on
-seglists -= veto_segments
-zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
+  live_time = float(abs(zero_lag_segments))
+  print FAR, live_time
 
-live_time = float(abs(zero_lag_segments))
-print FAR, live_time
+  Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
 
-Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
+else:
+  Found = get_burst_injections(opts.burst_found)
+  Missed = get_burst_injections(opts.burst_missed)
+
 
 # restrict the sims to a distance range
 Found = cut_distance(Found, 1, max_dist)
 Missed = cut_distance(Missed, 1, max_dist)
+
 
 # get a 2D mass binning
 twoDMassBins = get_2d_mass_bins(min_mass, max_mass, mass_bins)
@@ -371,19 +395,18 @@ dBin = rate.LogarithmicBins(0.1,max_dist*1.25,dist_bins)
 gw = None
 
 #Get derivative of volume with respect to FAR
-dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
+#dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
-print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, live_time, bootnum=int(opts.bootstrap_iterations))
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1.0, bootnum=int(opts.bootstrap_iterations))
 
 # FIXME convert to years (use some lal or pylal thing in the future)
-vA.array /= secs_in_year
-vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
+#vA.array /= secs_in_year
+#vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
 
 #Trim the array to have sane values outside the total mass area of interest
 try: minvol = scipy.unique(vA.array)[1]/10.0
 except: minvol = 0
-trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
+#trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
 trim_mass_space(vA, twoDMassBins, minthresh=minvol, minM=min_mtotal, maxM=max_mtotal)
 trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=min_mtotal, maxM=max_mtotal)
 
@@ -392,9 +415,9 @@ xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
-xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
+#xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
 # DONE with vA, so it is okay to mess it up...
 # Compute range 
-vA.array = (vA.array * secs_in_year / live_time / (4.0/3.0 * pi)) **(1.0/3.0)
-xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeDistance"))
+#vA.array = (vA.array * secs_in_year / live_time / (4.0/3.0 * pi)) **(1.0/3.0)
+#xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeDistance"))
 utils.write_filename(xmldoc, "2Dsearchvolume-%s-%s.xml" % (opts.output_name_tag, "".join(sorted(opts.instruments))))

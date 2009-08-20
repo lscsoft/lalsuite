@@ -54,7 +54,7 @@ CREATE TABLE _idmap_ AS
 DROP INDEX ut_v_index;
 DROP INDEX ns_tsid_index;
 DROP INDEX ns_tsidv_index;
-DROP INDEX ns_v_indexi;
+DROP INDEX ns_v_index;
 
 DROP TABLE new_slides;
 DROP TABLE ts_vecs;

@@ -38,6 +38,8 @@ $Id$
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <lal/LALErrno.h>
+#include <lal/XLALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
@@ -454,7 +456,6 @@ LALGalacticInspiralParamsToSimInspiralTable(
 /* </lalVerbatim> */
 {
   PPNParamStruc         ppnParams;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
   SkyPosition           skyPos;
   LALSource             source;
@@ -509,10 +510,10 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* populate geocentric end time */
   output->geocent_end_time = input->geocentEndTime;
 
-  /* populate gmst field */
-  LALGPStoGMST1( status->statusPtr, &(output->end_time_gmst),
-      &(output->geocent_end_time), &gmstUnits );
-  CHECKSTATUSPTR( status );
+  /* populate gmst field (hours) */
+  output->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+      &output->geocent_end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;  /* hours*/
+  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(output->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
   /* set up params for the site end times and detector response */
   memset( &skyPos, 0, sizeof(SkyPosition) );

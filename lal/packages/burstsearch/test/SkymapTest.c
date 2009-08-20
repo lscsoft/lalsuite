@@ -35,6 +35,9 @@ static void numericApply(
     // accumulate probability in this
     double p = 0.0;
 
+    // kernel is unused
+    kernel = NULL;
+
     // range from +/- 5 sigma in prior on a[i] for adequate accuracy
     for (a[0] = -5.0; a[0] <= 5.0; a[0] += da)
     {
@@ -51,8 +54,9 @@ static void numericApply(
             {
                 int k;
                 // get the time-shifted data
-                x[j] = xSw[j][tau + properties->delay[j]];
-                // subtract the inner product
+                x[j] = XLALSkymap2Interpolate(xSw[j] + tau + properties->delay[j] - 1, properties->weight[j]);
+
+				// subtract the inner product
                 q -= x[j] * x[j] / wSw[j];
                 // for each polarization
                 for (k = 0; k != 2; ++k)
@@ -147,6 +151,7 @@ static void numerical(void)
         
 }
 
+#if 0
 static void injection(void)
 {    
     XLALSkymap2PlanType plan;    
@@ -192,6 +197,11 @@ static void injection(void)
                 directions + i, 
                 properties + i
                 );
+			//for (int j = 0; j != 3; ++j)
+			//{
+			//	properties[i].weight[j][0] = 1;
+			//	properties[i].weight[j][1] = 0;
+			//}
         }
     }
 
@@ -369,6 +379,21 @@ static void injection(void)
 
 }
 
+static void interpolation(void)
+{
+
+	double x[] = { 0, 2, 1, 3, 5, 7, 6, 8 };
+	
+	for (double t = 1.; t < 6.; t += 0.01)
+	{
+		double w[4];
+		XLALSkymap2InterpolationWeights(t - floor(t), w);
+		printf("%g %g\n", t, XLALSkymap2Interpolate(x + (int) floor(t) - 1, w));
+	}
+	
+}
+#endif
+
 //int main(int argc, char** argv)
 int main(void)
 {
@@ -376,13 +401,11 @@ int main(void)
     // check the fast analytic bayesian statistic against simpler but 
     // slower numerical integration
     
-    numerical();
+	numerical();
 
-    
-    
-    
     //injection();
 
+	//interpolation();
 
     // ideas for tests:
 

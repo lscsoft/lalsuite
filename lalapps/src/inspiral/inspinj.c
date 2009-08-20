@@ -842,7 +842,6 @@ void drawFromSource( REAL8 *rightAscension,
 void drawLocationFromExttrig( SimInspiralTable* table )
 {
   LIGOTimeGPS timeGRB;  /* real time of the GRB */
-  LALMSTUnitsAndAcc unitsAndAcc; 
   REAL4 ra_rad, de_rad;
   REAL8 gmst1, gmst2;  
 
@@ -850,16 +849,12 @@ void drawLocationFromExttrig( SimInspiralTable* table )
   ra_rad = exttrigHead->event_ra  * LAL_PI_180;
   de_rad = exttrigHead->event_dec * LAL_PI_180;
 
-  /* set units and accuracy for GMST calculation*/
-  unitsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  unitsAndAcc.units = MST_RAD;
-
   /* populate the time structures */
   timeGRB.gpsSeconds     = exttrigHead->start_time;
   timeGRB.gpsNanoSeconds = exttrigHead->start_time_ns;
 
-  LALGPStoGMST1( &status, &gmst1, &timeGRB, &unitsAndAcc );
-  LALGPStoGMST1( &status, &gmst2, &table->geocent_end_time, &unitsAndAcc );
+  gmst1 = XLALGreenwichMeanSiderealTime(&timeGRB);
+  gmst2 = XLALGreenwichMeanSiderealTime(&table->geocent_end_time);
 
   /* populate the table */
   table->longitude = ra_rad- gmst1 + gmst2;
@@ -991,15 +986,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -1500,7 +1495,7 @@ int main( int argc, char *argv[] )
         if (latitude <= (  LAL_PI/2. + epsAngle ) && \
             latitude >= ( -LAL_PI/2. - epsAngle ))
         { 
-	  this_proc_param = this_proc_param->next = 
+          this_proc_param = this_proc_param->next = 
             next_process_param( long_options[option_index].name, 
                 "float", "%e", latitude );
         }
@@ -1652,7 +1647,7 @@ int main( int argc, char *argv[] )
             "The CBC group \n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -1923,7 +1918,7 @@ int main( int argc, char *argv[] )
 
   /* check if the mass area is properly specified */
   if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 || 
-	 maxMass1 <=0.0 || maxMass2 <=0.0) )
+         maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr, 
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
@@ -2047,7 +2042,7 @@ int main( int argc, char *argv[] )
   if (meanTimeStep<=0)
   {
     fprintf( stderr,
-	     "Minimum time step value must be larger than zero\n" );
+             "Minimum time step value must be larger than zero\n" );
     exit( 1 );
   }
 
@@ -2196,8 +2191,8 @@ int main( int argc, char *argv[] )
     else
     {
       fprintf( stderr,
-	       "Unknown location distribution specified. Possible choices: "
-	       "source, exttrig, random or fixed\n" );
+               "Unknown location distribution specified. Possible choices: "
+               "source, exttrig, random or fixed\n" );
       exit( 1 );
     }
 
@@ -2209,11 +2204,11 @@ int main( int argc, char *argv[] )
     else
     {                           
       do {
-	simTable=XLALRandomInspiralOrientation(simTable, randParams,
-					       iDistr, inclStd);
+        simTable=XLALRandomInspiralOrientation(simTable, randParams,
+                                               iDistr, inclStd);
       } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-		( simTable->inclination < eps ||
-		  simTable->inclination > LAL_PI-eps) );
+                ( simTable->inclination < eps ||
+                  simTable->inclination > LAL_PI-eps) );
     }
 
     /* set polarization angle */
