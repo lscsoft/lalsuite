@@ -611,6 +611,209 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   return(loglikeli);
 }
 
+REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template)
+{
+  REAL8 loglikeli, totalChiSquared=0.0;
+  LALIFOData *ifoPtr=data;
+  COMPLEX16Vector * residual=NULL;
+
+  /* loop over data (different interferometers): */
+  while (ifoPtr != NULL) {
+	COMPLEX16FrequencySeries *freqModelResponse = XLALCreateCOMPLEX16FrequencySeries("freqModelResponse",
+                                                                  &(ifoPtr->freqData->epoch),
+                                                                  0.0,
+                                                                  ifoPtr->freqData->deltaF,
+                                                                  &lalDimensionlessUnit,
+                                                                  ifoPtr->freqData->data->length);
+	/*compute the response*/
+	ComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
+	
+	COMPLEX16VectorSubtract(residual, ifoPtr->freqData->data, freqModelResponse->data);
+	
+	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, residual, residual); 
+    ifoPtr = ifoPtr->next;
+  }
+  loglikeli = -1.0 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+  return(loglikeli);
+}
+
+void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
+                              LALTemplateFunction *template, COMPLEX16FrequencySeries *freqData)
+/***************************************************************/
+/* Frequency-domain single-IFO response computation.           */
+/* Computes response for a given template.                     */
+/* Will re-compute template only if necessary                  */
+/* (i.e., if previous, as stored in data->freqModelhCross,     */
+/* was based on different parameters or template function).    */
+/* Carries out timeshifting for a given detector               */
+/* and projection onto this detector.                          */
+/* Result stored in freqResponse, assumed to be correctly      */
+/* initialized												   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/							  
+{
+	double ra, dec, psi, distMpc, gmst;
+	
+	double GPSdouble;
+	double timeTmp;
+	LIGOTimeGPS GPSlal;
+	LALMSTUnitsAndAcc UandA;
+	double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
+	double timeshift;  /* time shift (not necessarily same as above)                   */
+	double deltaT, deltaF, twopit, f, re, im;
+
+	int different;
+	LALVariables intrinsicParams;
+	LALStatus status;
+
+	double Fplus, Fcross;
+	double FplusScaled, FcrossScaled;
+	REAL8 plainTemplateReal, plainTemplateImag;
+	int i;
+	
+	/* determine source's sky location & orientation parameters: */
+	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
+	dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
+	psi       = *(REAL8*) getVariable(currentParams, "polarisation");   /* radian      */
+	GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
+	distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
+	
+	/* figure out GMST: */
+	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+	UandA.units    = MST_RAD;
+	UandA.accuracy = LALLEAPSEC_LOOSE;
+	LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+
+	intrinsicParams.head      = NULL;
+	intrinsicParams.dimension = 0;
+	copyVariables(currentParams, &intrinsicParams);
+	removeVariable(&intrinsicParams, "rightascension");
+	removeVariable(&intrinsicParams, "declination");
+	removeVariable(&intrinsicParams, "polarisation");
+	removeVariable(&intrinsicParams, "time");
+	removeVariable(&intrinsicParams, "distance");
+	// TODO: add pointer to template function here.
+	// (otherwise same parameters but different template will lead to no re-computation!!)
+      
+	/* The parameters the response function can handle by itself     */
+    /* (and which shouldn't affect the template function) are        */
+    /* sky location (ra, dec), polarisation and signal arrival time. */
+    /* Note that the template function shifts the waveform to so that*/
+	/* t_c corresponds to the "time" parameter in                    */
+	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
+    
+    /* Compare parameter values with parameter values corresponding  */
+    /* to currently stored template; ignore "time" variable:         */
+    if (checkVariable(dataPtr->modelParams, "time")) {
+      timeTmp = *(REAL8 *) getVariable(dataPtr->modelParams, "time");
+      removeVariable(dataPtr->modelParams, "time");
+    }
+    else timeTmp = GPSdouble;
+    different = compareVariables(dataPtr->modelParams, &intrinsicParams);
+    /* "different" now may also mean that "dataPtr->modelParams" */
+    /* wasn't allocated yet (as in the very 1st iteration).      */
+
+    if (different) { /* template needs to be re-computed: */
+      copyVariables(&intrinsicParams, dataPtr->modelParams);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      template(dataPtr);
+      if (dataPtr->modelDomain == timeDomain)
+        executeFT(dataPtr);
+      /* note that the dataPtr->modelParams "time" element may have changed here!! */
+      /* (during "template()" computation)                                      */
+    }
+    else { /* no re-computation necessary. Return back "time" value, do nothing else: */
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+    }
+
+    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
+    /*-- (Either freshly computed or inherited.)                            --*/
+
+    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
+    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response,
+			     ra, dec, psi, gmst);
+    /* signal arrival time (relative to geocenter); */
+    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+                                             ra, dec, &GPSlal);
+    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
+
+    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
+    timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
+    twopit    = LAL_TWOPI * timeshift;
+
+    /* include distance (overall amplitude) effect in Fplus/Fcross: */
+    FplusScaled  = Fplus  / distMpc;
+    FcrossScaled = Fcross / distMpc;
+
+	if(freqData->data->length!=dataPtr->freqModelhPlus->data->length){
+		printf("Error!  Frequency data vector must be same length as original data!\n");
+		exit(1);
+	}
+	
+	deltaT = dataPtr->timeData->deltaT;
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+	
+	for(i=0; i<freqData->data->length; i++){
+		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
+		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
+                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
+		plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
+                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
+		/* do time-shifting...             */
+		/* (also un-do 1/deltaT scaling): */
+		f = ((double) i) * deltaF;
+		/* real & imag parts of  exp(-2*pi*i*f*deltaT): */
+		re = cos(twopit * f);
+		im = - sin(twopit * f);
+
+		freqData->data->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
+		freqData->data->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);
+	}
+	destroyVariables(&intrinsicParams);
+}
+
+	
+							  						  
+REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr, 
+	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2)
+{
+    int lower, upper, i;
+	double deltaT, deltaF, TwoDeltaToverN;
+	double data1re, data1im, data2re, data2im;
+	double diffRe, diffIm, diffSquared, chisquared=0.0;
+	
+	/* determine frequency range & loop over frequency bins: */
+    deltaT = dataPtr->timeData->deltaT;
+    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+    // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
+    lower = ceil(dataPtr->fLow / deltaF);
+    upper = floor(dataPtr->fHigh / deltaF);
+    TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
+    for (i=lower; i<=upper; ++i){
+	  data1re = freqData1->data[i].re/deltaT;
+	  data1im = freqData1->data[i].re/deltaT;
+	  data2re = freqData2->data[i].im/deltaT;
+	  data2im = freqData2->data[i].im/deltaT;	  	  	  
+      /* compute squared difference & 'chi-squared': */
+      diffRe       = data1re - data2re;         // Difference in real parts...
+      diffIm       = data1im - data2im;         // ...and imaginary parts, and...
+      diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
+	  chisquared  += ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	}
+	return chisquared;
+}
+
+void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2)
+{
+}
+
 
 REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
@@ -808,7 +1011,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
-  LALIFOData *ifoPtr;
+  LALIFOData *ifoPtr, *ifoListStart;
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
   fprintf(stdout, " readData(): started.\n");
@@ -825,33 +1028,52 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fprintf(stdout, " injectSignal(): finished.\n");
 
     ifoPtr = irs->data;
+	ifoListStart = irs->data;
     while (ifoPtr != NULL) {
-      ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
+		/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
+			freqModelh*, and modelParams variables to avoid excess computation 
+			in model waveform generation in the future*/
+		LALIFOData * ifoPtrCompare=ifoListStart;
+		int foundIFOwithSameSampleRate=0;
+		while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
+			if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
+				ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
+				ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
+				ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
+				ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
+				ifoPtr->modelParams=ifoPtrCompare->modelParams;	
+				foundIFOwithSameSampleRate=1;	
+				break;
+			}
+		}
+		if(!foundIFOwithSameSampleRate){
+				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
                                                           &(ifoPtr->timeData->epoch),
                                                           0.0,
                                                           ifoPtr->timeData->deltaT,
                                                           &lalDimensionlessUnit,
                                                           ifoPtr->timeData->data->length);
-      ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
+				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
                                                           &(ifoPtr->timeData->epoch),
                                                           0.0,
                                                           ifoPtr->timeData->deltaT,
                                                           &lalDimensionlessUnit,
                                                           ifoPtr->timeData->data->length);
-      ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
+				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
                                                                   &(ifoPtr->freqData->epoch),
                                                                   0.0,
                                                                   ifoPtr->freqData->deltaF,
                                                                   &lalDimensionlessUnit,
                                                                   ifoPtr->freqData->data->length);
-      ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
+				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
                                                                    &(ifoPtr->freqData->epoch),
                                                                    0.0,
                                                                    ifoPtr->freqData->deltaF,
                                                                    &lalDimensionlessUnit,
                                                                    ifoPtr->freqData->data->length);
-      ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
-      ifoPtr = ifoPtr->next;
+				ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
+		}
+		ifoPtr = ifoPtr->next;
     }
   }
   else

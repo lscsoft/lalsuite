@@ -22,6 +22,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/Units.h>
+
 #include <lal/LALInspiral.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
@@ -43,6 +48,8 @@
 #include <lal/LIGOLwXMLRead.h>
 
 #include "LALInference.h"
+
+const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -287,7 +294,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	LALIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-	
+	memset(&status,0,sizeof(status));
 	while(thisData){
 		minFlow=minFlow>thisData->fLow?thisData->fLow:minFlow;
 		MindeltaT=MindeltaT>thisData->timeData->deltaT?thisData->timeData->deltaT:MindeltaT;
@@ -300,6 +307,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	fprintf(stdout,"Injecting event %d\n",event);
 	
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(commandLine,"--injXML")->value,0,0);
+	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
 	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,getProcParamVal(commandLine,"--injXML")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
@@ -307,22 +315,38 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
-	printf("Approximant %d\n", injapprox);
+	REPORTSTATUS(&status);
+	printf("Approximant %x\n", injapprox);
 	LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
-	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!!!\n"); REPORTSTATUS(&status); }
-	
+	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
+
+
 	/* Begin loop over interferometers */
 	while(IFOdata){
 		memset(&det,0,sizeof(det));
 		det.site=IFOdata->detector;
-		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("injection",
+		COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&IFOdata->timeData->epoch,
+																		  0.0,
+																		  IFOdata->freqData->deltaF,
+																		  &strainPerCount,
+																		  IFOdata->freqData->data->length);
+		
+		for(i=0;i<resp->data->length;i++) {resp->data->data[i].re=(REAL4)1.0; resp->data->data[i].im=0.0;}
+
+		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOdata->detector->frDetector.prefix,
 																			  &IFOdata->timeData->epoch,
 																			  0.0,
 																			  IFOdata->timeData->deltaT,
-																			  &lalDimensionlessUnit,
+																			  &lalADCCountUnit,
 																			  IFOdata->timeData->data->length);
-		LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
+		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
+		LALFindChirpInjectSignals(&status,injWave,injTable,resp);
 		if(status.statusCode) REPORTSTATUS(&status);
+
+		XLALDestroyCOMPLEX8FrequencySeries(resp);
+		
+		if(status.statusCode) REPORTSTATUS(&status);
+/*		for(j=0;j<injWave->data->length;j++) printf("%f\n",injWave->data->data[j]);*/
 		REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("injection8",
 																			  &IFOdata->timeData->epoch,
 																			  0.0,
@@ -341,10 +365,11 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 		REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 		for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=IFOdata->window->data->data[j]/WinNorm;
 		XLALREAL8TimeFreqFFT(injF,inj8Wave,IFOdata->timeToFreqFFTPlan);
+/*		for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
 		if(IFOdata->oneSidedNoisePowerSpectrum){
 			for(SNR=0.0,j=IFOdata->fLow/injF->deltaF;j<injF->data->length;j++){
-				SNR+=pow(injF->data->data[j].re,2.0)*IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
-				SNR+=pow(injF->data->data[j].im,2.0)*IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=pow(injF->data->data[j].re,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
+				SNR+=pow(injF->data->data[j].im,2.0)/IFOdata->oneSidedNoisePowerSpectrum->data->data[j];
 			}
 		}
 		NetworkSNR+=SNR;
@@ -355,11 +380,14 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 			IFOdata->freqData->data->data[j].re+=injF->data->data[j].re;
 			IFOdata->freqData->data->data[j].im+=injF->data->data[j].im;
 		}
-		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,SNR);
+		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,sqrt(SNR));
 		XLALDestroyREAL8TimeSeries(inj8Wave);
 		XLALDestroyCOMPLEX16FrequencySeries(injF);
 		IFOdata=IFOdata->next;
 	}
+	NetworkSNR=sqrt(NetworkSNR);
+	REPORTSTATUS(&status);
+
 	fprintf(stdout,"Network SNR of event %d = %g\n",event,NetworkSNR);
 	return;
 }
