@@ -943,20 +943,20 @@ void templateSineGaussian(LALIFOData *IFOdata)
 /*   - "amplitude"  (amplitude, REAL8)                                                  */
 /****************************************************************************************/
 {
-  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
-  double sigma = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
-  double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
-  double phi   = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
-  double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
-  double loga  = log(a);
+  double time   = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double sigma  = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
+  double f      = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
+  double phi    = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
+  double a      = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
+  double logamp = log(a);
   double t, tsigma, twopif = LAL_TWOPI*f;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   long i;
   for (i=0; i<IFOdata->timeData->data->length; ++i){
-    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time); 
-    tsigma = t/sigma;
-    if (fabs(tsigma) < 10.0)   /*  (only do computations within 10 sigma range)  */
-      IFOdata->timeModelhPlus->data->data[i] = exp(loga - 0.5*tsigma*tsigma) * sin(twopif*t-phi);
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu         */
+    tsigma = t/sigma;                                             /* (t-mu)/sigma */
+    if (fabs(tsigma) < 5.0)   /*  (only do computations within a 10 sigma range)  */
+      IFOdata->timeModelhPlus->data->data[i] = exp(logamp - 0.5*tsigma*tsigma) * sin(twopif*t-phi);
     else 
       IFOdata->timeModelhPlus->data->data[i] = 0.0;
     IFOdata->timeModelhCross->data->data[i] = 0.0;
