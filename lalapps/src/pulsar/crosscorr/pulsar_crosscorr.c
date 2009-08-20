@@ -863,11 +863,10 @@ int main(int argc, char *argv[]){
 
 	        /*normalise rho by sqrt(2)*stddev */
 
-	        rho->data[counter] = rho->data[counter]/sqrt(2.0*variance->data[counter]);
+	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
-
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -889,7 +888,7 @@ int main(int argc, char *argv[]){
 	    thisPoint.Alpha = skyAlpha[skyCounter]; 
 	    thisPoint.Delta = skyDelta[skyCounter]; 
 	    /*normalise rho*/
-	    rho->data[counter] = rho->data[counter]/sqrt(2.0*variance->data[counter]);
+	    rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
 	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		  thisPoint.Delta, f_current,
 		  fdot_current, fddot_current, rho->data[counter]);
