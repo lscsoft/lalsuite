@@ -37,7 +37,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 
-#include "LocalOptimizationFlags.h"
+/* #include "LocalOptimizationFlags.h" */
 
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
@@ -151,22 +151,6 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
 	LogPrintf(LOG_CRITICAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
 	ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
       }
-
-      /* write out optimization settings */
-
-#ifdef EAH_OPTIMIZATION
-
-      fprintf(stderr,
-	      "\n$Revision$ REV:%s, OPT:%d, "
-	      "SCVAR:%d, SCTRIM:%d, "
-	      "HOTVAR:%d, HOTDIV:%d, "
-	      "HGHPRE:%d, HGHBAT:%d\n",
-	      EAH_OPTIMIZATION_REVISION, EAH_OPTIMIZATION,
-	      EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
-	      EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
-	      EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
-
-#endif /* def EAH_OPTIMIZATION */
 
       firstcall = FALSE;
     }
@@ -566,22 +550,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  {
 	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 and DTERMS == 8 */
 
-#ifdef EAH_HOTLOOP_VARIANT
-
-#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
-#include "hotloop_precalc.ci"
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
-#include "hotloop_sse.ci"
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
-#include "hotloop_altivec.ci"
-#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
-#include "hotloop_autovect.ci"
-#else /* EAH_HOTLOOP_VARIANT */
-#include "hotloop_generic.ci"
-#endif /* EAH_HOTLOOP_VARIANT == */
-
-#else /* def EAH_HOTLOOP_VARIANT */
-
 #ifdef AUTOVECT_HOTLOOP
 #include "hotloop_autovect.ci"
 #elif __ALTIVEC__
@@ -595,8 +563,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #else
 #include "hotloop_generic.ci"
 #endif
-
-#endif /* def EAH_HOTLOOP_VARIANT */
 	 
 	  } /* if |remainder| > LD_SMALL4 */
 	else
