@@ -197,7 +197,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data,
 REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
-                              LALTemplateFunction *template, COMPLEX16FrequencySeries *freqData);							  
+                              LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);							  
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data, 
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);

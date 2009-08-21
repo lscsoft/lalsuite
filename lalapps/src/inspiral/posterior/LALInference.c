@@ -616,20 +616,23 @@ REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData 
 {
   REAL8 loglikeli, totalChiSquared=0.0;
   LALIFOData *ifoPtr=data;
-  COMPLEX16Vector * residual=NULL;
+  COMPLEX16Vector *freqModelResponse=NULL, *residual=NULL;
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
-	COMPLEX16FrequencySeries *freqModelResponse = XLALCreateCOMPLEX16FrequencySeries("freqModelResponse",
-                                                                  &(ifoPtr->freqData->epoch),
-                                                                  0.0,
-                                                                  ifoPtr->freqData->deltaF,
-                                                                  &lalDimensionlessUnit,
-                                                                  ifoPtr->freqData->data->length);
+	if(freqModelResponse==NULL)
+		freqModelResponse= XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
+	else
+		freqModelResponse= XLALResizeCOMPLEX16Vector(freqModelResponse, ifoPtr->freqData->data->length);
 	/*compute the response*/
 	ComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
 	
-	COMPLEX16VectorSubtract(residual, ifoPtr->freqData->data, freqModelResponse->data);
+	if(residual==NULL)
+		residual=XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
+	else
+		residual=XLALResizeCOMPLEX16Vector(residual, ifoPtr->freqData->data->length);
+	
+	COMPLEX16VectorSubtract(residual, ifoPtr->freqData->data, freqModelResponse);
 	
 	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, residual, residual); 
     ifoPtr = ifoPtr->next;
@@ -639,7 +642,7 @@ REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData 
 }
 
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
-                              LALTemplateFunction *template, COMPLEX16FrequencySeries *freqData)
+                              LALTemplateFunction *template, COMPLEX16Vector *freqWaveform)
 /***************************************************************/
 /* Frequency-domain single-IFO response computation.           */
 /* Computes response for a given template.                     */
@@ -752,7 +755,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
-	if(freqData->data->length!=dataPtr->freqModelhPlus->data->length){
+	if(freqWaveform->length!=dataPtr->freqModelhPlus->data->length){
 		printf("Error!  Frequency data vector must be same length as original data!\n");
 		exit(1);
 	}
@@ -760,7 +763,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
 	
-	for(i=0; i<freqData->data->length; i++){
+	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
@@ -773,21 +776,22 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 		re = cos(twopit * f);
 		im = - sin(twopit * f);
 
-		freqData->data->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
-		freqData->data->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);
+		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
+		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);
 	}
 	destroyVariables(&intrinsicParams);
 }
 
 	
 							  						  
-REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr, 
+REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
+	//gsl_vector * freqData1, gsl_vector * freqData2
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2)
 {
     int lower, upper, i;
 	double deltaT, deltaF, TwoDeltaToverN;
 	double data1re, data1im, data2re, data2im;
-	double diffRe, diffIm, diffSquared, chisquared=0.0;
+	double overlap=0.0;
 	
 	/* determine frequency range & loop over frequency bins: */
     deltaT = dataPtr->timeData->deltaT;
@@ -795,23 +799,33 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
     // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
     lower = ceil(dataPtr->fLow / deltaF);
     upper = floor(dataPtr->fHigh / deltaF);
+printf("lower %d upper %d fLow %g fHigh %g deltaT %g\n", lower, upper, dataPtr->fLow, dataPtr->fHigh, deltaT);
+printf("freqData1(1) %g %g freqData2(1) %g %g PSD(1) %g\n",   
+freqData1->data[1].re,  freqData1->data[1].im,  freqData2->data[1].re,  freqData2->data[1].im, dataPtr->oneSidedNoisePowerSpectrum->data->data[1]);
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
+	
+	//for(i=1; i<=1; i++){
     for (i=lower; i<=upper; ++i){
 	  data1re = freqData1->data[i].re/deltaT;
 	  data1im = freqData1->data[i].re/deltaT;
 	  data2re = freqData2->data[i].im/deltaT;
 	  data2im = freqData2->data[i].im/deltaT;	  	  	  
       /* compute squared difference & 'chi-squared': */
-      diffRe       = data1re - data2re;         // Difference in real parts...
-      diffIm       = data1im - data2im;         // ...and imaginary parts, and...
-      diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-	  chisquared  += ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      //diffRe       = data1re - data2re;         // Difference in real parts...
+      //diffIm       = data1im - data2im;         // ...and imaginary parts, and...
+      //diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
+	  overlap  += ((TwoDeltaToverN * 2.0*(data1re*data2re+data1im*data2im)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
-	return chisquared;
+	return overlap;
 }
 
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2)
 {
+	int i;
+	for(i=0; out->length; i++){
+		out->data[i].re=in1->data[i].re-in2->data[i].re;
+		out->data[i].im=in1->data[i].im-in2->data[i].im;
+	}
 }
 
 
