@@ -36,7 +36,7 @@
 --timeslide --studentt (use student-t likelihood function)\n \
 [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
 
-extern CHAR outfile[4096];
+extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;
@@ -579,7 +579,7 @@ int main( int argc, char *argv[])
 		} /* End if(!FakeFlag) */
 		
 		/* Perform injection in time domain */
-		if(NULL!=injXMLFile && fakeinj==0 && NINJA==0) {
+		if(NULL!=injXMLFile && fakeinj==0) {
 			DetectorResponse det;
 			REAL8 SNR=0.0;
 			LIGOTimeGPS realSegStart;

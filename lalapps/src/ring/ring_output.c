@@ -184,7 +184,6 @@ int ring_output_events_xml(
 ProcessTable *ring_create_process_table( struct ring_params *params )
 {
   LALStatus status = blank_status;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   ProcessTable *processTable = NULL;
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );
@@ -203,7 +202,7 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
   strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
-  LAL_CALL( LALGPSTimeNow( &status, &processTable->end_time, &accuracy ), &status );
+  XLALGPSTimeNow(&processTable->end_time);
 
   return processTable;
 }

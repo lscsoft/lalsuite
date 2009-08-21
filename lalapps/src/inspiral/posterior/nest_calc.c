@@ -8,7 +8,7 @@
 #include "LALInspiralMCMCUser.h"
 #include <lal/LALError.h>
 #include <lal/TimeDelay.h>
-
+#include <stdio.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_linalg.h>
@@ -19,7 +19,7 @@
 
 gsl_matrix *cov_mat;
 
-CHAR outfile[4096];
+CHAR outfile[FILENAME_MAX];
 double etawindow;
 
 INT4 seed;
@@ -137,7 +137,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	REAL8 logLmax=-DBL_MAX;
 	REAL4 rngseed=0;
 	FILE *fpout=NULL;
-	CHAR outEnd[5010];
+	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
 	
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
@@ -175,7 +175,15 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	XLALMCMCSetParameter(temp,"distMpc",DBL_MAX);
 	MCMCinput->funcPrior(MCMCinput,temp);
 	MCMCinput->funcLikelihood(MCMCinput,temp);
-	logZnoise = temp->logLikelihood;
+/*	logZnoise = temp->logLikelihood; */
+/* Calculate this from the tables instead of calling logL with dist = DBL_MAX */
+	logZnoise=0.0;
+	for (j=0;j<MCMCinput->numberDataStreams;j++){
+		int lowBin=(int)MCMCinput->fLow/MCMCinput->deltaF;
+		logZnoise+=topdown_sum[j]->data[lowBin];
+	}
+	logZnoise*=-2.0*MCMCinput->deltaF;
+	
 	fprintf(stdout,"Noise evidence: %lf\n",logZnoise);
 	fprintf(stderr,"Sprinkling initial points, may take a while");
 	/* Set up the parameters for the live points */
@@ -350,7 +358,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 			else  XLALMCMCDifferentialEvolution(MCMCInput,temp);
 			/* Evaluate MH ratio */
 		}
-		else if( (jump_select=gsl_rng_uniform(RNG))<0.8/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
+		else if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
 		/*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
 		else XLALMCMCJump(MCMCInput,temp,covM);
 		
