@@ -537,9 +537,9 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
-      template(data);
+      template(dataPtr);
       if (dataPtr->modelDomain == timeDomain)
-        executeFT(data);
+        executeFT(dataPtr);
       /* note that the dataPtr->modelParams "time" element may have changed here!! */
       /* (during "template()" computation)                                      */
     }
