@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Resampling Test Code. This code is much more readable and reusable than its predecessor. Author - Pinkesh Patel
-import sys,random,commands,math,shutil,os,re
+import sys,random,commands,math,shutil,os,re,string
 
 def main():
     
@@ -113,9 +113,9 @@ def main():
     # Reference Time in SSB
     try:
         Vars['refTime'] = float(config.refTime)
+        refString = ' --refTime ' + str(Vars['refTime'])
     except:
-        print "refTime cannot be read"
-        sys.exit(1)
+        refString = ' '
 
     # Output Directory
     try:
@@ -257,7 +257,7 @@ def main():
     try: 
         Vars['FDotBand'] = config.FDotBand
     except:
-        Vars['FdotBand'] = 0
+        Vars['FDotBand'] = 0
         #print "Cannot read in FDot variable"
         #sys.exit(1)
 
@@ -319,7 +319,7 @@ def main():
 
     # Create the Time Stamp File
     if(not(TimeStampsFile_Is_Set)):
-        CreateTimeStampFile(Vars)
+        CreateTimeStampFile(Vars,UniqueID)
 
     # If running multiple time, delete all the old SFTs
     if(os.path.exists("./"+Vars['Out'])):
@@ -338,7 +338,7 @@ def main():
 
     # Generate Fake data string
     for ifo in range(NumofIFOs):
-        FakeDataString = GenFakeDataString(1,Vars,ifo)
+        FakeDataString = GenFakeDataString(1,Vars,ifo,UniqueID,refString)
         if(Vars['debug']):
             print "----------- Makefakedata String ------------"
             print FakeDataString
@@ -347,14 +347,16 @@ def main():
         # Generate the data
         try:
             G = commands.getoutput(FakeDataString)
+            os.remove("timestampsFile"+Vars['IFO'][ifo]+UniqueID)
         except:
             print "Tried to generate SFTs, failed"
             sys.exit(1)
 
     # Run v2()
-    OutputFileV = "OutputV" + UniqueID
-    startstring = "lalapps_ComputeFStatistic_v2 --outputLoudest " + OutputFileV + " -F " + str(Vars['FThres']) + "  "
-    endstring = " "
+    OutputFileVLoudest = "OutputVLoudest" + UniqueID
+    OutputFileVFstat = "OutputVFstat" + UniqueID
+    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFileVFstat + " --outputLoudest " + OutputFileVLoudest +  " -F " + str(Vars['FThres']) + "  "
+    endstring = " " + refString
     V2DataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "----------- V2 String ------------"
@@ -373,9 +375,11 @@ def main():
         print "---------- V2 Done ---------------\n\n"
 
     # Run Resamp
-    OutputFileR = "OutputR" + UniqueID
-    startstring = "./lalapps_ComputeFStatistic_resamp --outputLoudest " + OutputFileR + " -F " + str(Vars['FThres']) + "  "
-    endstring = "  --outputTimeSeries "  + str(Vars['ResampOutput']) + " > plot1 "
+    ResampLocation = "/home/ppatel/lalsuite/lalapps/src/pulsar/FDS_isolated/ResamplingFstat/"
+    OutputFileRLoudest = "OutputRLoudest" + UniqueID
+    OutputFileRFstat = "OutputRFstat" + UniqueID
+    startstring = ResampLocation + "lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFileRFstat + " --outputLoudest " + OutputFileRLoudest+ " -F " + str(Vars['FThres']) + "  "
+    endstring = " " + refString
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "-------- Resamp String -----------"
@@ -394,13 +398,57 @@ def main():
 
     if(Vars['debug']):
         print "---------- Deleting SFT Folder ---------\n\n"
-    #try:
-    #    shutil.rmtree(Vars['Out'])
-    #except:
-    #    print " Could not delete SFT folder \n\n"
-    #    sys.exit(1)
-    AnalyzeLoudest(OutputFileR,OutputFileV)
+    try:
+        shutil.rmtree(Vars['Out'])
+    except:
+        print " Could not delete SFT folder \n\n"
+        sys.exit(1)
+        
+    FreqOutput = AnalyzeFreq(OutputFileRFstat,OutputFileVFstat,Vars['Finj'],Vars['Res'])
+    LoudestOutput = AnalyzeLoudest(OutputFileRLoudest,OutputFileVLoudest)
+    os.remove(OutputFileRLoudest)
+    os.remove(OutputFileVLoudest)
+    #os.remove(OutputFileRFstat)
+    #os.remove(OutputFileVFstat)
+    print FreqOutput,LoudestOutput
     return(0)
+
+def AnalyzeFreq(Filename1,Filename2,Freq,dF):
+    File1 = open(Filename1,'r')
+    File2 = open(Filename2,'r')
+    File1lines = File1.readlines()
+    File2lines = File2.readlines()
+    Freq1 = 0
+    dF1 = 0
+    Freq2 = 0
+    dF2 = 0
+    
+    exp = re.compile(r'^\d')
+
+    for line in File1lines:
+        if(exp.search(line)):
+            linesplit = string.split(line)
+            if(Freq1 and not(dF1)):
+                dF1 = abs(float(linesplit[0])) - Freq1
+            Freq1 = float(linesplit[0])
+            if(abs(Freq1-Freq) < dF1/2.0):
+                twoF1 = float(linesplit[6])
+                Freq1store = Freq1
+                storeline = line
+    
+    for line in File2lines:
+        if(exp.search(line)):
+            linesplit = string.split(line)
+            if(Freq2 and not(dF2)):
+                dF2 = abs(float(linesplit[0])) - Freq2
+            Freq2 = float(linesplit[0])
+            if(abs(Freq2-Freq) < dF2/2.0):
+                twoF2 = float(linesplit[6])
+                Freq2store = Freq2
+                
+
+    #print Freq,Freq1store,Freq2store,dF,dF1,dF2,twoF1,twoF2
+    return(str(Freq) + " " + str(Freq1store) + " " + str(Freq2store) + " " + str(dF) + " " + str(dF1) + " " + str(dF2) + " " + str(twoF1) + " " + str(twoF2) + " ")
 
 def AnalyzeLoudest(Filename1,Filename2):
     File1 = open(Filename1,'r')
@@ -427,16 +475,17 @@ def AnalyzeLoudest(Filename1,Filename2):
             
             if(re.match('Freq',linesplit[0])):
                 Freq2 = float(linesplit[1])    
-    
-    print Freq1,twoF1,Freq2,twoF2
+
+    #print Freq1,twoF1,Freq2,twoF2
+    return(str(Freq1) + " " + str(twoF1) + " " + str(Freq2) + " " + str(twoF2) + " ")
             
 def PrintValues(Dict):
     for key in Dict.keys():
         print key," = ",Dict[key]
 
-def CreateTimeStampFile(Vars):
+def CreateTimeStampFile(Vars,UniqueID):
     for ifo in range(Vars['NumofIFOs']):
-        ifotimestampfile = "./timestampsFile" + str(Vars['IFO'][ifo])
+        ifotimestampfile = "./timestampsFile" + str(Vars['IFO'][ifo])+UniqueID
         try:
             File = open(ifotimestampfile,'w')
         except:
@@ -491,7 +540,7 @@ def CreateTimeStampFile(Vars):
             File.write(" 0 \n")
             
 
-def GenFakeDataString(addtonoise,Vars,ifo):
+def GenFakeDataString(addtonoise,Vars,ifo,UniqueID,endstring):
     if(Vars['Band'] > 1e-2):
         CreationBand = Vars['Band']*4
         CreationFmin = Vars['Fmin']-Vars['Band']*2
@@ -499,11 +548,13 @@ def GenFakeDataString(addtonoise,Vars,ifo):
         CreationBand = 1
         CreationFmin = Vars['Fmin'] - 0.5
 
-    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO'][ifo]) + ' --refTime ' + str(Vars['refTime']) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile' + str(Vars['IFO'][ifo])
+    CreationFmin -= 1
+    CreationBand += 2
+    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO'][ifo]) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile' + str(Vars['IFO'][ifo]) + UniqueID + endstring
     return(S)
                          
 def GenDataString(beginstring,endstring,Vars):
-    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dotBand ' + str(Vars['FDotBand']) + ' -S --df1dot ' + str(Vars['dFDot']) +  endstring
+    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dot ' + str(Vars['FDot']) +  endstring
     return(S)
 
 #' --f1dot ' + str(Vars['FDot']) + 
