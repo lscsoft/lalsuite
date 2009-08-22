@@ -83,7 +83,7 @@ NRCSID(TEMPORARY,"$Blah$");
 #define FALSE (1==0)
 
 /*----- SWITCHES -----*/
-#define NUM_SPINS 4		/* number of spin-values to consider: {f, fdot, f2dot, ... } */
+#define NUM_SPINS 3		/* number of spin-values to consider: {f, fdot, f2dot, ... } */
 
 /*----- Error-codes -----*/
 #define COMPUTEFSTATISTIC_ENULL 	1
@@ -110,6 +110,7 @@ NRCSID(TEMPORARY,"$Blah$");
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define LAL_INT4_MAX 2147483647
+UINT4 FactorialLookup[7] = {1,1,2,6,24,120,720,5040};
 
 /*---------- internal types ----------*/
 
@@ -135,6 +136,8 @@ typedef struct
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
+  REAL8 Alpha;                              /**< sky position alpha in radians */
+  REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   /* -------------------- Resampling -------------------- */
@@ -167,9 +170,11 @@ REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
 REAL8 uvar_Alpha;
+CHAR* uvar_RA;
 REAL8 uvar_dAlpha;
 REAL8 uvar_AlphaBand;
 REAL8 uvar_Delta;
+CHAR* uvar_Dec;
 REAL8 uvar_dDelta;
 REAL8 uvar_DeltaBand;
 /* 1st spindown */
@@ -309,7 +314,6 @@ void XLALDestroyMultiCmplxAMCoeffs(MultiCmplxAMCoeffs *X);
 REAL8Sequence* XLALCreateREAL8Sequence(UINT4 length);
 MultiFFTWCOMPLEXSeries *XLALCreateMultiFFTWCOMPLEXSeries(UINT4 length);
 FFTWCOMPLEXSeries *XLALCreateFFTWCOMPLEXSeries(UINT4 length);
-UINT4 factorial(UINT4 x);
 REAL8 magsquare(fftw_complex f);
 INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,INT4 startindex);
 void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X);
@@ -446,7 +450,10 @@ int main(int argc,char *argv[])
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   if(uvar_countTemplates)
-    printf("%%%% Number of templates: %0.0f\n",numTemplates);
+    {
+      printf("%%%% Number of templates: %0.0f\n",numTemplates);
+      exit(0);
+    }
 
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
@@ -463,7 +470,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
-  while ( !uvar_countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
+  while ((XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
       LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,&Vars), &status );
@@ -656,6 +663,8 @@ initUserVars (LALStatus *status)
   uvar_AlphaBand = 0;
   uvar_DeltaBand = 0;
   uvar_skyRegion = NULL;
+  uvar_RA = NULL;
+  uvar_Dec = NULL;
 
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_ephemYear, EPHEM_YEARS);
@@ -722,6 +731,8 @@ initUserVars (LALStatus *status)
 
   LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
+  LALregSTRINGUserVar(status,Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
   LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
   LALregREALUserVar(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
@@ -1056,12 +1067,26 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       }
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
-
-
+ 
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
     LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
     PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta)) || (LALUserVarWasSet(&uvar_RA) && LALUserVarWasSet(&uvar_Dec));
+
+    /* define sky position variables from user input */
+    if (LALUserVarWasSet(&uvar_RA)) 
+      {
+	/* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+	cfg->Alpha = LALDegsToRads(uvar_RA, "alpha");
+      }
+    else cfg->Alpha = uvar_Alpha;
+    if (LALUserVarWasSet(&uvar_Dec)) 
+      {
+	/* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+	cfg->Delta = LALDegsToRads(uvar_Dec, "delta");
+      }
+    else cfg->Delta = uvar_Delta;
+    
 
     if (uvar_skyRegion)
       {
@@ -1074,7 +1099,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,	uvar_AlphaBand, uvar_DeltaBand), status);
+				cfg->Alpha, cfg->Delta,	uvar_AlphaBand, uvar_DeltaBand), status);
       }
 
     if ( LALUserVarWasSet ( &uvar_internalRefTime ) ) {
@@ -1775,17 +1800,6 @@ void XLALDestroyReSampBuffer ( ReSampBuffer *cfb)
   return;
 } /* XLALDestroyReSampBuffer() */
 
-
-/* Calculates the factorial of an integer */
-UINT4 factorial(UINT4 x)
-{
-  UINT4 prod = 1,i;
-  if(x==0 || x==1)
-    return(1);
-  for(i=2;i<=x;i++)
-    prod = prod*i;
-  return(prod);
-}
 
 
 /* Returns the magnitude square of a complex number */
@@ -2545,11 +2559,10 @@ void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSer
       /* Phi is the sum of all terms */
       Phi = 0;
 
-      for(j=1;j<PULSAR_MAX_SPINS;j++)
+      for(j=1;j<NUM_SPINS;j++)
 	{
-	  Phi += 2.0*LAL_PI* (*SpinDowns)[j] *pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M* (*SpinDowns)[j] * pow(DT,j)/factorial(j);
-	}   
-
+	  Phi += 2.0*LAL_PI* (*SpinDowns)[j] *pow(DT,j+1)/FactorialLookup[j+1] + 2.0*LAL_PI*Phi_M* (*SpinDowns)[j] * pow(DT,j)/FactorialLookup[j];
+	}
       
       sinphi = sin(Phi);
       cosphi = cos(Phi);
