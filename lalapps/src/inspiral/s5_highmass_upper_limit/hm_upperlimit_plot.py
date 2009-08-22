@@ -13,6 +13,11 @@ import glob
 import copy
 from glue.ligolw.utils import ligolw_add
 from glue.ligolw import ligolw, utils
+# FIXME:  the plots should use LaTeX to generate the labels, but some don't
+# work yet
+matplotlib.rcParams.update({
+	"text.usetex": False
+})
 
 # FIXME, I apparently don't know how to read XML as cleverly as I thought, how do I find the table
 # without specifying the childnode number?
