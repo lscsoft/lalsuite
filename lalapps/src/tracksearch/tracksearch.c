@@ -1186,7 +1186,7 @@ void LALappsTrackSearchInitialize(
 
       if ((params->dcDetrend < -1) || (params->dcDetrend == 0))
 	{
-	  fprintf(stderr,"Invalid point size specified on command line for dc_detrend option\n");
+	  fprintf(stderr,"Invalid point size specified on command line for dc_remove option\n");
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EARGS);
 	}
