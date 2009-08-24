@@ -25,6 +25,8 @@
 
 /* the way of trimming x to the interval [0..2) for the sin_cos_LUT functions
    give significant differences in speed, so we provide various ways here. */
+#ifdef SINCOS_REAL4_ARG
+
 #ifdef _MSC_VER /* no C99 rint() */
 #define SINCOS_TRIM_X(y,x) \
   { \
@@ -42,6 +44,26 @@
 #define SINCOS_TRIM_X(y,x) y = x - rint(x) + 1.0;
 #endif
 
+#else /* SINCOS_REAL4_ARG */
+
+#ifdef _MSC_VER /* no C99 rint() */
+#define SINCOS_TRIM_X(y,x) \
+  { \
+    __asm FLD     DWORD PTR x 	\
+    __asm FRNDINT             	\
+    __asm FSUBR   DWORD PTR x 	\
+    __asm FLD1                	\
+    __asm FADDP   ST(1),ST	\
+    __asm FSTP    DWORD PTR y 	\
+    }
+#elif _ARCH_PPC
+/* floor() is actually faster here, as we don't have to set the rounding mode */
+#define SINCOS_TRIM_X(y,x) y = x - floorf(x);
+#else
+#define SINCOS_TRIM_X(y,x) y = x - rintf(x) + 1.0;
+#endif
+
+#endif /* SINCOS_REAL4_ARG */
 
 
 
@@ -157,7 +179,7 @@ union {
 
 /* Version 1 : with trimming of input argument to [0,2) */ 
 #define SINCOS_TRIM_P0A(alpha) \
-  SINCOS_FLD "%[" #alpha "]\n\t" /* st: alpha */ 			\
+  SINCOS_FLD " %[" #alpha "] \n\t" /* st: alpha */ 			\
   "fistpll %[tmp]          \n\t" /* tmp=(INT8)(round((alpha)) */	\
   "fld1                    \n\t" /* st: 1.0 */				\
   "fildll  %[tmp]          \n\t" /* st: 1.0;(round((alpha))*/ 
@@ -170,7 +192,7 @@ union {
 
 /* Version 2 : assumes input argument is already trimmed */ 
 #define SINCOS_P0(alpha)						\
-  SINCOS_FLD "%[" #alpha "]\n\t" /*st:alpha */				\
+  SINCOS_FLD " %[" #alpha "] \n\t" /*st:alpha */			\
   "faddl   %[sincos_adds]  \n\t" /*st:alpha+A */	                \
   "fstpl   %[tmp]          \n\t"
 
