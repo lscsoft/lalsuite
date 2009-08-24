@@ -20,21 +20,10 @@
 
 /*
    This is a local copy of ComputeFstatHoughMap() of HierarchicalSearch.c
-   See that file for details
-
-   $Id$
+   See that file for Copyright details
 */
 
 #include "../HierarchicalSearch.h"
-#include "LocalOptimizationFlags.h"
-
-#if __x86_64__
-#include "hough_x64.ci"
-#elif __SSE2__
-#include "hough_sse2.ci"
-#elif __i386__
-#include "hough_x87.ci"
-#endif
 
 RCSID( "$Id$");
 
@@ -731,19 +720,25 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 
 
 /* prefetch compiler directives */
-#if ( EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_NONE )
-#define PREFETCH(a) a
-#elif defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
-// not tested yet with icc or MS Visual C 
+#if defined(__GNUC__)
+#define PREFETCH(a) __builtin_prefetch(a)
+#elif defined(__INTEL_COMPILER) ||  defined(_MSC_VER) /* not tested yet */
 #include "xmmintrin.h"
 #define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
-#elif defined(__GNUC__)
-#define PREFETCH(a) __builtin_prefetch(a)
-#else  /* no known compiler, but not EAH_HOUGH_PREFETCH_NONE */
-#define PREFETCH(a) a
+#else
+#undef PREFETCH
 #endif
 
-#if ( (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87) || (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_AMD64) )
+/* assembler hough code for gcc on x86 */
+#if defined(__GNUC__) && ( defined(__i386__) || defined(__x86_64__) )
+
+#if __x86_64__
+#include "hough_x64.ci"
+#elif __SSE2__
+#include "hough_sse2.ci"
+#elif __i386__
+#include "hough_x87.ci"
+#endif
 
 INLINE void ALWAYS_INLINE
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
@@ -794,8 +789,9 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
     
 };
 
+#elif defined(PREFETCH) && ( defined(__SSE__) || defined(__ALTIVEC__) )
 
-#elif EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_DIRECT
+/* hough with prefetching */
 
 #ifndef EAH_HOUGH_BATCHSIZE_LOG2
 #define EAH_HOUGH_BATCHSIZE_LOG2 2
