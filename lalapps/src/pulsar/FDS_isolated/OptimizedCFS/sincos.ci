@@ -149,9 +149,15 @@ union {
 #define PDX "%%"RDX
 #define PDI "%%"RDI
 
+#ifdef SINCOS_REAL4_ARG
+#define SINCOS_FLD "fld"
+#else
+#define SINCOS_FLD "fldl"
+#endif
+
 /* Version 1 : with trimming of input argument to [0,2) */ 
 #define SINCOS_TRIM_P0A(alpha) \
-  "fldl    %[" #alpha "]   \n\t" /* st: alpha */			\
+  SINCOS_FLD "%[" #alpha "]\n\t" /* st: alpha */ 			\
   "fistpll %[tmp]          \n\t" /* tmp=(INT8)(round((alpha)) */	\
   "fld1                    \n\t" /* st: 1.0 */				\
   "fildll  %[tmp]          \n\t" /* st: 1.0;(round((alpha))*/ 
@@ -164,7 +170,7 @@ union {
 
 /* Version 2 : assumes input argument is already trimmed */ 
 #define SINCOS_P0(alpha)						\
-  "fldl    %[" #alpha "]   \n\t" /*st:alpha */				\
+  SINCOS_FLD "%[" #alpha "]\n\t" /*st:alpha */				\
   "faddl   %[sincos_adds]  \n\t" /*st:alpha+A */	                \
   "fstpl   %[tmp]          \n\t"
 
