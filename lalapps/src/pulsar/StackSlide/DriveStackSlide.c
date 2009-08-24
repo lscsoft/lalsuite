@@ -1457,8 +1457,6 @@ void StackSlideConditionData(
   /* UINT4 i = 0;  */    /* all purpose index */
   /* UINT4 k = 0;  */    /* another all purpose index */
   INT4 k = 0;      /* another all purpose index */  
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; /* 03/01/04 gam; Call LALLeapSecs to get edat->leap */
-  INT4 leap; /* 03/01/04 gam; 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
 
 /*********************************************************/
 /*                                                       */
@@ -1723,17 +1721,7 @@ void StackSlideConditionData(
 
   params->edat->ephiles.sunEphemeris = params->sunEdatFile ;
   params->edat->ephiles.earthEphemeris = params->earthEdatFile;
-  
-  /* 02/24/04 gam; Set edat->leap = 13; Was NOT getting initialized. Note 13 is OK for 2000; Check for current date! */
-  /* params->edat->leap = 13; */  
-  LALLeapSecs(status->statusPtr,&leap,&(params->timeStamps[0]),&formatAndAcc); /* 03/01/04 gam; Call LALLeapSecs to get edat->leap */
-  INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
-  params->edat->leap = (INT2)leap;
-  #ifdef DEBUG_EPHEMERISDATA
-       fprintf(stdout, "\nparams->edat->leap = %i \n",params->edat->leap);
-       fflush(stdout);
-  #endif
-    
+
   #ifdef INCLUDE_INTERNALLALINITBARYCENTER	  
     /* Use internal copy of LALInitBarycenter.c from the LAL support package.  Author: Curt Cutler */
     InternalLALInitBarycenter(status->statusPtr, params->edat);
@@ -3755,8 +3743,7 @@ void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampM
 
     das->pSource->orientation = orientationAngle;  
     das->pSource->equatorialCoords.system = coordSystem;
-    timeAndAcc.accuracy=LALLEAPSEC_STRICT;
-                                                                                                                            
+
     /* loop that calls LALComputeDetAMResponse to find F_+ and F_x at the midpoint of each SFT for ZERO Psi */
     for(i=0; i<numSTKs; i++) {
       /* Find mid point from timestamp, half way through SFT. */

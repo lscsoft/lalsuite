@@ -344,7 +344,7 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
@@ -877,15 +877,12 @@ InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
-	       LIGOTimeGPS epoch,	/**< epoch of observation */
 	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */
 	       )
 {
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-  INT4 leap;
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -919,9 +916,6 @@ InitEphemeris (LALStatus * status,
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-
-  TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
-  edat->leap = (INT2) leap;
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 
@@ -1093,7 +1087,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, isLISA ), status);
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */

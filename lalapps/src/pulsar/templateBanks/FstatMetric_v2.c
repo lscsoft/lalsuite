@@ -570,8 +570,6 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
 
-  edat->leap = XLALGPSLeapSeconds ( epoch->gpsSeconds );
-
   LALInitBarycenter(&status, edat);
 
   if ( status.statusCode != 0 ) {

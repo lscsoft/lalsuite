@@ -259,7 +259,6 @@ main(int argc, char *argv[]){
   REAL8 alpha, delta;
   EphemerisData *edat = NULL;
   CHAR EphemEarth[1024], EphemSun[1024];
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
   INT4 leap0,leap;
   LIGOTimeGPS epoch;
   LIGOTimeGPS TstartSSB, TendSSB, TendGPS;
@@ -275,7 +274,7 @@ main(int argc, char *argv[]){
   MJDTime *TOA = NULL;
   CHAR tempstr[15];
   CHAR *tempstr2;
-  CHAR TrefMJDstr[20],TstartMJDstr[20],TfinishMJDstr[20],TOAstr[20];
+  CHAR TstartMJDstr[20],TfinishMJDstr[20],TOAstr[20];
   PulsarSignalParams pulsarparams;
   CHAR parfile[256];
   CHAR timfile[256];
@@ -376,10 +375,10 @@ main(int argc, char *argv[]){
   snprintf(EphemSun, 1024, "%s/sun%s.dat", uvar.ephemdir, uvar.ephemyear);
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-  LALLeapSecs (&status, &leap0, &epoch, &formatAndAcc);
-  edat->leap = (INT2) leap0;
+  leap0 = XLALGPSLeapSeconds (epoch.gpsSeconds);
+
   if (lalDebugLevel) fprintf(stdout,"STATUS : leap seconds = %d\n",leap0);
-  
+
   /* initialise the barycenter routines */
   LALInitBarycenter(&status, edat);
   if (lalDebugLevel) fprintf(stdout,"STATUS : Initiated Barycenter\n");
@@ -646,10 +645,10 @@ main(int argc, char *argv[]){
 	return(TEMPOCOMPARISONC_ESUB);
       }
       if (lalDebugLevel) fprintf(stdout,"STATUS : SSB -> detector conversion gives discrepancies of %e sec\n",diff);
-      
+
       /* recompute leap seconds incase they've changed */
-      LALLeapSecs (&status, &leap, &TDET, &formatAndAcc); 
-      
+      leap = XLALGPSLeapSeconds (TDET.gpsSeconds);
+
       /* must now convert to an MJD time for TEMPO */
       /* Using UTC conversion as used by Matt in his successful comparison */
       UTCGPStoMJD (&status,&tempTOA,&TDET,leap);

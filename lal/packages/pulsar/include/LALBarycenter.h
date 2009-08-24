@@ -133,12 +133,6 @@ time intervals. The fields are
 the two files containing positions of Earth and Sun, resp., at evenly
 spaced times.
 
-\item[\texttt{INT2  leap}]  The number of leap seconds that have
-been inserted into UTC between Jan. 6, 1980 (= start of GPS calendar)
-and the current time tgps. But it's perfectly OK to approximate this by
-number of leap sec inserted between Jan. 6, 1980 and Jan. 2 of year covered by
-this ephemeris file; e.g. leap = 13 for year 2000.
-
 \item[\texttt{INT4  nentriesE}]  The number of entries in Earth ephemeris
 table.
 
@@ -270,11 +264,6 @@ typedef struct
 {
   EphemerisFilenames ephiles; /**< Names of the two files containing positions of
                                * Earth and Sun, respectively at evenly spaced times. */
-  INT2  leap;           /**< The number of leap seconds that have
-                         * been inserted into UTC between Jan 6, 1980 (= start of GPS calendar)
-                         * and the current time tgps. But its perfectly OK to approximate this by
-                         * number of leap sec inserted between Jan 6, 1980 and Jan 2 of year
-                         * covered by this ephemeris file; eg leap = 13 for year 2000. */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
   INT4  nentriesS;      /**< The number of entries in Sun ephemeris table. */
   REAL8 dtEtable;       /**< The spacing in sec between consecutive intants in Earth ephemeris table.*/

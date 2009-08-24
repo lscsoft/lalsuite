@@ -901,7 +901,6 @@ int prepare_baryinput(LALStatus* status){
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = earthdata;
   (*edat).ephiles.sunEphemeris =   sundata;
-  (*edat).leap=13; 
   
   /* Read in ephemerides */  
   LALInitBarycenter(status, edat);
@@ -1182,7 +1181,6 @@ int write_modulated_amplitudes_file(LALStatus* status){
     gps.gpsSeconds=timestamps[i].gpsSeconds;
     gps.gpsNanoSeconds=timestamps[i].gpsNanoSeconds;
     gpsandacc.gps=gps;
-    gpsandacc.accuracy=LALLEAPSEC_STRICT;
 
     LALComputeDetAMResponse(status, &amresp, &detectorandsource, &gpsandacc);
     fprintf(fp,"%f  %f\n",amresp.plus,amresp.cross);

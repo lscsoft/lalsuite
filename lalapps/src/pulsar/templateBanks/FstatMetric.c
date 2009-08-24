@@ -441,14 +441,7 @@ main(int argc, char *argv[])
 	    REAL8 Rorb = LAL_AU_SI;
 
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
-	    if ( config.edat->leap < 0 )	/* signals that we're dealing with LISA */
-	      {
-		sineps = 0; coseps = 1;	/* already working in ecliptic coords */
-	      }
-	    else
-	      {
-		sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
-	      }
+            sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
 
 	    sind1 = sin(uvar.Delta); cosd1 = cos(uvar.Delta);
 	    sina1 = sin(uvar.Alpha); cosa1 = cos(uvar.Alpha);
@@ -1608,8 +1601,6 @@ InitEphemeris (LALStatus * status,
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-  INT4 leap;
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1645,16 +1636,6 @@ InitEphemeris (LALStatus * status,
   edat->ephiles.sunEphemeris = EphemSun;
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
-
-  if ( isLISA )
-    {
-      edat->leap = -1;	/* dirty hack: signal that ephemeris are in *ECLIPTIC* coords, not EQUATORIAL */
-    }
-  else
-    {
-      TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
-      edat->leap = (INT2) leap;
-    }
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );

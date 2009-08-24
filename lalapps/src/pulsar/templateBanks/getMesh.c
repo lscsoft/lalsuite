@@ -428,9 +428,6 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uva
   /* ---------- init ephemeris if needed ---------- */
   if ( uvar->metricType ==  LAL_PMETRIC_COH_EPHEM )
     {
-      LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-      INT4 leap;
-
       if (LALUserVarWasSet (&uvar->ephemDir) )
 	{
 	  sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
@@ -445,9 +442,6 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uva
       cfg->ephemeris = (EphemerisData*) LALCalloc( 1, sizeof(EphemerisData) );
       cfg->ephemeris->ephiles.earthEphemeris = cfg->EphemEarth;
       cfg->ephemeris->ephiles.sunEphemeris = cfg->EphemSun;
-
-      TRY (LALLeapSecs(status->statusPtr, &leap, &(cfg->startTimeGPS), &formatAndAcc), status);
-      cfg->ephemeris->leap = leap;
 
       TRY (LALInitBarycenter (status->statusPtr, cfg->ephemeris), status);
 

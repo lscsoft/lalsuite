@@ -277,14 +277,7 @@ int main(int argc, char *argv[]) {
       snprintf(ephemeris.ephiles.earthEphemeris, buf, "earth%s.dat", ephem_year);
       snprintf(ephemeris.ephiles.sunEphemeris, buf, "sun%s.dat", ephem_year);
     }
-    
-    /* Get the leap seconds */
-    ephemeris.leap = (INT2)XLALGPSLeapSeconds(catalog->data[0].header.epoch.gpsSeconds);
-    if (xlalErrno != XLAL_SUCCESS) {
-      LALPrintError("XLALGPSLeapSeconds failed\n");
-      return EXIT_FAILURE;
-    }
-    
+
     /* Load ephemeris */
     LogPrintf(LOG_DEBUG, "Loading ephemeris ... ");
     LAL_CALL(LALInitBarycenter(&status, &ephemeris), &status);

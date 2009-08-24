@@ -152,8 +152,6 @@ int main(int argc, char *argv[]){
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
-  INT4 tmpLeap;
-  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
   CHAR EphemEarth[MAXFILENAMELENGTH];
   CHAR EphemSun[MAXFILENAMELENGTH];
 
@@ -446,9 +444,6 @@ int main(int argc, char *argv[]){
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = EphemEarth;
   (*edat).ephiles.sunEphemeris = EphemSun;
-
-  LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
-  (*edat).leap = (INT2)tmpLeap;
 
   LAL_CALL( LALInitBarycenter( &status, edat), &status);
 

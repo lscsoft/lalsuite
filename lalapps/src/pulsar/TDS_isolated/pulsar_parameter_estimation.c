@@ -2564,13 +2564,6 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 
     DT = data.times->data[i] - T0;
 
-    if(data.times->data[i] <= 820108813)
-      (*edat).leap = 13;
-    else if(data.times->data[i] <= 914803214)
-      (*edat).leap = 14;
-    else
-      (*edat).leap = 15;
-
     /* only do call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
     if( i==0 || DT > DTplus ){

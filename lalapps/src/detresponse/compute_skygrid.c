@@ -184,8 +184,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   LALGPSandAcc            gps_and_acc;
   LIGOTimeGPS             start_time;
   LALTimeInterval         time_interval;
-  LALLeapSecFormatAndAcc  leapsec_info = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4                    tmp_leapsecs;
   REAL8                   det_velocity[3];
 
 
@@ -288,7 +286,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         args_info.nsample_given &&
         args_info.sampling_interval_given)
     {
-      gps_and_acc.accuracy = leapsec_info.accuracy;
       gps_and_acc.gps.gpsSeconds = args_info.start_time_sec_arg;
       gps_and_acc.gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
     
@@ -308,7 +305,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   {
     if (args_info.start_time_sec_given)
     {
-      gps_and_acc.accuracy = leapsec_info.accuracy;
       gps_and_acc.gps.gpsSeconds = args_info.start_time_sec_arg;
       gps_and_acc.gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
     }
@@ -363,13 +359,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       printf("sum_file_name     = %s\n", sum_file_name);
       printf("relfreq_file_name = %s\n", relfreq_file_name);
     }    
-    
-    /*
-     * set leapsec info in ephemerides
-     */
-    LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
-    p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
-    
 
     LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
     
@@ -448,14 +437,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     {
       fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
       snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
-      
-      /*
-       * set leapsec info in ephemerides
-       */
-      LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
-      p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
-      
-
 
       LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
       
@@ -552,15 +533,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     
     for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
-      /*
-       * set leapsec info in ephemerides
-       */
-      LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
-      p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
-
-
       LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
-          
+
       for (j = start_ra; j < end_ra; ++j)
       {
         source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);

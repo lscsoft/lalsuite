@@ -509,14 +509,10 @@ int main(int argc, char *argv[]){
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  
+
   {
-    INT4    tmpLeap;
     UINT4   iIFO, iSFT, numsft, j;
-    LALLeapSecFormatAndAcc   lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
+
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
     
     /* get information about all detectors including velocity and timestamps */

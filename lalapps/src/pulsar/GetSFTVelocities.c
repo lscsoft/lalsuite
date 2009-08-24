@@ -91,8 +91,6 @@ int main(int argc, char *argv[]){
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
-  INT4 tmpLeap;
-  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
 
   /* user input variables */
   BOOLEAN  uvar_help; 
@@ -134,8 +132,7 @@ int main(int argc, char *argv[]){
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
-  (*edat).leap = (INT2)tmpLeap;
+
   LAL_CALL( LALInitBarycenter( &status, edat), &status);
   
   /* read sft Files and set up weights and nstar vector */

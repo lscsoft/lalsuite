@@ -635,7 +635,6 @@ int main(int argc, char **argv)
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF]; 
   edata.ephiles.earthEphemeris = EARTHDATA;               
   edata.ephiles.sunEphemeris = SUNDATA;                   
-  edata.leap = 13;
   
   /****** Initializing earth data set edata ******/
   LALInitBarycenter( &status, &edata);          

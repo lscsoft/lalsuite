@@ -515,9 +515,6 @@ int GenerateMesh(GlobVar GV,REAL4VectorSequence **XYmesh,XYparameterspace *XYspa
 
 int SetupBaryInput(GlobVar *GV,EphemerisData **edat,LALDetector *Detector)
 {
-  
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
   CHAR filenameE[256],filenameS[256];
   FILE *fp;
 
@@ -551,10 +548,6 @@ int SetupBaryInput(GlobVar *GV,EphemerisData **edat,LALDetector *Detector)
   (*edat)=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*(*edat)).ephiles.earthEphemeris = filenameE;     
   (*(*edat)).ephiles.sunEphemeris = filenameS;   
-
-  /* set up leap second information */
-  LALLeapSecs(&status,&leap,&GV->tstart,&formatAndAcc);
-  (*(*edat)).leap=leap;
 
   /* Read in ephemeris files */
   LALInitBarycenter(&status,(*edat));             

@@ -393,8 +393,6 @@ int main( int argc, char **argv )
   eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   eph->ephiles.earthEphemeris = earth;
   eph->ephiles.sunEphemeris = sun;
-  eph->leap = 13; /* OK for 2000-2004 */
-
 
   LALInitBarycenter( &stat, eph );
 
