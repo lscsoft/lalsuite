@@ -871,52 +871,53 @@ static void worker (void) {
 #endif
 
 
-      fprintf(stderr,"Flags: "
+  LogPrintf (LOG_DEBUG, "Flags: "
 #ifdef LAL_NDEBUG
-	      "LAL_NDEBUG"
+	  "LAL_NDEBUG"
 #else
-	      "LAL_DEBUG"
+	  "LAL_DEBUG"
 #endif
 #ifdef HS_OPTIMIZATION
-	      ", HS_OPTIMIZATION"
+	  ", HS_OPTIMIZATION"
 #endif
 #ifdef USE_CUDA
-	      ", CUDA"
+	  ", CUDA"
 #endif
 #ifdef AUTOVECT_HOTLOOP
-	      ", AUTOVECT"
+	  ", AUTOVECT"
 #endif
 #if _ARCH_PPC
-	      ", PPC"
+	  ", PPC"
 #elif __x86_64__
-	      ", X64"
+	  ", X64"
+#elif __i386__
+	  ", i386"
 #endif
 #if __ALTIVEC__
-	      ", ALTIVEC"
+	  ", ALTIVEC"
 #endif
 #if __SSE__
-	      ", SSE"
+	  ", SSE"
 #endif
 #if __SSE2__
-	      ", SSE2"
+	  ", SSE2"
 #endif
-
 #ifdef __BIG_ENDIAN__
-	      ", BIG_ENDIAN"
+	  ", BIG_ENDIAN"
 #endif
 #if __GNUC__
-	      ", GNUC"
+	  ", GNUC"
 #endif
 #ifdef _MSC_VER
-	      ", _MSC_VER:%d",_MSC_VER
+	  ", _MSC_VER:%d\n",_MSC_VER
+#else
+	  "\n"
 #endif
-	      );
-      fprintf(stderr,"\n");
-
+	  );
 
 #ifdef __GLIBC__
   /* log the glibc version */
-  fprintf(stderr, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
+  LogPrintf (LOG_DEBUG, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
 #endif
 
   /* if there already was an error, there is no use in continuing */
