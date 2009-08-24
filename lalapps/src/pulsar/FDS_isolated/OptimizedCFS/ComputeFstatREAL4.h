@@ -32,9 +32,14 @@ extern "C" {
 
 /* ---------- exported defines and macros ---------- */
 
+/** ----- switch between different versions of XLALComputeFStatFreqBandVector() ----- */
+#ifdef USE_CUDA
+#define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCUDA
+#else
+#define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCPU
+#endif
+
 /* ---------- exported types ---------- */
-
-
 // FIXME: the following types might be useful to move into LAL at some point
 /** sequence of MultiSFT vectors -- for each segment */
 typedef struct tagMultiSFTVectorSequence {
@@ -122,14 +127,14 @@ extern const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 
 /* ---------- exported API prototypes ---------- */
 int
-XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
-                                 const PulsarDopplerParams *doppler,
-                                 const MultiSFTVectorSequence *multiSFTsV,
-                                 const MultiNoiseWeightsSequence *multiWeightsV,
-                                 const MultiDetectorStateSeriesSequence *multiDetStatesV,
-                                 UINT4 Dterms,
-                                 ComputeFBufferREAL4V *cfvBuffer
-                                 );
+XLALComputeFStatFreqBandVectorCPU ( REAL4FrequencySeriesVector *fstatBandV,
+                                    const PulsarDopplerParams *doppler,
+                                    const MultiSFTVectorSequence *multiSFTsV,
+                                    const MultiNoiseWeightsSequence *multiWeightsV,
+                                    const MultiDetectorStateSeriesSequence *multiDetStatesV,
+                                    UINT4 Dterms,
+                                    ComputeFBufferREAL4V *cfvBuffer
+                                    );
 int
 XLALDriverFstatREAL4 ( REAL4 *Fstat,
                      const PulsarDopplerParams *doppler,
