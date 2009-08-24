@@ -23,7 +23,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_ComputeFStatistic_v2 lalapps_PredictFStat \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit
 
-EXTRA_PROGRAMS = lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2
+EXTRA_PROGRAMS = lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
