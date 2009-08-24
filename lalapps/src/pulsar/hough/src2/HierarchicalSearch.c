@@ -133,20 +133,56 @@ RCSID( "$Id$");
  */
 #ifdef EAH_BOINC
 #include "EinsteinAtHome/hs_boinc_extras.h"
-#else
+#else /* EAH_BOINC */
+/* checkpointing */
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
+/* FStat coprocessor (CUDA) */
+#define REARRANGE_SFT_DATA /* almost obsolete now */
+#define INITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
+/* BOINC */
+#define MAIN main
+#endif /* EAH_BOINC */
+
+/* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
+#ifndef HS_OPTIMIZATION
+#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#else /* HS_OPTIMIZATION */
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+extern void
+LocalComputeFstatHoughMap ( LALStatus *status,
+			    SemiCohCandidateList  *out,   /* output candidates */
+			    HOUGHPeakGramVector *pgV, /* peakgram vector */
+			    SemiCoherentParams *params);
+#endif /* HS_OPTIMIZATION */
+
+/* use CUDA (currently for computing F-Statistic only) */
+#ifdef USE_CUDA
+#define GPUREADY_DEFAULT 1
+#define INITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
+#define REARRANGE_SFT_DATA
+#else /*  USE_CUDA */
+#define GPUREADY_DEFAULT 0
 #define REARRANGE_SFT_DATA
 #define INITIALIZE_COPROCESSOR_DEVICE
 #define UNINITIALIZE_COPROCESSOR_DEVICE
-#define MAIN  main
-#define FOPEN fopen
-#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
-#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
-#endif
+#endif /*  USE_CUDA */
 
 extern int lalDebugLevel;
 

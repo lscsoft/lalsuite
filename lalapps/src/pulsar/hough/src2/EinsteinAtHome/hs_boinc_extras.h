@@ -38,44 +38,6 @@
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
-/* use a local copy of ComputeFStatFreqBand() and related functions for E@H-specific optimizations */
-#ifdef EAH_CUDA
-#include "../HierarchicalSearch.h"
-#define GPUREADY_DEFAULT 1
-#define INITIALIZE_COPROCESSOR_DEVICE
-#define UNINITIALIZE_COPROCESSOR_DEVICE
-#define REARRANGE_SFT_DATA
-#else /*  EAH_CUDA */
-#define GPUREADY_DEFAULT 0
-#define REARRANGE_SFT_DATA
-#define INITIALIZE_COPROCESSOR_DEVICE
-#define UNINITIALIZE_COPROCESSOR_DEVICE
-#endif
-
-#ifndef EAH_OPTIMIZATION
-#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
-#else /* EAH_OPTIMIZATION */
-#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
-
-#include "../HierarchicalSearch.h"
-
-extern void
-LocalComputeFStatFreqBand ( LALStatus *status, 
-                            REAL4FrequencySeries *FstatVector,
-                            const PulsarDopplerParams *doppler,
-                            const MultiSFTVector *multiSFTs, 
-                            const MultiNoiseWeights *multiWeights,
-                            const MultiDetectorStateSeries *multiDetStates,
-                            const ComputeFParams *params);
-extern void
-LocalComputeFstatHoughMap ( LALStatus *status,
-			    SemiCohCandidateList  *out,   /* output candidates */
-			    HOUGHPeakGramVector *pgV, /* peakgram vector */
-			    SemiCoherentParams *params);
-#endif /* EAH_OPTIMIZATION */
-
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
 

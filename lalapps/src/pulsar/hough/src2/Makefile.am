@@ -75,17 +75,19 @@ lalapps_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)
 lalapps_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchicalSearch_cuda_LDADD = -lcudart
 
-
 # Einstein@home targets
-EAHSources =  EinsteinAtHome/LocalComputeFstatHoughMap.c EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp
+EAHSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp
 
 eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
+eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
 
 eah_HierarchicalSearch_sse_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
+eah_HierarchicalSearch_sse_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
 eah_HierarchicalSearch_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
 
 eah_HierarchicalSearch_sse2_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
+eah_HierarchicalSearch_sse2_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
 eah_HierarchicalSearch_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FstatCUDA.cu
-eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
+eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA -DEAH_BOINC -DHS_OPTIMIZATION

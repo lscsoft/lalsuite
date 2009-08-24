@@ -130,7 +130,7 @@ int global_cpu_type;
 /** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
-#ifdef EAH_CUDA
+#ifdef USE_CUDA
 /** CUDA device id */
 int cuda_device_id = 0;
 #endif
@@ -798,7 +798,7 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-#ifdef EAH_CUDA
+#ifdef USE_CUDA
     /* if building a CUDA App, handle --device option given by BOINC client */
     else if (MATCH_START("--device",argv[arg],l)) {
       arg++; /* next argument */
