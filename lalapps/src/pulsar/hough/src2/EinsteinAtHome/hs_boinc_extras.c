@@ -877,6 +877,15 @@ static void worker (void) {
 #else
 	      "LAL_DEBUG"
 #endif
+#ifdef HS_OPTIMIZATION
+	      ", HS_OPTIMIZATION"
+#endif
+#ifdef USE_CUDA
+	      ", CUDA"
+#endif
+#ifdef AUTOVECT_HOTLOOP
+	      ", AUTOVECT"
+#endif
 #if _ARCH_PPC
 	      ", PPC"
 #elif __x86_64__
@@ -894,9 +903,6 @@ static void worker (void) {
 
 #ifdef __BIG_ENDIAN__
 	      ", BIG_ENDIAN"
-#endif
-#ifdef AUTOVECT_HOTLOOP
-	      ", AUTOVECT"
 #endif
 #if __GNUC__
 	      ", GNUC"
