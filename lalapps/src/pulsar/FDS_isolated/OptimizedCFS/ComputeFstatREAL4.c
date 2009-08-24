@@ -50,7 +50,7 @@
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
-#ifdef EAH_OPTIMIZATION
+#ifdef EAH_OPTIMIZATION_FLAGS
 #include "LocalOptimizationFlags.h"
 #endif
 
@@ -1096,7 +1096,7 @@ void init_sin_cos_LUT_REAL4 ( void )
 
       /* write out optimization settings */
 
-#ifdef EAH_OPTIMIZATION
+#ifdef EAH_OPTIMIZATION_FLAGS
 
       fprintf(stderr,
               "\n$Revision$ REV:%s, OPT:%d, "
