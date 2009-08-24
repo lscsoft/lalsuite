@@ -3,7 +3,13 @@
 
 # for using lalapps-defines + functions
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -I$(top_srcdir)/misc
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+## make sure lalapps.la is built
+lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
+$(lalappsla):
+	cd $(top_builddir)/src/lalapps && $(MAKE)
+LDADD = $(lalappsla)
+
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 

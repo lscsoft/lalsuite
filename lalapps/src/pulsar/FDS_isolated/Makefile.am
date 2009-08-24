@@ -2,7 +2,12 @@
 # $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+## make sure lalapps.la is built
+lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
+$(lalappsla):
+	cd $(top_builddir)/src/lalapps && $(MAKE)
+LDADD = $(lalappsla)
 
 SUBDIRS = ResamplingFstat
 
@@ -10,7 +15,7 @@ SUBDIRS = ResamplingFstat
 .PHONY: gitID
 gitID:
 	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
+
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
