@@ -133,7 +133,8 @@ dag.set_dag_file(basename)
 
 print "Parsing the ihope cache..."
 ihope_cache = [line for line in file(options.ihope_cache) \
-  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line or " INJECTIONS" in line]
+  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line \
+  or " INJECTIONS" in line or "INSPIRAL_SECOND" in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SECOND" in entry])
@@ -141,6 +142,8 @@ slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SLIDE_SECOND" in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
   " INJECTIONS" in entry])
+inspiral_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "INSPIRAL_SECOND" in entry]) 
 
 del ihope_cache
 
@@ -177,6 +180,7 @@ for tag in user_tags:
   cluster_job = inspiral.ClusterCoincsJob(cp)
   ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
   ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
+  printlc_job = inspiral.PrintLCJob(cp)
   if simulation:
     dbaddinj_job = inspiral.DBAddInjJob(cp)
   else:
@@ -192,6 +196,7 @@ for tag in user_tags:
   cluster_job.set_sub_file( '.'.join([ basename, tag, 'cluster_coincs', 'sub' ]) )
   ucfar_job.set_sub_file( '.'.join([ basename, tag, 'uncombined.cfar', 'sub' ]) )
   ccfar_job.set_sub_file( '.'.join([ basename, tag, 'combined.cfar', 'sub' ]) )
+  printlc_job.set_sub_file( '.'.join([ basename, tag, 'printlc', 'sub' ]) )
   if simulation:
     dbaddinj_job.set_sub_file ( '.'.join([ basename, tag, 'dbaddinj', 'sub' ]) )
   else:
@@ -255,7 +260,9 @@ for tag in user_tags:
     for entry_num, entry in enumerate(instrument_cache):
       if not this_cache:
         # first entry; store type for cache naming
+        # and add all the second_inspiral files to the cache
         cache_type = entry.description
+        this_cache.extend(inspiral_cache)
       # Add the zero-lag thinca entry to this_cache 
       this_cache.append(entry)
       # if this isn't a simulation add the slide file
@@ -452,6 +459,48 @@ for tag in user_tags:
   ccfar_node.add_parent( ucfar_node )
   
   dag.add_node( ccfar_node )
+
+  ############################################################################
+  # Summary: Setup a PrintLCNode to generate LoudestEvent summary and full
+  # xml
+
+  print "\tsetting up printlc nodes..."
+
+  # set datatypes to generate files for
+  if simulation:
+    datatypes = ['simulation']
+  elif options.generate_all_data_plots or 'PLAYGROUND' in tag:
+    datatypes = ['all_data', 'playground', 'exclude_play', 'slide']
+  else:
+    datatypes = ['playground', 'slide']
+
+
+  for datatype in datatypes:
+    print "\t\tfor %s..." % datatype
+    # set output and extracted xml file names
+    type = '_'.join([ tag, 'LOUDEST', datatype.upper(), 'EVENTS_BY', cp.get('printlc', 'ranking-stat').upper()])
+    if cp.has_option('printlc', 'output-format'):
+      summary_extension = cp.get('printlc', 'output-format')
+    else:
+      summary_extension = 'wiki'
+    summary_filename = '.'.join([
+      '-'.join([ distinct_ifos, type + '_SUMMARY', experiment_start, experiment_duration ]),
+      summary_extension ])
+    xml_filename =  '.'.join([
+      '-'.join([ distinct_ifos, type, experiment_start, experiment_duration ]),
+      'xml' ])
+
+    # set node options
+    printlc_node = inspiral.PrintLCNode( printlc_job )
+    printlc_node.set_tmp_space( tmp_space )
+    printlc_node.set_input( result_db )
+    printlc_node.set_output( summary_filename )
+    printlc_node.set_extract_to_xml( xml_filename )
+
+    # set parent node
+    printlc_node.add_parent( ccfar_node )
+
+    dag.add_node( printlc_node )
 
   ############################################################################
   # Plotting: Generate all result plots

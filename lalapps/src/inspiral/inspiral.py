@@ -2111,6 +2111,60 @@ class CFarNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
+class PrintLCJob(pipeline.SqliteJob):
+  """
+  A printlc job. The static options are read from the section [printlc] in
+  the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    @sections: list of sections for cp to read from
+    """
+    exec_name = 'printlc'
+    sections = ['printlc']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class PrintLCNode(pipeline.SqliteNode):
+  """
+  A PrintLC node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PrintLCJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.datatype = None
+    self.extract_to_xml = None
+
+  def set_datatype(self, datatype):
+    """
+    Sets datatype option.
+    """
+    self.add_var_opt('datatype', datatype)
+    self.__datatype = datatype
+
+  def get_datatype(self):
+    """
+    Gets datatype.
+    """
+    return self.__datatype
+
+  def set_extract_to_xml(self, xml_filename):
+    """
+    Sets the extract-to-xml option.
+    """
+    self.add_var_opt('extract-to-xml', xml_filename)
+    self.__extract_to_xml = xml_filename
+
+  def get_extract_to_xml(self):
+    """
+    Gets xml-filename if extract-to-xml is set.
+    """
+    return self.__extract_to_xml
+
+
 class PlotSlidesJob(pipeline.SqliteJob):
   """
   A plotslides job. The static options are read from the sections [plot_input]
