@@ -336,7 +336,9 @@ LALCompareSnglRingdownByTime (
 
 
 
-
+/** Compare theparameters of two ringdown triggers according to  
+ * the specified coincidence test.
+ */
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALCompareRingdowns (
@@ -441,7 +443,7 @@ LALCompareRingdowns (
 }
 
 
-
+/** Two dimensional (frequency and quality) coincidence test */
 REAL4 
 XLAL2DRinca(
     SnglRingdownTable         *aPtr, 
@@ -463,7 +465,7 @@ XLAL2DRinca(
   return ( (dsab + dsba)/2. );
 }
 
-
+/** Three dimensional (time, frequency and quality) coincidence test */
 REAL4
 XLAL3DRinca(
     SnglRingdownTable         *aPtr, 
