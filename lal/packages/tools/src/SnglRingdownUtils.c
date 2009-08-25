@@ -336,7 +336,7 @@ LALCompareSnglRingdownByTime (
 
 
 
-/** Compare theparameters of two ringdown triggers according to  
+/** Compare theparameters of two ringdown triggers according to
  * the specified coincidence test.
  */
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -399,7 +399,7 @@ LALCompareRingdowns (
   {
     if( (fabs( aPtr->frequency - bPtr->frequency ) <= (aAcc.df + bAcc.df) )
       && (fabs( aPtr->quality - bPtr->quality ) <= (aAcc.dQ + bAcc.dQ) ) )
-    { 
+    {
       params->match = 1;
     }
     else
@@ -444,17 +444,17 @@ LALCompareRingdowns (
 
 
 /** Two dimensional (frequency and quality) coincidence test */
-REAL4 
+REAL4
 XLAL2DRinca(
-    SnglRingdownTable         *aPtr, 
-    SnglRingdownTable         *bPtr 
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
     )
 {
   REAL4   fa, fb, Qa, Qb;
   REAL4   dsab = 0;
   REAL4   dsba = 0;
 
-  fa = aPtr->frequency; 
+  fa = aPtr->frequency;
   fb = bPtr->frequency;
   Qa = aPtr->quality;
   Qb = bPtr->quality;
@@ -468,8 +468,8 @@ XLAL2DRinca(
 /** Three dimensional (time, frequency and quality) coincidence test */
 REAL4
 XLAL3DRinca(
-    SnglRingdownTable         *aPtr, 
-    SnglRingdownTable         *bPtr 
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
     )
 {
 
