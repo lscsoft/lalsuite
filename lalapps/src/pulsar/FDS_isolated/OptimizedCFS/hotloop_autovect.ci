@@ -60,7 +60,7 @@
 	}
 
       {
-	REAL8 _lambda_alpha = -lambda_alpha;
+	REAL8 _lambda_alpha = lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
       }

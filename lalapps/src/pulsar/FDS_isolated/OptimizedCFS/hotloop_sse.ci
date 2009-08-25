@@ -10,7 +10,7 @@
 	  static REAL4 M1 = -1.0f;
 	  static REAL8 sincos_adds = 402653184.0;
 	  REAL8 tmp;
-          REAL8 _lambda_alpha = -lambda_alpha;
+          REAL8 _lambda_alpha = lambda_alpha;
           /* vector constants */
           /* having these not aligned will crash the assembler code */
           static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
@@ -249,7 +249,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 
 #ifndef EAH_HOTLOOP_INTERLEAVED
       {
-	REAL8 _lambda_alpha = -lambda_alpha;
+	REAL8 _lambda_alpha = lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
       }

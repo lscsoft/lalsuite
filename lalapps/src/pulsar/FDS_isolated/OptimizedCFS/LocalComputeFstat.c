@@ -493,7 +493,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
 	}
 #endif
-	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
+	lambda_alpha = 0.5 * Dphi_alpha - phi_alpha;
 	
 	/* FIXME: that might be possible to do faster */
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
@@ -570,9 +570,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	    UINT4 ind0;
 
 	    /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
-	    REAL8 _lambda_alpha = -lambda_alpha;
-	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+	    SINCOS_TRIM_X (lambda_alpha,lambda_alpha);
+	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, lambda_alpha );
 
 	    if ( kappa_star <= LD_SMALL4 )
 	      ind0 = DTERMS - 1;

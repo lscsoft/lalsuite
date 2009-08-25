@@ -648,7 +648,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	Dphi_alpha_rem *= Tsft;
 
         tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
-	lambda_alpha = phi_alpha_rem - tmp;
+	lambda_alpha = tmp - phi_alpha_rem;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	/* the sin/cos LUT calculations are woven into the hotloop for performance reasons
@@ -764,7 +764,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 
 	  {
-	    REAL8 _lambda_alpha = -lambda_alpha;
+	    REAL8 _lambda_alpha = lambda_alpha;
 	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
 	  }
@@ -778,7 +778,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  UINT4 ind0;
 
 	  /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
-	  REAL8 _lambda_alpha = -lambda_alpha;
+	  REAL8 _lambda_alpha = lambda_alpha;
 	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
 
