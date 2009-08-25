@@ -1592,13 +1592,13 @@ XLALCoincSimRingdownTest (
     CoincRingdownTable **missedCoincHead
     );
 
-REAL4
+REAL8
 XLAL2DRinca(
     SnglRingdownTable         *aPtr,
     SnglRingdownTable         *bPtr
     );
 
-REAL4
+REAL8
 XLAL3DRinca(
     SnglRingdownTable         *aPtr,
     SnglRingdownTable         *bPtr
