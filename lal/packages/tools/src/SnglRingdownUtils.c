@@ -354,7 +354,7 @@ LALCompareRingdowns (
   SnglRingdownAccuracy aAcc, bAcc;
   InterferometerNumber ifoaNum,  ifobNum;
 
-  REAL4 ds2 = 0;
+  REAL8 ds2 = 0;
   INT8 ta,  tb;
   const LALDetector *aDet;
   const LALDetector *bDet;
@@ -444,15 +444,15 @@ LALCompareRingdowns (
 
 
 /** Two dimensional (frequency and quality) coincidence test */
-REAL4
+REAL8
 XLAL2DRinca(
     SnglRingdownTable         *aPtr,
     SnglRingdownTable         *bPtr
     )
 {
-  REAL4   fa, fb, Qa, Qb;
-  REAL4   dsab = 0;
-  REAL4   dsba = 0;
+  REAL8   fa, fb, Qa, Qb;
+  REAL8   dsab = 0;
+  REAL8   dsba = 0;
 
   fa = aPtr->frequency;
   fb = bPtr->frequency;
@@ -466,7 +466,7 @@ XLAL2DRinca(
 }
 
 /** Three dimensional (time, frequency and quality) coincidence test */
-REAL4
+REAL8
 XLAL3DRinca(
     SnglRingdownTable         *aPtr,
     SnglRingdownTable         *bPtr
@@ -474,7 +474,7 @@ XLAL3DRinca(
 {
 
   INT8    ta,  tb;
-  REAL4   fa, fb, Qa, Qb, ds2_min;
+  REAL8   fa, fb, Qa, Qb, ds2_min;
   REAL8   step = 1./16384.;
   REAL8   dtab, dt_min, dt_max, dt;
   const LALDetector *aDet;
@@ -497,7 +497,7 @@ XLAL3DRinca(
   /* estimate true time delay */
   for ( dt = dt_min ; dt < dt_max ; dt += step )
   {
-    REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+    REAL8 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
     if (ds2 < ds2_min) ds2_min = ds2;
   }
   return ( ds2_min );
