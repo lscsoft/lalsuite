@@ -3264,7 +3264,13 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 {
   PassBandParamStruc       bandPassParams;
   int                      errcode=0;
-  if (params.lowPass > 0)
+  REAL4                    attenF=0;
+  INT4                     orderF=0;
+  attenF=0.9;
+  orderF=20;
+  orderF=10;
+  orderF=5;
+  if ((params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
 	{
@@ -3273,11 +3279,11 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	}
 
       bandPassParams.name=NULL;
-      bandPassParams.nMax=20;
+      bandPassParams.nMax=orderF;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=params.lowPass;
       bandPassParams.f2=0;
-      bandPassParams.a1=0.9;
+      bandPassParams.a1=attenF;
       bandPassParams.a2=0;
       /*
        * Band pass is achieved by low pass first then high pass!
@@ -3293,7 +3299,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
   /*
    * Call the high pass filter function.
    */
-  if (params.highPass > 0)
+  if ((params.highPass > 0))
     {
       if (params.verbosity >= verbose)
 	{
@@ -3301,12 +3307,12 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	  fflush(stdout);
 	}
       bandPassParams.name=NULL;
-      bandPassParams.nMax=20;
+      bandPassParams.nMax=orderF;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=0;
       bandPassParams.f2=params.highPass;
       bandPassParams.a1=0;
-      bandPassParams.a2=0.9;
+      bandPassParams.a2=attenF;
       errcode=XLALButterworthREAL4TimeSeries(dataSet,&bandPassParams);
       if (errcode !=0)
 	{
