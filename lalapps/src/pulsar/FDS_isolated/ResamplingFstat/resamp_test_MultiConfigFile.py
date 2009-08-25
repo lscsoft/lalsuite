@@ -1,9 +1,9 @@
-# Configuration Script for auto_resamp.py script. Times are in seconds.
+ # Configuration Script for auto_resamp.py script. Times are in seconds.
 # For parameters with a _min and _max function, if parameter > 0, then it is 
 # set as the value, else it is chosen uniformly from _min to _max
 
 # Strength of signal
-h0 = 0.15
+h0 = 0.30
 
 # Cosine of iota
 cosi = -0.3
@@ -24,10 +24,12 @@ phi0_max = 1
 Dterms = 128
 
 # Interferometer
-IFOs = 'H2 H1'
+#IFOs = 'H2 H1'
+IFOs = 'H2'
 
 # Start Time
-t0 = '820006091 820000000'
+#t0 = '820006091 820000000'
+t0 = '830000000'
 
 # Reference Time in SSB
 refTime = 820000000
@@ -36,30 +38,32 @@ refTime = 820000000
 Out= './SFTs'
 
 # Ephemeris Directory 
-Ephem = '/Users/ppatel/home/install/lal/share/lal'
+Ephem = '/home/ppatel/install/lal/share/lal'
 
 # Ephemeris Year
 EphemYear = '05-09'
 
 # Noise Sh
-Sh = 0.15*0
+Sh = 0.15
 
 # Duration of Analysis
-TSpan = '36000 36000'
+#TSpan = '36000 36000'
+TSpan = '72000'
 
 # SFT time baseline
 TSFT = 1800
 
 # Number of SFTs to add
 #NumSFTs = '20 20'
-NumSFTs = '10 11'
+#NumSFTs = '10 11'
+NumSFTs = '22'
 
 # Number of Gaps to add
-NumGaps = '5 5'
-#NumGaps = '0 0'
+#NumGaps = '3 3'
+NumGaps = '3'
 
 # Alpha (Right Ascension)
-#Alpha = 2.0
+Alpha = 2.0
 Alpha_min = 0
 Alpha_max = 6.28
 
@@ -73,17 +77,17 @@ Delta_max = 1.57
 Fmin = 103.0
 
 # Band of Analysis
-Band = 0.2
+Band = 0.1
 
 # Injection Frequency
-Finj = 103.03
-Finj_min = 55.0
-Finj_max = 55.1
+#Finj = 103.03
+Finj_min = 103.0
+Finj_max = 103.1
 
 # Spindown
-FDot = 1e-8
-FDot_min = 1e-7
-FDot_max = 1e-11
+#FDot = 1e-8*0
+FDot_min = -1e-7
+FDot_max = -1e-11
 
 # Fdot band
 FDotBand = 2e-8*0
@@ -96,7 +100,7 @@ debug = 0
 
 # Resolution
 #Res = 1.0/144000/4/2
-Res = 1.0/20/1800/10
+Res = 1.0/20/1800/10/10
 
 # OutputTimeSeries
 TimeSeriesOut = 'TSeries'

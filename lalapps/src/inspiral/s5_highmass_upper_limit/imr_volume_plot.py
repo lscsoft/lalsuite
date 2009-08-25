@@ -13,11 +13,6 @@ import glob
 import copy
 from glue.ligolw.utils import ligolw_add
 from glue.ligolw import ligolw, utils
-# FIXME:  the plots should use LaTeX to generate the labels, but some don't
-# work yet
-matplotlib.rcParams.update({
-	"text.usetex": False
-})
 
 # FIXME, I apparently don't know how to read XML as cleverly as I thought, how do I find the table
 # without specifying the childnode number?
@@ -74,15 +69,15 @@ def integrate_posterior(mu, post, conf):
 
 # test case
 
-VT = numpy.array([10.0**8])
-sigmasq = numpy.array([4.0*10**14])
-Lambda = numpy.array([1.0])
+#VT = numpy.array([10.0**8])
+#sigmasq = numpy.array([4.0*10**14])
+#Lambda = numpy.array([1.0])
 
-mu, post = posterior(VT, sigmasq, Lambda)
+#mu, post = posterior(VT, sigmasq, Lambda)
 
 #pylab.semilogy(mu, post.cumsum()/post.sum())
 #pylab.show()
-print integrate_posterior(mu, post, 0.90)
+#print integrate_posterior(mu, post, 0.90)
 
 # bins is the same for each call and ulA is an empty binnedArray that has the right shape
 # that can hold the upperlimit when we get around to computing it later, so it is okay
@@ -95,68 +90,32 @@ for i, l in enumerate(vA):
     for k, n in enumerate(m):
       if n == 0: print i,j,k,n #vA[i][j][k] = 0.01
     #if k = 0 k = 0.01
-
+print vA.shape
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
-bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
-bins, vAD, ulA = get_combined_array("2DsearchvolumeDistance", 3)
+#bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
+#bins, vAD, ulA = get_combined_array("2DsearchvolumeDistance", 3)
  
 #bin edges Number of bins + 1 for pcolor
 X = numpy.array( list(bins.lower()[0]) + [bins.upper()[0][-1]] )
 Y = numpy.array( list(bins.lower()[1]) + [bins.upper()[1][-1]] )
 
 #compute combined posterior over m1, m2
-for m1 in range(len(bins.lower()[0])):
-  for m2 in range(len(bins.lower()[1])): 
-    mu, post = posterior(vA[...,m1,m2], vA2[...,m1,m2], dvA[...,m1,m2])
-    ulA.array[m1][m2] = integrate_posterior(mu, post, 0.90)
+#for m1 in range(len(bins.lower()[0])):
+#  for m2 in range(len(bins.lower()[1])): 
+#    mu, post = posterior(vA[...,m1,m2], vA2[...,m1,m2], dvA[...,m1,m2])
+#    ulA.array[m1][m2] = integrate_posterior(mu, post, 0.90)
 
 log_vol = pylab.log10(vA[0])
 
-log_ul = pylab.log10(ulA.array)
+#log_ul = pylab.log10(ulA.array)
 
 vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 
-der = dvA[0] #pylab.log10(eA.array)
+#der = dvA[0] #pylab.log10(eA.array)
 
 fn = sys.argv[1]
 
-wiki = open(fn.split('-')[-1].replace('.xml','range_summary.txt'),"w")
-wiki.write("||Masses||Range||\n")
 pylab.figure(1)
-#FIXME don't hardcode masses
-masses = bins[15,15]
-print masses
-wiki.write("||15,15||%f||\n" % (vAD[0,masses[0],masses[1]],) )
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-pylab.hold(1)
-masses = bins[50,50]
-wiki.write("||50,50||%f||\n" % (vAD[0,masses[0],masses[1]],) )
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-masses = bins[1,99]
-wiki.write("||1,99||%f||\n" % (vAD[0,masses[0],masses[1]],) )
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-masses = bins[1,24]
-wiki.write("||1,24||%f||\n" % (vAD[0,masses[0],masses[1]],) )
-print masses
-wiki.close()
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-pylab.hold(0)
-pylab.title("Combined posteriors for a few mass bins",fontsize=14)
-pylab.legend(["15,15", "50,50", "1,99", "1,24"])
-pylab.ylabel("Prob (unnormalized)",fontsize=14)
-pylab.xlabel("Rate",fontsize=14)
-pylab.ylim([0.0001, 1])
-pylab.grid()
-if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','posterior.png'))
-else: pylab.savefig("combinedposterior.png")
-
-pylab.figure(2)
 pylab.gray()
 pylab.pcolor(X,Y, log_vol)
 #pylab.hold(1)
@@ -166,7 +125,7 @@ pylab.pcolor(X,Y, log_vol)
 pylab.colorbar()
 pylab.ylim([0, 51])
 pylab.xlim([11, 101])
-pylab.title("Log10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
+pylab.title("Log10[< Volume >] Mpc^3",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
@@ -175,47 +134,33 @@ pylab.savefig(fn.split('-')[-1].replace('.xml','volume_time.png'))
 
 #pylab.show()
 
-pylab.figure(3)
+pylab.figure(2)
 pylab.pcolor(X,Y, vol_error)
 pylab.colorbar()
 pylab.ylim([0, 51])
 pylab.xlim([11, 101])
-pylab.title("Fractional Error on Volume * Time [std/mean]",fontsize=14)
+pylab.title("Fractional Error on Volume [std/mean]",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
 pylab.savefig(fn.split('-')[-1].replace('.xml','fractional_error.png'))
 
-
-pylab.figure(4)
-pylab.pcolor(X,Y, der )
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Volume derivative, Lambda",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.gca().set_aspect(1)
-pylab.grid()
-pylab.savefig(fn.split('-')[-1].replace('.xml','lambda.png'))
-
-
-pylab.figure(5)
-pylab.gray()
-pylab.pcolor(X,Y, log_ul)
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.gca().set_aspect(1)
-pylab.grid()
-if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','upper_limit.png'))
-else: pylab.savefig("combinedupper_limit.png")
-
-
-#pylab.show()
-
+if vA.shape[0] == 2:
+  pylab.figure(3)
+  pylab.gray()
+  pylab.pcolor(X,Y, pylab.log10(vA[0]) /  pylab.log10(vA[1]) )
+  #pylab.hold(1)
+  #cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)
+  #pylab.clabel(cn)
+  #pylab.hold(0)
+  pylab.colorbar()
+  pylab.ylim([0, 51])
+  pylab.xlim([11, 101])
+  pylab.title("Log10[< Volume >] Mpc^3\n" + sys.argv[1] + "\n" + sys.argv[2],fontsize=14)
+  pylab.xlabel("Mass 2",fontsize=14)
+  pylab.ylabel("Mass 1",fontsize=14)
+  pylab.gca().set_aspect(1)
+  pylab.grid()
+  pylab.savefig(sys.argv[1].replace('/','_') + "_" + sys.argv[2].replace('/','_') + 'volume_time_ratio.png')
 

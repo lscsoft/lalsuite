@@ -314,6 +314,11 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
             ( log(maxTotalMass) - log(minTotalMass) ) );
     ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
   }
+  else
+  {
+    /* unsupported distribution type */
+    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassRatio", XLAL_EINVAL);
+  }
   inj->mass1 = (ratio * mtotal) / (ratio + 1);
   inj->mass2 = mtotal / (ratio + 1);
   inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );

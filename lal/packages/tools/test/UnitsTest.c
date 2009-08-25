@@ -466,7 +466,8 @@ int main( int argc, char *argv[] )
     TestStatus(&status, CODES(UNITSH_ENONINT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENONINT);
 
-    unit1.unitNumerator[2] = 40000;
+    unit1.unitNumerator[2] = 20000;
+    unit1.unitNumerator[2] += 20000;
     power.numerator = 2;
     power.denominatorMinusOne = 0;
     LALUnitRaise( &status, &unit1, &unit1, &power );
