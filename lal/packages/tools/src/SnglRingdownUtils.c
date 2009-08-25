@@ -335,6 +335,7 @@ LALCompareSnglRingdownByTime (
 
 
 
+
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALCompareRingdowns (
@@ -345,18 +346,8 @@ LALCompareRingdowns (
     )
 /* </lalVerbatim> */
 {
-  INT8    ta,  tb;
-  REAL4   df, dQ;
-  REAL4   fa, fb, Qa, Qb;
-  REAL4   dsab = 0;
-  REAL4   dsba = 0;
-  REAL8   step = 1./params->minimizerStep;
-  InterferometerNumber ifoaNum,  ifobNum;
-  SnglRingdownAccuracy aAcc, bAcc;
-
   INITSTATUS( status, "LALCompareRingdowns", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
-
 
   params->match = 1;
 
@@ -373,6 +364,46 @@ LALCompareRingdowns (
     goto exit;
   }
 
+  /* Make sure triggers lie within a reasonable time window */
+  XLALCheckTime(aPtr, bPtr, params);
+
+  /* compare f and Q parameters */
+  if ( params->test == f_and_Q )
+  {
+    params->match = XLALBoxRinca( aPtr, bPtr, params);
+  }
+  else if ( params->test == ds_sq )
+  {
+    params->match = XLAL2DRinca( aPtr, bPtr, params );
+  }
+  else if ( params->test == ds_sq_fQt )
+  {
+    params->match = XLAL3DRinca( aPtr, bPtr, params );
+  }
+  else
+  {
+    LALInfo( status, "error: unknown test\n" );
+    params->match = 0;
+    goto exit;
+  }
+  exit:
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+
+int
+XLALCheckTime(
+    SnglRingdownTable        *aPtr,
+    SnglRingdownTable        *bPtr,
+    RingdownAccuracyList     *params
+    )
+{
+  INT8    ta,  tb;
+  InterferometerNumber ifoaNum,  ifobNum;
+  SnglRingdownAccuracy aAcc, bAcc;
+
   ifoaNum = XLALIFONumber( aPtr->ifo );
   ifobNum = XLALIFONumber( bPtr->ifo );
 
@@ -386,113 +417,140 @@ LALCompareRingdowns (
   if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {
-    LALInfo( status, "Triggers pass time coincidence test");
     params->match = 1;
   }
   else
   {
-    LALInfo( status, "Triggers fail time coincidence test" );
     params->match = 0;
-    goto exit;
   }
+  return ( params->match );
+}
 
-  /* compare f and Q parameters */
-  if ( params->test == f_and_Q )
+
+
+int
+XLALBoxRinca(      
+    SnglRingdownTable        *aPtr,
+    SnglRingdownTable        *bPtr,
+    RingdownAccuracyList     *params
+    )
+{
+  SnglRingdownAccuracy aAcc, bAcc;
+  InterferometerNumber ifoaNum,  ifobNum;
+  REAL4   df, dQ;
+
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum];
+  df = fabs( aPtr->frequency - bPtr->frequency );
+  dQ = fabs( aPtr->quality - bPtr->quality );
+
+  if ( ( df <= (aAcc.df + bAcc.df) )
+    && ( dQ <= (aAcc.dQ + bAcc.dQ) )) 
   {
-    df = fabs( aPtr->frequency - bPtr->frequency );
-    dQ = fabs( aPtr->quality - bPtr->quality );
-
-    if ( ( df <= (aAcc.df + bAcc.df) )
-        && ( dQ <= (aAcc.dQ + bAcc.dQ) ))
-    {
-      LALInfo( status, "Triggers are coincident in f and Q" );
-      params->match = 1;
-    }
-    else
-    {
-      LALInfo( status, "Triggers are not coincident in f and Q" );
-      params->match = 0;
-      goto exit;
-    }
-  }
-  else if ( params->test == ds_sq || params->test == ds_sq_fQt )
-  {
-    fa = aPtr->frequency;
-    fb = bPtr->frequency;
-    Qa = aPtr->quality;
-    Qb = bPtr->quality;
-
-    if ( params->test == ds_sq )
-    {
-      dsab = XLAL2DRingMetricDistance( fa, fb, Qa, Qb );
-      dsba = XLAL2DRingMetricDistance( fb, fa, Qb, Qa );
-    }
-    else if ( params->test == ds_sq_fQt )
-    {
-      REAL8 dtab = 1.e-9 * (tb - ta);
-      REAL8 dt_min = dtab - 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-      REAL8 dt_max = dtab + 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-      REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
-      REAL8 dt;
-
-      /* estimate true time delay */
-      for ( dt = dt_min ; dt < dt_max ; dt += step )
-      {
-        REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
-        if (ds2 < ds2_min) ds2_min = ds2;
-      }
-
-      dsab = ds2_min;
-      dsba = ds2_min;
-    }
-    if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
-    {
-      LALInfo( status, "Triggers pass the ds_sq coincidence test" );
-      params->match = 1;
-      if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
-		||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
-      {
-        aPtr->ds2_H1H2=dsab;
-        bPtr->ds2_H1H2=dsba;
-      }
-      else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0)
- 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
-      {
-        aPtr->ds2_H1L1=dsab;
-        bPtr->ds2_H1L1=dsba;
-      }
-      else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
-		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
-      {
-        aPtr->ds2_H2L1=dsab;
-        bPtr->ds2_H2L1=dsba;
-      }
-      else
-      {
-        LALInfo( status, "Unknown pair of ifo's" );
-        params->match = 0;
-        goto exit;
-      }
-    }
-    else
-    {
-      LALInfo( status, "Triggers fail the ds_sq coincidence test" );
-      params->match = 0;
-      goto exit;
-    }
+    params->match = 1;
   }
   else
   {
-    LALInfo( status, "error: unknown test\n" );
     params->match = 0;
-    goto exit;
-  }
-
-exit:
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  } 
+  return ( params->match );
 }
 
+
+
+int 
+XLAL2DRinca(
+    SnglRingdownTable         *aPtr, 
+    SnglRingdownTable         *bPtr, 
+    RingdownAccuracyList     *params 
+    )
+{
+  SnglRingdownAccuracy aAcc, bAcc;
+  InterferometerNumber ifoaNum,  ifobNum;
+
+  REAL4   fa, fb, Qa, Qb;
+  REAL4   dsab = 0;
+  REAL4   dsba = 0;
+
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum];
+  fa = aPtr->frequency; 
+  fb = bPtr->frequency;
+  Qa = aPtr->quality;
+  Qb = bPtr->quality;
+
+  dsab = XLAL2DRingMetricDistance( fa, fb, Qa, Qb );
+  dsba = XLAL2DRingMetricDistance( fb, fa, Qb, Qa );
+
+  if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
+  {
+    params->match = 1;
+  }
+  else
+  {
+    params->match = 0;
+  }
+  return ( params->match );
+}
+
+
+
+int
+XLAL3DRinca(
+    SnglRingdownTable         *aPtr, 
+    SnglRingdownTable         *bPtr, 
+    RingdownAccuracyList     *params 
+    )
+{
+  SnglRingdownAccuracy aAcc, bAcc;
+  InterferometerNumber ifoaNum,  ifobNum;
+
+  INT8    ta,  tb;
+  REAL4   fa, fb, Qa, Qb, ds2_min;
+  REAL4   dsab = 0;
+  REAL4   dsba = 0;
+  REAL8   step = 1./params->minimizerStep;
+  REAL8   dtab, dt_min, dt_max, dt;
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum]; 
+  fa = aPtr->frequency;
+  fb = bPtr->frequency;
+  Qa = aPtr->quality;
+  Qb = bPtr->quality;
+  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
+
+  dtab = 1.e-9 * (tb - ta);
+  dt_min = dtab - 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+  dt_max = dtab + 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+  ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
+  
+  /* estimate true time delay */
+  for ( dt = dt_min ; dt < dt_max ; dt += step )
+  {
+    REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+    if (ds2 < ds2_min) ds2_min = ds2;
+  }
+
+  dsab = ds2_min;
+  dsba = ds2_min;
+
+  if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
+  {
+    params->match = 1;
+  }
+  else
+  {
+    params->match = 0;
+  }
+  return ( params->match );
+}
 
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
