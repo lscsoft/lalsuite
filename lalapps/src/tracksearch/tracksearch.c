@@ -1100,6 +1100,11 @@ void LALappsTrackSearchInitialize(
    *If doing a MAP analysis skip these checks these options should
    *not be invoked
    */
+  if ((params->colsToClip > 0))
+    {
+      fprintf(stderr,"25Aug2009:BIN BUFFERING CURRENTLY BROKEN! Since Het introduced.\n");
+      fflush(stderr);
+    }
   if ((params->HeterodyneFrequency > 0) || (params->HeterodyneSamplingRate > 0))
     {
       fprintf(stdout,"WARNING: All measure such as segment length are assumed relative to the effective sampling rate of the heterodyned data.\n");
@@ -1501,7 +1506,7 @@ void LALappsGetFrameData(LALStatus*          status,
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,
-		  "DC offset removal invoked.");
+		  "DC offset removal invoked.\n");
 	  fflush(stdout);
 	}
       if (params->verbosity >= printFiles)
