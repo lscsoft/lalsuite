@@ -20,7 +20,7 @@ eah_sources = 	$(lalappsDIR)/lalapps.c \
 		$(optHOME)/LocalComputeFstat.c $(eaHOME)/LocalComputeFstatHoughMap.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 if USE_CUDA
-    eah_sources += $(optHOME)/FStatCUDA.cu
+    eah_sources += $(optHOME)/ComputeFstatREAL4.c $(optHOME)/FStatCUDA.cu
 endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc

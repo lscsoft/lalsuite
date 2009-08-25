@@ -48,6 +48,7 @@ typedef struct {
 
 /*---------- Global variables ----------*/
 extern int cuda_device_id;
+static const LALStatus empty_LALStatus;
 
 
 /*---------- internal prototypes ----------*/

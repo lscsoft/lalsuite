@@ -254,14 +254,14 @@ extern const CLWorkspace empty_CLWorkspace;
 
 /* ---------- exported API prototypes ---------- */
 int
-XLALComputeFStatFreqBandVectorCPU ( REAL4FrequencySeriesVector *fstatBandV,
-                                    const PulsarDopplerParams *doppler,
-                                    const MultiSFTVectorSequence *multiSFTsV,
-                                    const MultiNoiseWeightsSequence *multiWeightsV,
-                                    const MultiDetectorStateSeriesSequence *multiDetStatesV,
-                                    UINT4 Dterms,
-                                    ComputeFBufferREAL4V *cfvBuffer
-                                    );
+XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
+				 const PulsarDopplerParams *doppler,
+				 const MultiSFTVectorSequence *multiSFTsV,
+				 const MultiNoiseWeightsSequence *multiWeightsV,
+				 const MultiDetectorStateSeriesSequence *multiDetStatesV,
+				 UINT4 Dterms,
+				 ComputeFBufferREAL4V *cfvBuffer
+				 );
 
 #if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
 int
