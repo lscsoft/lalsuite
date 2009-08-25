@@ -4,6 +4,12 @@
 # for using lalapps-defines + functions
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -I$(top_srcdir)/misc
 
+## Compiling with OpenCL on Linux
+# LDFLAGS = -lOpenCL
+#
+## Compiling with OpenCL on Mac
+# LDFLAGS = -framework OpenCL
+
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearch_v2 lalapps_HierarchicalSearchGC \
