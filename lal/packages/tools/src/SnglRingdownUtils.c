@@ -45,6 +45,7 @@ $Id$
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LALSimulation.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
@@ -348,8 +349,24 @@ LALCompareRingdowns (
 {
   INITSTATUS( status, "LALCompareRingdowns", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
+  SnglRingdownAccuracy aAcc, bAcc;
+  InterferometerNumber ifoaNum,  ifobNum;
 
+  REAL4 ds2 = 0;
+  INT8 ta,  tb;
+  const LALDetector *aDet;
+  const LALDetector *bDet;
+
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum];
+  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
   params->match = 1;
+  aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
+  bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
+
 
   /* check that triggers come from different IFOs */
   if( strcmp(aPtr->ifo, bPtr->ifo) )
@@ -365,20 +382,52 @@ LALCompareRingdowns (
   }
 
   /* Make sure triggers lie within a reasonable time window */
-  XLALCheckTime(aPtr, bPtr, params);
+  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+      + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+  {
+    params->match = 1;
+  }
+  else
+  {
+    params->match = 0;
+  }
 
   /* compare f and Q parameters */
   if ( params->test == f_and_Q )
   {
-    params->match = XLALBoxRinca( aPtr, bPtr, params);
+    if( (fabs( aPtr->frequency - bPtr->frequency ) <= (aAcc.df + bAcc.df) )
+      && (fabs( aPtr->quality - bPtr->quality ) <= (aAcc.dQ + bAcc.dQ) ) )
+    { 
+      params->match = 1;
+    }
+    else
+    {
+      params->match = 0;
+    }
   }
   else if ( params->test == ds_sq )
   {
-    params->match = XLAL2DRinca( aPtr, bPtr, params );
+    ds2 = XLAL2DRinca( aPtr, bPtr );
+    if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
+    {
+      params->match = 1;
+    }
+    else
+    {
+      params->match = 0;
+    }
   }
   else if ( params->test == ds_sq_fQt )
   {
-    params->match = XLAL3DRinca( aPtr, bPtr, params );
+    ds2 = XLAL3DRinca( aPtr, bPtr );
+    if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
+    {
+      params->match = 1;
+    }
+    else
+    {
+      params->match = 0;
+    }
   }
   else
   {
@@ -393,91 +442,16 @@ LALCompareRingdowns (
 
 
 
-int
-XLALCheckTime(
-    SnglRingdownTable        *aPtr,
-    SnglRingdownTable        *bPtr,
-    RingdownAccuracyList     *params
-    )
-{
-  INT8    ta,  tb;
-  InterferometerNumber ifoaNum,  ifobNum;
-  SnglRingdownAccuracy aAcc, bAcc;
-
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
-
-  ta = XLALGPSToINT8NS( &(aPtr->start_time) );
-  tb = XLALGPSToINT8NS( &(bPtr->start_time) );
-
-  /* compare on trigger time coincidence */
-  aAcc = params->ifoAccuracy[ifoaNum];
-  bAcc = params->ifoAccuracy[ifobNum];
-
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
-      + params->lightTravelTime[ifoaNum][ifobNum])
-  {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
-  }
-  return ( params->match );
-}
-
-
-
-int
-XLALBoxRinca(      
-    SnglRingdownTable        *aPtr,
-    SnglRingdownTable        *bPtr,
-    RingdownAccuracyList     *params
-    )
-{
-  SnglRingdownAccuracy aAcc, bAcc;
-  InterferometerNumber ifoaNum,  ifobNum;
-  REAL4   df, dQ;
-
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
-  aAcc = params->ifoAccuracy[ifoaNum];
-  bAcc = params->ifoAccuracy[ifobNum];
-  df = fabs( aPtr->frequency - bPtr->frequency );
-  dQ = fabs( aPtr->quality - bPtr->quality );
-
-  if ( ( df <= (aAcc.df + bAcc.df) )
-    && ( dQ <= (aAcc.dQ + bAcc.dQ) )) 
-  {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
-  } 
-  return ( params->match );
-}
-
-
-
-int 
+REAL4 
 XLAL2DRinca(
     SnglRingdownTable         *aPtr, 
-    SnglRingdownTable         *bPtr, 
-    RingdownAccuracyList     *params 
+    SnglRingdownTable         *bPtr 
     )
 {
-  SnglRingdownAccuracy aAcc, bAcc;
-  InterferometerNumber ifoaNum,  ifobNum;
-
   REAL4   fa, fb, Qa, Qb;
   REAL4   dsab = 0;
   REAL4   dsba = 0;
 
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
-  aAcc = params->ifoAccuracy[ifoaNum];
-  bAcc = params->ifoAccuracy[ifobNum];
   fa = aPtr->frequency; 
   fb = bPtr->frequency;
   Qa = aPtr->quality;
@@ -486,39 +460,23 @@ XLAL2DRinca(
   dsab = XLAL2DRingMetricDistance( fa, fb, Qa, Qb );
   dsba = XLAL2DRingMetricDistance( fb, fa, Qb, Qa );
 
-  if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
-  {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
-  }
-  return ( params->match );
+  return ( (dsab + dsba)/2. );
 }
 
 
-
-int
+REAL4
 XLAL3DRinca(
     SnglRingdownTable         *aPtr, 
-    SnglRingdownTable         *bPtr, 
-    RingdownAccuracyList     *params 
+    SnglRingdownTable         *bPtr 
     )
 {
-  SnglRingdownAccuracy aAcc, bAcc;
-  InterferometerNumber ifoaNum,  ifobNum;
 
   INT8    ta,  tb;
   REAL4   fa, fb, Qa, Qb, ds2_min;
-  REAL4   dsab = 0;
-  REAL4   dsba = 0;
-  REAL8   step = 1./params->minimizerStep;
+  REAL8   step = 1./16384.;
   REAL8   dtab, dt_min, dt_max, dt;
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
-  aAcc = params->ifoAccuracy[ifoaNum];
-  bAcc = params->ifoAccuracy[ifobNum]; 
+  const LALDetector *aDet;
+  const LALDetector *bDet;
   fa = aPtr->frequency;
   fb = bPtr->frequency;
   Qa = aPtr->quality;
@@ -527,8 +485,11 @@ XLAL3DRinca(
   tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   dtab = 1.e-9 * (tb - ta);
-  dt_min = dtab - 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-  dt_max = dtab + 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+  aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
+  bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
+  dt_min = dtab - 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_max = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
   
   /* estimate true time delay */
@@ -537,19 +498,7 @@ XLAL3DRinca(
     REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
     if (ds2 < ds2_min) ds2_min = ds2;
   }
-
-  dsab = ds2_min;
-  dsba = ds2_min;
-
-  if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
-  {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
-  }
-  return ( params->match );
+  return ( ds2_min );
 }
 
 
