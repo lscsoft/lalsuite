@@ -250,6 +250,17 @@ REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt
   return ( ds2 );
 }
 
+REAL4 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL4 ds_sq )
+{
+  REAL4 gtt;
+  REAL4 f = table->frequency;
+  REAL4 Q = table->quality;
+  REAL4 Q2 = Q*Q;
+
+  gtt = ( LAL_PI*LAL_PI * f*f ) * ( 1. + 4.*Q2 ) / ( Q2 );
+
+  return ( sqrt( ds_sq / gtt ) );
+}
 
 /* <lalVerbatim file="RingCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )

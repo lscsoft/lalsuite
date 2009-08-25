@@ -1592,7 +1592,17 @@ XLALCoincSimRingdownTest (
     CoincRingdownTable **missedCoincHead
     );
 
+REAL4
+XLAL2DRinca(
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
+    );
 
+REAL4
+XLAL3DRinca(
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
+    );
 
 /* coinc ringdown */
 
