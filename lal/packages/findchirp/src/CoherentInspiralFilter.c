@@ -1417,8 +1417,6 @@ LALCoherentInspiralFilterSegment (
   double                              timeDelay[4]= {0.0,0.0,0.0,0.0};
   double                              sortedDelays3D[3]= {0.0,0.0,0.0};
   double                              sortedDelays4D[4]= {0.0,0.0,0.0,0.0};
-  double                              sortedSigmasq3D[3]= {0.0,0.0,0.0};
-  double                              sortedSigmasq4D[4]= {0.0,0.0,0.0,0.0};
   double                              fplus[4] = {0.0,0.0,0.0,0.0};
   double                              fcross[4] = {0.0,0.0,0.0,0.0};
   /* CHECK: COMPLEX8                            cDataTemp[4]; */
@@ -3064,15 +3062,10 @@ LALCoherentInspiralFilterSegment (
 		    /* Calculate factors necessary for parameter estimation*/
 		    uSigma[detId] = (double)fplus[detId] * sqrt((double)sigmasq[j]);
 		    vSigma[detId] = (double)fcross[detId] * sqrt((double)sigmasq[j]);
-                     
-                    /* Sort sigmasq for degeneracy resoln. */
-                    sortedSigmasq3D[detId] = sigmasq[j]/3;
 
 		    detId++;
 		  }
 		}
-                qsort( sortedSigmasq3D, (int) params->numDetectors, sizeof(double), compare );
-
 		/* Construct network terms and factors required for
 		   computing the coherent statistics */
 		AA = AAn[0] + AAn[1] +AAn[2];
@@ -3095,55 +3088,39 @@ LALCoherentInspiralFilterSegment (
 		MM2 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
 
 		/* Regularize */
-		if ( (MM1<sortedSigmasq3D[0] ) ) 
-                  /* smaller of MM1 and MM2 */
-		  MM1=sortedSigmasq3D[0];
-		if ( (MM2<sortedSigmasq3D[2] ) )
-		  MM2=sortedSigmasq3D[2];
+		if ( (MM1<1.0e-1 ) )
+		  MM1=1.0e-1;
+		if ( (MM2<1.0e-1 ) )
+		  MM2=1.0e-1;
 
-		if ( (MM1 == sortedSigmasq3D[0]) || (MM2 == sortedSigmasq3D[2]) ) {
-		  /*Initialize cohSNR components and time stamps */
-		  CRePlus = 0.0;
-		  CImPlus = 0.0;
-		  CReMinus = 0.0;
-		  CImMinus = 0.0;
-		  timePtTemp[1] = 0;
-		  timePtTemp[2] = 0;
-		  
-		  /* Compute components of the coherent SNR */
-		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
-		    detIdSlidTimePt = timePt[0]+slidePoints[detId];
-		    
-		    CRePlus += VVPlus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].re;
-		    CImPlus += VVPlus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].im;
-		    CReMinus += VVMinus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].re;
-		    CImMinus += VVMinus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].im;
-		  }
-		  
-		  /* Compute coherent SNR */
-		  cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 +
-					CImPlus*CImPlus/MM1 +
-					CReMinus*CReMinus/MM2 +
-					CImMinus*CImMinus/MM2 ) );
+		/*Initialize cohSNR components and time stamps */
+		CRePlus = 0.0;
+		CImPlus = 0.0;
+		CReMinus = 0.0;
+		CImMinus = 0.0;
+		timePtTemp[1] = 0;
+		timePtTemp[2] = 0;
+
+		/* Compute components of the coherent SNR */
+		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+		  detIdSlidTimePt = timePt[0]+slidePoints[detId];
+
+		  CRePlus += VVPlus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].re;
+		  CImPlus += VVPlus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].im;
+		  CReMinus += VVMinus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].re;
+		  CImMinus += VVMinus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].im;
 		}
-		else {
-		  /* Just compute LHO-LLO stat; Plus is LHO */
-		  detIdSlidTimePt = timePt[0]+slidePoints[0];
-		  CRePlus = cData[0]->data->data[detIdSlidTimePt].re;
-		  CImPlus = cData[0]->data->data[detIdSlidTimePt].im;
-		  
-		  detIdSlidTimePt = timePt[0]+slidePoints[1];
-		  CReMinus = cData[1]->data->data[detIdSlidTimePt].re;
-		  CImMinus = cData[1]->data->data[detIdSlidTimePt].im;
-		  
-		  cohSNRLocal = sqrt(CRePlus*CRePlus + CImPlus*CImPlus
-				     + CReMinus*CReMinus + CImMinus*CImMinus);
-		}
-		
+
+		/* Compute coherent SNR */
+		cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 +
+				      CImPlus*CImPlus/MM1 +
+				      CReMinus*CReMinus/MM2 +
+				      CImMinus*CImMinus/MM2 ) );
+
 		if(cohSNRLocal > cohSNR) {
 		  cohSNR = cohSNRLocal;
 		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
@@ -3253,13 +3230,9 @@ LALCoherentInspiralFilterSegment (
 		      thisEvent->eta = input->tmplt->eta;
                       /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
                       thisEvent->null_statistic = -1;
-		      /* Compute network null-statistic at just trigger end-time */
-                      if ( (MM1 == sortedSigmasq3D[0]) || (MM2 == sortedSigmasq3D[2]) ) {
-			thisEvent->tau5 = thisEvent->null_statistic;
-		      }
-		      else {
-			thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
-		      }
+                      /* Compute network null-statistic at just trigger end-time */
+                      thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
+
 		      /* CHECK: Move this to post-processing to save time
 		      for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 			cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
@@ -3404,17 +3377,13 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
-		       /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
+                      /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
                        thisEvent->null_statistic = -1;
-		       /* Compute network null-statistic at just trigger end-time */
-                       if ( (MM1 == sortedSigmasq3D[0]) || (MM2 == sortedSigmasq3D[2]) ) {
-			 thisEvent->tau5 = thisEvent->null_statistic;
-		       }
-		       else {
-			 thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
-		       }
+                       /* Compute network null-statistic at just trigger end-time */
+                       thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
+
 		      /* Parameter estimation: Distance
-			  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
+		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 		      for ( i=0 ; i < 3 ; i++ ) {
 			NN[i] = 0.0;
 		      }
@@ -3575,13 +3544,9 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->eta = input->tmplt->eta;
                        /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
                        thisEvent->null_statistic = -1;
-		       /* Compute network null-statistic at just trigger end-time */
-                       if ( (MM1 == sortedSigmasq3D[0]) || (MM2 == sortedSigmasq3D[2]) ) {
-			 thisEvent->tau5 = thisEvent->null_statistic;
-		       }
-		       else {
-			 thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
-		       }
+                       /* Compute network null-statistic at just trigger end-time */
+                       thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
+
 		      /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 		      for ( i=0 ; i < 3 ; i++ ) {
@@ -3801,14 +3766,9 @@ LALCoherentInspiralFilterSegment (
 		    uSigma[detId] = (double)fplus[detId] * sqrt((double)sigmasq[j]);
 		    vSigma[detId] = (double)fcross[detId] * sqrt((double)sigmasq[j]);
 
-                    /* Sort sigmasq for degeneracy resoln. */
-                    sortedSigmasq4D[detId] = sigmasq[j]/3;
-
 		    detId++;
 		  }
 		}
-                qsort( sortedSigmasq4D, (int) params->numDetectors, sizeof(double), compare );
-
 		/* Construct network terms and factors required for
 		   computing the coherent statistics */
 		AA = AAn[0] + AAn[1] +AAn[2] + AAn[3];
@@ -3839,67 +3799,40 @@ LALCoherentInspiralFilterSegment (
 		MM2 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
 
 		/* Regularize */
-                if ( (MM1<sortedSigmasq4D[0] ) )
-                  /* smaller of MM1 and MM2 */
-                  MM1=sortedSigmasq4D[0];
-                if ( (MM2<sortedSigmasq4D[3] ) )
-                  MM2=sortedSigmasq4D[3];
+		if ( (MM1<1.0e-1 ) )
+		  MM1=1.0e-1;
+		if ( (MM2<1.0e-1 ) )
+		  MM2=1.0e-1;
 
-                if ( (MM1 == sortedSigmasq4D[0]) || (MM2 == sortedSigmasq4D[3]) ) {
-		  /*Initialize cohSNR components and time stamps */
-		  CRePlus = 0.0;
-		  CImPlus = 0.0;
-		  CReMinus = 0.0;
-		  CImMinus = 0.0;
-		  timePtTemp[1] = 0;
-		  timePtTemp[2] = 0;
-		  timePtTemp[3] = 0;
-		  
-		  /* Compute components of the coherent SNR */
-		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
-		    detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
-		    
-		    CRePlus += VVPlus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].re;
-		    CImPlus += VVPlus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].im;
-		    CReMinus += VVMinus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].re;
-		    CImMinus += VVMinus[detId] *
-		      cData[detId]->data->data[detIdSlidTimePt].im;
-		  }
-		  
-		  /* Compute coherent SNR */
-		  cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 +
-					CImPlus*CImPlus/MM1 +
-					CReMinus*CReMinus/MM2 +
-					CImMinus*CImMinus/MM2 ) );
-		}
-		else {
-		  /* Just compute LHO-LLO stat; Plus is LHO */
-		  detIdSlidTimePt = timePt[0]+slidePoints4D[0];
+		/*Initialize cohSNR components and time stamps */
+		CRePlus = 0.0;
+		CImPlus = 0.0;
+		CReMinus = 0.0;
+		CImMinus = 0.0;
+		timePtTemp[1] = 0;
+		timePtTemp[2] = 0;
+		timePtTemp[3] = 0;
 
-		  /*CHECK: This will NOT work if G1 is present! because it assumes that the "0" det is H1 and "1" det is H2! Rectify in next rev. */
-		  cohSNRLocalRe = 
-                    sqrt(sigmasq[1])*cData[0]->data->data[detIdSlidTimePt].re
-		    + sqrt(sigmasq[2])*cData[1]->data->data[detIdSlidTimePt].re;
-		  cohSNRLocalIm = 
-                    sqrt(sigmasq[1])*cData[0]->data->data[detIdSlidTimePt].im
-		    + sqrt(sigmasq[2])*cData[1]->data->data[detIdSlidTimePt].im;
-		  
-		  cohSNRLocal = (cohSNRLocalRe*cohSNRLocalRe 
-                    + cohSNRLocalIm*cohSNRLocalIm) / (sigmasq[1] + sigmasq[2]) ;
-		    
-		  detIdSlidTimePt = timePt[0]+slidePoints4D[2];		  
-		  cohSNRLocal += 
-                    cData[2]->data->data[detIdSlidTimePt].re
-		    *cData[2]->data->data[detIdSlidTimePt].re +
-		    cData[2]->data->data[detIdSlidTimePt].im
-		    *cData[2]->data->data[detIdSlidTimePt].im;
-		  
-		  cohSNRLocal = sqrt( cohSNRLocal );
+		/* Compute components of the coherent SNR */
+		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+		  detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
+
+		  CRePlus += VVPlus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].re;
+		  CImPlus += VVPlus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].im;
+		  CReMinus += VVMinus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].re;
+		  CImMinus += VVMinus[detId] *
+		    cData[detId]->data->data[detIdSlidTimePt].im;
 		}
-		
+
+		/* Compute coherent SNR */
+		cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 +
+				      CImPlus*CImPlus/MM1 +
+				      CReMinus*CReMinus/MM2 +
+				      CImMinus*CImMinus/MM2 ) );
+
 		if(cohSNRLocal > cohSNR) {
 		  cohSNR = cohSNRLocal;
 		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
@@ -4023,12 +3956,7 @@ LALCoherentInspiralFilterSegment (
                         thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
                         /* Compute network null-statistic at just trigger end-time */
                         /* CHECK: thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID[1],fplus[0],fplus[1],fplus[2],fcross[0],fcross[1],fcross[2],sigmasq,thisEvent); */
-                        if ( (MM1 == sortedSigmasq4D[0]) || (MM2 == sortedSigmasq4D[3]) ) {
-			  thisEvent->tau5 = thisEvent->null_statistic;
-			}
-			else {
-			  thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
-                        }
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 			/* Parameter estimation: Distance
 			   for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 			for ( i=0 ; i < 3 ; i++ ) {
@@ -4188,12 +4116,7 @@ LALCoherentInspiralFilterSegment (
                           - thisEvent->h2quad.im / sqrt(sigmasq[2]);
                         thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
                         /* Compute network null-statistic at just trigger end-time */
-                        if ( (MM1 == sortedSigmasq4D[0]) || (MM2 == sortedSigmasq4D[3]) ) {
-			  thisEvent->tau5 = thisEvent->null_statistic;
-			}
-			else {
-			  thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
-			}
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 			/* Parameter estimation: Distance
 			   for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 			for ( i=0 ; i < 3 ; i++ ) {
@@ -4364,12 +4287,7 @@ LALCoherentInspiralFilterSegment (
                           - thisEvent->h2quad.im / sqrt(sigmasq[2]);
                         thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
                         /* Compute network null-statistic at just trigger end-time */
-                        if ( (MM1 == sortedSigmasq4D[0]) || (MM2 == sortedSigmasq4D[3]) ) {
-			  thisEvent->tau5 = thisEvent->null_statistic;
-			}
-			else {
-			  thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
-			}
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 		        inclination = 0.0;
 		        polarization = 0.0;
 			/* CHECK: Move this to post-processing to save time
