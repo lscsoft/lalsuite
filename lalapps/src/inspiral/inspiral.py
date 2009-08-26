@@ -1096,9 +1096,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
       raise ValueError, "no input-cache specified"
     # open the input cache file
     fp = open(self.__input_cache, 'r')
-    input_cache = lal.Cache().fromfile(fp)
-    # remove any slide files
-    input_cache = input_cache - input_cache.sieve( description = 'SLIDE' )
+    input_cache = lal.Cache().fromfile(fp).sieve( description = 'THINCA_SECOND' )
     output_files = [ \
       '/'.join([ os.getcwd(), 
       re.sub('THINCA', 'THINCA_TO_COINC', os.path.basename(entry.url)) ]) for entry in input_cache \

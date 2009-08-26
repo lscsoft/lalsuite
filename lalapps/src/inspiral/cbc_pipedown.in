@@ -133,7 +133,8 @@ dag.set_dag_file(basename)
 
 print "Parsing the ihope cache..."
 ihope_cache = [line for line in file(options.ihope_cache) \
-  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line or " INJECTIONS" in line]
+  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line \
+  or " INJECTIONS" in line or "INSPIRAL_SECOND" in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SECOND" in entry])
@@ -141,6 +142,8 @@ slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SLIDE_SECOND" in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
   " INJECTIONS" in entry])
+inspiral_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "INSPIRAL_SECOND" in entry]) 
 
 del ihope_cache
 
@@ -257,7 +260,9 @@ for tag in user_tags:
     for entry_num, entry in enumerate(instrument_cache):
       if not this_cache:
         # first entry; store type for cache naming
+        # and add all the second_inspiral files to the cache
         cache_type = entry.description
+        this_cache.extend(inspiral_cache)
       # Add the zero-lag thinca entry to this_cache 
       this_cache.append(entry)
       # if this isn't a simulation add the slide file
