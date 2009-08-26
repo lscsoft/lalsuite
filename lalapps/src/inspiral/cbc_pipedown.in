@@ -494,6 +494,8 @@ for tag in user_tags:
       printlc_node.set_output( summary_filename )
       printlc_node.set_extract_to_xml( xml_filename )
       printlc_node.set_include_only_coincs( '[ALL in ' + on_instruments + ']' )
+      printlc_node.set_datatype( datatype )
+
       # set parent node
       printlc_node.add_parent( ccfar_node )
 
