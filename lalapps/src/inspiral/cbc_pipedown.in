@@ -480,17 +480,16 @@ for tag in user_tags:
     type = '_'.join([ tag, 'LOUDEST', datatype.upper(), 'EVENTS_BY', cp.get('printlc', 'ranking-stat').upper()])
     # cycle over all ifos times, creating different tables for each
     for on_instruments in distinct_instrument_sets:
-      on_instr = lsctables.ifos_from_instrument_set(on_instruments)
       # set output and extracted xml file names
       if cp.has_option('printlc', 'output-format'):
         summary_extension = cp.get('printlc', 'output-format')
       else:
         summary_extension = 'wiki'
       summary_filename = '.'.join([
-        '-'.join([ on_instr, type + '_SUMMARY', experiment_start, experiment_duration ]),
+        '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
         summary_extension ])
       xml_filename =  '.'.join([
-        '-'.join([ on_instr, type, experiment_start, experiment_duration ]),
+        '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
         'xml' ])
       # set node options
       printlc_node = inspiral.PrintLCNode( printlc_job )
@@ -498,7 +497,7 @@ for tag in user_tags:
       printlc_node.set_input( result_db )
       printlc_node.set_output( summary_filename )
       printlc_node.set_extract_to_xml( xml_filename )
-      printlc_node.set_include_only_coincs( '[ALL in ' + on_instr + ']' )
+      printlc_node.set_include_only_coincs( '[ALL in ' + on_instruments + ']' )
       # set parent node
       printlc_node.add_parent( ccfar_node )
 
