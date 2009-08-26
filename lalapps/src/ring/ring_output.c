@@ -101,11 +101,9 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 
       strncpy( thisParam->program, program, LIGOMETA_PROGRAM_MAX - 1 );
       strncpy( thisParam->param, opt, LIGOMETA_PARAM_MAX - 1 );
+      strncpy( thisParam->type, "string", LIGOMETA_TYPE_MAX - 1 );
       if ( val )
-      {
-        strncpy( thisParam->type, "string", LIGOMETA_TYPE_MAX - 1 );
         strncpy( thisParam->value, val, LIGOMETA_VALUE_MAX - 1 );
-      }
     }
 
     LALFree( opt );
