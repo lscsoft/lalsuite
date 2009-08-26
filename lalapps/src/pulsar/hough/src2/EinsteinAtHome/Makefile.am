@@ -54,7 +54,15 @@ endif
 eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CPPFLAGS@
 eah_ldadd += @CUDA_LIBS@
 
-bin_PROGRAMS = lalappsGitID.h cfsBOINC
+## make sure LALAPPSgitID.h is re-generated at every 'make'
+.PHONY: gitID
+gitID:
+	sh $(lalappsDIR)/../../misc/generateGitID.sh $(lalappsDIR)/../.. lalapps
+	cp $(lalappsDIR)/../../misc/lalappsGitID.h .
+
+BUILT_SOURCES = gitID
+
+bin_PROGRAMS = cfsBOINC
 
 if USE_GRAPHICS
    bin_PROGRAMS += starsphere
@@ -83,7 +91,3 @@ ACLOCAL_AMFLAGS = -I m4
 starsphere_CPPFLAGS = -Wall -DUSE_BOINC -DBOINC_APP_GRAPHICS -DBOINC_APIV6 -DBOINC_GRAPHICS=0 @GRAPHICS_CFLAGS@ -Igraphics -I/usr/X11R6/include
 starsphere_LDADD    = -lboinc_graphics2 -lboinc_api -lboinc @GRAPHICS_LIBS@ @MAC_LIBS@ # -lglut
 starsphere_SOURCES  = graphics/starlist.C graphics/snr_list.C graphics/user_text.C graphics/pulsar_list.C graphics/search_info.C graphics/starsphere.C graphics/main.C
-
-lalappsGitID.h:
-	sh $(lalappsDIR)/../../misc/generateGitID.sh $(lalappsDIR)/../.. lalapps
-	cp $(lalappsDIR)/../../misc/lalappsGitID.h .
