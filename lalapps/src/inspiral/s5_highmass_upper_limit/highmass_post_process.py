@@ -438,14 +438,16 @@ def ifo_seg_dict(cp):
   cat = "_".join(os.path.basename(out["H1"]).split("_")[1:3])
   return out, [cat], ifo_combos(out), ",".join(instruments)
 
-def grep(string, inname, outname):
+def grep(string, inname, outname, append_cache=None):
     o = open(outname, "w")
     print "grepping " + inname + " for " + string + " and sending it to " + outname
     expr = re.compile(string)
     o.write(''.join(filter(expr.search,open(inname).readlines())))
+    if append_cache: o.write(''.join(append_cache))
+    o.close()
 
 
-def grep_pieces(string, inname, outname):
+def grep_pieces_and_append(string, inname, outname, append_cache=None):
     expr = re.compile(string)
     new_list = filter(expr.search,open(inname).readlines())
     new_list.sort()
@@ -458,6 +460,7 @@ def grep_pieces(string, inname, outname):
       if not i % 10: 
         outnames.append(outname+"/"+outname+"_"+str(i))
         o = open(outnames[-1]+".cache", "w")
+        if append_cache: o.write(''.join(append_cache))
 	print "grepping " + inname + " for " + string + " and sending it to " + outnames[-1] + ".cache"
       o.write(new_list[i])
       o.write(new_list[i].replace('THINCA_SECOND','THINCA_SLIDE_SECOND'))
@@ -487,6 +490,11 @@ dag = hm_post_DAG("hm_post.ini", string.strip(cp.get('output','logpath')))
 
 #break down the cache to save on parsing
 grep('HL-INJ', INJCACHE, "inj.cache")
+
+#get second stage inspiral jobs for meta data
+expr = re.compile("INSPIRAL_SECOND")
+inspiral_second_list = filter(expr.search,open(FULLDATACACHE).readlines())
+
 
 #Setup jobs
 sqliteJob = sqlite_job(cp)
@@ -536,7 +544,7 @@ for type in types:
   for cat in cats:
     #break down the cache to save on parsing
     tag = type + "_" + cat
-    out_tags = grep_pieces('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag)
+    out_tags = grep_pieces_and_append('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag, inspiral_second_list)
     cnt = 0;
     node_list = []
     for otag in out_tags:
@@ -561,7 +569,7 @@ for inj in injcache:
     try: os.mkdir(tag)
     except: pass
     #break down the cache
-    grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile)
+    grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile, inspiral_second_list)
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, instruments=instruments, p_node=[segNode[cat]]);n+=1
     database = tag+"_"+timestr+".sqlite"
     db_to_xml_name = tag +"_"+timestr+".xml.gz"
@@ -600,13 +608,14 @@ for cat in cats:
   for ifo_combination in ifo_combinations:
     #FIXME use a different function
     ifo_combination = str(ifo_combination)
-    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','')
+    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','') + '.xml'
     upperlimit_fnames[cat].append(fname)
     print fname, ifo_combination, ifo_combination
 
     hmUpperlimitNode[cat+ifo_combination] = hm_upperlimit_node(hmUpperlimitJob, dag, ifo_combination,timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
-    upperlimit_nodes[cat].append(hmUpperlimitNode[cat+ifo_combination])
     hmUpperlimitPlotNode[cat+ifo_combination] = ul_plot_node(hmUpperlimitPlotJob, dag, fname, n, [hmUpperlimitNode[cat+ifo_combination]]);n+=1
+    upperlimit_nodes[cat].append(hmUpperlimitPlotNode[cat+ifo_combination])
+
 
 #IFAR plots and combined upper limit plots and summary page
 for cat in cats:

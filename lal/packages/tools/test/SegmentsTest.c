@@ -163,7 +163,7 @@ int main( int argc, char *argv[] )
     INT4 infirst;
   } TestTime;
 
-  TestTime stime[] = {  {{794284997,0}, 0},
+  TestTime lalstime[] = {  {{794284997,0}, 0},
 		        {{794284998,0}, 8},
 		        {{794284998,5}, 8},
 		        {{794284999,5}, 0},
@@ -1079,7 +1079,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Loop over test times */
-    for ( itime=0; itime < (INT4)sizeof(stime)/(INT4)sizeof(TestTime); itime++ ) {
+    for ( itime=0; itime < (INT4)sizeof(lalstime)/(INT4)sizeof(TestTime); itime++ ) {
 
       /* Loop over lastFound states */
       for ( ilast = -1; ilast < nsegs; ilast++ ) {
@@ -1095,7 +1095,7 @@ int main( int argc, char *argv[] )
 		 "XLALSegListSearch - nsegs=%d, itime=%d, ilast=%d",
 		 nsegs, itime, ilast );
 	/* Do the search */
-	segptr = XLALSegListSearch( &seglist2, &(stime[itime].gps) );
+	segptr = XLALSegListSearch( &seglist2, &(lalstime[itime].gps) );
 
 	/* Check whether the function had an error */
 	if ( xlalErrno != 0 ) {
@@ -1104,14 +1104,14 @@ int main( int argc, char *argv[] )
 	}
 
 	/* Check that the result is correct */
-	if ( stime[itime].infirst > 0 && nsegs >= stime[itime].infirst ) {
+	if ( lalstime[itime].infirst > 0 && nsegs >= lalstime[itime].infirst ) {
 	  /* The search should have found a match */
 	  if ( ! segptr ) {
 	    FUNCFAIL( testname, "Failed to find a match" );
 	    continue;
 	  }
 	  /* The matched segment should contain the time */
-	  if ( XLALGPSInSeg(&(stime[itime].gps),segptr) != 0 ) {
+	  if ( XLALGPSInSeg(&(lalstime[itime].gps),segptr) != 0 ) {
 	    FUNCFAIL( testname, "Segment returned does not contain the time" );
 	    continue;
 	  }

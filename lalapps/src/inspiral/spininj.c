@@ -52,6 +52,7 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/lalGitID.h>
+#include <lal/LALErrno.h>
 #include <lalappsGitID.h>
 
 
@@ -82,9 +83,9 @@ RCSID( "$Id$" );
 "                           twoPointFivePN, threePN) (default: EOBtwoPN)\n"\
 "  --fLower                 set the lower cutoff frequency of the isnpiral waveform (40)\n\n"\
 "  --dist-distr DDISTR      set method of simulated source distance distr to DDISTR \n"\
-"                             SPININJ_distance    : uniform distr of sources in distance \n"\
-"                             SPININJ_logDistance : uniform distr of sources in log(distance) \n"\
-"                             SPININJ_volume      : uniform distr of sources in volume \n"\
+"                           SPININJ_distance    : uniform distr of sources in distance \n"\
+"                           SPININJ_logDistance : uniform distr of sources in log(distance) \n"\
+"                           SPININJ_volume      : uniform distr of sources in volume \n"\
 "                           Default is SPININJ_logDistance \n"\
 "  --distance-min           set minimal value of simulated sources distance in kpc \n"\
 "  --distance-max           set maximal value of simulated sources distance in kpc \n\n"\
@@ -101,8 +102,8 @@ RCSID( "$Id$" );
 "  --spin2-max              set maximal value of the initial spin (<=1)\n"\
 "  --spin2-range            set range of the initial spin (0 - 1)\n\n"\
 "  --mass-distr MDISTR      set method of simulated source mass distr to MDISTR \n"\
-"                             SPININJ_m1Andm2     : uniform distr of sources component mass \n"\
-"                             SPININJ_totalMass   : uniform distr of sources total mass \n"\
+"                           SPININJ_m1Andm2     : uniform distr of sources component mass \n"\
+"                           SPININJ_totalMass   : uniform distr of sources total mass \n"\
 "                           Default is SPININJ_totalMass \n"\
 "  --mass1-range            set range of the first mass (3 - 20 )\n"\
 "  --mass2-range            set range of the second mass (3 - 20)\n\n"\
@@ -151,48 +152,48 @@ typedef struct {
 
 
 void LALSimInspiralTablePopulate(LALStatus        *status, 
-				 MetadataTable     injections, 
-				 SimInspiralTable *this_inj);
+                                 MetadataTable     injections, 
+                                 SimInspiralTable *this_inj);
 
 
 
 void LALSetIndividualMasses(LALStatus             *status,
-			    InspiralInjectionParameters params,
-			    SimInspiralTable *this_inj);
+                            InspiralInjectionParameters params,
+                            SimInspiralTable *this_inj);
 
 
 
 void LALSetDistance(LALStatus *status, 
-		    InspiralInjectionParameters,
-		    SimInspiralTable *this_inj);
+                    InspiralInjectionParameters,
+                    SimInspiralTable *this_inj);
 
 void LALSetSpin(LALStatus                   *status,
-		InspiralInjectionParameters params,
-		SimInspiralTable            *this_inj  );
+                InspiralInjectionParameters params,
+                SimInspiralTable            *this_inj  );
 
 void LALSetSpatialDistribution(LALStatus *status,
-			       InspiralInjectionParameters params,
-			       SimInspiralTable *this_inj);
+                               InspiralInjectionParameters params,
+                               SimInspiralTable *this_inj);
 
 void LALSetSiteParameters(LALStatus *status,
-			  SimInspiralTable *this_inj);
+                          SimInspiralTable *this_inj);
 
 
 
 
 
-void LALSetGeoCentricEndTime(LALStatus *status,	
-			     InspiralInjectionParameters params,
-			     SimInspiralTable *this_inj);
+void LALSetGeoCentricEndTime(LALStatus *status,        
+                             InspiralInjectionParameters params,
+                             SimInspiralTable *this_inj);
 
 void LALParserInspiralInjection(LALStatus *status,
-				int,
-				char**,
-				InspiralInjectionParameters *);
+                                int,
+                                char**,
+                                InspiralInjectionParameters *);
 
 
 void LALCheckInspiralInjectionParameters(LALStatus *status, 
-					 InspiralInjectionParameters params);
+                                         InspiralInjectionParameters params);
 
 
 
@@ -231,20 +232,20 @@ int main( int argc, char *argv[] )
 
   /* command line options */
 
-  InspiralInjectionParameters 	paramsIn;     
-  MetadataTable         	injections;
-  SimInspiralTable     		*this_inj = NULL;
-  LALGPSCompareResult        	compareGPS;
+  InspiralInjectionParameters         paramsIn;     
+  MetadataTable                       injections;
+  SimInspiralTable                    *this_inj = NULL;
+  LALGPSCompareResult                 compareGPS;
 
     /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
   
   LAL_CALL( LALParserInspiralInjection(&status, argc, argv, &paramsIn), 
-	   &status);
+           &status);
   
   LAL_CALL( LALCreateRandomParams( &status, &randParams, paramsIn.randSeed ), 
-	    &status );  
+            &status );  
   
   /* null out the head of the linked list */
   injections.simInspiralTable = NULL;
@@ -275,23 +276,23 @@ int main( int argc, char *argv[] )
     }
 
     LAL_CALL(LALSetGeoCentricEndTime(&status, paramsIn, this_inj), 
-	     &status);
+             &status);
     LAL_CALL( LALSetIndividualMasses(&status, paramsIn, this_inj), 
-	      &status);   
+              &status);   
     LAL_CALL( LALSetSpin(&status, paramsIn, this_inj), 
-	      &status); 
+              &status); 
     LAL_CALL( LALSetDistance(&status, paramsIn, this_inj), 
-	      &status);
+              &status);
     LAL_CALL( LALSetSpatialDistribution(&status, paramsIn, this_inj),
-	      &status);  
+              &status);  
     LAL_CALL( LALSetSiteParameters(&status, this_inj), 
-	      &status);
+              &status);
 
     /* increment the injection time */
     XLALGPSAdd( &(paramsIn.gpsStartTime), paramsIn.meanTimeStep );
 
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &(paramsIn.gpsStartTime), 
-			     &(paramsIn.gpsEndTime) ), &status );
+                             &(paramsIn.gpsEndTime) ), &status );
 
 
     this_inj->f_lower  = paramsIn.fLower;
@@ -309,8 +310,8 @@ int main( int argc, char *argv[] )
   /* write the sim_inspiral table */
   if ( injections.simInspiralTable ){
     LAL_CALL(LALSimInspiralTablePopulate(&status, 
-					 injections, 
-					 this_inj), &status);
+                                         injections, 
+                                         this_inj), &status);
   }
   /* close the injection file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
@@ -324,14 +325,14 @@ int main( int argc, char *argv[] )
 
 /*################################################*/
 void LALSimInspiralTablePopulate(LALStatus        *status, 
-				 MetadataTable     injections, 
-				 SimInspiralTable *this_inj)
+                                 MetadataTable     injections, 
+                                 SimInspiralTable *this_inj)
 {
   
   LAL_CALL( LALBeginLIGOLwXMLTable( status, &xmlfp, sim_inspiral_table ), 
-	    status );
+            status );
   LAL_CALL( LALWriteLIGOLwXMLTable( status, &xmlfp, injections, 
-				    sim_inspiral_table ), status );
+                                    sim_inspiral_table ), status );
   LAL_CALL( LALEndLIGOLwXMLTable ( status, &xmlfp ), status );
   
   while ( injections.simInspiralTable )
@@ -348,8 +349,8 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
 /* TODO check uniformity of totalmass and (2) set mchirp*/
 
 void LALSetIndividualMasses(LALStatus                   *status,
-			    InspiralInjectionParameters params,
-			    SimInspiralTable            *this_inj  )
+                            InspiralInjectionParameters params,
+                            SimInspiralTable            *this_inj  )
 { 
       
   REAL4 deltaM1 = params.m1.max - params.m1.min;
@@ -376,7 +377,7 @@ void LALSetIndividualMasses(LALStatus                   *status,
     this_inj->mass1 =  params.m1.min + u * deltaM1;
     this_inj->mass2 = mtotal - this_inj->mass1;
     while (this_inj->mass2 >= params.m2.max 
-	   || this_inj->mass2 <=  params.m2.min )
+           || this_inj->mass2 <=  params.m2.min )
       {
         LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
         this_inj->mass1 =  params.m1.min + u * deltaM1;
@@ -393,8 +394,8 @@ void LALSetIndividualMasses(LALStatus                   *status,
 
 
 void LALSetSpin(LALStatus                   *status,
-		InspiralInjectionParameters params,
-		SimInspiralTable            *this_inj  )
+                InspiralInjectionParameters params,
+                SimInspiralTable            *this_inj  )
 {       
   REAL4 u; 
   REAL4 spin1Mag;
@@ -425,17 +426,17 @@ void LALSetSpin(LALStatus                   *status,
   /* spin2Mag */
  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
  spin2Mag = params.spin2.min + u * (params.spin2.max - params.spin2.min);
-                                                                                                                             
+
  /* spin2z */
  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
  this_inj->spin2z = (u - 0.5) * 2 * (spin2Mag);
-                                                                                                                             
+
  r2 = pow( ((spin2Mag * spin2Mag) - (this_inj->spin2z * this_inj->spin2z)) , 0.5);
-                                                                                                                             
+
  /* phi2 */
  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
  phi2 = u * LAL_TWOPI;
-                                                                                                                             
+
  /* spin2x and spin2y */
  this_inj->spin2x = r2 * cos(phi2);
  this_inj->spin2y = r2 * sin(phi2);
@@ -444,8 +445,8 @@ void LALSetSpin(LALStatus                   *status,
 
 /* TODO to check */
 void LALSetDistance(LALStatus *status, 
-		    InspiralInjectionParameters params,
-		    SimInspiralTable *this_inj)
+                    InspiralInjectionParameters params,
+                    SimInspiralTable *this_inj)
 {
   REAL4 u,  deltaL, lmin,lmax, d3min,d3max,deltad3,d3, exponent;
 
@@ -483,9 +484,9 @@ void LALSetDistance(LALStatus *status,
 
 
 void LALSetSpatialDistribution(LALStatus *status,
-			       InspiralInjectionParameters params,
-			       SimInspiralTable *this_inj
-			       )
+                               InspiralInjectionParameters params,
+                               SimInspiralTable *this_inj
+                               )
 {
   REAL4 u; 
 
@@ -518,8 +519,8 @@ void LALSetSpatialDistribution(LALStatus *status,
 
 
 void LALSetSiteParameters(LALStatus *status,
-			  SimInspiralTable *this_inj)
-		       
+                          SimInspiralTable *this_inj)
+                       
 {
   SkyPosition           skyPos;
   LALSource             source;
@@ -567,13 +568,13 @@ void LALSetSiteParameters(LALStatus *status,
   /* lho */
   placeAndGPS.p_detector = &lho;
   LAL_CALL( LALTimeDelayFromEarthCenter( status, &time_diff_ns,
-					 &detTimeAndSource ), status );
+                                         &detTimeAndSource ), status );
   XLALGPSAdd( &(this_inj->h_end_time), time_diff_ns );
 
   /* llo */
   placeAndGPS.p_detector = &llo;
   LAL_CALL( LALTimeDelayFromEarthCenter( status,  &time_diff_ns,
-					 &detTimeAndSource ), status);
+                                         &detTimeAndSource ), status);
   XLALGPSAdd( &(this_inj->l_end_time), time_diff_ns );
 
   /* temporarily, populate the fields for the */
@@ -600,23 +601,23 @@ void LALSetSiteParameters(LALStatus *status,
   
   detAndSource.pDetector = &lho;
   LAL_CALL( LALComputeDetAMResponse( status, &resp, &detAndSource,
-				     &gpsAndAcc ), status );
+                                     &gpsAndAcc ), status );
   
 
   /* compute the effective distance for LHO */
   this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
-				scross*scross*resp.cross*resp.cross );
+                                scross*scross*resp.cross*resp.cross );
 
   
   /* compute the response of the LLO detector */
   detAndSource.pDetector = &llo;
   LAL_CALL( LALComputeDetAMResponse( status, &resp, &detAndSource,
-				     &gpsAndAcc ), status);
+                                     &gpsAndAcc ), status);
 
   
   /* compute the effective distance for LLO */
   this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
-				+ scross*scross*resp.cross*resp.cross );
+                                + scross*scross*resp.cross*resp.cross );
   
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO effective distances  */
@@ -634,13 +635,10 @@ void LALSetSiteParameters(LALStatus *status,
 
 
 void LALSetGeoCentricEndTime(LALStatus *status,
-			     InspiralInjectionParameters params,
-			     SimInspiralTable *this_inj)
+                             InspiralInjectionParameters params,
+                             SimInspiralTable *this_inj)
 {
-  LALGPSandAcc          gpsAndAcc;
   REAL4 u;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-
   
   /* set the geocentric end time of the injection */
   /* XXX CHECK XXX */
@@ -650,20 +648,19 @@ void LALSetGeoCentricEndTime(LALStatus *status,
       LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
       XLALGPSAdd( &(this_inj->geocent_end_time), u * params.timeInterval );
     }
-
-  gpsAndAcc.gps = this_inj->geocent_end_time;
   
   /* set gmst */
-  LAL_CALL( LALGPStoGMST1( status, &(this_inj->end_time_gmst),
-			   &(this_inj->geocent_end_time), &gmstUnits ), status);
+  this_inj->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+      &this_inj->geocent_end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(this_inj->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 }
 
 
 
 void LALParserInspiralInjection(LALStatus *status, 
-				int argc, 
-				char **argv, 
-				InspiralInjectionParameters *params)
+                                int argc, 
+                                char **argv, 
+                                InspiralInjectionParameters *params)
 {
   MetadataTable         proctable;
   MetadataTable         procparams;
@@ -681,15 +678,15 @@ void LALParserInspiralInjection(LALStatus *status,
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -727,10 +724,10 @@ void LALParserInspiralInjection(LALStatus *status,
   params->ddistr                      = SPININJ_logDistance;
   params->userTag                     = NULL;
   snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-	       "EOBtwoPN");  
+               "EOBtwoPN");  
   snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-	       params->randSeed, params->gpsStartTime.gpsSeconds, 
-	       params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
+               params->randSeed, params->gpsStartTime.gpsSeconds, 
+               params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
   
   /* Actual parsing is here; we do not check validity of the input arguments 
      for the time being*/
@@ -739,185 +736,185 @@ void LALParserInspiralInjection(LALStatus *status,
   while (i < argc)
     {
       if ( (strcmp(argv[i], "--help") == 0) ||  (strcmp(argv[i], "-h") == 0) ){
-	fprintf( stderr, USAGE );
-	exit(1);
+        fprintf( stderr, USAGE );
+        exit(1);
       }
       else if ( strcmp(argv[i], "--user-tag") == 0){
         /* create storage for the usertag */
         params->userTag = (CHAR *) calloc( strlen( argv[i+1] ) + 1, sizeof(CHAR) );
         memcpy( params->userTag, argv[i+1], strlen( argv[i+1] ) + 1 );
         this_proc_param = this_proc_param->next = 
-	  next_process_param( "user-tag",  "string", "%s",  argv[i+1] );
-	i++;
+          next_process_param( "user-tag",  "string", "%s",  argv[i+1] );
+        i++;
       }
-      else if  ( strcmp(argv[i], "--gps-start-time") == 0){       	
-	params->gpsStartTime.gpsSeconds = atol(argv[++i]);
-	this_proc_param = this_proc_param->next = 
+      else if  ( strcmp(argv[i], "--gps-start-time") == 0){               
+        params->gpsStartTime.gpsSeconds = atol(argv[++i]);
+        this_proc_param = this_proc_param->next = 
           next_process_param( "gps-start-time", "int",  "%ld", params->gpsStartTime.gpsSeconds);
       }
       else if  ( strcmp(argv[i], "--gps-end-time") == 0){
-	params->gpsEndTime.gpsSeconds = atol(argv[++i]);
-	this_proc_param = this_proc_param->next = 
+        params->gpsEndTime.gpsSeconds = atol(argv[++i]);
+        this_proc_param = this_proc_param->next = 
           next_process_param( "gps-end-time", "int",  "%ld", params->gpsEndTime.gpsSeconds );
       }
       else if ( strcmp(argv[i], "--seed") == 0){
-	params->randSeed = atoi( argv[++i]);
+        params->randSeed = atoi( argv[++i]);
         this_proc_param = this_proc_param->next = 
           next_process_param( "seed", "int", "%d", params->randSeed );
       }      
       else if ( strcmp(argv[i] , "--time-interval") == 0 ){
-	params->timeInterval = atof( argv[++i] );
+        params->timeInterval = atof( argv[++i] );
         this_proc_param = this_proc_param->next = 
           next_process_param( "time-interval", "float", "%le", params->timeInterval );
       }
       else if ( strcmp(argv[i] , "--time-step") == 0 ){
-	params->meanTimeStep = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
+        params->meanTimeStep = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
           next_process_param( "time-step", "float",  "%le", params->meanTimeStep );
       }
       else if ( strcmp(argv[i] , "--coa-phase-min") == 0 ){
-	params->coa_phase.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "coa-phase-min", "float", "%le", params->coa_phase.min );
+        params->coa_phase.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "coa-phase-min", "float", "%le", params->coa_phase.min );
       }  
       else if ( strcmp(argv[i] , "--coa-phase-max") == 0 ){
-	params->coa_phase.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "coa-phase-max", "float", "%le", params->coa_phase.max );
+        params->coa_phase.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "coa-phase-max", "float", "%le", params->coa_phase.max );
       }
       else if ( strcmp(argv[i] , "--coa-phase-range") == 0 ){
-	params->coa_phase.min = atof( argv[++i] );
-	params->coa_phase.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "coa-phase-min", "float", "%le", params->coa_phase.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "coa-phase-max", "float", "%le", params->coa_phase.max );
+        params->coa_phase.min = atof( argv[++i] );
+        params->coa_phase.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "coa-phase-min", "float", "%le", params->coa_phase.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "coa-phase-max", "float", "%le", params->coa_phase.max );
       } 
       else if ( strcmp(argv[i] , "--mass1-min") == 0 ){
-	params->m1.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass1-min", "float", "%le", params->m1.min );
+        params->m1.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass1-min", "float", "%le", params->m1.min );
       }  
       else if ( strcmp(argv[i] , "--mass1-max") == 0 ){
-	params->m1.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass1-max", "float", "%le", params->m1.max );
+        params->m1.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass1-max", "float", "%le", params->m1.max );
       }
       else if ( strcmp(argv[i] , "--mass1-range") == 0 ){
-	params->m1.min = atof( argv[++i] );
-	params->m1.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass1-min", "float", "%le", params->m1.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass1-max", "float", "%le", params->m1.max );
+        params->m1.min = atof( argv[++i] );
+        params->m1.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass1-min", "float", "%le", params->m1.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass1-max", "float", "%le", params->m1.max );
       } 
       else if ( strcmp(argv[i] , "--fLower") == 0 ){
-	params->fLower = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "fLower", "float", "%le", params->fLower );
+        params->fLower = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "fLower", "float", "%le", params->fLower );
       } 
       else if ( strcmp(argv[i] , "--mass2-min") == 0 ){
-	params->m2.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass2-min", "float", "%le", params->m2.min );
+        params->m2.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass2-min", "float", "%le", params->m2.min );
       }  
       else if ( strcmp(argv[i] , "--mass2-max") == 0 ){
-	params->m2.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass2-max", "float", "%le", params->m2.max );
+        params->m2.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass2-max", "float", "%le", params->m2.max );
       }
       else if ( strcmp(argv[i] , "--mass2-range") == 0 ){
-	params->m2.min = atof( argv[++i] );
-	params->m2.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass2-min", "float", "%le", params->m2.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass2-max", "float", "%le", params->m2.max );
+        params->m2.min = atof( argv[++i] );
+        params->m2.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass2-min", "float", "%le", params->m2.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "mass2-max", "float", "%le", params->m2.max );
       }
       else if ( strcmp(argv[i] , "--distance-min") == 0 ){
-	params->distance.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "distance-min", "float", "%le", params->distance.min );
+        params->distance.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "distance-min", "float", "%le", params->distance.min );
       } 
       else if ( strcmp(argv[i] , "--distance-max") == 0 ){
-	params->distance.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "distance-max", "float", "%le", params->distance.max );
+        params->distance.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "distance-max", "float", "%le", params->distance.max );
       }  
       else if ( strcmp(argv[i] , "--distance-range") == 0 ){
-	params->distance.min = atof( argv[++i] );
-	params->distance.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "distance-min", "float", "%le", params->distance.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "distance-max", "float", "%le", params->distance.max );
+        params->distance.min = atof( argv[++i] );
+        params->distance.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "distance-min", "float", "%le", params->distance.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "distance-max", "float", "%le", params->distance.max );
       } 
       else if ( strcmp(argv[i] , "--spin1-min") == 0 ){
-	params->spin1.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin1-min", "float", "%le", params->spin1.min );
+        params->spin1.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin1-min", "float", "%le", params->spin1.min );
       } 
       else if ( strcmp(argv[i] , "--spin2-min") == 0 ){
-	params->spin2.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin2-min", "float", "%le", params->spin2.min );
+        params->spin2.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin2-min", "float", "%le", params->spin2.min );
       }
       else if ( strcmp(argv[i] , "--spin1-max") == 0 ){
-	params->spin1.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin1-max", "float", "%le", params->spin1.max );
+        params->spin1.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin1-max", "float", "%le", params->spin1.max );
       } 
       else if ( strcmp(argv[i] , "--spin2-max") == 0 ){
-	params->spin2.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin2-max", "float", "%le", params->spin2.max );
+        params->spin2.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin2-max", "float", "%le", params->spin2.max );
       }
       else if ( strcmp(argv[i] , "--spin1-range") == 0 ){
-	params->spin1.min = atof( argv[++i] );
-	params->spin1.max = atof( argv[++i] );
-	
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin1-min", "float", "%le", params->spin1.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin1-max", "float", "%le", params->spin1.max );
+        params->spin1.min = atof( argv[++i] );
+        params->spin1.max = atof( argv[++i] );
+        
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin1-min", "float", "%le", params->spin1.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin1-max", "float", "%le", params->spin1.max );
       }  
       else if ( strcmp(argv[i] , "--spin2-range") == 0 ){
-	params->spin2.min = atof( argv[++i] );
-	params->spin2.max = atof( argv[++i] );
+        params->spin2.min = atof( argv[++i] );
+        params->spin2.max = atof( argv[++i] );
 
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin2-min", "float", "%le", params->spin2.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "spin2-max", "float", "%le", params->spin2.max );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin2-min", "float", "%le", params->spin2.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "spin2-max", "float", "%le", params->spin2.max );
       } 
       else if ( strcmp(argv[i] , "--inclination-min") == 0 ){
-	params->inclination.min = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "inclination-min", "float", "%le", params->inclination.min );
+        params->inclination.min = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "inclination-min", "float", "%le", params->inclination.min );
       } 
       else if ( strcmp(argv[i] , "--inclination-max") == 0 ){
-	params->inclination.max = atof( argv[++i] );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "inclination-max", "float", "%le", params->inclination.max );
+        params->inclination.max = atof( argv[++i] );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
       else if ( strcmp(argv[i] , "--inclination-range") == 0 ){
-	params->inclination.min = atof( argv[++i] );
-	params->inclination.max = atof( argv[++i] );
+        params->inclination.min = atof( argv[++i] );
+        params->inclination.max = atof( argv[++i] );
 
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "inclination-min", "float", "%le", params->inclination.min );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( "inclination-max", "float", "%le", params->inclination.max );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "inclination-min", "float", "%le", params->inclination.min );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
       else if ( strcmp(argv[i] , "--waveform") == 0 ){
-	snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-		     argv[++i]);
+        snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+                     argv[++i]);
         this_proc_param = this_proc_param->next =
           next_process_param( "waveform", "string",
-			      "%s",argv[i] );	
+                              "%s",argv[i] );        
       }
       else if ( strcmp(argv[i] , "--mass-distr") == 0 ){
-	 if ( ! strcmp( "SPININJ_m1Andm2", argv[++i] ) )
+         if ( ! strcmp( "SPININJ_m1Andm2", argv[++i] ) )
           {
             params->mdistr = SPININJ_m1Andm2;
           }
@@ -932,7 +929,7 @@ void LALParserInspiralInjection(LALStatus *status,
           }
         this_proc_param = this_proc_param->next =
           next_process_param( "mass-distr", "string",
-			      "%s",argv[i] );	
+                              "%s",argv[i] );        
       }
        else if ( strcmp(argv[i] , "--dist-distr") == 0 ){
          if ( ! strcmp( "SPININJ_distance", argv[++i] ) )
@@ -957,18 +954,18 @@ void LALParserInspiralInjection(LALStatus *status,
                               "%s",argv[i] );
       }
       else {
-	fprintf(stderr, "option %s unknown !!! abort\n", argv[i]);
-	exit(1);
+        fprintf(stderr, "option %s unknown !!! abort\n", argv[i]);
+        exit(1);
       }
-	  
+          
     
       i++;
     }
   
   if (params->userTag){
     snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-		 params->randSeed, params->userTag, params->gpsStartTime.gpsSeconds, 
-		 params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
+              params->randSeed, params->userTag, params->gpsStartTime.gpsSeconds, 
+              params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
   }
 
   /* Let us check now the validity of the arguments */
@@ -989,7 +986,7 @@ void LALParserInspiralInjection(LALStatus *status,
   LAL_CALL(  LALBeginLIGOLwXMLTable( status, &xmlfp, process_table ),status), 
 
   LAL_CALL(  LALWriteLIGOLwXMLTable( status, &xmlfp, proctable, 
-				     process_table ), status );  
+                                     process_table ), status );  
 
   
   LAL_CALL(  LALEndLIGOLwXMLTable ( status, &xmlfp ), status ); 
@@ -1025,150 +1022,150 @@ void LALParserInspiralInjection(LALStatus *status,
 
 
 void LALCheckInspiralInjectionParameters(LALStatus *status, 
-					 InspiralInjectionParameters params)
+                                         InspiralInjectionParameters params)
 { 
   LALGPSCompareResult        compareGPS;
 
   
-    if ( params.fLower <= 5 || params.fLower >=1000)
+  if ( params.fLower <= 5 || params.fLower >=1000)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "fLower should not be less than 5Hz or greater than 1000Hz " 
-	       "(%f specified)\n",
-	       "fLower", params.fLower );
+               "fLower should not be less than 5Hz or greater than 1000Hz " 
+               "(%f specified)\n",
+               "fLower", params.fLower );
       exit( 1 );
     } 
   if ( params.gpsStartTime.gpsSeconds < 441417609 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "GPS start time is prior to " 
-	       "Jan 01, 1994  00:00:00 UTC:\n"
-	       "(%d specified)\n",
-	       "gps-start-time", params.gpsStartTime.gpsSeconds );
+               "GPS start time is prior to " 
+               "Jan 01, 1994  00:00:00 UTC:\n"
+               "(%d specified)\n",
+               "gps-start-time", params.gpsStartTime.gpsSeconds );
       exit( 1 );
     } 
   if ( params.gpsStartTime.gpsSeconds  > 999999999 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "GPS start time is after " 
-	       "Sep 14, 2011  01:46:26 UTC:\n"
-	       "(%d specified)\n", 
-	       "gps-start-time",  params.gpsStartTime.gpsSeconds);
+               "GPS start time is after " 
+               "Sep 14, 2011  01:46:26 UTC:\n"
+               "(%d specified)\n", 
+               "gps-start-time",  params.gpsStartTime.gpsSeconds);
       exit( 1 );
     }
   /* check that the start time is before the end time */
   LAL_CALL( LALCompareGPS( status, &compareGPS, &(params.gpsStartTime), &(params.gpsEndTime)) ,
-	    status );
+            status );
   if ( params.gpsEndTime.gpsSeconds > 999999999 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "GPS End time is after " 
-	       "Sep 14, 2011  01:46:26 UTC:\n"
-	       "(%d specified)\n", 
-	       "gps-end-time", params.gpsEndTime.gpsSeconds );
+               "GPS End time is after " 
+               "Sep 14, 2011  01:46:26 UTC:\n"
+               "(%d specified)\n", 
+               "gps-end-time", params.gpsEndTime.gpsSeconds );
       exit( 1 );
     } 
   if ( params.meanTimeStep <= 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "time step must be > 0: (%e seconds specified)\n",
-	       "mean-time", params.meanTimeStep );
+               "time step must be > 0: (%e seconds specified)\n",
+               "mean-time", params.meanTimeStep );
       exit( 1 );
     }
   if ( params.timeInterval < 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "time interval must be >= 0: (%e seconds specified)\n",
-	       "time-interval", params.timeInterval );
+               "time interval must be >= 0: (%e seconds specified)\n",
+               "time-interval", params.timeInterval );
       exit( 1 );
     }
   if ( params.m1.min < 0 || params.m2.max < 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "miniumum component mass must be > 0: \n",
-	       "mass-range"  );
+               "miniumum component mass must be > 0: \n",
+               "mass-range"  );
 
       exit( 1 );
     } 
   if ( params.m1.min > params.m1.max  )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "minimum component (%f) mass must be < maximum component (%f) : \n",
-	       "mass-range",  params.m1.min, params.m1.max);
+               "minimum component (%f) mass must be < maximum component (%f) : \n",
+               "mass-range",  params.m1.min, params.m1.max);
 
       exit( 1 );
     }
   if ( params.m2.min > params.m2.max  )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "minimum component (%f) mass must be < maximum component (%f) : \n",
-	       "mass-range",  params.m2.min, params.m2.max);
+               "minimum component (%f) mass must be < maximum component (%f) : \n",
+               "mass-range",  params.m2.min, params.m2.max);
       
       exit( 1 );
     }
   if ( params.distance.min <= 0)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "minimum distance must be > 0: "
-	       "(%f kpc specified)\n", "distance-range",params.distance.min);
+               "minimum distance must be > 0: "
+               "(%f kpc specified)\n", "distance-range",params.distance.min);
       
       exit( 1 );
     }
   if (  params.distance.max < params.distance.min)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "maximum distance max (%f) must be > distance min (%f)",
-	       "distance-range",params.distance.max, params.distance.min);
+               "maximum distance max (%f) must be > distance min (%f)",
+               "distance-range",params.distance.max, params.distance.min);
       
       exit( 1 );
     }
   if (  params.coa_phase.max < params.coa_phase.min)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "maximum coa_phase max (%f) must be > coa_phase min (%f)",
-	       "coa-phase-range",params.coa_phase.max, params.coa_phase.min);
+               "maximum coa_phase max (%f) must be > coa_phase min (%f)",
+               "coa-phase-range",params.coa_phase.max, params.coa_phase.min);
       
       exit( 1 );
     }
 
 
-   if (  params.spin1.min < 0 || params.spin1.max < 0)
+  if (  params.spin1.min < 0 || params.spin1.max < 0)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin1-min (%f) and spin1-max (%f) must be > 0 \n",
                "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
-                                                                                                                             
+
       exit( 1 );
     }
 
-    if (  params.spin1.max < params.spin1.min)
+  if (  params.spin1.max < params.spin1.min)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin1-min (%f) must be < spin1-max (%f) \n",
                "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
-                                                                                                                             
+
       exit( 1 );
     }
 
-   if (  params.spin2.min < 0 || params.spin2.max < 0)
+  if (  params.spin2.min < 0 || params.spin2.max < 0)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin2-min (%f) and spin2-max (%f) must be > 0 \n",
                "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
-                                                                                                                             
+
       exit( 1 );
     }
-                                                                                                                             
-    if (  params.spin2.max < params.spin2.min)
+
+  if (  params.spin2.max < params.spin2.min)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "spin2-min (%f) must be < spin2-max (%f) \n",
                "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
-                                                                                                                             
+
       exit( 1 );
     }
 
-    if (  params.inclination.max > LAL_PI)
+  if (  params.inclination.max > LAL_PI)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "inclination-max (%f) must be < pi \n",
@@ -1177,7 +1174,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       exit( 1 );
     }
 
-    if (  params.inclination.min < 0.01)
+  if (  params.inclination.min < 0.01)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "inclination-min (%f) must be > 0.01 \n",
@@ -1186,7 +1183,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       exit( 1 );
     }
 
-    if (  params.inclination.max < params.inclination.min)
+  if (  params.inclination.max < params.inclination.min)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
                "inclination-min (%f) must be < inclination-max (%f) \n",

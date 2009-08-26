@@ -133,7 +133,10 @@ def param_table(pdict, wiki, server):
   colors,colordict = get_colors()
 
   skypath = glob.glob('pylal_skyPlotJob/Images/*plot_inspiral_skymap_*' + pdict['All']['ID'] + '*_skylocation-unspecified-gpstime_thumb.png')
-  wiki.write('||<|'+str(nrows)+'>'+imageLink(server+'/'+skypath[0]))
+  if skypath:
+    wiki.write('||<|'+str(nrows)+'>'+imageLink(server+'/'+skypath[0]))
+  else:
+    wiki.write('||<|'+str(nrows)+'>')
   write_columns(['RANK','COINC TYPE','IFO TIME','EVENT ID','STAT','FAR'],wiki)
   write_columns([pdict['All']['Rank'],pdict['All']['Type'],pdict['All']['IfoTime'],pdict['All']['ID'],pdict['All']['Stat'],pdict['All']['FAR']], wiki,'white','normal')
 
@@ -152,7 +155,7 @@ def setup(dest, server):
   # Make a destination directory if it doesn't exist
   if not os.path.isdir(dest):
     print "destination:" + dest + " does not exist, I'll make it for you..."
-    os.mkdir(dest)
+    os.makedirs(dest)
 
   # copy the data to the webspace - sort of painful probably could omit some
   for sec in sections:

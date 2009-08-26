@@ -120,6 +120,8 @@ LALDestroyVector()
 #endif
 
 #include <math.h>
+#include <lal/LALErrno.h>
+#include <lal/XLALError.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -161,7 +163,6 @@ LALFindChirpBCVSpinFilterSegment (
   COMPLEX8             *qBCVSpin2        = NULL;
   COMPLEX8             *tmpltSignal      = NULL;
   SnglInspiralTable    *thisEvent        = NULL;
-  LALMSTUnitsAndAcc     gmstUnits;
   COMPLEX8             *wtilde;
   COMPLEX8             *inputData1;
   REAL4 		rho = 0.0;
@@ -308,10 +309,6 @@ LALFindChirpBCVSpinFilterSegment (
   qtilde         = params->qtildeVec->data;
   qtildeBCVSpin1 = params->qtildeVecBCVSpin1->data;
   qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data;
-
-  /* set the gmst units and strictness */
-  gmstUnits.units = MST_HRS;
-  gmstUnits.accuracy = LALLEAPSEC_STRICT;
 
   /* finding cross product of data with itself,
      to be used for normalisation later  */
@@ -662,10 +659,11 @@ LALFindChirpBCVSpinFilterSegment (
 				= (INT4) (timeNS/1000000000L);
           		thisEvent->end_time.gpsNanoSeconds
 				= (INT4) (timeNS%1000000000L);
-          		LALGPStoGMST1( status->statusPtr,
-				&(thisEvent->end_time_gmst),
-              			&(thisEvent->end_time), &gmstUnits );
-          		CHECKSTATUSPTR( status );
+          		thisEvent->end_time_gmst
+				= fmod(XLALGreenwichMeanSiderealTime(
+				&thisEvent->end_time),
+				LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+          		ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
           		/* set the impulse time for the event */
           		thisEvent->template_duration = (REAL8) chirpTime;
@@ -768,10 +766,10 @@ LALFindChirpBCVSpinFilterSegment (
 	        = (INT4) (timeNS/1000000000L);
 	thisEvent->end_time.gpsNanoSeconds
 	        = (INT4) (timeNS%1000000000L);
-	LALGPStoGMST1( status->statusPtr,
-	          &(thisEvent->end_time_gmst),
-	          &(thisEvent->end_time), &gmstUnits );
-	          CHECKSTATUSPTR( status );
+	thisEvent->end_time_gmst
+	        = fmod(XLALGreenwichMeanSiderealTime(&thisEvent->end_time),
+	        LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+	ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
 	/* set the impulse time for the event */
 	thisEvent->template_duration = (REAL8) chirpTime;
