@@ -2135,8 +2135,10 @@ class PrintLCNode(pipeline.SqliteNode):
     @job: a PrintLCJob
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.datatype = None
-    self.extract_to_xml = None
+    self.__datatype = None
+    self.__extract_to_xml = None
+    self.__exclude_coincs = None
+    self.__include_only_coincs = None
 
   def set_datatype(self, datatype):
     """
@@ -2163,6 +2165,32 @@ class PrintLCNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_exclude_coincs(self, exclude_coincs):
+    """
+    Sets exclude-coincs option.
+    """
+    self.add_var_opt('exclude-coincs', exclude_coincs)
+    self.__exclude_coincs = exclude_coincs
+
+  def get_exclude_coincs(self):
+    """
+    Gets exclude-coincs option.
+    """
+    return self.__exclude_coincs
+
+  def set_include_only_coincs(self, include_only_coincs):
+    """
+    Sets include-only-coincs option.
+    """
+    self.add_var_opt('include-only-coincs', include_only_coincs)
+    self.__include_only_coincs = include_only_coincs
+
+  def get_include_only_coincs(self):
+    """
+    Gets include-only-coincs option.
+    """
+    return self.__include_only_coincs
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
