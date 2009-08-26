@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <lal/Date.h>
 #include "LALInference.h"
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
 #include <lal/StringInput.h>
 
 
@@ -286,8 +288,29 @@ int main(int argc, char *argv[]){
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
     fprintf(stdout, " ...done.\n");
     fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);  
-    
     fprintf(stdout," ----------\n");
+		
+	//Single IFO likelihood test
+	fprintf(stdout, "Single IFO likelihood test\n");
+	COMPLEX16Vector *freqModel1=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
+	COMPLEX16Vector *freqModel2=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
+	numberI4 = LAL_PNORDER_TWO;
+    setVariable(&currentParams, "LAL_PNORDER",     &numberI4);	
+	numberI4 = TaylorT1;
+    setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
+	ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel1);
+	ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
+	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
+	for(i=0; i<runstate->data->freqData->data->length; i++){
+		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
+		((double)i)*1.0/ (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT),
+		freqModel1->data[i].re, freqModel1->data[i].im, freqModel2->data[i].re, freqModel2->data[i].im,
+		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
+	}
+	fprintf(stdout, "overlap=%g\n", 
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));			
+	
+
     /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
     fprintf(stdout," generating templates & writing to files...:\n");
