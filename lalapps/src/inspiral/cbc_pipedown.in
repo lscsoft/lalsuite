@@ -480,6 +480,7 @@ for tag in user_tags:
     type = '_'.join([ tag, 'LOUDEST', datatype.upper(), 'EVENTS_BY', cp.get('printlc', 'ranking-stat').upper()])
     # cycle over all ifos times, creating different tables for each
     for on_instruments in distinct_instrument_sets:
+      on_instruments = lsctables.ifos_from_instrument_set(lsctables.instrument_set_from_ifos(on_instruments))
       # set output and extracted xml file names
       if cp.has_option('printlc', 'output-format'):
         summary_extension = cp.get('printlc', 'output-format')
