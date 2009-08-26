@@ -1021,6 +1021,7 @@ void templateDampedSinusoid(LALIFOData *IFOdata)
 }
 
 
+
 void templateSinc(LALIFOData *IFOdata)
 /*****************************************************/
 /* Sinc function (burst) template.                   */
@@ -1029,8 +1030,8 @@ void templateSinc(LALIFOData *IFOdata)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* The (plus-) waveform is a sinc function of given  */
 /* frequency:                                        */
-/*   a*sinc(2*pi*f*(t-time))                         */
-/*   = a*sin(2*pi*f*(t-time)) / (2*pi*f*(t-time))    */
+/*   a * sinc(2*pi*f*(t-time))                       */
+/*   = a * sin(2*pi*f*(t-time)) / (2*pi*f*(t-time))  */
 /* where "time" is the time parameter denoting the   */
 /* signal's central peak location.                   */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *************************/
