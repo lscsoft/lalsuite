@@ -49,7 +49,7 @@
 #endif
 
 /* our own exception handler / runtime debugger */
-#ifdef __MINGW32__
+#if HAVE_EXCHNDL
 #include "exchndl.h"
 #endif
 
@@ -1188,7 +1188,7 @@ int main(int argc, char**argv) {
      same terminal), but the app should wait for the client to send <quit/> and cleanly exit. 
    */
 
-#ifdef __MINGW32__
+#if HAVE_EXCHNDL
   ExchndlSetup();
 #elif _WIN32
   signal(SIGTERM, sighandler);

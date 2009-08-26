@@ -35,6 +35,11 @@ endif
 if MINGW32_BUILD
    eah_sources += $(eaHOME)/win_lib.cpp $(eaHOME)/exchndl.c
    eah_ldadd += -lbfd -liberty -lintl
+   eah_cppflags += -DHAVE_EXCHNDL=1
+endif
+
+if WIN32_CYGWIN_BUILD
+   eah_sources += $(eaHOME)/win_lib.cpp
 endif
 
 if LINUX_BUILD
