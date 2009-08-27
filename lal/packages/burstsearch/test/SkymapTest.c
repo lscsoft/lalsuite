@@ -144,7 +144,7 @@ static void numerical(void)
         
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
     
     // check the fast analytic bayesian statistic against simpler but 
