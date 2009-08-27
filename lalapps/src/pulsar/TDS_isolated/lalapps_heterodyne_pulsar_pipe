@@ -30,8 +30,6 @@ import exceptions
 from types import *
 
 try:
-  from glue import segments
-  from glue import LSCsegFindClient
   from glue import gsiserverutils
   from glue.lal import LIGOTimeGPS
 except ImportError, e:
@@ -55,11 +53,15 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
   -h, --help               display this message
   -v, --version            print version information and exit
 
-  -d, --datafind           run LSCdataFind to create frame cache files
+  -d, --datafind           run ligo_data_find to create frame cache files
                            (required for coarse heterodyne)
+  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -s, --seglist            run LSCsegFind to create a segment list (otherwise
                            attempt to read the segment filename from the
-                           configuation file)
+                           configuation file) 
+  THIS OPTION IS NO LONGER USABLE - CREATE YOUR OWN SEGMENT LIST (E.G. USING
+  ligolw_segment_query) INSTEAD AND ADD TO THE CONFIGURATION FILE
+  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -c, --coarse             run lalapps_heterodyne_pulsar in coarse mode
   -f, --fine               run lalapps_heterodyne_pulsar in fine mode
   -u, --update             run lalapps_heterodyne_pulsar in update mode
@@ -101,7 +103,6 @@ except getopt.GetoptError:
 # default options
 config_file = None
 do_datafind = None
-do_seglist = None
 do_fine = None
 do_coarse = None
 do_update = None
@@ -123,7 +124,8 @@ for o, a in opts:
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-s", "--seglist"):
-    do_seglist = 1
+    print "The -s (--segment) flag is no longer valid (see --help)"
+    sys.exit(0) 
   elif o in ("-c", "--coarse"):
     do_coarse = 1
   elif o in ("-f", "--fine"):
@@ -159,8 +161,10 @@ if not log_path:
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
-try: os.mkdir('cache')
-except: pass
+if do_datafind:
+  try: os.mkdir('cache')
+  except: pass
+
 try: os.mkdir('logs')
 except: pass
 
@@ -199,9 +203,6 @@ pulsar_param_dir = cp.get('data','pulsar_param_dir')
 earth_ephem = cp.get('ephem','earth_ephem')
 sun_ephem = cp.get('ephem','sun_ephem')
 
-# default values
-manual_epoch = 0
-
 # actual info on the analysis
 tstart = cp.get('input','starttime')
 tend = cp.get('input','endtime')
@@ -212,7 +213,10 @@ resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 freq_factor = cp.get('input','freq_factor')
-manual_epoch = cp.get('input','manual_epoch')
+try:
+  manual_epoch = cp.get('input','manual_epoch')
+except:
+  manual_epoch = None
 
 # check that if you're performing a coarse heterodyne, but you're not doing a
 # datafind that you have instead supplied a frame cache file
@@ -250,9 +254,6 @@ except: pass
 if do_datafind:
   df = heterodyne_pulsar.LSCDataFindNode(df_job)
   
-  #server = cp.get('datafind','server')
-  #df.set_server(server)
-  
   # set observatory for LSCdataFind
   if (detector.find('H1') > -1) | (detector.find('H2') > -1):
     obs = 'H'
@@ -274,104 +275,14 @@ H2, L1, V1, G1 or GEO."""
   # add DAG
   dag.add_node(df)
 
-# this bit is basically hacked from LSCsegFind
-if do_seglist:
-  print >> sys.stderr, "I'm going to make a seglist"
-  # run LSCsegFind - don't bother with a job just run it and create this list
-  # set segment list and stuff
-  seg_list_file = basename + '.seglist'
-
-  # defaults
-  hostPortString = None
-  port = 30015
-
-  clientMethodArgDict = {
-    'interferometer': None,
-    'type': None,
-    'explain': None,
-    'end': None,
-    'start': None,
-    'lfns': False,
-    'strict' : True
-  }
-
-  # default method 
-  clientMethod = 'findStateSegments'
-  typeString = None
-  format = None
-
-  hostPortString = cp.get('datafind','server')
+# set seglist file from value in the config file
+seg_list_file = cp.get('data','seg_list')
   
-  # environment variables override defaults but not
-  # command line options
-  try:
-    hostPortString = os.environ['LSC_SEGFIND_SERVER']
-  except:
-    pass
-
-  clientMethodArgDict['interferometer'] = detector
-  clientMethodArgDict['type'] = 'Science'
-  clientMethodArgDict['start'] = tstart
-  clientMethodArgDict['end'] = tend
-
-  if hostPortString.find(':') < 0:
-    # no port specified
-    host = hostPortString
-  else:
-    # server and port specified
-    host, portString = hostPortString.split(':')
-    port = int(portString)
-
-  # open connection to LSCsegFindServer
-  try:
-    myClient = LSCsegFindClient.LSCsegFind(host, port)
-
-  except Exception, e:
-    print >> sys.stderr, \
-      "Unable to connect to LSCsegFindServer %s:%d" % (host, port)
-    if gsiserverutils.checkCredentials():
-      print >>sys.stderr, "Got the following error : " + str(e)
-    sys.exit(1)
-
-  # get the segment list here
-  try:
-    seglist = eval("myClient.%s(%s)" % (clientMethod, clientMethodArgDict))
-
-    try:
-      f = open(seg_list_file, 'w')
-    
-    except Exception, e:
-      print >> sys.stderr, "Can't open file %s!" % (seg_list_file)
-      sys.exit(1)
-      
-    if type(seglist) is StringType:
-      print seglist
-    else:
-      if len( seglist ) == 0:
-        print >> sys.stderr, "No segments found!"
-      else: # output format will be segwizard style
-        i = 1
-        for seg in seglist:
-           wizlist = str(i) + ' ' + str(seg[0]) + ' ' + str(seg[1]) + ' ' + str(seg.duration()) +\
-'\n'
-           f.write(wizlist)
-           i += 1
-      
-    f.close()
-         
-  except Exception, e:
-    print >> sys.stderr, "Could not create segment list :("
-    sys.exit(1)
-  
-elif do_seglist == None:
-  # set seglist file from value in the config file
-  seg_list_file = cp.get('data','seg_list')
-  
-  # see if it exits - if it doesn't give an error
-  if os.path.isfile(seg_list_file)==False:
-    print >> sys.stderr, """No segment list file given in config file - add seg_list argument to
+# see if it exits - if it doesn't give an error
+if os.path.isfile(seg_list_file)==False:
+  print >> sys.stderr, """No segment list file given in config file - add seg_list argument to
 [data] section of .ini file"""
-    sys.exit(1)
+  sys.exit(1)
   
 if do_coarse:
   param_files = os.listdir(pulsar_param_dir)
@@ -400,7 +311,8 @@ if do_coarse:
       coarse[j].set_earth_ephem(earth_ephem)
       coarse[j].set_sun_ephem(sun_ephem)
       """
-      coarse[j].set_manual_epoch(manual_epoch)
+      if manual_epoch != None:
+        coarse[j].set_manual_epoch(manual_epoch)
       coarse[j].set_filter_knee(filter_knee)
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
@@ -519,7 +431,8 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_resample_rate(resample_rate)
       fine[j].set_data_file(data_file)
       fine[j].set_seg_list(seg_list_file)
-      fine[j].set_manual_epoch(manual_epoch)
+      if manual_epoch != None:
+        fine[j].set_manual_epoch(manual_epoch)
      
       if do_calibrate:
         fine[j].set_calibrate()

@@ -479,7 +479,6 @@ void LALappsTrackSearchInitialize(
       {"inject_space",        required_argument,  0,    'L'},
       {"inject_file",         required_argument,  0,    'M'},
       {"inject_scale",        required_argument,  0,    'N'},
-      {"channel_type",        required_argument,  0,    'O'},
       {"bin_buffer",          required_argument,  0,    'P'},
       {"zcontrast",           required_argument,  0,    'Q'},
       {"zlength",             required_argument,  0,    'R'},
@@ -536,9 +535,7 @@ void LALappsTrackSearchInitialize(
   params->dcDetrend=-1;
   params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
-  params->calChannelType=SimDataChannel;/*See lsd*/
   params->channelName=NULL; /* Leave NULL to avoid frame read problems */
-  params->channelNameType=LAL_ADC_CHAN; /*Default for data analysis */
   params->dataDirPath=NULL;
   params->singleDataCache=NULL;
   params->detectorPSDCache=NULL;
@@ -613,11 +610,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    /*XLALFloatToGPS(&tempGPS,startTime);*/
-	    LAL_CALL(LALFloatToGPS(status,
-				   &tempGPS,
-				   &startTime),
-		     status);
+	    XLALGPSSetREAL8(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -996,22 +989,6 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
-	case 'O':
-	  {
-	    if(!strcmp(optarg,"LAL_ADC_CHAN"))
-	      params->channelNameType=LAL_ADC_CHAN;
-	    else if(!strcmp(optarg,"LAL_SIM_CHAN"))
-	      params->channelNameType=LAL_SIM_CHAN;
-	    else if(!strcmp(optarg,"LAL_PROC_CHAN"))
-	      params->channelNameType=LAL_PROC_CHAN;
-	    else
-	      {
-		fprintf(stderr,"Invalid channel type specified assuming LAL_ADC_CHAN\n");
-		params->channelNameType=LAL_ADC_CHAN;
-	      };
-	  }
-	  break;
-
 	case 'P':
 	  {
 	    params->colsToClip=atoi(optarg);
@@ -1294,7 +1271,7 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 elementAvg=0;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
-  channelIn.type = params->channelNameType;
+  channelIn.type = LAL_ADC_CHAN;
   if(dirname)
     {
       /* Open frame stream */
@@ -1317,6 +1294,18 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
+      lal_errhandler = LAL_ERR_EXIT;
+      /* Set verbosity of stream so user sees frame read problems! */
+      XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
+      memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
+      bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
+      /* 
+       * Seek to end of requested data makes sure that all stream is complete!
+       */
+      bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
+      XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
+      bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,"Creating data stream.\n");
@@ -1342,21 +1331,6 @@ void LALappsGetFrameData(LALStatus*          status,
       exit(TRACKSEARCHC_EVAL);
     }
   lal_errhandler = LAL_ERR_EXIT;
-  /* Set verbosity of stream so user sees frame read problems! */
-  XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
-  /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
-  memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-  LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
-	   status);
-  /* 
-   * Seek to end of requested data makes sure that all stream is complete!
-   */
-  bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-  LAL_CALL(LALFloatToGPS(status,
-			 &bufferedDataStopGPS,
-			 &bufferedDataStop),
-	   status);
-  bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
   if (params->verbosity >= verbose)
     {
       fprintf(stderr,"Checking frame stream spans requested data interval, including the appropriate data buffering!\n");
@@ -2153,7 +2127,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
-  signalStart=XLALGPSGetREAL8(&signalSeries->epoch);
+  signalStart = XLALGPSGetREAL8(&signalSeries->epoch);
+
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
    * should be the stop time of the clipped TFR.
@@ -2330,10 +2305,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    */
     originalFloatTime=XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
-    LAL_CALL(LALFloatToGPS(status,
-			   &edgeOffsetGPS,
-			   &newFloatTime),
-	     status);
+    XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
     /*
      * To handle special case where data is hetordyned and resampled
      * we determine the interval of time that the data would have spanned 
@@ -2735,8 +2707,6 @@ LALappsWriteSearchConfig(LALStatus          *status,
     fprintf(configFile,"channelNamePSD\t: %s\n",
 	    myParams.channelNamePSD);
 
-  fprintf(configFile,"calChannelType\t: %i\n",
-	  myParams.calChannelType);
   if (myParams.calFrameCache == NULL)
     fprintf(configFile,"calFrameCache\t: \n");
   else
@@ -2856,8 +2826,8 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      startStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[0]);
-      stopStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[outCurve.curves[i].n-1]);
+      startStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[0]));
+      stopStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]));
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,
@@ -4098,12 +4068,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 				     REAL8            fHet)
 {
-/*   REAL4 a=0; */
-/*   REAL4 b=0; */
-/*   REAL4 c=0; */
-/*   REAL4 d=0; */
-/*   REAL4 t=0; */
-/*   COMPLEX8 z; */
   UINT4 index=0;
 
   if ((1/data->deltaT) < 1/fHet)
@@ -4114,31 +4078,16 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 
   for (index=0;index<data->data->length;index++)
     {
-      /*ToBeStripped<Start>*/
       if ((INT4) fmod(index,(INT4)((data->data->length)/100.0)) == 0)
 	{
 	  fprintf(stdout,".");
 	  fflush(stdout);
 	}
-      /*<End>*/
-/*       t=index*data->deltaT; */
-/*       a=data->data->data[index]; */
-/*       b=0; */
-/*       c=cos(2*LAL_PI*fHet*t); */
-/*       d=sin(2*LAL_PI*fHet*t); */
-/*       z.re=((a*c)-(b*d)); */
-/*       z.im=((b*d)+(b*c)); */
-      /*
-       *Keeping only REAL(Data*LocalOscillator)
-       */
-/*       data->data->data[index]=z.re; */
       data->data->data[index]=(data->data->data[index]*
 			       cos(2*LAL_PI*fHet*(index*data->deltaT)));			       
     }
-  /*ToBeStripped<Start>*/
   fprintf(stdout,"\n");
   fflush(stdout);
-  /*<End<*/
   return 0;
 }
 

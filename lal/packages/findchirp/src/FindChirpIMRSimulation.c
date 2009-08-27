@@ -152,8 +152,7 @@ LALFindChirpInjectIMR (
    */
 
 
-  LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
-  CHECKSTATUSPTR( status );
+  chanStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
   /* fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -298,9 +297,7 @@ LALFindChirpInjectIMR (
     if ( thisEvent->geocent_end_time.gpsSeconds )
     {
       /* get the gps start time of the signal to inject */
-      LALGPStoINT8( status->statusPtr, &waveformStartTime,
-          &(thisEvent->geocent_end_time) );
-      CHECKSTATUSPTR( status );
+      waveformStartTime = XLALGPSToINT8NS( &(thisEvent->geocent_end_time) );
       waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
     }
     else
@@ -309,9 +306,7 @@ LALFindChirpInjectIMR (
           "into center of data segment" );
 
       /* center the waveform in the data segment */
-      LALGPStoINT8( status->statusPtr, &waveformStartTime,
-          &(chan->epoch) );
-      CHECKSTATUSPTR( status );
+      waveformStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
       waveformStartTime += (INT8) ( 1000000000.0 *
           ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT
@@ -323,7 +318,7 @@ LALFindChirpInjectIMR (
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
         "ppnParams.tc = %e\n"
-        "waveformStartTime = %lld\n",
+        "waveformStartTime = %" LAL_INT8_FORMAT "\n",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,
         ppnParams.tc,
@@ -334,8 +329,7 @@ LALFindChirpInjectIMR (
     memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
 
     /* set the start times for injection */
-    LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
-    CHECKSTATUSPTR( status );
+    XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
     memcpy( &(waveform.f->epoch), &(waveform.a->epoch),
         sizeof(LIGOTimeGPS) );
     memcpy( &(waveform.phi->epoch), &(waveform.a->epoch),

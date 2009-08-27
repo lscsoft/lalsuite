@@ -110,17 +110,17 @@ RCSID( "$Id$" );
 #define S2StopTime   734367613 /* Apr 14 2003 15:00:00 UTC */
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 static ProcessParamsTable *next_process_param( 
-	const char *name, 
-	const char *type,
-    	const char *fmt, ... );
+        const char *name, 
+        const char *type,
+            const char *fmt, ... );
 
 extern int vrbflg;
 
 
 ProcessParamsTable *next_process_param( 
-	const char *name, 
-	const char *type,
-    	const char *fmt, ... )
+        const char *name, 
+        const char *type,
+            const char *fmt, ... )
 {
   ProcessParamsTable *pp;
   va_list ap;
@@ -133,9 +133,9 @@ ProcessParamsTable *next_process_param(
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+    snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -166,7 +166,7 @@ int main( int argc, char *argv[] )
   UINT4         sumMaxMassUse=0;     /* flag indicating to use the sumMaxMass */
   REAL4         dmin = 1.0;          /* minimum distance from earth (kpc) */
   REAL4         dmax = 20000.0 ;     /* maximum distance from earth (kpc) */
-  REAL4 	fLower = 0;          /* default value for th lower cut off frequency */
+  REAL4         fLower = 0;          /* default value for th lower cut off frequency */
 /* REAL4         Rcore = 0.0; */
   UINT4         ddistr = 0, mdistr=0;
 
@@ -174,9 +174,6 @@ int main( int argc, char *argv[] )
   RandomParams *randParams = NULL;
   REAL4  u, exponent, d2;
   REAL4  deltaM, mtotal;
-  /* XXX CHECK XXX */
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-  /* XXX END CHECK XXX */
 
 
   /* waveform */
@@ -208,7 +205,7 @@ int main( int argc, char *argv[] )
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-compress",          no_argument,       &outCompress,      1 },
     {"version",                 no_argument,       0,                'V'},
-    {"f-lower",        		required_argument, 0,                'f'},
+    {"f-lower",                        required_argument, 0,                'f'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -242,17 +239,17 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -433,14 +430,14 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "sum of two component masses must be > 0: "
-		   "(%f solar masses specified)\n",
-		   long_options[option_index].name, sumMaxMass );
+                   "(%f solar masses specified)\n",
+                   long_options[option_index].name, sumMaxMass );
           exit( 1 );
         }
       sumMaxMassUse=1;
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-			      "float", "%e", sumMaxMass );
+                              "float", "%e", sumMaxMass );
         break;
 
       case 'p':
@@ -517,7 +514,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'w':
-        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
@@ -537,7 +534,7 @@ int main( int argc, char *argv[] )
             "Duncan A Brown and Eirini Messaritaki\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
         
@@ -568,7 +565,7 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
   {
     /* use EOBtwoPN as the default waveform */
-    LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+    snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
         "EOBtwoPN");
   }
 
@@ -597,25 +594,25 @@ int main( int argc, char *argv[] )
   /* create the output file name */
   if ( userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
         randSeed, userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( userTag && !outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml",
         randSeed, userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if ( !userTag && outCompress )
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
         randSeed, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml",
         randSeed, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
@@ -673,13 +670,17 @@ int main( int argc, char *argv[] )
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_end_time),
-          &(this_inj->geocent_end_time), u * timeInterval ), &status );
+      XLALGPSAdd( &(this_inj->geocent_end_time), u * timeInterval );
     }
 
     /* set gmst */
-    LAL_CALL( LALGPStoGMST1( &status, &(this_inj->end_time_gmst),
-          &(this_inj->geocent_end_time), &gmstUnits ), &status);
+    this_inj->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+        &this_inj->geocent_end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+    if( XLAL_IS_REAL8_FAIL_NAN(this_inj->end_time_gmst) )
+    {
+      fprintf(stderr, "XLALGreenwichMeanSiderealTime() failed\n");
+      exit(1);
+    }
     /* XXX END CHECK XXX */
 
     /* populate the sim_inspiral table */
@@ -703,10 +704,10 @@ int main( int argc, char *argv[] )
       mtotal = 2.0 * minMass + u * 2.0 *deltaM ;
 
       if (sumMaxMassUse==1) {
-	while (mtotal > sumMaxMass) {
-	  LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
-	  mtotal = 2.0 * minMass + u * 2.0 *deltaM ;	  
-	}
+        while (mtotal > sumMaxMass) {
+          LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
+          mtotal = 2.0 * minMass + u * 2.0 *deltaM ;          
+        }
       }
 
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
@@ -787,7 +788,7 @@ int main( int argc, char *argv[] )
 
 
     /* set the source and waveform fields */
-    LALSnprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
+    snprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
     memcpy( this_inj->waveform, waveform, LIGOMETA_WAVEFORM_MAX *
         sizeof(CHAR));
 
@@ -805,19 +806,18 @@ int main( int argc, char *argv[] )
         &status);
     
     /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
-          meanTimeStep ), &status );
+    XLALGPSAdd( &gpsStartTime, meanTimeStep );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
 
     /* finally populate the flower */
-    if (fLower > 0) 	
+    if (fLower > 0)         
     {
-	this_inj->f_lower = fLower;
+        this_inj->f_lower = fLower;
     }
     else
     {
-	this_inj->f_lower = 0;
+        this_inj->f_lower = 0;
     }
     /* XXX END CHECK XXX */
 
@@ -839,7 +839,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 

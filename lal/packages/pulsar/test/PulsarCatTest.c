@@ -134,7 +134,6 @@ LALMalloc()                     LALFree()
 LALDCreateVector()              LALDDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
 LALUniformDeviate()             LALInitBarycenter()
-LALGPStoINT8()                  LALINT8toGPS()
 LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
 LALCreateTokenList()            LALDestroyTokenList()
 LALReadPulsarCatHead()          LALReadPulsarCatLine()
@@ -760,7 +759,7 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
     acc.accuracy = LALLEAPSEC_STRICT;
     acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( julianDay - 2444244.5 )*(8.64e13L) );
-    TRY( LALINT8toGPS( stat->statusPtr, epoch, &gpsNan ), stat );
+    XLALINT8NSToGPS(epoch, gpsNan);
     leap2 = 0;
     do {
       leap1 = leap2;
@@ -777,7 +776,7 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
     if ( endptr == string ) {
       ABORT( stat, PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG );
     }
-    TRY( LALINT8toGPS( stat->statusPtr, epoch, &gpsNan ), stat );
+    XLALINT8NSToGPS(epoch, gpsNan);
   }
 
   /* That's all. */

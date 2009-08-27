@@ -97,12 +97,12 @@ RCSID( "$Id$" );
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
@@ -258,15 +258,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
                                       calloc( 1, sizeof(ProcessParamsTable) );
@@ -402,7 +402,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -412,7 +412,7 @@ int main( int argc, char *argv[] )
             "Gareth Jones\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -671,8 +671,7 @@ int main( int argc, char *argv[] )
         }
 
         /* get the gps start time of the signal to inject */
-        LALGPStoINT8( &status, &waveformStartTime, 
-          &(thisInjection->geocent_end_time) );
+        waveformStartTime = XLALGPSToINT8NS( &(thisInjection->geocent_end_time) );
         waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
         offset = (chan->data->length / 2.0) * chan->deltaT;
@@ -689,7 +688,7 @@ int main( int argc, char *argv[] )
        XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
 
        /* set the start times for injection */
-       LALINT8toGPS( &status, &(waveform.a->epoch), &waveformStartTime );
+       XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
        memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
  
@@ -702,17 +701,17 @@ int main( int argc, char *argv[] )
           switch ( ifoNumber )
           {
           case 1:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H1_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_H1_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing H1 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
           case 2:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_H2_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_H2_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing H2 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
           case 3:
-             LALSnprintf( chanfilename, FILENAME_MAX, "chanTest_L1_inj%d.dat", injSimCount+1);
+             snprintf( chanfilename, FILENAME_MAX, "chanTest_L1_inj%d.dat", injSimCount+1);
              if (vrbflg) fprintf( stdout, "writing L1 channel time series out to %s\n", chanfilename );
              LALSPrintTimeSeries(chan, chanfilename );
              break;
@@ -836,7 +835,7 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, sizeof(fname), outputFile);
+  snprintf( fname, sizeof(fname), outputFile);
   LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
 
   /* write out the process and process params tables */

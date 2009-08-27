@@ -42,14 +42,13 @@
  *
  **** </lalLaTeX> */
 
-#include <FrameL.h>
-
 #include <stdio.h>
 #include <unistd.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
+#include <lal/LALFrameL.h>
 
 #include <lal/LALRCSID.h>
 NRCSID (FRAMESTREAMTESTC,"$Id$");

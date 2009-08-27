@@ -235,7 +235,7 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
   INITSTATUS( status, "initGeneral", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  TRY ( LALFloatToGPS (status->statusPtr, &(cfg->startTimeGPS), &uvar->startTime), status);
+  XLALGPSSetREAL8(&(cfg->startTimeGPS),  uvar->startTime);
 
   /* ---------- init ephemeris if needed ---------- */
   if ( uvar->metricType ==  LAL_PMETRIC_COH_EPHEM )

@@ -234,15 +234,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     LALCalloc( 1, sizeof(ProcessParamsTable) );
@@ -384,13 +384,13 @@ int main( int argc, char *argv[] )
 
         /* Store CData frame name  */
 
-        LALSnprintf( cDataChanNames->chanNameH1,
+        snprintf( cDataChanNames->chanNameH1,
           LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",
           &thisCoinc->snglInspiral[LAL_IFO_H1]->ifo, frInType, eventID );
         if (vrbflg) fprintf( stdout, "H1 channel: %s\n",
            cDataChanNames->chanNameH1 );
 
-        LALSnprintf( cDataChanNames->chanNameH2,      
+        snprintf( cDataChanNames->chanNameH2,      
           LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",             
           (*(thisCoinc->snglInspiral[LAL_IFO_H2])).ifo, frInType, eventID );
         if (vrbflg) fprintf( stdout, "H2 channel: %s\n",
@@ -588,7 +588,7 @@ int main( int argc, char *argv[] )
 
       if ( nullStatOut )
       {
-        LALSnprintf( nullStatStr, LALNameLength*sizeof(CHAR), "NULL_STAT_%d", 
+        snprintf( nullStatStr, LALNameLength*sizeof(CHAR), "NULL_STAT_%d", 
                      numNullStatFr++ );
         strcpy( nullStatParams->nullStatVec->name, "NullStatistic");
         outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
@@ -645,13 +645,13 @@ int main( int argc, char *argv[] )
   /* write the output xml file */
   if ( userTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-NULLSTAT_%s-%d-%d", ifoTag, 
+    snprintf( fileName, FILENAME_MAX, "%s-NULLSTAT_%s-%d-%d", ifoTag, 
                  userTag, gpsStartTime.gpsSeconds, 
                  gpsEndTime.gpsSeconds-gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-NULLSTAT-%d-%d", ifoTag,
+    snprintf( fileName, FILENAME_MAX, "%s-NULLSTAT-%d-%d", ifoTag,
        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds-gpsStartTime.gpsSeconds );
   }
 
@@ -659,12 +659,12 @@ int main( int argc, char *argv[] )
   {
     if ( outputPath[0] )
     {
-      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
                    outputPath, fileName );
     }
     else
     {
-      LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName);
+      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName);
     }
 
     if ( vrbflg ) fprintf( stdout, "Writing null statistic time series to %s.",
@@ -679,12 +679,12 @@ int main( int argc, char *argv[] )
     memset( &results, 0, sizeof(LIGOLwXMLStream) );
     if ( outputPath[0] )
     {
-      LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
+      snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
                    outputPath, fileName );
     }
     else
     {
-      LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+      snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "Writing xml data to %s.", xmlname );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
@@ -760,12 +760,12 @@ int main( int argc, char *argv[] )
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
           long_options[option_index].name ); \
-          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
 #define USAGE1 \
@@ -886,7 +886,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
        case 'P':
          memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-         LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
+         snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
          ADD_PROCESS_PARAM( "string", "%s", outputPath );
          break;
 
@@ -977,7 +977,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                "Messaritaki <emess@caltech.ed>\n"
                "CVS Version: " CVS_ID_STRING "\n"
                "CVS Tag: " CVS_NAME_STRING "\n" );
-	 fprintf( stdout, lalappsGitID );
+         fprintf( stdout, lalappsGitID );
          exit( 0 );
          break;
 

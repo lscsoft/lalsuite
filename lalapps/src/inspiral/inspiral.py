@@ -1067,6 +1067,8 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     self.__instruments = None
     self.__zero_lag_file = None
     self.__time_slide_file = None
+    self.__veto_segments = None
+    self.__veto_segments_name = None
 
   def set_input_cache(self, input_cache_name):
     """
@@ -1103,18 +1105,46 @@ class ThincaToCoincNode(InspiralAnalysisNode):
       ]
     return output_files
 
-  def set_instruments(self, instrument_set):
+  def set_instruments(self, instruments):
     """
-    @instrument_set: instruments that are on for the
+    @instruments: instruments that are on for the
      THINCA files thinca_to_coinc is operating on.
     """
-    self.add_var_opt('instruments', instrument_set)
+    self.add_var_opt('instruments', instruments)
+    self.__instruments = instruments
 
   def get_instruments(self):
     """
     Returns instruments for this node.
     """
     return self.__instruments
+
+  def set_veto_segments(self, veto_segments):
+    """
+    @veto_segments: name of xml file containing the vetoes to apply
+    """
+    self.add_var_opt('veto-segments', veto_segments)
+    self.__veto_segments = veto_segments
+
+  def get_veto_segmetns(self):
+    """
+    Returns the name of the veto-segments file for this node.
+    """
+    return self.__veto_segments
+
+  def set_veto_segments_name(self, veto_segments_name):
+    """
+    @veto_segments_name: name of vetoes in the vetoes xml file to
+    apply.
+    """
+    self.add_var_opt('veto-segments-name', veto_segments_name)
+    self.__veto_segments_name = veto_segments_name
+
+  def get_veto_segments_name(self):
+    """
+    Returns the name of the vetoes applied for this node.
+    """
+    return self.__veto_segments_name
 
   def set_zero_lag_file(self, zero_lag_file):
     """
@@ -1966,6 +1996,31 @@ class DBSimplifyNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
+class ComputeDurationsJob(pipeline.SqliteJob):
+  """
+  A ComputeDurations job. The static options are read from the section
+  [compute_durations] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'compute_durations'
+    sections = ['compute_durations']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class ComputeDurationsNode(pipeline.SqliteNode):
+  """
+  A ComputeDurations node.
+  """
+  def __init__(self, job):
+    """
+    @job: a ComputeDurationsJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
 class DBAddInjJob(pipeline.SqliteJob):
   """
   A DBAddInj job. The static options are read from the section
@@ -2036,12 +2091,12 @@ class CFarJob(pipeline.SqliteJob):
   A cfar job. The static options are read from the section [cfar] in
   the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp, sections, dax = False):
     """
     @cp: ConfigParser object from which options are read.
+    @sections: list of sections for cp to read from
     """
     exec_name = 'cfar'
-    sections = ['cfar']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
 
 
@@ -2074,7 +2129,7 @@ class PlotSlidesJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_arg('plot-playground-only')
+    self.add_var_opt('plot-playground-only')
 
 
 class PlotSlidesNode(pipeline.SqliteNode):

@@ -58,12 +58,12 @@ RCSID("$Id$");
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
-LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
     PROGRAM_NAME ); \
-LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
-LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 extern int vrbflg;
 int allIFO = -1;
@@ -197,15 +197,15 @@ int main( int argc, char *argv[] )
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -324,7 +324,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -420,11 +420,11 @@ int main( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -434,7 +434,7 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst and Shawn Seader\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -451,39 +451,39 @@ int main( int argc, char *argv[] )
   }
   if ( ! *comment )
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
         " " );
   } 
   else 
   {
-    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
   /* enable/disable-all-ifo is stored in the first process param row */
   if ( allIFO == 1 )
   {
-    LALSnprintf( processParamsTable.processParamsTable->program,
+    snprintf( processParamsTable.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( processParamsTable.processParamsTable->param,
+    snprintf( processParamsTable.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--enable-all-ifo" );
-    LALSnprintf( processParamsTable.processParamsTable->type,
+    snprintf( processParamsTable.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( processParamsTable.processParamsTable->value,
+    snprintf( processParamsTable.processParamsTable->value,
         LIGOMETA_TYPE_MAX, " " );
   }
   else if ( allIFO == 0 )
   {
-    LALSnprintf( processParamsTable.processParamsTable->program,
+    snprintf( processParamsTable.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( processParamsTable.processParamsTable->param,
+    snprintf( processParamsTable.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-all-ifo" );
-    LALSnprintf( processParamsTable.processParamsTable->type,
+    snprintf( processParamsTable.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( processParamsTable.processParamsTable->value,
+    snprintf( processParamsTable.processParamsTable->value,
         LIGOMETA_TYPE_MAX, " " );
   }
   else
@@ -599,70 +599,70 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
       coincHead = XLALSortCoincInspiral( coincHead, 
-		          *XLALCompareCoincInspiralByTime );
+                          *XLALCompareCoincInspiralByTime );
       if ( vrbflg ) fprintf( stdout, "done\n" );
 
       if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
       
       if ( !numSlides )
       {
-	numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
-		      cluster_dt, coincstat , &bittenLParams);
+        numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
+                      cluster_dt, coincstat , &bittenLParams);
       }
       else
       { 
-	int slide = 0;
-	int numClusteredSlide = 0;
-	CoincInspiralTable *slideCoinc = NULL;
-	CoincInspiralTable *slideClust = NULL;
-	
-	if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
-	
-	for( slide = -numSlides; slide < (numSlides + 1); slide++)
-	{
-	  if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
-	  /* extract the slide */
-	  slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
-	  /* run clustering */
-	  numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
-          	     cluster_dt, coincstat, &bittenLParams);
-	  
-	  if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
-				 numClusteredSlide );
-	  numClusteredEvents += numClusteredSlide;
-	  
-	  /* add clustered triggers */
-	  if( slideCoinc )
-	  {
-	    if( slideClust )
-	    {
-	      thisCoinc = thisCoinc->next = slideCoinc;
-	    }
-	    else
-	    {
-	      slideClust = thisCoinc = slideCoinc;
-	    }
-	    /* scroll to end of list */
-	    for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
-	  }
-	}
-	
-	/* free coincHead -- although we expect it to be empty */
-	while ( coincHead )
-	{
-	  thisCoinc = coincHead;
-	  coincHead = coincHead->next;
-	  XLALFreeCoincInspiral( &thisCoinc );
-	}
-	
-	/* move events to coincHead */
-	coincHead = slideClust;
-	slideClust = NULL;
+        int slide = 0;
+        int numClusteredSlide = 0;
+        CoincInspiralTable *slideCoinc = NULL;
+        CoincInspiralTable *slideClust = NULL;
+        
+        if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+        
+        for( slide = -numSlides; slide < (numSlides + 1); slide++)
+        {
+          if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+          /* extract the slide */
+          slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
+          /* run clustering */
+          numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
+                       cluster_dt, coincstat, &bittenLParams);
+          
+          if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+                                 numClusteredSlide );
+          numClusteredEvents += numClusteredSlide;
+          
+          /* add clustered triggers */
+          if( slideCoinc )
+          {
+            if( slideClust )
+            {
+              thisCoinc = thisCoinc->next = slideCoinc;
+            }
+            else
+            {
+              slideClust = thisCoinc = slideCoinc;
+            }
+            /* scroll to end of list */
+            for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
+          }
+        }
+        
+        /* free coincHead -- although we expect it to be empty */
+        while ( coincHead )
+        {
+          thisCoinc = coincHead;
+          coincHead = coincHead->next;
+          XLALFreeCoincInspiral( &thisCoinc );
+        }
+        
+        /* move events to coincHead */
+        coincHead = slideClust;
+        slideClust = NULL;
       }
       
       if ( vrbflg ) fprintf( stdout, "done\n" );
       if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
-			     numClusteredEvents );
+                             numClusteredEvents );
     }
     
     /*
@@ -673,7 +673,7 @@ int main( int argc, char *argv[] )
     
     if ( allIFO )
     {
-	numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
+        numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
     }
     else
     {
@@ -712,22 +712,22 @@ int main( int argc, char *argv[] )
   /* set the file name correctly */
   if ( userTag && !outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml", 
+    snprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml", 
         ifos, userTag, startTime, endTime - startTime );  
   }
   else if ( userTag && outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml.gz",
+    snprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml.gz",
         ifos, userTag, startTime, endTime - startTime );
   }
   else if ( !userTag && outCompress )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml.gz",
+    snprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml.gz",
         ifos, startTime, endTime - startTime );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml", 
+    snprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml", 
         ifos, startTime, endTime - startTime );
   }
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );

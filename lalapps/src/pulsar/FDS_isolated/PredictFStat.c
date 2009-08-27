@@ -346,13 +346,13 @@ InitEphemeris (LALStatus * status,
 
   if ( ephemDir )
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;
@@ -480,7 +480,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     Tsft = 1.0 / catalog->data[0].header.deltaF;
     startTime = catalog->data[0].header.epoch;
     endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-    LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+    XLALGPSAdd(&endTime, Tsft);
     duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
   }
 

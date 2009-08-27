@@ -84,7 +84,6 @@ containing all the required parmaters.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
 \begin{verbatim}
-LALFloatToGPS()
 LALMalloc()
 LALBarycenterEarth()
 LALBarycenter()
@@ -150,7 +149,7 @@ void LALAvgDetectorVel( LALStatus *status,
 
   /* calculate finish time */
   t = t0 + tBase;
-  TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
+  XLALGPSSetREAL8(&tgps, t);
 
   /* calculate position at start and finish time */
   TRY( LALDetectorPos( status->statusPtr, pos1, &t0gps, detector, edat), status);
@@ -218,7 +217,7 @@ void LALAvgDetectorPos( LALStatus *status,
 
   /* calculate finish time */
   t = t0 + tBase;
-  TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
+  XLALGPSSetREAL8(&tgps, t);
 
 
   /* The first approximation: (b-a)^-1 * int(f(x),x=a..b) = 0.5*(f(a)+f(b)) */
@@ -244,7 +243,7 @@ void LALAvgDetectorPos( LALStatus *status,
     for (k=1; k<points; k+=2)
       {
 	t = t0 + 1.0 * k * tBase / (1.0 * points);
-        TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
+	XLALGPSSetREAL8(&tgps, t);
 	TRY( LALDetectorPos( status->statusPtr, tempVel, &tgps, detector, edat), status);
 	for (n=0; n<3; n++) trapSum[n] += tempVel[n];
       }

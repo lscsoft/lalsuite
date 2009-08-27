@@ -1702,7 +1702,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
 	error( "SSB time argument to -S = %f must be non-negative and <= 1.e-9\n", (double)temptime);
 	exit(1);
       }
-      LALFloatToGPS(status, &SSBpulsarparams, &temptime);
+      XLALGPSSetREAL8(&SSBpulsarparams, temptime);
       break;
     case 'X':
       /* include x axis in time strain output */

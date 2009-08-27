@@ -212,7 +212,7 @@ second instrument.
 
 \subsubsection*{Uses}
 
-\noindent LALCalloc, LALFree, LALGPStoINT8, LALINT8NanoSecIsPlayground.
+\noindent LALCalloc, LALFree, LALINT8NanoSecIsPlayground.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -441,8 +441,8 @@ LALCompareSnglInspiralByTime (
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   if ( ta > tb )
   {
@@ -516,8 +516,8 @@ LALCompareSnglInspiral (
     params->match = 0;
   }
 
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
+  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
   if ( labs( ta - tb ) < params->dt && params->match)
@@ -1118,7 +1118,7 @@ XLALRsqCutSingleInspiral (
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable *eventHead,
-    LALSegList        *vetoSegs, 
+    LALSegList        *vetoSegs,
     const CHAR        *ifo
     )
 /* </lalVerbatim> */
@@ -1460,7 +1460,7 @@ XLALTimeSlideSegList(
   INT8 ringEndNS = 0;	/* initialized to silence warning */
   INT8 slideNS;
   LALSeg tmpSeg;
-  LALSegList tmplist; 
+  LALSegList tmplist;
   unsigned i;
 
   /* make sure the segment list has been properly initialized */
@@ -1481,7 +1481,7 @@ XLALTimeSlideSegList(
   /* initialize segment list */
   XLALSegListInit( &tmplist );
 
-  /* loop over the entries in seglist */  
+  /* loop over the entries in seglist */
   for( i = 0; i < seglist->length; i++ ) {
     /* convert the segment boundaries to nanoseconds */
     INT8 segStartNS = XLALGPSToINT8NS( &seglist->segs[i].start );
@@ -1531,7 +1531,7 @@ XLALTimeSlideSegList(
   }
 
   /* clear the old list */
-  XLALSegListClear( seglist ); 
+  XLALSegListClear( seglist );
 
   /* copy segments from new list into original */
   for ( i = 0; i < tmplist.length; i++)
@@ -1545,7 +1545,7 @@ XLALTimeSlideSegList(
 
   /* done */
   return 0;
-}  
+}
 
 
 /* ======================================= */
@@ -1584,8 +1584,8 @@ XLALTimeSlideSingleInspiral(
 
     /* convert back to LIGOTimeGPS */
     XLALINT8NSToGPS( &triggerList->end_time, trigTimeNS);
-  }         
-}  
+  }
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1844,13 +1844,13 @@ LALIncaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -1865,7 +1865,7 @@ LALIncaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if (tb > ta + errorParams->dt )
       {
@@ -1964,7 +1964,7 @@ LALTamaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
           currentTrigger[0]->end_time.gpsSeconds,
@@ -1974,7 +1974,7 @@ LALTamaCoincidenceTest(
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -1990,7 +1990,7 @@ LALTamaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
       if (tb > ta + errorParams->dt )
       {

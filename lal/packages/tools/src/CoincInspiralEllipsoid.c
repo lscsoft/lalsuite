@@ -234,8 +234,9 @@ LALCreateTwoIFOCoincListEllipsoid(
       /* Check whether the event was coincident */
       if ( match )
       {
+#if 0
         REAL8 etp = XLALCalculateEThincaParameter( currentError[0]->trigger,  currentError[1]->trigger, accuracyParams );
-        printf( "%e\n", etp );
+#endif
         /* create a 2 IFO coinc and store */
         if ( ! coincHead  )
         {
@@ -276,8 +277,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
       if ( (currentError[1] = currentError[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentError[1]->trigger->end_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end_time) );
       }
       else
       {

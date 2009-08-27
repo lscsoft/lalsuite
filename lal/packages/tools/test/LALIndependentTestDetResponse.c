@@ -56,7 +56,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 10/14/04 gam: Update definition of lal_gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
-10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
+10/15/04 gam: Fix bug M_PI not defined when configuring lal with --enable-gcc-flags.
               WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
@@ -177,12 +177,6 @@ int main( int argc, char *argv[] )
   UINT4 lgthDataSet = 0;
   REAL8 phiStart = 0.0;
   REAL8 phiStartLAL = 0.0;  /* 10/13/04 gam */
-
-  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
-  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
-
-  uandacc.units = MST_RAD;
-  uandacc.accuracy = LALLEAPSEC_STRICT;
 
   /* parse options */
   if( argc == 1)
@@ -474,11 +468,8 @@ int main( int argc, char *argv[] )
   place_and_gps.p_gps = &gpsTime;
 
   /* Compute Local Sidereal Time at the start of the data set*/
-  /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, &uandacc); */  /* 10/13/03 gam*/
-  /* if(lalDebugLevel > 1) fprintf( stderr, "LMST (radians)= %f\n", phiStart ); */ /* 10/13/03 gam*/
-  /* 10/13/03 gam */
-  LALGPStoLMST1(&status, &phiStartLAL,  &place_and_gps, &uandacc);
+
+  phiStartLAL = XLALGreenwichMeanSiderealTime(place_and_gps.p_gps) + atan2(place_and_gps.p_detector->location[1], place_and_gps.p_detector->location[0]);
   phiStartLAL = fmod(phiStartLAL,LAL_TWOPI);  /* put into interval 0 to 2pi */
   if(lalDebugLevel > 0) {
      fprintf(stdout, "Local Mean Sidereal Time from LAL (radians) = %f\n", phiStartLAL);
@@ -732,15 +723,10 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 
   LALTimeIntervalAndNSample time_info;
 
-  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
-  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
   LALGPSandAcc gps_and_acc; /* 05/20/03 gam */
 
   INITSTATUS (status, "GenerateResponseFuncUsingLAL", LALINDEPENDENTTESTDETRESPONSEC);
   ATTATCHSTATUSPTR(status);
-
-  uandacc.units = MST_RAD;
-  uandacc.accuracy = LALLEAPSEC_STRICT;
 
   if (lalDebugLevel > 1)  {
      /* fprintf(stdout,"status->statusCode = %i \n", status->statusCode);
@@ -761,9 +747,7 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   det_and_pulsar.pDetector = detector;
   det_and_pulsar.pSource   = pulsar;
 
-  /* LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  LALGPStoLMST1(status->statusPtr, &lmsthours, &place_and_gps, &uandacc);
-  CHECKSTATUSPTR (status);
+  lmsthours = XLALGreenwichMeanSiderealTime(place_and_gps.p_gps) + atan2(place_and_gps.p_detector->location[1], place_and_gps.p_detector->location[0]);
 
   if (lalDebugLevel > 1)  {
     fprintf(stdout, "In GenerateResponseFuncUsingLAL LMST = %7e \n", lmsthours); /* 10/13/04 gam */

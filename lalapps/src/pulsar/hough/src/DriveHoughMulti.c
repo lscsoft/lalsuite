@@ -521,12 +521,12 @@ int main(int argc, char *argv[]){
     constraints.detector = NULL;
 
     if ( LALUserVarWasSet( &uvar_startTime ) ) {
-      LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime), &status);
+      XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
       constraints.startTime = &startTimeGPS;
     }
 
     if ( LALUserVarWasSet( &uvar_endTime ) ) {
-      LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
+      XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
       constraints.endTime = &endTimeGPS;
     }
 
@@ -596,8 +596,7 @@ int main(int argc, char *argv[]){
 
     if ( LALUserVarWasSet( &uvar_refTime ) ) 
     {
-      LAL_CALL ( LALFloatToGPS( &status, &refTimeGPS, &uvar_refTime), &status);
-      
+      XLALGPSSetREAL8(&refTimeGPS, uvar_refTime);
       tObs = XLALGPSDiff( &lastTimeStamp, &refTimeGPS ) + timeBase;
     }
     else

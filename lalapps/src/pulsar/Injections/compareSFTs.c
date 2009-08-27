@@ -152,7 +152,7 @@ main(int argc, char *argv[])
 	  LALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
 	  exit(1);
 	}
-      LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
+      Tdiff = XLALGPSDiff(&(sft1->epoch), &(sft2->epoch));
       if ( Tdiff != 0.0 )
 	LALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
 		       sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
