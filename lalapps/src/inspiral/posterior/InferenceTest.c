@@ -229,44 +229,11 @@ int main(int argc, char *argv[]){
 	  
 	  // Parameters for which I am going to compute the likelihood
 	  
-	  REAL4 m1_current = 20.0;
-	  REAL4 m2_current = 1.4;
-	  REAL4 inc_current = 0.0;
-	  REAL4 phii_current = 0.0;
-	  REAL8 tc_current = tc;
 	  REAL8 ra_current        = 0.0;	/* radian      */
 	  REAL8 dec_current       = 0.0;	/* radian      */
 	  REAL8 psi_current       = 0.8;	/* radian      */
 	  REAL8 distMpc_current   = 10.0;	/* Mpc         */
 	  
-	  addVariable(&currentParams,"m1",&m1_current,REAL4_t);
-	  addVariable(&currentParams,"m2",&m2_current,REAL4_t);
-	  addVariable(&currentParams,"inc",&inc_current,REAL4_t);
-	  addVariable(&currentParams,"phii",&phii_current,REAL4_t);
-	  addVariable(&currentParams,"time",&tc_current,REAL8_t);
-	  addVariable(&currentParams,"rightascension",&ra_current,REAL8_t);
-	  addVariable(&currentParams,"declination",&dec_current,REAL8_t);
-	  addVariable(&currentParams,"polarisation",&psi_current,REAL8_t);
-	  addVariable(&currentParams,"distance",&distMpc_current,REAL8_t);
-	  
-	  likelihood = 0.0;
-	  
- fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood...\n");
-	  likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
- fprintf(stdout, " ...done.\n");
-
-	  nulllikelihood = NullLogLikelihood(&currentParams, runstate->data);
-	  
-	  fprintf(stdout,"likelihood %g, null likelihood %g, relative likelihood %g\n",likelihood, nulllikelihood, likelihood-nulllikelihood);
-
-
-    fprintf(stdout, " trying 'FreqDomainNullLogLikelihood'...\n");
-    likelihood = FreqDomainNullLogLikelihood(runstate->data);
-    fprintf(stdout, " ...done.\n");
-    fprintf(stdout," null log-likelihood %f\n", likelihood);
-   
-    fprintf(stdout, " trying 'templateStatPhase' likelihood...\n");
-    destroyVariables(&currentParams);
     addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
     addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
     addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
@@ -276,10 +243,6 @@ int main(int argc, char *argv[]){
     addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
     addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
-    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateStatPhase);
-    fprintf(stdout, " ...done.\n");
-    fprintf(stdout," StatPhase log-likelihood %f\n", likelihood);
-
     fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorT1;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
@@ -299,7 +262,8 @@ int main(int argc, char *argv[]){
 	numberI4 = TaylorT1;
     setVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
 	ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel1);
-	ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
+	freqModel2=runstate->data->freqData->data;
+	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
 	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
 	for(i=0; i<runstate->data->freqData->data->length; i++){
 		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
@@ -308,8 +272,22 @@ int main(int argc, char *argv[]){
 		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
 	fprintf(stdout, "overlap=%g\n", 
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));			
-	
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));
+	fprintf(stdout, "<d|d>=%g, <d|h>=%g, <h|h>=%g, <d|h>-1/2<h|h>=%g\n", 
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2),
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)-0.5*ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
+		);				
+	fprintf(stdout, "likelihood %g\n",
+		FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL));
+	fprintf(stdout, "undecomposed likelihood %g \n", 
+		UndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL));
+	fprintf(stdout, "null likelihood %g decomposed null likelihood %g\n",
+		FreqDomainNullLogLikelihood(runstate->data),
+		NullLogLikelihood(runstate->data));
+    XLALDestroyCOMPLEX16Vector(freqModel1);
+	XLALDestroyCOMPLEX16Vector(freqModel2);
 
     /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
@@ -323,7 +301,6 @@ int main(int argc, char *argv[]){
 
     /* These are the LAL templates that (...seem to...) work right now: */
     /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
-/*
     numberI4 = LAL_PNORDER_TWO;
     setVariable(&currentParams, "LAL_PNORDER",     &numberI4);
     numberI4 = TaylorF2;
@@ -384,7 +361,6 @@ int main(int argc, char *argv[]){
 
     destroyVariables(&currentParams);
     fprintf(stdout," ----------\n");
-*/
   }
 
   printf(" ========== main(): finished. ==========\n");

@@ -191,10 +191,10 @@ void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
-REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
+REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
                               LALTemplateFunction *template);
 
-REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                               LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);							  
@@ -209,7 +209,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
 
-REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData *data);							  
+REAL8 NullLogLikelihood(LALIFOData *data);							  
 
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);

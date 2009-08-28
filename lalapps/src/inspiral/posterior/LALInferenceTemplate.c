@@ -32,8 +32,8 @@
 
 void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
-	static LALStatus stat;								/* status structure */	
-	memset(&stat,0,sizeof(status));
+	static LALStatus status;								/* status structure */	
+	memset(&status,0,sizeof(status));
 
 	IFOdata->modelDomain = timeDomain;
 	
@@ -91,7 +91,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	/* PPN parameter. */
 	params.ppn = NULL;
-	LALSCreateVector( &stat, &(params.ppn), order + 1 );
+	LALSCreateVector( &status, &(params.ppn), order + 1 );
 	params.ppn->data[0] = 1.0;
 	if ( order > 0 )
 		params.ppn->data[1] = 0.0;
@@ -106,7 +106,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	 *******************************************************************/
 
 	/* Generate waveform. */
-	LALGeneratePPNInspiral( &stat, &waveform, &params );
+	LALGeneratePPNInspiral( &status, &waveform, &params );
 	
 	REAL8 chirplength=params.tc;	/*The waveform duration up to tc */
 	//printf("desired_tc %10.10f chirplength %g epoch %10.10f\n", desired_tc, chirplength, IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
@@ -198,10 +198,10 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	 * CLEANUP                                                         *
 	 *******************************************************************/
 	
-	LALSDestroyVector( &stat, &(params.ppn) );
-	LALSDestroyVectorSequence( &stat, &(waveform.a->data) );
-	LALSDestroyVector( &stat, &(waveform.f->data) );
-	LALDDestroyVector( &stat, &(waveform.phi->data) );
+	LALSDestroyVector( &status, &(params.ppn) );
+	LALSDestroyVectorSequence( &status, &(waveform.a->data) );
+	LALSDestroyVector( &status, &(waveform.f->data) );
+	LALDDestroyVector( &status, &(waveform.phi->data) );
 	LALFree( waveform.a );
 	LALFree( waveform.f );
 	LALFree( waveform.phi );
