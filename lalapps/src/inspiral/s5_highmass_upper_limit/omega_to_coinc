@@ -56,6 +56,21 @@ def create_tables(xmldoc, verbose=False):
 		time_slide = lsctables.New(lsctables.TimeSlideTable)
 		xmldoc.childNodes[0].appendChild(time_slide)
 	
+def get_instruments_from_segments(xmldoc):
+
+	#TODO make sure that segments have sensible *on* instruments
+	try: st = table.get_table(xmldoc,"segment_definer")	
+	except: 
+		print sys.stderr, """
+segment definer table not found, cannot continue.  
+Hint you need to run ligolw_segments on the omega segments file
+to make an xml file that you can put on the command line
+		"""
+		sys.exit(1)
+	if len(st) > 1:
+		print sys.stderr, "Too many segment definer rows, I cannot figure out the intsruments analyzed"
+		sys.exit(1)
+	return st[0].ifos
 
 def populate_search_summary_from_segments(xmldoc,ifos=None, verbose=False):
 	t = table.get_table(xmldoc,"search_summary")
@@ -86,7 +101,6 @@ to make an xml file that you can put on the command line
 	if verbose: print >> sys.stderr, ""
 
 def match_sngl_burst_to_search_summary(xmldoc, verbose=False):
-	#FIXME This is slow!! fix with some O(N)log(N) thing
 	search_summary = table.get_table(xmldoc,"search_summary")
         proc_ids = [r.process_id for r in search_summary]
 	sngl_burst = table.get_table(xmldoc,"sngl_burst")
@@ -100,11 +114,6 @@ def match_sngl_burst_to_search_summary(xmldoc, verbose=False):
 		except: 
 			print sys.stderr, "Trigger %d found outside of segment!! Aborting!" % (j,)
 			sys.exit(1)
-
-		#if idx: brow.process_id = proc_ids[idx]
-		#else:
-		#	print sys.stderr, "Trigger %d found outside of segment!! Aborting!" % (j,)
-		#	sys.exit(1)
 
 	if verbose: print >>sys.stderr, ""
 
@@ -136,7 +145,7 @@ def create_coinc_def_row(xmldoc):
 
 class Coinc(object):
 
-	def __init__(self, row, xmldoc, ifos, time_slide_id, coinc_def_id):
+	def __init__(self, row, xmldoc, ifos, on_instruments, time_slide_id, coinc_def_id):
 		self.xmldoc = xmldoc
 		self.time = {}
 		self.duration = {}
@@ -146,19 +155,20 @@ class Coinc(object):
 		self.zinc = {}
 		self.offset = {}
 		self.time_slide_id = None
+		self.on_instruments = on_instruments
 		#FIXME use utilities in glue to sort out instrument keys
 		self.instrument_combos = ifos
 		self.instruments = ifos.split(',')
 		self._add_coinc(row, ifos)
 		self.time_slide_id = time_slide_id
 		self.coinc_def_id = coinc_def_id
+		
 
 	def add_to_coinc_event_table(self):
 		t = table.get_table(self.xmldoc,"coinc_event")
 		row = t.RowType()
 		row.coinc_event_id = t.get_next_id()
-		#FIXME on instruments hardcoded to H1,H2,L1
-		row.set_instruments(['H1','H2','L1'])
+		row.set_instruments(self.on_instruments.split(','))
 		row.likelihood = 1.0
 		row.nevents = len(self.instruments)
 		t.append(row)	
@@ -347,6 +357,10 @@ ifos = opts.instruments
 
 xmldoc = ligolw_add.ligolw_add(ligolw.Document(), xmls, verbose=opts.verbose)
 
+#Check for valid segments before continuing
+on_instruments = get_instruments_from_segments(xmldoc)
+print on_instruments
+
 create_tables(xmldoc, opts.verbose)
 
 coinc_def_id = create_coinc_def_row(xmldoc)
@@ -362,7 +376,7 @@ for f in trigger_files:
 		if '#' in row: continue
 		if opts.verbose: print>> sys.stderr, "processing trigger:\t %d\r" % (i,),
 		#FIXME instruments and offset need to be command line arguments
-		coinc = Coinc(row, xmldoc, ifos, time_slide_id, coinc_def_id)
+		coinc = Coinc(row, xmldoc, ifos, on_instruments, time_slide_id, coinc_def_id)
 		coinc.add_to_coinc_event_table()
 
 
