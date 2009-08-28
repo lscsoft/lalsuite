@@ -438,14 +438,20 @@ void vectorCopy(vector *vec1, vector *vec2)
 /* Copy vec1 over to (pre-initialised!!) vec2 */
 {
   int i,j,k;
-  if (vec2->dimension != vec1->dimension) {
+  if (vec2->dimension != vec1->dimension) { /* unequal dimension --> set up vec2: */
     vectorDispose(vec2);
     vec2->dimension = vec1->dimension;
     if (vec1->dimension > 0) {
       vec2->value = (double*) malloc(sizeof(double)*vec1->dimension);
       vec2->name  = (char**) malloc(sizeof(char*)*vec1->dimension);
+      for (i=0; i<vec2->dimension; ++i)
+        vec2->name[i] = NULL;
     }
   }
+  else /* vec2 already correct dimension --> only free names entries: */
+    for (i=0; i<vec2->dimension; ++i)
+      free(vec2->name[i]);
+  /* vec2 is now set up, copy over (values & names): */
   if (vec1->dimension > 0) {
     for (i=0; i<vec1->dimension; ++i){
       vec2->value[i] = vec1->value[i];
@@ -471,13 +477,13 @@ void vectorSetValue(vector *vec, char name[], double value)
     i=0;
     while ((i<vec->dimension) && (notfound=(strcmp(vec->name[i], name)!=0))) ++i;
     if (notfound)
-      printf(" : ERROR: attempt to set unknown vector element in 'vectorGetValue(...,\"%s\")'!\n", 
+      printf(" : ERROR: attempt to set unknown vector element in 'vectorSetValue(...,\"%s\")'!\n", 
              name);
     else
       vec->value[i] = value;
   }
   else
-    printf(" : ERROR: attempt to set element of empty vector in 'vectorGetValue(...,\"%s\")'!\n", 
+    printf(" : ERROR: attempt to set element of empty vector in 'vectorSetValue(...,\"%s\")'!\n", 
            name);
 }
 
@@ -1779,9 +1785,9 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       printf(" : injection:\n"); vectorPrint(&injectpar);
     }
     inject(DF, *coherentN, injecttemplate, &injectpar);
-    /* dumptemplates(DF, &injectpar, 
+     dumptemplates(DF, &injectpar, 
                      "/home/christian/temp/templatesF.txt", 
-                     "/home/christian/temp/templatesT.txt"); */
+                     "/home/christian/temp/templatesT.txt"); 
     vectorDispose(&injectpar);
   }
 
@@ -2788,34 +2794,24 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
     template2535(DF, parameter, Fplus, Fcross, output);
   /*-- LAL templates... --*/
   else if (waveform == iLALTT2PN00)    /* LAL Taylor T2 Newtonian        */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, newtonian);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT2PN10)    /* LAL Taylor T2 1.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE);
   else if (waveform == iLALTT2PN15)    /* LAL Taylor T2 1.5PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, onePointFivePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT2PN20)    /* LAL Taylor T2 2.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, twoPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT2, LAL_PNORDER_TWO);
   else if (waveform == iLALTT3PN00)    /* LAL Taylor T3 Newtonian        */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, newtonian);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_NEWTONIAN);
   else if (waveform == iLALTT3PN10)    /* LAL Taylor T3 1.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE);
   else if (waveform == iLALTT3PN15)    /* LAL Taylor T3 1.5PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, onePointFivePN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_ONE_POINT_FIVE);
   else if (waveform == iLALTT3PN20)    /* LAL Taylor T3 2.0PN            */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, twoPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, TaylorT3, LAL_PNORDER_TWO);
   else if (waveform == iLALIMRPhenomA) /* LAL Phenomenological           */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, pseudoFourPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALEOBNR)      /* LAL EOBNR                      */
-    //templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, pseudoFourPN);
     templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, LAL_PNORDER_PSEUDO_FOUR);
   /* burst: */
   else if (waveform == bSineGaussian)  /* Sine-Gaussian burst            */
@@ -3386,12 +3382,9 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   /* shift the start time to match the coalescence time,            */
   /* and eventually re-do parameter calculations:                   */
 
-  /*printf(":: LALInspiralWave(..., approximant=%d, order=%d)\n", params.approximant, params.order);
-    printf(" :  tC way before: %f\n", params.tC);*/
-
+  /* printf(":: LALInspiralWave(..., approximant=%d, order=%d)\n", params.approximant, params.order); */
 
   LALInspiralParameterCalc(&status, &params);
-  /*printf(" :  tC wee before: %f\n", params.tC);*/
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
     params.startTime = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
@@ -3409,14 +3402,16 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
 for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   /* compute actual waveform: */
 
-/*rams.tC = 0.0;
- printf(" :  tC before    : %f\n", params.tC);*/
-
   /* REPORTSTATUS(&status); */
   LALInspiralWave(&status, LALSignal, &params);
+  if (status.statusCode != 0) {
+    fprintf(stderr, " : ERROR in templateLAL(): encountered non-zero status code.\n");
+    fprintf(stderr, " : LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
   /* REPORTSTATUS(&status); */
 
-  /*printf(" :  tC after     : %f\n", params.tC);*/
   /* REPORTSTATUS(&status);*/
   /* frequency domain or time domain waveform? */
   FDomain = ((params.approximant == TaylorF1)
@@ -3461,8 +3456,57 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
   else if (params.approximant == BCV)
     timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - (((double)DF->dataSize)*DF->dataDeltaT);
-  else if (params.approximant == IMRPhenomA)
-    timeshift = 0.0; /*(vectorGetValue(parameter,"time") - DF->dataStart) - params.tC;*/
+  else if (params.approximant == IMRPhenomA) {
+    /* figure out coalescence instant numerically... */
+    fftw_complex *InvFTinput=NULL;
+    double *InvFToutput=NULL;
+    double *amplitude;
+    long imax;
+    double p, pmax, pleft, pright, instant;
+
+    fftw_plan InvFTplan;
+    InvFTinput  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*DF->FTSize);
+    InvFToutput = (double*) fftw_malloc(sizeof(double)*DF->dataSize);
+    amplitude = (double*) malloc(sizeof(double)*DF->dataSize);
+    InvFTplan = fftw_plan_dft_c2r_1d(DF->dataSize, InvFTinput, InvFToutput, FFTW_ESTIMATE);
+
+    for (i=0; i<DF->FTSize; ++i)
+      InvFTinput[i] = cosinechirp[i];
+    fftw_execute(InvFTplan);
+    for (i=0; i<DF->dataSize; ++i)
+      amplitude[i] = InvFToutput[i] * InvFToutput[i];
+
+    for (i=0; i<DF->FTSize; ++i)
+      InvFTinput[i] = I*cosinechirp[i];
+    fftw_execute(InvFTplan);
+    for (i=0; i<DF->dataSize; ++i)
+      amplitude[i] += InvFToutput[i] * InvFToutput[i];
+
+    fftw_destroy_plan(InvFTplan);
+    fftw_free(InvFTinput);
+    fftw_free(InvFToutput);
+
+    pmax = 0.0;
+    for (i=0; i<DF->dataSize; ++i) {
+      if (amplitude[i] > pmax) {
+        pmax = amplitude[i];
+        imax = i;
+      }
+    }
+    i = (imax>0) ? imax-1 : DF->dataSize-1;
+    pleft = sqrt(amplitude[i]);
+    i = (imax<DF->dataSize-1) ? imax+1 : 0;
+    pright = sqrt(amplitude[i]);
+    free(amplitude);
+    pmax = sqrt(pmax);
+    if (!((pleft<pmax) || (pright<pmax)))
+      pleft = pright = pmax - 1.0;
+    else if (!(pleft<pmax)) pleft = 0.5*(pmax+pright);
+    else if (!(pright<pmax)) pright = 0.5*(pmax+pleft);
+    instant = (pleft-pright) / (2.0*pleft-4.0*pmax+2.0*pright);
+    instant = imax*DF->dataDeltaT + instant*DF->dataDeltaT;
+    timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - instant;
+  }
 
   /* time-shift the template: */
   if (timeshift != 0.0) { 
@@ -4344,7 +4388,8 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
   /* adjust proposal scale accordingly:                                 */
   scalar = (d<=5) ? 1.0 : 2.4/sqrt(d);
   /* (see Gelman & al.: Bayesian Data Analysis, p.334)                  */
-  scalar /= 5.0;
+  /*scalar /= 5.0;*/
+  scalar /= 10.0;
   /* (this seems to work better here than Gelman & al's recommendation) */
 
   /* generate the Gaussian / t-distributed proposal */
