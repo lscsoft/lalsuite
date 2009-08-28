@@ -323,6 +323,7 @@ int main(int argc, char *argv[]){
 
     /* These are the LAL templates that (...seem to...) work right now: */
     /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
+/*
     numberI4 = LAL_PNORDER_TWO;
     setVariable(&currentParams, "LAL_PNORDER",     &numberI4);
     numberI4 = TaylorF2;
@@ -383,6 +384,7 @@ int main(int argc, char *argv[]){
 
     destroyVariables(&currentParams);
     fprintf(stdout," ----------\n");
+*/
   }
 
   printf(" ========== main(): finished. ==========\n");

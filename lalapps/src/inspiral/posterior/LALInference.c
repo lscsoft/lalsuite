@@ -485,6 +485,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   double timeTmp;
   int different;
   LALStatus status;
+  memset(&status,0,sizeof(status));
   LALVariables intrinsicParams;
 
   /* determine source's sky location & orientation parameters: */
@@ -675,11 +676,14 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	int different;
 	LALVariables intrinsicParams;
 	LALStatus status;
+	memset(&status,0,sizeof(status));
 
 	double Fplus, Fcross;
 	double FplusScaled, FcrossScaled;
 	REAL8 plainTemplateReal, plainTemplateImag;
 	int i;
+
+//printf("status %d\n", status);
 	
 	/* determine source's sky location & orientation parameters: */
 	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
@@ -688,11 +692,14 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
 	distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 	
+printf("GPSdouble %g\n", GPSdouble);	
 	/* figure out GMST: */
 	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
 	UandA.units    = MST_RAD;
 	UandA.accuracy = LALLEAPSEC_LOOSE;
 	LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+
+printf("GPSlal.seconds %d GPSlal.nanoseconds %d  gmst %g status %d\n", GPSlal.gpsSeconds, GPSlal.gpsNanoSeconds, gmst, status.statusCode);
 
 	intrinsicParams.head      = NULL;
 	intrinsicParams.dimension = 0;
@@ -723,6 +730,9 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     /* "different" now may also mean that "dataPtr->modelParams" */
     /* wasn't allocated yet (as in the very 1st iteration).      */
 
+printf("different %d\n", different);
+
+
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
@@ -742,6 +752,8 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response,
 			     ra, dec, psi, gmst);
+printf("Fplus %g Fcross %g ra %g dec %g psi %g gmst %g\n", 
+Fplus, Fcross, ra, dec, psi, gmst);				 
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, &GPSlal);
@@ -751,9 +763,13 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
 
+printf("timeshift %g\n", timeshift);
+
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
+
+printf("FplusScaled %g FcrossScaled %g\n", FplusScaled, FcrossScaled);
 
 	if(freqWaveform->length!=dataPtr->freqModelhPlus->data->length){
 		printf("Error!  Frequency data vector must be same length as original data!\n");
@@ -769,6 +785,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
 		plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
+
 		/* do time-shifting...             */
 		/* (also un-do 1/deltaT scaling): */
 		f = ((double) i) * deltaF;
@@ -778,6 +795,8 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
 		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);
+if(i==1)
+printf("%g %g %g %g %g \n", plainTemplateReal, plainTemplateImag, f, re, im);		
 	}
 	destroyVariables(&intrinsicParams);
 }
@@ -789,8 +808,8 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2)
 {
     int lower, upper, i;
-	double deltaT, deltaF, TwoDeltaToverN;
-	double data1re, data1im, data2re, data2im;
+	double deltaT, deltaF;
+
 	double overlap=0.0;
 	
 	/* determine frequency range & loop over frequency bins: */
@@ -802,19 +821,15 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 printf("lower %d upper %d fLow %g fHigh %g deltaT %g\n", lower, upper, dataPtr->fLow, dataPtr->fHigh, deltaT);
 printf("freqData1(1) %g %g freqData2(1) %g %g PSD(1) %g\n",   
 freqData1->data[1].re,  freqData1->data[1].im,  freqData2->data[1].re,  freqData2->data[1].im, dataPtr->oneSidedNoisePowerSpectrum->data->data[1]);
-    TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
 	
 	//for(i=1; i<=1; i++){
-    for (i=lower; i<=upper; ++i){
-	  data1re = freqData1->data[i].re/deltaT;
-	  data1im = freqData1->data[i].re/deltaT;
-	  data2re = freqData2->data[i].im/deltaT;
-	  data2im = freqData2->data[i].im/deltaT;	  	  	  
+    for (i=lower; i<=upper; ++i){  	  	  
       /* compute squared difference & 'chi-squared': */
       //diffRe       = data1re - data2re;         // Difference in real parts...
       //diffIm       = data1im - data2im;         // ...and imaginary parts, and...
       //diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-	  overlap  += ((TwoDeltaToverN * 2.0*(data1re*data2re+data1im*data2im)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	  overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
+		/ dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
 	return overlap;
 }

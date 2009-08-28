@@ -33,6 +33,7 @@
 void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	static LALStatus stat;								/* status structure */	
+	memset(&stat,0,sizeof(status));
 
 	IFOdata->modelDomain = timeDomain;
 	
@@ -404,6 +405,7 @@ void templateLAL(LALIFOData *IFOdata)
 /*************************************************************************************************/
 {
   static LALStatus status;
+  memset(&status,0,sizeof(status));
   static InspiralTemplate params;
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
