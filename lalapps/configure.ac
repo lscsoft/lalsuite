@@ -115,9 +115,7 @@ if test "x$condor" = "xtrue"; then
   esac
   AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
-fi
+
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_LIBTOOL
@@ -127,6 +125,27 @@ AC_CHECK_PROGS(DVIPS, dvips, echo)
 AC_CHECK_PROGS(BIBTEX, bibtex, echo)
 AM_PATH_PYTHON(2.4,,:)
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
+
+# check for supported mac os x version
+if test "x$build_vendor" = "xapple"; then
+  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  if test "x$SW_VERS" != "x"; then
+    AC_MSG_CHECKING([Mac OS X version])
+    MACOSX_VERSION=`$SW_VERS -productVersion`
+    AC_MSG_RESULT([$MACOSX_VERSION])
+  fi
+  case "$MACOSX_VERSION" in
+    10.0*|10.1*|10.2*|10.3*)
+      AC_MSG_ERROR([This version of Mac OS X is not supported])
+      ;;
+    10.4*|10.5*|10.6*)
+      # supported version
+    ;;
+    *)
+      AC_MSG_WARN([Unknown Mac OS X version])
+      ;;
+  esac
+fi
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
@@ -292,7 +311,17 @@ AM_CONDITIONAL(DATAFLOW, test x$metaio = xtrue)
 AM_CONDITIONAL(CFITSIO, test x$cfitsio = xtrue)
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
-dnl restore all static to ldflags
+# add gcc specific flags
+if test "$GCC" = yes; then
+  CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
+
+  # add mac os x specific flags
+  if test "x$MACOSX_VERSION" != "x"; then
+    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
+  fi
+fi
+
+# restore all static to ldflags
 if test "${allstatic}" = "true" ; then
   LDFLAGS="-all-static $LDFLAGS"
 fi
