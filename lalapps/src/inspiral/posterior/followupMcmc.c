@@ -1785,9 +1785,9 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       printf(" : injection:\n"); vectorPrint(&injectpar);
     }
     inject(DF, *coherentN, injecttemplate, &injectpar);
-     dumptemplates(DF, &injectpar, 
+    /* dumptemplates(DF, &injectpar, 
                      "/home/christian/temp/templatesF.txt", 
-                     "/home/christian/temp/templatesT.txt"); 
+                     "/home/christian/temp/templatesT.txt");*/ 
     vectorDispose(&injectpar);
   }
 
