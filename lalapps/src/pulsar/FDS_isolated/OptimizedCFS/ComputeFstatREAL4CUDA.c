@@ -35,6 +35,10 @@
 
 #include "ComputeFstatREAL4.h"
 
+#if defined(__GNUC__) && defined(WIN32)
+#include "cuda_win32_gcc_host_defines.h"
+#endif
+
 #include <cuda_runtime_api.h>
 
 /*---------- local DEFINES ----------*/

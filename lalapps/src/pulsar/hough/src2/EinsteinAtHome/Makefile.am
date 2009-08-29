@@ -9,8 +9,13 @@ lalappsDIR = @LALAPPS_DIR@
 CLEANFILES = 
 
 NVCC ?= nvcc
+if WIN32_CYGWIN_BUILD
+.cu.o:
+	$(NVCC) --compiler-options /GS- -c `cygpath -w $<` -o `cygpath -w $@`
+else
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
+endif
 
 ## start with some common defaults
 eah_sources = 	$(lalappsDIR)/lalapps.c \
