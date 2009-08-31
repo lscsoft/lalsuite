@@ -98,7 +98,7 @@ void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
 void init_sin_cos_LUT_REAL4 (void);
 
 #if USE_OPENCL_KERNEL_CPU
-#  include "kernel.cl"
+#include "FStatKernel.cl"
 #endif
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -845,6 +845,11 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   }
 
 
+#ifdef OPENCL_KERNEL_TEXT
+
+  char *cl_kernel_strings = OPENCL_KERNEL_TEXT;
+
+#else
 
   // read kernel source into memory
   LogPrintf(LOG_DEBUG, "In function %s: read kernel source into memory\n", fn);
@@ -876,6 +881,8 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   fclose (fd);
   cl_kernel_strings[bytes_read] = '\0'; // null-terminated string
 
+#endif
+
   // create the program
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL program\n", fn);
   program = clCreateProgramWithSource( *(clW->context),
@@ -883,7 +890,10 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                                        (const char **) &cl_kernel_strings, // program strings
                                        NULL, // string lengths
                                        &err); // error code
+
+#ifndef OPENCL_KERNEL_TEXT
   LALFree(cl_kernel_strings);                                     
+#endif
 
   if (program == (cl_program)0) {
     XLALPrintError( "%s: ERROR: failed to create OpenCL program\n", fn);
