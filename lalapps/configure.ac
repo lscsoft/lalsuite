@@ -313,7 +313,7 @@ AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
+  CFLAGS="$CFLAGS $lalapps_gcc_flags"
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then
