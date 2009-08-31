@@ -68,7 +68,23 @@
 extern "C" {
 #endif
 
-extern int global_cpu_type;
+/* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+extern void
+LocalComputeFstatHoughMap ( LALStatus *status,
+			    SemiCohCandidateList  *out,   /* output candidates */
+			    HOUGHPeakGramVector *pgV, /* peakgram vector */
+			    SemiCoherentParams *params);
 
 extern LALStatus *global_status;
 

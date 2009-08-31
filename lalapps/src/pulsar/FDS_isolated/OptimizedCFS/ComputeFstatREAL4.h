@@ -20,6 +20,14 @@
 #ifndef _COMPUTEFSTATREAL4_H
 #define _COMPUTEFSTATREAL4_H
 
+/* used in HierarchicalSearch.c */
+#ifdef USE_CUDA
+#define GPUREADY_DEFAULT 1
+#define INITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
+#define REARRANGE_SFT_DATA
+#endif /*  USE_CUDA */
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
