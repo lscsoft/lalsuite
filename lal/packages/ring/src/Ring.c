@@ -209,13 +209,13 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
 }
 
 /* <lalVerbatim file="RingCP"> */
-REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
+REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
 /* </lalVerbatim> */
 {
-  REAL4 Q2 = Qa*Qa;
-  REAL4 gQQ;
-  REAL4 gff;
-  REAL4 gQf;
+  REAL8 Q2 = Qa*Qa;
+  REAL8 gQQ;
+  REAL8 gff;
+  REAL8 gQf;
 
   gQQ = ( 3.0 + 16.0 * Q2 * Q2) / ( Q2 * ( 1.0 + 4.0 * Q2 ) * ( 1.0 + 4.0 * Q2 ) );
   gff = ( 3.0 + 8.0 * Q2) / ( fa * fa);
@@ -225,15 +225,15 @@ REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
 }
 
 /* <lalVerbatim file="RingCP"> */
-REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt )
+REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt )
 /* </lalVerbatim> */
 {
-  REAL4 gQQ, gff, gtt;
-  REAL4 gQf, gtf, gtQ;
-  REAL4 df, dQ, ds2;
-  REAL4 f = (fa+fb)/2.;
-  REAL4 Q = (Qa+Qb)/2.;
-  REAL4 Q2 = Q*Q;
+  REAL8 gQQ, gff, gtt;
+  REAL8 gQf, gtf, gtQ;
+  REAL8 df, dQ, ds2;
+  REAL8 f = (fa+fb)/2.;
+  REAL8 Q = (Qa+Qb)/2.;
+  REAL8 Q2 = Q*Q;
 
   gQQ = ( 1. + 28.*Q2*Q2 + 128.*Q2*Q2*Q2 + 64.*Q2*Q2*Q2*Q2) / ( 4. * Q2 * ( 1. + 6.*Q2 + 8.*Q2*Q2 )*( 1. + 6.*Q2 + 8.*Q2*Q2 ) );
   gff = ( 1. + 6.*Q2 + 16.*Q2*Q2) / ( 4. * f*f * ( 1. + 2.*Q2 ) );
@@ -250,6 +250,17 @@ REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt
   return ( ds2 );
 }
 
+REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_sq )
+{
+  REAL8 gtt;
+  REAL8 f = table->frequency;
+  REAL8 Q = table->quality;
+  REAL8 Q2 = Q*Q;
+
+  gtt = ( LAL_PI*LAL_PI * f*f ) * ( 1. + 4.*Q2 ) / ( Q2 );
+
+  return ( sqrt( lal_ring_ds_sq / gtt ) );
+}
 
 /* <lalVerbatim file="RingCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
