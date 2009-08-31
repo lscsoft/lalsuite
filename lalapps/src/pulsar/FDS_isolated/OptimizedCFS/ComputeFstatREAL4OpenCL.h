@@ -28,13 +28,6 @@
 #error Cannot use both USE_OPENCL_KERNEL and USE_OPENCL_KERNEL_CPU at the same time
 #endif
 
-/** ----- switch between different versions of XLALComputeFStatFreqBandVector() ----- */
-#ifdef USE_CUDA
-#define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCUDA
-#else
-#define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCPU
-#endif
-
 #if USE_OPENCL_KERNEL
 #ifdef _WIN32
 #include <CL/cl.h>
@@ -146,10 +139,10 @@ XLALComputeFStatFreqBandVectorOpenCL ( REAL4FrequencySeriesVector *fstatBandV,
 				       const MultiNoiseWeightsSequence *multiWeightsV,
 				       const MultiDetectorStateSeriesSequence *multiDetStatesV,
 				       UINT4 Dterms,
-				       ComputeFBufferREAL4V *cfvBuffer,
+				       ComputeFBufferREAL4V *cfvBuffer
 				       );
-int XLALInitCLWorkspace (CLWorkspace *clW, const MultiSFTVectorSequence *stackMultiSFT);
-void XLALDestroyCLWorkspace (CLWorkspace *clW, const MultiSFTVectorSequence *stackMultiSFT);
+int XLALInitCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
+void XLALDestroyCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
 
 #if USE_OPENCL_KERNEL
 void freeCLMemoryObject (cl_mem *memobj);

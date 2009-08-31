@@ -38,9 +38,6 @@ extern "C" {
 #define USE_OPENCL_KERNEL_CPU 0
 #endif
 #define USE_OPENCL (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-#if USE_OPENCL
-#include "ComputeFstatREAL4OpenCL.h"
-#endif
 
 /* Map functions in HierarchicalSearch.c for CUDA / OpenCL use */
 #ifdef USE_CUDA
@@ -204,6 +201,9 @@ void XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB );
 void XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb);
 void XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv);
 
+#if USE_OPENCL
+#include "ComputeFstatREAL4OpenCL.h"
+#endif
 
 #ifdef  __cplusplus
 }

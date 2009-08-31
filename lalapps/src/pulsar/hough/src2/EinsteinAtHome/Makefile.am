@@ -27,6 +27,9 @@ eah_sources = 	$(lalappsDIR)/lalapps.c \
 if USE_CUDA
     eah_sources += $(optHOME)/ComputeFstatREAL4CUDA.c $(optHOME)/FStatCUDA.cu
 endif
+if USE_OPENCL
+    eah_sources += $(optHOME)/ComputeFstatREAL4OpenCL.c $(optHOME)/FStatKernel.cl
+endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
 eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
