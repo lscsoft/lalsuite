@@ -46,13 +46,11 @@
 #include <lal/ComputeFstat.h>
 
 #include "ComputeFstatREAL4.h"
-#include "../hough/src2/HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- local DEFINES ----------*/
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
-
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */
 
@@ -66,6 +64,8 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- Global variables ----------*/
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
+CLWorkspace clW;
+
 
 /* global sin-cos lookup table */
 #define LUT_RES         	64      /* resolution of lookup-table */
@@ -105,15 +105,14 @@ void init_sin_cos_LUT_REAL4 (void);
  * Computes a vector of Fstatistic values for a number of frequency bins, for each segment
  */
 int
-XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**< [out] Vector of Fstat frequency-bands */
-                                   const PulsarDopplerParams *doppler,			/**< parameter-space point to compute F for */
-                                   const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-                                   const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
-                                   const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
-                                   UINT4 Dterms,					/**< number of Dirichlet kernel Dterms to use */
-                                   ComputeFBufferREAL4V *cfvBuffer,			/**< buffer quantities that don't need to be recomputed */
-                                   CLWorkspace *clW                                     /**< OpenCL workspace */
-                                   )
+XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV, 		/**< [out] Vector of Fstat frequency-bands */
+					 const PulsarDopplerParams *doppler,			/**< parameter-space point to compute F for */
+					 const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+					 const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
+					 const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
+					 UINT4 Dterms,						/**< number of Dirichlet kernel Dterms to use */
+					 ComputeFBufferREAL4V *cfvBuffer,			/**< buffer quantities that don't need to be recomputed */
+					 )
 {
   static const char *fn = "XLALComputeFStatFreqBandVector()";
 
@@ -605,7 +604,6 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   return XLAL_SUCCESS;
 
 } /* XLALComputeFStatFreqBandVector() */
-
 
 
 /** Host-bound 'driver' function for the central F-stat computation
