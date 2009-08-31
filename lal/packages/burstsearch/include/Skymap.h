@@ -74,7 +74,7 @@ void XLALSkymap2PlanConstruct(
     XLALSkymap2PlanType* plan
     );
 
-// Struct to store reuseable pre-computed quantities for a specific 
+// Struct to store reuseable pre-computed quantities for a specific
 // direction, set of detectors, and sample rate
 
 typedef struct
