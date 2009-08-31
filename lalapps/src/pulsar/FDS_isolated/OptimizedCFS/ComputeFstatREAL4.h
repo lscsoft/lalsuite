@@ -20,14 +20,6 @@
 #ifndef _COMPUTEFSTATREAL4_H
 #define _COMPUTEFSTATREAL4_H
 
-/* used in HierarchicalSearch.c */
-#ifdef USE_CUDA
-#define GPUREADY_DEFAULT 1
-#define INITIALIZE_COPROCESSOR_DEVICE
-#define UNINITIALIZE_COPROCESSOR_DEVICE
-#define REARRANGE_SFT_DATA
-#endif /*  USE_CUDA */
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -38,48 +30,35 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/ComputeFstat.h>
 
-/* ---------- exported defines and macros ---------- */
-/* used in OpenCL */
-#define NUM_IFOS 2           /**< number of detectors */
-#define MAX_NUM_SFTS 64      /**< max number of SFTs  */
-
-/* used in OpenCL */
+/* for OpenCL */
 #ifndef USE_OPENCL_KERNEL
 #define USE_OPENCL_KERNEL 0
 #endif
 #ifndef USE_OPENCL_KERNEL_CPU
 #define USE_OPENCL_KERNEL_CPU 0
 #endif
-
-#if (USE_OPENCL_KERNEL && USE_OPENCL_KERNEL_CPU)
-#error Cannot use both USE_OPENCL_KERNEL and USE_OPENCL_KERNEL_CPU at the same time
+#define USE_OPENCL (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
+#if USE_OPENCL
+#include "ComputeFstatREAL4OpenCL.h"
 #endif
+
+/* Map functions in HierarchicalSearch.c for CUDA / OpenCL use */
+#ifdef USE_CUDA
+#define GPUREADY_DEFAULT 1
+#define INITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
+#define REARRANGE_SFT_DATA
+#elif USE_OPENCL
+#define INITIALIZE_COPROCESSOR_DEVICE   clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT); 
+#define UNINITIALIZE_COPROCESSOR_DEVICE XLALDestroyCLWorkspace ( &clW, &stackMultiSFT );
+#define REARRANGE_SFT_DATA              XLALRearrangeSFTData ( &clW, &fstatVector );
+#endif /*  USE_CUDA */
 
 /** ----- switch between different versions of XLALComputeFStatFreqBandVector() ----- */
 #ifdef USE_CUDA
 #define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCUDA
 #else
 #define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCPU
-#endif
-
-/* used in OpenCL */
-#if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-#define INITIALIZE_COPROCESSOR_DEVICE   CLWorkspace clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT); 
-#define UNINITIALIZE_COPROCESSOR_DEVICE XLALDestroyCLWorkspace ( &clW, &stackMultiSFT );
-#define REARRANGE_SFT_DATA              XLALRearrangeSFTData ( &clW, &fstatVector );
-#endif
-
-#if USE_OPENCL_KERNEL
-#ifdef _WIN32
-#include <CL/cl.h>
-#endif
-#if defined(__APPLE__) || defined(__MACOSX)
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif 
-#else
-#define cl_mem void*
 #endif
 
 /* ---------- exported types ---------- */
@@ -189,76 +168,9 @@ typedef struct tagUINT4MemBuffer {
   cl_mem memobj;
 } UINT4MemBuffer;
 
-typedef struct tagREAL4MemBuffer {
-  UINT4 length;
-  REAL4 *data;
-  cl_mem memobj;
-} REAL4MemBuffer;
-
-typedef struct tagCOMPLEX8MemBuffer {
-  UINT4 length;
-  COMPLEX8 *data;
-  cl_mem memobj;
-} COMPLEX8MemBuffer;
-
-typedef struct tagREAL42MemBuffer {
-  UINT4 length;
-  REAL42 *data;
-  cl_mem memobj;
-} REAL42MemBuffer;
-
-typedef struct tagREAL44MemBuffer {
-  UINT4 length;
-  REAL44 *data;
-  cl_mem memobj;
-} REAL44MemBuffer;
-
-/** Struct to store OpenCL context: platform, queue, kernel etc.
- * It can be declared in a main rouine of an application, i.e. HierarchicalSearch, 
- * and then filled in in top-level function XLALComputeFStatFreqBandVector()
- */
-typedef struct {
-
-#if USE_OPENCL_KERNEL
-    cl_platform_id    *platform;
-    cl_device_id      *device;
-    cl_context        *context;
-    cl_command_queue  *cmd_queue;
-    cl_program        *program;
-    cl_kernel         *kernel;
-#endif
-
-    UINT4              numBins;       // <200
-    UINT4              numSegments;   // ~121
-    UINT4              numIFOs;       // 2
-    UINT4              maxNumSFTs;    // <64
-    UINT4              sftLen;        // ~254 -- can vary between the runs and between the calls
-
-    REAL4MemBuffer     Fstat;
-
-    COMPLEX8MemBuffer  multiSFTsFlat; /* flattened array for all SFT COMPLEX8 data */
-    UINT4MemBuffer     numSFTsV;      /* numSFTs for numSegments x numIFOs data slots */
-
-    REAL42MemBuffer    fkdot4;
-    REAL4MemBuffer     tSSB_DeltaT_int;
-    REAL4MemBuffer     tSSB_DeltaT_rem;
-    REAL4MemBuffer     tSSB_TdotM1;
-
-    REAL4MemBuffer     amcoe_a;
-    REAL4MemBuffer     amcoe_b;
-
-    REAL44MemBuffer    ABCInvD;
-
-} CLWorkspace;
-
-#endif
-
 /* ---------- exported global variables ---------- */
 extern const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 extern const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
-#if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-extern const CLWorkspace empty_CLWorkspace;
-#endif
 
 /* ---------- exported API prototypes ---------- */
 int
@@ -270,19 +182,6 @@ XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
 				 UINT4 Dterms,
 				 ComputeFBufferREAL4V *cfvBuffer
 				 );
-
-#if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-int
-XLALComputeFStatFreqBandVectorOpenCL ( REAL4FrequencySeriesVector *fstatBandV,
-				       const PulsarDopplerParams *doppler,
-				       const MultiSFTVectorSequence *multiSFTsV,
-				       const MultiNoiseWeightsSequence *multiWeightsV,
-				       const MultiDetectorStateSeriesSequence *multiDetStatesV,
-				       UINT4 Dterms,
-				       ComputeFBufferREAL4V *cfvBuffer,
-				       CLWorkspace *clW
-				       );
-#endif
 
 int
 XLALDriverFstatREAL4 ( REAL4 *Fstat,
@@ -331,14 +230,6 @@ void XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB );
 void XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb);
 void XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv);
 
-#if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-int XLALInitCLWorkspace (CLWorkspace *clW, const MultiSFTVectorSequence *stackMultiSFT);
-void XLALDestroyCLWorkspace (CLWorkspace *clW, const MultiSFTVectorSequence *stackMultiSFT);
-#endif
-
-#if USE_OPENCL_KERNEL
-void freeCLMemoryObject (cl_mem *memobj);
-#endif
 
 #ifdef  __cplusplus
 }
