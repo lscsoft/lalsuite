@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Reinhard Prix, Bernd Machenschalk, Anton Obukhov
+ * Copyright (C) 2009 Reinhard Prix
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
  * Copyright (C) 2005, 2006, 2007 Reinhard Prix
@@ -39,35 +39,18 @@
  */
 
 /*---------- INCLUDES ----------*/
+#define __USE_ISOC99 1
 #include <math.h>
 
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
-#include <lal/LogPrintf.h>
-
 
 #include "ComputeFstatREAL4.h"
+#include "../hough/src2/HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
-#ifdef EAH_OPTIMIZATION_FLAGS
-#include "LocalOptimizationFlags.h"
-#endif
-
-/*----- SIN/COS Lookup table code inserted here -----*/
-/* In particular this defines
-  - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
-  - a function void local_sin_cos_2PI_LUT_init(void) that inits the lookup tables
-  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x) that uses the
-    lookup tables to evaluate sin and cos values of 2*Pi*x
-  - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
-*/
-#include "sincos.ci"
-
 /*---------- local DEFINES ----------*/
-#define TRUE  (1==1)
-#define FALSE (1==0)
-
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -84,6 +67,12 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 /*---------- Global variables ----------*/
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
+/* global sin-cos lookup table */
+#define LUT_RES         	64      /* resolution of lookup-table */
+#define OO_LUT_RES		(1.0f / LUT_RES )
+
+static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
@@ -98,18 +87,17 @@ const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
 const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 const FcomponentsREAL4 empty_FcomponentsREAL4;
-
+const CLWorkspace empty_CLWorkspace;
 
 /*---------- internal prototypes ----------*/
-/* don't use finite() from win_lib.cpp here for performance reasons */
-#ifdef _MSC_VER
-#define finite _finite
-#else
 int finite(double x);
+void sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x);
+void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
+void init_sin_cos_LUT_REAL4 (void);
+
+#if USE_OPENCL_KERNEL_CPU
+#  include "kernel.cl"
 #endif
-
-void init_sin_cos_LUT_REAL4(void);
-
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
@@ -117,24 +105,52 @@ void init_sin_cos_LUT_REAL4(void);
  * Computes a vector of Fstatistic values for a number of frequency bins, for each segment
  */
 int
-XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		/**< [out] Vector of Fstat frequency-bands */
-                                      const PulsarDopplerParams *doppler,			/**< parameter-space point to compute F for */
-                                      const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-                                      const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
-                                      const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
-                                      UINT4 Dterms,					/**< number of Dirichlet kernel Dterms to use */
-                                      ComputeFBufferREAL4V *cfvBuffer			/**< buffer quantities that don't need to be recomputed */
-                                      )
+XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**< [out] Vector of Fstat frequency-bands */
+                                   const PulsarDopplerParams *doppler,			/**< parameter-space point to compute F for */
+                                   const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                                   const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
+                                   const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
+                                   UINT4 Dterms,					/**< number of Dirichlet kernel Dterms to use */
+                                   ComputeFBufferREAL4V *cfvBuffer,			/**< buffer quantities that don't need to be recomputed */
+                                   CLWorkspace *clW                                     /**< OpenCL workspace */
+                                   )
 {
   static const char *fn = "XLALComputeFStatFreqBandVector()";
+
+  const UINT4 CALL_XLALCoreFstatREAL4 = 0;
+#if USE_OPENCL_KERNEL
+  cl_int err, err_total;
+#endif
+  static int call_count = 0;
 
   UINT4 numBins, k;
   UINT4 numSegments, n;
   REAL8 f0, deltaF;
   REAL4 Fstat;
   REAL8 Freq0, Freq;
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s, maxs;
+
+  REAL8 constSftsDataDeltaF = multiSFTsV->data[0]->data[0]->data->deltaF;
+  REAL8 constSftsDataF0 = multiSFTsV->data[0]->data[0]->data->f0;
+
+  REAL4 constTsft = (REAL4)(1.0 / constSftsDataDeltaF);                       /* length of SFTs in seconds */
+  REAL4 constDFreq = (REAL4)constSftsDataDeltaF;
+  INT4 constFreqIndex0 = (UINT4)(constSftsDataF0 / constDFreq + 0.5);         /* index of first frequency-bin in SFTs */
+
+  /* increment the function call counter */
+  ++call_count;
+
+  /* report which flavour of function is called */
+  if (call_count == 1) {
+    if (USE_OPENCL_KERNEL) {
+      LogPrintf (LOG_DEBUG, "%s: using OpenCL call on GPUs. ", fn);
+    } else if (USE_OPENCL_KERNEL_CPU) {
+      LogPrintf (LOG_DEBUG, "%s: using OpenCL kernel as a regular function on CPU. ", fn);
+    }
+    if (CALL_XLALCoreFstatREAL4) {
+      LogPrintf (LOG_DEBUG, "calling function XLALCoreFstatREAL4", fn);
+    }
+    LogPrintf (LOG_DEBUG, "\n");
+  }
 
   /* check input consistency */
   if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !cfvBuffer ) {
@@ -173,6 +189,8 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
   }
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s;
   Freq = Freq0 = doppler->fkdot[0];
   fkdot4.FreqMain = (INT4)Freq0;
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
@@ -180,11 +198,17 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
   /* the remaining spins are simply down-cast to REAL4 */
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
+  UINT4 maxs;
   /* find highest non-zero spindown-entry */
   for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
     if ( fkdot4.fkdot[maxs] != 0 )
       break;
   fkdot4.spdnOrder = maxs;
+
+  PulsarSpins16 fkdot16;
+  fkdot16.s[0] = fkdot4.spdnOrder;
+  for (k=1; k<=fkdot4.spdnOrder; k++) fkdot16.s[k] = fkdot4.fkdot[k];
+
 
   /* make sure sin/cos lookup-tables are initialized */
   init_sin_cos_LUT_REAL4();
@@ -198,6 +222,9 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
        cfvBuffer->numSegments != numSegments
        )
     { /* no ==> compute and buffer */
+
+      LogPrintf(LOG_DEBUG, "In function %s: buffering quantities that don't need to be recomputed...\n", fn);
+
       SkyPosition skypos;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
@@ -224,8 +251,6 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
 
       for ( n=0; n < numSegments; n ++ )
         {
-          LALStatus status = empty_LALStatus;
-
           /* compute new SSB timings over all segments */
           if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -233,6 +258,7 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
+          LALStatus status = empty_LALStatus;
           LALGetMultiAMCoeffs ( &status, &(cfvBuffer->multiAMcoefV[n]), multiDetStatesV->data[n], skypos );
           if ( status.statusCode ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
@@ -247,12 +273,240 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
+          /*
+           * OpenCL: copy the data to the flat 1D memory buffers
+           */
+          {
+            MultiSSBtimesREAL4 *multiSSB4 = cfvBuffer->multiSSB4V[n];
+            MultiAMCoeffs *multiAMcoeff = cfvBuffer->multiAMcoefV[n];
+            SSBtimesREAL4 *tSSB;
+            AMCoeffs *amcoe;
+            UINT4 X, offset, len;
+            
+            for (X=0; X<clW->numIFOs; X++) {
+              offset = (n*clW->numIFOs + X) * clW->maxNumSFTs;
+              tSSB = multiSSB4->data[X];
+              amcoe = multiAMcoeff->data[X];
+              len = tSSB->DeltaT_int->length * sizeof(REAL4);
+
+              // 1D-index of an array element {n, X, s}:
+              // ind = (n*clW->numIFOs + X) * clW->maxNumSFTs + s
+               
+              memcpy (clW->tSSB_DeltaT_int.data + offset, tSSB->DeltaT_int->data, len);
+              memcpy (clW->tSSB_DeltaT_rem.data + offset, tSSB->DeltaT_rem->data, len);
+              memcpy (clW->tSSB_TdotM1.data + offset, tSSB->TdotM1->data, len);
+
+              memcpy (clW->amcoe_a.data + offset, amcoe->a->data, len);
+              memcpy (clW->amcoe_b.data + offset, amcoe->b->data, len);
+            }
+
+            clW->ABCInvD.data[n].Ad = multiAMcoeff->Mmunu.Ad;
+            clW->ABCInvD.data[n].Bd = multiAMcoeff->Mmunu.Bd;
+            clW->ABCInvD.data[n].Cd = multiAMcoeff->Mmunu.Cd;
+            clW->ABCInvD.data[n].InvDd = 1.0f / multiAMcoeff->Mmunu.Dd;
+            
+          }
+
         } /* for n < numSegments */
+
+        /* 
+         * OpenCL: initialize the array of REAL4-split frequencies
+         */
+        Freq = Freq0;	
+      
+        for (k=0; k<clW->numBins; k++) {
+          clW->fkdot4.data[k].FreqMain = (INT4)Freq;
+          clW->fkdot4.data[k].fkdot0 = (REAL4)( Freq - (REAL8)fkdot4.FreqMain );
+          Freq += deltaF;
+        }
+
+#if USE_OPENCL_KERNEL
+        err_total = CL_SUCCESS;
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->fkdot4.memobj, 
+                                     CL_TRUE, 0, clW->numBins * sizeof(REAL42),
+                                     clW->fkdot4.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+        
+
+        /*
+         * OpenCL: copy the buffers to the device memory
+         */
+        UINT4 l2 = clW->numSegments * clW->numIFOs;
+        UINT4 l3 = l2 * clW->maxNumSFTs;
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue),           // which queue
+                                     clW->tSSB_DeltaT_int.memobj, // destination device pointer
+                                     CL_TRUE,                     // blocking write?
+                                     0,                           // offset
+                                     l3 * sizeof(REAL4),          // size in bytes
+                                     clW->tSSB_DeltaT_int.data,   // source pointer
+                                     0,                           // cl_uint num_events_in_wait_list
+                                     NULL,                        // const cl_event *event_wait_list
+                                     NULL);                       // cl_event *event
+        err_total += (err-CL_SUCCESS);
+
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->tSSB_DeltaT_rem.memobj, 
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
+                                     clW->tSSB_DeltaT_rem.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->tSSB_TdotM1.memobj, 
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
+                                     clW->tSSB_TdotM1.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->amcoe_a.memobj, 
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
+                                     clW->amcoe_a.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->amcoe_b.memobj, 
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
+                                     clW->amcoe_b.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+
+        err = clEnqueueWriteBuffer ( *(clW->cmd_queue), clW->ABCInvD.memobj, 
+                                     CL_TRUE, 0, l2 * sizeof(REAL44),          
+                                     clW->ABCInvD.data, 0, NULL, NULL);                       
+        err_total += (err-CL_SUCCESS);
+
+        if (err_total != CL_SUCCESS) {
+          XLALPrintError ("%s: Error copying data to memory buffer, error code = %d\n", fn, err );
+          XLALDestroyCLWorkspace (clW, multiSFTsV);
+          XLAL_ERROR ( fn, XLAL_EINVAL );
+        }
+#endif // #if USE_OPENCL_KERNEL
 
     } /* if we could NOT reuse previously buffered quantites */
 
+#if USE_OPENCL_KERNEL  
+  /*
+   * OpenCL: set kernel arguments
+   */
+  err_total = CL_SUCCESS;
+  err = clSetKernelArg(*(clW->kernel),       // wchich kernel      
+                       0,                    // argument index
+                       sizeof(cl_mem),       // argument data size 
+                       (void *)&(clW->Fstat.memobj) ); // argument data
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 1, sizeof(cl_mem), (void *)&(clW->multiSFTsFlat.memobj)); 
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 2, sizeof(cl_mem), (void *)&(clW->numSFTsV.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 3, sizeof(UINT4), (void *)&(clW->sftLen) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 4, sizeof(REAL4), (void *)&constTsft);
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 5, sizeof(REAL4), (void *)&constDFreq);
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 6, sizeof(INT4), (void *)&constFreqIndex0);
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 7, sizeof(cl_mem), (void *)&(clW->fkdot4.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 8, sizeof(PulsarSpins16), (void *)&(fkdot16) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 9, sizeof(cl_mem), (void *)&(clW->tSSB_DeltaT_int.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 10, sizeof(cl_mem), (void *)&(clW->tSSB_DeltaT_rem.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 11, sizeof(cl_mem), (void *)&(clW->tSSB_TdotM1.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 12, sizeof(cl_mem), (void *)&(clW->amcoe_a.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 13, sizeof(cl_mem), (void *)&(clW->amcoe_b.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 14, sizeof(cl_mem), (void *)&(clW->ABCInvD.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clW->kernel), 15, sizeof(FcomponentsREAL4)*clW->numIFOs*clW->maxNumSFTs, NULL );
+  err_total += (err-CL_SUCCESS);
+
+  if (err_total != CL_SUCCESS) {
+    XLALPrintError ("%s: Error while setting the kernel arguments, error code = %d\n", fn, err );
+    XLALDestroyCLWorkspace (clW, multiSFTsV);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+
+  /*
+   * OpenCL: enqueue kernel for execution
+   * block-thread geometry: (numSegments,numBins,1) x (maxNumSFTs, numIFOs(2), 1)
+   */
+  LogPrintf(LOG_DEBUG, "In function %s: launching the kernel...\n", fn);
+
+  size_t local_work_size[2], global_work_size[2];
+  local_work_size[0] = clW->maxNumSFTs;
+  local_work_size[1] = clW->numIFOs;
+  global_work_size[0] = local_work_size[0] * clW->numSegments;
+  global_work_size[1] = local_work_size[1] * numBins;
+    
+  err = clEnqueueNDRangeKernel(*(clW->cmd_queue), *(clW->kernel),
+                               2, // Work dimensions
+                               NULL, // must be NULL (work offset)
+                               global_work_size,  // global work items grid dimension
+                               local_work_size,   // local work group size
+                               0, // no events to wait on
+                               NULL, // event list
+                               NULL); // event for this kernel
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error enqueueing the kernel, error code = %d\n", fn, err );
+    XLALDestroyCLWorkspace (clW, multiSFTsV);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /*
+   * Read output memory buffer after the kernel call
+   */
+  err = clEnqueueReadBuffer( *(clW->cmd_queue),  // which queue
+                             clW->Fstat.memobj,  // source device memory buffer
+                             CL_TRUE,            // blocking read
+                             0,                  // offset
+                             sizeof(REAL4)*clW->Fstat.length, // size
+                             clW->Fstat.data,    // pointer
+                             0, NULL, NULL);     // events
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error reading output buffer, error code = %d\n", fn, err );
+    XLALDestroyCLWorkspace (clW, multiSFTsV);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /*
+   * Store the results in fstatBandV
+   */
+  for ( n = 0; n < numSegments; n ++ ) {
+    for ( k = 0; k < numBins; k++) {
+      fstatBandV->data[n].data->data[k] = clW->Fstat.data[k * numSegments + n];
+    }
+  }
+
+
+#endif // #if USE_OPENCL_KERNEL
 
   /* loop over all segments and compute FstatVector over frequencies for each */
+
+#if USE_OPENCL_KERNEL_CPU
+  FcomponentsREAL4 *FaFb_components;
+  if ( (FaFb_components = XLALCalloc ( clW->numIFOs * clW->maxNumSFTs, sizeof(FcomponentsREAL4) )) == NULL ) {
+    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+    XLALDestroyCLWorkspace (clW, multiSFTsV);
+    XLALPrintError ( "%s: memory allocation for FaFb_components failed\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+#endif
+
   for ( n = 0; n < numSegments; n ++ )
     {
 
@@ -267,27 +521,92 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
 
           /* call the core function to compute one multi-IFO F-statistic */
 
-          /* >>>>> this function could run on the GPU device <<<<< */
-          XLALCoreFstatREAL4 ( &Fstat, &fkdot4, multiSFTsV->data[n], cfvBuffer->multiSSB4V[n], cfvBuffer->multiAMcoefV[n], Dterms );
+          if (CALL_XLALCoreFstatREAL4) {
+	      /* >>>>> this function could run on the GPU device <<<<< */
+	      XLALCoreFstatREAL4 ( &Fstat, &fkdot4, multiSFTsV->data[n], cfvBuffer->multiSSB4V[n], cfvBuffer->multiAMcoefV[n], Dterms );
 
-          if ( xlalErrno ) {
-            XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError ("%s: XLALCoreFstatREAL4() failed with errno = %d in loop n=%d, k=%d.\n", fn, xlalErrno, n, k );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+	      if ( xlalErrno ) {
+		XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+		XLALPrintError ("%s: XLALCoreFstatREAL4() failed with errno = %d in loop n=%d, k=%d.\n", fn, xlalErrno, n, k );
+		XLAL_ERROR ( fn, XLAL_EFUNC );
+	      }
+
+	      fstatBandV->data[n].data->data[k] = Fstat;
+
+	      /* increase frequency by deltaF */
+	      Freq += deltaF;
           }
 
-          fstatBandV->data[n].data->data[k] = Fstat;
+#if USE_OPENCL_KERNEL_CPU
+          UINT4 X, alpha;
+          for (X = 0; X < clW->numIFOs; X++ ) {
+            for (alpha = 0; alpha < clW->maxNumSFTs; alpha++ ) {
+              OpenCLComputeFstatFaFb(clW->Fstat.data, 
+                                     n, // curSegment
+                                     k, // curBin
+                                     clW->maxNumSFTs,
+                                     alpha,
+                                     X,
+                                     numSegments,
+                                     clW->multiSFTsFlat.data,
+                                     clW->numSFTsV.data, 
+                                     clW->sftLen, 
+                                     constTsft, 
+                                     constDFreq, 
+                                     constFreqIndex0,
+                                     clW->fkdot4.data,
+                                     fkdot16,
+                                     clW->tSSB_DeltaT_int.data,
+                                     clW->tSSB_DeltaT_rem.data,
+                                     clW->tSSB_TdotM1.data,
+                                     clW->amcoe_a.data,
+                                     clW->amcoe_b.data,
+                                     clW->ABCInvD.data,
+                                     FaFb_components);
+              
+              if (alpha) {
+                FaFb_components[X * clW->maxNumSFTs].Fa.re += FaFb_components[X * clW->maxNumSFTs + alpha].Fa.re;
+                FaFb_components[X * clW->maxNumSFTs].Fa.im += FaFb_components[X * clW->maxNumSFTs + alpha].Fa.im;
+                FaFb_components[X * clW->maxNumSFTs].Fb.re += FaFb_components[X * clW->maxNumSFTs + alpha].Fb.re;
+                FaFb_components[X * clW->maxNumSFTs].Fb.im += FaFb_components[X * clW->maxNumSFTs + alpha].Fb.im;
+              }
 
-          /* increase frequency by deltaF */
-          Freq += deltaF;
+            }
+          }
+
+
+          REAL4 Fa_re = (FaFb_components[0].Fa.re + FaFb_components[clW->maxNumSFTs].Fa.re) * OOTWOPI_FLOAT;
+          REAL4 Fa_im = (FaFb_components[0].Fa.im + FaFb_components[clW->maxNumSFTs].Fa.im) * OOTWOPI_FLOAT;
+          REAL4 Fb_re = (FaFb_components[0].Fb.re + FaFb_components[clW->maxNumSFTs].Fb.re) * OOTWOPI_FLOAT;
+          REAL4 Fb_im = (FaFb_components[0].Fb.im + FaFb_components[clW->maxNumSFTs].Fb.im) * OOTWOPI_FLOAT;
+
+          REAL4 Ad =  clW->ABCInvD.data[n].Ad;
+          REAL4 Bd =  clW->ABCInvD.data[n].Bd;
+          REAL4 Cd =  clW->ABCInvD.data[n].Cd;
+          REAL4 Dd_inv =  clW->ABCInvD.data[n].InvDd;
+
+
+          clW->Fstat.data[k * numSegments + n] = Dd_inv * ( Bd * (SQ(Fa_re) + SQ(Fa_im) )
+                                               + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                                               - 2.0f * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                                               );
+          fstatBandV->data[n].data->data[k] = clW->Fstat.data[k * numSegments + n];
+
+#endif // #if USE_OPENCL_KERNEL_CPU
 
         } /* for k < numBins */
 
     } /* for n < numSegments */
 
+#if USE_OPENCL_KERNEL_CPU
+  LALFree (FaFb_components);
+#endif
+
   return XLAL_SUCCESS;
 
 } /* XLALComputeFStatFreqBandVector() */
+
+
 
 /** Host-bound 'driver' function for the central F-stat computation
  *  of a single F-stat value for one parameter-space point.
@@ -310,16 +629,13 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
   MultiSSBtimesREAL4 *multiSSB4 = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
-  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
-  UINT4 s, maxs;
-  UINT4 numIFOs;
 
   /* check input consistency */
   if ( !Fstat || !doppler || !multiSFTs || !multiDetStates || !cfBuffer ) {
     XLALPrintError("%s: Illegal NULL pointer input.\n", fn );
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
-  numIFOs = multiSFTs->length;
+  UINT4 numIFOs = multiSFTs->length;
   if ( multiDetStates->length != numIFOs ) {
     XLALPrintError("%s: inconsistent number of IFOs in SFTs (%d) and detector-states (%d).\n", fn, numIFOs, multiDetStates->length);
     XLAL_ERROR (fn, XLAL_EINVAL );
@@ -340,9 +656,6 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
     }
   else
     {
-      SkyPosition skypos;
-      LALStatus status = empty_LALStatus;
-
       /* compute new SSB timings */
       if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
         XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
@@ -350,6 +663,8 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
       }
 
       /* compute new AM-coefficients */
+      SkyPosition skypos;
+      LALStatus status = empty_LALStatus;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
@@ -380,6 +695,8 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s;
   fkdot4.FreqMain = (INT4)doppler->fkdot[0];
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
   fkdot4.fkdot[0] = (REAL4)( doppler->fkdot[0] - (REAL8)fkdot4.FreqMain );
@@ -387,6 +704,7 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
   for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
     fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
   /* find largest non-zero spindown order */
+  UINT4 maxs;
   for ( maxs = PULSAR_MAX_SPINS - 1;  maxs > 0 ; maxs --  )
     if ( doppler->fkdot[maxs] != 0 )
       break;
@@ -421,14 +739,12 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
                   const MultiSFTVector *multiSFTs,	/**< [in] input multi-IFO data ("SFTs") */
                   MultiSSBtimesREAL4 *multiSSB4,	/**< [in] multi-IFO SSB-timings in REAL4-safe format */
                   MultiAMCoeffs *multiAMcoef,		/**< [in] multi-IFO antenna-pattern functions */
-                  UINT4 Dterms				/**< [in] parameter: number of Dterms to use in Dirichlet kernel */
-                  )
+                  UINT4 Dterms)				/**< [in] parameter: number of Dterms to use in Dirichlet kernel */
 {
   static const char *fn = "XLALCoreFstatREAL4()";
 
   UINT4 numIFOs, X;
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
-  REAL4 Ad, Bd, Cd, Dd_inv;
 
 #ifndef LAL_NDEBUG
   /* check input consistency */
@@ -487,10 +803,10 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
   /* ----- compute final Fstatistic-value ----- */
 
   /* convenient shortcuts */
-  Ad = multiAMcoef->Mmunu.Ad;
-  Bd = multiAMcoef->Mmunu.Bd;
-  Cd = multiAMcoef->Mmunu.Cd;
-  Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
+  REAL4 Ad = multiAMcoef->Mmunu.Ad;
+  REAL4 Bd = multiAMcoef->Mmunu.Bd;
+  REAL4 Cd = multiAMcoef->Mmunu.Cd;
+  REAL4 Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
@@ -537,12 +853,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   REAL4 norm = OOTWOPI_FLOAT;
 
-  REAL4 dFreq;
-  REAL4 f0;
-  REAL4 df;
-  REAL4 tau;
-  REAL4 Freq;
-
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
@@ -566,14 +876,14 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   numSFTs = sfts->length;
   Tsft = (REAL4)( 1.0 / sfts->data[0].deltaF );
 
-  dFreq = sfts->data[0].deltaF;
+  REAL4 dFreq = sfts->data[0].deltaF;
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
-  f0 = fkdot4->FreqMain;
-  df = fkdot4->fkdot[0];
-  tau = 1.0f / df;
-  Freq = f0 + df;
+  REAL4 f0 = fkdot4->FreqMain;
+  REAL4 df = fkdot4->fkdot[0];
+  REAL4 tau = 1.0f / df;
+  REAL4 Freq = f0 + df;
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -616,8 +926,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
         REAL4 phi_alpha_rem;
         REAL4 TdotM1;		/* defined as Tdot_al - 1 */
-        REAL4 T0rem;
-        REAL4 tmp;
 
         /* 1st oder: s = 0 */
         TdotM1 = *TdotM1_al;
@@ -626,7 +934,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         deltaT = T0 + dT;
 
         /* phi_alpha = f * Tas; */
-        T0rem = fmodf ( T0, tau );
+        REAL4 T0rem = fmodf ( T0, tau );
         phi_alpha_rem = f0 * dT;
         phi_alpha_rem += T0rem * df;
         phi_alpha_rem += df * dT;
@@ -647,13 +955,11 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
         Dphi_alpha_int *= Tsft;
 	Dphi_alpha_rem *= Tsft;
 
-        tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
-	lambda_alpha = tmp - phi_alpha_rem;
+        REAL4 tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
+	lambda_alpha = phi_alpha_rem - tmp;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	/* the sin/cos LUT calculations are woven into the hotloop for performance reasons
-	   sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
-	*/
+	sin_cos_2PI_LUT_REAL4 ( &imagQ, &realQ, - lambda_alpha );
 
         kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
 	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
@@ -676,10 +982,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      /* the sin/cos LUT calculations are woven into the hotloop for performance reasons
-	 sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
-	 c_alpha -= 1.0f;
-      */
+      sin_cos_2PI_LUT_REAL4 ( &s_alpha, &c_alpha, kappa_star );
+      c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
@@ -698,27 +1002,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-#ifdef __GNUC__
-	/** somehow the branch prediction of gcc-4.1.2 terribly failes
-	    with the current case distinction in the hot-loop,
-	    having a severe impact on runtime of the E@H Linux App.
-	    So let's allow to give gcc a hint which path has a higher probablility */
-      if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
-#else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
-#endif
-
-#ifdef AUTOVECT_HOTLOOP
-#include "hotloop_autovect.ci"
-#elif __ALTIVEC__
-#include "hotloop_altivec.ci"
-#elif __SSE__
-#ifdef _MSC_VER
-#include "hotloop_sse_msc.ci"
-#else
-#include "hotloop_precalc.ci"
-#endif /* MSC_VER */
-#else
 	{
 	  /* improved hotloop algorithm by Fekete Akos:
 	   * take out repeated divisions into a single common denominator,
@@ -736,17 +1020,16 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	    {
 	      Xalpha_l ++;
 
-	      pn = pn - 1.0f; 				/* p_(n+1) */
+	      pn = pn - 1.0f; 			/* p_(n+1) */
 	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
-	      qn *= pn;					/* q_(n+1) */
+	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
-	  {
-	    REAL4 qn_inv = 1.0f / qn;
-	    U_alpha = Sn * qn_inv;
-	    V_alpha = Tn * qn_inv;
-	  }
+          REAL4 qn_inv = 1.0f / qn;
+
+	  U_alpha = Sn * qn_inv;
+	  V_alpha = Tn * qn_inv;
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
@@ -754,34 +1037,13 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  }
 #endif
 
-	  {
-	    REAL8 kstar8 = kappa_star;
-	    SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kstar8);
-	  }
-	  c_alpha -= 1.0f;
-
- 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
- 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-
-	  {
-	    REAL8 _lambda_alpha = lambda_alpha;
-	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-	  }
+	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 
 	} /* if |remainder| > LD_SMALL4 */
-
-#endif /* hotloop variant */
-
       else
 	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	  UINT4 ind0;
-
-	  /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
-	  REAL8 _lambda_alpha = lambda_alpha;
-	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
@@ -936,7 +1198,7 @@ XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**
  success:
   return ret;
 
-} /* LALGetMultiSSBtimes() */
+} /* XLALGetMultiSSBtimesREAL4() */
 
 
 
@@ -1052,6 +1314,454 @@ XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 
 
 
+/** Initialize OpenCL workspace
+ * Create memory objects associated with OpenCL context
+ * and memory buffers */
+int
+XLALInitCLWorkspace ( CLWorkspace *clW,  
+                      const MultiSFTVectorSequence *stackMultiSFT )
+{
+  static const char *fn = "XLALInitCLWorkspace()";
+  static const char *cl_kernel_filepath = "/Users/oleg/lalsuite/lalapps/src/pulsar/FDS_isolated/kernel.cl"; //TODO: do something with hardcoded kernel path
+
+#if USE_OPENCL_KERNEL  
+  cl_int err, err_total;
+  const cl_uint max_num_platforms = 3;
+  static cl_platform_id platforms[3];
+  cl_uint num_platforms;
+  char strInfo[100];
+  static cl_context context;
+  const cl_uint max_num_devices = 4; 
+  cl_device_id devices[4];
+  cl_uint num_devices;
+  static cl_command_queue cmd_queue;
+  static cl_program program;
+  static cl_kernel kernel;
+
+  clW->platform  = NULL;
+  clW->device    = NULL;
+  clW->context   = NULL;
+  clW->cmd_queue = NULL;
+  clW->program   = NULL;
+  clW->kernel    = NULL;
+#endif
+
+  clW->multiSFTsFlat.data = NULL;
+  clW->numSFTsV.data = NULL;
+  clW->tSSB_DeltaT_int.data = NULL;
+  clW->tSSB_DeltaT_rem.data = NULL; 
+  clW->tSSB_TdotM1.data = NULL; 
+  clW->amcoe_a.data = NULL;
+  clW->amcoe_b.data = NULL;
+  clW->ABCInvD.data = NULL;
+  clW->Fstat.data = NULL;
+
+  LogPrintf(LOG_DEBUG, "In function %s: initializing OpenCL workspace\n", fn);
+
+#if USE_OPENCL_KERNEL
+  // query the platform ID
+  LogPrintf(LOG_DEBUG, "In function %s: query the platform ID\n", fn);
+  clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
+  clW->platform = &(platforms[0]);
+
+  // query OpenCL platform info
+  LogPrintf(LOG_DEBUG, "In function %s: query the OpenCL platform info\n", fn);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_PROFILE, 100, strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo.\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  // create OpenCL GPU context 
+  LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
+  context = clCreateContextFromType(0, CL_DEVICE_TYPE_GPU, NULL, NULL, NULL); 
+  if (context == (cl_context)0) {
+      XLALPrintError ("%s: Failed to create context\n", fn );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->context = &context;
+
+  // get the list of available GPU devices
+  LogPrintf(LOG_DEBUG, "In function %s: get the list of all available GPU devices\n", fn);
+  err = clGetDeviceIDs( *(clW->platform),
+                    CL_DEVICE_TYPE_GPU,
+                    max_num_devices,
+                    devices,
+                    &num_devices);
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error querying number of OpenCL devices\n", fn );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->device = &(devices[0]);
+
+  // create a command-queue
+  LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);
+  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device),  
+                                   CL_QUEUE_PROFILING_ENABLE, 
+                                   &err);
+  if (cmd_queue == (cl_command_queue)0) {
+      XLALPrintError ("%s: Failed to create command queue\n", fn );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->cmd_queue = &cmd_queue;
+
+#endif // #if USE_OPENCL_KERNEL
+
+  // allocate flattened memory buffers on host
+
+  // WARNING: HARDCODED VALUES FOR NOW (RUN S5R4)
+  // TODO: include proper assertions here to ensure correctness
+  clW->numSegments = stackMultiSFT->length;
+  clW->numIFOs = NUM_IFOS;
+  clW->maxNumSFTs = MAX_NUM_SFTS;
+  clW->sftLen = stackMultiSFT->data[0]->data[0]->data[0].data->length;
+  clW->numBins = 200;
+
+  // allocate large buffer arrays on a host
+  LogPrintf(LOG_DEBUG, "In function %s: allocate 1D buffer arrays\n", fn);
+  UINT4 l2 = clW->numSegments * clW->numIFOs;
+  UINT4 l3 = l2 * clW->maxNumSFTs;
+  UINT4 l4 = l3 * clW->sftLen;
+
+  clW->multiSFTsFlat.length = l4;
+  clW->multiSFTsFlat.data = XLALMalloc( sizeof(COMPLEX8) * l4);
+
+  clW->numSFTsV.length = l2;
+  clW->numSFTsV.data = XLALMalloc( sizeof(UINT4) * l2 );
+
+  clW->tSSB_DeltaT_int.length = l3;
+  clW->tSSB_DeltaT_int.data = XLALMalloc( sizeof(REAL4) * l3 );
+
+  clW->tSSB_DeltaT_rem.length = l3;
+  clW->tSSB_DeltaT_rem.data = XLALMalloc( sizeof(REAL4) * l3 );
+
+  clW->tSSB_TdotM1.length = l3;
+  clW->tSSB_TdotM1.data = XLALMalloc( sizeof(REAL4) * l3 );
+
+  clW->amcoe_a.length = l3;
+  clW->amcoe_a.data = XLALMalloc( sizeof(REAL4) * l3 );
+
+  clW->amcoe_b.length = l3;
+  clW->amcoe_b.data = XLALMalloc( sizeof(REAL4) * l3 );
+
+  clW->ABCInvD.length = l2;
+  clW->ABCInvD.data = XLALMalloc( sizeof(REAL44) * l2 );
+
+  // clW->fkdot4: initialized in RearrangeSFTData
+  // clW->Fstat:  initialized in RearrangeSFTData
+
+  if ( clW->multiSFTsFlat.data == NULL || clW->numSFTsV.data == NULL
+       || clW->tSSB_DeltaT_int.data == NULL || clW->tSSB_DeltaT_rem.data == NULL || clW->tSSB_DeltaT_rem.data == NULL 
+       || clW->amcoe_a.data == NULL || clW->amcoe_b.data == NULL ) {
+      XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  } 
+  
+  { // SFT data rearrangement block
+    UINT4 n, X, s;
+
+    MultiSFTVector *multiSFT;
+    SFTVector *sFT;
+    COMPLEX8Vector *cV;
+    COMPLEX8 *ptrData;
+    //TODO: state your assertions here!!!
+    /* Traverse stackMultiSFT and do the following:
+     * 1. copy data segments sequentially to multiSFTsFlat;
+     * 2. deallocate data segments in stackMultiSFT;
+     * 3. repoint the data pointers to the middle of multiSFTsFlat.
+     *
+     * Index of a data element at position m in SFT s, detector X and segment n, is:
+     * ind = m + cV->sftLen * (s + cV->maxNumSFTs * (X + cV->numIFOs * n))
+     */
+    LogPrintf(LOG_DEBUG, "In function %s: flatten the stackMultiSFT data structure\n", fn);
+    ptrData = clW->multiSFTsFlat.data;
+
+    if (clW->numSegments != stackMultiSFT->length) {
+      XLALPrintError ("%s: internal error: inconsistent clW->numSegments\n", fn);
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+    for (n=0; n<stackMultiSFT->length; n++) {
+      multiSFT = stackMultiSFT->data[n];
+      if (clW->numIFOs != multiSFT->length) {
+        XLALPrintError ("%s: internal error: inconsistent clW->numIFOs for segment %d\n", fn, n);
+        XLALDestroyCLWorkspace (clW, stackMultiSFT);
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+      }
+      for (X=0; X<multiSFT->length; X++) {
+        sFT = multiSFT->data[X];
+        if (clW->maxNumSFTs < sFT->length) {
+          XLALPrintError ("%s: internal error: number of SFTs exceeds MAX_NUM_SFTS for segment %d, detector %d\n", fn, n, X);
+          XLALDestroyCLWorkspace (clW, stackMultiSFT);
+          XLAL_ERROR ( fn, XLAL_EINVAL );
+        }
+        clW->numSFTsV.data[n * multiSFT->length + X] = sFT->length;
+        for (s=0; s<sFT->length; s++) { 
+          cV = sFT->data[s].data;
+          if (clW->sftLen != cV->length) {
+            XLALPrintError ("%s: internal error: inconsistent SFT length in segment=%d, detector=%d, SFT %d\n", fn, n, X, s);
+            XLALDestroyCLWorkspace (clW, stackMultiSFT);
+            XLAL_ERROR ( fn, XLAL_EINVAL );
+          }
+          memcpy (ptrData, cV->data, cV->length * sizeof(COMPLEX8));
+          
+          LALFree (cV->data);
+          cV->data = ptrData;
+          ptrData += clW->sftLen;
+        }
+        ptrData += (clW->maxNumSFTs - sFT->length) * clW->sftLen;
+      }
+    }
+  } // end of SFT data rearrangement block
+
+#if USE_OPENCL_KERNEL  
+  // allocate buffer arrays on the device
+  // only SFT array is copied to the device; the rest of the arrays are created empty and will be filled later
+  LogPrintf(LOG_DEBUG, "In function %s: allocate OpenCL device memory buffers\n", fn);
+  err_total = CL_SUCCESS;
+  clW->multiSFTsFlat.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(COMPLEX8) * clW->multiSFTsFlat.length, clW->multiSFTsFlat.data, &err);            
+  err_total += (err-CL_SUCCESS);
+
+  clW->numSFTsV.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(UINT4) * clW->numSFTsV.length, clW->numSFTsV.data, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->tSSB_DeltaT_int.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL4) * clW->tSSB_DeltaT_int.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->tSSB_DeltaT_rem.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL4) * clW->tSSB_DeltaT_rem.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->tSSB_TdotM1.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL4) * clW->tSSB_TdotM1.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->amcoe_a.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL4) * clW->amcoe_a.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->amcoe_b.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL4) * clW->amcoe_b.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  clW->ABCInvD.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL44) * clW->ABCInvD.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
+  if (err_total != CL_SUCCESS) {
+      XLALPrintError ("%s: Error creating memory buffer for ABCInvD, error code = %d\n", fn, err );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+
+
+  // read kernel source into memory
+  LogPrintf(LOG_DEBUG, "In function %s: read kernel source into memory\n", fn);
+
+  FILE *fd;
+  char *cl_kernel_strings;
+  const size_t max_kernel_bytes = 50000;
+  size_t bytes_read;
+
+  if ( ( cl_kernel_strings  = XLALMalloc( max_kernel_bytes * sizeof(char))) == NULL ) {
+      XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
+      XLALDestroyCLWorkspace (clW, stackMultiSFT );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  if((fd=fopen(cl_kernel_filepath, "rb"))==NULL) {
+    XLALPrintError ("%s: ERROR: Cannot open OpenCL kernel file at location \"%s\".\n", fn, cl_kernel_filepath );
+    XLALDestroyCLWorkspace (clW, stackMultiSFT );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  fread (cl_kernel_strings, max_kernel_bytes, 1, fd);
+  if (! feof(fd) || ferror(fd)) {
+    XLALPrintError ("%s: ERROR: Cannot read OpenCL kernel file at location \"%s\".\n", fn, cl_kernel_filepath );
+    XLALDestroyCLWorkspace (clW, stackMultiSFT );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  bytes_read = ftell(fd);
+  fclose (fd);
+  cl_kernel_strings[bytes_read] = '\0'; // null-terminated string
+
+  // create the program
+  LogPrintf(LOG_DEBUG, "In function %s: create OpenCL program\n", fn);
+  program = clCreateProgramWithSource( *(clW->context),
+                                       1, // string count
+                                       (const char **) &cl_kernel_strings, // program strings
+                                       NULL, // string lengths
+                                       &err); // error code
+  LALFree(cl_kernel_strings);                                     
+
+  if (program == (cl_program)0) {
+    XLALPrintError( "%s: ERROR: failed to create OpenCL program\n", fn);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  } 
+  clW->program = &program;
+
+  // build the program
+  LogPrintf(LOG_DEBUG, "In function %s: build OpenCL program...\n", fn);
+  err = clBuildProgram(*(clW->program),
+                       0,     // num devices in device list
+                       NULL,  // device list
+                       NULL,  // options
+                       NULL,  // notifier callback function ptr
+                       NULL); // error code
+  if (err != CL_SUCCESS) {
+    size_t len;
+    char debug_buffer[2048];
+    XLALPrintError( "%s: ERROR: failed to compile OpenCL program\n", fn);
+    clGetProgramBuildInfo(*(clW->program), *(clW->device), CL_PROGRAM_BUILD_LOG, 
+                          sizeof(debug_buffer), debug_buffer, &len);
+    XLALPrintError("%s\n", debug_buffer);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  // finally, create the kernel
+  LogPrintf(LOG_DEBUG, "In function %s: create kernel...\n", fn);
+  kernel = clCreateKernel(*(clW->program), "OpenCLComputeFstatFaFb", NULL); 
+  if (kernel == (cl_kernel)0) {
+    XLALPrintError( "%s: ERROR: failed to create kernel\n", fn);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->kernel = &kernel;
+#endif // #if USE_OPENCL_KERNEL
+   
+  return 0;
+} /* XLALInitCLWorkspace() */
+
+
+
+/** Rearrange SFT data structures
+ * Flatten the SFT data: combine small chunks of memory into a single 
+ * contiguous array, accessable via 4d-index */
+void
+XLALRearrangeSFTData ( CLWorkspace *clW,
+                       const REAL4FrequencySeriesVector *fstatBandV )
+{
+  static const char *fn = "XLALRearrangeSFTData()";
+  static int call_count = 0;
+  ++call_count;
+
+  LogPrintf(LOG_DEBUG, "In function %s: rearrange SFT data structures\n", fn);
+
+  clW->numBins = fstatBandV->data[0].data->length;
+
+  // deallocate previously allocated memory
+  if (clW->fkdot4.data) LALFree(clW->fkdot4.data);
+  if (clW->Fstat.data)  LALFree(clW->Fstat.data);
+
+  // allocate memory for new arrays
+  clW->fkdot4.length = clW->numBins;
+  clW->fkdot4.data = XLALMalloc( sizeof(REAL42) * clW->numBins );
+
+  clW->Fstat.length = clW->numSegments * clW->numBins;
+  clW->Fstat.data = XLALMalloc( sizeof(REAL4) * clW->Fstat.length );
+
+  if ( clW->Fstat.data == NULL || clW->fkdot4.data == NULL ) {
+      XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  } 
+
+#if USE_OPENCL_KERNEL
+  { // create memory buffers on the device
+    cl_int err, err_total;
+
+    if (call_count > 1) {
+      freeCLMemoryObject(&(clW->fkdot4.memobj));
+      freeCLMemoryObject(&(clW->Fstat.memobj));
+    }
+
+    clW->Fstat.memobj = clCreateBuffer (*(clW->context), CL_MEM_READ_WRITE, sizeof(REAL4)*clW->Fstat.length, NULL, &err);
+    err_total += (err-CL_SUCCESS);
+
+    clW->fkdot4.memobj = clCreateBuffer(*(clW->context), CL_MEM_READ_ONLY, sizeof(REAL42)*clW->fkdot4.length, NULL, &err);
+    err_total += (err-CL_SUCCESS);
+
+    if (err_total != CL_SUCCESS) {
+        XLALPrintError ("%s: Error creating memory buffer for ABCInvD, error code = %d\n", fn, err );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+  }
+#endif // #if USE_OPENCL_KERNEL  
+
+} /* XLALRearrangeSFTData */
+
+
+
+/** Close OpenCL workspace
+ * Free all objects and memory associated with the OpenCL Workspace */
+void
+XLALDestroyCLWorkspace ( CLWorkspace *clW,
+                         const MultiSFTVectorSequence *stackMultiSFT )
+{
+  static const char *fn = "XLALDestroyCLWorkspace()";
+
+  LogPrintf(LOG_DEBUG, "In function %s: deallocate memory, release OpenCL context\n", fn);
+
+#if USE_OPENCL_KERNEL
+  freeCLMemoryObject(&(clW->multiSFTsFlat.memobj));
+  freeCLMemoryObject(&(clW->numSFTsV.memobj));
+  freeCLMemoryObject(&(clW->fkdot4.memobj));
+  freeCLMemoryObject(&(clW->tSSB_DeltaT_int.memobj));
+  freeCLMemoryObject(&(clW->tSSB_DeltaT_rem.memobj));
+  freeCLMemoryObject(&(clW->tSSB_TdotM1.memobj));
+  freeCLMemoryObject(&(clW->amcoe_a.memobj));
+  freeCLMemoryObject(&(clW->amcoe_b.memobj));
+  freeCLMemoryObject(&(clW->ABCInvD.memobj));
+  freeCLMemoryObject(&(clW->Fstat.memobj));
+#endif
+
+  if (clW->multiSFTsFlat.data) {
+    // deallocate the array which contains flattened data for stackMultiSFTs
+    LALFree (clW->multiSFTsFlat.data);
+
+    UINT4 n, X, s;
+
+    MultiSFTVector *multiSFT;
+    SFTVector *sFT;
+    COMPLEX8Vector *cV;
+    
+    // set all data pointers on the lowest level to NULL, since their memory has been 
+    // already deallocated
+    for (n=0; n<stackMultiSFT->length; n++) {
+      multiSFT = stackMultiSFT->data[n];
+      for (X=0; X<multiSFT->length; X++) {
+        sFT = multiSFT->data[X];
+        for (s=0; s<sFT->length; s++) { 
+          cV = sFT->data[s].data;
+          cV->data = NULL;
+        }
+      }
+    }
+  } // if clW->multiSFTsFlat.data != NULL 
+
+  if (clW->tSSB_DeltaT_int.data) LALFree(clW->tSSB_DeltaT_int.data);
+  if (clW->tSSB_DeltaT_rem.data) LALFree(clW->tSSB_DeltaT_rem.data);
+  if (clW->tSSB_TdotM1.data)     LALFree(clW->tSSB_TdotM1.data);
+  if (clW->amcoe_a.data)         LALFree(clW->amcoe_a.data);
+  if (clW->amcoe_b.data)         LALFree(clW->amcoe_b.data);
+  if (clW->ABCInvD.data)         LALFree(clW->ABCInvD.data);
+  if (clW->fkdot4.data)          LALFree(clW->fkdot4.data);
+  if (clW->numSFTsV.data)        LALFree(clW->numSFTsV.data);
+  if (clW->Fstat.data)           LALFree(clW->Fstat.data);
+
+#if USE_OPENCL_KERNEL
+  if (clW->kernel)    clReleaseKernel(*(clW->kernel));
+  if (clW->program)   clReleaseProgram(*(clW->program));
+  if (clW->cmd_queue) clReleaseCommandQueue (*(clW->cmd_queue));
+  if (clW->context)   clReleaseContext (*(clW->context));
+#endif
+
+  return;
+} /* XLALDestroyCLWorkspace() */
+
+
+
 /** Destruction of a ComputeFBufferREAL4V *contents*,
  * i.e. the arrays of multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
@@ -1059,14 +1769,11 @@ XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 void
 XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 {
-  UINT4 numSegments;
-  UINT4 i;
-
   if ( !cfbv )
     return;
 
-  numSegments = cfbv->numSegments;
-
+  UINT4 numSegments = cfbv->numSegments;
+  UINT4 i;
   for (i=0; i < numSegments; i ++ )
     {
       XLALDestroyMultiSSBtimesREAL4 ( cfbv->multiSSB4V[i] );
@@ -1086,33 +1793,100 @@ XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 
 
 /* ---------- pure REAL4 version of sin/cos lookup tables */
-void init_sin_cos_LUT_REAL4 ( void )
+
+/** REAL4 version of sin_cos_LUT()
+ *
+ * Calculate sin(x) and cos(x) to roughly 1e-7 precision using
+ * a lookup-table and Taylor-expansion.
+ *
+ * NOTE: this function will fail for arguments larger than
+ * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
+ *
+ * return = 0: OK, nonzero=ERROR
+ */
+void
+sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x)
 {
-  static int firstcall = TRUE;
-  if (firstcall)
+  sin_cos_2PI_LUT_REAL4 ( sinx, cosx, x * OOTWOPI_FLOAT );
+  return;
+}
+
+/* initialize the global sin/cos lookup table */
+void
+init_sin_cos_LUT_REAL4 (void)
+{
+  UINT4 k;
+  static int firstCall = 1;
+
+  if ( !firstCall )
+    return;
+
+  for (k=0; k <= LUT_RES; k++)
     {
-      /* init sin/cos lookup tables */
-      local_sin_cos_2PI_LUT_init();
-
-      /* write out optimization settings */
-
-#ifdef EAH_OPTIMIZATION_FLAGS
-
-      fprintf(stderr,
-              "\n$Revision$ REV:%s, OPT:%d, "
-              "SCVAR:%d, SCTRIM:%d, "
-              "HOTVAR:%d, HOTDIV:%d, "
-              "HGHPRE:%d, HGHBAT:%d\n",
-              EAH_OPTIMIZATION_REVISION, EAH_OPTIMIZATION,
-              EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
-              EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
-              EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
-
-#endif /* def EAH_OPTIMIZATION */
-
-      firstcall = FALSE;
+      sinVal[k] = sin( LAL_TWOPI * k / LUT_RES );
+      cosVal[k] = cos( LAL_TWOPI * k / LUT_RES );
     }
+
+  firstCall = 0;
 
   return;
 
 } /* init_sin_cos_LUT_REAL4() */
+
+
+/* REAL4 version of sin_cos_2PI_LUT() */
+void
+sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x)
+{
+  REAL4 xt;
+  INT4 i0;
+  REAL4 d, d2;
+  REAL4 ts, tc;
+
+  /* we only need the fractional part of 'x', which is number of cylces,
+   * this was previously done using
+   *   xt = x - (INT4)x;
+   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
+   * for saftey we therefore rather use modf(), even if that
+   * will be somewhat slower...
+   */
+  xt = x - (INT8)x;	/* xt in (-1, 1) */
+
+  if ( xt < 0.0 )
+    xt += 1.0f;			/* xt in [0, 1 ) */
+
+#ifndef LAL_NDEBUG
+  if ( xt < 0.0 || xt > 1.0 )
+    {
+      XLALPrintError("\nFailed numerics in sin_cos_2PI_LUT_REAL4(): xt = %f not in [0,1)\n\n", xt );
+      XLAL_ERROR_VOID ( "sin_cos_2PI_LUT_REAL4()", XLAL_EFPINEXCT );
+    }
+#endif
+
+  i0 = (INT4)( xt * LUT_RES + 0.5f );	/* i0 in [0, LUT_RES ] */
+  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
+  d2 *= 0.5f * d;
+
+  ts = sinVal[i0];
+  tc = cosVal[i0];
+
+  /* use Taylor-expansions for sin/cos around LUT-points */
+  (*sin2pix) = ts + d * tc - d2 * ts;
+  (*cos2pix) = tc - d * ts - d2 * tc;
+
+  return;
+
+} /* sin_cos_2PI_LUT_REAL4() */
+
+#if USE_OPENCL_KERNEL
+/** A helper function to release OpenCL memory objects */
+void freeCLMemoryObject (cl_mem *memobj) {
+  cl_uint ref_count, i;
+
+  // get an object's reference count
+  clGetMemObjectInfo (*memobj, CL_MEM_REFERENCE_COUNT, sizeof(ref_count), &ref_count, NULL);
+ 
+  // decrement reference count of a memory object unless its destroyed
+  for (i=0;i<ref_count;i++) clReleaseMemObject(*memobj);
+}
+#endif
