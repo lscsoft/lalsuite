@@ -142,32 +142,6 @@ typedef struct {
   MultiAMCoeffs **multiAMcoefV;					/**< array[numSegments] of antenna-pattern coeffs computed in previous search */
 } ComputeFBufferREAL4V;
 
-#if (USE_OPENCL_KERNEL || USE_OPENCL_KERNEL_CPU)
-
-typedef struct {
-  REAL4 FreqMain;
-  REAL4 fkdot0;
-} REAL42;
-
-typedef struct {
-  REAL4 Ad;
-  REAL4 Bd;
-  REAL4 Cd;
-  REAL4 InvDd;
-} REAL44;
-
-typedef struct {
-  REAL4 s[16];   // HARDCODED VALUE
-} PulsarSpins16;
-
-/** Memory buffer structures to group logically the buffers on the host and
- * memory objects on the device */
-typedef struct tagUINT4MemBuffer {
-  UINT4 length;
-  UINT4 *data;
-  cl_mem memobj;
-} UINT4MemBuffer;
-
 /* ---------- exported global variables ---------- */
 extern const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 extern const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
