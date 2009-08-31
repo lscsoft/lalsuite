@@ -47,6 +47,19 @@ ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
 int i, j, k;
 
+//Test LALProposalFunction
+void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+//Test LALPriorFunction
+REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
+//Test LALEvolveOneStepFunction
+void BasicMCMCOneStep(LALInferenceRunState *runState);
+//Test LALAlgorithm
+void MCMCAlgorithm (struct tagLALInferenceRunState *runState);
+
+gsl_rng * InitializeRandomSeed(void);
+unsigned long int random_seed();
+
+
 
 int main(int argc, char *argv[]){
   fprintf(stdout," ========== InferenceTest.c ==========\n");
@@ -366,3 +379,177 @@ int main(int argc, char *argv[]){
   printf(" ========== main(): finished. ==========\n");
   return 0;
 }
+
+
+
+//Test LALProposalFunction
+void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist (e.g., for TaylorT1):			*/
+/* chirpmass, massratio, inclination,	*/
+/* phase, time, rightascension,			*/
+/* desclination, polarisation, distance.*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian if within prior;		*/
+/* need smarter wall bounces in future.	*/
+/****************************************/
+{
+	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
+	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariables * currentParams = runState->currentParams;	
+	int withinPrior=0;
+
+	destroyVariables(proposedParams);
+
+	mc		= *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
+	eta		= *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
+	iota	= *(REAL8*) getVariable(currentParams, "inclination");		/* radian      */
+	tc		= *(REAL8*) getVariable(currentParams, "time");				/* GPS seconds */
+	phi		= *(REAL8*) getVariable(currentParams, "phase");			/* radian      */
+	ra      = *(REAL8*) getVariable(currentParams, "rightascension");	/* radian      */
+	dec     = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
+	psi     = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
+	dist	= *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
+
+	addVariable(proposedParams, "chirpmass",       &mc,			REAL8_t);
+	addVariable(proposedParams, "massratio",       &eta,		REAL8_t);
+	addVariable(proposedParams, "inclination",     &iota,		REAL8_t);
+	addVariable(proposedParams, "phase",           &phi,		REAL8_t);
+	addVariable(proposedParams, "time",            &tc,			REAL8_t); 
+	addVariable(proposedParams, "rightascension",  &ra,			REAL8_t);
+	addVariable(proposedParams, "declination",     &dec,		REAL8_t);
+	addVariable(proposedParams, "polarisation",    &psi,		REAL8_t);
+	addVariable(proposedParams, "distance",        &dist,		REAL8_t);  
+  
+	while(!withinPrior)
+	{
+		mc_proposed=mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
+		eta_proposed=eta+gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
+		//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
+		iota_proposed=iota+gsl_ran_ugaussian(GSLrandom)*0.1;
+		tc_proposed=tc+gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
+		phi_proposed=phi+gsl_ran_ugaussian(GSLrandom)*0.5;
+		ra_proposed=ra+gsl_ran_ugaussian(GSLrandom)*0.05;
+		dec_proposed=dec+gsl_ran_ugaussian(GSLrandom)*0.05;
+		psi_proposed=psi+gsl_ran_ugaussian(GSLrandom)*0.1;
+		dist_proposed=dist*(1.0+gsl_ran_ugaussian(GSLrandom)*0.3);
+	
+		setVariable(proposedParams, "chirpmass",       &mc_proposed);
+		setVariable(proposedParams, "massratio",       &eta_proposed);
+		setVariable(proposedParams, "inclination",     &iota_proposed);
+		setVariable(proposedParams, "phase",           &phi_proposed);
+		setVariable(proposedParams, "time",            &tc_proposed); 
+		setVariable(proposedParams, "rightascension",  &ra_proposed);
+		setVariable(proposedParams, "declination",     &dec_proposed);
+		setVariable(proposedParams, "polarisation",    &psi_proposed);
+		setVariable(proposedParams, "distance",        &dist_proposed);
+	
+		withinPrior= runState->prior(runState, proposedParams) > 0;
+	}
+}
+
+//Test LALPriorFunction
+REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist (e.g., for TaylorT1):			*/
+/* chirpmass, massratio, inclination,	*/
+/* phase, time, rightascension,			*/
+/* desclination, polarisation, distance.*/
+/* Prior is flat if within range		*/
+/****************************************/
+{
+	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;	
+	
+	mc		= *(REAL8*) getVariable(params, "chirpmass");		/* solar masses*/
+	eta		= *(REAL8*) getVariable(params, "massratio");		/* dim-less    */
+	iota	= *(REAL8*) getVariable(params, "inclination");		/* radian      */
+	tc		= *(REAL8*) getVariable(params, "time");			/* GPS seconds */
+	phi		= *(REAL8*) getVariable(params, "phase");			/* radian      */
+	ra      = *(REAL8*) getVariable(params, "rightascension");	/* radian      */
+	dec     = *(REAL8*) getVariable(params, "declination");		/* radian      */
+	psi     = *(REAL8*) getVariable(params, "polarisation");	/* radian      */
+	dist	= *(REAL8*) getVariable(params, "distance");		/* Mpc         */
+	
+	if(eta>0 && eta<=0.25 && iota>=0 && iota <=2.0*pi && phi>=0 && phi <=2.0*pi && ra>=0 && ra<=24.0 
+				&& dec>=-pi/2.0 && dec<=pi/2.0 && psi>=0 && psi<=2.0*pi)	
+		return 1.0;
+	//TODO: should be properly normalized; pass in range via priorArgs?	
+	return 0;
+}
+
+//Test LALEvolveOneStepFunction
+void BasicMCMCOneStep(LALInferenceRunState *runState)
+{
+	REAL8 priorCurrent, priorProposed=0;
+	LALVariables proposedParams;
+	REAL8 likelihoodCurrent, likelihoodProposed;
+	REAL8 acceptanceProbability;
+	
+	priorCurrent=runState->prior(runState, runState->currentParams);
+	while(priorProposed<=0){	
+		runState->proposal(runState, &proposedParams);
+		priorProposed=runState->prior(runState, &proposedParams);
+	}
+	likelihoodCurrent=runState->likelihood(runState->currentParams, runState->data, runState->template);
+	likelihoodProposed=runState->likelihood(&proposedParams, runState->data, runState->template);
+	
+	acceptanceProbability=likelihoodCurrent*priorCurrent/(likelihoodProposed*priorProposed);
+	
+	if(acceptanceProbability > gsl_rng_uniform(runState->GSLrandom))	//accept
+		copyVariables(&proposedParams, runState->currentParams);
+
+	destroyVariables(&proposedParams);	
+}
+
+//Test LALAlgorithm
+void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
+{
+	int i;
+	runState->GSLrandom=InitializeRandomSeed();
+	for(i=0; i<100; i++)
+	{
+		runState->evolve(runState);
+		printf("MCMC step %d.  Current parameters are:\n", i);
+		printVariables(runState->currentParams);
+	}
+}
+
+
+//Random variant algorithm initialization
+//see GSL documentation
+//http://www.gnu.org/software/gsl/manual/
+gsl_rng * InitializeRandomSeed(void)
+{
+        const gsl_rng_type * T;
+        gsl_rng * rng;
+        gsl_rng_env_setup();
+        T = gsl_rng_default;
+        rng = gsl_rng_alloc (T);
+        //long seed = time(NULL)*getpid();
+        unsigned long seed=random_seed();
+        gsl_rng_set(rng, seed);
+        return rng;
+}
+
+
+//http://www.cygwin.com/ml/gsl-discuss/2004-q1/msg00072.html
+unsigned long int random_seed(){
+        unsigned int seed;
+        struct timeval tv;
+        FILE *devrandom;
+
+        if ((devrandom = fopen("/dev/random","r")) == NULL) {
+                gettimeofday(&tv,0);
+                seed = tv.tv_sec + tv.tv_usec;
+        } else {
+                fread(&seed,sizeof(seed),1,devrandom);
+                fclose(devrandom);
+        }
+
+        return seed;
+}
+
+
