@@ -38,6 +38,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   ep->tau = 20.0;          /* memory time of the autoregressive average */
   ep->cr = 5.0;            /* CR of the threshold */
   ep->edge = 0.00061035;   /* how many seconds around (before and after) the event have to be "purged" */
+  ep->factor = 1.0;
   notzero = 1e-25;
   return ep;
 }
