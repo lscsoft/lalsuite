@@ -584,6 +584,9 @@ int main(int argc,char *argv[])
       } else if (CommandLineArgs.TDcleaningProc == 3) {
          if(TDCleaning_R4(CommandLineArgs))
 	   return 6;   
+      } else if (CommandLineArgs.TDcleaningProc == 4) {
+         if(TDCleaning_NoBil_R4(CommandLineArgs))
+	   return 6;   
       }
   
       /* create an SFT */
@@ -864,7 +867,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       return 1;
     }
 
-  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 3) )
+  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 4) )
     {
       fprintf(stderr,"Illegal specification of TDcleaningProc.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
@@ -990,7 +993,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
   /*paola*/
   /*  11/19/05 gam; will keep dataDouble or dataSingle in memory at all times, depending on whether using single or double precision */
 
-  if ((CLA.useSingle) || (CLA.TDcleaningProc == 3)) {  
+  if ((CLA.useSingle) || (CLA.TDcleaningProc >= 3)) {  
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
 
@@ -1028,7 +1031,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
-      if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc != 3)) {  
+      if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc < 3)) {  
   
 	LALDCreateVector(&status,&dataDoubleFirstHP.data,(UINT4)((CLA.T/dataDouble.deltaT +0.5)+1));
 	TESTSTATUS( &status );
@@ -2968,6 +2971,47 @@ int TDCleaning_R4(struct CommandLineArgsTag CLA)
 }
 
 
+int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
+{       
+  INT4 k;
+  ParamOfEvent even_param;
+  BilHP bilparam;
+
+  bilparam.fcut    = CLA.fc;
+  bilparam.crt     = CLA.cr;
+  
+  EventParamInit(dataDouble.data->length, &even_param);
+
+  /* debug: write out original dataDouble TS */
+  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"NoBilDataDouble.dat",50,-1);
+
+  /* debug: convert dataDouble into dataSingle TS */
+  XLALConvertREAL8TimeSeriesToREAL4TimeSeries(&dataSingle, &dataDouble);
+
+  /* debug: write out dataSingle to be sure the conversion works */
+  XLALPrintREAL4TimeSeriesToFile(&dataSingle,"NoBilDataSingle.dat",50);
+
+  /* highpass the data using single precision */
+  BilHighpass_dataSingle( &dataSingleHP, &dataSingleFirstHP, &dataSingle, &even_param, &bilparam );
+
+  /* debug: write out the highpass TS */
+  XLALPrintREAL4TimeSeriesToFile(&dataSingleFirstHP,"NoBilDataSingleFirstHP.dat",50);
+  XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"NoBilDataSingleHP.dat",50);
+
+  EventRemoval_R4( &dataSingleClean, &dataSingle, &dataSingleHP, &databil2Single, &even_param, &bilparam);
+
+  /* write out the cleaned data */
+  XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"NoBilDataSingleClean.dat",0);
+
+  /* copy the cleaned data back to dataDouble */
+  for (k = 0; k < (int)dataSingleClean.data->length; k++) {
+    dataDouble.data->data[k] = dataSingleClean.data->data[k];
+  }
+
+  return 0;
+}
+
+
 /*******************************************************************************/
 
 /*******************************************************************************/
@@ -3313,7 +3357,7 @@ int FreeMem(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   /* 11/19/05 gam */
-  if(CLA.useSingle || (CLA.TDcleaningProc == 3)) {
+  if(CLA.useSingle || (CLA.TDcleaningProc >= 3)) {
 
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
@@ -3341,7 +3385,7 @@ int FreeMem(struct CommandLineArgsTag CLA)
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
 
-    if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc != 3)) {  
+    if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc < 3)) {  
     
       LALDDestroyVector(&status,&dataDoubleFirstHP.data);
       TESTSTATUS( &status );
