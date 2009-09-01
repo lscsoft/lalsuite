@@ -806,7 +806,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->HPf < 0 )
     {
       fprintf(stderr,"No high pass filtering frequency specified.\n"); 
-      fprintf(stderr,"If you don't want to use the high pass filter set the frequency to 0.\n");
+      fprintf(stderr,"If you don't want to high pass filter set the frequency to 0.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
@@ -1612,9 +1612,7 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
 /* Hann window based on Matlab, but with C indexing: w[k] = 0.5*( 1 - cos(2*pi*k/(N-1)) ) k = 0, 1, 2,...N-1 */
 int WindowDataHann(struct CommandLineArgsTag CLA)
 {
-
   INT4 k;
-  REAL8 suwin2 = 0;
   REAL8 win,N,Nm1;
   REAL8 real8TwoPi = 2.0*((REAL8)(LAL_PI));
 
@@ -1633,18 +1631,11 @@ int WindowDataHann(struct CommandLineArgsTag CLA)
         Nm1 = N - 1;
         for (k=0; k<N; k++) {
           win=0.5*( 1.0 - cos(real8TwoPi*((REAL8)(k))/Nm1) );
-          suwin2=suwin2+win*win;
           dataDouble.data->data[k] *= win;
         }  
-
-
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after windowing data in WindowDataHann:\n"); printExampleDataDouble();
         #endif  
-
-
-   printf("suwin2 %23.26e \n",suwin2);
-
   }
 
   return 0;
@@ -1812,7 +1803,7 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
       
        if(itest==1){
          OUTtest=fopen("testhp.dat","w");
-         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%23.16e\n",seriesHP->data->data[k]);
+         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%23.16e %23.16e\n",seriesHP->data->data[k],series->data->data[k]);
          fclose(OUTtest);
 
        }
@@ -2619,7 +2610,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
       TESTSTATUS( &status );  
 
-      /* compute sft. You'll find it in RealFFT.c */
+      /* compute sft */
       XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble );
 
       #if TRACKMEMUSE
