@@ -179,13 +179,13 @@ typedef struct tagParamOfEvent{
   INT4 iflev;      /*0=no events; 1=begin; 2=event; 3=end of the event*/
   REAL4 *xamed;    /*AUTOREGRESSIVE MEAN*/
   REAL4 *xastd;    /*AUTOREGRESSIVE STANDARD DEVIATION*/
-  REAL4 *med;    /*AUTOREGRESSIVE MEAN*/
+  REAL4 *med;     /*AUTOREGRESSIVE MEAN*/
   REAL4 *std; 
   REAL4 xw;
   REAL4 qw;
   REAL8 w_norm;   /*Normalization factor for mean and std*/
   REAL4 edge;     /*Seconds around (before and after) the event have to be excluded*/
-  int total;     /* Samples, due to all events, have been cleaned*/
+  int total;      /* Samples, due to all events, have been cleaned*/
   int *begin;     /*Sample numbers of the beginning of each event*/
   int *duration;  /*Event duration in number of samples*/
   int *imax;      /*Index at which each event has the maximum*/
@@ -267,6 +267,7 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 /* Time Domain Cleaning Procedure */
 int TDCleaning(struct CommandLineArgsTag CLA);
 int TDCleaning_R4(struct CommandLineArgsTag CLA);
+int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA);
 
 /* Time Domain Cleaning with PSS functions */
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
@@ -1712,6 +1713,48 @@ int EventParamInit(long len, ParamOfEvent *even_param)
   return 0;
 }
 
+int EventParamInit_NoBil(long len, ParamOfEvent *even_param)
+{ 
+  int i;
+  long lent; 
+  lent=len;
+  /*EVEN_PARAM *even_param; Parameters to check for events and clean the data*/
+  /*even_param=(EVEN_PARAM *)calloc(1,sizeof(EVEN_PARAM)); */
+  even_param->tau=20.0;       /*memory time of the autoregressive average; */   
+  if(lent <= 131072) even_param->tau=10.0; 
+  even_param->deadtime=0.1;  /*Dead time in seconds*/
+  even_param->factor=1.0;    /*e.g. 10: when re-evaluate mean and std*/
+  even_param->iflev=0;       /*0=no events; 1=begin; 2=event; 3=end of the event*/
+  even_param->med=(REAL4*)malloc(lent*sizeof(REAL4));       /*Autoregressive mean*/
+  even_param->std=(REAL4*)malloc(lent*sizeof(REAL4));   
+  even_param->xamed=(REAL4*)malloc(lent*sizeof(REAL4));      /*Autoregressive mean*/
+  even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));    /*Autoregressive std*/
+  even_param->xw=0.;
+  even_param->qw=0.;
+  even_param->w_norm=1.;
+  even_param->edge=0.00061035;  /*Right value: 0.00061035; 0.15 s Seconds around (before and after) the event have to be excluded"*/
+  even_param->total=0;    /*Samples, due to all events, have been cleaned*/
+  even_param->number=0;   /*Number of events*/
+  even_param->ar=1;       /*Algorithm for the autoregressive evaluation; it has to be = 1*/
+  even_param->begin=malloc((size_t) len*sizeof(int)); /*The dimension is the number of events, less than len, but here len is used, just for simplicity*/
+  even_param->duration=malloc((size_t) len*sizeof(long)); 
+  even_param->imax=malloc((size_t) len*sizeof(long));
+  even_param->crmax=malloc((size_t) len*sizeof(REAL4));
+  even_param->ener=malloc((size_t) len*sizeof(REAL4));
+  for(i=0;i<lent;i++){
+    even_param->xamed[i]=0.;
+    even_param->xastd[i]=0.;
+    even_param->med[i]=0.;
+    even_param->std[i]=0.;
+    even_param->begin[i]=-1;
+    even_param->duration[i]=0;
+    even_param->imax[i]=0;
+    even_param->crmax[i]=0;
+    even_param->ener[i]=0;
+  }
+  return 0;
+}
+
 
 /*********************************************/
 /*Initialization of the event paramaters for the 'fake' highpass series*/
@@ -2980,7 +3023,7 @@ int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
   bilparam.fcut    = CLA.fc;
   bilparam.crt     = CLA.cr;
   
-  EventParamInit(dataDouble.data->length, &even_param);
+  EventParamInit_NoBil(dataDouble.data->length, &even_param);
 
   /* debug: write out original dataDouble TS */
   XLALPrintREAL8TimeSeriesToFile(&dataDouble,"NoBilDataDouble.dat",50,-1);
@@ -2998,7 +3041,7 @@ int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
   XLALPrintREAL4TimeSeriesToFile(&dataSingleFirstHP,"NoBilDataSingleFirstHP.dat",50);
   XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"NoBilDataSingleHP.dat",50);
 
-  EventRemoval_R4( &dataSingleClean, &dataSingle, &dataSingleHP, &databil2Single, &even_param, &bilparam);
+  EventRemoval_dataSingle( &dataSingleClean, &dataSingle, &dataSingleHP, &even_param, &bilparam);
 
   /* write out the cleaned data */
   XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"NoBilDataSingleClean.dat",0);
