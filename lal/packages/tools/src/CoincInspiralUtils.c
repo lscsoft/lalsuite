@@ -939,7 +939,7 @@ XLALExtractSnglInspiralFromCoinc(
           eventId->id = thisCoincEntry->event_id->id;
         }
         else if ( eventNum > 99999 )
-        { 
+        {
           /* FIXME: This is a temporary measure, until we are sure that the
            * plotting codes and coire can handle a different event id */
           XLALPrintError(

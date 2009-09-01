@@ -1096,9 +1096,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
       raise ValueError, "no input-cache specified"
     # open the input cache file
     fp = open(self.__input_cache, 'r')
-    input_cache = lal.Cache().fromfile(fp)
-    # remove any slide files
-    input_cache = input_cache - input_cache.sieve( description = 'SLIDE' )
+    input_cache = lal.Cache().fromfile(fp).sieve( description = 'THINCA_SECOND' )
     output_files = [ \
       '/'.join([ os.getcwd(), 
       re.sub('THINCA', 'THINCA_TO_COINC', os.path.basename(entry.url)) ]) for entry in input_cache \
@@ -2109,6 +2107,88 @@ class CFarNode(pipeline.SqliteNode):
     @job: a CFarJob
     """
     pipeline.SqliteNode.__init__(self, job)
+
+
+class PrintLCJob(pipeline.SqliteJob):
+  """
+  A printlc job. The static options are read from the section [printlc] in
+  the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    @sections: list of sections for cp to read from
+    """
+    exec_name = 'printlc'
+    sections = ['printlc']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class PrintLCNode(pipeline.SqliteNode):
+  """
+  A PrintLC node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PrintLCJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.__datatype = None
+    self.__extract_to_xml = None
+    self.__exclude_coincs = None
+    self.__include_only_coincs = None
+
+  def set_datatype(self, datatype):
+    """
+    Sets datatype option.
+    """
+    self.add_var_opt('datatype', datatype)
+    self.__datatype = datatype
+
+  def get_datatype(self):
+    """
+    Gets datatype.
+    """
+    return self.__datatype
+
+  def set_extract_to_xml(self, xml_filename):
+    """
+    Sets the extract-to-xml option.
+    """
+    self.add_var_opt('extract-to-xml', xml_filename)
+    self.__extract_to_xml = xml_filename
+
+  def get_extract_to_xml(self):
+    """
+    Gets xml-filename if extract-to-xml is set.
+    """
+    return self.__extract_to_xml
+
+  def set_exclude_coincs(self, exclude_coincs):
+    """
+    Sets exclude-coincs option.
+    """
+    self.add_var_opt('exclude-coincs', exclude_coincs)
+    self.__exclude_coincs = exclude_coincs
+
+  def get_exclude_coincs(self):
+    """
+    Gets exclude-coincs option.
+    """
+    return self.__exclude_coincs
+
+  def set_include_only_coincs(self, include_only_coincs):
+    """
+    Sets include-only-coincs option.
+    """
+    self.add_var_opt('include-only-coincs', include_only_coincs)
+    self.__include_only_coincs = include_only_coincs
+
+  def get_include_only_coincs(self):
+    """
+    Gets include-only-coincs option.
+    """
+    return self.__include_only_coincs
 
 
 class PlotSlidesJob(pipeline.SqliteJob):

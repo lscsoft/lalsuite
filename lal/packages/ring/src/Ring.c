@@ -250,7 +250,7 @@ REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt
   return ( ds2 );
 }
 
-REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 ds_sq )
+REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_sq )
 {
   REAL8 gtt;
   REAL8 f = table->frequency;
@@ -259,7 +259,7 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 ds_sq )
 
   gtt = ( LAL_PI*LAL_PI * f*f ) * ( 1. + 4.*Q2 ) / ( Q2 );
 
-  return ( sqrt( ds_sq / gtt ) );
+  return ( sqrt( lal_ring_ds_sq / gtt ) );
 }
 
 /* <lalVerbatim file="RingCP"> */

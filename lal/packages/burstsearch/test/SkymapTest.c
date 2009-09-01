@@ -80,7 +80,7 @@ static void numericApply(
 
 static void numerical(void)
 {
-    XLALSkymap2PlanType plan;    
+    XLALSkymap2PlanType plan;
     double direction[2];
     XLALSkymap2DirectionPropertiesType properties;
     double wSw[5] = { 100., 100., 100., 100., 100. };
@@ -91,10 +91,10 @@ static void numerical(void)
     int n;
 
     rng = XLALCreateRandomParams(0);
-    
+
     for (n = 1; n != 6; ++n)
     {
-    
+
         XLALSkymap2PlanConstruct(8192, n, siteNumbers, &plan);
 
         direction[0] = LAL_PI * XLALUniformDeviate(rng);
@@ -121,8 +121,8 @@ static void numerical(void)
         {
             double logPosteriorAnalytic;
             double logPosteriorNumerical;
-            
-            XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosteriorAnalytic);        
+
+            XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosteriorAnalytic);
 
             numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
 
@@ -141,15 +141,15 @@ static void numerical(void)
         }
 
     }
-        
+
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
-    
-    // check the fast analytic bayesian statistic against simpler but 
+
+    // check the fast analytic bayesian statistic against simpler but
     // slower numerical integration
-    
+
 	numerical();
 
     return 0;

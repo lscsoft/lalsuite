@@ -1,0 +1,274 @@
+#!/usr/bin/python
+
+import subprocess
+import sys
+import glob
+import os
+from glue import lal
+
+from optparse import OptionParser
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import ligolw_tisi
+from pylal import llwapp
+from pylal import ligolw_cafe
+from glue import pipeline
+import ConfigParser
+import tempfile
+import string
+
+def path_to_cache(pat, outname="ringfirst.cache"):
+	#FIXME assumes a fixed file name for output cache file
+	output = open(outname,"w")
+	for l in glob.glob(pat):
+		path, file = os.path.split(l)
+		url = "file://localhost%s" % os.path.abspath(os.path.join(path, file))
+		try:
+			cache_entry = lal.CacheEntry.from_T050017(url)
+		except ValueError, e:
+			raise e
+		print >>output, str(cache_entry)
+	return outname
+
+class Tisi(object):
+	#FIXME pick different time slide file name
+	def __init__(self, options, filename="tisi.xml"):
+		instrument = options.instrument
+		self.time_slides = {}
+		self.dict_map(instrument)
+		self.convert(options)
+		self.filenames = [filename]
+		self.make_doc(options)
+		self.filename = filename
+
+	def new_doc(self):
+		doc = ligolw.Document()
+		doc.appendChild(ligolw.LIGO_LW())
+		proctable = lsctables.New(lsctables.ProcessTable)
+		doc.childNodes[0].appendChild(proctable)
+		procparamtable = lsctables.New(lsctables.ProcessParamsTable)
+		doc.childNodes[0].appendChild(procparamtable)
+		timeslidetable = lsctables.New(lsctables.TimeSlideTable)
+		doc.childNodes[0].appendChild(timeslidetable)
+		return doc
+
+	def dict_map(self, instrument):
+		for time_slide in ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides(instrument)):
+		        self.time_slides[lsctables.TimeSlideTable.get_next_id()] = time_slide
+
+	def convert(self,options):
+		map(self.time_slides.pop, ligolw_tisi.time_slides_vacuum(self.time_slides, verbose = options.verbose).keys())
+		self.time_slides = self.time_slides.items()
+		self.time_slides.sort(reverse = True)
+
+
+	def make_doc(self, options):
+		while self.time_slides:
+			doc = self.new_doc()
+			timeslidetable = table.get_table(doc, lsctables.TimeSlideTable.tableName)
+			process = ligolw_tisi.append_process(doc, **options.__dict__)
+			N = int(round(float(len(self.time_slides)) / len(self.filenames)))
+			while N:
+				id, offsetdict = self.time_slides.pop()
+				for row in ligolw_tisi.RowsFromOffsetDict(offsetdict, id, process):
+					timeslidetable.append(row)
+				N -= 1
+			llwapp.set_process_end_time(process)
+			self.filename = self.filenames.pop(0)
+			utils.write_filename(doc, self.filename, options.verbose, gz = (self.filename or "stdout").endswith(".gz"))
+
+#FIXME assumes cafe_ is base name
+def cafe(cachenames, options, time_slide_file, base="cafe_"):
+	cache = []
+	for filename in cachenames:
+		cache.extend(ligolw_cafe.load_cache(filename, options.verbose))
+	seglists, outputcaches = ligolw_cafe.ligolw_cafe(cache, ligolw_tisi.load_time_slides(time_slide_file, verbose = options.verbose, gz = time_slide_file.endswith(".gz")).values(), options.verbose)
+	instruments = set(seglists.keys())
+	return ligolw_cafe.write_caches(base, outputcaches, instruments, options.verbose)
+
+class ring_post_DAG(pipeline.CondorDAG):
+	def __init__(self, config_file, log_path):
+		self.config_file = str(config_file)
+		self.basename = self.config_file.replace('.ini','')
+		tempfile.tempdir = log_path
+		tempfile.template = self.basename + '.dag.log.'
+		logfile = tempfile.mktemp()
+		fh = open( logfile, "w" )
+		fh.close()
+		pipeline.CondorDAG.__init__(self,logfile)
+		self.set_dag_file(self.basename)
+		self.jobsDict = {}
+		self.id = 0
+	def add_node(self, node):
+		self.id+=1
+		pipeline.CondorDAG.add_node(self, node)
+		
+
+class ligolw_add_job(pipeline.CondorDAGJob):
+	"""
+	A ligolw_add job
+	"""
+	def __init__(self, cp, tag_base='LIGOLW_ADD'):
+		"""
+		"""
+		self.__prog__ = 'ligolw_add'
+		self.__executable = string.strip(cp.get('condor','ligolw_add'))
+		self.__universe = "vanilla"
+		pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+		self.add_condor_cmd('getenv','True')
+		self.tag_base = tag_base
+		self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+		self.set_sub_file(tag_base+'.sub')
+		self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+		self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+
+class ligolw_sqlite_job(pipeline.CondorDAGJob):
+	"""
+	A ligolw_sqlite job
+	"""
+	def __init__(self, cp, tag_base='LIGOLW_SQLITE'):
+		"""
+		"""
+		self.__prog__ = 'ligolw_sqlite'
+		self.__executable = string.strip(cp.get('condor','ligolw_sqlite'))
+		self.__universe = "vanilla"
+		pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+		self.add_condor_cmd('getenv','True')
+		self.tag_base = tag_base
+		self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+		self.set_sub_file(tag_base+'.sub')
+		self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+		self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class ligolw_add_node(pipeline.CondorDAGNode):
+	"""
+	"""
+	def __init__(self, job, dag, cache, tisi_file, p_node=[]):
+		pipeline.CondorDAGNode.__init__(self,job)
+		#FIXME add tmp file space
+		self.add_macro("macroid", dag.id)
+		self.add_file_arg(tisi_file)
+		self.add_var_opt("input-cache", cache)
+		self.add_var_opt("output", cache.replace('.cache', '.xml.gz'))
+		self.add_output_file(cache.replace('.cache', '.xml.gz'))
+		for p in p_node:
+			self.add_parent(p)
+		dag.add_node(self)
+
+
+class ligolw_rinca_job(pipeline.CondorDAGJob):
+	"""
+	A ligolw_rinca job
+	"""
+	def __init__(self, cp, tag_base='LIGOLW_RINCA'):
+		"""
+		"""
+		self.__prog__ = 'ligolw_rinca'
+		self.__executable = string.strip(cp.get('condor','ligolw_rinca'))
+		self.__universe = "vanilla"
+		pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+		self.add_condor_cmd('getenv','True')
+		self.tag_base = tag_base
+		self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+		self.set_sub_file(tag_base+'.sub')
+		self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+		self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+
+class ligolw_rinca_node(pipeline.CondorDAGNode):
+	"""
+	"""
+	def __init__(self, job, dag, xml, ds_sq=0.4, p_node=[]):
+		pipeline.CondorDAGNode.__init__(self,job)
+		#FIXME add tmp file space
+		self.add_macro("macroid", dag.id)
+		self.add_file_arg(xml)
+		self.add_output_file(xml)
+		self.add_var_opt("ds-sq-threshold", ds_sq)
+		for p in p_node:
+			self.add_parent(p)
+		dag.add_node(self)
+
+class ligolw_sqlite_node(pipeline.CondorDAGNode):
+	"""
+	"""
+	def __init__(self, job, dag, database, xml_list, p_node=[], replace=True, extract=False):
+		pipeline.CondorDAGNode.__init__(self,job)
+		#FIXME add tmp file s
+		self.add_macro("macroid", dag.id)
+		self.add_var_opt("database", database)
+		if replace: self.add_var_opt("replace","")
+		for xml in xml_list:
+			self.add_file_arg(xml)
+		for p in p_node:
+			self.add_parent(p)
+		dag.add_node(self)
+
+
+###############################################################################
+## MAIN #######################################################################
+###############################################################################
+
+def parse_command_line():
+        parser = OptionParser(
+		version = "%prog CVS $Id$",
+		usage = "%prog [options] [filename ...]",
+		description = "%prog FIXME"
+		)
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	parser.add_option("-i", "--instrument", metavar = "name=first:last:step[,first:last:step[,...]]", action = "append", default = [], help = "Provide a description of the set of offsets to use for a particular instrument.  The set of offsets is (first + n * step) where n is an integer such that first <= offset <= last.  More than one set of offsets can be given for the same instrument, in which case the union is used.  As a short-hand, the sets can be combined into a single command line argument by separating the first:last:step triples with commas.")
+	parser.add_option("-g", "--ring-first-glob", help="pattern for RING_FIRST files")
+	parser.add_option("--comment", metavar = "text", help = "Set comment string in process table (default = None).")
+	parser.add_option("--log-path", help = "set dagman log path")
+	options, filenames = parser.parse_args()
+	return options, filenames
+
+
+
+opts, files = parse_command_line()
+
+cachename = path_to_cache(opts.ring_first_glob)
+
+tisi = Tisi(opts)
+
+cafe_caches = cafe([cachename], opts, tisi.filename)
+
+### SET UP THE DAG
+
+try: os.mkdir("logs")
+except: pass
+
+cp = ConfigParser.ConfigParser()
+#FIXME don't assume file name
+ininame = "ring_post.ini"
+cp.read(ininame)
+dag = ring_post_DAG(ininame, opts.log_path)
+
+#ligolw_add
+add_job = ligolw_add_job(cp)
+add_node = {}
+
+#rinca
+rinca_job = ligolw_rinca_job(cp)
+rinca_node = {}
+
+#ligolw sqlite
+sqlite_job = ligolw_sqlite_job(cp)
+sqlite_node = {}
+
+#Assemble dag
+for f in cafe_caches:
+	add_node[f] = ligolw_add_node(add_job, dag, f, tisi.filename)
+	rinca_node[f] = ligolw_rinca_node(rinca_job, dag, add_node[f].get_output_files()[0], p_node=[add_node[f]])
+	sqlite_node[f] = ligolw_sqlite_node(sqlite_job, dag, f.replace(".cache",".sqlite"), rinca_node[f].get_output_files(), p_node=[rinca_node[f]])
+
+#FIXME Do you want everying in one file, what should be the file name
+sqlite_node['all'] = ligolw_sqlite_node(sqlite_job, dag, "RING.sqlite", [f.get_output_files()[0] for f in rinca_node.values()], p_node=rinca_node.values())
+
+dag.write_sub_files()
+dag.write_dag()
+dag.write_script()
