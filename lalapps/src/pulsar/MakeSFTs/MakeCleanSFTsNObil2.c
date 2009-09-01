@@ -3,7 +3,8 @@
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
+*  the Free Software Foundation; either 
+version 2 of the License, or
 *  (at your option) any later version.
 *
 *  This program is distributed in the hope that it will be useful,
@@ -89,15 +90,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 
-#include <XLALPSSInterface.h>
-
 extern char *optarg;
 extern int optind, opterr, optopt;
-
-#if ! __USE_ISOC99
-extern int finite(double);
-extern long lroundf(float);
-#endif
 
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
@@ -179,13 +173,13 @@ typedef struct tagParamOfEvent{
   INT4 iflev;      /*0=no events; 1=begin; 2=event; 3=end of the event*/
   REAL4 *xamed;    /*AUTOREGRESSIVE MEAN*/
   REAL4 *xastd;    /*AUTOREGRESSIVE STANDARD DEVIATION*/
-  REAL4 *med;     /*AUTOREGRESSIVE MEAN*/
+  REAL4 *med;    /*AUTOREGRESSIVE MEAN*/
   REAL4 *std; 
   REAL4 xw;
   REAL4 qw;
   REAL8 w_norm;   /*Normalization factor for mean and std*/
   REAL4 edge;     /*Seconds around (before and after) the event have to be excluded*/
-  int total;      /* Samples, due to all events, have been cleaned*/
+  int total;     /* Samples, due to all events, have been cleaned*/
   int *begin;     /*Sample numbers of the beginning of each event*/
   int *duration;  /*Event duration in number of samples*/
   int *imax;      /*Index at which each event has the maximum*/
@@ -215,9 +209,6 @@ REAL8TimeSeries dataDoubleFirstHP;
 REAL4TimeSeries dataSingleFirstHP;
 REAL8TimeSeries dataDoubleHP;
 
-REAL8TimeSeries databil2;
-REAL4TimeSeries databil2Single;
-
 REAL4TimeSeries dataSingleHP;
 REAL8TimeSeries dataDoubleClean;
 REAL4TimeSeries dataSingleClean;
@@ -237,9 +228,6 @@ REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data contai
 COMPLEX8Vector *fftDataSingle = NULL;
 
 CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
-
-int testpao = 0;
-
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -264,14 +252,8 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 /* Useful functions for the time domain cleaning procedure */
 /*-----------------------------------------------------------*/
 
-/* Time Domain Cleaning Procedure */
+/* Time Domain Cleaning Procedure*/
 int TDCleaning(struct CommandLineArgsTag CLA);
-int TDCleaning_R4(struct CommandLineArgsTag CLA);
-int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA);
-
-/* Time Domain Cleaning with PSS functions */
-int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
-int PSSTDCleaningSingle(struct CommandLineArgsTag CLA);
 
 /*Initialization of the event paramaters*/
 int EventParamInit(long len, ParamOfEvent *even_param);
@@ -286,7 +268,7 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param );
 
 /*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in DOUBLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
-int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, ParamOfEvent *even_param );
+int MedStd_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param );
 
 /*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. DATA IN SINGLE-PRECISION*/
 int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams );
@@ -298,8 +280,8 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
 int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);
 
 /*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN DOUBLE-PRECISION*/
-/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);*/
-int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHPbil2, ParamOfEvent *even_param, BilHP *myparams);
+int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);
+/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);*/
 /*-----------------------------------------------------------*/
 
 
@@ -513,21 +495,6 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 }
 #endif
 
-int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
-  UINT4 i;
-  FILE*fp=fopen(name,"w");
-  if(!fp) {
-    fprintf(stderr,"Could not open file '%s' for writing\n",name);
-    return -1;
-  } else {
-    for(i=0;i<length;i++)
-      fprintf(fp,"%23.16e\n",array[i]);
-    fclose(fp);
-  }
-  return 0;
-}
-
-
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -579,6 +546,7 @@ int main(int argc,char *argv[])
       /* High-pass data with Butterworth filter */
       if(HighPass(CommandLineArgs)) return 4;
 
+
       /* Window data; 12/28/05 gam; add options */
       if (CommandLineArgs.windowOption==1) {
          if(WindowData(CommandLineArgs)) return 5; /* CommandLineArgs.windowOption==1 is the default */
@@ -590,20 +558,14 @@ int main(int argc,char *argv[])
         /* Continue with no windowing; parsing of command line args makes sure options are one of the above or 0 for now windowing. */
       }
 
-      /* Time Domain cleaning procedure */
-      if (CommandLineArgs.TDcleaningProc == 1) {
-         if(TDCleaning(CommandLineArgs))
-	   return 6;   
-      } else if (CommandLineArgs.TDcleaningProc == 2) {
-         if(PSSTDCleaningDouble(CommandLineArgs))
-	   return 6;   
-      } else if (CommandLineArgs.TDcleaningProc == 3) {
-         if(TDCleaning_R4(CommandLineArgs))
-	   return 6;   
-      } else if (CommandLineArgs.TDcleaningProc == 4) {
-         if(TDCleaning_NoBil_R4(CommandLineArgs))
-	   return 6;   
-      }
+    
+     /* Time Domain cleaning procedure */
+      if (CommandLineArgs.TDcleaningProc==1) {   
+         if(TDCleaning(CommandLineArgs)) return 6;   
+      } else {
+        /* Continue without cleaning. */
+      }      
+
   
       /* create an SFT */
       if(CreateSFT(CommandLineArgs)) return 7;
@@ -842,7 +804,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->HPf < 0 )
     {
       fprintf(stderr,"No high pass filtering frequency specified.\n"); 
-      fprintf(stderr,"If you don't want to high pass filter set the frequency to 0.\n");
+      fprintf(stderr,"If you don't want to use the high pass filter set the frequency to 0.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
@@ -883,7 +845,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       return 1;
     }
 
-  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 4) )
+  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 1) )
     {
       fprintf(stderr,"Illegal specification of TDcleaningProc.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
@@ -1006,26 +968,22 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
       dataDouble.deltaT=dataSingle.deltaT;
     }
-  /*paola*/
+/*paola*/
   /*  11/19/05 gam; will keep dataDouble or dataSingle in memory at all times, depending on whether using single or double precision */
-
-  if ((CLA.useSingle) || (CLA.TDcleaningProc >= 3)) {  
+  if(CLA.useSingle) {
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
 
-      if (CLA.TDcleaningProc > 0) {
+      if (CommandLineArgs.TDcleaningProc==1) {  
   
-	LALCreateVector(&status,&dataSingleFirstHP.data,(UINT4)((CLA.T/dataSingle.deltaT +0.5)+1));
-	TESTSTATUS( &status );
+      LALCreateVector(&status,&dataSingleFirstHP.data,(UINT4)((CLA.T/dataSingle.deltaT +0.5)+1));
+      TESTSTATUS( &status );
 
-	LALCreateVector(&status,&dataSingleHP.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-	TESTSTATUS( &status );
+      LALCreateVector(&status,&dataSingleHP.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
    
-	LALCreateVector(&status,&databil2Single.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5 + 20.0/dataDouble.deltaT));
-	TESTSTATUS( &status );
-
-	LALCreateVector(&status,&dataSingleClean.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-	TESTSTATUS( &status );
+      LALCreateVector(&status,&dataSingleClean.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
       }     
 
 
@@ -1040,28 +998,23 @@ int AllocateData(struct CommandLineArgsTag CLA)
          printf("Memory use after creating dataSingle and after calling LALCreateForwardRealFFTPlan.\n"); printmemuse();
       #endif
 
-  }
+  } else {  
 
-  if (!CLA.useSingle) {  
    
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
-      if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc < 3)) {  
+      if (CommandLineArgs.TDcleaningProc==1) {  
   
-	LALDCreateVector(&status,&dataDoubleFirstHP.data,(UINT4)((CLA.T/dataDouble.deltaT +0.5)+1));
-	TESTSTATUS( &status );
+      LALDCreateVector(&status,&dataDoubleFirstHP.data,(UINT4)((CLA.T/dataDouble.deltaT +0.5)+1));
+      TESTSTATUS( &status );
 
-	LALDCreateVector(&status,&dataDoubleHP.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-	TESTSTATUS( &status );
+      LALDCreateVector(&status,&dataDoubleHP.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
    
  
-	LALDCreateVector(&status,&databil2.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5 + 20.0/dataDouble.deltaT));
-	TESTSTATUS( &status );
-
-
-	LALDCreateVector(&status,&dataDoubleClean.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-	TESTSTATUS( &status );
+      LALDCreateVector(&status,&dataDoubleClean.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
       }
 
       #if TRACKMEMUSE
@@ -1480,6 +1433,7 @@ int ReadData(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 int HighPass(struct CommandLineArgsTag CLA)
 {
+  INT4 itest=1;
   INT4 i;
   FILE *out;
 
@@ -1520,11 +1474,11 @@ int HighPass(struct CommandLineArgsTag CLA)
         TESTSTATUS( &status );
    
         
-	if(testpao){
-	  out=fopen("dataDligoHP.dat","w");
-	  for(i=0; i< (int)dataDouble.data->length; i++)fprintf(out,"%23.16e\n",dataDouble.data->data[i]);
-	  fclose(out);
-	}
+    if(itest==1){
+             out=fopen("dataDligoHP.dat","w");
+             for(i=0; i< (int)dataDouble.data->length; i++)fprintf(out,"%23.16e\n",dataDouble.data->data[i]);
+             fclose(out);
+       }
 
 
 
@@ -1549,6 +1503,8 @@ int WindowData(struct CommandLineArgsTag CLA)
 {
   REAL8 r = 0.001;
   INT4 k, N, kl, kh;
+
+  int testpao=1;
   FILE *OUTpao;
   
   /* This implementation of a Tukey window is describes 
@@ -1587,7 +1543,7 @@ int WindowData(struct CommandLineArgsTag CLA)
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
     #endif  
 
-   if(testpao){
+   if(testpao=1){
      OUTpao=fopen("windowT.dat","w");
      for(k =0; k < N; k++)fprintf(OUTpao,"%23.16e\n",dataDouble.data->data[k]);
      fclose(OUTpao);
@@ -1650,7 +1606,9 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
 /* Hann window based on Matlab, but with C indexing: w[k] = 0.5*( 1 - cos(2*pi*k/(N-1)) ) k = 0, 1, 2,...N-1 */
 int WindowDataHann(struct CommandLineArgsTag CLA)
 {
+
   INT4 k;
+  REAL8 suwin2 = 0;
   REAL8 win,N,Nm1;
   REAL8 real8TwoPi = 2.0*((REAL8)(LAL_PI));
 
@@ -1669,11 +1627,18 @@ int WindowDataHann(struct CommandLineArgsTag CLA)
         Nm1 = N - 1;
         for (k=0; k<N; k++) {
           win=0.5*( 1.0 - cos(real8TwoPi*((REAL8)(k))/Nm1) );
+          suwin2=suwin2+win*win;
           dataDouble.data->data[k] *= win;
         }  
+
+
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after windowing data in WindowDataHann:\n"); printExampleDataDouble();
         #endif  
+
+
+   printf("suwin2 %23.26e \n",suwin2);
+
   }
 
   return 0;
@@ -1698,52 +1663,9 @@ int EventParamInit(long len, ParamOfEvent *even_param)
   even_param->deadtime=0.1;  /*Dead time in seconds*/
   even_param->factor=1.0;    /*e.g. 10: when re-evaluate mean and std*/
   even_param->iflev=0;       /*0=no events; 1=begin; 2=event; 3=end of the event*/
-  even_param->med=(REAL4*)malloc(lent*sizeof(REAL4));       /*Autoregressive mean*/
-  even_param->std=(REAL4*)malloc(lent*sizeof(REAL4));   
-  /*even_param->xamed=(REAL4*)malloc(lent*sizeof(REAL4));       Autoregressive mean*/
- /* even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));      Autoregressive std*/
-  even_param->xw=0.;
-  even_param->qw=0.;
-  even_param->w_norm=1.;
-  even_param->edge=0.00061035;  /*Right value: 0.00061035; 0.15 s Seconds around (before and after) the event have to be excluded"*/
-  even_param->total=0;    /*Samples, due to all events, have been cleaned*/
-  even_param->number=0;   /*Number of events*/
-  even_param->ar=1;       /*Algorithm for the autoregressive evaluation; it has to be = 1*/
-  even_param->begin=malloc((size_t) len*sizeof(int)); /*The dimension is the number of events, less than len, but here len is used, just for simplicity*/
-  even_param->duration=malloc((size_t) len*sizeof(long)); 
-  even_param->imax=malloc((size_t) len*sizeof(long));
-  even_param->crmax=malloc((size_t) len*sizeof(REAL4));
-  even_param->ener=malloc((size_t) len*sizeof(REAL4));
-  for(i=0;i<lent;i++){
-   /* even_param->xamed[i]=0.;
-    even_param->xastd[i]=0.;*/
-    even_param->med[i]=0.;
-    even_param->std[i]=0.;
-    even_param->begin[i]=-1;
-    even_param->duration[i]=0;
-    even_param->imax[i]=0;
-    even_param->crmax[i]=0;
-    even_param->ener[i]=0;
-  }
-  return 0;
-}
-
-int EventParamInit_NoBil(long len, ParamOfEvent *even_param)
-{ 
-  int i;
-  long lent; 
-  lent=len;
-  /*EVEN_PARAM *even_param; Parameters to check for events and clean the data*/
-  /*even_param=(EVEN_PARAM *)calloc(1,sizeof(EVEN_PARAM)); */
-  even_param->tau=20.0;       /*memory time of the autoregressive average; */   
-  if(lent <= 131072) even_param->tau=10.0; 
-  even_param->deadtime=0.1;  /*Dead time in seconds*/
-  even_param->factor=1.0;    /*e.g. 10: when re-evaluate mean and std*/
-  even_param->iflev=0;       /*0=no events; 1=begin; 2=event; 3=end of the event*/
-  even_param->med=(REAL4*)malloc(lent*sizeof(REAL4));       /*Autoregressive mean*/
-  even_param->std=(REAL4*)malloc(lent*sizeof(REAL4));   
-  even_param->xamed=(REAL4*)malloc(lent*sizeof(REAL4));      /*Autoregressive mean*/
-  even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));    /*Autoregressive std*/
+  
+  even_param->xamed=(REAL4*)malloc(lent*sizeof(REAL4));      /* Autoregressive mean*/
+  even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));     /* Autoregressive std*/
   even_param->xw=0.;
   even_param->qw=0.;
   even_param->w_norm=1.;
@@ -1759,8 +1681,6 @@ int EventParamInit_NoBil(long len, ParamOfEvent *even_param)
   for(i=0;i<lent;i++){
     even_param->xamed[i]=0.;
     even_param->xastd[i]=0.;
-    even_param->med[i]=0.;
-    even_param->std[i]=0.;
     even_param->begin[i]=-1;
     even_param->duration[i]=0;
     even_param->imax[i]=0;
@@ -1771,38 +1691,6 @@ int EventParamInit_NoBil(long len, ParamOfEvent *even_param)
 }
 
 
-/*********************************************/
-/*Initialization of the event paramaters for the 'fake' highpass series*/
-/*********************************************/
-int Evenbil2(ParamOfEvent *even_param, REAL8TimeSeries *series )
-{ 
-  int i;
-  long newlen; 
-  newlen=ceil(even_param->tau/series->deltaT)+series->data->length;
-  even_param->xamed=(REAL4*)malloc(newlen*sizeof(REAL4));      
-  even_param->xastd=(REAL4*)malloc(newlen*sizeof(REAL4));    
-  for(i=0;i<(int)(newlen);i++){
-    even_param->xamed[i]=0.;
-    even_param->xastd[i]=0.;
-  }
-  
-  return 0;
-}
-
-int Evenbil2_R4(ParamOfEvent *even_param, REAL4TimeSeries *series )
-{ 
-  int i;
-  long newlen; 
-  newlen=ceil(even_param->tau/series->deltaT)+series->data->length;
-  even_param->xamed=(REAL4*)malloc(newlen*sizeof(REAL4));      
-  even_param->xastd=(REAL4*)malloc(newlen*sizeof(REAL4));    
-  for(i=0;i<(int)(newlen);i++){
-    even_param->xamed[i]=0.;
-    even_param->xastd[i]=0.;
-  }
-  
-  return 0;
-}
 
 /******************************************************************************************************************************************/
 /*BILATERAL HIGHPASS FILTER: the SINGLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
@@ -1825,7 +1713,7 @@ int BilHighpass_dataSingle( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthig
 	b1=-w1;
 	a1=-w;
         firsthighpass->data->data[0]=b0*series->data->data[0]; 
-	for(i=1;i<(INT4)series->data->length;i++){
+	for(i=1;i<series->data->length;i++){
 	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
 	}
         len=(series->data->length)-1;
@@ -1836,8 +1724,7 @@ int BilHighpass_dataSingle( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthig
       
         if(itest==1){
          OUTtest=fopen("testhp_singleprec.dat","w");
-         for(k=0;k<(INT4)series->data->length;k++)
-	   fprintf(OUTtest,"%i %23.16e %23.16e\n",k,seriesHP->data->data[k],series->data->data[k]);
+         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%i %23.16e %23.16e\n",k,seriesHP->data->data[k],series->data->data[k]);
          fclose(OUTtest);
 
        }
@@ -1857,22 +1744,18 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 	REAL4 w,w1,b0,b1,a1;
         int itest;
         
+       /* REAL8 r;
+        INT8 ts;
+        r=60.0;
+        ts=ceil(r/series->deltaT);*/
+
         FILE *OUTtest;
-        itest=0;
+     
 	 
-	/* FIXME:
-	  with timeseries allocated outside the function this should be checked
-	  and an error should be returned if they are unequal, but a length should
-	  never be modified !
-	*/
         seriesHP->data->length=series->data->length;
-	/* seriesHP->data->length=series->data->length;*/
+       /* seriesHP->data->length=series->data->length;*/
 	seriesHP->deltaT=series->deltaT; 
-	if(0)
-	  w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
-	else
-	  w=exp(-2*PSS_PI*(myparams->fcut)*(series->deltaT));
-	fprintf(stderr,"BilHighpass_dataDouble(): f:%23.16e, n:%23.16e, w:%23.16e\n",myparams->fcut,series->deltaT,w);
+	w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
 	w1=(1+w)/2;
 	b0=w1;
 	b1=-w1;
@@ -1880,7 +1763,7 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
 
         printf("SerieLength = %i\n",series->data->length);
         firsthighpass->data->data[0]=b0*series->data->data[0]; 
-	for(i=1;i<(INT4)series->data->length;i++){
+	for(i=1;i<series->data->length;i++){
 	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
 	}
         len=(series->data->length)-1;
@@ -1888,140 +1771,28 @@ int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthig
         for(i=len-1;i>=0;i--){
 	  seriesHP->data->data[i]=b0*firsthighpass->data->data[i]+b1*firsthighpass->data->data[i+1]-a1*seriesHP->data->data[i+1];
 	}
-         
-	     
-       if(itest==1){
-         OUTtest=fopen("Btesthp.dat","w");
-         for(k=0;k<(INT4)series->data->length;k++)fprintf(OUTtest,"%23.16e %23.16e\n",seriesHP->data->data[k],series->data->data[k]);
+
+            
+      /* firsthighpass->data->data[ts]=b0*series->data->data[ts]; 
+	for(i=ts;i<(series->data->length-ts);i++){
+	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
+	}
+        len=(series->data->length-ts)-1;
+	seriesHP->data->data[len]=b0*firsthighpass->data->data[len]; 
+        for(i=len-1;i>=ts;i--){
+	  seriesHP->data->data[i]=b0*firsthighpass->data->data[i]+b1*firsthighpass->data->data[i+1]-a1*seriesHP->data->data[i+1];
+	}*/
+
+      
+
+         OUTtest=fopen("testhp.dat","w");
+         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%23.16e\n",seriesHP->data->data[k]);
          fclose(OUTtest);
 
-       }
+     
        return i;
 
 }
-
-int BilHighpass_dataDouble_R4( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthighpass, REAL4TimeSeries *series, BilHP *myparams )
-{
-        INT4 i,k,last;
-	REAL4 w,w1,b0,b1,a1;
-        int itest;
-        FILE *OUTtest;
-        itest=0;
-        
-        if(seriesHP->data->length != series->data->length) {
-	  fprintf(stderr,"ERROR: BilHighpass_dataDouble_R4(): length of timeseries differs: %u != %u\n",
-		  seriesHP->data->length, series->data->length);
-	  return -1;
-	}
-        if(firsthighpass->data->length <= series->data->length) {
-	  fprintf(stderr,"ERROR: BilHighpass_dataDouble_R4(): length of firsthighpass timeseries too short: %u <= %u\n",
-		  firsthighpass->data->length, series->data->length);
-	  return -1;
-	}
-
-	seriesHP->deltaT = series->deltaT; 
-
-	w  = exp(-2.0f * 3.1415926f * (myparams->fcut) * (series->deltaT));
-	w1 = (1.0f + w) / 2.0f;
-	b0 = w1;
-	b1 = -w1;
-	a1 = -w;
-
-	fprintf(stderr,"BilHighpass_dataDouble(): f:%23.16e, n:%23.16e, w:%23.16e\n",myparams->fcut,series->deltaT,w);
-
-        firsthighpass->data->data[0] = b0 * series->data->data[0]; 
-	for(i = 1; i < (INT4)series->data->length; i++) {
-	  firsthighpass->data->data[i]
-	    = b0 * series->data->data[i]
-	    + b1 * series->data->data[i-1]
-	    - a1 * firsthighpass->data->data[i-1];        
-	}
-
-        last = series->data->length - 1;
-	seriesHP->data->data[last] = b0 * firsthighpass->data->data[last]; 
-        for(i = last - 1; i >= 0; i--) {
-	  seriesHP->data->data[i]
-	    = b0 * firsthighpass->data->data[i]
-	    + b1 * firsthighpass->data->data[i+1]
-	    - a1 * seriesHP->data->data[i+1];
-	}
-         if(itest==1){
-         OUTtest=fopen("Btesthp_R4.dat","w");
-         for(k=0;k<(INT4)series->data->length;k++)fprintf(OUTtest,"%23.16e %23.16e\n",seriesHP->data->data[k],series->data->data[k]);
-         fclose(OUTtest);
-
-       }
-
-	return 0;
-}
-
-
-/********************************************************************************************************************************************/
-/*BILATERAL PAOLA HIGHPASS FILTER: the DOUBLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
-/********************************************************************************************************************************************/
-int Bil2( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param )
-{
-
-  INT4 i,k;
-  int itest;
-            
-  INT8 ts;
-  ts=ceil(even_param->tau/seriesHP->deltaT);
-
-  FILE *OUTtest;
-  itest=0;
-
-  seriesHPbil2->data->length=(seriesHP->data->length+ts);
-  seriesHPbil2->deltaT=seriesHP->deltaT; 
-
-  for(i=0;i<(int)ts;i++){
-    seriesHPbil2->data->data[i]=seriesHP->data->data[i];
-  } 
-  for(i=ts;i<(int)(seriesHP->data->length+ts);i++){
-    /* for(j=0;i<(int)(seriesHP->data->length);j++)seriesHPbil2->data->data[j]=seriesHP->data->data[j];*/
-    seriesHPbil2->data->data[i]=seriesHP->data->data[i-ts];
-  } 
-          
-  printf("SerieLengthBil2 = %i\n",seriesHPbil2->data->length);
-
-  if(itest==1){
-    OUTtest=fopen("Btesthpbil2.dat","w");
-    for(k=0;k<(seriesHP->data->length+ts);k++)fprintf(OUTtest,"%23.16e \n",seriesHPbil2->data->data[k]);
-    fclose(OUTtest);
-  }
-
-  return i;
-}
-
-
-int Bil2_R4( REAL4TimeSeries *seriesHPbil2, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param )
-{
-  UINT4 i,k, ts;
-   int itest;
-   FILE *OUTtest;
-   itest=0;
-
-  ts = ceil(even_param->tau / seriesHP->deltaT);
-  seriesHPbil2->data->length=(seriesHP->data->length+ts);
-  seriesHPbil2->deltaT=seriesHP->deltaT; 
-
-  for(i = 0; i < ts; i++){
-    seriesHPbil2->data->data[i] = seriesHP->data->data[i];
-  } 
-  for(i = ts; i < seriesHP->data->length + ts; i++){
-    seriesHPbil2->data->data[i] = seriesHP->data->data[i-ts];
-  } 
-
-
-  if(itest==1){
-    OUTtest=fopen("Btesthpbil2_R4.dat","w");
-    for(k=0;k<(seriesHP->data->length+ts);k++)fprintf(OUTtest,"%23.16e \n",seriesHPbil2->data->data[k]);
-    fclose(OUTtest);
-  }
-
-  return i;
-}
-
 
 /**********************************************************************************************************************************************/
 /*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in SINGLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
@@ -2079,16 +1850,16 @@ int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
     }
 
   return i;
-}
 
+}
 
 /**********************************************************************************************************************************************/
 /*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in DOUBLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
 /**********************************************************************************************************************************************/
-int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, ParamOfEvent *even_param )
+int MedStd_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param )
+/*int MedStd_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *series, ParamOfEvent *even_param )*/
 {
 
-  INT8 ts;
   int  i,i_eval;
   REAL8 w_even;
   /*REAL8 mean_e,se,sum_e,std_e,diff,mean,su,std,sum;*/
@@ -2099,20 +1870,28 @@ int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, P
   REAL8 norm=1.0;
   REAL8 asd_appo;
   
-  ts = ceil(even_param->tau/series->deltaT);
-  seriesHPbil2->data->length = (series->data->length+ts);
-  seriesHPbil2->deltaT = series->deltaT;
+  /*int itest1=1;
+  int itest2=1;
+  FILE *OUTtest1;
+  FILE *OUTtest2;
+  FILE *OUTtest4;*/
+  series->data->length=(series->data->length);
+  series->deltaT=series->deltaT; 
 
-  /* if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT); */ /*change the memory time, if too long*/
+
+ /* if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT); */ /*change the memory time, if too long*/
   itaust=(REAL8) 1.0/(series->deltaT/even_param->tau);
   w_even=exp(-1.0/itaust);
   i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor);/*even_param->factor indicates that the computation of mean and std has to be re-evaluated every i_eval samples */
   if(i_eval<1)i_eval=1;
   even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
 
-  for(i=0; i<(int)(series->data->length+ts);i++){
-    ad=seriesHPbil2->data->data[i];
+
+   for(i=0; i<(int)series->data->length;i++){
+    ad=series->data->data[i];
+   /* printf("ad %23.16e\n",ad);*/
     qd=ad*ad;
+   /* printf("qd %23.16e\n",qd);*/
     if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
     if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
     if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
@@ -2128,105 +1907,31 @@ int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, P
       if(asd_appo !=0)even_param->xastd[i]=(REAL8) sqrt(asd_appo);
       else
 	even_param->xastd[i]=0.0;
+     /*printf("xamed xastd   %e %e  \n",even_param->xamed[i],even_param->xastd[i]);*/
   }
   
-  /* for(i=ts; i<i_eval;i++){*/
-  for(i=0; i<i_eval;i++){
-    even_param->xamed[i]=even_param->xamed[i_eval];
-    even_param->xastd[i]=even_param->xastd[i_eval];
+
+      for(i=0; i<i_eval;i++){
+     even_param->xamed[i]=even_param->xamed[i_eval];
+     even_param->xastd[i]=even_param->xastd[i_eval];
+     
    }
    
   /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
-  for(i=i_eval+1; i<(int) (series->data->length+ts);i++){
+    for(i=i_eval+1; i<(int) (series->data->length);i++){
     /*for(i=i_eval+1; i< (int) series->data->length;i++){*/
-    if(i%i_eval!=0){
-      even_param->xamed[i]=even_param->xamed[i-1];
-      even_param->xastd[i]=even_param->xastd[i-1];
-    }
-  }
-   
-  /* OUTtest2=fopen("testsn2.dat","w");*/
-  for(i=ts; i<(int)(series->data->length+ts);i++){
-    even_param->med[i-ts]=even_param->xamed[i];
-    even_param->std[i-ts]=even_param->xastd[i];
-  } 
+      if(i%i_eval!=0){
+	even_param->xamed[i]=even_param->xamed[i-1];
+	even_param->xastd[i]=even_param->xastd[i-1];
+
+      }
+    }   
+
+
 
   return i;
 
 }
-
-
-int MedStd_R4( REAL4TimeSeries *seriesHPbil2, REAL4TimeSeries *series, ParamOfEvent *even_param )
-{
-
-  INT8 ts;
-  int  i,i_eval;
-  REAL4 w_even;
-  /*REAL4 mean_e,se,sum_e,std_e,diff,mean,su,std,sum;*/
-  REAL4 ad,qd; /*abs of the datum and its square*/
-  REAL4 s=0.;
-  REAL4 ss=0.;  /*mean and average, without normalization, every i_eval samples*/
-  REAL4 itaust;
-  REAL4 norm=1.0;
-  REAL4 asd_appo;
-  
-  ts = ceil(even_param->tau/series->deltaT);
-  seriesHPbil2->data->length = (series->data->length+ts);
-  seriesHPbil2->deltaT = series->deltaT;
-
-  /* if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT); */ /*change the memory time, if too long*/
-  itaust=(REAL4) 1.0/(series->deltaT/even_param->tau);
-  w_even=exp(-1.0/itaust);
-  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor);/*even_param->factor indicates that the computation of mean and std has to be re-evaluated every i_eval samples */
-  if(i_eval<1)i_eval=1;
-  even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
-
-  for(i=0; i<(int)(series->data->length+ts);i++){
-    ad=seriesHPbil2->data->data[i];
-    qd=ad*ad;
-    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
-    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
-    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
-    if(i%i_eval==0 && i!=0){ 
-      s=even_param->xw;
-      ss=even_param->qw;      
-    } 
-      if(even_param->w_norm !=0) {
-      if(even_param->ar==1)norm=1.0/even_param->w_norm;
-    }
-      even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
-      if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
-      else
-	even_param->xastd[i]=0.0;
-  }
-  
-  /* for(i=ts; i<i_eval;i++){*/
-  for(i=0; i<i_eval;i++){
-    even_param->xamed[i]=even_param->xamed[i_eval];
-    even_param->xastd[i]=even_param->xastd[i_eval];
-   }
-   
-  /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
-  for(i=i_eval+1; i<(int) (series->data->length+ts);i++){
-    /*for(i=i_eval+1; i< (int) series->data->length;i++){*/
-    if(i%i_eval!=0){
-      even_param->xamed[i]=even_param->xamed[i-1];
-      even_param->xastd[i]=even_param->xastd[i-1];
-    }
-  }
-   
-  /* OUTtest2=fopen("testsn2.dat","w");*/
-  for(i=ts; i<(int)(series->data->length+ts);i++){
-    even_param->med[i-ts]=even_param->xamed[i];
-    even_param->std[i-ts]=even_param->xastd[i];
-  } 
-
-  return i;
-
-}
-
-
 
 /**************************************************************************************************************************/
 /*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. It uses the mean and the 
@@ -2236,14 +1941,13 @@ int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, B
 {
   INT4 i,j;
   REAL4 ad,rd;
-  REAL4 xmax = 0;
+  REAL4 xmax;
   INT8 time_below; /*Number of samples below*/
   INT8 samples_deadtime;
   REAL4 appo;
   appo=even_param->deadtime/series->deltaT;
   samples_deadtime=lroundf(appo);
-  FILE *EVENDATone;
-FILE *EVENDATfour;
+
   for(i=0;i<(int) series->data->length;i++){
     even_param->begin[i]=-1;
     even_param->duration[i]=0;
@@ -2254,19 +1958,10 @@ FILE *EVENDATfour;
   even_param->iflev=0;
   time_below=0.;
   j=-1;
-     EVENDATone=fopen("ARmean.dat","w"); 
-EVENDATfour=fopen("CRPia.dat","w");
+  
   for(i=0; i<(int) series->data->length;i++){
-#ifdef PSS_STYLE_RD
        ad=fabs(series->data->data[i]);
        rd=(ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25);
-#else
-       ad=(series->data->data[i]);
-       rd=fabs((ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25));
-
-      fprintf(EVENDATone,"%23.16e  %23.16e\n",even_param->med[i],even_param->std[i]);
-fprintf(EVENDATfour,"%23.16e \n",rd);
-#endif
          if((even_param->iflev==0)&&(rd>=myparams->crt) && (ad !=0)){  
 	   j+=1;
 	   even_param->iflev=1;
@@ -2308,8 +2003,6 @@ fprintf(EVENDATfour,"%23.16e \n",rd);
 	 }
   }
   even_param->number=j+1;  /*Total number of events found (j starts from 0)*/
-    fclose(EVENDATone);  
-    fclose(EVENDATfour); 
   return i;
 }
 
@@ -2320,21 +2013,26 @@ standard deviation computed in an autoregressive way and it registers the event 
 int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
 {
 
-  /* REAL8 r = 60.0;
-     INT8 ts, secstep;*/
+ /* REAL8 r = 60.0;
+  INT8 ts, secstep;*/
 
   INT4 i,j,i_start;
   REAL8 ad,rd,rdend,rdst;
-  REAL8 xmax = 0;
+  REAL8 xmax;
   long int time_below; /*Number of samples below*/
   long int samples_deadtime;
   REAL8 appo; /*REAL8 appo;*/
   appo=even_param->deadtime/series->deltaT;
   samples_deadtime=floor(appo+0.5); /*lround(appo);*/
 
-  printf("deadtime, cr_th, fcut,samples_deadtime, deltaT, SerieLength = %f %f %f %ld %23.16e %i\n",even_param->deadtime,myparams->crt,myparams->fcut,samples_deadtime,series->deltaT,series->data->length);
+ printf("deadtime, cr_th, fcut,samples_deadtime, deltaT, SerieLength = %f %f %f %ld %23.16e %i\n",even_param->deadtime,myparams->crt,myparams->fcut,samples_deadtime,series->deltaT,series->data->length);
 
-  int itest=0;
+ 
+ /* ts=ceil(r/series->deltaT);
+  secstep=series->data->length-ts-1;*/
+
+  /*int itest=1;
+  FILE *OUTtest;*/
   FILE *energy;
   FILE *ALLEVENT; 
   FILE *EVENDATone;
@@ -2342,19 +2040,19 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
   FILE *EVENDATthree;
   FILE *EVENDATfour;
 
-  /*float numfl=1;
-    double numdou=0.000215;
-    float trial;
-    double trial2;
-    long int sd,sdf;
-    trial=numfl/numdou;
-    trial2=numfl/numdou;
-    sdf=lroundf(trial);
-    sd=floor(trial2+0.5); 
-    printf("sdf sd: %ld %ld\n",sdf,sd);*/
-
-  energy=fopen("energy.dat","w");
-  for(i=0;i<(int) series->data->length;i++){
+ /*float numfl=1;
+ double numdou=0.000215;
+ float trial;
+ double trial2;
+ long int sd,sdf;
+ trial=numfl/numdou;
+ trial2=numfl/numdou;
+ sdf=lroundf(trial);
+ sd=floor(trial2+0.5); 
+ printf("sdf sd: %ld %ld\n",sdf,sd);*/
+energy=fopen("energy.dat","w");
+    for(i=0;i<(int) series->data->length;i++){
+    /*for(i=ts;i<(int) (series->data->length-ts);i++){*/
     even_param->begin[i]=-1;
     even_param->duration[i]=0;
     even_param->imax[i]=0; 
@@ -2363,107 +2061,161 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
   }
   even_param->iflev=0;
   time_below=0.;
+  
+  
 
+ALLEVENT=fopen("AllEvents.dat","w");
   j=-1;
+EVENDATone=fopen("ARmean.dat","w");
+EVENDATtwo=fopen("ARstd.dat","w");
+EVENDATthree=fopen("NOAbsHp.dat","w");
+EVENDATfour=fopen("CR.dat","w");
+/*for(i=15730;i<=15743;i++)printf("(ad,abs(ser(i)) %i %23.16e \n",i,fabs(series->data->data[i]));*/
 
-  if(itest) { 
-    ALLEVENT=fopen("AllEvents.dat","w");
-    EVENDATone=fopen("ARmean.dat","w");
-    EVENDATtwo=fopen("ARstd.dat","w");
-    EVENDATthree=fopen("NOAbsHp.dat","w");
-    EVENDATfour=fopen("CR.dat","w");
-  }
+  /*fprintf(EVENDAT,"%s %s %s %s %s %s\n","%", "i", "ad", "xamed", "xastd", "rd");*/
+  /*for(i=ts; i<(int) (series->data->length-ts);i++){*/
   
   for(i=0; i<(int) series->data->length;i++){
-    ad=series->data->data[i];
-    rd=fabs((ad-even_param->med[i])/(even_param->std[i]+1e-25));
-
-    if(itest) { 
-      fprintf(EVENDATone,"%23.16e \n",even_param->med[i]);
-      fprintf(EVENDATtwo,"%23.16e \n",even_param->std[i]);
-      fprintf(EVENDATthree,"%23.16e \n",series->data->data[i]);
-      fprintf(EVENDATfour,"%23.16e \n",rd);
-    }
-
-    if((even_param->iflev==0) && (rd>=myparams->crt) && (ad !=0)){  
-      j+=1;
-      even_param->iflev=1;
-      even_param->begin[j]=i;
-      even_param->duration[j]=1;
-      even_param->ener[j]+=ad*ad;
-      even_param->imax[j]=i;
-      even_param->crmax[j]=rd;
-      xmax=ad;
-      fprintf(energy,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",even_param->ener[j],ad,even_param->crmax[j],even_param->med[j],even_param->std[j]);
-      time_below=0;
-    }
-
-    if((even_param->iflev==2)&&(rd>=myparams->crt)){
-      time_below=0;
-      even_param->duration[j]+=1;
-      even_param->ener[j]+=ad*ad;
-      if(ad>=xmax)even_param->imax[j]=i;
-      if(ad>=xmax)even_param->crmax[j]=rd;
-      if(ad>=xmax)xmax=ad;
-    }
-
-    if((even_param->iflev==2)&&(rd<myparams->crt)){
-      time_below+=1.;
-      even_param->duration[j]+=1;
-      even_param->ener[j]+=ad*ad;
-    }
-
-    if(time_below==samples_deadtime){
-      even_param->iflev=3;
-      time_below=0.;
-    } 
-
-    if(time_below>samples_deadtime){
-      even_param->duration[j]-=1;
-      even_param->iflev=3;
-      /*puts("PAY ATTENTION: time_below is greater than samples_deadtime !!");*/
-      time_below=0.;
-    }
-
-    if(even_param->iflev==1)
-      even_param->iflev=2;
-    if(even_param->iflev==3){
-      even_param->duration[j]-=(int) samples_deadtime; 
-      if(even_param->duration[j]<=0) even_param->duration[j]=1;    
-      /*if(j==0)*/ 
-      /*  printf("End of an event (j,i,dur,ad,med,std,rd) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,even_param->duration[j],xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
-      /*EventNumber, Beg, Dur(samples), End, Dur(seconds), xmax, rd, mean, std;*/
+     /* ad=fabs(series->data->data[i]);*/
+      ad=series->data->data[i];
+      /*printf("ad %23.16e\n",ad);*/
+      /*printf("cr %f\n",myparams->crt);*/
+       rd=fabs((ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25));
+       /*if((rd>3.0))printf("rd %f\n",rd);*/
+       /*printf("rd %23.16e\n",rd);*/
+       /*if(even_param->xastd[i]<1e-20)printf("xastd %23.16e\n",even_param->xastd[i]);*/
+       /*printf("i ad,xamed,xastd,rd %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd); */
+       
         
-      i_start=i-samples_deadtime-even_param->duration[j]+1;
-      rdend=(xmax-even_param->med[i])/(even_param->std[i]+1e-25);
-      rdst=(fabs(series->data->data[i_start])-even_param->med[i_start])/(even_param->std[i_start]+1e-25);
+    /*  fprintf(EVENDAT,"%i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
 
-      even_param->iflev=0;
 
-      if(itest)
-	fprintf(ALLEVENT,"%i %i %i %i %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",
-		j,even_param->begin[j],
-		even_param->duration[j],
-		even_param->imax[j],
-		even_param->crmax[j],
-		even_param->med[j],
-		even_param->std[j],
-		even_param->ener[j],
-		ad*ad,xmax);
-    }
+ fprintf(EVENDATone,"%23.16e \n",even_param->xamed[i]);
+ fprintf(EVENDATtwo,"%23.16e \n",even_param->xastd[i]);
+ fprintf(EVENDATthree,"%23.16e \n",series->data->data[i]);
+ fprintf(EVENDATfour,"%23.16e \n",rd);
+
+
+/*if(i==0)printf("(i=0) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==1)printf("(i=1) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26184400)printf("(i=26184400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26214399)printf("(i=26204399) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26214400)printf("(i=26214400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+         if((even_param->iflev==0) && (rd>=myparams->crt) && (ad !=0)){  
+	   j+=1;
+	   even_param->iflev=1;
+          /* if(j==0) */       
+        /* printf("Beginning of an event (j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e\n",j,i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+          /* if(j==100) printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
+         /* printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
+         /*part*/
+         /* printf("(j,i,med,std,rd) %i %i %23.16e %23.16e %23.16e \n",j,i,even_param->xamed[i],even_param->xastd[i],rd);*/
+          /* printf("(START:j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rd);*/
+	   even_param->begin[j]=i;
+	   even_param->duration[j]=1;
+	   even_param->ener[j]+=ad*ad;
+ /*if(j==74)printf("(1st) %23.16e %23.16e %23.16e %23.16e\n",even_param->ener[j],ad*ad,xmax,xmax*xmax);*/
+   
+/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series NOT including the samples in the deadtime!*/
+	   even_param->imax[j]=i;
+	   even_param->crmax[j]=rd;
+	   xmax=ad;
+fprintf(energy,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",even_param->ener[j],ad,even_param->crmax[j],even_param->xamed[j],even_param->xastd[j]);
+/*fprintf(energy,"%23.16e \n",xmax);*/
+        /*  if(j==0) printf("j, xmax %i %23.16e\n",j,xmax);
+          if(j==3) printf("j, xmax %i %23.16e\n",j,xmax);
+          if(j==289) printf("j, xmax %i %23.16e\n",j,xmax); */
+           time_below=0;
+         }
+	 if((even_param->iflev==2)&&(rd>=myparams->crt)){
+	   time_below=0;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+/*if(j==74)printf("(2nd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
+	   if(ad>=xmax)even_param->imax[j]=i;
+	   if(ad>=xmax)even_param->crmax[j]=rd;
+	   if(ad>=xmax)xmax=ad;
+          /* printf("(j,xmax,med,std,rd) %d %23.16e %23.16e %23.16e %23.16e\n",j,xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
+	 }
+	 if((even_param->iflev==2)&&(rd<myparams->crt)){
+	   time_below+=1.;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+  /*  if(j==74)printf("(3rd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
+
+        
+	 }
+	 if(time_below==samples_deadtime){
+           even_param->iflev=3;
+	   time_below=0.;
+	 } 
+	 if(time_below>samples_deadtime){
+	   even_param->duration[j]-=1;
+	   even_param->iflev=3;
+           /*puts("PAY ATTENTION: time_below is greater than samples_deadtime !!");*/
+      	   time_below=0.;
+          
+	 }
+	 if(even_param->iflev==1)even_param->iflev=2;
+         if(even_param->iflev==3){
+           even_param->duration[j]-=(int) samples_deadtime; 
+	    if(even_param->duration[j]<=0) even_param->duration[j]=1;    
+          /*if(j==0)*/ 
+       /*  printf("End of an event (j,i,dur,ad,med,std,rd) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,even_param->duration[j],xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
+  
+        /*EventNumber, Beg, Dur(samples), End, Dur(seconds), xmax, rd, mean, std;*/
+        
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,xmax,ad,fabs(series->data->data[i]),fabs(series->data->data[i_start]));*/
+/*ad close to 'part' is = fabs(series->data->data[i_start]); while ad here is = fabs(series->data->data[i] because i here means the final event; i close to 'part' means the beginning and here the beginning of an event is i_start.)*/
+
+/* rdend=(fabs(series->data->data[i])-even_param->xamed[i])/(even_param->xastd[i]+1e-25);*/
+i_start=i-samples_deadtime-even_param->duration[j]+1;
+rdend=(xmax-even_param->xamed[i])/(even_param->xastd[i]+1e-25);
+rdst=(fabs(series->data->data[i_start])-even_param->xamed[i_start])/(even_param->xastd[i_start]+1e-25);
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,rd,rdst,rdend,fabs(series->data->data[i_start]),fabs(series->data->data[i]));*/
+/*rd here is = rdend; rdst here is = to rd in 'part'*/
+/*i_start here is = i in 'part'*/
+
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,even_param->xamed[i_start],even_param->xastd[i_start],even_param->xamed[i],even_param->xastd[i],rd);*/
+/*Med and Std are = at the begin and the end of an event, but rd is different because ad is different!*/
+
+/*printf("(END) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rdend);
+printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst);*/
+/*xamed[i_start] and xastd[i_start] are = to xamed[i] and xastd[i] close to 'part', respectively.*/
+
+
+
+      /* printf("%i %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),rdst,even_param->xamed[i_start],even_param->xastd[i_start],fabs(series->data->data[i]),rdend,even_param->xamed[i],even_param->xastd[i]);*/
+
+/*for(i_start=15730;i_start<=15743;i_start++)printf("(abs(series(i_start),abs(series(i)) %i %i %23.16e %23.16e \n",i_start,i,fabs(series->data->data[i_start]),fabs(series->data->data[i]));*/
+
+/*printf("%i %23.16e %23.16e\n",i,xmax,fabs(series->data->data[i])); */
+
+/* fprintf(ALLEVENT,"%i %23.16e %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->ener[j],i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst,xmax,even_param->xamed[i],even_param->xastd[i],rdend);*/
+ 
+ 
+
+	    even_param->iflev=0;
+
+fprintf(ALLEVENT,"%i %i %i %i %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->begin[j],even_param->duration[j],even_param->imax[j],even_param->crmax[j],even_param->xamed[j],even_param->xastd[j],even_param->ener[j],ad*ad,xmax);
+/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series including the samples in the deadtime!*/
+
+	 }
+
+  
+     /*  if(itest==1){ 
+         OUTtest=fopen("testsn.dat","w");
+         fprintf(OUTtest,"%i %i %i %f\n",j,i,even_param->duration[j],xmax);
+         fclose(OUTtest);
+       }*/
   }
-
+  fclose(EVENDATone);  
+fclose(EVENDATtwo); 
+fclose(EVENDATthree); 
+fclose(EVENDATfour); 
   even_param->number=j+1;  /*Total number of events found (j starts from 0)*/
-
-  if(itest) { 
-    fclose(EVENDATone);  
-    fclose(EVENDATtwo); 
-    fclose(EVENDATthree); 
-    fclose(EVENDATfour); 
-    fclose(ALLEVENT);
-    fclose(energy);
-  }
-
+fclose(ALLEVENT);
+fclose(energy);
   return i;
 }
 
@@ -2472,651 +2224,205 @@ int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, B
 /*******************************************************************************************************************************************/
 int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)
 {
-  INT4 i,k;
-  INT4 lwind;
-  INT4 index1,index2,index3,index4;
-  INT4 imax;
-  
-  i=MedStd_dataSingle(seriesHP,even_param);
-  i=EventSearch_dataSingle(seriesHP,even_param,myparams);
+        INT4 i,k;
+	INT4 lwind;
+	INT4 index1,index2,index3,index4;
+	INT4 imax;
 
-  /*copy in seriesCL the data of the original time series*/
-  seriesCL->data->length=series->data->length; 
-  seriesCL->deltaT=series->deltaT;
-  for(i=0;i<(INT4)series->data->length;i++)
-    seriesCL->data->data[i]=series->data->data[i];
+        i=MedStd_dataSingle(seriesHP,even_param);
+        i=EventSearch_dataSingle(seriesHP,even_param,myparams);
 
-  lwind=ceil(((REAL8) even_param->edge/series->deltaT));
+        seriesCL->data->length=series->data->length; 
+	seriesCL->deltaT=series->deltaT;
+      
+       for(i=0;i<series->data->length;i++)seriesCL->data->data[i]=series->data->data[i]; /*copy in seriesCL the data of the original time series*/
+       lwind=ceil(((REAL8) even_param->edge/series->deltaT));
 
-  for(i=0; i<even_param->number; i++){
-    if(even_param->begin[i]!=-1){
-      imax=even_param->imax[i];
+     for(i=0; i<even_param->number; i++){
+	  if(even_param->begin[i]!=-1){
+	    imax=even_param->imax[i];
 
-      index1=even_param->begin[i]-lwind;
-      index2=even_param->begin[i]+even_param->duration[i]+lwind;
-      index3=even_param->begin[i];
-      index4=even_param->begin[i]+even_param->duration[i];
-      if(index1 <= 0)
-	index1=0;
-      if(index2 >= (INT4)series->data->length)
-	index2=series->data->length;
+	    index1=even_param->begin[i]-lwind;
+	    index2=even_param->begin[i]+even_param->duration[i]+lwind;
+	    index3=even_param->begin[i];
+	    index4=even_param->begin[i]+even_param->duration[i];
+	    if(index1<=0)index1=0;
+	    if(index2>=series->data->length)index2=series->data->length;
+	  
+  	    for(k=index3; k<index4; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]; /*In the event*/
+	    /*At the edges:*/
+	    for(k=index1; k<index3; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(k-1.0*index1)/lwind; 
+	    for(k=index4; k<index2; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(1.0*index2-k)/lwind;
+	  }
+	   
+      }
+      
 
-      /*In the event*/
-      for(k=index3; k<index4; k++)
-	seriesCL->data->data[k]-=seriesHP->data->data[k];
-      /*At the edges:*/
-      for(k=index1; k<index3; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(k-1.0*index1)/lwind; 
-      for(k=index4; k<index2; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(1.0*index2-k)/lwind;
-    } 
-  }
+      return i;
 
-  return i;
 }
 
 /*******************************************************************************************************************************************/
 /*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN DOUBLE-PRECISION*/
 /*******************************************************************************************************************************************/
-int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHPbil2, ParamOfEvent *even_param, BilHP *myparams)
-/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)*/
+/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)*/
+int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)
 {
-  INT4 i,kk;
-  INT4 lwind;
-  INT4 index1,index2,index3,index4;
-  INT4 imax;
-  REAL8 su,su2,su3,cl;
-  REAL8 st1,st2,st3,hp,wr,diffs;
-  
-  int itest = 0;
-  FILE *outputtest;
-  FILE *EnergyInfo;
-  FILE *EventInfo;
-  FILE *TM;
-                
-  cl = 0; 
-  hp = 0;
-  wr = 0;
-
-  /* i = MedStd_dataDouble(seriesHP,even_param);*/
-  i = MedStd_dataDouble(seriesHPbil2,seriesHP,even_param); 
-  i = EventSearch_dataDouble(seriesHP,even_param,myparams);
-
-  /*copy in seriesCL the data of  of the original time series*/
-  seriesCL->data->length = series->data->length; 
-  seriesCL->deltaT = series->deltaT;
-  for(i = 0; i < (INT4)series->data->length; i++)
-    seriesCL->data->data[i] = series->data->data[i];
-
-  lwind = ceil(((REAL8) even_param->edge/series->deltaT));
-  EventInfo = fopen("even_info.dat","w");
-  EnergyInfo = fopen("energyInfo.dat","w");
-  TM = fopen("mixT.dat","w");
-
-  for(i = 0; i<even_param->number; i++){
-    if(even_param->begin[i] != -1){
-      imax=even_param->imax[i];
-
-      index1 = even_param->begin[i]-lwind;
-      index2 = even_param->begin[i]+even_param->duration[i]+lwind;
-      index3 = even_param->begin[i];
-      index4 = even_param->begin[i]+even_param->duration[i];
-      if(index1 <= 0)
-	index1 = 0;
-      if(index2 >= (INT4)series->data->length)
-	index2 = series->data->length;
-
-      /*In the event*/
-      for(kk = index3; kk<index4; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk];
-      /*At the edges:*/
-      for(kk = index1; kk<index3; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk] * (kk - 1.0 * index1) / lwind; 
-      for(kk = index4; kk<index2; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk] * (1.0 * index2 - kk) / lwind;
-           
-      fprintf(EventInfo,"%23.16e %23.16e %23.16e %i %23.16e %23.16e\n",
-	      even_param->duration[i]*series->deltaT,
-	      series->data->data[imax],
-	      seriesHP->data->data[imax],
-	      even_param->duration[i],
-	      even_param->crmax[i],
-	      even_param->ener[i]);
-
-      su = 0;
-      for(kk = index3; kk<index4; kk++){
-	su += (seriesHP->data->data[kk])*(seriesHP->data->data[kk]);
-      }
-      st1 = 0;
-      for(kk = index3; kk<index4; kk++)
-	st1 += 2 * (seriesHP->data->data[kk]) * (series->data->data[kk]);
-      
-      su2 = 0;
-      for(kk = index1; kk<index3; kk++)
-	su2 += (seriesHP->data->data[kk] * (kk-1.0*index1) / lwind) * (seriesHP->data->data[kk] * (kk-1.0*index1) / lwind);
-      st2 = 0;
-      for(kk = index1; kk<index3; kk++)
-	st2 +=  2 * (seriesHP->data->data[kk] * (kk - 1.0 * index1) / lwind) * (series->data->data[kk]); 
-          
-      su3 = 0;
-      for(kk = index4; kk<index2; kk++)
-	su3 += (seriesHP->data->data[kk] * (1.0 * index2 - kk) / lwind) * (seriesHP->data->data[kk] * (1.0*index2-kk) / lwind);
-      st3 = 0;
-      for(kk = index4; kk<index2; kk++)
-	st3 += 2 * (seriesHP->data->data[kk] * (1.0 * index2-kk) / lwind) * (series->data->data[kk]);
-
-      /* printf("%i %23.16e %23.16e %23.16e\n",kk,su,su2,su3); */
-      fprintf(EnergyInfo,"%i %23.16e %23.16e %23.16e \n",i,su,su2,su3); 
-      /* printf("%i %23.16e %23.16e %23.16e\n",kk,st1,st2,st3);*/
-      fprintf(TM,"%i %23.16e %23.16e %23.16e\n",i,st1,st2,st3); 
+        INT4 i,kk;
+	INT4 lwind;
+        INT4 index1,index2,index3,index4;
+	INT4 imax;
+        REAL8 su,su2,su3,cl;
+        REAL8 st1,st2,st3,hp,wr,diffs;
         
-    }
-	 
-  }
-  fclose(EventInfo);
-  fclose(EnergyInfo);
-  fclose(TM);
-
-  if(itest == 1){
-    outputtest = fopen("CleanedTS.dat","w");
-    for(i = 0; i < (INT4)series->data->length; i++)
-      fprintf(outputtest,"%23.16e\n",seriesCL->data->data[i]);
-    fclose(outputtest);      
-  }
-
-  for(i = 0;i < (INT4)series->data->length; i++){
-    hp += seriesHP->data->data[i] * seriesHP->data->data[i];
-    cl += seriesCL->data->data[i] * seriesCL->data->data[i];
-    wr += series->data->data[i] * series->data->data[i];
-  }
-
-  diffs = wr-cl;
-  printf("diffs %23.16e\n", diffs);
-  printf("sumHP2 sumcl2 sumw2 %23.16e %23.16e %23.16e\n",hp,cl,wr);
-
-  return i;
-}
-
-int EventRemoval_R4(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4TimeSeries *seriesHP, REAL4TimeSeries *seriesHPbil2, ParamOfEvent *even_param, BilHP *myparams)
-{
-  INT4 i,kk;
-  INT4 lwind;
-  INT4 index1,index2,index3,index4;
-  INT4 imax;
-  REAL4 su,su2,su3,cl;
-  REAL4 st1,st2,st3,hp,wr,diffs;
-  
-  FILE *EnergyInfo;
-  FILE *EventInfo;
-  FILE *TM;
+        int itest=1;
+        FILE *outputtest;
+        FILE *EnergyInfo;
+        FILE *EventInfo;
+        FILE *TM;
                 
-  cl = 0; 
-  hp = 0;
-  wr = 0;
+        cl=0; 
+        hp=0;
+        wr=0;
+         
+    
+/*
+REAL4 en;
 
-  i = MedStd_R4(seriesHPbil2,seriesHP,even_param); 
-  i = EventSearch_dataSingle(seriesHP,even_param,myparams);
+for(i=0;i<(int) series->data->length;i++){
+      en[i]=0;
+  }*/
 
-  /*copy in seriesCL the data of  of the original time series*/
-  seriesCL->data->length = series->data->length; 
-  seriesCL->deltaT = series->deltaT;
-  for(i = 0; i < (INT4)series->data->length; i++)
-    seriesCL->data->data[i] = series->data->data[i];
+       /* i=MedStd_dataDouble(seriesHP,even_param);*/
+        i=MedStd_dataDouble(seriesHP,even_param); 
+        i=EventSearch_dataDouble(seriesHP,even_param,myparams);
 
-  lwind = ceil(((REAL8) even_param->edge/series->deltaT));
-  EventInfo = fopen("even_info.dat","w");
-  EnergyInfo = fopen("energyInfo.dat","w");
-  TM = fopen("mixT.dat","w");
+        seriesCL->data->length=series->data->length; 
+	seriesCL->deltaT=series->deltaT;
+    for(i=0;i<series->data->length;i++)seriesCL->data->data[i]=series->data->data[i]; /*copy in seriesCL the data of  of the original time series*/
+       lwind=ceil(((REAL8) even_param->edge/series->deltaT));
+ EventInfo=fopen("even_info.dat","w");
+ EnergyInfo=fopen("energyInfo.dat","w");
+ TM=fopen("mixT.dat","w");
 
-  for(i = 0; i<even_param->number; i++){
-    if(even_param->begin[i] != -1){
-      imax=even_param->imax[i];
+     for(i=0; i<even_param->number; i++){
+	  if(even_param->begin[i]!=-1){
+	    imax=even_param->imax[i];
 
-      index1 = even_param->begin[i]-lwind;
-      index2 = even_param->begin[i]+even_param->duration[i]+lwind;
-      index3 = even_param->begin[i];
-      index4 = even_param->begin[i]+even_param->duration[i];
-      if(index1 <= 0)
-	index1 = 0;
-      if(index2 >= (INT4)series->data->length)
-	index2 = series->data->length;
 
-      /*In the event*/
-      for(kk = index3; kk<index4; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk];
-      /*At the edges:*/
-      for(kk = index1; kk<index3; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk] * (kk - 1.0 * index1) / lwind; 
-      for(kk = index4; kk<index2; kk++)
-	seriesCL->data->data[kk] -= seriesHP->data->data[kk] * (1.0 * index2 - kk) / lwind;
+ /* printf("***One event:(i, begin, dur) %d %d %d\n",i,even_param->begin[i],even_param->duration[i]);
+   printf("duration in s,MaxAmpOrig MaxAmpHPseries %f %23.16e %23.16e\n",even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax]);*/
+
+
+	    index1=even_param->begin[i]-lwind;
+	    index2=even_param->begin[i]+even_param->duration[i]+lwind;
+	    index3=even_param->begin[i];
+	    index4=even_param->begin[i]+even_param->duration[i];
+	    if(index1<=0)index1=0;
+	    if(index2>=series->data->length)index2=series->data->length;
+	  
+  	    for(kk=index3; kk<index4; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]; /*In the event*/
+	    /*At the edges:*/
+	    for(kk=index1; kk<index3; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]*(kk-1.0*index1)/lwind; 
+	    for(kk=index4; kk<index2; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]*(1.0*index2-kk)/lwind;
            
-      fprintf(EventInfo,"%23.16e %23.16e %23.16e %i %23.16e %23.16e\n",
-	      even_param->duration[i]*series->deltaT,
-	      series->data->data[imax],
-	      seriesHP->data->data[imax],
-	      even_param->duration[i],
-	      even_param->crmax[i],
-	      even_param->ener[i]);
-
-      su = 0;
-      for(kk = index3; kk<index4; kk++){
-	su += (seriesHP->data->data[kk])*(seriesHP->data->data[kk]);
-      }
-      st1 = 0;
-      for(kk = index3; kk<index4; kk++)
-	st1 += 2 * (seriesHP->data->data[kk]) * (series->data->data[kk]);
-      
-      su2 = 0;
-      for(kk = index1; kk<index3; kk++)
-	su2 += (seriesHP->data->data[kk] * (kk-1.0*index1) / lwind) * (seriesHP->data->data[kk] * (kk-1.0*index1) / lwind);
-      st2 = 0;
-      for(kk = index1; kk<index3; kk++)
-	st2 +=  2 * (seriesHP->data->data[kk] * (kk - 1.0 * index1) / lwind) * (series->data->data[kk]); 
+            fprintf(EventInfo,"%23.16e %23.16e %23.16e %i %23.16e %23.16e\n",even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->crmax[i],even_param->ener[i]);
           
-      su3 = 0;
-      for(kk = index4; kk<index2; kk++)
-	su3 += (seriesHP->data->data[kk] * (1.0 * index2 - kk) / lwind) * (seriesHP->data->data[kk] * (1.0*index2-kk) / lwind);
-      st3 = 0;
-      for(kk = index4; kk<index2; kk++)
-	st3 += 2 * (seriesHP->data->data[kk] * (1.0 * index2-kk) / lwind) * (series->data->data[kk]);
-
-      /* printf("%i %23.16e %23.16e %23.16e\n",kk,su,su2,su3); */
-      fprintf(EnergyInfo,"%i %23.16e %23.16e %23.16e \n",i,su,su2,su3); 
-      /* printf("%i %23.16e %23.16e %23.16e\n",kk,st1,st2,st3);*/
-      fprintf(TM,"%i %23.16e %23.16e %23.16e\n",i,st1,st2,st3); 
+             su=0;
+            for(kk=index3; kk<index4; kk++){
+            su+=(seriesHP->data->data[kk])*(seriesHP->data->data[kk]);
+            }
+            st1=0;
+            for(kk=index3; kk<index4; kk++)st1+=2*(seriesHP->data->data[kk])*(series->data->data[kk]);
+             
+           su2=0;
+           for(kk=index1; kk<index3; kk++)su2+=(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind)*(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind);
+           st2=0;
+           for(kk=index1; kk<index3; kk++)st2+=2*(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind)*(series->data->data[kk]); 
+          
+           su3=0;
+           for(kk=index4; kk<index2; kk++)su3+=(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind)*(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind);
+           st3=0;
+           for(kk=index4; kk<index2; kk++)st3+=2*(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind)*(series->data->data[kk]);
+           
+           
+          /* printf("%i %23.16e %23.16e %23.16e\n",kk,su,su2,su3); */
+           fprintf(EnergyInfo,"%i %23.16e %23.16e %23.16e \n",i,su,su2,su3); 
+           /* printf("%i %23.16e %23.16e %23.16e\n",kk,st1,st2,st3);*/
+           fprintf(TM,"%i %23.16e %23.16e %23.16e\n",i,st1,st2,st3); 
         
-    }
+
+
+         /* printf("%i %23.16e %23.16e %23.16e %i %23.16e %23.16e\n",i,even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->crmax[i],even_param->ener[i]);*/
+           /* printf("%i %23.16e %23.16e %23.16e %i %23.16e %23.16e\n",i,even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->xamed[i],even_param->xastd[i]);*/
+
+	  }
 	 
-  }
-  fclose(EventInfo);
-  fclose(EnergyInfo);
-  fclose(TM);
 
-  for(i = 0;i < (INT4)series->data->length; i++){
-    hp += seriesHP->data->data[i] * seriesHP->data->data[i];
-    cl += seriesCL->data->data[i] * seriesCL->data->data[i];
-    wr += series->data->data[i] * series->data->data[i];
-  }
+        /* if(itest==1){*/
+           /*Let's write the first event!*/
+           /* if(i==1)outputtest=fopen("testCL.dat","w");
+            if(index1>=5){ 
+            if(i==1)for(kk=index1-5;kk<index2;kk++)fprintf(outputtest,"%i %23.16e %23.16e %23.16e\n",kk,seriesCL->data->data[kk],series->data->data[kk],seriesHP->data->data[kk]);
+            }
+            if(i==1)fclose(outputtest);
+         }*/
 
-  diffs = wr-cl;
+                    
+     }
+fclose(EventInfo);
+fclose(EnergyInfo);
+fclose(TM);
+
+ /* printf("sum,um,sm %23.16e %23.16e %23.16e \n",sum,sm,um);
+  printf("st1,st2,st3 %23.16e %23.16e %23.16e \n",st1,st2,st3);
+  diffd=st1+st2+st3-(sum+sm+um);
+  printf("diffd %23.16e\n", diffd);*/
+    if(itest==1){
+             outputtest=fopen("CleanedTS.dat","w");
+             for(i=0;i<series->data->length;i++)fprintf(outputtest,"%23.16e\n",seriesCL->data->data[i]);
+             fclose(outputtest);           
+          
+       }
+
+ for(i=0;i<series->data->length;i++){
+    hp+=seriesHP->data->data[i]*seriesHP->data->data[i];
+    cl+=seriesCL->data->data[i]*seriesCL->data->data[i];
+    wr+=series->data->data[i]*series->data->data[i];
+   
+    }
+  diffs=wr-cl;
   printf("diffs %23.16e\n", diffs);
-  printf("sumHP2 sumcl2 sumw2 %23.16e %23.16e %23.16e\n",hp,cl,wr);
+ printf("sumHP2 sumcl2 sumw2 %23.16e %23.16e %23.16e\n",hp,cl,wr);
+      return i;
 
-  return i;
 }
 
 /*******************************************************************************/
-
-/**
-  returns
-  -1 if out of memory
-  -2 if some computation failes
-  -3 if input parameters are invalid
-   0 otherwise (all went well)
-*/
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
-  UINT4 samples;                /**< number of samples in the timeseries */
-  PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
-  PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
-  PSSTimeseries *cleanedTS;     /**< originalTS after cleaning */
-  PSSEventParams *eventParams;  /**< keeps track of the "events" */
-  PSSHeaderParams headerParams; /**< dummy, we don't actually use this to write SFTs */
-  int retval = 0;               /**< return value of the function */
-
-  fprintf(stderr,"[DEBUG] PSSTDCleaningREAL8 called\n");
-
-  /* input sanity checks */
-  if( !(LALTS) || !(LALTS->data) )
-    return -3;
-
-
-  /* number of samples in the original timeseries */
-  samples = LALTS->data->length;
-
-  /* reset errno before calling XLAL functions */
-  xlalErrno = 0;
-
-  /* open a log file, currently necessary for PSS */
-  XLALPSSOpenLog("-");
-
-  /* creation / memory allocation */
-  /* there can't be more events than there are samples,
-     so we prepare for as many events as we have samples */
-  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSEventParams call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeNothing;
-  }
-  if( (originalTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeEventParams;
-  }
-  if( (highpassTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeOriginalTS;
-  }
-  if( (cleanedTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeHighpassTS;
-  }
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after alloc): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  /* the actual cleaning */
-  if( XLALConvertREAL8TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {
-    fprintf(stderr,"XLALConvertREAL8TimeseriesToPSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",50,-1);
-  XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",0);
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
-    fprintf(stderr,"XLALPSSHighpassData call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
-
-  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-  if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
-    fprintf(stderr,"XLALSubstractPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",0);
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (before convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if( XLALConvertPSSTimeseriesToREAL8Timeseries(LALTS, cleanedTS) == NULL) {
-    fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after PSS): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  /* debug: write out autoregressive mean and std */
-  PrintREAL4ArrayToFile( "PSS_ARmed.dat", eventParams->xamed, dataDouble.data->length );
-  PrintREAL4ArrayToFile( "PSS_ARstd.dat", eventParams->xastd, dataDouble.data->length );
-
-  /* cleanup & return */
- PSSTDCleaningREAL8FreeAll:
-  XLALDestroyPSSTimeseries(cleanedTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeHighpassTS:
-  XLALDestroyPSSTimeseries(highpassTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeOriginalTS:
-  XLALDestroyPSSTimeseries(originalTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeEventParams:
-  XLALDestroyPSSEventParams(eventParams);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSEventParams done.\n");
- PSSTDCleaningREAL8FreeNothing:
-  XLALPSSCloseLog();
-  fprintf(stderr, "[DEBUG] XLALPSSCloseLog done.\n");
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after free()): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if (retval)
-    fprintf(stderr,"PSSTDCleaningREAL8 nonzero retval %d\n", retval);
-
-  return retval;
-}
-
-
-int PSSTDCleaningREAL4(REAL4TimeSeries *LALTS, REAL4 highpassFrequency) {
-  UINT4 samples;                /**< number of samples in the timeseries */
-  PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
-  PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
-  PSSTimeseries *cleanedTS;     /**< originalTS after cleaning */
-  PSSEventParams *eventParams;  /**< keeps track of the "events" */
-  PSSHeaderParams headerParams; /**< dummy, we don't actually use this to write SFTs */
-  int retval = 0;               /**< return value of the function */
-
-  /* input sanity checks */
-  if( !(LALTS) || !(LALTS->data) )
-    return -3;
-
-  /* number of samples in the original timeseries */
-  samples = LALTS->data->length;
-
-  /* open a log file, currently necessary for PSS */
-  XLALPSSOpenLog("-");
-
-  /* creation / memory allocation */
-  /* there can't be more events than there are samples,
-     so we prepare for as many events as we have samples */
-  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
-    retval = -1;
-    goto PSSTDCleaningREAL4FreeNothing;
-  }
-  if( (originalTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    retval = -1;
-    goto PSSTDCleaningREAL4FreeEventParams;
-  }
-  if( (highpassTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    retval = -1;
-    goto PSSTDCleaningREAL4FreeOriginalTS;
-  }
-  if( (cleanedTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    retval = -1;
-    goto PSSTDCleaningREAL4FreeHighpassTS;
-  }
-
-
-  /* the actual cleaning */
-  if( XLALConvertREAL4TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-  if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-  if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-  if( XLALConvertPSSTimeseriesToREAL4Timeseries(LALTS, cleanedTS) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-
-
-  /* cleanup & return */
- PSSTDCleaningREAL4FreeAll:
-  XLALDestroyPSSTimeseries(cleanedTS);
- PSSTDCleaningREAL4FreeHighpassTS:
-  XLALDestroyPSSTimeseries(highpassTS);
- PSSTDCleaningREAL4FreeOriginalTS:
-  XLALDestroyPSSTimeseries(originalTS);
- PSSTDCleaningREAL4FreeEventParams:
-  XLALDestroyPSSEventParams(eventParams);
- PSSTDCleaningREAL4FreeNothing:
-  XLALPSSCloseLog();
-  return retval;
-}
-
-int PSSTDCleaningSingle(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL4(&dataSingle, CLA.fc));
-}
-
-int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL8(&dataDouble, CLA.fc));
-}
-
 int TDCleaning(struct CommandLineArgsTag CLA)
-{
-  /* FIXME: Memory leak even_param */
+{       
   INT4 j, k;
-  
-   int itest=0;
-   FILE *dectest;
-
   ParamOfEvent *even_param;
   even_param=(ParamOfEvent *)calloc(1,sizeof(ParamOfEvent)); 
+ 
 
   BilHP bilparam;
 
   bilparam.fcut    = CLA.fc;
   bilparam.crt     = CLA.cr;
   
-  EventParamInit(dataDouble.data->length, even_param);
-  j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
+     
+       EventParamInit(dataDouble.data->length, even_param);
+       j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
+       j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, even_param, &bilparam);
+        dataDouble.data->length=dataDoubleClean.data->length;   
+	dataDouble.deltaT=dataDoubleClean.deltaT;
 
+       for (k = 0; k < (int)dataDoubleClean.data->length; k++) {
+          dataDouble.data->data[k] = dataDoubleClean.data->data[k];
+       }
 
-/*Decisive test*/
-            if(itest==1){
-             dectest=fopen("BTest.dat","w");
-             for(k=0;k<(int)dataDouble.data->length;k++)fprintf(dectest,"%23.16e  %23.16e  %23.16e\n",dataDoubleHP.data->data[k],dataDoubleFirstHP.data->data[k],dataDouble.data->data[k]);
-             fclose(dectest);           
-            }
-/*Decisive test*/
-
-
-  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",50,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
-
-  Evenbil2(even_param, &dataDouble );
-  j=Bil2( &databil2, &dataDoubleHP, even_param);
-  j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, even_param, &bilparam);
-  dataDouble.data->length=dataDoubleClean.data->length;   
-  dataDouble.deltaT=dataDoubleClean.deltaT;
-
-
-/*Decisive test
-            if(itest==1){
-             dectest=fopen("BDecTest.dat","w");
-             for(k=0;k<(int)dataDouble.data->length;k++)fprintf(dectest,"%23.16e  %23.16e  %23.16e  %23.16e\n",dataDoubleClean.data->data[k],dataDouble.data->data[k],dataDoubleHP.data->data[k],databil2.data->data[k]);
-             fclose(dectest);           
-            }
-Decisive test*/
-
-
-  for (k = 0; k < (int)dataDoubleClean.data->length; k++) {
-    dataDouble.data->data[k] = dataDoubleClean.data->data[k];
-  }
-
-  return 0;
-}
-
-
-int TDCleaning_R4(struct CommandLineArgsTag CLA)
-{       
-  INT4 k;
-  ParamOfEvent even_param;
-  BilHP bilparam;
-
-  bilparam.fcut    = CLA.fc;
-  bilparam.crt     = CLA.cr;
-  
-  EventParamInit(dataDouble.data->length, &even_param);
-
-  /* debug: write out original dataDouble TS */
- /* XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",0,-1); */
- XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDoubleInREAL8.dat",0,0);
- XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDoubleInREAL4.dat",0,-1); 
-
-
-  /* debug: convert dataDouble into dataSingle TS */
-  XLALConvertREAL8TimeSeriesToREAL4TimeSeries(&dataSingle, &dataDouble);
-
-  /* debug: write out dataSingle to be sure the conversion works */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingle,"dataSingle.dat",0);
-  
-  /* highpass the data using single precision */
-  BilHighpass_dataSingle( &dataSingleHP, &dataSingleFirstHP, &dataSingle, &even_param, &bilparam );
-
-  /* debug: write out the highpass TS */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleFirstHP,"dataSingleFirstHP.dat",0);
-
-
-
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"dataSingleHP.dat",0);
-  
-
-  /* REAL4TimeSeries version of Evenbil2() */
-  Evenbil2_R4(&even_param, &dataSingle );
-
-  /* REAL4TimeSeries version of Bil2() */
-  Bil2_R4( &databil2Single, &dataSingleHP, &even_param);
-  
-  EventRemoval_R4( &dataSingleClean, &dataSingle, &dataSingleHP, &databil2Single, &even_param, &bilparam);
-
-  /* write out the cleaned data */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"dataSingleClean.dat",0);
-    /* copy the cleaned data back to dataDouble */
-  for (k = 0; k < (int)dataSingleClean.data->length; k++) {
-    dataDouble.data->data[k] = dataSingleClean.data->data[k];
-  }
-
-  return 0;
-}
-
-
-int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
-{       
-  INT4 k;
-  ParamOfEvent even_param;
-  BilHP bilparam;
-
-  bilparam.fcut    = CLA.fc;
-  bilparam.crt     = CLA.cr;
-  
-  EventParamInit_NoBil(dataDouble.data->length, &even_param);
-
-  /* debug: write out original dataDouble TS */
-  XLALPrintREAL8TimeSeriesToFile(&dataDouble,"NoBilDataDouble.dat",50,-1);
-
-  /* debug: convert dataDouble into dataSingle TS */
-  XLALConvertREAL8TimeSeriesToREAL4TimeSeries(&dataSingle, &dataDouble);
-
-  /* debug: write out dataSingle to be sure the conversion works */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingle,"NoBilDataSingle.dat",50);
-
-  /* highpass the data using single precision */
-  BilHighpass_dataSingle( &dataSingleHP, &dataSingleFirstHP, &dataSingle, &even_param, &bilparam );
-
-  /* debug: write out the highpass TS */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleFirstHP,"NoBilDataSingleFirstHP.dat",50);
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"NoBilDataSingleHP.dat",50);
-
-  EventRemoval_dataSingle( &dataSingleClean, &dataSingle, &dataSingleHP, &even_param, &bilparam);
-
-  /* debug: write out autoregressive mean and std */
-  PrintREAL4ArrayToFile( "NoBil_ARmed.dat", even_param.xamed, dataDouble.data->length );
-  PrintREAL4ArrayToFile( "NoBil_ARstd.dat", even_param.xastd, dataDouble.data->length );
-
-  /* write out the cleaned data */
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"NoBilDataSingleClean.dat",0);
-
-  /* copy the cleaned data back to dataDouble */
-  for (k = 0; k < (int)dataSingleClean.data->length; k++) {
-    dataDouble.data->data[k] = dataSingleClean.data->data[k];
-  }
+     
 
   return 0;
 }
@@ -3467,47 +2773,43 @@ int FreeMem(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   /* 11/19/05 gam */
-  if(CLA.useSingle || (CLA.TDcleaningProc >= 3)) {
+  if(CLA.useSingle) {
 
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
 
-    if (CommandLineArgs.TDcleaningProc > 0) {  
+    if (CommandLineArgs.TDcleaningProc==1) {  
     
-      LALDestroyVector(&status,&dataSingleFirstHP.data);
-      TESTSTATUS( &status );
+    LALDestroyVector(&status,&dataSingleFirstHP.data);
+    TESTSTATUS( &status );
 
-      LALDestroyVector(&status,&dataSingleHP.data);
-      TESTSTATUS( &status ); 
+    LALDestroyVector(&status,&dataSingleHP.data);
+    TESTSTATUS( &status ); 
 
-      LALDestroyVector(&status,&dataSingleClean.data);
-      TESTSTATUS( &status );
+    LALDestroyVector(&status,&dataSingleClean.data);
+    TESTSTATUS( &status );
     }
 
 
     LALDestroyRealFFTPlan( &status, &fftPlanSingle );
     TESTSTATUS( &status );
      
-  }
-
-  if(!CLA.useSingle) {
+  } else {
 
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
 
-    if ((CLA.TDcleaningProc > 0) && (CLA.TDcleaningProc < 3)) {  
+    if (CommandLineArgs.TDcleaningProc==1) {  
     
-      LALDDestroyVector(&status,&dataDoubleFirstHP.data);
-      TESTSTATUS( &status );
+    LALDDestroyVector(&status,&dataDoubleFirstHP.data);
+    TESTSTATUS( &status );
 
-      LALDDestroyVector(&status,&dataDoubleHP.data);
-      TESTSTATUS( &status ); 
+    LALDDestroyVector(&status,&dataDoubleHP.data);
+    TESTSTATUS( &status ); 
 
-      LALDDestroyVector(&status,&databil2.data);
-      TESTSTATUS( &status ); 
 
-      LALDDestroyVector(&status,&dataDoubleClean.data);
-      TESTSTATUS( &status );
+    LALDDestroyVector(&status,&dataDoubleClean.data);
+    TESTSTATUS( &status );
     }
     
     LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
@@ -3521,4 +2823,4 @@ int FreeMem(struct CommandLineArgsTag CLA)
 }
 /*******************************************************************************/
 
-#endif /* #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME */
+#endif
