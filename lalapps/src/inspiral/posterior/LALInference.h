@@ -54,7 +54,14 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#include <sys/time.h>
 
+
+
+#define pi 3.141592653589793
+//TODO: use M_PI from math library?
 
 
 //...other includes
@@ -124,11 +131,11 @@ typedef void (LALTemplateFunction) (struct tagLALIFOData *data);
 //A jump proposal distribution function could call other jump proposal
 //distribution functions with various probabilities to allow for multiple
 //jump proposal distributions
-typedef REAL8 (LALProposalFunction) (LALVariables *currentParams,
-	LALVariables *proposedParams, LALVariables *proposalArgs);
+typedef void (LALProposalFunction) (struct tagLALInferenceRunState *runState,
+	LALVariables *proposedParams);
 
-typedef REAL8 (LALPriorFunction) (LALVariables *currentParams, 
-	LALVariables *priorArgs);
+typedef REAL8 (LALPriorFunction) (struct tagLALInferenceRunState *runState,
+	LALVariables *params);
 
 //Likelihood calculator 
 //Should take care to perform expensive evaluation of h+ and hx 
@@ -138,9 +145,7 @@ typedef REAL8 (LALLikelihoodFunction) (LALVariables *currentParams,
         struct tagLALIFOData * data, LALTemplateFunction *template);
 
 //Compute next state along chain; replaces currentParams
-typedef void (LALEvolveOneStepFunction) (LALVariables * currentParams, 
-	struct tagLALIFOData *data, LALPriorFunction *prior, 
-	LALLikelihoodFunction * likelihood, LALProposalFunction * proposal);
+typedef void (LALEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 //Main driver function for a run; will distinguish MCMC from NestedSampling
 typedef void (LALAlgorithm) (struct tagLALInferenceRunState *runState);
@@ -158,6 +163,7 @@ tagLALInferenceRunState
   LALTemplateFunction * template;
   struct tagLALIFOData * data;
   LALVariables * currentParams, *priorArgs, *proposalArgs;
+  gsl_rng * GSLrandom;
 } LALInferenceRunState;
 
 
@@ -191,10 +197,10 @@ void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
-REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
+REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
                               LALTemplateFunction *template);
 
-REAL8 DecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                               LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);							  
@@ -209,7 +215,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
 
-REAL8 NullLogLikelihood(LALVariables *currentParams, LALIFOData *data);							  
+REAL8 NullLogLikelihood(LALIFOData *data);							  
 
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);

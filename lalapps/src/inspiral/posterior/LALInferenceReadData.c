@@ -54,6 +54,7 @@ const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
 	LALStatus status;
+	memset(&status,0,sizeof(status));
 	FrCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
@@ -88,6 +89,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
 {
 	LALStatus status;
+	memset(&status,0,sizeof(status));
 	ProcessParamsTable *procparam=NULL;
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
@@ -113,7 +115,6 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	char **fLows=NULL,**fHighs=NULL;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
-	memset(&status,0,sizeof(LALStatus));
 
 	if(!getProcParamVal(commandLine,"--cache")||!getProcParamVal(commandLine,"--IFO")||
 	   !getProcParamVal(commandLine,"--PSDstart")||!getProcParamVal(commandLine,"--trigtime")||
@@ -279,6 +280,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 {
 	LALStatus status;
+	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
 	INT4 Ninj=0;
 	INT4 event=0;
@@ -294,7 +296,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	LALIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-	memset(&status,0,sizeof(status));
+	
 	while(thisData){
 		minFlow=minFlow>thisData->fLow?thisData->fLow:minFlow;
 		MindeltaT=MindeltaT>thisData->timeData->deltaT?thisData->timeData->deltaT:MindeltaT;
