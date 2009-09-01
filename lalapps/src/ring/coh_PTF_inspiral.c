@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
@@ -78,6 +79,15 @@ void cohPTFStatistic(
     REAL4Array                 *v1PTFM,
     COMPLEX8VectorSequence     *v1PTFqVec
     );
+void cohPTFoldStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec
+    );
+
 
 
 int main( int argc, char **argv )
@@ -113,6 +123,9 @@ int main( int argc, char **argv )
   COMPLEX8VectorSequence  *l1PTFqVec = NULL;
   REAL4Array              *v1PTFM = NULL;
   COMPLEX8VectorSequence  *v1PTFqVec = NULL;
+  time_t                  startTime;
+  
+  startTime = time(NULL);
 
   /* set error handlers to abort on error */
   set_abrt_on_error();
@@ -121,19 +134,17 @@ int main( int argc, char **argv )
   /* no lal mallocs before this! */
   params = coh_PTF_get_params( argc, argv );
 
-  /* create process params */
-/*  procpar = create_process_params( argc, argv, PROGRAM_NAME );*/
+  fprintf(stdout,"Read input params %ld \n", time(NULL)-startTime);
 
+  /* create process params */
   /* create forward and reverse fft plans */
   fwdplan = coh_PTF_get_fft_fwdplan( params );
   revplan = coh_PTF_get_fft_revplan( params );
 
-  fprintf (stdout, "HELLO!!");
-  fflush (stdout);
+  fprintf(stdout,"Made fft plans %ld \n", time(NULL)-startTime);
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    fprintf (stdout,"%d \n", params->haveTrig[ifoNumber]);
     if ( params->haveTrig[ifoNumber] )
     {
       /* Initialize some of the structures */
@@ -144,10 +155,10 @@ int main( int argc, char **argv )
       PTFqVec[ifoNumber] = NULL;
       /* Read in data from the various ifos */
       params->doubleData = 1;
-      if ( ifoNumber == LAL_IFO_V1 )
-      {
-        params->doubleData = 0;
-      }
+      if ( params->simData )
+          params->doubleData = 0;
+      else if ( ifoNumber == LAL_IFO_V1 )
+          params->doubleData = 0;
       channel[ifoNumber] = coh_PTF_get_data(params,params->channel[ifoNumber],\
                                params->dataCache[ifoNumber] );
       rescale_data (channel[ifoNumber],1E20);
@@ -159,11 +170,10 @@ int main( int argc, char **argv )
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
            invspec[ifoNumber], fwdplan, params );
+
+      fprintf(stdout,"Created segments for one ifo %ld \n", time(NULL)-startTime);
     }
   }
-
-  fprintf (stdout, "HELLOOO!!");
-  fflush (stdout);
 
   /* Create the relevant structures that will be needed */
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
@@ -193,8 +203,7 @@ int main( int argc, char **argv )
   /* Generate the Q freq series of the template */
   generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
 
-  fprintf (stdout, "HELLOOO!!");
-  fflush (stdout);
+  fprintf(stdout,"Generated the template %ld \n", time(NULL)-startTime);
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -208,16 +217,16 @@ int main( int argc, char **argv )
       memset( PTFqVec[ifoNumber]->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
 
       /* And calculate A^I B^I and M^IJ */
-      cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],PTFqVec[ifoNumber],
-                      &segments[ifoNumber]->sgmnt[0],invPlan);
+      cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+          PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[0],invPlan);
+      fprintf(stdout,"Made filters for one ifo %ld \n", time(NULL)-startTime);
+
     }
   }
 
-  fprintf (stdout, "HELLOOO!!");
-  fflush (stdout);
 
-
-  cohPTFStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
+  cohPTFoldStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
+  fprintf(stdout,"Made coherent statistic %ld \n", time(NULL)-startTime);
  
   exit(0);
 
@@ -257,7 +266,12 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
 
   if ( params->getData )
   {
-    if ( params->doubleData )
+    if ( params->simData )
+      channel = get_simulated_data( ifoChannel, &params->startTime,
+          params->duration, params->strainData, params->sampleRate,
+          params->randomSeed, 1E-20 );
+
+    else if ( params->doubleData )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
@@ -509,6 +523,162 @@ void generate_PTF_template(
 }
 
 void cohPTFStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec)
+{
+  UINT4 numPoints,i,j,k,l,m;
+  numPoints = h1PTFqVec->vectorLength;
+  REAL4Array *PTFM[3];
+  COMPLEX8VectorSequence *PTFqVec[3];
+  PTFqVec[0] = h1PTFqVec;
+  PTFqVec[1] = l1PTFqVec;
+  PTFqVec[2] = v1PTFqVec;
+  PTFM[0] = h1PTFM;
+  PTFM[1] = l1PTFM;
+  PTFM[2] = v1PTFM;
+  REAL4 P[9];
+  REAL4 a[3], b[3],theta[3],phi[3];
+  REAL8 A[12];
+  REAL8 CEmBF,AFmCD,BDmAE;
+  REAL4 tempSNR[2],cohSNR[numPoints];
+  REAL4 N,Ntmp[4];
+  REAL4 beta,lamda,Theta,varphi;
+  REAL4 ZH[25],SH[25],YU[25],zh[25],sh[25],yu[25];
+  FILE *outfile;
+  REAL4 deltaT = 1./4076.;
+  REAL4 numpi = 3.141592654;
+  UINT4 numvarphi = 1.;
+  UINT4 numTheta = 1.;
+
+  beta = 0.5;
+  lamda = 2.13;
+
+  /* For a given beta,lamda,Theta,varphi calculate the SNR */
+  /* We need to calculate a[3] and b[3]. This function needs to be written
+     properly (calculating theta and phi from beta and lamda for all ifos */
+  theta[0] = 0.5;
+  theta[1] = 1.1;
+  theta[2] = 0.2;
+  phi[0] = 1.5;
+  phi[1] = 2.7;
+  phi[0] = 0.03;
+  for (i = 0; i < 3; i++)
+  {
+    a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
+    b[i] = cos(theta[i]) * sin(2.*phi[i]);
+  }
+
+  for (i = 0; i < numPoints; i++)
+  {
+    cohSNR[i] = 0.;
+    /* Calculate the cyrillics */
+    for (j = 0; j < 5; j++)
+    {
+      for (k = 0; k < 5; k++)
+      {
+        ZH[j*5+k] = 0;
+        SH[j*5+k] = 0;
+        YU[j*5+k] = 0;
+        zh[j*5+k] = 0;
+        sh[j*5+k] = 0;
+        yu[j*5+k] = 0;
+        for (l=0; l < 3; l++)
+        {
+          for (m=0; m < 3; m++)
+          {
+            Ntmp[0] = PTFqVec[l]->data[j*numPoints+i].im;  
+            Ntmp[1] = PTFqVec[l]->data[k*numPoints+i].im;
+            Ntmp[2] = PTFqVec[l]->data[j*numPoints+i].re; 
+            Ntmp[3] = PTFqVec[l]->data[k*numPoints+i].re;
+            N = Ntmp[0]*Ntmp[1] + Ntmp[2]*Ntmp[3];
+            ZH[j*5+k] += a[l]*a[m] * N;
+            SH[j*5+k] += b[l]*b[m] * N;
+            YU[j*5+k] += a[l]*b[m] * N;
+          }
+          zh[j*5+k] += a[l]*a[l] * PTFM[l]->data[j*5+k];
+          sh[j*5+k] += b[l]*b[l] * PTFM[l]->data[j*5+k];
+          yu[j*5+k] += a[l]*b[l] * PTFM[l]->data[j*5+k];
+        }
+      }
+    }
+    /* Now we loop over varphi and Theta */
+    for (l=0; l < numTheta; l++)
+    {
+      for (m=0; m < numvarphi; m++)
+      {
+        A[0] = 0;
+        A[1] = 0;
+        A[2] = 0;
+        A[3] = 0;
+        A[4] = 0;
+        A[5] = 0;
+        /* Define varphi and Theta */
+        varphi = l/(REAL4) numvarphi * 2.*numpi;
+        Theta = l/(REAL4) numTheta * numpi;
+        /* Calculate the Ps */
+        P[0] = -0.25 * cos(2.*varphi) * ( 3. + cos(2*Theta));
+        P[1] = cos(Theta) * sin(2.*varphi);
+        P[2] = -0.25 * sin(2.*varphi) * ( 3. + cos(2*Theta));
+        P[3] = cos(Theta) * cos(2.*varphi);
+        P[4] = 0.5 * cos(varphi) * sin(2.*Theta);
+        P[5] = - sin(Theta) * sin(varphi);
+        P[6] = 0.5 * sin(varphi) * sin(2.*Theta);
+        P[7] = sin(Theta) * cos(varphi);
+        P[8] = 0.5 * (1 - cos(2.*Theta));
+
+        /* Calculate the A[6] */
+        for (j = 0; j < 5; j++)
+        {
+          for (k = 0; k < 5; k++)
+          {
+            A[0]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
+            A[0]+=P[2*j]*P[2*k+1]*YU[j*5+k];
+            A[1]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
+            A[2]+=P[2*j]*P[2*k+1]*(ZH[j*5+k]-SH[j*5+k]);
+            A[2]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*YU[j*5+k];
+            A[3]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
+            A[3]+=P[2*j]*P[2*k+1]*yu[j*5+k];
+            A[4]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
+            A[5]+=P[2*j]*P[2*k+1]*(zh[j*5+k]-sh[j*5+k]);
+            A[5]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*yu[j*5+k];       
+          }
+        }
+        /* Now we calculate the SNR maximized over psi */
+        BDmAE = A[1]*A[3]-A[0]*A[4];
+        CEmBF = A[2]*A[4]-A[1]*A[5];
+        AFmCD = A[0]*A[5] - A[2]*A[3];
+        A[6] = pow(pow(AFmCD,2.) + pow(BDmAE,2.),0.5); 
+        A[7] = pow(pow(A[6],2.) - pow(CEmBF,2.),0.5);
+        A[8] = (A[7]*BDmAE + CEmBF*AFmCD) / pow(A[6],2.);
+        A[9] = (CEmBF*BDmAE - A[7]*AFmCD) / pow(A[6],2.);
+        A[10] = (-A[7]*BDmAE + CEmBF*AFmCD) / pow(A[6],2.);
+        A[11] = (CEmBF*BDmAE + A[7]*AFmCD) / pow(A[6],2.);
+        tempSNR[0] = 0.5*(A[0]+A[1]*A[8]+A[2]*A[9])/(A[3]+A[4]*A[8]+A[5]*A[9]);
+        tempSNR[1]=0.5*(A[0]+A[1]*A[10]+A[2]*A[11])/(A[3]+A[4]*A[10]+A[5]*A[11]);
+        if ( tempSNR[0] > cohSNR[i])
+          cohSNR[i] = tempSNR[0];
+        if ( tempSNR[1] > cohSNR[i])
+          cohSNR[i] = tempSNR[1];
+      }
+    }
+  }
+  outfile = fopen("cohSNR_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR[i]);
+  }
+  fclose(outfile);
+
+}
+
+  
+  
+
+void cohPTFoldStatistic(
     REAL4Array                 *h1PTFM,
     COMPLEX8VectorSequence     *h1PTFqVec,
     REAL4Array                 *l1PTFM,
