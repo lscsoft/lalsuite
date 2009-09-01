@@ -36,9 +36,9 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   /* values that differ from the defaults set in crea_evenpar() */
   ep->absvalue = 0;        /* 1 uses abs values. Else uses values with sign */
   ep->tau = 20.0;          /* memory time of the autoregressive average */
+  ep->factor = ep->tau/(6.1035156250000000e-05);
   ep->cr = 5.0;            /* CR of the threshold */
   ep->edge = 0.00061035;   /* how many seconds around (before and after) the event have to be "purged" */
-  ep->factor = 1.0;
   notzero = 1e-25;
   return ep;
 }
