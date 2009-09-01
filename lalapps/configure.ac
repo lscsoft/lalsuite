@@ -115,9 +115,7 @@ if test "x$condor" = "xtrue"; then
   esac
   AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
-fi
+
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_LIBTOOL
@@ -128,31 +126,52 @@ AC_CHECK_PROGS(BIBTEX, bibtex, echo)
 AM_PATH_PYTHON(2.4,,:)
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
+# check for supported mac os x version
+if test "x$build_vendor" = "xapple"; then
+  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  if test "x$SW_VERS" != "x"; then
+    AC_MSG_CHECKING([Mac OS X version])
+    MACOSX_VERSION=`$SW_VERS -productVersion`
+    AC_MSG_RESULT([$MACOSX_VERSION])
+  fi
+  case "$MACOSX_VERSION" in
+    10.0*|10.1*|10.2*|10.3*)
+      AC_MSG_ERROR([This version of Mac OS X is not supported])
+      ;;
+    10.4*|10.5*|10.6*)
+      # supported version
+    ;;
+    *)
+      AC_MSG_WARN([Unknown Mac OS X version])
+      ;;
+  esac
+fi
+
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
 AC_CHECK_LIB(z, compress)
 
 PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
-PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
 	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS"
 	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
-  AC_CHECK_LIB(lalstochastic, LALStochasticOptimalFilter, , AC_MSG_ERROR(could not find the LAL stochastic library))
 fi
 
 dnl LALFrame, LALMetaIo, and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
+lalstochastic="true"
 PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
 PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
-	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
+	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
+	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 fi
 
 dnl cfitsio
@@ -207,11 +226,12 @@ if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB(cfitsio, ffopen, , cfitsio="false")
 fi
 
-dnl Now check for LALFrame and LALMetaIo
+dnl Now check for LALFrame, LALMetaIo, and LALStohastic
 if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
   AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
+  AC_CHECK_LIB(lalstochastic, LALStochasticOptimalFilter, , lalstochastic="false")
 fi
 
 dnl Checks for header files.
@@ -275,20 +295,33 @@ if test "$LALSUITE_BUILD" = "true"; then
   lalframe="false"
   lalmetaio="false"
   lalxml="false"
+  lalstochastic="false"
   test -n "$LALFRAME_LIBS" && lalframe="true"
   test -n "$LALMETAIO_LIBS" && lalmetaio="true"
   test -n "$LALXML_LIBS" && lalxml="true"
+  test -n "$LALSTOCHASTIC_LIBS" && lalstochastic="true"
 fi
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(LALFRAME, test x$lalframe = xtrue)
 AM_CONDITIONAL(LALMETAIO, test x$lalmetaio = xtrue)
 AM_CONDITIONAL(LALXML, test x$lalxml = xtrue)
+AM_CONDITIONAL(LALSTOCHASTIC, test x$lalstochastic = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$metaio = xtrue)
 AM_CONDITIONAL(CFITSIO, test x$cfitsio = xtrue)
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
-dnl restore all static to ldflags
+# add gcc specific flags
+if test "$GCC" = yes; then
+  CFLAGS="$CFLAGS $lalapps_gcc_flags"
+
+  # add mac os x specific flags
+  if test "x$MACOSX_VERSION" != "x"; then
+    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
+  fi
+fi
+
+# restore all static to ldflags
 if test "${allstatic}" = "true" ; then
   LDFLAGS="-all-static $LDFLAGS"
 fi
@@ -298,6 +331,7 @@ AC_OUTPUT
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalxmlenabled="`test x${lalxml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+lalstochasticenabled="`test x${lalstochastic} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
@@ -307,6 +341,7 @@ echo "
                 LAL Frame library support is $lalframeenabled
                 LAL MetaIo library support is $lalmetaioenabled
                 LAL XML library support is $lalxmlenabled
+                LAL Stochastic library support is $lalstochasticenabled
                 FITS library support is $cfitsioenabled
 
         Now run 'make' to build LALApps

@@ -460,7 +460,7 @@ void LALCalculateUalpha(LALStatus *status,
 }
 
 
-/* Calculate rho, the cross correlation power, 
+/* Calculate rho, the cross correlation power,
  * according to Eqn 4.4 in Dhurandhar et al 2008 */
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,

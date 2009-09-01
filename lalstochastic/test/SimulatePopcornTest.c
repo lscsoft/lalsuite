@@ -49,7 +49,7 @@ A program to test \texttt{LALSimPopcornTimeSeries()}
 #include <lal/DetectorSite.h>
 #include <lal/Random.h>
 #include <lal/FileIO.h>
-#include "SimulatePopcorn.h"
+#include <lal/SimulatePopcorn.h>
 
 NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
