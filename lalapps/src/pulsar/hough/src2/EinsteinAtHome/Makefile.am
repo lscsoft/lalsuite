@@ -19,7 +19,7 @@ endif
 
 $(optHOME)/FStatOpenCLKernel.c: $(optHOME)/FStatOpenCLKernel.cl
 	echo 'char* opencl_kernel_text="\\' > $@ &&\
-	sed 's/\\/\\\\/g;s/"/\\"/g;s/$$/\\/' $< >> $@ &&\
+	sed 's/\\/\\\\/g;s/"/\\"/g;s/$$/\\n\\/' $< >> $@ &&\
 	echo '";' >> $@ ||\
 	rm -f $@
 
