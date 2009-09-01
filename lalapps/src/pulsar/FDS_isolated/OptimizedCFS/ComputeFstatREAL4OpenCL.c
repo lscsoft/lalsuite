@@ -98,8 +98,9 @@ void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
 void init_sin_cos_LUT_REAL4 (void);
 
 #if USE_OPENCL_KERNEL_CPU
-#include "FStatKernel.cl"
+#include "FStatOpenCLKernel.cl"
 #endif
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
@@ -846,8 +847,9 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
 
 #ifdef OPENCL_KERNEL_TEXT
-
-  char *cl_kernel_strings = OPENCL_KERNEL_TEXT;
+  
+  extern char*opencl_kernel_text;
+#define cl_kernel_strings opencl_kernel_text
 
 #else
 
