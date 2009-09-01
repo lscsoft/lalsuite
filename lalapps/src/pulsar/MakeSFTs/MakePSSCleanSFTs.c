@@ -513,6 +513,21 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 }
 #endif
 
+int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
+  UINT4 i;
+  FILE*fp=fopen(name,"w");
+  if(!fp) {
+    fprintf(stderr,"Could not open file '%s' for writing\n",name);
+    return -1;
+  } else {
+    for(i=0;i<length;i++)
+      fprintf(fp,"%23.16e\n",array[i]);
+    fclose(fp);
+  }
+  return 0;
+}
+
+
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -2822,6 +2837,10 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after PSS): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
+  /* debug: write out autoregressive mean and std */
+  PrintREAL4ArrayToFile( "PSS_ARmed.dat", eventParams->xamed, dataDouble.data->length );
+  PrintREAL4ArrayToFile( "PSS_ARstd.dat", eventParams->xastd, dataDouble.data->length );
+
   /* cleanup & return */
  PSSTDCleaningREAL8FreeAll:
   XLALDestroyPSSTimeseries(cleanedTS);
@@ -3042,6 +3061,10 @@ int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
   XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"NoBilDataSingleHP.dat",50);
 
   EventRemoval_dataSingle( &dataSingleClean, &dataSingle, &dataSingleHP, &even_param, &bilparam);
+
+  /* debug: write out autoregressive mean and std */
+  PrintREAL4ArrayToFile( "NoBil_ARmed.dat", even_param.xamed, dataDouble.data->length );
+  PrintREAL4ArrayToFile( "NoBil_ARstd.dat", even_param.xastd, dataDouble.data->length );
 
   /* write out the cleaned data */
   XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"NoBilDataSingleClean.dat",0);
