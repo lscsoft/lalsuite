@@ -46,6 +46,7 @@ extern "C" {
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #define REARRANGE_SFT_DATA
 #elif USE_OPENCL
+#define GPUREADY_DEFAULT 1
 #define INITIALIZE_COPROCESSOR_DEVICE   clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT); 
 #define UNINITIALIZE_COPROCESSOR_DEVICE XLALDestroyCLWorkspace ( &clW, &stackMultiSFT );
 #define REARRANGE_SFT_DATA              XLALRearrangeSFTData ( &clW, &fstatVector );
