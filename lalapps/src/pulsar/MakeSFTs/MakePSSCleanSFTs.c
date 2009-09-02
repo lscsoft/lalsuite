@@ -2030,14 +2030,15 @@ int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
   REAL8 norm=1.0;
   REAL8 asd_appo;
 
-  if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
-  itaust=(REAL8) 1.0/(series->deltaT/even_param->tau);
-  w_even=exp(-1.0/itaust);
-  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
-  if(i_eval<1)i_eval=1;
-  even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
+  if(series->data->length*series->deltaT < even_param->tau)
+    even_param->tau = (REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
+  itaust = (REAL8) 1.0/(series->deltaT/even_param->tau);
+  w_even = exp(-1.0/itaust);
+  i_eval = (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
+  if(i_eval<1)i_eval = 1;
+  even_param->ar = 1;  /*The algorithm for the autoregressive evaluation is set.*/
 
-  for(i=0; i<(int) series->data->length;i++){
+  for(i=0; i<(int)series->data->length;i++){
     ad=fabs(series->data->data[i]); 
     qd=ad*ad;
     
@@ -2049,13 +2050,16 @@ int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
       ss=even_param->qw;      
     } 
     if(even_param->w_norm !=0) {
-      if(even_param->ar==1)norm=1.0/even_param->w_norm;
+      if(even_param->ar==1)
+	norm=1.0/even_param->w_norm;
     }
-      even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
-      if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
-      else
-	even_param->xastd[i]=0.0;
+
+    even_param->xamed[i]=s*norm;
+    asd_appo=fabs(ss*norm-s*s*norm*norm);
+    if (asd_appo !=0)
+      even_param->xastd[i]=(REAL4) sqrt(asd_appo);
+    else
+      even_param->xastd[i]=0.0;
   }
   
   for(i=0; i<i_eval;i++){
@@ -2074,6 +2078,64 @@ int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
   return i;
 }
 
+int MedStd_dataSingle_R4( REAL4TimeSeries *series, ParamOfEvent *even_param )
+{
+  INT4  i,i_eval;
+  REAL4 w_even;
+  REAL4 ad,qd; /*abs of the datum and its square*/
+  REAL4 s=0.;
+  REAL4 ss=0.;  /*mean and average, without normalization, every i_eval samples*/
+  REAL4 itaust;
+  REAL4 norm=1.0;
+  REAL4 asd_appo;
+
+  if(series->data->length*series->deltaT < even_param->tau)
+    even_param->tau = (REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
+  itaust = (REAL4) 1.0/(series->deltaT/even_param->tau);
+  w_even = exp(-1.0/itaust);
+  i_eval = (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
+  if(i_eval<1)i_eval = 1;
+  even_param->ar = 1;  /*The algorithm for the autoregressive evaluation is set.*/
+
+  for(i=0; i<(int)series->data->length;i++){
+    ad=fabs(series->data->data[i]); 
+    qd=ad*ad;
+    
+    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
+    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
+    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
+    if(i%i_eval==0 && i!=0){ 
+      s=even_param->xw;
+      ss=even_param->qw;      
+    } 
+    if(even_param->w_norm !=0) {
+      if(even_param->ar==1)
+	norm=1.0/even_param->w_norm;
+    }
+
+    even_param->xamed[i]=s*norm;
+    asd_appo=fabs(ss*norm-s*s*norm*norm);
+    if (asd_appo !=0)
+      even_param->xastd[i]=(REAL4) sqrt(asd_appo);
+    else
+      even_param->xastd[i]=0.0;
+  }
+  
+  for(i=0; i<i_eval;i++){
+     even_param->xamed[i]=even_param->xamed[i_eval];
+     even_param->xastd[i]=even_param->xastd[i_eval];
+   }
+   
+  /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
+    for(i=i_eval+1; i< (INT4) series->data->length;i++){
+      if(i%i_eval!=0){
+	even_param->xamed[i]=even_param->xamed[i-1];
+	even_param->xastd[i]=even_param->xastd[i-1];
+      }
+    }
+
+  return i;
+}
 
 /**********************************************************************************************************************************************/
 /*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in DOUBLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
@@ -2463,7 +2525,7 @@ int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, 
   INT4 index1,index2,index3,index4;
   INT4 imax;
   
-  i=MedStd_dataSingle(seriesHP,even_param);
+  i=MedStd_dataSingle_R4(seriesHP,even_param);
   i=EventSearch_dataSingle(seriesHP,even_param,myparams);
 
   /*copy in seriesCL the data of the original time series*/
