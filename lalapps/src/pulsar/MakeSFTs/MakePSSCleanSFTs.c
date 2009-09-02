@@ -2089,6 +2089,9 @@ int MedStd_dataSingle_R4( REAL4TimeSeries *series, ParamOfEvent *even_param )
   REAL4 norm=1.0;
   REAL4 asd_appo;
 
+  FILE*fp1=fopen("norm.dat","w");
+  FILE*fp2=fopen("mean.dat","w");
+
   if(series->data->length*series->deltaT < even_param->tau)
     even_param->tau = (REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
   itaust = (REAL4) 1.0/(series->deltaT/even_param->tau);
@@ -2108,12 +2111,16 @@ int MedStd_dataSingle_R4( REAL4TimeSeries *series, ParamOfEvent *even_param )
       s=even_param->xw;
       ss=even_param->qw;      
     } 
-    if(even_param->w_norm !=0) {
-      if(even_param->ar==1)
-	norm=1.0/even_param->w_norm;
-    }
+    if(even_param->w_norm != 0.0)
+      norm = 1.0/even_param->w_norm;
 
     even_param->xamed[i]=s*norm;
+
+    if(fp1)
+      fprintf(fp1,"%23.16e\n",norm);
+    if(fp2)
+      fprintf(fp2,"%23.16e\n",even_param->xamed[i]);
+
     asd_appo=fabs(ss*norm-s*s*norm*norm);
     if (asd_appo !=0)
       even_param->xastd[i]=(REAL4) sqrt(asd_appo);
@@ -2127,12 +2134,17 @@ int MedStd_dataSingle_R4( REAL4TimeSeries *series, ParamOfEvent *even_param )
    }
    
   /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
-    for(i=i_eval+1; i< (INT4) series->data->length;i++){
-      if(i%i_eval!=0){
-	even_param->xamed[i]=even_param->xamed[i-1];
-	even_param->xastd[i]=even_param->xastd[i-1];
-      }
+  for(i=i_eval+1; i< (INT4) series->data->length;i++){
+    if(i%i_eval!=0){
+      even_param->xamed[i]=even_param->xamed[i-1];
+      even_param->xastd[i]=even_param->xastd[i-1];
     }
+  }
+
+  if(fp1)
+    fclose(fp1);
+  if(fp2)
+    fclose(fp2);
 
   return i;
 }
@@ -2168,21 +2180,23 @@ int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, P
   for(i=0; i<(int)(series->data->length+ts);i++){
     ad=seriesHPbil2->data->data[i];
     qd=ad*ad;
-    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
-    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
-    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
+    even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
+    even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
+    even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
     if(i%i_eval==0 && i!=0){ 
       s=even_param->xw;
       ss=even_param->qw;      
     } 
-      if(even_param->w_norm !=0) {
-      if(even_param->ar==1)norm=1.0/even_param->w_norm;
+    if(even_param->w_norm !=0) {
+      norm=1.0/even_param->w_norm;
     }
-      even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
-      if(asd_appo !=0)even_param->xastd[i]=(REAL8) sqrt(asd_appo);
-      else
-	even_param->xastd[i]=0.0;
+
+    even_param->xamed[i]=s*norm;
+    asd_appo=fabs(ss*norm-s*s*norm*norm);
+    if(asd_appo !=0)
+      even_param->xastd[i]=(REAL8) sqrt(asd_appo);
+    else
+      even_param->xastd[i]=0.0;
   }
   
   /* for(i=ts; i<i_eval;i++){*/
@@ -2239,21 +2253,23 @@ int MedStd_R4( REAL4TimeSeries *seriesHPbil2, REAL4TimeSeries *series, ParamOfEv
   for(i=0; i<(int)(series->data->length+ts);i++){
     ad=seriesHPbil2->data->data[i];
     qd=ad*ad;
-    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
-    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
-    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
+    even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
+    even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
+    even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
     if(i%i_eval==0 && i!=0){ 
       s=even_param->xw;
       ss=even_param->qw;      
     } 
-      if(even_param->w_norm !=0) {
-      if(even_param->ar==1)norm=1.0/even_param->w_norm;
+    if(even_param->w_norm !=0) {
+      norm=1.0/even_param->w_norm;
     }
-      even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
-      if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
-      else
-	even_param->xastd[i]=0.0;
+
+    even_param->xamed[i]=s*norm;
+    asd_appo=fabs(ss*norm-s*s*norm*norm);
+    if(asd_appo !=0)
+      even_param->xastd[i]=(REAL4) sqrt(asd_appo);
+    else
+      even_param->xastd[i]=0.0;
   }
   
   /* for(i=ts; i<i_eval;i++){*/
@@ -2526,6 +2542,11 @@ int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, 
   INT4 imax;
   
   i=MedStd_dataSingle_R4(seriesHP,even_param);
+
+  /* debug: write out autoregressive mean and std */
+  PrintREAL4ArrayToFile( "NoBil_ARmed.dat", even_param->xamed, dataDouble.data->length );
+  PrintREAL4ArrayToFile( "NoBil_ARstd.dat", even_param->xastd, dataDouble.data->length );
+
   i=EventSearch_dataSingle(seriesHP,even_param,myparams);
 
   /*copy in seriesCL the data of the original time series*/
@@ -2815,7 +2836,6 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if( !(LALTS) || !(LALTS->data) )
     return -3;
 
-
   /* number of samples in the original timeseries */
   samples = LALTS->data->length;
 
@@ -3043,7 +3063,8 @@ int TDCleaning(struct CommandLineArgsTag CLA)
 
   XLALPrintREAL8TimeSeriesToFile(&dataDouble,"dataDouble.dat",50,-1);
   XLALPrintREAL8TimeSeriesToFile(&dataDoubleFirstHP,"dataDoubleFirstHP.dat",50,-1);
-  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",50,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHPsingle.dat",0,-1);
+  XLALPrintREAL8TimeSeriesToFile(&dataDoubleHP,"dataDoubleHP.dat",0,0);
 
   Evenbil2(even_param, &dataDouble );
   j=Bil2( &databil2, &dataDoubleHP, even_param);
@@ -3084,7 +3105,7 @@ int TDCleaning_R4(struct CommandLineArgsTag CLA)
 
   /* debug: write out the highpass TS */
   XLALPrintREAL4TimeSeriesToFile(&dataSingleFirstHP,"dataSingleFirstHP.dat",50);
-  XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"dataSingleHP.dat",50);
+  XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"dataSingleHP.dat",0);
 
   /* REAL4TimeSeries version of Evenbil2() */
   Evenbil2_R4(&even_param, &dataSingle );
@@ -3134,10 +3155,6 @@ int TDCleaning_NoBil_R4(struct CommandLineArgsTag CLA)
   XLALPrintREAL4TimeSeriesToFile(&dataSingleHP,"NoBilDataSingleHP.dat",50);
 
   EventRemoval_dataSingle( &dataSingleClean, &dataSingle, &dataSingleHP, &even_param, &bilparam);
-
-  /* debug: write out autoregressive mean and std */
-  PrintREAL4ArrayToFile( "NoBil_ARmed.dat", even_param.xamed, dataDouble.data->length );
-  PrintREAL4ArrayToFile( "NoBil_ARstd.dat", even_param.xastd, dataDouble.data->length );
 
   /* write out the cleaned data */
   XLALPrintREAL4TimeSeriesToFile(&dataSingleClean,"NoBilDataSingleClean.dat",0);
