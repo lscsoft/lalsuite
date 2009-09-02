@@ -217,15 +217,13 @@ XLALComputeFullChisq(
   for (k = 0; k < bankVetoData->acorrMatSize; k++)
   {
     /* we skipped saving the first sample of the autocorrelation which is why */
-    /* we need the -1 here */
-    snrk = q[snrIX-k-1].re * cos(angle) + q[snrIX-k-1].im * sin(angle);
+    /* we need the -1 in the snrk here */
     C = bankVetoData->acorrMat->data[i * bankVetoData->acorrMatSize + k];
+    chisqnorm += 1.0 - C * C;
+    snrk = q[snrIX-k-1].re * cos(angle) + q[snrIX-k-1].im * sin(angle);
     (*dof) += 1;
-    /*FIXME what? This should never happen, and it probably doesn't but if it did it would screw the whole value */
-    if (C >=1 ) continue;
     tmp = snrk - C * snri;
-    chisq += tmp * tmp * norm;
-    chisqnorm += 1.0 / (1.0 - C * C);
+    chisq += tmp * tmp * norm ;
   }
   chisq /= chisqnorm;
   if (chisq <= 0 )
@@ -361,6 +359,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
       if (j != i) bankVetoData->ccMat->data[j*iSize + i].re *= (REAL4) normfac;
       bankVetoData->ccMat->data[i*iSize + j].im *= (REAL4) normfac;
       if (j != i) bankVetoData->ccMat->data[j*iSize + i].im *= (REAL4) normfac;
+      fprintf(stderr, "%d %d %e %e %e\n",i,j,bankVetoData->ccMat->data[i*iSize + j].re,bankVetoData->ccMat->data[i*iSize + j].im, 
+        sqrt(bankVetoData->ccMat->data[i*iSize + j].re * bankVetoData->ccMat->data[i*iSize + j].re + bankVetoData->ccMat->data[i*iSize + j].re * bankVetoData->ccMat->data[i*iSize + j].re) );
     }
   } /* end norm loop */
 
@@ -405,46 +405,36 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     ij.re = bankVetoData->ccMat->data[i*iSize + j].re * cos(phi) - bankVetoData->ccMat->data[i*iSize + j].im * sin(phi);
     ij.im = bankVetoData->ccMat->data[i*iSize + j].im * cos(phi) + bankVetoData->ccMat->data[i*iSize + j].re * sin(phi);
     ijsq = ij.re * ij.re + ij.im * ij.im;
-    if ( ijsq == 0 ) continue; 
-    denomFac =  1.0 / (1.0 - ijsq);
 
-    /* only count templates that are not very correlated 
-     * Note that the dof is incremented only if this is true 
-     * The denomFac is constrained to be between 1.0 and infinity
-     * where 1.0 corresponds to orthogonal templates and 
-     * infinity corresponds to parallel templates
-     * Choosing to make the domain between 1.0 and 2.0 restricts
-     * the inner product to be between 0 and 0.7 
-     * 1 / (1-0.7^2) ~ 2.0 
-     */
-    if ( denomFac > 1.0  && denomFac < 2.0)
-    {
-      bankNorm += denomFac;
-      jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
-             * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
-      jSNR_i = bankVetoData->qVecArray[j]->data[snrIX].im
-             * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
+    if ( ijsq == 0 ) continue; 
+
+    bankNorm += 1.0 - ijsq;
+
+    jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
+           * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
+    jSNR_i = bankVetoData->qVecArray[j]->data[snrIX].im
+           * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
       
-      chi_r = jSNR_r - ij.re * (iSNR);
-      chi_i = jSNR_i - ij.im * (iSNR);
-      chisq += chi_r*chi_r + chi_i*chi_i;
-      (*dof)++;
-    }
+    chi_r = jSNR_r - ij.re * (iSNR);
+    chi_i = jSNR_i - ij.im * (iSNR);
+    chisq += chi_r*chi_r + chi_i*chi_i;
+    (*dof)++;
   }
-  fprintf(stderr, "%d\n", *dof);
 
   /*FIXME Normalization now not necessarily chisquare distributed */
   return (REAL4) chisq / bankNorm;
+  /*return (REAL4) chisq;*/
 }
 
 
 InspiralTemplate *
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize)
   {
-  bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
+  return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
+  /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   return bankHead;
   breakUpRegions(bankHead, num, subbanksize );
-  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);*/
   }
 
 
