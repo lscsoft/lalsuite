@@ -986,7 +986,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
     err_total += (err-CL_SUCCESS);
 
     if (err_total != CL_SUCCESS) {
-        XLALPrintError ("%s: Error creating memory buffer for ABCInvD, error code = %d\n", fn, err );
+        XLALPrintError ("%s: Error creating memory buffer for ABCInvD, error code = %d\n", fn, err_total );
         XLAL_ERROR ( fn, XLAL_EINVAL );
     }
   }
