@@ -2436,8 +2436,10 @@ int TDCleaning(struct CommandLineArgsTag CLA)
   BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
   EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, even_param, &bilparam);
 
+  /*
   PrintREAL4ArrayToFile( "NoBil_ARmed.dat", even_param->xamed, dataDouble.data->length );
   PrintREAL4ArrayToFile( "NoBil_ARstd.dat", even_param->xastd, dataDouble.data->length );
+  */
 
   dataDouble.data->length=dataDoubleClean.data->length;   
   dataDouble.deltaT=dataDoubleClean.deltaT;
