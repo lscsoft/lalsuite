@@ -65,7 +65,7 @@ for database in databases:
 # pair up each file with the appropriate info file
 files.sort()
 infofiles.sort()
-if len(files) != len(infofiles): print 
+if len(files) != len(infofiles): 
   print>> sys.stderr, "the number of infofiles does not match the number of files"
   sys.exit(1)
 file_map=[]

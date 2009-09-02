@@ -122,7 +122,6 @@ for filename in fulldata_files:
   WHERE
     snglA.ifo == ?
     AND snglB.ifo == ?
-  LIMIT 10
     """, (tuple(ifos))):
       is_background = values[-1]
       values = values[:-1]
@@ -194,7 +193,6 @@ for filename in inj_files:
   WHERE
     snglA.ifo == ?
     AND snglB.ifo == ?
-  LIMIT 10  
     """, (tuple(ifos)) ):
       injections.append(values[1:] + (1,))
       injections_info.append([values[0], filename])
@@ -222,12 +220,6 @@ def open_file_write_headers(filetype, set_num, ifos, Nparams=Nparams):
 for i in range(Nrounds):
   f_training = open_file_write_headers(trstr, i, ifos)
   f_testing = open_file_write_headers(testr, i, ifos)
-  #f_training=open(''.join(ifos) + '_set' + str(i) + '_training.pat','w')
-  #f_training.write(str(len(injections[0][:])-1) + '\n')
-  #f_training.write("delta_t ab_dmchirp_rel ab_deta_rel a_snr b_snr a_chisq b_chisq a_effective_snr b_effective_snr a_rsq_veto_duration b_rsq_veto_duration a_bank_chisq b_bank_chisq a_cont_chisq b_cont_chisq \n")
-  #f_testing=open(''.join(ifos) + '_set' + str(i) + '_testing.pat','w')
-  #f_testing.write(str(len(injections[0][:])-1) + '\n')
-  #f_testing.write("delta_t ab_dmchirp_rel ab_deta_rel a_snr b_snr a_chisq b_chisq a_effective_snr b_effective_snr a_rsq_veto_duration b_rsq_veto_duration a_bank_chisq b_bank_chisq a_cont_chisq b_cont_chisq \n")
   f_testing_info=open(''.join(ifos) + '_set' + str(i) + '_' + str(testr) + '_info.pat', 'w')
   set_inj = list(injections)
   set_inj_info = list(injections_info)
@@ -273,8 +265,3 @@ for row in zerolag_info:
 time2=time()
 elapsed_time=time2-time1
 print "elapsed time:", elapsed_time
-  ## what about this enumerate thing? for (row_index, row) in enumerate(set_i_inj):
-  #  print row, row_index
-  #  row = list(row)
-  #  f_testing.write("%s\n" % " ".join(map(str,row)))
-  #  f_testing_info.write("%s\n" % " ".join(map(str,set_i_inj_info[row_index])))
