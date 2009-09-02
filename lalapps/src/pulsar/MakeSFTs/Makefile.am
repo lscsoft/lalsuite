@@ -1,3 +1,4 @@
+
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
@@ -11,7 +12,7 @@ gitID:
 BUILT_SOURCES = gitID
 
 if FRAME
-frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs lalapps_MakeCleanSFTsNObil2 lalapps_MakePSSCleanSFTs
+frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs lalapps_MakeCleanSFTsNObil2 MakeCleanSFTsNObil2single lalapps_MakePSSCleanSFTs
 else
 frameprogs =
 endif
