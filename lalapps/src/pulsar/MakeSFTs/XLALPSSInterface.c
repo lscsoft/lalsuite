@@ -34,12 +34,13 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   if ( ep == NULL )
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EFAULT );
   /* values that differ from the defaults set in crea_evenpar() */
-  ep->absvalue = 0;        /* 1 uses abs values. Else uses values with sign */
-  ep->tau = 20.0;          /* memory time of the autoregressive average */
-  ep->factor = ep->tau/(6.1035156250000000e-05);
-  ep->cr = 5.0;            /* CR of the threshold */
-  ep->edge = 0.00061035;   /* how many seconds around (before and after) the event have to be "purged" */
-  notzero = 1e-25;
+  ep->absvalue = 0.0f;      /* 1 uses abs values. Else uses values with sign */
+  ep->tau = 20.0f;          /* memory time of the autoregressive average */
+  ep->factor = ep->tau/(6.103515625e-05f);
+  ep->cr = 5.0f;            /* CR of the threshold */
+  ep->edge = 0.00061035f;   /* how many seconds around (before and after) the event have to be "purged" */
+  notzero = 1e-25f;
+  ep->w_norm=1.0f;          /* to be sure, might already be set in crea_evenparam() */
   return ep;
 }
 
