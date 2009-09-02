@@ -54,6 +54,8 @@ extern "C" {
 /** ----- switch between different versions of XLALComputeFStatFreqBandVector() ----- */
 #ifdef USE_CUDA
 #define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCUDA
+#elif USE_OPENCL
+#define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorOpenCL
 #else
 #define XLALComputeFStatFreqBandVector XLALComputeFStatFreqBandVectorCPU
 #endif

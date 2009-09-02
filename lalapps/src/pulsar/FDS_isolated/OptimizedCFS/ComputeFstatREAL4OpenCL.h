@@ -131,18 +131,9 @@ typedef struct {
 extern const CLWorkspace empty_CLWorkspace;
 extern CLWorkspace clW;
 
-/* ---------- exported API prototypes ---------- */
-int
-XLALComputeFStatFreqBandVectorOpenCL ( REAL4FrequencySeriesVector *fstatBandV,
-				       const PulsarDopplerParams *doppler,
-				       const MultiSFTVectorSequence *multiSFTsV,
-				       const MultiNoiseWeightsSequence *multiWeightsV,
-				       const MultiDetectorStateSeriesSequence *multiDetStatesV,
-				       UINT4 Dterms,
-				       ComputeFBufferREAL4V *cfvBuffer
-				       );
-int XLALInitCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
-void XLALDestroyCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
+/* ---------- additional exported API prototypes ---------- */
+extern int XLALInitCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
+extern void XLALDestroyCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
 
 #if USE_OPENCL_KERNEL
 void freeCLMemoryObject (cl_mem *memobj);
