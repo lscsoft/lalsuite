@@ -318,7 +318,7 @@ void LALTaylorT4Waveform (
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorT4WaveformEngine(status->statusPtr, signalvec, 
+   LALTaylorT4WaveformEngine(status->statusPtr, signalvec,
              NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -383,7 +383,7 @@ LALTaylorT4WaveformForInjection(
     ABORTXLAL( status );
   }
 
-  /* Call the engine function */  
+  /* Call the engine function */
   LALTaylorT4WaveformEngine(status->statusPtr, NULL, a, ff,
                              phi, &count, params, &paramsInit);
   BEGINFAIL( status )
@@ -403,7 +403,7 @@ LALTaylorT4WaveformForInjection(
 
   /* Allocate the waveform structures. */
   if ( ( waveform->a = (REAL4TimeVectorSeries *)
-         LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+         LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL )
   {
     XLALDestroyREAL4Vector( ff );
     XLALDestroyREAL4Vector( a );
@@ -412,7 +412,7 @@ LALTaylorT4WaveformForInjection(
            LALINSPIRALH_MSGEMEM );
   }
   if ( ( waveform->f = (REAL4TimeSeries *)
-         LALCalloc(1, sizeof(REAL4TimeSeries) ) ) == NULL ) 
+         LALCalloc(1, sizeof(REAL4TimeSeries) ) ) == NULL )
   {
     LALFree( waveform->a ); waveform->a = NULL;
     XLALDestroyREAL4Vector( ff );
@@ -422,7 +422,7 @@ LALTaylorT4WaveformForInjection(
            LALINSPIRALH_MSGEMEM );
   }
   if ( ( waveform->phi = (REAL8TimeSeries *)
-         LALCalloc(1, sizeof(REAL8TimeSeries) ) ) == NULL ) 
+         LALCalloc(1, sizeof(REAL8TimeSeries) ) ) == NULL )
   {
     LALFree( waveform->a ); waveform->a = NULL;
     LALFree( waveform->f ); waveform->f = NULL;
@@ -533,7 +533,7 @@ LALTaylorT4WaveformEngine (
    INITSTATUS(status, "LALTaylorT4WaveformEngine", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT( signalvec || ( ff && a && phiVec ), status, 
+   ASSERT( signalvec || ( ff && a && phiVec ), status,
             LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
 /* Allocate all the memory required to dummy and then point the various
