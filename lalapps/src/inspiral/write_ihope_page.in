@@ -490,13 +490,13 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   page.add(msg)
   if thisSearch=='playground':
     ZLdir='playground_summary_plots/'
-    ifartag=['PLAYGROUND','PLAYGROUND']
+    ifartag=['PLAYGROUND','PLAYGROUND','CLOSED_BOX']
   elif thisSearch=='full_data_slide':
     ZLdir='full_data_slide_summary_plots/'
-    ifartag=['FULL_DATA','PLAYGROUND']
+    ifartag=['FULL_DATA','PLAYGROUND','CLOSED_BOX']
   elif thisSearch=='full_data':
     ZLdir='full_data_summary_plots/'
-    ifartag=['FULL_DATA','ALL_DATA']
+    ifartag=['FULL_DATA','ALL_DATA','OPEN_BOX']
   else:
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
@@ -535,7 +535,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
         "Found and Missed plots (Second stage)",\
         "Chi squared plots",\
         "IFAR at CAT_3 (including hardware injections).",\
-        "IFAR at CAT_4 (hardware injections removed)."     
+        "IFAR at CAT_4 (hardware injections removed)."
         ]
 
   tags = [\
@@ -774,13 +774,13 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   page.add(msg)
   if thisSearch=='playground':
     images_dir='playground_summary_plots/'
-    ifartag=['PLAYGROUND','PLAYGROUND']
+    ifartag=['PLAYGROUND','PLAYGROUND','CLOSED_BOX']
   elif thisSearch=='full_data_slide':
     images_dir='full_data_slide_summary_plots/'
-    ifartag=['FULL_DATA','PLAYGROUND']
+    ifartag=['FULL_DATA','PLAYGROUND','CLOSED_BOX']
   elif thisSearch=='full_data':
     images_dir='full_data_summary_plots/'
-    ifartag=['FULL_DATA','ALL_DATA']
+    ifartag=['FULL_DATA','ALL_DATA','OPEN_BOX']
   else:
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
@@ -888,7 +888,8 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 	'Second inspiral stage (using SIRE_SECOND files)',\
 	'Second thinca step (all ifo combination and category 3 COIRE_SECOND*_ files)',\
         "IFAR at CAT_3 (including hardware injections).",\
-        "IFAR at CAT_4 (hardware injections removed)."
+        "IFAR at CAT_4 (hardware injections removed).",\
+        "Trigger rates at second coincidence stage (hardware injections removed)"
 	]
 
   tags = [\
@@ -899,7 +900,8 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 	'*plotinspiral_SECOND_*',\
 	'*plotthinca_SECOND_*CAT_3*',\
         '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1]+'*',\
-        '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1]+'*'
+        '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1]+'*',\
+        '*plotslides*'+ifartag[0]+'*CAT_4*'+ifartag[2]+'*'
 	]
 
   imagetags=[\
@@ -910,7 +912,8 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 	['snr_vs_time','snr_vs_chisq_log','snr_histogram'],\
 	['plot_slide_trigs', 'cum_hist_effective_snr'],\
         ['cumhist_uncombined_ifar','cumhist_combined_ifar'],\
-        ['cumhist_uncombined_ifar','cumhist_combined_ifar']
+        ['cumhist_uncombined_ifar','cumhist_combined_ifar'],\
+        ['playground_rates','slide_durations']
 	]
 
   captions = [\
@@ -924,7 +927,8 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 	"Trigger rate at second inspiral stage",\
 	'Trigger rate at second coincidence stage',\
         "Combined and uncombined cumulative IFAR vs number of triggers",\
-        "Combined and uncombined cumulative IFAR vs number of triggers"
+        "Combined and uncombined cumulative IFAR vs number of triggers",\
+        'Trigger rate at second coincidence stage'
 	]
 
   comments = [\
@@ -935,6 +939,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
    To obtain the first thinca stage images, clik on the links in the caption here below",\
   None,\
   "This section shows the plotthinca results for the category 3 only.  ",\
+  None,\
   None,\
   None
   ]
@@ -947,7 +952,8 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 	'veto-inspiral',\
 	'thinca-2',\
         'plotifar',\
-        'plotifar'
+        'plotifar',\
+        None
 	]
 
   images_dirs = [ \
@@ -957,6 +963,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
         images_dir,\
         images_dir,\
         images_dir,\
+        PDdir,\
         PDdir,\
         PDdir
         ]
