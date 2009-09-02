@@ -1746,7 +1746,7 @@ int EventParamInit_NoBil(long len, ParamOfEvent *even_param)
   even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));    /*Autoregressive std*/
   even_param->xw=0.;
   even_param->qw=0.;
-  even_param->w_norm=1.;
+  even_param->w_norm=1.0;
   even_param->edge=0.00061035;  /*Right value: 0.00061035; 0.15 s Seconds around (before and after) the event have to be excluded"*/
   even_param->total=0;    /*Samples, due to all events, have been cleaned*/
   even_param->number=0;   /*Number of events*/
@@ -2851,6 +2851,17 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after alloc): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  /* initialize the header params */
+  memset(&headerParams,0,sizeof(headerParams));
+  /* this implies
+     headerParams.typ = 0;
+     headerParams.nfft = 0;
+
+     The PSS function to allocate and initialize the header parameters is crea_sfdbheader()
+  */
+  headerParams.tsamplu = LALTS->deltaT;
+
 
   /* the actual cleaning */
   if( XLALConvertREAL8TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {

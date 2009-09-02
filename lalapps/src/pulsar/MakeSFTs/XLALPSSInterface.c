@@ -356,8 +356,6 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
 PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PSSHeaderParams* hp, REAL4 f) {
   if ( !tsout || !tsin || !hp )
     XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
-  /* that parameter needs to be set in the headerParams */
-  hp->tsamplu = tsin->dx;
   fprintf(stderr, "[DEBUG] highpass_data_bil: %d\n", highpass_data_bil(tsout,tsin,hp,f) );
   /* XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT ); */
   return tsout;
