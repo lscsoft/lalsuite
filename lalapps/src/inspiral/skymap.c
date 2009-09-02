@@ -24,6 +24,8 @@
 #define max(A,B) (((A) > (B)) ? (A) : (B))
 #define NSIGMA 3
 
+typedef double XLALSkymap2SphericalPolarType[2];
+        
 typedef struct 
 {
     XLALSkymap2SphericalPolarType *directions;

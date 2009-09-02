@@ -49,6 +49,7 @@ int finite(double);
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FrequencySeries.h>
+#include <lal/GSLSupport.h>
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
@@ -208,6 +209,9 @@ BOOLEAN uvar_countTemplates;
 
 INT4 uvar_NumCandidatesToKeep;
 INT4 uvar_clusterOnScanline;
+
+CHAR *uvar_outputFstatHist;        /**< output discrete histogram of all Fstatistic values */
+REAL8 uvar_FstatHistBin;           /**< width of an Fstatistic histogram bin */ 
 
 CHAR *uvar_gridFile;
 REAL8 uvar_dopplermax;
@@ -389,6 +393,7 @@ int main(int argc,char *argv[])
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
   Resamp_Variables Vars;
+  gsl_vector_int *Fstat_histogram = NULL;
   Buffer.fstatVector = NULL;
 
   lalDebugLevel = 0;
@@ -434,6 +439,15 @@ int main(int argc,char *argv[])
 
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
+
+  /* start Fstatistic histogram with a single empty bin */
+  if (uvar_outputFstatHist) {
+    if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
+      LALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
+      return COMPUTEFSTATISTIC_EMEM;
+    }
+    gsl_vector_int_set_zero(Fstat_histogram);
+  }
 
   /* if a complete output of the Time Series was requested,
    * we open and prepare the output-file here */
@@ -554,6 +568,25 @@ int main(int argc,char *argv[])
 	  if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
 	    loudestFCand = thisFCand;
 
+	  /* add Fstatistic to histogram if needed */
+      if (uvar_outputFstatHist) 
+	{
+	  
+	  /* compute bin */
+	  const size_t bin = 2.0 * thisFCand.Fstat.F / uvar_FstatHistBin;
+
+	  /* resize histogram vector if needed */
+	  if (!Fstat_histogram || bin >= Fstat_histogram->size)
+	    if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	      LALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
+	      return COMPUTEFSTATISTIC_EMEM;
+	    }
+	  
+	  /* add to bin */
+	  gsl_vector_int_set(Fstat_histogram, bin,
+			     gsl_vector_int_get(Fstat_histogram, bin) + 1);
+	  
+	}
 	} /* inner loop about frequency-bins from resampling frequ-band */
 
     } /* while more Doppler positions to scan */
@@ -627,6 +660,31 @@ int main(int argc,char *argv[])
 
   LogPrintf (LOG_DEBUG, "Search finished.\n");
 
+  /* write out the Fstatistic histogram */
+  if (uvar_outputFstatHist) 
+    {
+      
+      size_t i = 0;
+      FILE *fpFstatHist = fopen(uvar_outputFstatHist, "wb");
+      
+      if (fpFstatHist == NULL) {
+	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	return (COMPUTEFSTATISTIC_ESYS);
+      }
+      fprintf(fpFstatHist, "%s", GV.logstring);
+      
+      for (i = 0; i < Fstat_histogram->size; ++i)
+	fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+		uvar_FstatHistBin * i,
+		uvar_FstatHistBin * (i + 1),
+		gsl_vector_int_get(Fstat_histogram, i));
+      
+      fprintf(fpFstatHist, "%%DONE\n");
+      fclose(fpFstatHist);
+      
+    }
+  
+
   /* Free memory */
   LogPrintf (LOG_DEBUG, "Freeing Doppler grid ... ");
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
@@ -636,6 +694,9 @@ int main(int argc,char *argv[])
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
+  if (Fstat_histogram)
+    gsl_vector_int_free(Fstat_histogram);
+  
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
 
@@ -703,6 +764,10 @@ initUserVars (LALStatus *status)
   uvar_outputLogfile = NULL;
 
   uvar_outputFstat = NULL;
+  uvar_outputLoudest = NULL;
+  
+  uvar_outputFstatHist = NULL;
+  uvar_FstatHistBin = 0.1;
 
   uvar_gridFile = NULL;
 
@@ -771,6 +836,9 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+
+ LALregSTRINGUserVar(status,outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
+ LALregREALUserVar(status,  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
 
   LALregINTUserVar(status,      NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
   LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");

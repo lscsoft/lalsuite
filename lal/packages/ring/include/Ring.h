@@ -191,8 +191,9 @@ REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta );
 REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 );
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude );
-REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb );
-REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt );
+REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb );
+REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt );
+REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_sq );
 
 int XLALComputeRingTemplate(
     REAL4TimeSeries *output, SnglRingdownTable *input );

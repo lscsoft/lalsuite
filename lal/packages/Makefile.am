@@ -22,7 +22,6 @@ SUBDIRS = \
 	burstsearch \
 	tracksearch \
 	timefreq \
-	stochastic \
 	support \
 	framedata
 
