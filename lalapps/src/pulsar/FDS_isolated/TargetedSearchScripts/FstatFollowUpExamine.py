@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 """
 ExamineFollowUpResults.py - Examines the results from a FStatFollowUp.py run, finds the largest events, makes a few plots, and calls FStatFollowUp.py if another iteration is still possible. 
 """
@@ -7,15 +8,13 @@ ExamineFollowUpResults.py - Examines the results from a FStatFollowUp.py run, fi
 import os,sys,getopt
 from numpy import *
 import math
+import time
+import parseConfigFile
 
-##############################################################
-#Initialization of various default parameters for the follow up
+###################
+#Initialization
+Vars = {}
 
-v_max = 30290.0 #m/s
-c = 299792458.0 #m/s
-
-#Multiplies the estimated resolution to get parameter space to search
-param_space_mult = 10.0
 
 ################################
 #Prints the usage of this script
@@ -25,14 +24,11 @@ Usage: FstatFollowUpExamine.py [options]
 
   -h, --help               display this message
   -C, --configFile         File which has default parameters for the follow-ups
-  -o, --OutputDirectory    Base name for the directory
+  -o, --OutputName         Base name for the directory
   -j, --TotalJobs          Total number of jobs in search
-  -d, --InputDirectory     Directory where jobs are stored
-  -b, --BaseName           Base file name of the jobs to be examined (no result/loudest, just base)
   -i, --Iteration          Indicates which run this is
-  -t, --Tcoh               Coherent time of the jobs just run
+  -t, --CoherentTime       Coherent time of the jobs just run
   -T, --Time               Time of calculated ephemeris (start time of search)
-  -L, --UserLogDirectory   Location to place condor log files
   -A, --AngularResolution  Spacing in Right Ascension or Declination (radians) of templates from previous iteration
   -N, --TemplateNumber     Total number of templates in the previous iteration
 """
@@ -42,18 +38,15 @@ Usage: FstatFollowUpExamine.py [options]
 #################################################
 #This section reads in the command line arguments
 
-shortop = "hC:o:j:d:b:i:t:T:L:A:N:"
+shortop = "hC:o:j:d:b:i:t:T:A:N:"
 longop = [
   "help",
   "ConfigFile=",
   "OutputDirectory=",
   "TotalJobs=",
-  "InputDirectory=",
-  "BaseName=",
   "Iteration=",
-  "Tcoh=",
+  "CoherentTime=",
   "Time=",
-  "UserLogDirectory=",
   "AngularResolution=",
   "TemplateNumber=",
   ]
@@ -70,130 +63,43 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-C","--ConfigFile"):
-    config_file = str(a)   
+    config_file_name = str(a)   
   elif o in ("-o","--OutputDirectory"):
-    output_dir = str(a)
+    Vars['base_name'] = str(a)
   elif o in ("-j","--TotalJobs"):
-    jobs = int(a)
-  elif o in ("-d","--InputDirectory"):
-    input_dir = str(a)
-  elif o in ("-b","--BaseName"):
-    base_name = str(a)
+    Vars['jobs'] = int(a)
   elif o in ("-i","--Iteration"):
-    run = int(a)
-  elif o in ("-t","--Tcoh"):
-    tcoh = float(a)
+    Vars['iteration'] = int(a)
+  elif o in ("-t","--CoherentTime"):
+    Vars['coherence_time'] = float(a)
   elif o in ("-T","Time"):
-    param_time = int(float(a))
-  elif o in ("-L","UserLogDirectory"):
-    user_log = str(a)
+    Vars['param_time'] = int(float(a))
   elif o in ("-A","AngularResolution"):
-    angular_resolution = float(a)
+    Vars['angular_resolution'] = float(a)
   elif o in ("-N","TemplateNumber"):
-    total_templates = float(a)
+    Vars['total_templates'] = float(a)
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
     sys.exit(1)
 
-logFile = open(''.join([base_name,'_',str(run),'_examine.log']),'w')
-logFile.write(' '.join(sys.argv))
-logFile.write('\n')
-logFile.close()
-
-
 ###################################
 #Parses the config file, if any
 #The config file is overriden by command line parameters
 
-# Import the Configuration File into config
-config_file = os.path.abspath(config_file)
-sys.path.append(os.path.dirname(config_file))
-config = __import__(os.path.basename(config_file.strip('.py')));
+Vars = parseConfigFile.parse_config_file(os.path.abspath(config_file_name),Vars)
+Vars = parseConfigFile.generate_directory_names(Vars['base_name'],Vars)
 
-# First GPS time to be considered for data selection
-try:
-  config.start_time
-except:
-  print "start_time cannot be read"
-  sys.exit(1)
-    
-# Last GPS time to be considered for data selection
-try:
-  config.end_time
-except:
-  print "end_time cannot be read"
-  sys.exit(1)
-      
-# Maximum 1-D mismatch between template and possible signal
-try:
-  config.mismatch
-except:
-  print "mismatch cannot be read"
-  sys.exit(1)
-        
-# Earth and Sun Ephemeris directory
-try:
-  config.ephem_dir
-except:
-  print "ephem_dir cannot be read"
-  sys.exit(1)
-      
-# Earth and Sun Ephemeris year to use
-try:
-  config.ephem_year
-except:
-  print "ephem_year cannot be read"
-  sys.exit(1)
+Vars = parseConfigFile.generate_file_names(Vars['run_name'],Vars)
 
-# Number of candidates to keep per job 
-try:
-  config.num_candidates_to_keep
-except:
-  print "num_candidates_to_keep cannot be read"
-  sys.exit(1)
 
-# Grid type used by CommputeFStatistic
-try:
-  config.grid_type
-except:
-  print "grid_type cannot be read"
-  sys.exit(1)
+###############################3
+#Log the command line input
 
-# Metric type used by ComputeFStatistic
-try:
-  config.metric_type
-except:
-  print "metric_type cannot be read"
-  sys.exit(1)    
-
-# Max number of jobs to run per event per step
-try:
-  config.max_number_of_jobs
-except:
-  print "max_number_of_jobs cannot be read"
-  sys.exit(1)
-
-# Location of data files, in comma seperated format
-try:
-  config.data_location_file = config.data_location_file.split(',')
-except:
-  print "data_location_file cannot be read"
-  sys.exit(1)
-
-# Location of the python files
-try:
-  config.python_dir
-except:
-  print "python_dir cannot be read"
-  sys.exit(1)
-
-# Which % of the largest 2F values to average to get the location of the signal
-try:
-  config.percent_largest_to_average
-except:
-  print "percent_largest_to_average cannot be read"
-  sys.exit(1)
+logFile = open(''.join([Vars['current_directory'].rstrip('/'),'/',Vars['run_name'],'_examine.log']),'w')
+logFile.write(' '.join(sys.argv))
+logFile.write('\n')
+logFile.close()
 
 ###################################
 #Checks to see if all the results files exist
@@ -201,13 +107,6 @@ except:
 
 ###################################
 #Find the loudest
-
-input_dir = input_dir.rstrip('/')
-input_dir = ''.join([input_dir,'/'])
-output_dir = output_dir.rstrip('/') + '/'
-new_base_name = ''.join([base_name,'_',str(run),'_loudest_'])
-new_results_base_name = ''.join([base_name,'_',str(run),'_result_'])
-
 
 loudest2F = 0
 loudestFreq = 0
@@ -225,11 +124,11 @@ arrayF1dot = array([])
 arrayF2dot = array([])
 arrayF3dot = array([])
 
-loudestResultFile = ''.join(['./' + 'loudestResult_',str(run),'.txt'])
-lrf = open(loudestResultFile,'w')
+recordLoudestResultFile = ''.join([Vars['current_directory'] + '/loudestResult_',str(Vars['iteration']),'.txt'])
+record_loudest_results_file = open(recordLoudestResultFile,'w')
 
-for job in range(0,jobs):
-    loudestFile = open(''.join([input_dir,new_base_name,str(job)]),'r')
+for job in range(0,Vars['jobs']):
+    loudestFile = open(''.join([Vars['output_run_directory'],Vars['loudest_base_prefix'],str(job)]),'r')
     for line in loudestFile:
         if line.split('=')[0].strip() == 'twoF':
             temp2F = line.split('=')[1].strip().strip(';')
@@ -254,7 +153,7 @@ for job in range(0,jobs):
 
     loudestFile.close()
 
-    lrf.write(' '.join([str(tempFreq),str(tempF1dot),str(tempF2dot),str(tempF3dot),str(tempRA),str(tempDEC),str(temp2F),"\n"]))
+    record_loudest_results_file.write(' '.join([str(tempFreq),str(tempF1dot),str(tempF2dot),str(tempF3dot),str(tempRA),str(tempDEC),str(temp2F),"\n"]))
 
     if float(temp2F) > float(loudest2F):
         loudest2F = temp2F
@@ -265,16 +164,16 @@ for job in range(0,jobs):
         loudestF2dot = tempF2dot
         loudestF3dot = tempF3dot
 
-#Finds all 2F values greater than or equal to a percentage (90%) of the loudest 2F value, and
+#Finds all 2F values greater than or equal to a percentage (i.e. 90%) of the loudest 2F value, and
 #takes a weighted average to find the most likely source position in frequency, spindown and sky position
 #parameter space
 
-average_cutoff = float(loudest2F) * float(config.percent_largest_to_average)
+average_cutoff = float(loudest2F) * float(Vars['percent_largest_to_average'])
 
 
 
-for job in range(0,jobs):
-  fullResultsFile = open(''.join([input_dir,new_results_base_name,str(job)]),'r')
+for job in range(0,Vars['jobs']):
+  fullResultsFile = open(''.join([Vars['output_run_directory'],Vars['results_base_prefix'],str(job)]),'r')
   for line in fullResultsFile:
     if not (line[0] == '%'):
       #Tests to see if 2F greater than required cutoff, then records data if true
@@ -298,70 +197,80 @@ meanF3dot = sum(array2F*arrayF3dot)/total2Fsum
 
 #Use the calculated average parameters to generate the parameter space for the next longer coherent step
 
-Tcoh = float(tcoh)
-F_band = param_space_mult*1.0/Tcoh
-F_dot_band = param_space_mult*1.0/Tcoh**2
+Vars['Coherence_time'] = float(Vars['coherence_time'])
+F_band = Vars['parameter_space_multiplier']*1.0/Vars['Coherence_time']
+F_dot_band = Vars['parameter_space_multiplier']*1.0/Vars['Coherence_time']**2
 
-RA_band = param_space_mult*angular_resolution
-DEC_band = param_space_mult*angular_resolution
+RA_band = Vars['parameter_space_multiplier']*Vars['angular_resolution']
+DEC_band = Vars['parameter_space_multiplier']*Vars['angular_resolution']
 
-new_Tcoh = Tcoh * 4.0
+Vars['new_coherence_time'] = Vars['Coherence_time'] * 4.0
 
 
 F_c = float(loudest2F)/2.0
 Prob_below = (1 - ((1 + F_c)/2.0)*math.exp(-F_c))
-FA = 1 - Prob_below**total_templates
+FA = 1 - Prob_below**Vars['total_templates']
 
 
 
-FA_file = open(''.join(['../false_alarms/FA_',base_name,'.txt']),'a')
-if run == 0:
-  FA_file.write('2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA Name Run\n')
-FA_file.write(' '.join([loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(total_templates),str(FA),str(base_name),str(run)]))
+
+if os.path.exists(Vars['false_alarm_file']):
+  false_alarm_file_exists = True
+else:
+  false_alarm_file_exists = False
+  
+FA_file = open(Vars['false_alarm_file'],'a')
+if not false_alarm_file_exists:
+  FA_file.write('Param_time Coherence_Time 2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA Name Run\n')
+FA_file.write(' '.join([str(Vars['param_time']),str(Vars['coherence_time']),loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(Vars['total_templates']),str(FA),str(Vars['base_name']),str(Vars['iteration']),'\n']))
 FA_file.close()
 
-sleep(1)
+time.sleep(1)
+
+#Cat result files for easy printing
+os.system('cat ' + Vars['output_run_directory'].rstrip('/') + '/*' + Vars['results_base_prefix'] + '* > ' + Vars['events_directory'].rstrip('/') + '/plot_data_' + Vars['run_name'])
 
 #Delete the previous run to save space
-os.system(''.join(['rm -rf ',base_name,'_',str(run),'_run']))
+if not Vars['messy']:
+  os.system(''.join(['rm -rf ',Vars['base_name'],'_',str(Vars['iteration']),'_run']))
 
 #Delete condor log files to save space
-os.system(''.join(['rm node_',base_name,'*']))
+if not Vars['messy']:
+  os.system(''.join(['rm node_',Vars['base_name'],'*']))
 
 
-if FA < 0.01:
-  interesting_event_file = open(''.join(['../events/',base_name,'_event_',str(run),'.txt']),'w')
-  interesting_event_file.write('2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA\n')
-  interesting_event_file.write(' '.join([loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(total_templates),str(FA)]))
+if FA < Vars['false_alarm_cutoff']:
+  interesting_event_file = open(Vars['event_result_file'],'w')
+  interesting_event_file.write('Param_time Coherence_Time 2F RA DEC Freq F1dot F2dot F3dot Total-Templates FA\n')
+  interesting_event_file.write(' '.join([str(Vars['param_time']),str(Vars['coherence_time']),loudest2F,loudestRA,loudestDEC,loudestFreq,loudestF1dot,loudestF2dot,loudestF3dot,str(Vars['total_templates']),str(FA),'\n']))
   interesting_event_file.close()
 
   
-  if float(Tcoh) >= (config.end_time - config.start_time):
+  if float(Vars['Coherence_time']) >= (Vars['end_time'] - Vars['start_time']):
     print "Last search used all available data - no further iterations"
     sys.exit(0)
 
-  code = config.python_dir.rstrip('/') + '/FstatFollowUp.py '
-
 
   #Command string for the next iteration to run
-  command_string = ' '.join([code,
-                             '-o',base_name,
-                             '-C',config_file,
-                             '-i',str(run+1),
+  command_string = ' '.join([''.join([Vars['python_dir'].rstrip('/'),'/FstatFollowUp.py']),
+                             '-o',Vars['base_name'],
+                             '-C',Vars['config_file'],
+                             '-i',str(Vars['iteration']+1),
                              '-a',str(meanRA),
                              '-d',str(meanDEC),
                              '-z',str(RA_band),
                              '-c', str(DEC_band),
                              '-f', str(meanFreq),
                              '-b',str(F_band),
-                             '-T', str(param_time),
+                             '-T', str(Vars['param_time']),
                              '-s', str(meanF1dot),
                              '-m', str(F_dot_band),
                              '--F2', str(0),
                              '--F2Band', str(0),
                              '--F3', str(0),
                              '--F3Band', str(0),
-                             '-t',str(new_Tcoh),
-                             '-L', str(user_log)])
+                             '-t',str(Vars['new_coherence_time'])])
   
   os.system(command_string)
+
+sys.exit(0)
