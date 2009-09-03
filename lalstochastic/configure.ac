@@ -115,7 +115,7 @@ echo "
 
           ${prefix}
 
-        Now run 'make' to build LAL support
+        Now run 'make' to build LAL Stochastic
         and run 'make install' to install LAL Stochastic
 
 ================================================================="
