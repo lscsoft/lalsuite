@@ -20,8 +20,7 @@ This package contains the shared-object libraries needed to run applications
 that use the LAL Stochastic library.
 
 %package devel
-Summary: Files and documentation needed for compiling programs that use
-LAL Stochastic
+Summary: Files and documentation needed for compiling programs that use LAL Stochastic
 Group: LAL
 Requires: %{name} = %{version}
 Requires: lal-devel
