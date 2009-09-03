@@ -42,9 +42,9 @@ extern "C" {
 /* Map functions in HierarchicalSearch.c for CUDA / OpenCL use */
 #ifdef USE_CUDA
 #define GPUREADY_DEFAULT 1
-#define INITIALIZE_COPROCESSOR_DEVICE
-#define UNINITIALIZE_COPROCESSOR_DEVICE
-#define REARRANGE_SFT_DATA
+#define INITIALIZE_COPROCESSOR_DEVICE   InitializeCUDADevice()
+#define UNINITIALIZE_COPROCESSOR_DEVICE UnInitializeCUDADevice()
+#define REARRANGE_SFT_DATA              RearrangeSFTData4CUDA()
 #elif USE_OPENCL
 #define GPUREADY_DEFAULT 1
 #define INITIALIZE_COPROCESSOR_DEVICE   clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT); 

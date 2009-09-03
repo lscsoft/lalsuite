@@ -748,4 +748,11 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
 
 } /* XLALComputeFStatFreqBandVector_cuda() */
 
-
+/* device handling routines */
+/* empty bodies for now for Anton */
+void InitializeCUDADevice(void) {
+}
+void UnInitializeCUDADevice(void) {
+}
+void RearrangeSFTData4CUDA(void) {
+}
