@@ -51,7 +51,7 @@ typedef struct {
 } PulsarSpinsExREAL4;
 
 /*---------- Global variables ----------*/
-int cuda_device_id = 0;
+int cuda_device_id = -1;
 static const LALStatus empty_LALStatus;
 
 
@@ -303,9 +303,34 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
         }
     }
 
+    // If no cuda_device_id specified yet, find device with max SM
+    if ( cuda_device_id < 0 ) {
+      int nodevices, deviceid, maxsmdevice=0;
+      size_t maxsm=0;
+      
+      if (cudaSuccess != cudaGetDeviceCount(&nodevices) ) {
+        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: cudaGetDeviceCount failed, no CUDA devices found\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+      }
+
+      for(deviceid=0, deviceid<nodevices; deviceid++) {
+	if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, device_id) ) {
+	  XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+	  XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
+	  XLAL_ERROR ( fn, XLAL_EINVAL );
+	}
+	if (maxsm < curDevProps->sharedMemPerBlock) {
+	  maxsm = curDevProps->sharedMemPerBlock;
+	  maxsmdevice = deviceid;
+	}
+      }
+
+      cuda_device_id = maxsmdevice;
+    }
+
     fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
 
-    // TODO: Get device with max GFLOPs (now device with zero ID)
     if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
     {
         XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
