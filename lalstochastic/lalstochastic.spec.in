@@ -54,6 +54,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_libdir}/*.so*
+%{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
