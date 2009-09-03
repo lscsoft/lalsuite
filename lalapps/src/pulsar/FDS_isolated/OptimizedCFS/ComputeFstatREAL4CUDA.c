@@ -303,8 +303,10 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
         }
     }
 
-    // If no cuda_device_id specified yet, find device with max SM
-    if ( cuda_device_id < 0 ) {
+    // If no cuda_device_id has been specified yet, find device with max SM
+    if ( cuda_device_id >= 0 )
+      fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
+    else {
       int nodevices, deviceid, maxsmdevice=0;
       size_t maxsm=0;
       
@@ -320,16 +322,16 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
 	  XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
 	  XLAL_ERROR ( fn, XLAL_EINVAL );
 	}
-	if (maxsm < curDevProps.sharedMemPerBlock) {
-	  maxsm = curDevProps.sharedMemPerBlock;
+	if (maxsm < curDevProps.multiProcessorCount) {
+	  maxsm = curDevProps.multiProcessorCount;
 	  maxsmdevice = deviceid;
 	}
       }
 
       cuda_device_id = maxsmdevice;
-    }
 
-    fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
+      fprintf (stderr, "Using CUDA device %d of %d\n", cuda_device_id, nodevices);
+    }
 
     if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
     {
