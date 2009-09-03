@@ -112,18 +112,6 @@ AC_DEFUN([LAL_ENABLE_METAIO],
   ], [ metaio=true ] )
 ])
 
-AC_DEFUN([LAL_ENABLE_XML],
-[AC_ARG_ENABLE(
-  [xml],
-  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
-  [ case "${enableval}" in
-      yes) xml=true;;
-      no)  xml=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
-    esac
-  ], [ xml=false ] )
-])
-
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],

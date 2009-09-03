@@ -1,0 +1,22 @@
+Source: lalxml
+Section: lscsoft
+Priority: optional
+Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, libxml2 (>= 2.6), libxml2-dev (>= 2.6), libgsl0 (>= 1.9), lal-dev (>= 6.4), lal (>= 6.4), pkg-config
+Standards-Version: 3.7.2
+
+Package: lalxml
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, lal (>= 6.4), libxml2 (>= 2.6), libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10)
+Description: LSC Algorithm Library XML
+ The LSC Algorithm XML Library for gravitational wave data analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL XML library.
+
+Package: lalxml-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libxml2-dev (>= 2.6), libgsl0-dev (>= 1.9), lal-dev (>= 6.4)
+Description: LSC Algorithm Library XML Developers
+ The LSC Algorithm XML Library for gravitational wave data analysis.
+ This package contains files needed build applications that use the LAL
+ XML library.
