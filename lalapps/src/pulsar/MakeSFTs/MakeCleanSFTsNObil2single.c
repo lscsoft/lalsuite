@@ -1826,7 +1826,8 @@ int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
   if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
   itaust=(REAL8) 1.0/(series->deltaT/even_param->tau);
   w_even=exp(-1.0/itaust);
-  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
+  /*i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
+i_eval = 1.0;
   if(i_eval<1)i_eval=1;
   even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
 
@@ -1897,7 +1898,8 @@ int MedStd_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param )
  /* if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT); */ /*change the memory time, if too long*/
   itaust=(REAL4) 1.0/(series->deltaT/even_param->tau);
   w_even=exp(-1.0/itaust);
-  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor);/*even_param->factor indicates that the computation of mean and std has to be re-evaluated every i_eval samples */
+ /* i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor);/*even_param->factor indicates that the computation of mean and std has to be re-evaluated every i_eval samples */
+i_eval = 1.0;
   if(i_eval<1)i_eval=1;
   even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
 
