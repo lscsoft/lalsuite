@@ -70,8 +70,12 @@ LALappsTSACropMap(
    * Adjust times on mapStopGPS and mapStartGPS to be times
    * after cropping the MAP
    */
-  startTime=XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
-  startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
+  /* FIXME:  loss of precision; consider
+  XLALGPSAdd(&tmpMarkingParams.mapStartGPS, tmpMarkingParams.deltaT*binsToCrop);
+  XLALGPSAdd(&tmpMarkingParams.mapStopGPS, -tmpMarkingParams.deltaT*binsToCrop);
+  */
+  startTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
+  startTime = startTime+(tmpMarkingParams.deltaT*binsToCrop);
   XLALGPSSetREAL8(&(tmpMarkingParams.mapStartGPS),startTime);
 
   stopTime=XLALGPSGetREAL8(&tmpMarkingParams.mapStopGPS);
@@ -967,7 +971,7 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   REAL8   timeT;
   size_t i;
 
-  timeT = XLALGPSGetREAL8(&fseries->epoch);
+  timeT = XLALGPSGetREAL8(&(fseries->epoch));
 
   if(fp) 
     {

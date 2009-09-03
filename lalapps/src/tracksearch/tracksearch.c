@@ -1077,6 +1077,11 @@ void LALappsTrackSearchInitialize(
    *If doing a MAP analysis skip these checks these options should
    *not be invoked
    */
+  if ((params->colsToClip > 0))
+    {
+      fprintf(stderr,"25Aug2009:BIN BUFFERING CURRENTLY BROKEN! Since Het introduced.\n");
+      fflush(stderr);
+    }
   if ((params->HeterodyneFrequency > 0) || (params->HeterodyneSamplingRate > 0))
     {
       fprintf(stdout,"WARNING: All measure such as segment length are assumed relative to the effective sampling rate of the heterodyned data.\n");
@@ -1266,7 +1271,11 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 elementAvg=0;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
   channelIn.type = params->channelNameType;
+=======
+  channelIn.type = LAL_ADC_CHAN;
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
   if(dirname)
     {
       /* Open frame stream */
@@ -1301,7 +1310,10 @@ void LALappsGetFrameData(LALStatus*          status,
       bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
       XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
       bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
 
+=======
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,"Creating data stream.\n");
@@ -1327,21 +1339,6 @@ void LALappsGetFrameData(LALStatus*          status,
       exit(TRACKSEARCHC_EVAL);
     }
   lal_errhandler = LAL_ERR_EXIT;
-  /* Set verbosity of stream so user sees frame read problems! */
-  XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
-  /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
-  memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-  LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
-	   status);
-  /* 
-   * Seek to end of requested data makes sure that all stream is complete!
-   */
-  bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-  LAL_CALL(LALFloatToGPS(status,
-			 &bufferedDataStopGPS,
-			 &bufferedDataStop),
-	   status);
-  bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
   if (params->verbosity >= verbose)
     {
       fprintf(stderr,"Checking frame stream spans requested data interval, including the appropriate data buffering!\n");
@@ -1491,7 +1488,7 @@ void LALappsGetFrameData(LALStatus*          status,
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,
-		  "DC offset removal invoked.");
+		  "DC offset removal invoked.\n");
 	  fflush(stdout);
 	}
       if (params->verbosity >= printFiles)
@@ -2138,8 +2135,12 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
 
   signalStart=XLALGPSGetREAL8(&signalSeries->epoch);
+=======
+  signalStart = XLALGPSGetREAL8(&signalSeries->epoch);
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
 
   /*
    * Fix the signalStop time stamp to be without the buffer points.  It
@@ -2317,10 +2318,14 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    */
     originalFloatTime=XLALGPSGetREAL8(&(params.GPSstart));
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
     LAL_CALL(LALFloatToGPS(status,
 			   &edgeOffsetGPS,
 			   &newFloatTime),
 	     status);
+=======
+    XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
     /*
      * To handle special case where data is hetordyned and resampled
      * we determine the interval of time that the data would have spanned 
@@ -2338,10 +2343,13 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 			     /params.HeterodyneSamplingRate*
 			     params.SamplingRate);
       }
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
 =======
     XLALGPSSetREAL8(&edgeOffsetGPS,newFloatTime);
 
 >>>>>>> master:lalapps/src/tracksearch/tracksearch.c
+=======
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,
 				      0,
@@ -2845,8 +2853,13 @@ LALappsWriteBreveResults(LALStatus      *status,
 	  "GPSstop");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
+<<<<<<< HEAD:lalapps/src/tracksearch/tracksearch.c
       startStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[0]);
       stopStamp=XLALGPSGetREAL8(&outCurve.curves[i].gpsStamp[outCurve.curves[i].n-1]);
+=======
+      startStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[0]));
+      stopStamp = XLALGPSGetREAL8(&(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]));
+>>>>>>> 3dff87100d4552e74fe192aabf88e58da646701a:lalapps/src/tracksearch/tracksearch.c
       fprintf(breveFile,
 	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
 	      i,
@@ -3258,7 +3271,13 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 {
   PassBandParamStruc       bandPassParams;
   int                      errcode=0;
-  if (params.lowPass > 0)
+  REAL4                    attenF=0;
+  INT4                     orderF=0;
+  attenF=0.9;
+  orderF=20;
+  orderF=10;
+  orderF=5;
+  if ((params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
 	{
@@ -3267,11 +3286,11 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	}
 
       bandPassParams.name=NULL;
-      bandPassParams.nMax=20;
+      bandPassParams.nMax=orderF;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=params.lowPass;
       bandPassParams.f2=0;
-      bandPassParams.a1=0.9;
+      bandPassParams.a1=attenF;
       bandPassParams.a2=0;
       /*
        * Band pass is achieved by low pass first then high pass!
@@ -3287,7 +3306,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
   /*
    * Call the high pass filter function.
    */
-  if (params.highPass > 0)
+  if ((params.highPass > 0))
     {
       if (params.verbosity >= verbose)
 	{
@@ -3295,12 +3314,12 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	  fflush(stdout);
 	}
       bandPassParams.name=NULL;
-      bandPassParams.nMax=20;
+      bandPassParams.nMax=orderF;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=0;
       bandPassParams.f2=params.highPass;
       bandPassParams.a1=0;
-      bandPassParams.a2=0.9;
+      bandPassParams.a2=attenF;
       errcode=XLALButterworthREAL4TimeSeries(dataSet,&bandPassParams);
       if (errcode !=0)
 	{
@@ -4081,12 +4100,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 				     REAL8            fHet)
 {
-/*   REAL4 a=0; */
-/*   REAL4 b=0; */
-/*   REAL4 c=0; */
-/*   REAL4 d=0; */
-/*   REAL4 t=0; */
-/*   COMPLEX8 z; */
   UINT4 index=0;
 
   if ((1/data->deltaT) < 1/fHet)
@@ -4097,31 +4110,16 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 
   for (index=0;index<data->data->length;index++)
     {
-      /*ToBeStripped<Start>*/
       if ((INT4) fmod(index,(INT4)((data->data->length)/100.0)) == 0)
 	{
 	  fprintf(stdout,".");
 	  fflush(stdout);
 	}
-      /*<End>*/
-/*       t=index*data->deltaT; */
-/*       a=data->data->data[index]; */
-/*       b=0; */
-/*       c=cos(2*LAL_PI*fHet*t); */
-/*       d=sin(2*LAL_PI*fHet*t); */
-/*       z.re=((a*c)-(b*d)); */
-/*       z.im=((b*d)+(b*c)); */
-      /*
-       *Keeping only REAL(Data*LocalOscillator)
-       */
-/*       data->data->data[index]=z.re; */
       data->data->data[index]=(data->data->data[index]*
 			       cos(2*LAL_PI*fHet*(index*data->deltaT)));			       
     }
-  /*ToBeStripped<Start>*/
   fprintf(stdout,"\n");
   fflush(stdout);
-  /*<End<*/
   return 0;
 }
 
