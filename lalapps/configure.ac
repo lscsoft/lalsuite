@@ -107,6 +107,9 @@ dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CPP
 
+AC_PROG_CXX
+AM_PROG_CC_C_O
+
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
