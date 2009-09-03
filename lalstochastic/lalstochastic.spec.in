@@ -34,6 +34,7 @@ Stochastic library.
 %setup -q
 
 %build
+source /opt/lscsoft/lscsoft-user-env.sh
 %configure
 %{__make}
 
