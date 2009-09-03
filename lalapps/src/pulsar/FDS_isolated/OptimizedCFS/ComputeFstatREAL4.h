@@ -45,9 +45,9 @@ extern "C" {
 #define INITIALIZE_COPROCESSOR_DEVICE   InitializeCUDADevice();
 #define UNINITIALIZE_COPROCESSOR_DEVICE UnInitializeCUDADevice();
 #define REARRANGE_SFT_DATA              RearrangeSFTData4CUDA();
-extern void InitializeCUDADevice(void)
-extern void UnInitializeCUDADevice(void)
-extern void RearrangeSFTData4CUDA(void)
+  extern void InitializeCUDADevice(void);
+  extern void UnInitializeCUDADevice(void);
+  extern void RearrangeSFTData4CUDA(void);
 #elif USE_OPENCL
 #define GPUREADY_DEFAULT 1
 #define INITIALIZE_COPROCESSOR_DEVICE   clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT);
