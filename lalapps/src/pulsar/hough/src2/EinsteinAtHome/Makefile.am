@@ -13,8 +13,13 @@ if WIN32_CYGWIN_BUILD
 .cu.o:
 	$(NVCC) --compiler-options /GS- --compiler-bindir '$(MSCDIR)' -c `cygpath -w $<` -o `cygpath -w $@`
 else
+if MAC_BUILD
+.cu.o:
+	$(NVCC) $(CPPFLAGS) -c $< -o $@  --compiler-bindir `which gcc-4.0`
+else
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
+endif
 endif
 
 $(optHOME)/FStatOpenCLKernel.c: $(optHOME)/FStatOpenCLKernel.cl
