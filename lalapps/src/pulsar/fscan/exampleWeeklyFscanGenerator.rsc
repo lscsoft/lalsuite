@@ -14,12 +14,12 @@ set fixedComparisonChanDir ../../fscans_2009_03_30_13_02_17_PDT_Mon/H2_LSC-STRAI
 set fixedComparisonString "H2_923700000_923714400";
 set fixedComparisonSNR  4;
 
-set fscanDriverPath "/home/gmendell/bin/fscanDriver.py"; # complete path to fscanDriver.py
+set fscanDriverPath "./fscanDriver.py"; # complete path to fscanDriver.py
 set matlabPath "/ldcg/matlab_r2008a";      # Path to matlab installation to use with -m option to fscanDriver.py, e.g., /ldcg/matlab_r2008a
 
 set parentOutputDirectory "weekly";
 
-set moveSFTsFromDirList "/usr1/ugmendell/oldsearchcode/src/lalapps/src/pulsar/fscan/testDaily/daily";
+set moveSFTsFromDirList "testDaily/daily";
 set moveSFTsFromSuffix "sfts/tmp";
 
 set startTime 923628000;
