@@ -803,7 +803,7 @@ static void worker (void) {
     else if (MATCH_START("--device",argv[arg],l)) {
       arg++; /* next argument */
       cuda_device_id = atoi(argv[arg]);
-      rarg--; rargc--; /* this argument is not passed to the main worker function */
+      rarg-=2; rargc-=2; /* these arguments are not passed to the main worker function */
     }
 #endif
 
