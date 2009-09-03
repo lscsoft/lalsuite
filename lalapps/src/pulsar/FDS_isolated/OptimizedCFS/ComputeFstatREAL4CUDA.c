@@ -303,6 +303,8 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
         }
     }
 
+    fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
+
     // TODO: Get device with max GFLOPs (now device with zero ID)
     if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
     {
