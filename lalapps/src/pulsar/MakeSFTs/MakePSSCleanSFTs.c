@@ -1975,7 +1975,8 @@ int Bil2( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *seriesHP, ParamOfEvent
   seriesHPbil2->deltaT=seriesHP->deltaT; 
 
   for(i=0;i<(int)ts;i++){
-    seriesHPbil2->data->data[i]=seriesHP->data->data[i];
+seriesHPbil2->data->data[i]=seriesHP->data->data[ts-i];
+/*Before it was:*/ /*seriesHPbil2->data->data[i]=seriesHP->data->data[i];*/
   } 
   for(i=ts;i<(int)(seriesHP->data->length+ts);i++){
     /* for(j=0;i<(int)(seriesHP->data->length);j++)seriesHPbil2->data->data[j]=seriesHP->data->data[j];*/
@@ -2006,7 +2007,8 @@ int Bil2_R4( REAL4TimeSeries *seriesHPbil2, REAL4TimeSeries *seriesHP, ParamOfEv
   seriesHPbil2->deltaT=seriesHP->deltaT; 
 
   for(i = 0; i < ts; i++){
-    seriesHPbil2->data->data[i] = seriesHP->data->data[i];
+    seriesHPbil2->data->data[i]=seriesHP->data->data[ts-i];
+/*Before it was:*/ /*seriesHPbil2->data->data[i]=seriesHP->data->data[i];*/
   } 
   for(i = ts; i < seriesHP->data->length + ts; i++){
     seriesHPbil2->data->data[i] = seriesHP->data->data[i-ts];

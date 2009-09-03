@@ -1846,7 +1846,7 @@ i_eval = 1.0;
       if(even_param->ar==1)norm=1.0/even_param->w_norm;
     }
       even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
+      asd_appo=(ss*norm-s*s*norm*norm);
       if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
       else
 	even_param->xastd[i]=0.0;
@@ -1920,7 +1920,7 @@ i_eval = 1.0;
       if(even_param->ar==1)norm=1.0/even_param->w_norm;
     }
       even_param->xamed[i]=s*norm;
-      asd_appo=fabs(ss*norm-s*s*norm*norm);
+      asd_appo=(ss*norm-s*s*norm*norm);
       if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
       else
 	even_param->xastd[i]=0.0;
