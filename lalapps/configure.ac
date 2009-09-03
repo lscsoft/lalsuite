@@ -160,7 +160,7 @@ if test "$LALSUITE_BUILD" != "true" ; then
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
 fi
 
-dnl LALFrame, LALMetaIo, and LALXML (optional).
+dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
@@ -168,7 +168,7 @@ lalstochastic="true"
 PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
 PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
-PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic >= 1.0, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
 	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
 	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
