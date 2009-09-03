@@ -314,14 +314,14 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
         XLAL_ERROR ( fn, XLAL_EINVAL );
       }
 
-      for(deviceid=0, deviceid<nodevices; deviceid++) {
-	if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, device_id) ) {
+      for(deviceid=0; deviceid<nodevices; deviceid++) {
+	if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, deviceid) ) {
 	  XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
 	  XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
 	  XLAL_ERROR ( fn, XLAL_EINVAL );
 	}
-	if (maxsm < curDevProps->sharedMemPerBlock) {
-	  maxsm = curDevProps->sharedMemPerBlock;
+	if (maxsm < curDevProps.sharedMemPerBlock) {
+	  maxsm = curDevProps.sharedMemPerBlock;
 	  maxsmdevice = deviceid;
 	}
       }
