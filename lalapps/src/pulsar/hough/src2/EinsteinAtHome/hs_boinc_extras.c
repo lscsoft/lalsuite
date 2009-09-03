@@ -132,7 +132,7 @@ static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to
 
 #ifdef USE_CUDA
 /** CUDA device id */
-int cuda_device_id = 0;
+extern int cuda_device_id;
 #endif
 
 /** FLOPS estimation - may be set by command line option --WUfpops=.

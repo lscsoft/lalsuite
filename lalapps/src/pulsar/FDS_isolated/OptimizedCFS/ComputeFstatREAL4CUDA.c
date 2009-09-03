@@ -51,7 +51,7 @@ typedef struct {
 } PulsarSpinsExREAL4;
 
 /*---------- Global variables ----------*/
-extern int cuda_device_id;
+int cuda_device_id = 0;
 static const LALStatus empty_LALStatus;
 
 
