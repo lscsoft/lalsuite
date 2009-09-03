@@ -34,6 +34,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/Units.h>
 
 void LALTaylorT4Derivatives4PN(
   REAL8Vector *values,
@@ -68,6 +69,10 @@ void LALTaylorT4Waveform (
 void LALTaylorT4WaveformEngine (
   LALStatus        *status,
   REAL4Vector      *signalvec,
+  REAL4Vector      *a,
+  REAL4Vector      *ff,
+  REAL8Vector      *phi,
+  UINT4            *countback,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -283,6 +288,7 @@ void LALTaylorT4Waveform (
 { /* </lalVerbatim> */
 
    InspiralInit paramsInit;
+   UINT4        count;
    INITSTATUS(status, "LALTaylorT4Waveform", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
@@ -312,11 +318,177 @@ void LALTaylorT4Waveform (
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorT4WaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
+   LALTaylorT4WaveformEngine(status->statusPtr, signalvec,
+             NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
+}
+
+void
+LALTaylorT4WaveformForInjection(
+                             LALStatus        *status,
+                             CoherentGW       *waveform,
+                             InspiralTemplate *params,
+                             PPNParamStruc  *ppnParams
+                             )
+{
+  UINT4        count, i;
+  REAL8       phiC;
+
+  REAL4Vector *a   = NULL;      /* pointers to generated amplitude  data */
+  REAL4Vector *ff  = NULL;      /* pointers to generated  frequency data */
+  REAL8Vector *phi = NULL;      /* pointer to generated phase data */
+
+  InspiralInit paramsInit;
+
+
+  INITSTATUS(status, "LALInspirallTaylorT4WaveformForInjection", LALTAYLORT4WAVEFORMC);
+  ATTATCHSTATUSPTR(status);
+
+  /* Make sure parameter and waveform structures exist. */
+  ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->h ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+
+  params->ampOrder = 0;
+  XLALPrintInfo( "WARNING: Amp Order has been reset to %d", params->ampOrder);
+
+  /* Compute some parameters*/
+  LALInspiralInit(status->statusPtr, params, &paramsInit);
+  CHECKSTATUSPTR(status);
+
+  if (paramsInit.nbins == 0)
+  {
+      XLALPrintError( "Error: Estimated length of injection is zero.\n" );
+      ABORT( status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE );
+  }
+
+  /* Now we can allocate memory and vector for coherentGW structure*/
+  ff  = XLALCreateREAL4Vector( paramsInit.nbins );
+  a   = XLALCreateREAL4Vector( 2*paramsInit.nbins );
+  phi = XLALCreateREAL8Vector( paramsInit.nbins );
+  if ( !ff || !a || !phi )
+  {
+    if ( ff )
+      XLALDestroyREAL4Vector( ff );
+    if ( a )
+      XLALDestroyREAL4Vector( a );
+    if ( phi )
+      XLALDestroyREAL8Vector( phi );
+    ABORTXLAL( status );
+  }
+
+  /* Call the engine function */
+  LALTaylorT4WaveformEngine(status->statusPtr, NULL, a, ff,
+                             phi, &count, params, &paramsInit);
+  BEGINFAIL( status )
+  {
+    XLALDestroyREAL4Vector( ff );
+    XLALDestroyREAL4Vector( a );
+    XLALDestroyREAL8Vector( phi );
+  }
+  ENDFAIL( status );
+
+  /*wrap the phase vector*/
+  phiC =  phi->data[count-1] ;
+  for (i = 0; i < count; i++)
+  {
+    phi->data[i] =  phi->data[i] - phiC + ppnParams->phi;
+  }
+
+  /* Allocate the waveform structures. */
+  if ( ( waveform->a = (REAL4TimeVectorSeries *)
+         LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL )
+  {
+    XLALDestroyREAL4Vector( ff );
+    XLALDestroyREAL4Vector( a );
+    XLALDestroyREAL8Vector( phi );
+    ABORT( status, LALINSPIRALH_EMEM,
+           LALINSPIRALH_MSGEMEM );
+  }
+  if ( ( waveform->f = (REAL4TimeSeries *)
+         LALCalloc(1, sizeof(REAL4TimeSeries) ) ) == NULL )
+  {
+    LALFree( waveform->a ); waveform->a = NULL;
+    XLALDestroyREAL4Vector( ff );
+    XLALDestroyREAL4Vector( a );
+    XLALDestroyREAL8Vector( phi );
+    ABORT( status, LALINSPIRALH_EMEM,
+           LALINSPIRALH_MSGEMEM );
+  }
+  if ( ( waveform->phi = (REAL8TimeSeries *)
+         LALCalloc(1, sizeof(REAL8TimeSeries) ) ) == NULL )
+  {
+    LALFree( waveform->a ); waveform->a = NULL;
+    LALFree( waveform->f ); waveform->f = NULL;
+    XLALDestroyREAL4Vector( ff );
+    XLALDestroyREAL4Vector( a );
+    XLALDestroyREAL8Vector( phi );
+    ABORT( status, LALINSPIRALH_EMEM,
+               LALINSPIRALH_MSGEMEM );
+  }
+
+  waveform->a->data = XLALCreateREAL4VectorSequence( (UINT4)count, 2 );
+  waveform->f->data = XLALCreateREAL4Vector( count );
+  waveform->phi->data = XLALCreateREAL8Vector( count );
+
+  if ( !waveform->a->data || !waveform->f->data || !waveform->phi->data )
+  {
+    if ( waveform->a->data )
+      XLALDestroyREAL4VectorSequence( waveform->a->data );
+    if ( waveform->f->data )
+      XLALDestroyREAL4Vector( waveform->f->data );
+    if ( waveform->phi->data )
+      XLALDestroyREAL8Vector( waveform->phi->data );
+    LALFree( waveform->a ); waveform->a = NULL;
+    LALFree( waveform->f ); waveform->f = NULL;
+    XLALDestroyREAL4Vector( ff );
+    XLALDestroyREAL4Vector( a );
+    XLALDestroyREAL8Vector( phi );
+    ABORTXLAL( status );
+  }
+
+  memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+  memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+  memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
+
+  waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
+    = ppnParams->deltaT;
+
+  waveform->a->sampleUnits    = lalStrainUnit;
+  waveform->f->sampleUnits    = lalHertzUnit;
+  waveform->phi->sampleUnits  = lalDimensionlessUnit;
+  waveform->position = ppnParams->position;
+  waveform->psi = ppnParams->psi;
+
+  snprintf( waveform->a->name, LALNameLength,   "T4 inspiral amplitude" );
+  snprintf( waveform->f->name, LALNameLength,   "T4 inspiral frequency" );
+  snprintf( waveform->phi->name, LALNameLength, "T4 inspiral phase" );
+
+  /* --- fill some output ---*/
+  ppnParams->tc     = (double)(count-1) / params->tSampling ;
+  ppnParams->length = count;
+  ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
+                    - waveform->f->data->data[count-2])) * ppnParams->deltaT;
+  ppnParams->fStop  = params->fFinal;
+  ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
+
+  ppnParams->fStart   = ppnParams->fStartIn;
+
+
+  /* --- free memory --- */
+  XLALDestroyREAL4Vector( ff );
+  XLALDestroyREAL4Vector( a );
+  XLALDestroyREAL8Vector( phi );
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }
 
 /*---------------------------------------------------------*/
@@ -324,6 +496,10 @@ void
 LALTaylorT4WaveformEngine (
                 LALStatus        *status,
                 REAL4Vector      *signalvec,
+                REAL4Vector      *a,
+                REAL4Vector      *ff,
+                REAL8Vector      *phiVec,
+                UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -342,9 +518,23 @@ LALTaylorT4WaveformEngine (
    /*DFindRootIn           rootIn;*/
    CHAR message[256];
 
+   /* Variables for injection */
+   REAL8 mTot = 0;
+   REAL8 unitHz = 0;
+   REAL8 f2a = 0;
+   REAL8 mu = 0;
+   REAL8 cosI = 0;/* cosine of system inclination */
+   REAL8 etab = 0;
+   REAL8 fFac = 0; /* SI normalization for f and t */
+   REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
+   REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
+
 
    INITSTATUS(status, "LALTaylorT4WaveformEngine", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
+
+   ASSERT( signalvec || ( ff && a && phiVec ), status,
+            LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
 /* Allocate all the memory required to dummy and then point the various
    arrays to dummy - this makes it easier to handle memory failures */
@@ -370,12 +560,36 @@ LALTaylorT4WaveformEngine (
    dyt.data       = &dummy.data[5*nn];
 
 
+   if ( a )
+   {
+      mTot   = params->mass1 + params->mass2;
+      etab   = params->mass1 * params->mass2;
+      etab  /= mTot;
+      etab  /= mTot;
+      unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
+      cosI   = cos( params->inclination );
+      mu     = etab * mTot;
+      fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+      f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
+      apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+      apFac *= 1.0 + cosI*cosI;
+      acFac *= 2.0*cosI;
+      params->nStartPad = 0;
+   }
+
    /* Set dt to sampling interval specified by user */
 
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signalvec->length;
+   if ( signalvec )
+   {
+     length = signalvec->length;
+   }
+   else
+   {
+     length = ff->length;
+   }
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -448,7 +662,7 @@ LALTaylorT4WaveformEngine (
 
    while (omega<omegaMax)
    {
-      if (count > length)
+      if (count >= length)
       {
         XLALRungeKutta4Free( integrator );
 	LALFree(dummy.data);
@@ -456,7 +670,23 @@ LALTaylorT4WaveformEngine (
       }
 
       h = 4 * m * eta * v*v * cos(2.*phi);
-      signalvec->data[ndx] = h;
+      if ( signalvec )
+      {
+        signalvec->data[ndx] = h;
+      }
+      else if (a)
+      {
+          int ice, ico;
+          ice = 2*count;
+          ico = ice + 1;
+          omega = v*v*v;
+
+          ff->data[count]       = (REAL4)(omega/unitHz);
+          f2a                   = pow (f2aFac * omega, 2./3.);
+          a->data[ice]      = (REAL4)(4.*apFac * f2a);
+          a->data[ico]    = (REAL4)(4.*acFac * f2a);
+          phiVec->data[count]      = (REAL8)(phi);
+      }
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(2.*m*LAL_PI)); */
 
       /* Integrate one step forward */
@@ -485,6 +715,7 @@ LALTaylorT4WaveformEngine (
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/
+   *countback = count;
    v = pow(m*omega, 1./3.);
    params->vFinal = v;
    params->tC = t;

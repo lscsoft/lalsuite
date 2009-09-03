@@ -379,7 +379,11 @@ LALInspiralWaveForInjection(
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);
-     	break;
+     	   break;
+      case TaylorT4:
+           LALTaylorT4WaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           CHECKSTATUSPTR(status);
+           break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
 

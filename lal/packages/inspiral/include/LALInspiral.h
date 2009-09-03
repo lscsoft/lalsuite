@@ -1189,6 +1189,12 @@ void LALTaylorT4Waveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+void LALTaylorT4WaveformForInjection(
+     LALStatus        *status,
+     CoherentGW       *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
+
 void LALBCVSpinWaveform(
      LALStatus *status,
      REAL4Vector *signalvec,
