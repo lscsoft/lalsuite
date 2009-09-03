@@ -399,7 +399,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, ra_proposed, dec_proposed, psi_proposed, dist_proposed;
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;	
-	int withinPrior=0;
+	//int withinPrior=0;
 
 	destroyVariables(proposedParams);
 
@@ -423,8 +423,9 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 	addVariable(proposedParams, "polarisation",    &psi,		REAL8_t);
 	addVariable(proposedParams, "distance",        &dist,		REAL8_t);  
   
-	while(!withinPrior)
-	{
+        /* the "withinPrior" restriction would screw up the sampling (not symmetric any more)!! */
+	//while(!withinPrior)
+	//{
 		mc_proposed=mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 		eta_proposed=eta+gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
 		//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
@@ -446,8 +447,8 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 		setVariable(proposedParams, "polarisation",    &psi_proposed);
 		setVariable(proposedParams, "distance",        &dist_proposed);
 	
-		withinPrior= runState->prior(runState, proposedParams) > 0;
-	}
+	//	withinPrior= runState->prior(runState, proposedParams) > 0;
+	//}
 }
 
 //Test LALPriorFunction
@@ -489,12 +490,21 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 	REAL8 acceptanceProbability;
 	
 	priorCurrent=runState->prior(runState, runState->currentParams);
-	while(priorProposed<=0){	
+
+        /* again, the within-prior restriction would screw up the sampler!! */
+	//while(priorProposed<=0){	
 		runState->proposal(runState, &proposedParams);
 		priorProposed=runState->prior(runState, &proposedParams);
-	}
+	//}
+
+        /* you can still save computation time by doing the following: */
+	if (priorProposed > 0) 
+          likelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
+        else
+          likelihoodProposed = 0;
+
 	likelihoodCurrent=runState->likelihood(runState->currentParams, runState->data, runState->template);
-	likelihoodProposed=runState->likelihood(&proposedParams, runState->data, runState->template);
+        /* (the above number should have been stored somwehere from the previous iteration) */
 	
 	acceptanceProbability=likelihoodCurrent*priorCurrent/(likelihoodProposed*priorProposed);
 	
