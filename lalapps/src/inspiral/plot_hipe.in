@@ -624,7 +624,9 @@ if opts.plotcoincmissed:
                     "SIRE_INJECTIONS_*_" + short_suffix + \
                     "_FOUND_SUMMARY_FIRST_" + short_suffix )
       plotcoincmissed_jobs['plotcoincmissed']. add_opt( "missed-pattern",
-                     short_suffix + "_MISSED_SUMMARY_SECOND_*_" + this_suffix )
+                     short_suffix + "_MISSED_SUMMARY_SECOND_*_" + short_suffix )
+      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "inj-string",
+                     short_suffix )
 
       plotcoincmissed_jobs['plotcoincmissed'].set_sub_file( basename 
                                              + '.plotcoincmissed' + subsuffix )

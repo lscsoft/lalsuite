@@ -162,9 +162,10 @@ LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
-LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_INTELFFT
+LAL_WITH_CUDA
+LAL_ENABLE_GCC_FLAGS
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
 LAL_ENABLE_XML
@@ -397,6 +398,9 @@ fi
 
 
 dnl Define variables describing what was enabled.
+if test "${cuda}" = "true"; then
+  AC_DEFINE(LAL_CUDA_ENABLED, 1, [Define if using cuda library])
+fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
 fi
@@ -445,6 +449,7 @@ AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
 AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
+AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 
@@ -504,6 +509,7 @@ AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -512,6 +518,7 @@ echo "
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
                 LAL XML library support is $xmlenabled
+                CUDA support is $cudaenabled
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL
