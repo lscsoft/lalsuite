@@ -140,10 +140,6 @@ RCSID( "$Id$");
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
-/* FStat coprocessor (CUDA) */
-#define REARRANGE_SFT_DATA /* almost obsolete now */
-#define INITIALIZE_COPROCESSOR_DEVICE
-#define UNINITIALIZE_COPROCESSOR_DEVICE
 /* BOINC */
 #define MAIN main
 #endif /* EAH_BOINC */
@@ -976,7 +972,7 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
 
-  INITIALIZE_COPROCESSOR_DEVICE;
+  INITIALIZE_COPROCESSOR_DEVICE
 
 #ifdef OUTPUT_TIMING
     clock0 = time(NULL);
@@ -1097,7 +1093,7 @@ int MAIN( int argc, char *argv[]) {
 	  } 
 	} /* loop over stacks */
 
-	REARRANGE_SFT_DATA;
+	REARRANGE_SFT_DATA
 
       } /* fstat memory allocation block */
       
@@ -1268,7 +1264,7 @@ int MAIN( int argc, char *argv[]) {
   }
 #endif
   
-  UNINITIALIZE_COPROCESSOR_DEVICE;
+  UNINITIALIZE_COPROCESSOR_DEVICE
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
