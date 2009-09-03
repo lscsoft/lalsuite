@@ -35,7 +35,7 @@ Stochastic library.
 
 %build
 source /opt/lscsoft/lscsoft-user-env.sh
-%configure
+%configure --disable-gcc-flags
 %{__make}
 
 %install
