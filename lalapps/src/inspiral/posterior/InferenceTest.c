@@ -56,8 +56,8 @@ void BasicMCMCOneStep(LALInferenceRunState *runState);
 //Test LALAlgorithm
 void MCMCAlgorithm (struct tagLALInferenceRunState *runState);
 
-gsl_rng * InitializeRandomSeed(void);
-unsigned long int random_seed();
+// gsl_rng * InitializeRandomSeed(void);
+// unsigned long int random_seed();
 
 
 
@@ -508,7 +508,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
 {
 	int i;
-	runState->GSLrandom=InitializeRandomSeed();
+	//runState->GSLrandom=InitializeRandomSeed();
 	for(i=0; i<100; i++)
 	{
 		runState->evolve(runState);
@@ -518,38 +518,38 @@ void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
 }
 
 
-//Random variant algorithm initialization
-//see GSL documentation
-//http://www.gnu.org/software/gsl/manual/
-gsl_rng * InitializeRandomSeed(void)
-{
-        const gsl_rng_type * T;
-        gsl_rng * rng;
-        gsl_rng_env_setup();
-        T = gsl_rng_default;
-        rng = gsl_rng_alloc (T);
-        //long seed = time(NULL)*getpid();
-        unsigned long seed=random_seed();
-        gsl_rng_set(rng, seed);
-        return rng;
-}
-
-
-//http://www.cygwin.com/ml/gsl-discuss/2004-q1/msg00072.html
-unsigned long int random_seed(){
-        unsigned int seed;
-        struct timeval tv;
-        FILE *devrandom;
-
-        if ((devrandom = fopen("/dev/random","r")) == NULL) {
-                gettimeofday(&tv,0);
-                seed = tv.tv_sec + tv.tv_usec;
-        } else {
-                fread(&seed,sizeof(seed),1,devrandom);
-                fclose(devrandom);
-        }
-
-        return seed;
-}
-
-
+////Random variant algorithm initialization
+////see GSL documentation
+////http://www.gnu.org/software/gsl/manual/
+//gsl_rng * InitializeRandomSeed(void)
+//{
+//        const gsl_rng_type * T;
+//        gsl_rng * rng;
+//        gsl_rng_env_setup();
+//        T = gsl_rng_default;
+//        rng = gsl_rng_alloc (T);
+//        //long seed = time(NULL)*getpid();
+//        unsigned long seed=random_seed();
+//        gsl_rng_set(rng, seed);
+//        return rng;
+//}
+//
+//
+////http://www.cygwin.com/ml/gsl-discuss/2004-q1/msg00072.html
+//unsigned long int random_seed(){
+//        unsigned int seed;
+//        struct timeval tv;
+//        FILE *devrandom;
+//
+//        if ((devrandom = fopen("/dev/random","r")) == NULL) {
+//                gettimeofday(&tv,0);
+//                seed = tv.tv_sec + tv.tv_usec;
+//        } else {
+//                fread(&seed,sizeof(seed),1,devrandom);
+//                fclose(devrandom);
+//        }
+//
+//        return seed;
+//}
+//
+// (I moved the above part into the "initialize()" function.  Hope that's OK.  Christian.)

@@ -1016,6 +1016,11 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
   LALInferenceRunState *irs=NULL;
   LALIFOData *ifoPtr, *ifoListStart;
+  ProcessParamsTable *ppt=NULL;
+  unsigned long int randomseed;
+  struct timeval tv;
+  FILE *devrandom;
+
   irs = calloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
   fprintf(stdout, " readData(): started.\n");
@@ -1082,6 +1087,27 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   }
   else
     fprintf(stdout, " initialize(): no data read.\n");
+
+  /* set up GSL random number generator: */
+  gsl_rng_env_setup();
+  irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+  /* (try to) get random seed from command line: */
+  ppt = getProcParamVal(commandLine, "--randomseed");
+  if (ppt != NULL)
+    randomseed = atoi(ppt->value);
+  else { /* otherwise generate "random" random seed: */
+    if ((devrandom = fopen("/dev/random","r")) == NULL) {
+      gettimeofday(&tv, 0);
+      randomseed = tv.tv_sec + tv.tv_usec;
+    } 
+    else {
+      fread(&randomseed, sizeof(randomseed), 1, devrandom);
+      fclose(devrandom);
+    }
+  }
+  fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
+  gsl_rng_set(irs->GSLrandom, randomseed);
+
   return(irs);
 }
 
