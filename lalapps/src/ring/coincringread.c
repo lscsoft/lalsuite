@@ -1466,9 +1466,8 @@ why??????????????
     LALFree( thisSearchSumm );
   }
 
-  if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
+  if ( vrbflg ) fprintf( stdout, "(edit) checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
   exit( 0 );
 
-  fprintf( stdout, "END OF COINCRINGREAD" );
 }
