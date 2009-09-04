@@ -90,8 +90,6 @@ LIBS="$LIBS $LAL_LIBS"
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 
 # check libraries if not a top-level build
-CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 if test "$LALSUITE_BUILD" = "true" ; then
   test -n "$LALSUPPORT_LIBS" && lalsupport="true"
 else
