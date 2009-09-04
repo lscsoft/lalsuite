@@ -93,10 +93,10 @@ PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
 LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 if test "$LALSUITE_BUILD" = "true" ; then
-	test -n "$LALSUPPORT_LIBS" && lalsupport="true"
+  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
 else
-	AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
-	AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
+  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
 fi
 AM_CONDITIONAL([LALSUPPORT], [test x$lalsupport = xtrue])
 
