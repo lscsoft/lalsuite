@@ -215,7 +215,9 @@ void LALRefInterference (LALStatus    *status,
 
   TRY(LALCCreateVector(status->statusPtr, &snum, n), status);
 
-  TRY(LALCreateReverseComplexFFTPlan(status->statusPtr, &pinv, n, 0), status);
+  pinv = XLALCreateReverseCOMPLEX8FFTPlan(n, 0);
+  if (pinv == NULL)
+    ABORTXLAL(status);
   /* -------------------------------------------   */
 
   /* -------------------------------------------   */
@@ -261,7 +263,8 @@ void LALRefInterference (LALStatus    *status,
   }
 
   /* Calculate z_k(t) by performing FFTs */
-  TRY(LALCOMPLEX8VectorFFT(status->statusPtr,zt, zf, pinv), status);
+  if (XLALCOMPLEX8VectorFFT(zt, zf, pinv) != 0)
+    ABORTXLAL(status);
 
   /* calculate invarb, B_k(1)(t) and initializes sden and snum */
 
@@ -376,7 +379,8 @@ void LALRefInterference (LALStatus    *status,
     }
 
     /* Calculate z_k(t) by performing FFTs */
-    TRY(LALCOMPLEX8VectorFFT(status->statusPtr,zt, zf, pinv), status);
+    if (XLALCOMPLEX8VectorFFT(zt, zf, pinv) != 0)
+      ABORTXLAL(status);
 
     /* calculate invarb, B_k(t)  */
 
@@ -490,7 +494,7 @@ void LALRefInterference (LALStatus    *status,
   TRY(LALZDestroyVector(status->statusPtr, &b1t), status);
   TRY(LALCDestroyVector(status->statusPtr, &snum), status);
 
-  TRY(LALDestroyComplexFFTPlan(status->statusPtr, &pinv), status);
+  XLALDestroyCOMPLEX8FFTPlan(pinv);
   /* -------------------------------------------   */
 
 
