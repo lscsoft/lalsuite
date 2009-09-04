@@ -146,14 +146,9 @@ int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
   int leapTAI;
   int leapGPS;
 
-  if ( gpssec < leaps[0].gpssec )
-  {
-    XLALPrintError( "XLAL Error - Don't know leap seconds before GPS time %d\n",
-        leaps[0].gpssec );
-    XLAL_ERROR( func, XLAL_EDOM );
-  }
-
   leapTAI = XLALLeapSeconds ( gpssec );
+  if ( leapTAI < 0 )
+    XLAL_ERROR( func, XLAL_EFUNC );
 
   leapGPS = leapTAI - 19;	/* subtract 19 seconds to get leap-seconds wrt to GPS epoch */
 
