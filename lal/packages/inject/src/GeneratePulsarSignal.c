@@ -320,7 +320,9 @@ LALSignalToSFTs (LALStatus *status,
 	     GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
   }
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numTimesteps, 0), status);
+  pfwd = XLALCreateForwardREAL4FFTPlan(numTimesteps, 0);
+  if (pfwd == NULL)
+    ABORTXLAL(status);
 
   /* get some info about time-series */
   tStart = signalvec->epoch;					/* start-time of time-series */
@@ -426,10 +428,11 @@ LALSignalToSFTs (LALStatus *status,
       }
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
-      LALForwardRealFFT(status->statusPtr, thisSFT->data, &timeStretch, pfwd);
-      BEGINFAIL(status) {
-	LALDestroySFTVector(status->statusPtr, &sftvect);
-      } ENDFAIL(status);
+      if (XLALREAL4ForwardFFT(thisSFT->data, &timeStretch, pfwd) != 0)
+      {
+        LALDestroySFTVector(status->statusPtr, &sftvect);
+        ABORTXLAL(status);
+      }
 
 
       /* normalize DFT-data to conform to v2 ( ie. COMPLEX8FrequencySeries ) specification ==> multiply DFT by dt */
@@ -478,7 +481,7 @@ LALSignalToSFTs (LALStatus *status,
     } /* for iSFT < numSFTs */
 
   /* free stuff */
-  LALDestroyRealFFTPlan(status->statusPtr, &pfwd);
+  XLALDestroyREAL4FFTPlan(pfwd);
 
   /* did we get timestamps or did we make them? */
   if (params->timestamps == NULL)
