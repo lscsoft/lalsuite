@@ -17,7 +17,7 @@
   *  MA  02111-1307  USA
   */
 /*
- * Author: Torres C. (Univ of TX at Brownsville)
+ * Author: Torres Cristina (LLO)
  */
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
@@ -77,6 +77,7 @@ LALappsTSACropMap(
   startTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
   startTime = startTime+(tmpMarkingParams.deltaT*binsToCrop);
   XLALGPSSetREAL8(&(tmpMarkingParams.mapStartGPS),startTime);
+
   stopTime=XLALGPSGetREAL8(&tmpMarkingParams.mapStopGPS);
   stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
   XLALGPSSetREAL8(&(tmpMarkingParams.mapStopGPS),stopTime);
@@ -702,6 +703,7 @@ LALappsTSASortCache(LALStatus   *status,
 	inputCache->mapStartTime[i]=-1;
       else
         inputCache->mapStartTime[i] = XLALGPSGetREAL8(&(tempMap->imageBorders.mapStartGPS));
+
       LALappsTSADestroyMap(status,
 			   &tempMap);
     }
@@ -948,6 +950,7 @@ void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
   size_t i;
 
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
+
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
@@ -969,6 +972,7 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   size_t i;
 
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
+
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
@@ -1085,4 +1089,3 @@ LALappsTSassert(UINT4               err,
     }
   return;
 }
- 
