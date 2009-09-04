@@ -1469,4 +1469,6 @@ why??????????????
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
   exit( 0 );
+
+  fprintf( stdout, "END OF COINCRINGREAD" );
 }
