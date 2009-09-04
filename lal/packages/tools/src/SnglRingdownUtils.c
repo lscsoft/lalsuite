@@ -476,7 +476,7 @@ XLAL3DRinca(
   INT8    ta,  tb;
   REAL8   fa, fb, Qa, Qb, ds2_min;
   REAL8   step = 1./16384.;
-  REAL8   dtab, dt_min, dt_max, dt;
+  REAL8   dtab, dtba, dt_min, dt_max, dt_min_ab, dt_min_ba, dt_max_ab, dt_max_ba, dt;
   const LALDetector *aDet;
   const LALDetector *bDet;
   fa = aPtr->frequency;
@@ -487,10 +487,32 @@ XLAL3DRinca(
   tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   dtab = 1.e-9 * (tb - ta);
+  dtba = 1.e-9 * (ta - tb);
   aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
   bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
-  dt_min = dtab - 1.e-9 * XLALLightTravelTime(aDet,bDet);
-  dt_max = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+
+  dt_min_ab = dtab - 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_min_ba = dtba - 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_max_ab = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_max_ba = dtba + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+
+  if ( dt_min_ab < dt_min_ba )
+  {
+    dt_min = dt_min_ab;
+  }
+  else
+  {
+    dt_min = dt_min_ba;
+  }
+
+  if ( dt_max_ab > dt_max_ba )
+  {
+    dt_max = dt_max_ab;
+  }
+  else
+  {
+    dt_max = dt_max_ba;
+  }
 
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
 
