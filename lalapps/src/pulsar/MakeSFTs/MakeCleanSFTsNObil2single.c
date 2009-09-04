@@ -1905,7 +1905,7 @@ i_eval = 1.0;
 
 
    for(i=0; i<(int)series->data->length;i++){
-    ad=series->data->data[i];
+    ad=1e26*series->data->data[i];
    /* printf("ad %23.16e\n",ad);*/
     qd=ad*ad;
    /* printf("qd %23.16e\n",qd);*/
