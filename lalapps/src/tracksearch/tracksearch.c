@@ -45,15 +45,15 @@ RCSID( "tracksearch $Id$");
 
 /* Define Error Codes */
 #define TRACKSEARCHC_ENORM              0
-#define TRACKSEARCHC_ESUB               1
-#define TRACKSEARCHC_EARGS              2
-#define TRACKSEARCHC_EVAL               4
-#define TRACKSEARCHC_EFILE              8
-#define TRACKSEARCHC_EREAD              16
-#define TRACKSEARCHC_EMEM               32
-#define TRACKSEARCHC_EMISC              64
-#define TRACKSEARCHC_ENULL              128
-#define TRACKSEARCHC_EDATA              256
+#define TRACKSEARCHC_ESUB               5
+#define TRACKSEARCHC_EARGS              10
+#define TRACKSEARCHC_EVAL               15
+#define TRACKSEARCHC_EFILE              20
+#define TRACKSEARCHC_EREAD              25
+#define TRACKSEARCHC_EMEM               30
+#define TRACKSEARCHC_EMISC              35
+#define TRACKSEARCHC_ENULL              40
+#define TRACKSEARCHC_EDATA              45
 
 #define TRACKSEARCHC_MSGENORM          "Normal Exit"
 #define TRACKSEARCHC_MSGESUB           "Subroutine Fail"
@@ -1302,7 +1302,7 @@ void LALappsGetFrameData(LALStatus*          status,
       frameCache=XLALFrImportCache(cachefile);
       if (frameCache == NULL)
 	{
-	  fprintf(stderr,"Error importing frame cache file!\n");
+	  fprintf(stderr,"Error importing frame cache file, is it empty or missing?\n");
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEDATA);
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
@@ -1479,7 +1479,7 @@ void LALappsGetFrameData(LALStatus*          status,
     default:
       {
 	fprintf(stderr,"Data type code found can't be loaded.\n");
-	fprintf(stderr,"Data type code value %i\n.",dataTypeCode);
+	fprintf(stderr,"Data type code value %i.\n",dataTypeCode);
 	fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEREAD);
 	fflush(stderr);
 	exit(TRACKSEARCHC_EREAD);
