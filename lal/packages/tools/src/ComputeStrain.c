@@ -774,10 +774,12 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
     ABORTXLAL( status );
 
   /* make fft plans */
-  LALCreateForwardREAL8FFTPlan(status->statusPtr, &fplan, tseriesDATA->data->length, 0 );
-  CHECKSTATUSPTR( status );
-  LALCreateReverseREAL8FFTPlan(status->statusPtr, &rplan, tseriesDATA->data->length, 0 );
-  CHECKSTATUSPTR( status );
+  fplan = XLALCreateForwardREAL8FFTPlan(tseriesDATA->data->length, 0 );
+  if (fplan == NULL)
+    ABORTXLAL(status);
+  rplan = XLALCreateReverseREAL8FFTPlan(tseriesDATA->data->length, 0 );
+  if (rplan == NULL)
+    ABORTXLAL(status);
 
   /* fft both series */
   xlerr=XLALREAL8TimeFreqFFT(vtilde, tseriesDATA, fplan);
@@ -819,10 +821,8 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
     }
 
   /* Destroy everything */
-  LALDestroyREAL8FFTPlan( status->statusPtr, &fplan );
-  CHECKSTATUSPTR( status );
-  LALDestroyREAL8FFTPlan( status->statusPtr, &rplan );
-  CHECKSTATUSPTR( status );
+  XLALDestroyREAL8FFTPlan(fplan);
+  XLALDestroyREAL8FFTPlan(rplan);
 
   XLALDestroyCOMPLEX16FrequencySeries(vtilde);
   XLALDestroyCOMPLEX16FrequencySeries(vtildeFIR);
