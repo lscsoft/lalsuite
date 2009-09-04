@@ -496,6 +496,8 @@ XLAL3DRinca(
   dt_max_ab = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
   dt_max_ba = dtba + 1.e-9 * XLALLightTravelTime(aDet,bDet);
 
+  XLALPrintInfo( "New dt loop" );
+
   if ( dt_min_ab < dt_min_ba )
   {
     dt_min = dt_min_ab;
