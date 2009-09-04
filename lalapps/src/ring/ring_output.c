@@ -101,11 +101,9 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 
       strncpy( thisParam->program, program, LIGOMETA_PROGRAM_MAX - 1 );
       strncpy( thisParam->param, opt, LIGOMETA_PARAM_MAX - 1 );
+      strncpy( thisParam->type, "string", LIGOMETA_TYPE_MAX - 1 );
       if ( val )
-      {
-        strncpy( thisParam->type, "string", LIGOMETA_TYPE_MAX - 1 );
         strncpy( thisParam->value, val, LIGOMETA_VALUE_MAX - 1 );
-      }
     }
 
     LALFree( opt );
@@ -184,7 +182,6 @@ int ring_output_events_xml(
 ProcessTable *ring_create_process_table( struct ring_params *params )
 {
   LALStatus status = blank_status;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   ProcessTable *processTable = NULL;
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );
@@ -203,7 +200,7 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
   strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
-  LAL_CALL( LALGPSTimeNow( &status, &processTable->end_time, &accuracy ), &status );
+  XLALGPSTimeNow(&processTable->end_time);
 
   return processTable;
 }
@@ -245,6 +242,7 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
   searchSummary->out_end_time   = outEndTime;
   XLALGPSAdd( &searchSummary->out_end_time, 1.0 * params->padData);
   searchSummary->nevents        = params->numEvents;
+  strncpy( searchSummary->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
 
   return searchSummary;
 }

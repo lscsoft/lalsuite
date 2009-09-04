@@ -292,18 +292,33 @@ SimInspiralTable* XLALGaussianInspiralMasses(
 SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
     RandomParams *randParams,/**< random parameter details */
+    MassDistribution mDist,  /**< the mass distribution to use */
     REAL4  minTotalMass,     /**< minimum total mass of binary */
     REAL4  maxTotalMass,     /**< maximum total mass of binary */
     REAL4  minMassRatio,     /**< minimum mass ratio */
     REAL4  maxMassRatio      /**< maximum mass ratio */
     )
 {
-  REAL4 mtotal, ratio;
+  REAL4 mtotal = -1.0;
+  REAL4 ratio = -1.0;
 
   /* generate uniformly distributed total mass and mass ratio */
-  mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
-  ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
-
+  if ( mDist==uniformTotalMassRatio)
+  {
+    mtotal = minTotalMass + (XLALUniformDeviate(randParams) * (maxTotalMass - minTotalMass));
+    ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
+  }
+  else if ( mDist==logMassUniformTotalMassRatio)
+  {
+    mtotal = exp( log(minTotalMass) +  XLALUniformDeviate(randParams) *
+            ( log(maxTotalMass) - log(minTotalMass) ) );
+    ratio = minMassRatio + (XLALUniformDeviate(randParams) * (maxMassRatio - minMassRatio));
+  }
+  else
+  {
+    /* unsupported distribution type */
+    XLAL_ERROR_NULL("XLALRandomInspiralTotalMassRatio", XLAL_EINVAL);
+  }
   inj->mass1 = (ratio * mtotal) / (ratio + 1);
   inj->mass2 = mtotal / (ratio + 1);
   inj->eta = inj->mass1 * inj->mass2 / ( mtotal * mtotal );
@@ -311,6 +326,7 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
 
   return ( inj );
 }
+
 
 /** Generates spins for an inspiral injection.  Spin magnitudes lie between the
  * specified max and min values.  Orientation for spin1 can be constrained by

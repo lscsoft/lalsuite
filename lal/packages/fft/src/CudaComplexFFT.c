@@ -129,11 +129,10 @@
 #include <lal/ComplexFFT.h>
 #include <lal/CudaPlan.h>
 #include <lal/FFTWMutex.h>
-#include <CudaFunctions.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cufft.h>
 #include <fftw3.h>
+
+#include "CudaFunctions.h"
+#include "CudaFFT.h"
 
 NRCSID( COMPLEXFFTC, "$Id$" );
 
@@ -152,6 +151,9 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
 
   if ( ! size )
     XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  /* "use" measurelvl */
+  measurelvl = 0;
 
   /* allocate memory for the plan and the temporary arrays */
   plan = XLALMalloc( sizeof( *plan ) );

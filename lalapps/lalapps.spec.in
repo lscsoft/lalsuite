@@ -14,7 +14,7 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: gsl fftw libframe libmetaio lal libxml2 cfitsio python
+Requires: gsl fftw libframe libmetaio lal lalstochastic libxml2 cfitsio python
 Prefix: %{_prefix}
 
 %description
@@ -28,7 +28,7 @@ Algorithm Library.
 %build
 source /opt/lscsoft/lscsoft-user-env.sh
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-debug
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
 %{__make}
 
 %install

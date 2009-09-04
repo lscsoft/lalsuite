@@ -22,623 +22,693 @@
 #include <lal/LIGOMetadataTables.h>
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))
+#define NSIGMA 3
 
-/* declare C99 function */
-int (isnan)(double);
+typedef double XLALSkymapSphericalPolarType[2];
+        
+typedef struct 
+{
+    XLALSkymapSphericalPolarType *directions;
+    double* logPosteriors;
+    double total_logPosterior;
+    int count;
+} SkyMapProperties;
+
+/* 
+ * Use detector names from lal/packages/tools/include/LALDetectors.h :
+ *
+ *      LAL_TAMA_300_DETECTOR   =       0,
+ *      LAL_VIRGO_DETECTOR      =       1,
+ *      LAL_GEO_600_DETECTOR    =       2,
+ *      LAL_LHO_2K_DETECTOR     =       3,
+ *      LAL_LHO_4K_DETECTOR     =       4,
+ *      LAL_LLO_4K_DETECTOR     =       5,
+ *
+ *-------------------------------------------------------
+ *
+ *  Array of pointers to the matched-filtered data z[t]
+ * 
+ *       x[0] = real(z_H)
+ *       x[1] = real(z_L)
+ *       x[2] = real(z_V)
+ *          ... etc ...
+ *       x[ MAXOBS + 0 ] = imag(z_H)
+ *       x[ MAXOBS + 1 ] = imag(z_L)
+ *       x[ MAXOBS + 2 ] = imag(z_V)
+ *          ... etc ...
+ */
+typedef struct 
+{
+    int N;
+    int* detectors;
+    double* wSw;
+    double** x;    
+} NetworkProperties;
 
 /*
  *  File names for input and output
  */
-const char* h1_frame_file = 0;
-const char* l1_frame_file = 0;
-const char* v1_frame_file = 0;
-const char* h2_frame_file = 0;
-
-char* xml_file[4] = { 0, 0, 0, 0};
-
+char* frame_file[6] = { 0, 0, 0, 0, 0, 0};
+char* xml_file[6] = { 0, 0, 0, 0, 0, 0 };
+typedef const char* cp;
+cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
 const char* output_file = "skymap.txt";
 
-char* event_id = 0;
 /*
- *  Time of the trigger to be analyzed
+ *  Global Variables...
  */
-double w[3] = { 1, 1, 1 };
-/*
- *  Resolution of output sky map
- */
-int ra_res = 512;
-int dec_res = 256;
+char* event_id = 0;    // Event ID
+int ra_res = 512;      // resolution of output skyMap
+int dec_res = 256;     // ""
+int frequency = 0;     // sampling freq. of analysis (det's sky tilting)
+int samples = 512;     // Number of samples to analyze
+double greenwich = 0;  // Orientation of Earth at event time
 
-/*
- *  Sampling frequency of analysis, which determines sky tiling
- */
-int frequency = 0;
-
-/*
- *  Number of samples to analyze
- */
-int samples = 512;
-
-/*
- *  Array of pointers to the matched-filtered data z[t]
- * 
- *  x[0] = real(z_H)
- *  x[1] = real(z_L)
- *  x[2] = real(z_V)
- *  x[3] = imag(z_H)
- *  x[4] = imag(z_L)
- *  x[5] = imag(z_V)
- */
-double* x[6] = { 0, 0, 0, 0, 0, 0 };
-/*
- * Orientation of the earth at the event time
- */
-double greenwich = 0;
 /*
  * Functions
  */
-void load_metadata(char* file, int detector);
-void load_data(int detector, const char* file, const char* initial);
-void dump_data_to_file(FILE*);
-void analyze(void);
+void  load_metadata( NetworkProperties* network,
+                     int slot);
+void      load_data( NetworkProperties* network,
+                     int slot );
+void writeSkymapOut( SkyMapProperties* skyMap );
+void        analyze( NetworkProperties* network, 
+                     SkyMapProperties* skyMap );
 
+/*
+ *  MAIN
+ */
 int main(int argc, char** argv)
 {
-    int c;
-    
-    while (1)
+  fprintf( stderr , "#INSIDE MAIN!!!\n");//<<-----------------FIXME
+  int c,numObs = 0;
+ 
+  while (1)
     {
-        static struct option long_options[] =
-            {
-                {"h1-frame-file", required_argument, 0, 'h'},
-                {"l1-frame-file", required_argument, 0, 'l'},
-                {"v1-frame-file", required_argument, 0, 'v'},
-                {"h2-frame-file", required_argument, 0, 'i'},             
-                {"output-file", required_argument, 0, 'o'},
-                {"ra-res", required_argument, 0, 'a'},
-                {"dec-res", required_argument, 0, 'd'},
-                {"h1-xml-file", required_argument, 0, 't'},
-                {"l1-xml-file", required_argument, 0, 's'},
-                {"v1-xml-file", required_argument, 0, 'r'},
-                {"h2-xml-file", required_argument, 0, 'q'},
-                {"event-id", required_argument, 0, 'e'},
-                {"sample-rate", required_argument, 0, 'f'},
-                {0, 0, 0, 0}
-            };
-        int option_index = 0;
-        c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:", long_options, &option_index);
-        if (c == -1)
-            break;
-        
-        switch (c)
+      static struct option long_options[] =
+	{
+	  {"h1-frame-file", required_argument, 0, 'h'},
+	  {"l1-frame-file", required_argument, 0, 'l'},
+	  {"v1-frame-file", required_argument, 0, 'v'},
+	  {"h2-frame-file", required_argument, 0, 'i'},             
+	  {"output-file", required_argument, 0, 'o'},
+	  {"ra-res", required_argument, 0, 'a'},
+	  {"dec-res", required_argument, 0, 'd'},
+	  {"h1-xml-file", required_argument, 0, 't'},
+	  {"l1-xml-file", required_argument, 0, 's'},
+	  {"v1-xml-file", required_argument, 0, 'r'},
+	  {"h2-xml-file", required_argument, 0, 'q'},
+	  {"event-id", required_argument, 0, 'e'},
+	  {"sample-rate", required_argument, 0, 'f'},
+	  {0, 0, 0, 0}
+	};
+      int option_index = 0;
+      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:", long_options, &option_index);
+      if (c == -1)
+	break;
+      
+      switch (c)
         {
-            case 'h':
-                h1_frame_file = optarg;
-                break;
-            case 'l':
-                l1_frame_file = optarg;
-                break;
-            case 'v':
-                v1_frame_file = optarg;
-                break;
-            case 'i':
-                h2_frame_file = optarg;
-                break;              
-            case 'o':
-                output_file = optarg;
-                break;
-            case 'a':
-                ra_res = atoi(optarg);
-                break;
-            case 'd':
-                dec_res = atoi(optarg);
-                break;
-            case 't':
-                xml_file[0] = optarg;
-                break;
-            case 's':
-                xml_file[1] = optarg;
-                break;
-            case 'r':
-                xml_file[2] = optarg;
-                break;
-            case 'q':
-                xml_file[3] = optarg;
-                break;
-            case 'e':
-                event_id = optarg;
-                break;
-            case 'f':
-                frequency = atoi(optarg);
-                break;
-            default:
-                fprintf(stderr, "unknown error while parsing options\n");
-                    exit(1);
-        }
-    }
-    
-    if (optind < argc)
+	case 'h':
+	  frame_file[LAL_LHO_4K_DETECTOR] = optarg;
+	  break;
+	case 'l':
+	  frame_file[LAL_LLO_4K_DETECTOR] = optarg;
+	  break;
+	case 'v':
+	  frame_file[LAL_VIRGO_DETECTOR] = optarg;
+	  break;
+	case 'i':
+	  frame_file[LAL_LHO_2K_DETECTOR] = optarg;
+	  break;              
+	case 'o':
+	  output_file = optarg;
+	  break;
+	case 'a':
+	  ra_res = atoi(optarg);
+	  break;
+	case 'd':
+	  dec_res = atoi(optarg);
+	  break;
+	case 't':
+	  xml_file[LAL_LHO_4K_DETECTOR] = optarg;
+	  break;
+	case 's':
+	  xml_file[LAL_LLO_4K_DETECTOR] = optarg;
+	  break;
+	case 'r':
+	  xml_file[LAL_VIRGO_DETECTOR] = optarg;
+	  break;
+	case 'q':
+	  xml_file[LAL_LHO_2K_DETECTOR] = optarg;
+	  break;
+	case 'e':
+	  event_id = optarg;
+	  break;
+	case 'f':
+	  frequency = atoi(optarg);
+	  break;
+	default:
+	  fprintf(stderr, "unknown error while parsing options\n");
+	  exit(1);
+        }// end switch
+    }// end while
+  
+  if (optind < argc)
     {
-        fprintf(stderr, "error: extraneous command line argument ");
-        while (optind < argc)
+      fprintf(stderr, "error: extraneous command line argument ");
+      while (optind < argc)
         {
-            fprintf(stderr, "%s\n", argv[optind++]);
+	  fprintf(stderr, "%s\n", argv[optind++]);
         }
-        exit(1);
-    }
-    
-    /* support "none" arguments */
-    if (h1_frame_file && !strcmp("none", h1_frame_file)) { h1_frame_file = 0; }
-    if (l1_frame_file && !strcmp("none", l1_frame_file)) { l1_frame_file = 0; }
-    if (v1_frame_file && !strcmp("none", v1_frame_file)) { v1_frame_file = 0; }
-    if (h2_frame_file && !strcmp("none", h2_frame_file)) { h2_frame_file = 0; }
-    if (xml_file[0] && !strcmp("none", xml_file[0])) { xml_file[0] = 0; }
-    if (xml_file[1] && !strcmp("none", xml_file[1])) { xml_file[1] = 0; }   
-    if (xml_file[2] && !strcmp("none", xml_file[2])) { xml_file[2] = 0; } 
-    if (xml_file[3] && !strcmp("none", xml_file[3])) { xml_file[3] = 0; }   
-    
-    /* check sanity */
-    if (!(h1_frame_file || l1_frame_file || v1_frame_file || h2_frame_file))
+      exit(1);
+    }// end if
+  
+  /* support "none" arguments */
+  {
+    int i;
+    for( i = 0 ; i < 6 ; ++i )
     {
-        fprintf(stderr, "error: Supply at least one of --h1-frame-file, --l1-frame-file or --v1-frame-file\n");
-        exit(1);
-    }
-    if (h1_frame_file && !xml_file[0])
-    {
-        fprintf(stderr, "error: Supply --h1-xml-file to match --h1-frame-file\n");
-        exit(1);
-    }
-    if (l1_frame_file && !xml_file[1])
-    {
-        fprintf(stderr, "error: Supply --l1-xml-file to match --l1-frame-file\n");
-        exit(1);
-    }
-    if (v1_frame_file && !xml_file[2])
-    {
-        fprintf(stderr, "error: Supply --v1-xml-file to match --v1-frame-file\n");
-        exit(1);
-    }
-    if (h2_frame_file && !xml_file[3])
-    {
-        fprintf(stderr, "error: Supply --h2-xml-file to match --h2-frame-file\n");
-        exit(1);
-    }
-    if (!h1_frame_file && xml_file[0])
-    {
-        fprintf(stderr, "error: Supply --h1-frame-file to match --h1-xml-file\n");
-        exit(1);
-    }
-    if (!l1_frame_file && xml_file[1])
-    {
-        fprintf(stderr, "error: Supply --l1-frame-file to match --l1-xml-file\n");
-        exit(1);
-    }
-    if (!v1_frame_file && xml_file[2])
-    {
-        fprintf(stderr, "error: Supply --v1-frame-file to match --v1-xml-file\n");
-        exit(1);
-    }
-    if (!h2_frame_file && xml_file[3])
-    {
-        fprintf(stderr, "error: Supply --h2-frame-file to match --h2-xml-file\n");
-        exit(1);
-    }
-    
-    if (frequency <= 0)
-    {
-        fprintf(stderr, "error: Supply positive integer Hertz --sample-rate\n");
-        exit(1);
-    }
-    
-    /* handle h2 */
-    if (h2_frame_file)
-    {
-        if (h1_frame_file)
+      if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; }
+      if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; }
+      if( ( frame_file[i] && !xml_file[i] ) || (xml_file[i] && !frame_file[i] ) )
         {
-            fprintf(stderr, "warning: H1 and H2 both supplied; H2 will be ignored\n");
-        }
-        else
+          fprintf( stderr , "error: Suppy matching pairs of frame & XML files\n");
+          exit(1);
+        }//end if
+      if( xml_file[i] && frame_file[i] )
         {
-            /* rebadge H2 as H1 */
-            h1_frame_file = h2_frame_file;
-            xml_file[0] = xml_file[3];
-        }
+           ++numObs;
+           printf("NUM OBS: %d\n" , numObs ); 
+        }// end if
+    }// end i for
+  }// end code block
+  
+  if (frequency <= 0)
+    {
+      fprintf(stderr, "error: Supply positive integer Hertz --sample-rate\n");
+      exit(1);
     }
+  
+  /* examine one second of data around the injection */
+  samples = frequency;
 
-    /* examine one second of data around the injection */
-    samples = frequency;
-    /*
-     * Load metadata from XML files
-     */
-    load_metadata(xml_file[0], 0);
-    load_metadata(xml_file[1], 1);
-    load_metadata(xml_file[2], 2);
-    /*
-     * Load z[t] data from frame files
-     */
-    load_data(0, h1_frame_file, "H");
-    load_data(1, l1_frame_file, "L");
-    load_data(2, v1_frame_file, "V");
-        
-    /*
-     * Analyze the data and save the skymap
-     */
+  
+  fprintf( stderr , "#Cleared Sanity Check!!!\n");//<<-----------------FIXME
+  
+  /* 
+   *  We create numObs + 1 networks... one for the whole system, and one network
+   *  for each single detector:
+   */
+  NetworkProperties* network;
+  NetworkProperties* singleObs = 0; // Suppress warning
 
-    analyze();
+  {
+    int i,k=0;
     
-    return 0;
-}
+    network = malloc(sizeof(*network));
+    network->N = numObs; 
+    
+    network->wSw = malloc( sizeof(double) * numObs ); 
+    network->detectors = malloc( sizeof(int) * numObs );    
+    
+    for( i = 0 ; i < 6 ; ++i )
+        if( frame_file[i] )
+            network->detectors[k++] = i;
 
-void load_metadata(char* file, int detector)
+    network->x = malloc( sizeof( double* ) * numObs * 2 );
+  }// end code block
+
+   
+ 
+  /*
+   * Load metadata from XML files
+   */
+  {
+    int i;
+    for( i = 0 ; i < numObs ; ++i )
+      {
+        load_metadata(network , i);
+        load_data(network , i);
+      }// end i for
+   }
+
+  {
+      int j;
+      double maxwSw = 0;
+      for( j = 0 ; j < network->N ; ++j )
+        if( network->wSw[j] > maxwSw )
+          maxwSw = network->wSw[j];
+      for( j = 0 ; j < network->N ; ++j )
+          network->wSw[j] /= maxwSw;
+  }// end code block
+    
+  if( numObs > 1 )
+    {
+      singleObs = malloc( sizeof(*network) * numObs );
+      
+      int i;
+      for( i = 0 ; i != numObs ; ++i )
+        {
+          singleObs[i].N = 1;
+          singleObs[i].wSw = malloc(sizeof(double));
+          singleObs[i].wSw[0] = network->wSw[i];
+
+          singleObs[i].detectors = malloc(sizeof(int));
+          singleObs[i].detectors[0] = network->detectors[i];
+
+          singleObs[i].x = malloc(sizeof(double*) * 2 );
+          singleObs[i].x[0] = network->x[i];
+          singleObs[i].x[1] = network->x[i + numObs]; 
+        }//end for
+    }//end if 
+
+  fprintf( stderr , "#Entering Analsis...\n");//<<-----------------FIXME
+  
+  /*
+   *  Analyze the data and save the skymap for the N-Detector Case
+   */
+  SkyMapProperties* skyMap;
+  skyMap = malloc(sizeof(*skyMap));
+  skyMap->count = ra_res * dec_res;
+  skyMap->directions = malloc(sizeof(*(skyMap->directions))*skyMap->count);
+  skyMap->logPosteriors = malloc(sizeof(*(skyMap->logPosteriors)) * skyMap->count );
+
+  /*
+   *  Analyze the data for the N single-detector cases, and store the net
+   *  log posteriors...
+   */
+  double* total_logPosteriors = 0; // suppress warning
+  if( numObs > 1 )
+    {
+      total_logPosteriors = malloc(sizeof(double) * numObs );
+      int i;
+      for( i = 0 ; i != numObs ; ++i )
+        {
+          analyze(  singleObs + i , skyMap );
+          total_logPosteriors[i] = skyMap->total_logPosterior;
+          fprintf(stderr,"total_logPosterior[%d] = %e\n", i , total_logPosteriors[i]);
+        }// end i for
+    }//end if
+  
+  /*
+   *   Analyze the full network, write out the skymap, and 
+   *   then print the final summary...
+   */
+
+  analyze( network , skyMap );
+  writeSkymapOut( skyMap );
+
+  {
+    int i,iMode = 0;
+    for( i = 0 ; i < skyMap->count ; ++i )
+      {
+        if(skyMap->logPosteriors[i] > skyMap->logPosteriors[iMode])
+          iMode = i;
+      }
+
+    double raMax = fmod( skyMap->directions[iMode][0] + greenwich , LAL_TWOPI );
+    double longMax = fmod( skyMap->directions[iMode][0] , LAL_TWOPI );
+    double decMax = skyMap->directions[iMode][1];
+
+    printf("#EVENT ID \t FOUND RA \t FOUND DEC \t");
+    printf(" TOTAL PROB \t LONG \t LAT\t");
+    if( numObs > 1 )
+        for( i = 0 ; i != numObs ; ++i )
+            printf(" Detector_%d \t " , i );
+    printf("\n");
+    printf("%s  %f \t %f \t %e \t %f \t %f\t" ,
+           event_id , raMax , decMax , skyMap->total_logPosterior ,
+           longMax , decMax );
+    if( numObs > 1 )
+        for( i = 0 ; i != numObs ; ++i )
+            printf(" %e \t",total_logPosteriors[i]);
+    printf("\n");
+  }// end summary block 
+ 
+   
+  /*
+   *  Raw data free'd
+   */
+  {
+    int i;
+    for (i = 0; i != 2*numObs; ++i)
+      free(network->x[i]); 
+  }
+  
+  
+  /*
+   *  posterior data free'd
+   */
+  free( skyMap->logPosteriors );
+  free( skyMap->directions );
+  free( singleObs );
+
+  return 0;
+}// end main
+
+void load_metadata(NetworkProperties* network , int slot)
 {
-    if (file)
+  char* file = xml_file[ network->detectors[slot] ];
+  
+  if (file)
     {
-        SnglInspiralTable* a = 0;
-        LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
-        if (!a)
+      SnglInspiralTable* a = 0;
+      LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
+      if (!a)
         {
-            fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
-            exit(1);
+	  fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
+	  exit(1);
         }
-        w[detector] = 1.0 / sqrt(a->sigmasq);
-        greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
-        /*
-        fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
-         */
-    }
-}
+      network->wSw[slot] = a->sigmasq;
+      greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
+    }//end file if
+}// end load_metadata
 
-void load_data(int detector, const char* file, const char* initial)
+void load_data(NetworkProperties* network , int slot )
 {
-    if (file)
+   const char* file = frame_file[ network->detectors[slot] ];
+   const char* initial = channel_name[ network->detectors[slot] ];
+  
+  if (file)
     {
-        /* 
-         *  Read the frame file here
-         */
-
-        FrStream *stream = NULL;
-        COMPLEX8TimeSeries H1series;
-        int i;
-
-        sprintf(H1series.name,"%s1:CBC-CData_%s", initial, event_id);
-        stream = XLALFrOpen("./", file);
-        if (!stream)
+      /* 
+       *  Read the frame file here
+       */
+      
+      FrStream *stream = NULL;
+      COMPLEX8TimeSeries H1series;
+      int i;
+      
+      sprintf(H1series.name,"%s:CBC-CData_%s", initial, event_id);
+      stream = XLALFrOpen("./", file);
+      if (!stream)
         {
-            fprintf(stderr, "error: failed to open FrStream from file %s\n", H1series.name);
-            exit(1);
+	  fprintf(stderr, "error: failed to open FrStream from file %s\n", H1series.name);
+	  exit(1);
         }
-        
-        H1series.data = XLALCreateCOMPLEX8Vector(samples);
-        if (!H1series.data)
+      
+      H1series.data = XLALCreateCOMPLEX8Vector(samples);
+      if (!H1series.data)
         {
-            fprintf(stderr, "error: failed to create COMPLEX8 vector\n");
-            exit(1);
+	  fprintf(stderr, "error: failed to create COMPLEX8 vector\n");
+	  exit(1);
         }
-        XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
-        XLALFrClose(stream);
+      XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
+      XLALFrClose(stream);
+      
+      /* 
+       * real/complex or waveform one/two  
+       */
+      network->x[slot              ] = (double*) malloc(samples * sizeof(double));
+      network->x[slot + network->N ] = (double*) malloc(samples * sizeof(double));     
 
-        /*
-         *  Allocate memory to repack the data in
-         */
-
-        /* real, or waveform one */
-        x[detector] = (double*) malloc(samples * sizeof(double));
-        /* complex, or waveform two */
-        x[detector + 3] = (double*) malloc(samples * sizeof(double));     
-
-        for (i = 0; i != samples; ++i)
+      for (i = 0; i != samples; ++i)
         {
-            x[detector    ][i] = H1series.data->data[i].re;
-            x[detector + 3][i] = H1series.data->data[i].im;
-        }
-    }
-}
+	  network->x[slot              ][i] = H1series.data->data[i].re;
+	  network->x[slot + network->N ][i] = H1series.data->data[i].im;
+        }// end i for
+    }// end file if
+}// end load_data
 
-#define NSIGMA 3
-
-void analyze(void)
+void writeSkymapOut( SkyMapProperties* skyMap )
 {
-
-    XLALSkymapPlanType* plan;
-    double s[NSIGMA];
-    int i, j;
-    double* raw;
-    double* accumulator;
-    int begin[3], end[3];
-    
-    double min_w = w[0];
-
-    for (i = 0; i != 3; ++i)
-    {
-        if (w[i] < min_w) min_w = w[i];
-    }
-
-    for (i = 0; i != 3; ++i) w[i] /= min_w;
-
-    begin[0] = 0;
-    begin[1] = begin[0];
-    begin[2] = begin[0];
-
-    end[0] = samples;
-    end[1] = end[0];
-    end[2] = end[0];
-
-    /* 
-     *  The characteristic size of the signal 
+    int i;
+    /*
+     *  Write a gzipped ascii file describing the sky map
      */
-
-    /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
-    
-    {
-        /* Validate the input */
-        
-        for (i = 0; i != 3; ++i)
-        {
-            if (x[i])
-            {
-                if (!((w[i] > 0) && (w[i] < -log(0))))
-                {
-                    fprintf(stderr, "error: w[%d] is %e\n", i, w[i]);
-                    exit(1);
-                }
-                for (j = 0; j != samples; ++j)
-                {
-                    if (!((x[i][j] > log(0)) && (x[i][j] < -log(0))))
-                    {
-                        fprintf(stderr, "error: x[%d][%d] = %e\n", i, j, x[i][j]);
-                        exit(1);
-                    }
-                    if (!((x[i + 3][j] > log(0)) && (x[i + 3][j] < -log(0))))
-                    {
-                        fprintf(stderr, "error: x[%d][%d] = %e\n", i + 3, j, x[i + 3][j]);
-                        exit(1);
-                    }
-                }
-            }
-        }
-        
-    }
-    
-    {
-        /*
-         * Compute the glitch hypotheses
-         */
-        double pglitches[3];
-        double pglitch;
-        
-        for (i = 0; i != 3; ++i)
-        {
-            pglitches[i] = 0;
-            if (x[i])
-            {
-                for (j = 0; j != samples; ++j)
-                {
-                    int k;
-                    for (k = 0; k != NSIGMA; ++k)
-                    {
-                        /*
-                         * FIXME: exp may overflow
-                         */
-                        double p = pow(s[k], -2) * exp(0.5 * (1.0 - pow(s[k], -2)) * (pow(x[i][j], 2) + pow(x[i + 3][j], 2)));
-                        pglitches[i] += (p / (NSIGMA * samples));
-                    }
-                }
-            }            
-        }
-
-        pglitch = 1.0;
-        for (i = 0; i != 3; ++i)
-        {
-            if (x[i])
-            {
-                pglitch *= pglitches[i];
-            }
-        }
-        
-        /*
-         * FIXME: output pglitch somewhere
-         */
-        
-        /*
-         * FIXME: implications of glitch model
-         */
-    }
-    
-    {
-        /* 
-         * Use the most sensitive detector to set the bottom of the
-         * logarithmic distribution of amplitude scales 
-         */
-        double min_w;
-        
-        min_w = -log(0);
-        
-        for (i = 0; i != 3; ++i)
-        {
-            if (x[i])
-            {
-                if (w[i] < min_w)
-                {
-                    min_w = w[i];
-                }
-            }
-        }
-        
-        s[0] =   sqrt(10.0) / min_w;
-        s[1] =  sqrt(100.0) / min_w;
-        s[2] = sqrt(1000.0) / min_w;
-    }
-    
-    {
-        /* Convert the individually normalized matched filters to a common normalization */
-        for (i = 0; i != 3; ++i)
-        {
-            if (x[i])
-            {
-                for (j = 0; j != samples; ++j)
-                {
-                    x[i][j] *= w[i];
-                    x[i + 3][j] *= w[i];
-                }
-            }
-        }
-    }
-     
-    /*   
-     *  the sky tiles implied by the frequency) 
-     */
-    if (!(plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res)))
-    {
-        fprintf(stderr, "XLALSkymapConstructPlanMN failed");
+    gzFile* h = NULL;
+    h = gzopen(output_file, "wb");
+    if (h == NULL)
+      {
+        fprintf(stderr,"cannot gzopen() %s\n",output_file);
         exit(1);
-    }
-    /*
-     *  Allocate a chunk of memory tto hold the sky map in the internal 
-     *  timing format
-     */
-    raw = (double*) calloc(plan->pixelCount, sizeof(double));
-    accumulator = (double*) calloc(plan->pixelCount, sizeof(double));
-    /*
-     *  Generate the skymap
-     */
-    if (XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0))
+      }
+
+    for ( i = 0; i != skyMap->count ; ++i )
+      {
+        double phi,ra,dec,longitude;
+        phi = skyMap->directions[i][1];
+        ra  = fmod(phi + greenwich, LAL_TWOPI);
+        longitude = fmod( phi , LAL_TWOPI);
+        while (ra < 0)
+          ra += LAL_TWOPI;
+        while ( longitude < 0 )
+          longitude += LAL_TWOPI;
+        while (ra >= LAL_TWOPI)
+          ra -= LAL_TWOPI;
+        while ( longitude >= LAL_TWOPI )
+          longitude -= LAL_TWOPI;
+        dec = LAL_PI_2 - skyMap->directions[i][0];
+        gzprintf( h, "%.10e %.10e %.10e %.10e %.10e\n", 
+                  ra, dec, (skyMap->logPosteriors[i]) , longitude , dec );
+      }// end i for
+    gzclose(h);
+}// end writeSkyMapOut
+
+
+
+/*
+ *  ANALYZE
+ */
+void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
+{
+  int i,j;
+  
+  XLALSkymapPlanType* plan;
+  XLALSkymapDirectionPropertiesType *properties;   
+  XLALSkymapKernelType *kernels;
+  
+  double** xSw = malloc( sizeof( double* ) * network->N );
+  double** xSw2 = malloc( sizeof( double* ) * network->N ); 
+  
+  /* 
+   *  The characteristic size of the signal 
+   */
+
+  /* Validate the input */    
+  for (i = 0; i != network->N; ++i)
     {
-        fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
-        exit(1);
-    }
-    for (i = 1; i != NSIGMA; ++i)
-    {
-        if (XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0))
+      if (network->x[i])
         {
-            fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
-            exit(1);
-        }
-        XLALSkymapSum(plan, accumulator, accumulator, raw);
-    }
-
-    free(raw);
-    raw = accumulator;
-    
-    {
-        /* validate the output */
-        for (i = 0; i != plan->pixelCount; ++i)
-        {
-            if ((plan->pixel[i].area != 0) && isnan(raw[i]))
+          for (j = 0; j != samples; ++j)
             {
-                fprintf(stderr, "plan->pixel[%d].area = %e && raw[%d] = %e\n", i, plan->pixel[i].area, i, raw[i]);
-                exit(1);
-            }
-        }
-    }
-
-    {   /*  
-         *  Get the mode 
-         */ 
-        double thetaphi[2];
-        XLALSkymapModeThetaPhi(plan, raw, thetaphi);
-        while (thetaphi[1] < 0)
-            thetaphi[1] += LAL_TWOPI;
-        printf("%e %e\n", thetaphi[0], thetaphi[1]);
-    }
-    
-    {   /*  
-         *  Render the timing-format sky map to a more friendly coordinate 
-         *  system
-         */
-        double* render;
-        int m = dec_res;
-        int n = ra_res;
-        double maximum;
-        render = (double*) malloc(m * n * sizeof(double));
-        if (XLALSkymapRender(render, plan, raw))
-        {
-            fprintf(stderr, "XLALSkymapRender failed\n");
-            exit(1);
-        }
-        
-        for (j = 0; j != m * n; ++j)
-        {
-            if (isnan(render[j]))
-            {
-                fprintf(stderr, "WARNING: The rendered skymap contains a NaN at pixel %d\n", j);
-            }
-        }
-
-        maximum = log(0);
-        for (j = 0; j != m * n; ++j)
-        {
-            if (isnan(maximum))
-            {
-                fprintf(stderr, "ERROR: The rendered skymap's progressive maximum became NaN before pixel %d\n", j);
-                exit(1);
-            }               
-            if (render[j] > maximum)
-            {
-                maximum = render[j];
-            }
-        }
-        if (!(maximum < -log(0)))
-        {
-            fprintf(stderr, "ERROR: The skymap maximum was not finite, and normalization cannot be performed\n");
-            exit(0);
-        }
-        for (j = 0; j != m * n; ++j)
-        {
-            render[j] -= maximum;
-        }
-
-
-
-        {
-            /*
-             *  Write a gzipped ascii file describing the sky map
-             */
-            gzFile* h = NULL;
-            h = gzopen(output_file, "wb");
-            if (h == NULL) 
-            {
-                fprintf(stderr,"cannot gzopen() %s\n",output_file);
-                exit(1);
-            }
-            for (j = 0; j != n; ++j)
-            {
-                double phi, ra;
-                phi = (LAL_TWOPI * (j + 0.5)) / n;
-                ra = fmod(phi + greenwich, LAL_TWOPI);
-                while (ra < 0)
-                    ra += LAL_TWOPI;
-                while (ra >= LAL_TWOPI)
-                    ra -= LAL_TWOPI;
-                for (i = 0; i != m; ++i)
-                {
-                    double dec;
-                    dec = LAL_PI_2 - acos(1. - (i + 0.5) * (2. / m));
-                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
-                }
-            }
-            gzclose(h);
-        }
-        
-        free(render);
-        
-    }
-        
-    free(raw);
-        
-    /*
-     *  The plan has allocated memory, so we have to destroy it
-     */
-    XLALSkymapDestroyPlan(plan);
+              if (!( ( network->x[i][j] >  log(0) )  && 
+                     ( network->x[i][j] < -log(0) )      ))
+	        {
+	          fprintf(stderr, "error: x[%d][%d] = %e\n", i, j, network->x[i][j]);
+	          exit(1);
+	        }// end if
+	      if (!(  (network->x[i + network->N][j] > log(0)) && 
+                      (network->x[i + network->N][j] < -log(0))   ))
+	        {
+	          fprintf( stderr , "error: x[%d][%d] = %e\n", 
+                           i + network->N, j, network->x[i + network->N][j]);
+	          exit(1);
+	        }//end if
+	    }//end j for
+	}// end if
+       else
+         {
+           fprintf(stderr , "Data not supplied for detector %d\n" , i );
+           exit(1);
+         }// end else
+    }//end i for
+  
+  fprintf( stderr , "#Input Validated...\n");//<<-----------------FIXME
     
     /*
-     *  Free the data
-     */
+     * Compute the glitch hypotheses  //<----------- TEMP REMOVED FIXME
+     *
+  {
+    double log_pglitches[network->N];
+    
+    for (i = 0; i != network->N; ++i)
+      {
+	log_pglitches[i] = log(0.0);
+	if (network->x[i])
+	  {
+	    for (j = 0; j != samples; ++j)
+	      {
+		double log_p = -1.0 * log( 1 + pow( 1 , 2 )) + 
+		.5 * pow(1 + pow(1,-2),-1) * (pow(x[i][j],2) + pow(x[i+network->N][j],2));
+		log_pglitches[i] = XLALSkymapLogSumExp( log_pglitches[i] , log_p );
+	      }// end j for
+	    log_pglitches[i] -= log( samples );
+	  }// end x if
+      }// end i for
+    
+    skyMap->log_pGlitch = 0.0;
+    for (i = 0; i != network->N ; ++i)
+      {
+	if (x[i])
+	  {
+	    skyMap->log_pGlitch += log_pglitches[i];
+	  }//end if
+      }//end i for
+  }// end code block
+  
+  ----------- FIXME END TEMP REMOVED FIXME 
+ 
+  */
+  
+  /*   
+   *  the sky tiles implied by the frequency) 
+   */
+  plan = malloc(sizeof(*plan));
+  XLALSkymapPlanConstruct( frequency , network->N , network->detectors , plan ); 
+  
+  /*
+   *  Directions assigned for each pixel, using sine proj.
+   */
+  {
+    for ( i = 0 ; i != dec_res ; ++i )
+      {
+	for ( j = 0 ; j != ra_res ; ++j )
+	  {
+	    skyMap->directions[i*ra_res + j][0] = acos((i - dec_res/2.0 + 0.5)/dec_res*2);
+	    skyMap->directions[i*ra_res + j][1] = (j + .5)/ra_res*2*LAL_PI;
+	  }//end j for
+      }// end i for
+  }// end code block
+  
+  fprintf( stderr , "#Pixel Direction Assigned...\n");//<<-----------------FIXME
+  
+  /*
+   *  Properties Constructed
+   */    
+  properties = malloc(sizeof(*properties) * skyMap->count );
+  for (i = 0 ; i != skyMap->count ; ++i)
     {
-        for (i = 0; i != 6; ++i)
+      XLALSkymapDirectionPropertiesConstruct(
+ 		                              plan, 
+				              &((*(skyMap->directions + i))[0]),
+				              properties + i
+				              );
+    }// end i for
+  
+  fprintf(stderr,"#Properties Constructed, N = %d \n" , network->N); 
+  
+  /*
+   *  Posterior probabilities found for 4 different signal amplitudes,
+   *  at each pixel in the sky, over all arrival times...
+   */
+  {
+    for (i = 0; i != network->N; ++i)
+    {
+      xSw[i] = malloc(sizeof(double) * samples);
+      xSw2[i] = malloc(sizeof(double) * samples);
+      for (j = 0; j != samples; ++j)
         {
-            free(x[i]);
-        }
-    }
+          xSw[i][j]  = network->x[i][j]               * sqrt( network->wSw[i] );
+          xSw2[i][j] = network->x[i + network->N ][j] * sqrt( network->wSw[i] );
+        }// end j for
+    }// end i for
 
-}
+    fprintf( stderr , "#Commencing kernel calculations...\n");//<<-----------------FIXME    
+
+    kernels = malloc( sizeof(*kernels) * skyMap->count );
+    for( j = 0 ; j != skyMap->count ; ++j )
+      skyMap->logPosteriors[j] = log(0);
+    double* buffer = malloc(sizeof(double) * samples);
+    
+    fprintf( stderr , "#Memory Allocated... btw's numObs == %d\n" , network->N );//<<--- FIXME
+    
+    {
+      int k;
+      double* wSw;
+      wSw = malloc( sizeof(double) * network->N );
+      for( i = 0 ; i < network->N ; ++i )
+        {
+          wSw[i] = network->wSw[i];
+        }// end i for
+
+      for( k = 0 ; k < 4 ; ++k ) /* over 4 waveForm amplitudes */
+        {
+  	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
+	    XLALSkymapKernelConstruct( plan , properties + i, wSw, kernels + i );
+          fprintf( stderr , "#samples = %d\n#count= %d\n" , samples , skyMap->count); //<< FIXME	
+          
+	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
+	    {
+	      int t;
+              //fprintf(stderr, "%d: i = %d\n", __LINE__, i);
+	      for( t = samples/4 ; t < 3 * samples / 4 ; ++t ) /* over all sample times */
+	        {
+                  double real , imag;
+                  //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
+		  XLALSkymapApply( plan , 
+                                    properties + i , 
+                                    kernels + i , 
+                                    xSw  , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
+                                    &real );       
+                  //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
+		  XLALSkymapApply( plan , 
+                                    properties + i , 
+                                    kernels + i , 
+                                    xSw2 , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
+                                    &imag );
+		  buffer[t] = real + imag;  
+	        }// end t for
+                //if( isnan(skyMap->logPosteriors[i] ) )
+                //  {
+                //    fprintf( stderr , "NAN @ i = %d\n" , i );
+                //    exit(1);
+                //  }//end if
+	      skyMap->logPosteriors[i] = XLALSkymapLogSumExp( skyMap->logPosteriors[i] , 
+	                                 XLALSkymapLogTotalExp( buffer + samples / 4 , 
+                                         buffer + 3*samples/4) - log(4) - log(samples/2) );
+            }//end i for
+          fprintf( stderr , "#N = %d\n" , k );	
+	  /*
+	   *  For the next loop, look for a signal sqrt(10) larger...
+	   */
+	  for( i = 0 ; i < network->N ; ++i )
+	  {
+	    wSw[i] *= 10.0;
+	    for( j = 0 ; j != samples; ++j )
+	    {
+	       xSw[i][j]  *= sqrt( 10.0 ); 
+               xSw2[i][j] *= sqrt( 10.0 );
+            }// end j for
+	  }//end i for
+        }// end n for
+    
+    }// end code block
+
+    free(buffer);
+  }// end posterior computing code block
+ 
+  fprintf( stderr , "#Posterior Found, writing...\n");//<<--------FIXME 
+ 
+  /* validate the output */
+  for (i = 0; i != skyMap->count ; ++i)
+    {
+      if( isnan(skyMap->logPosteriors[i]) )
+	{
+	  fprintf(stderr, "BAD DIRECTION :( THETA: %f PHI: %f i:%d\n", 
+                  skyMap->directions[i][0],skyMap->directions[i][1],i);
+	  exit(1);
+	}//end if
+    }// end i for
+  {
+    double log_totalProb = XLALSkymapLogTotalExp( skyMap->logPosteriors ,
+                                                  skyMap->logPosteriors + skyMap->count );
+    skyMap->total_logPosterior = log_totalProb - log( skyMap->count );
+    fprintf( stderr , "#TOTAL PROB: %e\n" , skyMap->total_logPosterior );
+  }
+  /*
+   *  Free the data
+   */
+  free(plan);
+  for(i = 0; i != network->N; ++i)
+  {
+     free(xSw2[i]);
+     free(xSw[i]);    
+  }// end i for
+  free(kernels);
+  free(properties);
+}// end analyze(void)
 

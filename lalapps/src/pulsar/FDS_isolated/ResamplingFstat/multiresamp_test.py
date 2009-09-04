@@ -1,21 +1,21 @@
 #!/usr/bin/python
 # Resampling Test Code. This code is much more readable and reusable than its predecessor. Author - Pinkesh Patel
-import sys,random,commands,math,shutil,os,re
+import sys,random,commands,math,shutil,os,re,string
 
 def main():
     
     # Import the Configuration File into config
     # Import the Configuration File into config
     if(len(sys.argv) < 2):
-        print "Insufficient command line arguments "
-        print " Usage is ",sys.argv[0]," <ConfigFile> {Job Number} "
-        print " Exiting ........."
+        print >> sys.stderr, "Insufficient command line arguments "
+        print >> sys.stderr, " Usage is ",sys.argv[0]," <ConfigFile> {Job Number} "
+        print >> sys.stderr, " Exiting ........."
         sys.exit(1)
     
     try:
         config = __import__(sys.argv[1]);
     except:
-        print "Cannot import Config file '",sys.argv[1],"' exiting ...."
+        print >> sys.stderr, "Cannot import Config file '",sys.argv[1],"' exiting ...."
         sys.exit(1)
 
     UniqueID = ''
@@ -31,14 +31,14 @@ def main():
     try:
         Vars['TSFT'] = config.TSFT
     except:
-        print "TSFT cannot be read"
+        print >> sys.stderr, "TSFT cannot be read"
         sys.exit(1)
 
     # Strength of signal
     try:
         Vars['h0'] = config.h0
     except:
-        print "h0 cannot be read"
+        print >> sys.stderr, "h0 cannot be read"
         sys.exit(1)
 
     # Cosine of iota
@@ -48,10 +48,10 @@ def main():
         try:
             Vars['cosi'] = random.uniform(config.cosi_min,config.cosi_max)
         except:
-            print "Cannot read in cosi variable"
+            print >> sys.stderr, "Cannot read in cosi variable"
             sys.exit(1)
     if(math.fabs(Vars['cosi']) > 1):
-        print "abs(cosi) > 1 !!!"
+        print >> sys.stderr, "abs(cosi) > 1 !!!"
         sys.exit(1)
 
 
@@ -62,7 +62,7 @@ def main():
         try:
             Vars['phi0'] = random.uniform(config.phi0_min,config.phi0_max)
         except:
-            print "Cannot read in phi0 variable"
+            print >> sys.stderr, "Cannot read in phi0 variable"
             sys.exit(1)
 
     # Polarization Angle
@@ -72,14 +72,14 @@ def main():
         try:
             Vars['psi'] = random.uniform(config.psi_min,config.psi_max)
         except:
-            print "Cannot read in psi variable"
+            print >> sys.stderr, "Cannot read in psi variable"
             sys.exit(1)
 
     # Number of Dirichlet terms used.
     try:
         Vars['Dterms'] = float(config.Dterms)
     except:
-        print "Dterms cannot be read"
+        print >> sys.stderr, "Dterms cannot be read"
         sys.exit(1)
 
     # Interferometer
@@ -92,7 +92,7 @@ def main():
         for i in range(NumofIFOs):
             Vars['IFO'].append(IFOs[i])
     except:
-        print "IFO cannot be read"
+        print >> sys.stderr, "IFO cannot be read"
         sys.exit(1)
 
     # Start Time
@@ -100,49 +100,49 @@ def main():
         t0 = config.t0
         t0 = t0.split(' ')
         if(len(t0) != NumofIFOs):
-            print "Number of starttimes != Number of IFOs"
+            print >> sys.stderr, "Number of starttimes != Number of IFOs"
             sys.exit(1)
         
         Vars['t0'] = []
         for i in range(NumofIFOs):
             Vars['t0'].append(float(t0[i]))
     except:
-        print "t0 cannot be read"
+        print >> sys.stderr, "t0 cannot be read"
         sys.exit(1)
 
     # Reference Time in SSB
     try:
         Vars['refTime'] = float(config.refTime)
+        refString = ' --refTime ' + str(Vars['refTime'])
     except:
-        print "refTime cannot be read"
-        sys.exit(1)
+        refString = ' '
 
     # Output Directory
     try:
         Vars['Out'] = config.Out + UniqueID
     except:
-        print "Out cannot be read"
+        print >> sys.stderr, "Out cannot be read"
         sys.exit(1)
 
     # Ephemeris Directory
     try:
         Vars['Ephem'] = config.Ephem
     except:
-        print "Ephem cannot be read"
+        print >> sys.stderr, "Ephem cannot be read"
         sys.exit(1)
 
     # Ephemeris Year
     try:
         Vars['EphemYear'] = config.EphemYear
     except:
-        print "EphemYear cannot be read"
+        print >> sys.stderr, "EphemYear cannot be read"
         sys.exit(1)
 
     # Noise Sh
     try:
         Vars['Sh'] = float(config.Sh)
     except:
-        print "Sh cannot be read"
+        print >> sys.stderr, "Sh cannot be read"
         sys.exit(1)
  
     # Duration of Analysis
@@ -150,14 +150,14 @@ def main():
         TSpan = config.TSpan
         TSpan = TSpan.split(' ')
         if(len(TSpan) != NumofIFOs):
-            print "Number of TSpans != Number of IFOs"
+            print >> sys.stderr, "Number of TSpans != Number of IFOs"
             sys.exit(1)
         
         Vars['TSpan'] = []
         for i in range(NumofIFOs):
             Vars['TSpan'].append(float(TSpan[i]))
     except:
-        print "TSpan cannot be read"
+        print >> sys.stderr, "TSpan cannot be read"
         sys.exit(1)
 
     # Number of SFTs to add
@@ -165,14 +165,14 @@ def main():
         NumSFTs = config.NumSFTs
         NumSFTs = NumSFTs.split(' ')
         if(len(NumSFTs) != NumofIFOs):
-            print "Number of starttimes != Number of IFOs"
+            print >> sys.stderr, "Number of starttimes != Number of IFOs"
             sys.exit(1)
         
         Vars['NumSFTs'] = []
         for i in range(NumofIFOs):
             Vars['NumSFTs'].append(int(NumSFTs[i]))
     except:
-        print "NumSFTs cannot be read"
+        print >> sys.stderr, "NumSFTs cannot be read"
         sys.exit(1)
 
     # Number of Gaps to add
@@ -180,14 +180,14 @@ def main():
         NumGaps = config.NumGaps
         NumGaps = NumGaps.split(' ')
         if(len(NumGaps) != NumofIFOs):
-            print "Number of starttimes != Number of IFOs"
+            print >> sys.stderr, "Number of starttimes != Number of IFOs"
             sys.exit(1)
         
         Vars['NumGaps'] = []
         for i in range(NumofIFOs):
             Vars['NumGaps'].append(int(NumGaps[i]))
     except:
-        print "NumGaps cannot be read"
+        print >> sys.stderr, "NumGaps cannot be read"
         sys.exit(1)
 
     # Alpha (Right Ascension)
@@ -197,10 +197,10 @@ def main():
         try:
             Vars['Alpha'] = random.uniform(config.Alpha_min,config.Alpha_max)
         except:
-            print "Cannot read in Alpha variable"
+            print >> sys.stderr, "Cannot read in Alpha variable"
             sys.exit(1)
     if(Vars['Alpha'] < 0 or Vars['Alpha'] > 2.0*math.pi):
-        print "Alpha out of bounds !!!"
+        print >> sys.stderr, "Alpha out of bounds !!!"
         sys.exit(1)
 
     # Delta (Declination)
@@ -210,24 +210,24 @@ def main():
         try:
             Vars['Delta'] = random.uniform(config.Delta_min,config.Delta_max)
         except:
-            print "Cannot read in Delta variable"
+            print >> sys.stderr, "Cannot read in Delta variable"
             sys.exit(1)
     if(math.fabs(Vars['Delta']) > math.pi/2.0):
-        print "abs(Delta) > pi/2 !!!"
+        print >> sys.stderr, "abs(Delta) > pi/2 !!!"
         sys.exit(1)
 
     # Minimum Frequency
     try:
         Vars['Fmin'] = config.Fmin
     except:
-        print "Fmin cannot be read"
+        print >> sys.stderr, "Fmin cannot be read"
         sys.exit(1)
 
     # Band of Analysis
     try:
         Vars['Band'] = config.Band
     except:
-        print "Band cannot be read"
+        print >> sys.stderr, "Band cannot be read"
         sys.exit(1)
 
     # Injection Frequency
@@ -237,10 +237,10 @@ def main():
         try:
             Vars['Finj'] = random.uniform(config.Finj_min,config.Finj_max)
         except:
-            print "Cannot read in Finj variable"
+            print >> sys.stderr, "Cannot read in Finj variable"
             sys.exit(1)
     if(Vars['Finj'] < 0):
-        print "Finj < 0 !!!"
+        print >> sys.stderr, "Finj < 0 !!!"
         sys.exit(1)
 
     # Spindown/ FDOT
@@ -250,15 +250,15 @@ def main():
         try:
             Vars['FDot'] = random.uniform(config.FDot_min,config.FDot_max)
         except:
-            print "Cannot read in FDot variable"
+            print >> sys.stderr, "Cannot read in FDot variable"
             sys.exit(1)
 
     # FDOTBand
     try: 
         Vars['FDotBand'] = config.FDotBand
     except:
-        Vars['FdotBand'] = 0
-        #print "Cannot read in FDot variable"
+        Vars['FDotBand'] = 0
+        #print >> sys.stderr, "Cannot read in FDot variable"
         #sys.exit(1)
 
     # dFDot
@@ -271,10 +271,10 @@ def main():
     try:
         Vars['Res'] = config.Res
         if(Vars['Res'] > 1.0/Vars['TSpan'][0]):
-            print "Resolution too low, set to 1/T"
+            print >> sys.stderr, "Resolution too low, set to 1/T"
             Vars['Res'] = 1.0/Vars['TSpan'][0]
         if(Vars['Res'] < 0):
-            print "Resolution < 0"
+            print >> sys.stderr, "Resolution < 0"
             sys.exit(1)
     except:
         Vars['Res'] = 1.0/Vars['TSpan'][0]
@@ -319,42 +319,47 @@ def main():
 
     # Create the Time Stamp File
     if(not(TimeStampsFile_Is_Set)):
-        CreateTimeStampFile(Vars)
+        if(Vars['debug']):
+            print "------------ Creating TimeStamps Files --------"
+        CreateTimeStampFile(Vars,UniqueID)
 
     # If running multiple time, delete all the old SFTs
     if(os.path.exists("./"+Vars['Out'])):
         try:
             shutil.rmtree(Vars['Out'])
         except:
-            print "Could not delete old directory\n"
+            print >> sys.stderr, "Could not delete old directory\n"
             sys.exit(1)
 
     try:
         os.mkdir(Vars['Out'])
     except:
-        print "Something went wrong creating new directory\n"
-        print "Permission trouble maybe\n"
+        print >> sys.stderr, "Something went wrong creating new directory\n"
+        print >> sys.stderr, "Permission trouble maybe\n"
         sys.exit(1)
 
     # Generate Fake data string
     for ifo in range(NumofIFOs):
-        FakeDataString = GenFakeDataString(1,Vars,ifo)
+        FakeDataString = GenFakeDataString(1,Vars,ifo,UniqueID,refString)
         if(Vars['debug']):
             print "----------- Makefakedata String ------------"
             print FakeDataString
             print "--------------------------------------------\n\n"
 
         # Generate the data
-        try:
-            G = commands.getoutput(FakeDataString)
-        except:
-            print "Tried to generate SFTs, failed"
+        (status,MOutput) = commands.getstatusoutput(FakeDataString)
+        os.remove("timestampsFile"+Vars['IFO'][ifo]+UniqueID)
+        if(status):
+            print >> sys.stderr, "Tried to generate SFTs, failed"
+            print >> sys.stderr, MOutput
             sys.exit(1)
 
     # Run v2()
-    OutputFileV = "OutputV" + UniqueID
-    startstring = "lalapps_ComputeFStatistic_v2 --outputLoudest " + OutputFileV + " -F " + str(Vars['FThres']) + "  "
-    endstring = " "
+    OutputFileVLoudest = "OutputVLoudest" + UniqueID
+    OutputFileVFstat = "OutputVFstat" + UniqueID
+    OutputFileVHist = "OutputVHist" + UniqueID
+    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFileVFstat + " --outputLoudest " + OutputFileVLoudest +  " -F " + str(Vars['FThres']) + "  --outputFstatHist " + OutputFileVHist + " "
+    endstring = " " + refString
     V2DataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "----------- V2 String ------------"
@@ -365,17 +370,25 @@ def main():
     
     (status,Voutput) = commands.getstatusoutput(V2DataString)
     if(status):
-        print "V2 failed, Output was \n\n"
-        print Voutput
+        print >> sys.stderr, "V2 failed, Output was \n\n"
+        print >> sys.stderr, Voutput
+        print >> sys.stderr, "\nV2 Command was\n"
+        print >> sys.stderr, V2DataString
+        print >> sys.stderr, "\nMakeFakeData Command was\n"
+        print >> sys.stderr, FakeDataString
         sys.exit(1)
     
     if(Vars['debug']):
         print "---------- V2 Done ---------------\n\n"
 
     # Run Resamp
-    OutputFileR = "OutputR" + UniqueID
-    startstring = "./lalapps_ComputeFStatistic_resamp --outputLoudest " + OutputFileR + " -F " + str(Vars['FThres']) + "  "
-    endstring = "  --outputTimeSeries "  + str(Vars['ResampOutput']) + " > plot1 "
+    #ResampLocation = "/home/ppatel/lalsuite/lalapps/src/pulsar/FDS_isolated/ResamplingFstat/"
+    ResampLocation = "./"
+    OutputFileRLoudest = "OutputRLoudest" + UniqueID
+    OutputFileRFstat = "OutputRFstat" + UniqueID
+    OutputFileRHist = "OutputRHist" + UniqueID
+    startstring = ResampLocation + "lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFileRFstat + " --outputLoudest " + OutputFileRLoudest+ " -F " + str(Vars['FThres']) + " --outputFstatHist " + OutputFileRHist + " "
+    endstring = " " + refString
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "-------- Resamp String -----------"
@@ -385,8 +398,12 @@ def main():
     
     (status,Routput) = commands.getstatusoutput(RDataString)
     if(status):
-        print "Resamp failed, Output was\n\n"
-        print Routput
+        print >> sys.stderr, "Resamp failed, Output was\n\n"
+        print >> sys.stderr, Routput
+        print >> sys.stderr, "\nResamp Command was\n"
+        print >> sys.stderr, RDataString
+        print >> sys.stderr, "\nMakeFakeData Command was\n"
+        print >> sys.stderr, FakeDataString
         sys.exit(0)
     
     if(Vars['debug']):
@@ -394,13 +411,57 @@ def main():
 
     if(Vars['debug']):
         print "---------- Deleting SFT Folder ---------\n\n"
-    #try:
-    #    shutil.rmtree(Vars['Out'])
-    #except:
-    #    print " Could not delete SFT folder \n\n"
-    #    sys.exit(1)
-    AnalyzeLoudest(OutputFileR,OutputFileV)
+    try:
+        shutil.rmtree(Vars['Out'])
+    except:
+        print >> sys.stderr, " Could not delete SFT folder \n\n"
+        sys.exit(1)
+        
+    FreqOutput = AnalyzeFreq(OutputFileRFstat,OutputFileVFstat,Vars['Finj'],Vars['Res'])
+    LoudestOutput = AnalyzeLoudest(OutputFileRLoudest,OutputFileVLoudest)
+    os.remove(OutputFileRLoudest)
+    os.remove(OutputFileVLoudest)
+    os.remove(OutputFileRFstat)
+    os.remove(OutputFileVFstat)
+    os.remove(OutputFileVHist)
+    os.remove(OutputFileRHist)
+    print FreqOutput,LoudestOutput
     return(0)
+
+def AnalyzeFreq(Filename1,Filename2,Freq,dF):
+    File1 = open(Filename1,'r')
+    File2 = open(Filename2,'r')
+    File1lines = File1.readlines()
+    File2lines = File2.readlines()
+    Freq1 = 0
+    dF1 = 0
+    Freq2 = 0
+    dF2 = 0
+    
+    exp = re.compile(r'^\d')
+
+    for line in File1lines:
+        if(exp.search(line)):
+            linesplit = string.split(line)
+            if(Freq1 and not(dF1)):
+                dF1 = abs(float(linesplit[0])) - Freq1
+            Freq1 = float(linesplit[0])
+            if(abs(Freq1-Freq) < dF1/2.0):
+                twoF1 = float(linesplit[6])
+                Freq1store = Freq1
+                storeline = line
+    
+    for line in File2lines:
+        if(exp.search(line)):
+            linesplit = string.split(line)
+            if(Freq2 and not(dF2)):
+                dF2 = abs(float(linesplit[0])) - Freq2
+            Freq2 = float(linesplit[0])
+            if(abs(Freq2-Freq) < dF2/2.0):
+                twoF2 = float(linesplit[6])
+                Freq2store = Freq2
+                
+    return(str(Freq) + " " + str(Freq1store) + " " + str(Freq2store) + " " + str(dF) + " " + str(dF1) + " " + str(dF2) + " " + str(twoF1) + " " + str(twoF2) + " ")
 
 def AnalyzeLoudest(Filename1,Filename2):
     File1 = open(Filename1,'r')
@@ -427,20 +488,20 @@ def AnalyzeLoudest(Filename1,Filename2):
             
             if(re.match('Freq',linesplit[0])):
                 Freq2 = float(linesplit[1])    
-    
-    print Freq1,twoF1,Freq2,twoF2
+
+    return(str(Freq1) + " " + str(twoF1) + " " + str(Freq2) + " " + str(twoF2) + " ")
             
 def PrintValues(Dict):
     for key in Dict.keys():
         print key," = ",Dict[key]
 
-def CreateTimeStampFile(Vars):
+def CreateTimeStampFile(Vars,UniqueID):
     for ifo in range(Vars['NumofIFOs']):
-        ifotimestampfile = "./timestampsFile" + str(Vars['IFO'][ifo])
+        ifotimestampfile = "./timestampsFile" + str(Vars['IFO'][ifo])+UniqueID
         try:
             File = open(ifotimestampfile,'w')
         except:
-            print "Tried to open timestampsFile, failed"
+            print >> sys.stderr, "Tried to open timestampsFile, failed"
             sys.exit(0)
             
         if(Vars['debug']):
@@ -491,7 +552,7 @@ def CreateTimeStampFile(Vars):
             File.write(" 0 \n")
             
 
-def GenFakeDataString(addtonoise,Vars,ifo):
+def GenFakeDataString(addtonoise,Vars,ifo,UniqueID,endstring):
     if(Vars['Band'] > 1e-2):
         CreationBand = Vars['Band']*4
         CreationFmin = Vars['Fmin']-Vars['Band']*2
@@ -499,11 +560,13 @@ def GenFakeDataString(addtonoise,Vars,ifo):
         CreationBand = 1
         CreationFmin = Vars['Fmin'] - 0.5
 
-    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO'][ifo]) + ' --refTime ' + str(Vars['refTime']) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile' + str(Vars['IFO'][ifo])
+    CreationFmin -= 1
+    CreationBand += 2
+    S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO'][ifo]) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile' + str(Vars['IFO'][ifo]) + UniqueID + endstring
     return(S)
                          
 def GenDataString(beginstring,endstring,Vars):
-    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --refTime ' + str(Vars['refTime']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dotBand ' + str(Vars['FDotBand']) + ' -S --df1dot ' + str(Vars['dFDot']) +  endstring
+    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dot ' + str(Vars['FDot'])  +  endstring
     return(S)
 
 #' --f1dot ' + str(Vars['FDot']) + 

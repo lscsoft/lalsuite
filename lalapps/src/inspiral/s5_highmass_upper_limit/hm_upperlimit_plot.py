@@ -13,6 +13,11 @@ import glob
 import copy
 from glue.ligolw.utils import ligolw_add
 from glue.ligolw import ligolw, utils
+# FIXME:  the plots should use LaTeX to generate the labels, but some don't
+# work yet
+matplotlib.rcParams.update({
+	"text.usetex": False
+})
 
 # FIXME, I apparently don't know how to read XML as cleverly as I thought, how do I find the table
 # without specifying the childnode number?
@@ -67,134 +72,179 @@ def integrate_posterior(mu, post, conf):
 	except: val = 0
         return mu[val]
 
-# test case
-
-VT = numpy.array([10.0**8])
-sigmasq = numpy.array([4.0*10**14])
-Lambda = numpy.array([1.0])
-
-mu, post = posterior(VT, sigmasq, Lambda)
-
-#pylab.semilogy(mu, post.cumsum()/post.sum())
-#pylab.show()
-print integrate_posterior(mu, post, 0.90)
-
-# bins is the same for each call and ulA is an empty binnedArray that has the right shape
+# bins are the same for each call and ulA is an empty binnedArray that has the right shape
 # that can hold the upperlimit when we get around to computing it later, so it is okay
 # that bins, and ulA are overwritten in each call. vA, vA2 and dvA are the important ones
 bins, vA, ulA = get_combined_array("2DsearchvolumeFirstMoment", 0)
+#FIXME Hack to give volume that is zero a value = 0.01
+
+vA[vA==0] = 0.01
+
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
 bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
-
+bins, vAD, ulA = get_combined_array("2DsearchvolumeDistance", 3)
  
 #bin edges Number of bins + 1 for pcolor
 X = numpy.array( list(bins.lower()[0]) + [bins.upper()[0][-1]] )
 Y = numpy.array( list(bins.lower()[1]) + [bins.upper()[1][-1]] )
 
-#compute combined posterior over m1, m2
-for m1 in range(len(bins.lower()[0])):
-  for m2 in range(len(bins.lower()[1])): 
-    mu, post = posterior(vA[...,m1,m2], vA2[...,m1,m2], dvA[...,m1,m2])
-    ulA.array[m1][m2] = integrate_posterior(mu, post, 0.90)
+numfiles = len(sys.argv[1:])
+f = pylab.figure(1)
+###############################################################################
+# loop over all the filenames and masses and compute the posteriors separately
+###############################################################################
+for i, f in enumerate(sys.argv[1:]):
+  legend_str = []
+  lines = []
+  #FIXME we can't get ifos from filenames, we should put it in the xml :(
+  ifos = "_".join(sys.argv[1+i].split('-')[-2:]).replace('.xml','')
+  wiki = open(ifos+'range_summary.txt',"w")
+  wiki.write("||Masses||Range||\n")
+  # loop over mass bins
+  for j, m1 in enumerate(bins.centres()[0]):
+    for k, m2 in enumerate(bins.centres()[1]):
+      masses = bins[m1,m2]
+      if vAD[i,masses[0],masses[1]] == 0: continue
+      legend_str.append("%.1f, %.1f" % (m1, m2))
+      wiki.write("||%.2f,%.2f||%.2f||\n" % (m1, m2, vAD[i,masses[0],masses[1]] ) )
+      mu,post = posterior(vA[i:i+1,masses[0],masses[1]], vA2[i:i+1,masses[0],masses[1]], dvA[i:i+1,masses[0],masses[1]])
+      lines.append(pylab.loglog(mu,post/post.max()))
+      ulA.array[j][k] = integrate_posterior(mu, post, 0.90)
 
-log_vol = pylab.log10(vA[0])
-log_ul = pylab.log10(ulA.array)
+  
+  fudge = 0.01 * min (ulA.array[ulA.array !=0])
+  print fudge
+  log_vol = pylab.log10(vA[i])
+  #HACKS FOR LOG PLOT :(
+  log_ul = pylab.log10(ulA.array + fudge)
+  vol_error = vA2[i]**0.5 / (vA[i] + 0.0001)
+  der = dvA[i]
+
+  ##
+  # Make posterior plots
+  ##
+
+  #f = pylab.figure(i)
+  pylab.title("%s posteriors for a few mass bins" % (ifos,),fontsize=14)
+  leg = pylab.figlegend(lines, legend_str, 'lower right')
+  leg.prop.set_size(8)
+  pylab.ylabel("Prob (unnormalized)",fontsize=14)
+  pylab.xlabel("Rate",fontsize=14)
+  pylab.ylim([0.0001, 1])
+  pylab.grid()
+  #FIXME hardcoded rate limits are bad for advanced ligo
+  pylab.xlim([1e-8, 1])
+  pylab.savefig(ifos + 'posterior.png')
+  pylab.clf()
+
+  ##
+  # Make log volume plot
+  ##
+
+  #FIXME make it gray for pub?
+  #pylab.gray()
+  pylab.pcolor(X,Y, log_vol)
+  pylab.colorbar()
+  pylab.ylim([0, 51])
+  pylab.xlim([11, 101])
+  pylab.title(ifos + " Log10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
+  pylab.xlabel("Mass 2",fontsize=14)
+  pylab.ylabel("Mass 1",fontsize=14)
+  pylab.gca().set_aspect(1)
+  pylab.grid()
+  pylab.savefig(ifos+'volume_time.png')
+  pylab.clf()
+
+  ## 
+  # Make vol error plot
+  ##
+  pylab.pcolor(X,Y, vol_error)
+  pylab.colorbar()
+  pylab.ylim([0, 51])
+  pylab.xlim([11, 101])
+  pylab.title(ifos + " Fractional Error on Volume * Time [std/mean]",fontsize=14)
+  pylab.xlabel("Mass 2",fontsize=14)
+  pylab.ylabel("Mass 1",fontsize=14)
+  pylab.gca().set_aspect(1)
+  pylab.grid()
+  pylab.savefig(ifos+'fractional_error.png')
+  pylab.clf()
+
+  ##
+  # Make lambda plot
+  ##
+
+  pylab.pcolor(X,Y, der)
+  pylab.colorbar()
+  pylab.ylim([0, 51])
+  pylab.xlim([11, 101])
+  pylab.title(ifos + " Volume derivative, Lambda",fontsize=14)
+  pylab.xlabel("Mass 2",fontsize=14)
+  pylab.ylabel("Mass 1",fontsize=14)
+  pylab.gca().set_aspect(1)
+  pylab.grid()
+  pylab.savefig(ifos + 'lambda.png')
+  pylab.clf()
+
+  ##
+  # Make UL plot
+  ##
+  pylab.pcolor(X,Y, log_ul)
+  pylab.colorbar()
+  pylab.ylim([0, 51])
+  pylab.xlim([11, 101])
+  pylab.title(ifos + " Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
+  pylab.xlabel("Mass 2",fontsize=14)
+  pylab.ylabel("Mass 1",fontsize=14)
+  pylab.gca().set_aspect(1)
+  pylab.grid()
+  pylab.savefig(ifos + 'upper_limit.png')
+  pylab.clf()
 
 
-vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
+###############################################################################
+# now write out the special combined case
+###############################################################################
+lines = []
+legend_str = []
+for j, m1 in enumerate(bins.centres()[0]):
+  for k, m2 in enumerate(bins.centres()[1]):
+    masses = bins[m1,m2]
+    if vAD[i,masses[0],masses[1]] == 0: continue
+    legend_str.append("%.1f, %.1f" % (m1, m2))
+    mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
+    lines.append(pylab.loglog(mu,post/post.max()))
+    ulA.array[j][k] = integrate_posterior(mu, post, 0.90)
 
-der = dvA[0] #pylab.log10(eA.array)
-
-fn = sys.argv[1]
-
-pylab.figure(1)
-masses = bins[15,15]
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-pylab.hold(1)
-masses = bins[50,50]
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-masses = bins[1,99]
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-masses = bins[1,24]
-print masses
-mu,post = posterior(vA[...,masses[0],masses[1]], vA2[...,masses[0],masses[1]], dvA[...,masses[0],masses[1]])
-pylab.loglog(mu,post/post.max())
-pylab.hold(0)
+# Make posterior plots
 pylab.title("Combined posteriors for a few mass bins",fontsize=14)
-pylab.legend(["15,15", "50,50", "1,99", "1,24"])
+leg = pylab.figlegend(lines, legend_str, 'lower right')
+leg.prop.set_size(8)
 pylab.ylabel("Prob (unnormalized)",fontsize=14)
 pylab.xlabel("Rate",fontsize=14)
 pylab.ylim([0.0001, 1])
 pylab.grid()
-if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','posterior.png'))
-else: pylab.savefig("combinedposterior.png")
-
-pylab.figure(2)
-pylab.gray()
-pylab.pcolor(X,Y, log_vol)
-#pylab.hold(1)
-#cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)
-#pylab.clabel(cn)
-#pylab.hold(0)
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Log10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.gca().set_aspect(1)
-pylab.grid()
-pylab.savefig(fn.split('-')[-1].replace('.xml','volume_time.png'))
-
-#pylab.show()
-
-pylab.figure(3)
-pylab.pcolor(X,Y, vol_error)
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Fractional Error on Volume * Time [std/mean]",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.gca().set_aspect(1)
-pylab.grid()
-pylab.savefig(fn.split('-')[-1].replace('.xml','fractional_error.png'))
+#FIXME hardcoded rate limits are bad for advanced ligo
+pylab.xlim([1e-8, 1])
+pylab.savefig('combinedposterior.png')
+pylab.clf()
 
 
-pylab.figure(4)
-pylab.pcolor(X,Y, der )
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Volume derivative, Lambda",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.gca().set_aspect(1)
-pylab.grid()
-pylab.savefig(fn.split('-')[-1].replace('.xml','lambda.png'))
-
-
-pylab.figure(5)
-pylab.gray()
+##
+# Make UL plot
+##
 pylab.pcolor(X,Y, log_ul)
 pylab.colorbar()
 pylab.ylim([0, 51])
 pylab.xlim([11, 101])
-pylab.title("Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
+pylab.title("Combined Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
-if len(sys.argv) == 2: pylab.savefig(fn.split('-')[-1].replace('.xml','upper_limit.png'))
-else: pylab.savefig("combinedupper_limit.png")
+pylab.savefig('combinedupper_limit.png')
+pylab.clf()
 
 
-#pylab.show()
-
-
+print >> sys.stderr, "ALL FINNISH!"
+sys.exit(0)

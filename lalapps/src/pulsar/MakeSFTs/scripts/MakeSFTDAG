@@ -505,13 +505,12 @@ nodeCount         = 0L
 datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
 datafindFID.write('universe = scheduler\n')
-datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/LSCdataFind\n')
-
+datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/ligo_data_find\n')
 if not datafindMatch:
    dataFindMatchString = ''
 else:
    dataFindMatchString = '--match ' + datafindMatch
-datafindFID.write('arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) %s\n' % dataFindMatchString)
+datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) %s\n' % dataFindMatchString)
 datafindFID.write('getenv = True\n')
 datafindFID.write('log = %s\n' % datafindLogFile)
 datafindFID.write('error = %s/datafind_$(tagstring).err\n' % logPath)

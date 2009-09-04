@@ -1,20 +1,25 @@
 dnl lal.m4
 
-AC_DEFUN([LAL_WITH_GCC_FLAGS],
-[AC_ARG_WITH(
-  [gcc_flags],
-  AC_HELP_STRING([--with-gcc-flags],[turn on strict gcc warning flags]),
-  [ if test -n "${with_gcc_flags}"
-    then
-      lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length"
-      case $host_cpu-$host_os in
-        *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
-        *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
-      esac
-    else
-      lal_gcc_flags=""
-    fi
-  ], [ lal_gcc_flags="" ] )
+AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
+[AC_ARG_ENABLE([gcc_flags],
+  AC_HELP_STRING([--enable-gcc-flags],[turn on strict gcc warning flags (default=yes)]),
+  [case "${enableval}" in
+     yes) DO_ENABLE_LAL_GCC_FLAGS;;
+     no) ;;
+     *) DO_ENABLE_LAL_GCC_FLAGS;;
+   esac ],
+   [ DO_ENABLE_LAL_GCC_FLAGS ] )
+])
+
+AC_DEFUN([DO_ENABLE_LAL_GCC_FLAGS],
+[
+  lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length"
+  if test "${cuda}" != "true"; then
+    case $host_cpu-$host_os in
+      *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
+      *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
+    esac
+  fi
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
@@ -130,6 +135,37 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
     esac
   ], [ intelfft=false ] )
+])
+
+AC_DEFUN([LAL_WITH_CUDA],
+[AC_ARG_WITH(
+  [cuda],
+  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
+  [ case "$with_cuda" in
+    no)
+      cuda=false
+      ;;
+    yes)
+      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
+      cuda=true
+      CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
+      CUDA_CFLAGS="-I/opt/cuda/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
+      ;;
+    *)
+      AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
+      cuda=true
+      CUDA_LIBS="-L${with_cuda}/lib -lcufft -lcudart"
+      CUDA_CFLAGS="-I${with_cuda}/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
+    esac
+  ], [ cuda=false ])
 ])
 
 AC_DEFUN([LAL_ENABLE_DEBUG],

@@ -151,6 +151,8 @@ LALInspiralStationaryPhaseApprox2 (
 	   case LAL_PNORDER_THREE_POINT_FIVE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing7PN;
 		   break;
+           default:
+                   ABORT( status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING );
    }
    n = signalvec->length;
    nby2 = n/2;

@@ -887,7 +887,7 @@ XLALExtractSnglInspiralFromCoinc(
     )
 /* </lalVerbatim> */
 {
-  /*static const char *func = "ExtractSnglInspiralFromCoinc";*/
+  static const char *func = "ExtractSnglInspiralFromCoinc";
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
@@ -903,9 +903,6 @@ XLALExtractSnglInspiralFromCoinc(
       );
     return( NULL );
   }
-
-  /* gpsStartTime is unused in this function */
-  gpsStartTime = NULL;
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
@@ -943,14 +940,35 @@ XLALExtractSnglInspiralFromCoinc(
         }
         else if ( eventNum > 99999 )
         {
-          /* put extra digits into overflow area (above slide number) */
-          eventId->id = ( LAL_INT8_C(1000000000) * (INT8) (eventNum / 100000) )
-          + (INT8) (eventNum % 100000);
+          /* FIXME: This is a temporary measure, until we are sure that the
+           * plotting codes and coire can handle a different event id */
+          XLALPrintError(
+              "Can only handle 99999 coincidences, this is number 100,000");
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglInspiral( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EMAXITER);
+        }
+
+        else if ( gpsStartTime )
+        {
+          eventId->id = LAL_INT8_C(1000000000) *
+            (INT8) gpsStartTime->gpsSeconds + (INT8) eventNum;
         }
         else
         {
-          /* just set eventId equal to eventNum */
-          eventId->id = (INT8) eventNum;
+          XLALPrintError(
+              "Event does not have id and no GPS start time given" );
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglInspiral( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EIO);
         }
 
         if ( slideNum < 0 )

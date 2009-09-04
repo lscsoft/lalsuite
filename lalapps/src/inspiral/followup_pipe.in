@@ -419,8 +419,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
   #   first, get the path to the scripts
   scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
 
-  scriptPath = scriptPath.strip('\n')
-  scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
+  scriptPath = scriptPath.strip('analyseQscan.py\n')
   os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
   os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
   os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
@@ -434,7 +433,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
     print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
     print('   followed by the name of the submitter of the jobs')
   else:
-    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
+    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','') + "/qscan/"
     os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
     os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
     os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
@@ -445,7 +444,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
     print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
     print('   followed by the name of the submitter of the jobs')
   else:
-    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
+    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','') + "/seismic_qscan/"
     os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
     os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
     os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')

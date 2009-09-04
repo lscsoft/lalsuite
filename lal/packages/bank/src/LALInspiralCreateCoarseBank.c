@@ -599,6 +599,8 @@ LALInspiralCreatePNCoarseBank(
       break;
 
     case Psi0Psi3:
+    case PTFIntrinsic:
+    case PTFFull:
       ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
       break;
   }
