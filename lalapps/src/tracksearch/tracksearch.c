@@ -1294,41 +1294,42 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
-      lal_errhandler = LAL_ERR_EXIT;
-      /* Set verbosity of stream so user sees frame read problems! */
-      XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
-      /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
-      memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-      bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
-      /* 
-       * Seek to end of requested data makes sure that all stream is complete!
-       */
-      bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-      XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
-      bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
-      if (params->verbosity >= verbose)
-	{
-	  fprintf(stdout,"Creating data stream.\n");
-	  fflush(stdout);
-	}
-      stream=XLALFrCacheOpen(frameCache);	  
-      if (params->verbosity >= verbose)
-	{
-	  fprintf(stdout,"Clearing imported cache file.\n");
-	  fflush(stdout);
-	}
-      XLALFrDestroyCache(frameCache);
-      if (params->verbosity >= verbose)
-	{
-	  fprintf(stdout,"Data stream ready.\n");
-	  fflush(stdout);
-	}
     }
   else 
     {
       fprintf(stderr,"Cache file or path to frame files not specified!\n");
       fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEVAL);
       exit(TRACKSEARCHC_EVAL);
+    }
+  lal_errhandler = LAL_ERR_EXIT;
+  /* Set verbosity of stream so user sees frame read problems! */
+  XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+  /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
+  bufferedDataStartGPS.gpsSeconds=DataIn->epoch.gpsSeconds;
+  bufferedDataStartGPS.gpsNanoSeconds=DataIn->epoch.gpsNanoSeconds;
+  bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
+  /* 
+   * Seek to end of requested data makes sure that all stream is complete!
+   */
+  bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
+  XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
+  bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
+  if (params->verbosity >= verbose)
+    {
+      fprintf(stdout,"Creating data stream.\n");
+      fflush(stdout);
+    }
+  stream=XLALFrCacheOpen(frameCache);	  
+  if (params->verbosity >= verbose)
+    {
+      fprintf(stdout,"Clearing imported cache file.\n");
+      fflush(stdout);
+    }
+  XLALFrDestroyCache(frameCache);
+  if (params->verbosity >= verbose)
+    {
+      fprintf(stdout,"Data stream ready.\n");
+      fflush(stdout);
     }
   lal_errhandler = LAL_ERR_EXIT;
   if (params->verbosity >= verbose)
@@ -1338,7 +1339,7 @@ void LALappsGetFrameData(LALStatus*          status,
       fprintf(stderr,"Stop            : %f\n",bufferedDataStop);
       fprintf(stderr,"Interval length : %f\n",bufferedDataTimeInterval);
     }
-
+  fprintf(stdout,"Seeking\n");
   errcode=XLALFrSeek(stream,&bufferedDataStopGPS);
   if (errcode!=0)
     {
@@ -1585,7 +1586,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
     }
 }
-  /* End frame reading code */
+/* End frame reading code */
 
 
 /*
