@@ -104,9 +104,8 @@ int main (int argc, char *argv[])
   /*set_debug_level("ERROR | WARNING | MEMDBG | TRACE");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
-  lal_errhandler = LAL_ERR_DFLT;
   lal_errhandler = LAL_ERR_RTRN;
-
+  lal_errhandler = LAL_ERR_DFLT;
   /*
    * Initialize status structure 
    */
@@ -1266,7 +1265,7 @@ void LALappsGetFrameData(LALStatus*          status,
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
   UINT4                 errcode=0;
-  UINT4                 index=0;
+  UINT4                 i=0;
   REAL8                 elementSum=0;
   REAL8                 elementAvg=0;
   /* Set all variables from params structure here */
@@ -1298,7 +1297,8 @@ void LALappsGetFrameData(LALStatus*          status,
       /* Set verbosity of stream so user sees frame read problems! */
       XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
-      memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
+      bufferedDataStartGPS.gpsSeconds=DataIn->epoch.gpsSeconds;
+      bufferedDataStartGPS.gpsNanoSeconds=DataIn->epoch.gpsNanoSeconds;
       bufferedDataStart = XLALGPSGetREAL8(&bufferedDataStartGPS);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
@@ -1488,12 +1488,13 @@ void LALappsGetFrameData(LALStatus*          status,
 	  print_real4tseries(DataIn,"Pre_dcDetrendFrameData.diag");
 	  print_lalUnit(DataIn->sampleUnits,"Pre_dcDetrendFrameData_Units.diag");
 	}
-
-      for (index=0;index<DataIn->data->length;index++)
-	elementSum=elementSum+DataIn->data->data[index];
+      elementSum=0;
+      elementAvg=0;
+      for (i=0;i<DataIn->data->length;i++)
+	elementSum=elementSum+DataIn->data->data[i];
       elementAvg=elementSum/DataIn->data->length;
-      for (index=0;index<DataIn->data->length;index++)
-	DataIn->data->data[index]=DataIn->data->data[index]-elementAvg;
+      for (i=0;i<DataIn->data->length;i++)
+	DataIn->data->data[i]=DataIn->data->data[i]-elementAvg;
 	  
       if (params->verbosity >= printFiles)
 	{
@@ -1568,10 +1569,10 @@ void LALappsGetFrameData(LALStatus*          status,
 		      params->TimeLengthPoints);
 	      fprintf(stdout,"Zero padding where appropriate.\n");
 	      DataIn=XLALResizeREAL4TimeSeries(DataIn,0,params->TimeLengthPoints);
-	      for (index = DataIn->data->length+1; 
-		   index < params->TimeLengthPoints;
-		   index++)
-		DataIn->data->data[index]=0;
+	      for (i = DataIn->data->length+1; 
+		   i < params->TimeLengthPoints;
+		   i++)
+		DataIn->data->data[i]=0;
 	      fprintf(stdout,"Resizing completed.\n");
 	    }
 	}
@@ -4068,7 +4069,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
 				     REAL8            fHet)
 {
-  UINT4 index=0;
+  UINT4 i=0;
 
   if ((1/data->deltaT) < 1/fHet)
     {
@@ -4076,15 +4077,15 @@ int LALappsQuickHeterodyneTimeSeries(REAL4TimeSeries *data,
       return TRACKSEARCHC_ESUB;
     }
 
-  for (index=0;index<data->data->length;index++)
+  for (i=0;i<data->data->length;i++)
     {
-      if ((INT4) fmod(index,(INT4)((data->data->length)/100.0)) == 0)
+      if ((INT4) fmod(i,(INT4)((data->data->length)/100.0)) == 0)
 	{
 	  fprintf(stdout,".");
 	  fflush(stdout);
 	}
-      data->data->data[index]=(data->data->data[index]*
-			       cos(2*LAL_PI*fHet*(index*data->deltaT)));			       
+      data->data->data[i]=(data->data->data[i]*
+			       cos(2*LAL_PI*fHet*(i*data->deltaT)));			       
     }
   fprintf(stdout,"\n");
   fflush(stdout);
