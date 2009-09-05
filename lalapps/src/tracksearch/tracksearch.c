@@ -104,8 +104,8 @@ int main (int argc, char *argv[])
   /*set_debug_level("ERROR | WARNING | MEMDBG | TRACE");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
-  lal_errhandler = LAL_ERR_RTRN;
   lal_errhandler = LAL_ERR_DFLT;
+  lal_errhandler = LAL_ERR_RTRN;
   /*
    * Initialize status structure 
    */
@@ -116,8 +116,7 @@ int main (int argc, char *argv[])
   /* 
    * Parse incoming search arguments initialize variables 
    */
-  LALappsTrackSearchInitialize(&status,
-			       argc,
+  LALappsTrackSearchInitialize(argc,
 			       argv,
 			       params,
 			       injectParams,
@@ -144,8 +143,7 @@ int main (int argc, char *argv[])
 	  fprintf(stdout,"Doing a time series analysis.\n");
 	  fflush(stdout);
 	}
-      LALappsDoTimeSeriesAnalysis(&status,
-				  *params,
+      LALappsDoTimeSeriesAnalysis(*params,
 				  *injectParams,
 				  cachefileDataField,
 				  dirpath);
@@ -220,13 +218,15 @@ int main (int argc, char *argv[])
  * Can do whitening and calibration on the segments
  * TINA -- Setup the removal of COHERENT LINES here!
  */
-void LALappsTrackSearchPrepareData( LALStatus        *status,
-				    REAL4TimeSeries  *dataSet,
+void LALappsTrackSearchPrepareData( REAL4TimeSeries  *dataSet,
 				    REAL4TimeSeries  *injectSet,
 				    TSSegmentVector  *dataSegments,
 				    TSSearchParams    params)
 /* Add option NULL or with data called REAL4TimeSeries injectSet */
 {
+  LALStatus           status;
+  memset(&status, 0, sizeof(status));
+
   if (params.verbosity >= printFiles)
     {
       print_lalUnit(dataSet->sampleUnits,"Pre_DataCondEntireInputDataSet_Units.diag");
@@ -248,7 +248,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	  print_lalUnit(dataSet->sampleUnits,"Pre_DataCalibrationTimeDomain_Units.diag");
 	  print_real4tseries(dataSet,"Pre_DataCalibrationTimeDomain.diag");
 	}
-      LALappsTrackSearchCalibrate(status,dataSet,params);
+      LALappsTrackSearchCalibrate(dataSet,params);
       if (params.verbosity >= printFiles)
 	{
 	  print_lalUnit(dataSet->sampleUnits,"Post_DataCalibrationTimeDomain_Units.diag");
@@ -273,7 +273,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_ButterworthFiltered_TimeDomain.diag");
-      LALappsTrackSearchBandPassing(status,dataSet,params);
+      LALappsTrackSearchBandPassing(dataSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_ButterworthFiltered_TimeDomain.diag");
     }
@@ -297,7 +297,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_SoftwareInjectDataSet.diag");
-      LALappsTrackSearchPerformInjection(status,dataSet,injectSet,params);
+      LALappsTrackSearchPerformInjection(dataSet,injectSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
@@ -325,7 +325,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	    }
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
-	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
+	  LALappsTracksearchRemoveHarmonics(dataSet,params);
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
 	  /*
@@ -334,11 +334,11 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * SegBufferPoints on each side of the segments.
 	   */
 	  /*DO I CONVERT TO XLALish type?*/
-	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+	  LAL_CALL(LALTrackSearchDataSegmenter(&status,
 					       dataSet,
 					       dataSegments,
 					       params),
-		   status);
+		   &status);
 
 	}
       else
@@ -349,18 +349,17 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * SegBufferPoints on each side of the segments.
 	   */
 	  /*DO I CONVERT TO XLALish type?*/
-	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+	  LAL_CALL(LALTrackSearchDataSegmenter(&status,
 					       dataSet,
 					       dataSegments,
 					       params),
-		   status);
+		   &status);
 
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,
 		    "Preparing to remove %i lines from individual data segments.\n",
 		    params.numLinesToRemove);
-	  LALappsTracksearchRemoveHarmonicsFromSegments(status,
-							dataSet,
+	  LALappsTracksearchRemoveHarmonicsFromSegments(dataSet,
 							dataSegments,
 							params);
 	}
@@ -373,11 +372,11 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
 	   */
-	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+	  LAL_CALL(LALTrackSearchDataSegmenter(&status,
 					       dataSet,
 					       dataSegments,
 					       params),
-		   status);
+		   &status);
       if (params.verbosity >= verbose)
 	{
 	  fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
@@ -396,7 +395,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	  fprintf(stdout,"Preparing to whiten data segments.\n");
 	  fflush(stdout);
 	}
-      LALappsTrackSearchWhitenSegments(status,dataSet,dataSegments,params);
+      LALappsTrackSearchWhitenSegments(dataSet,dataSegments,params);
     }
   else if (params.verbosity >= verbose)
     {
@@ -417,7 +416,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
  * Setup params structure by parsing the command line
  */
 void LALappsTrackSearchInitialize(
-				  LALStatus          *status,
 				  int                 argc,
 				  char               *argv[], 
 				  TSSearchParams     *params,
@@ -1248,8 +1246,7 @@ void LALappsTrackSearchInitialize(
  * This is the frame reading routine taken from power.c
  * it has been modified very slightly
  */
-void LALappsGetFrameData(LALStatus*          status,
-			 TSSearchParams*     params,
+void LALappsGetFrameData(TSSearchParams*     params,
 			 REAL4TimeSeries*    DataIn,
 			 CHARVector*         dirname,
 			 CHAR*               cachefile
@@ -1268,6 +1265,9 @@ void LALappsGetFrameData(LALStatus*          status,
   UINT4                 i=0;
   REAL8                 elementSum=0;
   REAL8                 elementAvg=0;
+  LALStatus           status;/* Error containing structure */
+  memset(&status, 0, sizeof(status));
+
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = LAL_ADC_CHAN;
@@ -1278,11 +1278,21 @@ void LALappsGetFrameData(LALStatus*          status,
   bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
   XLALGPSSetREAL8(&bufferedDataStopGPS,bufferedDataStop);
   bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
-  
+
   if(dirname)
     {
       /* Open frame stream */
       stream=XLALFrOpen(dirname->data,"*.gwf");
+      errcode=XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      if (errcode != 0)
+	{
+	  fprintf(stderr,"Error setting Verbose Mode using XLALFrSetMode.\n");
+	  fprintf(stderr,"XLALFrSetMode Error Code :%i\n",xlalErrno);
+	  fprintf(stderr,"XLAL Error Message :%s\n",XLALErrorString(xlalErrno));
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGESUB);
+	  fflush(stderr);
+	  exit(errcode);
+	}
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,"Not using a cache file. Data Interval won't be verified.\n");
@@ -1297,7 +1307,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fprintf(stdout,"Importing cache file: %s\n",cachefile);
 	  fflush(stdout);
 	}
-      lal_errhandler = LAL_ERR_EXIT;
+
       frameCache=XLALFrImportCache(cachefile);
       if (frameCache == NULL)
 	{
@@ -1306,9 +1316,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fflush(stderr);
 	  exit(TRACKSEARCHC_EDATA);
 	}
-      lal_errhandler = LAL_ERR_EXIT;
-      /* Set verbosity of stream so user sees frame read problems! */
-      XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
       if (params->verbosity >= verbose)
 	{
@@ -1316,6 +1323,19 @@ void LALappsGetFrameData(LALStatus*          status,
 	  fflush(stdout);
 	}
       stream=XLALFrCacheOpen(frameCache);	  
+
+      /* Set verbosity of stream so user sees frame read problems! */
+      errcode=XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      if (errcode != 0)
+	{
+	  fprintf(stderr,"Error setting Verbose Mode using XLALFrSetMode.\n");
+	  fprintf(stderr,"XLALFrSetMode Error Code :%i\n",xlalErrno);
+	  fprintf(stderr,"XLAL Error Message :%s\n",XLALErrorString(xlalErrno));
+	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGESUB);
+	  fflush(stderr);
+	  exit(errcode);
+	}
+
       if (params->verbosity >= verbose)
 	{
 	  fprintf(stdout,"Clearing imported cache file.\n");
@@ -1362,26 +1382,6 @@ void LALappsGetFrameData(LALStatus*          status,
       fprintf(stderr,"Cache file or path to frame files not specified!\n");
       fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEVAL);
       exit(TRACKSEARCHC_EVAL);
-    }
-  lal_errhandler = LAL_ERR_EXIT;
-  /* Set verbosity of stream so user sees frame read problems! */
-  XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
-  if (params->verbosity >= verbose)
-    {
-      fprintf(stdout,"Creating data stream.\n");
-      fflush(stdout);
-    }
-  stream=XLALFrCacheOpen(frameCache);	  
-  if (params->verbosity >= verbose)
-    {
-      fprintf(stdout,"Clearing imported cache file.\n");
-      fflush(stdout);
-    }
-  XLALFrDestroyCache(frameCache);
-  if (params->verbosity >= verbose)
-    {
-      fprintf(stdout,"Data stream ready.\n");
-      fflush(stdout);
     }
   /*
    * Determine the variable type of data in the frame file.
@@ -1614,8 +1614,7 @@ void LALappsGetFrameData(LALStatus*          status,
 /*
  * Routine to allow use of acsii input rather than frames
  */
-void LALappsGetAsciiData(LALStatus*          status,
-			 TSSearchParams*     params,
+void LALappsGetAsciiData(TSSearchParams*     params,
 			 REAL4TimeSeries*    DataIn,
 			 CHARVector*         dirname
 			 )
@@ -1649,7 +1648,6 @@ void LALappsGetAsciiData(LALStatus*          status,
  * Local routine to actually carry out search
  */
 void LALappsDoTrackSearch(
-			  LALStatus                     *status,
 			  TimeFreqRep                   *tfmap,
 			  TrackSearchParams              tsInputs,
 			  TrackSearchMapMarkingParams    tsMarkers,
@@ -1660,7 +1658,10 @@ void LALappsDoTrackSearch(
   CHARVector            *outputFilename=NULL;
   CHARVector            *outputFilenameMask=NULL;
   CHARVector            *outputCandidateFilename=NULL;
-  int                    errCode=0;
+  int                    errcode=0;
+  LALStatus           status;/* Error containing structure */
+  memset(&status, 0, sizeof(status));
+
   /*************************************************************/
   /* 
    * The LALTracksearch seems to map the 
@@ -1696,16 +1697,16 @@ void LALappsDoTrackSearch(
   if (params.autoLambda)
     {
       /* Do the calculate of Lh given parameters */
-      /*      errCode = LAL_CALL( LALTracksearchFindLambdaMean(status,*tfmap,&params),
+      /*      errcode = LAL_CALL( LALTracksearchFindLambdaMean(status,*tfmap,&params),
 	      status);*/
       lal_errhandler = LAL_ERR_RTRN;
-      errCode = LAL_CALL( LALTracksearchFindLambdaMedian(status,*tfmap,&params),
-			  status);
+      errcode = LAL_CALL( LALTracksearchFindLambdaMedian(&status,*tfmap,&params),
+			  &status);
 
-      if ( errCode != 0 )
+      if ( errcode != 0 )
 	{
 	  fprintf(stderr,"Error calling automagic Lambda selection routine.\n");
-	  fprintf(stderr,"%s\n",status->statusDescription);
+	  fprintf(stderr,"%s\n",status.statusDescription);
 	  fflush(stderr);
 	}
 
@@ -1717,39 +1718,33 @@ void LALappsDoTrackSearch(
 
     }
   /*Determine MAP file name to save output to.*/
-    LALappsDetermineFilename(status,
+    LALappsDetermineFilename(&status,
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
-  errCode = LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
-	    status);
-  if ( errCode != 0 )
+  errcode = LAL_CALL( LALSignalTrackSearch(&status,&outputCurves,tfmap,&tsInputs),
+	    &status);
+  if ( errcode != 0 )
     {
       fprintf(stderr,"Error calling LALSignalTrackSearch!\n");
-      fprintf(stderr,"Error Code: %s\n",status->statusDescription);
-      fprintf(stderr,"Function  : %s\n",status->function);
-      fprintf(stderr,"File      : %s\n",status->file);
-      fprintf(stderr,"Line      : %i\n",status->line);
+      fprintf(stderr,"Error Code: %s\n",status.statusDescription);
+      fprintf(stderr,"Function  : %s\n",status.function);
+      fprintf(stderr,"File      : %s\n",status.file);
+      fprintf(stderr,"Line      : %i\n",status.line);
       fprintf(stderr,"Aux information.\n");
       fprintf(stderr,"Start  point count: %i\n",outputCurves.store.numLStartPoints);
       fprintf(stderr,"Member point count: %i\n",outputCurves.store.numLPoints);
       fprintf(stderr,"Curves returned   : %i\n",outputCurves.numberOfCurves);
       fprintf(stdout,"MAP file may be corrupted?\n");
       fprintf(stdout,"Moving corrupted MAP from %s",outputCandidateFilename->data);
-      LALappsDetermineFilename(status,
+      LALappsDetermineFilename(&status,
 			       tsMarkers,
 			       &outputCandidateFilename,
 			       ".corruptedF");
       fprintf(stdout," to %s\n",outputCandidateFilename->data);
       fflush(stdout);
-      fprintf(stderr,"Detaching status pointer.\n");
-      DETATCHSTATUSPTR(status);
-      fflush(stderr);
-      fprintf(stderr,"Attaching status pointer.\n");
-      ATTATCHSTATUSPTR (status);
-      fflush(stderr);
     }
   
   /* 
@@ -1757,12 +1752,12 @@ void LALappsDoTrackSearch(
    * variable outputCurves which is no longer required
    */
   tsInputs.allocFlag = 2;
-  errCode = LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
-		       status);
-  if ( errCode != 0 )
+  errcode = LAL_CALL(  LALSignalTrackSearch(&status,&outputCurves,tfmap,&tsInputs),
+		       &status);
+  if ( errcode != 0 )
     {
       fprintf(stderr,"Error calling LALSignalTracksearch to clear memory structs.\n");
-      fprintf(stderr,"%s\n",status->statusDescription);
+      fprintf(stderr,"%s\n",status.statusDescription);
       fflush(stderr);
     }
   /*
@@ -1774,14 +1769,14 @@ void LALappsDoTrackSearch(
   /*Width -> freq bins */
   /* Need to configure mapMarkerParams correctly!*/
   lal_errhandler = LAL_ERR_RTRN;
-  errCode = LAL_CALL(  LALTrackSearchInsertMarkers(status,
-					 &outputCurves,
-					 &tsMarkers),
-	     status);
-  if ( errCode != 0 )
+  errcode = LAL_CALL(  LALTrackSearchInsertMarkers(&status,
+						   &outputCurves,
+						   &tsMarkers),
+		       &status);
+  if ( errcode != 0 )
     {
       fprintf(stderr,"Error calling insert markers routine.\n");
-      fprintf(stderr,"%s\n",status->statusDescription);
+      fprintf(stderr,"%s\n",status.statusDescription);
       fflush(stderr);
     }
   /* 
@@ -1797,15 +1792,15 @@ void LALappsDoTrackSearch(
       fprintf(stdout,"Subroutines for segment connection NOT TESTED\n");
       fprintf(stdout,"as of Fri-Jun-19-2009:200906191018\n");
       lal_errhandler = LAL_ERR_RTRN;
-      errCode=LAL_CALL( LALTrackSearchConnectSigma(status,
+      errcode=LAL_CALL( LALTrackSearchConnectSigma(&status,
 						   &outputCurves,
 						   *tfmap,
 						   tsInputs),
-			status);
-      if (errCode !=0)
+			&status);
+      if (errcode !=0)
 	{
 	  fprintf(stderr,"Call to connect trigger subroutine failed!.\n");
-	  fprintf(stderr,"%s\n",status->statusDescription);
+	  fprintf(stderr,"%s\n",status.statusDescription);
 	  fflush(stderr);
 	}
     };
@@ -1815,7 +1810,7 @@ void LALappsDoTrackSearch(
   if (params.verbosity >= printFiles)
     {
       sprintf(outputFilename->data,"Pre-%s",outputFilenameMask->data);
-      LALappsWriteCurveList(status,
+      LALappsWriteCurveList(&status,
 			    outputFilename->data,
 			    outputCurves,
 			    NULL);
@@ -1825,15 +1820,15 @@ void LALappsDoTrackSearch(
    */
   outputCurvesThreshold.curves = NULL;
   lal_errhandler = LAL_ERR_RTRN;
-  errCode = LAL_CALL( LALTrackSearchApplyThreshold(status,
+  errcode = LAL_CALL( LALTrackSearchApplyThreshold(&status,
 					 &outputCurves,
 					 &outputCurvesThreshold,
 					 params),
-	    status);
-  if ( errCode != 0 )
+	    &status);
+  if ( errcode != 0 )
     {
       fprintf(stderr,"Error calling trigger threshold selection routine.\n");
-      fprintf(stderr,"%s\n",status->statusDescription);
+      fprintf(stderr,"%s\n",status.statusDescription);
       fflush(stderr);
     }
   /*
@@ -1848,23 +1843,21 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
-  LALappsWriteSearchResults(status,
+  LALappsWriteSearchResults(&status,
 			    outputCandidateFilename->data,
 			    outputCurvesThreshold);
 
   if (params.verbosity >= printFiles)
-    LALappsWriteCurveList(status,
+    LALappsWriteCurveList(&status,
 			  outputFilenameMask->data,
 			  outputCurvesThreshold,
 			  &params);
   /*
    * General Memory Cleanup
    */
-  LALappsDestroyCurveDataSection(status,
-				 &(outputCurves.curves),
+  LALappsDestroyCurveDataSection(&(outputCurves.curves),
 				 outputCurves.numberOfCurves);
-  LALappsDestroyCurveDataSection(status,
-				 &(outputCurvesThreshold.curves),
+  LALappsDestroyCurveDataSection(&(outputCurvesThreshold.curves),
 				 outputCurvesThreshold.numberOfCurves);
   if (outputFilename)
     XLALDestroyCHARVector(outputFilename);
@@ -1880,8 +1873,7 @@ void LALappsDoTrackSearch(
  */
 
 void
-LALappsDoTSeriesSearch(LALStatus         *status,
-		       REAL4TimeSeries   *signalSeries,
+LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 		       TSSearchParams     params,
 		       INT4               callNum)
 {
@@ -1902,7 +1894,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   REAL8                 cropDeltaT=0;
   INT4                  tmpSegDataPoints=0;
   INT4                  tmpMapTimeBins=0;
-  INT4                  errCode=0;
+  INT4                  errcode=0;
+  LALStatus           status;/* Error containing structure */
+  memset(&status, 0, sizeof(status));
   /*
    * Error checking section
    */
@@ -1929,25 +1923,25 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 
-      errCode=LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
-		       status);
-      if (errCode != 0)
+      errcode=LAL_CALL(LALCreateTimeFreqParam(&status,&autoparams,&tfInputs),
+		       &status);
+      if (errcode != 0)
 	{
 	  fprintf(stderr,"Error calling LALCreateTimeFreqParam\n");
-	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
-	  fprintf(stderr,"Function  : %s\n",status->function);
-	  fprintf(stderr,"File      : %s\n",status->file);
-	  fprintf(stderr,"Line      : %i\n",status->line);
+	  fprintf(stderr,"Error Code: %s\n",status.statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status.function);
+	  fprintf(stderr,"File      : %s\n",status.file);
+	  fprintf(stderr,"Line      : %i\n",status.line);
 	}
-      errCode=LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
-		       status);
-      if (errCode != 0)
+      errcode=LAL_CALL(LALCreateTimeFreqRep(&status,&tfmap,&tfInputs),
+		       &status);
+      if (errcode != 0)
 	{
 	  fprintf(stderr,"Error calling LALCreateTimeFreqRep\n");
-	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
-	  fprintf(stderr,"Function  : %s\n",status->function);
-	  fprintf(stderr,"File      : %s\n",status->file);
-	  fprintf(stderr,"Line      : %i\n",status->line);
+	  fprintf(stderr,"Error Code: %s\n",status.statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status.function);
+	  fprintf(stderr,"File      : %s\n",status.file);
+	  fprintf(stderr,"Line      : %i\n",status.line);
 	}
       /*
        * There is an issue with the overlapping of fft windows used to
@@ -2062,15 +2056,15 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
 	    lal_errhandler = LAL_ERR_RTRN;
-	    errCode=LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
-			      status);
-	    if ( errCode != 0 )
+	    errcode=LAL_CALL( LALTfrSp(&status,signalSeries->data,tfmap,autoparams),
+			      &status);
+	    if ( errcode != 0 )
 	      {
 		fprintf(stderr,"Error calling LALTfrSp!\n");
-		fprintf(stderr,"Error Code: %s\n",status->statusDescription);
-		fprintf(stderr,"Function  : %s\n",status->function);
-		fprintf(stderr,"File      : %s\n",status->file);
-		fprintf(stderr,"Line      : %i\n",status->line);
+		fprintf(stderr,"Error Code: %s\n",status.statusDescription);
+		fprintf(stderr,"Function  : %s\n",status.function);
+		fprintf(stderr,"File      : %s\n",status.file);
+		fprintf(stderr,"Line      : %i\n",status.line);
 		exit(TRACKSEARCHC_ESUB);
 	      }
 	    lal_errhandler = LAL_ERR_DFLT;
@@ -2079,8 +2073,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	case WignerVille:
 	  {
 
-	    LAL_CALL( LALTfrWv(status,signalSeries->data,tfmap,autoparams),
-		      status);
+	    LAL_CALL( LALTfrWv(&status,signalSeries->data,tfmap,autoparams),
+		      &status);
 	  }
 	  break;
 	case PSWignerVille:
@@ -2092,8 +2086,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    memcpy(autoparams->windowF->data,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
-	    LAL_CALL( LALTfrPswv(status,signalSeries->data,tfmap,autoparams),
-		      status);
+	    LAL_CALL( LALTfrPswv(&status,signalSeries->data,tfmap,autoparams),
+		      &status);
 	  }
 	  break;
 	case RSpectrogram:
@@ -2102,8 +2096,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
-	    LAL_CALL( LALTfrRsp(status,signalSeries->data,tfmap,autoparams),
-		      status);
+	    LAL_CALL( LALTfrRsp(&status,signalSeries->data,tfmap,autoparams),
+		      &status);
 	  }
 	  break;
 	default:
@@ -2118,8 +2112,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        * Destroy TF params also
        */
       XLALDestroyREAL4Window(tempWindow);
-      LAL_CALL( LALDestroyTimeFreqParam(status,&autoparams),
-		status);
+      LAL_CALL( LALDestroyTimeFreqParam(&status,&autoparams),
+		&status);
       if (params.verbosity >= verbose)
 	{
 	  fprintf(stdout,"Created!\n");
@@ -2193,14 +2187,14 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       fprintf(stdout,"Cropping TFR ");
       fflush(stdout);
     }
-  LALappsTSACropMap(status,&tmpTSA,params.colsToClip);
+  LALappsTSACropMap(&status,&tmpTSA,params.colsToClip);
   /* 
    *Copy information from cropping procedure to relevant structures.
    */
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
   if (params.verbosity >= printFiles)
-    LALappsTSAWritePGM(status,tmpTSA,NULL); 
+    LALappsTSAWritePGM(&status,tmpTSA,NULL); 
   tfmap=tmpTSA->imageRep;
   XLALFree(tmpTSA);
   if ((params.verbosity > quiet) && (params.colsToClip > 0))
@@ -2229,8 +2223,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       fprintf(stdout,"Starting TFR analysis ");
       fflush(stdout);
     }
-  LALappsDoTrackSearch(status,
-		       tfmap,
+  LALappsDoTrackSearch(tfmap,
 		       inputs,
 		       mapMarkerParams,
 		       params);
@@ -2264,7 +2257,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	      mapMarkerParams.mapStartGPS.gpsNanoSeconds,
 	      mapMarkerParams.mapStopGPS.gpsSeconds,
 	      mapMarkerParams.mapStopGPS.gpsNanoSeconds);
-      LALappsTSAWriteMapFile(status,
+      LALappsTSAWriteMapFile(&status,
 			     mapBuilder,
 			     NULL);
       if (binaryFilename)
@@ -2275,16 +2268,15 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /* 
    * Destroy the memory holding the actual TF map
    */
-  LAL_CALL( LALDestroyTimeFreqRep(status,&tfmap),
-	    status);
+  LAL_CALL( LALDestroyTimeFreqRep(&status,&tfmap),
+	    &status);
 }
 /*
  * End LALappsDoTSeriesSearch
  */
 
 void
-LALappsDoTimeSeriesAnalysis(LALStatus          *status,
-			    TSSearchParams      params,
+LALappsDoTimeSeriesAnalysis(TSSearchParams      params,
 			    TSappsInjectParams  injectParams,
 			    CHAR               *cachefile,
 			    CHARVector         *dirpath)
@@ -2301,14 +2293,15 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   REAL8             originalFloatTime=0;
   REAL8             newFloatTime=0;
   CHARVector       *dataLabel=NULL;
+  int               errcode=0;
+  LALStatus           status;/* Error containing structure */
+  memset(&status, 0, sizeof(status));
+  status.statusPtr=NULL;
   /* Set to zero to use ascii files */
   /*
    * Check for nonNULL directory path Ptr to frame files
    */
   LALappsTSassert(((dirpath!=NULL)||(cachefile!=NULL)),
-		  TRACKSEARCHC_ENULL,
-		  TRACKSEARCHC_MSGENULL);
-  LALappsTSassert((status!=NULL),
 		  TRACKSEARCHC_ENULL,
 		  TRACKSEARCHC_MSGENULL);
   /* 
@@ -2354,6 +2347,36 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 				      1/params.SamplingRate,
 				      &lalADCCountUnit,
 				      newPointLength);
+
+  /* 
+   * Prepare the data for the call to Tracksearch 
+   */
+  SegVecParams.dataSegmentPoints = params.SegLengthPoints;
+  SegVecParams.numberDataSegments = params.NumSeg;
+  SegVecParams.SegBufferPoints = params.SegBufferPoints;
+  /*
+   * Allocate structure to hold all segment data
+   */
+  if (params.verbosity >= verbose)
+    {
+      fprintf(stdout,"Allocating memory for subsegments.\n");
+      fflush(stdout);
+    }
+
+  errcode=LAL_CALL(LALCreateTSDataSegmentVector(&status,&SegVec,&SegVecParams),
+		   &status);
+  if (errcode != 0)
+    {
+      fprintf(stderr,"Error calling LALCreateTSDataSegmentVector!\n");
+      fprintf(stderr,"Error Code: %s\n",status.statusDescription);
+      fprintf(stderr,"Function  : %s\n",status.function);
+      fprintf(stderr,"File      : %s\n",status.file);
+      fprintf(stderr,"Line      : %i\n",status.line);
+      fprintf(stderr,"Error in allocation of subsegments.\n");
+      fflush(stdout);
+      exit(TRACKSEARCHC_ESUB);
+    }
+
   if (productioncode == 1) /* Use production frame file inputs */
     {
       if (params.makenoise < 1 )
@@ -2363,7 +2386,8 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 	      fprintf(stdout,"Reading frame files.\n");
 	      fflush(stdout);
 	    }
-	  LALappsGetFrameData(status,&params,dataset,dirpath,cachefile);
+	  /*Untrapped xlal err code in LALappsGetFrameData*/
+	  LALappsGetFrameData(&params,dataset,dirpath,cachefile);
 	  if (params.verbosity >= verbose)
 	    {
 	      fprintf(stdout,"Reading frame complete.\n");
@@ -2378,14 +2402,14 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 	   *  the output array is desire length in a 
 	   * time series structure 
 	   */
-	  fakeDataGeneration(status,dataset,
+	  fakeDataGeneration(dataset,
 			     (params.NumSeg*params.SegLengthPoints),
 			     params.makenoise);
 	};
     }
   else
     {
-      LALappsGetAsciiData(status,&params,dataset,dirpath);
+      LALappsGetAsciiData(&params,dataset,dirpath);
     }
   /*
    * If injections were requested load them up!  We return a NULL time
@@ -2408,29 +2432,21 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 	  fflush(stdout);
 	}
 
-      LALappsCreateInjectableData(status,
-				  &injectSet,
+      LALappsCreateInjectableData(&injectSet,
 				  injectParams);
     }
   if ((params.verbosity >= printFiles) && (injectSet != NULL))
     print_real4tseries(injectSet,"CreatedSoftwareInjectableData.diag");
-  /* 
-   * Prepare the data for the call to Tracksearch 
-   */
-  SegVecParams.dataSegmentPoints = params.SegLengthPoints;
-  SegVecParams.numberDataSegments = params.NumSeg;
-  SegVecParams.SegBufferPoints = params.SegBufferPoints;
-  /*
-   * Allocate structure to hold all segment data
-   */
-  LAL_CALL(LALCreateTSDataSegmentVector(status,&SegVec,&SegVecParams),
-	   status);
-
   /*
    * Wed-Oct-24-2007:200710241539 
    * Edit function to fill buffered segments
    */
-  LALappsTrackSearchPrepareData(status,dataset,injectSet,SegVec,params);
+  if (params.verbosity >= verbose)
+    {
+      fprintf(stdout,"Preparing the data for filling segments.\n");
+      fflush(stdout);
+    }
+  LALappsTrackSearchPrepareData(dataset,injectSet,SegVec,params);
   /*
    * Remove the dataset variable to make room in RAM for TFRs
    */
@@ -2478,7 +2494,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 	  print_lalUnit(SegVec->dataSeg[j]->sampleUnits,dataLabel->data);
 	  XLALDestroyCHARVector(dataLabel);
 	}
-      LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
+      LALappsDoTSeriesSearch(SegVec->dataSeg[j],params,j);
       j++;
     };
   fprintf(stdout,"\n");
@@ -2486,13 +2502,13 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   /* Free some of the memory used to do the analysis */
   if (params.dataSegVec)
     {
-      LAL_CALL(LALDestroyTSDataSegmentVector(status,(params.dataSegVec)),
-	       status);
+      LAL_CALL(LALDestroyTSDataSegmentVector(&status,(params.dataSegVec)),
+	       &status);
     }
   if (SegVec)
     {
-      LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
-	       status);
+      LAL_CALL(LALDestroyTSDataSegmentVector(&status,SegVec),
+	       &status);
     }
 }
 /*
@@ -2591,8 +2607,7 @@ LALappsDoTSAMapSearch(LALStatus          *status,
   inputs.low=params->LinePThresh;
   inputs.width=((tfmap->imageRep->fRow/2)+1);
   inputs.height=tfmap->imageRep->tCol;
-  LALappsDoTrackSearch(status,
-		       tfmap->imageRep,
+  LALappsDoTrackSearch(tfmap->imageRep,
 		       inputs,
 		       tfmap->imageBorders,
 		       *params);
@@ -2878,14 +2893,11 @@ LALappsWriteBreveResults(LALStatus      *status,
 /*
  * Local routine to allocate memory for the curve structure
  */
-void LALappsCreateCurveDataSection(LALStatus    *status,
-				   Curve        **curvein)
+int LALappsCreateCurveDataSection(Curve        **curvein)
 {
   INT4    counter;
   Curve  *curve;
  
-  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
   *curvein = curve = XLALMalloc(MAX_NUMBER_OF_CURVES * sizeof(Curve));
   for (counter = 0; counter < MAX_NUMBER_OF_CURVES;counter++)
     {
@@ -2900,20 +2912,19 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
       curve[counter].depth = XLALMalloc(MAX_CURVE_LENGTH * sizeof(REAL4));
       if (curve[counter].row == NULL)
 	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	  return TRACKSEARCHC_EMEM;
 	}
       if (curve[counter].col == NULL)
 	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	  return TRACKSEARCHC_EMEM;
 	}
       if (curve[counter].depth == NULL)
 	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	  return TRACKSEARCHC_EMEM;
 	}
       /* Need to gracefully exit here by unallocating later */
     };
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return 0;
 }
 /* End of curve structure allocation function */
 
@@ -2922,15 +2933,12 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
  * Local routine to clean up memory once used to hold
  * collection of curve candidates
  */
-void LALappsDestroyCurveDataSection(LALStatus    *status,
-				    Curve        **curvein,
+void LALappsDestroyCurveDataSection(Curve        **curvein,
 				    INT4         numCurves)
 {
   INT4    counter;
   Curve  *curve;
 
-  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
   curve = *curvein;
 
   for (counter = 0; counter < numCurves;counter++)
@@ -2947,14 +2955,11 @@ void LALappsDestroyCurveDataSection(LALStatus    *status,
     {
       XLALFree(curve);
     }
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 /* End function to deallocate the curve structures */
 
 
-void LALappsCreateInjectableData(LALStatus           *status,
-				 REAL4TimeSeries    **injectSet,
+void LALappsCreateInjectableData(REAL4TimeSeries    **injectSet,
 				 TSappsInjectParams   params)
 {
   UINT4  i=0;
@@ -2975,6 +2980,8 @@ void LALappsCreateInjectableData(LALStatus           *status,
   FILE            *fp=NULL;
   CHAR             c;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+  LALStatus           status;
+  memset(&status, 0, sizeof(status));
   /*
    * Try and load the file
    */
@@ -3042,12 +3049,12 @@ void LALappsCreateInjectableData(LALStatus           *status,
    * Call interpolating routine to create resample waveform
    */
 
-  LAL_CALL(LALSVectorPolynomialInterpolation(status,
+  LAL_CALL(LALSVectorPolynomialInterpolation(&status,
 					     waveDomain,
 					     waveRange,
 					     domain,
 					     range),
-	   status);
+	   &status);
 
   pointLength=(params.numOfInjects*
 	       (waveDomain->length+timePoints))+offSetPoints;
@@ -3111,8 +3118,7 @@ void LALappsCreateInjectableData(LALStatus           *status,
 /* 
  * Function to perform calibration of input data if necessary
  */
-void LALappsTrackSearchCalibrate( LALStatus          *status,
-				  REAL4TimeSeries    *dataSet,
+void LALappsTrackSearchCalibrate( REAL4TimeSeries    *dataSet,
 				  TSSearchParams      params)
 {
   FrCache                  *calcache = NULL;
@@ -3124,7 +3130,8 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   CalibrationUpdateParams   calfacts;
   UINT4                     i=0;
   UINT4                     j=0;
-
+  LALStatus           status;
+  memset(&status, 0, sizeof(status));
   /* 
    * Create response function based on starting epoch from 
    * first data segment.  We assume it is constant over 
@@ -3141,10 +3148,10 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
 					     &strainPerCount,
 					     segmentPoints/2+1);
 
-  LAL_CALL(LALFrCacheImport(status,
+  LAL_CALL(LALFrCacheImport(&status,
 			    &calcache, 
 			    params.calFrameCache),
-	   status);
+	   &status);
   /*
    * Extract response function from calibration cache
    */
@@ -3154,11 +3161,11 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   strcpy(calfacts.ifo,params.calibrateIFO);
 
 
-  LAL_CALL( LALExtractFrameResponse(status,
+  LAL_CALL( LALExtractFrameResponse(&status,
 				    response, 
 				    calcache, 
 				    &calfacts),
-	    status);
+	    &status);
   if (params.verbosity >= printFiles)
     {
       print_lalUnit(response->sampleUnits,"extractedResponseFunction_Units.diag");
@@ -3173,7 +3180,7 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
    */
   if (calcache)
     {
-      LAL_CALL( LALDestroyFrCache(status, &calcache),status);
+      LAL_CALL( LALDestroyFrCache(&status, &calcache),&status);
     }
   /* Done getting response function */
   /*
@@ -3190,11 +3197,11 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
    */
   dataSetPlan=XLALCreateForwardREAL4FFTPlan(dataSet->data->length,0);
 
-  LAL_CALL( LALForwardREAL4FFT(status,
+  LAL_CALL( LALForwardREAL4FFT(&status,
 			       dataSetFFT->data,
 			       dataSet->data,
 			       dataSetPlan),
-	    status);
+	    &status);
   if (dataSetPlan)
     XLALDestroyREAL4FFTPlan(dataSetPlan);
 
@@ -3204,10 +3211,10 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
       print_complex8fseries(dataSetFFT,"Pre_CalibrateDataSetFFT.diag");
       print_lalUnit(dataSetFFT->sampleUnits,"Pre_CalibrateDataSetFFT_Units.diag");
     }
-  LAL_CALL(LALTrackSearchCalibrateCOMPLEX8FrequencySeries(status,
+  LAL_CALL(LALTrackSearchCalibrateCOMPLEX8FrequencySeries(&status,
 							  dataSetFFT,
 							  response),
-	   status);
+	   &status);
   if (params.verbosity >= printFiles)
     {
       print_complex8fseries(dataSetFFT,"Post_CalibrateDataSetFFT.diag");
@@ -3223,11 +3230,11 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
       
   dataSetPlan=XLALCreateReverseREAL4FFTPlan(dataSet->data->length,0);
 
-  LAL_CALL(LALReverseREAL4FFT(status,
+  LAL_CALL(LALReverseREAL4FFT(&status,
 			      dataSet->data,
 			      dataSetFFT->data,
 			      dataSetPlan),
-	   status);
+	   &status);
   /* 
    * Migrate units fields from F basis to T basis
    */
@@ -3239,7 +3246,7 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
     dataSet->data->data[i]=dataSet->data->data[i]/dataSet->data->length;
 
   if (dataSetPlan)
-    LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+    LAL_CALL(LALDestroyREAL4FFTPlan(&status,&dataSetPlan),&status);
   /*
    * Free the FFT memory space
    */
@@ -3258,8 +3265,7 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
 /*
  * Butterworth Band passing
  */
-void LALappsTrackSearchBandPassing( LALStatus           *status,
-				    REAL4TimeSeries     *dataSet,
+void LALappsTrackSearchBandPassing( REAL4TimeSeries     *dataSet,
 				    TSSearchParams       params)
 {
   PassBandParamStruc       bandPassParams;
@@ -3328,14 +3334,15 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 /* 
  * Variation that removes harmonics from individual data segments
  */ 
-void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
-						   REAL4TimeSeries *dataSet,
+void LALappsTracksearchRemoveHarmonicsFromSegments(REAL4TimeSeries *dataSet,
 						   TSSegmentVector *dataSegments,
 						   TSSearchParams   params)
 {
   UINT4             j=0;
   REAL4TimeSeries  *tmpSegmentPtr=NULL;
   CHARVector       *dataLabel=NULL;
+  LALStatus           status;
+  memset(&status, 0, sizeof(status));
 
   for (j=0;j<dataSegments->length;j++)
     {
@@ -3352,7 +3359,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
       sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i_Units.diag",j);
       if (params.verbosity >= printFiles)
 	print_lalUnit(tmpSegmentPtr->sampleUnits,dataLabel->data);
-      LALappsTracksearchRemoveHarmonics(status,tmpSegmentPtr,params);
+      LALappsTracksearchRemoveHarmonics(tmpSegmentPtr,params);
       sprintf(dataLabel->data,"Post_LineRemovalTimeDomainDataSeg_%i.diag",j);
       if (params.verbosity >= printFiles)
 	print_real4tseries(tmpSegmentPtr,dataLabel->data);
@@ -3370,8 +3377,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
 /*
  * Removing harmonic lines from data
  */
-void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
-				        REAL4TimeSeries       *dataSet,
+void LALappsTracksearchRemoveHarmonics( REAL4TimeSeries       *dataSet,
 				        TSSearchParams         params)
 {
   COMPLEX8Vector           *referenceSignal=NULL;
@@ -3627,7 +3633,6 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	   */
 	}
     }
-  /*lal_errhandler=LAL_ERR_DFLT;*/
   return;
 }
 /*
@@ -3636,8 +3641,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 /*
  * Perform software injections if data is available
  */
-void LALappsTrackSearchPerformInjection(LALStatus        *status,
-					REAL4TimeSeries  *dataSet,
+void LALappsTrackSearchPerformInjection(REAL4TimeSeries  *dataSet,
 					REAL4TimeSeries  *injectSet,
 					TSSearchParams     params)
 {
@@ -3667,10 +3671,9 @@ void LALappsTrackSearchPerformInjection(LALStatus        *status,
 /*
  * Whiten data segments
  */
-void LALappsTrackSearchWhitenSegments( LALStatus        *status,
-				       REAL4TimeSeries  *dataSet,
+void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
 				       TSSegmentVector  *dataSegments,
-				       TSSearchParams     params)
+				       TSSearchParams    params)
 {
   UINT4                    planLength=0;
   REAL4TimeSeries          *tmpSignalPtr=NULL;
@@ -3691,6 +3694,8 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   UINT4                     segmentLength=0;
   int                       errcode=0;
   const LIGOTimeGPS         gps_zero = LIGOTIMEGPSZERO;
+  LALStatus                 status;
+  memset(&status, 0, sizeof(status));
 
   if (params.verbosity >= verbose )
     {
@@ -4011,11 +4016,11 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	      fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
 	      fflush(stdout);
 	    }
-	  LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
+	  LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(&status,
 							       signalFFT,
 							       averagePSD,
 							       params.whiten),
-		   status);
+		   &status);
 	  if (params.verbosity >= printFiles)
 	    {
 	      dataLabel=XLALCreateCHARVector(128);
@@ -4328,8 +4333,7 @@ void QuickDump_Data(
  * This routine should be getting a seed to create the fake noise 
  * This is an inline routine not used anylonger
  */
-void fakeDataGeneration(LALStatus              *status,
-			REAL4TimeSeries        *fakeData,
+void fakeDataGeneration(REAL4TimeSeries        *fakeData,
 			INT4                    pointnum,
 			INT4                    seed
 			)
@@ -4339,8 +4343,6 @@ void fakeDataGeneration(LALStatus              *status,
   RandomParams      *RP = NULL;
   int                errcode = 0;
 
-  INITSTATUS (status, "makefakenoise", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
   seed = 0;
   fd=XLALCreateREAL4Vector(pointnum);
 
@@ -4359,8 +4361,6 @@ void fakeDataGeneration(LALStatus              *status,
       fakeData->data->data[k] = fd->data[k];
     }
   XLALDestroyREAL4Vector(fd);
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
 }
  
 /*
