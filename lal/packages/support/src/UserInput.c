@@ -1093,10 +1093,10 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
 
       /* copy the strings into the procparams table */
-      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname );
+      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", progname );
       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
-      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
-      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
+      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", valstr );
+      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", typestr );
 
       LALFree (valstr);
       valstr=NULL;
