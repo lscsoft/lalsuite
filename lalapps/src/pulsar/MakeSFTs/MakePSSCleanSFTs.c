@@ -2929,16 +2929,6 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
   XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
 
-  /*
-    Apparently the PSS function purge_data_subtract() used in XLALSubstractPSSCleaningEvents() already does this
-
-  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-  */
-
   if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
     fprintf(stderr,"XLALSubstractPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
     retval = -2;
@@ -3036,10 +3026,6 @@ int PSSTDCleaningREAL4(REAL4TimeSeries *LALTS, REAL4 highpassFrequency) {
     goto PSSTDCleaningREAL4FreeAll;
   }
   if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
-    retval = -2;
-    goto PSSTDCleaningREAL4FreeAll;
-  }
-  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
     retval = -2;
     goto PSSTDCleaningREAL4FreeAll;
   }

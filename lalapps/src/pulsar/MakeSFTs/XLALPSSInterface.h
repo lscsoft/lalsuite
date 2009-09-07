@@ -85,12 +85,6 @@ extern PSSTimeseries
  PSSHeaderParams* hp,
  REAL4 f);
 
-extern PSSEventParams
-*XLALIdentifyPSSCleaningEvents
-(PSSEventParams *events,
- PSSTimeseries *ts,
- PSSHeaderParams* hp);
-
 extern PSSTimeseries
 *XLALSubstractPSSCleaningEvents
 (PSSTimeseries *tsout,
