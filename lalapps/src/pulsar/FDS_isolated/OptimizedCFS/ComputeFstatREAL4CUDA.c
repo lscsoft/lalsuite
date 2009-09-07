@@ -750,12 +750,28 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
 
 /* device handling routines */
 /* empty bodies for now for Anton */
-void InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySeriesVector *fstatBandV) {
+int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySeriesVector *fstatBandV) {
   /* these values should all be equal for the whole stackMultiSFT structure, so take them from the first elements */
   UINT4 numSegments = stackMultiSFT->length; /* == nStacks == fstatBandV->length */
   UINT4 numIFOs = stackMultiSFT->data[0]->length;
   UINT4 numBins = fstatBandV->data[0].data->length;
   UINT4 sftDataLength = numBins == stackMultiSFT->data[0]->data[0]->data->data->length;
+  UINT4 i,j;
+
+  if(numIFOs != 2) {
+    XLALPrintError ("InitializeCUDADevice: numIFOs must be 2 (%d)\n", numIFOs);
+    return -1;
+  }
+
+  for(j=0;j<numSegments;j++)
+    for(i=0;i<numIFOs;i++)
+      if (stackMultiSFT->data[j]->data[i]->length > 64) {
+	XLALPrintError ("InitializeCUDADevice: numSFTs must be <= 64 (%d,%d,%d)\n",
+			j,i,stackMultiSFT->data[j]->data[i]->length);
+	return -1;
+      }
+
+  return 0;
 }
 void UnInitializeCUDADevice(void) {
 }
