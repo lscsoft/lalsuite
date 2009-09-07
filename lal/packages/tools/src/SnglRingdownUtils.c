@@ -496,7 +496,7 @@ XLAL3DRinca(
   dt_max_ab = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
   dt_max_ba = dtba + 1.e-9 * XLALLightTravelTime(aDet,bDet);
 
-  /* Search over extned dt loop so ifo order is not an issue */
+  /* Search over extended dt loop so ifo order is not an issue */
 
   if ( dt_min_ab < dt_min_ba )
   {
@@ -515,6 +515,8 @@ XLAL3DRinca(
   {
     dt_max = dt_max_ba;
   }
+
+  printf("new dt loop \n");
 
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
 
