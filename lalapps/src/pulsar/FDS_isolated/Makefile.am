@@ -71,6 +71,7 @@ lalapps_ComputeFStatistic_v2_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=ss
 # CPPFLAGS and LDFLAGS respectively (until LAL/LALAapps have a proper CUDA detection in configure)
 lalapps_ComputeFStatistic_v2_cuda_SOURCES = $(ComputeFStatisticV2Sources) OptimizedCFS/ComputeFstatREAL4CUDA.c OptimizedCFS/FStatCUDA.cu
 lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
+lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
