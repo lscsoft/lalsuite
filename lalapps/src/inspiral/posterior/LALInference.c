@@ -321,10 +321,12 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
 
 
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name)
+/* Returns pointer to element "name" of the ProcessParamsTable, */
+/* if present, and NULL otherwise.                              */
 {
   ProcessParamsTable *this=procparams;
-  while(this!=NULL) { 
-    if(!strcmp(this->param,name)) break;
+  while (this!=NULL) { 
+    if (!strcmp(this->param, name)) break;
     else this=this->next;
   }
   return(this);

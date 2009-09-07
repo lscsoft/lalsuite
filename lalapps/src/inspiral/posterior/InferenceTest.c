@@ -423,7 +423,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 	addVariable(proposedParams, "polarisation",    &psi,		REAL8_t);
 	addVariable(proposedParams, "distance",        &dist,		REAL8_t);  
   
-        /* the "withinPrior" restriction would screw up the sampling (not symmetric any more)!! */
+        /* CR: the "withinPrior" restriction would screw up the sampling (not symmetric any more)!! */
 	//while(!withinPrior)
 	//{
 		mc_proposed=mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
@@ -491,20 +491,20 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 	
 	priorCurrent=runState->prior(runState, runState->currentParams);
 
-        /* again, the within-prior restriction would screw up the sampler!! */
+        /* CR: again, the within-prior restriction would screw up the sampler!! */
 	//while(priorProposed<=0){	
 		runState->proposal(runState, &proposedParams);
 		priorProposed=runState->prior(runState, &proposedParams);
 	//}
 
-        /* you can still save computation time by doing the following: */
+        /* CR: you can still save computation time by doing the following: */
 	if (priorProposed > 0) 
           likelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
         else
           likelihoodProposed = 0;
 
 	likelihoodCurrent=runState->likelihood(runState->currentParams, runState->data, runState->template);
-        /* (the above number should have been stored somwehere from the previous iteration) */
+        /* (CR: the above number should have been stored somwehere from the previous iteration) */
 	
 	acceptanceProbability=likelihoodCurrent*priorCurrent/(likelihoodProposed*priorProposed);
 	

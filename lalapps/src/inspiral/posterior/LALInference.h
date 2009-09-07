@@ -94,18 +94,18 @@ extern size_t typeSize[];
 typedef struct
 tagVariableItem
 {
-  char name[VARNAME_MAX];
-  void * value;
-  VariableType type;
-  struct tagVariableItem * next;
-}LALVariableItem;
+  char                    name[VARNAME_MAX];
+  void                    *value;
+  VariableType            type;
+  struct tagVariableItem  *next;
+} LALVariableItem;
 
 typedef struct
 tagLALVariables
 {
   LALVariableItem * head;
   INT4 dimension;
-}LALVariables;
+} LALVariables;
 
 void *getVariable(LALVariables * vars, const char * name);
 void setVariable(LALVariables * vars, const char * name, void * value);
@@ -154,16 +154,18 @@ typedef void (LALAlgorithm) (struct tagLALInferenceRunState *runState);
 typedef struct 
 tagLALInferenceRunState
 {
-  ProcessParamsTable * commandLine;
-  LALAlgorithm * algorithm;
-  LALEvolveOneStepFunction * evolve;
-  LALPriorFunction * prior;
-  LALLikelihoodFunction * likelihood;
-  LALProposalFunction * proposal;
-  LALTemplateFunction * template;
-  struct tagLALIFOData * data;
-  LALVariables * currentParams, *priorArgs, *proposalArgs;
-  gsl_rng * GSLrandom;
+  ProcessParamsTable        *commandLine;
+  LALAlgorithm              *algorithm;
+  LALEvolveOneStepFunction  *evolve;
+  LALPriorFunction          *prior;
+  LALLikelihoodFunction     *likelihood;
+  LALProposalFunction       *proposal;
+  LALTemplateFunction       *template;
+  struct tagLALIFOData      *data;
+  LALVariables              *currentParams, 
+                            *priorArgs, 
+                            *proposalArgs;
+  gsl_rng                   *GSLrandom;
 } LALInferenceRunState;
 
 
@@ -176,17 +178,19 @@ void injectSignal(struct tagLALIFOData *IFOdata, ProcessParamsTable *commandLine
 typedef struct
 tagLALIFOData
 {
-  REAL8TimeSeries *timeData, *timeModelhPlus, *timeModelhCross;
-  COMPLEX16FrequencySeries *freqData, *freqModelhPlus, *freqModelhCross;
-  LALVariables *modelParams;
-  LALDomain modelDomain;
-  REAL8FrequencySeries *oneSidedNoisePowerSpectrum;
-  REAL8Window *window;
-  REAL8FFTPlan *timeToFreqFFTPlan, *freqToTimeFFTPlan;
-  REAL8 fLow, fHigh;	//integration limits;
-  LALDetector *detector;
-  struct tagLALIFOData *next;
-}LALIFOData;
+  REAL8TimeSeries           *timeData, 
+                            *timeModelhPlus, *timeModelhCross;
+  COMPLEX16FrequencySeries  *freqData, 
+                            *freqModelhPlus, *freqModelhCross;
+  LALVariables              *modelParams;
+  LALDomain                 modelDomain;
+  REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
+  REAL8Window               *window;
+  REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
+  REAL8                     fLow, fHigh;	//integration limits;
+  LALDetector               *detector;
+  struct tagLALIFOData      *next;
+} LALIFOData;
 
 /* Returns the element of the process params table with "name" */
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
