@@ -16,8 +16,6 @@ DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 PREFIX = /opt/lscsoft/lalstochastic
-FRAMEPREFIX = /opt/lscsoft/libframe
-METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
 
 CFLAGS = -Wall -g
@@ -36,7 +34,7 @@ config.status: configure
 
 #	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig \
+	PKG_CONFIG_PATH=$(LALPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
