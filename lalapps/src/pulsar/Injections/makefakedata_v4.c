@@ -1085,7 +1085,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     /* set random-number generator seed: either taken from user or from /dev/urandom */
     if ( LALUserVarWasSet ( &uvar_randSeed ) )
-      cfg->randSeed = uvar_randSeed;
+      {
+        if ( uvar_randSeed == 0 ) {
+          XLALPrintError ("WARNING: setting randSeed==0 results in the system clock being used as a random seed!\n");
+        }
+        cfg->randSeed = uvar_randSeed;
+      }
     else
       {
 	FILE *devrandom;

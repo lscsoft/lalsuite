@@ -146,6 +146,9 @@ LALRegisterLISTUserVar (LALStatus *status,
 /** Register a user-variable with the module.
  *  Effectively put an appropriate entry into UVAR_vars
  *
+ * Checks that long- and short-options are unique, an error is returned
+ * if a previous option name collides.
+ *
  *  \note don't use this directly, as it's not type-safe!!
  *      ==> use one of the 4 wrappers: LALRegisterREALUserVar(),
  *    LALRegisterINTUserVar(), LALRegisterBOOLUserVar(), LALRegisterSTRINGUserVar().
@@ -160,6 +163,7 @@ RegisterUserVar (LALStatus *status,
 		 const CHAR *helpstr,
 		 void *cvar)
 {
+  const char *fn = __func__;
   LALUserVariable *ptr;
 
   INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
@@ -167,10 +171,19 @@ RegisterUserVar (LALStatus *status,
   ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 
-  /* find end of uvar-list */
+  /* find end of uvar-list && check that neither short- nor long-option are taken already */
   ptr = &UVAR_vars;
-  while (ptr->next)
-    ptr = ptr->next;
+  while ( ptr->next && (ptr = ptr->next) )
+    {
+      if ( name && ptr->name && !strcmp(name, ptr->name) ) {
+        XLALPrintError ("%s: Long-option name '--%s' is already taken!\n", fn, name );
+        ABORT (status, USERINPUTH_ENAMECOLL,  USERINPUTH_MSGENAMECOLL);
+      }
+      if ( optchar && ptr->optchar && (optchar == ptr->optchar) ) {
+        XLALPrintError ("%s: Short-option '-%c' is already taken (by '--%s')!\n", fn, ptr->optchar, ptr->name );
+        ABORT (status, USERINPUTH_ENAMECOLL,  USERINPUTH_MSGENAMECOLL);
+      }
+    }
 
   /* create new entry */
   ptr->next = LALCalloc (1, sizeof(LALUserVariable));
@@ -1093,10 +1106,10 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
 
       /* copy the strings into the procparams table */
-      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname );
+      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", progname );
       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
-      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
-      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
+      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", valstr );
+      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", typestr );
 
       LALFree (valstr);
       valstr=NULL;

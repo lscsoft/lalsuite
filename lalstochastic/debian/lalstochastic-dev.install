@@ -1,0 +1,7 @@
+#opt/lscsoft/lalstochastic/bin/lal-config
+opt/lscsoft/lalstochastic/include/lal*
+opt/lscsoft/lalstochastic/lib/*a
+opt/lscsoft/lalstochastic/lib/pkgconfig
+#opt/lscsoft/lalstochastic/share/man/man1/lal-config.1*
+#opt/lscsoft/lalstochastic/share/man/man3/lal.3*
+#opt/lscsoft/lalstochastic/share/lal

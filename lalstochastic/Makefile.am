@@ -1,7 +1,6 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 EXTRA_DIST = doc lalstochastic.pc.in lalstochastic.spec.in \
 	lalstochastic.spec aclocal.m4 \
-	lalstochastic.spec aclocal.m4 \
 	gnuscripts/config.guess \
 	gnuscripts/config.sub \
 	gnuscripts/depcomp \

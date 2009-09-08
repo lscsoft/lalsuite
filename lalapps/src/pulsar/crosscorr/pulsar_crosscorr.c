@@ -132,6 +132,9 @@ int main(int argc, char *argv[]){
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
   COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
+  COMPLEX16Vector *gplus = NULL, *gcross = NULL;
+  static REAL8Vector *aplussq1, *aplussq2, *acrossq1, *acrossq2;
+  
 
   CrossCorrAmps amplitudes;
   CrossCorrBeamFn *beamfns1, *beamfns2;
@@ -183,13 +186,14 @@ int main(int argc, char *argv[]){
   PulsarDopplerParams thisPoint;
   static REAL8Vector *rho, *variance;
   REAL8 tmpstat, freq1, phase1, freq2, phase2;
-
+  REAL8 tmpstat2, tmpstat3, tmpstat4;
 
   REAL8 doppWings, fMin, fMax;
 
 
   /* output file */
   FILE *fp = NULL;
+  FILE *estimator = NULL;
   CHAR filename[MAXFILENAMELENGTH];
 
   /* sft constraint variables */
@@ -299,6 +303,15 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+  if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+    strcpy (filename, uvar_dirnameOut);
+    strcat (filename, "estimator.dat");
+    if ((estimator = fopen(filename, "w")) == NULL) {
+      fprintf(stderr, "error opening estimator output file\n");
+      exit(1);
+  }
+
+  }
   if (uvar_QCoeffs) {
     fprintf(fp, "##Alpha\tDelta\tFrequency\tQ1\tQ2\tBraking Index\tNormalised Power\n");
   }
@@ -486,6 +499,20 @@ int main(int argc, char *argv[]){
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
   variance->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
+  aplussq1 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  aplussq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  acrossq1 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  acrossq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  aplussq1->length = nParams;
+  aplussq2->length = nParams;
+  acrossq1->length = nParams;
+  acrossq2->length = nParams;
+  aplussq1->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+  aplussq2->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+  acrossq1->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+  acrossq2->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+
   /*initialise detector choice*/
   detChoice = uvar_detChoice;
 
@@ -584,6 +611,8 @@ int main(int argc, char *argv[]){
     yalpha = NULL;
     ualpha = NULL;
     sigmasq = NULL;
+    gplus = NULL;
+    gcross = NULL;
 
     counter = 0;
     /* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
@@ -766,6 +795,10 @@ int main(int argc, char *argv[]){
  	          yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
       		  ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
       		  sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
+		  gplus =  XLALResizeCOMPLEX16Vector(gplus, 1 + ualphacounter);
+		  gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
+
+
 
  		  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),
@@ -786,19 +819,20 @@ int main(int argc, char *argv[]){
 		  } else {
 		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
 						 phase1, phase2, *beamfns1, *beamfns2,
-						 sigmasq->data[ualphacounter], psi),
+						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
-		
 		  }
 
 		  ualphacounter++;
                 }
 	      } /*finish loop over sft pairs*/
 
-
 	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
  	      if (ualphacounter > 0) {
 	        tmpstat = 0;
+		tmpstat2 = 0;
+		tmpstat3 =0;
+		tmpstat4 = 0;
 	        LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
 			&status);
 
@@ -807,7 +841,16 @@ int main(int argc, char *argv[]){
 	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
 
-	        variance->data[counter] += tmpstat;
+	        variance->data[counter] += tmpstat;	
+
+	        if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+	 	   LAL_CALL( LALCalculateEstimators( &status, &tmpstat, &tmpstat2, &tmpstat3, &tmpstat4, yalpha, gplus, gcross, sigmasq), &status);
+
+		   aplussq1->data[counter] += tmpstat;
+		   aplussq2->data[counter] += tmpstat2;
+ 		   acrossq1->data[counter] += tmpstat3;
+		   acrossq2->data[counter] += tmpstat4;
+	        }
 	      }
 
 	      counter++;
@@ -817,8 +860,12 @@ int main(int argc, char *argv[]){
 
       XLALDestroyCOMPLEX16Vector(yalpha);
       XLALDestroyCOMPLEX16Vector(ualpha);
+      XLALDestroyCOMPLEX16Vector(gplus);
+      XLALDestroyCOMPLEX16Vector(gcross);
 
       XLALDestroyREAL8Vector(sigmasq);
+
+
 
 
     } /*end if listLength > 1 */
@@ -861,12 +908,15 @@ int main(int argc, char *argv[]){
 	        thisPoint.Alpha = skyAlpha[skyCounter]; 
 	        thisPoint.Delta = skyDelta[skyCounter]; 
 
-	        /*normalise rho by sqrt(2)*stddev */
-
+	        /*normalise rho by stddev */
 	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
+	
+		if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+		   fprintf(estimator, "%1.5f %e %e\n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter]))); 
+		}
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -909,6 +959,11 @@ int main(int argc, char *argv[]){
 
   fclose (fp);
 
+  if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+
+     fclose (estimator);
+
+  }
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
   LALFree(edat->ephemE);
@@ -920,6 +975,14 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
   XLALDestroyREAL8Vector(variance);
   XLALDestroyREAL8Vector(rho);
+      XLALDestroyREAL8Vector(aplussq1);
+      XLALDestroyREAL8Vector(aplussq2);
+      XLALDestroyREAL8Vector(acrossq1);
+      XLALDestroyREAL8Vector(acrossq2);
+
+  if (!uvar_averagePsi) {
+    LALFree(psi);
+  }
 
   if (uvar_QCoeffs) {
     XLALDestroyREAL8Vector(fdots);
