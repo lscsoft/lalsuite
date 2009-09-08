@@ -24,9 +24,11 @@
 #define max(A,B) (((A) > (B)) ? (A) : (B))
 #define NSIGMA 3
 
+typedef double XLALSkymapSphericalPolarType[2];
+        
 typedef struct 
 {
-    XLALSkymap2SphericalPolarType *directions;
+    XLALSkymapSphericalPolarType *directions;
     double* logPosteriors;
     double total_logPosterior;
     int count;
@@ -219,7 +221,7 @@ int main(int argc, char** argv)
    *  for each single detector:
    */
   NetworkProperties* network;
-  NetworkProperties* singleObs;
+  NetworkProperties* singleObs = 0; // Suppress warning
 
   {
     int i,k=0;
@@ -296,7 +298,7 @@ int main(int argc, char** argv)
    *  Analyze the data for the N single-detector cases, and store the net
    *  log posteriors...
    */
-  double* total_logPosteriors;
+  double* total_logPosteriors = 0; // suppress warning
   if( numObs > 1 )
     {
       total_logPosteriors = malloc(sizeof(double) * numObs );
@@ -473,9 +475,9 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
 {
   int i,j;
   
-  XLALSkymap2PlanType* plan;
-  XLALSkymap2DirectionPropertiesType *properties;   
-  XLALSkymap2KernelType *kernels;
+  XLALSkymapPlanType* plan;
+  XLALSkymapDirectionPropertiesType *properties;   
+  XLALSkymapKernelType *kernels;
   
   double** xSw = malloc( sizeof( double* ) * network->N );
   double** xSw2 = malloc( sizeof( double* ) * network->N ); 
@@ -554,7 +556,7 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
    *  the sky tiles implied by the frequency) 
    */
   plan = malloc(sizeof(*plan));
-  XLALSkymap2PlanConstruct( frequency , network->N , network->detectors , plan ); 
+  XLALSkymapPlanConstruct( frequency , network->N , network->detectors , plan ); 
   
   /*
    *  Directions assigned for each pixel, using sine proj.
@@ -578,9 +580,9 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
   properties = malloc(sizeof(*properties) * skyMap->count );
   for (i = 0 ; i != skyMap->count ; ++i)
     {
-      XLALSkymap2DirectionPropertiesConstruct(
+      XLALSkymapDirectionPropertiesConstruct(
  		                              plan, 
-				              skyMap->directions + i,
+				              &((*(skyMap->directions + i))[0]),
 				              properties + i
 				              );
     }// end i for
@@ -624,7 +626,7 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
       for( k = 0 ; k < 4 ; ++k ) /* over 4 waveForm amplitudes */
         {
   	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
-	    XLALSkymap2KernelConstruct( plan , properties + i, wSw, kernels + i );
+	    XLALSkymapKernelConstruct( plan , properties + i, wSw, kernels + i );
           fprintf( stderr , "#samples = %d\n#count= %d\n" , samples , skyMap->count); //<< FIXME	
           
 	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
@@ -635,18 +637,18 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
 	        {
                   double real , imag;
                   //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
-		  XLALSkymap2Apply( plan , 
+		  XLALSkymapApply( plan , 
                                     properties + i , 
                                     kernels + i , 
                                     xSw  , 
-                                    t , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
                                     &real );       
                   //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
-		  XLALSkymap2Apply( plan , 
+		  XLALSkymapApply( plan , 
                                     properties + i , 
                                     kernels + i , 
                                     xSw2 , 
-                                    t , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
                                     &imag );
 		  buffer[t] = real + imag;  
 	        }// end t for

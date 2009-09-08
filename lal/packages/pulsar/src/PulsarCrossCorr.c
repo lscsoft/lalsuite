@@ -398,7 +398,9 @@ void LALCalculateUalpha(LALStatus *status,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq,
-			REAL8     *psi)
+			REAL8     *psi,
+			COMPLEX16 *gplus,
+			COMPLEX16 *gcross)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
@@ -427,6 +429,13 @@ void LALCalculateUalpha(LALStatus *status,
 	          - (sin(deltaPhi) *
 		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
 
+  /*calculate estimators*/
+  gplus->re = 0.25*cos(deltaPhi)*FplusI*FplusJ;
+  gplus->im = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
+
+  gcross->re = 0.25*cos(deltaPhi)*FcrossI*FcrossJ;
+  gcross->im = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
+
 
   }
   else {
@@ -447,6 +456,7 @@ void LALCalculateUalpha(LALStatus *status,
 
   }
 
+	
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
   out->im = -im/(sigmasq);
@@ -524,4 +534,45 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 }
 
+/* Calculate the estimators for Aplus, Asq.
+ * Eqn 6.4 of Dhurandhar et al 2008 */
+void LALCalculateEstimators(LALStatus    *status,
+				REAL8 *aplussq1,
+				REAL8 *aplussq2,
+				REAL8 *acrossq1,
+				REAL8 *acrossq2, 
+				COMPLEX16Vector  *yalpha,
+				COMPLEX16Vector  *gplus,
+				COMPLEX16Vector  *gcross,
+				REAL8Vector      *sigmaAlphasq)
+{
+  INT4 i;
+  REAL8 ap1 = 0, ap2 = 0, ac1 = 0, ac2 = 0;
+
+  INITSTATUS (status, "CalculateEstimators", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (aplussq1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (yalpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+
+
+  for (i=0; i < (INT4)yalpha->length; i++) {
+	ap1 += 2.0*(SQUARE(gplus->data[i].re) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
+	ac1 += 2.0*(SQUARE(gcross->data[i].re) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
+	ap2 += ((yalpha->data[i].re * gplus->data[i].re) - (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i]; 
+	ac2 += ((yalpha->data[i].re * gcross->data[i].re) - (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
+  }
+
+  *aplussq1 = ap1;
+  *aplussq2 = ap2;
+  *acrossq1 = ac1;
+  *acrossq2 = ac2;
+  DETATCHSTATUSPTR (status);
+
+  /* normal exit */
+  RETURN (status);
+
+
+}
 

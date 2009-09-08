@@ -152,12 +152,6 @@ parser.add_option("-H", "--skip-pipedown",action="store_false",\
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
-parser.add_option("-G","--generate-full-data-results-plots",\
-    action="store_true",default=False,dest="generate_results_plots",\
-    help="""Use this option to generate the zero lag full data results plots
-This is independant of --skip-plots and --skip-full-data. DO NOT run with this
-option unless the box has been opened.""")
-
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -294,6 +288,7 @@ os.chdir("segments")
 
 # Determine which veto categories to filter
 veto_categories = [int(cat) for cat in cp.get('segments','veto-categories').split(',')] 
+veto_categories.sort()
 
 # Download the veto definer xml file
 vetoDefFile = inspiralutils.downloadVetoDefFile(cp, opts.generate_segments)
@@ -682,10 +677,7 @@ if opts.run_pipedown:
   if len(parentNodes) == 0:
     parentNodes = None
 
-  if opts.generate_results_plots:
-    playgroundOnly = False
-  else:
-    playgroundOnly = True
+  playgroundOnly = False
 
   print "Running lalapps_pipedown"
   dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
@@ -702,14 +694,15 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality:
-      parentVetoNodes = [hipePlayVetoNode[3]]
+      parentVetoNodes = [hipePlayVetoNode]
     else: parentVetoNodes = None
     
     # make the playground slide/zerolag plots
     print "Making plots depending only on the playground"
     dag = inspiralutils.zeroSlidePlots(dag, "playground_summary_plots", cp, \
         opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, \
+        veto_categories, ifos)
 
   if opts.run_playground and opts.run_full_data:
 
@@ -719,14 +712,33 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality and opts.run_playground:
-      parentVetoNodes = [hipePlayVetoNode[3], hipeAnalysisVetoNode[3]]
+      parentVetoNodes = [hipePlayVetoNode, hipeAnalysisVetoNode]
     else: parentVetoNodes = None
 
     # make the playground slide/zerolag plots
     print "Making plots with full data slides, playground zero lag"
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, \
+        veto_categories, ifos)
+ 
+  if opts.run_full_data:
+
+    # set up parents correctly
+    parentNodes = None
+    parentVetoNodes = None
+    if opts.run_full_data:
+      if opts.run_search:
+        parentNodes = [hipeAnalysisNode]
+      if opts.run_data_quality:
+        parentVetoNodes = [hipeAnalysisVetoNode]
+
+    # make the full data slide/zerolag plots
+    print "Making full data zero lag plots."
+    dag = inspiralutils.zeroSlidePlots(dag, "full_data_summary_plots", cp, \
+          opts.log_path, "FULL_DATA", "FULL_DATA", "../" + cachefilename, \
+          opts.do_dag_categories, parentNodes, parentVetoNodes, veto_categories , ifos)
+
 
   # Setting up plots for software injection run.
   if opts.run_injections:
@@ -753,17 +765,17 @@ if opts.run_plots:
       else: parentNodes = None
 
       if opts.run_data_quality:
-        parentVetoNodes = [hipeInjVetoNode[4][injDir]]
+        parentVetoNodes = [hipeInjVetoNode[veto_categories[-1]][injDir]]
         if opts.run_full_data:
-          parentVetoNodes.append(hipeAnalysisVetoNode[3])
+          parentVetoNodes.append(hipeAnalysisVetoNode[veto_categories[-1]])
         if opts.run_playground:
-          parentVetoNodes.append(hipePlayVetoNode[3])
+          parentVetoNodes.append(hipePlayVetoNode[veto_categories[-1]])
       else: parentVetoNodes = None
 
       dag = inspiralutils.injZeroSlidePlots(dag, injDir + "_summary_plots", \
           cp, opts.log_path, injDir.upper(), zeroLagSuffix, slideSuffix, \
           "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-          parentVetoNodes, 3, ifos)
+          parentVetoNodes, veto_categories, ifos)
 
     print "Making plots of all injection runs together"
 
@@ -777,37 +789,21 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality:
-      parentVetoNodes = hipeInjVetoNode[4].values()
+      parentVetoNodes = hipeInjVetoNode[veto_categories[-1]].values()
       if opts.run_playground:
-        parentVetoNodes.append(hipePlayVetoNode[3])
+        parentVetoNodes.append(hipePlayVetoNode[veto_categories[-1]])
       if opts.run_full_data:
-        parentVetoNodes.append(hipeAnalysisVetoNode[3])
+        parentVetoNodes.append(hipeAnalysisVetoNode[veto_categories[-1]])
     else: parentVetoNodes = None
 
     dag = inspiralutils.injZeroSlidePlots(dag, "allinj_summary_plots", cp, \
         opts.log_path, "*INJ", zeroLagSuffix, slideSuffix, \
         "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-        parentVetoNodes, 3, ifos)
+        parentVetoNodes, veto_categories, ifos)
 
   if opts.do_dag_categories:
     dag.add_maxjobs_category('plotting',2)
 
-if opts.generate_results_plots:
-  # set up parents correctly
-  parentNodes = None
-  parentVetoNodes = None
-  if opts.run_full_data:
-    if opts.run_search:
-      parentNodes = [hipeAnalysisNode]
-    if opts.run_data_quality:
-      parentVetoNodes = [hipeAnalysisVetoNode[3]]
-
-  # make the full data slide/zerolag plots
-  print "Making full data zero lag plots."
-  dag = inspiralutils.zeroSlidePlots(dag, "full_data_summary_plots", cp, \
-        opts.log_path, "FULL_DATA", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 3, ifos)
-                             
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
 if opts.run_followup:

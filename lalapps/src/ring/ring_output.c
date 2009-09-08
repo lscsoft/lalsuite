@@ -242,6 +242,7 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
   searchSummary->out_end_time   = outEndTime;
   XLALGPSAdd( &searchSummary->out_end_time, 1.0 * params->padData);
   searchSummary->nevents        = params->numEvents;
+  strncpy( searchSummary->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
 
   return searchSummary;
 }

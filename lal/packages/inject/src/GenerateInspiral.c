@@ -388,6 +388,10 @@ LALGetApproximantFromString(
   {
     *approximant = GeneratePPN;
   }
+  else if ( strstr(thisEvent, "TaylorT4" ) )
+  {
+    *approximant = TaylorT4;
+  }
   else if ( strstr(thisEvent, "NumRel" ) )
   {
     *approximant = NumRel;

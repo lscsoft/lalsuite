@@ -966,7 +966,7 @@ def pipedownSetup(dag,config,logPath,pipedownDir,\
 # Function to set up zero/slide plots:
 def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix, 
     cacheFile, doDagCategories, parentDags = None, vetoParentDags = None, 
-    vetoCat = 3, ifos = []):
+    vetoCat = [2,3,4], ifos = []):
   """
   set up plots for zero lag and time slides
   dag       = the dag
@@ -1003,29 +1003,30 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
       plotNode.add_parent(thisDag)
 
   # second stage (require DQ) 
-  vetoString = "_CAT_" + str(vetoCat) + "_VETO"
-  plotcp = copy.deepcopy(config)
-  plotcp.add_section("plot-arguments")
-  plotcp.set("plot-arguments","plotinspiral","")
-  plotcp.set("plot-arguments","plotthinca","")
-  plotcp.set("plot-arguments","write-script","")
-  if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
-    plotcp.set("plotthinca","zero-lag-playground","")
-  plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
-      "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
-      slideSuffix + vetoString, cacheFile, "", \
-      tag=vetoString[1:], ifos=ifos, cat=vetoCat)
-  if doDagCategories:
-    plotVetoNode.set_category('plotting')
-  dag.add_node(plotVetoNode)
-  if parentDags:
-    for thisDag in parentDags: 
-      plotVetoNode.add_parent(thisDag)
-  if vetoParentDags:
-    for thisDag in vetoParentDags:
-      plotVetoNode.add_parent(thisDag)
-  if not doDagCategories:
-    plotVetoNode.add_parent(plotNode)
+  for cat in vetoCat:
+    vetoString = "_CAT_" + str(cat) + "_VETO"
+    plotcp = copy.deepcopy(config)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotinspiral","")
+    plotcp.set("plot-arguments","plotthinca","")
+    plotcp.set("plot-arguments","write-script","")
+    if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
+      plotcp.set("plotthinca","zero-lag-playground","")
+    plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
+        "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
+        slideSuffix + vetoString, cacheFile, "", \
+        tag=vetoString[1:], ifos=ifos, cat=cat)
+    if doDagCategories:
+      plotVetoNode.set_category('plotting')
+    dag.add_node(plotVetoNode)
+    if parentDags:
+      for thisDag in parentDags: 
+        plotVetoNode.add_parent(thisDag)
+    if vetoParentDags:
+      for thisDag in vetoParentDags:
+        plotVetoNode.add_parent(thisDag[cat])
+    if not doDagCategories:
+      plotVetoNode.add_parent(plotNode)
 
   return dag
 
@@ -1033,7 +1034,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
 # Function to set up inj/zero/slide plots:
 def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
     zerolagSuffix, slideSuffix, cacheFile, doDagCategories, parentDags = None, 
-    vetoParentDags = None, vetoCat = 3, ifos = []):
+    vetoParentDags = None, vetoCat = [2,3,4], ifos = []):
   """
   set up plots for injections, zero lag and time slides
   dag       = the dag
@@ -1069,36 +1070,37 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
       injPlotNode.add_parent(thisDag)
 
   # second stage
-  vetoString = "_CAT_" + str(vetoCat) + "_VETO"
-  plotcp = copy.deepcopy(config)
-  plotcp.add_section("plot-arguments")
-  plotcp.set("plot-arguments","plotinspinj","")
-  plotcp.set("plot-arguments","plotsnrchi","")
-  plotcp.set("plot-arguments","plotethinca","")
-  plotcp.set("plot-arguments","plotinjnum","")
-  plotcp.set("plot-arguments","plotinspmissed","")
-  plotcp.set("plot-arguments","plotinspfound","")
-  plotcp.set("plot-arguments","plotcoincmissed","")
-  plotcp.set("plot-arguments","ploteffdistcut","")
-  plotcp.set("plot-arguments","write-script","")
-  injPlotVetoNode = plot_setup( plotDir, \
-      plotcp, logPath, "second", injectionSuffix + vetoString, \
-      zerolagSuffix + vetoString, slideSuffix + vetoString, \
-      injectionSuffix + vetoString, cacheFile, injectionSuffix, \
-      tag=vetoString[1:], ifos=ifos, cat=vetoCat)
-  if doDagCategories:
-    injPlotVetoNode.set_category('plotting')
-  dag.add_node(injPlotVetoNode)
+  for cat in vetoCat:
+    vetoString = "_CAT_" + str(cat) + "_VETO"
+    plotcp = copy.deepcopy(config)
+    plotcp.add_section("plot-arguments")
+    plotcp.set("plot-arguments","plotinspinj","")
+    plotcp.set("plot-arguments","plotsnrchi","")
+    plotcp.set("plot-arguments","plotethinca","")
+    plotcp.set("plot-arguments","plotinjnum","")
+    plotcp.set("plot-arguments","plotinspmissed","")
+    plotcp.set("plot-arguments","plotinspfound","")
+    plotcp.set("plot-arguments","plotcoincmissed","")
+    plotcp.set("plot-arguments","ploteffdistcut","")
+    plotcp.set("plot-arguments","write-script","")
+    injPlotVetoNode = plot_setup( plotDir, \
+        plotcp, logPath, "second", injectionSuffix + vetoString, \
+        zerolagSuffix + vetoString, slideSuffix + vetoString, \
+        injectionSuffix + vetoString, cacheFile, injectionSuffix, \
+        tag=vetoString[1:], ifos=ifos, cat=cat)
+    if doDagCategories:
+      injPlotVetoNode.set_category('plotting')
+    dag.add_node(injPlotVetoNode)
+ 
+    if parentDags:
+      for thisDag in parentDags:
+        injPlotVetoNode.add_parent(thisDag)
+    if vetoParentDags:
+      for thisDag in vetoParentDags:
+        injPlotVetoNode.add_parent(thisDag)
 
-  if parentDags:
-    for thisDag in parentDags:
-      injPlotVetoNode.add_parent(thisDag)
-  if vetoParentDags:
-    for thisDag in vetoParentDags:
-      injPlotVetoNode.add_parent(thisDag)
-
-  if not doDagCategories:
-    injPlotVetoNode.add_parent(injPlotNode)
+    if not doDagCategories:
+      injPlotVetoNode.add_parent(injPlotNode)
 
   return dag
 
