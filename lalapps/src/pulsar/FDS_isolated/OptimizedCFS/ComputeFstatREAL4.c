@@ -160,6 +160,27 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
+#ifdef AUTOVECT_HOTLOOP
+  {
+    static int firstcall = -1;
+    nDterms = 4 * (Dterms / 4);
+    if ((firstcall) && (Dterms != nDterms)) {
+      firstcall = 0;
+      fprintf (stderr, "WARNING: continuing with Dterms = %d instead of the passed %d\n", nDterms, Dterms);
+    }
+    Dterms = nDterms;
+  }
+#elif __ALTIVEC__ || __SSE__
+  {
+    static int firstcall = -1;
+    if ((firstcall) && (Dterms != 8)) {
+      firstcall = 0;
+      fprintf (stderr, "WARNING: continuing with Dterms = 8 instead of the passed %d\n", Dterms);
+    }
+    Dterms = 8;
+  }
+#endif
+
   numBins = fstatBandV->data[0].data->length;
   f0      = fstatBandV->data[0].f0;
   deltaF  = fstatBandV->data[0].deltaF;
