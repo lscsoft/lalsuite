@@ -83,8 +83,6 @@ NRCSID(TEMPORARY,"$Blah$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/*----- SWITCHES -----*/
-#define NUM_SPINS 3		/* number of spin-values to consider: {f, fdot, f2dot, ... } */
 
 /*----- Error-codes -----*/
 #define COMPUTEFSTATISTIC_ENULL 	1
@@ -324,7 +322,7 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X);
 void Reshuffle(COMPLEX16Vector *X);
 void PrintL(FFTWCOMPLEXSeries* L,REAL8 min,REAL8 step);
 void ApplyHetCorrection(REAL8Sequence *BaryTimes, REAL8Sequence *DetectorTimes,  const REAL8Sequence *Real, const REAL8Sequence *Imag, REAL8Sequence *Times, MultiCOMPLEX8TimeSeries *TSeries, REAL8Sequence* Real_Corrected, REAL8Sequence* Imag_Corrected);
-void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSeries *FaIn, const FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime, FFTWCOMPLEXSeries *FaInSpinCorrected, FFTWCOMPLEXSeries *FbInSpinCorrected);
+void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSeries *FaIn, const FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime, FFTWCOMPLEXSeries *FaInSpinCorrected, FFTWCOMPLEXSeries *FbInSpinCorrected,UINT4 NUM_SPINS);
 void ApplyAandB(REAL8Sequence *FineBaryTimes,REAL8Sequence *BaryTimes,REAL8Sequence *a,REAL8Sequence *b,REAL8Sequence *Real,REAL8Sequence *Imag,FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 TSFT);
 double sinc(double t);
 void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size, UINT4 terms);
@@ -333,7 +331,6 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag);
 MultiREAL8Sequence* XLALCreateMultiREAL8Sequence(UINT4 length);
 void XLALDestroyMultiREAL8Sequence(MultiREAL8Sequence *X);
-REAL8 DeltaF_RefTime(const PulsarSpins *SpinDowns,REAL8 refTime, REAL8 StartTime);
 
 /* Resampling prototypes (end) */
 
@@ -485,6 +482,8 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
   while ((XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
+      REAL8 deltaF_refTime = 0;
+
       /* main function call: compute F-statistic over frequency-band  */ 
       LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,&Vars), &status );
 
@@ -501,10 +500,17 @@ int main(int argc,char *argv[])
 		     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
 	}
 
+      {
+	REAL8 Freq_InternalRefTime = dopplerpos.fkdot[0];
+	LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );
+	deltaF_refTime = dopplerpos.fkdot[0] - Freq_InternalRefTime;
+	dopplerpos.refTime = GV.refTime;
+      }
+
       for ( k=0; k < fstatVector->data->length; k++)
 	{
 	  REAL8 thisF = fstatVector->data->data[k];
-	  REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF;
+	  REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF + deltaF_refTime;
 	  /* sanity check on the result */
 	  if ( !finite ( thisF ) )
 	    {
@@ -516,10 +522,7 @@ int main(int argc,char *argv[])
 	    }
 
 	  /* propagate fkdot from internalRefTime back to refTime for outputting results */
-	  /* FIXE: only do this for candidates we're going to write out */
 	  dopplerpos.fkdot[0] = thisFreq;
-	  /*LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );*/
-	  dopplerpos.refTime = GV.refTime;
 
 	  /* correct normalization in --SignalOnly case:
 	   * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of
@@ -989,8 +992,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar_Freq - uvar_FreqBand/2.0 , uvar_Freq + 3.0*uvar_FreqBand/2.0 );
-    REAL8 fMax = MYMAX ( uvar_Freq - uvar_FreqBand/2.0 , uvar_Freq + 3.0*uvar_FreqBand/2.0 );
+    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
     REAL8 f1dotMax = MYMAX ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
@@ -1062,9 +1065,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
     REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
     REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / cfg->Tsft;
+    REAL8 LoadedBand = fMax - fMin;
+    REAL8 fMax_Load = fMax + LoadedBand/2.0;
+    REAL8 fMin_Load = fMin - LoadedBand/2.0;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin_Load, fMax_Load ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
@@ -2586,20 +2592,8 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   return(CorrespondingDetTimes);
 
 }
-
-REAL8 DeltaF_RefTime(const PulsarSpins *SpinDowns,REAL8 refTime, REAL8 StartTime)
-{
-  UINT4 i;
-  REAL8 dF = 0;
-  REAL8 dT = refTime - StartTime;
-  for(i=1;i<NUM_SPINS;i++)
-    {
-      dF += (*SpinDowns)[i] * pow(dT,i)/FactorialLookup[i];
-    }
-  return(dF);
-}
   
-void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSeries *FaIn, const FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime, FFTWCOMPLEXSeries *FaInSpinCorrected, FFTWCOMPLEXSeries *FbInSpinCorrected)
+void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSeries *FaIn, const FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime, FFTWCOMPLEXSeries *FaInSpinCorrected, FFTWCOMPLEXSeries *FbInSpinCorrected,UINT4 NUM_SPINS)
 {
   UINT4 i;
   UINT4 j;
@@ -2779,6 +2773,14 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   /* The output fstatVector */
   REAL8FrequencySeries *fstatVector = NULL;
 
+  /* Calculate the number of non-zero spins and pass that to apply spin downs to save computation */
+  UINT4 NUM_SPINS;
+  for(NUM_SPINS = PULSAR_MAX_SPINS;NUM_SPINS <= PULSAR_MAX_SPINS;NUM_SPINS--)
+    {
+      if(doppler->fkdot[NUM_SPINS-1])
+	break;
+    }
+
   /* Allocate Memory to some common variables */
   Fa_Real = XLALCreateREAL8Sequence(new_length);
   Fb_Real = XLALCreateREAL8Sequence(new_length);
@@ -2808,7 +2810,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       UINT4 numFreqBins = floor(uvar_FreqBand/dF_closest + 0.5);
       if(Buffer->fstatVector)
 	XLALDestroyREAL8FrequencySeries(Buffer->fstatVector);
-      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, uvar_Freq, dF_closest, &empty_Unit, numFreqBins );
+      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, doppler->fkdot[0], dF_closest, &empty_Unit, numFreqBins );
       Buffer->fstatVector = fstatVector;
     }
       
@@ -3128,9 +3130,9 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       
       /* Make Plans */
       plan_a = fftw_plan_dft_1d(FaInSpinCorrected->length,FaInSpinCorrected->data,FaOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
-      plan_b = fftw_plan_dft_1d(FbInSpinCorrected->length,FbInSpinCorrected->data,FbOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
+      plan_b = fftw_plan_dft_1d(FbInSpinCorrected->length,FbInSpinCorrected->data,FbOut->data,FFTW_FORWARD,FFTW_ESTIMATE);	    
 
-      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],0,FaInSpinCorrected,FbInSpinCorrected);
+      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],GPS2REAL8(doppler->refTime) - StartTime,FaInSpinCorrected,FbInSpinCorrected,NUM_SPINS);
 
       /* FFT!! */
       fftw_execute(plan_a);
@@ -3166,15 +3168,14 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     UINT4 fmin_index = 0;
     UINT4 fstatVectorlength = fstatVector->data->length;
     UINT4 q,r;
-    REAL8 New_Het = TSeries->f_het + DeltaF_RefTime(&(doppler->fkdot),uvar_refTime,StartTime); 
     if(fstatVectorlength > new_length)
       {
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
 	exit(1);
       }
-    if(New_Het > fstatVector->f0 && New_Het < fstatVector->f0 + uvar_FreqBand)
+    if(TSeries->f_het > fstatVector->f0 && TSeries->f_het < fstatVector->f0 + uvar_FreqBand)
       {
-	fmin_index = floor((New_Het-fstatVector->f0)/dF_closest + 0.5);
+	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
 	q = 0;
 	for(r=new_length-fmin_index;r<new_length;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];
@@ -3182,16 +3183,16 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	while(q<fstatVectorlength)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r++];
       }
-    else if(New_Het < fstatVector->f0)
+    else if(TSeries->f_het < fstatVector->f0)
       {
-	fmin_index = floor((fstatVector->f0-New_Het)/dF_closest + 0.5);
+	fmin_index = floor((fstatVector->f0-TSeries->f_het)/dF_closest + 0.5);
 	q = 0;
 	for(r = fmin_index;r<fstatVector->data->length+fmin_index;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];
       }
     else
       {
-	fmin_index = floor((New_Het-fstatVector->f0)/dF_closest + 0.5);
+	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
 	q = 0;
 	for(r=new_length-fmin_index;r<new_length-fmin_index+fstatVectorlength;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];
