@@ -100,11 +100,17 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
 PKG_CHECK_MODULES([LAL],[lal >= 6.4],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
-AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
 
 # check for lalsupport, needed for test suite
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+
+# check libraries if not a top-level build
+if test "$LALSUITE_BUILD" = "true" ; then
+  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
+else
+  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
+  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+fi
 AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
 
 # add gcc specific flags
