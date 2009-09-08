@@ -79,8 +79,8 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
 /*---------- Global variables ----------*/
-#define NUM_FACT 6
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0) };
+static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
+
 
 /* empty initializers  */
 static const LALStatus empty_status;
@@ -398,12 +398,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
-    {
-      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
-    }
 #endif
 
   if ( params->upsampling > 1 ) {
