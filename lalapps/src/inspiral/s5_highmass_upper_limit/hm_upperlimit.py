@@ -19,6 +19,8 @@ from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
 from glue.ligolw import table
+from glue import segmentsUtils
+
 from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
@@ -70,10 +72,10 @@ class upper_limit(object):
         sim = False
 
       if not sim: 
-        self.get_far_thresholds(connection)
         if opts.veto_segments_name is not None: self.veto_segments = db_thinca_rings.get_veto_segments(connection, opts.veto_segments_name)
         self.get_instruments(connection)
         self.segments += db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = opts.live_time_program)
+        self.get_far_thresholds(connection)
       else: 
         self.get_mass_ranges(connection)
       
@@ -84,17 +86,18 @@ class upper_limit(object):
 
     # FIXME Do these have to be done by instruments?
     self.segments -= self.veto_segments
-    
+
     # compute far, segments and livetime by instruments
     for i in self.instruments:
       self.far[i] = min(self.far[i])
-      #FIXME this bombs if any of the FARS are zero. maybe it should continue
-      #and just remove that instrument combo from the calculation
+      # FIXME this bombs if any of the FARS are zero. maybe it should continue
+      # and just remove that instrument combo from the calculation
       if self.far[i] == 0: 
         print >> sys.stderr, "Encountered 0 FAR in %s, ABORTING" % (i,)
         sys.exit(1)
       self.zero_lag_segments[i] = self.segments.intersection(i) - self.segments.union(set(self.segments.keys()) - i)
-      self.livetime[i] = float(abs(self.zero_lag_segments[i]))
+      # Livetime must have playground removed
+      self.livetime[i] = float(abs(self.zero_lag_segments[i] - segmentsUtils.S2playground(self.segments.extent_all())))
       if opts.verbose: print >> sys.stderr, "%s FAR %e, livetime %f" % (",".join(sorted(list(i))), self.far[i], self.livetime[i])
 
     # get a 2D mass binning
@@ -147,7 +150,15 @@ class upper_limit(object):
     query = 'CREATE TEMPORARY TABLE distinct_instruments AS SELECT DISTINCT(instruments) as instruments FROM coinc_event;'
     connection.cursor().execute(query)
     
-    query = 'SELECT distinct_instruments.instruments, (SELECT MIN(coinc_inspiral.combined_far) AS combined_far FROM coinc_inspiral JOIN coinc_event ON (coinc_inspiral.coinc_event_id == coinc_event.coinc_event_id) WHERE coinc_event.instruments == distinct_instruments.instruments AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0)) FROM distinct_instruments;'
+    def create_is_playground_func( connection, playground_segs = segmentsUtils.S2playground(self.segments.extent_all()) ):
+      """
+      Construct the is_playground() SQL function.
+      """
+      connection.create_function("is_playground", 2, lambda seconds, nanoseconds: LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
+
+    create_is_playground_func(connection)
+
+    query = 'SELECT distinct_instruments.instruments, (SELECT MIN(coinc_inspiral.combined_far) AS combined_far FROM coinc_inspiral JOIN coinc_event ON (coinc_inspiral.coinc_event_id == coinc_event.coinc_event_id) WHERE coinc_event.instruments == distinct_instruments.instruments AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0) AND NOT is_playground(coinc_inspiral.end_time, coinc_inspiral.end_time_ns) ) FROM distinct_instruments;'
 
     for inst, far in connection.cursor().execute(query):
       inst = frozenset(lsctables.instrument_set_from_ifos(inst))
@@ -444,6 +455,16 @@ WHERE
     #m_dist_low = m_dist_low[m_dist_low <= mxd]
     out =  [sim for sim in sims if mnd <= sim.distance <= mxd]
     return out, numpy.array([l.distance for l in out])
+
+#### STUFF FOR PLAYGROUND ####
+
+#playground_segs = segmentsUtils.S2playground(self.seglists.extent_all())
+
+#def create_is_playground_func(connection, playground_segs):
+#        """
+#        Construct the is_playground() SQL function.
+#        """
+#        connection.create_function("is_playground", 2, lambda seconds, nanoseconds: LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
  
 
 ######################## ACTUAL PROGRAM #######################################
