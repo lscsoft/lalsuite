@@ -225,7 +225,7 @@ int main( int argc, char **argv )
   }
 
 
-  cohPTFoldStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
+  cohPTFStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
   fprintf(stdout,"Made coherent statistic %ld \n", time(NULL)-startTime);
  
   exit(0);
@@ -551,8 +551,8 @@ void cohPTFStatistic(
   FILE *outfile;
   REAL4 deltaT = 1./4076.;
   REAL4 numpi = 3.141592654;
-  UINT4 numvarphi = 1.;
-  UINT4 numTheta = 1.;
+  UINT4 numvarphi = 40.;
+  UINT4 numTheta = 40.;
 
   beta = 0.5;
   lamda = 2.13;
@@ -597,11 +597,11 @@ void cohPTFStatistic(
             N = Ntmp[0]*Ntmp[1] + Ntmp[2]*Ntmp[3];
             ZH[j*5+k] += a[l]*a[m] * N;
             SH[j*5+k] += b[l]*b[m] * N;
-            YU[j*5+k] += a[l]*b[m] * N;
+            YU[j*5+k] += 2.* a[l]*b[m] * N;
           }
           zh[j*5+k] += a[l]*a[l] * PTFM[l]->data[j*5+k];
           sh[j*5+k] += b[l]*b[l] * PTFM[l]->data[j*5+k];
-          yu[j*5+k] += a[l]*b[l] * PTFM[l]->data[j*5+k];
+          yu[j*5+k] += 2.*a[l]*b[l] * PTFM[l]->data[j*5+k];
         }
       }
     }
@@ -636,13 +636,13 @@ void cohPTFStatistic(
           for (k = 0; k < 5; k++)
           {
             A[0]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
-            A[0]+=P[2*j]*P[2*k+1]*YU[j*5+k];
             A[1]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
+            A[1]+=P[2*j]*P[2*k+1]*YU[j*5+k];
             A[2]+=P[2*j]*P[2*k+1]*(ZH[j*5+k]-SH[j*5+k]);
             A[2]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*YU[j*5+k];
             A[3]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
-            A[3]+=P[2*j]*P[2*k+1]*yu[j*5+k];
             A[4]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
+            A[4]+=P[2*j]*P[2*k+1]*yu[j*5+k];
             A[5]+=P[2*j]*P[2*k+1]*(zh[j*5+k]-sh[j*5+k]);
             A[5]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*yu[j*5+k];       
           }
@@ -657,8 +657,16 @@ void cohPTFStatistic(
         A[9] = (CEmBF*BDmAE - A[7]*AFmCD) / pow(A[6],2.);
         A[10] = (-A[7]*BDmAE + CEmBF*AFmCD) / pow(A[6],2.);
         A[11] = (CEmBF*BDmAE + A[7]*AFmCD) / pow(A[6],2.);
-        tempSNR[0] = 0.5*(A[0]+A[1]*A[8]+A[2]*A[9])/(A[3]+A[4]*A[8]+A[5]*A[9]);
-        tempSNR[1]=0.5*(A[0]+A[1]*A[10]+A[2]*A[11])/(A[3]+A[4]*A[10]+A[5]*A[11]);
+        if ( A[8] > (1. + 1E-7) )
+          fprintf(stderr,"Error cos psi is greater than one %lf",A[8]);
+        if ( A[9] > (1. + 1E-7) )
+          fprintf(stderr,"Error sin psi is greater than one %lf",A[9]);
+        if ( A[10] > (1. + 1E-7) )
+          fprintf(stderr,"Error cos psi 2 is greater than one %lf",A[10]);
+        if ( A[11] > (1. + 1E-7) )
+          fprintf(stderr,"Error sin psi 2 is greater than one %lf",A[11]);
+        tempSNR[0] = (A[0]+A[1]*A[8]+A[2]*A[9])/(A[3]+A[4]*A[8]+A[5]*A[9]);
+        tempSNR[1] = (A[0]+A[1]*A[10]+A[2]*A[11])/(A[3]+A[4]*A[10]+A[5]*A[11]);
         if ( tempSNR[0] > cohSNR[i])
           cohSNR[i] = tempSNR[0];
         if ( tempSNR[1] > cohSNR[i])
@@ -675,9 +683,6 @@ void cohPTFStatistic(
 
 }
 
-  
-  
-
 void cohPTFoldStatistic(
     REAL4Array                 *h1PTFM,
     COMPLEX8VectorSequence     *h1PTFqVec,
@@ -689,6 +694,7 @@ void cohPTFoldStatistic(
   UINT4 numPoints,i,j,k;
   REAL4 MsumH,MsumL,MsumV,Msum;
   REAL4Vector *Asum,*Bsum,*SNR;
+  REAL4 P[15];
   FILE *outfile;
   REAL4 deltaT = 1./4076.;
   numPoints = h1PTFqVec->vectorLength;
@@ -696,7 +702,38 @@ void cohPTFoldStatistic(
   Asum = XLALCreateREAL4Vector( numPoints );
   Bsum = XLALCreateREAL4Vector( numPoints );
   SNR = XLALCreateREAL4Vector( numPoints );
+  P[0] = 1.;
+  P[1] = 1.11503773;
+  P[2] = 0.61949214;
+  P[3] = 0.65593259;
+  P[4] = 0.27879013;
+  P[5] = 0.37759221;
+  P[6] = 0.47075501;
+  P[7] = 0.14902839;
+  P[8] = 0.20966414;
+  P[9] = 0.47096755;
+  P[10] = 1.100864;
+  P[11] = 1.2352822;
+  P[12] = 0.66869988;
+  P[13] = 0.7161475;
+  P[14] = 0.36410693;
+/*  P[0] = 0.;
+  P[1] = 0.;
+  P[2] = 0.;
+  P[3] = 0.;
+  P[4] = 0.;
+  P[5] = 0.;
+  P[6] = 0.;
+  P[7] = 0.;
+  P[8] = 0.;
+  P[9] = 0.;
+  P[10] = 0.;
+  P[11] = 0.;
+  P[12] = 0.;
+  P[13] = 0.;
+  P[14] = 0.; */
   
+
   memset( Asum->data, 0, Asum->length * sizeof(REAL4) );
   memset( Bsum->data, 0, Bsum->length * sizeof(REAL4) );
   memset( SNR->data, 0, Bsum->length * sizeof(REAL4) );
@@ -705,12 +742,12 @@ void cohPTFoldStatistic(
   {
     for ( j = 0; j < 5; j++ )
     {
-      Asum->data[i] += 1. * h1PTFqVec->data[i + j*numPoints].re;
-      Asum->data[i] += 1. * l1PTFqVec->data[i + j*numPoints].re;
-      Asum->data[i] += 1. * v1PTFqVec->data[i + j*numPoints].re;
-      Bsum->data[i] += 1. * h1PTFqVec->data[i + j*numPoints].im;
-      Bsum->data[i] += 1. * l1PTFqVec->data[i + j*numPoints].im;
-      Bsum->data[i] += 1. * v1PTFqVec->data[i + j*numPoints].im;
+      Asum->data[i] += P[j] * h1PTFqVec->data[i + j*numPoints].re;
+      Asum->data[i] += P[j+5] * l1PTFqVec->data[i + j*numPoints].re;
+      Asum->data[i] += P[j+10] * v1PTFqVec->data[i + j*numPoints].re;
+      Bsum->data[i] += P[j] * h1PTFqVec->data[i + j*numPoints].im;
+      Bsum->data[i] += P[j+5] * l1PTFqVec->data[i + j*numPoints].im;
+      Bsum->data[i] += P[j+10] * v1PTFqVec->data[i + j*numPoints].im;
     }
   }
   
@@ -722,13 +759,14 @@ void cohPTFoldStatistic(
   {
     for ( j = 0; j < 5; j++ )
     {
-      MsumH += 1.* 1.* h1PTFM->data[i + j*5];
-      MsumL += 1.* 1.* l1PTFM->data[i + j*5];
-      MsumV += 1.* 1.* v1PTFM->data[i + j*5];
+      MsumH += P[i]* P[j]* h1PTFM->data[i + j*5];
+      MsumL += P[i+5]* P[j+5]* l1PTFM->data[i + j*5];
+      MsumV += P[i+10]* P[j+10]* v1PTFM->data[i + j*5];
     }
   }
-  
-  Msum = pow(MsumH*MsumH+MsumL*MsumL+MsumV+MsumV,0.5);
+
+  Msum = MsumH + MsumL + MsumV;  
+/*  Msum = pow(MsumH*MsumH+MsumL*MsumL+MsumV+MsumV,0.5);*/
   for ( i = 0; i < numPoints ; i++ )
   {
     SNR->data[i] = (pow(Asum->data[i],2.) + pow(Bsum->data[i],2))/Msum;
