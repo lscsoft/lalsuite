@@ -38,10 +38,7 @@ config.status: configure
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
-	    --enable-nightly=no \
-	    --enable-frame --enable-metaio \
-	    --disable-gcc-flags \
-	    --disable-debug
+	    --disable-gcc-flags
 
 build: build-stamp
 
