@@ -1,0 +1,5 @@
+#opt/lscsoft/lalstochastic/bin/lal-version
+opt/lscsoft/lalstochastic/etc/*
+#opt/lscsoft/lalstochastic/etc/*-user-env.*
+opt/lscsoft/lalstochastic/lib/*.so*
+#opt/lscsoft/lalstochastic/share/lal
