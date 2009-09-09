@@ -118,7 +118,7 @@ int finite(double x);
     they must be correctly set outside this function.
 */
 void ComputeFStatFreqBand ( LALStatus *status,
-			    REAL8FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
+			    REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
@@ -1715,7 +1715,7 @@ LALGetMultiBinarytimes (LALStatus *status,
 
 /** For a given DetectorStateSeries, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
- *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
+ *  derivatives \f$\dot{T}_\alpha \equiv d T / d t (t_\alpha)\f$.
  *
  *  \note The return-vectors \a DeltaT and \a Tdot must be allocated already
  *  and have the same length as the input time-series \a DetStates.
@@ -2153,7 +2153,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      REAL8 ahat = amcoeX->a->data[alpha] ;
-	    REAL8 bhat = amcoeX->b->data[alpha] ;
+	      REAL8 bhat = amcoeX->b->data[alpha] ;
 
 	    /* sum A, B, C on the fly */
 	    Ad += ahat * ahat;

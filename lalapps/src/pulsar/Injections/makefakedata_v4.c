@@ -526,9 +526,11 @@ main(int argc, char *argv[])
 void
 InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
+  static const char *fn = "InitMakefakedata()";
+
   CHAR *channelName = NULL;
 
-  INITSTATUS( status, "InitMakefakedata", rcsid );
+  INITSTATUS( status, fn, rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* register all user-variables */
@@ -847,18 +849,22 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	/* check if anything matched */
 	if ( catalog->length == 0 )
 	  {
-	    printf ("\nNo noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n\n");
+	    XLALPrintError ("%s: No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n", fn);
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-
-	/* get timestamps from the matched SFTs */
-	TRY ( LALSFTtimestampsFromCatalog ( status->statusPtr, &cfg->timestamps, catalog ), status );
 
 	/* load effective frequency-band from noise-SFTs */
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
 	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+
+	/* get timestamps from the loaded noise SFTs */
+	if ( ( cfg->timestamps = XLALgetSFTtimestamps ( cfg->noiseSFTs )) == NULL ) {
+          XLALPrintError ("%s: XLALgetSFTtimestamps() failed to obtain timestamps from SFTvector.\n", fn );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
+
 
       } /* if uvar_noiseSFTs */
 
