@@ -50,10 +50,10 @@ class upper_limit(object):
     self.zero_lag_segments = {}
     self.instruments = []
     self.livetime = {}
-    self.minmass = 0
-    self.maxmass = 0
-    self.mintotal = 0
-    self.maxtotal = 0
+    self.minmass = None
+    self.maxmass = None
+    self.mintotal = None
+    self.maxtotal = None
 
     for f in flist: 
       if opts.verbose: print >> sys.stderr, "Gathering stats from: %s...." % (f,)
@@ -128,10 +128,14 @@ class upper_limit(object):
   def get_mass_ranges(self, connection):
     query = 'SELECT MIN(mass1), MAX(mass1), MIN(mass1+mass2), MAX(mass1+mass2) FROM sim_inspiral;'
     for v in connection.cursor().execute(query): 
-      self.minmass = min([v[0], self.minmass])
-      self.maxmass = max([v[1], self.maxmass])
-      self.mintotal = min([v[2], self.mintotal])
-      self.maxtotal = max([v[3], self.maxtotal])
+      if self.minmass: self.minmass = min([v[0], self.minmass])
+      else: self.minmass = v[0]
+      if self.maxmass: self.maxmass = max([v[1], self.maxmass])
+      else: self.maxmass = v[1]
+      if self.mintotal: self.mintotal = min([v[2], self.mintotal])
+      else: self.mintotal = v[2]
+      if self.maxtotal: self.maxtotal = max([v[3], self.maxtotal])
+      else: self.maxtotal = v[3]
 
   def get_instruments(self, connection):
     for i in connection.cursor().execute('SELECT DISTINCT(instruments) FROM coinc_event'):
@@ -353,6 +357,17 @@ WHERE
       dist_array[i] = sim.distance * (1.0-syserr) * float(scipy.exp( relerr * scipy.random.standard_normal(1))) 
     return dist_array
 
+  def live_time_array(self, instruments):
+    """
+    return an array of live times, note every bin will be the same :) it is just a 
+    convenience.
+    """
+    live_time = rate.BinnedArray(self.twoDMassBins)
+    live_time.array += 1.0
+    live_time.array *= self.livetime[instruments]
+    return live_time
+    
+
   def twoD_SearchVolume(self, instruments, dbin=None, FAR=None, bootnum=None, derr=0.197, dsys=0.074):
     """ 
     Compute the search volume in the mass/mass plane, bootstrap
@@ -510,7 +525,10 @@ for instruments in UL.set_instruments_to_calculate():
 
   #compute volume first and second moments
   vA, vA2 = UL.twoD_SearchVolume(instruments)
-  
+
+  # get an array of livetimes for convenience
+  ltA = UL.live_time_array(instruments)
+
   # FIXME convert to years (use some lal or pylal thing in the future)
   vA.array /= secs_in_year
   vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
@@ -528,9 +546,15 @@ for instruments in UL.set_instruments_to_calculate():
   xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
   xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
   xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
+
   # DONE with vA, so it is okay to mess it up...
   # Compute range 
   vA.array = (vA.array * secs_in_year / UL.livetime[instruments] / (4.0/3.0 * pi)) **(1.0/3.0)
   UL.trim_mass_space(vA, instruments, minthresh=0.0, minM=UL.mintotal, maxM=UL.maxtotal)
   xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeDistance"))
+
+  # make a live time 
+  UL.trim_mass_space(ltA, instruments, minthresh=0.0, minM=UL.mintotal, maxM=UL.maxtotal)
+  xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(ltA, "2DsearchvolumeLiveTime"))
+
   utils.write_filename(xmldoc, "2Dsearchvolume-%s-%s.xml" % (opts.output_name_tag, "".join(sorted(list(instruments)))))
