@@ -1882,8 +1882,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 */
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
-			  REAL8FrequencySeriesVector *FstatVect,
-			  REAL8  thr)
+			  REAL4FrequencySeriesVector *FstatVect,
+			  REAL4  thr)
 {
   INT4 j, k;
   INT4 nStacks, nSearchBins, nPeaks;
