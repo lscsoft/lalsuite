@@ -520,7 +520,7 @@ XLAL3DRinca(
 
   /* if ifos are H1H2 then no need to account for light travel time */
 
-  if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0
+  if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
 	||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
   {
     return ( ds2_min );
