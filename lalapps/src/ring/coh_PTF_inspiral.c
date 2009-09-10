@@ -79,6 +79,13 @@ void cohPTFStatistic(
     REAL4Array                 *v1PTFM,
     COMPLEX8VectorSequence     *v1PTFqVec
     );
+void cohPTFunconstrainedStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec);
 void cohPTFoldStatistic(
     REAL4Array                 *h1PTFM,
     COMPLEX8VectorSequence     *h1PTFqVec,
@@ -504,8 +511,8 @@ void fake_template (InspiralTemplate *template)
   template->mass1 = 14.;
   template->mass2 = 1.;
   template->fLower = 40.;
-  template->chi = 0.9;
-  template->kappa = 0.1;
+  template->chi = 0.;
+  template->kappa = 0.;
 /*  template->t0 = 6.090556;
   template->t2 = 0.854636;
   template->t3 = 1.136940;
@@ -540,7 +547,7 @@ void cohPTFStatistic(
   PTFM[0] = h1PTFM;
   PTFM[1] = l1PTFM;
   PTFM[2] = v1PTFM;
-  REAL4 P[9];
+  REAL4 P[10];
   REAL4 a[3], b[3],theta[3],phi[3];
   REAL8 A[12];
   REAL8 CEmBF,AFmCD,BDmAE;
@@ -551,8 +558,8 @@ void cohPTFStatistic(
   FILE *outfile;
   REAL4 deltaT = 1./4076.;
   REAL4 numpi = 3.141592654;
-  UINT4 numvarphi = 40.;
-  UINT4 numTheta = 40.;
+  UINT4 numvarphi = 10.;
+  UINT4 numTheta = 10.;
 
   beta = 0.5;
   lamda = 2.13;
@@ -629,6 +636,7 @@ void cohPTFStatistic(
         P[6] = 0.5 * sin(varphi) * sin(2.*Theta);
         P[7] = sin(Theta) * cos(varphi);
         P[8] = 0.5 * (1 - cos(2.*Theta));
+        P[9] = 0;
 
         /* Calculate the A[6] */
         for (j = 0; j < 5; j++)
@@ -682,6 +690,133 @@ void cohPTFStatistic(
   fclose(outfile);
 
 }
+
+void cohPTFunconstrainedStatistic(
+    REAL4Array                 *h1PTFM,
+    COMPLEX8VectorSequence     *h1PTFqVec,
+    REAL4Array                 *l1PTFM,
+    COMPLEX8VectorSequence     *l1PTFqVec,
+    REAL4Array                 *v1PTFM,
+    COMPLEX8VectorSequence     *v1PTFqVec)
+{
+  LALStatus status = blank_status;
+  UINT4 numPoints,i,j,k;
+  FILE *outfile;
+  REAL4 deltaT = 1./4076.;
+  REAL4        *det         = NULL;
+  numPoints = h1PTFqVec->vectorLength;
+  REAL4 u1[10], u2[10], v1[10], v2[10], B[100], Binv[100];
+  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 a[3], b[3],theta[3],phi[3];
+  REAL4 zh[25],sh[25],yu[25];
+  REAL4 beta,lamda;
+  REAL4Array *PTFM[3];
+  REAL4 cohSNR[numPoints];
+  COMPLEX8VectorSequence *PTFqVec[3];
+  PTFqVec[0] = h1PTFqVec;
+  PTFqVec[1] = l1PTFqVec;
+  PTFqVec[2] = v1PTFqVec;
+  PTFM[0] = h1PTFM;
+  PTFM[1] = l1PTFM;
+  PTFM[2] = v1PTFM;
+
+
+  beta = 0.5;
+  lamda = 2.13;
+  /* We need to calculate a[3] and b[3]. This function needs to be written
+     properly (calculating theta and phi from beta and lamda for all ifos */
+  theta[0] = 0.5;
+  theta[1] = 1.1;
+  theta[2] = 0.2;
+  phi[0] = 1.5;
+  phi[1] = 2.7;
+  phi[0] = 0.03;
+  for (i = 0; i < 3; i++)
+  {
+    a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
+    b[i] = cos(theta[i]) * sin(2.*phi[i]);
+  }
+
+  /* Create and invert the Bmatrix */
+  for (i = 0; i < 5; i++ )
+  {
+    for (j = 0; j < 5; j++ )
+    {
+      zh[i*5+j] = 0;
+      sh[i*5+j] = 0;
+      yu[i*5+j] = 0;
+      for ( k=0; k < 3; k++ )
+      {
+        zh[i*5+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
+        sh[i*5+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
+        yu[i*5+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
+      }
+    }
+  }
+
+  for (i = 0; i < 10; i++ )
+  {
+    for (j = 0; j < 10; j++ )
+    {
+      if ( i < 5 && j < 5 )
+        B[10*i + j] = zh[i*5+j];
+      else if ( i > 4 && j > 4)
+        B[10*i + j] = sh[(i-5)*5 + (j-5)];
+      else if ( i < 5 && j > 4)
+        B[10*i + j] = yu[i*5 + (j-5)];
+      else if ( i > 4 && j < 5)
+        B[10*i + j] = yu[j*5 + (i-5)];
+      else
+        fprintf(stderr,"BUGGER! Something went wrong.");
+    }
+  }
+
+  LAL_CALL( LALSMatrixInverse ( &status,
+      det, &B, &Binv ), &status);
+
+  for ( i = 0; i < numPoints; ++i ) /* Main loop over time */
+  {
+    for ( j = 0; j < 10 ; j++ ) /* Construct the vi vectors */
+    {
+      v1[j] = 0;
+      v2[j] = 0;
+      for ( k =0; k <3; k++ )
+      {
+        if (j < 5)
+        {
+          v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].re;
+          v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].im;
+        }
+        else
+        {
+          v1[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].re;
+          v2[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].im;
+        }
+      }
+    }
+    
+    /* Compute the dot products */
+    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+    for (i = 0; i < 10; i++)
+    {
+      v1_dot_u1 += v1[i] * u1[i];
+      v1_dot_u2 += v1[i] * u2[i];
+      v2_dot_u1 += v2[i] * u1[i];
+      v2_dot_u2 += v2[i] * u2[i];
+    }
+    max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+          * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
+    cohSNR[i] = sqrt(max_eigen);
+  }
+    
+  outfile = fopen("cohSNR_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR[i]);
+  }
+  fclose(outfile);
+}
+
 
 void cohPTFoldStatistic(
     REAL4Array                 *h1PTFM,
