@@ -560,8 +560,8 @@ void LALCalculateEstimators(LALStatus    *status,
   for (i=0; i < (INT4)yalpha->length; i++) {
 	ap1 += 2.0*(SQUARE(gplus->data[i].re) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
 	ac1 += 2.0*(SQUARE(gcross->data[i].re) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
-	ap2 += ((yalpha->data[i].re * gplus->data[i].re) - (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i]; 
-	ac2 += ((yalpha->data[i].re * gcross->data[i].re) - (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
+	ap2 += 2.0*((yalpha->data[i].re * gplus->data[i].re) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i]; 
+	ac2 += 2.0*((yalpha->data[i].re * gcross->data[i].re) + (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
   }
 
   *aplussq1 = ap1;

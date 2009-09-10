@@ -299,7 +299,7 @@ void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    ComputeFBuffer *cfBuffer );
 
 void ComputeFStatFreqBand ( LALStatus *status,
-			    REAL8FrequencySeries *FstatVector,
+			    REAL4FrequencySeries *FstatVector,
 			    const PulsarDopplerParams *doppler,
 			    const MultiSFTVector *multiSFTs,
 			    const MultiNoiseWeights *multiWeights,

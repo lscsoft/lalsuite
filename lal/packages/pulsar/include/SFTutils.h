@@ -85,6 +85,12 @@ typedef struct {
   REAL8FrequencySeries   *data;
 } REAL8FrequencySeriesVector;
 
+/** A vector of REAL4FrequencySeries */
+typedef struct {
+  UINT4                  length;
+  REAL4FrequencySeries   *data;
+} REAL4FrequencySeriesVector;
+
 
 /** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
 typedef COMPLEX8FrequencySeries 	SFTtype;
