@@ -66,7 +66,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   for(i=0;i<3;i++) strcpy(run->channelname[i],"");
   
   if(argc > 1) printf("   Parsing %i command-line arguments:\n",argc-1);
-
+  
   
   //Set up struct with long (--) options:
   static struct option long_options[] =
@@ -80,7 +80,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       {"nIter",           required_argument, 0,             'n'},
       {"nSkip",           required_argument, 0,             's'},
       {"network",         required_argument, 0,             'a'},
-	  {"channel",         required_argument, 0,             'a'},
+      {"channel",         required_argument, 0,             'a'},
       {"downsample",      required_argument, 0,             'a'},
       {"beforetc",        required_argument, 0,             'a'},
       {"aftertc",         required_argument, 0,             'a'},
@@ -88,7 +88,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       {"Fhigh",           required_argument, 0,             'a'},
       {"nPSDsegment",     required_argument, 0,             'a'},
       {"lPSDsegment",     required_argument, 0,             'a'},
-	  {"PSDstart",        required_argument, 0,             'a'},
+      {"PSDstart",        required_argument, 0,             'a'},
       {"outputPath",      required_argument, 0,             'o'},
       {"cache",           required_argument, 0,             'c'},      
       {0, 0, 0, 0}
@@ -103,13 +103,13 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       // *** Treat (untranslated) long options:
     case 0:
       if(strcmp(long_options[option_index].name,"injXMLfile")==0) {
-	run->injXMLfilename=(char*)malloc(strlen(optarg)+1);
-	strcpy(run->injXMLfilename,optarg);
-	printf("    - reading injection parameters from the XML file %s\n",run->injXMLfilename);
+        run->injXMLfilename=(char*)malloc(strlen(optarg)+1);
+        strcpy(run->injXMLfilename,optarg);
+        printf("    - reading injection parameters from the XML file %s\n",run->injXMLfilename);
       }
       if(strcmp(long_options[option_index].name,"injXMLnr")==0) {
-	run->injXMLnr = atoi(optarg);
-	printf("    - using injection %d from the injection XML file\n",run->injXMLnr);
+        run->injXMLnr = atoi(optarg);
+        printf("    - using injection %d from the injection XML file\n",run->injXMLnr);
       }
       break; //For case 0: long options
       
@@ -120,33 +120,33 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       printf("    - using main input file %s\n",run->mainFilename);
       break;
       
-    case 'm':		
+    case 'm':           
       run->triggerMc = atof(optarg);
       printf("    - From command line, trigger value for mChirp\t\t= %f\n",run->triggerMc);
       break;
       
-    case 'e':		
+    case 'e':           
       run->triggerEta = atof(optarg);
       printf("    - From command line, trigger value for eta\t\t\t= %f\n",run->triggerEta);
       break;
       
-    case 't':		
+    case 't':           
       run->triggerTc = atof(optarg);
       printf("    - From command line, trigger value for tc\t\t\t= %f\n",run->triggerTc);
       break;
       
-    case 'd':		
+    case 'd':           
       run->triggerDist = atof(optarg);
       printf("    - From command line, trigger value for the distance (Mpc)\t= %f\n",run->triggerDist);
       break;
       
-    case 'n':		
+    case 'n':           
       run->nIter = atoi(optarg);
       run->commandSettingsFlag[0] = 1;
       printf("    - From command line, number of iterations\t\t\t= %d\n",run->nIter);
       break;
       
-    case 's':		
+    case 's':           
       run->thinOutput = atoi(optarg);
       run->commandSettingsFlag[1] = 1;
       printf("    - From command line, thin output by\t\t\t\t= %d\n",run->thinOutput);
@@ -154,94 +154,90 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       
     case 'a': //Detector options
       if(strcmp(long_options[option_index].name,"network")==0) {
-	parseCharacterOptionString(optarg,&networkseq,&nIFO);
-	run->networkSize = nIFO;
-	run->commandSettingsFlag[2] = 1;
-	printf("    - From command line, network size\t\t\t\t= %d\n",run->networkSize);
-	for(i=0;i<run->networkSize;i++) {
-	  run->selectifos[i] = atoi(networkseq[i]);
-	  printf("    - From command line, IFO%d\t\t\t\t\t= %d\n",(i+1),run->selectifos[i]);
-	}
-	run->commandSettingsFlag[3] = 1;
+        parseCharacterOptionString(optarg,&networkseq,&nIFO);
+        run->networkSize = nIFO;
+        run->commandSettingsFlag[2] = 1;
+        printf("    - From command line, network size\t\t\t\t= %d\n",run->networkSize);
+        for(i=0;i<run->networkSize;i++) {
+          run->selectifos[i] = atoi(networkseq[i]);
+          printf("    - From command line, IFO%d\t\t\t\t\t= %d\n",(i+1),run->selectifos[i]);
+        }
+        run->commandSettingsFlag[3] = 1;
       }
-
-	  if(strcmp(long_options[option_index].name,"channel")==0) {
-	parseCharacterOptionString(optarg,&channelseq,&nChannel);
-		  if (run->networkSize != nChannel) {printf(" ERROR: number of IFOs %d should be the same as number of channels %d\n",nIFO,nChannel); exit(1);}
-		  else {
-	for(i=0;i<run->networkSize;i++) {
-		strcpy(run->channelname[i],channelseq[i]);
-		printf("    - From command line, channel %d\t\t\t\t= %s\n",(i+1),run->channelname[i]);
+      
+      if(strcmp(long_options[option_index].name,"channel")==0) {
+        parseCharacterOptionString(optarg,&channelseq,&nChannel);
+	if (run->networkSize != nChannel) {printf(" ERROR: number of IFOs %d should be the same as number of channels %d\n",nIFO,nChannel); exit(1);}
+	else {
+	  for(i=0;i<run->networkSize;i++) {
+	    strcpy(run->channelname[i],channelseq[i]);
+	    printf("    - From command line, channel %d\t\t\t\t= %s\n",(i+1),run->channelname[i]);
+	  }
+	  run->commandSettingsFlag[4] = 1;
 	}
-	run->commandSettingsFlag[4] = 1;
-		  }
-	}
-			
-			
+      }
+      
+      
       if(strcmp(long_options[option_index].name,"downsample")==0) {
-	run->downsampleFactor = atoi(optarg);
-	run->commandSettingsFlag[6] = 1;
-	printf("    - From command line, downsample factor\t\t\t= %d\n",run->downsampleFactor);
+        run->downsampleFactor = atoi(optarg);
+        run->commandSettingsFlag[6] = 1;
+        printf("    - From command line, downsample factor\t\t\t= %d\n",run->downsampleFactor);
       }
       if(strcmp(long_options[option_index].name,"beforetc")==0) {
-	run->dataBeforeTc = atof(optarg);
-	run->commandSettingsFlag[7] = 1;
-	printf("    - From command line, before tc\t\t\t\t= %f\n",run->dataBeforeTc);
+        run->dataBeforeTc = atof(optarg);
+        run->commandSettingsFlag[7] = 1;
+        printf("    - From command line, before tc\t\t\t\t= %f\n",run->dataBeforeTc);
       }
       if(strcmp(long_options[option_index].name,"aftertc")==0) {
-	run->dataAfterTc = atof(optarg);
-	run->commandSettingsFlag[8] = 1;
-	printf("    - From command line, after tc\t\t\t\t= %f\n",run->dataAfterTc);
+        run->dataAfterTc = atof(optarg);
+        run->commandSettingsFlag[8] = 1;
+        printf("    - From command line, after tc\t\t\t\t= %f\n",run->dataAfterTc);
       }
       if(strcmp(long_options[option_index].name,"Flow")==0) {
-	run->lowFrequencyCut = atof(optarg);
-	run->commandSettingsFlag[9] = 1;
-	printf("    - From command line, low frequency cut\t\t\t= %f\n",run->lowFrequencyCut);
+        run->lowFrequencyCut = atof(optarg);
+        run->commandSettingsFlag[9] = 1;
+        printf("    - From command line, low frequency cut\t\t\t= %f\n",run->lowFrequencyCut);
       }
       if(strcmp(long_options[option_index].name,"Fhigh")==0) {
-	run->highFrequencyCut = atof(optarg);
-	run->commandSettingsFlag[10] = 1;
-	printf("    - From command line, high frequency cut\t\t\t= %f\n",run->highFrequencyCut);
+        run->highFrequencyCut = atof(optarg);
+        run->commandSettingsFlag[10] = 1;
+        printf("    - From command line, high frequency cut\t\t\t= %f\n",run->highFrequencyCut);
       }
       if(strcmp(long_options[option_index].name,"nPSDsegment")==0) {
-	run->PSDsegmentNumber = atoi(optarg);
-	run->commandSettingsFlag[11] = 1;
-	printf("    - From command line, number of PSD segments\t\t\t= %d\n",run->PSDsegmentNumber);
+        run->PSDsegmentNumber = atoi(optarg);
+        run->commandSettingsFlag[11] = 1;
+        printf("    - From command line, number of PSD segments\t\t\t= %d\n",run->PSDsegmentNumber);
       }
       if(strcmp(long_options[option_index].name,"lPSDsegment")==0) {
-	run->PSDsegmentLength = atof(optarg);
-	run->commandSettingsFlag[12] = 1;
-	printf("    - From command line, length of PSD segments\t\t\t= %f\n",run->PSDsegmentLength);
+        run->PSDsegmentLength = atof(optarg);
+        run->commandSettingsFlag[12] = 1;
+        printf("    - From command line, length of PSD segments\t\t\t= %f\n",run->PSDsegmentLength);
       }
-	  if(strcmp(long_options[option_index].name,"PSDstart")==0) {
-	run->PSDstart = atof(optarg);
-	run->commandSettingsFlag[13] = 1;
-	printf("    - From command line, start of PSD segments\t\t\t= %f\n",run->PSDstart);
-	  }
-			
-      break; 		
+      if(strcmp(long_options[option_index].name,"PSDstart")==0) {
+        run->PSDstart = atof(optarg);
+        run->commandSettingsFlag[13] = 1;
+        printf("    - From command line, start of PSD segments\t\t\t= %f\n",run->PSDstart);
+      }
       
-    case 'o':		
+      break;            
+      
+    case 'o':           
       run->outputPath=(char*)malloc(strlen(optarg)+1);
       strcpy(run->outputPath,optarg);
       printf("    - From command line, output path\t\t\t\t= %s\n",run->outputPath);
       break;
-	case 'c':
-
-		parseCharacterOptionString(optarg,&(run->cacheFilename),&nCache);
-				if (run->networkSize != nCache) {printf(" ERROR: number of IFOs %d should be the same as number of cache files %d\n",nIFO,nCache); exit(1);}
-				else {
-					for(i=0;i<run->networkSize;i++) {
-						printf("    - From command line, cache file %d\t\t\t\t= %s\n",(i+1),run->cacheFilename[i]);
-					readCachefile(run,i);
-					}
-					run->commandSettingsFlag[15] = 1;
-				}
-					break;
-
-			
-	  break;
-			
+    case 'c':
+      
+      parseCharacterOptionString(optarg,&(run->cacheFilename),&nCache);
+      if (run->networkSize != nCache) {printf(" ERROR: number of IFOs %d should be the same as number of cache files %d\n",nIFO,nCache); exit(1);}
+      else {
+	for(i=0;i<run->networkSize;i++) {
+	  printf("    - From command line, cache file %d\t\t\t\t= %s\n",(i+1),run->cacheFilename[i]);
+	  readCachefile(run,i);
+	}
+	run->commandSettingsFlag[15] = 1;
+      }
+      break;
       
     default:
       //fprintf(stderr,"   Unrecognised option: %d\n",c);  // This notice is already produced by getopt_long()
@@ -259,7 +255,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
     while(optind < argc) printf ("%s ", argv[optind++]);
     printf("\n");
   }
-	
+  
 } // End void readCommandLineOptions(argc,argv)
 // ****************************************************************************************************************************************************  
 
@@ -301,7 +297,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     if ((j==1) & (input[i]==']')) {++*n; j=2;}
     ++i;
   }
-	if (j!=2) {fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input); exit(1);}
+  if (j!=2) {fprintf(stderr, " ERROR: argument vector \"%s\" not well-formed!\n", input); exit(1);}
   /* now allocate memory for results: */
   *strings  = (char**)  malloc(sizeof(char*) * (*n));
   for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
@@ -319,12 +315,12 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     /* actual copying: */
     if (j==1) {
       if (l>=511) {
-	fprintf(stderr, " WARNING: character argument too long!\n");
-	fprintf(stderr, " \"%s\"\n",(*strings)[k]);
+        fprintf(stderr, " WARNING: character argument too long!\n");
+        fprintf(stderr, " \"%s\"\n",(*strings)[k]);
       }
       else {
-	(*strings)[k][l] = input[i];
-	++l;
+        (*strings)[k][l] = input[i];
+        ++l;
       }
     }
     ++i;
@@ -430,7 +426,7 @@ void readMCMCinputfile(struct runPar *run)
   }
   
   fgets(tmpStr,500,fin);
-  if(run->commandSettingsFlag[1] == 0) {	
+  if(run->commandSettingsFlag[1] == 0) {        
     sscanf(tmpStr,"%d",&run->thinOutput);
   }
   
@@ -442,7 +438,7 @@ void readMCMCinputfile(struct runPar *run)
   fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->blockFrac);
   
   
-
+  
   //Correlated update proposals:
   fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
   fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->correlatedUpdates);
@@ -571,8 +567,8 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
     fgets(tmpStr,500,fin);  //Read the empty line
     
     fgets(tmpStr,500,fin);
-	  if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].ch1name);}
-	  else{ strcpy(ifo[i].ch1name,run->channelname[i]);}
+    if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].ch1name);}
+    else{ strcpy(ifo[i].ch1name,run->channelname[i]);}
     //fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].ch1filepath);
     fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
@@ -586,9 +582,9 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
     fgets(tmpStr,500,fin);  //Read the empty line
     
     fgets(tmpStr,500,fin);  sscanf(tmpStr,"%ld",&ifo[i].noiseGPSstart);
-	fgets(tmpStr,500,fin);
-	  if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].noisechannel);}
-	  else{ strcpy(ifo[i].noisechannel,run->channelname[i]);}  
+    fgets(tmpStr,500,fin);
+    if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].noisechannel);}
+    else{ strcpy(ifo[i].noisechannel,run->channelname[i]);}  
     //fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].noisefilepath);
     fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
@@ -688,7 +684,7 @@ void readInjectionInputfile(struct runPar *run)
     
     if(run->parDef[run->injID[i]] != 1) {
       fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d:\n     parameter ID %d is not defined.\n   Aborting...\n\n",
-	      run->injectionFilename,run->injNumber[i],run->injID[i]);
+              run->injectionFilename,run->injNumber[i],run->injID[i]);
       exit(1);
     }
     
@@ -705,9 +701,9 @@ void readInjectionInputfile(struct runPar *run)
       
     case 2 :  // InjectionValue + BoundLow - InjectionValue + BoundUp
       if(run->injBoundLow[i] > 0.0 || run->injBoundUp[i] < 0.0) {
-	fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     for injBoundType = 2, injBoundLow and injBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
-		run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     for injBoundType = 2, injBoundLow and injBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
+                run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]]);
+        exit(1);
       }
       run->injBoundLow[i] = run->injParValOrig[i] + run->injBoundLow[i];
       run->injBoundUp[i]  = run->injParValOrig[i] + run->injBoundUp[i];
@@ -715,9 +711,9 @@ void readInjectionInputfile(struct runPar *run)
       
     case 3 :  // InjectionValue * BoundLow - InjectionValue * BoundUp
       if(run->injBoundLow[i] > 1.0 || run->injBoundUp[i] < 1.0) {
-	fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     for injBoundType = 3, injBoundLow and injBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
-		run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     for injBoundType = 3, injBoundLow and injBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
+                run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]]);
+        exit(1);
       }
       run->injBoundLow[i] = run->injParValOrig[i] * run->injBoundLow[i];
       run->injBoundUp[i]  = run->injParValOrig[i] * run->injBoundUp[i];
@@ -725,7 +721,7 @@ void readInjectionInputfile(struct runPar *run)
       
     default :
       fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     %d is not a valid option for injBoundType.\n   Aborting...\n\n",
-	      run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injBoundType[i]);
+              run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injBoundType[i]);
       exit(1);
     } //End switch (run->injBoundType[i])
     
@@ -736,21 +732,21 @@ void readInjectionInputfile(struct runPar *run)
     // Check whether value for injRanPar is valid
     if(run->injRanPar[i] < 0 || run->injRanPar[i] > 2) {
       fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     %d is not a valid option for injRanPar.\n   Aborting...\n\n",
-	      run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injRanPar[i]);
+              run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injRanPar[i]);
       exit(1);
     }      
     
     //Check whether the lower boundary < the upper
     if(run->injBoundLow[i] >= run->injBoundUp[i]) {
       fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     the lower boundary of the prior is larger than or equal to the upper boundary (%lf vs. %lf).\n   Aborting...\n\n",
-	      run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injBoundLow[i],run->injBoundUp[i]);
+              run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]],run->injBoundLow[i],run->injBoundUp[i]);
       exit(1);
     }
     
     //Check whether  lower boundary <= injection value <= upper boundary
     if( (run->injParValOrig[i] < run->injBoundLow[i] || run->injParValOrig[i] > run->injBoundUp[i])  &&  run->injRanPar[i] == 0) {
       fprintf(stderr, "\n\n   ERROR reading injection input file %s, parameter %d (%s):\n     the injection value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
-	      run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]], run->injParValOrig[i], run->injBoundLow[i], run->injBoundUp[i]);
+              run->injectionFilename,run->injNumber[i],run->parAbrev[run->injID[i]], run->injParValOrig[i], run->injBoundLow[i], run->injBoundUp[i]);
       exit(1);
     }
     
@@ -770,16 +766,16 @@ void readInjectionInputfile(struct runPar *run)
     if(run->injectSignal >= 1) {
       printf("\n      %2i software-injection parameters:\n        Nr:  ID: Name:           Injection value:     Obtained:\n",run->nInjectPar);
       for(i=0;i<run->nInjectPar;i++) {
-	if(run->injRanPar[i]==0) {
-	  printf("        %2d  %3i  %-11s     %15.4lf      Taken from the value set in %s\n",i,run->injID[i],run->parAbrev[run->injID[i]],run->injParVal[i],
-		 run->injectionFilename);
-	} else if(run->injRanPar[i]==1) {
-	  printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a Gaussian distribution with centre  %lf  and width  %lf\n",i,run->injID[i],
-		 run->parAbrev[run->injID[i]],run->injParVal[i],run->injParValOrig[i],run->injSigma[i]);
-	} else if(run->injRanPar[i]==2) {
-	  printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a uniform distribution  %14.4lf - %-14.4lf\n",i,run->injID[i],run->parAbrev[run->injID[i]]
-		 ,run->injParVal[i],run->injBoundLow[i],run->injBoundUp[i]);
-	}
+        if(run->injRanPar[i]==0) {
+          printf("        %2d  %3i  %-11s     %15.4lf      Taken from the value set in %s\n",i,run->injID[i],run->parAbrev[run->injID[i]],run->injParVal[i],
+                 run->injectionFilename);
+        } else if(run->injRanPar[i]==1) {
+          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a Gaussian distribution with centre  %lf  and width  %lf\n",i,run->injID[i],
+                 run->parAbrev[run->injID[i]],run->injParVal[i],run->injParValOrig[i],run->injSigma[i]);
+        } else if(run->injRanPar[i]==2) {
+          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a uniform distribution  %14.4lf - %-14.4lf\n",i,run->injID[i],run->parAbrev[run->injID[i]]
+                 ,run->injParVal[i],run->injBoundLow[i],run->injBoundUp[i]);
+        }
       }
       printf("\n");
     } else {
@@ -887,7 +883,7 @@ void readParameterInputfile(struct runPar *run)
     
     if(run->parDef[run->parID[i]] != 1) {
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d:\n     parameter ID %d is not defined.\n   Aborting...\n\n",
-	      run->injectionFilename,run->parNumber[i],run->parID[i]);
+              run->injectionFilename,run->parNumber[i],run->parID[i]);
       exit(1);
     }
     
@@ -908,9 +904,9 @@ void readParameterInputfile(struct runPar *run)
       
     case 12 : // General range, best value+BoundLow - best value+BoundUp
       if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
-	fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 12, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
-		run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 12, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
+                run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+        exit(1);
       }
       run->priorBoundLow[i] = run->parBestVal[i] + run->priorBoundLow[i];
       run->priorBoundUp[i]  = run->parBestVal[i] + run->priorBoundUp[i];
@@ -918,9 +914,9 @@ void readParameterInputfile(struct runPar *run)
       
     case 13 : // General range, best value*BoundLow - best value*BoundUp
       if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
-	fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 13, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
-		run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 13, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
+                run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+        exit(1);
       }
       run->priorBoundLow[i] = run->parBestVal[i] * run->priorBoundLow[i];
       run->priorBoundUp[i]  = run->parBestVal[i] * run->priorBoundUp[i];
@@ -928,9 +924,9 @@ void readParameterInputfile(struct runPar *run)
       
     case 14 : // General range, injection value+BoundLow - injection value+BoundUp
       if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
-	fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 14, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
-		run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 14, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
+                run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+        exit(1);
       }
       run->priorBoundLow[i] = run->injParVal[i] + run->priorBoundLow[i];
       run->priorBoundUp[i]  = run->injParVal[i] + run->priorBoundUp[i];
@@ -938,9 +934,9 @@ void readParameterInputfile(struct runPar *run)
       
     case 15 : // General range, injection value*BoundLow - injection value*BoundUp
       if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
-	fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 15, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
-		run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 15, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
+                run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+        exit(1);
       }
       run->priorBoundLow[i] = run->injParVal[i] * run->priorBoundLow[i];
       run->priorBoundUp[i]  = run->injParVal[i] * run->priorBoundUp[i];
@@ -958,7 +954,7 @@ void readParameterInputfile(struct runPar *run)
       
     default :
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for priorType.\n   Aborting...\n\n",
-	      run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorType[i]);
+              run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorType[i]);
       exit(1);
     } //End switch
     
@@ -966,14 +962,14 @@ void readParameterInputfile(struct runPar *run)
     // Check whether value for fix is valid
     if(run->parFix[i] < 0 || run->parFix[i] > 2) {
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parFix.\n   Aborting...\n\n",
-	      run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parFix[i]);
+              run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parFix[i]);
       exit(1);
     }      
     
     // Check whether value for start is valid
     if(run->parStartMCMC[i] < 1 || run->parStartMCMC[i] > 5) {
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parStartMCMC.\n   Aborting...\n\n",
-	      run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parStartMCMC[i]);
+              run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parStartMCMC[i]);
       exit(1);
     }
     if((run->parStartMCMC[i] == 3 || run->parStartMCMC[i] == 4) && run->injectSignal <= 0) {
@@ -985,14 +981,14 @@ void readParameterInputfile(struct runPar *run)
     //Check whether the lower prior boundary < the upper
     if(run->priorBoundLow[i] >= run->priorBoundUp[i]) {
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the lower boundary of the prior is larger than or equal to the upper boundary (%lf vs. %lf).\n   Aborting...\n\n",
-	      run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorBoundLow[i],run->priorBoundUp[i]);
+              run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorBoundLow[i],run->priorBoundUp[i]);
       exit(1);
     }
     
     //Check whether  lower prior boundary <= best value <= upper boundary
     if( (run->parBestVal[i] < run->priorBoundLow[i] || run->parBestVal[i] > run->priorBoundUp[i])  && run->parStartMCMC[i] == 1 ) {
       fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the best value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
-	      run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]], run->parBestVal[i], run->priorBoundLow[i], run->priorBoundUp[i]);
+              run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]], run->parBestVal[i], run->priorBoundLow[i], run->priorBoundUp[i]);
       exit(1);
     }
     
@@ -1000,16 +996,16 @@ void readParameterInputfile(struct runPar *run)
     iInj = run->injRevID[run->parID[i]];  //Get the index of this parameter in the injection set.  -1 if not available.
     if(iInj >= 0) {
       if(run->injParVal[iInj] < run->priorBoundLow[i] || run->injParVal[iInj] > run->priorBoundUp[i]) {
-	fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the injection value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
-		run->parameterFilename, run->parNumber[i], run->parAbrev[run->parID[i]], run->injParVal[iInj], run->priorBoundLow[i], run->priorBoundUp[i]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the injection value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
+                run->parameterFilename, run->parNumber[i], run->parAbrev[run->parID[i]], run->injParVal[iInj], run->priorBoundLow[i], run->priorBoundUp[i]);
+        exit(1);
       }
     } else {
       if(run->injectSignal != 0) {
-	if(warnings==0) fprintf(stderr, "\n");
-	printf("    * Warning:  MCMC parameter %i (%s) does not occur in the injection template;  I cannot verify whether the injection value lies within the prior range *\n",
-	       run->parNumber[i],run->parAbrev[run->parID[i]]);
-	warnings += 1;
+        if(warnings==0) fprintf(stderr, "\n");
+        printf("    * Warning:  MCMC parameter %i (%s) does not occur in the injection template;  I cannot verify whether the injection value lies within the prior range *\n",
+               run->parNumber[i],run->parAbrev[run->parID[i]]);
+        warnings += 1;
       }
     } 
   } //End for (i)
@@ -1044,7 +1040,7 @@ void readParameterInputfile(struct runPar *run)
     printf("\n      %2i MCMC parameters:\n        Nr:  ID: Name:                Best value:     Prior:     min:            max:    Fix parameter?        Start chain:\n",run->nMCMCpar);
     for(i=0;i<run->nMCMCpar;i++) {
       printf("        %2d  %3i  %-11s     %15.4lf     %15.4lf %15.4lf     %-20s  %-45s\n",i,run->parID[i],run->parAbrev[run->parID[i]],run->parBestVal[i],
-	     run->priorBoundLow[i],run->priorBoundUp[i],  FixStr[run->parFix[i]],StartStr[run->parStartMCMC[i]]);
+             run->priorBoundLow[i],run->priorBoundUp[i],  FixStr[run->parFix[i]],StartStr[run->parStartMCMC[i]]);
     }
     printf("\n");
   }
@@ -1081,7 +1077,7 @@ void readSystemInputfile(struct runPar *run)
   for(i=1;i<=3;i++) { //Read first 3 lines
     fgets(tmpStr,500,fin);
   }  
-
+  
   //Data directory:
   fscanf(fin, "%s",run->dataDir);
   
@@ -1117,7 +1113,7 @@ void readInjectionXML(struct runPar *run)
   
   j=0;
   while(j<run->injXMLnr) {j++; injTable = injTable->next;}  // Select injection
-
+  
   i=0;
   for(i=0;i<run->nInjectPar;i++) {
     
@@ -1204,7 +1200,7 @@ void readInjectionXML(struct runPar *run)
   
   
   run->lowFrequencyCutInj = injTable->f_lower;  // May be 0.0!
-
+  
   printf("\n");
   
 } // End void readInjectionXML()
@@ -1221,44 +1217,44 @@ void readInjectionXML(struct runPar *run)
 // ****************************************************************************************************************************************************  
 void readCachefile(struct runPar *run, int ifonr)
 {
-	int i;
-	int line=0;
-	char tmpStr[2048];
-	FILE *fin;
-	
-	if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
-		fprintf(stderr, "\n\n   ERROR opening cache file: %s, aborting.\n\n\n",run->cacheFilename[ifonr]);
-		exit(1);
-	} else {
-		printf("   Reading cache file: %s.\n",run->cacheFilename[ifonr]);
-	}
-	
-	while ( ! feof (fin) ) //just to get the number of line. TO CHECK : last line of .cache file always empty ?
-	{
-		fgets (tmpStr , 2048 , fin);
-		line++;
-	}
-	fclose (fin); 
-	
-		run->nFrame[ifonr] = line - 1;
-	
-	run->FrameDetector[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
-	for (i=0; i<(line); ++i) (run->FrameDetector[ifonr])[i] = (char*) malloc(sizeof(char)*5);
-	run->FramePrefix[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
-	for (i=0; i<(line); ++i) (run->FramePrefix[ifonr])[i] = (char*) malloc(sizeof(char)*512);
-	run->FrameGPSstart[ifonr] = (int*) malloc(sizeof(int)* (line));
-	run->FrameLength[ifonr] = (int*) malloc(sizeof(int)* (line));
-	run->FrameName[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
-	for (i=0; i<(line); ++i) (run->FrameName[ifonr])[i] = (char*) malloc(sizeof(char)*512);
-
-	fin = fopen(run->cacheFilename[ifonr],"r");
-	for(i=0;i<(line-1);i++) {
-	//Read line by line:
-	fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
-	//	printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
-
-	}
-	fclose(fin);
+  int i;
+  int line=0;
+  char tmpStr[2048];
+  FILE *fin;
+  
+  if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
+    fprintf(stderr, "\n\n   ERROR opening cache file: %s, aborting.\n\n\n",run->cacheFilename[ifonr]);
+    exit(1);
+  } else {
+    printf("   Reading cache file: %s.\n",run->cacheFilename[ifonr]);
+  }
+  
+  while ( ! feof (fin) ) //just to get the number of line. TO CHECK : last line of .cache file always empty ?
+    {
+      fgets (tmpStr , 2048 , fin);
+      line++;
+    }
+  fclose (fin); 
+  
+  run->nFrame[ifonr] = line - 1;
+  
+  run->FrameDetector[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
+  for (i=0; i<(line); ++i) (run->FrameDetector[ifonr])[i] = (char*) malloc(sizeof(char)*5);
+  run->FramePrefix[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
+  for (i=0; i<(line); ++i) (run->FramePrefix[ifonr])[i] = (char*) malloc(sizeof(char)*512);
+  run->FrameGPSstart[ifonr] = (int*) malloc(sizeof(int)* (line));
+  run->FrameLength[ifonr] = (int*) malloc(sizeof(int)* (line));
+  run->FrameName[ifonr]  = (char**)  malloc(sizeof(char*) * (line));
+  for (i=0; i<(line); ++i) (run->FrameName[ifonr])[i] = (char*) malloc(sizeof(char)*512);
+  
+  fin = fopen(run->cacheFilename[ifonr],"r");
+  for(i=0;i<(line-1);i++) {
+    //Read line by line:
+    fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
+    //      printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
+    
+  }
+  fclose(fin);
 }  //End of readCachefile
 // ****************************************************************************************************************************************************  
 
@@ -1359,7 +1355,7 @@ void setParameterNames(struct runPar * run)
   strcpy(run->parAbrev[52], "psi");
   strcpy(run->parAbrv[52], "psi");
   run->parDef[52] = 1;
-  strcpy(run->parAbrev[53], "sin th_J0");
+  strcpy(run->parAbrev[53], "sin_th_J0");
   strcpy(run->parAbrv[53], "thJ0");
   run->parDef[53] = 1;
   strcpy(run->parAbrev[54], "phi_J0");
@@ -1384,7 +1380,7 @@ void setParameterNames(struct runPar * run)
   strcpy(run->parAbrev[71], "a_spin1");
   strcpy(run->parAbrv[71], "asp1");
   run->parDef[71] = 1;
-  strcpy(run->parAbrev[72], "cs th_sp1");
+  strcpy(run->parAbrev[72], "cs_th_sp1");
   strcpy(run->parAbrv[72], "ths1");
   run->parDef[72] = 1;
   strcpy(run->parAbrev[73], "phi_spin1");
@@ -1405,13 +1401,13 @@ void setParameterNames(struct runPar * run)
   strcpy(run->parAbrev[81], "a_spin2");
   strcpy(run->parAbrv[81], "asp2");
   run->parDef[81] = 1;
-  strcpy(run->parAbrev[82], "cs th_sp2");
+  strcpy(run->parAbrev[82], "cs_th_sp2");
   strcpy(run->parAbrv[82], "ths2");
   run->parDef[82] = 1;
   strcpy(run->parAbrev[83], "phi_spin2");
   strcpy(run->parAbrv[83], "phs2");
   run->parDef[83] = 1;
-
+  
   strcpy(run->parAbrev[85], "S2_x");
   strcpy(run->parAbrv[85], "S2x");
   run->parDef[85] = 1;
@@ -1538,7 +1534,7 @@ void copyRun2MCMC(struct runPar run, struct MCMCvariables *mcmc)
   
   mcmc->nTemps = run.nTemps;                            // Size of temperature ladder
   for(i=0;i<mcmc->nTemps;i++) mcmc->tempLadder[i] = run.tempLadder[i];
-
+  
 } // End copyRun2MCMC()
 // ****************************************************************************************************************************************************  
 
@@ -1546,7 +1542,7 @@ void copyRun2MCMC(struct runPar run, struct MCMCvariables *mcmc)
 
 
 
-  
+
 
 
 
