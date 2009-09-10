@@ -534,7 +534,7 @@ XLAL3DRinca(
       if (ds2 < ds2_min) ds2_min = ds2;
     }
     return ( ds2_min );
-  {
+  }
 }
 
 
