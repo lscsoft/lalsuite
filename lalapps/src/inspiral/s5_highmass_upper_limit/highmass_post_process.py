@@ -43,7 +43,7 @@ class hm_post_DAG(pipeline.CondorDAG):
     self.node_id = 0
 
     def add_node(self, node):
-      self.node_id+=i
+      self.node_id+=1
       node.add_macro("macroid", self.node_id)
       pipeline.CondorDAG.add_node(self, node)
 
