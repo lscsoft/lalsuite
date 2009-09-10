@@ -3,6 +3,8 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
@@ -17,6 +19,7 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
+#include <lal/MatrixUtils.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -232,7 +235,7 @@ int main( int argc, char **argv )
   }
 
 
-  cohPTFStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
+  cohPTFunconstrainedStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
   fprintf(stdout,"Made coherent statistic %ld \n", time(NULL)-startTime);
  
   exit(0);
@@ -511,8 +514,8 @@ void fake_template (InspiralTemplate *template)
   template->mass1 = 14.;
   template->mass2 = 1.;
   template->fLower = 40.;
-  template->chi = 0.;
-  template->kappa = 0.;
+  template->chi = 0.9;
+  template->kappa = 0.1;
 /*  template->t0 = 6.090556;
   template->t2 = 0.854636;
   template->t3 = 1.136940;
@@ -701,11 +704,13 @@ void cohPTFunconstrainedStatistic(
 {
   LALStatus status = blank_status;
   UINT4 numPoints,i,j,k;
+  REAL4 count;
   FILE *outfile;
   REAL4 deltaT = 1./4076.;
-  REAL4        *det         = NULL;
+  REAL8        *det         = NULL;
   numPoints = h1PTFqVec->vectorLength;
-  REAL4 u1[10], u2[10], v1[10], v2[10], B[100], Binv[100];
+  REAL4 u1[10], u2[10], v1[10], v2[10];
+/*  REAL8Array  *B, *Binv;*/
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
   REAL4 a[3], b[3],theta[3],phi[3];
   REAL4 zh[25],sh[25],yu[25];
@@ -713,6 +718,11 @@ void cohPTFunconstrainedStatistic(
   REAL4Array *PTFM[3];
   REAL4 cohSNR[numPoints];
   COMPLEX8VectorSequence *PTFqVec[3];
+
+  gsl_matrix *B2 = gsl_matrix_alloc(10,10);
+  gsl_matrix *Binv2a = gsl_matrix_alloc(10,10);
+  gsl_matrix *Binv2 = gsl_matrix_alloc(10,10);
+  gsl_permutation *p = gsl_permutation_alloc(10);
   PTFqVec[0] = h1PTFqVec;
   PTFqVec[1] = l1PTFqVec;
   PTFqVec[2] = v1PTFqVec;
@@ -720,6 +730,10 @@ void cohPTFunconstrainedStatistic(
   PTFM[1] = l1PTFM;
   PTFM[2] = v1PTFM;
 
+/*  B = XLALCreateREAL8ArrayL( 2, 10, 10 );
+  Binv = XLALCreateREAL8ArrayL( 2, 10, 10 );
+  memset( B->data, 0, 100 * sizeof(REAL8) );
+  memset( Binv->data, 0, 100 * sizeof(REAL8) );*/
 
   beta = 0.5;
   lamda = 2.13;
@@ -736,6 +750,9 @@ void cohPTFunconstrainedStatistic(
     a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
     b[i] = cos(theta[i]) * sin(2.*phi[i]);
   }
+  
+  fprintf(stderr,"Stage 2");
+  fflush(stderr);
 
   /* Create and invert the Bmatrix */
   for (i = 0; i < 5; i++ )
@@ -751,28 +768,67 @@ void cohPTFunconstrainedStatistic(
         sh[i*5+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
         yu[i*5+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
       }
+/*      fprintf(stdout,"%f %f %f ",zh[i*5+j],sh[i*5+j],yu[i*5+j]);*/
     }
   }
+
+  fprintf(stderr,"Stage 3");
+  fflush(stderr);
 
   for (i = 0; i < 10; i++ )
   {
     for (j = 0; j < 10; j++ )
     {
       if ( i < 5 && j < 5 )
-        B[10*i + j] = zh[i*5+j];
+      {
+        gsl_matrix_set(B2,i,j,zh[i*5+j]);
+      }
       else if ( i > 4 && j > 4)
-        B[10*i + j] = sh[(i-5)*5 + (j-5)];
+      {
+        gsl_matrix_set(B2,i,j,sh[(i-5)*5 + (j-5)]);
+      }
       else if ( i < 5 && j > 4)
-        B[10*i + j] = yu[i*5 + (j-5)];
+      {
+        gsl_matrix_set(B2,i,j, yu[i*5 + (j-5)]);
+      }
       else if ( i > 4 && j < 5)
-        B[10*i + j] = yu[j*5 + (i-5)];
+      {
+        gsl_matrix_set(B2,i,j,yu[j*5 + (i-5)]);
+      }
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
+/*      fprintf(stdout, "%f ", B->data[10*i + j]);*/
+      gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
+    }
+/*    fprintf(stdout,"\n");*/
+  }
+
+  fprintf(stderr,"Stage 4");
+  fflush(stderr);
+
+  int signum;
+  gsl_linalg_LU_decomp(Binv2,p,&signum);
+  gsl_linalg_LU_invert(Binv2,p,Binv2a);
+
+  for (i = 0; i < 10; i++ )
+  {
+    for (j = 0; j < 10; j++ )
+    {
+      count = 0;
+      for (k = 0; k < 10; k++ )
+      {
+        count += gsl_matrix_get(B2,i,k) * gsl_matrix_get(Binv2a,k,j);
+      }
+
+      fprintf(stdout, "%e %e %e \n", gsl_matrix_get(B2,i,j),gsl_matrix_get(Binv2a,i,j),count);
     }
   }
 
-  LAL_CALL( LALSMatrixInverse ( &status,
-      det, &B, &Binv ), &status);
+
+
+
+  fprintf(stderr,"Stage 5");
+  fflush(stderr);
 
   for ( i = 0; i < numPoints; ++i ) /* Main loop over time */
   {
@@ -794,18 +850,30 @@ void cohPTFunconstrainedStatistic(
         }
       }
     }
+    for ( j = 0 ; j < 10 ; j ++ ) 
+    {
+      u1[j] = 0.0;
+      u2[j] = 0.0;
+      for ( k = 0; k < 10; k++ )
+      {
+        u1[j] += gsl_matrix_get(Binv2a,j,k) * v1[k];
+        u2[j] += gsl_matrix_get(Binv2a,j,k) * v2[k];
+      }
+    }
+
     
     /* Compute the dot products */
     v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
-    for (i = 0; i < 10; i++)
+    for (j = 0; j < 10; j++)
     {
-      v1_dot_u1 += v1[i] * u1[i];
-      v1_dot_u2 += v1[i] * u2[i];
-      v2_dot_u1 += v2[i] * u1[i];
-      v2_dot_u2 += v2[i] * u2[i];
+      v1_dot_u1 += v1[j] * u1[j];
+      v1_dot_u2 += v1[j] * u2[j];
+      v2_dot_u1 += v2[j] * u1[j];
+      v2_dot_u2 += v2[j] * u2[j];
     }
     max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
+/*    fprintf(stderr,"%f \n",max_eigen);*/
     cohSNR[i] = sqrt(max_eigen);
   }
     
