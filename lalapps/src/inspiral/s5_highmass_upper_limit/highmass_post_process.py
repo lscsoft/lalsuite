@@ -333,7 +333,7 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[], mass_bins="0,50,85,inf", live_time_program="thinca", categories="mtotal-ifos-oninstruments", rank="snr"):
+  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[], mass_bins="0,50,85,inf", live_time_program="thinca", categories="mtotal-ifos-oninstruments", rank="snr", ext_num=5):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
@@ -342,6 +342,7 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_var_opt("rank-by", rank)
+    self.add_var_opt("extrapolation-num", ext_num)
     self.add_var_arg(database)
     self.add_macro("macroid", id)
     for p in p_node:
@@ -352,28 +353,39 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
   """
   hm_upperlimit.py --instruments --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations --veto-segments-name
   """
-  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, veto_segments_name, id, p_node=[]):
+  def __init__(self, job, dag, output_name_tag, database, id, bootstrap_iterations=10000, veto_segments_name="vetoes", ifos=None, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
-    print ifos
-    self.add_var_opt("instruments",ifos)
+    if ifos: self.add_var_opt("instruments",ifos)
     self.add_var_opt("output-name-tag",output_name_tag)
-    self.add_var_opt("full-data-file",full_data_file)
-    self.add_var_opt("inj-data-glob",inj_data_glob)
+    self.output_name_tag = output_name_tag
     self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
     self.add_var_opt("veto-segments-name",veto_segments_name)
+    self.add_var_arg(database)
     self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
 
+  def output_by_combo(self,ifo_combinations):
+    upperlimit_fnames = []
+    for ifo_combination in ifo_combinations:
+      #FIXME use a different function
+      ifo_combination = str(ifo_combination)
+      fname = '2Dsearchvolume-' + self.output_name_tag + '-' + ifo_combination.replace(',','') + '.xml'
+      upperlimit_fnames.append(fname)
+    fstr = " ".join(upperlimit_fnames)
+    return fstr
+
+
 class far_plot_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, id, p_node):
+  def __init__(self, job, dag, database, id, p_node, base=None):
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_macro("macroid", id)
+    if base: self.add_var_opt("base", base)
     self.add_var_arg(database)
     for p in p_node:
       self.add_parent(p)
@@ -414,33 +426,41 @@ def ifo_combos(ifosegdict):
   for i in l: combos.append(",".join(i))
   #FIXME assumes we don't look at H1H2
   if 'H1,H2' in combos: combos.remove('H1,H2')
-  print combos
   return combos
 
 def ifo_seg_dict(cp):
   out = {}
-  instruments = []
-  if string.strip(cp.get('input','h1vetosegments')):
-    out["H1"] = string.strip(cp.get('input','h1vetosegments'))
-    instruments.append("H1")
-  if string.strip(cp.get('input','h2vetosegments')):
-    out["H2"] = string.strip(cp.get('input','h2vetosegments'))
-    instruments.append("H2")
-  if string.strip(cp.get('input','l1vetosegments')):
-    out["L1"] = string.strip(cp.get('input','l1vetosegments'))
-    instruments.append("L1")
-  if string.strip(cp.get('input','v1vetosegments')):
-    out["V1"] = string.strip(cp.get('input','v1vetosegments'))
-    instruments.append("V1")
+  instruments = set()
+  cat_list = set()
+  ifos = ['H1','H2','L1','V1']
+  cats = ['CAT_2', 'CAT_3']
+  combos = {}
+  for c in cats:
+    out[c] = {}
+    for i in ifos:
+      name_str = i.lower() + '-' + c.lower() + '-vetosegments'
+      if string.strip(cp.get('input',name_str)):
+        out[c][i] = string.strip(cp.get('input',name_str))
+        instruments.add(i)
+        cat_list.add(c)
+    combos[c] = ifo_combos(out[c])
+    print>>sys.stderr, "\tfound these " + c + " combos:", combos[c]
+
   #FIXME use proper instruments utilities
+  instruments = list(instruments)
   instruments.sort()
-  #FIXME probably won't work on CAT2
-  cat = "_".join(os.path.basename(out["H1"]).split("_")[1:3])
-  return out, [cat], ifo_combos(out), ",".join(instruments)
+  cat_list = list(cat_list)
+  cat_list.sort()
+  if len(out['CAT_2']) and len(out['CAT_2']) and ( len(out['CAT_2']) != len(out['CAT_3']) ):
+    print >>sys.stderr, "cat 2 instruments don't agree with cat3 instruments, aborting."
+    sys.exit(1)
+  return out, cat_list, combos, ",".join(instruments)
+
 
 def grep(string, inname, outname, append_cache=None):
     o = open(outname, "w")
-    print "grepping " + inname + " for " + string + " and sending it to " + outname
+    #print >>sys.stderr, "grepping %s for %s and sending it to %s" % (inname, string, outname + ".cache")
+    #print >>sys.stderr, "grepping " + inname + " for " + string + " and sending it to " + outname + "\r",
     expr = re.compile(string)
     o.write(''.join(filter(expr.search,open(inname).readlines())))
     if append_cache: o.write(''.join(append_cache))
@@ -451,7 +471,7 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
     expr = re.compile(string)
     new_list = filter(expr.search,open(inname).readlines())
     new_list.sort()
-    print len(new_list)
+    #print len(new_list)
     outnames = []
     try: os.mkdir(outname)
     except: pass
@@ -461,7 +481,7 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
         outnames.append(outname+"/"+outname+"_"+str(i))
         o = open(outnames[-1]+".cache", "w")
         if append_cache: o.write(''.join(append_cache))
-	print "grepping " + inname + " for " + string + " and sending it to " + outnames[-1] + ".cache"
+	print >>sys.stderr, "\tbreaking up full data into pieces %f%%\r" % (float(i) / len(new_list) * 100.0,), 
       o.write(new_list[i])
       o.write(new_list[i].replace('THINCA_SECOND','THINCA_SLIDE_SECOND'))
     return outnames
@@ -469,6 +489,8 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
 ###############################################################################
 # MAIN PROGRAM
 ###############################################################################
+
+print >> sys.stderr, "\n...WELCOME FRIENDOS...\n"
 
 cp = ConfigParser.ConfigParser()
 cp.read("hm_post.ini")
@@ -513,7 +535,7 @@ n = 0
 #Do the segments node
 segNode = {}
 for cat in cats:
-  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict, "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
+  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict[cat], "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
 
 #Some initialization
 ligolwThincaToCoincNode = {}
@@ -524,8 +546,8 @@ ligolwSqliteNode = {}
 ligolwSqliteNodeInjDBtoXML = {}
 ligolwSqliteNodeInjXMLtoDB = {}
 ligolwInspinjfindNode = {}
-lallappsNewcorseNode = {}
-lallappsNewcorseNodeCombined = {}
+lalappsNewcorseNode = {}
+lalappsNewcorseNodeCombined = {}
 hmUpperlimitNode = {}
 hmUpperlimitPlotNode = {}
 farPlotNode = {}
@@ -540,8 +562,17 @@ end_time = inj.segment[1]
 
 timestr = str(start_time) + "-" + str(end_time)
 
-for type in types:
-  for cat in cats:
+###############################################
+# LOOP OVER CATS
+###############################################
+for cat in cats:
+  print >>sys.stderr, "Analyzing " + cat
+  p_nodes = {}
+  p_nodes[cat] = []
+  ###############################################
+  # FULL DATA THINCA TO COINC AND CLUSTERING ETC
+  ###############################################
+  for type in types:
     #break down the cache to save on parsing
     tag = type + "_" + cat
     out_tags = grep_pieces_and_append('THINCA_SECOND_.*'+type + ".*" + cat, FULLDATACACHE, tag, inspiral_second_list)
@@ -559,9 +590,14 @@ for type in types:
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
+    # keep track of parents
+    p_nodes[cat].append(sqliteNodeCluster[type+cat])
 
-for inj in injcache:
-  for cat in cats:
+  ###############################################
+  # INJECTION THINCA TO COINC AND CLUSTERING ETC
+  ###############################################
+  for injnum, inj in enumerate(injcache):
+    print >> sys.stderr, "processing injection %f %%\r" % (float(injnum) / len(injcache) * 100.00,),
     type = "_".join(inj.description.split("_")[2:])
     tag = type + "_" + cat
     url = inj.url
@@ -583,49 +619,38 @@ for inj in injcache:
     ligolwSqliteNodeInjDBtoXML[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
     ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, db_to_xml_name, n, p_node=[ligolwSqliteNodeInjDBtoXML[type+cat]]);n+=1
     ligolwSqliteNodeInjXMLtoDB[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
+    # keep track of parent nodes
+    p_nodes[cat].append(ligolwSqliteNodeInjXMLtoDB[type+cat])
 
-# New corse
-# First work out the parent/child relationships
-p_nodes = []
-for k in ligolwInspinjfindNode.keys():
-  p_nodes.append(ligolwSqliteNodeInjXMLtoDB[k])
-for k in sqliteNodeCluster.keys():
-  p_nodes.append(sqliteNodeCluster[k])
 
-#New corse jobs 
-for cat in cats:
+  ###############################################
+  # FAR PLOTS AND UPPER LIMITS OH MY
+  ###############################################
+
   #to compute uncombined far
-  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes, mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr");n+=1
+  lalappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes[cat], mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr");n+=1
+
   #to compute combined far 
-  lallappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lallappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");n+=1
+  lalappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lalappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");n+=1
 
-#Upper limit jobs
-upperlimit_fnames = {}
-upperlimit_nodes = {}
-for cat in cats:
-  upperlimit_fnames[cat] = []
-  upperlimit_nodes[cat] = []
-  for ifo_combination in ifo_combinations:
-    #FIXME use a different function
-    ifo_combination = str(ifo_combination)
-    fname = '2Dsearchvolume-' + timestr + '-' + ifo_combination.replace(',','') + '.xml'
-    upperlimit_fnames[cat].append(fname)
-    print fname, ifo_combination, ifo_combination
+  # lalapps_cbc_plotsummary plots
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lalappsNewcorseNodeCombined[cat]], base="cbc_plotsummary_"+cat+"_"+timestr);n+=1
 
-    hmUpperlimitNode[cat+ifo_combination] = hm_upperlimit_node(hmUpperlimitJob, dag, ifo_combination,timestr, "FULL_DATA_CAT_3_"+timestr+".sqlite", "*INJ_CAT_3_"+timestr+".sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNodeCombined[cat]]);n+=1
-    hmUpperlimitPlotNode[cat+ifo_combination] = ul_plot_node(hmUpperlimitPlotJob, dag, fname, n, [hmUpperlimitNode[cat+ifo_combination]]);n+=1
-    upperlimit_nodes[cat].append(hmUpperlimitPlotNode[cat+ifo_combination])
+  # upper limit
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, cat + "_" + timestr, " ".join(db[cat]), n p_node=[lalappsNewcorseNodeCombined[cat]]);n+=1
 
+  # upper limit plots
+  hmUpperlimitPlotNode[cat] = ul_plot_node(hmUpperlimitPlotJob, dag, hmUpperlimitNode[cat].output_by_combo(ifo_combinations[cat]), n, [hmUpperlimitNode[cat]]);n+=1
 
-#IFAR plots and combined upper limit plots and summary page
-for cat in cats:
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lallappsNewcorseNodeCombined[cat]]);n+=1
-  fstr = " ".join(upperlimit_fnames[cat])
-  hmUpperlimitPlotNode[cat] = ul_plot_node(hmUpperlimitPlotJob, dag, fstr, n, upperlimit_nodes[cat]);n+=1
   # Summary pages (open and closed box)
   summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, False, n, [hmUpperlimitPlotNode[cat]]);n+=1
   summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, True, n, [hmUpperlimitPlotNode[cat]]);n+=1
 
+
+
+###############################################
+# ALL FINNISH and loving it
+###############################################
 
 dag.write_sub_files()
 dag.write_dag()
