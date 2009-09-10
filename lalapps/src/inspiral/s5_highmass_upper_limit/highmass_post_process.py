@@ -565,7 +565,7 @@ timestr = str(start_time) + "-" + str(end_time)
 # LOOP OVER CATS
 ###############################################
 for cat in cats:
-  print >>sys.stderr, "Analyzing " + cat
+  print >>sys.stderr, "\nAnalyzing " + cat
   p_nodes = {}
   p_nodes[cat] = []
   ###############################################
