@@ -516,17 +516,25 @@ XLAL3DRinca(
     dt_max = dt_max_ba;
   }
 
-  printf("new dt loop \n");
-
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
 
-  /* estimate true time delay */
-  for ( dt = dt_min ; dt < dt_max ; dt += step )
+  /* if ifos are H1H2 then no need to account for light travel time */
+
+  if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0
+	||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
   {
-    REAL8 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
-    if (ds2 < ds2_min) ds2_min = ds2;
+    return ( ds2_min );
   }
-  return ( ds2_min );
+  else
+  {
+    /* estimate true time delay for non-H1H2 ifo combinations*/
+    for ( dt = dt_min ; dt < dt_max ; dt += step )
+    {
+      REAL8 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+      if (ds2 < ds2_min) ds2_min = ds2;
+    }
+    return ( ds2_min );
+  {
 }
 
 
