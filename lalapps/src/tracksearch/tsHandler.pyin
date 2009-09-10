@@ -42,7 +42,7 @@ except Exception, errorInfo:
     sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
     sys.stderr.write("Pylab functionality unavailable!\n")
     sys.stderr.write("Function calls requiring graphics may FAIL!\n")
-    
+    sys.stderr.flush()
 
 #Begin MAIN part of this python code to actually manipulate the curve
 #lists
@@ -99,6 +99,7 @@ def wrapperGraphTriggers(candidateObject):
             if candidateObject.verboseMode:
                 sys.stdout.write("Only trait summary for triggers in memory.\n")
                 sys.stdout.write("Loading entire candidate list.\n")
+                sys.stdout.flush()
             candidateObject.__loadfileQuick__(candidateObject.filename[0])
         candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
     except Exception, errorInfo:
@@ -106,6 +107,7 @@ def wrapperGraphTriggers(candidateObject):
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
         sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
         sys.stderr.write("Skipping this plot. Sorry.\n")
+        sys.stderr.flush()
 #End wrapperGraphTriggers(candidateObject)
 
 def wrapperShowHistogram(candidateObject):
@@ -143,6 +145,7 @@ def wrapperShowHistogram(candidateObject):
             property=candidateObject.__getCurveField__('',myTrait)
             sys.stdout.write("Creating histogram for %s \n"%
                              (property[1]))
+            sys.stdout.flush()
 
         candidateObject.setHistogramType(histogramType)
         candidateObject.showHistogram(myTrait,
@@ -160,6 +163,7 @@ def wrapperShowHistogram(candidateObject):
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
+            sys.stderr.flush()
 #End wrapperShowHistogram(candidateObject)
 
 def wrapperShowScatterPlot(candidateObject):
@@ -176,6 +180,7 @@ def wrapperShowScatterPlot(candidateObject):
             sys.stderr.write("Error plotting this scatter plot!\n")
             sys.stderr.write("Check trigger property string.\n")
             sys.stderr.write("%s\n"%(triggerTrait))
+            sys.stderr.flush()
             if (triggerTrait=="p"):
                 colX="p"
                 colY="v"
@@ -188,6 +193,7 @@ def wrapperShowScatterPlot(candidateObject):
             propertyY=candidateObject.__getCurveField__('',myTraitY)[1]
             sys.stdout.write("Creating scatter plot for %s,%s\n"%
                              (propertyX,propertyY))
+            sys.stdout.flush()
         try:
             formatString=''
             candidateObject.showScatterPlot(myTraitX,
@@ -199,6 +205,7 @@ def wrapperShowScatterPlot(candidateObject):
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
+            sys.stderr.flush()
             
 #End wrapperShowScatterPlot(candidateObject)
 
@@ -471,6 +478,7 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
         if expThreshold.__contains__('"'):
             if verboseSwitch:
                 sys.stdout.write("Found extra parenthesis in threshold expressions!")
+                sys.stdout.flush()
         expThreshold=expThreshold.strip('"')
         expThresholdLIST=str(expThreshold).split(',')
         for singleThreshold in expThresholdLIST:

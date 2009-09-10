@@ -1252,7 +1252,8 @@ class candidateList:
         spinner.setTag('Writing')
         for entry in self.curves:
             CurveId,Length,Power=entry.getKurveHeader()
-            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+'\n'
+            snrEstimate=entry.getKurveSNR()
+            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+','+str(snrEstimate)+'\n'
             output_fp.write(text)
             text=""
             data=[]
@@ -2296,6 +2297,7 @@ class candidateList:
             ww=float(self.__getCurveField__(lineInfo,"ww")[0])
             ee=float(self.__getCurveField__(lineInfo,"ee")[0])
             rr=float(self.__getCurveField__(lineInfo,"rr")[0])
+            pp=float(self.__getCurveField__(lineInfo,"pp")[0])
             evalResult=False
             try:
                 evalResult=eval(testExp)
@@ -2556,7 +2558,7 @@ class candidateList:
         plotLabel=str(self.__getCurveField__('',triggerTrait)[1])
         pylab.xlabel(str(plotLabel))
         pylab.ylabel(str("Count"))
-        figTitle="Upper Percentile :%3f%% ,%s Threshold :%f"%(float(100)*topPercentage,plotLabel,transitionValue)
+        figTitle="Upper Percentile :%3f%% ,%s Threshold :%d"%(float(100)*topPercentage,plotLabel,transitionValue)
         pylab.figtext(0.01,0.95,figTitle)
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])

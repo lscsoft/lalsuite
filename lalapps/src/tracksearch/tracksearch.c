@@ -2812,7 +2812,7 @@ LALappsWriteSearchResults(LALStatus      *status,
   /*Form of solution FreqIndex,TimeIndex,GPSSec,GPSNano,Power*/
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      fprintf(totalFile,"Curve number,length,power:%i,%i,%6.18f,%6.1f\n",
+      fprintf(totalFile,"Curve number,length,power:%i,%i,%1.20f,%1.4f\n",
 	      i,
 	      outCurve.curves[i].n,
 	      outCurve.curves[i].totalPower,
