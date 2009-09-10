@@ -658,7 +658,7 @@ dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
 
-print "\nYour database output should be...\n"
+print "\n\nYour database output should be...\n"
 for cat in cats:
   print "\t" + cat + ":\n", " ".join(db[cat]) + "\n"
-print "\n\tnow run condor_submit_dag hm_post.dag\n\n\tGOOD LUCK!"
+print "\n\n\tnow run condor_submit_dag hm_post.dag\n\n\tGOOD LUCK!"
