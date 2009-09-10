@@ -205,8 +205,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
-			    REAL8FrequencySeriesVector *FstatVect,
-			    REAL8  thr);
+			    REAL4FrequencySeriesVector *FstatVect,
+			    REAL4  thr);
 
   void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  

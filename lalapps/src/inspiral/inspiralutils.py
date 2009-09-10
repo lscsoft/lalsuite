@@ -810,7 +810,12 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   analysisduration = int(analysisend) - int(analysisstart)
   inspmissedVetoDir = "../segments"
   for ifo in ifos:
-    plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
+    if cat == 2:
+      plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
+        inspmissedVetoDir + "/" + ifo + "-CATEGORY_" + str(cat) +
+        "_VETO_SEGS-" + analysisstart + "-" + str(analysisduration) + ".txt")
+    else:
+      plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
         inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
         "_VETO_SEGS-" + analysisstart + "-" + str(analysisduration) + ".txt")
 
