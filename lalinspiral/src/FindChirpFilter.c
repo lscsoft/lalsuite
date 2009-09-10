@@ -322,9 +322,9 @@ LALFindChirpFilterSegment (
 
 
   /* inverse fft to get q */
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, params->qtildeVec,
-      params->invPlan );
-  CHECKSTATUSPTR( status );
+  XLALCOMPLEX8VectorFFT(params->qVec, params->qtildeVec, params->invPlan);
+  if (params->qVec == NULL)
+    ABORTXLAL(status);
 
 
   /*

@@ -263,9 +263,8 @@ LALFindChirpDataInit (
 
 
   /* foward fft plan */
-  LALCreateForwardRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan,
-      params->numPoints, 0 );
-  BEGINFAIL( status )
+  dataParamPtr->fwdPlan = XLALCreateForwardREAL4FFTPlan(params->numPoints, 0);
+  if (dataParamPtr->fwdPlan == NULL)
   {
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
         status );
@@ -286,16 +285,15 @@ LALFindChirpDataInit (
     }
     LALFree( dataParamPtr );
     *output = NULL;
+
+    ABORTXLAL(status);
   }
-  ENDFAIL( status );
 
   /* inverse fft plan */
-  LALCreateReverseRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan,
-      params->numPoints, 0 );
-  BEGINFAIL( status )
+  dataParamPtr->invPlan = XLALCreateReverseREAL4FFTPlan(params->numPoints, 0);
+  if (dataParamPtr->invPlan)
   {
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),
-        status );
+    XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -315,18 +313,17 @@ LALFindChirpDataInit (
     }
     LALFree( dataParamPtr );
     *output = NULL;
+
+    ABORTXLAL(status);
   }
-  ENDFAIL( status );
 
   /* workspace vector w: time domain */
   LALCreateVector( status->statusPtr, &dataParamPtr->wVec,
       params->numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ),
-        status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),
-        status );
+    XLALDestroyREAL4FFTPlan(dataParamPtr->invPlan);
+    XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -356,10 +353,8 @@ LALFindChirpDataInit (
   {
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ),
         status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ),
-        status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),
-        status );
+    XLALDestroyREAL4FFTPlan(dataParamPtr->invPlan);
+    XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -392,10 +387,8 @@ LALFindChirpDataInit (
         status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ),
         status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ),
-        status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),
-        status );
+    XLALDestroyREAL4FFTPlan(dataParamPtr->invPlan);
+    XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -431,10 +424,8 @@ LALFindChirpDataInit (
           status );
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ),
           status );
-      TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ),
-          status );
-      TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ),
-          status );
+      XLALDestroyREAL4FFTPlan(dataParamPtr->invPlan);
+      XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
       TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ),
           status );
       if ( dataParamPtr->ampVecBCV )
@@ -502,11 +493,8 @@ LALFindChirpDataFinalize (
   /* local pointer to structure */
   dataParamPtr = *output;
 
-  LALDestroyRealFFTPlan (status->statusPtr, &dataParamPtr->fwdPlan);
-  CHECKSTATUSPTR (status);
-
-  LALDestroyRealFFTPlan (status->statusPtr, &dataParamPtr->invPlan);
-  CHECKSTATUSPTR (status);
+  XLALDestroyREAL4FFTPlan(dataParamPtr->invPlan);
+  XLALDestroyREAL4FFTPlan(dataParamPtr->fwdPlan);
 
   LALDestroyVector (status->statusPtr, &dataParamPtr->wVec);
   CHECKSTATUSPTR (status);

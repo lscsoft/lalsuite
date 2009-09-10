@@ -288,9 +288,9 @@ LALFindChirpBCVSpinData (
      	 *
      	 */
 
-    	LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
-        	dataVec, params->fwdPlan );
-    	CHECKSTATUSPTR( status );
+      XLALREAL4ForwardFFT(fcSeg->data->data, dataVec, params->fwdPlan);
+      if (fcSeg->data->data == NULL)
+        ABORTXLAL(status);
 
   	/* compute strain */
   	for ( k = 0; k < fcSeg->data->data->length; ++k )
@@ -372,21 +372,18 @@ LALFindChirpBCVSpinData (
       		wtilde[0].re                             = 0.0;
 
       		/* transform to time domain */
-      		LALReverseRealFFT( status->statusPtr,
-			params->wVec,
-			params->wtildeVec,
-			params->invPlan );
-      		CHECKSTATUSPTR (status);
+      		XLALREAL4ReverseFFT(params->wVec, params->wtildeVec, params->invPlan);
+      		if (params->wVec == NULL)
+      			ABORTXLAL(status);
 
       		/* truncate in time domain */
       		memset( w + params->invSpecTrunc/2, 0,
           	(params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
 
       		/* transform to frequency domain */
-      		LALForwardRealFFT( status->statusPtr, params->wtildeVec,
-			params->wVec,
-          		params->fwdPlan );
-     	 	CHECKSTATUSPTR (status);
+      		XLALREAL4ForwardFFT(params->wtildeVec, params->wVec, params->fwdPlan);
+      		if (params->wtildeVec == NULL)
+      			ABORTXLAL(status);
 
       		/* normalise fourier transform and square */
       		{

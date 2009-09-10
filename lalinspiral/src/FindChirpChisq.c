@@ -322,9 +322,10 @@ LALFindChirpChisqVeto (
     memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l],
         (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
 
-    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
-        params->qtildeBinVec, params->plan );
-    CHECKSTATUSPTR( status );
+    XLALCOMPLEX8VectorFFT(params->qBinVecPtr[l],
+        params->qtildeBinVec, params->plan);
+    if (params->qBinVecPtr[l] == NULL)
+      ABORTXLAL(status);
   }
 
 
