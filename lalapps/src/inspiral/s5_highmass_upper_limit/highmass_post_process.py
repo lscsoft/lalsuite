@@ -40,6 +40,13 @@ class hm_post_DAG(pipeline.CondorDAG):
     pipeline.CondorDAG.__init__(self,logfile)
     self.set_dag_file(self.basename)
     self.jobsDict = {}
+    self.id = 0
+
+    def add_node(self, node):
+      self.id+=i
+      node.add_macro("macroid", self.id)
+      pipeline.CondorDAG.add_node(self, node)
+
 
 class sqlite_job(pipeline.CondorDAGJob):
   """
@@ -242,14 +249,14 @@ class summary_page_job(pipeline.CondorDAGJob):
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.add_arg(string.strip(cp.get('output','web_page')))
+    self.add_opt("webserver", string.strip(cp.get('output','web_page')))
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False,cache_pat=None):
+  def __init__(self, job, dag, database, xml_list, p_node=[], replace=True, extract=False,cache_pat=None):
 
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME add tmp file space
@@ -264,7 +271,6 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
       f.write("find $PWD -name '*" + cache_pat + "*.xml.gz' -print | sed -e 's?^?- - - - file://localhost?' > ligolw_sqlite_" + cache_pat + ".cache\n")
     f.write(cline)
     f.close
-    self.add_macro("macroid", id)
     self.add_file_arg(fn)
 
     for p in p_node:
@@ -274,7 +280,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, start_time, end_time, effsnrfac=50.0, p_node=[], instruments='H1,H2,L1,V1'):
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, start_time, end_time, effsnrfac=50.0, p_node=[], instruments='H1,H2,L1,V1'):
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
     self.add_var_opt("veto-segments", vetoes)
@@ -285,7 +291,6 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
     self.add_var_opt("experiment-start-time", start_time)
     self.add_var_opt("experiment-end-time", end_time)
 
-    self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -293,10 +298,9 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
 class sqlite_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, sqlfile, id, p_node=[]):
+  def __init__(self, job, dag, database, sqlfile, p_node=[]):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_macro("macroid", id)
     self.add_file_arg(database)
     self.add_macro("macroinput", sqlfile)
     for p in p_node:
@@ -306,11 +310,10 @@ class sqlite_node(pipeline.CondorDAGNode):
 class ligolw_inspinjfind_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, xml, id, p_node=[]):
+  def __init__(self, job, dag, xml, p_node=[]):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_arg(xml)
-    self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -318,13 +321,12 @@ class ligolw_inspinjfind_node(pipeline.CondorDAGNode):
 class ligolw_segments_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, ifodict, name, output, id, p_node=[], coalesce=True):
+  def __init__(self, job, dag, ifodict, name, output, p_node=[], coalesce=True):
     pipeline.CondorDAGNode.__init__(self,job)
     # HA HA, we win!
     self.add_var_opt("insert-from-segwizard", " --insert-from-segwizard ".join(["%s=%s" % (instrument.upper(), filename) for instrument, filename in ifodict.items()]))
     self.add_var_opt("name",name)
     self.add_var_opt("output",output)
-    self.add_macro("macroid", id)
     if coalesce: self.add_var_opt("coalesce","")
     for p in p_node:
       self.add_parent(p)
@@ -333,7 +335,7 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[], mass_bins="0,50,85,inf", live_time_program="thinca", categories="mtotal-ifos-oninstruments", rank="snr", ext_num=5):
+  def __init__(self, job, dag, veto_segments_name, database, p_node=[], mass_bins="0,50,85,inf", live_time_program="thinca", categories="mtotal-ifos-oninstruments", rank="snr", ext_num=5):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
@@ -344,7 +346,6 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
     self.add_var_opt("rank-by", rank)
     self.add_var_opt("extrapolation-num", ext_num)
     self.add_var_arg(database)
-    self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -353,7 +354,7 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
   """
   hm_upperlimit.py --instruments --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations --veto-segments-name
   """
-  def __init__(self, job, dag, output_name_tag, database, id, bootstrap_iterations=10000, veto_segments_name="vetoes", ifos=None, p_node=[]):
+  def __init__(self, job, dag, output_name_tag, database, bootstrap_iterations=10000, veto_segments_name="vetoes", ifos=None, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
@@ -363,7 +364,6 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
     self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_var_arg(database)
-    self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -382,9 +382,8 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
 class far_plot_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, id, p_node, base=None):
+  def __init__(self, job, dag, database, p_node, base=None):
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_macro("macroid", id)
     if base: self.add_var_opt("base", base)
     self.add_var_arg(database)
     for p in p_node:
@@ -394,9 +393,8 @@ class far_plot_node(pipeline.CondorDAGNode):
 class ul_plot_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, xml_list, id, p_node):
+  def __init__(self, job, dag, xml_list, p_node):
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_macro("macroid", id)
     self.add_var_arg(xml_list)
     for p in p_node:
       self.add_parent(p)
@@ -405,10 +403,10 @@ class ul_plot_node(pipeline.CondorDAGNode):
 class summary_page_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, open_box, id, p_node):
+  def __init__(self, job, dag, open_box=None, base_name=None, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_macro("macroid", id)
-    if open_box: self.add_var_arg("open")
+    if open_box: self.add_var_opt("open-box","")
+    if base_name: self.add_var_opt("output-name-tag", base_name)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -535,7 +533,7 @@ n = 0
 #Do the segments node
 segNode = {}
 for cat in cats:
-  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict[cat], "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
+  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, seg_dict[cat], "vetoes", "vetoes_"+cat+".xml.gz");
 
 #Some initialization
 ligolwThincaToCoincNode = {}
@@ -579,17 +577,17 @@ for cat in cats:
     cnt = 0;
     node_list = []
     for otag in out_tags:
-      ligolwThincaToCoincNode[type+cat+str(cnt)] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, otag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", otag+timestr, n, start_time, end_time, effsnrfac=string.strip(cp.get('input',"eff_snr_fac")), instruments=instruments, p_node=[segNode[cat]]); n+=1
+      ligolwThincaToCoincNode[type+cat+str(cnt)] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, otag+".cache", "vetoes_"+cat+".xml.gz", "vetoes", otag+timestr, start_time, end_time, effsnrfac=string.strip(cp.get('input',"eff_snr_fac")), instruments=instruments, p_node=[segNode[cat]]);
       node_list.append(ligolwThincaToCoincNode[type+cat+str(cnt)])
       cnt+=1
     database = tag+"_"+timestr+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
     xml_list = ["vetoes_"+cat+".xml.gz"]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=node_list, replace=True, cache_pat=tag); n+=1
-    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
-    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
-    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, p_node=node_list, replace=True, cache_pat=tag);
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), p_node=[ligolwSqliteNode[type+cat]]);
+    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")), p_node=[sqliteNodeSimplify[type+cat]]);
+    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")), p_node=[sqliteNodeRemoveH1H2[type+cat]]); 
     # keep track of parents
     p_nodes[cat].append(sqliteNodeCluster[type+cat])
 
@@ -606,19 +604,19 @@ for cat in cats:
     except: pass
     #break down the cache
     grep('THINCA_SECOND_.*'+type + '.*' + cat, INJCACHE, cachefile, inspiral_second_list)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, n, start_time, end_time, effsnrfac=50, instruments=instruments, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", tag+"/S5_HM_INJ_"+timestr, start_time, end_time, effsnrfac=50, instruments=instruments, p_node=[segNode[cat]]);
     database = tag+"_"+timestr+".sqlite"
     db_to_xml_name = tag +"_"+timestr+".xml.gz"
     try: db[cat].append(database)
     except: db[cat] = [database]
     xml_list = [url, "vetoes_"+cat+".xml.gz"]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True,cache_pat=tag);n+=1
-    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]);n+=1
-    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
-    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]);n+=1
-    ligolwSqliteNodeInjDBtoXML[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
-    ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, db_to_xml_name, n, p_node=[ligolwSqliteNodeInjDBtoXML[type+cat]]);n+=1
-    ligolwSqliteNodeInjXMLtoDB[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True,cache_pat=tag);
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), p_node=[ligolwSqliteNode[type+cat]]);
+    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")), p_node=[sqliteNodeSimplify[type+cat]]);
+    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")), p_node=[sqliteNodeRemoveH1H2[type+cat]]);
+    ligolwSqliteNodeInjDBtoXML[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True);
+    ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, db_to_xml_name, p_node=[ligolwSqliteNodeInjDBtoXML[type+cat]]);
+    ligolwSqliteNodeInjXMLtoDB[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [db_to_xml_name], p_node=[ligolwInspinjfindNode[type+cat]], replace=True);
     # keep track of parent nodes
     p_nodes[cat].append(ligolwSqliteNodeInjXMLtoDB[type+cat])
 
@@ -626,25 +624,27 @@ for cat in cats:
   ###############################################
   # FAR PLOTS AND UPPER LIMITS OH MY
   ###############################################
+  
+  base_name = cat + "_" + timestr
 
   #to compute uncombined far
-  lalappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes[cat], mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr");n+=1
+  lalappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]),  p_nodes[cat], mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr");
 
   #to compute combined far 
-  lalappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), n, [lalappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");n+=1
+  lalappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), [lalappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar");
 
   # lalapps_cbc_plotsummary plots
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), n, [lalappsNewcorseNodeCombined[cat]], base="cbc_plotsummary_"+cat+"_"+timestr);n+=1
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), [lalappsNewcorseNodeCombined[cat]], base="cbc_plotsummary_"+cat+"_"+timestr);
 
   # upper limit
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, cat + "_" + timestr, " ".join(db[cat]), n p_node=[lalappsNewcorseNodeCombined[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, base_name, " ".join(db[cat]), p_node=[lalappsNewcorseNodeCombined[cat]]);
 
   # upper limit plots
-  hmUpperlimitPlotNode[cat] = ul_plot_node(hmUpperlimitPlotJob, dag, hmUpperlimitNode[cat].output_by_combo(ifo_combinations[cat]), n, [hmUpperlimitNode[cat]]);n+=1
+  hmUpperlimitPlotNode[cat] = ul_plot_node(hmUpperlimitPlotJob, dag, hmUpperlimitNode[cat].output_by_combo(ifo_combinations[cat]), [hmUpperlimitNode[cat]]);
 
   # Summary pages (open and closed box)
-  summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, False, n, [hmUpperlimitPlotNode[cat]]);n+=1
-  summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, True, n, [hmUpperlimitPlotNode[cat]]);n+=1
+  summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
+  summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
 
 
 
