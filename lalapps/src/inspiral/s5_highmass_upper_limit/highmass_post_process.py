@@ -40,11 +40,11 @@ class hm_post_DAG(pipeline.CondorDAG):
     pipeline.CondorDAG.__init__(self,logfile)
     self.set_dag_file(self.basename)
     self.jobsDict = {}
-    self.id = 0
+    self.node_id = 0
 
     def add_node(self, node):
-      self.id+=i
-      node.add_macro("macroid", self.id)
+      self.node_id+=i
+      node.add_macro("macroid", self.node_id)
       pipeline.CondorDAG.add_node(self, node)
 
 
@@ -265,7 +265,8 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
     if extract: cline += " --extract " 
     if cache_pat: cline += " --input-cache ligolw_sqlite_" + cache_pat + ".cache "
     for xml in xml_list: cline += xml + " "
-    fn = "bash_scripts/ligolw_sqlite"+str(id)+".sh"
+    #FIXME the node id will be incremented when it is added, so we do +1 by hand here
+    fn = "bash_scripts/ligolw_sqlite"+str(dag.node_id+1)+".sh"
     f = open(fn,"w")
     if cache_pat: 
       f.write("find $PWD -name '*" + cache_pat + "*.xml.gz' -print | sed -e 's?^?- - - - file://localhost?' > ligolw_sqlite_" + cache_pat + ".cache\n")
