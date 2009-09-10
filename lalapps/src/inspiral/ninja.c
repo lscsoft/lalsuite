@@ -162,7 +162,6 @@ int main( INT4 argc, CHAR *argv[] )
   MetadataTable proctable;
   MetadataTable procparams;
   ProcessParamsTable   *this_proc_param = NULL;
-  LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE;
 
   /* nrwave stuff */
   NinjaMetaData metaData;
@@ -333,8 +332,6 @@ int main( INT4 argc, CHAR *argv[] )
 
   /* first the process table */
   proctable.processTable = (ProcessTable *)LALCalloc( 1, sizeof(ProcessTable) );
-
-  /*LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy ), &status );*/
   XLALGPSTimeNow ( &(proctable.processTable->start_time) );
 
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
@@ -355,7 +352,7 @@ int main( INT4 argc, CHAR *argv[] )
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, uvar_outFile ), &status );
 
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), &status );
 
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, process_table ), &status );
