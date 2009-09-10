@@ -595,8 +595,9 @@ for cat in cats:
   ###############################################
   # INJECTION THINCA TO COINC AND CLUSTERING ETC
   ###############################################
+  print >> sys.stderr, "\n"
   for injnum, inj in enumerate(injcache):
-    print >> sys.stderr, "processing injection %f %%\r" % (float(injnum) / len(injcache) * 100.00,),
+    print >> sys.stderr, "\tprocessing injection %f %%\r" % (float(injnum) / len(injcache) * 100.00,),
     type = "_".join(inj.description.split("_")[2:])
     tag = type + "_" + cat
     url = inj.url
