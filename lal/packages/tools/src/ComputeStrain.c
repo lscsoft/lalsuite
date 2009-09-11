@@ -70,6 +70,13 @@ None
 NRCSID( COMPUTESTRAINC, "$Id$" );
 RCSID("$Id$");
 
+
+/* Local helper functions, defined static so they cannot be used outside. */
+static void set_output_to_zero(StrainOut *output);
+static void check_nans_infs(LALStatus *status, StrainIn *input);
+
+
+
 void LALComputeStrain(
     LALStatus              *status,
     StrainOut              *output,
@@ -832,7 +839,7 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
 /*
  * Check if there are any nans or infs in the input data.
  */
-void check_nans_infs(LALStatus *status, StrainIn *input)
+static void check_nans_infs(LALStatus *status, StrainIn *input)
  {
      UINT4 p;
   
@@ -860,7 +867,7 @@ void check_nans_infs(LALStatus *status, StrainIn *input)
 
 
 
-void set_output_to_zero(StrainOut *output)
+static void set_output_to_zero(StrainOut *output)
 {
     memset(output->h.data->data,          0,  output->h.data->length         * sizeof(REAL8));
     memset(output->hR.data->data,         0,  output->hR.data->length        * sizeof(REAL8));
