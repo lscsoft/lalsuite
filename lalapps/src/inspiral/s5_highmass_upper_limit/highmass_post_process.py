@@ -42,10 +42,10 @@ class hm_post_DAG(pipeline.CondorDAG):
     self.jobsDict = {}
     self.node_id = 0
 
-    def add_node(self, node):
-      self.node_id+=1
-      node.add_macro("macroid", self.node_id)
-      pipeline.CondorDAG.add_node(self, node)
+  def add_node(self, node):
+    self.node_id += 1
+    node.add_macro("macroid", self.node_id)
+    pipeline.CondorDAG.add_node(self, node)
 
 
 class sqlite_job(pipeline.CondorDAGJob):
@@ -492,7 +492,10 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
 print >> sys.stderr, "\n...WELCOME FRIENDOS...\n"
 
 cp = ConfigParser.ConfigParser()
-cp.read("hm_post.ini")
+try: cp.read("hm_post.ini")
+except: 
+  print "couldn't find hm_post.ini"
+  sys.exit(1)
 
 try: os.mkdir("logs")
 except: pass
