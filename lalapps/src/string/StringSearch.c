@@ -579,7 +579,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
-		      
+      	
       if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
     }
   }
