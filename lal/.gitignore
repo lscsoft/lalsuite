@@ -112,6 +112,8 @@ packages/fft/test/AvgSpecTest
 packages/fft/test/ComplexFFTTest
 packages/fft/test/RealFFTTest
 packages/fft/test/TimeFreqFFTTest
+packages/fft/src/CudaFFT.c
+packages/fft/src/CudaFFT.linkinfo
 packages/findchirp/test/FindChirpBCVSpinTest
 packages/findchirp/test/FindChirpTDTest
 packages/framedata/src/FrameSeries.c

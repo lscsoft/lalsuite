@@ -54,6 +54,27 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_LIBTOOL
 
+# check for supported mac os x version
+if test "x$build_vendor" = "xapple"; then
+  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  if test "x$SW_VERS" != "x"; then
+    AC_MSG_CHECKING([Mac OS X version])
+    MACOSX_VERSION=`$SW_VERS -productVersion`
+    AC_MSG_RESULT([$MACOSX_VERSION])
+  fi
+  case "$MACOSX_VERSION" in
+    10.0*|10.1*|10.2*|10.3*)
+      AC_MSG_ERROR([This version of Mac OS X is not supported])
+      ;;
+    10.4*|10.5*|10.6*)
+      # supported version
+    ;;
+    *)
+      AC_MSG_WARN([Unknown Mac OS X version])
+      ;;
+  esac
+fi
+
 # check for header files
 AC_HEADER_STDC
 
@@ -64,16 +85,27 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
 PKG_CHECK_MODULES([LAL],[lal >= 6.3],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
-AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
 
 # check for lalsupport, needed for test suite
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+
+# check libraries if not a top-level build
+if test "$LALSUITE_BUILD" = "true" ; then
+  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
+else
+  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
+  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+fi
 AM_CONDITIONAL([LALSUPPORT], [test x$lalsupport = xtrue])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
+
+  # add mac os x specific flags
+  if test "x$MACOSX_VERSION" != "x"; then
+    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
+  fi
 fi
 
 # output
@@ -89,7 +121,7 @@ echo "
 
           ${prefix}
 
-        Now run 'make' to build LAL support
+        Now run 'make' to build LAL Stochastic
         and run 'make install' to install LAL Stochastic
 
 ================================================================="

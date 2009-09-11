@@ -162,9 +162,10 @@ LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
-LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_INTELFFT
+LAL_WITH_CUDA
+LAL_ENABLE_GCC_FLAGS
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
 LAL_ENABLE_XML
@@ -225,6 +226,28 @@ AC_CHECK_PROGS(M4, gm4 m4, m4)
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
+
+# check for supported mac os x version
+if test "x$build_vendor" = "xapple"; then
+  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  if test "x$SW_VERS" != "x"; then
+    AC_MSG_CHECKING([Mac OS X version])
+    MACOSX_VERSION=`$SW_VERS -productVersion`
+    AC_MSG_RESULT([$MACOSX_VERSION])
+  fi
+  case "$MACOSX_VERSION" in
+    10.0*|10.1*|10.2*|10.3*)
+      AC_MSG_ERROR([This version of Mac OS X is not supported])
+      ;;
+    10.4*|10.5*|10.6*)
+      # supported version
+    ;;
+    *)
+      AC_MSG_WARN([Unknown Mac OS X version])
+      ;;
+  esac
+fi
+
 if test -z "$TEXFLAGS"
 then
 AC_MSG_CHECKING(if $LATEX accepts --interaction=batchmode)
@@ -375,6 +398,9 @@ fi
 
 
 dnl Define variables describing what was enabled.
+if test "${cuda}" = "true"; then
+  AC_DEFINE(LAL_CUDA_ENABLED, 1, [Define if using cuda library])
+fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
 fi
@@ -423,6 +449,7 @@ AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
 AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
+AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 
@@ -463,7 +490,13 @@ fi
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
+
+  # add mac os x specific flags
+  if test "x$MACOSX_VERSION" != "x"; then
+    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
+  fi
 fi
+
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
@@ -476,6 +509,7 @@ AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -484,6 +518,7 @@ echo "
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
                 LAL XML library support is $xmlenabled
+                CUDA support is $cudaenabled
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

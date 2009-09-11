@@ -203,7 +203,6 @@ int main ( int argc, char *argv[] )
 {
   /* lal function variables */
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
   FrCache      *frInCache = NULL;
@@ -282,8 +281,7 @@ int main ( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
@@ -1186,8 +1184,7 @@ cleanExit:
 
   /* write the process table */
   snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,

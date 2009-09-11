@@ -1,3 +1,6 @@
+/* supress warnings from cuda headers */
+#pragma GCC system_header
+
 #include <lal/LALDatatypes.h>
 #include <cufft.h>
 

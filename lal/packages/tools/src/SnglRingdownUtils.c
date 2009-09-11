@@ -493,7 +493,7 @@ XLAL3DRinca(
   dt_max = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
 
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
-  
+
   /* estimate true time delay */
   for ( dt = dt_min ; dt < dt_max ; dt += step )
   {

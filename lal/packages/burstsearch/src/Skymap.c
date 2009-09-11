@@ -34,14 +34,14 @@
 
 // Dot product of 3-vectors
 
-static double dot3(double a[3], double b[3]) 
+static double dot3(double a[3], double b[3])
 {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
 // Inverse of a 2x2 matrix
 
-static void inv22(double a[2][2], double b[2][2]) 
+static void inv22(double a[2][2], double b[2][2])
 {
     double c = b[0][0] * b[1][1] - b[0][1] * b[1][0];
     a[0][0] =  b[1][1] / c;
@@ -52,14 +52,14 @@ static void inv22(double a[2][2], double b[2][2])
 
 // Determinant of a 2x2 matrix
 
-static double det22(double a[2][2]) 
+static double det22(double a[2][2])
 {
     return a[0][0] * a[1][1] - a[0][1] * a[1][0];
 }
 
 // Coordinate transformation theta,phi -> x,y,z
 
-void XLALSkymapCartesianFromSpherical(double a[3], double b[2]) 
+void XLALSkymapCartesianFromSpherical(double a[3], double b[2])
 {
     a[0] = sin(b[0]) * cos(b[1]);
     a[1] = sin(b[0]) * sin(b[1]);
@@ -68,7 +68,7 @@ void XLALSkymapCartesianFromSpherical(double a[3], double b[2])
 
 // Coordinate transformation x,y,z -> theta,phi
 
-void XLALSkymapSphericalFromCartesian(double a[2], double b[3]) 
+void XLALSkymapSphericalFromCartesian(double a[2], double b[3])
 {
     a[0] = acos(b[2]);
     a[1] = atan2(b[1], b[0]);
@@ -77,7 +77,7 @@ void XLALSkymapSphericalFromCartesian(double a[2], double b[3])
 // Time of arrival at a detector, relative to center of Earth, for signals
 // from a given (unit) direction
 
-static double site_time(LALDetector* site, double direction[3]) 
+static double site_time(LALDetector* site, double direction[3])
 {
     return -dot3(site->location, direction) / LAL_C_SI;
 }
@@ -85,7 +85,7 @@ static double site_time(LALDetector* site, double direction[3])
 // Plus and cross polarization response of a detector for signals from a
 // given direction
 
-static void site_response(double f[2], LALDetector* site, double direction[3]) 
+static void site_response(double f[2], LALDetector* site, double direction[3])
 {
     double thetaphi[2];
     XLALSkymapSphericalFromCartesian(thetaphi, direction);
@@ -121,25 +121,16 @@ static void site_response(double f[2], LALDetector* site, double direction[3])
 //     = log(2 * exp(a))
 //     = log(2) + a
 
-double XLALSkymapLogSumExp(double a, double b) 
+double XLALSkymapLogSumExp(double a, double b)
 {
-    return (a < b) ? 
-        (b + log1p(exp(a - b))) : 
+    return (a < b) ?
+        (b + log1p(exp(a - b))) :
         ((b < a) ? (a + log1p(exp(b - a))) : (a + log(2)));
-}
-
-// XLALSkymapLogDifferenceExp(a, b) computes log(exp(a) - exp(b)) but will
-// not overflow for a > ~300 ; it is assumed that a > b (otherwise the
-// result would be complex)
-
-double XLALSkymapLogDifferenceExp(double a, double b) 
-{
-    return a + log1p(-exp(b - a));
 }
 
 // Find the maximum of a sequence  of doubles and return a pointer to it
 
-static double* findmax(double* begin, double* end) 
+static double* findmax(double* begin, double* end)
 {
     double* p;
     double* m;
@@ -158,7 +149,7 @@ static double* findmax(double* begin, double* end)
 // XLALSkymapLogSumExp to accumulate the result without overflowing for
 // a[i] > ~300
 
-static double logtotalexpwithmax(double* begin, double* end, double m) 
+static double logtotalexpwithmax(double* begin, double* end, double m)
 {
     double t;
     double* p;
@@ -172,54 +163,52 @@ static double logtotalexpwithmax(double* begin, double* end, double m)
 
 // Find log sum_i exp(a[i]) using findmax and logtotalexpwithmax
 
-double XLALSkymapLogTotalExp(double* begin, double* end) 
+double XLALSkymapLogTotalExp(double* begin, double* end)
 {
     return logtotalexpwithmax(begin, end, *findmax(begin, end));
 }
 
-// To cubic interpolate 
-//     x(0 <= t <= 1) 
-// from 
-//     x[-1], x[0], x[1], x[2] 
-// we compute 
-//     w_t[-1], w_t[0], w_t[1], w_t[2] 
-// such that 
+// To cubic interpolate
+//     x(0 <= t <= 1)
+// from
+//     x[-1], x[0], x[1], x[2]
+// we compute
+//     w_t[-1], w_t[0], w_t[1], w_t[2]
+// such that
 //     x(t) = sum_i x[i] w_t[i]
 
-
-void XLALSkymap2InterpolationWeights(double t, double* w) 
+double XLALSkymapInterpolate(double t, double* x)
 {
-    double h[4];
+    int whole = floor(t);
+    t -= whole;
     
+    double h[4], w[4];
+
     // Hermite basis functions at t
-    
+
     h[0] = (1. + 2. * t) * (1. - t) * (1. - t);
     h[1] = t * (1. - t) * (1. - t);
     h[2] = t * t * (3. - 2. * t);
     h[3] = t * t * (t - 1.);
-    
+
     // Weights
-    
+
     w[0] = -0.5 * h[1];
     w[1] = h[0] - 0.5 * h[3];
     w[2] = h[2] + 0.5 * h[1];
     w[3] = 0.5 * h[3];
-}
 
-// Produce an interpolated value x(t) from data x[i] and weights w_t[i]
-
-double XLALSkymap2Interpolate(double* x, double* w) 
-{
-    double y;
+    double y = 0;
     int i;
-    
-    y = 0;
+
     for (i = 0; i != 4; ++i)
     {
-        y += x[i] * w[i];
+        y += x[whole + i - 1] * w[i];
     }
+
+    return y;    
     
-    return y;
+    
 }
 
 // Construct an XLALSkymap2PlanType in the given memory from
@@ -227,18 +216,18 @@ double XLALSkymap2Interpolate(double* x, double* w)
 //     number of detectors
 //     list of detector LAL ID numbers
 
-void XLALSkymap2PlanConstruct(int sampleFrequency, int n, int* detectors, XLALSkymap2PlanType* plan) 
+void XLALSkymapPlanConstruct(int sampleFrequency, int n, int* detectors, XLALSkymapPlanType* plan)
 {
     int i;
-    
+
     plan->sampleFrequency = sampleFrequency;
     plan->n = n;
-    
-    for (i = 0; i != plan->n; ++i) 
+
+    for (i = 0; i != plan->n; ++i)
     {
         plan->site[i] = lalCachedDetectors[detectors[i]];
     }
-    
+
 }
 
 // Construct an XLALSkymap2DirectionProperties object in the given memory
@@ -246,97 +235,91 @@ void XLALSkymap2PlanConstruct(int sampleFrequency, int n, int* detectors, XLALSk
 //     a plan
 //     a theta, phi tuple
 
-void XLALSkymap2DirectionPropertiesConstruct(
-        XLALSkymap2PlanType* plan,
+void XLALSkymapDirectionPropertiesConstruct(
+        XLALSkymapPlanType* plan,
         double* directions,
-        XLALSkymap2DirectionPropertiesType* properties
-        ) 
+        XLALSkymapDirectionPropertiesType* properties
+        )
 {
     double x[3];
     int j;
-    
+
     // Convert theta, phi direction to cartesian
     XLALSkymapCartesianFromSpherical(x, directions);
-    
-    for (j = 0; j != plan->n; ++j) 
-    {   
-        // Delay (in samples)
-        double delay = site_time(plan->site + j, x) * plan->sampleFrequency;
-        // Delay (in integer samples, rounded down)
-        properties->delay[j] = floor(delay);
-        // Residual delay (in fractional samples)
-        double t = delay - properties->delay[j];
-        // Weights to interpolate by residual delay
-        XLALSkymap2InterpolationWeights(t, properties->weight[j]);
-        // Plus and cross polarization responses 
+
+    for (j = 0; j != plan->n; ++j)
+    {
+        // Delay (in seconds)
+        properties->delay[j] = site_time(plan->site + j, x);
+        // Plus and cross polarization responses
         site_response(properties->f[j], plan->site + j, x);
     }
 }
 
 // Construct a XLALSkymap2Kernel object in the given memory from
 //     a plan
-//     direction properties (time delays, interpolation weights and 
+//     direction properties (time delays, interpolation weights and
 //         antenna patterns)
 //     the noise-weighted inner product of the template with itself
 
-void XLALSkymap2KernelConstruct(
-        XLALSkymap2PlanType* plan,
-        XLALSkymap2DirectionPropertiesType* properties,
+void XLALSkymapKernelConstruct(
+        XLALSkymapPlanType* plan,
+        XLALSkymapDirectionPropertiesType* properties,
         double* wSw,
-        XLALSkymap2KernelType* kernel
-        ) 
+        XLALSkymapKernelType* kernel
+        )
 {
-    
+
     int i, j, k, l;
-    
+
     //
     // W = diag(w.S_j^{-1}.w)
     //
     // F (F^T W F + I) F^T
     //
-    
+
     double a[2][2]; // F^T W F
     double b[2][2]; // inv(A)
-    
+
     // Compute the kernel
-    
+
     // F^T W F + I
-    
-    for (i = 0; i != 2; ++i) 
+
+    for (i = 0; i != 2; ++i)
     {
-        for (j = 0; j != 2; ++j) 
+        for (j = 0; j != 2; ++j)
         {
             a[i][j] = ((i == j) ? 1.0 : 0.0);
-            for (k = 0; k != plan->n; ++k) 
+            for (k = 0; k != plan->n; ++k)
             {
                 a[i][j] += properties->f[k][i] * wSw[k] * properties->f[k][j];
             }
         }
     }
-    
+
     // (F^T W F + I)^{-1}
-    
+
     inv22(b, a);
-    
+
     // F (F^T W F + I)^{-1} F^T
-    
-    for (i = 0; i != plan->n; ++i) 
+
+    for (i = 0; i != plan->n; ++i)
     {
-        for (j = 0; j != plan->n; ++j) 
+        for (j = 0; j != plan->n; ++j)
         {
             kernel->k[i][j] = 0.0;
-            for (k = 0; k != 2; ++k) 
+            for (k = 0; k != 2; ++k)
             {
-                for (l = 0; l != 2; ++l) 
+                for (l = 0; l != 2; ++l)
                 {
                     kernel->k[i][j] += properties->f[i][k] * b[k][l] * properties->f[j][l];
                 }
             }
         }
     }
-    
+
     kernel->logNormalization = 0.5 * log(det22(b));
-    
+
 }
 
 // Compute the marginalization integral over a_plus and a_cross for the
@@ -347,33 +330,33 @@ void XLALSkymap2KernelConstruct(
 //     a matched filter time series for each detector
 //     a signal arrival time
 
-void XLALSkymap2Apply(
-        XLALSkymap2PlanType* plan,
-        XLALSkymap2DirectionPropertiesType* properties,
-        XLALSkymap2KernelType* kernel,
+void XLALSkymapApply(
+        XLALSkymapPlanType* plan,
+        XLALSkymapDirectionPropertiesType* properties,
+        XLALSkymapKernelType* kernel,
         double** xSw,
-        int tau,
+        double tau,
         double* posterior
-        ) 
+        )
 {
     double a;
     int i, j;
-    
-    double x[XLALSKYMAP2_N];        
-    
+
+    double x[XLALSKYMAP_N];
+
     // Interpolate the matched filter values
-    
-    for (i = 0; i != plan->n; ++i) 
+
+    for (i = 0; i != plan->n; ++i)
     {
-        x[i] = XLALSkymap2Interpolate(xSw[i] + tau + properties->delay[i] - 1, properties->weight[i]);
+        x[i] = XLALSkymapInterpolate((tau + properties->delay[i]) * plan->sampleFrequency, xSw[i]); 
     }
-    
+
     // This implementation does not exploit the symmetry of the expression
-   
+
     // Compute x^T.K.x
-    
+
     a = 0;
-   
+
     for (i = 0; i != plan->n; ++i)
     {
         for (j = 0; j != plan->n; ++j)
@@ -381,11 +364,11 @@ void XLALSkymap2Apply(
             a += x[i] * kernel->k[i][j] * x[j];
         }
     }
-    
+
     // Scale and apply the normalization
-    
+
     *posterior = 0.5 * a + kernel->logNormalization;
-    
+
 }
 
 

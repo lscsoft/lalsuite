@@ -105,7 +105,6 @@ int main ( int argc, char *argv[] )
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
@@ -144,8 +143,7 @@ int main ( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 

@@ -1,6 +1,21 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
-EXTRA_DIST = doc gnuscripts lalstochastic.pc.in lalstochastic.spec.in \
-  lalstochastic.spec aclocal.m4
+EXTRA_DIST = doc lalstochastic.pc.in lalstochastic.spec.in \
+	lalstochastic.spec aclocal.m4 \
+	gnuscripts/config.guess \
+	gnuscripts/config.sub \
+	gnuscripts/depcomp \
+	gnuscripts/header-link.mk \
+	gnuscripts/install-sh \
+	gnuscripts/lal_c99.m4 \
+	gnuscripts/lalstochastic.m4 \
+	gnuscripts/libtool.m4 \
+	gnuscripts/ltmain.sh \
+	gnuscripts/lt~obsolete.m4 \
+	gnuscripts/ltoptions.m4 \
+	gnuscripts/ltsugar.m4 \
+	gnuscripts/ltversion.m4 \
+	gnuscripts/missing \
+	gnuscripts/pkg.m4
 SUBDIRS = include src test
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -428,7 +428,6 @@ static REAL4TimeSeries *injectWaveform(
 int main( int argc, char *argv[] )
 {
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   LIGOTimeGPS           gpsStartTime = {0, 0};
   LIGOTimeGPS           earliestEndTime = {0, 0};
   ResponseFunction      injectionResponse = noResponse;
@@ -512,8 +511,7 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -965,8 +963,7 @@ int main( int argc, char *argv[] )
 
   /* write the process table */
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 

@@ -193,6 +193,7 @@ for ifo in ifos:
 
   # create all the LSCdataFind jobs to run in sequence
   datatype = cp.get('input','type_%s' % ifo) 
+  channeltype = cp.get('input','channel_%s' % ifo) 
 
   # loop over segments
   for segment_number, seg in enumerate(data):
@@ -214,6 +215,7 @@ for ifo in ifos:
       string.set_end(chunk.end())
       string.set_ifo(ifo)
       string.set_cache(df.get_output())
+      string.add_var_opt('channel',channeltype)
       string.add_var_opt('threshold',snr[ifo])
       string.add_var_opt('trig-start-time',chunk.trig_start())
       string.add_var_opt('outfile',string.get_output())
@@ -257,4 +259,3 @@ LSCdataFind server.
 """
 
 sys.exit(0)
-

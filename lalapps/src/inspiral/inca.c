@@ -131,7 +131,6 @@ RCSID("$Id$");
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   extern int vrbflg;
   static INT4  writeUniqTrigs = 0;
@@ -252,8 +251,7 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -1663,8 +1661,7 @@ cleanexit:
       snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
           ifoName[0], ifoName[1] );
     }
-    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-          &accuracy ), &status );
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 

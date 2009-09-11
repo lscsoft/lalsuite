@@ -176,7 +176,6 @@ main(int argc, char **argv)
   BOOLEAN               ok = 1;     /* whether input format is correct */
   UINT4                 i;          /* generic index over file lines */
   INT8                  epoch;      /* epoch stored as an INT8 */
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   ProcessParamsTable   *this_proc_param;
   MetadataTable         proctable;
   MetadataTable         procparams;
@@ -206,8 +205,7 @@ main(int argc, char **argv)
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->start_time),
-        &accuracy ), &stat );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   LAL_CALL( populate_process_table( &stat, proctable.processTable, 
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &stat );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -746,8 +744,7 @@ main(int argc, char **argv)
 
 
     /* write out the process and process params tables */
-    LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->end_time),
-          &accuracy ), &stat );
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
 
     LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
         &stat );
