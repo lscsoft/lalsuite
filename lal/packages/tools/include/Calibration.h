@@ -361,6 +361,10 @@ int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
+void set_output_to_zero(StrainOut *output);
+void check_nans_infs(LALStatus *status, StrainIn *input);
+
+
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/
 }

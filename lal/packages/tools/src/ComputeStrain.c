@@ -86,6 +86,9 @@ REAL8IIRFilter ALPHASLPFIR;
  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
 
+ set_output_to_zero(output);
+ check_nans_infs(status, input);
+
  LALGetFactors(status->statusPtr, output, input);
  CHECKSTATUSPTR( status );
 
@@ -824,3 +827,45 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
 
 }
 
+
+
+/*
+ * Check if there are any nans or infs in the input data.
+ */
+void check_nans_infs(LALStatus *status, StrainIn *input)
+ {
+     UINT4 p;
+  
+     /* Check if there are nans or infs in DARM_ERR */
+     for (p=0; p < input->DARM_ERR.data->length; p++) {
+         REAL4 x = input->DARM_ERR.data->data[p];
+         if (isnan(x) || isinf(x)) {
+             fprintf(stderr, "ERROR: bad DARM_ERR\n");
+             ABORT(status, 1, "Bad DARM_ERR");
+         }
+     }
+
+     /* Same thing for DARM_CTRL if we use it */
+     if (input->darmctrl) {
+         for (p=0; p < input->DARM.data->length; p++) {
+             REAL4 x = input->DARM.data->data[p];
+             if (isnan(x) || isinf(x)) {
+                 fprintf(stderr, "ERROR: bad DARM_CTRL\n");
+                 ABORT(status, 2, "Bad DARM_CTRL");
+             }
+         }
+     }
+ }
+
+
+
+
+void set_output_to_zero(StrainOut *output)
+{
+    memset(output->h.data->data,          0,  output->h.data->length         * sizeof(REAL8));
+    memset(output->hR.data->data,         0,  output->hR.data->length        * sizeof(REAL8));
+    memset(output->hC.data->data,         0,  output->hC.data->length        * sizeof(REAL8));
+    memset(output->alpha.data->data,      0,  output->alpha.data->length     * sizeof(COMPLEX16));
+    memset(output->beta.data->data,       0,  output->beta.data->length      * sizeof(COMPLEX16));
+    memset(output->alphabeta.data->data,  0,  output->alphabeta.data->length * sizeof(COMPLEX16));
+}
