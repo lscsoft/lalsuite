@@ -207,11 +207,11 @@ LALInspiralFindEventsCluster
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
        */
    }
-   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
+   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
+     ABORTXLAL(status);
    /*
-   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
+   if (XLALREAL4VectorFFT(&filter2, &output2, findeventsin->fwdp) != 0)
+     ABORTXLAL(status);
    */
    normin.psd = &(findeventsin->psd);
    normin.df = df;

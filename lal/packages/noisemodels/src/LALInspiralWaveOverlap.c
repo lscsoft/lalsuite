@@ -136,8 +136,8 @@ LALInspiralWaveOverlap
                 * When the approximant is AmpCorPPN, TaylorT1, TaylorT2, TaylorT3, PadeT1 or EOB
 		* (time domain waveform) generate the template and take its FT
                 */
-                LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
-		CHECKSTATUSPTR(status);
+                if (XLALREAL4VectorFFT(&filter1, &output1, overlapin->fwdp)!= 0)
+                  ABORTXLAL(status);
 
 		break;
 	case Eccentricity:
@@ -146,8 +146,8 @@ LALInspiralWaveOverlap
                  * starting phase*/
                 LALInspiralWave(status->statusPtr, &output1, &overlapin->param);
 		CHECKSTATUSPTR(status);
-                LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
-		CHECKSTATUSPTR(status);
+                if (XLALREAL4VectorFFT(&filter1, &output1, overlapin->fwdp) != 0)
+                  ABORTXLAL(status);
                 break;
     /* commented section to inject a particular waveform containing a combinaison
      * of F+, Fx, h+ and  hx, not just F+h+
@@ -167,8 +167,8 @@ LALInspiralWaveOverlap
        output1.data[kk] = output1.data[kk]*fp + output2.data[kk]*fc;
     }
   }
-  LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
-  CHECKSTATUSPTR(status);
+  if (XLALREAL4VectorFFT(&filter1, &output1, overlapin->fwdp) != 0)
+    ABORTXLAL(status);;
 
   break;
   #endif
@@ -191,10 +191,10 @@ LALInspiralWaveOverlap
 
 		/* print out for debugging
 		 for (i=0; i<output1.length; i++) printf("%d %e %e\n", i, output1.data[i], output2.data[i]);
-		 LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
-		 CHECKSTATUSPTR(status);
-		 LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, overlapin->fwdp);
-		 CHECKSTATUSPTR(status);
+		 if (XLALREAL4VectorFFT(&filter1, &output1, overlapin->fwdp) != 0)
+			 ABORTXLAL(status);
+		 if (XLALREAL4VectorFFT(&filter2, &output2, overlapin->fwdp) != 0)
+			 ABORTXLAL(status);
 		 */
 		break;
 	default:

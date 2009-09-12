@@ -586,8 +586,8 @@ void LALRandomInspiralSignal
                 /* Once the time domain waveform has been generated, take its
                  * Fourier transform [i.e buff (t) ---> signal (f)].
                  */
-                LALREAL4VectorFFT(status->statusPtr, signalvec, &buff, randIn->fwdp);
-                CHECKSTATUSPTR(status);
+                if (XLALREAL4VectorFFT(signalvec, &buff, randIn->fwdp) != 0)
+                  ABORTXLAL(status);
 
             } /* End of else if time domain waveform */
 
@@ -623,8 +623,8 @@ void LALRandomInspiralSignal
             CHECKSTATUSPTR(status);
             LALDestroyRandomParams(status->statusPtr, &randomparams);
             CHECKSTATUSPTR(status);
-            LALREAL4VectorFFT(status->statusPtr, signalvec, &buff, randIn->fwdp);
-            CHECKSTATUSPTR(status);
+            if (XLALREAL4VectorFFT(signalvec, &buff, randIn->fwdp) != 0)
+              ABORTXLAL(status);
             LALColoredNoise(status->statusPtr, signalvec, randIn->psd);
             CHECKSTATUSPTR(status);
 
@@ -654,8 +654,8 @@ void LALRandomInspiralSignal
             CHECKSTATUSPTR(status);
             LALDestroyRandomParams(status->statusPtr, &randomparams);
             CHECKSTATUSPTR(status);
-            LALREAL4VectorFFT(status->statusPtr, &noisy, &buff, randIn->fwdp);
-            CHECKSTATUSPTR(status);
+            if (XLALREAL4VectorFFT(&noisy, &buff, randIn->fwdp) != 0)
+              ABORTXLAL(status);
             LALColoredNoise(status->statusPtr, &noisy, randIn->psd);
             CHECKSTATUSPTR(status);
 
@@ -676,8 +676,8 @@ void LALRandomInspiralSignal
 
                 /* Now convert from time domain signal(t) ---> frequency
                  * domain waveform buff(f) i.e signal(t) -> buff(f)*/
-                LALREAL4VectorFFT(status->statusPtr, &buff, signalvec, randIn->fwdp);
-                CHECKSTATUSPTR(status);
+                if (XLALREAL4VectorFFT(&buff, signalvec, randIn->fwdp) != 0)
+                  ABORTXLAL(status);
 
             }
 

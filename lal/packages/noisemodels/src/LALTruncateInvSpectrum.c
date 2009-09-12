@@ -96,8 +96,8 @@ void LALTruncateInvSpectrum(
 
     /* Inverse Fourier Transform to time domain
      */
-    LALReverseRealFFT (status->statusPtr, hvec, Hvec, params->revp);
-    CHECKSTATUSPTR(status);
+    if (XLALREAL4ReverseFFT(hvec, Hvec, params->revp) != 0)
+      ABORTXLAL(status);
 
     /* ---- If debugging then print the spectrum in time domain
        after its inverse Fourier transform --- */
@@ -137,8 +137,8 @@ void LALTruncateInvSpectrum(
 
     /* transform to frequency domain
      */
-    LALForwardRealFFT (status->statusPtr, Hvec, hvec, params->fwdp);
-    CHECKSTATUSPTR(status);
+    if (XLALREAL4ForwardFFT(Hvec, hvec, params->fwdp) != 0)
+      ABORTXLAL(status);
 
     /* normalise fourier transform and square
      */

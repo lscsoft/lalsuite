@@ -174,10 +174,10 @@ LALInspiralFindEvents
       for (i=0;i<(INT4)output1.length;i++)
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
    }
-   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
-   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
+   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
+     ABORTXLAL(status);
+   if (XLALREAL4VectorFFT(&filter2, &output2, findeventsin->fwdp) != 0)
+     ABORTXLAL(status);
    LALInspiralWaveNormalise(status->statusPtr, &filter1, &norm, findeventsin->psd);
    CHECKSTATUSPTR(status);
    LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, findeventsin->psd);
