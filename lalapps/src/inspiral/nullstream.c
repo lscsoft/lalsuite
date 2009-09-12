@@ -138,7 +138,6 @@ int           gpsStartTimeTemp   = 0;   /* input data GPS start time ns */
 int           gpsEndTimeTemp     = 0;   /* input data GPS start time ns */
 
 LALStatus             status;
-LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag IFOs    */
@@ -229,8 +228,7 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) LALCalloc(1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -691,8 +689,7 @@ int main( int argc, char *argv[] )
 
     /* process table */
     if ( vrbflg ) fprintf( stdout, "Writing the process table..." );
-    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), 
-                              &accuracy ), &status );
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
                                       &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 

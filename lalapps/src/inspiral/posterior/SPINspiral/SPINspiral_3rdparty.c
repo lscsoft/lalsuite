@@ -1,7 +1,7 @@
 /* 
    
    SPINspiral:                parameter estimation on binary inspirals detected by LIGO, including spins of the binary members
-   mcmc_3rdparty.c:           3rd-party routines
+   SPINspiral_3rdparty.c:     3rd-party routines
    
    
    Copyright 1995, 1998  Jake Janovetz (janovetz@uiuc.edu)
@@ -26,6 +26,14 @@
 
 
 //Copied from remez.c, extracted from http://www.janovetz.com/jake/remez/remez-19980711.zip
+
+/**
+ * \file SPINspiral_3rdparty.c
+ * \brief Contains third-party routines
+ */
+
+
+
 
 /**************************************************************************
  * Parks-McClellan algorithm for FIR filter design (C version)
@@ -89,13 +97,13 @@ void CreateDenseGrid(int r, int numtaps, int numband, double bands[],
       highf = bands[2*band + 1];
       k = (int)((highf - lowf)/delf + 0.5);   /* .5 for rounding */
       for (i=0; i<k; i++)
-	{
-	  D[j] = des[band];
-	  W[j] = weight[band];
-	  Grid[j] = lowf;
-	  lowf += delf;
-	  j++;
-	}
+        {
+          D[j] = des[band];
+          W[j] = weight[band];
+          Grid[j] = lowf;
+          lowf += delf;
+          j++;
+        }
       Grid[j-1] = highf;
     }
   
@@ -158,7 +166,7 @@ void InitialGuess(int r, int Ext[], int gridsize)
  ***********************/
 
 void CalcParms(int r, int Ext[], double Grid[], double D[], double W[],
-	       double ad[], double x[], double y[])
+               double ad[], double x[], double y[])
 {
   int i, j, k, ld;
   double sign, xi, delta, denom, numer;
@@ -178,13 +186,13 @@ void CalcParms(int r, int Ext[], double Grid[], double D[], double W[],
       denom = 1.0;
       xi = x[i];
       for (j=0; j<ld; j++)
-	{
+        {
           for (k=j; k<=r; k+=ld)
-	    if (k != i)
-	      denom *= 2.0*(xi - x[k]);
-	}
+            if (k != i)
+              denom *= 2.0*(xi - x[k]);
+        }
       if (fabs(denom)<0.00001)
-	denom = 0.00001;
+        denom = 0.00001;
       ad[i] = 1.0/denom;
     }
   
@@ -245,11 +253,11 @@ double ComputeA(double freq, int r, double ad[], double x[], double y[])
     {
       c = xc - x[i];
       if (fabs(c) < 1.0e-7)
-	{
-	  numer = y[i];
-	  denom = 1;
-	  break;
-	}
+        {
+          numer = y[i];
+          denom = 1;
+          break;
+        }
       c = ad[i]/c;
       denom += c;
       numer += c*y[i];
@@ -348,7 +356,7 @@ void Search(int r, int Ext[],
     {
       if (((E[i]>=E[i-1]) && (E[i]>E[i+1]) && (E[i]>0.0)) ||
           ((E[i]<=E[i-1]) && (E[i]<E[i+1]) && (E[i]<0.0)))
-	foundExt[k++] = i;
+        foundExt[k++] = i;
     }
   
   /*
@@ -368,43 +376,43 @@ void Search(int r, int Ext[],
   while (extra > 0)
     {
       if (E[foundExt[0]] > 0.0)
-	up = 1;                /* first one is a maxima */
+        up = 1;                /* first one is a maxima */
       else
-	up = 0;                /* first one is a minima */
+        up = 0;                /* first one is a minima */
       
       l=0;
       alt = 1;
       for (j=1; j<k; j++)
-	{
-	  if (fabs(E[foundExt[j]]) < fabs(E[foundExt[l]]))
+        {
+          if (fabs(E[foundExt[j]]) < fabs(E[foundExt[l]]))
             l = j;               /* new smallest error. */
-	  if ((up) && (E[foundExt[j]] < 0.0))
+          if ((up) && (E[foundExt[j]] < 0.0))
             up = 0;             /* switch to a minima */
-	  else if ((!up) && (E[foundExt[j]] > 0.0))
+          else if ((!up) && (E[foundExt[j]] > 0.0))
             up = 1;             /* switch to a maxima */
-	  else
-	    { 
-	      alt = 0;
-	      break;              /* Ooops, found two non-alternating */
-         }                      /* extrema.  Delete smallest of them */
-	}  /* if the loop finishes, all extrema are alternating */
+          else
+            { 
+              alt = 0;
+              break;              /* Ooops, found two non-alternating */
+	    }                      /* extrema.  Delete smallest of them */
+        }  /* if the loop finishes, all extrema are alternating */
       
       /*
        * If there's only one extremal and all are alternating,
        * delete the smallest of the first/last extremals.
        */
       if ((alt) && (extra == 1))
-	{
-	  if (fabs(E[foundExt[k-1]]) < fabs(E[foundExt[0]]))
+        {
+          if (fabs(E[foundExt[k-1]]) < fabs(E[foundExt[0]]))
             l = foundExt[k-1];   /* Delete last extremal */
-	  else
+          else
             l = foundExt[0];     /* Delete first extremal */
-	}
+        }
       
       for (j=l; j<k; j++)        /* Loop that does the deletion */
-	{
-	  foundExt[j] = foundExt[j+1];
-	}
+        {
+          foundExt[j] = foundExt[j+1];
+        }
       k--;
       extra--;
     }
@@ -444,52 +452,52 @@ void FreqSample(int N, double A[], double h[], int symm)
   if (symm == POSITIVE)
     {
       if (N%2)
-	{
-	  for (n=0; n<N; n++)
-	    {
-	      val = A[0];
-	      x = Pi2 * (n - M)/N;
-	      for (k=1; k<=M; k++)
-		val += 2.0 * A[k] * cos(x*k);
-	      h[n] = val/N;
-	    }
-	}
+        {
+          for (n=0; n<N; n++)
+            {
+              val = A[0];
+              x = Pi2 * (n - M)/N;
+              for (k=1; k<=M; k++)
+                val += 2.0 * A[k] * cos(x*k);
+              h[n] = val/N;
+            }
+        }
       else
-	{
-	  for (n=0; n<N; n++)
-	    {
-	      val = A[0];
-	      x = Pi2 * (n - M)/N;
-	      for (k=1; k<=(N/2-1); k++)
-		val += 2.0 * A[k] * cos(x*k);
-	      h[n] = val/N;
-	    }
-	}
+        {
+          for (n=0; n<N; n++)
+            {
+              val = A[0];
+              x = Pi2 * (n - M)/N;
+              for (k=1; k<=(N/2-1); k++)
+                val += 2.0 * A[k] * cos(x*k);
+              h[n] = val/N;
+            }
+        }
     }
   else
     {
       if (N%2)
-	{
-	  for (n=0; n<N; n++)
-	    {
-	      val = 0;
-	      x = Pi2 * (n - M)/N;
-	      for (k=1; k<=M; k++)
-		val += 2.0 * A[k] * sin(x*k);
-	      h[n] = val/N;
-	    }
-	}
-      else
-	{
+        {
           for (n=0; n<N; n++)
-	    {
-	      val = A[N/2] * sin(Pi * (n - M));
-	      x = Pi2 * (n - M)/N;
-	      for (k=1; k<=(N/2-1); k++)
+            {
+              val = 0;
+              x = Pi2 * (n - M)/N;
+              for (k=1; k<=M; k++)
                 val += 2.0 * A[k] * sin(x*k);
-	      h[n] = val/N;
-	    }
-	}
+              h[n] = val/N;
+            }
+        }
+      else
+        {
+          for (n=0; n<N; n++)
+            {
+              val = A[N/2] * sin(Pi * (n - M));
+              x = Pi2 * (n - M)/N;
+              for (k=1; k<=(N/2-1); k++)
+                val += 2.0 * A[k] * sin(x*k);
+              h[n] = val/N;
+            }
+        }
     }
 }
 
@@ -521,9 +529,9 @@ short isDone(int r, int Ext[], double E[])
     {
       current = fabs(E[Ext[i]]);
       if (current < min)
-	min = current;
+        min = current;
       if (current > max)
-	max = current;
+        max = current;
     }
   if (((max-min)/max) < 0.0001)
     return 1;
@@ -602,7 +610,7 @@ void remez(double h[], int numtaps,
    * Create dense frequency grid
    */
   CreateDenseGrid(r, numtaps, numband, bands, des, weight,
-		  &gridsize, Grid, D, W, symmetry);
+                  &gridsize, Grid, D, W, symmetry);
   InitialGuess(r, Ext, gridsize);
   
   /*
@@ -611,11 +619,11 @@ void remez(double h[], int numtaps,
   if (type == DIFFERENTIATOR)
     {
       for (i=0; i<gridsize; i++)
-	{
-	  /* D[i] = D[i]*Grid[i]; */
-	  if (D[i] > 0.0001)
+        {
+          /* D[i] = D[i]*Grid[i]; */
+          if (D[i] > 0.0001)
             W[i] = W[i]/Grid[i];
-	}
+        }
     }
   
   /*
@@ -625,35 +633,35 @@ void remez(double h[], int numtaps,
   if (symmetry == POSITIVE)
     {
       if (numtaps % 2 == 0)
-	{
-	  for (i=0; i<gridsize; i++)
-	    {
-	      c = cos(Pi * Grid[i]);
-	      D[i] /= c;
-	      W[i] *= c; 
-	    }
-	}
+        {
+          for (i=0; i<gridsize; i++)
+            {
+              c = cos(Pi * Grid[i]);
+              D[i] /= c;
+              W[i] *= c; 
+            }
+        }
     }
   else
     {
       if (numtaps % 2)
-	{
-	  for (i=0; i<gridsize; i++)
-	    {
-	      c = sin(Pi2 * Grid[i]);
-	      D[i] /= c;
-	      W[i] *= c;
-	    }
-	}
+        {
+          for (i=0; i<gridsize; i++)
+            {
+              c = sin(Pi2 * Grid[i]);
+              D[i] /= c;
+              W[i] *= c;
+            }
+        }
       else
-	{
-	  for (i=0; i<gridsize; i++)
-	    {
-	      c = sin(Pi * Grid[i]);
-	      D[i] /= c;
-	      W[i] *= c;
-	    }
-	}
+        {
+          for (i=0; i<gridsize; i++)
+            {
+              c = sin(Pi * Grid[i]);
+              D[i] /= c;
+              W[i] *= c;
+            }
+        }
     }
   
   /*
@@ -665,7 +673,7 @@ void remez(double h[], int numtaps,
       CalcError(r, ad, x, y, gridsize, Grid, D, W, E);
       Search(r, Ext, gridsize, E);
       if (isDone(r, Ext, E))
-	break;
+        break;
     }
   if (iter == MAXITERATIONS)
     {
@@ -682,19 +690,19 @@ void remez(double h[], int numtaps,
   for (i=0; i<=numtaps/2; i++)
     {
       if (symmetry == POSITIVE)
-	{
-	  if (numtaps%2)
+        {
+          if (numtaps%2)
             c = 1;
-	  else
+          else
             c = cos(Pi * (double)i/numtaps);
-	}
+        }
       else
-	{
-	  if (numtaps%2)
+        {
+          if (numtaps%2)
             c = sin(Pi2 * (double)i/numtaps);
-	  else
+          else
             c = sin(Pi * (double)i/numtaps);
-	}
+        }
       taps[i] = ComputeA((double)i/numtaps, r, ad, x, y)*c;
     }
   
