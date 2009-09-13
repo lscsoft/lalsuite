@@ -21,7 +21,9 @@
  */
 
 /* example command line: */
-/* ./InferenceTest --IFO [H1] --cache [/Users/john/data/triple/H1/frames.cache] --PSDstart 864162143.0 --PSDlength 1000 --srate 1024 --seglen 10 --trigtime 864162943.0  */
+/* 
+./InferenceTest --IFO [H1] --cache [/Users/john/data/triple/H1/frames.cache] --PSDstart 864162143.0 --PSDlength 1000 --srate 1024 --seglen 10 --trigtime 864162943.0
+*/
 
 #include <stdio.h>
 #include <lal/Date.h>
@@ -190,7 +192,8 @@ int main(int argc, char *argv[]){
 	  fclose(testout);
 	  testout=fopen("test_TD.txt","w");
 	  for (i=0;i<runstate->data->timeModelhPlus->data->length;i++){
-		  fprintf(testout,"%10.10lf %g %g\n",runstate->data->timeData->epoch.gpsSeconds+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeModelhPlus->deltaT,
+		  fprintf(testout,"%10.10lf %g %g\n",runstate->data->timeData->epoch.gpsSeconds
+					+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeModelhPlus->deltaT,
 				  runstate->data->timeModelhPlus->data->data[i],
 				  runstate->data->timeModelhCross->data->data[i]);
 	  }
@@ -203,7 +206,8 @@ int main(int argc, char *argv[]){
 	  fclose(testout);
 	  testout=fopen("noise_TD.txt","w");
 	  for (i=0;i<runstate->data->timeData->data->length;i++){
-		  fprintf(testout,"%10.10lf %g\n",runstate->data->timeData->epoch.gpsSeconds+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeData->deltaT,
+		  fprintf(testout,"%10.10lf %g\n",runstate->data->timeData->epoch.gpsSeconds
+					+(1e-9*runstate->data->timeData->epoch.gpsNanoSeconds)+i*runstate->data->timeData->deltaT,
 				  runstate->data->timeData->data->data[i]);
 	  }
 	  fclose(testout);
@@ -227,7 +231,8 @@ int main(int argc, char *argv[]){
     REAL8 eta  = 0.24;
     REAL8 iota = 0.0;
     REAL8 phi  = 2.0;
-    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
+    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + 
+		(((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
     printf("TCOAL: %f\n",tcoal);
     destroyVariables(runstate->data->modelParams);
     addVariable(runstate->data->modelParams, "chirpmass",   &mc,    REAL8_t);
@@ -290,7 +295,8 @@ int main(int argc, char *argv[]){
 		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
 		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2),
 		ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
-		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)-0.5*ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
+		ComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)
+			-0.5*ComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
 		);				
 	fprintf(stdout, "likelihood %g\n",
 		FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL));
@@ -300,7 +306,19 @@ int main(int argc, char *argv[]){
 		FreqDomainNullLogLikelihood(runstate->data),
 		NullLogLikelihood(runstate->data));
     XLALDestroyCOMPLEX16Vector(freqModel1);
-	XLALDestroyCOMPLEX16Vector(freqModel2);
+//	XLALDestroyCOMPLEX16Vector(freqModel2);
+	
+	//MCMC basic Sampler test
+	fprintf(stdout, "Try MCMC basic Sampler test\n");
+	runstate->algorithm=MCMCAlgorithm;
+	runstate->evolve=BasicMCMCOneStep;
+	runstate->prior=BasicUniformLALPrior;
+	runstate->proposal=BasicMCMCLALProposal;
+	runstate->likelihood=FreqDomainLogLikelihood;
+	runstate->template=templateLAL;
+	runstate->currentParams=&currentParams;
+	MCMCAlgorithm(runstate);
+	fprintf(stdout, "End of MCMC basic Sampler test\n");
 
     /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
@@ -399,9 +417,6 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, ra_proposed, dec_proposed, psi_proposed, dist_proposed;
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;	
-	//int withinPrior=0;
-
-	destroyVariables(proposedParams);
 
 	mc		= *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
 	eta		= *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
@@ -412,43 +427,34 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 	dec     = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
 	psi     = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
 	dist	= *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
+	
 
-	addVariable(proposedParams, "chirpmass",       &mc,			REAL8_t);
-	addVariable(proposedParams, "massratio",       &eta,		REAL8_t);
-	addVariable(proposedParams, "inclination",     &iota,		REAL8_t);
-	addVariable(proposedParams, "phase",           &phi,		REAL8_t);
-	addVariable(proposedParams, "time",            &tc,			REAL8_t); 
-	addVariable(proposedParams, "rightascension",  &ra,			REAL8_t);
-	addVariable(proposedParams, "declination",     &dec,		REAL8_t);
-	addVariable(proposedParams, "polarisation",    &psi,		REAL8_t);
-	addVariable(proposedParams, "distance",        &dist,		REAL8_t);  
-  
-        /* CR: the "withinPrior" restriction would screw up the sampling (not symmetric any more)!! */
-	//while(!withinPrior)
-	//{
-		mc_proposed=mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
-		eta_proposed=eta+gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
-		//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-		iota_proposed=iota+gsl_ran_ugaussian(GSLrandom)*0.1;
-		tc_proposed=tc+gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
-		phi_proposed=phi+gsl_ran_ugaussian(GSLrandom)*0.5;
-		ra_proposed=ra+gsl_ran_ugaussian(GSLrandom)*0.05;
-		dec_proposed=dec+gsl_ran_ugaussian(GSLrandom)*0.05;
-		psi_proposed=psi+gsl_ran_ugaussian(GSLrandom)*0.1;
-		dist_proposed=dist*(1.0+gsl_ran_ugaussian(GSLrandom)*0.3);
+	mc_proposed=mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
+	eta_proposed=eta+gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
+	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
+	iota_proposed=iota+gsl_ran_ugaussian(GSLrandom)*0.1;
+	tc_proposed=tc+gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
+	phi_proposed=phi+gsl_ran_ugaussian(GSLrandom)*0.5;
+	ra_proposed=ra+gsl_ran_ugaussian(GSLrandom)*0.05;
+	dec_proposed=dec+gsl_ran_ugaussian(GSLrandom)*0.05;
+	psi_proposed=psi+gsl_ran_ugaussian(GSLrandom)*0.1;
+	dist_proposed=dist*(1.0+gsl_ran_ugaussian(GSLrandom)*0.3);
+		
+	addVariable(proposedParams, "chirpmass",       &mc_proposed,	REAL8_t);		
+	addVariable(proposedParams, "massratio",       &eta_proposed,	REAL8_t);
+	addVariable(proposedParams, "inclination",     &iota_proposed,	REAL8_t);
+	addVariable(proposedParams, "phase",           &phi_proposed,	REAL8_t);
+	addVariable(proposedParams, "time",            &tc_proposed,	REAL8_t); 
+	addVariable(proposedParams, "rightascension",  &ra_proposed,	REAL8_t);
+	addVariable(proposedParams, "declination",     &dec_proposed,	REAL8_t);
+	addVariable(proposedParams, "polarisation",    &psi_proposed,	REAL8_t);
+	addVariable(proposedParams, "distance",        &dist_proposed,	REAL8_t);
 	
-		setVariable(proposedParams, "chirpmass",       &mc_proposed);
-		setVariable(proposedParams, "massratio",       &eta_proposed);
-		setVariable(proposedParams, "inclination",     &iota_proposed);
-		setVariable(proposedParams, "phase",           &phi_proposed);
-		setVariable(proposedParams, "time",            &tc_proposed); 
-		setVariable(proposedParams, "rightascension",  &ra_proposed);
-		setVariable(proposedParams, "declination",     &dec_proposed);
-		setVariable(proposedParams, "polarisation",    &psi_proposed);
-		setVariable(proposedParams, "distance",        &dist_proposed);
-	
-	//	withinPrior= runState->prior(runState, proposedParams) > 0;
-	//}
+    addVariable(proposedParams, "LAL_PNORDER",     getVariable(currentParams, "LAL_PNORDER"),	INT4_t);	
+    addVariable(proposedParams, "LAL_APPROXIMANT", getVariable(currentParams, "LAL_APPROXIMANT"),	INT4_t);	
+
+//	printVariables(currentParams);
+//	printVariables(proposedParams);
 }
 
 //Test LALPriorFunction
@@ -488,28 +494,31 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 	LALVariables proposedParams;
 	REAL8 likelihoodCurrent, likelihoodProposed;
 	REAL8 acceptanceProbability;
-	
+	proposedParams.head=NULL;
+	proposedParams.dimension=0;
+
 	priorCurrent=runState->prior(runState, runState->currentParams);
 
-        /* CR: again, the within-prior restriction would screw up the sampler!! */
-	//while(priorProposed<=0){	
-		runState->proposal(runState, &proposedParams);
-		priorProposed=runState->prior(runState, &proposedParams);
-	//}
+	runState->proposal(runState, &proposedParams);
 
-        /* CR: you can still save computation time by doing the following: */
+	priorProposed=runState->prior(runState, &proposedParams);
+	
 	if (priorProposed > 0) 
           likelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
-        else
+	else
           likelihoodProposed = 0;
 
-	likelihoodCurrent=runState->likelihood(runState->currentParams, runState->data, runState->template);
-        /* (CR: the above number should have been stored somwehere from the previous iteration) */
-	
+	//	likelihoodCurrent=runState->likelihood(runState->currentParams, runState->data, runState->template);
+	/* (CR: the above number should have been stored somwehere from the previous iteration) */
+	likelihoodCurrent=runState->currentLikelihood;
+
 	acceptanceProbability=likelihoodCurrent*priorCurrent/(likelihoodProposed*priorProposed);
 	
 	if(acceptanceProbability > gsl_rng_uniform(runState->GSLrandom))	//accept
+	{
 		copyVariables(&proposedParams, runState->currentParams);
+		runState->currentLikelihood=likelihoodProposed;
+	}
 
 	destroyVariables(&proposedParams);	
 }
@@ -522,7 +531,7 @@ void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
 	for(i=0; i<100; i++)
 	{
 		runState->evolve(runState);
-		printf("MCMC step %d.  Current parameters are:\n", i);
+		fprintf(stdout, "\nMCMC step %d.  Current parameters are:\n", i); fflush(stdout);
 		printVariables(runState->currentParams);
 	}
 }

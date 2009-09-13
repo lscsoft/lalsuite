@@ -642,7 +642,6 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 		freqModelResponse= XLALResizeCOMPLEX16Vector(freqModelResponse, ifoPtr->freqData->data->length);
 	/*compute the response*/
 	ComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
-	
 	/*if(residual==NULL)
 		residual=XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
 	else
@@ -782,6 +781,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
 
 	if(freqWaveform->length!=dataPtr->freqModelhPlus->data->length){
+		printf("fW%d data%d\n", freqWaveform->length, dataPtr->freqModelhPlus->data->length);
 		printf("Error!  Frequency data vector must be same length as original data!\n");
 		exit(1);
 	}
@@ -1086,6 +1086,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		}
 		ifoPtr = ifoPtr->next;
     }
+    irs->currentLikelihood=NullLogLikelihood(irs->data);
   }
   else
     fprintf(stdout, " initialize(): no data read.\n");
