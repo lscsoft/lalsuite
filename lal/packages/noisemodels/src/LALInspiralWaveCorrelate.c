@@ -172,8 +172,8 @@ LALInspiralWaveCorrelate
      buff.data[nby2] = 0;
   }
 
-  LALREAL4VectorFFT(status->statusPtr,output,&buff,corrin.revp);
-  CHECKSTATUSPTR(status);
+  if (XLALREAL4VectorFFT(output,&buff,corrin.revp) != 0)
+    ABORTXLAL(status);
   for (i=0; i<n; i++) output->data[i] /= ((double) n * corrin.samplingRate);
 
 

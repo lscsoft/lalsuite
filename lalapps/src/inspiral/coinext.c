@@ -109,8 +109,6 @@ int arg_parse_check( int argc, char *argv[]);
    variables
 *******************************/
   
-LALLeapSecAccuracy accuracy=LALLEAPSEC_LOOSE;
-
 int flagTest=0;    /* flag indicating a test of the program */
 int flagRestart;   /* flag indicating to restart the complete DAQ */
 int flagRecalc=0;  /* flag indicating to redo the inspiral analysis */
@@ -941,7 +939,7 @@ int writeXML( int nifo, int cgnIndex, int dag )
   LALOpenLIGOLwXMLFile( &status, &xmlStream, filenameOut );
             
   /* write process table */
-  LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table );
   LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, process_table );
   LALEndLIGOLwXMLTable ( &status, &xmlStream );
@@ -1036,9 +1034,8 @@ void startAnalysisJob(ExternalList* eList, int nifo)
   }
 
   /* check if enough time to create the frames (40 minutes) */
-  LALGPSTimeNow( &status, &gpsnow, LALLEAPSEC_LOOSE );
+  XLALGPSTimeNow(&gpsnow);
 
-  
   time ( &rawtime );
   gpsnow.gpsSeconds=rawtime-315964787;
   if ( gpsnow.gpsSeconds - eList->gps < 2400 ) {

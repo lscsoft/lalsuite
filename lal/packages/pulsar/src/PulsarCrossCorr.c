@@ -456,7 +456,7 @@ void LALCalculateUalpha(LALStatus *status,
 
   }
 
-	
+
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
   out->im = -im/(sigmasq);
@@ -470,7 +470,7 @@ void LALCalculateUalpha(LALStatus *status,
 }
 
 
-/* Calculate rho, the cross correlation power, 
+/* Calculate rho, the cross correlation power,
  * according to Eqn 4.4 in Dhurandhar et al 2008 */
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
@@ -540,7 +540,7 @@ void LALCalculateEstimators(LALStatus    *status,
 				REAL8 *aplussq1,
 				REAL8 *aplussq2,
 				REAL8 *acrossq1,
-				REAL8 *acrossq2, 
+				REAL8 *acrossq2,
 				COMPLEX16Vector  *yalpha,
 				COMPLEX16Vector  *gplus,
 				COMPLEX16Vector  *gcross,
@@ -560,7 +560,7 @@ void LALCalculateEstimators(LALStatus    *status,
   for (i=0; i < (INT4)yalpha->length; i++) {
 	ap1 += 2.0*(SQUARE(gplus->data[i].re) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
 	ac1 += 2.0*(SQUARE(gcross->data[i].re) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
-	ap2 += 2.0*((yalpha->data[i].re * gplus->data[i].re) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i]; 
+	ap2 += 2.0*((yalpha->data[i].re * gplus->data[i].re) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i];
 	ac2 += 2.0*((yalpha->data[i].re * gcross->data[i].re) + (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
   }
 

@@ -361,6 +361,7 @@ int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
+
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/
 }

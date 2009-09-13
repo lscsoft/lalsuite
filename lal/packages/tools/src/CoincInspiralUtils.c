@@ -941,7 +941,7 @@ XLALExtractSnglInspiralFromCoinc(
         else if ( gpsStartTime )
         {
           eventId->id = LAL_INT8_C(1000000000) *
-            (INT8) (gpsStartTime->gpsSeconds + eventNum/100000) + 
+            (INT8) (gpsStartTime->gpsSeconds + eventNum/100000) +
             (INT8) (eventNum % 100000);
         }
         else
