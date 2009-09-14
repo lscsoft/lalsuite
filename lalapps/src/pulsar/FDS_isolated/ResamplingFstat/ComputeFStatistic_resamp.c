@@ -223,6 +223,8 @@ INT4 uvar_maxEndTime;
 CHAR *uvar_workingDir;
 REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
+REAL8 uvar_WinFrac;
+REAL8 uvar_BandFrac;
 
 REAL8 BaryRefTime;
 
@@ -751,6 +753,8 @@ initUserVars (LALStatus *status)
   uvar_df3dot    = 0.0;
 
   uvar_countTemplates = FALSE;
+  uvar_WinFrac = 0.01;
+  uvar_BandFrac = 2.0;
 
   uvar_TwoFthreshold = 10.0;
   uvar_NumCandidatesToKeep = 0;
@@ -848,6 +852,8 @@ initUserVars (LALStatus *status)
 
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregREALUserVar(status, 	WinFrac,  0,  UVAR_OPTIONAL, "Fraction of Window to use as transition (0 -> Rectangular window , 1-> Hann Window) [Default: 0.01]");
+  LALregREALUserVar(status, 	BandFrac,  0,  UVAR_OPTIONAL, "Extra Fracion of Band to use, to minimize interpolation losses (1.0 -> Use Full Band , 2.0 -> Double the Band, 3.0 -> Triple the band) [Default: 1.0]");
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -861,7 +867,6 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserVar(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
   LALregBOOLUserVar(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search");
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 } /* initUserVars() */
@@ -1065,7 +1070,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
     REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
     REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / cfg->Tsft;
-    REAL8 LoadedBand = fMax - fMin;
+    REAL8 LoadedBand = (fMax - fMin)*(uvar_BandFrac-1.0);
     REAL8 fMax_Load = fMax + LoadedBand/2.0;
     REAL8 fMin_Load = fMin - LoadedBand/2.0;
 
@@ -2327,16 +2332,8 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	   /* Since the data in the Frequency and Time domain both have the same length, we can use one Tukey window for it all */
 	  REAL8Window *Win;
 
-	  /* The window will use the Dterms as a rise and a fall, So have to appropriately calculate the fraction */
-
-	  /* Beta is a parameter used to create a Tukey window and signifies what fraction of the total length will constitute a rise and a fall */
-	  REAL8 Win_beta = (2.0*uvar_Dterms)/(REAL8)(N);
-
-	  if(Win_beta > 0.01)
-	    Win_beta = 0.01;
-
 	  /* Create the Window */
-	  Win = XLALCreateTukeyREAL8Window(N,Win_beta);
+	  Win = XLALCreateTukeyREAL8Window(N,uvar_WinFrac);
 
 	  /* Assign some memory */
 	  L = XLALCreateCOMPLEX16Vector(N);
@@ -2775,7 +2772,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 
   /* Calculate the number of non-zero spins and pass that to apply spin downs to save computation */
   UINT4 NUM_SPINS;
-  for(NUM_SPINS = PULSAR_MAX_SPINS;NUM_SPINS <= PULSAR_MAX_SPINS;NUM_SPINS--)
+  for(NUM_SPINS = PULSAR_MAX_SPINS;NUM_SPINS >= 1;NUM_SPINS--)
     {
       if(doppler->fkdot[NUM_SPINS-1])
 	break;
