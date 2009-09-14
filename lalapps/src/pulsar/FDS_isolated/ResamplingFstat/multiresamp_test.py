@@ -347,17 +347,18 @@ def main():
             print "--------------------------------------------\n\n"
 
         # Generate the data
-        try:
-            G = commands.getoutput(FakeDataString)
-            os.remove("timestampsFile"+Vars['IFO'][ifo]+UniqueID)
-        except:
+        (status,MOutput) = commands.getstatusoutput(FakeDataString)
+        os.remove("timestampsFile"+Vars['IFO'][ifo]+UniqueID)
+        if(status):
             print >> sys.stderr, "Tried to generate SFTs, failed"
+            print >> sys.stderr, MOutput
             sys.exit(1)
 
     # Run v2()
     OutputFileVLoudest = "OutputVLoudest" + UniqueID
     OutputFileVFstat = "OutputVFstat" + UniqueID
-    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFileVFstat + " --outputLoudest " + OutputFileVLoudest +  " -F " + str(Vars['FThres']) + "  "
+    OutputFileVHist = "OutputVHist" + UniqueID
+    startstring = "lalapps_ComputeFStatistic_v2 --outputFstat " + OutputFileVFstat + " --outputLoudest " + OutputFileVLoudest +  " -F " + str(Vars['FThres']) + "  --outputFstatHist " + OutputFileVHist + " "
     endstring = " " + refString
     V2DataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
@@ -385,7 +386,8 @@ def main():
     ResampLocation = "./"
     OutputFileRLoudest = "OutputRLoudest" + UniqueID
     OutputFileRFstat = "OutputRFstat" + UniqueID
-    startstring = ResampLocation + "lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFileRFstat + " --outputLoudest " + OutputFileRLoudest+ " -F " + str(Vars['FThres']) + "  "
+    OutputFileRHist = "OutputRHist" + UniqueID
+    startstring = ResampLocation + "lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFileRFstat + " --outputLoudest " + OutputFileRLoudest+ " -F " + str(Vars['FThres']) + " --outputFstatHist " + OutputFileRHist + " "
     endstring = " " + refString
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
@@ -421,6 +423,8 @@ def main():
     os.remove(OutputFileVLoudest)
     os.remove(OutputFileRFstat)
     os.remove(OutputFileVFstat)
+    os.remove(OutputFileVHist)
+    os.remove(OutputFileRHist)
     print FreqOutput,LoudestOutput
     return(0)
 
@@ -562,7 +566,7 @@ def GenFakeDataString(addtonoise,Vars,ifo,UniqueID,endstring):
     return(S)
                          
 def GenDataString(beginstring,endstring,Vars):
-    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dot ' + str(Vars['FDot']) +  endstring
+    S = beginstring + ' --Freq ' + str(Vars['Fmin']) + ' --FreqBand ' + str(Vars['Band']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta'])  + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) +  ' --dFreq ' + str(Vars['Res']) + ' --DataFiles \"' + str(Vars['Out']) + '/*" ' + ' --f1dot ' + str(Vars['FDot'])  +  endstring
     return(S)
 
 #' --f1dot ' + str(Vars['FDot']) + 

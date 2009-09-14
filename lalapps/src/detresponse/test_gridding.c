@@ -48,7 +48,7 @@ main(int argc, char **argv)
 
   s.statusPtr = NULL;
   
-  LALGPSTimeNow (&s, &gps, &acc); 
+  XLALGPSTimeNow (&gps); 
   init_ephemeris(&s, &ephem);
 
   

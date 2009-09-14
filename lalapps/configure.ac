@@ -44,6 +44,7 @@ AC_CONFIG_FILES([\
 ])
 AM_INIT_AUTOMAKE([])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+AC_ARG_VAR(LAL_TOP_SRCDIR,[Set to top source directory of lal])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
@@ -154,13 +155,13 @@ AC_CHECK_LIB(z, compress)
 PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS"
-	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LALSTOCHASTIC_LIBS $LIBS"
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
 fi
 
-dnl LALFrame, LALMetaIo, and LALXML (optional).
+dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
@@ -168,7 +169,7 @@ lalstochastic="true"
 PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
 PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
-PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic >= 1.0, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
 	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
 	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
@@ -292,6 +293,9 @@ AC_CHECK_FUNCS(setenv)
 if test "$LALSUITE_BUILD" = "true"; then
   LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
   CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
+  echo "LAL_TOP_SRCDIR=$LAL_LIBS"
+  echo "LAL_TOP_SRCDIR=$LAL_TOP_SRCDIR"
+  AC_SUBST(LAL_TOP_SRCDIR)
   lalframe="false"
   lalmetaio="false"
   lalxml="false"

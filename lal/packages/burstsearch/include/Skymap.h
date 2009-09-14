@@ -32,7 +32,6 @@ NRCSID(EPSEARCHH, "$Id$");
 // Manipulate log-represented values without overflowing
 
 double XLALSkymapLogSumExp(double a, double b);
-double XLALSkymapLogDifferenceExp(double a, double b);
 double XLALSkymapLogTotalExp(double* begin, double* end);
 
 // Lightweight coordinate transformations
@@ -42,12 +41,11 @@ void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 
 // Cubic interpolation
 
-void XLALSkymap2InterpolationWeights(double t, double* w);
-double XLALSkymap2Interpolate(double* x, double* w);
+double XLALSkymapInterpolate(double t, double* x);
 
 // Largest network of interest (needed to allocate storage)
 
-#define XLALSKYMAP2_N 5
+#define XLALSKYMAP_N 5
 
 // Use detector names from lal/packages/tools/include/LALDetectors.h :
 //	LAL_TAMA_300_DETECTOR	=	0
@@ -64,14 +62,14 @@ typedef struct
 {
     int sampleFrequency;
     int n;
-    LALDetector site[XLALSKYMAP2_N];
-} XLALSkymap2PlanType;
+    LALDetector site[XLALSKYMAP_N];
+} XLALSkymapPlanType;
 
-void XLALSkymap2PlanConstruct(
+void XLALSkymapPlanConstruct(
     int sampleFrequency,
     int n,
     int* detectors,
-    XLALSkymap2PlanType* plan
+    XLALSkymapPlanType* plan
     );
 
 // Struct to store reuseable pre-computed quantities for a specific
@@ -79,15 +77,14 @@ void XLALSkymap2PlanConstruct(
 
 typedef struct
 {
-    double f[XLALSKYMAP2_N][2];
-    int delay[XLALSKYMAP2_N];
-	double weight[XLALSKYMAP2_N][4];
-} XLALSkymap2DirectionPropertiesType;
+    double f[XLALSKYMAP_N][2];
+    double delay[XLALSKYMAP_N];
+} XLALSkymapDirectionPropertiesType;
 
-void XLALSkymap2DirectionPropertiesConstruct(
-    XLALSkymap2PlanType* plan,
+void XLALSkymapDirectionPropertiesConstruct(
+    XLALSkymapPlanType* plan,
     double* direction,
-    XLALSkymap2DirectionPropertiesType* properties
+    XLALSkymapDirectionPropertiesType* properties
     );
 
 // Struct to store reuseable pre-computed kernel for a specific direction,
@@ -95,25 +92,25 @@ void XLALSkymap2DirectionPropertiesConstruct(
 
 typedef struct
 {
-    double k[XLALSKYMAP2_N][XLALSKYMAP2_N];
+    double k[XLALSKYMAP_N][XLALSKYMAP_N];
     double logNormalization;
-} XLALSkymap2KernelType;
+} XLALSkymapKernelType;
 
-void XLALSkymap2KernelConstruct(
-    XLALSkymap2PlanType* plan,
-    XLALSkymap2DirectionPropertiesType* properties,
+void XLALSkymapKernelConstruct(
+    XLALSkymapPlanType* plan,
+    XLALSkymapDirectionPropertiesType* properties,
     double* wSw,
-    XLALSkymap2KernelType* kernel
+    XLALSkymapKernelType* kernel
     );
 
 // Compute the Bayesian marginalization integral for the specified system
 
-void XLALSkymap2Apply(
-    XLALSkymap2PlanType* plan,
-    XLALSkymap2DirectionPropertiesType* properties,
-    XLALSkymap2KernelType* kernel,
+void XLALSkymapApply(
+    XLALSkymapPlanType* plan,
+    XLALSkymapDirectionPropertiesType* properties,
+    XLALSkymapKernelType* kernel,
     double** xSw,
-    int tau,
+    double tau,
     double* logPosterior
     );
 

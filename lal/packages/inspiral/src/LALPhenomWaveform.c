@@ -429,10 +429,12 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   /************************************************************************/
 
   /* Inverse Fourier transform */
-  LALCreateReverseREAL4FFTPlan(status->statusPtr, &revPlan, n, 0 );
-  LALREAL4VectorFFT(status->statusPtr, signalvec, signalFD1, revPlan);
+  revPlan = XLALCreateReverseREAL4FFTPlan(n, 0);
+  if (revPlan == NULL)
+    ABORTXLAL(status);
+  XLALREAL4VectorFFT(signalvec, signalFD1, revPlan);
   XLALDestroyREAL4Vector(signalFD1);
-  LALDestroyREAL4FFTPlan(status->statusPtr, &revPlan);
+  XLALDestroyREAL4FFTPlan(revPlan);
 
   /* FFT normalisation. The LAL implementation of the FFT omits the factor 1/n.
    * Also we change the sign of the waveform so that the initialPhase = 0 and pi/2

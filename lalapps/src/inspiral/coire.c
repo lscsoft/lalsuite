@@ -158,7 +158,6 @@ LALPlaygroundDataMask dataType;
 int main( int argc, char *argv[] )
 {
   /* lal initialization variables */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   LALStatus status = blank_status ;
 
   /*  program option variables */
@@ -258,8 +257,7 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), 
-        &accuracy), &status);
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -1442,8 +1440,7 @@ int main( int argc, char *argv[] )
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), 
-        &accuracy), &status);
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
@@ -1524,8 +1521,7 @@ int main( int argc, char *argv[] )
 
     /* write out the process and process params tables */
     if ( vrbflg ) fprintf( stdout, "process... " );
-    LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time),
-          &accuracy), &status);
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,

@@ -20,6 +20,7 @@ BBHINJSRC 	= bbhinj.c
 BLINDINJSRC 	= blindinj.c
 SPLITBANKSRC 	= splitbank.c
 TRIGBANKSRC 	= trigbank.c
+TRIGSCANSRC 	= trigscan.c
 INSPFRINJSRC 	= inspfrinj.c
 GWF2XMLSRC 	= gwf2xml.c
 SPININJSRC 	= spininj.c
@@ -47,7 +48,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inspinj lalapps_injcut lalapps_splitbank \
                lalapps_minj lalapps_bbhinj lalapps_blindinj \
                lalapps_inspfrinj lalapps_gwf2xml \
-               lalapps_thinca lalapps_trigbank \
+               lalapps_thinca lalapps_trigbank lalapps_trigscan \
                lalapps_spininj lalapps_coherent_inspiral lalapps_cohire \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
@@ -71,6 +72,7 @@ lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
 lalapps_blindinj_SOURCES 	= $(BLINDINJSRC)
 lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
 lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
+lalapps_trigscan_SOURCES 	= $(TRIGSCANSRC)
 lalapps_spininj_SOURCES 	= $(SPININJSRC)
 lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
