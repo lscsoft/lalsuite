@@ -165,6 +165,7 @@ tagLALInferenceRunState
   LALVariables              *currentParams, 
                             *priorArgs, 
                             *proposalArgs;
+  REAL8						currentLikelihood;
   gsl_rng                   *GSLrandom;
 } LALInferenceRunState;
 
