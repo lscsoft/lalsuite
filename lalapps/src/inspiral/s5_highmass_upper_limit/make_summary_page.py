@@ -153,7 +153,7 @@ if open_box:
       print filenames
       files = [open(f).readlines() for f in filenames]
       for f in filenames:
-        page.write("|| || %s ||" % (f.replace('range_summary.txt',''),) )
+        page.write("|| || || || || %s ||" % (f.replace('range_summary.txt','').replace(base_name, ""),) )
       page.write("\n")
       for i in range(len(files[0])):
         for f in files: 
