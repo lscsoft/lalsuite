@@ -126,7 +126,7 @@ for i, f in enumerate(sys.argv[1:]):
   #FIXME it is stupid to pull out names this way
   combined_ifos = "_".join(ifos.split("_")[:-1])
   wiki = open(ifos+'_range_summary.txt',"w")
-  wiki.write("||Masses||Range(Mpc)||Time||UL @ 90%||Fractional error||\n")
+  wiki.write("||'''Masses'''||'''Range(Mpc)'''||'''Time'''||'''UL @ 90%'''||'''Fractional error'''||\n")
   # loop over mass bins
   
   ulA.array *= 0
