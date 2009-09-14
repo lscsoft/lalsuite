@@ -6,6 +6,7 @@ import sys
 import glob
 import ConfigParser
 import subprocess
+from optparse import OptionParser
 
 class wiki(object):
   def __init__(self,open_box=False,fname="wiki.txt"):
@@ -55,7 +56,7 @@ def parse_command_line():
   parser.add_option("--open-box", action = "store_true", help = "Produce open box page")
   parser.add_option("--output-name-tag", default = "", metavar = "name", help = "Set the basename for image search")
   opts, filenames = parser.parse_args()
-  if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
+
   if not opts.webserver:
     print >>sys.stderr, "must specify a webserver"
     sys.exit(1)
@@ -73,41 +74,42 @@ base_name = opts.output_name_tag
 
 if open_box: print >>sys.stderr, "WARNING: OPENING THE BOX"
 
-page = wiki(open_box)
+page = wiki(open_box, fname=base_name+"wiki.txt")
 
 page.section("Injection Parameters")
 
-image_list = page.image_glob(base_name+'*_sim_dist*.png') 
+image_list = page.image_glob(base_name+'_sim_dist*.png') 
+print base_name+'_sim_dist*.png'
 page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
-image_list = page.image_glob(base_name+'*_deff_vs_mchirp_*.png')
+image_list = page.image_glob(base_name+'_deff_vs_mchirp_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'*_deff_vs_t_*.png')
+image_list = page.image_glob(base_name+'_deff_vs_t_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = page.image_glob(base_name+'*_mchirp_acc_frac_*.png')
+image_list = page.image_glob(base_name+'_mchirp_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'*_eta_acc_frac_*.png')
+image_list = page.image_glob(base_name+'_eta_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'*_t_acc_*.png')
+image_list = page.image_glob(base_name+'_t_acc_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
-image_list = page.image_glob(base_name+'*_playground_chi2_vs_rho_*.png')
+image_list = page.image_glob(base_name+'_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-image_list = page.image_glob(base_name+'*_playground_rho_*.png')
+image_list = page.image_glob(base_name+'_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
-image_list = page.image_glob(base_name+'*_playground_count_vs_snr_*.png')
+image_list = page.image_glob(base_name+'_playground_count_vs_snr_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Ifar")
-image_list = page.image_glob(base_name+'*_playground_count_vs_ifar*.png')
+image_list = page.image_glob(base_name+'_playground_count_vs_ifar*.png')
 page.image_table(image_list,webserver)
 
 try:
@@ -118,19 +120,19 @@ if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
-    image_list = page.image_glob(base_name+'*_chi2_vs_rho_*.png')
+    image_list = page.image_glob(base_name+'_chi2_vs_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Effective SNR scatter")
-    image_list = page.image_glob(base_name+'*_rho_*.png')
+    image_list = page.image_glob(base_name+'_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
-    image_list = page.image_glob(base_name+'*_count_vs_snr_*.png')
+    image_list = page.image_glob(base_name+'_count_vs_snr_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Ifar")
-    image_list = page.image_glob(base_name+'*_count_vs_ifar_*.png')
+    image_list = page.image_glob(base_name+'_count_vs_ifar_*.png')
     page.image_table(image_list,webserver)
 
     try:
