@@ -78,38 +78,40 @@ page = wiki(open_box, fname=base_name+"wiki.txt")
 
 page.section("Injection Parameters")
 
-image_list = page.image_glob(base_name+'_sim_dist*.png') 
-print base_name+'_sim_dist*.png'
+image_list = page.image_glob(base_name+'6_sim_dist*.png') 
 page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
-image_list = page.image_glob(base_name+'_deff_vs_mchirp_*.png')
+image_list = page.image_glob(base_name+'1_deff_vs_mchirp_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'_deff_vs_t_*.png')
+image_list = page.image_glob(base_name+'1_deff_vs_t_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = page.image_glob(base_name+'_mchirp_acc_frac_*.png')
+image_list = page.image_glob(base_name+'2_mchirp_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'_eta_acc_frac_*.png')
+image_list = page.image_glob(base_name+'2_eta_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob(base_name+'_t_acc_*.png')
+image_list = page.image_glob(base_name+'2_t_acc_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
-image_list = page.image_glob(base_name+'_playground_chi2_vs_rho_*.png')
+image_list = page.image_glob(base_name+'3_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-image_list = page.image_glob(base_name+'_playground_rho_*.png')
+image_list = page.image_glob(base_name+'4_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
+page.section("Time slide plots")
+image_list = page.image_glob(base_name + '7_playground_plot_slides_*.png')
+
 page.section("Playground SNR")
-image_list = page.image_glob(base_name+'_playground_count_vs_snr_*.png')
+image_list = page.image_glob(base_name+'5_playground_count_vs_snr_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Ifar")
-image_list = page.image_glob(base_name+'_playground_count_vs_ifar*.png')
+image_list = page.image_glob(base_name+'5_playground_count_vs_ifar*.png')
 page.image_table(image_list,webserver)
 
 try:
@@ -120,19 +122,22 @@ if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
-    image_list = page.image_glob(base_name+'_chi2_vs_rho_*.png')
+    image_list = page.image_glob(base_name+'3_chi2_vs_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Effective SNR scatter")
-    image_list = page.image_glob(base_name+'_rho_*.png')
+    image_list = page.image_glob(base_name+'4_rho_*.png')
     page.image_table(image_list,webserver)
 
+    page.section("Time slide plots")
+    image_list = page.image_glob(base_name + '7_plot_slides_*.png')
+
     page.section("Full Data SNR")
-    image_list = page.image_glob(base_name+'_count_vs_snr_*.png')
+    image_list = page.image_glob(base_name+'5_count_vs_snr_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Ifar")
-    image_list = page.image_glob(base_name+'_count_vs_ifar_*.png')
+    image_list = page.image_glob(base_name+'5_count_vs_ifar_*.png')
     page.image_table(image_list,webserver)
 
     try:
@@ -157,27 +162,27 @@ if open_box:
     except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
 
     page.write("\n")
-    image_list = page.image_glob(base_name+'*volume_time.png') 
+    image_list = page.image_glob(base_name+'-*volume_time.png') 
     page.image_table(image_list,webserver)
 
     page.section("error on Volume x time ")
-    image_list = page.image_glob(base_name+'*fractional_error.png')
+    image_list = page.image_glob(base_name+'-*fractional_error.png')
     page.image_table(image_list,webserver)
 
     page.section("lambda ")
-    image_list = page.image_glob(base_name+'*lambda.png')
+    image_list = page.image_glob(base_name+'-*lambda.png')
     page.image_table(image_list,webserver)
 
     page.section("Selected posteriors ")
-    image_list = page.image_glob(base_name+'*posterior.png') 
+    image_list = page.image_glob(base_name+'-*posterior.png') 
     page.image_table(image_list,webserver)
 
     page.section("upper limit ")
-    image_list = page.image_glob(base_name+'*upper_limit.png') 
+    image_list = page.image_glob(base_name+'-*upper_limit.png') 
     page.image_table(image_list,webserver)
 
     page.section("Combined upper limit")
-    image_list = [base_name+'combinedupper_limit.png', base_name+'combinedposterior.png']
+    image_list = [base_name+'upper_limit.png', base_name+'posterior.png']
     page.image_table(image_list,webserver)
 
 try: 
