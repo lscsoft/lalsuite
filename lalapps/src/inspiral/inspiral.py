@@ -1936,6 +1936,7 @@ class PlotSnrchiNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotsnrchi.
     """
     InspiralPlottingNode.__init__(self,job)
+
 #############################################################################
 
 class PlotGRBtimeslideStatsJob(InspiralAnalysisJob):
@@ -1964,6 +1965,131 @@ class PlotGRBtimeslideStatsNode(InspiralAnalysisNode):
     job = A CondorDAGJob that can run an instance of pylal_grbtimeslide_stats.
     """
     InspiralAnalysisNode.__init__(self,job)
+
+#############################################################################
+
+class MiniFollowupsJob(InspiralPlottingJob):
+  """
+  A minifollowups job. Static options are read from the
+  [minifollowups] section in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'minifollowups'
+    sections = ['minifollowups']
+    extension = None
+    InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
+
+
+class MiniFollowupsNode(InspiralPlottingNode):
+  """
+  A mininfollowups node.
+  """
+  def __init__(self, job):
+    """
+    @job: a MiniFollowupsJob
+    """
+    InspiralAnalysisNode.__init__(self, job)
+    self.__cache_file = None
+    self.__cache_string = None
+    self.__prefix = None
+    self.__suffix = None
+    self.__input_xml = None
+    self.__input_xml_summary = None
+    self.__output_html_table = None
+
+  def set_cache_file(self, cache_file):
+    """
+    Set the ihope cache file to use.
+    """
+    self.add_file_opt( 'cache-file', cache_file )
+    self.__cache_file = cache_file
+
+  def get_cache_file(self):
+    """
+    Returns the cache file that's set.
+    """
+    return self.__cache_file
+
+  def set_cache_string(self, cache_string):
+    """
+    Set the ihope cache file to use.
+    """
+    self.add_file_opt( 'cache-string', cache_string )
+    self.__cache_string = cache_string
+
+  def get_cache_string(self):
+    """
+    Returns the cache file that's set.
+    """
+    return self.__cache_string
+
+  def set_prefix(self, prefix):
+    """
+    Sets the prefix option, which is used for plot names.
+    """
+    self.add_var_opt( 'prefix', prefix )
+    self.__prefix = prefix
+
+  def get_prefix(self):
+    """
+    Return the prefix that's set.
+    """
+    return self.__prefix
+
+  def set_suffix(self, suffix):
+    """
+    Sets the suffix option, which is used for plot names.
+    """
+    self.add_var_opt( 'suffix', suffix )
+    self.__suffix = suffix
+
+  def get_suffix(self):
+    """
+    Return the suffix that's set.
+    """
+    return self.__suffix
+
+  def set_input_xml(self, input_xml):
+    """
+    Sets the input xml.
+    """
+    self.add_var_opt( 'input-xml', input_xml)
+    self.__input_xml = input_xml
+
+  def get_input_xml(self):
+    """
+    Return the input_xml that's set.
+    """
+    return self.__input_xml
+
+  def set_input_xml_summary(self, input_xml_summary):
+    """
+    Sets the input xml.
+    """
+    self.add_var_opt( 'input-xml-summary', input_xml_summary)
+    self.__input_xml_summary = input_xml_summary
+  
+  def get_input_xml_summary(self):
+    """
+    Return the input_xml_summary that's set.
+    """
+    return self.__input_xml_summary
+  
+  def set_output_html_table(self, output_html_table):
+    """
+    Sets the input xml.
+    """
+    self.add_var_opt( 'output-html-table', output_html_table)
+    self.__output_html_table = output_html_table
+  
+  def get_output_html_table(self):
+    """
+    Return the output_html_table that's set.
+    """
+    return self.__output_html_table
 
 
 #############################################################################
