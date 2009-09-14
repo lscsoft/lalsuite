@@ -162,23 +162,23 @@ if open_box:
     except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
 
     page.write("\n")
-    image_list = page.image_glob(base_name+'-*volume_time.png') 
+    image_list = page.image_glob(base_name+'-*_volume_time.png') 
     page.image_table(image_list,webserver)
 
     page.section("error on Volume x time ")
-    image_list = page.image_glob(base_name+'-*fractional_error.png')
+    image_list = page.image_glob(base_name+'-*_fractional_error.png')
     page.image_table(image_list,webserver)
 
     page.section("lambda ")
-    image_list = page.image_glob(base_name+'-*lambda.png')
+    image_list = page.image_glob(base_name+'-*_lambda.png')
     page.image_table(image_list,webserver)
 
     page.section("Selected posteriors ")
-    image_list = page.image_glob(base_name+'-*posterior.png') 
+    image_list = page.image_glob(base_name+'-*_posterior.png') 
     page.image_table(image_list,webserver)
 
     page.section("upper limit ")
-    image_list = page.image_glob(base_name+'-*upper_limit.png') 
+    image_list = page.image_glob(base_name+'-*_upper_limit.png') 
     page.image_table(image_list,webserver)
 
     page.section("Combined upper limit")
