@@ -19,6 +19,7 @@
  * Copyright (C) 2009 Adam Mercer
  */
 
+#include <string.h>
 #include "config.h"
 #include <LALVCSInfo.h>
 
@@ -36,6 +37,26 @@ const char *lalVCSStatus = LAL_VCS_STATUS;
 struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
   LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
   LAL_VCS_COMMITTER, LAL_VCS_STATUS};
+
+/* fucntion to compare two LALVCSInfo structures */
+int XLALVCSInfoCompare(LALVCSInfo *header, LALVCSInfo *library)
+{
+  /* check for header/library mismatch */
+  if (strcmp(header->version, library->version) || \
+      strcmp(header->vcsId, library->vcsId) || \
+      strcmp(header->vcsDate, library->vcsDate) || \
+      strcmp(header->vcsBranch, library->vcsBranch) || \
+      strcmp(header->vcsTag, library->vcsTag) || \
+      strcmp(header->vcsAuthor, library->vcsAuthor) || \
+      strcmp(header->vcsCommitter, library->vcsCommitter) || \
+      strcmp(header->vcsStatus, library->vcsStatus))
+  {
+    /* version mismatch */
+    return 1;
+  }
+
+  return 0;
+}
 
 /*
  * vim: tw=0 ts=2 et

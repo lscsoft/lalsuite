@@ -50,7 +50,8 @@ typedef enum
   uniformComponentMass,
   logComponentMass,
   gaussianMassDist,
-  uniformTotalMassRatio
+  uniformTotalMassRatio,
+  logMassUniformTotalMassRatio,
 }
 MassDistribution;
 
@@ -135,6 +136,7 @@ SimInspiralTable* XLALGaussianInspiralMasses( SimInspiralTable *inj,
 
 SimInspiralTable* XLALRandomInspiralTotalMassRatio( SimInspiralTable *inj,
     RandomParams *randParams,
+    MassDistribution mDist,
     REAL4  minTotalMass,
     REAL4  maxTotalMass,
     REAL4  minMassRatio,

@@ -104,7 +104,6 @@ static void print_usage(char *program)
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   INT4 i;
   INT4 numTriggers = 0;
@@ -192,20 +191,19 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -434,7 +432,7 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst and Shawn Seader\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -599,70 +597,70 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
       coincHead = XLALSortCoincInspiral( coincHead, 
-		          *XLALCompareCoincInspiralByTime );
+                          *XLALCompareCoincInspiralByTime );
       if ( vrbflg ) fprintf( stdout, "done\n" );
 
       if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
       
       if ( !numSlides )
       {
-	numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
-		      cluster_dt, coincstat , &bittenLParams);
+        numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
+                      cluster_dt, coincstat , &bittenLParams);
       }
       else
       { 
-	int slide = 0;
-	int numClusteredSlide = 0;
-	CoincInspiralTable *slideCoinc = NULL;
-	CoincInspiralTable *slideClust = NULL;
-	
-	if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
-	
-	for( slide = -numSlides; slide < (numSlides + 1); slide++)
-	{
-	  if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
-	  /* extract the slide */
-	  slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
-	  /* run clustering */
-	  numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
-          	     cluster_dt, coincstat, &bittenLParams);
-	  
-	  if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
-				 numClusteredSlide );
-	  numClusteredEvents += numClusteredSlide;
-	  
-	  /* add clustered triggers */
-	  if( slideCoinc )
-	  {
-	    if( slideClust )
-	    {
-	      thisCoinc = thisCoinc->next = slideCoinc;
-	    }
-	    else
-	    {
-	      slideClust = thisCoinc = slideCoinc;
-	    }
-	    /* scroll to end of list */
-	    for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
-	  }
-	}
-	
-	/* free coincHead -- although we expect it to be empty */
-	while ( coincHead )
-	{
-	  thisCoinc = coincHead;
-	  coincHead = coincHead->next;
-	  XLALFreeCoincInspiral( &thisCoinc );
-	}
-	
-	/* move events to coincHead */
-	coincHead = slideClust;
-	slideClust = NULL;
+        int slide = 0;
+        int numClusteredSlide = 0;
+        CoincInspiralTable *slideCoinc = NULL;
+        CoincInspiralTable *slideClust = NULL;
+        
+        if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+        
+        for( slide = -numSlides; slide < (numSlides + 1); slide++)
+        {
+          if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+          /* extract the slide */
+          slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
+          /* run clustering */
+          numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
+                       cluster_dt, coincstat, &bittenLParams);
+          
+          if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+                                 numClusteredSlide );
+          numClusteredEvents += numClusteredSlide;
+          
+          /* add clustered triggers */
+          if( slideCoinc )
+          {
+            if( slideClust )
+            {
+              thisCoinc = thisCoinc->next = slideCoinc;
+            }
+            else
+            {
+              slideClust = thisCoinc = slideCoinc;
+            }
+            /* scroll to end of list */
+            for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
+          }
+        }
+        
+        /* free coincHead -- although we expect it to be empty */
+        while ( coincHead )
+        {
+          thisCoinc = coincHead;
+          coincHead = coincHead->next;
+          XLALFreeCoincInspiral( &thisCoinc );
+        }
+        
+        /* move events to coincHead */
+        coincHead = slideClust;
+        slideClust = NULL;
       }
       
       if ( vrbflg ) fprintf( stdout, "done\n" );
       if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
-			     numClusteredEvents );
+                             numClusteredEvents );
     }
     
     /*
@@ -673,7 +671,7 @@ int main( int argc, char *argv[] )
     
     if ( allIFO )
     {
-	numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
+        numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
     }
     else
     {
@@ -735,8 +733,7 @@ int main( int argc, char *argv[] )
       &status );
 
   /* write process table */
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 

@@ -1,0 +1,273 @@
+#!/usr/bin/python
+
+import subprocess
+import sys
+import glob
+import os
+from glue import lal
+
+from optparse import OptionParser
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import ligolw_tisi
+from pylal import llwapp
+from pylal import ligolw_cafe
+from glue import pipeline
+import ConfigParser
+import tempfile
+import string
+from glue import iterutils
+
+
+class mvsc_dag_DAG(pipeline.CondorDAG):
+  def __init__(self, config_file, log_path):
+    self.config_file = str(config_file)
+    self.basename = self.config_file.replace('.ini','')
+    tempfile.tempdir = log_path
+    tempfile.template = self.basename + '.dag.log.'
+    logfile = tempfile.mktemp()
+    fh = open( logfile, "w" )
+    fh.close()
+    pipeline.CondorDAG.__init__(self,logfile)
+    self.set_dag_file(self.basename)
+    self.jobsDict = {}
+    self.id = 0
+  def add_node(self, node):
+    self.id+=1
+    pipeline.CondorDAG.add_node(self, node)
+    
+class mvsc_get_doubles_job(pipeline.CondorDAGJob):
+  """
+  A mvsc_get_doubles.py job: BLAH
+  """
+  def __init__(self, cp, tag_base='MVSC_GET_DOUBLES'):
+    """
+    """
+    self.__prog__ = 'mvsc_get_doubles.py'
+    self.__executable = string.strip(cp.get('condor','mvsc_get_doubles.py'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class mvsc_get_doubles_node(pipeline.CondorDAGNode):
+  """
+  """
+# add default values
+  def __init__(self, job, dag, instruments, injections='*INJ*.sqlite', fulldata='*FULL*.sqlite', number=10, trainingstr='training', testingstr='testing', zerolagstr='zerolag', p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME add tmp file space
+    self.add_macro("macroid", dag.id)
+# deal with the fact that the first two are globs?
+#    self.add_var_opt("injections", injections)
+#    self.add_var_opt("fulldata", fulldata)
+#    self.add_var_opt("number", number)
+    self.number = number
+    self.add_var_opt("instruments", instruments)
+#    self.add_var_opt("trainingstr", trainingstr)
+#    self.add_var_opt("testingstr", testingstr)
+#    self.add_var_opt("zerolagstr", zerolagstr)
+    ifos=instruments.strip().split(',')
+    ifos.sort()
+    self.out_file_group = {}
+    for i in range(number):
+      self.out_file_group[i] = ((''.join(ifos) + '_set' + str(i) + '_' + str(trainingstr) + '.pat'), (''.join(ifos) + '_set' + str(i) + '_' + str(testingstr) + '.pat'), self.add_output_file(''.join(ifos) + '_set' + str(i) + '_' + str(testingstr) + '_info.pat'))
+    self.zerolag_file = [''.join(ifos) + '_' + str(zerolagstr) + '.pat']
+    #print self.out_file_group
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class train_forest_job(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp, tag_base='TRAIN_FOREST'):
+    """
+    """
+    self.__prog__ = 'SprBaggerDecisionTreeApp'
+    self.__executable = string.strip(cp.get('condor','SprBaggerDecisionTreeApp'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class train_forest_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, trainingfile, p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME add tmp file space
+    self.add_macro("macroid", dag.id)
+    self.add_input_file(trainingfile)
+    self.trainingfile = self.get_input_files()[0]
+    #print self.trainingfile
+    self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
+    #print self.trainedforest
+#FIXME to make this changable by the user
+    self.add_file_arg("-a 1 -n 100 -l 4 -s 4 - c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
+    self.add_output_file(self.trainedforest)
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class use_forest_job(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp, tag_base='USE_FOREST'):
+    """
+    """
+    self.__prog__ = 'SprOutputWriterApp'
+    self.__executable = string.strip(cp.get('condor','SprOutputWriterApp'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class use_forest_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, trainedforest, file_to_rank,  p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME add tmp file space
+    self.add_macro("macroid", dag.id)
+    self.add_input_file(trainedforest)
+    self.add_input_file(file_to_rank)
+    self.trainedforest = self.get_input_files()[0]
+    self.file_to_rank = self.get_input_files()[1]
+    self.ranked_file = self.file_to_rank.replace('.pat','.dat')
+    self.add_file_arg("-a 1 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
+    self.add_output_file(self.ranked_file)
+# I need to figure out how to parse these options
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class mvsc_update_sql_job(pipeline.CondorDAGJob):
+  """
+  A mvsc_update_sql.py job: BLAH
+  """
+  def __init__(self, cp, tag_base='MVSC_UPDATE_SQL'):
+    """
+    """
+    self.__prog__ = 'mvsc_update_sql.py'
+    self.__executable = string.strip(cp.get('condor','mvsc_update_sql.py'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+    
+class mvsc_update_sql_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, files='*.dat', infofiles='*_info.pat', databases='*.sqlite', p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME add tmp file space
+    self.add_macro("macroid", dag.id)
+# uhh these are still globs! FIXME
+    self.add_var_opt("files", files)
+    self.add_var_opt("infofiles", infofiles)
+    self.add_var_opt("databases", databases)
+# do I need to put the databases as output files? 
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+
+
+###############################################################################
+## MAIN #######################################################################
+###############################################################################
+
+parser = OptionParser(version = "%prog CVS $Id$", usage = "%prog [options]")
+parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+parser.add_option("--all-instruments", help = "the list of all instruments from which you want to study the double-coincident triggers. e.g. H1,H2,L1,V1")
+parser.add_option("--log-path", help = "set dagman log path")
+(opts, args) = parser.parse_args()
+
+
+all_ifos = opts.all_instruments.strip().split(',')
+ifo_combinations = list(iterutils.choices(all_ifos,2))
+#print ifo_combinations
+for comb in ifo_combinations:
+  comb=','.join(comb)
+  #print comb
+  
+
+### SET UP THE DAG
+
+try: os.mkdir("logs")
+except: pass
+
+cp = ConfigParser.ConfigParser()
+#FIXME don't assume file name
+ininame = "mvsc_dag.ini"
+cp.read(ininame)
+dag = mvsc_dag_DAG(ininame, opts.log_path)
+
+#mvsc_get_doubles
+get_job = mvsc_get_doubles_job(cp)
+get_node = {}
+
+#SprBaggerDecisionTreeApp
+train_job = train_forest_job(cp)
+train_node = {}
+
+#SprOutputWriterApp
+rank_job = use_forest_job(cp)
+rank_node = {}
+zl_rank_job = use_forest_job(cp)
+zl_rank_node = {}
+
+#mvsc_update_sql
+update_job = mvsc_update_sql_job(cp)
+update_node = {}
+
+#Assemble the DAG
+for comb in ifo_combinations:
+  comb = ','.join(comb)
+  get_node[comb] = mvsc_get_doubles_node(get_job, dag, comb)
+  for i in range(get_node[comb].number):
+    file_for_this_set = get_node[comb].out_file_group[i]
+#    print file_for_this_set[0]
+    train_node[i] = train_forest_node(train_job, dag, file_for_this_set[0], p_node=[get_node[comb]])
+    rank_node[i] = use_forest_node(rank_job, dag, train_node[i].trainedforest, file_for_this_set[1], p_node=[train_node[i]])
+#print rank_node
+  #print get_node[comb].get_output_files()
+  zl_rank_node[comb] = use_forest_node(zl_rank_job, dag, train_node[0].trainedforest, get_node[comb].zerolag_file[0], p_node=[get_node[comb],train_node[0]])
+#print [rank_node.values(), zl_rank_node.values()]
+update_node['all'] = mvsc_update_sql_node(update_job, dag, p_node=rank_node.values()+zl_rank_node.values())
+#  print get_node[comb].out_file_group[:][1]
+#injections, fulldata, number, instruments, trainingstr, testingstr, zerolagstr, p_node=[])
+#
+##Assemble dag
+#for f in cafe_caches:
+#  add_node[f] = ligolw_add_node(add_job, dag, f, tisi.filename)
+#  rinca_node[f] = ligolw_rinca_node(rinca_job, dag, add_node[f].get_output_files()[0], p_node=[add_node[f]])
+#  sqlite_node[f] = ligolw_sqlite_node(sqlite_job, dag, f.replace(".cache",".sqlite"), rinca_node[f].get_output_files(), p_node=[rinca_node[f]])
+#
+##FIXME Do you want everying in one file, what should be the file name
+#sqlite_node['all'] = ligolw_sqlite_node(sqlite_job, dag, "RING.sqlite", [f.get_output_files()[0] for f in rinca_node.values()], p_node=rinca_node.values())
+#
+#sys.exit()
+dag.write_sub_files()
+dag.write_dag()
+dag.write_script()

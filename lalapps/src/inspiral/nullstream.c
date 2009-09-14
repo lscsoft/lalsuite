@@ -138,7 +138,6 @@ int           gpsStartTimeTemp   = 0;   /* input data GPS start time ns */
 int           gpsEndTimeTemp     = 0;   /* input data GPS start time ns */
 
 LALStatus             status;
-LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag IFOs    */
@@ -229,20 +228,19 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) LALCalloc(1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     LALCalloc( 1, sizeof(ProcessParamsTable) );
@@ -691,8 +689,7 @@ int main( int argc, char *argv[] )
 
     /* process table */
     if ( vrbflg ) fprintf( stdout, "Writing the process table..." );
-    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), 
-                              &accuracy ), &status );
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
                                       &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
@@ -977,7 +974,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                "Messaritaki <emess@caltech.ed>\n"
                "CVS Version: " CVS_ID_STRING "\n"
                "CVS Tag: " CVS_NAME_STRING "\n" );
-	 fprintf( stdout, lalappsGitID );
+         fprintf( stdout, lalappsGitID );
          exit( 0 );
          break;
 

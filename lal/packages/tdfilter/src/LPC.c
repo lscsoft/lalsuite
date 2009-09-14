@@ -66,11 +66,13 @@ Train a FIR filter aout of order p on the data x.
   /* compute correlations */
   npad = (UINT4)pow(2.0,ceil(log((REAL4)(x->length))/log(2.0)));
 
-  LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, npad, 0 );
-  CHECKSTATUSPTR (status);
+  pfwd = XLALCreateForwardREAL4FFTPlan( npad, 0 );
+  if (pfwd == NULL)
+    ABORTXLAL(status);
 
-  LALCreateReverseRealFFTPlan(status->statusPtr, &pinv, npad, 0 );
-  CHECKSTATUSPTR (status);
+  pinv = XLALCreateReverseREAL4FFTPlan( npad, 0 );
+  if (pinv == NULL)
+    ABORTXLAL(status);
 
   LALCCreateVector( status->statusPtr, &Hvec, npad/2 + 1);
   CHECKSTATUSPTR (status);
@@ -84,22 +86,20 @@ Train a FIR filter aout of order p on the data x.
   memcpy(r,x->data,x->length * sizeof(REAL4));
   bzero(r + x->length, (npad - x->length) * sizeof(REAL4));
 
-  LALForwardRealFFT(status->statusPtr, Hvec, &rv, pfwd);
-  CHECKSTATUSPTR (status);
+  if (XLALREAL4ForwardFFT(Hvec, &rv, pfwd) != 0)
+    ABORTXLAL(status);
 
   for(i=0;i<Hvec->length;i++) {
     Hvec->data[i].re = (Hvec->data[i].re*Hvec->data[i].re + Hvec->data[i].im*Hvec->data[i].im)/((REAL4)(npad*(x->length-1)));
     Hvec->data[i].im = 0.0;
   }
 
-  LALReverseRealFFT(status->statusPtr, &rv, Hvec, pinv);
-  CHECKSTATUSPTR (status);
+  if (XLALREAL4ReverseFFT(&rv, Hvec, pinv) != 0)
+    ABORTXLAL(status);
 
-  LALDestroyRealFFTPlan(status->statusPtr, &pinv);
-  CHECKSTATUSPTR (status);
+  XLALDestroyREAL4FFTPlan(pinv);
 
-  LALDestroyRealFFTPlan(status->statusPtr, &pfwd);
-  CHECKSTATUSPTR (status);
+  XLALDestroyREAL4FFTPlan(pfwd);
 
   LALCDestroyVector( status->statusPtr, &Hvec);
   CHECKSTATUSPTR (status);

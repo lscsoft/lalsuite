@@ -305,24 +305,28 @@ LALInspiralCreatePNCoarseBankHexa(
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+                          case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[2]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+                          case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[3]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+                          case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[4]){
 			  case In:    in    +=1; break;
 			  case Below: below +=1; break;
 			  case Above: above +=1; break;
 			  case Out:   out   +=1; break;
+                          case Edge:             break;
 			  }
 			}
 
@@ -823,30 +827,35 @@ LALSPAValidPosition(LALStatus *status,
   case Below: below +=1; break;
   case Above: above +=1; break;
   case Out:   out   +=1; break;
+  case Edge:             break;
   }
   switch ((*cell)[id1].RectPosition[2]){
   case In:    in    +=1; break;
   case Below: below +=1; break;
   case Above: above +=1; break;
   case Out:   out   +=1; break;
+  case Edge:             break;
   }
   switch ((*cell)[id1].RectPosition[3]){
   case In:    in    +=1; break;
   case Below: below +=1; break;
   case Above: above +=1; break;
   case Out:   out   +=1; break;
+  case Edge:             break;
   }
   switch ((*cell)[id1].RectPosition[4]){
   case In:    in    +=1; break;
   case Below: below +=1; break;
   case Above: above +=1; break;
   case Out:   out   +=1; break;
+  case Edge:             break;
   }
   switch ((*cell)[id1].RectPosition[0]){
   case In:    in    +=1; break;
   case Below: below +=1; break;
   case Above: above +=1; break;
   case Out:   out   +=1; break;
+  case Edge:             break;
   }
 
   (*cell)[id1].in = in;

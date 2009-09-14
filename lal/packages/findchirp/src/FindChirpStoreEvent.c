@@ -42,6 +42,8 @@ $Id$
 #endif
 
 #include <math.h>
+#include <lal/LALErrno.h>
+#include <lal/XLALError.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -71,7 +73,6 @@ LALFindChirpStoreEvent (
   INT8                       timeNS;
   INT4                       timeIndex;
   REAL4                      deltaT;
-  LALMSTUnitsAndAcc          gmstUnits;
   UINT4			     numPoints;
 
   INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
@@ -114,10 +115,6 @@ LALFindChirpStoreEvent (
   deltaT = params->deltaT;
   numPoints = params->qVec->length;
 
-  /* set the gmst units and strictness */
-  gmstUnits.units = MST_HRS;
-  gmstUnits.accuracy = LALLEAPSEC_STRICT;
-
   /* set the event LIGO GPS time of the event */
   timeNS = 1000000000L *
     (INT8) (input->segment->data->epoch.gpsSeconds);
@@ -125,9 +122,9 @@ LALFindChirpStoreEvent (
   timeNS += (INT8) (1e9 * timeIndex * deltaT);
   thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
   thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
-  LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
-      &(thisEvent->end_time), &gmstUnits );
-  CHECKSTATUSPTR( status );
+  thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
   /* set the impulse time for the event */
   thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;

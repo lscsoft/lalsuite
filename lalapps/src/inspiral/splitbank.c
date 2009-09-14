@@ -82,7 +82,6 @@ int main ( int argc, char *argv[] )
 {
   /* lal function variables */
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* template bank generation parameters */
   CHAR   *bankFileName = NULL;
@@ -142,20 +141,19 @@ int main ( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -310,7 +308,7 @@ int main ( int argc, char *argv[] )
         fprintf( stdout, "Inspiral Template Bank Splitter\n" 
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
             "CVS Version: " CVS_ID_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -434,8 +432,7 @@ int main ( int argc, char *argv[] )
       fprintf( stdout, "writing templates to %s... ", outBankFileName );
 
     /* write process table */
-    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-          &accuracy ), &status );
+    XLALGPSTimeNow(&(proctable.processTable->end_time));
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
