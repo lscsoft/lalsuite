@@ -149,7 +149,7 @@ if open_box:
     #ifos_string = ",".join(ifos_list)
     page.section("Volume x time ")
     try:
-      filenames = page.image_glob(base_name+'*range_summary.txt')
+      filenames = page.image_glob(base_name+'-*_range_summary.txt')
       print filenames
       files = [open(f).readlines() for f in filenames]
       for f in filenames:
