@@ -49,88 +49,100 @@ class wiki(object):
   def finish(self):
     self.file.close()  
 
-try: webserver = sys.argv[1]
-except: 
-  print >>sys.stderr, "YOU MUST SPECIFY A WEBSERVER AS THE FIRST ARGUMENT (e.g. https://ldas-jobs.ligo.caltech.edu/~channa/highmass_months_23-24_summary_page)"
-  sys.exit(1)
+def parse_command_line():
+  parser = OptionParser(version = "%prog CVS $Id$", usage = "%prog [options] [file ...]", description = "%prog computes mass/mass upperlimit")
+  parser.add_option("--webserver", help = "Set the webserver path.  Required.  Example https://ldas-jobs.ligo.caltech.edu/~channa/highmass_months_23-24_summary_page")
+  parser.add_option("--open-box", action = "store_true", help = "Produce open box page")
+  parser.add_option("--output-name-tag", default = "", metavar = "name", help = "Set the basename for image search")
+  opts, filenames = parser.parse_args()
+  if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
+  if not opts.webserver:
+    print >>sys.stderr, "must specify a webserver"
+    sys.exit(1)
+  return opts, filenames
 
-open_box = False
-try: # see if you want to open the box
-  if sys.argv[2] == "open":
-    print >>sys.stderr, "WARNING: OPENING THE BOX"
-    open_box = True
-except: pass
+###########################################################
+# MAIN
+###########################################################
+
+opts, filenames = parse_command_line()
+
+webserver = opts.webserver
+open_box = opts.open_box
+base_name = opts.output_name_tag
+
+if open_box: print >>sys.stderr, "WARNING: OPENING THE BOX"
 
 page = wiki(open_box)
 
 page.section("Injection Parameters")
 
-image_list = page.image_glob('cbc_plotsummary_*_sim_dist*.png') 
+image_list = page.image_glob(base_name+'*_sim_dist*.png') 
 page.image_table(image_list,webserver)
 
 page.section("Found / Missed")
-image_list = page.image_glob('cbc_plotsummary_*_deff_vs_mchirp_*.png')
+image_list = page.image_glob(base_name+'*_deff_vs_mchirp_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_*_deff_vs_t_*.png')
+image_list = page.image_glob(base_name+'*_deff_vs_t_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Parameter Accuracy")
-image_list = page.image_glob('cbc_plotsummary_*_mchirp_acc_frac_*.png')
+image_list = page.image_glob(base_name+'*_mchirp_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_*_eta_acc_frac_*.png')
+image_list = page.image_glob(base_name+'*_eta_acc_frac_*.png')
 page.image_table(image_list,webserver)
-image_list = page.image_glob('cbc_plotsummary_*_t_acc_*.png')
+image_list = page.image_glob(base_name+'*_t_acc_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Chi-squared")
-image_list = page.image_glob('cbc_plotsummary_*_playground_chi2_vs_rho_*.png')
+image_list = page.image_glob(base_name+'*_playground_chi2_vs_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Effective SNR scatter")
-image_list = page.image_glob('cbc_plotsummary_*_playground_rho_*.png')
+image_list = page.image_glob(base_name+'*_playground_rho_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
-image_list = page.image_glob('cbc_plotsummary_*_playground_count_vs_snr_*.png')
+image_list = page.image_glob(base_name+'*_playground_count_vs_snr_*.png')
 page.image_table(image_list,webserver)
 
 page.section("Playground Ifar")
-image_list = page.image_glob('cbc_plotsummary_*_playground_count_vs_ifar*.png')
+image_list = page.image_glob(base_name+'*_playground_count_vs_ifar*.png')
 page.image_table(image_list,webserver)
 
 try:
-  for l in open("playground_summary_table.txt").readlines(): page.write(l)
+  for l in open(base_name+"playground_summary_table.txt").readlines(): page.write(l)
 except: print >>sys.stderr, "WARNING: couldn't find playground summary, continuing"
 
 if open_box:
     print >>sys.stderr, "WARNING: OPENING THE BOX"
 
     page.section("Full Data Chi-squared")
-    image_list = page.image_glob('cbc_plotsummary_*_chi2_vs_rho_*.png')
+    image_list = page.image_glob(base_name+'*_chi2_vs_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Effective SNR scatter")
-    image_list = page.image_glob('cbc_plotsummary_*_rho_*.png')
+    image_list = page.image_glob(base_name+'*_rho_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
-    image_list = page.image_glob('cbc_plotsummary_*_count_vs_snr_*.png')
+    image_list = page.image_glob(base_name+'*_count_vs_snr_*.png')
     page.image_table(image_list,webserver)
 
     page.section("Full Data Ifar")
-    image_list = page.image_glob('cbc_plotsummary_*_count_vs_ifar_*.png')
+    image_list = page.image_glob(base_name+'*_count_vs_ifar_*.png')
     page.image_table(image_list,webserver)
 
     try:
-      for l in open("summary_table.txt").readlines(): page.write(l)
+      for l in open(base_name+"summary_table.txt").readlines(): page.write(l)
     except: print >>sys.stderr, "WARNING: couldn't find summary, continuing"
 
     # UPPER LIMIT PLOTS
-    ifos_list = [f.replace('volume_time.png','') for f in page.image_glob('*volume_time.png')]
-    ifos_string = ",".join(ifos_list)
-    page.section("Volume x time " + ifos_string)
+    #ifos_list = [f.replace('volume_time.png','') for f in page.image_glob('*volume_time.png')]
+    #ifos_string = ",".join(ifos_list)
+    page.section("Volume x time ")
     try:
-      filenames = page.image_glob('*range_summary.txt')
+      filenames = page.image_glob(base_name+'*range_summary.txt')
       print filenames
       files = [open(f).readlines() for f in filenames]
       for f in filenames:
@@ -143,31 +155,31 @@ if open_box:
     except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
 
     page.write("\n")
-    image_list = page.image_glob('*volume_time.png') 
+    image_list = page.image_glob(base_name+'*volume_time.png') 
     page.image_table(image_list,webserver)
 
-    page.section("error on Volume x time " + ifos_string)
-    image_list = page.image_glob('*fractional_error.png')
+    page.section("error on Volume x time ")
+    image_list = page.image_glob(base_name+'*fractional_error.png')
     page.image_table(image_list,webserver)
 
-    page.section("lambda " + ifos_string)
-    image_list = page.image_glob('*lambda.png')
+    page.section("lambda ")
+    image_list = page.image_glob(base_name+'*lambda.png')
     page.image_table(image_list,webserver)
 
-    page.section("Selected posteriors " + ifos_string)
-    image_list = page.image_glob('*posterior.png') 
+    page.section("Selected posteriors ")
+    image_list = page.image_glob(base_name+'*posterior.png') 
     page.image_table(image_list,webserver)
 
-    page.section("upper limit " + ifos_string)
-    image_list = page.image_glob('*upper_limit.png') 
+    page.section("upper limit ")
+    image_list = page.image_glob(base_name+'*upper_limit.png') 
     page.image_table(image_list,webserver)
 
     page.section("Combined upper limit")
-    image_list = ['combinedupper_limit.png', 'combinedposterior.png']
+    image_list = [base_name+'combinedupper_limit.png', base_name+'combinedposterior.png']
     page.image_table(image_list,webserver)
 
 try: 
-  for l in open("plotsummary.txt").readlines(): page.write(l)
+  for l in open(base_name+"plotsummary.txt").readlines(): page.write(l)
 except: print >>sys.stderr, "WARNING couldn't find plotsummary.txt"
 
 page.finish()

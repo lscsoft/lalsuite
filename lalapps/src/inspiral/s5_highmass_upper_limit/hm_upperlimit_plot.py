@@ -120,8 +120,8 @@ f = pylab.figure(1)
 for i, f in enumerate(sys.argv[1:]):
   legend_str = []
   lines = []
-  #FIXME we can't get ifos from filenames, we should put it in the xml :(
-  ifos = "_".join(sys.argv[1+i].split('-')[-2:]).replace('.xml','')
+  #FIXME we shouldn't get ifos from filenames, we should put it in the xml :(
+  ifos = sys.argv[1+i].replace('.xml','').replace("2Dsearchvolume-","")
   wiki = open(ifos+'range_summary.txt',"w")
   wiki.write("||Masses||Range(Mpc)||Time||UL @ 90%||Fractional error||\n")
   # loop over mass bins

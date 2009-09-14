@@ -84,9 +84,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-int snprintf(char *str, size_t size, const char *format, ...);
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
@@ -579,7 +576,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
-		      
+      	
       if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
     }
   }
