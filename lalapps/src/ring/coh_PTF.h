@@ -52,6 +52,7 @@ struct coh_PTF_params {
   REAL4        lowCutoffFrequency;
   REAL4        highpassFrequency;
   REAL4        invSpecLen;
+  char         bankFile[256];
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
   UINT4        numEvents;

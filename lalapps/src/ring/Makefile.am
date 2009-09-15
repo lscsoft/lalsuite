@@ -53,7 +53,9 @@ lalapps_ring_SOURCES = \
 lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c ring_output.c \
          errutil.c errutil.h \
          gpstime.c gpstime.h \
+         injsgnl.c injsgnl.h \
          getdata.c getdata.h \
+         getresp.c getresp.h \
          spectrm.c spectrm.h \
          segment.c segment.h
 lalapps_rinj_SOURCES = rinj.c

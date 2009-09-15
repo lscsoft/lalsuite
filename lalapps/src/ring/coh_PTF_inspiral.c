@@ -20,6 +20,8 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -83,12 +85,12 @@ void cohPTFStatistic(
     COMPLEX8VectorSequence     *v1PTFqVec
     );
 void cohPTFunconstrainedStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec);
+    REAL4Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    struct coh_PTF_params   *params,
+    REAL4                   deltaT,
+    UINT4                   numPoints
+    );
 void cohPTFoldStatistic(
     REAL4Array                 *h1PTFM,
     COMPLEX8VectorSequence     *h1PTFqVec,
@@ -102,6 +104,7 @@ void cohPTFoldStatistic(
 
 int main( int argc, char **argv )
 {
+  INT4 i,j,k;
   static LALStatus      status;
   struct coh_PTF_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
@@ -109,17 +112,12 @@ int main( int argc, char **argv )
   REAL4FFTPlan            *revplan   = NULL;
   COMPLEX8FFTPlan          *invPlan   = NULL;
   REAL4TimeSeries         *channel[LAL_NUM_IFO];
-  REAL4TimeSeries         *h1channel   = NULL;
-  REAL4TimeSeries         *l1channel   = NULL;
-  REAL4TimeSeries         *v1channel   = NULL;
   REAL4FrequencySeries    *invspec[LAL_NUM_IFO];
-  REAL4FrequencySeries    *h1invspec   = NULL;
-  REAL4FrequencySeries    *l1invspec   = NULL;
-  REAL4FrequencySeries    *v1invspec   = NULL;
   RingDataSegments        *segments[LAL_NUM_IFO];
-  RingDataSegments        *h1segments  = NULL;
-  RingDataSegments        *l1segments  = NULL;
-  RingDataSegments        *v1segments  = NULL;
+  INT4                    numTmplts = 0;
+  INT4  startTemplate     = -1;           /* index of first template      */
+  INT4  stopTemplate      = -1;           /* index of last template       */
+  INT4 numSegments        = 0;
   InspiralTemplate        *PTFtemplate = NULL;
   FindChirpTemplate       *fcTmplt     = NULL;
   FindChirpTmpltParams     *fcTmpltParams      = NULL;
@@ -127,12 +125,6 @@ int main( int argc, char **argv )
   UINT4                   numPoints,ifoNumber;
   REAL4Array              *PTFM[LAL_NUM_IFO];
   COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO];
-  REAL4Array              *h1PTFM = NULL;
-  COMPLEX8VectorSequence  *h1PTFqVec = NULL;
-  REAL4Array              *l1PTFM = NULL;
-  COMPLEX8VectorSequence  *l1PTFqVec = NULL;
-  REAL4Array              *v1PTFM = NULL;
-  COMPLEX8VectorSequence  *v1PTFqVec = NULL;
   time_t                  startTime;
   
   startTime = time(NULL);
@@ -141,12 +133,16 @@ int main( int argc, char **argv )
   set_abrt_on_error();
 
   /* options are parsed and debug level is set here... */
+  
+
   /* no lal mallocs before this! */
   params = coh_PTF_get_params( argc, argv );
 
+  /* create process params */
+  procpar = create_process_params( argc, argv, PROGRAM_NAME );
+
   fprintf(stdout,"Read input params %ld \n", time(NULL)-startTime);
 
-  /* create process params */
   /* create forward and reverse fft plans */
   fwdplan = coh_PTF_get_fft_fwdplan( params );
   revplan = coh_PTF_get_fft_revplan( params );
@@ -180,6 +176,8 @@ int main( int argc, char **argv )
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
            invspec[ifoNumber], fwdplan, params );
+      
+      numSegments = segments[ifoNumber]->numSgmnt;
 
       fprintf(stdout,"Created segments for one ifo %ld \n", time(NULL)-startTime);
     }
@@ -188,7 +186,6 @@ int main( int argc, char **argv )
   /* Create the relevant structures that will be needed */
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
   fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
-  PTFtemplate = LALCalloc( 1, sizeof( *PTFtemplate ) );
   fcTmplt = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams = LALCalloc ( 1, sizeof( *fcTmpltParams ) );
   fcTmplt->PTFQtilde =
@@ -203,41 +200,59 @@ int main( int argc, char **argv )
   fcTmpltParams->fwdPlan =
         XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT = 1.0/params->sampleRate;
-
-  /* Create an inverser FFT plan */
-  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
-
-  /* A temporary call to create a template with specified values */
-  fake_template (PTFtemplate);
-
-  /* Generate the Q freq series of the template */
-  generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
-
-  fprintf(stdout,"Generated the template %ld \n", time(NULL)-startTime);
-
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( params->haveTrig[ifoNumber] )
     {
-
-      /* Create storage vectors for the PTF filters */
       PTFM[ifoNumber] = XLALCreateArrayL( 2, 5, 5 );
       PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
-      memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL4) );
-      memset( PTFqVec[ifoNumber]->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
-
-      /* And calculate A^I B^I and M^IJ */
-      cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
-          PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[0],invPlan);
-      fprintf(stdout,"Made filters for one ifo %ld \n", time(NULL)-startTime);
-
     }
   }
+  /* Create an inverser FFT plan */
+  invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
+  /* Read in the tmpltbank xml file */
+  numTmplts = InspiralTmpltBankFromLIGOLw( &PTFtemplate, params->bankFile,
+      startTemplate, stopTemplate );
+  /*fake_template (PTFtemplate);*/
 
-  cohPTFunconstrainedStatistic(PTFM[1],PTFqVec[1],PTFM[3],PTFqVec[3],PTFM[5],PTFqVec[5]);
-  fprintf(stdout,"Made coherent statistic %ld \n", time(NULL)-startTime);
- 
+  for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
+  {
+    PTFtemplate->approximant = FindChirpPTF;
+    PTFtemplate->order = LAL_PNORDER_TWO;
+    PTFtemplate->fLower = 40.;
+    /* Generate the Q freq series of the template */
+    generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
+
+    fprintf(stdout,"Generated template %d at %ld \n", i, time(NULL)-startTime);
+
+    for ( j = 0; j < numSegments; ++j )
+    {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          /* Zero the storage vectors for the PTF filters */
+          memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL4) );
+          memset( PTFqVec[ifoNumber]->data, 0, 
+                  5 * numPoints * sizeof(COMPLEX8) );
+
+          /* And calculate A^I B^I and M^IJ */
+          cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan);
+          fprintf(stdout,
+              "Made filters for ifo %d,segment %d, template %d at %ld \n", 
+              ifoNumber,j,i,time(NULL)-startTime);
+        }
+      }
+    
+      cohPTFunconstrainedStatistic(PTFM,PTFqVec,params,
+                                 fcTmpltParams->deltaT,numPoints);
+      fprintf(stdout,
+          "Made coherent statistic for segment %d, template %d at %ld \n",
+          j,i,time(NULL)-startTime);
+    }
+  }
   exit(0);
 
 }
@@ -299,17 +314,12 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
 
-    /* inject ring signals */
-/*    if ( params->injectFile )
-      inject_signal( channel, params->injectType, params->injectFile,
-          params->calibCache, 1.0, ifoChannel );
+    /* inject signals */
+    if ( params->injectFile )
+      inject_signal( channel, 3, params->injectFile,
+          NULL, 1.0, NULL );
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );
-    if( params->geoData ){
-      for (j=0; j<channel->data->length; j++){
-        channel->data->data[j] *= params->geoScale;
-      }
-    } */
 
     /* condition the data: resample and highpass */
     resample_REAL4TimeSeries( channel, params->sampleRate );
@@ -695,40 +705,31 @@ void cohPTFStatistic(
 }
 
 void cohPTFunconstrainedStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec)
+    REAL4Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    struct coh_PTF_params   *params, 
+    REAL4                   deltaT,
+    UINT4                   numPoints
+)
+
 {
   LALStatus status = blank_status;
-  UINT4 numPoints,i,j,k;
+  UINT4 i,j,k;
   REAL4 count;
   FILE *outfile;
-  REAL4 deltaT = 1./4076.;
   REAL8        *det         = NULL;
-  numPoints = h1PTFqVec->vectorLength;
   REAL4 u1[10], u2[10], v1[10], v2[10];
 /*  REAL8Array  *B, *Binv;*/
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
-  REAL4 a[3], b[3],theta[3],phi[3];
+  REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO],theta[LAL_NUM_IFO],phi[LAL_NUM_IFO];
   REAL4 zh[25],sh[25],yu[25];
   REAL4 beta,lamda;
-  REAL4Array *PTFM[3];
   REAL4 cohSNR[numPoints];
-  COMPLEX8VectorSequence *PTFqVec[3];
 
   gsl_matrix *B2 = gsl_matrix_alloc(10,10);
   gsl_matrix *Binv2a = gsl_matrix_alloc(10,10);
   gsl_matrix *Binv2 = gsl_matrix_alloc(10,10);
   gsl_permutation *p = gsl_permutation_alloc(10);
-  PTFqVec[0] = h1PTFqVec;
-  PTFqVec[1] = l1PTFqVec;
-  PTFqVec[2] = v1PTFqVec;
-  PTFM[0] = h1PTFM;
-  PTFM[1] = l1PTFM;
-  PTFM[2] = v1PTFM;
 
 /*  B = XLALCreateREAL8ArrayL( 2, 10, 10 );
   Binv = XLALCreateREAL8ArrayL( 2, 10, 10 );
@@ -739,21 +740,18 @@ void cohPTFunconstrainedStatistic(
   lamda = 2.13;
   /* We need to calculate a[3] and b[3]. This function needs to be written
      properly (calculating theta and phi from beta and lamda for all ifos */
-  theta[0] = 0.5;
-  theta[1] = 1.1;
-  theta[2] = 0.2;
-  phi[0] = 1.5;
-  phi[1] = 2.7;
-  phi[0] = 0.03;
-  for (i = 0; i < 3; i++)
+  theta[1] = 0.5;
+  theta[3] = 1.1;
+  theta[5] = 0.2;
+  phi[1] = 1.5;
+  phi[3] = 2.7;
+  phi[5] = 0.03;
+  for (i = 1; i < 6; i = i+2)
   {
     a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
     b[i] = cos(theta[i]) * sin(2.*phi[i]);
   }
   
-  fprintf(stderr,"Stage 2");
-  fflush(stderr);
-
   /* Create and invert the Bmatrix */
   for (i = 0; i < 5; i++ )
   {
@@ -762,18 +760,17 @@ void cohPTFunconstrainedStatistic(
       zh[i*5+j] = 0;
       sh[i*5+j] = 0;
       yu[i*5+j] = 0;
-      for ( k=0; k < 3; k++ )
+      for( k = 0; k < LAL_NUM_IFO; k++)
       {
-        zh[i*5+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
-        sh[i*5+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
-        yu[i*5+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
+        if ( params->haveTrig[k] )
+        {
+          zh[i*5+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
+          sh[i*5+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
+          yu[i*5+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
+        }
       }
-/*      fprintf(stdout,"%f %f %f ",zh[i*5+j],sh[i*5+j],yu[i*5+j]);*/
     }
   }
-
-  fprintf(stderr,"Stage 3");
-  fflush(stderr);
 
   for (i = 0; i < 10; i++ )
   {
@@ -797,38 +794,15 @@ void cohPTFunconstrainedStatistic(
       }
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
-/*      fprintf(stdout, "%f ", B->data[10*i + j]);*/
       gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
     }
-/*    fprintf(stdout,"\n");*/
   }
 
-  fprintf(stderr,"Stage 4");
-  fflush(stderr);
-
+  /* This is the inversion of the B matrix */
   int signum;
   gsl_linalg_LU_decomp(Binv2,p,&signum);
   gsl_linalg_LU_invert(Binv2,p,Binv2a);
 
-  for (i = 0; i < 10; i++ )
-  {
-    for (j = 0; j < 10; j++ )
-    {
-      count = 0;
-      for (k = 0; k < 10; k++ )
-      {
-        count += gsl_matrix_get(B2,i,k) * gsl_matrix_get(Binv2a,k,j);
-      }
-
-      fprintf(stdout, "%e %e %e \n", gsl_matrix_get(B2,i,j),gsl_matrix_get(Binv2a,i,j),count);
-    }
-  }
-
-
-
-
-  fprintf(stderr,"Stage 5");
-  fflush(stderr);
 
   for ( i = 0; i < numPoints; ++i ) /* Main loop over time */
   {
@@ -836,17 +810,20 @@ void cohPTFunconstrainedStatistic(
     {
       v1[j] = 0;
       v2[j] = 0;
-      for ( k =0; k <3; k++ )
+      for( k = 0; k < LAL_NUM_IFO; k++)
       {
-        if (j < 5)
+        if ( params->haveTrig[k] )
         {
-          v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].re;
-          v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].im;
-        }
-        else
-        {
-          v1[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].re;
-          v2[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].im;
+          if (j < 5)
+          {
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].re;
+            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].im;
+          }
+          else
+          {
+            v1[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].re;
+            v2[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].im;
+          }
         }
       }
     }

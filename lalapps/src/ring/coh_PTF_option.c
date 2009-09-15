@@ -79,11 +79,13 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "debug-level",             required_argument, 0, 'd' },
     { "cutoff-frequency",        required_argument, 0, 'e' },
     { "highpass-frequency",      required_argument, 0, 'E' },
+    { "injection-file",          required_argument, 0, 'i' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
     { "only-segment-numbers",    required_argument, 0, 'n' },
     { "only-template-numbers",   required_argument, 0, 'N' },
     { "output-file",             required_argument, 0, 'o' },
+    { "bank-file",               required_argument, 0, 'O' },
     { "random-seed",             required_argument, 0, 'r' },
     { "dynamic-range-factor",    required_argument, 0, 'R' },
     { "sample-rate",             required_argument, 0, 's' },
@@ -95,7 +97,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:h:k:K:n:N:o:r:R:s:S:T:u:U:V:w:W:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:h:i:k:K:n:N:o:O:r:R:s:S:T:u:U:V:w:W:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -160,6 +162,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'h': /* help */
         coh_PTF_usage( program );
         exit( 0 );
+      case 'i': /* injection-file */
+        localparams.injectFile = optarg;
+        break;
       case 'k': /* user-tag */
         strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
         break;
@@ -174,6 +179,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'o': /* output-file */
         strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
+        break;
+      case 'O': /* bank-file */
+        strncpy( localparams.bankFile, optarg, sizeof( localparams.bankFile ) - 1 );
         break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
@@ -360,7 +368,8 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
-
+  fprintf( stderr, "\nbank generation options:\n" );
+  fprintf( stderr, "--bank-file=name           Location of tmpltbank xml file\n" );
   fprintf( stderr, "\nfiltering options:\n" );
   fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
