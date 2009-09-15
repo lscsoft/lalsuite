@@ -3792,6 +3792,9 @@ void BankEfficiencyAscii2Xml(void)
   fprintf(stderr,"reading the ascii file -- and saving xml file");
   while   ((fgets(sbuf, 2048, input1))!= NULL)
   {
+   /* We use a temporarily restricted output. */
+   /* When full output reinstated , restore the line below */
+   /*
     sscanf(sbuf,BANKEFFICIENCY_PARAMS_ROW_SPACE,
         &trigger.mass1_trigger, &trigger.mass2_trigger,
     &psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, &ecc,&eccI,&eccI_fl,
@@ -3799,7 +3802,12 @@ void BankEfficiencyAscii2Xml(void)
     &trigger.mass1_inject, &trigger.mass2_inject,&inclination,&polarisation,
     &phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max,
-    &bestEMatch);
+    &bestEMatch);*/
+
+    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", &trigger.mass1_trigger, &trigger.mass2_trigger,
+      &tau0, &tau3, &tau0I, &tau3I,
+      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, &trigger.fend_inject,
+      &trigger.rho_final, &trigger.bin );
 
 
     fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
