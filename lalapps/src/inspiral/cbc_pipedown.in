@@ -552,7 +552,7 @@ for tag in user_tags:
 
     if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
       plotcumhist_job.set_plot_playground_only()
-    plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_node )
+    plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_job )
     plotcumhist_node.set_tmp_space( tmp_space )
     plotcumhist_node.set_input( result_db )
     plotcumhist_node.set_user_tag( tag )
