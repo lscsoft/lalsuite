@@ -186,6 +186,7 @@ for tag in user_tags:
     dbaddinj_job = inspiral.DBAddInjJob(cp)
   else:
     plotslides_job = inspiral.PlotSlidesJob(cp)
+    plotcumhist_job = inspiral.PlotCumhistJob(cp)
     plotifar_job = inspiral.PlotIfarJob(cp)
 
   # set better submit file names than the default
@@ -203,6 +204,7 @@ for tag in user_tags:
     dbaddinj_job.set_sub_file ( '.'.join([ basename, tag, 'dbaddinj', 'sub' ]) )
   else:
     plotslides_job.set_sub_file( '.'.join([ basename, tag, 'plotslides', 'sub' ]) )
+    plotcumhist_job.set_sub_file( '.'.join([ basename, tag, 'plotcumhist', 'sub' ]) )
     plotifar_job.set_sub_file( '.'.join([ basename, tag, 'plotifar', 'sub' ]) )
 
   ############################################################################
@@ -545,6 +547,20 @@ for tag in user_tags:
   
     dag.add_node( plotslides_node )
   
+    # create plotcumhist node
+    print "\t\tcreating plotcumhist node..."
+
+    if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
+      plotcumhist_job.set_plot_playground_only()
+    plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_node )
+    plotcumhist_node.set_tmp_space( tmp_space )
+    plotcumhist_node.set_input( result_db )
+    plotcumhist_node.set_user_tag( tag )
+
+    plotcumhist_node.add_parent( ccfar_node )
+
+    dag.add_node( plotcumhist_node )
+
     # Write plotifar nodes for different datatypes
     print "\t\tcreating plotifar node for datatypes:"
     for datatype in ['all_data', 'playground', 'exclude_play']: 
