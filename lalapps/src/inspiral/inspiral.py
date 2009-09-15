@@ -2320,8 +2320,7 @@ class PrintLCNode(pipeline.SqliteNode):
 class PlotSlidesJob(pipeline.SqliteJob):
   """
   A plotslides job. The static options are read from the sections [plot_input]
-  and [plotslides]. [plot_input] is used to determine if should plot playground
-  only.
+  and [plotslides].
   """
   def __init__(self, cp, dax = False):
     """
@@ -2345,6 +2344,37 @@ class PlotSlidesNode(pipeline.SqliteNode):
   def __init__(self, job):
     """
     @job: a PlotSlidesJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
+class PlotCumhistJob(pipeline.SqliteJob):
+  """
+  A plotcumhist job. The static options are read from the sections [plot_input] and
+  [plotcumhist].
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'plotcumhist'
+    sections = ['plot_input', 'plotcumhist']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+  def set_plot_playground_only(self):
+    """
+    Sets plot-playground-only option. This causes job to only plot playground.
+    """
+    self.add_var_opt('plot-playground-only')
+
+
+class PlotCumhistNode(pipeline.SqliteNode):
+  """
+  A PlotCumhist node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PlotCumhist Job
     """
     pipeline.SqliteNode.__init__(self, job)
 
