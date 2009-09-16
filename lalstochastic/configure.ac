@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
