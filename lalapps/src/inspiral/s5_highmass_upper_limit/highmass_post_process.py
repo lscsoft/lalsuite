@@ -630,7 +630,7 @@ for cat in cats:
   # FAR PLOTS AND UPPER LIMITS OH MY
   ###############################################
   
-  base_name = cat + "_" + timestr
+  base_name = cat + "_" + timestr + "_"
 
   #to compute uncombined far
   lalappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]),  p_nodes[cat], mass_bins="0,50,85,inf", categories="mtotal-ifos-oninstruments", rank="snr", ext_num=5);
@@ -639,7 +639,7 @@ for cat in cats:
   lalappsNewcorseNodeCombined[cat] = lalapps_newcorse_node(lalappsNewcorseJobCombined, dag, "vetoes", " ".join(db[cat]), [lalappsNewcorseNode[cat]], mass_bins=None, categories="oninstruments", rank="uncombined-ifar", ext_num=1);
 
   # lalapps_cbc_plotsummary plots
-  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), [lalappsNewcorseNodeCombined[cat]], base="cbc_plotsummary_"+cat+"_"+timestr);
+  farPlotNode[cat] = far_plot_node(farPlotJob, dag, " ".join(db[cat]), [lalappsNewcorseNodeCombined[cat]], base=base_name);
 
   # upper limit
   hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, base_name, " ".join(db[cat]), p_node=[lalappsNewcorseNodeCombined[cat]]);
