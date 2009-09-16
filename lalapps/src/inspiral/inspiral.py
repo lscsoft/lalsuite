@@ -454,6 +454,24 @@ class ChiaJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class InspInjFindJob(InspiralAnalysisJob):
+  """
+  An inspinjfind job. The static options are read from the [inspinjfind]
+  section in the cp file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: a ConfigParser object from which the options are read.
+    """
+    exec_name = 'inspinjfind'
+    sections = ['inspinjfind']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+    # overwrite standard log file names
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+
+
 #############################################################################
 
 
@@ -1124,7 +1142,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     self.add_var_opt('veto-segments', veto_segments)
     self.__veto_segments = veto_segments
 
-  def get_veto_segmetns(self):
+  def get_veto_segments(self):
     """
     Returns the name of the veto-segments file for this node.
     """
@@ -1597,6 +1615,24 @@ class ChiaNode(InspiralAnalysisNode):
     self.add_output_file(filename)
 
     return filename
+
+
+class InspInjFindNode( InspiralAnalysisNode ):
+  """
+  An InspInjFindNode runs an instance of the InspInjJob in a
+  Condor DAG.
+  """
+  def __init__(self, job):
+    """
+    @job: A CondorDAGJob that can run an instance of ligolw_inspinjfind.
+    """
+    InspiralAnalysisNode.__init__(self, job)
+
+  def get_input_from_cache(self, cache):
+    """
+    Retrieves
+    """
+    self.add_var_arg(filename)
 
 
 ##############################################################################
