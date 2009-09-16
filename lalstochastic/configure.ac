@@ -7,6 +7,7 @@ AC_CONFIG_FILES([ \
   lalstochastic.spec \
   lalstochastic.pc \
   Makefile \
+  debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
