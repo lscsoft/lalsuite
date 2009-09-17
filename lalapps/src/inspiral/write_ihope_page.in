@@ -654,15 +654,15 @@ def write_datainfo(page,opts):
       keys = []
       formFlags = {}
       keys.append(str(key))
-      formFlags[str(key)] = ['Ifo','Flag','Version','Start padding (s)', 'End padding (s)']
+      formFlags[str(key)] = ['IFO','Flag','Version','Start padding (s)', 'End padding (s)','Start time','End time']
       key += 1
       for ifo in ifos:
         command = 'ligolw_print -t veto_definer -c ifo -c name -c version '
-        command += '-c start_pad -c end_pad -c category '
+        command += '-c start_pad -c end_pad -c category -c start_time -c end_time '
         command += datadir +'/segments/' + hipecp.get("segments", "veto-def-file")
         command += """ -d " " | awk '{ if ($6 == '""" + str(i) + """' && """
         command += '''$1 == "''' + ifo + '''")'''
-        command += """ printf("%s %s %s %s %s\\n",$1,$2,$3,$4,$5) }'"""      
+        command += """ printf("%s %s %s %s %s %s %s\\n",$1,$2,$3,$4,$5,$7,$8) }'"""      
         flags, status = \
           make_external_call(command, opts.debug, opts.debug, True)
         flags = flags.split('\n') 
@@ -674,7 +674,7 @@ def write_datainfo(page,opts):
 
       page = write_table(page, formFlags,keys,printKeys = False)
 
-      msg="The veto times (category "+str(i)+") according to hipe ( "+cat+")"
+      msg="Cumulative time vetoed at category "+str(i)+" according to "+cat
       page.add(msg)
 
       segs = get_segments_tag(cat)
@@ -1659,47 +1659,31 @@ def get_segments_tag(tag):
   this_tag  = '-' + tag + opts.txt_suffix
   if tag=="RDS_C03_L2":
     this_tag  = '_' + tag + opts.txt_suffix
+
+  print opts.txt_suffix
   
   file = datadir +'/segments/' + ifos[1] + this_tag
-  if not os.path.isfile(file):
+  scifile = datadir +'/segments/' + ifos[1] + '-SCIENCE_SEGMENTS' + opts.txt_suffix
+  if not os.path.isfile(file) or not os.path.isfile(scifile):
     return thisdata
 
   #reading the segments files and extract the duration
-  command = 'awk \'{print NF}\' ' +  file
+  command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{print NF}\'' % (file,scifile)
   try:
     ncols, status = make_external_call(command, False, opts.debug, True)
     ncols = ncols[len(ncols)-2]
     # some files may be empty, so the first line (the comment 
     # which has 5 cols) will be read, which explain the >= and not strict ==. 
-    if float(ncols)>=4:  
+    if float(ncols)>=4 or float(ncols)==2:  
       for ifo in ifos:
-        thisfile = ifo + this_tag
-        command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' \
-          +  directory + thisfile
-        output_days, status = \
-          make_external_call(command, False, opts.debug, True)
+        file = datadir +'/segments/' + ifo + this_tag
+        scifile = datadir +'/segments/' + ifo + '-SCIENCE_SEGMENTS' + opts.txt_suffix
 
-        command = 'awk \'{sum=sum+$4} END {print sum}\' ' \
-          +  directory + thisfile
+        command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{sum=sum+$4} END {print sum}\'' % (file,scifile)
         output_seconds, status = \
           make_external_call(command, False, opts.debug, True)
 
-        thisdata[ifo] = [thisfile, output_days, output_seconds]
-    # unfortunately, right now, there is no standard, so some files have only 2 columns
-    elif float(ncols)==2:
-      for ifo in ifos:
-        thisfile = ifo + this_tag
-        command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' \
-          +  directory + thisfile
-        output_days, status = \
-          make_external_call(command,False,opts.debug, True)
-
-        command = 'awk \'{sum=sum+$2-$1} END {print sum}\' ' \
-          +  directory + thisfile
-        output_seconds, status = \
-          make_external_call(command, False, opts.debug, True)
-
-        thisdata[ifo] = [thisfile, output_days, output_seconds]
+        thisdata[ifo] = [os.path.basename(file), str(float(output_seconds)/86400.0), output_seconds]
   except:
     logText(logfile,  'Error while parsing the segment duration files', "error")
 
