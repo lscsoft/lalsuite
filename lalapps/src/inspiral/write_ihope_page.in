@@ -2023,7 +2023,7 @@ def html_insert(page,opts, html_tag=None,\
   htmlfileList =  glob.glob(thisglob)
 
   if opts.verbose is True:
-    print "        Searching for files with this(ese) tag(s): " +str(image_tag)
+    print "        Copying this html file : " +str(html_tag)
 
   # for each cachefile we create a div figure section with all 
   # figures whose name is part of the image_tag list
