@@ -149,7 +149,7 @@ REPORTSTATUS( LALStatus *status );
     LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n"       \
         "        %s %s\n", (statusptr)->level, (statusptr)->statusCode,      \
         (statusptr)->function, (statusptr)->file, (statusptr)->line,        \
-        (statusptr)->Id, (statement) ? (statement) : "",                    \
+        (statusptr)->Id, (statement),                    \
         (statusptr)->statusDescription ) : 0 )
 
 #define LALWarning( statusptr, warning )                                    \

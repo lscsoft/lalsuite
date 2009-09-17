@@ -1,0 +1,104 @@
+#SPINspiral:  Data input file.  The LINE NUMBER for each parameter should not change!!!  The order of IFOs in this file *MUST* be H1, L1, V
+
+#Value:                                                                         Variable:                Description:
+NINJA data set                                                                  datasetName              Name of the data set used (for printing purposes), upto 80 characters
+
+#Detector network:
+1                                                                               networksize              Set the number of detectors that make up the network; read in networksize block of IFO data below
+1 2 3                                                                           selectifos               Select the IFOs to use  1: H1, 2: L1, 3: V
+
+#Data handling:
+4                                                                               downsamplefactor         Downsample the sampling frequency of the detector (16-20kHz for the detectors, 4kHz for NINJA) by this factor.  Default (for detectors): 4.0. 10+1.4Mo needs ~16x a<0.1, 8x: a<=0.8, 4x: a>0.8
+6.0                                                                             databeforetc             The stretch of data in seconds before presumed coalescence that is read in as part of the data segment
+1.0                                                                             dataaftertc              The stretch of data in seconds after presumed coalescence that is read in as part of the data segment
+40.0                                                                            lowfrequencycut          Templates and overlap integration start at this frequency
+350.0                                                                           highfrequencycut         Overlap integration ends at this frequency
+0.15                                                                            tukeywin                 Parameter for Tukey-window used in dataFT (non-flat fraction of window);  Use 0.15 for Virgo data
+
+#Noise PSD estimation:
+32                                                                              PSDsegmentNumber         Number of data segments used for the PSD estimation.  Default: 32
+8.0                                                                             PSDsegmentLength         Length of each data segment used for PSD estimation.  Default: 8.0 -> 32x8.0s = 256s
+
+
+
+
+###  IFO 1:  ###########################################################################################################################################################################################
+Hanford                                                                         name                     Detector name
+  46.45                                                                         lati                     Latitude (degrees)
+-119.41                                                                         longi                    Longitude (degrees)
+  36.80                                                                         rightarm                 Orientation of the 'right' arm (degrees)
+ 126.80                                                                         leftarm                  Orientation of the 'left' arm (degrees)
+  
+H1:STRAIN                                                                       ch1name                         
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
+H-H1_NINJA_NOISE-                                                               ch1fileprefix                 
+-1024.gwf                                                                       ch1filesuffix                 
+1024                                                                            ch1filesize                 
+743                                                                             ch1fileoffset            If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               ch1doubleprecision         
+0                                                                               add2channels             0, unless you want to read a signal from file
+
+894377200                                                                       noiseGPSstart                 
+H1:STRAIN                                                                       noisechannel                 
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
+H-H1_NINJA_NOISE-                                                               noisefileprefix                 
+-1024.gwf                                                                       noisefilesuffix                 
+1024                                                                            noisefilesize                 
+743                                                                             noisefileoffset          If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               noisedoubleprecision         
+
+
+###  IFO 2:  ###########################################################################################################################################################################################
+Livingston                                                                      name                     Detector name
+  30.56                                                                         lati                     Latitude (degrees)
+ -90.77                                                                         longi                    Longitude (degrees)
+ 108.00                                                                         rightarm                 Orientation of the 'right' arm (degrees)
+ 198.00                                                                         leftarm                  Orientation of the 'left' arm (degrees)
+  
+L1:STRAIN                                                                       ch1name                         
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
+L-L1_NINJA_NOISE-                                                               ch1fileprefix                 
+-1024.gwf                                                                       ch1filesuffix                 
+1024                                                                            ch1filesize                 
+743                                                                             ch1fileoffset            If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               ch1doubleprecision         
+0                                                                               add2channels             0, unless you want to read a signal from file
+
+894377200                                                                       noiseGPSstart                 
+L1:STRAIN                                                                       noisechannel                 
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
+L-L1_NINJA_NOISE-                                                               noisefileprefix                 
+-1024.gwf                                                                       noisefilesuffix                 
+1024                                                                            noisefilesize                 
+743                                                                             noisefileoffset          If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               noisedoubleprecision         
+
+
+###  IFO 3:  ###########################################################################################################################################################################################
+Pisa                                                                            name                     Detector name
+  43.63                                                                         lati                     Latitude (degrees)
+  10.50                                                                         longi                    Longitude (degrees)
+ 341.50                                                                         rightarm                 Orientation of the 'right' arm (degrees)
+  71.50                                                                         leftarm                  Orientation of the 'left' arm (degrees)
+  
+V1:STRAIN                                                                       ch1name                         
+.                                                                               ch1filepath              Subdirectory of the path in SPINspiral.input.local where the data sits.  Use "." for no subdirectory
+V-V1_NINJA_NOISE-                                                               ch1fileprefix                 
+-1024.gwf                                                                       ch1filesuffix                 
+1024                                                                            ch1filesize                 
+743                                                                             ch1fileoffset            If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               ch1doubleprecision         
+0                                                                               add2channels             0, unless you want to read a signal from file
+
+894377200                                                                       noiseGPSstart                 
+V1:STRAIN                                                                       noisechannel                 
+.                                                                               noisefilepath            Subdirectory of the path in SPINspiral.input.local where the noise files sit.  Use "." for no subdirectory
+V-V1_NINJA_NOISE-                                                               noisefileprefix                 
+-1024.gwf                                                                       noisefilesuffix                 
+1024                                                                            noisefilesize                 
+743                                                                             noisefileoffset          If the Frame filename ends in: -839366009-128.gwf, fileoffset = mod(839366009,128)
+0                                                                               noisedoubleprecision         
+
+
+
+########################################################################################################################################################################################################

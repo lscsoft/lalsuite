@@ -29,8 +29,8 @@ ligolw_add :
 
 ligolw_burca :
 	# run ligolw_burca
-	pushd injections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --program StringSearch --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
-	pushd noninjections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --program StringSearch --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
+	pushd injections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
+	pushd noninjections/triggers && ligolw_burca --verbose --coincidence-algorithm stringcusp --thresholds H1,H2=0.002 --thresholds H1,L1=0.012 --thresholds H2,L1=0.012 --stringcusp-params 3.0,0.5 cafe*.xml.gz ; popd
 
 
 ligolw_binjfind :

@@ -43,6 +43,7 @@ Functions for creating XMGR graphs from LAL structures and functions.
 </lalLaTeX> ************************************************************/
 
 #include <math.h>
+#include <time.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
@@ -290,10 +291,9 @@ LALXMGRGPSTimeToTitle(
     CHAR               *comment
     )
 {
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_STRICT;
   CHARVector           *startString = NULL;
   CHARVector           *stopString  = NULL;
-  LALDate               thisDate;
+  struct tm             thisDate;
 
   INITSTATUS( status, "LALXMGRGPSTimeToTitle", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
@@ -312,15 +312,11 @@ LALXMGRGPSTimeToTitle(
   LALCHARCreateVector( status->statusPtr, &stopString, (UINT4) 64 );
   CHECKSTATUSPTR( status );
 
-  LALGPStoUTC( status->statusPtr, &thisDate, startGPS, &accuracy );
-  CHECKSTATUSPTR( status );
-  LALDateString( status->statusPtr, startString, &thisDate );
-  CHECKSTATUSPTR( status );
+  XLALGPSToUTC(&thisDate, startGPS->gpsSeconds);
+  strftime(startString->data, startString->length, "%F %T UTC %a", &thisDate);
 
-  LALGPStoUTC( status->statusPtr, &thisDate, stopGPS, &accuracy );
-  CHECKSTATUSPTR( status );
-  LALDateString( status->statusPtr, stopString, &thisDate );
-  CHECKSTATUSPTR( status );
+  XLALGPSToUTC(&thisDate, stopGPS->gpsSeconds);
+  strftime(stopString->data, stopString->length, "%F %T UTC %a", &thisDate);
 
   snprintf( title->data, title->length * sizeof(CHAR),
       "%s from %s to %s", comment, startString->data, stopString->data );

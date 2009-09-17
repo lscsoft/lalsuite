@@ -178,12 +178,6 @@ int main( int argc, char *argv[] )
   REAL8 phiStart = 0.0;
   REAL8 phiStartLAL = 0.0;  /* 10/13/04 gam */
 
-  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
-  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
-
-  uandacc.units = MST_RAD;
-  uandacc.accuracy = LALLEAPSEC_STRICT;
-
   /* parse options */
   if( argc == 1)
     {
@@ -729,15 +723,10 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 
   LALTimeIntervalAndNSample time_info;
 
-  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
-  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
   LALGPSandAcc gps_and_acc; /* 05/20/03 gam */
 
   INITSTATUS (status, "GenerateResponseFuncUsingLAL", LALINDEPENDENTTESTDETRESPONSEC);
   ATTATCHSTATUSPTR(status);
-
-  uandacc.units = MST_RAD;
-  uandacc.accuracy = LALLEAPSEC_STRICT;
 
   if (lalDebugLevel > 1)  {
      /* fprintf(stdout,"status->statusCode = %i \n", status->statusCode);

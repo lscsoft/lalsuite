@@ -35,8 +35,7 @@ int main(int argc, char *argv[])
   static LALStatus    status;
   LIGOTimeGPS         gpsTime = {0, 0};
   LIGOTimeGPS         tmpGps  = {0, 0};
-  LALDate             utcDate;
-  LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE; /* prevent ABORT */
+  struct tm           utcDate;
   CHARVector         *timestamp = NULL;
   char                refstamp[128];
   /* char                infostr[256]; */
@@ -51,23 +50,14 @@ int main(int argc, char *argv[])
   /*
    * GPS 0 == 1980-01-06 00:00:00 UTC Sun
    */
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr, "TestGPStoUTC: LALDateString() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
+  strftime(timestamp->data, timestamp->length, "%F %T UTC %a", &utcDate);
 
   sprintf(refstamp, "1980-01-06 00:00:00 UTC Sun");
 
@@ -102,23 +92,14 @@ int main(int argc, char *argv[])
   gpsTime.gpsSeconds = 457574400;
   gpsTime.gpsNanoSeconds = 0;
 
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr, "TestGPStoUTC: LALDateString() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
+  strftime(timestamp->data, timestamp->length, "%F %T UTC %a", &utcDate);
 
   sprintf(refstamp, "1994-07-06 23:59:50 UTC Wed");
 
@@ -151,23 +132,14 @@ int main(int argc, char *argv[])
   gpsTime.gpsSeconds = 599184012;
   gpsTime.gpsNanoSeconds = 0;
 
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr, "TestGPStoUTC: LALDateString() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
+  strftime(timestamp->data, timestamp->length, "%F %T UTC %a", &utcDate);
 
   sprintf(refstamp, "1998-12-31 23:59:60 UTC Thu");
 
@@ -203,25 +175,14 @@ int main(int argc, char *argv[])
   gpsTime.gpsSeconds     = 835747214; /* use maxtestedGPS + 1 */
   gpsTime.gpsNanoSeconds = 0;
 
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
-  LALDateString(&status, timestamp, &utcDate);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr, "TestGPStoUTC: LALDateString() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      LALCHARDestroyVector(&status, &timestamp);
-      LALCheckMemoryLeaks();
-      return status.statusCode;
-    }
+  strftime(timestamp->data, timestamp->length, "%F %T UTC %a", &utcDate);
 
   /* UPDATEME */
   /* the date here should be one second after maxtestedGPS */
@@ -252,60 +213,28 @@ int main(int argc, char *argv[])
 
 
   /*
-   * GPS -100 : should fail
-   */
-  gpsTime.gpsSeconds     = -100;
-  gpsTime.gpsNanoSeconds = 0;
-
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode > 0)
-    {
-      if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
-        {
-          if (lalDebugLevel > 0)
-            {
-              fprintf(stderr, "failed with status code %d as expected",
-                      DATEH_ERANGEGPSABS);
-              REPORTSTATUS(&status);
-            }
-        }
-      else /* some other error */
-        {
-          fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-    }
-
-
-  /*
-   * GPS 701654413 == 2002-04-01 00:00:00 UTC
+   * GPS -44000
    * should fail.  No leap seconds, yet.
    */
-  gpsTime.gpsSeconds     = -100;
+  gpsTime.gpsSeconds     = -44000;
   gpsTime.gpsNanoSeconds = 0;
 
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
+    if (XLALGetBaseErrno() != XLAL_EDOM) /* not expected error */
         {
-          if (lalDebugLevel > 0)
-            {
-              fprintf(stderr, "failed with status code %d as expected",
-                      DATEH_ERANGEGPSABS);
-              REPORTSTATUS(&status);
-            }
-        }
-      else /* some other error */
-        {
-          fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+          fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
                   __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
+          return 1;
         }
     }
+  else /* no error */
+    {
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
+              __LINE__, LALTESTGPSTOUTCC);
+      return 1;
+    }
+  XLALClearErrno();
 
   /*
    * Now, let's try converting GPS to UTC and back
@@ -313,23 +242,20 @@ int main(int argc, char *argv[])
   gpsTime.gpsSeconds     = 701654354;
   gpsTime.gpsNanoSeconds = 0;
 
-  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
-      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+      fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
-  LALUTCtoGPS(&status, &tmpGps, &utcDate, &accuracy);
-  if (status.statusCode && lalDebugLevel > 0)
+  XLALGPSSet(&tmpGps, XLALUTCToGPS(&utcDate), 0);
+  if (XLALGetBaseErrno() && lalDebugLevel > 0)
     {
       fprintf(stderr,
-              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              "TestUTCtoGPS: error in XLALUTCToGPS, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      return 1;
     }
 
   if (lalDebugLevel > 0)

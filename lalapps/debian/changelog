@@ -1,3 +1,21 @@
+lalapps (6.3-1lscsoft1) unstable; urgency=low
+
+  * LALApps 6.3
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 03 Sep 2009 16:00:00 +0200
+
+lalapps (6.2-1lscsoft2) unstable; urgency=low
+
+  * LALApps 6.2 with dynamic python version fix
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Mon, 10 Aug 2009 14:07:00 +0200
+
+lalapps (6.2-1lscsoft1) unstable; urgency=low
+
+  * LALApps 6.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 6 Aug 2009 12:02:09 -0600
+
 lalapps (6.1-1lscsoft1) unstable; urgency=low
 
   * LALApps 6.1

@@ -82,6 +82,7 @@ RCSID("$Id$");
 enum population {
 	POPULATION_TARGETED,
 	POPULATION_ALL_SKY_SINEGAUSSIAN,
+	POPULATION_ALL_SKY_BTLWNB,
 	POPULATION_STRING_CUSP
 };
 
@@ -115,8 +116,8 @@ static struct options options_defaults(void)
 {
 	struct options defaults;
 	
-	defaults.gps_start_time = 0;
-	defaults.gps_end_time = 0;
+	defaults.gps_start_time = -1;
+	defaults.gps_end_time = -1;
 	defaults.population = -1;
 	defaults.ra = XLAL_REAL8_FAIL_NAN;
 	defaults.dec = XLAL_REAL8_FAIL_NAN;
@@ -196,7 +197,8 @@ static void print_usage(void)
 	); fprintf(stderr, 
 "--population name\n" \
 "	Select the injection population to synthesize.  Allowed values are\n" \
-"	\"targeted\", \"string_cusp\", and \"all_sky_sinegaussian\".\n" \
+"	\"targeted\", \"string_cusp\", and \"all_sky_sinegaussian\",\n" \
+"	\"all_sky_btlwnb\".\n" \
 "\n" \
 "--q value\n" \
 "	Set the Q for sine-Gaussian injections.\n" \
@@ -355,6 +357,8 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 			options.population = POPULATION_STRING_CUSP;
 		else if(!strcmp(optarg, "all_sky_sinegaussian"))
 			options.population = POPULATION_ALL_SKY_SINEGAUSSIAN;
+		else if(!strcmp(optarg, "all_sky_btlwnb"))
+			options.population = POPULATION_ALL_SKY_BTLWNB;
 		else {
 			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
 			exit(1);
@@ -454,12 +458,24 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		exit(1);
 	}
 
-	if(!options.gps_start_time || !options.gps_end_time) {
+	if(options.gps_start_time == -1 || options.gps_end_time == -1) {
 		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
 		exit(1);
 	}
 	if(options.gps_end_time < options.gps_start_time) {
 		fprintf(stderr, "error: --gps-end-time < --gps-start-time\n");
+		exit(1);
+	}
+
+	switch(options.population) {
+	case POPULATION_TARGETED:
+	case POPULATION_ALL_SKY_SINEGAUSSIAN:
+	case POPULATION_ALL_SKY_BTLWNB:
+	case POPULATION_STRING_CUSP:
+		break;
+
+	default:
+		fprintf(stderr, "error: --population is required\n");
 		exit(1);
 	}
 
@@ -664,7 +680,7 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
 /* 
  * ============================================================================
  *
- *                            Directed Simulations
+ *                             BTLWNB Injections
  *
  * ============================================================================
  */
@@ -675,7 +691,7 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
  */
 
 
-static SimBurst *random_directed_btlwnb(double ra, double dec, double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
+static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
 {
 	REAL8TimeSeries *hplus, *hcross;
 	SimBurst *sim_burst = XLALCreateSimBurst();
@@ -689,7 +705,7 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double minf, doub
 
 	sim_burst->ra = ra;
 	sim_burst->dec = dec;
-	sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
+	sim_burst->psi = psi;
 
 	/* pick a waveform */
 
@@ -736,6 +752,17 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double minf, doub
 	/* done */
 
 	return sim_burst;
+}
+
+
+static SimBurst *random_all_sky_btlwnb(double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
+{
+	double ra, dec, psi;
+	SimBurst *sim_burst;
+
+	random_location_and_polarization(&ra, &dec, &psi, rng);
+
+	return random_directed_btlwnb(ra, dec, psi, minf, maxf, minband, maxband, mindur, maxdur, minEoverr2, maxEoverr2, rng);
 }
 
 
@@ -954,20 +981,30 @@ int main(int argc, char *argv[])
 
 		switch(options.population) {
 		case POPULATION_TARGETED:
-			*sim_burst = random_directed_btlwnb(options.ra, options.dec, options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
+			*sim_burst = random_directed_btlwnb(options.ra, options.dec, gsl_ran_flat(rng, 0, LAL_TWOPI), options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
 			break;
 
 		case POPULATION_ALL_SKY_SINEGAUSSIAN:
 			*sim_burst = random_all_sky_sineGaussian(options.minf, options.maxf, options.q, options.minhrss, options.maxhrss, rng);
 			break;
 
+		case POPULATION_ALL_SKY_BTLWNB:
+			*sim_burst = random_all_sky_btlwnb(options.minf, options.maxf, options.minbandwidth, options.maxbandwidth, options.minduration, options.maxduration, options.minEoverr2, options.maxEoverr2, rng);
+			break;
+
 		case POPULATION_STRING_CUSP:
 			*sim_burst = random_string_cusp(options.minf, options.maxf, options.minA, options.maxA, rng);
 			break;
+
+		default:
+			/* shouldn't get here, command line parsing code
+			 * should prevent it */
+			XLALPrintError("internal error\n");
+			exit(1);
 		}
 
 		if(!*sim_burst) {
-			XLALPrintError("can't make injection");
+			XLALPrintError("can't make injection\n");
 			exit(1);
 		}
 
@@ -989,6 +1026,10 @@ int main(int argc, char *argv[])
 
 		sim_burst = &(*sim_burst)->next;
 	}
+
+	XLALPrintInfo("%s: ", argv[0]);
+	XLALPrintProgressBar(1.0);
+	XLALPrintInfo(" complete\n");
 
 	/* output */
 

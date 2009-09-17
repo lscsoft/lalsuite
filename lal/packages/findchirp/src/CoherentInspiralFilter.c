@@ -41,7 +41,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/DetectorSite.h>
-#include <lal/StochasticCrossCorrelation.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
@@ -2921,7 +2920,6 @@ LALCoherentInspiralFilterSegment (
       { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
 	/*Now the last 3 cases will involve the looping over the coefficients*/
 	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
-	LALMSTUnitsAndAcc pUnitsAndAcc;
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
@@ -2934,9 +2932,7 @@ LALCoherentInspiralFilterSegment (
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
 	/* Convert GPS time of trigger to GMST time in radians
 	   for computing F+, Fx */
-	pUnitsAndAcc.units = MST_RAD;
-	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
-	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	gmstInRadians = XLALGreenwichMeanSiderealTime(&triggerGPSEndTime);
 
 	/* Following needed because XLALArrivalTimeDiff() uses doubles */
 	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
@@ -3092,10 +3088,10 @@ LALCoherentInspiralFilterSegment (
 		MM2 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
 
 		/* Regularize */
-		if ( (MM1<1.0e-4 ) )
-		  MM1=1.0e-4;
-		if ( (MM2<1.0e-4 ) )
-		  MM2=1.0e-4;
+		if ( (MM1<1.0e-1 ) )
+		  MM1=1.0e-1;
+		if ( (MM2<1.0e-1 ) )
+		  MM2=1.0e-1;
 
 		/*Initialize cohSNR components and time stamps */
 		CRePlus = 0.0;
@@ -3232,14 +3228,8 @@ LALCoherentInspiralFilterSegment (
 		      thisEvent->mass2 = input->tmplt->mass2;
 		      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		      thisEvent->eta = input->tmplt->eta;
-                      /* Compute null-statistic for H1-H2 at just trigger end-time */
-                      nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
-                      nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
-                        - thisEvent->h2quad.re / sqrt(sigmasq[2]);
-                      nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
-                        - thisEvent->h2quad.im / sqrt(sigmasq[2]);
-                      thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-
+                      /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
+                      thisEvent->null_statistic = -1;
                       /* Compute network null-statistic at just trigger end-time */
                       thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
 
@@ -3387,13 +3377,8 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
-                       /* Compute null-statistic for H1-H2 at just trigger end-time */
-                       nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
-                       nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
-                         - thisEvent->h2quad.re / sqrt(sigmasq[2]);
-                       nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
-                         - thisEvent->h2quad.im / sqrt(sigmasq[2]);
-                       thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                      /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
+                       thisEvent->null_statistic = -1;
                        /* Compute network null-statistic at just trigger end-time */
                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
 
@@ -3557,13 +3542,8 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
-                       /* Compute null-statistic for H1-H2 at just trigger end-time */
-                       nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
-                       nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
-                         - thisEvent->h2quad.re / sqrt(sigmasq[2]);
-                       nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
-                         - thisEvent->h2quad.im / sqrt(sigmasq[2]);
-                       thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                       /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
+                       thisEvent->null_statistic = -1;
                        /* Compute network null-statistic at just trigger end-time */
                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
 
@@ -3643,7 +3623,6 @@ LALCoherentInspiralFilterSegment (
   case 4: /* Network: 4 detectors */
     {
 	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
-	LALMSTUnitsAndAcc pUnitsAndAcc;
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
@@ -3656,9 +3635,7 @@ LALCoherentInspiralFilterSegment (
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
 	/* Convert GPS time of trigger to GMST time in radians
 	   for computing F+, Fx */
-	pUnitsAndAcc.units = MST_RAD;
-	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
-	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	gmstInRadians = XLALGreenwichMeanSiderealTime(&triggerGPSEndTime);
 
 	/* Following needed because XLALArrivalTimeDiff() uses doubles */
 	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
@@ -3822,10 +3799,10 @@ LALCoherentInspiralFilterSegment (
 		MM2 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
 
 		/* Regularize */
-		if ( (MM1<1.0e-4 ) )
-		  MM1=1.0e-4;
-		if ( (MM2<1.0e-4 ) )
-		  MM2=1.0e-4;
+		if ( (MM1<1.0e-1 ) )
+		  MM1=1.0e-1;
+		if ( (MM2<1.0e-1 ) )
+		  MM2=1.0e-1;
 
 		/*Initialize cohSNR components and time stamps */
 		CRePlus = 0.0;
@@ -4390,26 +4367,7 @@ LALCoherentInspiralFilterSegment (
   } /* closes  switch(params->numDetectors) */
 
 
-  /* Compute null-statistic for H1-H2 at just trigger end-time,
-     and NOT the H1H2 null-statistic time-series */
-  if( thisEvent && !(params->nullStatH1H2Out) && (case2a || case3a)) {
-    /* Prepare norm for null statistic */
-    nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
-
-    /*CHECK: Will not give intended result if first det is "G1", since it
-      assumes that cdata[0] is H1 and cdata[1] is H2; rectify this in next rev. */
-    /* Compute null-stream statistic;
-       in next rev. report re and im parts separately */
-    nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
-      - thisEvent->h2quad.re / sqrt(sigmasq[2]);
-    nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
-      - thisEvent->h2quad.im / sqrt(sigmasq[2]);
-
-    thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-  }
-
-  /* Compute null-statistic, just for H1-H2 as of now,
-     and cohSNRH1H2, if not computed above already
+  /* Compute time-series of the null-statistic of H1-H2 and of cohSNRH1H2
      if( thisEvent && params->nullStatOut && params->cohH1H2SNROut
       && !(case3b || case4a) ) {
   */
@@ -4447,19 +4405,9 @@ LALCoherentInspiralFilterSegment (
       params->nullStatH1H2Vec->data->data[k] =
         ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
     }
-    /* CHECK:
-      thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
-    */
-    nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
-      - thisEvent->h2quad.re / sqrt(sigmasq[2]);
-    nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
-      - thisEvent->h2quad.im / sqrt(sigmasq[2]);
-
-    thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-
   }
 
-  /* Compute null-statistic ONLY, just for H1-H2 as of now, and NOT cohH1H2SNR */
+  /* Compute H1H2 null-statistic time-series and NOT cohH1H2SNR */
   if( thisEvent && params->nullStatH1H2Out && !(params->cohH1H2SNROut)
       && !(case3b || case4a) ) {
 
@@ -4481,12 +4429,11 @@ LALCoherentInspiralFilterSegment (
       params->nullStatH1H2Vec->data->data[k] =
         ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
     }
-    thisEvent->null_statistic = params->nullStatH1H2Vec->data->data[(INT4)(numPoints/2)];
   }
 
   /* Compute cohSNRH1H2 ONLY, if not computed above already,
      but NOT the full  null-statistic time-series */
-  if( params->cohH1H2SNROut && !nullStatH1H2Out ) {
+  if( thisEvent && params->cohH1H2SNROut && !nullStatH1H2Out ) {
     /* Allocate memory for cohSNRH1H2Vec if that SNR has
        not been computed above already*/
     memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
@@ -4506,105 +4453,6 @@ LALCoherentInspiralFilterSegment (
                 (sigmasq[1] + sigmasq[2] ) );
     }
   }
-
-  /*CHECK: The following is deactivated for now (because of the "0"
-    in the condition of the "if" statment.
-    Next update will handle null-statistic time-series computation
-    if( thisEvent && params->nullStatOut && case3b ){ */
-  if( thisEvent && case3b && !(params->nullStatOut) ){
-    /* This trigger is from either H1 or H2 but not both */
-    REAL8 sigmasqH = 0.0;
-    REAL8 nullNorm8 = 0.0;
-    REAL8 nullNumerRe8 = 0.0;
-    REAL8 nullNumerIm8 = 0.0;
-
-    detId = 0;
-    for( j=0; j<LAL_NUM_IFO; j++ ) {
-      /* Compute antenna-patterns if caseID[j] != 0 */
-      if ( !(params->detIDVec->data[j] == 0 )) {
-        XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-	  detectors[detId].response, (double) thisEvent->ligo_axis_ra,
-	  (double) thisEvent->ligo_axis_dec, 0, (double) gmstInRadians);
-        detId++;
-      }
-    }
-
-    if ( (caseID[1] == 0) ) {
-      /* This is a H2 trigger */
-      sigmasqH = sigmasq[2];
-
-      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h2quad.re/ sqrt(sigmasqH) +
-	fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-	fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
-
-      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h2quad.im / sqrt(sigmasqH) +
-	fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-	fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
-    }
-    else {
-      sigmasqH = sigmasq[1];
-
-      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re/ sqrt(sigmasqH) +
-	fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-	fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
-
-      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasqH) +
-	fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-	fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
-    }
-
-    /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasqH +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
-
-    nullStatistic = ( nullNumerRe8*nullNumerRe8
-	                 + nullNumerIm8*nullNumerIm8)  / nullNorm8;
-
-    thisEvent->null_statistic = (REAL4) nullStatistic;
-  }
-
-  /*CHECK:  The following is deactivated for now (because of the "0"
-    in the condition of the "if" statment.
-    Next update will handle null-statistic time-series computation
-    if( thisEvent && params->nullStatOut && case4a ){ */
-  if( thisEvent && case4a && !(params->nullStatOut) ){
-    /* This trigger is from both H1 and H2;
-     but using H1 and not H2 for now*/
-    REAL8 nullNorm8 = 0.0;
-    REAL8 nullNumerRe8 = 0.0;
-    REAL8 nullNumerIm8 = 0.0;
-
-    detId = 0;
-    for( j=0; j<LAL_NUM_IFO; j++ ) {
-      /* Compute antenna-patterns if caseID[j] != 0 */
-      if ( !(params->detIDVec->data[j] == 0 )) {
-        XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-	  detectors[detId].response, (double) thisEvent->ligo_axis_ra,
-	  (double) thisEvent->ligo_axis_dec, 0, (double) gmstInRadians);
-        detId++;
-      }
-    }
-
-    /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
-
-    nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
-
-    nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
-
-    nullStatistic = ( nullNumerRe8*nullNumerRe8
-	                 + nullNumerIm8*nullNumerIm8)  / nullNorm8;
-
-    thisEvent->null_statistic = (REAL4) nullStatistic;
-  }
-
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -4623,29 +4471,29 @@ double XLALComputeNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[
       /* This is a H2 trigger */
       sigmasqH = sigmasq[2];
 
-      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h2quad.re/ sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+      nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h2quad.re/ sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.re / sqrt(sigmasq[5]);
 
-      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h2quad.im / sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+      nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h2quad.im / sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
     }
     else {
       sigmasqH = sigmasq[1];
 
-      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re/ sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+      nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h1quad.re/ sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.re / sqrt(sigmasq[5]);
 
-      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+      nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h1quad.im / sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
     }
     /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasqH +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+    nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasqH +
+      pow(fplus[2]*fcross[0]-fplus[0]*fcross[2],2)/ sigmasq[3] +
+      pow(fplus[0]*fcross[1]-fplus[1]*fcross[0],2)/ sigmasq[5] ;
 
     nullStatistic = ( nullNumerRe8*nullNumerRe8
                          + nullNumerIm8*nullNumerIm8)  / nullNorm8;
@@ -4664,29 +4512,33 @@ double XLALComputeNullTimeSeriesCase3b(INT4 caseID[6], double fplus[4], double f
       /* This is a H2 trigger */
       sigmasqH = sigmasq[2];
 
-      nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re/ sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*quadTemp[1].re / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*quadTemp[2].re / sqrt(sigmasq[5]);
+    nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
+      pow(fplus[2]*fcross[0]-fplus[0]*fcross[2],2)/ sigmasq[3] +
+      pow(fplus[0]*fcross[1]-fplus[1]*fcross[0],2)/ sigmasq[5] ;
 
-      nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*quadTemp[1].im / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*quadTemp[2].im / sqrt(sigmasq[5]) ;
+      nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].re/ sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[1].re / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[2].re / sqrt(sigmasq[5]);
+
+      nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].im / sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[1].im / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[2].im / sqrt(sigmasq[5]) ;
     }
     else {
       sigmasqH = sigmasq[1];
 
-      nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re/ sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*quadTemp[1].re / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*quadTemp[2].re / sqrt(sigmasq[5]);
+      nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].re/ sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[1].re / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[2].re / sqrt(sigmasq[5]);
 
-      nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasqH) +
-        fplus[2]*fcross[0]*quadTemp[1].im / sqrt(sigmasq[3]) +
-        fplus[0]*fcross[1]*quadTemp[2].im / sqrt(sigmasq[5]) ;
+      nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].im / sqrt(sigmasqH) +
+        (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[1].im / sqrt(sigmasq[3]) +
+        (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[2].im / sqrt(sigmasq[5]) ;
     }
     /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasqH +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+    nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasqH +
+      pow(fplus[2]*fcross[0]-fplus[0]*fcross[2],2)/ sigmasq[3] +
+      pow(fplus[0]*fcross[1]-fplus[1]*fcross[0],2)/ sigmasq[5] ;
 
     nullStatistic = ( nullNumerRe8*nullNumerRe8
                          + nullNumerIm8*nullNumerIm8)  / nullNorm8;
@@ -4706,17 +4558,17 @@ double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[
     UNUSED(caseID);
 
     /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+    nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
+      pow(fplus[2]*fcross[0]-fplus[0]*fcross[2],2)/ sigmasq[3] +
+      pow(fplus[0]*fcross[1]-fplus[1]*fcross[0],2)/ sigmasq[5] ;
 
-    nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+    nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h1quad.re / sqrt(sigmasq[1]) +
+      (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+      (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.re / sqrt(sigmasq[5]);
 
-    nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+    nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*thisEvent->h1quad.im / sqrt(sigmasq[1]) +
+      (fplus[2]*fcross[0]-fplus[0]*fcross[2])*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+      (fplus[0]*fcross[1]-fplus[1]*fcross[0])*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
 
     nullStatistic = ( nullNumerRe8*nullNumerRe8
                          + nullNumerIm8*nullNumerIm8)  / nullNorm8;
@@ -4736,17 +4588,17 @@ double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double f
     UNUSED(caseID);
 
     /* Prepare norm for null statistic */
-    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
-      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
-      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+    nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
+      pow(fplus[2]*fcross[0]-fplus[0]*fcross[2],2)/ sigmasq[3] +
+      pow(fplus[0]*fcross[1]-fplus[1]*fcross[0],2)/ sigmasq[5] ;
 
-    nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*quadTemp[2].re / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*quadTemp[3].re / sqrt(sigmasq[5]);
+    nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].re / sqrt(sigmasq[1]) +
+      (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[2].re / sqrt(sigmasq[3]) +
+      (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[3].re / sqrt(sigmasq[5]);
 
-    nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasq[1]) +
-      fplus[2]*fcross[0]*quadTemp[2].im / sqrt(sigmasq[3]) +
-      fplus[0]*fcross[1]*quadTemp[3].im / sqrt(sigmasq[5]) ;
+    nullNumerIm8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*quadTemp[0].im / sqrt(sigmasq[1]) +
+      (fplus[2]*fcross[0]-fplus[0]*fcross[2])*quadTemp[2].im / sqrt(sigmasq[3]) +
+      (fplus[0]*fcross[1]-fplus[1]*fcross[0])*quadTemp[3].im / sqrt(sigmasq[5]) ;
 
     nullStatistic = ( nullNumerRe8*nullNumerRe8
                          + nullNumerIm8*nullNumerIm8)  / nullNorm8;
@@ -4854,7 +4706,6 @@ double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa
  if((((float)a1==(float)a4)&&((float)a2==-(float)a3))||(((float)a1==-(float)a4)&&((float)a2==(float)a3)))
    {
      *psi_est = -50.;
-     printf("\n  CHECK\n");
    }
  else
    {

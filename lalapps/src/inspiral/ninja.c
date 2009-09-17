@@ -162,7 +162,6 @@ int main( INT4 argc, CHAR *argv[] )
   MetadataTable proctable;
   MetadataTable procparams;
   ProcessParamsTable   *this_proc_param = NULL;
-  LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE;
 
   /* nrwave stuff */
   NinjaMetaData metaData;
@@ -257,12 +256,12 @@ int main( INT4 argc, CHAR *argv[] )
 
   /* create a frame cache by globbing *.gwf in specified dir */
   LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, uvar_nrDir, uvar_pattern ), 
-	    &status );
+            &status );
 
   memset( &sieve, 0, sizeof(FrCacheSieve) );
   /* sieve doesn't actually do anything yet */
   LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
-	    &status );
+            &status );
 
   LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );  
   
@@ -295,10 +294,10 @@ int main( INT4 argc, CHAR *argv[] )
       
       /* alloc next element of inspiral table linked list*/
       if ( injections.simInspiralTable )   {
-	this_inj = this_inj->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+        this_inj = this_inj->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
       }
       else  {
-	injections.simInspiralTable = this_inj = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+        injections.simInspiralTable = this_inj = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
       }
 
       get_minmax_modes( &minMode,&maxMode,frame);
@@ -333,29 +332,27 @@ int main( INT4 argc, CHAR *argv[] )
 
   /* first the process table */
   proctable.processTable = (ProcessTable *)LALCalloc( 1, sizeof(ProcessTable) );
-
-  /*LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy ), &status );*/
   XLALGPSTimeNow ( &(proctable.processTable->start_time) );
 
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, uvar_outFile ), &status );
 
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), &status );
 
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, process_table ), &status );
@@ -369,9 +366,9 @@ int main( INT4 argc, CHAR *argv[] )
   if ( procparams.processParamsTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ),
-	      &status );
+              &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
-				      process_params_table ), &status );
+                                      process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
 
@@ -380,9 +377,9 @@ int main( INT4 argc, CHAR *argv[] )
   if ( injections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ),
-	      &status );
+              &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections,
-				      sim_inspiral_table ), &status );
+                                      sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
   LogPrintfVerbatim (LOG_NORMAL, "done\n");
@@ -433,7 +430,7 @@ int main( INT4 argc, CHAR *argv[] )
 /* metadata is stored in the history field comment 
    -- this function parses the comment to fill the metadata struct */
 int get_nr_metadata_from_framehistory(NinjaMetaData *data,
-				      FrHistory *history)
+                                      FrHistory *history)
 {
 
   UINT4 stringlen=128;
@@ -456,7 +453,7 @@ int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 
 
 int get_metadata_from_string(NinjaMetaData *data,
-			     CHAR *comment)
+                             CHAR *comment)
 {
 
   CHAR *token;
@@ -578,8 +575,8 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 
 
 int get_minmax_modes(INT4 *min,
-		     INT4 *max,
-		     FrameH *frame)
+                     INT4 *max,
+                     FrameH *frame)
 {
   int ret=1;
   INT4 mode_l, mode_m, locmin, locmax;
@@ -591,9 +588,9 @@ int get_minmax_modes(INT4 *min,
   while (sim) {
     if (!get_mode_index_from_channel_name( &mode_l, &mode_m, sim->name)) { 
       if (locmin > mode_l)
-	locmin = mode_l;
+        locmin = mode_l;
       if (locmax < mode_l)
-	locmax = mode_l;
+        locmax = mode_l;
     }
 
     sim = sim->next;
@@ -607,8 +604,8 @@ int get_minmax_modes(INT4 *min,
 
 /* very hackish -- need to make this better */
 int get_mode_index_from_channel_name(INT4  *mode_l,
-				     INT4  *mode_m,
-				     CHAR  *name)
+                                     INT4  *mode_m,
+                                     CHAR  *name)
 {
   int ret=1;
   CHAR *tmp;
@@ -662,7 +659,7 @@ int get_mode_index_from_channel_name(INT4  *mode_l,
 /** take a list of numrel group names separated by ";" and parse it to
     get a vector of NumRelGroup */
 int parse_group_list ( NrParRange *range,
-		       CHAR *list)
+                       CHAR *list)
 {
 
   UINT4 numGroups=0;
@@ -685,10 +682,10 @@ int parse_group_list ( NrParRange *range,
       
       /* if the parsing was successful, add to list */
       if (thisGroup != NINJA_GROUP_LAST) {
-	
-	numGroups++;
-	grouplist = LALRealloc(grouplist, numGroups*sizeof(*grouplist));
-	grouplist[numGroups-1] = thisGroup;
+        
+        numGroups++;
+        grouplist = LALRealloc(grouplist, numGroups*sizeof(*grouplist));
+        grouplist[numGroups-1] = thisGroup;
       }
       token = strtok(NULL,";");
     }

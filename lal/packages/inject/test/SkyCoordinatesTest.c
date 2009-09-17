@@ -106,7 +106,6 @@ lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
 LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
-LALGPStoUTC()                   LALDateString()
 LALGPStoGMST1()
 LALCHARCreateVector()           LALCHARDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
@@ -121,6 +120,7 @@ LALNormalizeSkyPosition()
 ******************************************************* </lalLaTeX> */
 
 #include <math.h>
+#include <time.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -514,7 +514,7 @@ main( int argc, char **argv )
   /* Print the time in various formats. */
   if ( t ) {
     INT8 nsec;    /* time as INT8 nanoseconds */
-    LALDate date; /* time as LALDate structure */
+    struct tm date;	/* UTC */
     REAL8 gmst;   /* Greenwich mean sidereal time */
 
     /* Convert to INT8 seconds and back, just to test things (and get
@@ -526,22 +526,17 @@ main( int argc, char **argv )
     /* Convert to UTC timestamp. */
     if ( gpsTime.gpsSeconds >= 0 ) {
       CHARVector *timeStamp = NULL; /* date string */
-      /* don't bomb if leap second table isn't up to date */
-      LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
-      LALMSTUnitsAndAcc uAcc;
-      uAcc.units = MST_DEG;
-      uAcc.accuracy = acc;
 
       fprintf( stdout, "GPS time: %i.%09is\n", gpsTime.gpsSeconds,
 	       gpsTime.gpsNanoSeconds );
-      SUB( LALGPStoUTC( &stat, &date, &gpsTime, &acc ), &stat );
+      XLALGPSToUTC(&date, gpsTime.gpsSeconds);
       SUB( LALCHARCreateVector( &stat, &timeStamp, 32 ), &stat );
-      SUB( LALDateString( &stat, timeStamp, &date ), &stat );
+      strftime(timeStamp->data, timeStamp->length, "%F %T UTC %a", &date);
       fprintf( stdout, "UTC time: %s\n", timeStamp->data );
       SUB( LALCHARDestroyVector( &stat, &timeStamp ), &stat );
 
-      /* Convert to Greenwich mean sidereal time. */
-      SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, &uAcc ), &stat );
+      /* Convert to Greenwich mean sidereal time (degrees). */
+      gmst = fmod(XLALGreenwichMeanSiderealTime(&gpsTime), LAL_TWOPI) * 360.0 / LAL_TWOPI;
       fprintf( stdout, "Greenwich mean sidereal time: %6.2f deg\n",
 	       1.0*gmst );
     } else
