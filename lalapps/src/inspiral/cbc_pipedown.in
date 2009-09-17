@@ -248,7 +248,7 @@ if options.generate_all_data_plots:
 # Cycle over the user tags, creating databases for each 
 
 veto_files = {}
-veto2sql_parents = {}
+cluster_nodes = {}
 inspinjfind_parents = {}
 for tag in user_tags:
 
@@ -440,7 +440,7 @@ for tag in user_tags:
   dag.add_node( cluster_node )
 
   # add to list of parents for veto2sql nodes
-  veto2sql_parents[tag] = cluster_node
+  cluster_nodes[tag] = cluster_node
   
   ############################################################################
   # Step 5: Do additional jobs for injection tags
@@ -556,6 +556,7 @@ for result_db in result_dbs_cache:
     sim2fulldb_node.set_tmp_space( tmp_space )
     
     sim2fulldb_node.add_parent( inspinjfind_nodes[veto_cat] )
+    sim2fulldb_node.add_parent( cluster_nodes[tag] )
     dag.add_node( sim2fulldb_node )
 
     # create a dbsimplify node to clean the database
@@ -579,7 +580,7 @@ for result_db in result_dbs_cache:
   veto2sql_node.set_database( result_db.path() )
   
   # set parent node
-  veto2sql_node.add_parent( veto2sql_parents[tag] )
+  veto2sql_node.add_parent( cluster_nodes[tag] )
   if 'FULL_DATA' in tag:
     veto2sql_node.add_parent( dbsimplify2_node )
   
