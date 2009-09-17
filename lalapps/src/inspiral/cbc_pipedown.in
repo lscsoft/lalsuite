@@ -507,7 +507,7 @@ for veto_cat, node_list in inspinjfind_parents.items():
   inspinjfind_nodes[veto_cat] = inspinjfind_node
 
   # Cache the files
-  sim_cache = lal.Cache().from_urls( inspinjfind_node.get_output() )
+  sim_cache = lal.Cache().from_urls( inspinjfind_node.get_input_files() )
   if veto_cat == 'CAT_1_VETO':
     cache_type = 'ALLINJ_CLUSTERED_CBC_RESULTS'
   else:
