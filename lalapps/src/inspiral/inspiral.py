@@ -467,6 +467,7 @@ class InspInjFindJob(InspiralAnalysisJob):
     sections = ['inspinjfind']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+    self.add_condor_cmd('getenv', 'True')
     # overwrite standard log file names
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
     self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
