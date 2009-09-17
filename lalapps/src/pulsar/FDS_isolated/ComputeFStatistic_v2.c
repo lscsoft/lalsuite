@@ -2033,7 +2033,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
       XLAL_ERROR_NULL( fn, XLAL_EDOM);
     }
 
-  len = LALSnprintf ( buf, MAXLEN, "tRef%09d_RA%.7g_DEC%.7g_Freq%.7g",
+  len = LALSnprintf ( buf, MAXLEN, "tRef%09d_RA%.9g_DEC%.9g_Freq%.15g",
 		      par->refTime.gpsSeconds,
 		      par->Alpha,
 		      par->Delta,
