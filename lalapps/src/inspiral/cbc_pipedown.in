@@ -249,7 +249,7 @@ if options.generate_all_data_plots:
 
 veto_files = {}
 veto2sql_parents = {}
-inspinjfind_parents = []
+inspinjfind_parents = {}
 for tag in user_tags:
 
   print "Creating jobs for %s..." % tag
@@ -475,7 +475,9 @@ for tag in user_tags:
     dag.add_node( simxml_node )
 
     # add to list of inspinjfind parents
-    inspinjfind_parents.append( simxml_node )
+    if veto_cat not in inspinjfind_parents:
+      inspinjfind_parents[veto_cat] = []
+    inspinjfind_parents[veto_cat].append( simxml_node )
 
   else:
     # just cache the result_db
@@ -485,30 +487,30 @@ for tag in user_tags:
 ##############################################################################
 # done cycling over tags: Create inspinjfind job and node
 
-print "Creating injection finding node..."
+# cache the sim xmls by veto category
+print "Creating inspinjfind nodes..."
 
-inspinjfind_node = inspiral.InspInjFindNode( inspinjfind_job )
-inspinjfind_node.set_category('inspinjfind')
-# add input files and parents
-for simxml_node in inspinjfind_parents:
-  inspinjfind_node.add_file_arg( simxml_node.get_output() )
-  inspinjfind_node.add_parent( simxml_node )
-
-dag.add_node( inspinjfind_node )
-
-# cache the sim dbs by veto category
-print "Caching simulation xmls..."
+inspinjfind_nodes = {}
 sim_caches = {}
-for veto_cat in veto_files.keys():
+for veto_cat, node_list in inspinjfind_parents.items():
+  
+  # create a inspinjfind node for each veto_category
+  inspinjfind_node = inspiral.InspInjFindNode( inspinjfind_job )
+  inspinjfind_node.set_category('inspinjfind')
+
+  # add input files and parents
+  for simxml_node in node_list:
+    inspinjfind_node.add_file_arg( simxml_node.get_output() )
+    inspinjfind_node.add_parent( simxml_node )
+  dag.add_node( inspinjfind_node )
+
+  inspinjfind_nodes[veto_cat] = inspinjfind_node
+
+  # Cache the files
+  sim_cache = lal.Cache().from_urls( inspinjfind_node.get_output() )
   if veto_cat == 'CAT_1_VETO':
-    sim_cache = lal.Cache().from_urls( filename
-      for filename in inspinjfind_node.get_input_files()
-      if 'VETO' not in filename )
     cache_type = 'ALLINJ_CLUSTERED_CBC_RESULTS'
   else:
-    sim_cache = lal.Cache().from_urls( filename
-      for filename in inspinjfind_node.get_input_files()
-      if veto_cat in filename )
     cache_type = '_'.join(['ALLINJ', veto_cat, 'CLUSTERED_CBC_RESULTS' ])
   instruments = set()
   for entry in sim_cache:
@@ -519,7 +521,7 @@ for veto_cat in veto_files.keys():
     'cache' ])
   sim_cache.tofile( open(sim_cache_name, 'w') )
   sim_caches[veto_cat] = sim_cache_name
-  
+
 
 ##############################################################################
 # now cycle over non-injection databases, 
@@ -553,7 +555,7 @@ for result_db in result_dbs_cache:
     sim2fulldb_node.set_database( result_db.path() )
     sim2fulldb_node.set_tmp_space( tmp_space )
     
-    sim2fulldb_node.add_parent( inspinjfind_node )
+    sim2fulldb_node.add_parent( inspinjfind_nodes[veto_cat] )
     dag.add_node( sim2fulldb_node )
 
     # create a dbsimplify node to clean the database
