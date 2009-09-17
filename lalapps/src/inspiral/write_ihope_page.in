@@ -1338,7 +1338,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   sections.append(section)
   htmlOnly.append(section)
   titles[section] = "Loudest software injection triggers after CAT_4.."
-  tags[section] = '*'+injection.upper()+'*CAT_4*'+'LOUDEST_SIMULATION_EVENTS_BY_COMBINED_FAR*'
+  tags[section] = '*'+injection.upper()+'*CAT_4_VETO_LOUDEST_SIMULATION_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest events after Category 4 vetoes (hardware injections removed).'
   comments[section] = None
   configs[section] = None
@@ -1854,6 +1854,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*html')
       copy_files(dataDir,webDir,'*FULL_DATA*PLAYGROUND*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*ALL_DATA*html')
+      copy_files(dataDir,webDir,'*LOUDEST_SLIDE_EVENTS*html')
       copy_files(dataDir,webDir,'*CLOSED_BOX*html')
       copy_files(dataDir,webDir,'*SIMULATION*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*cache')
@@ -1862,7 +1863,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*SIMULATION*cache')
       mkdir(webDir + '/Images')
       copy_files(dataDir+'/Images',webDir+'/Images','*PLAYGROUND*PLAYGROUND*')
-      copy_files(dataDir+'/Images',webDir+'/Images','*FULL_DATA*PLAYGROUND')
+      copy_files(dataDir+'/Images',webDir+'/Images','*FULL_DATA*PLAYGROUND*')
       copy_files(dataDir+'/Images',webDir+'/Images','*PLAYGROUND*ALL_DATA*')
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSED_BOX*')
       copy_files(dataDir+'/Images',webDir+'/Images','*SIMULATION*')
