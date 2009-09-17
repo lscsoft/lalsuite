@@ -36,6 +36,8 @@
 #include "StatPatternRecognition/SprVarTransformerReader.hh"
 #include "StatPatternRecognition/SprTransformerFilter.hh"
 
+#include "MySqliteReader.hh"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
@@ -152,11 +154,13 @@ int main(int argc, char ** argv)
   string transformerFile;
   unsigned nUsedTrees = 0;
 
+  string sqlQuery;
+
   // decode command line
   int c;
   extern char* optarg;
   //  extern int optind;
-  while( (c = getopt(argc,argv,"hjko:a:An:l:s:y:Q:Bv:f:F:c:C:P:g:ir:N:K:DGt:d:w:V:z:Z:x:q:")) 
+  while( (c = getopt(argc,argv,"hjko:a:An:l:s:y:Q:Bv:f:F:c:C:P:g:ir:N:K:DGt:d:w:V:z:Z:x:q:S:")) 
 	 != EOF ) {
     switch( c )
       {
@@ -263,6 +267,9 @@ int main(int argc, char ** argv)
       case 'q' :
 	nodeValidationString = optarg;
 	break;
+      case 'S' :
+        sqlQuery = optarg;
+        break;
       }
   }
 
@@ -274,9 +281,21 @@ int main(int argc, char ** argv)
   }
 
   // make reader
+
+  auto_ptr<SprAbsReader> reader;
+
   SprRWFactory::DataType inputType 
     = ( readMode==0 ? SprRWFactory::Root : SprRWFactory::Ascii );
-  auto_ptr<SprAbsReader> reader(SprRWFactory::makeReader(inputType,readMode));
+  if (sqlQuery.empty())
+  {
+    cout << "Creating an SPR reader" << endl;
+    reader.reset( SprRWFactory::makeReader(inputType,readMode) );
+  }
+  else
+  {
+    cout << "Creating a MySqliteReader with query = " << sqlQuery << endl;
+    reader.reset( new MySqliteReader(sqlQuery) );
+  }
 
   // include variables
   set<string> includeSet;
