@@ -72,4 +72,4 @@ DELETE FROM time_slide WHERE time_slide_id IN (SELECT old FROM _idmap_ WHERE old
 
 DROP TABLE _idmap_;
 
-VACUUM;
+-- VACUUM;
