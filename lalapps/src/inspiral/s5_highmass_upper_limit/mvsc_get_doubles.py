@@ -72,7 +72,7 @@ for filename in fulldata_files:
   
   for values in connection.cursor().execute("""
   SELECT
-    mapA.coinc_event_id,
+    coinc_inspiral.coinc_event_id,
     calc_delta_t(snglA.ifo, snglA.end_time, snglA.end_time_ns, snglB.ifo, snglB.end_time, snglB.end_time_ns, coinc_event.time_slide_id),
     abs(2*(snglA.mchirp - snglB.mchirp)/(snglA.mchirp+snglB.mchirp)),
     abs(2*(snglA.eta - snglB.eta)/(snglA.eta+snglB.eta)),
@@ -98,29 +98,17 @@ for filename in fulldata_files:
         AND time_slide.offset != 0
     )
   FROM
-    coinc_event_map AS mapA
-    JOIN coinc_event_map AS mapB ON (
-      mapB.table_name == 'sngl_inspiral'
-      AND mapB.coinc_event_id == mapA.coinc_event_id
-    )
-    JOIN coinc_inspiral ON (
-      mapA.table_name == 'sngl_inspiral'
-      AND coinc_inspiral.coinc_event_id==mapA.coinc_event_id
-    )
-    JOIN sngl_inspiral AS snglA ON (
-      mapA.table_name == 'sngl_inspiral'
-      AND snglA.event_id == mapA.event_id
-    )
-    JOIN sngl_inspiral AS snglB ON (
-      mapB.table_name == 'sngl_inspiral'
-      AND snglB.event_id == mapB.event_id
-    )
-    JOIN coinc_event ON (
-      mapA.table_name == 'sngl_inspiral'
-      AND coinc_event.coinc_event_id == mapA.coinc_event_id
-    )
+    coinc_inspiral 
+    JOIN coinc_event_map AS mapA ON (mapA.coinc_event_id == coinc_inspiral.coinc_event_id)
+    JOIN coinc_event_map AS mapB ON (mapB.coinc_event_id == coinc_inspiral.coinc_event_id)
+    JOIN sngl_inspiral AS snglA ON (snglA.event_id == mapA.event_id)
+    JOIN sngl_inspiral AS snglB ON (snglB.event_id == mapB.event_id)
+    JOIN coinc_event ON (mapA.coinc_event_id == coinc_event.coinc_event_id)
   WHERE
-    snglA.ifo == ?
+    coinc_event.coinc_def_id == 'coinc_definer:coinc_def_id:0'
+    AND mapA.table_name == 'sngl_inspiral'
+    AND mapB.table_name == 'sngl_inspiral'
+    AND snglA.ifo == ?
     AND snglB.ifo == ?
     """, (tuple(ifos))):
       is_background = values[-1]
@@ -149,7 +137,7 @@ for filename in inj_files:
   
   for values in connection.cursor().execute("""
   SELECT
-    mapA.coinc_event_id,
+    coinc_inspiral.coinc_event_id,
     calc_delta_t_inj(snglA.end_time, snglA.end_time_ns, snglB.end_time, snglB.end_time_ns),
     abs(2*(snglA.mchirp - snglB.mchirp)/(snglA.mchirp+snglB.mchirp)),
     abs(2*(snglA.eta - snglB.eta)/(snglA.eta+snglB.eta)),
@@ -166,32 +154,23 @@ for filename in inj_files:
     snglA.cont_chisq,
     snglB.cont_chisq
   FROM
-    coinc_event_map AS mapA
-    JOIN coinc_event_map AS mapB ON (
-      mapB.table_name == 'sngl_inspiral'
-      AND mapB.coinc_event_id == mapA.coinc_event_id
-    )
-    JOIN coinc_event_map AS mapD ON (
-      mapD.coinc_event_id == mapA.coinc_event_id
-    )
-    JOIN sim_inspiral ON (
-      mapD.table_name == 'sim_inspiral'
-      AND sim_inspiral.simulation_id==mapD.event_id
-    )
-    JOIN sngl_inspiral AS snglA ON (
-      mapA.table_name == 'sngl_inspiral'
-      AND snglA.event_id == mapA.event_id
-    )
-    JOIN sngl_inspiral AS snglB ON (
-      mapB.table_name == 'sngl_inspiral'
-      AND snglB.event_id == mapB.event_id
-    )
-    JOIN coinc_event ON (
-      mapA.table_name == 'sngl_inspiral'
-      AND coinc_event.coinc_event_id == mapA.coinc_event_id
-    )
+    coinc_inspiral 
+    JOIN coinc_event_map AS mapA ON (mapA.coinc_event_id == coinc_inspiral.coinc_event_id)
+    JOIN coinc_event_map AS mapB ON (mapB.coinc_event_id == coinc_inspiral.coinc_event_id)
+    JOIN sngl_inspiral AS snglA ON (snglA.event_id == mapA.event_id)
+    JOIN sngl_inspiral AS snglB ON (snglB.event_id == mapB.event_id)
+    JOIN coinc_event_map AS mapC ON (mapC.event_id == coinc_inspiral.coinc_event_id)
+    JOIN coinc_event_map AS mapD ON (mapD.coinc_event_id == mapC.coinc_event_id)
+    JOIN sim_inspiral ON (sim_inspiral.simulation_id == mapD.event_id)
+    JOIN coinc_event AS sim_coinc_event ON (sim_coinc_event.coinc_event_id == mapD.coinc_event_id)
+    JOIN coinc_event AS insp_coinc_event ON (insp_coinc_event.coinc_event_id == mapA.coinc_event_id)
   WHERE
-    snglA.ifo == ?
+    sim_coinc_event.coinc_def_id == 'coinc_definer:coinc_def_id:2'
+    AND mapA.table_name == 'sngl_inspiral'
+    AND mapB.table_name == 'sngl_inspiral'
+    AND mapC.table_name == 'coinc_event'
+    AND mapD.table_name == 'sim_inspiral'
+    AND snglA.ifo == ?
     AND snglB.ifo == ?
     """, (tuple(ifos)) ):
       injections.append(values[1:] + (1,))

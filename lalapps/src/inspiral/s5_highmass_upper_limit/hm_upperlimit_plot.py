@@ -117,13 +117,16 @@ f = pylab.figure(1)
 ###############################################################################
 # loop over all the filenames and masses and compute the posteriors separately
 ###############################################################################
+
 for i, f in enumerate(sys.argv[1:]):
   legend_str = []
   lines = []
-  #FIXME we can't get ifos from filenames, we should put it in the xml :(
-  ifos = "_".join(sys.argv[1+i].split('-')[-2:]).replace('.xml','')
-  wiki = open(ifos+'range_summary.txt',"w")
-  wiki.write("||Masses||Range(Mpc)||Time||UL @ 90%||Fractional error||\n")
+  #FIXME we shouldn't get ifos from filenames, we should put it in the xml :(
+  ifos = sys.argv[1+i].replace('.xml','').replace("2Dsearchvolume-","")
+  #FIXME it is stupid to pull out names this way
+  combined_ifos = "_".join(ifos.split("_")[:-1])
+  wiki = open(ifos+'_range_summary.txt',"w")
+  wiki.write("||'''Masses'''||'''Range(Mpc)'''||'''Time'''||'''UL @ 90%'''||'''Fractional error'''||\n")
   # loop over mass bins
   
   ulA.array *= 0
@@ -156,7 +159,7 @@ for i, f in enumerate(sys.argv[1:]):
   ##
 
   #f = pylab.figure(i)
-  pylab.title("%s posteriors for a few mass bins" % (ifos,),fontsize=14)
+  pylab.title("%s \nposteriors for a few mass bins" % (ifos,),fontsize=14)
   leg = pylab.figlegend(lines, legend_str, 'lower right')
   leg.prop.set_size(6)
   leg.pad = 0
@@ -166,7 +169,7 @@ for i, f in enumerate(sys.argv[1:]):
   pylab.grid()
   #FIXME hardcoded rate limits are bad for advanced ligo
   pylab.xlim([1e-8, 1])
-  pylab.savefig(ifos + 'posterior.png')
+  pylab.savefig(ifos + '_posterior.png')
   pylab.clf()
 
   ##
@@ -180,12 +183,12 @@ for i, f in enumerate(sys.argv[1:]):
   pylab.colorbar()
   pylab.ylim(m1range)
   pylab.xlim(m2range)
-  pylab.title(ifos + " Log10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
+  pylab.title(ifos + " \nLog10[< Volume * Time>] in mergers/Mpc^3/yr",fontsize=14)
   pylab.xlabel("Mass 2",fontsize=14)
   pylab.ylabel("Mass 1",fontsize=14)
   pylab.gca().set_aspect(1)
   pylab.grid()
-  pylab.savefig(ifos+'volume_time.png')
+  pylab.savefig(ifos+'_volume_time.png')
   pylab.clf()
 
   ## 
@@ -196,12 +199,12 @@ for i, f in enumerate(sys.argv[1:]):
   pylab.colorbar()
   pylab.ylim(m1range)
   pylab.xlim(m2range)
-  pylab.title(ifos + " Fractional Error on Volume * Time [std/mean]",fontsize=14)
+  pylab.title(ifos + " \nFractional Error on Volume * Time [std/mean]",fontsize=14)
   pylab.xlabel("Mass 2",fontsize=14)
   pylab.ylabel("Mass 1",fontsize=14)
   pylab.gca().set_aspect(1)
   pylab.grid()
-  pylab.savefig(ifos+'fractional_error.png')
+  pylab.savefig(ifos+'_fractional_error.png')
   pylab.clf()
 
   ##
@@ -213,12 +216,12 @@ for i, f in enumerate(sys.argv[1:]):
   pylab.colorbar()
   pylab.ylim(m1range)
   pylab.xlim(m2range)
-  pylab.title(ifos + " Log10[fg/bg likelihood ratio(Lambda)]",fontsize=14)
+  pylab.title(ifos + " \nLog10[fg/bg likelihood ratio(Lambda)]",fontsize=14)
   pylab.xlabel("Mass 2",fontsize=14)
   pylab.ylabel("Mass 1",fontsize=14)
   pylab.gca().set_aspect(1)
   pylab.grid()
-  pylab.savefig(ifos + 'lambda.png')
+  pylab.savefig(ifos + '_lambda.png')
   pylab.clf()
 
   ##
@@ -229,12 +232,12 @@ for i, f in enumerate(sys.argv[1:]):
   pylab.colorbar()
   pylab.ylim(m1range)
   pylab.xlim(m2range)
-  pylab.title(ifos + " Log10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
+  pylab.title(ifos + " \nLog10[90% upper limit] in mergers/Mpc^3/yr",fontsize=14)
   pylab.xlabel("Mass 2",fontsize=14)
   pylab.ylabel("Mass 1",fontsize=14)
   pylab.gca().set_aspect(1)
   pylab.grid()
-  pylab.savefig(ifos + 'upper_limit.png')
+  pylab.savefig(ifos + '_upper_limit.png')
   pylab.clf()
 
 
@@ -274,7 +277,7 @@ pylab.ylim([0.0001, 1])
 pylab.grid()
 #FIXME hardcoded rate limits are bad for advanced ligo
 pylab.xlim([1e-8, 1])
-pylab.savefig('combinedposterior.png')
+pylab.savefig(combined_ifos + '_posterior.png')
 pylab.clf()
 
 
@@ -291,7 +294,7 @@ pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.gca().set_aspect(1)
 pylab.grid()
-pylab.savefig('combinedupper_limit.png')
+pylab.savefig(combined_ifos + '_upper_limit.png')
 pylab.clf()
 
 

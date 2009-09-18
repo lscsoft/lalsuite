@@ -1,0 +1,468 @@
+.TH LALAPPS_INSPIRAL 1 "15 September 2009" LALApps LALApps
+.SH NAME
+lalapps_inspiral - searches for inspiral signals in gravitation wave detector (gwd) data
+
+.SH SYNOPSIS
+.B lalapps_inspiral
+.IR [options]
+
+.SH DESCRIPTION
+.PP
+The executable lalapps_inspiral is part of the LALApps library. Currenty it has treefold
+functionality: a.) Search for inspiral signals, b.) search for injected signal
+for efficiency studies c.) test template banks with runtime generated or pre-fabricated injections.
+
+.SH OPTIONS
+The following options are recognized by lalapps_inspiral:
+
+.B Generic options
+.TP
+  --help                      
+ display this message         
+
+.TP
+  --verbose                   
+ print progress information   
+
+.TP
+  --version                   
+ print version information and exit
+
+.TP
+  --debug-level LEVEL         
+ set the LAL debug level to LEVEL  
+
+.TP
+  --user-tag STRING           
+ set the process_params usertag to STRING
+
+.TP
+  --ifo-tag STRING            
+ set the ifotag to STRING - for file naming
+
+.TP
+  --comment STRING            
+ set the process table comment to STRING   
+
+.TP
+  --gps-start-time SEC        
+ GPS second of data start time
+
+.TP
+  --gps-start-time-ns NS      
+ GPS nanosecond of data start time
+
+.TP
+  --gps-end-time SEC          
+ GPS second of data end time      
+
+.TP
+  --gps-end-time-ns NS        
+ GPS nanosecond of data end time  
+
+.TP
+  --pad-data T                
+ pad the data start and end time by T seconds. (Expl.: This is the number of seconds left unanalyzed at 
+the beginning and end of each segment so that there're no spurious effects coming from the
+fact that the segment just started. Standard is 8.)
+
+.TP
+  --slide-time T              
+ slide data start epoch by T seconds         
+
+.TP
+  --slide-time-ns T           
+ slide data start epoch by T nanoseconds     
+
+.TP
+  --glob-frame-data           
+ glob *.gwf files in the pwd to obtain frame data
+
+.TP
+  --frame-type TAG            
+ input data is contained in frames of type TAG   
+
+.TP
+  --frame-cache               
+ obtain frame data from LAL frame cache FILE     
+
+.TP
+  --calibration-cache FILE    
+ obtain calibration from LAL frame cache FILE    
+
+.TP
+  --glob-calibration-data     
+ obtain calibration by globbing in working dir   
+
+.TP
+  --channel-name CHAN         
+ read data from interferometer channel CHAN
+
+.TP
+  --calibrated-data TYPE      
+ calibrated data of TYPE real_4 or real_8  
+
+.TP
+  --strain-high-pass-freq F   
+ high pass REAL8 h(t) data above F Hz      
+
+.TP
+  --strain-high-pass-order O  
+ set the order of the h(t) high pass filter to O
+
+.TP
+  --strain-high-pass-atten A  
+ set the attenuation of the high pass filter to A
+
+.TP
+  --point-calibration         
+ use the first point in the chunk to calibrate   
+
+.TP
+  --injection-file FILE       
+ inject simulated inspiral signals from FILE
+
+.TP
+  --fast F                    
+ analyse injections templates within a match F
+
+.TP
+  --inject-overhead           
+ inject signals from overhead detector        
+
+.TP
+  --enable-filter-inj-only    
+ filter only segments with injections         
+
+.TP
+  --disable-filter-inj-only   
+ filter all segments when doing injections    
+
+.TP
+  --hardware-injection        
+ Injections are in the frame files don't make them again !  All segments are filtered.                              
+
+.TP
+  --td-follow-up FILE         
+ Follow up coincident BCV events in FILE
+
+.TP
+  --bank-file FILE            
+ read template bank parameters from FILE
+
+.TP
+  --start-template N          
+ start filtering at template number N in bank
+
+.TP
+  --stop-template N           
+ stop filtering at template number N in bank 
+
+.TP
+  --reverse-chirp-bank        
+ filters data using a reverse chirp template bank
+
+.TP
+  --sample-rate F             
+ filter data at F Hz, downsampling if necessary
+
+.TP
+  --resample-filter TYPE      
+ set resample filter to TYPE (ldas|butterworth) 
+
+.TP
+  --disable-high-pass         
+ turn off the IIR highpass filter
+
+.TP
+  --enable-high-pass F        
+ high pass data above F Hz using an IIR filter
+
+.TP
+  --high-pass-order O         
+ set the order of the high pass filter to O   
+
+.TP
+  --high-pass-attenuation A   
+ set the attenuation of the high pass filter to A
+
+.TP
+  --spectrum-type TYPE        
+ use PSD estimator TYPE. Possible values are: mean,median,gaussian,white,LIGO,AdvLIGO.
+TYPE 'gaussian' is equivalent to 'white' - deprecated option
+
+.TP
+  --segment-length N          
+ set data segment length to N points
+
+.TP
+  --number-of-segments N      
+ set number of data segments to N   
+
+.TP
+  --segment-overlap N         
+ overlap data segments by N points  
+
+.TP
+  --low-frequency-cutoff F    
+ do not filter below F Hz     
+
+.TP
+  --inverse-spec-length T     
+ set length of inverse spectrum to T seconds
+
+.TP
+  --dynamic-range-exponent X  
+ set dynamic range scaling to 2^X. (Expl.: This is a factor that internally multiplies all data in the 
+pipeline to avoid having to deal with too small numbers (strain is of the order of 10E-20) that could 
+bring errors related to the machine precision of the computers. The standard choice  is 69, which 
+multiplies everything by 2^69.)
+
+.TP
+--approximant APPROX        
+ set approximant of the waveform to APPROX. Possible values are 
+FindChirpSP,BCV,BCVC,BCVSpin,TaylorT1,TaylorT2, TaylorT3,PadeT1,EOB,GeneratePPN,FindChirpPTF 
+
+.TP
+  --order ORDER               
+ set the pN order of the waveform to ORDER. Possible varlues 
+are: twoPN,twoPointFivePN,threePN,threePointFivePN, pseudoFourPN
+
+.TP
+  --snr-threshold RHO         
+ set signal-to-noise threshold to RHO             
+
+.TP
+  --chisq-bins P              
+ set number of chisq veto bins to P               
+
+.TP
+  --chisq-delta DELTA         
+ set chisq delta parameter to DELTA               
+
+.TP
+  --chisq-threshold X         
+ threshold on chi^2 < X * ( p + DELTA *rho^2 )    
+
+.TP
+  --cluster-method MTHD       
+ max over chirp MTHD (tmplt|window|tmpltwindow|none) 
+
+.TP
+  --cluster-window SEC        
+ set length of clustering time window if required    
+
+.TP
+  --enable-rsq-veto           
+ enable the r^2 veto test     
+
+.TP
+  --disable-rsq-veto          
+ disable the r^2 veto test    
+
+.TP
+  --rsq-veto-window SEC       
+ set the r^2 veto window to SEC
+
+.TP
+  --rsq-veto-threshold RSQ    
+ set r^2 veto threshold to RSQ 
+
+.TP
+  --do-rsq-veto               
+ do the r^2 veto              
+
+.TP
+  --rsq-veto-time-thresh SEC  
+ set the r^2 veto window to SEC
+
+.TP
+  --rsq-veto-max-snr MAXSNR   
+ set the r^2 veto maximum snr to MAXSNR
+
+.TP
+  --rsq-veto-coeff COEFF      
+ set the r^2 veto coefficient to COEFF 
+
+.TP
+  --rsq-veto-pow POW          
+ set the r^2 veto power to POW         
+
+.TP
+  --bank-veto-subbank-size N  
+ set the number of tmplts in a subbank to N
+
+.TP
+  --maximization-interval MSEC
+ set length of interval (in ms) for maximization of triggers over the template bank. Cannot be used 
+with --ts-cluster.               
+
+.TP
+  --ts-cluster   MTHD         
+ max over template and end time MTHD. Possible values are:   
+T0T3Tc,T0T3TcAS,Psi0Psi3Tc,Psi0Psi3TcAS. Cannot be used with --maximization-interval.
+
+.TP
+  --ts-endtime-interval msec  
+ set end-time interval for TrigScan clustering 
+
+.TP
+  --ts-metric-scaling fac     
+ scale the metric which defines the ellipsoids for TrigScan Scaling must be > 0
+
+.TP
+  --band-pass-template        
+ Band-pass filter the time-domain inspiral template
+
+.TP
+  --taper-template OPT        
+ Taper the inspiral template using option OPT. Possible values are: start,end,startend. (Expl.: One can 
+choose to taper the waveforms of the template back at the start, end or both. This is to avoid edge effects if 
+the templates start or end too abruptly.)
+
+.TP
+  --enable-output             
+ write the results to a LIGO LW XML file
+
+.TP
+  --output-mask MASK          
+ write the output sngl_inspiral table with optional MASK. Possible values are: bns,bcv         
+
+.TP
+  --write-compress            
+ write a compressed xml file            
+
+.TP
+  --disable-output            
+ do not write LIGO LW XML output file   
+
+.TP
+  --trig-start-time SEC       
+ only output triggers after GPS time SEC
+
+.TP
+  --trig-end-time SEC         
+ only output triggers before GPS time SEC
+
+.TP
+  --white-gaussian VAR        
+ replace data with white gaussian noise of variance VAR
+
+.TP
+  --gaussian-noise VAR        
+ same as --white-gaussian - deprecated option
+
+.TP
+  --colored-gaussian PSD      
+ replace data with colored gaussian noise with psd PSD. Possible values are: LIGO|AdvLIGO
+
+.TP
+  --random-seed SEED          
+ set random number seed for injections to SEED. Possible values are:  urandom,integer
+
+.TP
+  --bank-simulation N         
+ perform N injections to test the template bank. Possible values are: sim_inspiral.xml, integer
+
+.TP
+  --enable-bank-sim-max       
+ compute the maximum match over the bank
+
+.TP
+  --disable-bank-sim-max      
+ do not maximize the match over the bank
+
+.TP
+  --sim-approximant APX       
+ set approximant of the injected waveform to APX. Possible values are: 
+TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile
+
+.TP
+  --sim-frame-file F          
+ read the bank sim waveform from frame named F
+
+.TP
+  --sim-frame-channel C       
+ read the bank sim waveform from frame channel C
+
+.TP
+  --sim-minimum-mass M        
+ set minimum mass of bank injected signal to M
+
+.TP
+  --sim-maximum-mass M        
+ set maximum mass of bank injected signal to M
+
+.TP
+  --bank-sim-flower F         
+ set low frequency of signal to F
+
+.TP
+  --data-checkpoint
+ checkpoint and exit after data is read in
+
+.TP
+  --checkpoint-path PATH
+ write checkpoint file under PATH
+
+.TP
+  --output-path PATH
+ write output data to PATH
+
+.TP
+  --write-raw-data
+ write raw data to a frame file
+
+.TP
+  --write-filter-data
+ write data that is passed to filter to a frame
+
+.TP
+  --write-response
+ write the computed response function to a frame
+
+.TP
+  --write-spectrum
+ write the uncalibrated psd to a frame
+
+.TP
+  --write-snrsq
+ write the snr time series for each data segment
+
+.TP
+  --write-chisq
+ write the r^2 time series for each data segment
+
+.TP
+  --write-cdata
+ write the complex filter output
+
+.TP
+  --write-template
+    write the template time series
+
+
+.SH EXAMPLE
+.PP
+A typical use-case of lalapps_inspiral:
+
+.RS
+lalapps_inspiral --approximant TaylorT1 --trig-end-time 0 --cluster-method template 
+--dynamic-range-exponent 69.0 --disable-rsq-veto --bank-file H1-TMPLTBANK_mytest-865543915-2048.xml 
+--high-pass-order 8 --strain-high-pass-order 8 --ifo-tag FIRST  --gps-end-time 865545963 
+--calibrated-data real_8 --channel-name H1:LSC-STRAIN --snr-threshold 4.25 --number-of-segments 15 
+--trig-start-time 865545773 --enable-high-pass 30.0 --debug-level 33 --gps-start-time 865543915 
+--enable-filter-inj-only --high-pass-attenuation 0.1 --chisq-bins 0 --inverse-spec-length 16 
+--segment-length 1048576 --low-frequency-cutoff 40.0 --pad-data 8 --sample-rate 4096 --chisq-threshold 
+10.0 --resample-filter ldas --strain-high-pass-atten 0.1 --strain-high-pass-freq 30.0 --bank-simulation 
+1 --enable-bank-sim-max --sim-approximant TaylorT1 --segment-overlap 524288 --frame-cache mytest.cache 
+--chisq-delta 0.2 --bank-veto-subbank-size 1 --user-tag mytest --order twoPN --enable-output 
+--spectrum-type median --random-seed 234698623 --sim-minimum-mass 1 --sim-maximum-mass 40 
+--bank-sim-flower 40
+.RE
+
+.SH AUTHOR
+LSC-Virgo Collaboration
+
+.SH DISCLAIMER
+Man page created by Gergely Debreczeni 

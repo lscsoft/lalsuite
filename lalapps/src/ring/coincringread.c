@@ -1469,4 +1469,5 @@ why??????????????
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
   exit( 0 );
+
 }
