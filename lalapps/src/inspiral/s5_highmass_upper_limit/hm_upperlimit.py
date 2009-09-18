@@ -126,16 +126,16 @@ class upper_limit(object):
       return []
 
   def get_mass_ranges(self, connection):
-    query = 'SELECT MIN(mass1), MAX(mass1), MIN(mass1+mass2), MAX(mass1+mass2) FROM sim_inspiral;'
+    query = 'SELECT MIN(mass1), MIN(mass2), MAX(mass1), MAX(mass2), MIN(mass1+mass2), MAX(mass1+mass2) FROM sim_inspiral;'
     for v in connection.cursor().execute(query): 
-      if self.minmass: self.minmass = min([v[0], self.minmass])
-      else: self.minmass = v[0]
-      if self.maxmass: self.maxmass = max([v[1], self.maxmass])
-      else: self.maxmass = v[1]
-      if self.mintotal: self.mintotal = min([v[2], self.mintotal])
-      else: self.mintotal = v[2]
-      if self.maxtotal: self.maxtotal = max([v[3], self.maxtotal])
-      else: self.maxtotal = v[3]
+      if self.minmass: self.minmass = min([v[0], v[1], self.minmass])
+      else: self.minmass = min(v[0], v[1])
+      if self.maxmass: self.maxmass = max([v[2], v[3], self.maxmass])
+      else: self.maxmass = max(v[2], v[3])
+      if self.mintotal: self.mintotal = min([v[4], self.mintotal])
+      else: self.mintotal = v[4]
+      if self.maxtotal: self.maxtotal = max([v[4], self.maxtotal])
+      else: self.maxtotal = v[4]
 
   def get_instruments(self, connection):
     for i in connection.cursor().execute('SELECT DISTINCT(instruments) FROM coinc_event'):
