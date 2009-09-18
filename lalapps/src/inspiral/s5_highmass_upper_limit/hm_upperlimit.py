@@ -134,8 +134,8 @@ class upper_limit(object):
       else: self.maxmass = max(v[2], v[3])
       if self.mintotal: self.mintotal = min([v[4], self.mintotal])
       else: self.mintotal = v[4]
-      if self.maxtotal: self.maxtotal = max([v[4], self.maxtotal])
-      else: self.maxtotal = v[4]
+      if self.maxtotal: self.maxtotal = max([v[5], self.maxtotal])
+      else: self.maxtotal = v[5]
 
   def get_instruments(self, connection):
     for i in connection.cursor().execute('SELECT DISTINCT(instruments) FROM coinc_event'):
