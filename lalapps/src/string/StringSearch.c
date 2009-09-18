@@ -84,9 +84,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-int snprintf(char *str, size_t size, const char *format, ...);
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
@@ -467,8 +464,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
   if (CLA.printsnrflag)
     for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
       fprintf(stdout,"%d %e\n",m, vector->data[p]);
-	
-
+  
   /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
     maximum = 0.0;
@@ -572,14 +568,14 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       }
       
       if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
-      
+
       /* normalise the result by template normalisation and multiply by 
 	 df (not inluded in LALReverseRealFFT)  factor of 2 is from 
 	 match-filter definition */
       
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
-      	
+	      	
       if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
     }
   }
@@ -714,6 +710,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   f_min_index = CLA.fbankstart / GV.Spec.deltaF;
   f_max_index = fmax / GV.Spec.deltaF;
   integral = XLALCreateREAL4Vector(f_max_index-f_min_index);
+  epsilon=0;
 
   /* first template : f_cutoff = fbankhighfcutofflow */
   f_cut = (int)(CLA.fbankhighfcutofflow/GV.Spec.deltaF)*GV.Spec.deltaF;
