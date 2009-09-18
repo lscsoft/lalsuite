@@ -476,7 +476,7 @@ XLAL3DRinca(
   INT8    ta,  tb;
   REAL8   fa, fb, Qa, Qb, ds2_min;
   REAL8   step = 1./16384.;
-  REAL8   dtab, dt_min, dt_max, dt;
+  REAL8   dtab, dtba, dt_min, dt_max, dt_min_ab, dt_min_ba, dt_max_ab, dt_max_ba, dt;
   const LALDetector *aDet;
   const LALDetector *bDet;
   fa = aPtr->frequency;
@@ -487,20 +487,54 @@ XLAL3DRinca(
   tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
   dtab = 1.e-9 * (tb - ta);
+  dtba = 1.e-9 * (ta - tb);
   aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
   bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
-  dt_min = dtab - 1.e-9 * XLALLightTravelTime(aDet,bDet);
-  dt_max = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+
+  dt_min_ab = dtab - 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_min_ba = dtba - 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_max_ab = dtab + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+  dt_max_ba = dtba + 1.e-9 * XLALLightTravelTime(aDet,bDet);
+
+  /* Search over extended dt loop so ifo order is not an issue */
+
+  if ( dt_min_ab < dt_min_ba )
+  {
+    dt_min = dt_min_ab;
+  }
+  else
+  {
+    dt_min = dt_min_ba;
+  }
+
+  if ( dt_max_ab > dt_max_ba )
+  {
+    dt_max = dt_max_ab;
+  }
+  else
+  {
+    dt_max = dt_max_ba;
+  }
 
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
 
-  /* estimate true time delay */
-  for ( dt = dt_min ; dt < dt_max ; dt += step )
+  /* if ifos are H1H2 then no need to account for light travel time */
+
+  if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
+	||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
   {
-    REAL8 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
-    if (ds2 < ds2_min) ds2_min = ds2;
+    return ( ds2_min );
   }
-  return ( ds2_min );
+  else
+  {
+    /* estimate true time delay for non-H1H2 ifo combinations*/
+    for ( dt = dt_min ; dt < dt_max ; dt += step )
+    {
+      REAL8 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+      if (ds2 < ds2_min) ds2_min = ds2;
+    }
+    return ( ds2_min );
+  }
 }
 
 

@@ -249,25 +249,21 @@ for comb in ifo_combinations:
     file_for_this_set = get_node[comb].out_file_group[i]
 #    print file_for_this_set[0]
     train_node[i] = train_forest_node(train_job, dag, file_for_this_set[0], p_node=[get_node[comb]])
-    rank_node[i] = use_forest_node(rank_job, dag, train_node[i].trainedforest, file_for_this_set[1], p_node=[train_node[i]])
-#print rank_node
+    try: rank_node[comb]
+    except: rank_node[comb] = {}
+
+    rank_node[comb][i] = use_forest_node(rank_job, dag, train_node[i].trainedforest, file_for_this_set[1], p_node=[train_node[i]])
   #print get_node[comb].get_output_files()
   zl_rank_node[comb] = use_forest_node(zl_rank_job, dag, train_node[0].trainedforest, get_node[comb].zerolag_file[0], p_node=[get_node[comb],train_node[0]])
-#print [rank_node.values(), zl_rank_node.values()]
-update_node['all'] = mvsc_update_sql_node(update_job, dag, p_node=rank_node.values()+zl_rank_node.values())
-#  print get_node[comb].out_file_group[:][1]
-#injections, fulldata, number, instruments, trainingstr, testingstr, zerolagstr, p_node=[])
-#
-##Assemble dag
-#for f in cafe_caches:
-#  add_node[f] = ligolw_add_node(add_job, dag, f, tisi.filename)
-#  rinca_node[f] = ligolw_rinca_node(rinca_job, dag, add_node[f].get_output_files()[0], p_node=[add_node[f]])
-#  sqlite_node[f] = ligolw_sqlite_node(sqlite_job, dag, f.replace(".cache",".sqlite"), rinca_node[f].get_output_files(), p_node=[rinca_node[f]])
-#
-##FIXME Do you want everying in one file, what should be the file name
-#sqlite_node['all'] = ligolw_sqlite_node(sqlite_job, dag, "RING.sqlite", [f.get_output_files()[0] for f in rinca_node.values()], p_node=rinca_node.values())
-#
-#sys.exit()
+print rank_node
+print rank_node.values()
+finished_rank_nodes=[]
+for key in rank_node:
+  finished_rank_nodes.extend(rank_node[key].values())
+print len(finished_rank_nodes)
+update_node['all'] = mvsc_update_sql_node(update_job, dag, p_node=finished_rank_nodes+zl_rank_node.values())
+
+
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
