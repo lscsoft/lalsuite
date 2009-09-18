@@ -33,6 +33,11 @@ MySqliteReader::MySqliteReader(const string& sqliteQuery, SprPreFilter* filter)
 SprAbsFilter* MySqliteReader::read(const char* filename)
 {
   
+  if( !include_.empty() || !exclude_.empty() ) {
+    cerr << "SPR-style inclusion and exclusion of variables not supported yet" << endl;
+    return 0;
+  }
+
   int status;
 
   sqlite3* database = 0;
@@ -60,10 +65,47 @@ SprAbsFilter* MySqliteReader::read(const char* filename)
     return 0;
   }
 
+  status = sqlite3_step(statement);
+  int n = sqlite3_column_count(statement);
+  
+  vector<string> column_names;
+
+  for (int i = 0; i != n; ++i)
+  {
+    column_names.push_back(sqlite3_column_name(statement, i));
+  }
+
+  auto_ptr<SprData> data(new SprData);
+  data->setVars(column_names);
+
+  vector<double> v(n);
+
+  while (status == SQLITE_ROW)
+  {
+
+    for (int i = 0; i != n; ++i)
+    {
+      v[i] = sqlite3_column_double(statement, i);
+    }
+
+    int icls = 0;
+    data->insert(icls, v);
+
+    status = sqlite3_step(statement);
+  }
+
+  if (status != SQLITE_DONE)
+  {
+    cout << "sqlite3_step(...) error: " << sqlite3_errmsg(database) << endl;
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
+    return 0;
+  }
+
   sqlite3_finalize(statement);
   sqlite3_close(database);
 
-  return 0;
+  return new SprEmptyFilter(data.release(), true);
 
 #if 0
 
