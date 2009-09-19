@@ -130,6 +130,18 @@ AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
   ], [ cfitsio=false ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_PSS],
+[AC_ARG_ENABLE(
+  [pss],
+  AC_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
+  [ case "${enableval}" in
+      yes) pss=true;;
+      no) pss=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
+    esac
+  ], [pss=false])
+])
+
 AC_DEFUN([LALAPPS_ENABLE_LALFRAME],
 [AC_ARG_ENABLE(
   [lalframe],
