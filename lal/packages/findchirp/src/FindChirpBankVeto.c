@@ -430,11 +430,9 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 InspiralTemplate *
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize)
   {
-  return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
-  /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
-  return bankHead;
+  bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   breakUpRegions(bankHead, num, subbanksize );
-  return XLALFindChirpSortTemplatesByLevel(bankHead,num);*/
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   }
 
 
