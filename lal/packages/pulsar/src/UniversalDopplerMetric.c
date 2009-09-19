@@ -57,6 +57,9 @@
 
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
+#define MULT_VECT(lam, v) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
+#define ADD_VECT(dst,src) do { (dst)[0] += (src)[0]; (dst)[1] += (src)[1]; (dst)[2] += (src)[2]; } while(0)
+#define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
 
 #define SQUARE(x) ((x) * (x))
 
@@ -379,6 +382,11 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
   EmissionTime emit = empty_EmissionTime;
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
+  PosVel3D_t Spin_z, Spin_xy;
+  REAL8 cosi = cos(LAL_IEARTH);
+  REAL8 sini = sin(LAL_IEARTH);
+
+  REAL8 eZ[3];
 
   if ( !posvel || !tGPS || !site || !edat ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", fn);
@@ -412,6 +420,23 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
   Det_wrt_Earth.vel[1] = emit.vDetector[1] - earth.velNow[1];
   Det_wrt_Earth.vel[2] = emit.vDetector[2] - earth.velNow[2];
 
+  eZ[0] = 0; eZ[1] = -sini; eZ[2] = cosi; 	/* ecliptic z-axis in equatorial coordinates */
+  /* compute ecliptic-z projected spin motion */
+  REAL8 pz = SCALAR ( Det_wrt_Earth.pos, eZ );
+  REAL8 vz = SCALAR ( Det_wrt_Earth.vel, eZ );
+
+  COPY_VECT ( Spin_z.pos, eZ );
+  MULT_VECT ( pz, Spin_z.pos );
+
+  COPY_VECT ( Spin_z.vel, eZ );
+  MULT_VECT ( vz, Spin_z.vel );
+
+  /* compute ecliptic-xy projected spin motion */
+  COPY_VECT ( Spin_xy.pos, Det_wrt_Earth.pos );
+  SUB_VECT ( Spin_xy.pos, Spin_z.pos );
+
+  COPY_VECT ( Spin_xy.vel, Det_wrt_Earth.vel );
+  SUB_VECT ( Spin_xy.vel, Spin_z.vel );
 
   /* ----- Ptolemaic special case: orbital motion on a circle */
   if ( (special == DETMOTION_SPIN_PTOLEORBIT) || (special == DETMOTION_PTOLEORBIT) )
@@ -467,11 +492,39 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
       */
       break;
 
+      /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
+    case DETMOTION_ORBIT_SPINZ:
+
+      COPY_VECT(posvel->pos, earth.posNow);
+      COPY_VECT(posvel->vel, earth.velNow);
+
+      ADD_VECT ( posvel->pos, Spin_z.pos );
+      ADD_VECT ( posvel->vel, Spin_z.vel );
+
+      break;
+
+      /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
+    case DETMOTION_ORBIT_SPINXY:
+
+      COPY_VECT(posvel->pos, earth.posNow);
+      COPY_VECT(posvel->vel, earth.velNow);
+
+      ADD_VECT ( posvel->pos, Spin_xy.pos );
+      ADD_VECT ( posvel->vel, Spin_xy.vel );
+
+      break;
+
     default:
       XLALPrintError("\n%s: Illegal 'special' value passed: '%d'\n\n", fn, special );
       XLAL_ERROR( fn, XLAL_EINVAL );
       break;
     } /* switch(special) */
+
+
+  /* debug output */
+  printf ("pos = [ %5.3g, %5.3g, %5.3g ], vel = [ %5.3g, %5.3g, %5.3g ]\n",
+          posvel->pos[0], posvel->pos[1], posvel->pos[2],
+          posvel->vel[0], posvel->vel[1], posvel->vel[2] );
 
   return XLAL_SUCCESS;
 

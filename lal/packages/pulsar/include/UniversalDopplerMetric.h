@@ -81,6 +81,9 @@ typedef enum {
   DETMOTION_SPIN_PTOLEORBIT,	/**< ptole-orbital motion (on a circle) + Earth spin */
   DETMOTION_PTOLEORBIT,		/**< pure "Ptolemaic" orbital motion, no Earth spin */
 
+  DETMOTION_ORBIT_SPINZ,	/**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
+  DETMOTION_ORBIT_SPINXY,	/**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
+
   DETMOTION_LAST
 } DetectorMotionType;
 
@@ -94,6 +97,9 @@ const CHAR *DetectorMotionNames[] = {
 
   "spin+ptoleorbit",
   "ptoleorbit",
+
+  "orbit+spin_Z",
+  "orbit+spin_XY",
 
   "NONE"
 };
