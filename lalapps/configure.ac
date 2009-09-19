@@ -69,6 +69,7 @@ LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
+LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_LALFRAME
 LALAPPS_ENABLE_LALMETAIO
 LALAPPS_ENABLE_LALXML
@@ -262,6 +263,17 @@ if test "${cfitsio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
+# check for pss
+# FIXME also needs to check for libraries and headers
+if test "${pss}" = "true"; then
+  PKG_CHECK_MODULES([PSS],[pss],[pss="true"],[pss="false"])
+  if test "x$pss" = "xtrue"; then
+    CPPFLAGS="$CPPFLAGS $PSS_CFLAGS"
+    LIBS="$LIBS $PSS_LIBS"
+  fi
+fi
+LALSUITE_ENABLE_MODULE([PSS],[pss])
+
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
@@ -318,6 +330,7 @@ echo "
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
+                PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
 
         Now run 'make' to build LALApps
