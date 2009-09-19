@@ -649,7 +649,7 @@ for cat in cats:
 
   # Summary pages (open and closed box)
   summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
-  summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
+  summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, open_box=True, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
 
 
 

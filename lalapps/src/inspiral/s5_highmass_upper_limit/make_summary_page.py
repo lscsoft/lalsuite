@@ -105,6 +105,7 @@ page.image_table(image_list,webserver)
 
 page.section("Time slide plots")
 image_list = page.image_glob(base_name + '7_playground_plot_slides_*.png')
+page.image_table(image_list,webserver)
 
 page.section("Playground SNR")
 image_list = page.image_glob(base_name+'5_playground_count_vs_snr_*.png')
@@ -131,6 +132,7 @@ if open_box:
 
     page.section("Time slide plots")
     image_list = page.image_glob(base_name + '7_plot_slides_*.png')
+    page.image_table(image_list,webserver)
 
     page.section("Full Data SNR")
     image_list = page.image_glob(base_name+'5_count_vs_snr_*.png')

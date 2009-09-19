@@ -16,7 +16,7 @@ EXTRA_DIST = doc lalstochastic.pc.in lalstochastic.spec.in \
 	gnuscripts/ltversion.m4 \
 	gnuscripts/missing \
 	gnuscripts/pkg.m4
-SUBDIRS = include src test
+SUBDIRS = debian include src test
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc
