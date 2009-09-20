@@ -132,9 +132,12 @@ int main(int argc, char *argv[]){
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
   COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
+
+  /*estimator arrays */
   COMPLEX16Vector *gplus = NULL, *gcross = NULL;
   static REAL8Vector *aplussq1, *aplussq2, *acrossq1, *acrossq2;
-  
+  REAL8Vector *galphasq;
+  INT4 i;
 
   CrossCorrAmps amplitudes;
   CrossCorrBeamFn *beamfns1, *beamfns2;
@@ -303,7 +306,10 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+  /* if debugging, and averaging over both psi & iota, OR using exact psi & iota
+   * values, print out estimator info */
+  if (lalDebugLevel && ((!uvar_averagePsi && !uvar_averageIota) ||
+		(uvar_averagePsi && uvar_averageIota))) {
     strcpy (filename, uvar_dirnameOut);
     strcat (filename, "estimator.dat");
     if ((estimator = fopen(filename, "w")) == NULL) {
@@ -493,24 +499,33 @@ int main(int argc, char *argv[]){
   }
 
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
-  variance = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   rho->length = nParams;
-  variance->length = nParams;
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  variance = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  variance->length = nParams;
   variance->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
+  /*initialise debugging vectors */
   aplussq1 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
-  aplussq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
-  acrossq1 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
-  acrossq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   aplussq1->length = nParams;
-  aplussq2->length = nParams;
-  acrossq1->length = nParams;
-  acrossq2->length = nParams;
   aplussq1->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  aplussq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  aplussq2->length = nParams;
   aplussq2->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  acrossq1 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  acrossq1->length = nParams;
   acrossq1->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  acrossq2 = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  acrossq2->length = nParams;
   acrossq2->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  galphasq = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  galphasq->length = nParams;
+  galphasq->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
 
   /*initialise detector choice*/
@@ -822,7 +837,6 @@ int main(int argc, char *argv[]){
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 		  }
-
 		  ualphacounter++;
                 }
 	      } /*finish loop over sft pairs*/
@@ -850,8 +864,22 @@ int main(int argc, char *argv[]){
 		   aplussq2->data[counter] += tmpstat2;
  		   acrossq1->data[counter] += tmpstat3;
 		   acrossq2->data[counter] += tmpstat4;
+
+		  for (i=0; i < (INT4)ualpha->length; i++) {
+		    	
+		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
+		  }
+		   
 	        }
 	      }
+
+		if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
+	
+		  for (i=0; i < (INT4)ualpha->length; i++) {
+
+ 		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
+                  }
+		}
 
 	      counter++;
 	 paramCounter++;
@@ -915,8 +943,13 @@ int main(int argc, char *argv[]){
 		q1_current, q2_current, n_current, rho->data[counter]);
 	
 		if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
-		   fprintf(estimator, "%1.5f %e %e\n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter]))); 
+		   fprintf(estimator, "%1.5f %e %e %e \n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter])), galphasq->data[counter]); 
 		}
+
+		if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
+		   fprintf(estimator, "%1.5f %g \n", f_current, galphasq->data[counter]);
+		}
+
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -979,6 +1012,7 @@ int main(int argc, char *argv[]){
       XLALDestroyREAL8Vector(aplussq2);
       XLALDestroyREAL8Vector(acrossq1);
       XLALDestroyREAL8Vector(acrossq2);
+   XLALDestroyREAL8Vector(galphasq);
 
   if (!uvar_averagePsi) {
     LALFree(psi);
@@ -1782,7 +1816,7 @@ void initUserVars (LALStatus *status)
 			    "Output directory",
 			    &uvar_dirnameOut);
   LALRegisterSTRINGUserVar( status->statusPtr, "filenameOut",
-			    'o', UVAR_OPTIONAL,
+			    0, UVAR_OPTIONAL,
 			    "Output filename",
 			    &uvar_filenameOut);
   LALRegisterINTUserVar( status->statusPtr, "blocksRngMed",

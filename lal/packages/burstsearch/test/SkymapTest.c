@@ -148,16 +148,16 @@ static void interpolation(void)
 {
     double* x;
     int n;
-    
+
     n = 1000;
-    
+
     x = (double*) malloc(sizeof(double) * n);
-    
+
     for (int i = 0; i != n; ++i)
     {
         x[i] = sin(i);
     }
-    
+
     for (double t = n * 0.25; t < n * 0.75; t += 0.1)
     {
         if (abs(XLALSkymapInterpolate(t, x) - sin(t)) > 0.03)
@@ -166,7 +166,7 @@ static void interpolation(void)
             exit(1);
         }
     }
-    
+
     for (int t = n / 4; t < (n * 3) / 4; ++t)
     {
         if (abs(XLALSkymapInterpolate(t, x) - sin(t)) != 0)
@@ -184,7 +184,7 @@ int main(void)
     // slower numerical integration
 
 	numerical();
-    
+
     interpolation();
 
     return 0;

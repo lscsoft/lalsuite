@@ -181,7 +181,7 @@ double XLALSkymapInterpolate(double t, double* x)
 {
     int whole = floor(t);
     t -= whole;
-    
+
     double h[4], w[4];
 
     // Hermite basis functions at t
@@ -206,9 +206,9 @@ double XLALSkymapInterpolate(double t, double* x)
         y += x[whole + i - 1] * w[i];
     }
 
-    return y;    
-    
-    
+    return y;
+
+
 }
 
 // Construct an XLALSkymap2PlanType in the given memory from
@@ -348,7 +348,7 @@ void XLALSkymapApply(
 
     for (i = 0; i != plan->n; ++i)
     {
-        x[i] = XLALSkymapInterpolate((tau + properties->delay[i]) * plan->sampleFrequency, xSw[i]); 
+        x[i] = XLALSkymapInterpolate((tau + properties->delay[i]) * plan->sampleFrequency, xSw[i]);
     }
 
     // This implementation does not exploit the symmetry of the expression
