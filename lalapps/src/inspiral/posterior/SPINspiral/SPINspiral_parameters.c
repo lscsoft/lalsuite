@@ -1220,6 +1220,7 @@ void readCachefile(struct runPar *run, int ifonr)
   int i;
   int line=0;
   char tmpStr[2048];
+  char * tmpname;
   FILE *fin;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
@@ -1253,7 +1254,15 @@ void readCachefile(struct runPar *run, int ifonr)
     fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
     //      printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
     
+	  //remove file://localhost at the beginning of the file name if present.
+	  if(strncmp("file://localhost",run->FrameName[ifonr][i],16)==0)
+	  {
+		  run->FrameName[ifonr][i] = &(run->FrameName[ifonr][i][16]);
+	  }
+
+	  
   }
+		
   fclose(fin);
 }  //End of readCachefile
 // ****************************************************************************************************************************************************  
