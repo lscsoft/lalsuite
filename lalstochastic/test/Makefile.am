@@ -1,15 +1,20 @@
-# Process this file with automake to produce Makefile.in
-
 AMCFLAGS = $(LALSUPPORT_CFLAGS)
 
 if LALSUPPORT
-check_PROGRAMS = StochasticCrossCorrelationStatisticTest \
-  StochasticHeterodynedCrossCorrelationStatisticTest \
-  StochasticCrossCorrelationSpectrumTest SZeroPadAndFFTTest \
-  CZeroPadAndFFTTest StochasticOptimalFilterTest StochasticOmegaGWTest \
-  StochasticOptimalFilterNormalizationTest \
-  OverlapReductionFunctionTest StochasticInverseNoiseTest \
-  AstroOmegaTest SimulateSBTest SimulatePopcornTest
+check_PROGRAMS = \
+	StochasticCrossCorrelationStatisticTest \
+	StochasticHeterodynedCrossCorrelationStatisticTest \
+	StochasticCrossCorrelationSpectrumTest \
+	SZeroPadAndFFTTest \
+	CZeroPadAndFFTTest \
+	StochasticOptimalFilterTest \
+	StochasticOmegaGWTest \
+	StochasticOptimalFilterNormalizationTest \
+	OverlapReductionFunctionTest \
+	StochasticInverseNoiseTest \
+	AstroOmegaTest \
+	SimulateSBTest \
+	SimulatePopcornTest
 else
 check_PROGRAMS =
 endif
@@ -85,7 +90,18 @@ endif
 
 TESTS_ENVIRONMENT = 1>/dev/null
 
-EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in \
-  response2.in CheckStatus.c CheckStatus.h L1.dat H2.dat
+EXTRA_DIST = \
+	pipeline \
+	spectrum1.in \
+	spectrum2.in \
+	response1.in \
+	response2.in \
+	CheckStatus.c \
+	CheckStatus.h \
+	L1.dat \
+	H2.dat
 
-MOSTLYCLEANFILES = ??_*.dat PrintVector.0* WHITENED-SB*
+MOSTLYCLEANFILES = \
+	??_*.dat \
+	PrintVector.0* \
+	WHITENED-SB*
