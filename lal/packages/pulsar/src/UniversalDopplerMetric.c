@@ -67,6 +67,7 @@
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
+#define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
@@ -109,12 +110,14 @@ MultiDetectorInfo empty_MultiDetectorInfo;
 /*---------- Global variables ----------*/
 NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
 
+BOOLEAN outputIntegrand = 0;
+
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
 gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
 
 double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
-double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params );
+double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_out );
 
 double CWPhaseDeriv_i ( double tt, void *params );
 double CWPhase_cov_Phi_ij ( const intparams_t *params );
@@ -132,35 +135,67 @@ int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
  * The input parameters correspond to CW_am1_am2_Phi_i_Phi_j()
  */
 double
-XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params )
+XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_out )
 {
   const CHAR *fn = "XLALAverage_am1_am2_Phi_i_Phi_j()";
 
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
   gsl_function integrand;
-  double epsrel = 2e-3;
-  /* NOTE: this level of accuracy has to be compatible with AM-coefficients involved
+  double epsrel = 1e-4;
+  /* NOTE: this level of accuracy should be compatible with AM-coefficients involved
    * which are computed in REAL4 precision. We therefor cannot go lower than this it seems,
    * otherwise the gsl-integration fails to converge in some cases.
    */
-  double epsabs = 1e-5;	/* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
-  double abserr;
+  double epsabs = 0;
   size_t neval;
-  double ret;
   int stat;
 
   integrand.params = (void*)&par;
 
   /* compute <q_1 q_2 phi_i phi_j> as an integral from tt=0 to tt=1 */
-  integrand.function = &CW_am1_am2_Phi_i_Phi_j;
-  XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &ret, &abserr, &neval) );
-  if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> failed! Result = %g, abserr=%g, neval=%d\n",
-		     fn, ret, abserr, neval);
-    XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
-  }
 
-  return ret;
+  /* NOTE: this numerical integration runs into problems when integrating over
+   * several days (~O(5d)), as the integrands are oscillatory functions on order of ~1/4d
+   * and convergence degrades.
+   * As a solution, we split the integral into N segments of 1/4 day duration, and compute
+   * the final integral as a sum over partial integrals
+   */
+  REAL8 Tseg = 0.25 * LAL_DAYSID_SI;
+  UINT4 Nseg = (UINT4) ceil ( params->Tspan / Tseg );
+  UINT4 n;
+  REAL8 dT = 1.0 / Nseg;
+
+  REAL8 res = 0;
+  REAL8 abserr2 = 0;
+
+  integrand.function = &CW_am1_am2_Phi_i_Phi_j;
+  for (n=0; n < Nseg; n ++ )
+    {
+      REAL8 ti = 1.0 * n * dT;
+      REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
+      REAL8 err_n, res_n;
+
+      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &err_n, &neval) );
+      /* NOTE: we don't fail if the requested level of accuracy was not reached, rather we only output a warning
+       * and try to estimate the final accuracy of the integral
+       */
+      if ( stat != 0 )
+        {
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", fn );
+          XLALPrintWarning ("Segment n=%d, neval=%d: Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, neval, res_n, err_n, fabs(err_n/res_n), epsrel);
+          /* XLAL_ERROR_REAL8( fn, XLAL_EFUNC ); */
+        }
+
+      res += res_n;
+      abserr2 += SQUARE ( err_n );
+
+    } /* for i < Nseg */
+
+  REAL8 relerr = sqrt(abserr2) / fabs(res);
+  if ( relerr_out )
+    (*relerr_out) = relerr;
+
+  return res;
 
 } /* XLALAverage_am1_am2_Phi_i_Phi_j() */
 
@@ -238,7 +273,14 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
     phi_j = 1.0;
 
   ret = am1 * am2 * phi_i * phi_j;
-  /* printf ( "%f  %f  %f  %f  %f   %f\n", tt, am1, am2, phi_i, phi_j, ret ); */
+
+  if ( outputIntegrand )
+    {
+      printf ( "%d %d %d %d   %f  %f  %f  %f  %f   %f\n",
+               par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
+               tt, am1, am2, phi_i, phi_j, ret );
+    }
+
 
   return ( ret );
 
@@ -521,10 +563,14 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
     } /* switch(special) */
 
 
+#if 0
   /* debug output */
-  printf ("pos = [ %5.3g, %5.3g, %5.3g ], vel = [ %5.3g, %5.3g, %5.3g ]\n",
+  printf ("%.6f  %.16g  %.16g  %.16g    %.16g  %.16g %.16g \n",
+          GPS2REAL8((*tGPS)),
           posvel->pos[0], posvel->pos[1], posvel->pos[2],
           posvel->vel[0], posvel->vel[1], posvel->vel[2] );
+
+#endif
 
   return XLAL_SUCCESS;
 
@@ -595,17 +641,6 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
   int stat;
 
-  double epsrel = 1e-9;
-  /* NOTE: this level of accuracy is only achievable *without* AM-coefficients involved
-   * which are computed in REAL4 precision. For the current function this is OK, as this
-   * function is only supposed to compute *pure* phase-derivate covariances.
-   */
-
-  double epsabs = 0;
-  double abserr;
-  size_t neval;
-  double av_ij, av_i, av_j;
-
   /* sanity-check: don't allow any AM-coeffs being turned on here! */
   if ( par.amcomp1 != AMCOMP_NONE || par.amcomp2 != AMCOMP_NONE ) {
     XLALPrintError ( "%s: Illegal input, amcomp[12] must be set to AMCOMP_NONE!\n", fn );
@@ -614,31 +649,75 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
 
   integrand.params = (void*)&par;
 
-  /* compute <phi_i phi_j> */
-  integrand.function = &CW_am1_am2_Phi_i_Phi_j;
-  XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_ij, &abserr, &neval) );
-  if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! abserr=%g, neval=%d\n", fn, abserr, neval);
-    XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
-  }
 
-  /* compute <phi_i> */
-  integrand.function = &CWPhaseDeriv_i;
-  par.deriv = par.deriv1;
-  XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_i, &abserr, &neval) );
-  if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i> failed! abserr=%g, neval=%d\n", fn, abserr, neval);
-    XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
-  }
+  double epsrel = 1e-6;
+  /* NOTE: this level of accuracy is only achievable *without* AM-coefficients involved
+   * which are computed in REAL4 precision. For the current function this is OK, as this
+   * function is only supposed to compute *pure* phase-derivate covariances.
+   */
 
-  /* compute <phi_j> */
-  integrand.function = &CWPhaseDeriv_i;
-  par.deriv = par.deriv2;
-  XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_j, &abserr, &neval) );
-  if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_j> failed! abserr=%g, neval=%d\n", fn, abserr, neval);
-    XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
-  }
+  /* NOTE: this numerical integration still runs into problems when integrating over
+   * long durations (~O(23d)), as the integrands are oscillatory functions on order of ~1d
+   * and convergence degrades.
+   * As a solution, we split the integral into N segments of 1 day duration, and compute
+   * the final integral as a sum over partial integrals
+   */
+  REAL8 Tseg = LAL_DAYSID_SI;
+  UINT4 Nseg = (UINT4) ceil ( params->Tspan / Tseg );
+  UINT4 n;
+  REAL8 dT = 1.0 / Nseg;
+
+  REAL8 res = 0;
+  REAL8 abserr2 = 0;
+
+  double epsabs = 1e-3; 	/* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
+  double abserr;
+  size_t neval;
+  double av_ij = 0, av_i = 0, av_j = 0;
+
+  for (n=0; n < Nseg; n ++ )
+    {
+      REAL8 ti = 1.0 * n * dT;
+      REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
+      REAL8 err_n, res_n;
+
+      /* compute <phi_i phi_j> */
+      integrand.function = &CW_am1_am2_Phi_i_Phi_j;
+      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      if ( outputIntegrand ) printf ("\n");
+      if ( stat != 0 ) {
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g, neval=%d\n",
+                         fn, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+      }
+      av_ij += res_n;
+
+
+      /* compute <phi_i> */
+      integrand.function = &CWPhaseDeriv_i;
+      par.deriv = par.deriv1;
+      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      if ( stat != 0 ) {
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g, neval=%d\n",
+                         fn, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+      }
+      av_i += res_n;
+
+
+      /* compute <phi_j> */
+      integrand.function = &CWPhaseDeriv_i;
+      par.deriv = par.deriv2;
+      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      if ( stat != 0 ) {
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g, neval=%d\n",
+                         fn, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+      }
+      av_j += res_n;
+
+    } /* for i < Nseg */
+
 
   return ( av_ij - av_i * av_j );	/* return covariance */
 
@@ -722,6 +801,12 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 	  gg = CWPhase_cov_Phi_ij ( &intparams );	/* [Phi_i, Phi_j] */
 	  if ( xlalErrno ) {
 	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", fn, i, j, xlalErrno );
+            xlalErrno = 0;
+            BOOLEAN sav = outputIntegrand;
+            outputIntegrand = 1;
+            gg = CWPhase_cov_Phi_ij ( &intparams );	/* [Phi_i, Phi_j] */
+            outputIntegrand = sav;
+
 	    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
 	  }
 	  gsl_matrix_set (g_ij, i, j, gg);
@@ -829,6 +914,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   const LIGOTimeGPS *refTime, *startTime;
   const DopplerCoordinateSystem *coordSys;
 
+  REAL8 max_relerr = 0;
+  REAL8 relerr_thresh = 1e-2;	/* relatively tolerant integration-threshold */
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
@@ -866,7 +953,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   for ( X = 0; X < numDet; X ++ )
     {
       REAL8 weight = metricParams->detInfo.detWeights[X];
-      REAL8 av;
+      REAL8 av, relerr;
       intparams.site = &(metricParams->detInfo.sites[X]);
 
       intparams.deriv1 = DOPPLERCOORD_NONE;
@@ -875,21 +962,24 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
       /* A = < a^2 > (67)*/
       intparams.amcomp1 = AMCOMP_A;
       intparams.amcomp2 = AMCOMP_A;
-      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+      max_relerr = MYMAX ( max_relerr, relerr );
       if ( xlalErrno ) goto failed;
       A += weight * av;
 
       /* B = < b^2 > (67) */
       intparams.amcomp1 = AMCOMP_B;
       intparams.amcomp2 = AMCOMP_B;
-      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+      max_relerr = MYMAX ( max_relerr, relerr );
       if ( xlalErrno ) goto failed;
       B += weight * av;
 
       /* C = < a b > (67) */
       intparams.amcomp1 = AMCOMP_A;
       intparams.amcomp2 = AMCOMP_B;
-      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+      max_relerr = MYMAX ( max_relerr, relerr );
       if ( xlalErrno ) goto failed;
       C += weight * av;
 
@@ -915,7 +1005,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	  for ( X = 0; X < numDet; X ++ )
 	    {
 	      REAL8 weight = metricParams->detInfo.detWeights[X];
-	      REAL8 av;
+	      REAL8 av, relerr;
 	      intparams.site = &(metricParams->detInfo.sites[X]);
 
 	      /* ------------------------------ */
@@ -925,21 +1015,24 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      /* <a^2 Phi_i Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_A;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_a_i_j += weight * av;
 
 	      /* <b^2 Phi_i Phi_j> */
 	      intparams.amcomp1 = AMCOMP_B;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      b_b_i_j += weight * av;
 
 	      /* <a b Phi_i Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_b_i_j += weight * av;
 
@@ -950,21 +1043,24 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      /* <a^2 Phi_i> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_A;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_a_i += weight * av;
 
 	      /* <b^2 Phi_i> */
 	      intparams.amcomp1 = AMCOMP_B;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      b_b_i += weight * av;
 
 	      /* <a b Phi_i> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_b_i += weight * av;
 
@@ -975,21 +1071,24 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      /* <a^2 Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_A;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_a_j += weight * av;
 
 	      /* <b^2 Phi_j> */
 	      intparams.amcomp1 = AMCOMP_B;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      b_b_j += weight * av;
 
 	      /* <a b Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
 	      intparams.amcomp2 = AMCOMP_B;
-	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams );
+	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
+              max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
 	      a_b_j += weight * av;
 
@@ -1012,6 +1111,15 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	} /* for j <= i */
 
     } /* for i < dim */
+
+  if ( max_relerr > relerr_thresh )
+    {
+      XLALPrintError ("Maximal relative F-metric error too high: %.2e > %.2e\n", max_relerr, relerr_thresh );
+      XLALDestroyFmetricAtoms ( ret );
+      XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+    }
+  else
+    XLALPrintInfo ("\nMaximal relative error in F-metric: %.2e\n", max_relerr );
 
   return ret;
 
