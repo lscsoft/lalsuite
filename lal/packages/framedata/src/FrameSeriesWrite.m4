@@ -50,7 +50,7 @@ int XFUNC ( STYPE *series, int frnum )
     XLAL_ERROR( func, XLAL_EFAULT );
   if ( ! series->data || ! series->data->data )
     XLAL_ERROR( func, XLAL_EINVAL );
-  
+
   /* if channel name is of the form Xn:... then Xn is the ifo name */
   if ( isupper( series->name[0] ) )
   {
@@ -180,7 +180,7 @@ FUNC (
   INT8 tend;
   INT4 dt;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );  
+  INITSTATUS( status, "FUNC", FRAMESERIESC );
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ATTATCHSTATUSPTR( status );
@@ -189,7 +189,7 @@ FUNC (
   vnits.data = units;
 
   strncpy( source, params->source ? params->source : "F", sizeof( source ) );
-  
+
   TRY( LALUnitAsString( status->statusPtr, &vnits, &series->sampleUnits ),
       status );
 
@@ -241,7 +241,7 @@ FUNC (
 
       FrVectFree(vect);
       vect=NULL;
- 
+
       ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
     }
     memcpy( vect->FRDATA, data, ncpy * sizeof( *series->data->data ) );
@@ -289,7 +289,7 @@ FSFUNC (
   INT8 tend;
   INT4 dt;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );  
+  INITSTATUS( status, "FUNC", FRAMESERIESC );
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ATTATCHSTATUSPTR( status );
@@ -298,7 +298,7 @@ FSFUNC (
   vnits.data = units;
 
   strncpy( source, params->source ? params->source : "F", sizeof( source ) );
-  
+
   TRY( LALUnitAsString( status->statusPtr, &vnits, &series->sampleUnits ),
       status );
 
@@ -348,7 +348,7 @@ FSFUNC (
     {
       free( proc );
 
-      FrVectFree(vect); 
+      FrVectFree(vect);
       vect=NULL;
 
       ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
@@ -371,7 +371,7 @@ FSFUNC (
 
     FrameWrite( frame, frfile );
 
-    FrVectFree(vect); 
+    FrVectFree(vect);
     vect=NULL;
 
   }

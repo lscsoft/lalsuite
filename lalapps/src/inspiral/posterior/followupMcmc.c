@@ -552,7 +552,7 @@ int char2template(char *templatename)
   else if (strcmp(templatename, "2025")==0)  
     result = i2025;
   else if (strcmp(templatename, "2535")==0)  
-    result = i2025;
+    result = i2535;
   else if (strcmp(templatename, "LALTaylorT2PN00")==0)  
     result = iLALTT2PN00;
   else if (strcmp(templatename, "LALTaylorT2PN10")==0)  

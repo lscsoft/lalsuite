@@ -87,7 +87,7 @@
  *
  * \vfill{\footnotesize\input{FrameSeriesCV}}
  *
- **** </lalLaTeX> */ 
+ **** </lalLaTeX> */
 
 
 int rename( const char *from, const char *to );
@@ -207,7 +207,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
   }
   if ( vect && vect->compress )
     FrVectExpand( vect );
-  return vect; 
+  return vect;
 }
 
 
@@ -380,7 +380,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   FrReadVQ( iFile, &v->unitX, v->nDim );
   FrReadSChar( iFile, &v->unitY );
   FrReadStruct( iFile, &v->next );
- 
+
   if ( pos )
     *pos = localpos;
   return v;
@@ -517,7 +517,7 @@ int XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
   if ( stream->state & LAL_FR_ERR )
     XLAL_ERROR( func, XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO ); 
+    XLAL_ERROR( func, XLAL_EIO );
 
   vect = loadFrVect( stream, name );
   if ( ! vect || ! vect->data )
@@ -542,7 +542,7 @@ LALFrGetTimeSeriesType(
     )
 { /* </lalVerbatim> */
   int type;
-  INITSTATUS( status, "LALFrGetTimeSeriesType", FRAMESERIESC );  
+  INITSTATUS( status, "LALFrGetTimeSeriesType", FRAMESERIESC );
 
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -568,7 +568,7 @@ LALFrGetTimeSeriesType(
       case XLAL_EIO:
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
       case XLAL_ETYPE:
-        ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );      
+        ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
       default:
         ABORTXLAL( status );
     }
@@ -651,11 +651,11 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	if ( stream->state & LAL_FR_ERR )
 		XLAL_ERROR_NULL( func, XLAL_EIO );
 	if ( stream->state & LAL_FR_END )
-		XLAL_ERROR_NULL( func, XLAL_EIO ); 
+		XLAL_ERROR_NULL( func, XLAL_EIO );
 
 	/* seek to the correct place */
 	if ( XLALFrSeek( stream, start ) )
-		XLAL_ERROR_NULL( func, XLAL_EIO ); 
+		XLAL_ERROR_NULL( func, XLAL_EIO );
 
 	vect = loadFrVect( stream, channel );
 	if ( ! vect || ! vect->data )
@@ -676,7 +676,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	 * if current time is within fuzz of a sample, get that sample;
 	 * otherwise get the sample just after the requested time */
 	rate = 1.0 / vect->dx[0];
-	noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate ); 
+	noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate );
 	if ( noff > vect->nData ) {
 		FrVectFree(vect);
 		XLAL_ERROR_NULL( func, XLAL_ETIME ); /* invalid time offset */
@@ -699,7 +699,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	ncpy = ( vect->nData - noff < need ) ? ( vect->nData - noff ) : need;
 	code = copy_FrVect_to_REAL8( dest, vect, ncpy, noff );
 	if ( code < 0 ) { /* fails if vect has complex data type */
-		if(vect) FrVectFree(vect);	
+		if(vect) FrVectFree(vect);
 		XLALDestroyREAL8TimeSeries( series );
 		XLAL_ERROR_NULL( func, XLAL_ETYPE ); /* data has wrong type */
 	}
@@ -713,12 +713,12 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	/* if still data remaining */
 	while ( need ) {
 		if ( XLALFrNext( stream ) < 0 ) {
-			if(vect) FrVectFree(vect);	
+			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( func, XLAL_EFUNC );
 		}
 		if ( stream->state & LAL_FR_END ) {
-			if(vect) FrVectFree(vect);	
+			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( func, XLAL_EIO );
 		}
@@ -731,7 +731,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 		}
 
 		if ( stream->state & LAL_FR_GAP ) { /* failure: gap in data */
-			if(vect) FrVectFree(vect);	
+			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( func, XLAL_ETIME );
 		}
@@ -740,7 +740,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 		ncpy = vect->nData < need ? vect->nData : need;
 		code = copy_FrVect_to_REAL8( dest, vect, ncpy, 0 );
 		if ( code < 0 ) { /* fails if vect has complex data type */
-			if(vect) FrVectFree(vect);	
+			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( func, XLAL_ETYPE );
 		}
