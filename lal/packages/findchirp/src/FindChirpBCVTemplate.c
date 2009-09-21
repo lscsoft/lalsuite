@@ -69,7 +69,6 @@ LALDestroyVector()
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCV.h>
