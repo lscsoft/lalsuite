@@ -10,6 +10,7 @@ from pylal import db_thinca_rings
 from time import clock,time
 from optparse import *
 import glob
+import sys
 
 usage="""
 sql to .pat files for MVSC
@@ -48,28 +49,43 @@ for filename in fulldata_files:
   
   rings = db_thinca_rings.get_thinca_rings_by_available_instruments(connection)
   offset_vectors = dbtables.lsctables.table.get_table(dbtables.get_xml(connection), dbtables.lsctables.TimeSlideTable.tableName).as_dict()
-  
+
   def calc_delta_t(trigger1_ifo, trigger1_end_time, trigger1_end_time_ns, trigger2_ifo, trigger2_end_time, trigger2_end_time_ns, time_slide_id, rings = rings, offset_vectors = offset_vectors):
+    print >>sys.stderr, "calculating delta_t"
     trigger1_true_end_time = dbtables.lsctables.LIGOTimeGPS(trigger1_end_time, trigger1_end_time_ns)
     trigger2_true_end_time = dbtables.lsctables.LIGOTimeGPS(trigger2_end_time, trigger2_end_time_ns)
-    # find the instruments that were on at trigger 1's end time and 
+    # find the instruments that were on at trigger 1's end time and
     # find the ring that contains this trigger
-    [ring] = [segs[segs.find(trigger1_end_time)] for segs in rings.values() if trigger1_end_time in segs]
+    try:
+      [ring] = [segs[segs.find(trigger1_end_time)] for segs in rings.values() if trigger1_end_time in segs]
+    except ValueError:
+      # FIXME THERE SEEMS TO BE A BUG IN  THINCA!  Occasionally thinca records a trigger on the upper boundary
+      # of its ring.  This would make it outside the ring which is very problematic.  It needs to be fixed in thinca
+      # for now we'll allow the additional check that the other trigger is in the ring and use it.
+        print >>sys.stderr, "trigger1 found not on a ring, trying trigger2"
+        [ring] = [segs[segs.find(trigger2_end_time)] for segs in rings.values() if trigger2_end_time in segs]
     # now we can unslide the triggers on the ring
-    trigger1_true_end_time = SnglInspiralUtils.slideTimeOnRing(trigger1_true_end_time, offset_vectors[time_slide_id][trigger1_ifo], ring)
-    trigger2_true_end_time = SnglInspiralUtils.slideTimeOnRing(trigger2_true_end_time, offset_vectors[time_slide_id][trigger2_ifo], ring)
-    out = abs(trigger1_true_end_time - trigger2_true_end_time)
-    return float(out)
-  
+    try:
+      trigger1_true_end_time = SnglInspiralUtils.slideTimeOnRing(trigger1_true_end_time, offset_vectors[time_slide_id][trigger1_ifo], ring)
+      trigger2_true_end_time = SnglInspiralUtils.slideTimeOnRing(trigger2_true_end_time, offset_vectors[time_slide_id][trigger2_ifo], ring)
+      out = abs(trigger1_true_end_time - trigger2_true_end_time)
+      return float(out)
+    except:
+      print "calc delta t failed",trigger1_true_end_time, trigger2_true_end_time, ring
+      return float(abs(trigger1_true_end_time - trigger2_true_end_time)) % 1
+
   def calc_delta_t_inj(trigger1_end_time, trigger1_end_time_ns, trigger2_end_time, trigger2_end_time_ns):
-    return abs((trigger1_end_time - trigger2_end_time) + (trigger1_end_time_ns - trigger2_end_time)*1e-9)
+    try:
+      return abs((trigger1_end_time - trigger2_end_time) + (trigger1_end_time_ns - trigger2_end_time)*1e-9)
+    except: print "calc_delta_t_inj() failed"
   
   connection.create_function("calc_delta_t", 7, calc_delta_t)
   connection.create_function("calc_effective_snr", 3, calc_effective_snr)
   
   ifos=opts.instruments.strip().split(',')
   ifos.sort()
-  
+ 
+  #FIXME: look up coinc_definer_id from cefinition in pylal
   for values in connection.cursor().execute("""
   SELECT
     coinc_inspiral.coinc_event_id,
@@ -104,13 +120,15 @@ for filename in fulldata_files:
     JOIN sngl_inspiral AS snglA ON (snglA.event_id == mapA.event_id)
     JOIN sngl_inspiral AS snglB ON (snglB.event_id == mapB.event_id)
     JOIN coinc_event ON (mapA.coinc_event_id == coinc_event.coinc_event_id)
+    JOIN coinc_definer ON (coinc_definer.coinc_def_id == coinc_event.coinc_def_id)
   WHERE
-    coinc_event.coinc_def_id == 'coinc_definer:coinc_def_id:0'
+    coinc_definer.search == 'inspiral'
+    AND coinc_definer.search_coinc_type == 0
     AND mapA.table_name == 'sngl_inspiral'
     AND mapB.table_name == 'sngl_inspiral'
     AND snglA.ifo == ?
     AND snglB.ifo == ?
-    """, (tuple(ifos))):
+    """, tuple(ifos) ):
       is_background = values[-1]
       values = values[:-1]
       if is_background:
@@ -135,6 +153,7 @@ for filename in inj_files:
   xmldoc = dbtables.get_xml(connection)
   cursor = connection.cursor()
   
+  #FIXME: look up coinc_definer_id from cefinition in pylal
   for values in connection.cursor().execute("""
   SELECT
     coinc_inspiral.coinc_event_id,
@@ -164,8 +183,10 @@ for filename in inj_files:
     JOIN sim_inspiral ON (sim_inspiral.simulation_id == mapD.event_id)
     JOIN coinc_event AS sim_coinc_event ON (sim_coinc_event.coinc_event_id == mapD.coinc_event_id)
     JOIN coinc_event AS insp_coinc_event ON (insp_coinc_event.coinc_event_id == mapA.coinc_event_id)
+    JOIN coinc_definer ON (coinc_definer.coinc_def_id == sim_coinc_event.coinc_def_id)
   WHERE
-    sim_coinc_event.coinc_def_id == 'coinc_definer:coinc_def_id:2'
+    coinc_definer.search == 'inspiral'
+    AND coinc_definer.search_coinc_type == 2
     AND mapA.table_name == 'sngl_inspiral'
     AND mapB.table_name == 'sngl_inspiral'
     AND mapC.table_name == 'coinc_event'
@@ -185,6 +206,7 @@ for filename in inj_files:
 Nrounds = opts.number
 Ninj = len(injections)
 Nslide = len(timeslides)
+print >>sys.stderr, injections
 Nparams = len(injections[0][:]) - 1
 
 trstr = opts.trainingstr

@@ -31,7 +31,6 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
-#include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>

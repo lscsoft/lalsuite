@@ -25,6 +25,9 @@ export LALSUPPORT_LIBS
 LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
 LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
 export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
+LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
+LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
+export LALXML_LIBS LALXML_CFLAGS
 
 if test "$frame" = "true" ; then
 	LIBS_save="$LIBS"
@@ -75,6 +78,7 @@ if test "$xml" = "true" ; then
 fi
 
 AC_CONFIG_SUBDIRS([lal])
+AC_CONFIG_SUBDIRS([lalxml])
 AC_CONFIG_SUBDIRS([lalstochastic])
 AC_CONFIG_SUBDIRS([lalapps])
 
