@@ -230,6 +230,7 @@ typedef struct
   gsl_matrix *a_b_i_j;	/**< \f$ \langle a\,b \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
   gsl_matrix *b_b_i_j;	/**< \f$ \langle b^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
 
+  double maxrelerr;	/**< estimate for largest relative error in metric component integrations */
 } FmetricAtoms_t;
 
 
@@ -241,12 +242,16 @@ typedef struct
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
+  double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
 
   gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
 
   gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
+
+  double maxrelerr_gF;			/**< estimate for largest relative error in Fmetric component integrations */
+
   REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
 } DopplerMetric;
 
@@ -258,7 +263,8 @@ extern MultiDetectorInfo empty_MultiDetectorInfo;
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *
 XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
-			 const EphemerisData *edat
+			 const EphemerisData *edat,
+                         double *relerr_max
 			 );
 
 DopplerMetric*

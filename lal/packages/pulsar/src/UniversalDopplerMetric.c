@@ -117,11 +117,10 @@ DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 
 gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
 
 double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
-double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_out );
-
 double CWPhaseDeriv_i ( double tt, void *params );
-double CWPhase_cov_Phi_ij ( const intparams_t *params );
 
+double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
+double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 
@@ -135,7 +134,7 @@ int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
  * The input parameters correspond to CW_am1_am2_Phi_i_Phi_j()
  */
 double
-XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_out )
+XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max )
 {
   const CHAR *fn = "XLALAverage_am1_am2_Phi_i_Phi_j()";
 
@@ -192,8 +191,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_out 
     } /* for i < Nseg */
 
   REAL8 relerr = sqrt(abserr2) / fabs(res);
-  if ( relerr_out )
-    (*relerr_out) = relerr;
+  if ( relerr_max )
+    (*relerr_max) = relerr;
 
   return res;
 
@@ -633,7 +632,7 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
  * which gives a component of the "phase metric"
  */
 double
-CWPhase_cov_Phi_ij ( const intparams_t *params )
+CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 {
   const CHAR *fn = "CWPhase_cov_Phi_ij()";
   gsl_function integrand;
@@ -667,19 +666,17 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
   UINT4 n;
   REAL8 dT = 1.0 / Nseg;
 
-  REAL8 res = 0;
-  REAL8 abserr2 = 0;
-
   double epsabs = 1e-3; 	/* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
-  double abserr;
+  double abserr, maxrelerr = 0;
   size_t neval;
   double av_ij = 0, av_i = 0, av_j = 0;
+  double av_ij_err = 0, av_i_err = 0, av_j_err = 0;
 
   for (n=0; n < Nseg; n ++ )
     {
       REAL8 ti = 1.0 * n * dT;
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
-      REAL8 err_n, res_n;
+      double res_n;
 
       /* compute <phi_i phi_j> */
       integrand.function = &CW_am1_am2_Phi_i_Phi_j;
@@ -691,6 +688,7 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
         XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
       }
       av_ij += res_n;
+      av_ij_err += SQUARE (abserr);
 
 
       /* compute <phi_i> */
@@ -703,7 +701,7 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
         XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
       }
       av_i += res_n;
-
+      av_i_err += SQUARE (abserr);
 
       /* compute <phi_j> */
       integrand.function = &CWPhaseDeriv_i;
@@ -715,9 +713,19 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
         XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
       }
       av_j += res_n;
+      av_j_err += SQUARE (abserr);
 
     } /* for i < Nseg */
 
+  av_ij_err = sqrt(av_ij_err) / fabs(av_ij);
+  av_i_err = sqrt(av_i_err) / fabs (av_i);
+  av_j_err = sqrt(av_j_err) / fabs (av_j);
+
+  maxrelerr = MYMAX ( av_ij_err, av_i_err );
+  maxrelerr = MYMAX ( maxrelerr, av_j_err );
+
+  if ( relerr_max )
+    (*relerr_max) = maxrelerr;
 
   return ( av_ij - av_i * av_j );	/* return covariance */
 
@@ -739,7 +747,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
  */
 gsl_matrix *
 XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
-			 const EphemerisData *edat			/**< ephemeris data */
+			 const EphemerisData *edat,			/**< ephemeris data */
+                         double *relerr_max
 			 )
 {
   const CHAR *fn = "XLALDopplerPhaseMetric()";
@@ -791,6 +800,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.amcomp2 = AMCOMP_NONE;
 
   /* ---------- compute components of the phase-metric ---------- */
+  double maxrelerr = 0, err;
   for ( i=0; i < dim; i ++ )
     {
       for ( j = 0; j <= i; j ++ )
@@ -798,13 +808,14 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 	  /* g_ij */
 	  intparams.deriv1 = coordSys->coordIDs[i];
 	  intparams.deriv2 = coordSys->coordIDs[j];
-	  gg = CWPhase_cov_Phi_ij ( &intparams );	/* [Phi_i, Phi_j] */
+	  gg = CWPhase_cov_Phi_ij ( &intparams, &err );	/* [Phi_i, Phi_j] */
+          maxrelerr = MYMAX ( maxrelerr, err );
 	  if ( xlalErrno ) {
 	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", fn, i, j, xlalErrno );
             xlalErrno = 0;
             BOOLEAN sav = outputIntegrand;
             outputIntegrand = 1;
-            gg = CWPhase_cov_Phi_ij ( &intparams );	/* [Phi_i, Phi_j] */
+            gg = CWPhase_cov_Phi_ij ( &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
             outputIntegrand = sav;
 
 	    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
@@ -815,6 +826,9 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 	} /* for j <= i */
 
     } /* for i < dim */
+
+  if ( relerr_max )
+    (*relerr_max) = maxrelerr;
 
   return g_ij;
 
@@ -846,6 +860,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   REAL8 cosi, psi;
 
   FmetricAtoms_t *atoms;
+  double relerr;
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
@@ -871,13 +886,13 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 
   /* ----- compute the standard phase-metric g_ij ---------- */
-  if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat )) == NULL ) {
+  if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat, &relerr )) == NULL ) {
     XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
     XLALDestroyFmetricAtoms ( atoms );
     XLALDestroyDopplerMetric ( metric );
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
-
+  metric->maxrelerr_gPh = relerr;
 
   /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
   if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
@@ -1112,6 +1127,10 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
     } /* for i < dim */
 
+  /* return error-estimate */
+  ret->maxrelerr = max_relerr;
+
+  /* FIXME: should probably not be hardcoded */
   if ( max_relerr > relerr_thresh )
     {
       XLALPrintError ("Maximal relative F-metric error too high: %.2e > %.2e\n", max_relerr, relerr_thresh );
@@ -1591,6 +1610,8 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
   alpha3 = 0.25 * SQUARE ( 1.0 - eta2 ) * sin2psi * cos2psi;
 
   metric->rho2 = alpha1 * A + alpha2 * B + 2.0 * alpha3 * C;
+
+  metric->maxrelerr_gF = atoms->maxrelerr;
 
   /* ---------- compute components of the metric ---------- */
   for ( i=0; i < dim; i ++ )

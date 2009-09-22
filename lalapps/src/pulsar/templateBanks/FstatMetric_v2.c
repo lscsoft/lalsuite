@@ -668,7 +668,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   LALInitBarycenter(&status, edat);
 
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", status.statusCode, status.statusDescription );
+    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", fn, status.statusCode, status.statusDescription );
     return NULL;
   }
 
@@ -753,6 +753,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 
   /* ----- output phase metric ---------- */
   fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
+  fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
 
   /* ----- output F-metric (and related matrices ---------- */
   fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
@@ -760,6 +761,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
   fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
   fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
+  fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
 
   /*  ----- output Fisher matrix ---------- */
   A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
