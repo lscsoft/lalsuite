@@ -1426,10 +1426,9 @@ LALNewGetAMCoeffs(LALStatus *status,
 
 
 /** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
+ * Note: this function uses REAL8 precision, so this can be used in
+ * high-precision integration of the F-metric
  *
- * This is a simplified (ugly) wrapper to LALNewGetAMCoeffs() to allow the
- * computing a single-timestamp antenna-pattern, without having to
- * worry about the whole DetectorStateSeries complexity...
  */
 int
 XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern function a(t) */
@@ -1440,53 +1439,85 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 				  const EphemerisData *edat	/**< [in] ephemeris-data */
 				  )
 {
-  const CHAR *fn = "XLALComputeAntennaPatternCoeffs()";
+  const CHAR *fn = __func__;
 
-  DetectorStateSeries *detState = NULL;
   LALStatus status = empty_status;
-  LIGOTimeGPSVector *oneStepSeries = NULL;
-  AMCoeffs amcoeffs = empty_AMCoeffs;
+  EarthState earth = {0};
 
   if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
     XLAL_ERROR( fn, XLAL_EINVAL );
   }
 
-  /* construct dummy 1-timestamp detector-state 'series' */
-  if ( (oneStepSeries = XLALCreateTimestampVector ( 1 )) == NULL ) {
-    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
-  }
-  oneStepSeries->data[0] = (*tGPS);
-
-  /* prepare antenna-pattern struct */
-  if ( (amcoeffs.a = XLALCreateREAL4Vector ( 1 )) == NULL ) {
-    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
-  }
-  if ( (amcoeffs.b = XLALCreateREAL4Vector ( 1 )) == NULL ) {
-    XLAL_ERROR_REAL8( fn, XLAL_ENOMEM );
-  }
-
-  LALGetDetectorStates (&status, &detState, oneStepSeries, site, edat, 0 );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALGetDetectorStates() failed!\n\n", fn);
+  LALBarycenterEarth (&status, &earth, tGPS, edat );
+  if ( status.statusCode ) {
+    XLALPrintError ("%s: Call to LALBarycenterEarth() failed. statusCode=%d\n", fn, status.statusCode );
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
 
-  /* call antenna-pattern function to get a(tt), b(tt) */
-  LALNewGetAMCoeffs (&status, &amcoeffs, detState, (*skypos) );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALNewGetAMCoeffs() failed!\n\n", fn);
-    XLAL_ERROR( fn, XLAL_EFUNC );
-  }
+  /* ---------- compute the detector tensor ---------- */
+  REAL8 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
+  SymmTensor3d detT;
 
-  (*ai) = amcoeffs.a->data[0];
-  (*bi) = amcoeffs.b->data[0];
+  sinG = sin ( earth.gmstRad );
+  cosG = cos ( earth.gmstRad );
 
-  /* free memory */
-  XLALDestroyREAL4Vector ( amcoeffs.a );
-  XLALDestroyREAL4Vector ( amcoeffs.b );
-  XLALDestroyTimestampVector ( oneStepSeries );
-  oneStepSeries = NULL;
-  XLALDestroyDetectorStateSeries ( detState );
+  sinGsinG = sinG * sinG;
+  sinGcosG = sinG * cosG;
+  cosGcosG = cosG * cosG;
+
+  detT.d11 = site->response[0][0] * cosGcosG
+        - 2 * site->response[0][1] * sinGcosG
+            + site->response[1][1] * sinGsinG;
+  detT.d22 = site->response[0][0] * sinGsinG
+        + 2 * site->response[0][1] * sinGcosG
+            + site->response[1][1] * cosGcosG;
+  detT.d12 = (site->response[0][0] - site->response[1][1]) * sinGcosG
+        + site->response[0][1] * (cosGcosG - sinGsinG);
+  detT.d13 = site->response[0][2] * cosG
+            - site->response[1][2] * sinG;
+  detT.d23 = site->response[0][2] * sinG
+            + site->response[1][2] * cosG;
+  detT.d33 = site->response[2][2];
+
+
+  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
+  REAL8 delta, alpha;
+  REAL8 sin1delta, cos1delta;
+  REAL8 sin1alpha, cos1alpha;
+
+  REAL8 xi1, xi2;
+  REAL8 eta1, eta2, eta3;
+
+
+  alpha = skypos->longitude;
+  delta = skypos->latitude;
+
+  sin1delta = sin(delta);
+  cos1delta = cos(delta);
+
+  sin1alpha = sin(alpha);
+  cos1alpha = cos(alpha);
+
+  xi1 = - sin1alpha;
+  xi2 =  cos1alpha;
+  eta1 = sin1delta * cos1alpha;
+  eta2 = sin1delta * sin1alpha;
+  eta3 = - cos1delta;
+
+  /*---------- Compute the a(t_i) and b(t_i) ---------- */
+  (*ai) = detT.d11 * ( xi1 * xi1 - eta1 * eta1 )
+    + 2 * detT.d12 * ( xi1*xi2 - eta1*eta2 )
+    - 2 * detT.d13 *             eta1 * eta3
+    +     detT.d22 * ( xi2*xi2 - eta2*eta2 )
+    - 2 * detT.d23 *             eta2 * eta3
+    -     detT.d33 *             eta3*eta3;
+
+  (*bi) = detT.d11 * 2 * xi1 * eta1
+    + 2 * detT.d12 *   ( xi1 * eta2 + xi2 * eta1 )
+    + 2 * detT.d13 *     xi1 * eta3
+    +     detT.d22 * 2 * xi2 * eta2
+    + 2 * detT.d23 *     xi2 * eta3;
+
 
   return XLAL_SUCCESS;
 
