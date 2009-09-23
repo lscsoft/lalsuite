@@ -770,7 +770,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 
   D = A * B - C * C;
 
-  fprintf ( fp, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", A, B, C, D );
+  fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
   fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
 
   fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
