@@ -22,4 +22,4 @@ else
 TESTS =
 endif
 
-TESTS_ENVIRONMENT = 1>/dev/null
+TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
