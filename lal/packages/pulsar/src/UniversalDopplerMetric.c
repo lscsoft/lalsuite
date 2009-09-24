@@ -331,23 +331,33 @@ CWPhaseDeriv_i ( double tt, void *params )
   tauiSI = ttSI + dTSI;			/* SSB time corresponding to tt, for this skyposition nn, in seconds */
   dT = dTSI / par->Tspan;		/* SSB time-delay in 'natural units' */
 
+  REAL8 nNat = Freq * par->Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
+
   switch ( par->deriv )
     {
       /* ----- sky derivatives ----- */
-    case DOPPLERCOORD_ALPHA_RAD:				/* longitude/right ascension/Delta in radians */
+    case DOPPLERCOORD_ALPHA_RAD:				/* longitude/right-ascension/Alpha in radians */
+    case DOPPLERCOORD_ALPHA_NAT:				/* longitude/right-ascension/Alpha in natural units */
       nDeriv_i[0] = - cosd * sina;
       nDeriv_i[1] =   cosd * cosa;
       nDeriv_i[2] =   0;
 
       ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
+      if ( par->deriv == DOPPLERCOORD_ALPHA_NAT )
+        ret *= nNat;
+
       break;
 
-    case DOPPLERCOORD_DELTA_RAD:				/* latitude/declination/Alpha in radians */
+    case DOPPLERCOORD_DELTA_RAD:				/* latitude/declination/Delta in radians */
+    case DOPPLERCOORD_DELTA_NAT:				/* latitude/declination/Delta in natural units */
       nDeriv_i[0] = - sind * cosa;
       nDeriv_i[1] = - sind * sina;
       nDeriv_i[2] =   cosd;
 
       ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
+      if ( par->deriv == DOPPLERCOORD_DELTA_NAT )
+        ret *= nNat;
+
       break;
 
       /* ----- frequency derivatives SI-units ----- */

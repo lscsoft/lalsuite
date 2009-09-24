@@ -123,6 +123,9 @@ typedef enum {
   DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * Tspan^3 */
   DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * Tspan^4 */
 
+  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -144,6 +147,9 @@ const CHAR *DopplerCoordinateNames[] = {
   "f1dot_Nat",
   "f2dot_Nat",
   "f3dot_Nat",
+
+  "Alpha_Nat",
+  "Delta_Nat",
 
   "NONE"
 };
@@ -168,6 +174,9 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! Tspan^2 [Units:1]",
   "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! Tspan^3 [Units:1]",
   "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! Tspan^4 [Units:1]",
+
+  "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
+  "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
   "NONE"
 };
