@@ -222,14 +222,14 @@ XLALComputeFullChisq(
     /* we skipped saving the first sample of the autocorrelation which is why */
     /* we need the -1 in the snrk here */
     C = bankVetoData->acorrMat->data[i * bankVetoData->acorrMatSize + k];
-    chisqnorm += 1.0 - C * C;
+    chisqnorm = 1.0 - C * C;
     snrk = q[snrIX-k-1].re * cos(angle) + q[snrIX-k-1].im * sin(angle);
     (*dof) += 1;
     tmp = snrk - C * snri;
-    chisq += tmp * tmp * norm ;
+    chisq += tmp * tmp * norm / chisqnorm;
   }
 
-  chisq /= chisqnorm;
+  /*chisq /= chisqnorm;*/
 
   return chisq;  
 }
@@ -399,7 +399,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     if ( ijsq == 0 ) continue; 
 
-    bankNorm += 2.0 - ijsq;
+    bankNorm = 2.0 - ijsq;
 
     jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
            * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
@@ -408,13 +408,13 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
       
     chi_r = jSNR_r - ij.re * (iSNR);
     chi_i = jSNR_i - ij.im * (iSNR);
-    chisq += chi_r*chi_r + chi_i*chi_i;
+    chisq += (chi_r*chi_r + chi_i*chi_i) / bankNorm;
     (*dof)++;
   }
 
   /*FIXME Normalization now not necessarily chisquare distributed */
-  return (REAL4) chisq / bankNorm;
-  /*return (REAL4) chisq;*/
+  return (REAL4) chisq;
+  /*return (REAL4) chisq / bankNorm;*/
 }
 
 
