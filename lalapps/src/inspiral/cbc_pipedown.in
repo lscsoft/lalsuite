@@ -251,6 +251,7 @@ sql_fromcache_job.add_condor_cmd("requirements", "Memory > 1000")
 sql_frominput_job.add_condor_cmd("requirements", "Memory > 1000")
 sql_extract_job.add_condor_cmd("requirements", "Memory > 1000")
 inspinjfind_job.add_condor_cmd("requirements", "Memory > 1000")
+printlc_job.add_condor_cmd("requirements", "Memory > 1000")
 minifup_job.add_condor_cmd("requirements", "Memory > 1000")
 
 ##############################################################################
