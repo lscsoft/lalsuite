@@ -1,0 +1,220 @@
+#!/usr/bin/python
+
+from optparse import OptionParser
+
+try:
+        import sqlite3
+except ImportError:
+        # pre 2.5.x
+        from pysqlite2 import dbapi2 as sqlite3
+import sys
+
+from glue import segments
+from glue import segmentsUtils
+from glue.ligolw import table
+from glue.ligolw import dbtables
+from pylal import db_thinca_rings
+from pylal.date import LIGOTimeGPS
+
+
+dbtables.lsctables.LIGOTimeGPS = LIGOTimeGPS
+
+
+class DB_summary(object):
+	
+	def __init__(self, connection, live_time_program, veto_segments_name = None, verbose = False, base=None):
+		"""
+		Compute and record some summary information about the
+		database.
+		"""
+
+		self.base = base
+		self.connection = connection
+		xmldoc = dbtables.get_xml(connection)
+
+		cursor = connection.cursor()
+
+		# find the tables
+		try:
+			self.sngl_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SnglInspiralTable.tableName)
+		except ValueError:
+			self.sngl_inspiral_table = None
+		try:
+			self.sim_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SimInspiralTable.tableName)
+		except ValueError:
+			self.sim_inspiral_table = None
+		try:
+			self.coinc_def_table = table.get_table(xmldoc, dbtables.lsctables.CoincDefTable.tableName)
+			self.coinc_table = table.get_table(xmldoc, dbtables.lsctables.CoincTable.tableName)
+			self.time_slide_table = table.get_table(xmldoc, dbtables.lsctables.TimeSlideTable.tableName)
+		except ValueError:
+			self.coinc_def_table = None
+			self.coinc_table = None
+			self.time_slide_table = None
+		try:
+			self.coinc_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.CoincInspiralTable.tableName)
+		except ValueError:
+			self.coinc_inspiral_table = None
+
+
+		# determine a few coinc_definer IDs
+		# FIXME:  don't hard-code the numbers
+		if self.coinc_def_table is not None:
+			try:
+				self.ii_definer_id = self.coinc_def_table.get_coinc_def_id("inspiral", 0, create_new = False)
+			except KeyError:
+				self.ii_definer_id = None
+			try:
+				self.si_definer_id = self.coinc_def_table.get_coinc_def_id("inspiral", 1, create_new = False)
+			except KeyError:
+				self.si_definer_id = None
+			try:
+				self.sc_definer_id = self.coinc_def_table.get_coinc_def_id("inspiral", 2, create_new = False)
+			except KeyError:
+				self.sc_definer_id = None
+		else:
+			self.ii_definer_id = None
+			self.si_definer_id = None
+			self.sc_definer_id = None
+
+		# retrieve the distinct on and participating instruments
+		self.on_instruments_combos = [frozenset(dbtables.lsctables.instrument_set_from_ifos(x)) for x, in cursor.execute("SELECT DISTINCT(instruments) FROM coinc_event WHERE coinc_def_id == ?", (self.ii_definer_id,))]
+
+		# get the segment lists
+		self.seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
+		self.playground_segs = segmentsUtils.S2playground(self.seglists.extent_all())
+		self.instruments = set(self.seglists)
+		if veto_segments_name is not None:
+			self.veto_segments = db_thinca_rings.get_veto_segments(connection, veto_segments_name)
+		else:
+			self.veto_segments = segments.segmentlistdict()
+		self.seglists -= self.veto_segments
+
+def create_is_playground_func(connection, playground_segs):
+	"""
+	Construct the is_playground() SQL function.
+	"""
+	connection.create_function("is_playground", 2, lambda seconds, nanoseconds: LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
+
+class FUTriggers(object):
+	def __init__(self):
+		self.playground_candidates = []
+		self.candidates = []
+
+	def add_contents(self, contents, stat='combined_far',num=10):
+		if contents.sim_inspiral_table:
+			#For now we only return summary information on non injections
+			return
+		self.base = contents.base
+		self.playground_candidates += contents.connection.cursor().execute("""
+SELECT
+        coinc_inspiral.combined_far,
+        coinc_inspiral.snr,
+        coinc_inspiral.end_time + coinc_inspiral.end_time_ns * 1.0e-9,
+        coinc_inspiral.mass,
+        coinc_inspiral.mchirp,
+        coinc_inspiral.ifos,
+        coinc_event.instruments,
+        (SELECT
+                group_concat(sngl_inspiral.ifo || ":" || sngl_inspiral.snr || ":" || sngl_inspiral.chisq || ":" || sngl_inspiral.mass1 || ":" || sngl_inspiral.mass2, " ")
+        FROM
+                sngl_inspiral
+                JOIN coinc_event_map ON (
+                        coinc_event_map.coinc_event_id == coinc_inspiral.coinc_event_id
+                )
+        WHERE
+                sngl_inspiral.event_id == coinc_event_map.event_id
+        )
+FROM
+        coinc_inspiral
+        JOIN coinc_event ON (
+                coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
+        )
+WHERE
+        is_playground(coinc_inspiral.end_time, coinc_inspiral.end_time_ns)
+        AND NOT EXISTS(
+                SELECT
+                        *
+                FROM
+                        time_slide
+                WHERE
+                        time_slide.time_slide_id == coinc_event.time_slide_id
+                AND
+                        time_slide.offset != 0
+        )
+ORDER BY
+        ?
+LIMIT ?
+		""", (stat, num) ).fetchall()
+		self.candidates += contents.connection.cursor().execute("""
+SELECT
+        coinc_inspiral.combined_far,
+        coinc_inspiral.snr,
+        coinc_inspiral.end_time + coinc_inspiral.end_time_ns * 1.0e-9,
+        coinc_inspiral.mass,
+        coinc_inspiral.mchirp,
+        coinc_inspiral.ifos,
+        coinc_event.instruments,
+        (SELECT
+                group_concat(sngl_inspiral.ifo || ":" || sngl_inspiral.snr || ":" || sngl_inspiral.chisq || ":" || sngl_inspiral.mass1 || ":" || sngl_inspiral.mass2, " ")
+        FROM
+                sngl_inspiral
+                JOIN coinc_event_map ON (
+                        coinc_event_map.coinc_event_id == coinc_inspiral.coinc_event_id
+                )
+        WHERE
+                sngl_inspiral.event_id == coinc_event_map.event_id
+        )
+FROM
+        coinc_inspiral
+        JOIN coinc_event ON (
+                coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
+        )
+WHERE
+        NOT EXISTS(
+                SELECT
+                        *
+                FROM
+                        time_slide
+                WHERE
+                        time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0
+        )
+ORDER BY
+        ?
+LIMIT ?
+		""", (stat, num) ).fetchall()
+
+def parse_command_line():
+	parser = OptionParser(version="%prog CVS $Id$")
+	parser.add_option("-b", "--base", metavar = "base", default = "cbc_followup_", help = "Set the prefix for output filenames (default = \"cbc_followup_\")")
+	parser.add_option("-l", "--live-time-program", metavar = "program", default = "thinca", help = "Set the name, as it appears in the process table, of the program whose search summary entries define the search live time (default = \"thinca\").")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	return options, (filenames or [])
+
+
+
+
+### MAIN ######################################################################
+###############################################################################
+
+options, filenames = parse_command_line()
+
+trigs = FUTriggers()
+
+for n, filename in enumerate(filenames):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+	connection = sqlite3.connect(working_filename)
+	contents = DB_summary(connection, options.live_time_program, veto_segments_name = "vetoes", verbose = options.verbose, base=options.base)
+	#if contents.sim_inspiral_table is not None:
+	#	create_sim_coinc_view(connection)
+	create_is_playground_func(connection, contents.playground_segs)
+	trigs.add_contents(contents)
+	connection.close()
+	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+
+print trigs.candidates
