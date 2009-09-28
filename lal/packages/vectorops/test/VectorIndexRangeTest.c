@@ -165,7 +165,7 @@ main(int argc, char **argv)
   if (verbose_p)
     {
       printf(" - - - - - - - -\n");
-      printf("y = %#x\n", (unsigned int)y);
+      printf("y = %p\n", (void *)y);
       printf("y->length = %d\n", y->length);
     }
 
@@ -363,10 +363,10 @@ trail_status_maybe(LALStatus *status)
   if (lalDebugLevel & 15)
     {
       printf("TRAIL STATUS:\n");
-      printf("  status = %#x\n", (unsigned int)status);
+      printf("  status = %p\n", (void *)status);
       if (status)
-        printf("  status->statusPtr = %#x\n",
-               (unsigned int)(status->statusPtr));
+        printf("  status->statusPtr = %p\n",
+               (void *)(status->statusPtr));
       printf("\n");
 
       if (status)

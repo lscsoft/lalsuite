@@ -8,7 +8,7 @@ fail () {
 }
 
 ## Run 00boot in subdirs
-for d in lal lalapps; do
+for d in lal lalxml lalstochastic lalapps; do
 	echo "00boot: running 00boot in $d"
 	(cd "$d" && ./00boot 1>/dev/null) || fail "00boot in $d"
 done

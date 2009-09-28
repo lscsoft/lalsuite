@@ -1357,8 +1357,7 @@ params->numFDeriv5   =   0;
 	                  CHAR *xmlFile;
             MetadataTable         proctable;
             MetadataTable         procparams;
-	    LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-	    
+
             params->xmlStream = (LIGOLwXMLStream *) LALMalloc(sizeof(LIGOLwXMLStream));
 	    xmlFile = (CHAR *) LALMalloc( (strlen(params->outputFile) + 5) * sizeof(CHAR) );
 	    strcpy(xmlFile,params->outputFile);
@@ -1381,8 +1380,8 @@ params->numFDeriv5   =   0;
 	    proctable.processTable->is_online = 0;
 	    snprintf( proctable.processTable->node, LIGOMETA_NODE_MAX, "%s", BLANK );
 	    snprintf( proctable.processTable->username, LIGOMETA_USERNAME_MAX, "%s", BLANK );
-	    LALGPSTimeNow ( status->statusPtr, &(proctable.processTable->start_time), &accuracy );
-            LALGPSTimeNow ( status->statusPtr, &(proctable.processTable->end_time), &accuracy );
+	    XLALGPSTimeNow(&(proctable.processTable->start_time));
+	    XLALGPSTimeNow(&(proctable.processTable->end_time));
 	    proctable.processTable->jobid = 0;
             snprintf( proctable.processTable->domain, LIGOMETA_DOMAIN_MAX, "%s", BLANK );
 	    proctable.processTable->unix_procid = 0;

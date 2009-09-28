@@ -170,4 +170,4 @@ WHERE
 	);
 
 -- VACUUM, this reduces the file size by ~6
-VACUUM;
+-- VACUUM;

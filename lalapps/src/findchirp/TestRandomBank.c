@@ -2193,7 +2193,6 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
   CHAR                  fname[256];
   LIGOTimeGPS           gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS           gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -2218,8 +2217,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->start_time),
-			      &accuracy ), &status );
+    XLALGPSTimeNow(&(templateBank.processTable->start_time));
     LAL_CALL( populate_process_table( &status, 
 				      templateBank.processTable, 
 				      PROGRAM_NAME, 
@@ -2236,9 +2234,8 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     /* write process table */
     snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 		 ifoName[0], ifoName[1] );
-    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->end_time),
-			      &accuracy ), &status );
-    
+    XLALGPSTimeNow(&(templateBank.processTable->end_time));
+
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
 	      &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
@@ -2355,7 +2352,6 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
   CHAR                  fname[256];
   LIGOTimeGPS           gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS           gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -2383,8 +2379,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->start_time),
-			      &accuracy ), &status );
+    XLALGPSTimeNow(&(templateBank.processTable->start_time));
     LAL_CALL( populate_process_table( &status, templateBank.processTable, 
 				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
     this_proc_param = processParamsTable.processParamsTable = 
@@ -2399,9 +2394,8 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     /* write process table */
     snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 		 ifoName[0], ifoName[1] );
-    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->end_time),
-			      &accuracy ), &status );
-    
+    XLALGPSTimeNow(&(templateBank.processTable->end_time));
+
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
 	      &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
@@ -4340,7 +4334,6 @@ void LALBankPrintXML(MetadataTable templateBank ,
   CHAR                  fname[256];
   LIGOTimeGPS gpsStartTime 	= { 0, 0 }; /* input data GPS start time    */
   LIGOTimeGPS gpsEndTime 	= { 0, 0 }; /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR  ifoName[3][LIGOMETA_IFO_MAX];
   MetadataTable         processParamsTable;
@@ -4365,9 +4358,9 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-			    &accuracy ), &status );
+
+
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
 				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = processParamsTable.processParamsTable = 
@@ -4382,9 +4375,8 @@ void LALBankPrintXML(MetadataTable templateBank ,
   /* write process table */
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
 	       ifoName[0], ifoName[1] );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-			    &accuracy ), &status );
-  
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
+
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
 	    &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 

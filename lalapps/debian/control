@@ -2,12 +2,12 @@ Source: lalapps
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libxml2-dev (>= 2.6), libcfitsio3-dev, git-core (>= 1.5), lal-dev (>= 6.0), lal (>= 6.0), pkg-config, python2.4-dev, python2.5-dev, python-dev (>= 2.4)
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libcfitsio3-dev, git-core (>= 1.5), lal-dev (>= 6.3), lal (>= 6.3), lalstochastic-dev (>= 1.0), lalstochastic (>= 1.0), lalxml-dev (>= 1.0), lalxml (>= 1.0), pkg-config, python2.4-dev, python2.5-dev, python-dev (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalapps
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1 (>= 8.0), libmetaio1 (>=8.2), fftw3, libcfitsio3, lal (>= 6.0), libxml2 (>= 2.6), python (>= 2.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1 (>= 8.0), libmetaio1 (>=8.2), fftw3, libcfitsio3, lal (>= 6.3), lalstochastic (>= 1.0) lalxml (>= 1.0), python (>= 2.4)
 Recommends: python2.4, python2.5
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.

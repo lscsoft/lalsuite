@@ -124,8 +124,8 @@ REAL4 massStdev2=-1.0;
 REAL4 minMassRatio=-1.0;
 REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
-REAL4 fixed_inc=0.0;
-REAL4 psi=0.0;
+REAL4 fixed_inc=-1.0;
+REAL4 psi=-1.0;
 REAL4 longitude=181.0;
 REAL4 latitude=91.0;
 REAL4 epsAngle=1e-7;
@@ -890,7 +890,6 @@ int main( int argc, char *argv[] )
   /* xml output data */
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
@@ -981,8 +980,7 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -1571,6 +1569,13 @@ int main( int argc, char *argv[] )
       case 'S':
         /* set the polarization angle */
         psi = (REAL4) atof( optarg )/180.*LAL_PI;
+        if ( (atof(optarg) < 0.) || (atof(optarg) >= 360.) ) {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "polarization angle must be between 0 and 360 degrees: "
+              "(%s specified)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", psi );
@@ -1890,11 +1895,18 @@ int main( int argc, char *argv[] )
   }
 
   /* check inclination distribution */
-  if ( iDistr==gaussianInclDist && inclStd<0.0 )
+  if ( ( iDistr == gaussianInclDist ) && ( inclStd < 0.0 ) )
   {
     fprintf( stderr, 
-        "Must specify width for gaussian inclination distribution, "\
+        "Must specify width for gaussian inclination distribution; "\
         "use --inclStd.\n" );
+    exit( 1 );
+  }
+  if ( ( iDistr == fixedInclDist ) && ( fixed_inc < 0. ) )
+  {
+    fprintf( stderr,
+        "Must specify an inclination if you want it fixed; "\
+        "use --fixed-inc.\n" );
     exit( 1 );
   }
 
@@ -2196,23 +2208,27 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    /* populate orientations */
+    /* populate polarization, inclination, and coa_phase */
+    do
+    {
+      simTable=XLALRandomInspiralOrientation(simTable, randParams,
+                                             iDistr, inclStd);
+    } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
+              ( iDistr != fixedInclDist ) &&
+              ( simTable->inclination < eps ||
+                simTable->inclination > LAL_PI-eps) );
+
+    /* override inclination */
     if ( iDistr == fixedInclDist )
     {
       simTable->inclination = fixed_inc;
     }
-    else
-    {                           
-      do {
-        simTable=XLALRandomInspiralOrientation(simTable, randParams,
-                                               iDistr, inclStd);
-      } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-                ( simTable->inclination < eps ||
-                  simTable->inclination > LAL_PI-eps) );
-    }
 
-    /* set polarization angle */
-    simTable->polarization = psi;
+    /* override polarization angle */
+    if ( psi != -1.0 )
+    {
+      simTable->polarization = psi;
+    }
 
     /* populate spins, if required */
     if (spinInjections)
@@ -2324,8 +2340,7 @@ int main( int argc, char *argv[] )
 
 
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname ), &status );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 

@@ -21,11 +21,26 @@ sys.path.append('@PYTHONLIBDIR@')
 # import the modules we need to build the pipeline
 from glue import pipeline
 from glue import lal
+from glue import iterutils
 from glue.ligolw import lsctables
 import inspiral
 
 ##############################################################################
 # Function Definitions
+
+def get_veto_cat_from_tag( tag ):
+  """
+  Returns the veto category number in a tag.
+  Assumes tag has the form _CAT_N_VETO for N>1 and
+  nothing for N=1.
+  """
+  if 'VETO' in tag:
+    cat_num = int(tag.split('_')[-2])
+  else:
+    # is category 1 veto
+    cat_num = 1
+
+  return cat_num
 
 def get_veto_segments_name( veto_cat_num, cumulative = True ):
   """
@@ -133,7 +148,8 @@ dag.set_dag_file(basename)
 
 print "Parsing the ihope cache..."
 ihope_cache = [line for line in file(options.ihope_cache) \
-  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line or " INJECTIONS" in line]
+  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line \
+  or " INJECTIONS" in line or "INSPIRAL_SECOND" in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SECOND" in entry])
@@ -141,6 +157,8 @@ slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SLIDE_SECOND" in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
   " INJECTIONS" in entry])
+all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+  if "INSPIRAL_SECOND" in entry]) 
 
 del ihope_cache
 
@@ -149,9 +167,89 @@ user_tags = set([ '_'.join([ entry.description.split('_')[ii]
   for ii in range( 3, len(entry.description.split('_')) ) ])
   for entry in zero_lag_cache ])
 
-##############################################################################
-# Cycle over the user tags, creating a pipeline for each
+# create a list to store non-injection databases for later caching
+non_sim_dbs = []
 
+##############################################################################
+# Create the needed jobs to be run
+
+# thinca_to_coinc jobs
+t2c_job = inspiral.ThincaToCoincJob(cp)
+t2c_job.set_experiment_start_time(options.gps_start_time)
+t2c_job.set_experiment_end_time(options.gps_end_time)
+# because t2c simulation jobs require the --simulation option to be set, these
+# must be separate
+t2c_sim_job = inspiral.ThincaToCoincJob(cp)
+t2c_sim_job.set_simulation()
+t2c_sim_job.set_experiment_start_time(options.gps_start_time)
+t2c_sim_job.set_experiment_end_time(options.gps_end_time)
+
+# ligolw_sqlite jobs; there are 4 different types:
+# 1. sql_replace_job: reads from a cache and writes to a database
+#   with the --replace option set (only for adding thinca_to_coinc files )
+# 2. sql_fromcache_job: reads from a cache and writes to a database without
+#   the replace option
+# 3. sql_frominput_job: adds a single file to a databse (for veto xml files)
+# 4. sql_extract_job: extracts xmls from a database (for turning simulation
+#   databases into xml files)
+sql_replace_job = pipeline.LigolwSqliteJob(cp)
+sql_replace_job.set_replace()
+sql_fromcache_job = pipeline.LigolwSqliteJob(cp)
+sql_frominput_job = pipeline.LigolwSqliteJob(cp)
+sql_extract_job = pipeline.LigolwSqliteJob(cp)
+
+# for plotting jobs with plot_playground_only option, only create jobs without
+# if generate-all-data-plots set
+plotslides_play_job = inspiral.PlotSlidesJob(cp)
+plotslides_play_job.set_plot_playground_only()
+plotcumhist_play_job = inspiral.PlotCumhistJob(cp)
+plotcumhist_play_job.set_plot_playground_only()
+if options.generate_all_data_plots:
+  plotslides_job = inspiral.PlotSlidesJob(cp)
+  plotcumhist_job = inspiral.PlotCumhistJob(cp)
+  
+# all other jobs: all the nodes share the same static options for these
+dbsimplify_job = inspiral.DBSimplifyJob(cp)
+dbaddinj_job = inspiral.DBAddInjJob(cp)
+inspinjfind_job = inspiral.InspInjFindJob(cp)
+comp_durs_job = inspiral.ComputeDurationsJob(cp)
+cluster_job = inspiral.ClusterCoincsJob(cp)
+ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
+ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
+printlc_job = inspiral.PrintLCJob(cp)
+minifup_job = inspiral.MiniFollowupsJob(cp)
+plotifar_job = inspiral.PlotIfarJob(cp)
+
+# set better submit file names than the default
+t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', 'sub' ]) )
+t2c_sim_job.set_sub_file( '.'.join([ basename, 'simulation', 'thinca_to_coinc', 'sub' ]) )
+sql_replace_job.set_sub_file( '.'.join([ basename, 'replace_from_cache', 'ligolw_sqlite', 'sub' ]) )
+sql_fromcache_job.set_sub_file( '.'.join([ basename, 'add_from_cache', 'ligolw_sqlite', 'sub' ]) )
+sql_frominput_job.set_sub_file( '.'.join([ basename, 'add_from_input', 'ligolw_sqlite', 'sub' ]) )
+sql_extract_job.set_sub_file( '.'.join([ basename, 'extract', 'ligolw_sqlite', 'sub' ]) )
+dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', 'sub' ]) )
+dbaddinj_job.set_sub_file( '.'.join([ basename, 'dbaddinj', 'sub' ]) )
+inspinjfind_job.set_sub_file( '.'.join([ basename, 'inspinjfind', 'sub' ]) )
+comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
+cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
+ucfar_job.set_sub_file( '.'.join([ basename, 'uncombined', 'cfar', 'sub' ]) )
+ccfar_job.set_sub_file( '.'.join([ basename, 'combined', 'cfar', 'sub' ]) )
+printlc_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
+minifup_job.set_sub_file( '.'.join([ basename, 'minifollowups', 'sub' ]) )
+plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', 'sub' ]) )
+plotslides_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotslides', 'sub' ]) )
+plotcumhist_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotcumhist', 'sub' ]) )
+if options.generate_all_data_plots:
+  plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', 'sub' ]) )
+  plotcumhist_job.set_sub_file( '.'.join([ basename, 'plotcumhist', 'sub' ]) )
+
+
+##############################################################################
+# Cycle over the user tags, creating databases for each 
+
+veto_files = {}
+cluster_nodes = {}
+inspinjfind_parents = {}
 for tag in user_tags:
 
   print "Creating jobs for %s..." % tag
@@ -169,34 +267,6 @@ for tag in user_tags:
   else:
     raise ValueError, "More than one injection file found for %s" % tag
 
-  # write the jobs that will be run
-  t2c_job = inspiral.ThincaToCoincJob(cp)
-  tosql_job = pipeline.LigolwSqliteJob(cp)
-  dbsimplify_job = inspiral.DBSimplifyJob(cp)
-  comp_durs_job = inspiral.ComputeDurationsJob(cp)
-  cluster_job = inspiral.ClusterCoincsJob(cp)
-  ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
-  ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
-  if simulation:
-    dbaddinj_job = inspiral.DBAddInjJob(cp)
-  else:
-    plotslides_job = inspiral.PlotSlidesJob(cp)
-    plotifar_job = inspiral.PlotIfarJob(cp)
-
-  # set better submit file names than the default
-  subsuffix = 'sub'
-  t2c_job.set_sub_file( '.'.join([ basename, tag, 'thinca_to_coinc', 'sub' ]) )
-  tosql_job.set_sub_file( '.'.join([ basename, tag, 'ligolw_sqlite', 'sub' ]) )
-  dbsimplify_job.set_sub_file( '.'.join([ basename, tag, 'dbsimplify', 'sub' ]) )
-  comp_durs_job.set_sub_file( '.'.join([ basename, tag, 'compute_durations', 'sub' ]) )
-  cluster_job.set_sub_file( '.'.join([ basename, tag, 'cluster_coincs', 'sub' ]) )
-  ucfar_job.set_sub_file( '.'.join([ basename, tag, 'uncombined.cfar', 'sub' ]) )
-  ccfar_job.set_sub_file( '.'.join([ basename, tag, 'combined.cfar', 'sub' ]) )
-  if simulation:
-    dbaddinj_job.set_sub_file ( '.'.join([ basename, tag, 'dbaddinj', 'sub' ]) )
-  else:
-    plotslides_job.set_sub_file( '.'.join([ basename, tag, 'plotslides', 'sub' ]) )
-    plotifar_job.set_sub_file( '.'.join([ basename, tag, 'plotifar', 'sub' ]) )
 
   ############################################################################
   # Step 1: Setup thinca_to_coinc nodes
@@ -204,21 +274,20 @@ for tag in user_tags:
   print "\tsetting up thinca_to_coinc nodes..."
 
   # set job options
-  t2c_job.set_experiment_start_time(options.gps_start_time)
-  t2c_job.set_experiment_end_time(options.gps_end_time)
-  if simulation:
-    t2c_job.set_simulation()
 
   # sieve zero_lag_cache for THINCA_SECOND files with this tag
   file_sieve = '*' + tag
   thinca_cache = zero_lag_cache.sieve( description = file_sieve, exact_match = True )
-
   # if not an injection run, check that there are an equal number of
   # slide files
   if not simulation and \
     len(slide_cache.sieve( description = file_sieve, exact_match = True )) != \
     len(thinca_cache):
     raise ValueError, "Number of %s slide files doesn't equal number of zero-lag files." % tag
+
+  # also sieve all_inspirals_cache
+  file_sieve = tag.split('_CAT_')[0]
+  inspiral_cache = all_inspirals_cache.sieve( description = file_sieve )
 
   # get distinct on_instruments in the thinca cache
   distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
@@ -229,12 +298,7 @@ for tag in user_tags:
   distinct_ifos = ''.join(sorted(distinct_ifo_set))
 
   # get the veto file
-  if 'VETO' in tag:
-    # get the category veto (assuming tag has form: *CAT_N_VETO)
-    cat_num = tag.split('_')[-2]
-  else:
-    # is category 1 veto
-    cat_num = '1'
+  cat_num = str(get_veto_cat_from_tag( tag ))
   veto_file_path = cp.get('input', 'ihope-segments-directory')
   veto_file_name = ''.join([
     distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
@@ -242,6 +306,9 @@ for tag in user_tags:
   veto_file = '/'.join([ veto_file_path, veto_file_name ])
   if not os.path.exists( veto_file ):
     raise ValueError, "Veto file %s could not be found." % veto_file
+  # store the veto file for additional later use
+  veto_cat = '_'.join(['CAT', cat_num, 'VETO'])
+  veto_files[veto_cat] = veto_file
   # get the veto segments name
   veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
@@ -255,7 +322,9 @@ for tag in user_tags:
     for entry_num, entry in enumerate(instrument_cache):
       if not this_cache:
         # first entry; store type for cache naming
+        # and add all the second_inspiral files to the cache
         cache_type = entry.description
+        this_cache.extend(inspiral_cache)
       # Add the zero-lag thinca entry to this_cache 
       this_cache.append(entry)
       # if this isn't a simulation add the slide file
@@ -273,7 +342,11 @@ for tag in user_tags:
         this_cache.tofile(this_cache_file)
         this_cache_file.close()
         # write node
-        this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
+        if simulation:
+          this_t2c_node = inspiral.ThincaToCoincNode(t2c_sim_job)
+        else:
+          this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
+        this_t2c_node.set_category('thinca_to_coinc')
         this_t2c_node.set_instruments(lsctables.ifos_from_instrument_set( distinct_ifo_set ))
         this_t2c_node.set_input_cache(this_cache_name)
         this_t2c_node.set_veto_segments( veto_file )
@@ -299,28 +372,27 @@ for tag in user_tags:
   fp.close()
 
   ############################################################################
-  # Step 2a: Setup a LigolwSqliteNode for putting thinca_to_coincs 
+  # Step 2: Setup a LigolwSqliteNode for putting thinca_to_coincs 
   # into a sql db
 
   print "\tsetting up node to put thinca_to_coinc files into a SQLite database..."
   
   # set node options
-  t2c2sql_node = pipeline.LigolwSqliteNode( tosql_job )
+  t2c2sql_node = pipeline.LigolwSqliteNode( sql_replace_job )
+  t2c2sql_node.set_category('ligolw_sqlite')
   t2c2sql_node.set_input_cache( t2c_output_cache )
   t2c2sql_node.set_tmp_space( tmp_space )
   # database name has form: 
-  # distinct_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
-  db_type = 'CBC_TRIGDB_RAW-' + tag
+  # distinct_ifos-USER_TAG_CBC_RAW_RESULTS-cache_start-cache_duration.sql
+  db_type = tag + '_RAW_CBC_RESULTS'
   raw_result_db = '.'.join([
     '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
     'sql' ])
   # check to make sure the database doesn't already exist
   if os.path.exists( raw_result_db ):
-    raise ValueError, "Raw result database %s already exists. " % raw_result_db + \
-    "Either rm or mv it, then re-run. (If it exists, you may also want to " + \
-    "mv the CLUSTERED database so it doesn't get overwritten by cluster_coincs.)" \
+    print "WARNING: Raw result database %s already exists; " % raw_result_db + \
+    "if it isn't moved, it will be overwritten when DAG is submitted."
     
-  
   t2c2sql_node.set_database( raw_result_db )
   
   # set parent nodes to be all the thinca_to_coinc nodes
@@ -329,41 +401,190 @@ for tag in user_tags:
   dag.add_node( t2c2sql_node )
   
   ############################################################################
-  # Step 2b: Setup a LigolwSqliteNode for putting the veto-segments file 
-  # into the raw database
-  
-  # cache the veto file
-  veto_cache = lal.Cache().from_urls( [veto_file] )
-  veto_cache_file = re.sub('.xml', '.cache', os.path.basename(veto_file))
-  fp = open( veto_cache_file, 'w' )
-  veto_cache.tofile( fp )
-  fp.close()
-  
-  # write node to add the veto file
-  veto2sql_node = pipeline.LigolwSqliteNode( tosql_job )
-  veto2sql_node.set_input_cache( veto_cache_file )
-  veto2sql_node.set_tmp_space( tmp_space )
-  veto2sql_node.set_database( raw_result_db )
-  
-  # set parent node
-  veto2sql_node.add_parent( t2c2sql_node )
-  
-  dag.add_node( veto2sql_node )
-  
-  ############################################################################
   # Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
   
   print "\tsetting up dbsimplify node to clean the database..."
   
   # set node options
   dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
+  dbsimplify_node.set_category('dbsimplify')
   dbsimplify_node.set_tmp_space( tmp_space )
   dbsimplify_node.set_database( raw_result_db )
   
   # set parent node
-  dbsimplify_node.add_parent( veto2sql_node )
+  dbsimplify_node.add_parent( t2c2sql_node )
   
   dag.add_node( dbsimplify_node )
+ 
+  ############################################################################
+  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+  
+  print "\tsetting up cluster node to cluster coincs in the database..."
+  
+  # set node options
+  cluster_node = inspiral.ClusterCoincsNode( cluster_job )
+  cluster_node.set_category('cluster_coincs')
+  cluster_node.set_tmp_space( tmp_space )
+  cluster_node.set_input( raw_result_db )
+  # output database name has form:
+  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
+  db_type = tag + '_CLUSTERED_CBC_RESULTS'
+  result_db = '.'.join([
+    '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
+    'sql' ]) 
+  cluster_node.set_output(result_db)
+  
+  # set parent node
+  cluster_node.add_parent( dbsimplify_node )
+  
+  dag.add_node( cluster_node )
+
+  # add to list of parents for veto2sql nodes
+  cluster_nodes[tag] = cluster_node
+  
+  ############################################################################
+  # Step 5: Do additional jobs for injection tags
+
+  if simulation:
+    # add dbaddinj node
+    print "\tsetting up dbaddinj node to add the injection file..."
+  
+    # set node options
+    dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
+    dbaddinj_node.set_category('dbaddinj')
+    dbaddinj_node.set_tmp_space( tmp_space )
+    dbaddinj_node.set_database( result_db )
+    dbaddinj_node.set_injection_file( inj_file )
+  
+    dbaddinj_node.add_parent( cluster_node )
+  
+    dag.add_node( dbaddinj_node )
+
+    # add sqlite extract node
+    print "\tsetting up ligolw_sqlite node to extract the injection database to an xml..."
+    
+    # set node options
+    simxml_node = pipeline.LigolwSqliteNode( sql_extract_job )
+    simxml_node.set_category('ligolw_sqlite')
+    simxml_node.set_tmp_space( tmp_space )
+    simxml_node.set_database( result_db )
+    sim_xml = result_db.replace('.sql', '.xml')
+    simxml_node.set_xml_output( sim_xml )
+
+    simxml_node.add_parent( dbaddinj_node )
+    dag.add_node( simxml_node )
+
+    # add to list of inspinjfind parents
+    if veto_cat not in inspinjfind_parents:
+      inspinjfind_parents[veto_cat] = []
+    inspinjfind_parents[veto_cat].append( simxml_node )
+
+  else:
+    # just cache the result_db
+    non_sim_dbs.append( result_db )
+    
+
+##############################################################################
+# done cycling over tags: Create inspinjfind job and node
+
+# cache the sim xmls by veto category
+print "Creating inspinjfind nodes..."
+
+inspinjfind_nodes = {}
+sim_caches = {}
+for veto_cat, node_list in inspinjfind_parents.items():
+  
+  # create a inspinjfind node for each veto_category
+  inspinjfind_node = inspiral.InspInjFindNode( inspinjfind_job )
+  inspinjfind_node.set_category('inspinjfind')
+
+  # add input files and parents
+  for simxml_node in node_list:
+    inspinjfind_node.add_file_arg( simxml_node.get_output() )
+    inspinjfind_node.add_parent( simxml_node )
+  dag.add_node( inspinjfind_node )
+
+  inspinjfind_nodes[veto_cat] = inspinjfind_node
+
+  # Cache the files
+  sim_cache = lal.Cache().from_urls( inspinjfind_node.get_input_files() )
+  if veto_cat == 'CAT_1_VETO':
+    cache_type = 'ALLINJ_CLUSTERED_CBC_RESULTS'
+  else:
+    cache_type = '_'.join(['ALLINJ', veto_cat, 'CLUSTERED_CBC_RESULTS' ])
+  instruments = set()
+  for entry in sim_cache:
+    instruments |= lsctables.instrument_set_from_ifos(entry.observatory)
+  instruments = ''.join(sorted(instruments))
+  sim_cache_name = '.'.join([ 
+    '-'.join([ instruments, cache_type, experiment_start, experiment_duration ]), 
+    'cache' ])
+  sim_cache.tofile( open(sim_cache_name, 'w') )
+  sim_caches[veto_cat] = sim_cache_name
+
+
+##############################################################################
+# now cycle over non-injection databases, 
+# carrying out the rest of the pipeline
+
+# cache the non_sim_dbs
+result_dbs_cache = lal.Cache().from_urls( non_sim_dbs )
+
+for result_db in result_dbs_cache:
+  
+  # get tag and veto_cat
+  print "Creating jobs for %s database..." % result_db.description
+  tag = result_db.description.replace('_CLUSTERED_CBC_RESULTS', '')
+  cat_num = get_veto_cat_from_tag( tag )
+  veto_cat = '_'.join([ 'CAT', str(cat_num), 'VETO' ])
+
+  # get all possible instruments_on in this database
+  instruments = lsctables.instrument_set_from_ifos(result_db.observatory)
+  distinct_instrument_sets = [instruments]
+  distinct_instrument_sets.extend( set(sub_combo)
+    for nn in range(2, len(instruments))
+    for sub_combo in iterutils.choices( list(instruments), nn ) )
+
+  # add the injection xmls to the FULL_DATA databases
+  if 'FULL_DATA' in tag:
+
+    # create a sqlite node to add the injetion results
+    sim2fulldb_node = pipeline.LigolwSqliteNode( sql_fromcache_job )
+    sim2fulldb_node.set_category('ligolw_sqlite')
+    sim2fulldb_node.set_input_cache( sim_caches[veto_cat] )
+    sim2fulldb_node.set_database( result_db.path() )
+    sim2fulldb_node.set_tmp_space( tmp_space )
+    
+    sim2fulldb_node.add_parent( inspinjfind_nodes[veto_cat] )
+    sim2fulldb_node.add_parent( cluster_nodes[tag] )
+    dag.add_node( sim2fulldb_node )
+
+    # create a dbsimplify node to clean the database
+    dbsimplify2_node = inspiral.DBSimplifyNode( dbsimplify_job )
+    dbsimplify2_node.set_category('dbsimplify')
+    dbsimplify2_node.set_tmp_space( tmp_space )
+    dbsimplify2_node.set_database( result_db.path() )
+
+    dbsimplify2_node.add_parent( sim2fulldb_node )
+    dag.add_node( dbsimplify2_node )
+
+  ############################################################################
+  # Setup a LigolwSqliteNode for putting the veto-segments file into the
+  # database 
+  
+  # write node to add the veto file
+  veto2sql_node = pipeline.LigolwSqliteNode( sql_frominput_job )
+  veto2sql_node.set_category('ligolw_sqlite')
+  veto2sql_node.add_file_arg( veto_files[veto_cat] )
+  veto2sql_node.set_tmp_space( tmp_space )
+  veto2sql_node.set_database( result_db.path() )
+  
+  # set parent node
+  veto2sql_node.add_parent( cluster_nodes[tag] )
+  if 'FULL_DATA' in tag:
+    veto2sql_node.add_parent( dbsimplify2_node )
+  
+  dag.add_node( veto2sql_node )
   
   ############################################################################
   # Step 3b: Compute durations in the database
@@ -372,53 +593,14 @@ for tag in user_tags:
 
   # set node options
   comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
+  comp_durs_node.set_category('compute_durations')
   comp_durs_node.set_tmp_space( tmp_space )
-  comp_durs_node.set_database( raw_result_db )
+  comp_durs_node.set_database( result_db.path() )
 
   # set parent node
-  comp_durs_node.add_parent( dbsimplify_node )
+  comp_durs_node.add_parent( veto2sql_node )
 
   dag.add_node(comp_durs_node)
-  
-  ############################################################################
-  # Step 3c: If simulation, add injection file.
-  
-  if simulation:
-    print "\tsetting up dbaddinj node to add the injection file..."
-  
-    # set node options
-    dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
-    dbaddinj_node.set_tmp_space( tmp_space )
-    dbaddinj_node.set_database( raw_result_db )
-    dbaddinj_node.set_injection_file( inj_file )
-  
-    dbaddinj_node.add_parent( comp_durs_node )
-  
-    dag.add_node( dbaddinj_node )
-  
-  ############################################################################
-  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
-  
-  print "\tsetting up cluster node to cluster coincs in the database..."
-  
-  # set node options
-  cluster_node = inspiral.ClusterCoincsNode( cluster_job )
-  cluster_node.set_tmp_space( tmp_space )
-  cluster_node.set_input( raw_result_db )
-  # output database name has form:
-  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
-  db_type = 'CBC_TRIGDB_CLUSTERED-' + tag
-  result_db = '.'.join([
-    '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
-    'sql' ]) 
-  cluster_node.set_output(result_db)
-  
-  # set parent node
-  cluster_node.add_parent( comp_durs_node )
-  if simulation:
-    cluster_node.add_parent( dbaddinj_node )
-  
-  dag.add_node( cluster_node )
   
   ############################################################################
   # Step 5a: Setup a CfarNode to compute the uncombined false alarm rates
@@ -428,12 +610,13 @@ for tag in user_tags:
   
   # set node options: output database is same as input
   ucfar_node = inspiral.CFarNode( ucfar_job )
+  ucfar_node.set_category('cfar')
   ucfar_node.set_tmp_space( tmp_space )
-  ucfar_node.set_input( result_db )
-  ucfar_node.set_output( result_db )
+  ucfar_node.set_input( result_db.path() )
+  ucfar_node.set_output( result_db.path() )
   
   # set parent node
-  ucfar_node.add_parent( cluster_node )
+  ucfar_node.add_parent( comp_durs_node )
   
   dag.add_node( ucfar_node )
   
@@ -444,9 +627,10 @@ for tag in user_tags:
   
   # set node options: output database is same as input
   ccfar_node = inspiral.CFarNode( ccfar_job )
+  ccfar_node.set_category('cfar')
   ccfar_node.set_tmp_space( tmp_space )
-  ccfar_node.set_input( result_db )
-  ccfar_node.set_output( result_db )
+  ccfar_node.set_input( result_db.path() )
+  ccfar_node.set_output( result_db.path() )
   
   # set parent node
   ccfar_node.add_parent( ucfar_node )
@@ -454,43 +638,123 @@ for tag in user_tags:
   dag.add_node( ccfar_node )
 
   ############################################################################
+  # Summary: Setup PrintLC and MiniFollowup Nodes to generate a summary of 
+  # loudest events
+
+  print "\tsetting up printlc and minifollowup nodes..."
+
+  # set datatypes to generate files for
+  if 'PLAYGROUND' in tag:
+    datatypes = ['playground', 'slide']
+  else:
+    datatypes = ['all_data', 'playground', 'exclude_play', 'simulation', 'slide']
+
+  for datatype in datatypes:
+    print "\t\tfor %s..." % datatype
+    # set file naming type
+    if datatype == 'simulation' and veto_cat != 'CAT_1_VETO':
+      type_prefix = '_'.join(['ALLINJ', veto_cat])
+    elif datatype == 'simulation' and veto_cat == 'CAT_1_VETO':
+      type_prefix = 'ALLINJ'
+    else:
+      type_prefix = tag
+    type = '_'.join([ type_prefix, 'LOUDEST', datatype.upper(), 'EVENTS_BY', cp.get('printlc', 'ranking-stat').upper()])
+    # cycle over all ifos times, creating different tables for each
+    for on_instruments in distinct_instrument_sets:
+      on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
+      # set output and extracted xml file names
+      summary_filename = '.'.join([
+        '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
+        'xml' ])
+      xml_filename =  '.'.join([
+        '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
+        'xml' ])
+      # set node options
+      printlc_node = inspiral.PrintLCNode( printlc_job )
+      printlc_node.set_category('printlc')
+      printlc_node.set_tmp_space( tmp_space )
+      printlc_node.set_input( result_db.path() )
+      printlc_node.set_output( summary_filename )
+      printlc_node.set_extract_to_xml( xml_filename )
+      printlc_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
+      printlc_node.set_datatype( datatype )
+
+      # set parent node
+      printlc_node.add_parent( ccfar_node )
+
+      dag.add_node( printlc_node )
+
+      # create the minifollowups nodes
+      prefix = '-'.join([ ''.join(on_instruments.split(',')), tag ])
+      suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
+
+      minifup_node = inspiral.MiniFollowupsNode( minifup_job )
+      minifup_node.set_category('minifollowups')
+      minifup_node.set_cache_file( options.ihope_cache )
+      minifup_node.set_cache_string( tag.split('_CAT_')[0] )
+      minifup_node.set_prefix( prefix )
+      minifup_node.set_suffix( suffix )
+      minifup_node.set_input_xml( xml_filename )
+      minifup_node.set_input_xml_summary( summary_filename )
+      minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+
+      minifup_node.add_parent( printlc_node )
+      dag.add_node( minifup_node )
+      
+
+  ############################################################################
   # Plotting: Generate all result plots
   
   print "\tsetting up plotting jobs..."
-  
-  if not simulation:
-    print "\t\tcreating plotslides node..."
-    # set plotslides_job options
-    if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
-      plotslides_job.set_plot_playground_only()
-    # Write plotslides node
+
+  # Write plotslides node
+  print "\t\tcreating plotslides node..."
+  if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
+    plotslides_node = inspiral.PlotSlidesNode( plotslides_play_job )
+  else:
     plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
-    plotslides_node.set_tmp_space( tmp_space )
-    plotslides_node.set_input( result_db )
-    plotslides_node.set_user_tag( tag )
-  
+
+  plotslides_node.set_category('plotslides')
+  plotslides_node.set_tmp_space( tmp_space )
+  plotslides_node.set_input( result_db.path() )
+  plotslides_node.set_user_tag( tag )
+
+  plotslides_node.add_parent( ccfar_node )
+  dag.add_node( plotslides_node )
+
+  # create plotcumhist node
+  print "\t\tcreating plotcumhist node..."
+  if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
+    plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_play_job )
+  else:
+    plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_job )
+
+  plotcumhist_node.set_tmp_space( tmp_space )
+  plotcumhist_node.set_input( result_db.path() )
+  plotcumhist_node.set_user_tag( tag )
+
+  plotcumhist_node.add_parent( ccfar_node )
+
+  dag.add_node( plotcumhist_node )
+
+  # Write plotifar nodes for different datatypes
+  print "\t\tcreating plotifar node for datatypes:"
+  for datatype in ['all_data', 'playground', 'exclude_play']: 
+    # only create nodes for non-playground if options.plot-playground-only not set
+    if (not options.generate_all_data_plots or 'PLAYGROUND' in tag)  and datatype != 'playground':
+      continue
+    print "\t\t\t%s..." % datatype
+    plotifar_node = inspiral.PlotIfarNode( plotifar_job )
+    plotifar_node.set_category('plotifar')
+    plotifar_node.set_tmp_space( tmp_space )
+    plotifar_node.set_input( result_db.path() )
+    plotifar_node.set_datatype( datatype )
+    plotifar_node.set_user_tag( tag )
+    
     # set parent node
-    plotslides_node.add_parent( ccfar_node )
-  
-    dag.add_node( plotslides_node )
-  
-    # Write plotifar nodes for different datatypes
-    print "\t\tcreating plotifar node for datatypes:"
-    for datatype in ['all_data', 'playground', 'exclude_play']: 
-      # only create nodes for non-playground if options.plot-playground-only not set
-      if (not options.generate_all_data_plots or 'PLAYGROUND' in tag)  and datatype != 'playground':
-        continue
-      print "\t\t\t%s..." % datatype
-      plotifar_node = inspiral.PlotIfarNode( plotifar_job )
-      plotifar_node.set_tmp_space( tmp_space )
-      plotifar_node.set_input( result_db )
-      plotifar_node.set_datatype( datatype )
-      plotifar_node.set_user_tag( tag )
-      
-      # set parent node
-      plotifar_node.add_parent( ccfar_node )
-  
-      dag.add_node( plotifar_node )
+    plotifar_node.add_parent( ccfar_node )
+
+    dag.add_node( plotifar_node )
   
   
 ##############################################################################
@@ -498,6 +762,9 @@ for tag in user_tags:
 # Final Step: Write the DAG
 
 print "Writing DAG and sub files..."
+
+# set max-jobs: currently, only minifollowups is set
+dag.add_maxjobs_category('minifollowups', 15)
 
 dag.write_sub_files()
 dag.write_dag()

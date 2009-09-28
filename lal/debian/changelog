@@ -1,3 +1,9 @@
+lal (6.3-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 03 Sep 2009 16:00:00 +0200
+
 lal (6.2-1lscsoft1) unstable; urgency=low
 
   * LAL 6.2

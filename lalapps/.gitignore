@@ -116,6 +116,7 @@ src/inspiral/lalapps_thinca
 src/inspiral/lalapps_tmpltbank
 src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
+src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
 src/inspiral/posterior/lalapps_inspnest
 src/lalapps/lalapps_cache
@@ -153,6 +154,7 @@ src/pulsar/FDS_isolated/lalapps_extractSFTband
 src/pulsar/FDS_isolated/lalapps_makeInvetofile
 src/pulsar/FDS_isolated/lalapps_monteint
 src/pulsar/FDS_isolated/lalapps_polka
+src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/Injections/lalapps_Makefakedata_v4

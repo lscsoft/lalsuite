@@ -42,6 +42,10 @@ NRCSID (LALLIGOIPSDC,"$Id$");
  * \right)^{-56} + 0.16 \left( \frac{f}{f_0} \right)^{-4.52} + 0.52 + 0.32
  * \left( \frac{f}{f_0} \right)^2 \right]
  * \end{equation}
+ *
+ * Multiply the return value of this function by 2 \Delta f to put it in
+ * the same units as used by the LAL average spectrum functions like
+ * XLALWhitenCOMPLEX16FrequencySeries().
  */
 
 

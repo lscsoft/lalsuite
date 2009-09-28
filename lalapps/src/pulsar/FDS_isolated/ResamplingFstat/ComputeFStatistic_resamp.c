@@ -49,6 +49,7 @@ int finite(double);
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FrequencySeries.h>
+#include <lal/GSLSupport.h>
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
@@ -209,6 +210,9 @@ BOOLEAN uvar_countTemplates;
 INT4 uvar_NumCandidatesToKeep;
 INT4 uvar_clusterOnScanline;
 
+CHAR *uvar_outputFstatHist;        /**< output discrete histogram of all Fstatistic values */
+REAL8 uvar_FstatHistBin;           /**< width of an Fstatistic histogram bin */ 
+
 CHAR *uvar_gridFile;
 REAL8 uvar_dopplermax;
 INT4 uvar_RngMedWindow;
@@ -329,6 +333,7 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag);
 MultiREAL8Sequence* XLALCreateMultiREAL8Sequence(UINT4 length);
 void XLALDestroyMultiREAL8Sequence(MultiREAL8Sequence *X);
+REAL8 DeltaF_RefTime(const PulsarSpins *SpinDowns,REAL8 refTime, REAL8 StartTime);
 
 /* Resampling prototypes (end) */
 
@@ -348,8 +353,6 @@ int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams
 
 int compareFstatCandidates ( const void *candA, const void *candB );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
-
-const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -389,6 +392,7 @@ int main(int argc,char *argv[])
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
   Resamp_Variables Vars;
+  gsl_vector_int *Fstat_histogram = NULL;
   Buffer.fstatVector = NULL;
 
   lalDebugLevel = 0;
@@ -434,6 +438,15 @@ int main(int argc,char *argv[])
 
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
+
+  /* start Fstatistic histogram with a single empty bin */
+  if (uvar_outputFstatHist) {
+    if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
+      LALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
+      return COMPUTEFSTATISTIC_EMEM;
+    }
+    gsl_vector_int_set_zero(Fstat_histogram);
+  }
 
   /* if a complete output of the Time Series was requested,
    * we open and prepare the output-file here */
@@ -554,6 +567,25 @@ int main(int argc,char *argv[])
 	  if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
 	    loudestFCand = thisFCand;
 
+	  /* add Fstatistic to histogram if needed */
+      if (uvar_outputFstatHist) 
+	{
+	  
+	  /* compute bin */
+	  const size_t bin = 2.0 * thisFCand.Fstat.F / uvar_FstatHistBin;
+
+	  /* resize histogram vector if needed */
+	  if (!Fstat_histogram || bin >= Fstat_histogram->size)
+	    if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	      LALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
+	      return COMPUTEFSTATISTIC_EMEM;
+	    }
+	  
+	  /* add to bin */
+	  gsl_vector_int_set(Fstat_histogram, bin,
+			     gsl_vector_int_get(Fstat_histogram, bin) + 1);
+	  
+	}
 	} /* inner loop about frequency-bins from resampling frequ-band */
 
     } /* while more Doppler positions to scan */
@@ -627,6 +659,31 @@ int main(int argc,char *argv[])
 
   LogPrintf (LOG_DEBUG, "Search finished.\n");
 
+  /* write out the Fstatistic histogram */
+  if (uvar_outputFstatHist) 
+    {
+      
+      size_t i = 0;
+      FILE *fpFstatHist = fopen(uvar_outputFstatHist, "wb");
+      
+      if (fpFstatHist == NULL) {
+	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	return (COMPUTEFSTATISTIC_ESYS);
+      }
+      fprintf(fpFstatHist, "%s", GV.logstring);
+      
+      for (i = 0; i < Fstat_histogram->size; ++i)
+	fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+		uvar_FstatHistBin * i,
+		uvar_FstatHistBin * (i + 1),
+		gsl_vector_int_get(Fstat_histogram, i));
+      
+      fprintf(fpFstatHist, "%%DONE\n");
+      fclose(fpFstatHist);
+      
+    }
+  
+
   /* Free memory */
   LogPrintf (LOG_DEBUG, "Freeing Doppler grid ... ");
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
@@ -636,6 +693,9 @@ int main(int argc,char *argv[])
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
+  if (Fstat_histogram)
+    gsl_vector_int_free(Fstat_histogram);
+  
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
 
@@ -703,6 +763,10 @@ initUserVars (LALStatus *status)
   uvar_outputLogfile = NULL;
 
   uvar_outputFstat = NULL;
+  uvar_outputLoudest = NULL;
+  
+  uvar_outputFstatHist = NULL;
+  uvar_FstatHistBin = 0.1;
 
   uvar_gridFile = NULL;
 
@@ -771,6 +835,9 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+
+ LALregSTRINGUserVar(status,outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
+ LALregREALUserVar(status,  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
 
   LALregINTUserVar(status,      NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
   LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
@@ -1468,27 +1535,6 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   fclose(fp);
   return 0;
 } /* outputBeamTS() */
-
-/*
-============
-va ['stolen' from Quake2 (GPL'ed)]
-
-does a varargs printf into a temp buffer, so I don't need to have
-varargs versions of all text functions.
-FIXME: make this buffer size safe someday
-============
-*/
-const char *va(const char *format, ...)
-{
-        va_list         argptr;
-        static char     string[1024];
-
-        va_start (argptr, format);
-        vsprintf (string, format,argptr);
-        va_end (argptr);
-
-        return string;
-}
 
 /** write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
  * RETURN 0 = OK, -1 = ERROR
@@ -2382,7 +2428,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
       for(p=0;p<TSeries->Real[i]->length;p++)
 	{
 	  REAL8 cosphis = cos(LAL_TWOPI*(UserFmin_Diff)*TSeries->Times[i]->data[p]);
-	  REAL8 sinphis = -sin(LAL_TWOPI*(UserFmin_Diff)*TSeries->Times[i]->data[p]);
+	  REAL8 sinphis = sin(LAL_TWOPI*(UserFmin_Diff)*TSeries->Times[i]->data[p]);
 	  REAL8 Realpart = TSeries->Real[i]->data[p];
 	  REAL8 Imagpart = TSeries->Imag[i]->data[p];
 	  TSeries->Real[i]->data[p] = Realpart*cosphis - Imagpart*sinphis;
@@ -2541,6 +2587,18 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 
 }
 
+REAL8 DeltaF_RefTime(const PulsarSpins *SpinDowns,REAL8 refTime, REAL8 StartTime)
+{
+  UINT4 i;
+  REAL8 dF = 0;
+  REAL8 dT = refTime - StartTime;
+  for(i=1;i<NUM_SPINS;i++)
+    {
+      dF += (*SpinDowns)[i] * pow(dT,i)/FactorialLookup[i];
+    }
+  return(dF);
+}
+  
 void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, const FFTWCOMPLEXSeries *FaIn, const FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime, FFTWCOMPLEXSeries *FaInSpinCorrected, FFTWCOMPLEXSeries *FbInSpinCorrected)
 {
   UINT4 i;
@@ -3072,7 +3130,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       plan_a = fftw_plan_dft_1d(FaInSpinCorrected->length,FaInSpinCorrected->data,FaOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
       plan_b = fftw_plan_dft_1d(FbInSpinCorrected->length,FbInSpinCorrected->data,FbOut->data,FFTW_FORWARD,FFTW_ESTIMATE);
 
-      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],uvar_refTime-StartTime,FaInSpinCorrected,FbInSpinCorrected);
+      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,Buffer->StartTimeinBaryCenter,MultiCorrDetTimes->data[i],0,FaInSpinCorrected,FbInSpinCorrected);
 
       /* FFT!! */
       fftw_execute(plan_a);
@@ -3108,14 +3166,15 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     UINT4 fmin_index = 0;
     UINT4 fstatVectorlength = fstatVector->data->length;
     UINT4 q,r;
+    REAL8 New_Het = TSeries->f_het + DeltaF_RefTime(&(doppler->fkdot),uvar_refTime,StartTime); 
     if(fstatVectorlength > new_length)
       {
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
 	exit(1);
       }
-    if(TSeries->f_het > fstatVector->f0 && TSeries->f_het < fstatVector->f0 + uvar_FreqBand)
+    if(New_Het > fstatVector->f0 && New_Het < fstatVector->f0 + uvar_FreqBand)
       {
-	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
+	fmin_index = floor((New_Het-fstatVector->f0)/dF_closest + 0.5);
 	q = 0;
 	for(r=new_length-fmin_index;r<new_length;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];
@@ -3123,16 +3182,16 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	while(q<fstatVectorlength)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r++];
       }
-    else if(TSeries->f_het < fstatVector->f0)
+    else if(New_Het < fstatVector->f0)
       {
-	fmin_index = floor((fstatVector->f0-TSeries->f_het)/dF_closest + 0.5);
+	fmin_index = floor((fstatVector->f0-New_Het)/dF_closest + 0.5);
 	q = 0;
 	for(r = fmin_index;r<fstatVector->data->length+fmin_index;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];
       }
     else
       {
-	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
+	fmin_index = floor((New_Het-fstatVector->f0)/dF_closest + 0.5);
 	q = 0;
 	for(r=new_length-fmin_index;r<new_length-fmin_index+fstatVectorlength;r++)
 	  fstatVector->data->data[q++] = Fstat_temp->data[r];

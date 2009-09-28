@@ -15,10 +15,27 @@ THIS CODE IS UNDER CONSTRUCTION:
 
 ../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -O . -C --run 
 
-5. How to compile plotSpecAvgOutput.m, e.g., on ldas-grid:
+5. How to compile plotSpecAvgOutput.m, e.g., as user pulsar on ldas-grid:
+
+Make sure /archive/home/pulsar/.usematlab_r2008a exists, otherwise touch this file, and logout and login so that "which matlab" returns:
+/ldcg/matlab_r2008a/bin/matlab 
+
+Then run these commands:
+
+$ cd /archive/home/pulsar/searchcode/src/lalsuite/lalapps/src/pulsar/fscan
+$ source MatlabSetup_R2008a_glnxa64.sh
 $ matlab -nodisplay -nodesktop -nojvm
 >> mbuild -setup
 >> mcc -mv plotSpecAvgOutput.m
 >> exit
-# Need to run the code once by hand before it will work on the cluster:
+
+You many need to run the code once by hand before it will work on the cluster (it does not matter if this fails, this just makes Matlab set up the libraries under ~/.mcr_cache_v78): 
+
 ./plotSpecAvgOutput S4/spec_50.00_100.00_H1_793181266_795677345 /archive/home/pulsar/public_html/fscan/test/spec_50.00_100.00_H1_793181266_795677345.pdf H1:hoft 793181266 795677345 50 100 10 5 10
+
+After this, logout, and login to unset the environment set by MatlabSetup_R2008a_glnxa64.sh.
+
+You do not want to source MatlabSetup_R2008a_glnxa64.sh when running plotSpecAvgOutput!!!
+
+Instead, the fscan code runs run_plotSpecAvgOutput.sh /ldcg/matlab_r2008a, which is a wrapper script the matlab mcc commands generated that runs plotSpecAvgOutput, and it will take care of setting up the environment.   
+

@@ -45,13 +45,13 @@ define(`FSFUNC',`format(`LALFrGet%s',FSTYPE)')
 /* <lalVerbatim file="FrameSeriesCP"> */
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
 { /* </lalVerbatim> */
-  static const char func[] = "XFSFUNC"; 
+  static const char func[] = "XFSFUNC";
   struct FrVect	*vect;
 
   if ( stream->state & LAL_FR_ERR )
     XLAL_ERROR( func, XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO ); 
+    XLAL_ERROR( func, XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
@@ -100,7 +100,7 @@ FSFUNC (
     )
 { /* </lalVerbatim> */
   struct FrVect	*vect;
-  INITSTATUS( status, "FSFUNC", FRAMESERIESC );  
+  INITSTATUS( status, "FSFUNC", FRAMESERIESC );
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! series->data, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -170,7 +170,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
   if ( stream->state & LAL_FR_ERR )
     XLAL_ERROR( func, XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO ); 
+    XLAL_ERROR( func, XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
@@ -194,7 +194,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
    * if current time is within fuzz of a sample, get that sample;
    * otherwise get the sample just after the requested time */
   rate = vect->dx[0] ? 1.0 / vect->dx[0] : 0.0;
-  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate ); 
+  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate );
 
   /* adjust current time to be exactly the first sample
    * (rounded to nearest nanosecond) */
@@ -228,7 +228,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
   if ( stream->state & LAL_FR_ERR )
     XLAL_ERROR( func, XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-    XLAL_ERROR( func, XLAL_EIO ); 
+    XLAL_ERROR( func, XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
@@ -252,7 +252,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
    * if current time is within fuzz of a sample, get that sample;
    * otherwise get the sample just after the requested time */
   rate = vect->dx[0] ? 1.0 / vect->dx[0] : 0.0;
-  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate ); 
+  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate );
 
   /* adjust current time to be exactly the first sample
    * (rounded to nearest nanosecond) */
@@ -299,13 +299,13 @@ int XFUNC ( STYPE *series, FrStream *stream )
   {
     if ( XLALFrNext( stream ) < 0 )
     {
-      if(vect) FrVectFree(vect);	
+      if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
       XLAL_ERROR( func, XLAL_EFUNC );
     }
     if ( stream->state & LAL_FR_END )
     {
-      if(vect) FrVectFree(vect);	
+      if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
       XLAL_ERROR( func, XLAL_EIO );
     }
@@ -411,7 +411,7 @@ FUNC (
   REAL8          rate;
   INT4           gap = 0;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );  
+  INITSTATUS( status, "FUNC", FRAMESERIESC );
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -433,7 +433,7 @@ FUNC (
   }
   if ( vect->type != FRTYPE )
   {
-    FrVectFree(vect);	
+    FrVectFree(vect);
     ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
   }
 
@@ -453,7 +453,7 @@ FUNC (
    * if current time is within fuzz of a sample, get that sample;
    * otherwise get the sample just after the requested time */
   rate = vect->dx[0] ? 1.0 / vect->dx[0] : 0.0;
-  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate ); 
+  noff = ceil( ( 1e-9 * ( tnow - tbeg ) - fuzz ) * rate );
 
   /* adjust current time to be exactly the first sample
    * (rounded to nearest nanosecond) */
@@ -503,13 +503,13 @@ FUNC (
     LALFrNext( status->statusPtr, stream );
     BEGINFAIL( status )
     {
-      if(vect) FrVectFree(vect);	
+      if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
     }
     ENDFAIL( status );
     if ( stream->state & LAL_FR_END )
     {
-      if(vect) FrVectFree(vect);	
+      if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
       ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
     }
@@ -613,13 +613,13 @@ FUNCM (
     )
 { /* </lalVerbatim> */
   void *sequence;
-                                                                                
+
   INITSTATUS (status, "FUNCM", FRAMESERIESC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
   ASSERT (stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-                                                                                
+
   /* save the sequence address, then wipe the series structure */
   sequence = series->data;
   memset (series, 0, sizeof(*series));

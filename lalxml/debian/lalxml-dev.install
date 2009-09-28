@@ -1,0 +1,7 @@
+#opt/lscsoft/lalxml/bin/lal-config
+opt/lscsoft/lalxml/include/lal*
+opt/lscsoft/lalxml/lib/*a
+opt/lscsoft/lalxml/lib/pkgconfig
+#opt/lscsoft/lalxml/share/man/man1/lal-config.1*
+#opt/lscsoft/lalxml/share/man/man3/lal.3*
+#opt/lscsoft/lalxml/share/lal

@@ -88,7 +88,7 @@ static void FUNC ( void )
   if (verbose)
     {
       printf("VFT line %d:\n", __LINE__);
-      printf("  vector = %#x\n", (unsigned int)vector);
+      printf("  vector = %p\n", (void *)vector);
     }
 
   LALCheckMemoryLeaks();
@@ -116,7 +116,7 @@ static void FUNC ( void )
   if (verbose)
     {
       printf("VFT line %d:\n", __LINE__);
-      printf("  vector = %#x\n", (unsigned int)vector);
+      printf("  vector = %p\n", (void *)vector);
     }
 
   LALCheckMemoryLeaks();
@@ -135,7 +135,7 @@ static void FUNC ( void )
     if (verbose)
       {
         printf("VFT line %d\n", __LINE__);
-        printf("  vector = %#x\n", (unsigned int)vector);
+        printf("  vector = %p\n", (void *)vector);
       }
 
     CFUNC ( &status, &vector, 0 );
