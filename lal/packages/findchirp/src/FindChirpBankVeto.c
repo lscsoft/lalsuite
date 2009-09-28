@@ -393,11 +393,11 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
   for (j = 0; j < iSize; j++)
   {
     if (i == j) continue;
+    if (bankVetoData->ccMat->data[i*iSize + j].re == 0 && bankVetoData->ccMat->data[i*iSize + j].im == 0) continue;
+
     ij.re = bankVetoData->ccMat->data[i*iSize + j].re * cos(phi) - bankVetoData->ccMat->data[i*iSize + j].im * sin(phi);
     ij.im = bankVetoData->ccMat->data[i*iSize + j].im * cos(phi) + bankVetoData->ccMat->data[i*iSize + j].re * sin(phi);
     ijsq = ij.re * ij.re + ij.im * ij.im;
-
-    if ( ijsq == 0 ) continue; 
 
     bankNorm = 2.0 - ijsq;
 
