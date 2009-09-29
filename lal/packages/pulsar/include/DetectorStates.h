@@ -73,6 +73,17 @@ typedef struct
                             REAL4 d33;
 } SymmTensor3;
 
+
+/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
+ */
+typedef struct
+{
+  REAL8 d11;   REAL8 d12;   REAL8 d13;
+               REAL8 d22;   REAL8 d23;
+                            REAL8 d33;
+} SymmTensor3d;
+
+
 /** Struct containing pre-computed quantites describing a
  * single detector arm: unit-vector along detector-arm, arm-length,
  * and arm "basis-tensor" n x n. This is used to speed up the
