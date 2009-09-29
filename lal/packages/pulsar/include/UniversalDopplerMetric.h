@@ -216,6 +216,8 @@ typedef struct
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
+  INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
+
 } DopplerMetricParams;
 
 

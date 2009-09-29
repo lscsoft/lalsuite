@@ -160,7 +160,7 @@ typedef struct
 
   INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
 
-  INT4 projection;     /**< project metric onto surface */
+  INT4 projection;     /**< project metric onto subspace orthogonal to this coordinate-axis (0=none, 1=1st-coordinate axis, ...) */
 
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
   BOOLEAN coordsHelp;	/**< output help-string explaining all the possible Doppler-coordinate names for --cords */
@@ -184,12 +184,6 @@ int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char
 EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear, const LIGOTimeGPS *epoch );
 
 int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
-
-int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const UINT4 coordinate );
-int outer_product ( gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
-int symmetrize ( gsl_matrix *mat );
-REAL8 quad_form ( const gsl_matrix *mat, const gsl_vector *vec );
-
 
 int XLALDestroyConfig ( ConfigVariables *cfg );
 void XLALDestroyResultHistory ( ResultHistory_t * history );
@@ -260,6 +254,7 @@ main(int argc, char *argv[])
   metricParams.Tspan         = uvar.duration;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
+  metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
@@ -357,7 +352,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
   LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Coordinate of metric projection: 0=none, 1=f, 2=Alpha, 3=Delta, 4=f1dot");
+  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
   LALregLISTUserStruct(status,	coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
   LALregBOOLUserStruct(status,	coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
@@ -508,115 +503,6 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 } /* XLALDestroyConfig() */
 
 
-/** Calculate the projected metric onto the subspace of 'c' given by
- * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
- * The output-matrix ret must be allocated
- *
- * return 0 = OK, -1 on error.
- */
-int
-project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
-{
-  UINT4 i,j;
-
-  if ( !ret_ij )
-    return -1;
-  if ( !g_ij )
-    return -1;
-  if ( (ret_ij->size1 != ret_ij->size2) )
-    return -1;
-  if ( (g_ij->size1 != g_ij->size2) )
-    return -1;
-
-  for ( i=0; i < ret_ij->size1; i ++) {
-    for ( j=0; j < ret_ij->size2; j ++ ) {
-      if ( i==c || j==c ) {
-	gsl_matrix_set ( ret_ij, i, j, 0.0 );
-      }
-      else {
-	gsl_matrix_set ( ret_ij, i, j, ( gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c)) ));
-      }
-    }
-  }
-  return 0;
-}
-
-
-/** Calculate the outer product ret_ij of vectors u_i and v_j, given by
- * ret_ij = u_i v_j
- * The output-matrix ret must be allocated and have dimensions len(u) x len(v)
- *
- * return 0 = OK, -1 on error.
- */
-int
-outer_product (gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j )
-{
-  UINT4 i, j;
-
-  if ( !ret_ij || !u_i || !v_j )
-    return -1;
-
-  if ( (ret_ij->size1 != u_i->size) || ( ret_ij->size2 != v_j->size) )
-    return -1;
-
-
-  for ( i=0; i < ret_ij->size1; i ++)
-    for ( j=0; j < ret_ij->size2; j ++ )
-      gsl_matrix_set ( ret_ij, i, j, gsl_vector_get(u_i, i) * gsl_vector_get(v_j, j) );
-
-  return 0;
-
-} /* outer_product() */
-
-
-/* symmetrize the input-matrix 'mat' (which must be quadratic)
- */
-int
-symmetrize ( gsl_matrix *mat )
-{
-  gsl_matrix *tmp;
-
-  if ( !mat )
-    return -1;
-  if ( mat->size1 != mat->size2 )
-    return -1;
-
-  tmp = gsl_matrix_calloc ( mat->size1, mat->size2 );
-
-  gsl_matrix_transpose_memcpy ( tmp, mat );
-
-  gsl_matrix_add (mat, tmp );
-
-  gsl_matrix_scale ( mat, 0.5 );
-
-  gsl_matrix_free ( tmp );
-
-  return 0;
-
-} /* symmetrize() */
-
-
-/* compute the quadratic form = vec.mat.vec
- */
-REAL8
-quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
-{
-  UINT4 i, j;
-  REAL8 ret = 0;
-
-  if ( !mat || !vec )
-    return 0;
-  if ( (mat->size1 != mat->size2) || ( mat->size1 != vec->size ) )
-    return 0;
-
-  for (i=0; i < mat->size1; i ++ )
-    for (j=0; j < mat->size2; j ++ )
-      ret += gsl_vector_get(vec, i) * gsl_matrix_get (mat, i, j) * gsl_vector_get(vec,j);
-
-  return ret;
-
-} /* quad_form() */
-
 
 /** Load Ephemeris from ephemeris data-files  */
 EphemerisData *
@@ -713,6 +599,17 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       fprintf ( fp, "%s", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
     }
   fprintf ( fp, "];\n");
+
+  { /* output projection info */
+    const char *pname;
+    if ( meta->projectCoord < 0 )
+      pname = "None";
+    else
+      pname = XLALDopplerCoordinateName ( meta->coordSys.coordIDs[meta->projectCoord] );
+
+    fprintf ( fp, "%%%% Projection onto subspace orthogonal to coordinate: '%s'\n", pname);
+  }
+
   fprintf ( fp, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
   fprintf ( fp, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
   fprintf ( fp, "%%%% DopplerPoint = {\n");
