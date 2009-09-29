@@ -126,6 +126,9 @@ typedef enum {
   DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
   DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
 
+  DOPPLERCOORD_NECL_X,			/**< x-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates */
+  DOPPLERCOORD_NECL_Y,			/**< y-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -150,6 +153,9 @@ const CHAR *DopplerCoordinateNames[] = {
 
   "Alpha_Nat",
   "Delta_Nat",
+
+  "nEcl_x",
+  "nEcl_y",
 
   "NONE"
 };
@@ -177,6 +183,9 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
 
   "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
+
+  "Sky-position: x-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates",
+  "Sky-position: y-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates",
 
   "NONE"
 };
