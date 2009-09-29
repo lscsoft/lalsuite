@@ -2311,7 +2311,10 @@ mainpage.div.close()
 mainpage.div.close()
 mainpage.div(id_="ihope")
 mainpage.add('<h2> i h o p e </h2>')
-mainpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
+if opts.full_data:
+  mainpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/OpenBox.jpg">')
+else:
+  mainpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
 mainpage.div.close()
 mainpage.div(id_='header')
 mainpage.add('<h1>' + title  +' </h1>')
@@ -2332,6 +2335,10 @@ output,status = make_external_call(cmd, True, True, False)
 if status==0:
   cmd = 'mv /tmp/tmp.html '+opts.output
   make_external_call(cmd, True, True, True)
+if opts.full_data:
+  cmd = 'sed -i \'s/<body>/<body\ class=\"openbox\">/g\' ' + opts.output + '>/tmp/tmp.html'
+  make_external_call(cmd, True, True, True)
+
 # that's it for the html creation. let us copy it to the requested directory  
 
 print '---------------------FINISHED ---------------------'
