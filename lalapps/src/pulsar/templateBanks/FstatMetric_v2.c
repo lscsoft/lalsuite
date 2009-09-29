@@ -85,7 +85,7 @@ RCSID("$Id");
 /* uncomment the following to turn off range-checking in GSL vector-functions */
 /* #define GSL_RANGE_CHECK_OFF 1*/
 
-#define METRIC_FORMAT	"%.16g"		/* fprintf-format used for printing metric components */
+#define METRIC_FORMAT	"% .16e"		/* fprintf-format used for printing metric components */
 
 /*---------- local defines ---------- */
 #define TRUE 		(1==1)
