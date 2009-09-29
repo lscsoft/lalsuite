@@ -54,6 +54,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
+%{_prefix}/share/lalxml/*
 
 %files devel
 %defattr(-,root,root)
