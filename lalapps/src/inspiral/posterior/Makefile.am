@@ -1,4 +1,3 @@
-
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID
 gitID:
@@ -20,11 +19,4 @@ lalapps_followupMcmc_SOURCES = followupMcmc.c
 
 endif
 
-bin_PROGRAMS = $(metaio_progs)
-
-EXTRA_PROGRAMS = $(frame_progs)
-
-
-
-
-
+bin_PROGRAMS = $(metaio_progs) $(frame_progs)
