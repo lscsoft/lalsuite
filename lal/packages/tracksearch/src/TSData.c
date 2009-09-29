@@ -250,6 +250,11 @@ LALTracksearchFindLambdaMedian(
   if (searchParams->verbosity >= verbose)
     {
       fprintf(stdout,"Auto lambda invoked\n");
+      fprintf(stdout,"Freq Row Cuts offs %i and %i. Row count %i, BinRow Per Hz %f\n",
+	      lowerFRow,
+	      upperFRow,
+	      map.fRow/2+1,
+	      binPerHz);
       fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \n Median h: %10.20e \n Pixel Count: %i \n",searchParams->StartThresh,
 	      searchParams->LinePThresh,
 	      myGaussian,
