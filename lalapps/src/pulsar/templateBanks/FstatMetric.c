@@ -264,7 +264,7 @@ main(int argc, char *argv[])
   REAL8 m1, m2, m3;
   REAL8 mF, mFav, disc, mMin, mMax;
   gsl_matrix *g_ij, *gFlat_ij, *gamma_ij;
-  REAL8 mm, mm_projected;
+  REAL8 mm;
   UserVariables_t uvar = empty_UserVariables;
 
   FILE *fpMetric = 0;
@@ -345,6 +345,14 @@ main(int argc, char *argv[])
 	      return -1;
 	    }
 
+          if ( uvar.projection > 0 )
+            {
+              project_metric ( gamma_ij, gF_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( gF_ij, gamma_ij );
+              project_metric ( gamma_ij, gFav_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( gFav_ij, gamma_ij );
+            }
+
 	  mF   = quad_form ( gF_ij,   config.dopplerOffset );
 	  mFav = quad_form ( gFav_ij, config.dopplerOffset );
 
@@ -395,27 +403,28 @@ main(int argc, char *argv[])
 	      printf ("\nSomething failed in computePhaseMetric() \n\n");
 	      return -1;
 	    }
+
+          if ( uvar.projection > 0 )
+            {
+              project_metric ( gamma_ij, g_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( g_ij, gamma_ij );
+            }
+
 	  mm = quad_form ( g_ij, config.dopplerOffset );
 
 	  if ( fpMetric )
 	    {
 	      const CHAR *gprefix, *mprefix;
 	      if ( metricType == METRIC_PHASE ) {
-		if ( uvar.projection > 0 ) {
-		  project_metric(gamma_ij, g_ij, (uvar.projection - 1) );
-		  mm_projected = quad_form ( gamma_ij, config.dopplerOffset );
-		  gprefix = "gPh_projected_ij = \\\n"; mprefix = "mPh_projected = ";
-		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gamma_ij );
-		  fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm_projected );
-		}
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
 		gprefix = "gOrb_ij = \\\n"; mprefix = "mOrb = ";
 	      } else if ( metricType == METRIC_PTOLE ) {
 		gprefix = "gPtole_ij = \\\n"; mprefix = "mPtole = ";
 	      }
-	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
-	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
+
+              fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
+              fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 
 	    } /* if fpMetric */
 
@@ -1019,7 +1028,6 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   cfg->offsetUnits.skypos.system = COORDINATESYSTEM_EQUATORIAL;
   if ( uvar->unitsType == UNITS_NATURAL )
     {
-      REAL8 nNat = uvar->Freq * uvar->duration * ORB_V0;
       cfg->offsetUnits.fkdot->data[0] = 1.0 / ( LAL_TWOPI * uvar->duration );
       cfg->offsetUnits.fkdot->data[1] = 2.0 / ( LAL_TWOPI * SQ( uvar->duration ) );
       cfg->offsetUnits.skypos.longitude = 1.0;
