@@ -1456,26 +1456,25 @@ LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_s
 }
 
 
-void XLALPSDRegressorFree(LALPSDRegressor *r)
+void XLALPSDRegressorReset(LALPSDRegressor *r)
 {
-  if(r)
+  if(r->history)
   {
-    if(r->history)
-    {
-      unsigned i;
-      for(i = 0; i < r->median_samples; i++)
-        XLALDestroyREAL8Sequence(r->history[i]);
-    }
-    XLALFree(r->history);
-    XLALDestroyREAL8FrequencySeries(r->mean_square);
+    unsigned i;
+    for(i = 0; i < r->median_samples; i++)
+      XLALDestroyREAL8Sequence(r->history[i]);
   }
-  free(r);
+  XLALFree(r->history);
+  XLALDestroyREAL8FrequencySeries(r->mean_square);
+  r->n_samples = 0;
 }
 
 
-void XLALPSDRegressorReset(LALPSDRegressor *r)
+void XLALPSDRegressorFree(LALPSDRegressor *r)
 {
-  r->n_samples = 0;
+  if(r)
+    XLALPSDRegressorReset(r);
+  free(r);
 }
 
 
