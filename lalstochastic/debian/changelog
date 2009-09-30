@@ -1,3 +1,9 @@
+lalstochastic (1.0-2lscsoft1) unstable; urgency=low
+
+  * Rebuild against LAL-6.4
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 30 Sep 2009 10:00:00 +0200
+
 lalstochastic (1.0-1lscsoft1) unstable; urgency=low
 
   * LALStochastic 1.0
