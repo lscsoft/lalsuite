@@ -123,6 +123,7 @@ double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *rele
 double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
+gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -871,6 +872,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   FmetricAtoms_t *atoms;
   double relerr;
+  gsl_matrix *tmp;
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
@@ -894,7 +896,6 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
 
-
   /* ----- compute the standard phase-metric g_ij ---------- */
   if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat, &relerr )) == NULL ) {
     XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
@@ -903,6 +904,38 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
   metric->maxrelerr_gPh = relerr;
+
+  /* ----- if requested, project gF_ij, gFav_ij and g_ij onto coordinate 'projectCoord' */
+  if ( metricParams->projectCoord >= 0 )
+    {
+      UINT4 projCoord = (UINT4)metricParams->projectCoord;
+
+      /* gF_ij */
+      if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
+        XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      gsl_matrix_free ( metric->gF_ij );
+      metric->gF_ij = tmp;
+
+      /* gFav_ij */
+      if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
+        XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      gsl_matrix_free ( metric->gFav_ij );
+      metric->gFav_ij = tmp;
+
+      /* phase-metric g_ij */
+      if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
+        XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      gsl_matrix_free ( metric->g_ij );
+      metric->g_ij = tmp;
+
+    } /* if projectCoordinate >= 0 */
+
 
   /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
   if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
@@ -1814,3 +1847,57 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
   return fisher;
 
 } /* XLALComputeFisherFromAtoms() */
+
+
+/** Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
+ * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
+ * The output-matrix is allocate here
+ *
+ * return 0 = OK, -1 on error.
+ */
+gsl_matrix *
+XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
+{
+  const char *fn = __func__;
+  UINT4 i,j, dim1, dim2;
+  gsl_matrix *ret_ij;
+
+  if ( !g_ij ) {
+    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  dim1 = g_ij->size1;
+  dim2 = g_ij->size2;
+
+  if ( dim1 != dim2 ) {
+    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", fn, dim1, dim2 );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", fn, dim1, dim2 );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  for ( i=0; i < dim1; i++)
+    {
+    for ( j=0; j < dim2; j++ )
+      {
+        if ( i==c || j==c )
+          {
+            gsl_matrix_set ( ret_ij, i, j, 0.0 );
+          }
+        else
+          {
+            double proj = gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c));
+            gsl_matrix_set ( ret_ij, i, j, proj );
+          }
+      } /* for j < dim2 */
+
+    } /* for i < dim1 */
+
+  return ret_ij;
+
+} /* XLALProjectMetric() */
+

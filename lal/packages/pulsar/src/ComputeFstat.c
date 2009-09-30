@@ -100,6 +100,7 @@ const MultiAMCoeffs empty_MultiAMCoeffs;
 const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
+const EarthState empty_EarthState;
 
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
@@ -1442,7 +1443,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
   const CHAR *fn = __func__;
 
   LALStatus status = empty_status;
-  EarthState earth = {0};
+  EarthState earth = empty_EarthState;
 
   if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
     XLAL_ERROR( fn, XLAL_EINVAL );
