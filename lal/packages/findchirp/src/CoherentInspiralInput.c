@@ -47,7 +47,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
@@ -57,7 +56,6 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
-#include <lal/StochasticCrossCorrelation.h>
 #include <lal/DetectorSite.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>

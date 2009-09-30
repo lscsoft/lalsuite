@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006, 2008 Reinhard Prix
+ * Copyright (C) 2006, 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,15 +22,21 @@
  *
  * \author{Reinhard Prix}
  *
- * New code to calculated various F-statistic metrics and mismatches
+ * This module deals with calculating various F-statistic metric approximations,
+ * Fisher matrices and mismatches. Contrary to previous implementations
+ * this consistently uses gsl-integration, and allows for very generic
+ * handling of different coordinate systems in the Doppler parameter space.
  *
- * Revision: $Id$
+ * In particular, it allows for easy extensions to new coordinates and Doppler parameters.
+ *
+ *
  *
  */
 
 /* ---------- includes ---------- */
 #include <math.h>
-
+#include <errno.h>
+#include <string.h>
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -79,7 +85,7 @@ RCSID("$Id");
 /* uncomment the following to turn off range-checking in GSL vector-functions */
 /* #define GSL_RANGE_CHECK_OFF 1*/
 
-#define METRIC_FORMAT	"%.16g"		/* fprintf-format used for printing metric components */
+#define METRIC_FORMAT	"% .16e"		/* fprintf-format used for printing metric components */
 
 /*---------- local defines ---------- */
 #define TRUE 		(1==1)
@@ -101,6 +107,21 @@ RCSID("$Id");
 #define SQ(x) ((x) * (x))
 
 /* ---------- local types ---------- */
+
+/** Rudimentary first sketch of a history type, to encode all
+ * the history-trail leading to a certain result from primal inputs.
+ *
+ * This will be extended in the future and moved into LAL.
+ */
+typedef struct
+{
+  CHAR *app_name;			/**< name (and path) of this application */
+  CHAR *cmdline;			/**< commandline used to produce this result */
+  CHAR *LAL_VCS_Version;		/**< lal source-version from VCS */
+  CHAR *LALApps_VCS_Version;		/**< lalapps source-version from VCS */
+} ResultHistory_t;
+
+
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
@@ -108,6 +129,7 @@ typedef struct
   PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
   DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
+  ResultHistory_t *history;		/**< history trail leading up to and including this application */
 } ConfigVariables;
 
 
@@ -138,7 +160,7 @@ typedef struct
 
   INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
 
-  INT4 projection;     /**< project metric onto surface */
+  INT4 projection;     /**< project metric onto subspace orthogonal to this coordinate-axis (0=none, 1=1st-coordinate axis, ...) */
 
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
   BOOLEAN coordsHelp;	/**< output help-string explaining all the possible Doppler-coordinate names for --cords */
@@ -157,17 +179,14 @@ extern int vrbflg;
 
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *status, UserVariables_t *uvar);
-void InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar);
+int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
 EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear, const LIGOTimeGPS *epoch );
 
-int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const UINT4 coordinate );
-int outer_product ( gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
-int symmetrize ( gsl_matrix *mat );
-REAL8 quad_form ( const gsl_matrix *mat, const gsl_vector *vec );
+int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
 
-
-void FreeMem ( LALStatus *status, ConfigVariables *cfg );
+int XLALDestroyConfig ( ConfigVariables *cfg );
+void XLALDestroyResultHistory ( ResultHistory_t * history );
 
 /*============================================================
  * FUNCTION definitions
@@ -176,10 +195,11 @@ void FreeMem ( LALStatus *status, ConfigVariables *cfg );
 int
 main(int argc, char *argv[])
 {
+  const CHAR *fn = argv[0];
+
   LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
-  FILE *fpMetric = 0;
   DopplerMetric *metric;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
@@ -223,7 +243,10 @@ main(int argc, char *argv[])
     } /* if coordsHelp */
 
   /* basic setup and initializations */
-  LAL_CALL ( InitCode(&status, &config, &uvar), &status);
+  if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
+    return FSTATMETRIC_EXLAL;
+  }
 
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
@@ -231,102 +254,29 @@ main(int argc, char *argv[])
   metricParams.Tspan         = uvar.duration;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
+  metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). errno = %d\n\n", xlalErrno);
+    LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
     return -1;
   }
 
   /* ---------- output results ---------- */
   if ( uvar.outputMetric )
     {
-      UINT4 i;
-      CHAR *id1, *id2;
-      CHAR *cmdline = NULL;
-      REAL8 A, B, C, D;
-      const DopplerMetricParams *meta = &metricParams;
-      const PulsarDopplerParams *doppler = &(meta->signalParams.Doppler);
-      const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
-
-      if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
+      FILE *fpMetric;
+      if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL ) {
+	LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing. error = '%s'\n",
+		   fn, uvar.outputMetric, strerror(errno));
 	return FSTATMETRIC_EFILE;
+      }
 
-      /* get full commandline describing search*/
-      LAL_CALL ( LALUserVarGetLog (&status, &cmdline,  UVAR_LOGFMT_CMDLINE ), &status );
-      fprintf ( fpMetric, "%%%% cmdline: %s\n", cmdline );
-      LALFree ( cmdline );
-
-      id1 = XLALClearLinebreaks ( lalGitID );
-      id2 = XLALClearLinebreaks ( lalappsGitID );
-      fprintf ( fpMetric, "%%%% %s\n%%%%%s\n", id1, id2 );
-      fprintf ( fpMetric, "%%%% DopplerCoordinates = [ " );
-      LALFree ( id1 ); LALFree ( id2 );
-      for ( i=0; i < meta->coordSys.dim; i ++ )
-	{
-	  if ( i > 0 ) fprintf ( fpMetric, ", " );
-	  fprintf ( fpMetric, "%s", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
-	}
-      fprintf ( fpMetric, "];\n");
-      fprintf ( fpMetric, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
-      fprintf ( fpMetric, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
-      fprintf ( fpMetric, "%%%% DopplerPoint = {\n");
-      fprintf ( fpMetric, "%%%% 	refTime = {%d, %d}\n",
-		doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
-      fprintf ( fpMetric, "%%%% 	Alpha = %f rad; Delta = %f rad\n", doppler->Alpha, doppler->Delta );
-      fprintf ( fpMetric, "%%%% 	fkdot = [%f, %g, %g, %g ]\n",
-		doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
-      if ( doppler->orbit )
-	{
-	  const BinaryOrbitParams *orbit = doppler->orbit;
-	  fprintf ( fpMetric, "%%%% 	   orbit = { \n");
-	  fprintf ( fpMetric, "%%%% 		tp = {%d, %d}\n", orbit->tp.gpsSeconds, orbit->tp.gpsNanoSeconds );
-	  fprintf ( fpMetric, "%%%% 		argp  = %g\n", orbit->argp );
-	  fprintf ( fpMetric, "%%%% 		asini = %g\n", orbit->asini );
-	  fprintf ( fpMetric, "%%%% 		ecc = %g\n", orbit->ecc );
-	  fprintf ( fpMetric, "%%%% 		period = %g\n", orbit->period );
-	  fprintf ( fpMetric, "%%%% 	   }\n");
-	} /* if doppler->orbit */
-      fprintf ( fpMetric, "%%%% }\n");
-
-      fprintf ( fpMetric, "%%%% startTime = {%d, %d}\n", meta->startTime.gpsSeconds, meta->startTime.gpsNanoSeconds );
-      fprintf ( fpMetric, "%%%% duration  = %f\n", meta->Tspan );
-      fprintf ( fpMetric, "%%%% detectors = [");
-      for ( i=0; i < meta->detInfo.length; i ++ )
-	{
-	  if ( i > 0 ) fprintf ( fpMetric, ", ");
-	  fprintf ( fpMetric, "%s", meta->detInfo.sites[i].frDetector.name );
-	}
-      fprintf ( fpMetric, "];\n");
-      fprintf ( fpMetric, "%%%% detectorWeights = [");
-      for ( i=0; i < meta->detInfo.length; i ++ )
-	{
-	  if ( i > 0 ) fprintf ( fpMetric, ", ");
-	  fprintf ( fpMetric, "%f", meta->detInfo.detWeights[i] );
-	}
-      fprintf ( fpMetric, "];\n");
-
-      /* ----- output phase metric ---------- */
-      fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
-
-      /* ----- output F-metric (and related matrices ---------- */
-      fprintf ( fpMetric, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gF_ij );
-      fprintf ( fpMetric, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gFav_ij );
-      fprintf ( fpMetric, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m1_ij );
-      fprintf ( fpMetric, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m2_ij );
-      fprintf ( fpMetric, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m3_ij );
-
-      /*  ----- output Fisher matrix ---------- */
-      A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
-      B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
-      C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
-
-      D = A * B - C * C;
-
-      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", A, B, C, D );
-      fprintf ( fpMetric, "\nrho2 = %.16g;\n", metric->rho2 );
-
-      fprintf (fpMetric, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->Fisher_ab );
+      if ( XLALOutputDopplerMetric ( fpMetric, metric, config.history ) != XLAL_SUCCESS  ) {
+	LogPrintf (LOG_CRITICAL, "%s: failed to write Doppler metric into output-file '%s'. xlalErrno = %d\n\n",
+		   fn, uvar.outputMetric, xlalErrno );
+	return FSTATMETRIC_EFILE;
+      }
 
       fclose ( fpMetric );
 
@@ -334,7 +284,10 @@ main(int argc, char *argv[])
 
   /* ----- done: free all memory */
   XLALDestroyDopplerMetric ( metric );
-  LAL_CALL (FreeMem(&status, &config), &status);
+  if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", fn, xlalErrno );
+    return FSTATMETRIC_EXLAL;
+  }
 
   LALCheckMemoryLeaks();
 
@@ -399,12 +352,12 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
   LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Coordinate of metric projection: 0=none, 1=f, 2=Alpha, 3=Delta, 4=f1dot");
+  LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
   LALregLISTUserStruct(status,	coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
   LALregBOOLUserStruct(status,	coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  LALregINTUserStruct(status,  	detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit");
+  LALregINTUserStruct(status,  	detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
 
@@ -416,20 +369,24 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
 /** basic initializations: set-up 'ConfigVariables'
  */
-void
-InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
+int
+XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
 {
-  const CHAR *fn = "InitCode()";
+  const CHAR *fn = "XLALInitCode()";
 
-  INITSTATUS (status, fn, rcsid);
-  ATTATCHSTATUSPTR (status);
+  LALStatus status = blank_status;
+
+  if ( !cfg || !uvar || !app_name ) {
+    LogPrintf (LOG_CRITICAL, "%s: illegal NULL pointer input.\n\n", fn );
+    XLAL_ERROR (fn, XLAL_EINVAL );
+  }
 
   /* ----- determine start-time from user-input */
   XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
 
   if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear, &(cfg->startTime) )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Failed to initialize ephemeris data!\n");
-    ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+    LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
   /* ----- get parameter-space point from user-input) */
@@ -454,20 +411,20 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     UINT4 numDet = uvar->IFOs->length;
 
     if ( numDet > DOPPLERMETRIC_MAX_DETECTORS ) {
-      LogPrintf (LOG_CRITICAL, "More detectors (%d) specified than can be handled maximally (%d)\n", numDet, DOPPLERMETRIC_MAX_DETECTORS );
-      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", fn, numDet, DOPPLERMETRIC_MAX_DETECTORS );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
     }
     if ( uvar->IFOweights && (uvar->IFOweights->length != numDet ) )
       {
-	LogPrintf (LOG_CRITICAL, "If specified, the number of IFOweights (%d) must agree with the number of IFOs!\n",
-		   uvar->IFOweights->length, numDet );
-	ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+	LogPrintf (LOG_CRITICAL, "%s: number of IFOweights (%d) must agree with the number of IFOs (%d)!\n\n",
+		   fn, uvar->IFOweights->length, numDet );
+	XLAL_ERROR ( fn, XLAL_EINVAL );
       }
 
     cfg->detInfo = empty_MultiDetectorInfo;
     if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
       LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", fn, xlalErrno);
-      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+      XLAL_ERROR ( fn, XLAL_EFUNC );
     }
 
   } /* handle detector input */
@@ -475,147 +432,76 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
-    XLALPrintError ("%s: Call to XLALDopplerCoordinateNames2System() failed. errno = %d\n\n", fn, xlalErrno );
-    ABORT ( status,  FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+    LogPrintf (LOG_CRITICAL, "%s: Call to XLALDopplerCoordinateNames2System() failed. errno = %d\n\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
+  /* ---------- record full 'history' up to and including this application ---------- */
+  {
+    CHAR *cmdline = NULL;
+    CHAR *tmp;
+    size_t len = strlen ( app_name ) + 1;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+    if ( (cfg->history = XLALCalloc ( 1, sizeof(*cfg->history))) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%d) failed.\n\n", fn, sizeof(*cfg->history));
+      XLAL_ERROR ( fn, XLAL_ENOMEM );
+    }
 
-} /* InitCode() */
+    if ( (tmp = XLALMalloc ( len )) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "%s: XLALMalloc (%s) failed.\n\n", fn, len );
+      XLAL_ERROR ( fn, XLAL_ENOMEM );
+    }
+    strcpy ( tmp, app_name );
+    cfg->history->app_name = tmp;
+
+    /* get commandline describing search*/
+    LALUserVarGetLog (&status, &cmdline,  UVAR_LOGFMT_CMDLINE );
+    if ( status.statusCode ) {
+      LogPrintf (LOG_CRITICAL, "%s: LALUserVarGetLog() failed with statusCode = %d.\n\n", fn, status.statusCode );
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    }
+    cfg->history->cmdline = cmdline;
+
+    cfg->history->LAL_VCS_Version     = XLALClearLinebreaks ( lalGitID );
+    cfg->history->LALApps_VCS_Version = XLALClearLinebreaks ( lalappsGitID );
+
+  } /* record history */
 
 
-/** Free all memory */
-void
-FreeMem ( LALStatus *status, ConfigVariables *cfg )
+  return XLAL_SUCCESS;
+
+} /* XLALInitCode() */
+
+
+/** Destructor for internal configuration struct */
+int
+XLALDestroyConfig ( ConfigVariables *cfg )
 {
+  const CHAR *fn = "XLALDestroyConfig()";
 
-  INITSTATUS (status, "FreeMem", rcsid);
-  ATTATCHSTATUSPTR (status);
+  LALStatus status = blank_status;
 
-  ASSERT ( cfg, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
+  if ( !cfg ) {
+    LogPrintf (LOG_CRITICAL, "%s: invalid NULL input!\n\n", fn );
+    XLAL_ERROR (fn, XLAL_EINVAL );
+  }
 
-  TRY ( LALDestroyUserVars ( status->statusPtr ), status );
+  LALDestroyUserVars ( &status );
+  if ( status.statusCode ) {
+    LogPrintf (LOG_CRITICAL, "%s: call to LALDestroyUserVars() failed, status = %d\n\n", fn, status.statusCode );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  XLALDestroyResultHistory ( cfg->history );
 
   LALFree ( cfg->edat->ephemE );
   LALFree ( cfg->edat->ephemS );
   LALFree ( cfg->edat );
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
+  return XLAL_SUCCESS;
 
-} /* FreeMem() */
+} /* XLALDestroyConfig() */
 
-
-/** Calculate the projected metric onto the subspace of 'c' given by
- * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
- * The output-matrix ret must be allocated
- *
- * return 0 = OK, -1 on error.
- */
-int
-project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
-{
-  UINT4 i,j;
-
-  if ( !ret_ij )
-    return -1;
-  if ( !g_ij )
-    return -1;
-  if ( (ret_ij->size1 != ret_ij->size2) )
-    return -1;
-  if ( (g_ij->size1 != g_ij->size2) )
-    return -1;
-
-  for ( i=0; i < ret_ij->size1; i ++) {
-    for ( j=0; j < ret_ij->size2; j ++ ) {
-      if ( i==c || j==c ) {
-	gsl_matrix_set ( ret_ij, i, j, 0.0 );
-      }
-      else {
-	gsl_matrix_set ( ret_ij, i, j, ( gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c)) ));
-      }
-    }
-  }
-  return 0;
-}
-
-
-/** Calculate the outer product ret_ij of vectors u_i and v_j, given by
- * ret_ij = u_i v_j
- * The output-matrix ret must be allocated and have dimensions len(u) x len(v)
- *
- * return 0 = OK, -1 on error.
- */
-int
-outer_product (gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j )
-{
-  UINT4 i, j;
-
-  if ( !ret_ij || !u_i || !v_j )
-    return -1;
-
-  if ( (ret_ij->size1 != u_i->size) || ( ret_ij->size2 != v_j->size) )
-    return -1;
-
-
-  for ( i=0; i < ret_ij->size1; i ++)
-    for ( j=0; j < ret_ij->size2; j ++ )
-      gsl_matrix_set ( ret_ij, i, j, gsl_vector_get(u_i, i) * gsl_vector_get(v_j, j) );
-
-  return 0;
-
-} /* outer_product() */
-
-
-/* symmetrize the input-matrix 'mat' (which must be quadratic)
- */
-int
-symmetrize ( gsl_matrix *mat )
-{
-  gsl_matrix *tmp;
-
-  if ( !mat )
-    return -1;
-  if ( mat->size1 != mat->size2 )
-    return -1;
-
-  tmp = gsl_matrix_calloc ( mat->size1, mat->size2 );
-
-  gsl_matrix_transpose_memcpy ( tmp, mat );
-
-  gsl_matrix_add (mat, tmp );
-
-  gsl_matrix_scale ( mat, 0.5 );
-
-  gsl_matrix_free ( tmp );
-
-  return 0;
-
-} /* symmetrize() */
-
-
-/* compute the quadratic form = vec.mat.vec
- */
-REAL8
-quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
-{
-  UINT4 i, j;
-  REAL8 ret = 0;
-
-  if ( !mat || !vec )
-    return 0;
-  if ( (mat->size1 != mat->size2) || ( mat->size1 != vec->size ) )
-    return 0;
-
-  for (i=0; i < mat->size1; i ++ )
-    for (j=0; j < mat->size2; j ++ )
-      ret += gsl_vector_get(vec, i) * gsl_matrix_get (mat, i, j) * gsl_vector_get(vec,j);
-
-  return ret;
-
-} /* quad_form() */
 
 
 /** Load Ephemeris from ephemeris data-files  */
@@ -668,10 +554,152 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   LALInitBarycenter(&status, edat);
 
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", status.statusCode, status.statusDescription );
+    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", fn, status.statusCode, status.statusDescription );
     return NULL;
   }
 
   return edat;
 
 } /* InitEphemeris() */
+
+int
+XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
+{
+  const CHAR *fn = "XLALOutputDopplerMetric()";
+
+  UINT4 i;
+  REAL8 A, B, C, D;
+  const DopplerMetricParams *meta;
+  const PulsarDopplerParams *doppler;
+  const PulsarAmplitudeParams *Amp;
+
+  if ( !fp || !metric ) {
+    LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* useful shortcuts */
+  meta = &(metric->meta);
+  doppler = &(meta->signalParams.Doppler);
+  Amp = &(meta->signalParams.Amp);
+
+  /* output history info */
+  if ( history )
+    {
+      if ( history->app_name ) fprintf (fp, "%%%% app_name: %s\n", history->app_name );
+      if ( history->cmdline) fprintf (fp, "%%%% commandline: %s\n", history->cmdline );
+      if ( history->LAL_VCS_Version ) fprintf (fp, "%%%% LAL Version: %s\n", history->LAL_VCS_Version );
+      if ( history->LALApps_VCS_Version ) fprintf (fp, "%%%% LALApps Version: %s\n", history->LALApps_VCS_Version );
+    }
+
+  fprintf ( fp, "%%%% DopplerCoordinates = [ " );
+  for ( i=0; i < meta->coordSys.dim; i ++ )
+    {
+      if ( i > 0 ) fprintf ( fp, ", " );
+      fprintf ( fp, "%s", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
+    }
+  fprintf ( fp, "];\n");
+
+  { /* output projection info */
+    const char *pname;
+    if ( meta->projectCoord < 0 )
+      pname = "None";
+    else
+      pname = XLALDopplerCoordinateName ( meta->coordSys.coordIDs[meta->projectCoord] );
+
+    fprintf ( fp, "%%%% Projection onto subspace orthogonal to coordinate: '%s'\n", pname);
+  }
+
+  fprintf ( fp, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
+  fprintf ( fp, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
+  fprintf ( fp, "%%%% DopplerPoint = {\n");
+  fprintf ( fp, "%%%% 	refTime = {%d, %d}\n",
+	    doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
+  fprintf ( fp, "%%%% 	Alpha = %f rad; Delta = %f rad\n", doppler->Alpha, doppler->Delta );
+  fprintf ( fp, "%%%% 	fkdot = [%f, %g, %g, %g ]\n",
+	    doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
+  if ( doppler->orbit )
+    {
+      const BinaryOrbitParams *orbit = doppler->orbit;
+      fprintf ( fp, "%%%% 	   orbit = { \n");
+      fprintf ( fp, "%%%% 		tp = {%d, %d}\n", orbit->tp.gpsSeconds, orbit->tp.gpsNanoSeconds );
+      fprintf ( fp, "%%%% 		argp  = %g\n", orbit->argp );
+      fprintf ( fp, "%%%% 		asini = %g\n", orbit->asini );
+      fprintf ( fp, "%%%% 		ecc = %g\n", orbit->ecc );
+      fprintf ( fp, "%%%% 		period = %g\n", orbit->period );
+      fprintf ( fp, "%%%% 	   }\n");
+    } /* if doppler->orbit */
+  fprintf ( fp, "%%%% }\n");
+
+  fprintf ( fp, "%%%% startTime = {%d, %d}\n", meta->startTime.gpsSeconds, meta->startTime.gpsNanoSeconds );
+  fprintf ( fp, "%%%% duration  = %f\n", meta->Tspan );
+  fprintf ( fp, "%%%% detectors = [");
+  for ( i=0; i < meta->detInfo.length; i ++ )
+    {
+      if ( i > 0 ) fprintf ( fp, ", ");
+      fprintf ( fp, "%s", meta->detInfo.sites[i].frDetector.name );
+    }
+  fprintf ( fp, "];\n");
+  fprintf ( fp, "%%%% detectorWeights = [");
+  for ( i=0; i < meta->detInfo.length; i ++ )
+    {
+      if ( i > 0 ) fprintf ( fp, ", ");
+      fprintf ( fp, "%f", meta->detInfo.detWeights[i] );
+    }
+  fprintf ( fp, "];\n");
+
+  /* ----- output phase metric ---------- */
+  fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
+  fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+
+  /* ----- output F-metric (and related matrices ---------- */
+  fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
+  fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gFav_ij );
+  fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
+  fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
+  fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
+  fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
+
+  /*  ----- output Fisher matrix ---------- */
+  A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
+  B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
+  C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
+
+  D = A * B - C * C;
+
+  fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
+  fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
+
+  fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
+
+  return XLAL_SUCCESS;
+
+} /* XLALOutputDopplerMetric() */
+
+
+/** Destructor for ResultHistory type
+ */
+void
+XLALDestroyResultHistory ( ResultHistory_t * history )
+{
+
+  if ( !history )
+    return;
+
+  if ( history->app_name )
+    XLALFree ( history->app_name );
+
+  if ( history->cmdline )
+    XLALFree ( history->cmdline );
+
+  if ( history->LAL_VCS_Version )
+    XLALFree ( history->LAL_VCS_Version );
+
+  if ( history->LALApps_VCS_Version )
+    XLALFree ( history->LALApps_VCS_Version );
+
+  XLALFree ( history );
+
+  return;
+
+} /* XLALDestroyResultHistory() */

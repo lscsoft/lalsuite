@@ -1,6 +1,7 @@
 opt/lscsoft/lalapps/bin
 opt/lscsoft/lalapps/etc
-opt/lscsoft/lalapps/lib
+opt/lscsoft/lalapps/lib/python2.4
+opt/lscsoft/lalapps/lib/python2.5
 opt/lscsoft/lalapps/sbin
 opt/lscsoft/lalapps/share/lalapps
 opt/lscsoft/lalapps/share/man

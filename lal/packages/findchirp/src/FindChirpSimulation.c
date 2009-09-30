@@ -90,6 +90,7 @@ LALFree()
 #include <lal/GenerateInspiral.h>
 #include <lal/NRWaveInject.h>
 #include <lal/GenerateInspRing.h>
+#include <lal/LALErrno.h>
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
@@ -399,6 +400,12 @@ LALFindChirpInjectSignals (
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
               XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
+          }
+          else if ( strcmp( "TAPER_NONE", thisEvent->taper ) )
+          {
+              XLALPrintError( "Invalid injection tapering option specified: %s\n",
+                 thisEvent->taper );
+              ABORT( status, LAL_BADPARM_ERR, LAL_BADPARM_MSG );
           }
       }
 

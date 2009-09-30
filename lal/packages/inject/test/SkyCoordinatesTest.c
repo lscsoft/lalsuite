@@ -526,11 +526,6 @@ main( int argc, char **argv )
     /* Convert to UTC timestamp. */
     if ( gpsTime.gpsSeconds >= 0 ) {
       CHARVector *timeStamp = NULL; /* date string */
-      /* don't bomb if leap second table isn't up to date */
-      LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
-      LALMSTUnitsAndAcc uAcc;
-      uAcc.units = MST_DEG;
-      uAcc.accuracy = acc;
 
       fprintf( stdout, "GPS time: %i.%09is\n", gpsTime.gpsSeconds,
 	       gpsTime.gpsNanoSeconds );
@@ -540,8 +535,8 @@ main( int argc, char **argv )
       fprintf( stdout, "UTC time: %s\n", timeStamp->data );
       SUB( LALCHARDestroyVector( &stat, &timeStamp ), &stat );
 
-      /* Convert to Greenwich mean sidereal time. */
-      SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, &uAcc ), &stat );
+      /* Convert to Greenwich mean sidereal time (degrees). */
+      gmst = fmod(XLALGreenwichMeanSiderealTime(&gpsTime), LAL_TWOPI) * 360.0 / LAL_TWOPI;
       fprintf( stdout, "Greenwich mean sidereal time: %6.2f deg\n",
 	       1.0*gmst );
     } else

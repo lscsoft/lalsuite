@@ -1,6 +1,9 @@
 #ifndef _CUDAPLAN_H
 #define _CUDAPLAN_H
 
+/* suppress warnings from cuda headers */
+#pragma GCC system_header
+
 #include <lal/LALDatatypes.h>
 #include <fftw3.h>
 #include <cufft.h>

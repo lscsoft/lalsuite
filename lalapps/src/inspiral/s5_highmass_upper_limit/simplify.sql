@@ -54,7 +54,7 @@ CREATE TABLE _idmap_ AS
 DROP INDEX ut_v_index;
 DROP INDEX ns_tsid_index;
 DROP INDEX ns_tsidv_index;
-DROP INDEX ns_v_indexi;
+DROP INDEX ns_v_index;
 
 DROP TABLE new_slides;
 DROP TABLE ts_vecs;
@@ -71,3 +71,5 @@ DROP INDEX idm_o_index;
 DELETE FROM time_slide WHERE time_slide_id IN (SELECT old FROM _idmap_ WHERE old != new);
 
 DROP TABLE _idmap_;
+
+-- VACUUM;

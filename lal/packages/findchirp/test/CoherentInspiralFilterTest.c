@@ -47,7 +47,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
-#include <lal/DataBuffer.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>

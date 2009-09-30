@@ -119,8 +119,6 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
-void NestInitInj(LALMCMCParameter *parameter, void *iT);
-
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT);
 
 void NestInitInjNINJAHighMass(LALMCMCParameter *parameter, void *iT);

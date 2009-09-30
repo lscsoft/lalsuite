@@ -433,7 +433,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
     print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
     print('   followed by the name of the submitter of the jobs')
   else:
-    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
+    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','') + "/qscan/"
     os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
     os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
     os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
@@ -444,7 +444,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
     print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
     print('   followed by the name of the submitter of the jobs')
   else:
-    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
+    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','') + "/seismic_qscan/"
     os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
     os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
     os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
@@ -454,7 +454,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
 # Prepare the qscan background
 if opts.background_qscan or opts.background_hoft_qscan or opts.background_seis_qscan:
   for ifo in ifos_list:
-    times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
+    times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo,segFile)
     for time in times:
       # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
       dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,'datafind')

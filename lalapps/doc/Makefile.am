@@ -4,7 +4,7 @@
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
                  animate.tex animate.ps animate.pdf \
                  BankEfficiency.tex BankNumber.tex \
-		 findchirp.tex hello.tex  inspinj.tex inspiral-module.tex \
+		 findchirp.tex inspinj.tex inspiral-module.tex \
 		 inspiral.tex \
                  stochastic.tex olapredfcn.tex \
                  pipeline-module.tex ring.tex
@@ -12,7 +12,7 @@ TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
 MOSTLYCLEANFILES = *.log *.ilg *.blg *.out
-CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.toc hello.c AUTHORS.tex
+CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.toc AUTHORS.tex
 DISTCLEANFILES = $(INSTALLFILES)
 EXTRA_DIST = $(TEXSOURCEFILES)
 LATEX = @LATEX@
@@ -31,7 +31,6 @@ dvi-local:
 	  test -f $$file || @LN_S@ $(srcdir)/$$file . ; \
 	done
 	test -f AUTHORS.tex || @LN_S@ $(top_srcdir)/AUTHORS AUTHORS.tex
-	test -f hello.c || @LN_S@ $(top_srcdir)/src/example/hello.c .
 	${LATEX} lalapps
 	${BIBTEX} lalapps
 	${LATEX} lalapps

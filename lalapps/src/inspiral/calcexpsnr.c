@@ -233,7 +233,6 @@ int main( int argc, char *argv[] )
 
   /* output data */
   LIGOLwXMLStream       xmlStream;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   MetadataTable         proctable;
   MetadataTable         outputTable;
   MetadataTable         procparams;
@@ -253,20 +252,19 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), 
-                                                         &accuracy), &status);
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
                                       calloc( 1, sizeof(ProcessParamsTable) );
@@ -412,7 +410,7 @@ int main( int argc, char *argv[] )
             "Gareth Jones\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -840,7 +838,7 @@ int main( int argc, char *argv[] )
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), &accuracy), &status);
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );

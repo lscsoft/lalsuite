@@ -14,7 +14,7 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: gsl fftw libframe libmetaio lal libxml2 cfitsio python
+Requires: gsl fftw libframe libmetaio lal lalstochastic lalxml cfitsio python
 Prefix: %{_prefix}
 
 %description

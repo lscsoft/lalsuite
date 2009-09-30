@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.4],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -8,8 +8,6 @@ AC_CONFIG_FILES([ \
                  lal.pc \
                  lalframe.pc \
                  lalmetaio.pc \
-                 lalxml.pc \
-                 lalstochastic.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -133,11 +131,6 @@ AC_CONFIG_FILES([ \
                  packages/timefreq/include/Makefile \
                  packages/timefreq/src/Makefile \
                  packages/timefreq/test/Makefile \
-                 packages/stochastic/Makefile \
-                 packages/stochastic/doc/Makefile \
-                 packages/stochastic/include/Makefile \
-                 packages/stochastic/src/Makefile \
-                 packages/stochastic/test/Makefile \
                  packages/support/Makefile \
                  packages/support/doc/Makefile \
                  packages/support/include/Makefile \
@@ -168,12 +161,12 @@ LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
-LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_INTELFFT
+LAL_WITH_CUDA
+LAL_ENABLE_GCC_FLAGS
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
-LAL_ENABLE_XML
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -231,6 +224,28 @@ AC_CHECK_PROGS(M4, gm4 m4, m4)
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
+
+# check for supported mac os x version
+if test "x$build_vendor" = "xapple"; then
+  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  if test "x$SW_VERS" != "x"; then
+    AC_MSG_CHECKING([Mac OS X version])
+    MACOSX_VERSION=`$SW_VERS -productVersion`
+    AC_MSG_RESULT([$MACOSX_VERSION])
+  fi
+  case "$MACOSX_VERSION" in
+    10.0*|10.1*|10.2*|10.3*)
+      AC_MSG_ERROR([This version of Mac OS X is not supported])
+      ;;
+    10.4*|10.5*|10.6*)
+      # supported version
+    ;;
+    *)
+      AC_MSG_WARN([Unknown Mac OS X version])
+      ;;
+  esac
+fi
+
 if test -z "$TEXFLAGS"
 then
 AC_MSG_CHECKING(if $LATEX accepts --interaction=batchmode)
@@ -304,7 +319,7 @@ else
   AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional FrameL, metaio, and xml2 libraries.
+dnl Checks for optional FrameL, and metaio.
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
@@ -322,15 +337,6 @@ if test "${frame}" = "true"; then
                  [AC_MSG_WARN(disabling frame library)]
                  [frame="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
-fi
-if test "${xml}" = "true"; then
-  PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= 2.6, [ true ], [ false ])
-  lal_pre_xml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
-  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
-                 [AC_MSG_WARN(disabling xml support)]
-                 [xml="false"]
-                 [LIBS="$lal_pre_xml2_LIBS"])
 fi
 
 
@@ -367,20 +373,15 @@ if test "${frame}" = "true"; then
                    [frame="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
-if test "${xml}" = "true"; then
-  lal_pre_xml2_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  AC_CHECK_HEADERS(libxml/xmlversion.h, ,
-                   [AC_MSG_WARN(disabling xml support)]
-                   [xml="false"]
-                   [CPPFLAGS="$lal_pre_xml2_CPPFLAGS"])
-fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
 
 
 dnl Define variables describing what was enabled.
+if test "${cuda}" = "true"; then
+  AC_DEFINE(LAL_CUDA_ENABLED, 1, [Define if using cuda library])
+fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
 fi
@@ -389,9 +390,6 @@ if test "${metaio}" = "true"; then
 fi
 if test "${frame}" = "true"; then
   AC_DEFINE(LAL_FRAME_ENABLED, 1, [Define if using frame library])
-fi
-if test "${xml}" = "true"; then
-  AC_DEFINE(LAL_XML_ENABLED, 1, [Define if using xml2 library])
 fi
 
 
@@ -427,8 +425,8 @@ AC_SUBST(pkgdocdir)
 dnl Setup automake conditionals
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
-AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
+AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 
@@ -454,22 +452,21 @@ if test -d $srcdir/lalapps ; then
     LALMETAIO_LIBS=""
     LALMETAIO_CFLAGS=""
   fi
-  if test x$xml = xtrue ; then
-    LALXML_LIBS=$lal_build_dir/packages/support/src/liblalxml.la
-    LALXML_CFLAGS=-I$lal_build_dir/include
-  else
-    LALXML_LIBS=""
-    LALXML_CFLAGS=""
-  fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS LALXML_LIBS LALXML_CFLAGS
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
   AC_CONFIG_SUBDIRS(lalapps)
 fi
 
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
+
+  # add mac os x specific flags
+  if test "x$MACOSX_VERSION" != "x"; then
+    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
+  fi
 fi
+
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
@@ -481,7 +478,7 @@ AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -489,7 +486,7 @@ echo "
 
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
-                LAL XML library support is $xmlenabled
+                CUDA support is $cudaenabled
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

@@ -33,7 +33,7 @@ NRCSID (LALTESTUTCTOGPSC, "$Id$");
 static int test(struct tm *t, int correct_gps, int line)
 {
   int gps = XLALUTCToGPS(t);
- 
+
   if (XLALGetBaseErrno())
     {
       fprintf(stderr, "TestUTCtoGPS: error in XLALUTCToGPS(), line %i\n", line);

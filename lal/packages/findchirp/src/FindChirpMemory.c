@@ -109,7 +109,6 @@ LALU4DestroyVector()
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
-#include <lal/DataBuffer.h>
 #include <lal/FindChirp.h>
 
 NRCSID (FINDCHIRPMEMORYC, "$Id$");
