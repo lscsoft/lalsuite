@@ -2,7 +2,7 @@ Source: lalxml
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, libxml2 (>= 2.6), libxml2-dev (>= 2.6), libgsl0 (>= 1.9), lal-dev (>= 6.4), lal (>= 6.4), pkg-config
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, libxml2 (>= 2.6), libxml2-dev (>= 2.6), libgsl0-dev (>= 1.9), lal-dev (>= 6.4), lal (>= 6.4), pkg-config
 Standards-Version: 3.7.2
 
 Package: lalxml
