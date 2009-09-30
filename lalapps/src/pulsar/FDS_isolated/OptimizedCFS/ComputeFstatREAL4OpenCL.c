@@ -207,9 +207,10 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
       break;
   fkdot4.spdnOrder = maxs;
 
-  PulsarSpins16 fkdot16;
-  fkdot16.s[0] = fkdot4.spdnOrder;
-  for (k=1; k<=fkdot4.spdnOrder; k++) fkdot16.s[k] = fkdot4.fkdot[k];
+  for (k=1; k<=fkdot4.spdnOrder; k++) clWp->fkdot16.data[k] = fkdot4.fkdot[k];
+//  PulsarSpins16 fkdot16;
+//  fkdot16.s[0] = fkdot4.spdnOrder;
+//  for (k=1; k<=fkdot4.spdnOrder; k++) fkdot16.s[k] = fkdot4.fkdot[k];
 
 
   /* ---------- Buffering quantities that don't need to be recomputed ---------- */
@@ -281,7 +282,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
             SSBtimesREAL4 *tSSB;
             AMCoeffs *amcoe;
             UINT4 X, offset, len;
-            
+
             for (X=0; X<clWp->numIFOs; X++) {
               offset = (n*clWp->numIFOs + X) * clWp->maxNumSFTs;
               tSSB = multiSSB4->data[X];
@@ -290,7 +291,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
 
               // 1D-index of an array element {n, X, s}:
               // ind = (n*clWp->numIFOs + X) * clWp->maxNumSFTs + s
-               
+
               memcpy (clWp->tSSB_DeltaT_int.data + offset, tSSB->DeltaT_int->data, len);
               memcpy (clWp->tSSB_DeltaT_rem.data + offset, tSSB->DeltaT_rem->data, len);
               memcpy (clWp->tSSB_TdotM1.data + offset, tSSB->TdotM1->data, len);
@@ -303,35 +304,29 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
             clWp->ABCInvD.data[n].Bd = multiAMcoeff->Mmunu.Bd;
             clWp->ABCInvD.data[n].Cd = multiAMcoeff->Mmunu.Cd;
             clWp->ABCInvD.data[n].InvDd = 1.0f / multiAMcoeff->Mmunu.Dd;
-            
+
           }
 
         } /* for n < numSegments */
 
-        /* 
+        /*
          * OpenCL: initialize the array of REAL4-split frequencies
          */
-        Freq = Freq0;	
-      
+        Freq = Freq0;
+
         for (k=0; k<clWp->numBins; k++) {
-          clWp->fkdot4.data[k].FreqMain = (INT4)Freq;
-          clWp->fkdot4.data[k].fkdot0 = (REAL4)( Freq - (REAL8)fkdot4.FreqMain );
+          clWp->Freq.data[k].FreqMain = (INT4)Freq;
+          clWp->Freq.data[k].fkdot0 = (REAL4)( Freq - (REAL8)fkdot4.FreqMain );
           Freq += deltaF;
         }
 
 #if USE_OPENCL_KERNEL
-        err_total = CL_SUCCESS;
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->fkdot4.memobj, 
-                                     CL_TRUE, 0, clWp->numBins * sizeof(REAL42),
-                                     clWp->fkdot4.data, 0, NULL, NULL);                       
-        err_total += (err-CL_SUCCESS);
-        
-
         /*
          * OpenCL: copy the buffers to the device memory
          */
         UINT4 l2 = clWp->numSegments * clWp->numIFOs;
         UINT4 l3 = l2 * clWp->maxNumSFTs;
+        err_total = CL_SUCCESS;
         err = clEnqueueWriteBuffer ( *(clWp->cmd_queue),           // which queue
                                      clWp->tSSB_DeltaT_int.memobj, // destination device pointer
                                      CL_TRUE,                     // blocking write?
@@ -343,29 +338,29 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                      NULL);                       // cl_event *event
         err_total += (err-CL_SUCCESS);
 
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->tSSB_DeltaT_rem.memobj, 
-                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
-                                     clWp->tSSB_DeltaT_rem.data, 0, NULL, NULL);                       
+        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->tSSB_DeltaT_rem.memobj,
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),
+                                     clWp->tSSB_DeltaT_rem.data, 0, NULL, NULL);
         err_total += (err-CL_SUCCESS);
 
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->tSSB_TdotM1.memobj, 
-                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
-                                     clWp->tSSB_TdotM1.data, 0, NULL, NULL);                       
+        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->tSSB_TdotM1.memobj,
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),
+                                     clWp->tSSB_TdotM1.data, 0, NULL, NULL);
         err_total += (err-CL_SUCCESS);
 
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->amcoe_a.memobj, 
-                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
-                                     clWp->amcoe_a.data, 0, NULL, NULL);                       
+        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->amcoe_a.memobj,
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),
+                                     clWp->amcoe_a.data, 0, NULL, NULL);
         err_total += (err-CL_SUCCESS);
 
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->amcoe_b.memobj, 
-                                     CL_TRUE, 0, l3 * sizeof(REAL4),          
-                                     clWp->amcoe_b.data, 0, NULL, NULL);                       
+        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->amcoe_b.memobj,
+                                     CL_TRUE, 0, l3 * sizeof(REAL4),
+                                     clWp->amcoe_b.data, 0, NULL, NULL);
         err_total += (err-CL_SUCCESS);
 
-        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->ABCInvD.memobj, 
-                                     CL_TRUE, 0, l2 * sizeof(REAL44),          
-                                     clWp->ABCInvD.data, 0, NULL, NULL);                       
+        err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->ABCInvD.memobj,
+                                     CL_TRUE, 0, l2 * sizeof(REAL44),
+                                     clWp->ABCInvD.data, 0, NULL, NULL);
         err_total += (err-CL_SUCCESS);
 
         if (err_total != CL_SUCCESS) {
@@ -377,18 +372,38 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
 
     } /* if we could NOT reuse previously buffered quantites */
 
-#if USE_OPENCL_KERNEL  
+#if USE_OPENCL_KERNEL
+  /*
+   * copy frequency arrays
+   */
+  err_total = CL_SUCCESS;
+  err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->Freq.memobj,
+                               CL_TRUE, 0, clWp->numBins * sizeof(REAL42),
+                               clWp->Freq.data, 0, NULL, NULL);
+  err_total += (err-CL_SUCCESS);
+
+  err = clEnqueueWriteBuffer ( *(clWp->cmd_queue), clWp->fkdot16.memobj,
+                               CL_TRUE, 0, 16 * sizeof(REAL4),
+                               clWp->fkdot16.data, 0, NULL, NULL);
+  err_total += (err-CL_SUCCESS);
+  if (err_total != CL_SUCCESS) {
+    XLALPrintError ("%s: Error copying frequency data to device memory, error code = %d\n", fn, err );
+    XLALDestroyCLWorkspace (clWp, multiSFTsV);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+
   /*
    * OpenCL: set kernel arguments
    */
   err_total = CL_SUCCESS;
-  err = clSetKernelArg(*(clWp->kernel),       // wchich kernel      
+  err = clSetKernelArg(*(clWp->kernel),       // wchich kernel
                        0,                    // argument index
-                       sizeof(cl_mem),       // argument data size 
+                       sizeof(cl_mem),       // argument data size
                        (void *)&(clWp->Fstat.memobj) ); // argument data
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 1, sizeof(cl_mem), (void *)&(clWp->multiSFTsFlat.memobj)); 
+  err = clSetKernelArg(*(clWp->kernel), 1, sizeof(cl_mem), (void *)&(clWp->multiSFTsFlat.memobj));
   err_total += (err-CL_SUCCESS);
 
   err = clSetKernelArg(*(clWp->kernel), 2, sizeof(cl_mem), (void *)&(clWp->numSFTsV.memobj) );
@@ -406,31 +421,34 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   err = clSetKernelArg(*(clWp->kernel), 6, sizeof(INT4), (void *)&constFreqIndex0);
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 7, sizeof(cl_mem), (void *)&(clWp->fkdot4.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 7, sizeof(cl_mem), (void *)&(clWp->Freq.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 8, sizeof(PulsarSpins16), (void *)&(fkdot16) );
+  err = clSetKernelArg(*(clWp->kernel), 8, sizeof(UINT4), (void *)&(fkdot4.spdnOrder) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 9, sizeof(cl_mem), (void *)&(clWp->tSSB_DeltaT_int.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 9, sizeof(cl_mem), (void *)&(clWp->fkdot16.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 10, sizeof(cl_mem), (void *)&(clWp->tSSB_DeltaT_rem.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 10, sizeof(cl_mem), (void *)&(clWp->tSSB_DeltaT_int.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 11, sizeof(cl_mem), (void *)&(clWp->tSSB_TdotM1.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 11, sizeof(cl_mem), (void *)&(clWp->tSSB_DeltaT_rem.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 12, sizeof(cl_mem), (void *)&(clWp->amcoe_a.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 12, sizeof(cl_mem), (void *)&(clWp->tSSB_TdotM1.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 13, sizeof(cl_mem), (void *)&(clWp->amcoe_b.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 13, sizeof(cl_mem), (void *)&(clWp->amcoe_a.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 14, sizeof(cl_mem), (void *)&(clWp->ABCInvD.memobj) );
+  err = clSetKernelArg(*(clWp->kernel), 14, sizeof(cl_mem), (void *)&(clWp->amcoe_b.memobj) );
   err_total += (err-CL_SUCCESS);
 
-  err = clSetKernelArg(*(clWp->kernel), 15, sizeof(FcomponentsREAL4)*clWp->numIFOs*clWp->maxNumSFTs, NULL );
+  err = clSetKernelArg(*(clWp->kernel), 15, sizeof(cl_mem), (void *)&(clWp->ABCInvD.memobj) );
+  err_total += (err-CL_SUCCESS);
+
+  err = clSetKernelArg(*(clWp->kernel), 16, sizeof(FcomponentsREAL4)*clWp->numIFOs*clWp->maxNumSFTs, NULL );
   err_total += (err-CL_SUCCESS);
 
   if (err_total != CL_SUCCESS) {
@@ -451,7 +469,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   local_work_size[1] = clWp->numIFOs;
   global_work_size[0] = local_work_size[0] * clWp->numSegments;
   global_work_size[1] = local_work_size[1] * numBins;
-    
+
   err = clEnqueueNDRangeKernel(*(clWp->cmd_queue), *(clWp->kernel),
                                2, // Work dimensions
                                NULL, // must be NULL (work offset)
@@ -540,7 +558,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
           UINT4 X, alpha;
           for (X = 0; X < clWp->numIFOs; X++ ) {
             for (alpha = 0; alpha < clWp->maxNumSFTs; alpha++ ) {
-              OpenCLComputeFstatFaFb(clWp->Fstat.data, 
+              OpenCLComputeFstatFaFb(clWp->Fstat.data,
                                      n, // curSegment
                                      k, // curBin
                                      clWp->maxNumSFTs,
@@ -548,13 +566,14 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                      X,
                                      numSegments,
                                      clWp->multiSFTsFlat.data,
-                                     clWp->numSFTsV.data, 
-                                     clWp->sftLen, 
-                                     constTsft, 
-                                     constDFreq, 
+                                     clWp->numSFTsV.data,
+                                     clWp->sftLen,
+                                     constTsft,
+                                     constDFreq,
                                      constFreqIndex0,
-                                     clWp->fkdot4.data,
-                                     fkdot16,
+                                     clWp->Freq.data,
+                                     fkdot4.spdnOrder,
+                                     clWp->fkdot16.data,
                                      clWp->tSSB_DeltaT_int.data,
                                      clWp->tSSB_DeltaT_rem.data,
                                      clWp->tSSB_TdotM1.data,
@@ -562,7 +581,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                      clWp->amcoe_b.data,
                                      clWp->ABCInvD.data,
                                      FaFb_components);
-              
+
               if (alpha) {
                 FaFb_components[X * clWp->maxNumSFTs].Fa.re += FaFb_components[X * clWp->maxNumSFTs + alpha].Fa.re;
                 FaFb_components[X * clWp->maxNumSFTs].Fa.im += FaFb_components[X * clWp->maxNumSFTs + alpha].Fa.im;
@@ -590,12 +609,13 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                                - 2.0f * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
                                                );
           fstatBandV->data[n].data->data[k] = clWp->Fstat.data[k * numSegments + n];
-
 #endif // #if USE_OPENCL_KERNEL_CPU
 
         } /* for k < numBins */
 
     } /* for n < numSegments */
+
+
 
 #if USE_OPENCL_KERNEL_CPU
   LALFree (FaFb_components);
@@ -610,20 +630,20 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
  * Create memory objects associated with OpenCL context
  * and memory buffers */
 int
-XLALInitCLWorkspace ( CLWorkspace *clW,  
+XLALInitCLWorkspace ( CLWorkspace *clW,
                       const MultiSFTVectorSequence *stackMultiSFT )
 {
   static const char *fn = "XLALInitCLWorkspace()";
   static const char *cl_kernel_filepath = "/Users/oleg/lalsuite/lalapps/src/pulsar/FDS_isolated/kernel.cl"; //TODO: do something with hardcoded kernel path
 
-#if USE_OPENCL_KERNEL  
+#if USE_OPENCL_KERNEL
   cl_int err, err_total;
   const cl_uint max_num_platforms = 3;
   static cl_platform_id platforms[3];
   cl_uint num_platforms;
   char strInfo[100];
   static cl_context context;
-  const cl_uint max_num_devices = 4; 
+  const cl_uint max_num_devices = 4;
   cl_device_id devices[4];
   cl_uint num_devices;
   static cl_command_queue cmd_queue;
@@ -641,12 +661,13 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   clW->multiSFTsFlat.data = NULL;
   clW->numSFTsV.data = NULL;
   clW->tSSB_DeltaT_int.data = NULL;
-  clW->tSSB_DeltaT_rem.data = NULL; 
-  clW->tSSB_TdotM1.data = NULL; 
+  clW->tSSB_DeltaT_rem.data = NULL;
+  clW->tSSB_TdotM1.data = NULL;
   clW->amcoe_a.data = NULL;
   clW->amcoe_b.data = NULL;
   clW->ABCInvD.data = NULL;
   clW->Fstat.data = NULL;
+  clW->fkdot16.data = NULL;
 
   LogPrintf(LOG_DEBUG, "In function %s: initializing OpenCL workspace\n", fn);
 
@@ -664,9 +685,9 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  // create OpenCL GPU context 
+  // create OpenCL GPU context
   LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
-  context = clCreateContextFromType(0, CL_DEVICE_TYPE_GPU, NULL, NULL, NULL); 
+  context = clCreateContextFromType(0, CL_DEVICE_TYPE_GPU, NULL, NULL, NULL);
   if (context == (cl_context)0) {
       XLALPrintError ("%s: Failed to create context\n", fn );
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
@@ -690,8 +711,8 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
   // create a command-queue
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);
-  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device),  
-                                   CL_QUEUE_PROFILING_ENABLE, 
+  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device),
+                                   CL_QUEUE_PROFILING_ENABLE,
                                    &err);
   if (cmd_queue == (cl_command_queue)0) {
       XLALPrintError ("%s: Failed to create command queue\n", fn );
@@ -742,17 +763,21 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   clW->ABCInvD.length = l2;
   clW->ABCInvD.data = XLALMalloc( sizeof(REAL44) * l2 );
 
-  // clW->fkdot4: initialized in RearrangeSFTData
+  clW->fkdot16.length = 16; //hardcoded value!
+  clW->fkdot16.data = XLALMalloc (sizeof(REAL4) * clW->fkdot16.length);
+
+  // clW->fkdot16: initialized in RearrangeSFTData
+  // clW->Freq: initialized in RearrangeSFTData
   // clW->Fstat:  initialized in RearrangeSFTData
 
   if ( clW->multiSFTsFlat.data == NULL || clW->numSFTsV.data == NULL
-       || clW->tSSB_DeltaT_int.data == NULL || clW->tSSB_DeltaT_rem.data == NULL || clW->tSSB_DeltaT_rem.data == NULL 
+       || clW->tSSB_DeltaT_int.data == NULL || clW->tSSB_DeltaT_rem.data == NULL || clW->tSSB_DeltaT_rem.data == NULL
        || clW->amcoe_a.data == NULL || clW->amcoe_b.data == NULL ) {
       XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
-  } 
-  
+  }
+
   { // SFT data rearrangement block
     UINT4 n, X, s;
 
@@ -792,7 +817,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
           XLAL_ERROR ( fn, XLAL_EINVAL );
         }
         clW->numSFTsV.data[n * multiSFT->length + X] = sFT->length;
-        for (s=0; s<sFT->length; s++) { 
+        for (s=0; s<sFT->length; s++) {
           cV = sFT->data[s].data;
           if (clW->sftLen != cV->length) {
             XLALPrintError ("%s: internal error: inconsistent SFT length in segment=%d, detector=%d, SFT %d\n", fn, n, X, s);
@@ -800,7 +825,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
             XLAL_ERROR ( fn, XLAL_EINVAL );
           }
           memcpy (ptrData, cV->data, cV->length * sizeof(COMPLEX8));
-          
+
           LALFree (cV->data);
           cV->data = ptrData;
           ptrData += clW->sftLen;
@@ -810,12 +835,12 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     }
   } // end of SFT data rearrangement block
 
-#if USE_OPENCL_KERNEL  
+#if USE_OPENCL_KERNEL
   // allocate buffer arrays on the device
   // only SFT array is copied to the device; the rest of the arrays are created empty and will be filled later
   LogPrintf(LOG_DEBUG, "In function %s: allocate OpenCL device memory buffers\n", fn);
   err_total = CL_SUCCESS;
-  clW->multiSFTsFlat.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(COMPLEX8) * clW->multiSFTsFlat.length, clW->multiSFTsFlat.data, &err);            
+  clW->multiSFTsFlat.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(COMPLEX8) * clW->multiSFTsFlat.length, clW->multiSFTsFlat.data, &err);
   err_total += (err-CL_SUCCESS);
 
   clW->numSFTsV.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(UINT4) * clW->numSFTsV.length, clW->numSFTsV.data, &err);
@@ -839,6 +864,9 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   clW->ABCInvD.memobj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(REAL44) * clW->ABCInvD.length, NULL, &err);
   err_total += (err-CL_SUCCESS);
 
+  clW->fkdot16.memobj = clCreateBuffer (*(clW->context), CL_MEM_READ_ONLY, sizeof(REAL4)*clW->fkdot16.length, NULL, &err);
+  err_total += (err-CL_SUCCESS);
+
   if (err_total != CL_SUCCESS) {
       XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err );
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
@@ -847,7 +875,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
 
 #ifdef OPENCL_KERNEL_TEXT
-  
+
   extern char*opencl_kernel_text;
 #define cl_kernel_strings opencl_kernel_text
 
@@ -894,14 +922,14 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                                        &err); // error code
 
 #ifndef OPENCL_KERNEL_TEXT
-  LALFree(cl_kernel_strings);                                     
+  LALFree(cl_kernel_strings);
 #endif
 
   if (program == (cl_program)0) {
     XLALPrintError( "%s: ERROR: failed to create OpenCL program\n", fn);
     XLALDestroyCLWorkspace (clW, stackMultiSFT );
     XLAL_ERROR ( fn, XLAL_EINVAL );
-  } 
+  }
   clW->program = &program;
 
   // build the program
@@ -916,7 +944,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     size_t len;
     char debug_buffer[2048];
     XLALPrintError( "%s: ERROR: failed to compile OpenCL program\n", fn);
-    clGetProgramBuildInfo(*(clW->program), *(clW->device), CL_PROGRAM_BUILD_LOG, 
+    clGetProgramBuildInfo(*(clW->program), *(clW->device), CL_PROGRAM_BUILD_LOG,
                           sizeof(debug_buffer), debug_buffer, &len);
     XLALPrintError("%s\n", debug_buffer);
     XLALDestroyCLWorkspace (clW, stackMultiSFT );
@@ -925,7 +953,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
   // finally, create the kernel
   LogPrintf(LOG_DEBUG, "In function %s: create kernel...\n", fn);
-  kernel = clCreateKernel(*(clW->program), "OpenCLComputeFstatFaFb", NULL); 
+  kernel = clCreateKernel(*(clW->program), "OpenCLComputeFstatFaFb", NULL);
   if (kernel == (cl_kernel)0) {
     XLALPrintError( "%s: ERROR: failed to create kernel\n", fn);
     XLALDestroyCLWorkspace (clW, stackMultiSFT );
@@ -933,14 +961,14 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   }
   clW->kernel = &kernel;
 #endif // #if USE_OPENCL_KERNEL
-   
+
   return 0;
 } /* XLALInitCLWorkspace() */
 
 
 
 /** Rearrange SFT data structures
- * Flatten the SFT data: combine small chunks of memory into a single 
+ * Flatten the SFT data: combine small chunks of memory into a single
  * contiguous array, accessable via 4d-index */
 void
 XLALRearrangeSFTData ( CLWorkspace *clW,
@@ -955,34 +983,34 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
   clW->numBins = fstatBandV->data[0].data->length;
 
   // deallocate previously allocated memory
-  if (clW->fkdot4.data) LALFree(clW->fkdot4.data);
+  if (clW->Freq.data) LALFree(clW->Freq.data);
   if (clW->Fstat.data)  LALFree(clW->Fstat.data);
 
   // allocate memory for new arrays
-  clW->fkdot4.length = clW->numBins;
-  clW->fkdot4.data = XLALMalloc( sizeof(REAL42) * clW->numBins );
+  clW->Freq.length = clW->numBins;
+  clW->Freq.data = XLALMalloc( sizeof(REAL42) * clW->numBins );
 
   clW->Fstat.length = clW->numSegments * clW->numBins;
   clW->Fstat.data = XLALMalloc( sizeof(REAL4) * clW->Fstat.length );
 
-  if ( clW->Fstat.data == NULL || clW->fkdot4.data == NULL ) {
+  if ( clW->Fstat.data == NULL || clW->Freq.data == NULL ) {
       XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
       XLAL_ERROR ( fn, XLAL_EINVAL );
-  } 
+  }
 
 #if USE_OPENCL_KERNEL
   { // create memory buffers on the device
     cl_int err, err_total = CL_SUCCESS;
 
     if (call_count > 1) {
-      freeCLMemoryObject(&(clW->fkdot4.memobj));
+      freeCLMemoryObject(&(clW->Freq.memobj));
       freeCLMemoryObject(&(clW->Fstat.memobj));
     }
 
     clW->Fstat.memobj = clCreateBuffer (*(clW->context), CL_MEM_READ_WRITE, sizeof(REAL4)*clW->Fstat.length, NULL, &err);
     err_total += (err-CL_SUCCESS);
 
-    clW->fkdot4.memobj = clCreateBuffer(*(clW->context), CL_MEM_READ_ONLY, sizeof(REAL42)*clW->fkdot4.length, NULL, &err);
+    clW->Freq.memobj = clCreateBuffer(*(clW->context), CL_MEM_READ_ONLY, sizeof(REAL42)*clW->Freq.length, NULL, &err);
     err_total += (err-CL_SUCCESS);
 
     if (err_total != CL_SUCCESS) {
@@ -990,7 +1018,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
         XLAL_ERROR ( fn, XLAL_EINVAL );
     }
   }
-#endif // #if USE_OPENCL_KERNEL  
+#endif // #if USE_OPENCL_KERNEL
 
 } /* XLALRearrangeSFTData */
 
@@ -1009,7 +1037,7 @@ XLALDestroyCLWorkspace ( CLWorkspace *clW,
 #if USE_OPENCL_KERNEL
   freeCLMemoryObject(&(clW->multiSFTsFlat.memobj));
   freeCLMemoryObject(&(clW->numSFTsV.memobj));
-  freeCLMemoryObject(&(clW->fkdot4.memobj));
+  freeCLMemoryObject(&(clW->Freq.memobj));
   freeCLMemoryObject(&(clW->tSSB_DeltaT_int.memobj));
   freeCLMemoryObject(&(clW->tSSB_DeltaT_rem.memobj));
   freeCLMemoryObject(&(clW->tSSB_TdotM1.memobj));
@@ -1017,6 +1045,7 @@ XLALDestroyCLWorkspace ( CLWorkspace *clW,
   freeCLMemoryObject(&(clW->amcoe_b.memobj));
   freeCLMemoryObject(&(clW->ABCInvD.memobj));
   freeCLMemoryObject(&(clW->Fstat.memobj));
+  freeCLMemoryObject(&(clW->fkdot16.memobj));
 #endif
 
   if (clW->multiSFTsFlat.data) {
@@ -1028,20 +1057,20 @@ XLALDestroyCLWorkspace ( CLWorkspace *clW,
     MultiSFTVector *multiSFT;
     SFTVector *sFT;
     COMPLEX8Vector *cV;
-    
-    // set all data pointers on the lowest level to NULL, since their memory has been 
+
+    // set all data pointers on the lowest level to NULL, since their memory has been
     // already deallocated
     for (n=0; n<stackMultiSFT->length; n++) {
       multiSFT = stackMultiSFT->data[n];
       for (X=0; X<multiSFT->length; X++) {
         sFT = multiSFT->data[X];
-        for (s=0; s<sFT->length; s++) { 
+        for (s=0; s<sFT->length; s++) {
           cV = sFT->data[s].data;
           cV->data = NULL;
         }
       }
     }
-  } // if clW->multiSFTsFlat.data != NULL 
+  } // if clW->multiSFTsFlat.data != NULL
 
   if (clW->tSSB_DeltaT_int.data) LALFree(clW->tSSB_DeltaT_int.data);
   if (clW->tSSB_DeltaT_rem.data) LALFree(clW->tSSB_DeltaT_rem.data);
@@ -1049,9 +1078,10 @@ XLALDestroyCLWorkspace ( CLWorkspace *clW,
   if (clW->amcoe_a.data)         LALFree(clW->amcoe_a.data);
   if (clW->amcoe_b.data)         LALFree(clW->amcoe_b.data);
   if (clW->ABCInvD.data)         LALFree(clW->ABCInvD.data);
-  if (clW->fkdot4.data)          LALFree(clW->fkdot4.data);
+  if (clW->Freq.data)            LALFree(clW->Freq.data);
   if (clW->numSFTsV.data)        LALFree(clW->numSFTsV.data);
   if (clW->Fstat.data)           LALFree(clW->Fstat.data);
+  if (clW->fkdot16.data)         LALFree(clW->fkdot16.data);
 
 #if USE_OPENCL_KERNEL
   if (clW->kernel)    clReleaseKernel(*(clW->kernel));
@@ -1071,7 +1101,7 @@ void freeCLMemoryObject (cl_mem *memobj) {
 
   // get an object's reference count
   clGetMemObjectInfo (*memobj, CL_MEM_REFERENCE_COUNT, sizeof(ref_count), &ref_count, NULL);
- 
+
   // decrement reference count of a memory object unless its destroyed
   for (i=0;i<ref_count;i++) clReleaseMemObject(*memobj);
 }

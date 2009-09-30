@@ -115,7 +115,8 @@ typedef struct {
     COMPLEX8MemBuffer  multiSFTsFlat; /* flattened array for all SFT COMPLEX8 data */
     UINT4MemBuffer     numSFTsV;      /* numSFTs for numSegments x numIFOs data slots */
 
-    REAL42MemBuffer    fkdot4;
+    REAL42MemBuffer    Freq;
+    REAL4MemBuffer     fkdot16;
     REAL4MemBuffer     tSSB_DeltaT_int;
     REAL4MemBuffer     tSSB_DeltaT_rem;
     REAL4MemBuffer     tSSB_TdotM1;

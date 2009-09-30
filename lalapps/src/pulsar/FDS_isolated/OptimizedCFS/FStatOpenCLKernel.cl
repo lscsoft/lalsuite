@@ -105,8 +105,8 @@ typedef struct {
 //#define SINCOS_TRIM_X(y,x)          y = (x)
 
 #if USE_OPENCL_KERNEL_CPU
-#  define SINCOS_2PI_TRIMMED(s,c,x)   sin_cos_2PI_LUT_REAL4(s,c,x);
-//#  define SINCOS_2PI_TRIMMED(s,c,x)   {*s = sin(TWOPI_F*(x)); *c = cos(TWOPI_F*(x));}
+//#  define SINCOS_2PI_TRIMMED(s,c,x)   sin_cos_2PI_LUT_REAL4(s,c,x);
+#  define SINCOS_2PI_TRIMMED(s,c,x)   {*s = sin(TWOPI_F*(x)); *c = cos(TWOPI_F*(x));}
 #else
 #  define SINCOS_2PI_TRIMMED(s,c,x)   *s = sincos(TWOPI_F*(x), (c))
 //#  define SINCOS_2PI_TRIMMED(s,c,x)   {*s = sinf(TWOPI_F*(x)); *c = cosf(TWOPI_F*(x));}
@@ -157,8 +157,9 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
                                      REAL4 dFreq,
                                      INT4 freqIndex0,
 
-                                     __global REAL42 *fkdot4,   //TODO: simplify here
-                                     PulsarSpins16 fkdot4ex,
+                                     __global REAL42 *Freq,
+                                     UINT4 spdnOrder, 
+                                     __global REAL4 *fkdot16,
 
                                      __global REAL4 *arg_tSSB_DeltaT_int,
                                      __global REAL4 *arg_tSSB_DeltaT_rem,
@@ -207,8 +208,8 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
 
         INT4 freqIndex1 = freqIndex0 + sftLen;                   // index of last frequency-bin in SFTs
 
-        REAL4 f0 = fkdot4[curBin].FreqMain;
-        REAL4 df = fkdot4[curBin].fkdot0;
+        REAL4 f0 = Freq[curBin].FreqMain;
+        REAL4 df = Freq[curBin].fkdot0;
         REAL4 tau = RECIPROCAL(df);
         REAL4 Freq = f0 + df;
 
@@ -216,8 +217,6 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
 //        REAL4 T0offs = tSSB_DeltaT_int[0];
 //        tSSB_DeltaT_int += curSfts;
 //        REAL4 phi_alpha_offs = df * FMOD(T0offs, tau);
-
-        UINT4 spdnOrder = (UINT4)fkdot4ex.s[0];
 
         // Process one SFT per thread 
         {
@@ -259,7 +258,7 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
                 UINT4 s;
                 for (s=1; s <= spdnOrder; s++)
                 {
-                  REAL4 fsdot = fkdot4ex.s[s];
+                  REAL4 fsdot = fkdot16[s];
                   Dphi_alpha_rem += fsdot * Tas * invfact[s]; 	/* here: Tas = DT^s */
                   Tas *= deltaT;					/* now:  Tas = DT^(s+1) */
                   phi_alpha_rem += fsdot * Tas * invfact[s+1];
@@ -374,17 +373,15 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
 
 #if !(USE_OPENCL_KERNEL_CPU)
     // Perform reduction. Assuming blockDim = [64,2,1]
-    int m, o2;
-    m = maxSfts;
-    o2 = m/2;
-    for (; m; m>>=1, o2>>=1) {
+    int m;
+    for (m=maxSfts/2; m>0; m/=2) {
        barrier(CLK_LOCAL_MEM_FENCE);
-       if (curSfts < o2)
+       if (curSfts < m)
        {
-           FaFb_components[offset].Fa.re += FaFb_components[offset + o2].Fa.re;
-           FaFb_components[offset].Fa.im += FaFb_components[offset + o2].Fa.im;
-           FaFb_components[offset].Fb.re += FaFb_components[offset + o2].Fb.re;
-           FaFb_components[offset].Fb.im += FaFb_components[offset + o2].Fb.im;
+           FaFb_components[offset].Fa.re += FaFb_components[offset + m].Fa.re;
+           FaFb_components[offset].Fa.im += FaFb_components[offset + m].Fa.im;
+           FaFb_components[offset].Fb.re += FaFb_components[offset + m].Fb.re;
+           FaFb_components[offset].Fb.im += FaFb_components[offset + m].Fb.im;
         }
     }
 
