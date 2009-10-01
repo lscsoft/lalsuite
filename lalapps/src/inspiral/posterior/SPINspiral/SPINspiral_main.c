@@ -27,6 +27,8 @@
 
 #include <SPINspiral.h>
 
+double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
+
 
 
 /**

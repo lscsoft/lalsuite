@@ -33,6 +33,7 @@ AC_CONFIG_FILES([\
   src/pulsar/TDS_isolated/Makefile \
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
+  src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
   src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
