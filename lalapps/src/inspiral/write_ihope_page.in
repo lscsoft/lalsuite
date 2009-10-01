@@ -528,8 +528,10 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
 
   sections = []
   htmlOnly = []
+  htmlAndPlot = []
   titles = {}
   tags = {}
+  htmltags = {}
   imagetags = {}
   captions = {}
   comments = {}
@@ -549,24 +551,15 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
 
   section = 'ifar4'
   sections.append(section)
-  titles[section] = "IFAR at CAT_4 (hardware injections removed)."
+  htmlAndPlot.append(section)
+  titles[section] = "IFAR and loudest event tables at CAT_4 (hardware injections removed)."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1] + '*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
-  captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
+  captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
-
-  section = 'printlc4zl'
-  sections.append(section)
-  htmlOnly.append(section)
-  titles[section] = "Loudest zero lag events after CAT_4 (hardware injections removed)."
-  tags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
-  captions[section] = 'Loudest events after Category 4 vetoes (hardware injections removed).'
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
 
   section = 'inspmissed'
   sections.append(section)
@@ -584,8 +577,12 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
         page.p(comments[section])
       page = add_config_section(page, configs[section])
       if section in htmlOnly:
-        page = html_insert(page,opts, html_tag=tags[section],\
+        page = html_insert(page,opts, html_tag=htmltags[section],\
           caption=captions[section],directory=images_dirs[section])
+      elif section in htmlAndPlot:
+        page = html_and_plot(page, opts, cachefile_tag=tags[section],\
+          caption=captions[section],image_tag=imagetags[section],\
+          directory=images_dirs[section],html_tag=htmltags[section])
       else:
         page = fom(page, opts, cachefile_tag=tags[section],\
           caption=captions[section],image_tag=imagetags[section],\
@@ -1484,7 +1481,7 @@ def add_caption(page, caption):
 
 # ***************************************************************************
 def add_figure(page,webDir,fnames="test", caption="add a caption", size=None, \
-    alt="no figure found",source="not specified",html=None):
+    alt="no figure found",source="not specified",html=None,html_file = None):
   """
   Add a figure to the HTML document, taking care of the numbering.
  
@@ -1552,6 +1549,13 @@ def add_figure(page,webDir,fnames="test", caption="add a caption", size=None, \
     for fnam in fnames:
       page.add(fnam.replace("\n",""))
     page.add("</pre>")
+
+  if html_file:
+    this = open(html_file, "r")
+    for line in this:
+      page.add(line)
+    page.add("<pre>Source: "+ html_file + "\n </pre>" )
+    this.close()
 
   page.div.close()
 
@@ -1920,9 +1924,6 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
   dataDir = opts.datadir+directory+'/'
   webDir = opts.physdir + directory + '/'
 
-  # create the div that will contain the figure 
-#  page.div(class_="figure")
-
   # create a list of cachefiles, each of which containing
   # the cachefile_tag argument in its name
   thisglob = webDir + cachefile_tag +'cache'
@@ -1988,6 +1989,108 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
 
   return page
 # ***************************************************************************
+
+def html_and_plot(page, opts, cachefile_tag=None,\
+          caption='fix_me',image_tag=None,\
+          directory=None,html_tag=None):
+  """
+  This function does fom and html_insert together!
+  """
+  dataDir = opts.datadir+directory+'/'
+  webDir = opts.physdir + directory + '/'
+  # create a list of cachefiles, each of which containing
+  # the cachefile_tag argument in its name
+  thisglob = webDir + cachefile_tag +'cache'
+  cachefileList =  glob.glob(thisglob)
+  # And do the same for the html_tag glob.
+  thisglob = webDir + html_tag + 'html'
+  htmlfileList = glob.glob(thisglob)
+
+  # Now we need to match them up
+  fileListDict = []
+  cacheFiles = {}
+  htmlFiles = {}
+  cachefileList.sort()
+  for file in cachefileList: 
+    ifo = None
+    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+      if os.path.basename(file).startswith(combo):
+        ifo = combo
+    if ifo:
+      cacheFiles[ifo] = file
+      fileListDict.append(ifo)
+    else:
+      print >> sys.stderr,"WARNING: file doesn't seem to match an ifo combo!"
+
+  for file in htmlfileList:
+    ifo = None
+    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+      if os.path.basename(file).startswith(combo):
+        ifo = combo
+    if ifo:
+      htmlFiles[ifo] = file
+    else:
+      print >> sys.stderr,"WARNING: file doesn't seem to match an ifo combo!"
+    if ifo not in cacheFiles:
+      print >> sys.stderr,"WARNING: file doesn't seem to correspond to cache file list"
+
+  if opts.verbose is True:
+    print "        Searching for files with this(ese) tag(s): " +str(image_tag)
+
+  for ifo in fileListDict:
+    # read the image cachefile
+    this = open(cacheFiles[ifo], "r")
+    fnameList = []
+    # Lots of lists but it ensures that the order is always the same
+    fileNameList = []
+    href = None
+    #for each file contained in the cachefile
+
+    if opts.debug is True:
+      print >>sys.stdout, "        --> Copying files from " +cacheFiles[ifo]
+
+    for filename in this:
+      filename = filename.replace("\n","")
+      filename = filename.replace(" ","")
+      fileNameList.append(filename)
+
+    fileNameList.sort()
+
+    for filename in fileNameList:
+      # if the file is an image, we copy it in ./Images
+      # if the file is an image, we copy the file. Then, if the pattern 
+      # (in image_tag)  matches the filename, then we create am html section.
+      if filename[-4:]=='.png':
+        # we check if the pattern match the file
+        if image_tag is not None:
+          for eachPattern  in image_tag:
+            if patternFoundInFilename(filename, eachPattern) is True:
+              fnameList.append(filename.replace(".png", "_thumb.png"))
+        else:
+          fnameList.append(filename.replace(".png", "_thumb.png"))
+      elif filename[-5:] == '.html' and ('followup' not in filename):
+        href = filename.replace("/pictures", "")
+        href = href.replace("\n", "")
+        htmlFile = href
+        href = directory + '/' + href
+
+    if href:
+      msg =" <a href=\"" + href + "\""
+      msg+=" rel=\"external\" >"
+      msg += """ <br/> --- <b>Click here (to open link in a new tab/window)</b> to get all pictures (full resolution) 
+          as well as the pylal arguments used to generate the plots</a> """
+
+      source =  cacheFiles[ifo].split('/')
+      source =  source[len(source)-1]
+      page = add_figure(page, directory, fnames=fnameList, \
+          caption=(caption+' '+msg), source=source,size=None, alt=fnameList,\
+          html = htmlFile,html_file = htmlFiles[ifo])
+      # close the cachefile
+    this.close()
+
+  return page
+  
+###############################################################################
 
 def html_insert(page,opts, html_tag=None,\
           caption='fix_me',directory='playground_summary_plots'):

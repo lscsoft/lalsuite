@@ -217,7 +217,7 @@ print "      Completed Jobs = " + str( totals[0] )
 print "      Submitted Jobs = " + str( sum( totals[:7] ) )
 print "      Total Jobs     = " + str( sum(totals[:]) )
 if sub_dags != 0:
-  print "      Dags       =", str( done_dags ) + "/" + str( sub_dags )
+  print "      Sub-dags       =", str( done_dags ) + "/" + str( sub_dags )
 print "  ----------------------------------- "
 
 # Confirm if completed
