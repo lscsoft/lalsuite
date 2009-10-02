@@ -243,6 +243,16 @@ if options.generate_all_data_plots:
   plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', 'sub' ]) )
   plotcumhist_job.set_sub_file( '.'.join([ basename, 'plotcumhist', 'sub' ]) )
 
+# set memory requirments for memory intensive jobs
+t2c_job.add_condor_cmd("requirements", "Memory > 1000")
+t2c_sim_job.add_condor_cmd("requirements", "Memory > 1000")
+sql_replace_job.add_condor_cmd("requirements", "Memory > 1000")
+sql_fromcache_job.add_condor_cmd("requirements", "Memory > 1000")
+sql_frominput_job.add_condor_cmd("requirements", "Memory > 1000")
+sql_extract_job.add_condor_cmd("requirements", "Memory > 1000")
+inspinjfind_job.add_condor_cmd("requirements", "Memory > 1000")
+printlc_job.add_condor_cmd("requirements", "Memory > 1000")
+minifup_job.add_condor_cmd("requirements", "Memory > 1000")
 
 ##############################################################################
 # Cycle over the user tags, creating databases for each 
@@ -315,10 +325,10 @@ for tag in user_tags:
   t2c_output = []
   t2c_nodes = []
   this_cache = lal.Cache()
-  cache_start_time = int(experiment_start)
   for on_instruments in distinct_instrument_sets:
     instrument_cache = thinca_cache.sieve( ifos = on_instruments, exact_match = True )
     instrument_cache.sort()
+    cache_start_time = int(experiment_start)
     for entry_num, entry in enumerate(instrument_cache):
       if not this_cache:
         # first entry; store type for cache naming
