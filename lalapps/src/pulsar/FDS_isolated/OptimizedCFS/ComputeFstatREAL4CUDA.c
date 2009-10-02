@@ -55,6 +55,82 @@ int cuda_device_id = -1;
 static const LALStatus empty_LALStatus;
 
 
+  const UINT4 maxNumSFTs = 64;
+  UINT4 maxNumSegments;
+  UINT4 maxNumIFOs;
+  UINT4 maxSftDataLength;
+  UINT4 maxNumBins;
+
+    UINT4 unipitch_Fstat;
+    UINT4 unipitch_sfts_data_data_data;
+    
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Declaration
+
+    REAL4 *Fstat;
+
+    COMPLEX8 *ifo0_sfts_data_data_data;
+    COMPLEX8 *ifo1_sfts_data_data_data;
+
+    REAL4 *fkdot4_FreqMain;
+    REAL4 *fkdot4_fkdot_0;
+
+    REAL4 *ifo0_tSSB_DeltaT_int;
+    REAL4 *ifo1_tSSB_DeltaT_int;
+    REAL4 *ifo0_tSSB_DeltaT_rem;
+    REAL4 *ifo1_tSSB_DeltaT_rem;
+    REAL4 *ifo0_tSSB_TdotM1;
+    REAL4 *ifo1_tSSB_TdotM1;
+
+    REAL4 *ifo0_amcoe_a;
+    REAL4 *ifo1_amcoe_a;
+    REAL4 *ifo0_amcoe_b;
+    REAL4 *ifo1_amcoe_b;
+
+    UINT4 *ifo0_sfts_length;
+    UINT4 *ifo1_sfts_length;
+    REAL4 *antenna_pattern_Ad;
+    REAL4 *antenna_pattern_Bd;
+    REAL4 *antenna_pattern_Cd;
+    REAL4 *antenna_pattern_DdInv;
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Declaration
+
+    //1
+    REAL4 *dev_Fstat;
+
+    //2
+    COMPLEX8 *dev_ifo0_sfts_data_data_data;
+    COMPLEX8 *dev_ifo1_sfts_data_data_data;
+
+    //3
+    REAL4 *dev_fkdot4_FreqMain;
+    REAL4 *dev_fkdot4_fkdot0;
+
+    //4
+    REAL4 *dev_ifo0_tSSB_DeltaT_int;
+    REAL4 *dev_ifo1_tSSB_DeltaT_int;
+    REAL4 *dev_ifo0_tSSB_DeltaT_rem;
+    REAL4 *dev_ifo1_tSSB_DeltaT_rem;
+    REAL4 *dev_ifo0_tSSB_TdotM1;
+    REAL4 *dev_ifo1_tSSB_TdotM1;
+
+    //5
+    REAL4 *dev_ifo0_amcoe_a;
+    REAL4 *dev_ifo1_amcoe_a;
+    REAL4 *dev_ifo0_amcoe_b;
+    REAL4 *dev_ifo1_amcoe_b;
+
+    UINT4 *dev_ifo0_sfts_length;
+    UINT4 *dev_ifo1_sfts_length;
+    REAL4 *dev_antenna_pattern_Ad;
+    REAL4 *dev_antenna_pattern_Bd;
+    REAL4 *dev_antenna_pattern_Cd;
+    REAL4 *dev_antenna_pattern_DdInv;
+
+
 /*---------- internal prototypes ----------*/
 extern void HostWrapperCUDAComputeFstatFaFb    (REAL4 *Fstat,
                                                 UINT4 Fstat_pitch,
@@ -116,16 +192,13 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
     REAL8 Freq0, Freq;
     PulsarSpinsExREAL4 fkdot4ex;
     UINT4 s;
-    UINT4 m;
 
     //////////////////////////////////////////////////////////////////////////
     //CUDA related
 
     cudaError_t res;
 
-    UINT4 constIFOs = multiSFTsV->data[0]->length;
-    UINT4 constSftsDataDataLength = multiSFTsV->data[0]->data[0]->data->data->length;
-    UINT4 maxNumSFTs = 0;
+    UINT4 sftsDataDataLength = multiSFTsV->data[0]->data[0]->data->data->length;
 
     REAL8 constSftsDataDeltaF = multiSFTsV->data[0]->data[0]->data->deltaF;
     REAL8 constSftsDataF0 = multiSFTsV->data[0]->data[0]->data->f0;
@@ -134,7 +207,6 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
     REAL4 constDFreq = (REAL4)constSftsDataDeltaF;
     INT4 constFreqIndex0 = (UINT4)(constSftsDataF0 / constDFreq + 0.5);         /* index of first frequency-bin in SFTs */
 
-    struct cudaDeviceProp curDevProps;
 
 
     /* check input consistency */
@@ -180,6 +252,323 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
     {
         fkdot4ex.fkdot16[s] = (REAL4)doppler->fkdot[s+1];
     }
+
+    /* REAL4-split frequency value */
+    for (k = 0, Freq = Freq0; k < numBins; k++)
+    {
+        // TODO: Are we cool with this line?
+        fkdot4_FreqMain[k] = (REAL4)((INT4)Freq);
+        fkdot4_fkdot_0[k] = (REAL4)(Freq - (REAL8)fkdot4_FreqMain[k]);
+
+        /* increase frequency by deltaF */
+        Freq += deltaF;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE to HOST memcpy
+
+    //3
+    res = cudaMemcpy(dev_fkdot4_FreqMain, fkdot4_FreqMain, numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
+    res = cudaMemcpy(dev_fkdot4_fkdot0,   fkdot4_fkdot_0,  numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Kernel Launch
+
+    HostWrapperCUDAComputeFstatFaFb(dev_Fstat,
+                                    unipitch_Fstat,
+
+                                    sftsDataDataLength,
+                                    dev_ifo0_sfts_data_data_data,
+                                    dev_ifo1_sfts_data_data_data,
+                                    unipitch_sfts_data_data_data,
+                                    constTsft,
+                                    constDFreq,
+                                    constFreqIndex0,
+
+                                    dev_fkdot4_FreqMain,
+                                    dev_fkdot4_fkdot0,
+                                    fkdot4ex,
+
+                                    dev_ifo0_tSSB_DeltaT_int,
+                                    dev_ifo1_tSSB_DeltaT_int,
+                                    dev_ifo0_tSSB_DeltaT_rem,
+                                    dev_ifo1_tSSB_DeltaT_rem,
+                                    dev_ifo0_tSSB_TdotM1,
+                                    dev_ifo1_tSSB_TdotM1,
+
+                                    dev_ifo0_amcoe_a,
+                                    dev_ifo1_amcoe_a,
+                                    dev_ifo0_amcoe_b,
+                                    dev_ifo1_amcoe_b,
+
+                                    dev_ifo0_sfts_length,
+                                    dev_ifo1_sfts_length,
+
+                                    dev_antenna_pattern_Ad,
+                                    dev_antenna_pattern_Bd,
+                                    dev_antenna_pattern_Cd,
+                                    dev_antenna_pattern_DdInv,
+
+                                    Dterms,
+
+                                    numBins,
+                                    numSegments);
+    res = cudaGetLastError();
+    res = cudaThreadSynchronize();
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST to DEVICE memcpy
+
+    res = cudaMemcpy(Fstat, dev_Fstat, unipitch_Fstat * numSegments, cudaMemcpyDeviceToHost);
+    for (n=0; n<numSegments; n++)
+    {
+        for (k=0; k<numBins; k++)
+        {
+            fstatBandV->data[n].data->data[k] = ((REAL4 *)(((char *)Fstat) + n * unipitch_Fstat))[k];
+        }
+    }
+
+    return XLAL_SUCCESS;
+
+} /* XLALComputeFStatFreqBandVector_cuda() */
+
+
+int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySeriesVector *fstatBandV) 
+{
+    static const char *fn = "InitializeCUDADevice()";
+    cudaError_t res;
+        struct cudaDeviceProp curDevProps;
+  UINT4 i,j;
+
+  /* these values should all be equal for the whole stackMultiSFT structure, so take them from the first elements */
+  maxNumSegments = stackMultiSFT->length; /* == nStacks == fstatBandV->length */
+  maxNumIFOs = stackMultiSFT->data[0]->length;
+  maxSftDataLength = stackMultiSFT->data[0]->data[0]->data->data->length;
+  //TODO: this is unsafe and pure memory waste
+  maxNumBins = 256;
+
+  if(maxNumIFOs != 2) {
+    XLALPrintError ("InitializeCUDADevice: numIFOs must be 2 (%d)\n", maxNumIFOs);
+    return -1;
+  }
+
+  for(j=0;j<maxNumSegments;j++)
+    for(i=0;i<maxNumIFOs;i++)
+      if (stackMultiSFT->data[j]->data[i]->length > maxNumSFTs) {
+	XLALPrintError ("InitializeCUDADevice: numSFTs must be <= %d (%d,%d,%d)\n",
+			maxNumSFTs,j,i,stackMultiSFT->data[j]->data[i]->length);
+	return -1;
+      }
+
+    #define UNIPITCH256(type, numElems)     ((numElems * sizeof(type) + 255) & (~255))
+
+    // calculate pitch for Fstat output (256-bytes alignment)
+    unipitch_Fstat = UNIPITCH256(REAL4, maxNumBins);
+
+    // calculate pitch for sfts_data_data_data (256-bytes alignment)
+    unipitch_sfts_data_data_data = UNIPITCH256(COMPLEX8, maxSftDataLength);
+
+
+
+
+
+
+    // If no cuda_device_id has been specified yet, find device with max SM
+    if ( cuda_device_id >= 0 )
+      fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
+    else {
+      int nodevices, deviceid, maxsmdevice=0;
+      size_t maxsm=0;
+      
+      if (cudaSuccess != cudaGetDeviceCount(&nodevices) ) {
+        //XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: cudaGetDeviceCount failed, no CUDA devices found\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+      }
+
+      for(deviceid=0; deviceid<nodevices; deviceid++) {
+	if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, deviceid) ) {
+	  //XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+	  XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
+	  XLAL_ERROR ( fn, XLAL_EINVAL );
+	}
+	if (maxsm < curDevProps.multiProcessorCount) {
+	  maxsm = curDevProps.multiProcessorCount;
+	  maxsmdevice = deviceid;
+	}
+      }
+
+      cuda_device_id = maxsmdevice;
+
+      fprintf (stderr, "Using CUDA device %d of %d\n", cuda_device_id, nodevices);
+    }
+
+    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
+    {
+        //XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
+        XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+
+
+
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Allocation
+
+    Fstat                    = malloc(unipitch_Fstat * maxNumSegments);
+
+    ifo0_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
+    ifo1_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
+
+    fkdot4_FreqMain          = malloc(maxNumBins * sizeof(REAL4));
+    fkdot4_fkdot_0           = malloc(maxNumBins * sizeof(REAL4));
+
+    ifo0_tSSB_DeltaT_int     = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_DeltaT_int     = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_tSSB_DeltaT_rem     = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_DeltaT_rem     = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_tSSB_TdotM1         = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_tSSB_TdotM1         = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+
+    ifo0_amcoe_a             = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_amcoe_a             = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo0_amcoe_b             = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    ifo1_amcoe_b             = malloc(maxNumSegments * maxNumSFTs * sizeof(REAL4));
+
+    ifo0_sfts_length         = malloc(maxNumSegments * sizeof(UINT4));
+    ifo1_sfts_length         = malloc(maxNumSegments * sizeof(UINT4));
+    antenna_pattern_Ad       = malloc(maxNumSegments * sizeof(REAL4));
+    antenna_pattern_Bd       = malloc(maxNumSegments * sizeof(REAL4));
+    antenna_pattern_Cd       = malloc(maxNumSegments * sizeof(REAL4));
+    antenna_pattern_DdInv    = malloc(maxNumSegments * sizeof(REAL4));
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Allocation (gridDim.x = numBins, gridDim.x = numSegments)
+
+    //1
+    res = cudaMalloc((void **)&dev_Fstat, unipitch_Fstat * maxNumSegments);
+
+    //2
+    res = cudaMalloc((void **)&dev_ifo0_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
+    res = cudaMalloc((void **)&dev_ifo1_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
+
+    //3
+    res = cudaMalloc((void **)&dev_fkdot4_FreqMain, maxNumBins * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_fkdot4_fkdot0, maxNumBins * sizeof(REAL4));
+
+    //4
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_int, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_int, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_rem, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_rem, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_tSSB_TdotM1, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_tSSB_TdotM1, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+
+    //5
+    res = cudaMalloc((void **)&dev_ifo0_amcoe_a, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_amcoe_a, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo0_amcoe_b, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_ifo1_amcoe_b, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+
+    //extra
+    res = cudaMalloc((void **)&dev_ifo0_sfts_length, maxNumSegments * sizeof(UINT4));
+    res = cudaMalloc((void **)&dev_ifo1_sfts_length, maxNumSegments * sizeof(UINT4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Ad, maxNumSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Bd, maxNumSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_Cd, maxNumSegments * sizeof(REAL4));
+    res = cudaMalloc((void **)&dev_antenna_pattern_DdInv, maxNumSegments * sizeof(REAL4));
+
+
+
+  return 0;
+}
+
+void UnInitializeCUDADevice(void) 
+{
+    //////////////////////////////////////////////////////////////////////////
+    // DEVICE Deallocation
+
+    //1
+    cudaFree(dev_Fstat);
+
+    //2
+    cudaFree(dev_ifo0_sfts_data_data_data);
+    cudaFree(dev_ifo1_sfts_data_data_data);
+
+    //3
+    cudaFree(dev_fkdot4_FreqMain);
+    cudaFree(dev_fkdot4_fkdot0);
+
+    //4
+    cudaFree(dev_ifo0_tSSB_DeltaT_int);
+    cudaFree(dev_ifo1_tSSB_DeltaT_int);
+    cudaFree(dev_ifo0_tSSB_DeltaT_rem);
+    cudaFree(dev_ifo1_tSSB_DeltaT_rem);
+    cudaFree(dev_ifo0_tSSB_TdotM1);
+    cudaFree(dev_ifo1_tSSB_TdotM1);
+
+    //5
+    cudaFree(dev_ifo0_amcoe_a);
+    cudaFree(dev_ifo1_amcoe_a);
+    cudaFree(dev_ifo0_amcoe_b);
+    cudaFree(dev_ifo1_amcoe_b);
+
+    //extra
+    cudaFree(dev_ifo0_sfts_length);
+    cudaFree(dev_ifo1_sfts_length);
+    cudaFree(dev_antenna_pattern_Ad);
+    cudaFree(dev_antenna_pattern_Bd);
+    cudaFree(dev_antenna_pattern_Cd);
+    cudaFree(dev_antenna_pattern_DdInv);
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOST Deallocation
+
+    free(Fstat);
+
+    free(ifo0_sfts_data_data_data);
+    free(ifo1_sfts_data_data_data);
+
+    free(fkdot4_FreqMain);
+    free(fkdot4_fkdot_0);
+
+    free(ifo0_tSSB_DeltaT_int);
+    free(ifo1_tSSB_DeltaT_int);
+    free(ifo0_tSSB_DeltaT_rem);
+    free(ifo1_tSSB_DeltaT_rem);
+    free(ifo0_tSSB_TdotM1);
+    free(ifo1_tSSB_TdotM1);
+
+    free(ifo0_amcoe_a);
+    free(ifo1_amcoe_a);
+    free(ifo0_amcoe_b);
+    free(ifo1_amcoe_b);
+
+    free(ifo0_sfts_length);
+    free(ifo1_sfts_length);
+    free(antenna_pattern_Ad);
+    free(antenna_pattern_Bd);
+    free(antenna_pattern_Cd);
+    free(antenna_pattern_DdInv);
+
+}
+
+void RearrangeSFTData4CUDA(REAL4FrequencySeriesVector *fstatBandV,
+				 const PulsarDopplerParams *doppler,
+				 const MultiSFTVectorSequence *multiSFTsV,
+				 const MultiNoiseWeightsSequence *multiWeightsV,
+				 const MultiDetectorStateSeriesSequence *multiDetStatesV,
+				 UINT4 Dterms,
+				 ComputeFBufferREAL4V *cfvBuffer)
+{
+    static const char *fn = "RearrangeSFTData4CUDA()";
+    cudaError_t res;
+    UINT4 n;
+    UINT4 numSegments = fstatBandV->length;
+    UINT4 sftsDataDataLength = multiSFTsV->data[0]->data[0]->data->data->length;
 
     /* ---------- Buffering quantities that don't need to be recomputed ---------- */
 
@@ -246,259 +635,23 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Initializations and Assertions
-    //
-
-    // Check numIFOs is equal to hardcoded value
-    if (constIFOs != 2)
-    {
-        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-        XLALPrintError ("%s: numIFOs is not equal to 2. Consider upgrading the client\n", fn );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
-    }
-
-    for (n = 0; n < numSegments; n++)
-    {
-        // Check numIFOs is constant
-        if (constIFOs != multiSFTsV->data[n]->length)
-        {
-            XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError ("%s: numIFOs is not constant across data set\n", fn );
-            XLAL_ERROR ( fn, XLAL_EINVAL );
-        }
-
-        for (k = 0; k < constIFOs; k++)
-        {
-            // Determine max sfts length
-            if (maxNumSFTs < multiSFTsV->data[n]->data[k]->length)
-            {
-                maxNumSFTs = multiSFTsV->data[n]->data[k]->length;
-            }
-
-            // Assert constant fields consistency
-            for (m=0; m<multiSFTsV->data[n]->data[k]->length; m++)
-            {
-                // Check deltaF is constant
-                if (constSftsDataDeltaF != multiSFTsV->data[n]->data[k]->data[m].deltaF)
-                {
-                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-                    XLALPrintError ("%s: deltaF is not constant across data set\n", fn );
-                    XLAL_ERROR ( fn, XLAL_EINVAL );
-                }
-
-                if (constSftsDataF0 != multiSFTsV->data[n]->data[k]->data[m].f0)
-                {
-                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-                    XLALPrintError ("%s: f0 is not constant across data set\n", fn );
-                    XLAL_ERROR ( fn, XLAL_EINVAL );
-                }
-
-                if (constSftsDataDataLength != multiSFTsV->data[n]->data[k]->data[m].data->length)
-                {
-                    XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-                    XLALPrintError ("%s: sftsDataDataDataLength is not constant across data set\n", fn );
-                    XLAL_ERROR ( fn, XLAL_EINVAL );
-                }
-            }
-        }
-    }
-
-    // If no cuda_device_id has been specified yet, find device with max SM
-    if ( cuda_device_id >= 0 )
-      fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
-    else {
-      int nodevices, deviceid, maxsmdevice=0;
-      size_t maxsm=0;
-      
-      if (cudaSuccess != cudaGetDeviceCount(&nodevices) ) {
-        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-        XLALPrintError ("%s: cudaGetDeviceCount failed, no CUDA devices found\n", fn );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
-      }
-
-      for(deviceid=0; deviceid<nodevices; deviceid++) {
-	if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, deviceid) ) {
-	  XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-	  XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
-	  XLAL_ERROR ( fn, XLAL_EINVAL );
-	}
-	if (maxsm < curDevProps.multiProcessorCount) {
-	  maxsm = curDevProps.multiProcessorCount;
-	  maxsmdevice = deviceid;
-	}
-      }
-
-      cuda_device_id = maxsmdevice;
-
-      fprintf (stderr, "Using CUDA device %d of %d\n", cuda_device_id, nodevices);
-    }
-
-    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
-    {
-        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-        XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
-    }
-
-    // align to warp size
-    maxNumSFTs = (maxNumSFTs + curDevProps.warpSize - 1) & (~(curDevProps.warpSize - 1));
-
-    // Check that (sfts_length rounded to warp size) x numIFOs <= MAX_THREADS_IN_BLOCK
-    if (maxNumSFTs * constIFOs > (UINT4)curDevProps.maxThreadsPerBlock)
-    {
-        XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-        XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
     // Flatten structures
     //
-    {
-    #define UNIPITCH256(type, numElems)     ((numElems * sizeof(type) + 255) & (~255))
 
-    // calculate pitch for Fstat output (256-bytes alignment)
-    UINT4 unipitch_Fstat = UNIPITCH256(REAL4, numBins);
+//    memset(ifo0_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
+//    memset(ifo1_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * maxNumSegments);
 
-    // calculate pitch for sfts_data_data_data (256-bytes alignment)
-    UINT4 unipitch_sfts_data_data_data = UNIPITCH256(COMPLEX8, constSftsDataDataLength);
+//    memset(ifo0_tSSB_DeltaT_int, 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo1_tSSB_DeltaT_int, 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo0_tSSB_DeltaT_rem, 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo1_tSSB_DeltaT_rem, 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo0_tSSB_TdotM1    , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo1_tSSB_TdotM1    , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
 
-    //////////////////////////////////////////////////////////////////////////
-    // HOST Declaration
-
-    REAL4 *Fstat;
-
-    COMPLEX8 *ifo0_sfts_data_data_data;
-    COMPLEX8 *ifo1_sfts_data_data_data;
-
-    REAL4 *fkdot4_FreqMain;
-    REAL4 *fkdot4_fkdot_0;
-
-    REAL4 *ifo0_tSSB_DeltaT_int;
-    REAL4 *ifo1_tSSB_DeltaT_int;
-    REAL4 *ifo0_tSSB_DeltaT_rem;
-    REAL4 *ifo1_tSSB_DeltaT_rem;
-    REAL4 *ifo0_tSSB_TdotM1;
-    REAL4 *ifo1_tSSB_TdotM1;
-
-    REAL4 *ifo0_amcoe_a;
-    REAL4 *ifo1_amcoe_a;
-    REAL4 *ifo0_amcoe_b;
-    REAL4 *ifo1_amcoe_b;
-
-    UINT4 *ifo0_sfts_length;
-    UINT4 *ifo1_sfts_length;
-    REAL4 *antenna_pattern_Ad;
-    REAL4 *antenna_pattern_Bd;
-    REAL4 *antenna_pattern_Cd;
-    REAL4 *antenna_pattern_DdInv;
-
-    //REAL4 *debugREAL4;
-    //UINT4 *debugUINT4;
-
-    //////////////////////////////////////////////////////////////////////////
-    // DEVICE Declaration
-
-    //1
-    REAL4 *dev_Fstat;
-
-    //2
-    COMPLEX8 *dev_ifo0_sfts_data_data_data;
-    COMPLEX8 *dev_ifo1_sfts_data_data_data;
-
-    //3
-    REAL4 *dev_fkdot4_FreqMain;
-    REAL4 *dev_fkdot4_fkdot0;
-
-    //4
-    REAL4 *dev_ifo0_tSSB_DeltaT_int;
-    REAL4 *dev_ifo1_tSSB_DeltaT_int;
-    REAL4 *dev_ifo0_tSSB_DeltaT_rem;
-    REAL4 *dev_ifo1_tSSB_DeltaT_rem;
-    REAL4 *dev_ifo0_tSSB_TdotM1;
-    REAL4 *dev_ifo1_tSSB_TdotM1;
-
-    //5
-    REAL4 *dev_ifo0_amcoe_a;
-    REAL4 *dev_ifo1_amcoe_a;
-    REAL4 *dev_ifo0_amcoe_b;
-    REAL4 *dev_ifo1_amcoe_b;
-
-    UINT4 *dev_ifo0_sfts_length;
-    UINT4 *dev_ifo1_sfts_length;
-    REAL4 *dev_antenna_pattern_Ad;
-    REAL4 *dev_antenna_pattern_Bd;
-    REAL4 *dev_antenna_pattern_Cd;
-    REAL4 *dev_antenna_pattern_DdInv;
-
-    //REAL4 *dev_debugREAL4;
-    //UINT4 *dev_debugUINT4;
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // HOST Allocation
-
-    Fstat                    = malloc(unipitch_Fstat * numSegments);
-
-    ifo0_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-    ifo1_sfts_data_data_data = malloc(unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-
-    fkdot4_FreqMain          = malloc(numBins * sizeof(REAL4));
-    fkdot4_fkdot_0           = malloc(numBins * sizeof(REAL4));
-
-    ifo0_tSSB_DeltaT_int     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo1_tSSB_DeltaT_int     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo0_tSSB_DeltaT_rem     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo1_tSSB_DeltaT_rem     = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo0_tSSB_TdotM1         = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo1_tSSB_TdotM1         = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-
-    ifo0_amcoe_a             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo1_amcoe_a             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo0_amcoe_b             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-    ifo1_amcoe_b             = malloc(numSegments * maxNumSFTs * sizeof(REAL4));
-
-    ifo0_sfts_length         = malloc(numSegments * sizeof(UINT4));
-    ifo1_sfts_length         = malloc(numSegments * sizeof(UINT4));
-    antenna_pattern_Ad       = malloc(numSegments * sizeof(REAL4));
-    antenna_pattern_Bd       = malloc(numSegments * sizeof(REAL4));
-    antenna_pattern_Cd       = malloc(numSegments * sizeof(REAL4));
-    antenna_pattern_DdInv    = malloc(numSegments * sizeof(REAL4));
-//#define NUM_INTERMEDIATES_PER_THREAD    4
-//    debugREAL4 = malloc((64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
-//    debugUINT4 = malloc((64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
-
-    //////////////////////////////////////////////////////////////////////////
-    // HOST meminit
-
-    memset(ifo0_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-    memset(ifo1_sfts_data_data_data, 0, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-
-    memset(ifo0_tSSB_DeltaT_int, 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo1_tSSB_DeltaT_int, 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo0_tSSB_DeltaT_rem, 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo1_tSSB_DeltaT_rem, 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo0_tSSB_TdotM1    , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo1_tSSB_TdotM1    , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-
-    memset(ifo0_amcoe_a        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo1_amcoe_a        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo0_amcoe_b        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-    memset(ifo1_amcoe_b        , 0, numSegments * maxNumSFTs * sizeof(REAL4));
-
-    //memset(debugUINT4        , 0xCC, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
-    //memset(debugREAL4        , 0xCC, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
-
-    /* REAL4-split frequency value */
-    for (k = 0, Freq = Freq0; k < numBins; k++)
-    {
-        // TODO: Are we cool with this line?
-        fkdot4_FreqMain[k] = (REAL4)((INT4)Freq);
-        fkdot4_fkdot_0[k] = (REAL4)(Freq - (REAL8)fkdot4_FreqMain[k]);
-
-        /* increase frequency by deltaF */
-        Freq += deltaF;
-    }
+//    memset(ifo0_amcoe_a        , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo1_amcoe_a        , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo0_amcoe_b        , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
+//    memset(ifo1_amcoe_b        , 0, maxNumSegments * maxNumSFTs * sizeof(REAL4));
 
     for (n=0; n<numSegments; n++)
     {
@@ -511,13 +664,13 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
         {
             memcpy(((char *)ifo0_sfts_data_data_data) + (n * maxNumSFTs + i) * unipitch_sfts_data_data_data,
                    multiSFTsV->data[n]->data[0]->data[i].data->data,
-                   constSftsDataDataLength * sizeof(COMPLEX8));
+                   sftsDataDataLength * sizeof(COMPLEX8));
         }
         for (i=0; i<ifo1_sfts_length[n]; i++)
         {
             memcpy(((char *)ifo1_sfts_data_data_data) + (n * maxNumSFTs + i) * unipitch_sfts_data_data_data,
                    multiSFTsV->data[n]->data[1]->data[i].data->data,
-                   constSftsDataDataLength * sizeof(COMPLEX8));
+                   sftsDataDataLength * sizeof(COMPLEX8));
         }
 
         memcpy(ifo0_tSSB_DeltaT_int + n * maxNumSFTs, cfvBuffer->multiSSB4V[n]->data[0]->DeltaT_int->data, multiSFTsV->data[n]->data[0]->length * sizeof(REAL4));
@@ -539,54 +692,11 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
     }
 
     //////////////////////////////////////////////////////////////////////////
-    // DEVICE Allocation (gridDim.x = numBins, gridDim.x = numSegments)
-
-    //1
-    res = cudaMalloc((void **)&dev_Fstat, unipitch_Fstat * numSegments);
-
-    //2
-    res = cudaMalloc((void **)&dev_ifo0_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-    res = cudaMalloc((void **)&dev_ifo1_sfts_data_data_data, unipitch_sfts_data_data_data * maxNumSFTs * numSegments);
-
-    //3
-    res = cudaMalloc((void **)&dev_fkdot4_FreqMain, numBins * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_fkdot4_fkdot0, numBins * sizeof(REAL4));
-
-    //4
-    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo0_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo1_tSSB_DeltaT_rem, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo0_tSSB_TdotM1, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo1_tSSB_TdotM1, numSegments * maxNumSFTs * sizeof(REAL4));
-
-    //5
-    res = cudaMalloc((void **)&dev_ifo0_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo1_amcoe_a, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo0_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_ifo1_amcoe_b, numSegments * maxNumSFTs * sizeof(REAL4));
-
-    //extra
-    res = cudaMalloc((void **)&dev_ifo0_sfts_length, numSegments * sizeof(UINT4));
-    res = cudaMalloc((void **)&dev_ifo1_sfts_length, numSegments * sizeof(UINT4));
-    res = cudaMalloc((void **)&dev_antenna_pattern_Ad, numSegments * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_antenna_pattern_Bd, numSegments * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_antenna_pattern_Cd, numSegments * sizeof(REAL4));
-    res = cudaMalloc((void **)&dev_antenna_pattern_DdInv, numSegments * sizeof(REAL4));
-
-    //res = cudaMalloc((void **)&dev_debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4));
-    //res = cudaMalloc((void **)&dev_debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4));
-
-    //////////////////////////////////////////////////////////////////////////
     // DEVICE to HOST memcpy
 
     //2
     res = cudaMemcpy(dev_ifo0_sfts_data_data_data, ifo0_sfts_data_data_data, maxNumSFTs * unipitch_sfts_data_data_data * numSegments, cudaMemcpyHostToDevice);
     res = cudaMemcpy(dev_ifo1_sfts_data_data_data, ifo1_sfts_data_data_data, maxNumSFTs * unipitch_sfts_data_data_data * numSegments, cudaMemcpyHostToDevice);
-
-    //3
-    res = cudaMemcpy(dev_fkdot4_FreqMain, fkdot4_FreqMain, numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
-    res = cudaMemcpy(dev_fkdot4_fkdot0,   fkdot4_fkdot_0,  numBins * sizeof(REAL4), cudaMemcpyHostToDevice);
 
     //4
     res = cudaMemcpy(dev_ifo0_tSSB_DeltaT_int, ifo0_tSSB_DeltaT_int, numSegments * maxNumSFTs * sizeof(REAL4), cudaMemcpyHostToDevice);
@@ -610,170 +720,6 @@ XLALComputeFStatFreqBandVectorCUDA (REAL4FrequencySeriesVector *fstatBandV,     
     res = cudaMemcpy(dev_antenna_pattern_Cd, antenna_pattern_Cd, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
     res = cudaMemcpy(dev_antenna_pattern_DdInv, antenna_pattern_DdInv, numSegments * sizeof(REAL4), cudaMemcpyHostToDevice);
 
-    res = cudaMemset(dev_Fstat, 0, unipitch_Fstat * numSegments);
+//    res = cudaMemset(dev_Fstat, 0, unipitch_Fstat * numSegments);
 
-    //res = cudaMemcpy(dev_debugREAL4, debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyHostToDevice);
-    //res = cudaMemcpy(dev_debugUINT4, debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(UINT4), cudaMemcpyHostToDevice);
-
-    //////////////////////////////////////////////////////////////////////////
-    // Kernel Launch
-
-    HostWrapperCUDAComputeFstatFaFb/*_debug*/(dev_Fstat,
-                                    unipitch_Fstat,
-
-                                    constSftsDataDataLength,
-                                    dev_ifo0_sfts_data_data_data,
-                                    dev_ifo1_sfts_data_data_data,
-                                    unipitch_sfts_data_data_data,
-                                    constTsft,
-                                    constDFreq,
-                                    constFreqIndex0,
-
-                                    dev_fkdot4_FreqMain,
-                                    dev_fkdot4_fkdot0,
-                                    fkdot4ex,
-
-                                    dev_ifo0_tSSB_DeltaT_int,
-                                    dev_ifo1_tSSB_DeltaT_int,
-                                    dev_ifo0_tSSB_DeltaT_rem,
-                                    dev_ifo1_tSSB_DeltaT_rem,
-                                    dev_ifo0_tSSB_TdotM1,
-                                    dev_ifo1_tSSB_TdotM1,
-
-                                    dev_ifo0_amcoe_a,
-                                    dev_ifo1_amcoe_a,
-                                    dev_ifo0_amcoe_b,
-                                    dev_ifo1_amcoe_b,
-
-                                    dev_ifo0_sfts_length,
-                                    dev_ifo1_sfts_length,
-
-                                    dev_antenna_pattern_Ad,
-                                    dev_antenna_pattern_Bd,
-                                    dev_antenna_pattern_Cd,
-                                    dev_antenna_pattern_DdInv,
-
-                                    Dterms,
-                                    //dev_debugREAL4,
-                                    //dev_debugUINT4,
-
-                                    numBins,
-                                    numSegments);
-    res = cudaGetLastError();
-    res = cudaThreadSynchronize();
-
-    //////////////////////////////////////////////////////////////////////////
-    // HOST to DEVICE memcpy
-
-    res = cudaMemcpy(Fstat, dev_Fstat, unipitch_Fstat * numSegments, cudaMemcpyDeviceToHost);
-    for (n=0; n<numSegments; n++)
-    {
-        for (k=0; k<numBins; k++)
-        {
-            fstatBandV->data[n].data->data[k] = ((REAL4 *)(((char *)Fstat) + n * unipitch_Fstat))[k];
-        }
-    }
-
-    //res = cudaMemcpy(debugREAL4, dev_debugREAL4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyDeviceToHost);
-    //res = cudaMemcpy(debugUINT4, dev_debugUINT4, (64*2* NUM_INTERMEDIATES_PER_THREAD + 100) * sizeof(REAL4), cudaMemcpyDeviceToHost);
-
-    //////////////////////////////////////////////////////////////////////////
-    // DEVICE Deallocation
-
-    //1
-    cudaFree(dev_Fstat);
-
-    //2
-    cudaFree(dev_ifo0_sfts_data_data_data);
-    cudaFree(dev_ifo1_sfts_data_data_data);
-
-    //3
-    cudaFree(dev_fkdot4_FreqMain);
-    cudaFree(dev_fkdot4_fkdot0);
-
-    //4
-    cudaFree(dev_ifo0_tSSB_DeltaT_int);
-    cudaFree(dev_ifo1_tSSB_DeltaT_int);
-    cudaFree(dev_ifo0_tSSB_DeltaT_rem);
-    cudaFree(dev_ifo1_tSSB_DeltaT_rem);
-    cudaFree(dev_ifo0_tSSB_TdotM1);
-    cudaFree(dev_ifo1_tSSB_TdotM1);
-
-    //5
-    cudaFree(dev_ifo0_amcoe_a);
-    cudaFree(dev_ifo1_amcoe_a);
-    cudaFree(dev_ifo0_amcoe_b);
-    cudaFree(dev_ifo1_amcoe_b);
-
-    //extra
-    cudaFree(dev_ifo0_sfts_length);
-    cudaFree(dev_ifo1_sfts_length);
-    cudaFree(dev_antenna_pattern_Ad);
-    cudaFree(dev_antenna_pattern_Bd);
-    cudaFree(dev_antenna_pattern_Cd);
-    cudaFree(dev_antenna_pattern_DdInv);
-
-    //////////////////////////////////////////////////////////////////////////
-    // HOST Deallocation
-
-    free(Fstat);
-
-    free(ifo0_sfts_data_data_data);
-    free(ifo1_sfts_data_data_data);
-
-    free(fkdot4_FreqMain);
-    free(fkdot4_fkdot_0);
-
-    free(ifo0_tSSB_DeltaT_int);
-    free(ifo1_tSSB_DeltaT_int);
-    free(ifo0_tSSB_DeltaT_rem);
-    free(ifo1_tSSB_DeltaT_rem);
-    free(ifo0_tSSB_TdotM1);
-    free(ifo1_tSSB_TdotM1);
-
-    free(ifo0_amcoe_a);
-    free(ifo1_amcoe_a);
-    free(ifo0_amcoe_b);
-    free(ifo1_amcoe_b);
-
-    free(ifo0_sfts_length);
-    free(ifo1_sfts_length);
-    free(antenna_pattern_Ad);
-    free(antenna_pattern_Bd);
-    free(antenna_pattern_Cd);
-    free(antenna_pattern_DdInv);
-    }
-
-    return XLAL_SUCCESS;
-
-} /* XLALComputeFStatFreqBandVector_cuda() */
-
-/* device handling routines */
-/* empty bodies for now for Anton */
-int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySeriesVector *fstatBandV) {
-  /* these values should all be equal for the whole stackMultiSFT structure, so take them from the first elements */
-  UINT4 numSegments = stackMultiSFT->length; /* == nStacks == fstatBandV->length */
-  UINT4 numIFOs = stackMultiSFT->data[0]->length;
-  UINT4 numBins = fstatBandV->data[0].data->length;
-  UINT4 sftDataLength = numBins == stackMultiSFT->data[0]->data[0]->data->data->length;
-  UINT4 i,j;
-
-  if(numIFOs != 2) {
-    XLALPrintError ("InitializeCUDADevice: numIFOs must be 2 (%d)\n", numIFOs);
-    return -1;
-  }
-
-  for(j=0;j<numSegments;j++)
-    for(i=0;i<numIFOs;i++)
-      if (stackMultiSFT->data[j]->data[i]->length > 64) {
-	XLALPrintError ("InitializeCUDADevice: numSFTs must be <= 64 (%d,%d,%d)\n",
-			j,i,stackMultiSFT->data[j]->data[i]->length);
-	return -1;
-      }
-
-  return 0;
-}
-void UnInitializeCUDADevice(void) {
-}
-void RearrangeSFTData4CUDA(void) {
 }

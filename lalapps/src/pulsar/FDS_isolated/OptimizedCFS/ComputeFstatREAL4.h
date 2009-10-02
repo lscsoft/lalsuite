@@ -42,9 +42,9 @@ extern "C" {
 /* Map functions in HierarchicalSearch.c for CUDA / OpenCL use */
 #ifdef USE_CUDA
 #define GPUREADY_DEFAULT 1
-#define INITIALIZE_COPROCESSOR_DEVICE   if(InitializeCUDADevice(&stackMultiSFT,&fstatVector)) return -1;
+#define INITIALIZE_COPROCESSOR_DEVICE   if(InitializeCUDADevice(&stackMultiSFT, &fstatVector)) return -1;
 #define UNINITIALIZE_COPROCESSOR_DEVICE UnInitializeCUDADevice();
-#define REARRANGE_SFT_DATA              RearrangeSFTData4CUDA();
+#define REARRANGE_SFT_DATA              RearrangeSFTData4CUDA( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, CFparams.Dterms, &cfvBuffer);
 #elif USE_OPENCL
 #define GPUREADY_DEFAULT 1
 #define INITIALIZE_COPROCESSOR_DEVICE   clW = empty_CLWorkspace; XLALInitCLWorkspace (&clW, &stackMultiSFT);
@@ -207,7 +207,13 @@ void XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv);
 #ifdef USE_CUDA
   extern int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySeriesVector *fstatVector);
   extern void UnInitializeCUDADevice(void);
-  extern void RearrangeSFTData4CUDA(void);
+  extern void RearrangeSFTData4CUDA(REAL4FrequencySeriesVector *fstatBandV,
+				 const PulsarDopplerParams *doppler,
+				 const MultiSFTVectorSequence *multiSFTsV,
+				 const MultiNoiseWeightsSequence *multiWeightsV,
+				 const MultiDetectorStateSeriesSequence *multiDetStatesV,
+				 UINT4 Dterms,
+				 ComputeFBufferREAL4V *cfvBuffer);
 #elif USE_OPENCL
 #include "ComputeFstatREAL4OpenCL.h"
 #endif
