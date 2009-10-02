@@ -109,7 +109,7 @@ example: ./SPINspiral -i ./pipeline/SPINspiral.input --mChirp 1.7 --eta 0.12 --t
 
 
 // Global constants, assigned in setConstants()
-double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
+extern double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 // *** PLEASE DON'T ADD ANY NEW ONES, BUT USE THE STRUCTS BELOW INSTEAD (e.g. runPar or MCMCvariables) ***
 
 
@@ -489,7 +489,7 @@ void readSystemInputfile(struct runPar *run);
 void readInjectionXML(struct runPar *run);
 void setParameterNames(struct runPar *run);
 
-void setConstants();
+void setConstants(void);
 void setIFOdata(struct runPar *run, struct interferometer ifo[]);
 
 void setRandomInjectionParameters(struct runPar *run);

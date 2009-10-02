@@ -124,7 +124,7 @@ lalDebugLevel = 0;
 LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
 LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
-LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'I', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
+LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
 LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
 LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
@@ -134,7 +134,7 @@ LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL, "
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputBname",  'o', UVAR_OPTIONAL, "Base name of output files",   &outputBname ), &status);
 LAL_CALL(LALRegisterREALUserVar  (&status, "freqRes",      'r', UVAR_REQUIRED, "Spectrogram freq resolution", &freqres     ), &status);
 LAL_CALL(LALRegisterREALUserVar  (&status, "timeBaseline", 't', UVAR_REQUIRED, "The time baseline of sfts",   &timebaseline), &status);
-LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",  'S', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
+LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",  'P', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrEphemeris",  'S', UVAR_OPTIONAL, "pulsar ephemeris file",   &psrEphemeris ), &status);
 
 LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);

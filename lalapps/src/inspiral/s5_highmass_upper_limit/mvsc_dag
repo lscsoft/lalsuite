@@ -61,11 +61,10 @@ class mvsc_get_doubles_node(pipeline.CondorDAGNode):
   """
   """
 # add default values
-  def __init__(self, job, dag, instruments, injections='*INJ*.sqlite', fulldata='*FULL*.sqlite', number=10, trainingstr='training', testingstr='testing', zerolagstr='zerolag', p_node=[]):
+  def __init__(self, job, dag, instruments, databases, number=10, trainingstr='training', testingstr='testing', zerolagstr='zerolag', p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME add tmp file space
     self.add_macro("macroid", dag.id)
-# deal with the fact that the first two are globs?
 #    self.add_var_opt("injections", injections)
 #    self.add_var_opt("fulldata", fulldata)
 #    self.add_var_opt("number", number)
@@ -74,6 +73,8 @@ class mvsc_get_doubles_node(pipeline.CondorDAGNode):
 #    self.add_var_opt("trainingstr", trainingstr)
 #    self.add_var_opt("testingstr", testingstr)
 #    self.add_var_opt("zerolagstr", zerolagstr)
+    for database in databases:
+      self.add_file_arg(database)
     ifos=instruments.strip().split(',')
     ifos.sort()
     self.out_file_group = {}
@@ -197,12 +198,13 @@ class mvsc_update_sql_node(pipeline.CondorDAGNode):
 ## MAIN #######################################################################
 ###############################################################################
 
-parser = OptionParser(version = "%prog CVS $Id$", usage = "%prog [options]")
+parser = OptionParser(version = "%prog  $Revision$", usage = "%prog [options] [databases]")
 parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 parser.add_option("--all-instruments", help = "the list of all instruments from which you want to study the double-coincident triggers. e.g. H1,H2,L1,V1")
 parser.add_option("--log-path", help = "set dagman log path")
-(opts, args) = parser.parse_args()
+(opts, databases) = parser.parse_args()
 
+print databases
 
 all_ifos = opts.all_instruments.strip().split(',')
 ifo_combinations = list(iterutils.choices(all_ifos,2))
@@ -244,7 +246,7 @@ update_node = {}
 #Assemble the DAG
 for comb in ifo_combinations:
   comb = ','.join(comb)
-  get_node[comb] = mvsc_get_doubles_node(get_job, dag, comb)
+  get_node[comb] = mvsc_get_doubles_node(get_job, dag, comb, databases)
   for i in range(get_node[comb].number):
     file_for_this_set = get_node[comb].out_file_group[i]
 #    print file_for_this_set[0]
