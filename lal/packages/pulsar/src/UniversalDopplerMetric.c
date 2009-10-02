@@ -301,7 +301,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   const CHAR *fn = "CWPhaseDeriv_i()";
   REAL8 ret;
   intparams_t *par = (intparams_t*) params;
-  REAL8 nn[3];		/* skypos unit vector */
+  REAL8 nn_equ[3], nn_ecl[3];	/* skypos unit vector */
   REAL8 nDeriv_i[3];	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
   REAL8 ttSI, dTSI, dT, tauiSI;
@@ -314,10 +314,21 @@ CWPhaseDeriv_i ( double tt, void *params )
   REAL8 sina = sin(par->dopplerPoint->Alpha);
   REAL8 cosd = cos(par->dopplerPoint->Delta);
   REAL8 sind = sin(par->dopplerPoint->Delta);
+  /* ... in an equatorial coordinate-frame */
+  nn_equ[0] = cosd * cosa;
+  nn_equ[1] = cosd * sina;
+  nn_equ[2] = sind;
 
-  nn[0] = cosd * cosa;
-  nn[1] = cosd * sina;
-  nn[2] = sind;
+  /* and in an ecliptic coordinate-frame */
+  REAL8 cosi = cos(LAL_IEARTH);
+  REAL8 sini = sin(LAL_IEARTH);
+
+  nn_ecl[0] = nn_equ[0];
+  nn_ecl[1] = cosi * nn_equ[1] + sini * nn_equ[2];
+  nn_ecl[2] = cosi * nn_equ[2] - sini * nn_equ[1];
+
+  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
+    nn_ecl[2] = 1e-6;
 
   ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
   XLALGPSSetREAL8( &ttGPS, ttSI );
@@ -328,7 +339,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
-  dTSI = SCALAR(nn, posvel.pos );
+  dTSI = SCALAR(nn_equ, posvel.pos );
   tauiSI = ttSI + dTSI;			/* SSB time corresponding to tt, for this skyposition nn, in seconds */
   dT = dTSI / par->Tspan;		/* SSB time-delay in 'natural units' */
 
@@ -346,7 +357,6 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
       if ( par->deriv == DOPPLERCOORD_ALPHA_NAT )
         ret *= nNat;
-
       break;
 
     case DOPPLERCOORD_DELTA_RAD:				/* latitude/declination/Delta in radians */
@@ -358,7 +368,14 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
       if ( par->deriv == DOPPLERCOORD_DELTA_NAT )
         ret *= nNat;
+      break;
 
+    case DOPPLERCOORD_NECL_X:
+      ret = LAL_TWOPI * Freq * ( posvel.pos[0] - (nn_ecl[0]/nn_ecl[2]) * posvel.pos[2] );
+      break;
+
+    case DOPPLERCOORD_NECL_Y:
+      ret = LAL_TWOPI * Freq * ( posvel.pos[1] - (nn_ecl[1]/nn_ecl[2]) * posvel.pos[2] );
       break;
 
       /* ----- frequency derivatives SI-units ----- */
@@ -382,7 +399,6 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = SQUARE(tt+dT) * SQUARE( tt + dT );	/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       ret *= LAL_TWOPI * SQUARE(par->Tspan) * SQUARE(par->Tspan) * kfactinv[4];
       break;
-
 
       /* ----- frequency derivatives natural units ----- */
     case DOPPLERCOORD_FREQ_NAT:			/* om0 = 2pi f T */

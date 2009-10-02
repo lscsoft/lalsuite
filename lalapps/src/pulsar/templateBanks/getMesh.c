@@ -22,15 +22,15 @@
  *
  * \author{Reinhard Prix}
  *
- * Standalone code to produce a 'mesh' in the parameter-space 
+ * Standalone code to produce a 'mesh' in the parameter-space
  * Currently this is just some code to use InitDopplerScan()
  * directly outside of ComputeFStatistic, and can't do much more
- * than generating sky-grids. 
+ * than generating sky-grids.
  *
  * UserInput-parameters a compatible with ComputeFStatistic.
  *
  * Revision: $Id$
- *           
+ *
  *-----------------------------------------------------------------------*/
 
 /* ---------- includes ---------- */
@@ -92,7 +92,7 @@ typedef struct
   REAL8 endTime;		/**< GPS end time of observation */
   REAL8 duration;		/**< OR alternatively: length of observation in seconds */
   BOOLEAN projectMetric;		/**< project out frequency-component of metric */
-  
+
   REAL8 dAlpha;			/**< Alpha-resolution if GRID_FLAT or GRID_ISOTROPIC */
   REAL8 dDelta;			/**< Delta-resolution if ... */
   REAL8 AlphaBand;		/**< Sky-region interval in Alpha */
@@ -105,20 +105,20 @@ typedef struct
   INT4  metricType;		/**< if GRID_METRIC: what type of metric to use? */
   REAL8 metricMismatch;		/**< what's the maximal mismatch of the grid? */
   CHAR *skyRegion;		/**< alternative input: polygon describing skyregion */
-  
+
   CHAR *skyGridFile;		/**< read in sky-grid if GRID_FILE */
   CHAR *outputSkyGrid;		/**< write sky-grid into this file */
-  
+
   INT4 searchNeighbors;		/**< number of desired gridpoints/dimension around central point*/
   INT4 randomSeed;		/**< random-seed for searchNeighbors grid randomization */
-  
+
   CHAR *mergedSFTFile;		/**< dummy for CFS-compatibility */
 
   INT4 numSkyPartitions;	/**< number of (roughly)equal partitions to split sky-grid into */
   INT4 partitionIndex;		/**< 0<= index < numSkyPartitions: index of sky-partition to generate */
 } UserVariables_t;
 
-typedef struct 
+typedef struct
 {
   CHAR EphemEarth[512];		/**< filename of earth-ephemeris data */
   CHAR EphemSun[512];		/**< filename of sun-ephemeris data */
@@ -147,10 +147,10 @@ void setTrueRandomSeed(void);
 extern int vrbflg;
 
 /*----------------------------------------------------------------------
- * main function 
+ * main function
  *----------------------------------------------------------------------*/
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
@@ -159,7 +159,7 @@ main(int argc, char *argv[])
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   UINT4 nFreq, nf1dot;
 
-  lalDebugLevel = 0;  
+  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -167,10 +167,10 @@ main(int argc, char *argv[])
 
   /* register user-variables */
   LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars (&status, &uvar), &status);	  
+  LAL_CALL (initUserVars (&status, &uvar), &status);
 
-  /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
+  /* read cmdline & cfgfile  */
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
 
   if (uvar.help) 	/* help requested: we're done */
     exit (0);
@@ -198,7 +198,7 @@ main(int argc, char *argv[])
 
   scanInit.numSkyPartitions = uvar.numSkyPartitions;
   scanInit.partitionIndex = uvar.partitionIndex;
-  
+
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */
   config.searchRegion = empty_DopplerRegion;	/* set to empty first */
   LAL_CALL ( getSearchRegion(&status, &(config.searchRegion), &scanInit, &uvar ), &status);
@@ -207,41 +207,41 @@ main(int argc, char *argv[])
 
   /* the following call generates a skygrid plus determines dFreq, df1dot,..
    * Currently the complete template-grid is more like a 'foliation' of
-   * the parameter-space by skygrids, stacked along f and f1dot, 
+   * the parameter-space by skygrids, stacked along f and f1dot,
    * not a full 4D metric template-grid
    */
-  LAL_CALL ( InitDopplerSkyScan( &status, &thisScan, &scanInit), &status); 
+  LAL_CALL ( InitDopplerSkyScan( &status, &thisScan, &scanInit), &status);
 
   /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
   if ( LALUserVarWasSet( &uvar.dFreq ) )
     thisScan.dfkdot[0] = uvar.dFreq;
 
-  if( LALUserVarWasSet( &uvar.df1dot) ) 
+  if( LALUserVarWasSet( &uvar.df1dot) )
     thisScan.dfkdot[1] = uvar.df1dot;
 
   /* we write the sky-grid to disk? */
-  if ( uvar.outputSkyGrid ) 
+  if ( uvar.outputSkyGrid )
     {
       printf ("\nNow writing sky-grid into file '%s' ...", uvar.outputSkyGrid);
       LAL_CALL(writeSkyGridFile(&status, thisScan.skyGrid, uvar.outputSkyGrid ), &status);
       printf (" done.\n\n");
     }
-  
+
 
   /* ----- output grid-info ----- */
-  nFreq = (UINT4)(config.searchRegion.fkdotBand[0] / thisScan.dfkdot[0] + 1e-6) + 1;  
-  nf1dot =(UINT4)(config.searchRegion.fkdotBand[1]/ thisScan.dfkdot[1] + 1e-6) + 1;  
+  nFreq = (UINT4)(config.searchRegion.fkdotBand[0] / thisScan.dfkdot[0] + 1e-6) + 1;
+  nf1dot =(UINT4)(config.searchRegion.fkdotBand[1]/ thisScan.dfkdot[1] + 1e-6) + 1;
 
   /* debug output */
   if ( lalDebugLevel )
     {
       printf ("DEBUG: Search-region:\n");
       printf ("       skyRegion = \"%s\"\n", scanInit.skyRegionString);
-      printf ("       Freq in  = [%.16g, %.16g]\n", 
-	      config.searchRegion.fkdot[0], 
+      printf ("       Freq in  = [%.16g, %.16g]\n",
+	      config.searchRegion.fkdot[0],
 	      config.searchRegion.fkdot[0] + config.searchRegion.fkdotBand[0]);
       printf ("       f1dot in = [%.16g, %.16g]\n",
-	      config.searchRegion.fkdot[1], 
+	      config.searchRegion.fkdot[1],
 	      config.searchRegion.fkdot[1] + config.searchRegion.fkdotBand[1]);
 
       printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
@@ -259,10 +259,10 @@ main(int argc, char *argv[])
     {
       printf ("\n%g\n\n", (REAL8)thisScan.numSkyGridPoints * nFreq *  nf1dot );
     }
-  /* output octave-compatible 'search-range' as a matrix: 
+  /* output octave-compatible 'search-range' as a matrix:
    * [ Alpha, AlphaBand; Delta, DeltaBand; Freq, FreqBand; f1dot, f1dotBand ]
    */
-  else 
+  else
     {
       SkyRegion skyregion;
       DopplerRegion *searchRegion = &(config.searchRegion);
@@ -271,26 +271,26 @@ main(int argc, char *argv[])
 
       /* we need to parse the skyRegion string into a SkyRegion, which is easier to handle */
       LAL_CALL (ParseSkyRegionString(&status, &skyregion, searchRegion->skyRegionString), &status);
-      if ( skyregion.vertices) 
+      if ( skyregion.vertices)
 	LALFree ( skyregion.vertices );
 
-      Alpha = skyregion.lowerLeft.longitude; 
+      Alpha = skyregion.lowerLeft.longitude;
       AlphaBand = skyregion.upperRight.longitude - Alpha;
       Delta = skyregion.lowerLeft.latitude;
       DeltaBand = skyregion.upperRight.latitude - Delta;
-      
+
       Freq = searchRegion->fkdot[0];
       FreqBand = searchRegion->fkdotBand[0];
       f1dot = searchRegion->fkdot[1];
       f1dotBand = searchRegion->fkdotBand[1];
-      
+
       /* now write octave-compatible matrix containing the search-region */
-      printf ("[%.12g, %.12g; %.12g, %.12g; %.12g, %.12g; %.12g, %.12g ]\n", 
+      printf ("[%.12g, %.12g; %.12g, %.12g; %.12g, %.12g; %.12g, %.12g ]\n",
 	      Alpha, AlphaBand,
 	      Delta, DeltaBand,
 	      Freq, FreqBand,
 	      f1dot, f1dotBand );
-      
+
     } /* if uvar.searchNeighbors */
 
   /* ----- clean up and exit ----- */
@@ -306,7 +306,7 @@ main(int argc, char *argv[])
 
   LALFree ( config.Detector );
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 } /* main */
@@ -371,8 +371,6 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregINTUserStruct(status,	numSkyPartitions, 0, UVAR_OPTIONAL,	"Number of (equi-)partitions to split skygrid into");
   LALregINTUserStruct(status,	partitionIndex,   0, UVAR_OPTIONAL,	"Index [0,numSkyPartitions-1] of sky-partition to generate");
 
-  LALregINTUserStruct(status,	metricType,     'M', UVAR_OPTIONAL,	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-
   LALregREALUserStruct(status,	Freq, 		'f', UVAR_REQUIRED, 	"target frequency");
   LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   LALregREALUserStruct(status,	FreqBand,       'b', UVAR_OPTIONAL, 	"Search frequency band in Hz");
@@ -381,10 +379,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	dFreq,         	'r', UVAR_OPTIONAL, 	"Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
   LALregREALUserStruct(status,	df1dot,        	'e', UVAR_OPTIONAL, 	"Resolution for f1dot (default: use metric or 1/(2*T^2))");
 
-  LALregINTUserStruct(status,	metricType,     'M', UVAR_OPTIONAL,	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregBOOLUserStruct(status,	projectMetric,	 0,  UVAR_OPTIONAL,	"Project metric onto frequency-surface");
-  LALregREALUserStruct(status,	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
-  LALregREALUserStruct(status, 	endTime,      	't', UVAR_OPTIONAL,	"GPS end time of observation");
+  LALregREALUserStruct(status,	startTime,       0, UVAR_OPTIONAL, 	"GPS start time of observation");
+  LALregREALUserStruct(status, 	endTime,      	 0, UVAR_OPTIONAL,	"GPS end time of observation");
   LALregREALUserStruct(status,	duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
 
   LALregSTRINGUserStruct(status,ephemDir,       'E', UVAR_OPTIONAL,	"Directory where Ephemeris files are located");
@@ -393,6 +389,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   /* ---------- */
   LALregINTUserStruct(status,	gridType,        0 , UVAR_OPTIONAL, 	"0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
   LALregINTUserStruct(status, 	metricType,     'M', UVAR_OPTIONAL, 	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregBOOLUserStruct(status,	projectMetric,	 0,  UVAR_OPTIONAL,	"Project metric onto frequency-surface");
   LALregREALUserStruct(status,	metricMismatch, 'X', UVAR_OPTIONAL, 	"Maximal mismatch for SKY-grid (adjust value for more dimensions)");
   LALregREALUserStruct(status,	dAlpha,         'l', UVAR_OPTIONAL, 	"Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserStruct(status,	dDelta,         'g', UVAR_OPTIONAL, 	"Resolution in delta (equatorial coordinates) in radians");
@@ -409,7 +406,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 } /* initUserVars() */
 
 /*----------------------------------------------------------------------*/
-/** do some general initializations, 
+/** do some general initializations,
  * e.g. load ephemeris-files (if required), setup detector etc
  */
 void
@@ -426,7 +423,7 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uva
     cfg->duration = uvar->endTime - uvar->startTime;
   else
     cfg->duration = uvar->duration;
-  
+
 
   /* ---------- init ephemeris if needed ---------- */
   if ( uvar->metricType ==  LAL_PMETRIC_COH_EPHEM )
@@ -475,13 +472,13 @@ void
 checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);  
+  INITSTATUS (status, "checkUserInputConsistency", rcsid);
 
   if (uvar->ephemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
-    }      
+    }
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar->AlphaBand < 0) ||  (uvar->DeltaBand < 0) )
     {
@@ -516,7 +513,7 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
-	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n"); 
+	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
@@ -534,7 +531,7 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
     if ( useSkyGridFile && !haveSkyGridFile )
       {
         LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
-        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);  
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( !useSkyGridFile && haveSkyGridFile )
       {
@@ -546,15 +543,15 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
         LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was"
 		    " also specified ... will be ignored!\n");
       }
-    if ( !useMetric && haveMetric) 
+    if ( !useMetric && haveMetric)
       {
         LALWarning (status, "\nWARNING: Metric was specified for non-metric grid..."
 		    " will be ignored!\n");
       }
-    if ( useMetric && !haveMetric) 
+    if ( useMetric && !haveMetric)
       {
         LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
-        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
   } /* grid-related checks */
@@ -567,20 +564,20 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
     if ( !haveEndTime && !haveDuration )
       {
 	LALPrintError ("\nERROR: need either --endTime or --duration!\n\n");
-        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( haveEndTime && haveDuration )
       {
 	LALPrintError ("\nERROR: can specify only one of --endTime or --duration!\n\n");
-        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
     if ( haveEndTime && (uvar->endTime < uvar->startTime) )
       {
 	LALPrintError ("\nERROR: endTime must be later than startTime!\n\n");
-        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
-      
+
   } /* check Tspan */
 
   RETURN (status);
@@ -588,21 +585,21 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 
 
 /** Determine the DopplerRegion in parameter-space to search over.
- * 
- * Normally this is just given directly by the user and therefore trivial. 
  *
- * However, for Monte-Carlo-runs testing the metric-grid we want to search 
- * a (randomized) 'small' region around a given parameter-space point, 
- * specifying only the (approx.) number of grid-points desired per dimension. 
+ * Normally this is just given directly by the user and therefore trivial.
+ *
+ * However, for Monte-Carlo-runs testing the metric-grid we want to search
+ * a (randomized) 'small' region around a given parameter-space point,
+ * specifying only the (approx.) number of grid-points desired per dimension.
  * This is done by getMCDopplerCube(), which determines the appropriate
- * Bands in each direction using the metric. 
+ * Bands in each direction using the metric.
  * This behavior is triggered by the user-input  --searchNeighbors.
  *
  * This function allows the user additionally to manually override these Bands.
  *
  */
 void
-getSearchRegion (LALStatus *status, 
+getSearchRegion (LALStatus *status,
 		 DopplerRegion *searchRegion,	/**< OUT: the DopplerRegion to search over */
 		 const DopplerSkyScanInit *params,	/**< IN: DopplerSkyScan params might be needed */
 		 const UserVariables_t *uvar
@@ -611,11 +608,11 @@ getSearchRegion (LALStatus *status,
 
   DopplerRegion ret = empty_DopplerRegion;
 
-  INITSTATUS (status, "getSearchRegion", rcsid);  
+  INITSTATUS (status, "getSearchRegion", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( searchRegion, status, GETMESH_ENULL, GETMESH_MSGENULL);
-  ASSERT ( searchRegion->skyRegionString == NULL, status, 
+  ASSERT ( searchRegion->skyRegionString == NULL, status,
 	   GETMESH_EINPUT, GETMESH_MSGEINPUT);
 
   /* set defaults */
@@ -639,15 +636,15 @@ getSearchRegion (LALStatus *status,
 
 
 
-  /* if user specified the option -searchNeighbors=N, we generate an 
+  /* if user specified the option -searchNeighbors=N, we generate an
    * automatic search-region of N grid-steps in each dimension
    * around the given search-point
    */
-  if ( LALUserVarWasSet(&uvar->searchNeighbors) ) 
+  if ( LALUserVarWasSet(&uvar->searchNeighbors) )
     {
       DopplerRegion cube = empty_DopplerRegion;
       PulsarDopplerParams signal = empty_PulsarDopplerParams;
-      
+
       signal.Alpha = uvar->Alpha;
       signal.Delta = uvar->Delta;
       signal.fkdot[0]  = uvar->Freq;
@@ -660,7 +657,7 @@ getSearchRegion (LALStatus *status,
 	setTrueRandomSeed();
 
       /* construct MC doppler-cube around signal-location */
-      TRY ( getMCDopplerCube(status->statusPtr, 
+      TRY ( getMCDopplerCube(status->statusPtr,
 			     &cube, signal, uvar->searchNeighbors, params), status);
 
       /* free previous skyRegionString */
@@ -669,15 +666,15 @@ getSearchRegion (LALStatus *status,
 
       /* overload defaults with automatic search-region */
       ret = cube;
-      
+
     } /* if searchNeighbors */
 
   /* ---------- finally, the user can override the 'neighborhood' search-Region
    * if he explicitly specified search-bands in some (or all) directions.
-   * 
+   *
    * The motivation is to allow more selective control over the search-region,
    * e.g. by setting certain bands to zero.
-   */ 
+   */
   {
     BOOLEAN haveSkyBands = LALUserVarWasSet(&uvar->AlphaBand) && LALUserVarWasSet(&uvar->DeltaBand);
 
@@ -685,16 +682,16 @@ getSearchRegion (LALStatus *status,
       {
 	CHAR *str = NULL;
 	TRY ( SkySquare2String( status->statusPtr, &str,
-				uvar->Alpha, uvar->Delta, 
+				uvar->Alpha, uvar->Delta,
 				uvar->AlphaBand, uvar->DeltaBand), status);
-	if ( ret.skyRegionString) 
+	if ( ret.skyRegionString)
 	  LALFree ( ret.skyRegionString );
 
 	ret.skyRegionString = str;
       }
     else if ( uvar->skyRegion )
       {
-	if ( ret.skyRegionString) 
+	if ( ret.skyRegionString)
 	  LALFree ( ret.skyRegionString );
 	ret.skyRegionString = LALCalloc(1, strlen(uvar->skyRegion) + 1);
 	strcpy ( ret.skyRegionString, uvar->skyRegion);
@@ -734,7 +731,7 @@ getSearchRegion (LALStatus *status,
 } /* getSearchRegion() */
 
 /** set random-seed from /dev/urandom if possible, otherwise
- * from uninitialized local-var ;) 
+ * from uninitialized local-var ;)
  */
 void
 setTrueRandomSeed(void)
@@ -743,7 +740,7 @@ setTrueRandomSeed(void)
   INT4 seed;		/* NOTE: possibly used un-initialized! that's ok!! */
 
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
-  if ( fpRandom == NULL ) 
+  if ( fpRandom == NULL )
     {
       LALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
     }

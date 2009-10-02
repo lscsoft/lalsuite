@@ -1,0 +1,44 @@
+# Q Pipeline parameter file
+
+# Shourov K. Chatterji
+# shourov@ligo.caltech.edu
+
+# $Id: qevent_param_h1h2_standard.txt,v 1.1 2008/11/25 15:15:49 romain Exp $
+
+channelNames:                {'H1:LSC-STRAIN', 'H2:LSC-STRAIN'}
+frameTypes:                  {'H1_RDS_C03_L2', 'H2_RDS_C03_L2'}
+timeShifts:                  [0 0]
+
+injectionNames:              {'NONE', 'NONE'}
+injectionTypes:              {'NONE', 'NONE'}
+injectionFactors:            [0 0]
+
+sampleFrequency:             4096
+
+blockDuration:               64
+extraBlockOverlap:           1
+
+qRange:                      [sqrt(11) 100]
+frequencyRange:              [48 Inf]
+maximumMismatch:             0.2
+
+analysisMode:                'coherent'
+
+outlierFactor:               2.0
+
+falseEventRate:              1e0
+falseVetoRate:               1e0
+uncertaintyFactor:           0.05
+correlationFactor:           0.0
+
+maximumSignificants:         1e6
+maximumTriggers:             1e5
+maximumConsistents:          1e4
+
+durationInflation:           1.0
+bandwidthInflation:          1.0
+
+applyVeto:                   1
+vetoDurationFactor:          0.5
+vetoBandwidthFactor:         0.5
+

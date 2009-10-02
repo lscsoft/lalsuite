@@ -446,8 +446,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
 
   LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
-  LALregREALUserStruct(status,	psi,		'Y', UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
-  LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
+  LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
+  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
   LALregREALUserStruct(status,	A,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
   LALregREALUserStruct(status,	B,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
