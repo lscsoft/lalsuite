@@ -2,7 +2,7 @@
 -- coinc_definer clean up
 --
 
-CREATE TABLE _idmap_ AS
+CREATE TEMPORARY TABLE _idmap_ AS
 	SELECT
 		old_definer.coinc_def_id AS old,
 		MIN(new_definer.coinc_def_id) AS new
@@ -14,15 +14,12 @@ CREATE TABLE _idmap_ AS
 		)
 	GROUP BY
 		old_definer.coinc_def_id;
+CREATE INDEX tmpindex ON _idmap_ (old);
 
-CREATE INDEX idm_o_index ON _idmap_ (old);
-CREATE INDEX ce_cdid_index ON coinc_event (coinc_def_id);
 UPDATE coinc_event SET coinc_def_id = (SELECT new FROM _idmap_ WHERE old == coinc_def_id);
-DROP INDEX idm_o_index;
-DROP INDEX ce_cdid_index;
-
 DELETE FROM coinc_definer WHERE coinc_def_id IN (SELECT old FROM _idmap_ WHERE old != new);
 
+DROP INDEX tmpindex;
 DROP TABLE _idmap_;
 
 --
