@@ -26,47 +26,25 @@ DROP TABLE _idmap_;
 -- time_slide clean up
 --
 
-CREATE TEMPORARY TABLE time_slide_ids AS SELECT DISTINCT time_slide_id AS time_slide_id FROM time_slide;
-CREATE INDEX tsid_id_index ON time_slide_ids (time_slide_id);
+CREATE TEMPORARY TABLE _idmap_ AS
+	SELECT
+		time_slide_id AS old,
+		(SELECT group_concat(instrument || "=" || offset) FROM time_slide AS time_slide_a WHERE time_slide_a.time_slide_id == time_slide.time_slide_id ORDER BY instrument) AS repr,
+		NULL AS new
+	FROM
+		time_slide
+	GROUP BY
+		time_slide_id;
+CREATE INDEX tmpindex ON _idmap_ (repr, old);
 
--- BEGIN CHADS CHANGES TO SPEED UP TIME SLIDE ID FIXING
+UPDATE _idmap_ SET new = (SELECT MIN(old) FROM _idmap_ AS a WHERE a.repr == _idmap_.repr);
+DROP INDEX tmpindex;
+CREATE INDEX tmpindex ON _idmap_ (old);
 
-CREATE TEMPORARY TABLE new_slides AS SELECT tsa.time_slide_id AS time_slide_id, (SELECT group_concat(tsb.instrument || "," || tsb.offset) FROM time_slide AS tsb WHERE (tsb.time_slide_id == tsa.time_slide_id) ORDER BY tsb.instrument, tsb.offset) AS vec FROM time_slide_ids AS tsa;
-
-CREATE INDEX ns_tsid_index ON new_slides (time_slide_id);
-CREATE INDEX ns_tsidv_index ON new_slides (time_slide_id, vec);
-CREATE INDEX ns_v_index ON new_slides (vec);
-
-CREATE TABLE ts_vecs AS SELECT DISTINCT(vec) AS vec FROM new_slides;
-CREATE TABLE unique_ts AS SELECT  ts_vecs.vec, (SELECT MIN(time_slide_id) FROM new_slides WHERE new_slides.vec == ts_vecs.vec) AS time_slide_id FROM ts_vecs;
-CREATE INDEX ut_v_index ON unique_ts(vec);
-
-CREATE TABLE _idmap_ AS
-	SELECT 
-		new_slides.time_slide_id AS old,
-		unique_ts.time_slide_id AS new
-	FROM new_slides JOIN unique_ts 
-		ON (new_slides.vec == unique_ts.vec);
-
-DROP INDEX ut_v_index;
-DROP INDEX ns_tsid_index;
-DROP INDEX ns_tsidv_index;
-DROP INDEX ns_v_index;
-
-DROP TABLE new_slides;
-DROP TABLE ts_vecs;
-DROP TABLE unique_ts;
-
---- END CHADS CHANGES
-
-DROP TABLE time_slide_ids;
-
-CREATE INDEX idm_o_index ON _idmap_ (old);
-UPDATE coinc_event SET time_slide_id = (SELECT new FROM _idmap_ WHERE old == time_slide_id);
-DROP INDEX idm_o_index;
-
+UPDATE coinc_event SET time_slide_id = (SELECT _idmap_.new FROM _idmap_ WHERE _idmap_.old == time_slide_id);
 DELETE FROM time_slide WHERE time_slide_id IN (SELECT old FROM _idmap_ WHERE old != new);
 
+DROP INDEX tmpindex;
 DROP TABLE _idmap_;
 
 -- VACUUM;
