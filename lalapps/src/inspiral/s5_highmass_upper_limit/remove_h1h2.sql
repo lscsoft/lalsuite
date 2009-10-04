@@ -5,27 +5,23 @@ DELETE FROM
 WHERE
 	instruments == "H1,H2";
 
-DELETE FROM
-	coinc_inspiral
-WHERE
-	ifos == "H1,H2";
-
--- remove H2+L1 coincs when H1+H2+L1 are on
+-- remove coincs when H1+H2 are the only participants or when H2+L1 are the
+-- only participants when H1+H2+L1 are on
 
 DELETE FROM
 	coinc_inspiral
 WHERE
-	coinc_event_id IN (
-		SELECT
-			coinc_inspiral.coinc_event_id
-		FROM
-			coinc_inspiral
-			JOIN coinc_event ON (
-				coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
-			)
-		WHERE
-			coinc_inspiral.ifos == "H2,L1"
-			AND coinc_event.instruments == "H1,H2,L1"
+	ifos == "H1,H2"
+	OR (
+		ifos == "H2,L1"
+		AND coinc_event_id IN (
+			SELECT
+				coinc_event_id
+			FROM
+				coinc_event
+			WHERE
+				instruments == "H1,H2,L1"
+		)
 	);
 
 -- remove unused rows from the coinc_event and coinc_inspiral tables
