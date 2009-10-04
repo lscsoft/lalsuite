@@ -1572,8 +1572,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   {
     /* create space for mean square series */
 
-    if(r->mean_square)
-      XLALDestroyREAL8FrequencySeries(r->mean_square);
+    XLALDestroyREAL8FrequencySeries(r->mean_square);
     r->mean_square = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
     if(!r->mean_square)
       XLAL_ERROR(func, XLAL_EFUNC);
@@ -1582,8 +1581,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
 
     for(i = 0; i < r->median_samples; i++)
     {
-      if(r->history[i])
-        XLALDestroyREAL8Sequence(r->history[i]);
+      XLALDestroyREAL8Sequence(r->history[i]);
       r->history[i] = XLALCreateREAL8Sequence(sample->data->length);
       if(!r->history[i])
       {
