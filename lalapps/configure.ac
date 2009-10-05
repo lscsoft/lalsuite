@@ -206,7 +206,7 @@ if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, ,
+  AC_SEARCH_LIBS(MetaioOpen, metaio, ,
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
