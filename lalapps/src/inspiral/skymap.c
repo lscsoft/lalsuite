@@ -70,8 +70,9 @@ typedef struct
  */
 char* frame_file[6] = { 0, 0, 0, 0, 0, 0};
 char* xml_file[6] = { 0, 0, 0, 0, 0, 0 };
-typedef const char* cp;
-cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
+char* channel_name[6] = { 0, 0, 0, 0, 0, 0 };
+//typedef const char* cp;
+//cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
 const char* output_file = "skymap.txt";
 
 /*
@@ -110,7 +111,11 @@ int main(int argc, char** argv)
 	  {"h1-frame-file", required_argument, 0, 'h'},
 	  {"l1-frame-file", required_argument, 0, 'l'},
 	  {"v1-frame-file", required_argument, 0, 'v'},
-	  {"h2-frame-file", required_argument, 0, 'i'},             
+	  {"h2-frame-file", required_argument, 0, 'i'}, 
+	  {"h1-channel", required_argument, 0, 'j'},
+	  {"l1-channel", required_argument, 0, 'k'},
+	  {"v1-channel", required_argument, 0, 'm'},
+	  {"h2-channel", required_argument, 0, 'n'}, 
 	  {"output-file", required_argument, 0, 'o'},
 	  {"ra-res", required_argument, 0, 'a'},
 	  {"dec-res", required_argument, 0, 'd'},
@@ -123,7 +128,7 @@ int main(int argc, char** argv)
 	  {0, 0, 0, 0}
 	};
       int option_index = 0;
-      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:", long_options, &option_index);
+      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
       if (c == -1)
 	break;
       
@@ -162,6 +167,18 @@ int main(int argc, char** argv)
 	case 'q':
 	  xml_file[LAL_LHO_2K_DETECTOR] = optarg;
 	  break;
+	case 'j':
+	  channel_name[LAL_LHO_4K_DETECTOR] = optarg;
+	  break;
+	case 'k':
+	  channel_name[LAL_LLO_4K_DETECTOR] = optarg;
+	  break;
+	case 'm':
+	  channel_name[LAL_VIRGO_DETECTOR] = optarg;
+	  break;
+	case 'n':
+	  channel_name[LAL_LHO_2K_DETECTOR] = optarg;
+	  break;
 	case 'e':
 	  event_id = optarg;
 	  break;
@@ -187,16 +204,19 @@ int main(int argc, char** argv)
   /* support "none" arguments */
   {
     int i;
+    int arg_test;
     for( i = 0 ; i < 6 ; ++i )
     {
-      if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; }
-      if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; }
-      if( ( frame_file[i] && !xml_file[i] ) || (xml_file[i] && !frame_file[i] ) )
+      arg_test = 0;
+      if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; arg_test+=1;}
+      if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; arg_test+=1;}
+      if( channel_name[i] && !strcmp("none" , channel_name[i] ) ) { channel_name[i] = 0; arg_test+=1;}
+      if( arg_test!=0 || arg_test!=3 )
         {
-          fprintf( stderr , "error: Suppy matching pairs of frame & XML files\n");
+          fprintf( stderr , "error: Suppy matching pairs of frame, channel-name & XML files\n");
           exit(1);
         }//end if
-      if( xml_file[i] && frame_file[i] )
+      if( arg_test==0 )
         {
            ++numObs;
            printf("NUM OBS: %d\n" , numObs ); 
@@ -331,14 +351,14 @@ int main(int argc, char** argv)
     double longMax = fmod( skyMap->directions[iMode][0] , LAL_TWOPI );
     double decMax = skyMap->directions[iMode][1];
 
-    printf("#EVENT ID \t FOUND RA \t FOUND DEC \t");
+    printf("#FOUND RA \t FOUND DEC \t");
     printf(" TOTAL PROB \t LONG \t LAT\t");
     if( numObs > 1 )
         for( i = 0 ; i != numObs ; ++i )
             printf(" Detector_%d \t " , i );
     printf("\n");
-    printf("%s  %f \t %f \t %e \t %f \t %f\t" ,
-           event_id , raMax , decMax , skyMap->total_logPosterior ,
+    printf("  %f \t %f \t %e \t %f \t %f\t" ,
+           raMax , decMax , skyMap->total_logPosterior ,
            longMax , decMax );
     if( numObs > 1 )
         for( i = 0 ; i != numObs ; ++i )
@@ -388,7 +408,7 @@ void load_metadata(NetworkProperties* network , int slot)
 void load_data(NetworkProperties* network , int slot )
 {
    const char* file = frame_file[ network->detectors[slot] ];
-   const char* initial = channel_name[ network->detectors[slot] ];
+   const char* selected_channel_name = channel_name[ network->detectors[slot] ];
   
   if (file)
     {
@@ -400,7 +420,7 @@ void load_data(NetworkProperties* network , int slot )
       COMPLEX8TimeSeries H1series;
       int i;
       
-      sprintf(H1series.name,"%s:CBC-CData_%s", initial, event_id);
+      sprintf(H1series.name,"%s", selected_channel_name);
       stream = XLALFrOpen("./", file);
       if (!stream)
         {
