@@ -23,7 +23,7 @@ Written June-July 2002 by Peter Shawhan
 Modified various times after that
 
 To compile/link on Solaris:
-gcc -g ivana.c -I$LIGOTOOLS/include -L$LIGOTOOLS/lib -ldataflow -lsocket -lnsl\
+gcc -g ivana.c -I$LIGOTOOLS/include -L$LIGOTOOLS/lib -lmetaio -lsocket -lnsl\
     -o ivana
 
 Usage example:
