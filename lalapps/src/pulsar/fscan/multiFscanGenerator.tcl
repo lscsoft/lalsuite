@@ -41,10 +41,12 @@ proc PrintHelpAndExit {} {
    puts "The resourceFile describes channels and times to generate fscans and must be given; see exampleFscanGenerator.rsc."
    puts "";
    puts "The segFile is optional, and if given this must be the complete path to a file with a list of segments."
+   puts "The segFile can also be a list of segment files in the format \"IFO1:Path_to_IFO1_segFile IFO2:Path_to_IFO2_segFile ...\""
+   puts "For example: \"H1:/home/fscans/H1segs.txt L1:/home/fscans/L1segs.txt V1:/home/fscans/V1segs.txt\""
    puts "The segFile can also be set in the resourceFile. If the segFile is not set anywhere, and useLSCsegFind is"
-   puts "set to 1 in the resource file, then commands set the resource file are used to find segments (e.g., "
-   puts "using ligolw_segment_query and ligolw_print).  Otherwise the default is to generate fscans for ALL times"
-   puts "between the start and end times set in the resourceFile."
+   puts "set to 1 in the resource file, then commands set in the resource file are used to find segments (e.g., "
+   puts "using ligolw_segment_query and ligolw_print). The typeLSCsegFind is then a list of types to use for each IFO."
+   puts "Otherwise the default is to generate fscans for ALL times between the start and end times set in the resourceFile."
    puts "";
    puts "If the -R option is given, then fscanDriver.py will be run with the -R option to submit the DAGs to condor."
    puts "";
@@ -204,14 +206,13 @@ set baseOutputSegmentFile "tmpFscanGenSegList.txt";
 set useLSCsegFind 0;           # Use LSCsegFind to get segments.
 set segFindCmdAndPath "";      # Path to LSCsegFind command needs to be set in .rsc file
 set segFindServer     "";      # Server to use with LSCsegFind needs to be set in .rsc file
-set ifoList2 [list ];          # For each typeList below, list 2 character IFOs to check (e.g, H1, H2, L1, G1);
 set typeLSCsegFind "Science";  # Comma deliminated string of types to use with LSCsegFind (e.g., Science)
 set incSegStartsBy 0;          # Increase the start times of segs returned from LSCsegFind by this amount
 set decSegEndsBy 0;            # Decrease the end times of segs returned from LSCsegFind by this amount
 set ::LSCsegFindList {};       # 10/17/06 gam; initialize list of LSCsegFind segments;
 
-set useSegFiles 0;             # If set to 1, and if not useLSCsegFind, the read in a list of segments from file. uses incSegStartsBy and decSegEndsBy as above.
-set segFileList [list ];       # List of segment files to use for each channel
+set useSegFileList 0;          # If True, then use SegFileList(IFO) as segFile for each IFO.
+
 set segFileStartCol   1;       # Column with segment start times in segment file
 set segFileEndCol     2;       # Column with segment end times in segment file
 set ::segsFromFile {};         # Initialize list of segFile segments;
@@ -270,10 +271,7 @@ if {$argc < 1} {
 set resourceFile [lindex $argv 0];
 source $resourceFile
 
-if {$useLSCsegFind || $useSegFiles} {
-   source sets.tcl; # source the procedures for handling segment lists
-}
-
+source sets.tcl; # source the procedures for handling segment lists
 
 if {$parentOutputDirectory == "none"} {
    puts "Error: parentOutputDirectory not set in $resourceFile";
@@ -395,14 +393,43 @@ if {$argc >= 2} {
 }
 
 if {$segFile != "none"} {
-  # continue; $segFile needs to be complete path to the file
+  # $segFile needs to be complete path to the file
+  if {[llength $segFile] > 1} {
+     # If list given then format is IFO1:path_to_IFO1_segments IFO2:path_toIFO2_segments ... 
+     set useSegFileList 1;
+     foreach segFileItem $segFile {
+             #puts "segFileItem = $segFileItem";
+             set segFileItemList [split $segFileItem ":"];
+             set thisIFO [lindex $segFileItemList 0];
+             set thisSegFilePath [lindex $segFileItemList 1];
+             puts "thisSegFilePath = $thisSegFilePath for thisIFO = $thisIFO";
+             set segFileList($thisIFO) $thisSegFilePath;
+     }
+  } else {
+     # continue;
+  }
 } else {
   if {$useLSCsegFind} {
-    set segFile "$startingPWD/multiFscanSegFile_$joinFormatTimeNow.txt"
-    puts "segFile = $segFile"
-    set ::LSCsegFindList {}; # initialize list of LSCsegFind segments;
-    set thisIFO2 [lindex $ifoList2 0];
-    getLSCsegFindsegs $typeLSCsegFind $startTime $endTime $segFile;
+    if {[llength $typeLSCsegFind] > 1} {
+      set useSegFileList 1;
+      foreach typeLSCsegFindItem $typeLSCsegFind {
+        set typeLSCsegFindItemList [split $typeLSCsegFindItem ":"];
+        set thisIFO [lindex $typeLSCsegFindItemList 0];
+        set thisSegFilePath "$startingPWD/multiFscanSegFile_$thisIFO";
+        append thisSegFilePath "_";
+        append thisSegFilePath $joinFormatTimeNow.txt;
+        set segFileList($thisIFO) $thisSegFilePath;
+        puts "thisSegFilePath = $thisSegFilePath for thisIFO = $thisIFO";
+        set ::LSCsegFindList {}; # initialize list of LSCsegFind segments;
+        getLSCsegFindsegs $typeLSCsegFindItem $startTime $endTime $thisSegFilePath;
+      }
+    } else {
+      # Do as before
+      set segFile "$startingPWD/multiFscanSegFile_$joinFormatTimeNow.txt"
+      puts "segFile = $segFile"
+      set ::LSCsegFindList {}; # initialize list of LSCsegFind segments;
+      getLSCsegFindsegs $typeLSCsegFind $startTime $endTime $segFile;
+    }
   } else {
     set segFile "ALL"; # do all times
   }
@@ -473,6 +500,10 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     append cmd " -X fscan$thisChanDir -o /usr1/pulsar"
     append cmd " -O $thisDir -m $matlabPath"
     append cmd " -W $thisDir/fscan$thisG.html"
+    if {$useSegFileList} {
+       # Use the segFile that goes with thisIFO.
+       set segFile $segFileList($thisIFO);
+    }
     append cmd " -x 64 -v 2 -g $segFile --freq-res 0.1"
     # Set up comparison with another fscan:
     if {$thisComparisonChan != "none"} {
