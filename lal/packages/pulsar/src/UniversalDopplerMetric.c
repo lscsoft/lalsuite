@@ -112,6 +112,13 @@ NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
 
 BOOLEAN outputIntegrand = 0;
 
+/* Some local constants. */
+#define rOrb_c  (LAL_AU_SI / LAL_C_SI)
+#define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
+// sin,cos(LAL_IEARTH);
+#define cosiEcl 0.917482062157619
+#define siniEcl 0.397777155727931
+
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
 gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
@@ -124,6 +131,13 @@ double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
+
+typedef REAL8 vect3[3];
+typedef REAL8 mat33[3][3];
+
+int equatorialVect2ecliptic ( vect3 *out, vect3 const *in );
+int eclipticVect2equatorial ( vect3 *out, vect3 const *in );
+int matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -301,9 +315,11 @@ CWPhaseDeriv_i ( double tt, void *params )
   const CHAR *fn = "CWPhaseDeriv_i()";
   REAL8 ret;
   intparams_t *par = (intparams_t*) params;
-  REAL8 nn_equ[3], nn_ecl[3];	/* skypos unit vector */
-  REAL8 nDeriv_i[3];	/* derivative of sky-pos vector wrt i */
+  vect3 nn_equ, nn_ecl;	/* skypos unit vector */
+  vect3 nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
+  vect3 detpos_ecl;
+
   REAL8 ttSI, dTSI, dT, tauiSI;
   REAL8 Freq = par->dopplerPoint->fkdot[0];
   LIGOTimeGPS ttGPS;
@@ -320,12 +336,20 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  REAL8 cosi = cos(LAL_IEARTH);
-  REAL8 sini = sin(LAL_IEARTH);
+  equatorialVect2ecliptic ( &nn_ecl, (vect3 const *)&nn_equ );
 
+  /*
+  vect3 nn_ecl0, nn_equ0;
+  printf ("equatorialVect2ecliptic(): nn_ecl0 = { %g, %g, %g}\n", nn_ecl0[0], nn_ecl0[1], nn_ecl0[2] );
   nn_ecl[0] = nn_equ[0];
-  nn_ecl[1] = cosi * nn_equ[1] + sini * nn_equ[2];
-  nn_ecl[2] = cosi * nn_equ[2] - sini * nn_equ[1];
+  nn_ecl[1] = cosiEcl * nn_equ[1] + siniEcl * nn_equ[2];
+  nn_ecl[2] = cosiEcl * nn_equ[2] - siniEcl * nn_equ[1];
+  printf ("manual conversion        : nn_ecl  = { %g, %g, %g}\n", nn_ecl[0], nn_ecl[1], nn_ecl[2] );
+  eclipticVect2equatorial ( nn_equ0, nn_ecl0 );
+  printf ("eclipticVect2equatorial(): nn_equ0 = { %g, %g, %g}\n", nn_equ0[0], nn_equ0[1], nn_equ0[2] );
+  printf ("original input           : nn_equ  = { %g, %g, %g}\n", nn_equ[0], nn_equ[1], nn_equ[2] );
+  exit(0);
+  */
 
   if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
     nn_ecl[2] = 1e-6;
@@ -337,6 +361,9 @@ CWPhaseDeriv_i ( double tt, void *params )
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", fn);
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
+
+  /* convert detector position in ecliptic coordinates */
+  equatorialVect2ecliptic ( &detpos_ecl, (vect3 const*) &posvel.pos );
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
   dTSI = SCALAR(nn_equ, posvel.pos );
@@ -370,12 +397,23 @@ CWPhaseDeriv_i ( double tt, void *params )
         ret *= nNat;
       break;
 
-    case DOPPLERCOORD_NECL_X:
-      ret = LAL_TWOPI * Freq * ( posvel.pos[0] - (nn_ecl[0]/nn_ecl[2]) * posvel.pos[2] );
+    case DOPPLERCOORD_NECL_X_NAT:
+      ret = ( detpos_ecl[0] - (nn_ecl[0]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
 
-    case DOPPLERCOORD_NECL_Y:
-      ret = LAL_TWOPI * Freq * ( posvel.pos[1] - (nn_ecl[1]/nn_ecl[2]) * posvel.pos[2] );
+    case DOPPLERCOORD_NECL_Y_NAT:
+      ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
+      break;
+
+      /* experimental: unconstrained skypos vector n3 */
+    case DOPPLERCOORD_N3X:
+      ret = detpos_ecl[0] / rOrb_c;
+      break;
+    case DOPPLERCOORD_N3Y:
+      ret = detpos_ecl[1] / rOrb_c;
+      break;
+    case DOPPLERCOORD_N3Z:
+      ret = detpos_ecl[2] / rOrb_c;
       break;
 
       /* ----- frequency derivatives SI-units ----- */
@@ -451,9 +489,6 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
   PosVel3D_t Spin_z, Spin_xy;
-  REAL8 cosi = cos(LAL_IEARTH);
-  REAL8 sini = sin(LAL_IEARTH);
-
   REAL8 eZ[3];
 
   if ( !posvel || !tGPS || !site || !edat ) {
@@ -488,7 +523,7 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
   Det_wrt_Earth.vel[1] = emit.vDetector[1] - earth.velNow[1];
   Det_wrt_Earth.vel[2] = emit.vDetector[2] - earth.velNow[2];
 
-  eZ[0] = 0; eZ[1] = -sini; eZ[2] = cosi; 	/* ecliptic z-axis in equatorial coordinates */
+  eZ[0] = 0; eZ[1] = -siniEcl; eZ[2] = cosiEcl; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = SCALAR ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = SCALAR ( Det_wrt_Earth.vel, eZ );
@@ -614,11 +649,6 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 {
   const CHAR *fn = "XLALPtolemaicPosVel()";
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
-  /* Some local constants. */
-  REAL8 rOrb_c = LAL_AU_SI / LAL_C_SI;
-  REAL8 vOrb_c = LAL_TWOPI * rOrb_c / LAL_YRSID_SI;
-  REAL8 cosi = cos(LAL_IEARTH);
-  REAL8 sini = sin(LAL_IEARTH);
   REAL8 phiOrb;   /* Earth orbital revolution angle, in radians. */
   REAL8 sinOrb, cosOrb;
   LALStatus status = empty_status;
@@ -641,13 +671,13 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
   /* Get instantaneous position. */
   posvel->pos[0] = rOrb_c * cosOrb;
-  posvel->pos[1] = rOrb_c * sinOrb * cosi;
-  posvel->pos[2]=  rOrb_c * sinOrb * sini;
+  posvel->pos[1] = rOrb_c * sinOrb * cosiEcl;
+  posvel->pos[2]=  rOrb_c * sinOrb * siniEcl;
 
   /* Get instantaneous velocity. */
   posvel->vel[0] = -vOrb_c * sinOrb;
-  posvel->vel[1] =  vOrb_c * cosOrb * cosi;
-  posvel->vel[2] =  vOrb_c * cosOrb * sini;
+  posvel->vel[1] =  vOrb_c * cosOrb * cosiEcl;
+  posvel->vel[2] =  vOrb_c * cosOrb * siniEcl;
 
   return XLAL_SUCCESS;
 
@@ -1917,3 +1947,58 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 
 } /* XLALProjectMetric() */
 
+/** Convert 3-D vector from equatorial into ecliptic coordinates
+ * return: 0 = OK, -1 = ERROR
+ */
+int
+equatorialVect2ecliptic ( vect3 *out, vect3 const *in )
+{
+  static const mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
+                                    { 0.0,  cosiEcl, siniEcl },
+                                    { 0.0, -siniEcl, cosiEcl } };
+  if (!out || !in )
+    return -1;
+
+  return matrix33_in_vect3 ( out, &rotEqu2Ecl, in );
+
+} /* equatorialVect2ecliptic() */
+
+/** Convert 3-D vector from ecliptic into equatorial coordinates
+ * return: 0 = OK, -1 = ERROR
+ */
+int
+eclipticVect2equatorial ( vect3 *out, vect3 const *in )
+{
+  static const mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
+                                     { 0.0,  cosiEcl, -siniEcl },
+                                     { 0.0,  siniEcl,  cosiEcl } };
+
+  if (!out || !in )
+    return -1;
+
+  return matrix33_in_vect3 ( out, &rotEcl2Equ, in );
+
+} /* eclipticVect2equatorial() */
+
+/** compute matrix product mat . vect
+ * return: 0 = OK, -1 = ERROR
+ */
+int
+matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in )
+{
+  if ( !out || !mat || !in )
+    return -1;
+
+  UINT4 i,j;
+  for ( i=0; i < 3; i ++ )
+    {
+      (*out)[i] = 0;
+      for ( j=0; j < 3; j ++ )
+        {
+          (*out)[i] += (*mat)[i][j] * (*in)[j];
+        }
+    }
+
+  return 0;
+
+} /* matrix33_in_vect3() */
