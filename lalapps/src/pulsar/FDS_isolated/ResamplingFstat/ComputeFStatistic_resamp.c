@@ -2912,8 +2912,8 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
-
-      /* store these in buffer if available */
+ 
+     /* store these in buffer if available */
       if ( Buffer )
 	{
 	  XLALDestroyMultiAMCoeffs ( Buffer->multiAMcoef );
@@ -3148,6 +3148,8 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       XLALDestroyFFTWCOMPLEXSeries(FbOut);
       XLALDestroyFFTWCOMPLEXSeries(FaInSpinCorrected);
       XLALDestroyFFTWCOMPLEXSeries(FbInSpinCorrected);
+      fftw_destroy_plan(plan_a);
+      fftw_destroy_plan(plan_b);
            
     }
 
