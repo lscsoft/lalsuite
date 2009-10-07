@@ -307,7 +307,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-  REAL8 m1,m2,logdl,ampli,a=50,b=21;
+  REAL8 m1,m2;
   parameter->logPrior=0.0;
   REAL8 mc,eta;
   REAL8 minCompMass = 1.0;
@@ -333,7 +333,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-	REAL8 m1,m2,logdl,ampli,a=50,b=21;
+	REAL8 m1,m2;
 	parameter->logPrior=0.0;
 	REAL8 mc,eta;
 	REAL8 minCompMass = 1.0;

@@ -568,7 +568,7 @@ int main( int argc, char *argv[])
 				
 				/* Compute power spectrum */
 				if(DEBUG) fprintf(stderr,"Computing power spectrum, seglen %i\n",seglen);
-				check=XLALREAL8AverageSpectrumWelch( inputMCMC.invspec[i] ,RawData,(UINT4)seglen,(UINT4)stride,windowplan,fwdplan);
+				check=XLALREAL8AverageSpectrumMedian( inputMCMC.invspec[i] ,RawData,(UINT4)seglen,(UINT4)stride,windowplan,fwdplan);
 				check|=XLALREAL8SpectrumInvertTruncate( inputMCMC.invspec[i], inputMCMC.fLow, seglen, (seglen-stride)/4, fwdplan, revplan );
 				
 				if(check) {fprintf(stderr,"Cannot create spectrum, check=%x\n",check); exit(-1);}
@@ -649,10 +649,10 @@ int main( int argc, char *argv[])
 			for(j=0;j<injF->data->length;j++) fprintf(waveout,"%10.10lf %10.10e %10.10e\n",j*inputMCMC.deltaF,injF->data->data[j].re,injF->data->data[j].im);
 			fclose(waveout);
 #endif
-			XLALDestroyCOMPLEX8FrequencySeries(injF);
+			XLALDestroyCOMPLEX16FrequencySeries(injF);
 			
 			XLALDestroyREAL4TimeSeries(injWave);
-			XLALDestroyREAL4TimeSeries(inj8Wave);
+			XLALDestroyREAL8TimeSeries(inj8Wave);
 			
 			if(status.statusCode==0) {fprintf(stderr,"Injected signal into %s. SNR=%lf\n",IFOnames[i],SNR);}
 			else {fprintf(stderr,"injection failed!!!\n"); REPORTSTATUS(&status); exit(-1);}
