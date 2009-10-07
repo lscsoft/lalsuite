@@ -16,11 +16,11 @@ void NestInit2PN(LALMCMCParameter *parameter, void *iT);
 
 REAL8 mean(REAL8 *array,int N);
 
-REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live,LALMCMCInput *MCMCinput);
+REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live,LALMCMCInput *MCMCinput);
 
 REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, LALMCMCInput *MCMCInput,REAL8 minL,gsl_matrix *covM,INT4 N);
 
-void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,int N);
+void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,UINT4 N);
 
 REAL8 ang_dist(REAL8 a1, REAL8 a2);
 
