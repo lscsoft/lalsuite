@@ -103,7 +103,7 @@ AC_DEFUN([LAL_ENABLE_FRAME],
 AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
-  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio/dataflow library [default=yes]]),
+  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio library [default=yes]]),
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;

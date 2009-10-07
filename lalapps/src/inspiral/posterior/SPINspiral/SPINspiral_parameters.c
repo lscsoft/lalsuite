@@ -30,7 +30,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLRead.h>
 
-#include <SPINspiral.h>
+#include "SPINspiral.h"
 
 
 

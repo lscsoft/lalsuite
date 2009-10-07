@@ -126,8 +126,12 @@ typedef enum {
   DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
   DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
 
-  DOPPLERCOORD_NECL_X,			/**< x-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates */
-  DOPPLERCOORD_NECL_Y,			/**< y-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates */
+  DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
+  DOPPLERCOORD_N3X,			/**< experimental: unconstrained sky-vector n3: ecliptic-x coordinate */
+  DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
+  DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
@@ -154,8 +158,12 @@ const CHAR *DopplerCoordinateNames[] = {
   "Alpha_Nat",
   "Delta_Nat",
 
-  "nEcl_x",
-  "nEcl_y",
+  "nEcl_x_Nat",
+  "nEcl_y_Nat",
+
+  "n3_x",
+  "n3_y",
+  "n3_z",
 
   "NONE"
 };
@@ -184,8 +192,12 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
-  "Sky-position: x-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates",
-  "Sky-position: y-component of sky-position unit-vector n in ECLIPTIC Cartesian coordinates",
+  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
+  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
+
+  "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
+  "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
+  "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
 
   "NONE"
 };
