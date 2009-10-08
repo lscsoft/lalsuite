@@ -69,7 +69,7 @@ class GitInvocationError(exceptions.Exception):
 # command line option parsing
 def parse_args():
   # usage information
-  usage = '%prog [options] src_dir build_dir'
+  usage = '%prog [options] project src_dir build_dir'
 
   # define option parser
   parser = optparse.OptionParser(usage=usage)
@@ -82,14 +82,14 @@ def parse_args():
   opts, args = parser.parse_args()
 
   # check for positional arguments
-  if (len(args) != 2):
+  if (len(args) != 3):
     parser.error('incorrect number of command line options specified')
 
   # check that both --sed and --file are not specified
   if (opts.sed is True) and (opts.file is True):
     parser.error('cannot specify both --sed and --file')
 
-  return opts, args[0], args[1]
+  return opts, args[0], args[1], args[2]
 
 #
 # process management methods
@@ -189,16 +189,16 @@ def generate_git_version_info():
 #
 
 # parse command line options
-options, src_dir, build_dir = parse_args()
+options, project, src_dir, build_dir = parse_args()
 
 # filenames
-basename= 'LALVCSInfo.h'
+basename = '%sVCSInfo.h' % project
 infile = '%s/%s.in' % (src_dir, basename)
 tmpfile= '%s/%s.tmp' % (build_dir, basename)
 srcfile = '%s/%s' % (src_dir, basename)
 dstfile = '%s/%s' % (build_dir, basename)
 
-# copy LALVCSInfo.h to build_dir, if appropriate
+# copy vcs header to build_dir, if appropriate
 if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
   shutil.copy(srcfile, dstfile)
 
@@ -230,7 +230,7 @@ if git_ok:
     print 's+@STATUS@+%s+g' % info.status
   elif options.sed:
     # generate sed command line options
-    sed_cmd = '-e "s/@ID@/%s/"' % info.id
+    sed_cmd = ' -e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
     sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
     sed_cmd += ' -e "s/@TAG@/%s/"' % info.tag
@@ -243,7 +243,7 @@ if git_ok:
     p = subprocess.Popen(cmd, shell=True)
     os.waitpid(p.pid, 0)
 
-    # update LALVCSInfo.h, if appropriate
+    # update vcs header, if appropriate
     if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
       os.rename(tmpfile, dstfile)
     else:
