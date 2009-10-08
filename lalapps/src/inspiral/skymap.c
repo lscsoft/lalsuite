@@ -112,10 +112,10 @@ int main(int argc, char** argv)
 	  {"l1-frame-file", required_argument, 0, 'l'},
 	  {"v1-frame-file", required_argument, 0, 'v'},
 	  {"h2-frame-file", required_argument, 0, 'i'}, 
-	  {"h1-channel", required_argument, 0, 'j'},
-	  {"l1-channel", required_argument, 0, 'k'},
-	  {"v1-channel", required_argument, 0, 'm'},
-	  {"h2-channel", required_argument, 0, 'n'}, 
+	  {"h1-channel-name", required_argument, 0, 'j'},
+	  {"l1-channel-name", required_argument, 0, 'k'},
+	  {"v1-channel-name", required_argument, 0, 'm'},
+	  {"h2-channel-name", required_argument, 0, 'n'}, 
 	  {"output-file", required_argument, 0, 'o'},
 	  {"ra-res", required_argument, 0, 'a'},
 	  {"dec-res", required_argument, 0, 'd'},
@@ -211,12 +211,13 @@ int main(int argc, char** argv)
       if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; arg_test+=1;}
       if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; arg_test+=1;}
       if( channel_name[i] && !strcmp("none" , channel_name[i] ) ) { channel_name[i] = 0; arg_test+=1;}
-      if( arg_test!=0 || arg_test!=3 )
+      fprintf(stderr, "argtest %d\n",arg_test);
+      if( arg_test!=0 && arg_test!=3 )
         {
-          fprintf( stderr , "error: Suppy matching pairs of frame, channel-name & XML files\n");
+          fprintf( stderr , "error: Supply matching pairs of frame, channel-name & XML files %d\n", arg_test);
           exit(1);
         }//end if
-      if( arg_test==0 )
+      if( arg_test==0 && frame_file[i] )
         {
            ++numObs;
            printf("NUM OBS: %d\n" , numObs ); 

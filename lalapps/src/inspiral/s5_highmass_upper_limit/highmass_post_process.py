@@ -406,7 +406,7 @@ class summary_page_node(pipeline.CondorDAGNode):
   """
   def __init__(self, job, dag, open_box=None, base_name=None, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
-    if open_box: self.add_var_opt("open-box","")
+    if open_box: self.add_var_arg("--open-box")
     if base_name: self.add_var_opt("output-name-tag", base_name)
     for p in p_node:
       self.add_parent(p)
