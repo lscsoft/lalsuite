@@ -19,6 +19,8 @@ __version__ = '$Revision: 1.25 $'[11:-2]
 # 06/29/2009 gam; Include links to _2 plots, when making a comparisons with other fscans.
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
+# 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+# 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -61,9 +63,11 @@ Usage: [options]
   -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise ligolw_segment_query is used to find Science segments; if -g ALL is given then [start_time, start_time + duration) is used.
+  -t, --segment-type         (optional) segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1).
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -i, --ifo                  (optional) ifo to use with ligolw_segment_query and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
+  -I, --intersect-data       (optional) Run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
   -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
@@ -90,7 +94,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:l:J:j:hSHZCR" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -109,6 +113,7 @@ longop = [  #cg; longopt is a list
   "sub-log-path=",
   "channel-name=",
   "ifo=",
+  "intersect-data",
   "frame-struct-type=",
   "window-type=",
   "overlap-fraction=",
@@ -128,6 +133,7 @@ longop = [  #cg; longopt is a list
   "misc-desc=",
   "max-num-per-node=",
   "segment-file=",
+  "segment-type=",
   "min-seg-length=",
   "use-single=",  
   "use-hot",
@@ -162,6 +168,7 @@ logPath = "logs"
 subLogPath = "logs"
 channelName = None
 segIFO = None
+intersectData = False
 makeSFTIFO = None
 frameStructType = None
 windowType = 1
@@ -184,6 +191,7 @@ miscDesc = None
 maxNumPerNode = 1
 maxLengthAllJobs = None
 segmentFile = None
+segmentType = None
 minSegLength = 0L
 useSingle = False
 useHoT = False
@@ -225,6 +233,8 @@ for o, a in opts:
     channelName = a
   elif o in ("-i", "--ifo"):
     segIFO = a
+  elif o in ("-I", "--intersect-data"):
+    intersectData = True
   elif o in ("-u", "--frame-struct-type"):
     frameStructType = a
   elif o in ("-w", "--window-type"):
@@ -263,6 +273,8 @@ for o, a in opts:
     maxLengthAllJobs = long(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
+  elif o in ("-t", "--segment-type"):
+    segmentType = a
   elif o in ("-l", "--min-seg-length"):
     minSegLength = long(a)
   elif o in ("-S", "--use-single"):
@@ -437,8 +449,11 @@ if (createSFTs):
   # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
   if not segmentFile:
     segmentFile = 'tmpSegs%stmp.txt' % tagString
+    if not segmentType:
+       # set default segment type
+       segmentType = "%s:DMT-SCIENCE:1" % segIFO
     #segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
-    segCommand = "ligolw_segment_query --database --query-segments --include-segments '%s:DMT-SCIENCE:1' --gps-start-time %d --gps-end-time %s | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
+    segCommand = "ligolw_segment_query --database --query-segments --include-segments %s --gps-start-time %d --gps-end-time %d | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segmentType,analysisStartTime,analysisEndTime,segmentFile)
     print >> sys.stdout,"Trying: ",segCommand,"\n"
     try:
       segFindExit = os.system(segCommand)
@@ -468,7 +483,45 @@ if (createSFTs):
     # Just continue with the name given on the command line.
     print >> sys.stderr, 'Using segmentFile == %s \n' % segmentFile
 
-    
+  ###################################################
+  # Intersect with existing data if intersectData = True
+  #
+
+  if intersectData:
+    # Get the segments the data exist from ligo_data_find
+    dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
+    dataFindCommand = "ligo_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
+    try:
+      dataFindExit = os.system(dataFindCommand)
+      if (dataFindExit > 0):
+         print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'ligo_data_find succeeded! \n'
+    except:
+      print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+      sys.exit(1)
+
+    # Intersect the segments to run on with the segments data exist
+    intersectedSegmentFile = 'tmpIntersectedSegs%stmp.txt' % tagString
+    segexprCommand = "segexpr \"intersection(%s,%s)\" %s" % (segmentFile,dataFindSegmentFile,intersectedSegmentFile)
+    print >> sys.stdout,"Trying: ",segexprCommand,"\n"
+    try:
+      segexprExit = os.system(segexprCommand)
+      if (segexprExit > 0):
+         print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'segexpr succeeded! \n'
+    except:
+      print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+      sys.exit(1)
+
+    # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
+    segmentFile = intersectedSegmentFile
+  # End if intersectData
+
   ###################################################
   # CHECK THE SEGMENT FILE
   #

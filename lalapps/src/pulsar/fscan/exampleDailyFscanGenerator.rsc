@@ -30,6 +30,8 @@ set startTimeFile "lastTimeUsedByFscanGenerator.txt";
 
 set useEndTimeForDirName 1;    # 0 == false, 1 == true; Use start time to name output directory.
 
+set intersectData 0; # 0 == false, 1 == true; if true run fscanDriver.py with -I option so that it intersects the segments with the times data exists.
+
 # Control whether to find segs using ligolw_segment_query:
 set useLSCsegFind 1 
 set typeLSCsegFind "H1:DMT-SCIENCE L1:DMT-SCIENCE V1:ITF_SCIENCEMODE"; #Give as a list for each IFO in the masterList
