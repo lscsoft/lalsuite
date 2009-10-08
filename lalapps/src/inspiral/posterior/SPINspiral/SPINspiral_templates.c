@@ -26,7 +26,7 @@
 
 
 
-#include <SPINspiral.h>
+#include "SPINspiral.h"
 
 
 /**

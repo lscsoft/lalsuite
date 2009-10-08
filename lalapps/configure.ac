@@ -11,6 +11,7 @@ AC_CONFIG_FILES([\
   man/Makefile \
   misc/Makefile \
   src/Makefile \
+  src/lalapps/defaults.py \
   src/lalapps/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
@@ -33,6 +34,7 @@ AC_CONFIG_FILES([\
   src/pulsar/TDS_isolated/Makefile \
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
+  src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
   src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
@@ -168,7 +170,7 @@ lalxml="true"
 lalstochastic="true"
 PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
-PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
+PKG_CHECK_MODULES(LALXML, lalxml >= 1.0, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic >= 1.0, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
 	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
@@ -205,21 +207,10 @@ if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, ,
+  AC_SEARCH_LIBS(MetaioOpen, metaio, ,
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
-dnl XML2 (libxml2)
-if test "${xml}" = "true"; then
-  PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= 2.6, [ true ], [ false ])
-  lal_pre_xml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
-  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
-                 [AC_MSG_WARN(disabling xml support)]
-                 [xml="false"]
-                 [LIBS="$lal_pre_xml2_LIBS"])
 fi
 
 dnl Check for libcfitsio
@@ -227,7 +218,7 @@ if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB(cfitsio, ffopen, , cfitsio="false")
 fi
 
-dnl Now check for LALFrame, LALMetaIo, and LALStohastic
+dnl Now check for LALFrame, LALMetaIo, LALXMl, and LALStohastic
 if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")

@@ -46,20 +46,26 @@ page = wiki()
 page.section("Volume x time H1H2L1, H1L1, H2L1")
 image_list = ['H1H2L1volume_time.png', 'H1L1volume_time.png','H2L1volume_time.png']
 page.image_table(image_list,webserver)
+
 page.section("error on Volume x time H1H2L1, H1L1, H2L1")
 image_list = ['H1H2L1fractional_error.png', 'H1L1fractional_error.png','H2L1fractional_error.png']
 page.image_table(image_list,webserver)
+
 page.section("lambda H1H2L1, H1L1, H2L1")
 image_list = ['H1H2L1lambda.png', 'H1L1lambda.png','H2L1lambda.png']
 page.image_table(image_list,webserver)
+
 page.section("Selected posteriors H1H2L1, H1L1, H2L1")
 image_list = ['H1H2L1posterior.png', 'H1L1posterior.png','H2L1posterior.png']
 page.image_table(image_list,webserver)
+
 page.section("upper limit H1H2L1, H1L1, H2L1")
 image_list = ['H1H2L1upper_limit.png', 'H1L1upper_limit.png','H2L1upper_limit.png']
+page.image_table(image_list,webserver)
+
 page.section("Combined upper limit")
 image_list = ['combinedupper_limit.png', 'combinedposterior.png']
-
 page.image_table(image_list,webserver)
+
 page.finish()
 

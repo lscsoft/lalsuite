@@ -35,6 +35,7 @@ Header file for the MCMC tools code.
 # include <lal/LIGOMetadataTables.h>
 # include <lal/LALDatatypes.h>
 # include <lal/FindChirp.h>
+#include <lal/Window.h>
 #include <lal/LALDetectors.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_errno.h>

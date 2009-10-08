@@ -8,7 +8,6 @@ AC_CONFIG_FILES([ \
                  lal.pc \
                  lalframe.pc \
                  lalmetaio.pc \
-                 lalxml.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -168,7 +167,6 @@ LAL_WITH_CUDA
 LAL_ENABLE_GCC_FLAGS
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
-LAL_ENABLE_XML
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -321,12 +319,12 @@ else
   AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional FrameL, metaio, and xml2 libraries.
+dnl Checks for optional FrameL, and metaio.
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, ,
+  AC_SEARCH_LIBS(MetaioOpen, metaio, ,
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
@@ -339,15 +337,6 @@ if test "${frame}" = "true"; then
                  [AC_MSG_WARN(disabling frame library)]
                  [frame="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
-fi
-if test "${xml}" = "true"; then
-  PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= 2.6, [ true ], [ false ])
-  lal_pre_xml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
-  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
-                 [AC_MSG_WARN(disabling xml support)]
-                 [xml="false"]
-                 [LIBS="$lal_pre_xml2_LIBS"])
 fi
 
 
@@ -384,14 +373,6 @@ if test "${frame}" = "true"; then
                    [frame="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
-if test "${xml}" = "true"; then
-  lal_pre_xml2_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  AC_CHECK_HEADERS(libxml/xmlversion.h, ,
-                   [AC_MSG_WARN(disabling xml support)]
-                   [xml="false"]
-                   [CPPFLAGS="$lal_pre_xml2_CPPFLAGS"])
-fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
@@ -409,9 +390,6 @@ if test "${metaio}" = "true"; then
 fi
 if test "${frame}" = "true"; then
   AC_DEFINE(LAL_FRAME_ENABLED, 1, [Define if using frame library])
-fi
-if test "${xml}" = "true"; then
-  AC_DEFINE(LAL_XML_ENABLED, 1, [Define if using xml2 library])
 fi
 
 
@@ -447,7 +425,6 @@ AC_SUBST(pkgdocdir)
 dnl Setup automake conditionals
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
-AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
 AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
@@ -475,14 +452,7 @@ if test -d $srcdir/lalapps ; then
     LALMETAIO_LIBS=""
     LALMETAIO_CFLAGS=""
   fi
-  if test x$xml = xtrue ; then
-    LALXML_LIBS=$lal_build_dir/packages/support/src/liblalxml.la
-    LALXML_CFLAGS=-I$lal_build_dir/include
-  else
-    LALXML_LIBS=""
-    LALXML_CFLAGS=""
-  fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS LALXML_LIBS LALXML_CFLAGS
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
   AC_CONFIG_SUBDIRS(lalapps)
 fi
 
@@ -508,7 +478,6 @@ AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
@@ -517,7 +486,6 @@ echo "
 
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
-                LAL XML library support is $xmlenabled
                 CUDA support is $cudaenabled
 
         Now run 'make' to build LAL

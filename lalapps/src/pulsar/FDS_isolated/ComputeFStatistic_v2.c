@@ -280,7 +280,6 @@ void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logst
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 void OutputVersion ( void );
 
-const char *va(const char *format, ...);	/* little var-arg string helper function */
 CHAR *append_string ( CHAR *str1, const CHAR *append );
 
 /* ---------- scanline window functions ---------- */
@@ -1672,27 +1671,6 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   fclose(fp);
   return 0;
 } /* outputBeamTS() */
-
-/*
-============
-va ['stolen' from Quake2 (GPL'ed)]
-
-does a varargs printf into a temp buffer, so I don't need to have
-varargs versions of all text functions.
-FIXME: make this buffer size safe someday
-============
-*/
-const char *va(const char *format, ...)
-{
-        va_list         argptr;
-        static char     string[1024];
-
-        va_start (argptr, format);
-        vsprintf (string, format,argptr);
-        va_end (argptr);
-
-        return string;
-}
 
 /** write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
  * RETURN 0 = OK, -1 = ERROR

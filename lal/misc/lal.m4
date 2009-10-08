@@ -103,25 +103,13 @@ AC_DEFUN([LAL_ENABLE_FRAME],
 AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
-  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio/dataflow library [default=yes]]),
+  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio library [default=yes]]),
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
     esac
   ], [ metaio=true ] )
-])
-
-AC_DEFUN([LAL_ENABLE_XML],
-[AC_ARG_ENABLE(
-  [xml],
-  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
-  [ case "${enableval}" in
-      yes) xml=true;;
-      no)  xml=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
-    esac
-  ], [ xml=false ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],

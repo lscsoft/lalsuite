@@ -32,7 +32,7 @@
 #include <lal/LALXML.h>
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXMLVOTableSerializers.h>
-#include <LALStatusMacros.h>
+#include <lal/LALStatusMacros.h>
 
 
 #define LALXMLC_ENOM 0

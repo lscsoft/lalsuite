@@ -4,41 +4,36 @@ ihope_status.in - give a brief dag status
 
 $Id $
 
-This script parse a dag file and retrieve the last status line found in the
-file. It prints the number of failed/done jobs. 
+Reads in a dag file and looks for sub dags. The status of each sub dag is
+reported as well as the total number of jobs, the number of submitted jobs
+and the progress.
 
-If a dag contains other dag, those dags are alos read. 
+This is specificly designed for use with lalapps_ihope.
 
 """
-__author__ = 'Thomas Cokelaer < Thomas.Cokelaer@astro.cf.ac.uk>'
+__author__ = 'Thomas Cokelaer < Thomas.Cokelaer@astro.cf.ac.uk>, David Mckechan'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 __name__ = 'ihope_status'
 
 
 import sys
-import os
-import optparse
 from optparse import OptionParser
-import time
+from time import sleep
 
 
 ##############################################################################
 usage = """\
 %prog [options]
-----------------
- brief status of the dag
+---------------- 
+  Specifically designed for use with lalapps_ihope uber-dags.
    
- Purpose - parse one or several dagman.out file(s) to obtain a brief  summary 
- of the dag status and their rescue files if they exist.
+ Purpose - parse  several dags and their dagman.out file(s) to obtain a 
+ concise summary of the dag status.
  
- Example - You can parse a dag that contains several dag such as ihope.dag 
-
+ Example - 
          >>> python %prog --dag-file ihope.dag
-         
-         - Or a simple dag:
         
-         >>> python %prog --dag-file hipe.dag')
 
 """
 
@@ -68,75 +63,65 @@ options, args = parse_command_line()
 
 
 ##############################################################################
-def get_status(filename, depth, totals, debug=False):
+def get_status(filename, totals, debug=False):
   """
   parse a dag filem search for failed/done jobs
   @param filename: name of a dag file to parse
-  @param depth: used for the tabbing
   @param totals: cumulitive number of jobs in each category
-  @return output_message
-  @return error_message
-  @return number_of_failed_jobs
+  @return status_int
 
   """
-  space = "    "
-  tab =""
-  for i in range(0,depth):
-    tab = tab + space
+  tab = "    "
+  dag_status = 0
+  num = 0
+  output = 0
 
   try:
-    thisdag = open(filename, 'r')
+    thisdag = open(filename + '.dagman.out', 'r')
   except:
-    if debug==True:
-      print "This file does not exists ("+filename+")"
-    return [], "fileError", -1
-  print tab + '-->  parsing '+ filename 
+    dag_status = -1
+
+  if dag_status == 0:
+    line = "dummy"
+    while line:
+      line = thisdag.readline()
+      if line.find('Done')>=0:
+        output = tab + line      
+        line = thisdag.readline()
+        output = output + tab + line
+        #read the numbers
+        line = thisdag.readline()
+        #numbers = line.split(" ")
+        num = line
+        #number_of_undone_jobs = int(numbers[len(numbers)-1])
+        output = output + tab + line
+      if line.find('EXITING WITH STATUS 0')>=0:
+        dag_status = 1
+
+    # count the number of jobs
+    if num != 0:  
+      num=num.split()
+      num = num[2:]
+      for i in xrange( len( num ) ):
+        totals[i] += int(num[i])
+
+  elif dag_status == -1:
+    try:
+      thisdag = open(filename, 'r')
+    except:
+      dag_status = -2
     
-  #line = thisdag.readline()
-  #if not line:
-  #  return [], "emptyFile", -1
+    if dag_status == -1:
+      line = "dummy"
+      while line:
+        line = thisdag.readline()
+        if line.find('.sub')>=0:
+          totals[7] += 1 
 
-  line = "dummy"
-  status = []
-  error = []
-  countline = 0
-  while line:
-    line = thisdag.readline()
-    if line.find('Done')>=0:
-      output = tab + line      
-      line = thisdag.readline()
-      output = output + tab + line
-      #read the numbers
-      line = thisdag.readline()
-      numbers = line.split(" ")
-      num = line
-      number_of_failed_jobs = int(numbers[len(numbers)-1])
-      
-      output = output + tab + line
-  # count the number of jobs
-  num=num.split()
-  num = num[2:]
-  s = 0
-  for i in num:
-   s = s+ int(i)
-  njobs = s
-  # and failed or unready
-  s = 0
-  for i in num[1:]:
-   s = s+ int(i)  
-  number_of_failed_jobs = s 
-  # adjust totals
-  for i in xrange( len( num ) ):
-    totals[i] += int(num[i])
-  
+  if output != 0:
+    print output[:-1]
 
-  if len(output)>0:
-    print output
-  else:
-    print "No line matches \"Done or Failed\" as expected... "
-    print error
-
-  return output, error, number_of_failed_jobs
+  return dag_status
 
 
 #
@@ -155,15 +140,16 @@ def get_status(filename, depth, totals, debug=False):
     by itself, and in such case we search for the .dagman.out file.
 """
 
-print 'Parsing ' +options.dag_file + '...'
-time.sleep(1)
+print 'Parsing ' + options.dag_file + '...'
+sleep(1.5)
 
-# Need path path for dub dags
+# Need path path for sub dags
 if '/' in options.dag_file:
   path = options.dag_file[:( options.dag_file.rindex( '/' ) + 1 )]
 else:
   path = ''
 
+# Look for sub dags
 dagFile = open(options.dag_file, 'r')
 filenames = []
 lines = dagFile.readlines()
@@ -172,72 +158,80 @@ for line in lines:
     strs = line.split()
     if "DIR" in strs:
       fname = strs[-1] + "/"
-    else:
-      fname = ""
     for string in strs:
       if "dag" in string:
         fname += string.strip(".condor.sub")
-    filenames.append(fname)
-    print 'Found ' + fname
+        filenames.append(fname)
 dagFile.close()
 
 if len(filenames)==0:
   print 'No dag files found in ' + options.dag_file
   print 'Assuming that ' + options.dag_file + ' is the dag file you want to parse'
-  filenames.append(options.dag_file)
-  
+  filenames.append( options.dag_file[len(path):] )
+  sub_dags = 0
+else:
+  sub_dags = len( filenames )
+  print 'Found', str( sub_dags ), 'subdags'
+done_dags = 0  
+
+for file in filenames:
+  print path + file
 print 'Parsing the dag files for status...\n'
 ### we found some dag files hopefully
 
-time.sleep(1)
+sleep(1.5)
+totals = [0,0,0,0,0,0,0,0]
 
 #parse all the dags one by one
-totals = [0,0,0,0,0,0,0]
 for i in xrange(0,len(filenames), 1):
-  tag = filenames[i] 
-  filename = tag +'.dagman.out'
-  
-  # if sub dags add path
-  if path != '' and path not in filename:
-    filename = path + filename
-  
+  filename = path + filenames[i]
 
-  undone_jobs = 111 #dummy value
-  depth = 0   # used for tabulating rescue files
   print '-------------------------------------------------------------------------'
-  while undone_jobs is not 0:
-    # How many jobs are completed/failed ? 
-    output, error, undone_jobs = get_status(filename, depth, totals)
-    tag = tag+'.rescue'
-    filename = tag + '.dagman.out'
-    depth = depth + 1
-    # If no file found, we stop this dag parsing
-    if len(error)>0:
-#      print error
-      break
+  # How many jobs are completed/failed ?
+  print "Parsing " + filenames[i]
+
+  status = get_status(filename, totals)
   
-  # This dag has been parsed. Where they any failures ?
-  if undone_jobs >0:
-    print "  WARNING: still " +str(undone_jobs) + "jobs not done"
-  if error=="emptyFile":
-    print "empty file"
-  if undone_jobs==0: 
-    print filenames[i]+" is COMPLETED"
-#  print '-------------------------------------------------------------------------\n'
+  if status==1: 
+    done_dags += 1 
+    print "COMPLETE :)"
+  elif status==0:
+    print "incomplete :("
+  elif status==-1:
+   print "dag not yet started!"
+  elif status==-2:
+   print "dag NOT FOUND!"
+
 
 # Print totals
-print " Done    =", totals[0]
-print " Pre     =", totals[1]
-print " Queued  =", totals[2]
-print " Post    =", totals[3]
-print " Ready   =", totals[4]
-print " Unready =", totals[5]
-print " Failed  =", totals[6]
-print " --------------------------- "
-print " Total jobs =", sum( totals )
-print " --------------------------- "
+print "  --------------------------- "
+print "      Done    =", totals[0]
+#print " Pre     =", totals[1]
+print "      Queued  =", totals[2]
+#print " Post    =", totals[3]
+print "      Ready   =", totals[4]
+print "      Unready =", totals[5]
+print "      Failed  =", totals[6]
+print "  ----------------------------------- "
+print "      Completed Jobs = " + str( totals[0] )
+print "      Submitted Jobs = " + str( sum( totals[:7] ) )
+print "      Total Jobs     = " + str( sum(totals[:]) )
+if sub_dags != 0:
+  print "      Sub-dags       =", str( done_dags ) + "/" + str( sub_dags )
+print "  ----------------------------------- "
 
-  
+# Confirm if completed
+dagFile = open(options.dag_file + '.dagman.out', 'r')
+uber = 0
+lines = dagFile.readlines()
+for line in lines:
+  if "EXITING WITH STATUS 0" in line:
+    uber = 1
+if uber == 1:
+  print "  ihope status... COMPLETED!"
+else:
+  print "  ihope status... incomplete."
+print ""
   
 
 

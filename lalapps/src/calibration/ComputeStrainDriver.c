@@ -76,6 +76,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Units.h>
 #include <lal/LALString.h>
 #include <lal/FrequencySeries.h>
+#include <lal/LALVCSInfo.h>
 #include <lalapps.h>
 
 #include "LALASCIIFileRead.h"
@@ -348,8 +349,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, lalappsconfargs);  
 
   /* Add lal info */
-  snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
-	       LAL_VERSION , LAL_CVS_TAG , LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
+  snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
+	       LAL_VERSION , lalHeaderVCSInfo.vcsTag, lalHeaderVCSInfo.vcsId, LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalconfargs);  
 
   /* Create string with all command line arguments and add it to history */

@@ -118,7 +118,10 @@ src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
+src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
+src/inspiral/posterior/SPINspiral/lalapps_spinspiral
+src/lalapps/defaults.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version

@@ -25,6 +25,9 @@ export LALSUPPORT_LIBS
 LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
 LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
 export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
+LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
+LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
+export LALXML_LIBS LALXML_CFLAGS
 
 if test "$frame" = "true" ; then
 	LIBS_save="$LIBS"
@@ -43,7 +46,7 @@ if test "$metaio" = "true" ; then
 	PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
 	LIBS="$METAIO_LIBS $LIBS"
 	CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-	AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, , [AC_MSG_WARN(disabling metaio support)]
+	AC_SEARCH_LIBS(MetaioOpen, metaio, , [AC_MSG_WARN(disabling metaio support)]
 		[metaio="false"])
 	CPPFLAGS="$CPPFLAGS_save"
 	LIBS="$LIBS_save"
@@ -75,6 +78,7 @@ if test "$xml" = "true" ; then
 fi
 
 AC_CONFIG_SUBDIRS([lal])
+AC_CONFIG_SUBDIRS([lalxml])
 AC_CONFIG_SUBDIRS([lalstochastic])
 AC_CONFIG_SUBDIRS([lalapps])
 

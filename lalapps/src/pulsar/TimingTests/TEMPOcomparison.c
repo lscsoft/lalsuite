@@ -813,7 +813,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregREALUserStruct ( status, 	DurationMJD, 	'D', UVAR_OPTIONAL, 	"Full duration of TOAs (in days) [Default = 1800 ~ 5 years]");
   LALregSTRINGUserStruct ( status,      PSRJ,           'n', UVAR_OPTIONAL, 	"Name of pulsar [Default = TEST]");
   LALregSTRINGUserStruct ( status,      Observatory,    'O', UVAR_OPTIONAL, 	"TEMPO observatory name (GBT,ARECIBO,NARRABRI,NANSHAN,DSS_43,PARKES,JODRELL,VLA,NANCAY,COE,SSB) [Default = JODRELL]");
-  LALregBOOLUserStruct ( status,        randparams,     'r', UVAR_OPTIONAL, 	"Override sky position with random values [Default = FALSE]");
+  LALregBOOLUserStruct ( status,        randparams,      0, UVAR_OPTIONAL, 	"Override sky position with random values [Default = FALSE]");
   LALregINTUserStruct ( status, 	seed,     	'o', UVAR_OPTIONAL, 	"The random seed (integer) [Default = 0 = clock]");
 
   /* read all command line variables */

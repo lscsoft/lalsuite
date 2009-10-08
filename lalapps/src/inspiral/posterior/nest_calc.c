@@ -9,6 +9,7 @@
 #include <lal/LALError.h>
 #include <lal/TimeDelay.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_linalg.h>
@@ -30,10 +31,10 @@ double logadd(double a,double b){
 }
 
 void NestInit2PN(LALMCMCParameter *parameter, void *iT){
-	REAL8 time;
+	REAL8 trg_time;
 	SnglInspiralTable *inspiralTable = (SnglInspiralTable *)iT;
-	REAL4 mtot,eta,mwindow,etawindow,timewindow;
-	time = (REAL8)inspiralTable->end_time.gpsSeconds + (REAL8)inspiralTable->end_time.gpsNanoSeconds *1.0e-9;
+	REAL4 mtot,eta,mwindow;
+	trg_time = (REAL8)inspiralTable->end_time.gpsSeconds + (REAL8)inspiralTable->end_time.gpsNanoSeconds *1.0e-9;
 	parameter->param=NULL;
 	parameter->dimension=0;
 	mwindow=0.5;
@@ -55,7 +56,7 @@ void NestInit2PN(LALMCMCParameter *parameter, void *iT){
 	/*XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*0.25 , 0, 0.25, 0);*/
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
 	/*XLALMCMCAddParam(parameter, "eta",	eta*(1.0 + etawindow*(gsl_rng_uniform(RNG)-0.5)),eta*(1.0-0.5*etawindow),eta*(1.0+0.5*etawindow),0);*/
-	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + time ,time-0.5*timewindow,time+0.5*timewindow,0);
+	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
@@ -71,7 +72,7 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	InspiralTemplate template;
 	REAL8 real,imag,chisq;
 	UINT4 Nmodel;
-	INT4 i;
+	UINT4 i;
 	double SNR1,mul_factor=1.0;
 	
 	memset(&template,0,sizeof(InspiralTemplate));
@@ -124,10 +125,10 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	/*	free(model); */
 }
 
-REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCinput)
+REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCinput)
 {
-	int i=0;
-	int j,minpos;
+	UINT4 i=0;
+	UINT4 j,minpos;
 	static LALStatus status;
 	REAL4 accept;
 	REAL8 *logZarray,*logwarray,*Harray,*oldZarray,*Wtarray;
@@ -135,7 +136,6 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	REAL8 MCMCfail=0;
 	REAL8 logZnoise=0.0;
 	REAL8 logLmax=-DBL_MAX;
-	REAL4 rngseed=0;
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
@@ -147,7 +147,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	/* Initialise the RNG */
 	gsl_rng_env_setup();
 	RNG=gsl_rng_alloc(gsl_rng_default);
-	gsl_rng_set(RNG,seed==0 ? (unsigned long int)time(NULL) : seed);
+	gsl_rng_set(RNG,seed==0 ? (unsigned long int)time(NULL) : (unsigned int long) seed);
 	
 	/* Initialise the optimised tables declared in LALInspiralMCMCUser.h*/
 	
@@ -165,7 +165,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 		topdown_sum[i]=XLALCreateREAL8Vector(MCMCinput->stilde[i]->data->length);
 		topdown_sum[i]->data[topdown_sum[i]->length-1]=
 		(pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].re,2.0)+pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].im,2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
-		for(j=topdown_sum[i]->length-2;j>=0;j--) topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(MCMCinput->stilde[i]->data->data[j].re,2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
+		for(j=topdown_sum[i]->length-2;j>0;j--) topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(MCMCinput->stilde[i]->data->data[j].re,2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
 	}
 	
 	if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(temp,(void *)MCMCinput->injectionTable);
@@ -301,7 +301,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
 	fprintf(stdout,"Z-score = %lf\n",zscore);
 	
-	close(fpout);
+	fclose(fpout);
 	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");
 	fprintf(fpout,"%lf %lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,Live[Nlive-1]->logLikelihood-logZnoise,zscore);
@@ -329,10 +329,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 	int a_cnt=0;
 	int accept=0;
 	int nreflect=0;
-	REAL8 logL,logPri,phi;
 	REAL8 jump_select=0;
-	REAL8 scale_temp;
-	REAL8 scalefactor_small=1E-4;
 	int ret=0;
 	
 	MCMCInput->funcPrior(MCMCInput,sample);
@@ -376,9 +373,9 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 	return(((REAL4) a_cnt)/((REAL4) i));
 }
 
-void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,int N)
-{ int i,j,k;
-	int ND=samples[0]->dimension;
+void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,UINT4 N)
+{ UINT4 i,j,k;
+	UINT4 ND=samples[0]->dimension;
 	REAL8 *means;
 	LALMCMCParam *p;
 	LALMCMCParam *jp;
@@ -479,7 +476,7 @@ REAL8 ang_dist(REAL8 a1, REAL8 a2){
 /* Calculate the variance of a modulo-2pi distribution */
 REAL8 ang_var(LALMCMCParameter **list,const char *pname, int N){
 	int i=0;
-	REAL8 mean=0.0;
+	REAL8 ang_mean=0.0;
 	REAL8 var=0.0;
 	REAL8 ms,mc;
 	/* Calc mean */
@@ -488,10 +485,10 @@ REAL8 ang_var(LALMCMCParameter **list,const char *pname, int N){
 		mc+=cos(XLALMCMCGetParameter(list[i],pname));
 	}
 	ms/=N; mc/=N;
-	mean=atan2(ms,mc);
-	mean = mean<0? 2.0*LAL_PI + mean : mean;
+	ang_mean=atan2(ms,mc);
+	ang_mean = ang_mean<0? 2.0*LAL_PI + ang_mean : ang_mean;
 	/* calc variance */
-	for(i=0;i<N;i++) var+=ang_dist(XLALMCMCGetParameter(list[i],pname),mean)*ang_dist(XLALMCMCGetParameter(list[i],pname),mean);
+	for(i=0;i<N;i++) var+=ang_dist(XLALMCMCGetParameter(list[i],pname),ang_mean)*ang_dist(XLALMCMCGetParameter(list[i],pname),ang_mean);
 	return(var/(REAL8)N);
 }
 

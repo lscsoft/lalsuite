@@ -15,7 +15,7 @@ lalapps_cache_SOURCES = cache.c
 LDADD = liblalapps.la @LAL_LIBS@
 INCLUDES = -I$(top_srcdir)/src
 if HAVE_PYTHON
-pkgpython_DATA = __init__.py
+pkgpython_DATA = __init__.py defaults.py
 endif
 EXTRA_DIST = series.c series.h getdate.y __init__.py
 TESTS = lalapps_version
