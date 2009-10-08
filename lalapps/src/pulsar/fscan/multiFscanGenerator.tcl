@@ -217,6 +217,8 @@ set segFileStartCol   1;       # Column with segment start times in segment file
 set segFileEndCol     2;       # Column with segment end times in segment file
 set ::segsFromFile {};         # Initialize list of segFile segments;
 
+set intersectData 0; # 0 == false, 1 == true; if true run fscanDriver.py with -I option so that it intersects the segments with the times data exists.
+
 set fscanDriverPath "none"; # complete path to fscanDriver.py
 set matlabPath "none";      # Path to matlab installation to use with -m option to fscanDriver.py, e.g., /ldcg/matlab_r2008a
 
@@ -544,6 +546,10 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
          }
        }
        append cmd " -r $thisComparisonChanDir -e $thisComparisonString -q $thisComparisonSNR"
+    }
+    if {$intersectData} {
+        # Append option to run ligo_data_find and intersect segments with times data exists.
+        append cmd " -I";
     }
     if {$runDAGs} {
         # Append option to run the dags
