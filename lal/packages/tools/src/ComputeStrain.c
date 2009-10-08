@@ -95,6 +95,7 @@ REAL8IIRFilter ALPHASLPFIR;
 
  set_output_to_zero(output);
  check_nans_infs(status, input);
+ if (! status->statusPtr) return;
 
  LALGetFactors(status->statusPtr, output, input);
  CHECKSTATUSPTR( status );
