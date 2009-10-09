@@ -166,20 +166,22 @@
 NRCSID( REALFFTC, "$Id$" );
 
 
+/** Plan to perform FFT of REAL4 data */
 struct
 tagREAL4FFTPlan
 {
-  INT4       sign;
-  UINT4      size;
-  fftwf_plan plan;
+  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /*< length of the real data vector for this plan */
+  fftwf_plan plan; /*< the FFTW plan */
 };
 
+/** Plan to perform FFT of REAL8 data */
 struct
 tagREAL8FFTPlan
 {
-  INT4       sign;
-  UINT4      size;
-  fftw_plan  plan;
+  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /*< length of the real data vector for this plan */
+  fftw_plan  plan; /*< the FFTW plan */
 };
 
 
@@ -394,7 +396,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
 }
 
 
-int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
+int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
     const REAL4FFTPlan *plan )
 {
   static const char *func = "XLALREAL4VectorFFT";
@@ -674,7 +676,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
 }
 
 
-int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
+int XLALREAL8VectorFFT( REAL8Vector * restrict output, REAL8Vector * restrict input,
     const REAL8FFTPlan *plan )
 {
   static const char *func="XLALREAL8VectorFFT";
