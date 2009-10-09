@@ -22,6 +22,9 @@ LAL_TOP_SRCDIR="${lalsuite_top_srcdir}/lal"
 export LALSUITE_BUILD LAL_LIBS LAL_CFLAGS LAL_TOP_SRCDIR
 LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
 export LALSUPPORT_LIBS
+LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
+LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
+export LALFRAME_LIBS LALFRAME_CFLAGS
 LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
 LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
 export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
@@ -78,6 +81,7 @@ if test "$xml" = "true" ; then
 fi
 
 AC_CONFIG_SUBDIRS([lal])
+AC_CONFIG_SUBDIRS([lalframe])
 AC_CONFIG_SUBDIRS([lalxml])
 AC_CONFIG_SUBDIRS([lalstochastic])
 AC_CONFIG_SUBDIRS([lalapps])

@@ -54,7 +54,6 @@ contains macro constants that are defined at configuration time.  They are:
 \idx[Constant]{LAL\_NDEBUG}
 \idx[Constant]{NOLALMACROS}
 \idx[Constant]{LAL\_PTHREAD\_LOCK}
-\idx[Constant]{LAL\_FRAME\_ENABLED}
 \idx[Constant]{LAL\_MPI\_ENABLED}
 \begin{description}
 \item[\texttt{LAL\_VERSION}] Constant string containing the version of LAL.
@@ -88,9 +87,6 @@ contains macro constants that are defined at configuration time.  They are:
 \item[\texttt{LAL\_PTHREAD\_LOCK}] Defined if POSIX thread mutex locking is
   to be used for threadsafety (use the configure argument
   \texttt{--enable-pthread-lock} to do this).
-\item[\texttt{LAL\_FRAME\_ENABLED}] Defined if LAL frame-format data reading
-  routines will be compiled (use the configure argument
-  \texttt{--enable-frame} to do this).
 \item[\texttt{LAL\_MPI\_ENABLED}] Defined if LAL MPI routines will be compiled
   (use the configure argument \texttt{--enable-mpi} to do this).
 \end{description}
