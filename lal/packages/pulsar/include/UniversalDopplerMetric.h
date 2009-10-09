@@ -142,6 +142,9 @@ typedef enum {
   DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
   DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
 
+  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -174,6 +177,9 @@ const CHAR *DopplerCoordinateNames[] = {
   "n3_y",
   "n3_z",
 
+  "nEqu_x_Nat",
+  "nEqu_y_Nat",
+
   "NONE"
 };
 
@@ -201,12 +207,15 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
-  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
-  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
+  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
 
   "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
+
+  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
 
   "NONE"
 };

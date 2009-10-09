@@ -318,7 +318,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   vect3 nn_equ, nn_ecl;	/* skypos unit vector */
   vect3 nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
-  vect3 detpos_ecl;
+  vect3 detpos_ecl, detpos_equ;
 
   REAL8 ttSI, dTSI, dT, tauiSI;
   REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -362,8 +362,10 @@ CWPhaseDeriv_i ( double tt, void *params )
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
 
+  COPY_VECT ( detpos_equ, posvel.pos );
+
   /* convert detector position in ecliptic coordinates */
-  equatorialVect2ecliptic ( &detpos_ecl, (vect3 * const) &posvel.pos );
+  equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
   dTSI = SCALAR(nn_equ, posvel.pos );
@@ -400,7 +402,6 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NECL_X_NAT:
       ret = ( detpos_ecl[0] - (nn_ecl[0]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
-
     case DOPPLERCOORD_NECL_Y_NAT:
       ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
@@ -415,6 +416,15 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_N3Z:
       ret = detpos_ecl[2] / rOrb_c;
       break;
+
+    case DOPPLERCOORD_NEQU_X_NAT:
+      ret = ( detpos_equ[0] - (nn_equ[0]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
+      break;
+    case DOPPLERCOORD_NEQU_Y_NAT:
+      ret = ( detpos_equ[1] - (nn_equ[1]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
+      break;
+
+
 
       /* ----- frequency derivatives SI-units ----- */
     case DOPPLERCOORD_FREQ_SI:
