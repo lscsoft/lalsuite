@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2008 P. Ajith, Badri Krishnan, Lucia Santamaria
+*  Copyright (C) 2008-2009 P. Ajith, Badri Krishnan, Lucia Santamaria
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -52,15 +52,20 @@ BBHPhenomParams;
 static void XLALComputePhenomParams( BBHPhenomParams *phenParams,
 			      InspiralTemplate *params);
 
+static void XLALComputePhenomParams2( BBHPhenomParams *phenParams,
+			      InspiralTemplate *params);
+
 static REAL8 XLALLorentzianFn ( REAL8 freq,
 			 REAL8 fRing,
 			 REAL8 sigma);
-
 
 static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
 			 InspiralTemplate *insp_template,
 			 REAL4Vector *signalvec);
 
+static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
+			 InspiralTemplate *insp_template,
+			 REAL4Vector *signalvec);
 
 static void XLALComputeInstantFreq( REAL4Vector *Freq,
 			     REAL4Vector *hp,
@@ -92,21 +97,141 @@ void LALBBHPhenWaveFreqDom ( LALStatus        *status,
   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (signalvec->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-
-    /* compute the phenomenological parameters */
-    XLALComputePhenomParams(&phenParams, params);
-
-    /* generate the phenomenological waveform in frequency domain */
-    XLALBBHPhenWaveFD (&phenParams, params, signalvec);
-
-/*     params->fFinal = params->fCut; */
-
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+  ASSERT (params->mass1 > 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (params->mass2 > 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (params->spin1[0] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (params->spin1[1] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (params->spin2[0] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (params->spin2[1] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  
+  switch (params->approximant) {
+      
+      /* non-spinning binaries. Ref. http://arxiv.org/pdf/0710.2335 */
+      case IMRPhenomA:
+      case IMRPhenomFA:
+          
+          ASSERT (params->spin1[2] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+          ASSERT (params->spin2[2] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+          /* compute the phenomenological parameters */
+          XLALComputePhenomParams(&phenParams, params);
+          /* generate the phenomenological waveform in frequency domain */
+          XLALBBHPhenWaveFD (&phenParams, params, signalvec);
+          break;
+      
+      /* aligned-spin binaries. Ref. http://arxiv.org/pdf/0909.2867 */
+      case IMRPhenomB:
+      case IMRPhenomFB:
+          
+          /* compute the phenomenological parameters */
+          XLALComputePhenomParams2(&phenParams, params);
+          /* generate the phenomenological waveform in frequency domain */
+          XLALBBHPhenWaveFD2 (&phenParams, params, signalvec);
+          break;
+      
+      default:
+           ABORT( status, 9999, "Unknown case in switch." );
+  }
+  
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 
+/*********************************************************************/
+/* Compute phenomenological parameters for non-spinning binaries     */
+/* Ref. Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and              */
+/* Table I of http://arxiv.org/pdf/0712.0343                         */
+/*********************************************************************/
 static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
+			      InspiralTemplate *params)
+
+{
+
+  REAL8 totalMass, piM, eta, fMerg_a, fMerg_b, fMerg_c, fRing_a, fRing_b;
+  REAL8 fRing_c, sigma_a, sigma_b, sigma_c, fCut_a, fCut_b, fCut_c;
+  REAL8 psi0_a, psi0_b, psi0_c, psi2_a, psi2_b, psi2_c, psi3_a, psi3_b, psi3_c;
+  REAL8 psi4_a, psi4_b, psi4_c, psi6_a, psi6_b, psi6_c, psi7_a, psi7_b, psi7_c;
+
+  /* calculate the total mass and symmetric mass ratio */
+
+  if (params) {
+
+    totalMass = params->mass1+params->mass2;
+    eta = params->mass1*params->mass2/pow(totalMass,2.);
+    piM = totalMass*LAL_PI*LAL_MTSUN_SI;
+  }
+  else {
+    return;
+  }
+
+  fMerg_a = BBHPHENOMCOEFFSH_FMERG_A;
+  fMerg_b = BBHPHENOMCOEFFSH_FMERG_B;
+  fMerg_c = BBHPHENOMCOEFFSH_FMERG_C;
+
+  fRing_a = BBHPHENOMCOEFFSH_FRING_A;
+  fRing_b = BBHPHENOMCOEFFSH_FRING_B;
+  fRing_c = BBHPHENOMCOEFFSH_FRING_C;
+
+  sigma_a = BBHPHENOMCOEFFSH_SIGMA_A;
+  sigma_b = BBHPHENOMCOEFFSH_SIGMA_B;
+  sigma_c = BBHPHENOMCOEFFSH_SIGMA_C;
+
+  fCut_a = BBHPHENOMCOEFFSH_FCUT_A;
+  fCut_b = BBHPHENOMCOEFFSH_FCUT_B;
+  fCut_c = BBHPHENOMCOEFFSH_FCUT_C;
+
+  psi0_a = BBHPHENOMCOEFFSH_PSI0_X;
+  psi0_b = BBHPHENOMCOEFFSH_PSI0_Y;
+  psi0_c = BBHPHENOMCOEFFSH_PSI0_Z;
+
+  psi2_a = BBHPHENOMCOEFFSH_PSI2_X;
+  psi2_b = BBHPHENOMCOEFFSH_PSI2_Y;
+  psi2_c = BBHPHENOMCOEFFSH_PSI2_Z;
+
+  psi3_a = BBHPHENOMCOEFFSH_PSI3_X;
+  psi3_b = BBHPHENOMCOEFFSH_PSI3_Y;
+  psi3_c = BBHPHENOMCOEFFSH_PSI3_Z;
+
+  psi4_a = BBHPHENOMCOEFFSH_PSI4_X;
+  psi4_b = BBHPHENOMCOEFFSH_PSI4_Y;
+  psi4_c = BBHPHENOMCOEFFSH_PSI4_Z;
+
+  psi6_a = BBHPHENOMCOEFFSH_PSI6_X;
+  psi6_b = BBHPHENOMCOEFFSH_PSI6_Y;
+  psi6_c = BBHPHENOMCOEFFSH_PSI6_Z;
+
+  psi7_a = BBHPHENOMCOEFFSH_PSI7_X;
+  psi7_b = BBHPHENOMCOEFFSH_PSI7_Y;
+  psi7_c = BBHPHENOMCOEFFSH_PSI7_Z;
+
+  /* Evaluate the polynomials. See Eq. (4.18) of P. Ajith et al
+   * arXiv:0710.2335 [gr-qc] */
+  if (phenParams) {
+
+    phenParams->fCut  = (fCut_a*eta*eta  + fCut_b*eta  + fCut_c)/piM;
+    phenParams->fMerger  = (fMerg_a*eta*eta  + fMerg_b*eta  + fMerg_c)/piM;
+    phenParams->fRing  = (fRing_a*eta*eta + fRing_b*eta + fRing_c)/piM;
+    phenParams->sigma = (sigma_a*eta*eta + sigma_b*eta + sigma_c)/piM;
+
+    phenParams->psi0 = (psi0_a*eta*eta + psi0_b*eta + psi0_c)/(eta*pow(piM, 5./3.));
+    phenParams->psi1 = 0.;
+    phenParams->psi2 = (psi2_a*eta*eta + psi2_b*eta + psi2_c)/(eta*pow(piM, 3./3.));
+    phenParams->psi3 = (psi3_a*eta*eta + psi3_b*eta + psi3_c)/(eta*pow(piM, 2./3.));
+    phenParams->psi4 = (psi4_a*eta*eta + psi4_b*eta + psi4_c)/(eta*pow(piM, 1./3.));
+    phenParams->psi5 = 0.;
+    phenParams->psi6 = (psi6_a*eta*eta + psi6_b*eta + psi6_c)/(eta*pow(piM, -1./3.));
+    phenParams->psi7 = (psi7_a*eta*eta + psi7_b*eta + psi7_c)/(eta*pow(piM, -2./3.));
+  }
+
+  return;
+
+}
+
+/*********************************************************************/
+/* Compute phenomenological parameters for aligned-spin binaries     */
+/* Ref. Eq.(2) and Table I of http://arxiv.org/pdf/0909.2867         */
+/*********************************************************************/
+static void XLALComputePhenomParams2( BBHPhenomParams  *phenParams,
 			      InspiralTemplate *params)
 
 {
@@ -191,8 +316,98 @@ static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
 
 }
 
-
+/*********************************************************************/
+/* Compute frequency-domain waveforms for non-spinning binaries      */
+/* Ref. Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335       */
+/*********************************************************************/
 static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
+				InspiralTemplate *insp_template,
+				REAL4Vector *signalvec) {
+
+    REAL8 df, shft, phi, amp0, ampEff=0, psiEff, fMerg, fNorm;
+    REAL8 f, fRing, sigma, totalMass, eta;
+    INT4 i, j, n;
+
+    /* freq resolution and the low-freq bin */
+    df = insp_template->tSampling/signalvec->length;
+    n = signalvec->length;
+
+    /* If we want to pad with zeroes in the beginning then the instant of
+    * coalescence will be the chirp time + the duration for which padding
+    * is needed. Thus, in the equation below nStartPad occurs with a +ve sign.
+    * This code doesn't support non-zero start-time. i.e. params->startTime
+    * should be necessarily zero.*/
+    shft = 2.*LAL_PI * ((REAL4)signalvec->length/insp_template->tSampling +
+            insp_template->nStartPad/insp_template->tSampling + insp_template->startTime);
+    phi  = insp_template->startPhase;
+
+    /* phenomenological  parameters*/
+    fMerg = params->fMerger;
+    fRing = params->fRing;
+    sigma = params->sigma;
+    totalMass = insp_template->mass1 + insp_template->mass2;
+    eta = insp_template->mass1 * insp_template->mass2 / pow(totalMass, 2.);
+
+    /* Now compute the amplitude.  NOTE the params->distance is assumed to
+     * me in meters. This is, in principle, inconsistent with the LAL
+     * documentation (inspiral package). But this seems to be the convention
+     * employed in the injection codes */
+    amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
+    amp0 *= pow(5.*eta/24., 1./2.)/(insp_template->distance/LAL_C_SI);
+
+    /* fill the zero and Nyquist frequency with zeros */
+    *(signalvec->data+0) = 0.;
+    *(signalvec->data+n/2) = 0.;
+
+    /* now generate the waveform at all frequency bins */
+    for (i=1; i<n/2; i++) {
+
+        /* this is the index of the imaginary part */
+        j = n-i;
+
+        /* fourier frequency corresponding to this bin */
+      	f = i * df;
+        fNorm = f/fMerg;
+
+    	/* compute the amplitude */
+        if ((f < insp_template->fLower) || (f > params->fCut)) {
+            ampEff = 0.;
+        }
+        else if (f <= fMerg) {
+            ampEff = amp0*pow(fNorm, -7./6.);
+        }
+        else if ((f > fMerg) & (f <= fRing)) {
+            ampEff = amp0*pow(fNorm, -2./3.);
+        }
+        else if (f > fRing) {
+            ampEff = XLALLorentzianFn ( f, fRing, sigma);
+            ampEff *= amp0*LAL_PI_2*pow(fRing/fMerg,-2./3.)*sigma;
+        }
+
+        /* now compute the phase */
+       	psiEff = shft*f + phi
+                    + params->psi0*pow(f,-5./3.)
+                    + params->psi1*pow(f,-4./3.)
+                    + params->psi2*pow(f,-3./3.)
+                    + params->psi3*pow(f,-2./3.)
+                    + params->psi4*pow(f,-1./3.)
+                    + params->psi5*pow(f,0.)
+                    + params->psi6*pow(f,1./3.)
+                    + params->psi7*pow(f,2./3.);
+
+       	/* generate the waveform */
+       	*(signalvec->data+i) = (REAL4) (ampEff * cos(psiEff));     /* real */
+        *(signalvec->data+j) = (REAL4) (ampEff * sin(psiEff));    /* imag */
+    }
+
+}
+
+
+/*********************************************************************/
+/* Compute frequency-domain waveforms for aligned-spin binaries      */
+/* Ref. Eq.(1) of http://arxiv.org/pdf/0909.2867                     */
+/*********************************************************************/
+static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
 				InspiralTemplate *insp_template,
 				REAL4Vector *signalvec) {
 
@@ -213,7 +428,11 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
     * should be necessarily zero.*/
     shft = 2.*LAL_PI * ((REAL4)signalvec->length/insp_template->tSampling +
             insp_template->nStartPad/insp_template->tSampling + insp_template->startTime)-20.;
-    phi  = insp_template->startPhase;
+
+    /* the negative sign is introduced such that the definition of the 
+     * polarisations (phi = 0 for plus, phi = pi/2 for cross) is consistent
+     * with the IMRPhenomA waveforms */
+    phi  = -insp_template->startPhase;
 
     /* phenomenological  parameters*/
     fMerg = params->fMerger;
@@ -259,7 +478,8 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
             
     w1 = 1. + alpha2*pow(vMerg,2.) + alpha3*pow(vMerg,3.); 
     w1 = w1/(1. + epsilon_1*vMerg + epsilon_2*vMerg*vMerg);
-    w2 = w1*(LAL_PI*sigma/2.)*pow(fRing/fMerg, mergPower)*(1. + epsilon_1*vRing + epsilon_2*vRing*vRing);
+    w2 = w1*(LAL_PI*sigma/2.)*pow(fRing/fMerg, mergPower)*(1. + epsilon_1*vRing 
+            + epsilon_2*vRing*vRing);
 
     /***********************************************************************/
     /* now generate the waveform at all frequency bins */
@@ -307,12 +527,9 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
        	*(signalvec->data+i) = (REAL4) (amp0 * ampEff * cos(psiEff));     /* real */
         *(signalvec->data+j) = (REAL4) (-amp0 * ampEff * sin(psiEff));    /* imag */
 
-        /*printf("amp0 = %e ampEff = %e psiEff = %e f = %f v = %f\n", amp0, ampEff, psiEff, f, v); */
     }
 
 }
-
-
 
 static REAL8 XLALLorentzianFn ( REAL8 freq,
 			 REAL8 fRing,
@@ -371,9 +588,11 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   REAL8 winFLo, winFHi, sigLo, sigHi;
   REAL4 windowLength;
   INT4 i, k, n;
+  /* INT4 kMin, kMax; */
+  /* REAL8 dfM;*/
   REAL4Vector *signalFD1 = NULL;
   REAL4FFTPlan *revPlan = NULL;
-  /*FILE *filePtr; */
+  /* FILE *filePtr; */
   BBHPhenomParams phenParams;
 
   /* check inputs */
@@ -387,10 +606,29 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   ASSERT (insp_template->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (insp_template->fLower > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (insp_template->tSampling > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  ASSERT (insp_template->mass1 > 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (insp_template->mass2 > 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (insp_template->spin1[0] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (insp_template->spin1[1] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (insp_template->spin2[0] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+  ASSERT (insp_template->spin2[1] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 
   /* compute the phenomenological parameters */
-  XLALComputePhenomParams(&phenParams, insp_template);
+  switch (insp_template->approximant) {
+      
+      /* non-spinning binaries. Ref. http://arxiv.org/pdf/0710.2335 */
+      case IMRPhenomA:
+          ASSERT (insp_template->spin1[2] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+          ASSERT (insp_template->spin2[2] == 0,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+          XLALComputePhenomParams(&phenParams, insp_template);
+          break;
+      /* aligned-spin binaries. Ref. http://arxiv.org/abs/0909.2867 */
+      case IMRPhenomB:
+          XLALComputePhenomParams2(&phenParams, insp_template);
+          break;
+      default:
+           ABORT( status, 9999, "Unknown case in switch." );
+  }
 
   totalMass = insp_template->mass1 + insp_template->mass2;
   eta = insp_template->mass1*insp_template->mass2/pow(totalMass,2.);
@@ -400,14 +638,12 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
    * will later apply a window function, and truncate the time-domain waveform
    * below an instantaneous frequency  fLower */
   fLowerOrig = insp_template->fLower;    /* this is the low-freq set by the user */
-
+  
   /* Find an optimum value for fLower (using the definition of Newtonian chirp time)
    * such that the waveform has a minimum length of tau0. This is necessary to avoid
    * FFT artifacts */
   tau0 = 32.;
   fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI; 
-
-  /* Better ansatz (Lucia Oct 08) */
   fCut = (1.025)*phenParams.fCut;
 
   /* make sure that these frequencies are not too out of range */
@@ -424,20 +660,24 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   /* generate the phenomenological waveform in frequency domain */
   n = signalvec->length;
   signalFD1 = XLALCreateREAL4Vector(n);
-  XLALBBHPhenWaveFD (&phenParams, insp_template, signalFD1);
+  
+  /* compute the phenomenological parameters */
+  switch (insp_template->approximant) {
+      
+      /* non-spinning binaries. Ref. http://arxiv.org/pdf/0710.2335 */
+      case IMRPhenomA:
+          XLALBBHPhenWaveFD (&phenParams, insp_template, signalFD1);
+          break;
+      /* aligned-spin binaries. Ref. http://arxiv.org/abs/0909.2867 */
+      case IMRPhenomB:
+          XLALBBHPhenWaveFD2 (&phenParams, insp_template, signalFD1);
+          break;
+      default:
+          ABORT( status, 9999, "Unknown case in switch." );
+  }
 
   /* apply the softening window function */
   fRes = insp_template->tSampling/n;
-
-  /********************************* DEBUG ********************************/
-  /*    filePtr = fopen("FreqDomPhenWave.txt","a");
-	  //for (i = 1; i < n/2; i++) {
-	  for (i = 1; i < (INT4)(fCut/fRes); i++) {
-	  fprintf(filePtr,"%e\t%e\t%e\n", i*fRes, signalFD1->data[i],signalFD1->data[n-i]);
-	  }
-	  fclose(filePtr); 
-      */
-  /************************************************************************/
 
   winFLo = (fLowerOrig + fLower)/2.;
   winFHi = (fCut + phenParams.fCut)/2.;
@@ -451,14 +691,6 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
     signalFD1->data[k] *= softWin;
     signalFD1->data[n-k] *= softWin;
     }
-
-  /********************************* DEBUG ********************************/
-       /*filePtr = fopen("FreqDomPhenWave_Wind.txt","a");
-	   for (i = 1; i < n/2; i++) {
-	   fprintf(filePtr,"%e\t%e\t%e\n", i*fRes, signalFD1->data[i],signalFD1->data[n-i]);
-	   }
-	   fclose(filePtr); */
-  /************************************************************************/
 
   /* Inverse Fourier transform */
   revPlan = XLALCreateReverseREAL4FFTPlan(n, 0);
@@ -476,14 +708,6 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
     signalvec->data[i] *= -insp_template->tSampling/n;
   }
 
-  /********************************* DEBUG ********************************/
-  /*filePtr = fopen("TimeDomPhenWave.txt","a");
-    for (i = 0; i < n; i++) {
-    fprintf(filePtr,"%e\t%e\n", i/insp_template->tSampling, signalvec->data[i]);
-    }
-    fclose(filePtr);*/
-  /************************************************************************/
-
   /* apply a linearly increasing/decresing window at the beginning and at the end
    * of the waveform in order to avoid edge effects. This could be made fancier */
    windowLength = 10.*totalMass * LAL_MTSUN_SI*insp_template->tSampling;
@@ -494,23 +718,13 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
    for (i=0; i< windowLength; i++){
         signalvec->data[i] *= i/windowLength;
    }
-
-  /********************************* DEBUG ********************************/
-  /* CHAR fileName[1000];
-     sprintf(fileName, "TimeDomPhenWave_Wind_Phi0%4.3f.txt",insp_template->startPhase);
-     filePtr = fopen(fileName,"a");
-     for (i = 0; i < n; i++) {
-     fprintf(filePtr,"%e\t%e\n", i/insp_template->tSampling, signalvec->data[i]);
-     }
-     fclose(filePtr); */
-  /************************************************************************/
-
-    /* reassign the original value of fLower */
-  insp_template->fLower = fLowerOrig;
-  insp_template->fFinal = phenParams.fCut;
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+   
+   /* reassign the original value of fLower */
+   insp_template->fLower = fLowerOrig;
+   insp_template->fFinal = phenParams.fCut;
+   
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }
 
 
@@ -550,7 +764,7 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
     n = signalvec1->length;
     f = XLALCreateREAL4Vector(n);
     a = XLALCreateREAL4Vector(n);
-    if (f) XLALComputeInstantFreq(f, signalvec2, signalvec1, dt);
+    if (f) XLALComputeInstantFreq(f, signalvec1, signalvec2, dt);
     peakAmp = 0.;
     peakAmpIdx = 0;
 
@@ -646,7 +860,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
         k = j+1;
 
         if (phiOut) {
-            phi->data[i] = -atan2(signalvec1->data[i], signalvec2->data[i]);
+            phi->data[i] = -atan2(signalvec2->data[i], signalvec1->data[i]);
         }
 
         /* fill the amplitude vector, if required. Currently we assume that both
@@ -752,7 +966,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
 
-  if( params->approximant == IMRPhenomA ) {
+  if( params->approximant == IMRPhenomA || params->approximant == IMRPhenomB) {
       LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
       CHECKSTATUSPTR(status);
       memset(h->data,  0, 2*paramsInit.nbins * sizeof(REAL4));
@@ -769,7 +983,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
     CHECKSTATUSPTR(status);
     LALDDestroyVector(status->statusPtr, &phi);
     CHECKSTATUSPTR(status);
-    if( params->approximant == IMRPhenomA ){
+    if( params->approximant == IMRPhenomA || params->approximant == IMRPhenomB){
       LALSDestroyVector(status->statusPtr, &h);
       CHECKSTATUSPTR(status);
     }
@@ -786,9 +1000,9 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       CHECKSTATUSPTR(status);
       LALDDestroyVector(status->statusPtr, &phi);
       CHECKSTATUSPTR(status);
-      if( params->approximant == IMRPhenomA){
-	LALSDestroyVector(status->statusPtr, &h);
-	CHECKSTATUSPTR(status);
+      if( params->approximant == IMRPhenomA || params->approximant == IMRPhenomB){
+	    LALSDestroyVector(status->statusPtr, &h);
+	    CHECKSTATUSPTR(status);
       }
 
       DETATCHSTATUSPTR( status );
@@ -888,21 +1102,22 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
       ppnParams->fStart   = ppnParams->fStartIn;
 
-      if( params->approximant == IMRPhenomA ){
-	if ( ( waveform->h = (REAL4TimeVectorSeries *)
-	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ){
-	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
-	}
-	memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
-	LALSCreateVectorSequence( status->statusPtr,&( waveform->h->data ), &in );
-	CHECKSTATUSPTR(status);
-	memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
-	waveform->h->deltaT = 1./params->tSampling;
-	waveform->h->sampleUnits = lalStrainUnit;
-	snprintf( waveform->h->name,
+      if( params->approximant == IMRPhenomA || params->approximant == IMRPhenomB){
+          if ( ( waveform->h = (REAL4TimeVectorSeries *)
+                      LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ){
+              ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+          }
+          
+          memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
+          LALSCreateVectorSequence( status->statusPtr,&( waveform->h->data ), &in );
+          CHECKSTATUSPTR(status);
+          memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
+          waveform->h->deltaT = 1./params->tSampling;
+          waveform->h->sampleUnits = lalStrainUnit;
+          snprintf( waveform->h->name,
 		     LALNameLength, "Phenom inspiral polarizations");
-	LALSDestroyVector(status->statusPtr, &h);
-	CHECKSTATUSPTR(status);
+          LALSDestroyVector(status->statusPtr, &h);
+          CHECKSTATUSPTR(status);
       }
   } /* end phase condition*/
 
