@@ -86,7 +86,9 @@ NRCSID( COMPLEXFFTH, "$Id$" );
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
+/** Plan to perform FFT of COMPLEX8 data */
 typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
+/** Plan to perform FFT of COMPLEX16 data */
 typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 #define tagComplexFFTPlan tagCOMPLEX8FFTPlan
 #define ComplexFFTPlan COMPLEX8FFTPlan
@@ -106,11 +108,130 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
  *
  */
 
+/** Returns a new COMPLEX8FFTPlan
+ *
+ * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
+ * A different plan is required for each size of the complex data vectors
+ * and for each direction of transform (forward or reverse).
+ * A forward transform performs
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,z[j]\f]
+ * where N, the size of the transform, is the length of the vectors z and Z.
+ * A reverse transform performs
+ * \f[w[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,W[k]\f]
+ * where N, the size of the transform, is the length of the vectors w and W.
+ *
+ * @note
+ * The reverse transform of the forward transform of some data is
+ * equal to N times the original data (we therefore call it a "reverse"
+ * transform rather than an "inverse" transform).
+ * 
+ * @param[in] size The number of points in the complex data.
+ * @param[in] fwdflag Set non-zero for a forward FFT plan;
+ *                    otherwise create a reverse plan
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateCOMPLEX8Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+
+/** Returns a new COMPLEX8FFTPlan for a forward transform
+ * 
+ * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
+ * A different plan is required for each size of the complex data vectors.
+ * A forward transform performs
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,z[j]\f]
+ * where N, the size of the transform, is the length of the vector z and Z.
+ *
+ * @param[in] size The number of points in the complex data.
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateForwardCOMPLEX8Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
+
+/** Returns a new COMPLEX8FFTPlan for a reverse transform
+ *
+ * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
+ * A reverse transform performs
+ * \f[w[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,W[k]\f]
+ * where N, the size of the transform, is the length of the vectors w and W.
+ *
+ * @note
+ * The reverse transform of the forward transform of some data is
+ * equal to N times the original data (we therefore call it a "reverse"
+ * transform rather than an "inverse" transform).
+ * 
+ * @param[in] size The number of points in the complex data.
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateReverseCOMPLEX8Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX8FFTPlan * XLALCreateReverseCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
+
+/** Destroys a COMPLEX8FFTPlan
+ * @param[in] plan A pointer to the COMPLEX8FFTPlan to be destroyed.
+ * @return None.
+ */
 void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
+
+/** Perform a COMPLEX8Vector to COMPLEX8Vector FFT
+ *
+ * This routine computes
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{\mp2\pi ijk/N}\,z[j],\f]
+ * and where the minus sign is used if a forward plan is provided as the argument
+ * and the plus sign is used if a reverse plan is provided as the argument;
+ * here N is the length of the input and output vectors z and Z.
+ * 
+ * @param[out] output The complex output data vector Z of length N
+ * @param[in] input The input complex data vector z of length N
+ * @param[in] plan The FFT plan to use for the transform
+ * @note
+ * The input and output vectors must be distinct.
+ * @return 0 upon successful completion or non-zero upon failure.
+ * @par Errors:
+ * The \c XLALCOMPLEX8VectorFFT() function shall fail if:
+ *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ *  - [\c XLAL_EINVAL] A argument is invalid or the input and output data
+ *    vectors are the same.
+ *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ *    incompatible.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  .
+ */
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * restrict input,
     const COMPLEX8FFTPlan *plan );
 
 /*
@@ -119,11 +240,131 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
  *
  */
 
+
+/** Returns a new COMPLEX16FFTPlan
+ *
+ * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
+ * A different plan is required for each size of the complex data vectors
+ * and for each direction of transform (forward or reverse).
+ * A forward transform performs
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,z[j]\f]
+ * where N, the size of the transform, is the length of the vectors z and Z.
+ * A reverse transform performs
+ * \f[w[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,W[k]\f]
+ * where N, the size of the transform, is the length of the vectors w and W.
+ *
+ * @note
+ * The reverse transform of the forward transform of some data is
+ * equal to N times the original data (we therefore call it a "reverse"
+ * transform rather than an "inverse" transform).
+ * 
+ * @param[in] size The number of points in the complex data.
+ * @param[in] fwdflag Set non-zero for a forward FFT plan;
+ *                    otherwise create a reverse plan
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateCOMPLEX16Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+
+/** Returns a new COMPLEX16FFTPlan for a forward transform
+ * 
+ * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
+ * A different plan is required for each size of the complex data vectors.
+ * A forward transform performs
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,z[j]\f]
+ * where N, the size of the transform, is the length of the vector z and Z.
+ *
+ * @param[in] size The number of points in the complex data.
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateForwardCOMPLEX16Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
+
+/** Returns a new COMPLEX16FFTPlan for a reverse transform
+ *
+ * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
+ * A reverse transform performs
+ * \f[w[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,W[k]\f]
+ * where N, the size of the transform, is the length of the vectors w and W.
+ *
+ * @note
+ * The reverse transform of the forward transform of some data is
+ * equal to N times the original data (we therefore call it a "reverse"
+ * transform rather than an "inverse" transform).
+ * 
+ * @param[in] size The number of points in the complex data.
+ * @param[in] measurelvl Measurement level for plan creation:
+ *                      - 0: no measurement, just estimate the plan;
+ *                      - 1: measure the best plan;
+ *                      - 2: perform a lengthy measurement of the best plan;
+ *                      - 3: perform an exhasutive measurement of the best plan.
+ * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
+ * upon successful completion.  Otherwise, a \c NULL pointer is returned
+ * and \c xlalErrno is set to indicate the error.
+ * @par Errors:
+ * The \c XLALCreateReverseCOMPLEX16Plan() function shall fail if:
+ *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ *  .
+ */
 COMPLEX16FFTPlan * XLALCreateReverseCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
+
+/** Destroys a COMPLEX16FFTPlan
+ * @param[in] plan A pointer to the COMPLEX16FFTPlan to be destroyed.
+ * @return None.
+ */
 void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
+
+/** Perform a COMPLEX16Vector to COMPLEX16Vector FFT
+ *
+ * This routine computes
+ * \f[Z[k] = \sum_{j=0}^{N-1} e^{\mp2\pi ijk/N}\,z[j],\f]
+ * and where the minus sign is used if a forward plan is provided as the argument
+ * and the plus sign is used if a reverse plan is provided as the argument;
+ * here N is the length of the input and output vectors z and Z.
+ * 
+ * @param[out] output The complex output data vector Z of length N
+ * @param[in] input The input complex data vector z of length N
+ * @param[in] plan The FFT plan to use for the transform
+ * @note
+ * The input and output vectors must be distinct.
+ * @return 0 upon successful completion or non-zero upon failure.
+ * @par Errors:
+ * The \c XLALCOMPLEX16VectorFFT() function shall fail if:
+ *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ *  - [\c XLAL_EINVAL] A argument is invalid or the input and output data
+ *    vectors are the same.
+ *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ *    incompatible.
+ *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ *  .
+ */
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * restrict output, COMPLEX16Vector * restrict input,
     const COMPLEX16FFTPlan *plan );
 
 /*
@@ -132,6 +373,10 @@ int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
  *
  */
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan instead.
+ * @see XLALCreateForwardCOMPLEX8FFTPlan
+ */
 void
 LALCreateForwardCOMPLEX8FFTPlan(
     LALStatus       *status,
@@ -139,8 +384,16 @@ LALCreateForwardCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     );
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan instead.
+ * @see XLALCreateForwardCOMPLEX8FFTPlan
+ */
 #define LALCreateForwardComplexFFTPlan LALCreateForwardCOMPLEX8FFTPlan
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan instead.
+ * @see XLALCreateReverseCOMPLEX8FFTPlan
+ */
 void
 LALCreateReverseCOMPLEX8FFTPlan(
     LALStatus       *status,
@@ -148,15 +401,31 @@ LALCreateReverseCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     );
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan instead.
+ * @see XLALCreateReverseCOMPLEX8FFTPlan
+ */
 #define LALCreateReverseComplexFFTPlan LALCreateReverseCOMPLEX8FFTPlan
 
+/** \b DEPRECATED
+ * @deprecated Use XLALDestroyCOMPLEX8FFTPlan instead.
+ * @see XLALDestroyCOMPLEX8FFTPlan
+ */
 void
 LALDestroyCOMPLEX8FFTPlan (
     LALStatus       *status,
     COMPLEX8FFTPlan **plan
     );
+/** \b DEPRECATED
+ * @deprecated Use XLALDestroyCOMPLEX8FFTPlan instead.
+ * @see XLALDestroyCOMPLEX8FFTPlan
+ */
 #define LALDestroyComplexFFTPlan LALDestroyCOMPLEX8FFTPlan
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCOMPLEX8VectorFFT instead.
+ * @see XLALCOMPLEX8VectorFFT
+ */
 void
 LALCOMPLEX8VectorFFT (
     LALStatus      *status,
@@ -167,10 +436,14 @@ LALCOMPLEX8VectorFFT (
 
 /*
  *
- * LAL COMPLEX8 functions
+ * LAL COMPLEX16 functions
  *
  */
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateForwardCOMPLEX16FFTPlan instead.
+ * @see XLALCreateForwardCOMPLEX16FFTPlan
+ */
 void
 LALCreateForwardCOMPLEX16FFTPlan(
     LALStatus       *status,
@@ -179,6 +452,10 @@ LALCreateForwardCOMPLEX16FFTPlan(
     INT4             measure
     );
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCreateReverseCOMPLEX16FFTPlan instead.
+ * @see XLALCreateReverseCOMPLEX16FFTPlan
+ */
 void
 LALCreateReverseCOMPLEX16FFTPlan(
     LALStatus       *status,
@@ -187,12 +464,20 @@ LALCreateReverseCOMPLEX16FFTPlan(
     INT4             measure
     );
 
+/** \b DEPRECATED
+ * @deprecated Use XLALDestroyCOMPLEX16FFTPlan instead.
+ * @see XLALDestroyCOMPLEX16FFTPlan
+ */
 void
 LALDestroyCOMPLEX16FFTPlan (
     LALStatus       *status,
     COMPLEX16FFTPlan **plan
     );
 
+/** \b DEPRECATED
+ * @deprecated Use XLALCOMPLEX16VectorFFT instead.
+ * @see XLALCOMPLEX16VectorFFT
+ */
 void
 LALCOMPLEX16VectorFFT (
     LALStatus      *status,
