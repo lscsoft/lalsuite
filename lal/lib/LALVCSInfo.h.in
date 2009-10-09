@@ -22,7 +22,7 @@
 #ifndef _LALVCSINFO_H
 #define _LALVCSINFO_H
 
-#include "config.h"
+#include <lal/LALConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
