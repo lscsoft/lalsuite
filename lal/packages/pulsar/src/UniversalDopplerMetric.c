@@ -1953,13 +1953,13 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 int
 equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
+  static mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
                                     { 0.0,  cosiEcl, siniEcl },
                                     { 0.0, -siniEcl, cosiEcl } };
   if (!out || !in )
     return -1;
 
-  return matrix33_in_vect3 ( out, (mat33 *)&rotEqu2Ecl, in );
+  return matrix33_in_vect3 ( out, &rotEqu2Ecl, in );
 
 } /* equatorialVect2ecliptic() */
 
@@ -1969,14 +1969,14 @@ equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
 int
 eclipticVect2equatorial ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
+  static mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
                                      { 0.0,  cosiEcl, -siniEcl },
                                      { 0.0,  siniEcl,  cosiEcl } };
 
   if (!out || !in )
     return -1;
 
-  return matrix33_in_vect3 ( out, (mat33 *)&rotEcl2Equ, in );
+  return matrix33_in_vect3 ( out, &rotEcl2Equ, in );
 
 } /* eclipticVect2equatorial() */
 
