@@ -160,6 +160,8 @@ typedef struct
 
   INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
 
+  INT4 metricType;	/**< type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both */
+
   INT4 projection;     /**< project metric onto subspace orthogonal to this coordinate-axis (0=none, 1=1st-coordinate axis, ...) */
 
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
@@ -250,6 +252,7 @@ main(int argc, char *argv[])
 
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
+  metricParams.metricType    = uvar.metricType;
   metricParams.startTime     = config.startTime;
   metricParams.Tspan         = uvar.duration;
   metricParams.detInfo       = config.detInfo;
@@ -326,6 +329,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->IFOweights = NULL;
 
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
+  uvar->metricType = 2;	/* by default: compute both phase + Fstat metric */
 
   if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
@@ -351,6 +355,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
   LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
+  LALregINTUserStruct(status,  	metricType,	 0,  UVAR_OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
   LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
   LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
@@ -649,28 +654,37 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   fprintf ( fp, "];\n");
 
   /* ----- output phase metric ---------- */
-  fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
-  fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+  if ( metric->g_ij )
+    {
+      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
+      fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+    }
 
   /* ----- output F-metric (and related matrices ---------- */
-  fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
-  fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gFav_ij );
-  fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
-  fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
-  fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
-  fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
+  if ( metric->gF_ij )
+    {
+      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
+      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gFav_ij );
+      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
+      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
+      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
+      fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
+    }
 
   /*  ----- output Fisher matrix ---------- */
-  A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
-  B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
-  C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
+  if ( metric->Fisher_ab )
+    {
+      A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
+      B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
+      C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
 
-  D = A * B - C * C;
+      D = A * B - C * C;
 
-  fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
-  fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
+      fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
+      fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
 
-  fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
+      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
+    }
 
   return XLAL_SUCCESS;
 

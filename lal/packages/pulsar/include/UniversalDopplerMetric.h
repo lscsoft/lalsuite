@@ -87,6 +87,15 @@ typedef enum {
   DETMOTION_LAST
 } DetectorMotionType;
 
+
+typedef enum {
+  METRIC_TYPE_PHASE = 0,	/**< compute phase metric only */
+  METRIC_TYPE_FSTAT = 1,	/**< compute full F-metric only */
+  METRIC_TYPE_ALL   = 2,	/**< compute both F-metric and phase-metric */
+  METRIC_TYPE_LAST
+} MetricType_t;
+
+
 /** Array of symbolic 'names' for various detector-motions
  */
 #ifdef IN_UNIVERSALDOPPLERMETRICC
@@ -239,6 +248,7 @@ typedef struct
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
   INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
 
+  MetricType_t metricType;			/**< switch controlling which types of metric to compute: 0 = PhaseMetric g_ij, 1 = Fmetrics gF.., 2=BOTH */
 } DopplerMetricParams;
 
 
