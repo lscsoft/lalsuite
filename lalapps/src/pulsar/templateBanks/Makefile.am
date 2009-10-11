@@ -32,3 +32,12 @@ lalapps_matchGrids_SOURCES = matchGrids.c
 lalapps_FstatMetric_SOURCES = FstatMetric.c
 
 lalapps_FstatMetric_v2_SOURCES = FstatMetric_v2.c
+
+
+TESTS = testMetricCodes.py
+TESTS_ENVIRONMENT = \
+LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
+LAL_PREFIX=$(LAL_PREFIX) \
+LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
+
+CLEANFILES = Fmetric.dat Fmetric_v2.dat
