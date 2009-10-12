@@ -67,7 +67,8 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 CLWorkspace clW;
 CLWorkspace *clWp = &clW;
-
+int gpu_device_id = 0; /* might be set on the command-line in hs_boinc_extras.c */
+int gpu_platform_id = 0;
 
 /* global sin-cos lookup table */
 #define LUT_RES         	64      /* resolution of lookup-table */
@@ -675,7 +676,9 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   // query the platform ID
   LogPrintf(LOG_DEBUG, "In function %s: query the platform ID\n", fn);
   clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
-  clW->platform = &(platforms[0]);
+  clW->platform = &(platforms[gpu_platform_id]);
+
+  LogPrintf(LOG_DEBUG, "In function %s: Found %d platforms, using platform id %d\n", fn, num_platforms, gpu_platform_id);
 
   // query OpenCL platform info
   LogPrintf(LOG_DEBUG, "In function %s: query the OpenCL platform info\n", fn);
@@ -706,8 +709,10 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
       XLALPrintError ("%s: Error querying number of OpenCL devices\n", fn );
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
+  } else {
+    LogPrintf(LOG_DEBUG, "In function %s: Found %d devices, using device id %d\n", fn, num_devices, gpu_device_id);
   }
-  clW->device = &(devices[0]);
+  clW->device = &(devices[gpu_device_id]);
 
   // create a command-queue
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);

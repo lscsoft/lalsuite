@@ -130,9 +130,9 @@ int global_cpu_type;
 /** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
 
-#ifdef USE_CUDA
-/** CUDA device id */
-extern int cuda_device_id;
+/** GPU (CUDA or OpenCL) device id */
+#if USE_OPENCL_KERNEL || defined(USE_CUDA)
+extern int gpu_device_id;
 #endif
 
 /** FLOPS estimation - may be set by command line option --WUfpops=.
@@ -798,11 +798,11 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
-#ifdef USE_CUDA
+#if USE_OPENCL_KERNEL || defined(USE_CUDA)
     /* if building a CUDA App, handle --device option given by BOINC client */
     else if (MATCH_START("--device",argv[arg],l)) {
       arg++; /* next argument */
-      cuda_device_id = atoi(argv[arg]);
+      gpu_device_id = atoi(argv[arg]);
       rarg-=2; rargc-=2; /* these arguments are not passed to the main worker function */
     }
 #endif

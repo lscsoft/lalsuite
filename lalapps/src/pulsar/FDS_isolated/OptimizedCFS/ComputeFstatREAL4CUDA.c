@@ -51,7 +51,7 @@ typedef struct {
 } PulsarSpinsExREAL4;
 
 /*---------- Global variables ----------*/
-int cuda_device_id = -1;
+int gpu_device_id = -1;
 static const LALStatus empty_LALStatus;
 
 
@@ -373,9 +373,9 @@ int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySe
 
 
 
-    // If no cuda_device_id has been specified yet, find device with max SM
-    if ( cuda_device_id >= 0 )
-      fprintf (stderr, "Using CUDA device %d\n", cuda_device_id);
+    // If no gpu_device_id has been specified yet, find device with max SM
+    if ( gpu_device_id >= 0 )
+      fprintf (stderr, "Using CUDA device %d\n", gpu_device_id);
     else {
       int nodevices, deviceid, maxsmdevice=0;
       size_t maxsm=0;
@@ -398,12 +398,12 @@ int InitializeCUDADevice(MultiSFTVectorSequence *stackMultiSFT, REAL4FrequencySe
 	}
       }
 
-      cuda_device_id = maxsmdevice;
+      gpu_device_id = maxsmdevice;
 
-      fprintf (stderr, "Using CUDA device %d of %d\n", cuda_device_id, nodevices);
+      fprintf (stderr, "Using CUDA device %d of %d\n", gpu_device_id, nodevices);
     }
 
-    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, cuda_device_id) )
+    if (cudaSuccess != cudaGetDeviceProperties (&curDevProps, gpu_device_id) )
     {
         //XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
         XLALPrintError ("%s: cudaGetDeviceProperties failed\n", fn );
