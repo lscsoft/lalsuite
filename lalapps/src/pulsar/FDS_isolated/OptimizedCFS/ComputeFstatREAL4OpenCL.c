@@ -709,6 +709,10 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
       XLALPrintError ("%s: Error querying number of OpenCL devices\n", fn );
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
+  } else if ( gpu_device_id >= num_devices ) {
+      XLALPrintError ("%s: Invalid device id %d, found only %d devices\n", fn, num_devices, gpu_device_id);
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
   } else {
     LogPrintf(LOG_DEBUG, "In function %s: Found %d devices, using device id %d\n", fn, num_devices, gpu_device_id);
   }
