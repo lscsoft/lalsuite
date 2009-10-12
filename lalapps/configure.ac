@@ -11,6 +11,7 @@ AC_CONFIG_FILES([\
   man/Makefile \
   misc/Makefile \
   src/Makefile \
+  src/lalapps/defaults.py \
   src/lalapps/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
@@ -167,7 +168,7 @@ lalframe="true"
 lalmetaio="true"
 lalxml="true"
 lalstochastic="true"
-PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
+PKG_CHECK_MODULES(LALFRAME, lalframe >= 1.0, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
 PKG_CHECK_MODULES(LALXML, lalxml >= 1.0, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic >= 1.0, [ true ], [ false ])

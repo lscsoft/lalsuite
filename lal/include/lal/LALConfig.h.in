@@ -59,9 +59,6 @@
 /* Define if using fftw3 library */
 #undef LAL_FFTW3_ENABLED
 
-/* Define if using Frame library */
-#undef LAL_FRAME_ENABLED
-
 /* Define if using MetaIo library */
 #undef LAL_METAIO_ENABLED
 
