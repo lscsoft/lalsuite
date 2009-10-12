@@ -685,7 +685,7 @@ LALTaylorT4WaveformEngine (
           f2a                   = pow (f2aFac * omega, 2./3.);
           a->data[ice]      = (REAL4)(4.*apFac * f2a);
           a->data[ico]    = (REAL4)(4.*acFac * f2a);
-          phiVec->data[count]      = (REAL8)(phi);
+          phiVec->data[count]      = (REAL8)(2.0 * phi);
       }
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(2.*m*LAL_PI)); */
 

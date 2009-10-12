@@ -135,9 +135,9 @@ gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 typedef REAL8 vect3[3];
 typedef REAL8 mat33[3][3];
 
-int equatorialVect2ecliptic ( vect3 *out, vect3 const *in );
-int eclipticVect2equatorial ( vect3 *out, vect3 const *in );
-int matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in );
+int equatorialVect2ecliptic ( vect3 *out, vect3 * const in );
+int eclipticVect2equatorial ( vect3 *out, vect3 * const in );
+int matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -336,7 +336,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( &nn_ecl, (vect3 const *)&nn_equ );
+  equatorialVect2ecliptic ( &nn_ecl, (vect3 * const )&nn_equ );
 
   /*
   vect3 nn_ecl0, nn_equ0;
@@ -363,7 +363,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
 
   /* convert detector position in ecliptic coordinates */
-  equatorialVect2ecliptic ( &detpos_ecl, (vect3 const*) &posvel.pos );
+  equatorialVect2ecliptic ( &detpos_ecl, (vect3 * const) &posvel.pos );
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
   dTSI = SCALAR(nn_equ, posvel.pos );
@@ -1951,9 +1951,9 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
  * return: 0 = OK, -1 = ERROR
  */
 int
-equatorialVect2ecliptic ( vect3 *out, vect3 const *in )
+equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
+  static mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
                                     { 0.0,  cosiEcl, siniEcl },
                                     { 0.0, -siniEcl, cosiEcl } };
   if (!out || !in )
@@ -1967,9 +1967,9 @@ equatorialVect2ecliptic ( vect3 *out, vect3 const *in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-eclipticVect2equatorial ( vect3 *out, vect3 const *in )
+eclipticVect2equatorial ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
+  static mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
                                      { 0.0,  cosiEcl, -siniEcl },
                                      { 0.0,  siniEcl,  cosiEcl } };
 
@@ -1984,7 +1984,7 @@ eclipticVect2equatorial ( vect3 *out, vect3 const *in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in )
+matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in )
 {
   if ( !out || !mat || !in )
     return -1;
