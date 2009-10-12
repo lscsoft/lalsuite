@@ -944,8 +944,8 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   // build the program
   LogPrintf(LOG_DEBUG, "In function %s: build OpenCL program...\n", fn);
   err = clBuildProgram(*(clW->program),
-                       0,     // num devices in device list
-                       NULL,  // device list
+                       1,     // num devices in device list (0)
+                       &(devices[gpu_device_id]),  // device list (NULL)
                        NULL,  // options
                        NULL,  // notifier callback function ptr
                        NULL); // error code
