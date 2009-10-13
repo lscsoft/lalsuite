@@ -17,7 +17,7 @@ if LALFRAME
 LALFRAMEPROGRAMS = \
 	lalapps_animate \
 	lalapps_calfacs \
-	lalapps_computespec \
+	lalapps_computespec
 lalapps_animate_SOURCES = animate.c
 lalapps_calfacs_SOURCES = calfacs.c
 lalapps_computespec_SOURCES = computespec.c
