@@ -16,7 +16,6 @@ AC_CONFIG_FILES([ \
                  doc/autodoc/Makefile \
                  include/Makefile \
                  include/lal/Makefile \
-                 lib/git_version
                  lib/Makefile \
                  misc/Makefile \
                  packages/Makefile \
@@ -136,6 +135,7 @@ AC_CONFIG_FILES([ \
                  packages/support/src/Makefile \
                  packages/support/test/Makefile
 ])
+AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
 AM_INIT_AUTOMAKE([])
 AH_TOP([
 #ifndef CONFIG_H__LAL
@@ -439,7 +439,6 @@ AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
 AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
-AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
