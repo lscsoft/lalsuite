@@ -188,10 +188,13 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	fprintf(stderr,"Sprinkling initial points, may take a while");
 	/* Set up the parameters for the live points */
 	for(i=0;i<Nlive;i++) {
-		if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(Live[i],(void *)MCMCinput->injectionTable);
-		else MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
-		MCMCinput->dim=Live[i]->dimension;
-		MCMCinput->funcPrior(MCMCinput,Live[i]);
+		do{
+			if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(Live[i],(void *)MCMCinput->injectionTable);
+			else MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
+			MCMCinput->dim=Live[i]->dimension;
+			MCMCinput->funcPrior(MCMCinput,Live[i]);
+			if(Live[i]->logPrior==-DBL_MAX) XLALMCMCFreePara(Live[i]);
+		} while(Live[i]->logPrior==-DBL_MAX);
 		MCMCinput->funcLikelihood(MCMCinput,Live[i]);
 	}
 	/* Set up covariance matrix */
@@ -340,7 +343,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 	while (i<N || (nreflect==a_cnt && nreflect>0 && nreflect%2==0)){
 		i++;
 		jump_select = gsl_rng_uniform(RNG);
-		if(jump_select<0.1 && MCMCInput->numberDataStreams>1){
+		if(jump_select<0.1 && MCMCInput->numberDataStreams>1 && XLALMCMCCheckWrapping(sample,"long")!=-1 && XLALMCMCCheckWrapping(sample,"lat")!=-1){
 			if(MCMCInput->numberDataStreams>1) jump_select = gsl_rng_uniform(RNG);
 			else jump_select=0;
 			if(jump_select>0.5) {
@@ -414,9 +417,15 @@ void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,UINT4 N)
 	free(means);
 	/* Fill in variances for angle parameters */
 	for(p=samples[0]->param,j=0;j<ND;j++,p=p->next) {
-		if(p->core->wrapping!=0) {
+		if(p->core->wrapping==1) {
 			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
 			gsl_matrix_set(cvm,j,j,ang_var(samples,p->core->name,N));
+			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
+		}
+		/* Set variance to default 1 for non-varying params */
+		else if (p->core->wrapping==-1) {
+			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
+			gsl_matrix_set(cvm,j,j,1.0);
 			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
 		}
 	}

@@ -282,19 +282,23 @@ return;
 
 REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-  REAL8 mNS,mComp;
+  REAL8 mNS,mComp,logmc;
   REAL8 mc,eta;
   /* Priors for the GRB component masses */
 #define m1min 1.0
 #define m1max 3.0
 #define m2min 1.0
 #define m2max 35.0
+  parameter->logPrior=0.0;
   if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
+  logmc=log(mc);
+  parameter->logPrior+=-(5.0/6.0)*logmc;
+
   eta=XLALMCMCGetParameter(parameter,"eta");
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-  parameter->logPrior+=logJacobianMcEta(mc,eta);
+  /*parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
   ParamInRange(parameter);
   /*check GRB component masses */

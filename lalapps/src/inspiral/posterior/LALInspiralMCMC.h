@@ -210,7 +210,7 @@ tagLALMCMCSubParam
   char        name[30]; 
   REAL8       minVal;  
   REAL8       maxVal;  
-  INT4        wrapping;
+  INT4        wrapping; /* 0=no, 1=yes, -1=fixed */
   REAL4Vector *chain;
 
 }  LALMCMCSubParam;
@@ -536,7 +536,10 @@ XLALCheckPositiveDefinite(
    gsl_matrix       *matrix,
    UINT4         dim);
 
-
+INT4 XLALMCMCCheckWrapping(LALMCMCParameter *parameter,
+						   const char *name);
+	
+	
 #ifdef  __cplusplus
 }
 #endif

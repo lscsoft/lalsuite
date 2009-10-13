@@ -377,7 +377,7 @@ main(int argc, char *argv[])
 
 	  if ( fpMetric )
 	    {
-	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
+	      fprintf ( fpMetric, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
 
 	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gF_ij );

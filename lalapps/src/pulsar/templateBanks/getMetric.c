@@ -386,6 +386,8 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
       for ( col = 0; col < dim; col ++ )
 	{
 	  printf (" %.16g", metric->data[ PMETRIC_INDEX(row,col) ] );
+          if ( col < dim - 1 )
+            printf (", ");
 	}
       if ( row < dim - 1 )
 	printf (";\n");

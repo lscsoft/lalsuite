@@ -1,11 +1,11 @@
 # exampleFscanGenerator.rsc
 
 # Set tcl list with list of channels, frame types, etc....
-# Each item in the list contains: channel_name channel_type IFO input_type output_sft_dir comparison_chan comparison_snr comparison_delta_dir 
+# Each item in the list contains: channel_name channel_type IFO input_type output_sft_dir comparison_chan comparison_snr comparison_delta_dir knee_freq sft_time_baseline start_freq band sub_band extra_time_for_data_find freq_res alternative_dir_name
 # If comparison_delta_dir is 0 compare with current fscans, if -1 compare with last previous set of fscans, etc...
 set ::masterList {\
-{H2:LSC-STRAIN ADC_REAL8 H2 H2_RDS_C03_L2 default H2:LSC-STRAIN 4 -1}\
-{H0:PEM-BSC9_MAGX ADC_INT2 H2 RDS_R_L1 default H2:LSC-STRAIN 4 0}\
+{H2:LSC-STRAIN ADC_REAL8 H2 H2_RDS_C03_L2 default H2:LSC-STRAIN 4 -1 30 1800 50 951 50 64 0.1 default}\
+{H0:PEM-BSC9_MAGX ADC_INT2 H2 RDS_R_L1 default H2:LSC-STRAIN 4 0 30 1800 50 951 50 64 0.1 default}\
 }
 
 # If fixedComparison is 1 then used then ignore the comparison delta dir in the masterList but compare using fixd values: 
@@ -14,12 +14,12 @@ set fixedComparisonChanDir ../../fscans_2009_03_30_13_02_17_PDT_Mon/H2_LSC-STRAI
 set fixedComparisonString "H2_923700000_923714400";
 set fixedComparisonSNR  4;
 
-set fscanDriverPath "./fscanDriver.py"; # complete path to fscanDriver.py
+set fscanDriverPath "/home/gmendell/bin/fscanDriver.py"; # complete path to fscanDriver.py
 set matlabPath "/ldcg/matlab_r2008a";      # Path to matlab installation to use with -m option to fscanDriver.py, e.g., /ldcg/matlab_r2008a
 
 set parentOutputDirectory "weekly";
 
-set moveSFTsFromDirList "testDaily/daily";
+set moveSFTsFromDirList "/usr1/ugmendell/oldsearchcode/src/lalapps/src/pulsar/fscan/testDaily/daily";
 set moveSFTsFromSuffix "sfts/tmp";
 
 set startTime 923628000;

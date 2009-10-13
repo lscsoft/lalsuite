@@ -400,6 +400,10 @@ LALGetApproximantFromString(
   {
     *approximant = IMRPhenomA;
   }
+  else if ( strstr(thisEvent, "IMRPhenomB" ) )
+  {
+    *approximant = IMRPhenomB;
+  }
   else
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),

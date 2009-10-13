@@ -6,10 +6,8 @@ AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_FILES([ \
                  lal.spec \
                  lal.pc \
-                 lalframe.pc \
                  lalmetaio.pc \
                  lalsupport.pc \
-                 lal-config \
                  Makefile \
                  debian/Makefile \
                  doc/Makefile \
@@ -17,7 +15,6 @@ AC_CONFIG_FILES([ \
                  doc/autodoc/Makefile \
                  include/Makefile \
                  include/lal/Makefile \
-                 lib/git_version
                  lib/Makefile \
                  misc/Makefile \
                  packages/Makefile \
@@ -135,13 +132,10 @@ AC_CONFIG_FILES([ \
                  packages/support/doc/Makefile \
                  packages/support/include/Makefile \
                  packages/support/src/Makefile \
-                 packages/support/test/Makefile \
-                 packages/framedata/Makefile \
-                 packages/framedata/doc/Makefile \
-                 packages/framedata/include/Makefile \
-                 packages/framedata/src/Makefile \
-                 packages/framedata/test/Makefile
+                 packages/support/test/Makefile
 ])
+AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
+AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
 AM_INIT_AUTOMAKE([])
 AH_TOP([
 #ifndef CONFIG_H__LAL
@@ -165,7 +159,6 @@ LAL_WITH_EXTRA_LIBS
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
 LAL_ENABLE_GCC_FLAGS
-LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
 
 LAL_ENABLE_DEBUG
@@ -319,7 +312,7 @@ else
   AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional FrameL, and metaio.
+dnl Checks for optional metaio.
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
@@ -328,15 +321,6 @@ if test "${metaio}" = "true"; then
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
-fi
-if test "${frame}" = "true"; then
-  PKG_CHECK_MODULES(FRAME, libframe, [ true ], [ false ])
-  lal_pre_frame_LIBS="$LIBS"
-  LIBS="$LIBS $FRAME_LIBS"
-  AC_SEARCH_LIBS(FrLibIni, Frame, ,
-                 [AC_MSG_WARN(disabling frame library)]
-                 [frame="false"]
-                 [LIBS="$lal_pre_frame_LIBS"])
 fi
 
 
@@ -365,14 +349,6 @@ if test "${metaio}" = "true"; then
                    [metaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
-if test "${frame}" = "true"; then
-  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
-  AC_CHECK_HEADERS(FrameL.h, ,
-                   [AC_MSG_WARN(disabling frame library support)]
-                   [frame="false"]
-                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
-fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
@@ -387,9 +363,6 @@ if test "${fftw3}" = "true"; then
 fi
 if test "${metaio}" = "true"; then
   AC_DEFINE(LAL_METAIO_ENABLED, 1, [Define if using MetaIo library])
-fi
-if test "${frame}" = "true"; then
-  AC_DEFINE(LAL_FRAME_ENABLED, 1, [Define if using frame library])
 fi
 
 
@@ -423,7 +396,6 @@ pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
 AC_SUBST(pkgdocdir)
 
 dnl Setup automake conditionals
-AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
 AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
@@ -438,13 +410,6 @@ if test -d $srcdir/lalapps ; then
   LAL_CFLAGS=-I$lal_build_dir/include
   LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
   LALSUPPORT_CFLAGS=-I$lal_build_dir/include
-  if test x$frame = xtrue ; then
-    LALFRAME_LIBS=$lal_build_dir/packages/framedata/src/liblalframe.la
-    LALFRAME_CFLAGS=-I$lal_build_dir/include
-  else
-    LALFRAME_LIBS=""
-    LALFRAME_CFLAGS=""
-  fi
   if test x$metaio = xtrue ; then
     LALMETAIO_LIBS=$lal_build_dir/packages/support/src/liblalmetaio.la
     LALMETAIO_CFLAGS=-I$lal_build_dir/include
@@ -452,7 +417,7 @@ if test -d $srcdir/lalapps ; then
     LALMETAIO_LIBS=""
     LALMETAIO_CFLAGS=""
   fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
   AC_CONFIG_SUBDIRS(lalapps)
 fi
 
@@ -473,10 +438,7 @@ DVIMKFILE=$srcdir/misc/dvi.mk
 AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
-AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
-AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
-frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
@@ -484,7 +446,6 @@ echo "
 
         LAL has now been successfully configured:
 
-                LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
                 CUDA support is $cudaenabled
 

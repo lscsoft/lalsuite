@@ -773,7 +773,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 		trueLat = (REAL8)injTable->latitude;
 	}
 	/*else*/   {
-		if(grb_time!=0) grb_time = manual_end_time;
+		grb_time = manual_end_time;
 		if(manual_RA!=-4200.0) trueLong = manual_RA;
 		if(manual_dec!=-4200.0) trueLat = manual_dec;
     }
@@ -803,8 +803,8 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "phi",              LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
 	
-	XLALMCMCAddParam(parameter,"long",(gsl_rng_uniform(RNG)-0.5)*deltaLong + trueLong,trueLong-0.5*deltaLong,trueLong+0.5*deltaLong,0);
-	XLALMCMCAddParam(parameter,"lat",(gsl_rng_uniform(RNG)-0.5)*deltaLat+trueLat,trueLat-0.5*deltaLat,trueLat+0.5*deltaLat,0);
+	XLALMCMCAddParam(parameter,"long",trueLong,trueLong-0.5*deltaLong,trueLong+0.5*deltaLong,-1);
+	XLALMCMCAddParam(parameter,"lat",trueLat,trueLat-0.5*deltaLat,trueLat+0.5*deltaLat,-1);
 	
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
@@ -866,8 +866,8 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	XLALMCMCAddParam(parameter,"long",deltaLong*(gsl_rng_uniform(RNG)-0.5)+manual_RA,manual_RA-0.5*deltaLong,manual_RA+0.5*deltaLong,0);
-	XLALMCMCAddParam(parameter,"lat",deltaLat*(gsl_rng_uniform(RNG)-0.5)+manual_dec,manual_dec-0.5*deltaLat,manual_dec+0.5*deltaLat,0);
+	XLALMCMCAddParam(parameter,"long",manual_RA,manual_RA-0.5*deltaLong,manual_RA+0.5*deltaLong,-1);
+	XLALMCMCAddParam(parameter,"lat",manual_dec,manual_dec-0.5*deltaLat,manual_dec+0.5*deltaLat,-1);
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 	return;

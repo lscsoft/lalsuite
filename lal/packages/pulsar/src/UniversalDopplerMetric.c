@@ -135,9 +135,9 @@ gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 typedef REAL8 vect3[3];
 typedef REAL8 mat33[3][3];
 
-int equatorialVect2ecliptic ( vect3 *out, vect3 const *in );
-int eclipticVect2equatorial ( vect3 *out, vect3 const *in );
-int matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in );
+int equatorialVect2ecliptic ( vect3 *out, vect3 * const in );
+int eclipticVect2equatorial ( vect3 *out, vect3 * const in );
+int matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -318,7 +318,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   vect3 nn_equ, nn_ecl;	/* skypos unit vector */
   vect3 nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
-  vect3 detpos_ecl;
+  vect3 detpos_ecl, detpos_equ;
 
   REAL8 ttSI, dTSI, dT, tauiSI;
   REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -336,7 +336,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( &nn_ecl, (vect3 const *)&nn_equ );
+  equatorialVect2ecliptic ( &nn_ecl, (vect3 * const )&nn_equ );
 
   /*
   vect3 nn_ecl0, nn_equ0;
@@ -362,8 +362,10 @@ CWPhaseDeriv_i ( double tt, void *params )
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
 
+  COPY_VECT ( detpos_equ, posvel.pos );
+
   /* convert detector position in ecliptic coordinates */
-  equatorialVect2ecliptic ( &detpos_ecl, (vect3 const*) &posvel.pos );
+  equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
   dTSI = SCALAR(nn_equ, posvel.pos );
@@ -400,7 +402,6 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NECL_X_NAT:
       ret = ( detpos_ecl[0] - (nn_ecl[0]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
-
     case DOPPLERCOORD_NECL_Y_NAT:
       ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
@@ -415,6 +416,15 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_N3Z:
       ret = detpos_ecl[2] / rOrb_c;
       break;
+
+    case DOPPLERCOORD_NEQU_X_NAT:
+      ret = ( detpos_equ[0] - (nn_equ[0]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
+      break;
+    case DOPPLERCOORD_NEQU_Y_NAT:
+      ret = ( detpos_equ[1] - (nn_equ[1]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
+      break;
+
+
 
       /* ----- frequency derivatives SI-units ----- */
     case DOPPLERCOORD_FREQ_SI:
@@ -915,8 +925,6 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   const CHAR *fn = "XLALDopplerFstatMetric()";
   DopplerMetric *metric = NULL;
   REAL8 cosi, psi;
-
-  FmetricAtoms_t *atoms;
   double relerr;
   gsl_matrix *tmp;
 
@@ -926,30 +934,63 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 
-  /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
-  if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", fn, xlalErrno );
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  if ( metricParams->metricType >= METRIC_TYPE_LAST ) {
+    XLALPrintError ("%s: Invalid value '%d' for metricType received. Must be within [%d,%d]!\n\n",
+                    metricParams->metricType, 0, METRIC_TYPE_LAST - 1, fn);
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 
-  /* ----- compute the F-metric gF_ij and related matrices ---------- */
-  cosi = metricParams->signalParams.Amp.cosi;
-  psi  = metricParams->signalParams.Amp.psi;
+  /* if we're asked to compute F-metric only (1) or F-metric + phase-metric (2) */
+  if ( metricParams->metricType == METRIC_TYPE_FSTAT || metricParams->metricType == METRIC_TYPE_ALL )
+    {
+      FmetricAtoms_t *atoms = NULL;
 
-  if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
-    XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", fn, xlalErrno );
-    XLALDestroyFmetricAtoms ( atoms );
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
-  }
+      /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
+      if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
+        XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", fn, xlalErrno );
+        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+      }
 
-  /* ----- compute the standard phase-metric g_ij ---------- */
-  if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat, &relerr )) == NULL ) {
-    XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
-    XLALDestroyFmetricAtoms ( atoms );
-    XLALDestroyDopplerMetric ( metric );
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
-  }
-  metric->maxrelerr_gPh = relerr;
+      /* ----- compute the F-metric gF_ij and related matrices ---------- */
+      cosi = metricParams->signalParams.Amp.cosi;
+      psi  = metricParams->signalParams.Amp.psi;
+
+      if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
+        XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", fn, xlalErrno );
+        XLALDestroyFmetricAtoms ( atoms );
+        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+      }
+
+      /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
+      if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
+        XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
+        XLALDestroyFmetricAtoms ( atoms );
+        XLALDestroyDopplerMetric ( metric );
+        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+      }
+
+      XLALDestroyFmetricAtoms ( atoms );
+    } /* if compute F-metric */
+
+  if ( metricParams->metricType == METRIC_TYPE_PHASE || metricParams->metricType == METRIC_TYPE_ALL )
+    {
+      /* if return-container 'metric' hasn't been allocated already earlier, we do it now */
+      if (!metric ) {
+        if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
+          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
+          XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+        }
+      }
+
+      /* ----- compute the standard phase-metric g_ij ---------- */
+      if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat, &relerr )) == NULL ) {
+        XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
+        XLALDestroyDopplerMetric ( metric );
+        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+      }
+      metric->maxrelerr_gPh = relerr;
+
+    } /* if compute phase-metric */
 
   /* ----- if requested, project gF_ij, gFav_ij and g_ij onto coordinate 'projectCoord' */
   if ( metricParams->projectCoord >= 0 )
@@ -957,44 +998,43 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       UINT4 projCoord = (UINT4)metricParams->projectCoord;
 
       /* gF_ij */
-      if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
-        XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-      }
-      gsl_matrix_free ( metric->gF_ij );
-      metric->gF_ij = tmp;
+      if ( metric->gF_ij )
+        {
+          if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
+            XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+          gsl_matrix_free ( metric->gF_ij );
+          metric->gF_ij = tmp;
+        }
 
       /* gFav_ij */
-      if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
-        XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-      }
-      gsl_matrix_free ( metric->gFav_ij );
-      metric->gFav_ij = tmp;
+      if ( metric->gFav_ij )
+        {
+          if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
+            XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+          gsl_matrix_free ( metric->gFav_ij );
+          metric->gFav_ij = tmp;
+        }
 
       /* phase-metric g_ij */
-      if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
-        XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-      }
-      gsl_matrix_free ( metric->g_ij );
-      metric->g_ij = tmp;
+      if ( metric->g_ij )
+        {
+          if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
+            XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
+          gsl_matrix_free ( metric->g_ij );
+          metric->g_ij = tmp;
+        }
 
     } /* if projectCoordinate >= 0 */
 
 
-  /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
-  if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
-    XLALDestroyFmetricAtoms ( atoms );
-    XLALDestroyDopplerMetric ( metric );
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
-  }
-
   /*  attach the metricParams struct as 'meta-info' to the output */
   metric->meta = (*metricParams);
-
-  XLALDestroyFmetricAtoms ( atoms );
 
   return metric;
 
@@ -1951,9 +1991,9 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
  * return: 0 = OK, -1 = ERROR
  */
 int
-equatorialVect2ecliptic ( vect3 *out, vect3 const *in )
+equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
+  static mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
                                     { 0.0,  cosiEcl, siniEcl },
                                     { 0.0, -siniEcl, cosiEcl } };
   if (!out || !in )
@@ -1967,9 +2007,9 @@ equatorialVect2ecliptic ( vect3 *out, vect3 const *in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-eclipticVect2equatorial ( vect3 *out, vect3 const *in )
+eclipticVect2equatorial ( vect3 *out, vect3 * const in )
 {
-  static const mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
+  static mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
                                      { 0.0,  cosiEcl, -siniEcl },
                                      { 0.0,  siniEcl,  cosiEcl } };
 
@@ -1984,7 +2024,7 @@ eclipticVect2equatorial ( vect3 *out, vect3 const *in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-matrix33_in_vect3 ( vect3 *out, mat33 const *mat, vect3 const *in )
+matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in )
 {
   if ( !out || !mat || !in )
     return -1;

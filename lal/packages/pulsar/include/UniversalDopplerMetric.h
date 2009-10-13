@@ -87,6 +87,15 @@ typedef enum {
   DETMOTION_LAST
 } DetectorMotionType;
 
+
+typedef enum {
+  METRIC_TYPE_PHASE = 0,	/**< compute phase metric only */
+  METRIC_TYPE_FSTAT = 1,	/**< compute full F-metric only */
+  METRIC_TYPE_ALL   = 2,	/**< compute both F-metric and phase-metric */
+  METRIC_TYPE_LAST
+} MetricType_t;
+
+
 /** Array of symbolic 'names' for various detector-motions
  */
 #ifdef IN_UNIVERSALDOPPLERMETRICC
@@ -133,6 +142,9 @@ typedef enum {
   DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
   DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
 
+  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -165,6 +177,9 @@ const CHAR *DopplerCoordinateNames[] = {
   "n3_y",
   "n3_z",
 
+  "nEqu_x_Nat",
+  "nEqu_y_Nat",
+
   "NONE"
 };
 
@@ -192,12 +207,15 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
-  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
-  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f)",
+  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
 
   "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
+
+  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
 
   "NONE"
 };
@@ -239,6 +257,7 @@ typedef struct
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
   INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
 
+  MetricType_t metricType;			/**< switch controlling which types of metric to compute: 0 = PhaseMetric g_ij, 1 = Fmetrics gF.., 2=BOTH */
 } DopplerMetricParams;
 
 
