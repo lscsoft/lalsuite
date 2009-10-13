@@ -1141,7 +1141,8 @@ XLALMCMCJump(
   /*  if (inputMCMC->verbose)
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
              paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
-    paraHead->value += step->data[i];
+    
+	  if(paraHead->core->wrapping!=-1) paraHead->value += step->data[i];
 	}
   
   XLALMCMCCyclicReflectiveBound(parameter);
@@ -1206,7 +1207,7 @@ XLALMCMCJumpIntrinsic(
   /* loop over all parameters */
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
   { 
-	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time"))
+	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time")||paraHead->core->wrapping==-1)
 	{;}
   /*  if (inputMCMC->verbose)
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
@@ -1229,7 +1230,7 @@ function to keep its proposals inside the parameter space */
 	REAL8 delta;
 	for (paraHead=parameter->param;paraHead;paraHead=paraHead->next)
 	{
-		if(paraHead->core->wrapping) /* For cyclic boundaries */
+		if(paraHead->core->wrapping==1) /* For cyclic boundaries */
 		{
 			delta = paraHead->core->maxVal - paraHead->core->minVal;
 			while ( paraHead->value > paraHead->core->maxVal) 
@@ -1237,7 +1238,7 @@ function to keep its proposals inside the parameter space */
 			while ( paraHead->value < paraHead->core->minVal) 
 			paraHead->value += delta;
 		}
-		else /* Use reflective boundaries */
+		else if(paraHead->core->wrapping==0) /* Use reflective boundaries */
 		{
 			if(paraHead->core->maxVal < paraHead->value) paraHead->value-=2.0*(paraHead->value - paraHead->core->maxVal);
 			if(paraHead->core->minVal > paraHead->value) paraHead->value+=2.0*(paraHead->core->minVal - paraHead->value);
@@ -1257,6 +1258,13 @@ INT4 XLALMCMCCheckParameter(
 
 }
 
+INT4 XLALMCMCCheckWrapping(LALMCMCParameter *parameter,
+						   const char *name)
+{
+	LALMCMCParam *param=NULL;
+	param=XLALMCMCGetParam(parameter,name);
+	return param->core->wrapping;
+}
 
 /* *****************************
 XLALMCMCAddParam
@@ -1393,7 +1401,7 @@ XLALMCMCSetParameter(
   LALMCMCParam* param;
   param=XLALMCMCGetParam( parameter, name);
 
-  if (param)
+  if (param && param->core->wrapping!=-1)
   {
     param->value=value;
   }
