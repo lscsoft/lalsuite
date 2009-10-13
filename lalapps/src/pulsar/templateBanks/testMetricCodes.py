@@ -31,10 +31,6 @@ import subprocess
 
 debug = False
 
-tol01 = 0.004
-tol02 = 0.004
-tol12 = 0.05
-
 ## ----- test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if not "LAL_DATA_PATH" in os.environ.keys():
     if "LAL_PREFIX" in os.environ.keys():
@@ -241,7 +237,8 @@ outfile2 = "Fmetric_v2.dat"
 
 firstIFO = options.IFOs.split(",")[0]
 
-## ========== 1) compare phase metrics
+## ========== 1) compare phase- and ptole- metrics
+coords = "Freq,Alpha,Delta,f1dot"
 
 common_args = { "Alpha" : options.Alpha,
                 "Delta" : options.Delta,
@@ -251,50 +248,107 @@ common_args = { "Alpha" : options.Alpha,
                 "ephemYear" : options.ephemYear
                 }
 
-## ----- run getMetric
-args0 = common_args.copy()
-args0["metricType"] = 3	## full-motion numerical phase metric
-args0["IFO"] = firstIFO
+for mettype in ["PHASE", "PTOLE"]:
 
-(stdout, stderr) = run_code ( code0, args0 )
+    print """
+## --------------------------------------------------------------------------------
+## Comparing %s-METRICS between [0]getMesh, [1]FstatMetric and [2]FstatMetric_v2
+## using coordinates '%s', startTime=%d, duration=%d, IFO=%s
+## and Doppler-position: Freq=%f, Alpha=%f, Delta=%f
+## --------------------------------------------------------------------------------""" \
+        % (mettype, coords, options.startTime, options.duration, firstIFO, options.Freq, options.Alpha, options.Delta )
 
-met0 = parse_octave_metrics ( stdout )
-if debug: print "getMetric output:\ng_ij = %s" % str(met0["g_ij"])
+    ## ----- run getMetric
+    args0 = common_args.copy()
+    args0["IFO"] = firstIFO
 
-## ----- run FstatMetric
-args1 = common_args.copy()
-args1["IFOs"] = firstIFO
-args1["metricType"] = 2	## full-motion numerical phase metric
-args1["outputMetric"] = outfile1
-args1["unitsType"] = 0	## SI units
+    if mettype == "PHASE":
+        args0["metricType"] = 3	## full-motion numerical phase metric
+    elif mettype == "PTOLE":
+        args0["metricType"] = 1	## analytic Ptole-metric
+    else:
+        print ("Invalid metric type '%s' encountered ..." % mettype )
+        sys.exit(1)
 
-(stdout, stderr) = run_code ( code1, args1 )
+    (stdout, stderr) = run_code ( code0, args0 )
 
-octstr = load_file ( outfile1 )
+    met0 = parse_octave_metrics ( stdout )
+    if debug: print "getMetric output:\ng_ij = %s" % str(met0["g_ij"])
 
-met1 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric output:\ngPh_ij = %s" % str(met1["gPh_ij"])
+    ## ----- run FstatMetric
+    args1 = common_args.copy()
+    args1["IFOs"] = firstIFO
+    args1["outputMetric"] = outfile1
+    args1["unitsType"] = 0	## SI units
 
-
-## ----- run FstatMetric_v2
-args2 = common_args.copy()
-args2["IFOs"] = firstIFO
-args2["metricType"] = 0	## full-motion numerical phase metric
-args2["outputMetric"] = outfile2
-args2["coords"] = "Freq,Alpha,Delta,f1dot"
-
-(stdout, stderr) = run_code ( code2, args2 )
-
-octstr = load_file ( outfile2 )
-
-met2 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
+    if mettype == "PHASE":
+        args1["metricType"] = 2	## full-motion numerical phase metric
+    elif mettype == "PTOLE":
+        args1["metricType"] = 4	## numerical Ptole-metric
+    else:
+        print ("Invalid metric type '%s' encountered ..." % mettype )
+        sys.exit(1)
 
 
-relerr01 = compare_metrics ( met0["g_ij"], met1["gPh_ij"] )
-relerr02 = compare_metrics ( met0["g_ij"], met2["g_ij"] )
+    (stdout, stderr) = run_code ( code1, args1 )
+
+    octstr = load_file ( outfile1 )
+
+    met1 =  parse_octave_metrics ( octstr )
+    if debug: print "FstatMetric output:\ngPh_ij = %s" % str(met1["gPh_ij"])
+
+
+    ## ----- run FstatMetric_v2
+    args2 = common_args.copy()
+    args2["IFOs"] = firstIFO
+    args2["metricType"] = 0	## full-motion numerical phase metric
+    args2["outputMetric"] = outfile2
+    args2["coords"] = coords
+
+    if mettype == "PHASE":
+        args2["detMotionType"] = 0	## full ephemeris-based spin+orbit motion
+        v1Name = "gPh_ij"
+    elif mettype == "PTOLE":
+        args2["detMotionType"] = 3	## spin + Ptole-orbit detector motion
+        v1Name = "gPtole_ij"
+    else:
+        print ("Invalid metric type '%s' encountered ..." % mettype )
+        sys.exit(1)
+
+    (stdout, stderr) = run_code ( code2, args2 )
+
+    octstr = load_file ( outfile2 )
+
+    met2 =  parse_octave_metrics ( octstr )
+    if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
+
+    ## ---------- compare metrics against each other:
+    relerr01 = compare_metrics ( met0["g_ij"],  met1[v1Name] )
+    relerr02 = compare_metrics ( met0["g_ij"],  met2["g_ij"] )
+    relerr12 = compare_metrics ( met1[v1Name],  met2["g_ij"] )
+
+    print "relerr     = (       maxrel,              rel2norm,               reldet )"
+    print "relerr 0-1 = " + str(relerr01)
+    print "relerr 0-2 = " + str(relerr02)
+    print "relerr 1-2 = " + str(relerr12)
+
+    tolPh = 0.01
+    if ( relerr01[0] > tolPh or relerr02[0] > tolPh or relerr12[0] > tolPh ):
+        print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolPh );
+        sys.exit(1)
+
+## end of loop over metric types
 
 ## ========== 2) compare F-metrics
+coords = "Freq,Alpha,Delta,f1dot"
+print """
+## --------------------------------------------------------------------------------
+## Comparing FSTAT-METRICS between [1]FstatMetric and [2]FstatMetric_v2
+## using coordinates '%s', startTime=%d, duration=%d
+## for IFOs = %s, with weights = %s
+## and Doppler-position: Freq=%f, Alpha=%f, Delta=%f
+## --------------------------------------------------------------------------------""" \
+    % (coords, options.startTime, options.duration, options.IFOs, options.IFOweights, options.Freq, options.Alpha, options.Delta )
 
 ## ----- run FstatMetric
 args1 = common_args.copy()
@@ -327,18 +381,19 @@ met2 =  parse_octave_metrics ( octstr )
 if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["gF_ij"])
 
 
+## ---------- compare F-metrics against each other:
 relerr12 = compare_metrics ( met1["gF_ij"], met2["gF_ij"] )
-
 print "relerr     = (       maxrel,              rel2norm,               reldet )"
-print "relerr 0-1 = " + str(relerr01)
-print "relerr 0-2 = " + str(relerr02)
 print "relerr 1-2 = " + str(relerr12)
 
-
-
-if ( relerr01[0] > tol01 or relerr02[0] > tol02 or relerr12[0] > tol12 ):
-    print ("Relative difference in matrix-components exceeded tolerance!");
+tolF = 0.05
+if ( relerr12[0] > tolF ):
+    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolF );
     sys.exit(1)
-else:
-    sys.exit(0)
+
+
+print ""
+
+
+## ========== 3) compare FstatMetric_v2 vs analytic solutions
 
