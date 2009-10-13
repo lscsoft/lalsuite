@@ -149,6 +149,7 @@ typedef struct
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   REAL8 startTime;	/**< GPS start time of observation */
+  REAL8 refTime;	/**< GPS reference time of Doppler parameters */
   REAL8 duration;	/**< length of observation in seconds */
 
   REAL8 h0;		/**< GW amplitude h_0 */
@@ -319,6 +320,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
+  uvar->refTime = 0;
 
   uvar->projection = 0;
   if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
@@ -346,6 +348,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   LALregREALUserStruct(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
+  LALregREALUserStruct(status, 	refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
   LALregREALUserStruct(status,  duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
@@ -394,6 +397,19 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
+  /* ----- figure out reference time */
+  REAL8 refTime;
+  LIGOTimeGPS refTimeGPS;
+  /* treat special values first */
+  if ( uvar->refTime == 0 )		/* 0 = use startTime */
+    refTime = uvar->startTime;
+  else if ( uvar->refTime == -1 )	/* -1 = use mid-time of observation */
+    refTime = uvar->startTime + 0.5 * uvar->duration;
+  else
+    refTime = uvar->refTime;
+
+  XLALGPSSetREAL8( &refTimeGPS, refTime );
+
   /* ----- get parameter-space point from user-input) */
   cfg->signalParams.Amp.h0 = uvar->h0;
   cfg->signalParams.Amp.cosi = uvar->cosi;
@@ -403,7 +419,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   {
     PulsarDopplerParams *dop = &(cfg->signalParams.Doppler);
     (*dop) = empty_PulsarDopplerParams;
-    dop->refTime = cfg->startTime;
+    dop->refTime = refTimeGPS;
     dop->Alpha = uvar->Alpha;
     dop->Delta = uvar->Delta;
     dop->fkdot[0] = uvar->Freq;
