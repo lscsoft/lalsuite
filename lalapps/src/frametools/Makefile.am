@@ -14,7 +14,7 @@ FRAMEPROGRAMS =
 endif
 
 if LALFRAME
-LALFRAMEPROGRANS = \
+LALFRAMEPROGRAMS = \
 	lalapps_animate \
 	lalapps_calfacs \
 	lalapps_computespec \
