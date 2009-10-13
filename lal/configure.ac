@@ -438,7 +438,6 @@ DVIMKFILE=$srcdir/misc/dvi.mk
 AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
-AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
 AC_OUTPUT
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
