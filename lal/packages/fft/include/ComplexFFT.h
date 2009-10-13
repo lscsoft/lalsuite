@@ -124,7 +124,7 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the complex data.
  * @param[in] fwdflag Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
@@ -146,7 +146,7 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
 /** Returns a new COMPLEX8FFTPlan for a forward transform
- * 
+ *
  * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors.
  * A forward transform performs
@@ -182,7 +182,7 @@ COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl )
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;
@@ -214,7 +214,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
  * and where the minus sign is used if a forward plan is provided as the argument
  * and the plus sign is used if a reverse plan is provided as the argument;
  * here N is the length of the input and output vectors z and Z.
- * 
+ *
  * @param[out] output The complex output data vector Z of length N
  * @param[in] input The input complex data vector z of length N
  * @param[in] plan The FFT plan to use for the transform
@@ -257,7 +257,7 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * re
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the complex data.
  * @param[in] fwdflag Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
@@ -279,7 +279,7 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * re
 COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
 /** Returns a new COMPLEX16FFTPlan for a forward transform
- * 
+ *
  * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors.
  * A forward transform performs
@@ -315,7 +315,7 @@ COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;
@@ -347,7 +347,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  * and where the minus sign is used if a forward plan is provided as the argument
  * and the plus sign is used if a reverse plan is provided as the argument;
  * here N is the length of the input and output vectors z and Z.
- * 
+ *
  * @param[out] output The complex output data vector Z of length N
  * @param[in] input The input complex data vector z of length N
  * @param[in] plan The FFT plan to use for the transform

@@ -263,7 +263,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the real data.
  * @param[in] fwdflag Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
@@ -285,7 +285,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
 REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
 /** Returns a new REAL4FFTPlan for a forward transform
- * 
+ *
  * A REAL4FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector.
  * A forward transform performs
@@ -321,7 +321,7 @@ REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;
@@ -358,7 +358,7 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
  * the length of the output vector is equal to \f$\lfloor N/2\rfloor + 1\f$
  * since the remaining "negative" frequency components can be obtained from the
  * "positive" frequency components.
- * 
+ *
  * @param[out] output The complex data vector z of length [N/2] + 1
  * that results from the transform
  * @param[in] input The real data vector x of length to be transformed
@@ -389,7 +389,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
  * the length of the input vector is equal to \f$\lfloor N/2\rfloor + 1\f$
  * since the remaining "negative" frequency components can be obtained from the
  * "positive" frequency components.
- * 
+ *
  * @param[out] output The real data vector y of length N
  * that results from the transform
  * @param[in] input The complex data vector z of length [N/2] + 1
@@ -421,7 +421,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
  * and where the minus sign is used if a forward plan is provided as the argument
  * and the plus sign is used if a reverse plan is provided as the argument;
  * here N is the length of the input vector x.
- * 
+ *
  * @param[out] output The real output data vector y of length N
  * @param[in] input The input real data vector x of length N
  * @param[in] plan The FFT plan to use for the transform
@@ -487,7 +487,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the real data.
  * @param[in] fwdflag Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
@@ -509,7 +509,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
 /** Returns a new REAL8FFTPlan for a forward transform
- * 
+ *
  * A REAL8FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector.
  * A forward transform performs
@@ -545,7 +545,7 @@ REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl );
  * The reverse transform of the forward transform of some data is
  * equal to N times the original data (we therefore call it a "reverse"
  * transform rather than an "inverse" transform).
- * 
+ *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;
@@ -582,7 +582,7 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
  * the length of the output vector is equal to \f$\lfloor N/2\rfloor + 1\f$
  * since the remaining "negative" frequency components can be obtained from the
  * "positive" frequency components.
- * 
+ *
  * @param[out] output The complex data vector z of length [N/2] + 1
  * that results from the transform
  * @param[in] input The real data vector x of length to be transformed
@@ -613,7 +613,7 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
  * the length of the input vector is equal to \f$\lfloor N/2\rfloor + 1\f$
  * since the remaining "negative" frequency components can be obtained from the
  * "positive" frequency components.
- * 
+ *
  * @param[out] output The real data vector y of length N
  * that results from the transform
  * @param[in] input The complex data vector z of length [N/2] + 1
@@ -645,7 +645,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
  * and where the minus sign is used if a forward plan is provided as the argument
  * and the plus sign is used if a reverse plan is provided as the argument;
  * here N is the length of the input vector x.
- * 
+ *
  * @param[out] output The real output data vector y of length N
  * @param[in] input The input real data vector x of length N
  * @param[in] plan The FFT plan to use for the transform
