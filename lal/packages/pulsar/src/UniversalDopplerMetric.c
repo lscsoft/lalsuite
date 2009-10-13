@@ -1511,6 +1511,7 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/** [out] parsed detect
 
   detInfo->length = numDet;
 
+  totalWeight = 0;
   /* parse input strings and fill detInfo */
   for ( X = 0; X < numDet; X ++ )
     {
@@ -1524,7 +1525,6 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/** [out] parsed detect
       XLALFree ( ifo );
 
       /* parse noise weights if any */
-      totalWeight = 0;
       if ( detWeights )
 	{
 	  if ( 1 != sscanf ( detWeights->data[X], "%lf", &(detInfo->detWeights[X]) ) )
