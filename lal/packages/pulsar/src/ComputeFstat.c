@@ -544,7 +544,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
       COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
-      REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+      REAL4 s_alpha=0, c_alpha=0;/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
       REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
@@ -799,7 +799,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
       COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
-      REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+      REAL4 s_alpha=0, c_alpha=0;/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
       REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
