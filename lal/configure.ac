@@ -8,7 +8,6 @@ AC_CONFIG_FILES([ \
                  lal.pc \
                  lalmetaio.pc \
                  lalsupport.pc \
-                 lal-config \
                  Makefile \
                  debian/Makefile \
                  doc/Makefile \
@@ -135,6 +134,7 @@ AC_CONFIG_FILES([ \
                  packages/support/src/Makefile \
                  packages/support/test/Makefile
 ])
+AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
 AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
 AM_INIT_AUTOMAKE([])
 AH_TOP([
