@@ -386,7 +386,7 @@ relerr12 = compare_metrics ( met1["gF_ij"], met2["gF_ij"] )
 print "relerr     = (       maxrel,              rel2norm,               reldet )"
 print "relerr 1-2 = " + str(relerr12)
 
-tolF = 0.05
+tolF = 0.10
 if ( relerr12[0] > tolF ):
     print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolF );
     sys.exit(1)
