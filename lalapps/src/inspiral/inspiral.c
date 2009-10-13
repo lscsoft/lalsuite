@@ -2606,7 +2606,9 @@ int main( int argc, char *argv[] )
                       bankCurrent->end_time.gpsSeconds;
                     tempTmplt->end_time.gpsNanoSeconds =
                       bankCurrent->end_time.gpsNanoSeconds;
-                    tempTmplt->event_id->id = bankCurrent->event_id->id;
+                    if (bankCurrent->event_id)
+                      tempTmplt->event_id->id = bankCurrent->event_id->id;
+                    else tempTmplt->event_id->id = 0;
 
                     if ( ! eventList ) {
                       UINT4 kmax;
@@ -2646,14 +2648,11 @@ int main( int argc, char *argv[] )
                           &coherentInputData, fcFilterParams->cVec,
                           tempTmplt, 0.5, numPoints / 4 ), &status );
 
-                    LALFree( tempTmplt->event_id );
-                    LALFree( tempTmplt );
-
                     if ( coherentInputData )
                     {
                       cDataForFrame = 1;
                       snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                   "%Ld", bankCurrent->event_id->id );
+                                   "%Ld", tempTmplt->event_id->id );
                       snprintf( coherentInputData->name,
                                    LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
@@ -2674,6 +2673,8 @@ int main( int argc, char *argv[] )
                       LALFree( coherentInputData );
                       coherentInputData = NULL;
                     }
+                    LALFree( tempTmplt->event_id );
+                    LALFree( tempTmplt );
                   }
                 }
 

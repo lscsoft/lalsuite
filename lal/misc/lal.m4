@@ -88,18 +88,6 @@ AC_DEFUN([LAL_WITH_CC],
   ],)
 ])
 
-AC_DEFUN([LAL_ENABLE_FRAME],
-[AC_ARG_ENABLE(
-  [frame],
-  AC_HELP_STRING([--enable-frame],[compile code that requires Frame library [default=yes]]),
-  [ case "${enableval}" in
-      yes) frame=true ;;
-      no)  frame=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
-    esac
-  ], [ frame=true ] )
-])
-
 AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
