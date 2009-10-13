@@ -18,7 +18,16 @@ lalframe-*.tar.gz
 lalframe.pc
 lalframe.spec
 libtool
+src/FrameSeries.c
 src/lalframe-user-env.csh
 src/lalframe-user-env.sh
-src/FrameSeries.c
+test/AggregationTest
+test/FrameCacheTest
+test/FrameDataTest
+test/FrameStreamTest
+test/H1:LSC-AS_Q.???
+test/MakeFrames
+test/Read40mData
+test/ReadGEOData
+test/ReadLHOData
 test/catalog*
