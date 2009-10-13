@@ -89,7 +89,8 @@ typedef struct
   DopplerCoordinateID deriv;		/**< component for single phase-derivative Phi_i compute */
   AM_comp_t amcomp1, amcomp2;		/**< two AM components q_l q_m */
   const PulsarDopplerParams *dopplerPoint;/**< Doppler params to compute metric for */
-  REAL8 startTime;			/**< GPS start time of observation (assumed == reference-time! */
+  REAL8 startTime;			/**< GPS start time of observation */
+  REAL8 refTime;			/**< GPS reference time for pulsar parameters */
   REAL8 Tspan;				/**< length of observation time in seconds */
   const LALDetector *site;		/**< detector site to compute metric for */
   const EphemerisData *edat;		/**< ephemeris data */
@@ -320,9 +321,8 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t posvel = empty_PosVel3D_t;
   vect3 detpos_ecl, detpos_equ;
 
-  REAL8 ttSI, dTSI, dT, tauiSI;
   REAL8 Freq = par->dopplerPoint->fkdot[0];
-  LIGOTimeGPS ttGPS;
+  REAL8 Tspan = par->Tspan;
   static REAL8 kfactinv[] = { 1.0, 1.0/1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0 };	/* 1/k! */
 
   /* get skypos-vector */
@@ -354,25 +354,30 @@ CWPhaseDeriv_i ( double tt, void *params )
   if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
     nn_ecl[2] = 1e-6;
 
-  ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
+  REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
+  LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
 
   if ( XLALDetectorPosVel ( &posvel, &ttGPS, par->site, par->edat, par->detMotionType ) ) {
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", fn);
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
-
   COPY_VECT ( detpos_equ, posvel.pos );
 
   /* convert detector position in ecliptic coordinates */
   equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
 
-  /* correct for time-delay from SSB to detector, neglecting relativistic effects */
-  dTSI = SCALAR(nn_equ, posvel.pos );
-  tauiSI = ttSI + dTSI;			/* SSB time corresponding to tt, for this skyposition nn, in seconds */
-  dT = dTSI / par->Tspan;		/* SSB time-delay in 'natural units' */
+  /* account for referenceTime != startTime */
+  REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
-  REAL8 nNat = Freq * par->Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
+  /* correct for time-delay from SSB to detector, neglecting relativistic effects */
+  REAL8 dTRoemerSI = SCALAR(nn_equ, detpos_equ );
+  REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
+
+  /* barycentric time-delay since reference time, measured in units of Tspan */
+  REAL8 tau = tau0 + tt + dTRoemer;
+
+  REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
 
   switch ( par->deriv )
     {
@@ -428,43 +433,33 @@ CWPhaseDeriv_i ( double tt, void *params )
 
       /* ----- frequency derivatives SI-units ----- */
     case DOPPLERCOORD_FREQ_SI:
-      ret = tt + dT;				/* dPhi/dFreq = 2 * pi * tSSB_i */
-      ret *= LAL_TWOPI * par->Tspan * kfactinv[1];
+    case DOPPLERCOORD_FREQ_NAT:				/* om0 = 2pi f T */
+      ret = tau;					/* in natural units: dPhi/dom0 = tau */
+      if ( par->deriv == DOPPLERCOORD_FREQ_SI )
+        ret *= LAL_TWOPI * Tspan * kfactinv[1];		/* dPhi/dFreq = 2 * pi * tSSB_i */
+
       break;
 
     case DOPPLERCOORD_F1DOT_SI:
-      ret = SQUARE( tt + dT );			/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
-      ret *= LAL_TWOPI * SQUARE(par->Tspan) * kfactinv[2];
+    case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! T^2 */
+      ret = tau * tau;					/* in natural units: dPhi/dom1 = tau^2 */
+      if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
+        ret *= LAL_TWOPI * (Tspan*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
       break;
 
     case DOPPLERCOORD_F2DOT_SI:
-      ret = (tt+dT) * SQUARE( tt + dT );	/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
-      ret *= LAL_TWOPI * par->Tspan * SQUARE(par->Tspan) * kfactinv[3];
+    case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! T^3 */
+      ret =  tau * tau * tau;				/* in natural units: dPhi/dom2 = tau^3 */
+      if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
+        ret *= LAL_TWOPI * (Tspan*Tspan*Tspan) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
       break;
-
 
     case DOPPLERCOORD_F3DOT_SI:
-      ret = SQUARE(tt+dT) * SQUARE( tt + dT );	/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
-      ret *= LAL_TWOPI * SQUARE(par->Tspan) * SQUARE(par->Tspan) * kfactinv[4];
+    case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! T^4 */
+      ret = tau * tau * tau * tau;			/* in natural units: dPhi/dom3 = tau^4 */
+      if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
+        ret *= LAL_TWOPI * (Tspan*Tspan*Tspan*Tspan) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       break;
-
-      /* ----- frequency derivatives natural units ----- */
-    case DOPPLERCOORD_FREQ_NAT:			/* om0 = 2pi f T */
-      ret = tt + dT;				/* dPhi/dom0 = tau_i */
-      break;
-
-    case DOPPLERCOORD_F1DOT_NAT:		/* om1 = 2pi f/2! T^2 */
-      ret = SQUARE( tt + dT );			/* dPhi/dom1 = tau_i^2 */
-      break;
-
-    case DOPPLERCOORD_F2DOT_NAT:		/* om2 = 2pi f/3! T^3 */
-      ret = (tt+dT) * SQUARE( tt + dT );	/* dPhi/dom2 = tau_i^3 */
-      break;
-
-    case DOPPLERCOORD_F3DOT_NAT:		/* om3 = 2pi f/4! T^4 */
-      ret = SQUARE(tt+dT) * SQUARE( tt + dT );	/* dPhi/dom3 = tau_i^4 */
-      break;
-
 
     default:
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", fn, par->deriv );
@@ -836,12 +831,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   startTime = &(metricParams->startTime);
   refTime   = &(metricParams->signalParams.Doppler.refTime);
-  if ( (refTime->gpsSeconds != startTime->gpsSeconds) || (refTime->gpsNanoSeconds != startTime->gpsNanoSeconds) ) {
-    XLALPrintError ("\n%s: Sorry, Doppler Reference time (%d,%d) must be identical to startTime (%d, %d) of observation!\n\n",
-		    fn, refTime->gpsSeconds, refTime->gpsNanoSeconds, startTime->gpsSeconds, startTime->gpsNanoSeconds );
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
-  }
-
 
   dim = metricParams->coordSys.dim;
   coordSys = &(metricParams->coordSys);
@@ -858,7 +847,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* ---------- set up integration parameters ---------- */
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
-  intparams.Tspan = metricParams->Tspan;
+  intparams.refTime   = XLALGPSGetREAL8 ( refTime );
+  intparams.Tspan     = metricParams->Tspan;
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
   intparams.site = ifo;
@@ -1069,11 +1059,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   startTime = &(metricParams->startTime);
   refTime   = &(metricParams->signalParams.Doppler.refTime);
-  if ( (refTime->gpsSeconds != startTime->gpsSeconds) || (refTime->gpsNanoSeconds != startTime->gpsNanoSeconds) ) {
-    XLALPrintError ("\n%s: Sorry, Doppler Reference time (%d,%d) must be identical to startTime (%d, %d) of observation!\n\n",
-		    fn, refTime->gpsSeconds, refTime->gpsNanoSeconds, startTime->gpsSeconds, startTime->gpsNanoSeconds );
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
-  }
 
   dim = metricParams->coordSys.dim;	/* shorthand: number of Doppler dimensions */
   numDet = metricParams->detInfo.length;
@@ -1089,6 +1074,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   intparams.detMotionType = metricParams->detMotionType;
   intparams.dopplerPoint = &metricParams->signalParams.Doppler;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
+  intparams.refTime   = XLALGPSGetREAL8 ( refTime );
   intparams.Tspan = metricParams->Tspan;
   intparams.edat = edat;
 
