@@ -204,14 +204,21 @@ def load_file ( fname ):
 def compare_metrics ( g1_ij, g2_ij ):
     """Compare two metrics and return a measure of aggreement, namely the 3-tuple
     ( maxrel, rel2norm, reldet ), where
-    - maxrel: is the largest relative difference in any component
+    - maxrel: is the largest relative difference in any component.
     - rel2norm: is the 2-norm of the difference-matrix divided by the 2-norm of the second matrix
     - reldet: is the relative difference in determinants
     """
 
     dg_ij = g1_ij - g2_ij
 
-    maxrel =  abs ( dg_ij / g2_ij ).max()
+    ## Note: for the relative component-error, we need to be careful if
+    ## any component is exactly zero: in that case we use the absolute error
+    ## instead:
+    inds0 = ( g2_ij == 0 )
+    g2_ijRel = g2_ij.copy()
+    g2_ijRel[inds0] = 1
+
+    maxrel =  abs ( dg_ij / g2_ijRel ).max()
 
     rel2norm = sqrt ( norm( dg_ij, 2 ) / norm ( g2_ij, 2 ) );
 
@@ -392,8 +399,65 @@ if ( relerr12[0] > tolF ):
     sys.exit(1)
 
 
-print ""
-
-
 ## ========== 3) compare FstatMetric_v2 vs analytic solutions
+coords = "Freq_Nat,f1dot_Nat,f2dot_Nat,f3dot_Nat"
+print """
+## --------------------------------------------------------------------------------
+## Comparing fkdot PHASE-METRICS between [2]FstatMetric_v2 and [3]analytic solution
+## using coordinates '%s', startTime=%d, duration=%d
+## --------------------------------------------------------------------------------""" \
+    % (coords, options.startTime, options.duration )
 
+## ----- run FstatMetric_v2 with refTime == startTime
+args2 = common_args.copy()
+args2["IFO"] = firstIFO
+args2["metricType"] = 0	## only compute phase-metric
+args2["outputMetric"] = outfile2
+args2["coords"] = coords
+
+args2["refTime"] = 0	## ==> refTime == startTime
+(stdout, stderr) = run_code ( code2, args2 )
+octstr = load_file ( outfile2 )
+met2 =  parse_octave_metrics ( octstr )
+if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
+
+gStart_2 = met2["g_ij"]
+
+## ----- run FstatMetric_v2 with refTime == mid-time of observation
+args2["refTime"] = -1
+(stdout, stderr) = run_code ( code2, args2 )
+octstr = load_file ( outfile2 )
+met2 =  parse_octave_metrics ( octstr )
+if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
+
+gMid_2 = met2["g_ij"]
+
+## analytic spin-metric for comparison
+gStart_3 = matrix ( [ [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 ], \
+                      [ 1.0/12, 4.0/45, 1.0/12, 8.0/105], \
+                      [ 3.0/40, 1.0/12, 9.0/112,3.0/40 ], \
+                      [ 1.0/15, 8.0/105,3.0/40,16.0/225]  \
+                          ] );
+
+gMid_3 = matrix ( [ [ 1.0/12,       0,   1.0/80,       0 ],  \
+                    [      0, 1.0/180,        0,  1.0/840],	\
+                    [ 1.0/80,       0,  1.0/448,       0 ],	\
+                    [      0, 1.0/840,        0, 1.0/3600]   \
+                        ] );
+
+
+## compare metrics
+relerrStart_23 = compare_metrics ( gStart_2, gStart_3 )
+relerrMid_23 = compare_metrics ( gMid_2, gMid_3 )
+print "relerr          = (       maxrel,              rel2norm,               reldet )"
+print "relerrStart 2-3 = " + str(relerrStart_23)
+print "relerrMid 2-3   = " + str(relerrMid_23)
+
+tolSpin = 0.01
+if ( relerrStart_23[0] > tolSpin or relerrMid_23[0] > tolSpin ):
+    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolSpin );
+    sys.exit(1)
+
+
+print ""
+sys.exit(0)
