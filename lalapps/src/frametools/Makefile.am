@@ -32,6 +32,8 @@ lalapps_frview_SOURCES = view.c
 else
 LALFRAMEMETAIOPROGRAMS =
 endif
+else
+LALFRAMEMETAIOPROGRAMS =
 endif
 
 bin_PROGRAMS = \
