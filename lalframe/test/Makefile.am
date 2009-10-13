@@ -76,8 +76,10 @@ MOSTLYCLEANFILES = *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
 CLEANFILES = catalog catalog.test H-H1_LSC_AS_Q-600000120-60.gwf
 
 catalog.test:
-	$(srcdir)/mkcatalog.sh catalog.test $(srcdir) $(srcdir)
-	echo "X EMPTY 0 0 file:///dev/null" >> catalog.test
+	@echo "creating" $@
+	@$(srcdir)/mkcatalog.sh catalog.test $(srcdir) $(srcdir)
+	@echo "X EMPTY 0 0 file:///dev/null" >> catalog.test
 
 catalog:
-	$(srcdir)/mkcatalog.sh catalog $(srcdir) $(pkgdatadir)
+	@echo "creating" $@
+	@$(srcdir)/mkcatalog.sh catalog $(srcdir) $(pkgdatadir)
