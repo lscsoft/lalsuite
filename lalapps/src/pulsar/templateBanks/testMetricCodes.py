@@ -206,7 +206,12 @@ def load_file ( fname ):
 
 ## ----- function to compare two metrics and return measures of aggreement
 def compare_metrics ( g1_ij, g2_ij ):
-    """Compare two metrics and return measures of aggreement"""
+    """Compare two metrics and return a measure of aggreement, namely the 3-tuple
+    ( maxrel, rel2norm, reldet ), where
+    - maxrel: is the largest relative difference in any component
+    - rel2norm: is the 2-norm of the difference-matrix divided by the 2-norm of the second matrix
+    - reldet: is the relative difference in determinants
+    """
 
     dg_ij = g1_ij - g2_ij
 
@@ -289,10 +294,6 @@ if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
 relerr01 = compare_metrics ( met0["g_ij"], met1["gPh_ij"] )
 relerr02 = compare_metrics ( met0["g_ij"], met2["g_ij"] )
 
-print "relerr 0-1 = " + str(relerr01)
-print "relerr 0-2 = " + str(relerr02)
-
-
 ## ========== 2) compare F-metrics
 
 ## ----- run FstatMetric
@@ -328,7 +329,12 @@ if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["gF_ij"])
 
 relerr12 = compare_metrics ( met1["gF_ij"], met2["gF_ij"] )
 
+print "relerr     = (       maxrel,              rel2norm,               reldet )"
+print "relerr 0-1 = " + str(relerr01)
+print "relerr 0-2 = " + str(relerr02)
 print "relerr 1-2 = " + str(relerr12)
+
+
 
 if ( relerr01[0] > tol01 or relerr02[0] > tol02 or relerr12[0] > tol12 ):
     print ("Relative difference in matrix-components exceeded tolerance!");
