@@ -340,8 +340,6 @@ void
 printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVariables *config)
 {
   REAL8Vector *metric = NULL;
-  REAL8Vector *physmetric = NULL;
-  UINT4 dim, a, b;
 
   INITSTATUS (status, "printFlatPulsarMetric", rcsid);
   ATTATCHSTATUSPTR (status);
