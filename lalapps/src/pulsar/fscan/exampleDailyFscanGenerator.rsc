@@ -1,13 +1,14 @@
 # exampleFscanGenerator.rsc
 
 # Set tcl list with list of channels, frame types, etc....
-# Each item in the list contains: channel_name channel_type IFO input_type output_sft_dir comparison_chan comparison_snr comparison_delta_dir 
+# Each item in the list contains: channel_name channel_type IFO input_type output_sft_dir comparison_chan comparison_snr comparison_delta_dir knee_freq sft_time_baseline start_freq band sub_band extra_time_for_data_find freq_res alternative_dir_name
 # If comparison_delta_dir is 0 compare with current fscans, if -1 compare with last previous set of fscans, etc...
 set ::masterList {\
-{H1:LSC-STRAIN ADC_REAL8 H1 H1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1}\
-{L1:LSC-STRAIN ADC_REAL8 L1 L1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1}\
-{V1:LSC-STRAIN ADC_REAL8 V1 V1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1}\
-{H0:PEM-BSC9_MAGX ADC_INT2 H1 RDS_R_L1 default H2:LSC-STRAIN 4 0}\
+{H1:LSC-STRAIN ADC_REAL8 H1 H1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1 30 1800 50 951 50 64 0.1 default}\
+{L1:LSC-STRAIN ADC_REAL8 L1 L1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1 30 1800 50 951 50 64 0.1 default}\
+{V1:h_16384Hz  ADC_REAL4 V1 V1_RDS_C03_L2 default H2:LSC-STRAIN 4 -1 30 1800 50 951 50 64 0.1 default}\
+{V1:h_16384Hz  ADC_REAL4 V1 V1_RDS_C03_L2 default none 0 0 0 1800 9 111 10 64 0.1 V1_h_16384Hz_lowFreq}\
+{H0:PEM-BSC9_MAGX ADC_INT2 H1 RDS_R_L1 default H2:LSC-STRAIN 4 0 30 1800 50 951 50 64 0.1 default}\
 }
 
 # If fixedComparison is 1 then used then ignore the comparison delta dir in the masterList but compare using fixd values: 

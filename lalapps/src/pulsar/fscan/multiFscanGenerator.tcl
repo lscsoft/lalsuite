@@ -360,13 +360,27 @@ set sftOutputDirList [list ];
 set comparisonChanList [list ];
 set comparisonSNRList [list ];
 set comparisonDeltaDirList [list ];
+set kneeFreqList [list ];
+set sftTimeBaseList [list ];
+set startFreqList [list ];
+set bandList [list ];
+set subBandList [list ];
+set extraTimeList [list ];
+set freqResList [list ];
+set chanAltDirName "";
 
 #for {set i 0} {$i < [llength $::masterList]} {incr i} {}
 foreach item $::masterList {
     puts $item
     set thisChan [lindex $item 0]
     lappend channelList $thisChan
-    lappend chanDirList [join [split $thisChan ":"] "_"]
+    set chanAltDirName [lindex $item 15];
+    # If an alternative name for the channel directory is not == default, use this rather than the channel name itself as the directory for this channel.
+    if {$chanAltDirName == "default"} {
+      lappend chanDirList [join [split $thisChan ":"] "_"]
+    } else {
+      lappend chanDirList $chanAltDirName
+    }
     lappend chanTypeList [lindex $item 1]
     lappend ifoList [lindex $item 2]
     lappend frameTypeList [lindex $item 3]
@@ -374,6 +388,13 @@ foreach item $::masterList {
     lappend comparisonChanList [lindex $item 5]
     lappend comparisonSNRList [lindex $item 6]
     lappend comparisonDeltaDirList [lindex $item 7]
+    lappend kneeFreqList [lindex $item 8];
+    lappend sftTimeBaseList [lindex $item 9];
+    lappend startFreqList [lindex $item 10];
+    lappend bandList [lindex $item 11];
+    lappend subBandList [lindex $item 12];
+    lappend extraTimeList [lindex $item 13];
+    lappend freqResList [lindex $item 14];
 }
 
 #puts "";
@@ -463,8 +484,9 @@ cd $thisOutputDir
 puts $cmd; puts "";
 
 for {set i 0} {$i < [llength $::masterList]} {incr i} {
+
     set thisChan [lindex $channelList $i];
-    set thisChanDir [lindex $chanDirList $i]
+    set thisChanDir [lindex $chanDirList $i];
     set thisChanType [lindex $chanTypeList $i];
     set thisIFO  [lindex $ifoList $i];
     set thisFrameType [lindex $frameTypeList $i];
@@ -472,6 +494,14 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     set thisComparisonChan [lindex $comparisonChanList $i];
     set thisComparisonSNR [lindex $comparisonSNRList $i];
     set thisComparisonDeltaDir [lindex $comparisonDeltaDirList $i];
+    set thisKneeFreq [lindex  $kneeFreqList $i];
+    set thisSFTTimeBase [lindex $sftTimeBaseList $i];
+    set thisStartFreq [lindex  $startFreqList $i];
+    set thisBand [lindex $bandList $i];
+    set thisSubBand [lindex $subBandList $i];
+    set thisExtraTime [lindex $extraTimeList $i];
+    set thisFreqRes [lindex $freqResList $i];
+
     set cmd "exec mkdir $thisChanDir";
     eval $cmd
 
@@ -494,11 +524,11 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     if {($moveSFTsFromDirList > "") && ($moveSFTsFromSuffix > "")} {
        # Do not give -C option to create SFTs, instead move SFTs to run on.
        moveSFTs $thisDir $moveSFTsFromDirList $moveSFTsFromSuffix $thisSFTOutDir $startTime $endTime $thisChanDir;
-       append cmd " -s $startTime -L $duration -G $thisG -d $thisFrameType -k 30 -T 1800 -u $thisChanType -i $thisIFO";
+       append cmd " -s $startTime -L $duration -G $thisG -d $thisFrameType -k $thisKneeFreq -T $thisSFTTimeBase -u $thisChanType -i $thisIFO";
     } else {
-       append cmd " -s $startTime -L $duration -G $thisG -d $thisFrameType -k 30 -T 1800 -C -u $thisChanType -i $thisIFO";
+       append cmd " -s $startTime -L $duration -G $thisG -d $thisFrameType -k $thisKneeFreq -T $thisSFTTimeBase -C -u $thisChanType -i $thisIFO";
     }
-    append cmd " -p $thisSFTOutDir -N $thisChan -F 50 -B 951 -b 50";
+    append cmd " -p $thisSFTOutDir -N $thisChan -F $thisStartFreq -B $thisBand -b $thisSubBand";
     append cmd " -X fscan$thisChanDir -o /usr1/pulsar"
     append cmd " -O $thisDir -m $matlabPath"
     append cmd " -W $thisDir/fscan$thisG.html"
@@ -506,7 +536,7 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
        # Use the segFile that goes with thisIFO.
        set segFile $segFileList($thisIFO);
     }
-    append cmd " -x 64 -v 2 -g $segFile --freq-res 0.1"
+    append cmd " -x $thisExtraTime -v 2 -g $segFile --freq-res $thisFreqRes"
     # Set up comparison with another fscan:
     if {$thisComparisonChan != "none"} {
        set thisComparisonChan [split $thisComparisonChan ":"]
