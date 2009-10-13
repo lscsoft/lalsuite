@@ -39,7 +39,7 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 .vcsinfo:
 	@touch .vcsinfo
-LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
+LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo git_version
 	@echo "creating LALVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 	./git_version --sed $$sourced $$buildd
