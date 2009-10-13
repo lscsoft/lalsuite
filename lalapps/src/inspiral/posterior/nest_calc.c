@@ -427,8 +427,7 @@ void calcCVM(gsl_matrix *cvm, LALMCMCParameter **samples,UINT4 N)
 			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
 			gsl_matrix_set(cvm,j,j,1.0);
 			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
-		} 
-
+		}
 	}
 	
 	/* the other half */

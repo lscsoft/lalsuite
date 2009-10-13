@@ -773,7 +773,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 		trueLat = (REAL8)injTable->latitude;
 	}
 	/*else*/   {
-		if(grb_time!=0) grb_time = manual_end_time;
+		grb_time = manual_end_time;
 		if(manual_RA!=-4200.0) trueLong = manual_RA;
 		if(manual_dec!=-4200.0) trueLat = manual_dec;
     }
