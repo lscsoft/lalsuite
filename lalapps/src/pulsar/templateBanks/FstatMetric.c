@@ -1247,7 +1247,6 @@ getMultiPhaseDerivs (LALStatus *status,
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   MultiPhaseDerivs *mdPhi = NULL;
   REAL8 TspanInv;
-  REAL8 eps, zEcl[3], tmp[3], proj;
 
   INITSTATUS (status, "getMultiPhaseDerivs", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1336,32 +1335,11 @@ getMultiPhaseDerivs (LALStatus *status,
 	    case PHASE_PTOLE: /* use Ptolemaic orbital approximation */
 	      getPtolePosVel( &posvel, ti, times.tAutumn );
 	      COPY_VECT ( rX, posvel.pos );
-	      /* add on the detector-motion */
+	      /* add on the detector-motion due to the Earth's spin */
 
-	      /* ecliptic z-axis in equatorial coords */
-	      eps = 0.409092804;	/* Earth inclination to ecliptic in radians (23.439 degrees) */
-	      zEcl[0] = 0;
-	      zEcl[1] = -sin(eps);
-	      zEcl[2] =  cos(eps);
-
-	      /* projected out z-motion wrt to ecliptic plane */
-	      tmp[0] = rDet[0];
-	      tmp[1] = cos(eps) * rDet[1];
-	      tmp[2] = sin(eps) * rDet[1];
-
-	      /* projected pure ecliptic-z motion */
-	      proj = SCALAR ( zEcl, rDet );
-	      tmp[0] = proj * zEcl[0];
-	      tmp[1] = proj * zEcl[1];
-	      tmp[2] = proj * zEcl[2];
-
-	      /*
-		 printf ("%f \t %f %f %f \t %f %f %f\n", ti, rX[0], rX[1], rX[2], tmp[0], tmp[1], tmp[2] );
-	      */
-
-	      rX[0] += tmp[0];
-	      rX[1] += tmp[1];
-	      rX[2] += tmp[2];
+	      rX[0] += rDet[0];
+	      rX[1] += rDet[1];
+	      rX[2] += rDet[2];
 
 	      break;
 	    default:
