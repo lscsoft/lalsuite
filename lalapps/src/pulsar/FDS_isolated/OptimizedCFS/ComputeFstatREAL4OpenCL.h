@@ -29,9 +29,6 @@
 #endif
 
 #if USE_OPENCL_KERNEL
-#ifdef _WIN32
-#include <CL/cl.h>
-#endif
 #if defined(__APPLE__) || defined(__MACOSX)
 #include <OpenCL/cl.h>
 #else
