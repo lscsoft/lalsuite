@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   time_info.gps.gpsNanoSeconds =         0;
 
   make_gridding(&s, &g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps), time_info.accuracy);
+                &ephem, &(time_info.gps));
 
   print_ra_grid(&g, "ifo_ra_grid.txt");
   print_dec_grid(&g, "ifo_dec_grid.txt");

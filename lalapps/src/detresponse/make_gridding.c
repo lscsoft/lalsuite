@@ -63,9 +63,7 @@ void
 make_gridding(LALStatus *s, gridding_t *g, 
               UINT4 num_ra, gridding_geom_t ra_geom, 
               UINT4 num_dec, gridding_geom_t dec_geom,
-              EphemerisData *e,
-              LIGOTimeGPS   *gps,
-              LALLeapSecAccuracy acc)
+              EphemerisData *e, LIGOTimeGPS   *gps )
 {
   UINT4 i, j;
   REAL8 pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
