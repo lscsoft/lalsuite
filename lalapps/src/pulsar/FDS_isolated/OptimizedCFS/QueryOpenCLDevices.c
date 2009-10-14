@@ -8,7 +8,7 @@
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
-#endif 
+#endif
 
 main() {
   cl_int err = 0;
@@ -41,7 +41,7 @@ main() {
     return -1;
   }
   printf("Found %d platforms:\n", num_platforms);
-  
+
   /* loop over available platforms */
   for(platform_id = 0; platform_id < num_platforms; platform_id++) {
     printf("  Platform %d:\n", platform_id);
