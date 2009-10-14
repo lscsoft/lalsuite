@@ -58,7 +58,7 @@ AC_PROG_LIBTOOL
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  AC_CHECK_PROGS([SW_VERS],[sw_vers])
   if test "x$SW_VERS" != "x"; then
     AC_MSG_CHECKING([Mac OS X version])
     MACOSX_VERSION=`$SW_VERS -productVersion`
@@ -98,7 +98,7 @@ else
   AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
   AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
 fi
-AM_CONDITIONAL([LALSUPPORT], [test x$lalsupport = xtrue])
+AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -112,7 +112,7 @@ fi
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
