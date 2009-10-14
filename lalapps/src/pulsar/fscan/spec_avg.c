@@ -108,8 +108,6 @@ int main(int argc, char **argv)
     
     /* these varibales are for converting GPS seconds into UTC time and date*/
     LALUnixDate       date;
-    /*LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;*/
-    /*LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;*/
     CHARVector        *timestamp = NULL;
     CHARVector	     *year_date = NULL; /*cg; creates a char vector*/
     REAL8Vector     *timestamps=NULL;
@@ -523,18 +521,7 @@ for (j=0;j<nSFT;j++)
         /* set up RA, DEC, and distance variables for LALBarycenter*/
         baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
         baryinput.alpha = pulsarParams.ra + dtpos*pulsarParams.pmra/cos(baryinput.delta);
-        
-        /* set leap seconds noting that for all runs prior to S5 that the number
-        of leap seconds was 13, 1 leap seconds was added on 31st
-        Dec 2005 24:00:00 i.e. GPS 820108813, and another was added on 31st
-        Dec 2008 24:00:00 i.e. GPS 91480321 */
-        if(cur_epoch <= 820108813)
-            (*edat).leap = 13;
-        else if(cur_epoch <= 914803214)
-            (*edat).leap = 14;
-        else
-            (*edat).leap = 15;
-        
+
         t2=cur_epoch+1;
     
         baryinput2 = baryinput;
