@@ -25,12 +25,12 @@ export LALMETAIO_LIBS
 LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
 LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
 export LALFRAME_LIBS LALFRAME_CFLAGS
-LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
-LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
-export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
 LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
 LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
 export LALXML_LIBS LALXML_CFLAGS
+LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
+LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
+export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
 
 if test "$metaio" = "true" ; then
   LIBS_save="$LIBS"
