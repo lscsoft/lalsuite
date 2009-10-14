@@ -6,7 +6,7 @@ EXTRA_DIST = \
 	LALHybridTest.c \
 	LALInspiralSpinningBHBinariesTest.c \
 	LALInspiralTest.c \
-	LALSTPNWaveFormTest.c \
+	LALSTPNWaveformTest.c \
 	TestRingdown.c
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep
