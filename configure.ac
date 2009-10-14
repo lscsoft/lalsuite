@@ -35,10 +35,10 @@ export LALXML_LIBS LALXML_CFLAGS
 if test "$metaio" = "true" ; then
 	LIBS_save="$LIBS"
 	CPPFLAGS_save="$CPPFLAGS"
-	PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
+	PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
 	LIBS="$METAIO_LIBS $LIBS"
 	CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-	AC_SEARCH_LIBS(MetaioOpen, metaio, , [AC_MSG_WARN(disabling metaio support)]
+	AC_SEARCH_LIBS([MetaioOpen],[metaio],,[AC_MSG_WARN([disabling metaio support])]
 		[metaio="false"])
 	CPPFLAGS="$CPPFLAGS_save"
 	LIBS="$LIBS_save"
