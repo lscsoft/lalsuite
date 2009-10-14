@@ -59,7 +59,7 @@ AC_CHECK_PROGS([M4],[gm4 m4],[m4])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  AC_CHECK_PROGS([SW_VERS],[sw_vers])
   if test "x$SW_VERS" != "x"; then
     AC_MSG_CHECKING([Mac OS X version])
     MACOSX_VERSION=`$SW_VERS -productVersion`
@@ -91,7 +91,7 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
 
-PKG_CHECK_MODULES(LIBFRAME, libframe, [ true ], [ false ])
+PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
 LIBS="$LIBS $LIBFRAME_LIBS"
 AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_WARN(cannot find frame library)])
@@ -125,7 +125,7 @@ fi
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
