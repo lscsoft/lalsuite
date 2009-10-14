@@ -24,8 +24,9 @@
 ## Given that they represent 3 very different implementations of
 ## metric calculations, this provides a very powerful consistency test
 
-import os
-from pylab import *
+import os, sys
+##from pylab import *
+from numpy import *
 from optparse import OptionParser
 import subprocess
 
@@ -134,56 +135,24 @@ def ConvertList2SquareMatrix ( slist ):
 
 
 ## ----- function to parse the octave-format metric files written by FstatMetric[_v2]
-def parse_octave_metrics ( octstring ):
-    """Parse octave-format metrics from the given string, as written by FstatMetric[_v2]
-    This returns a dictionary with the metric names as keys
+def parse_octave_metrics ( octstring, metric_name="g_ij" ):
+    """Parse octave-format metric of given name from the given octave-string, as written by FstatMetric[_v2]
+    Returns a square array containing the metric, raises NameError if that metric_name could not be parsed.
     """
+
     content = octstring.replace("];","]").replace(";", ",").replace("%", "#").lstrip()
 
     exec ( content )	## this provides python *lists* for all metrics found in the file
 
-    ret = {}	## return-dictionary
+    stmt = "g_ij = ConvertList2SquareMatrix( %s )" % metric_name
 
     try:
-        gPh_ij = ConvertList2SquareMatrix( gPh_ij )
-        ret["gPh_ij"] = gPh_ij
+        exec(stmt)
     except NameError:
-        pass
+        print ("Failed to read metric named '%s' from input octave string." % metric_name )
+        raise
 
-    try:
-        g_ij = ConvertList2SquareMatrix( g_ij )
-        ret["g_ij"] = g_ij
-    except NameError:
-        pass
-
-    try:
-        gOrb_ij = ConvertList2SquareMatrix( gOrb_ij )
-        ret["gOrb_ij"] = gOrb_ij
-    except NameError:
-        pass
-
-    try:
-        gPtole_ij = ConvertList2SquareMatrix( gPtole_ij )
-        ret["gPtole_ij"] = gPtole_ij
-    except NameError:
-        pass
-
-    try:
-        gF_ij   = ConvertList2SquareMatrix( gF_ij )
-        gFav_ij = ConvertList2SquareMatrix( gFav_ij )
-        m1_ij   = ConvertList2SquareMatrix( m1_ij )
-        m2_ij   = ConvertList2SquareMatrix( m2_ij )
-        m3_ij   = ConvertList2SquareMatrix( m3_ij )
-
-        ret["gF_ij"] =  gF_ij
-        ret["gFav_ij"] = gFav_ij
-        ret["m1_ij"] = m1_ij
-        ret["m2_ij"] = m2_ij
-        ret["m3_ij"] = m3_ij
-    except NameError:
-        pass
-
-    return ret
+    return g_ij
 
 
 ## ----- mini-function to load a text-file into a string
@@ -220,14 +189,14 @@ def compare_metrics ( g1_ij, g2_ij ):
 
     maxrel =  abs ( dg_ij / g2_ijRel ).max()
 
-    rel2norm = sqrt ( norm( dg_ij, 2 ) / norm ( g2_ij, 2 ) );
+    rel2norm = sqrt ( linalg.norm( dg_ij, 2 ) / linalg.norm ( g2_ij, 2 ) );
 
-    detg1 = det(g1_ij)
-    detg2 = det(g2_ij)
+    detg1 = linalg.det(g1_ij)
+    detg2 = linalg.det(g2_ij)
 
     if debug:
         print ("det(g1) = %g, det(g2) = %g" % ( detg1, detg2 ) )
-        print ("cond(g1)= %g, cond(g2) = %g" % ( cond(g1_ij), cond(g2_ij) ) )
+        print ("cond(g1)= %g, cond(g2) = %g" % ( linalg.cond(g1_ij), linalg.cond(g2_ij) ) )
 
     reldet = abs(detg1 - detg2) / abs ( detg2 )
 
@@ -279,8 +248,8 @@ for mettype in ["PHASE", "PTOLE"]:
 
     (stdout, stderr) = run_code ( code0, args0 )
 
-    met0 = parse_octave_metrics ( stdout )
-    if debug: print "getMetric output:\ng_ij = %s" % str(met0["g_ij"])
+    g0_ij = parse_octave_metrics ( stdout )
+    if debug: print "getMetric output:g_ij =\n%s" % str(g0_ij)
 
     ## ----- run FstatMetric
     args1 = common_args.copy()
@@ -290,8 +259,10 @@ for mettype in ["PHASE", "PTOLE"]:
 
     if mettype == "PHASE":
         args1["metricType"] = 2	## full-motion numerical phase metric
+        v1Name = "gPh_ij"
     elif mettype == "PTOLE":
         args1["metricType"] = 4	## numerical Ptole-metric
+        v1Name = "gPtole_ij"
     else:
         print ("Invalid metric type '%s' encountered ..." % mettype )
         sys.exit(1)
@@ -301,8 +272,8 @@ for mettype in ["PHASE", "PTOLE"]:
 
     octstr = load_file ( outfile1 )
 
-    met1 =  parse_octave_metrics ( octstr )
-    if debug: print "FstatMetric output:\ngPh_ij = %s" % str(met1["gPh_ij"])
+    g1_ij =  parse_octave_metrics ( octstr, v1Name )
+    if debug: print "FstatMetric output: %s =\n%s" % ( v1Name, str(g1_ij) )
 
 
     ## ----- run FstatMetric_v2
@@ -314,10 +285,8 @@ for mettype in ["PHASE", "PTOLE"]:
 
     if mettype == "PHASE":
         args2["detMotionType"] = 0	## full ephemeris-based spin+orbit motion
-        v1Name = "gPh_ij"
     elif mettype == "PTOLE":
         args2["detMotionType"] = 3	## spin + Ptole-orbit detector motion
-        v1Name = "gPtole_ij"
     else:
         print ("Invalid metric type '%s' encountered ..." % mettype )
         sys.exit(1)
@@ -326,13 +295,13 @@ for mettype in ["PHASE", "PTOLE"]:
 
     octstr = load_file ( outfile2 )
 
-    met2 =  parse_octave_metrics ( octstr )
-    if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
+    g2_ij =  parse_octave_metrics ( octstr, "g_ij" )
+    if debug: print "FstatMetric_v2 output:g_ij = \n%s" % str(g2_ij)
 
     ## ---------- compare metrics against each other:
-    relerr01 = compare_metrics ( met0["g_ij"],  met1[v1Name] )
-    relerr02 = compare_metrics ( met0["g_ij"],  met2["g_ij"] )
-    relerr12 = compare_metrics ( met1[v1Name],  met2["g_ij"] )
+    relerr01 = compare_metrics ( g0_ij,  g1_ij )
+    relerr02 = compare_metrics ( g0_ij,  g2_ij )
+    relerr12 = compare_metrics ( g1_ij,  g2_ij )
 
     print "relerr     = (       maxrel,              rel2norm,               reldet )"
     print "relerr 0-1 = " + str(relerr01)
@@ -369,8 +338,8 @@ args1["unitsType"] = 0	## SI units
 
 octstr = load_file ( outfile1 )
 
-met1 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric output:\ngF_ij = %s" % str(met1["gF_ij"])
+gF1_ij =  parse_octave_metrics ( octstr, "gF_ij" )
+if debug: print "FstatMetric output: gF_ij = \n%s" % str(gF1_ij)
 
 ## ----- run FstatMetric_v2
 args2 = common_args.copy()
@@ -384,12 +353,12 @@ args2["coords"] = "Freq,Alpha,Delta,f1dot"
 
 octstr = load_file ( outfile2 )
 
-met2 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["gF_ij"])
+gF2_ij =  parse_octave_metrics ( octstr, "gF_ij" )
+if debug: print "FstatMetric_v2 output: g_ij = \n%s" % str(gF2_ij)
 
 
 ## ---------- compare F-metrics against each other:
-relerr12 = compare_metrics ( met1["gF_ij"], met2["gF_ij"] )
+relerr12 = compare_metrics ( gF1_ij, gF2_ij )
 print "relerr     = (       maxrel,              rel2norm,               reldet )"
 print "relerr 1-2 = " + str(relerr12)
 
@@ -418,37 +387,34 @@ args2["coords"] = coords
 args2["refTime"] = 0	## ==> refTime == startTime
 (stdout, stderr) = run_code ( code2, args2 )
 octstr = load_file ( outfile2 )
-met2 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
-
-gStart_2 = met2["g_ij"]
+gStart2_ij =  parse_octave_metrics ( octstr, "g_ij" )
+if debug: print "refTime=startTime: FstatMetric_v2 output: g_ij = \n%s" % str(gStart2_ij)
 
 ## ----- run FstatMetric_v2 with refTime == mid-time of observation
 args2["refTime"] = -1
 (stdout, stderr) = run_code ( code2, args2 )
 octstr = load_file ( outfile2 )
-met2 =  parse_octave_metrics ( octstr )
-if debug: print "FstatMetric_v2 output:\ng_ij = %s" % str(met2["g_ij"])
-
-gMid_2 = met2["g_ij"]
+gMid2_ij =  parse_octave_metrics ( octstr, "g_ij" )
+if debug: print "refTime=midTime: FstatMetric_v2 output: g_ij = \n%s" % str(gMid2_ij)
 
 ## analytic spin-metric for comparison
-gStart_3 = matrix ( [ [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 ], \
+gStart3_ij = matrix ( [ [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 ], \
                       [ 1.0/12, 4.0/45, 1.0/12, 8.0/105], \
                       [ 3.0/40, 1.0/12, 9.0/112,3.0/40 ], \
                       [ 1.0/15, 8.0/105,3.0/40,16.0/225]  \
                           ] );
+if debug: print "refTime=startTime: analytic spin-metric: g_ij = \n%s" % str(gStart3_ij)
 
-gMid_3 = matrix ( [ [ 1.0/12,       0,   1.0/80,       0 ],  \
+gMid3_ij = matrix ( [ [ 1.0/12,       0,   1.0/80,       0 ],  \
                     [      0, 1.0/180,        0,  1.0/840],	\
                     [ 1.0/80,       0,  1.0/448,       0 ],	\
                     [      0, 1.0/840,        0, 1.0/3600]   \
                         ] );
-
+if debug: print "refTime=midTime: analytic spin-metric: g_ij = \n%s" % str(gMid3_ij)
 
 ## compare metrics
-relerrStart_23 = compare_metrics ( gStart_2, gStart_3 )
-relerrMid_23 = compare_metrics ( gMid_2, gMid_3 )
+relerrStart_23 = compare_metrics ( gStart2_ij, gStart3_ij )
+relerrMid_23 = compare_metrics ( gMid2_ij, gMid3_ij )
 print "relerr          = (       maxrel,              rel2norm,               reldet )"
 print "relerrStart 2-3 = " + str(relerrStart_23)
 print "relerrMid 2-3   = " + str(relerrMid_23)
