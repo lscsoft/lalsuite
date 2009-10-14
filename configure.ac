@@ -42,8 +42,6 @@ if test "$metaio" = "true" ; then
     [metaio="false"])
   CPPFLAGS="$CPPFLAGS_save"
   LIBS="$LIBS_save"
-  LIBS_save="$LIBS"
-  CPPFLAGS_save="$CPPFLAGS"
 fi
 
 if test "$metaio" = "true" ; then
