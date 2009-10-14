@@ -826,7 +826,7 @@ if ( vrbflg)
         "%d specified\n", numIFO );
     exit ( 1 );
   }
-  
+ 
   if ( numIFO > 2 && vrbflg )
   {
     if ( !multiIfoCoinc )
