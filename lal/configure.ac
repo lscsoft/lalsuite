@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT([lal],[6.4],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
+AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_FILES([ \
@@ -141,8 +141,8 @@ AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
 ])
-AH_TEMPLATE([LAL_SIZEOF_DOUBLE], [The number of bytes in a double.])
-AH_TEMPLATE([LAL_SIZEOF_FLOAT], [The number of bytes in a float.])
+AH_TEMPLATE([LAL_SIZEOF_DOUBLE],[The number of bytes in a double.])
+AH_TEMPLATE([LAL_SIZEOF_FLOAT],[The number of bytes in a float.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])
@@ -176,18 +176,18 @@ lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 # This sed script is more complex than it needs to be in order to prevent CVS
 # from corrupting it.
 lal_cvs_tag=`echo '$Name$' | sed -e 's? \\$\$??' -e 's?^\\$Name: ??'`
-AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
-AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
-AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
-AC_DEFINE_UNQUOTED(LAL_VERSION_MICRO, $lal_version_micro, [LAL Version Micro Number] )
-AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
-AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
-AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
+AC_DEFINE_UNQUOTED([LAL_VERSION],["$VERSION"],[LAL Version])
+AC_DEFINE_UNQUOTED([LAL_VERSION_MAJOR],[$lal_version_major],[LAL Version Major Number])
+AC_DEFINE_UNQUOTED([LAL_VERSION_MINOR],[$lal_version_minor],[LAL Version Minor Number])
+AC_DEFINE_UNQUOTED([LAL_VERSION_MICRO],[$lal_version_micro],[LAL Version Micro Number])
+AC_DEFINE_UNQUOTED([LAL_CONFIGURE_ARGS],["$ac_configure_args"],[LAL Configure Arguments])
+AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure Date])
+AC_DEFINE_UNQUOTED([LAL_CVS_TAG],["$lal_cvs_tag"],[LAL CVS Tag])
 test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
-AC_DEFINE_UNQUOTED(LAL_PREFIX, "$lal_prefix", [LAL Install Prefix])
+AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
 lal_pthread_available="yes"
-ACX_PTHREAD( , [lal_pthread_available="no"])
+ACX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
     LIBS="$PTHREAD_LIBS $LIBS"
@@ -200,7 +200,7 @@ fi
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -213,14 +213,14 @@ AC_PROG_LN_S
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
-AC_CHECK_PROGS(M4, gm4 m4, m4)
-AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
-AC_CHECK_PROGS(MKIND, makeindex, echo)
-AC_CHECK_PROGS(DVIPS, dvips, echo)
+AC_CHECK_PROGS([M4],[gm4 m4], m4)
+AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
+AC_CHECK_PROGS([MKIND],[makeindex],[echo])
+AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  AC_CHECK_PROGS([SW_VERS],[sw_vers])
   if test "x$SW_VERS" != "x"; then
     AC_MSG_CHECKING([Mac OS X version])
     MACOSX_VERSION=`$SW_VERS -productVersion`
@@ -241,7 +241,7 @@ fi
 
 if test -z "$TEXFLAGS"
 then
-AC_MSG_CHECKING(if $LATEX accepts --interaction=batchmode)
+AC_MSG_CHECKING([if $LATEX accepts --interaction=batchmode])
 cat > conflatextest.tex <<\CEOF
 \documentclass{article}
 \begin{document}
@@ -250,75 +250,77 @@ CEOF
 if $LATEX conflatextest.tex --interaction=batchmode >/dev/null 2>&1
 then
 TEXFLAGS="--interaction=batchmode"
-AC_MSG_RESULT(yes)
+AC_MSG_RESULT([yes])
 else
 TEXFLAGS=""
-AC_MSG_RESULT(no)
+AC_MSG_RESULT([no])
 fi
 rm -f conflatextest.*
 fi
-AC_SUBST(TEXFLAGS)
+AC_SUBST([TEXFLAGS])
 
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
   solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
   AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
-  *) AC_MSG_RESULT(none);;
+  *) AC_MSG_RESULT([none]);;
 esac
 
 dnl Checks for libraries.
 LALSUPPORT_LIBADD=""
 lal_save_LIBS="$LIBS"
-AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(z, compress, [ LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz" ])
+AC_CHECK_LIB([m],[sin])
+AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"])
+
 dnl if solaris, check for sunmath library
 case "${host_os}" in
-  solaris*) AC_CHECK_LIB(sunmath, sincosp);;
+  solaris*) AC_CHECK_LIB([sunmath],[sincosp]);;
 esac
-PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
+
+PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
-AC_CHECK_LIB(gslcblas, main)
-AC_CHECK_LIB(gsl, gsl_strerror, , [AC_MSG_ERROR(could not find GSL library)])
-LAL_CHECK_GSL_VERSION(1.9)
+AC_CHECK_LIB([gslcblas],[main])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
+LAL_CHECK_GSL_VERSION([1.9])
 
 dnl Checks for fft libraries.
 if test "${intelfft}" = "false" ; then
   fftw3="true"
-  PKG_CHECK_MODULES(FFTW3, fftw3 fftw3f, [ true ], [ false ])
+  PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
   CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
   LIBS="$LIBS $FFTW3_LIBS"
-  AC_CHECK_LIB(fftw3f, fftwf_execute_dft, , [AC_MSG_ERROR(could not find fftw3f library)], -lm)
-  AC_CHECK_LIB(fftw3, fftw_execute_dft, , [AC_MSG_ERROR(could not find fftw3 library)], -lm)
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR(could not find fftw3f library)],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR(could not find fftw3 library)],[-lm])
 else
-  AC_MSG_WARN(Using Intel FFT routines)
+  AC_MSG_WARN([Using Intel FFT routines])
   if test "x${qthread}" = "xtrue" ; then
     LAL_INTEL_MKL_QTHREAD_WARNING
   else
-    AC_CHECK_LIB(pthread, pthread_create, , [AC_MSG_ERROR(could not find pthread library)])
+    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR(could not find pthread library)])
   fi
-  AC_CHECK_LIB(guide, __kmp_abort, , [AC_MSG_ERROR(could not find guide library included with Intel MKL)])
-  AC_CHECK_HEADERS(pthread.h, , [AC_MSG_ERROR(could not find pthread header)])
+  AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR(could not find guide library included with Intel MKL)])
+  AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR(could not find pthread header)])
   if test "${enable_static}" = "yes"; then
     if test "${enable_shared}" = "yes" ; then
       LAL_INTEL_FFT_LIBS_MSG_ERROR
     else
-      AC_CHECK_LIB(mkl_ia32, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
+      AC_CHECK_LIB([mkl_ia32],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
     fi
   else
-    AC_CHECK_LIB(mkl, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
+    AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
   fi
-  AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
+  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
 dnl Checks for optional metaio.
 if test "${metaio}" = "true"; then
-  PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
+  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS(MetaioOpen, metaio, ,
-                 [AC_MSG_WARN(disabling metaio support)]
+  AC_SEARCH_LIBS([MetaioOpen],[metaio],,
+                 [AC_MSG_WARN([disabling metaio support])]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
@@ -326,43 +328,42 @@ fi
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h)
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
 case "${host_os}" in
-  solaris*) AC_CHECK_HEADERS(sunmath.h);;
+  solaris*) AC_CHECK_HEADERS([sunmath.h]);;
 esac
-AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h)])
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find gsl/gsl_errno.h])])
 if test "${intelfft}" = "false" ; then
-  AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find fftw3.h])])
 fi
-AC_CHECK_HEADER(stdint.h, , [AC_MSG_ERROR(could not find stdint.h)])
-AC_CHECK_HEADER(inttypes.h, , [AC_MSG_ERROR(could not find inttypes.h)])
+AC_CHECK_HEADER([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
+AC_CHECK_HEADER([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
 
-AC_MSG_CHECKING(for gethostname prototype in unistd.h)
-AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)
-AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE, 1, [Define if gethostname prototype is in unistd.h]), AC_MSG_RESULT(no))
+AC_MSG_CHECKING([for gethostname prototype in unistd.h])
+AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
 
 if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-  AC_CHECK_HEADERS(metaio.h, ,
-                   [AC_MSG_WARN(disabling metaio support)]
+  AC_CHECK_HEADERS([metaio.h],,
+                   [AC_MSG_WARN([disabling metaio support])]
                    [metaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
 if test "${lal_pthread_lock}" = "true"; then
-  AC_CHECK_HEADERS(pthread.h, break)
+  AC_CHECK_HEADERS([pthread.h],[break])
 fi
-
 
 dnl Define variables describing what was enabled.
 if test "${cuda}" = "true"; then
-  AC_DEFINE(LAL_CUDA_ENABLED, 1, [Define if using cuda library])
+  AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 if test "${fftw3}" = "true"; then
-  AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
+  AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
 fi
 if test "${metaio}" = "true"; then
-  AC_DEFINE(LAL_METAIO_ENABLED, 1, [Define if using MetaIo library])
+  AC_DEFINE([LAL_METAIO_ENABLED],[1],[Define if using MetaIo library])
 fi
 
 
@@ -381,25 +382,25 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF(float, 4)
-LAL_CHECK_SIZEOF(double, 8)
+LAL_CHECK_SIZEOF([float],[4])
+LAL_CHECK_SIZEOF([double],[8])
 
 dnl Checks for library functions.
-AC_CHECK_FUNCS(getopt)
-AC_CHECK_FUNCS(getopt_long)
+AC_CHECK_FUNCS([getopt])
+AC_CHECK_FUNCS([getopt_long])
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(vsnprintf)
-AC_CHECK_FUNCS(putenv)
+AC_CHECK_FUNCS([vsnprintf])
+AC_CHECK_FUNCS([putenv])
 
 dnl Set package documentation install path
 pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
-AC_SUBST(pkgdocdir)
+AC_SUBST([pkgdocdir])
 
 dnl Setup automake conditionals
-AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
-AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
-AM_CONDITIONAL(CUDA, test x$cuda = xtrue)
-AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
+AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
+AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
+AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
+AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 
 dnl Configure subdirectory lalapps if present
@@ -418,7 +419,7 @@ if test -d $srcdir/lalapps ; then
     LALMETAIO_CFLAGS=""
   fi
   export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
-  AC_CONFIG_SUBDIRS(lalapps)
+  AC_CONFIG_SUBDIRS([lalapps])
 fi
 
 
@@ -435,9 +436,9 @@ fi
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
-AC_SUBST_FILE(INCLUDEMKFILE)
-AC_SUBST_FILE(DOCMKFILE)
-AC_SUBST_FILE(DVIMKFILE)
+AC_SUBST_FILE([INCLUDEMKFILE])
+AC_SUBST_FILE([DOCMKFILE])
+AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
