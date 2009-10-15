@@ -80,6 +80,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "cutoff-frequency",        required_argument, 0, 'e' },
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "injection-file",          required_argument, 0, 'i' },
+    { "snr-threshold",           required_argument, 0, 'j' },
+    { "trig-time-window",        required_argument, 0, 'J' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
     { "only-segment-numbers",    required_argument, 0, 'n' },
@@ -164,6 +166,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         exit( 0 );
       case 'i': /* injection-file */
         localparams.injectFile = optarg;
+        break;
+      case 'j':
+        localparams.threshold = atof(optarg); 
+        break;
+      case 'J':
+        localparams.timeWindow = atof(optarg);
         break;
       case 'k': /* user-tag */
         strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
@@ -375,6 +383,9 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
 
+  fprintf( stderr, "\nTrigger extraction options:\n" );
+  fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
+  fprintf( stderr, "--trig-time-window=window Keep loudest trigger within window seconds\n" );
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );

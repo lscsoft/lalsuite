@@ -69,7 +69,7 @@ LALDestroyVector()
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include <lal/DataBuffer.h>
+/*#include <lal/DataBuffer.h>*/
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
@@ -233,10 +233,11 @@ void
 cohPTFNormalize(
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
-    REAL4Array                 *PTFM,
+    REAL8Array                 *PTFM,
     COMPLEX8VectorSequence     *PTFqVec,
     COMPLEX8FrequencySeries    *sgmnt,
-    COMPLEX8FFTPlan            *invPlan
+    COMPLEX8FFTPlan            *invPlan,
+    UINT4                      spinTemplate
     )
 /* Note that I use a different notation than Diego. In our notation M is
  * the same as Diego's B matrix (Q_0 | Q_0). We also have
@@ -245,8 +246,8 @@ cohPTFNormalize(
 
 /* </lalVerbatim> */
 {
-  UINT4         i, j, k, kmin, len, kmax,numPoints;
-  REAL4         f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
+  UINT4         i, j, k, kmin, len, kmax,numPoints,vecLength;
+  REAL8         f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
   COMPLEX8     *PTFq, *qtilde, *inputData;
   COMPLEX8Vector *qtildeVec,qVec;
   REAL4        *det         = NULL;
@@ -295,6 +296,21 @@ cohPTFNormalize(
   /* check that the parameter structure is set to a time domain approximant */
   sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
 
+  /* Set parameters to determine spin/nonspin */
+  vecLength = 2;
+  if (spinTemplate == 1)
+  {
+    vecLength = 5;
+  } 
+  else
+  {
+    for ( k = kmin; k < kmax ; ++k )
+    {
+      PTFQtilde[k + len].re = -PTFQtilde[k].im;
+      PTFQtilde[k + len].im = PTFQtilde[k].re;
+    }
+  }
+
   /*
    *
    * compute PTF normalization matrix
@@ -302,7 +318,7 @@ cohPTFNormalize(
    */
 
   /* Compute M_ij from Qtilde_i and Qtilde_j */
-  for( i = 0; i < 5; ++i )
+  for( i = 0; i < vecLength; ++i )
   {
     for ( j = 0; j < i + 1; ++j )
     {
@@ -322,8 +338,8 @@ cohPTFNormalize(
 
   /* A routine to print out the M^IJ information */
  
-  /*FILE *outfile;
-  outfile = fopen("M_array.dat","w");
+  FILE *outfile;
+  /*outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
   {
     for ( j = 0; j < 5; ++j )
@@ -336,7 +352,7 @@ cohPTFNormalize(
   
   
 
-  for ( i = 0; i < 5; ++i )
+  for ( i = 0; i < vecLength; ++i )
   {
 
     /* compute qtilde using data and Qtilde */
@@ -362,7 +378,7 @@ cohPTFNormalize(
     XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invPlan );
   }
 
-  /* Routines for printing the A and B time series */
+  /*Routines for printing the A and B time series */
   
   /*outfile = fopen("A_timeseries.dat","w");
   for ( i = 0; i < numPoints; ++i)
@@ -378,9 +394,5 @@ cohPTFNormalize(
   }
   fclose(outfile);*/
   
-
-  /* Currently unused function to invert M */
-/*  LALSMatrixInverse ( status->statusPtr,
-      det, fcTmplt->PTFB, fcTmplt->PTFBinverse );*/
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }

@@ -4,7 +4,9 @@
 #include <limits.h>
 #include <time.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_eigen.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
@@ -19,9 +21,13 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
-#include <lal/MatrixUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/DetectorSite.h>
+#include <lal/TimeDelay.h>
+#include <lal/DetResponse.h>
+#include <lal/TimeSeries.h>
+#include <lal/Units.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -71,35 +77,42 @@ void
 cohPTFNormalize(
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
-    REAL4Array                 *PTFM,
+    REAL8Array                 *PTFM,
     COMPLEX8VectorSequence     *PTFqVec,
     COMPLEX8FrequencySeries    *sgmnt,
-    COMPLEX8FFTPlan            *invPlan
-    );
-void cohPTFStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec
+    COMPLEX8FFTPlan            *invPlan,
+    UINT4                      spinTemplate
     );
 void cohPTFunconstrainedStatistic(
-    REAL4Array              *PTFM[LAL_NUM_IFO],
+    REAL4TimeSeries         *cohSNR,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
     struct coh_PTF_params   *params,
-    REAL4                   deltaT,
-    UINT4                   numPoints
+    UINT4                   spinTemplate,
+    UINT4                   singleDetector,
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross,
+    INT4                    segmentNumber
     );
-void cohPTFoldStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec
+void cohPTFmodBasesUnconstrainedStatistic(
+    REAL4TimeSeries         *cohSNR,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    struct coh_PTF_params   *params,
+    UINT4                   spinTemplate,
+    UINT4                   singleDetector,
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross,
+    INT4                    segmentNumber
     );
-
+void cohPTFaddTriggers(
+    struct coh_PTF_params   *params,
+    MultiInspiralTable      **eventList,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT4                   *eventId);
 
 
 int main( int argc, char **argv )
@@ -122,10 +135,23 @@ int main( int argc, char **argv )
   FindChirpTemplate       *fcTmplt     = NULL;
   FindChirpTmpltParams     *fcTmpltParams      = NULL;
   FindChirpInitParams     *fcInitParams = NULL;
-  UINT4                   numPoints,ifoNumber;
-  REAL4Array              *PTFM[LAL_NUM_IFO];
+  UINT4                   numPoints,ifoNumber,spinTemplate;
+  REAL8Array              *PTFM[LAL_NUM_IFO];
   COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO];
   time_t                  startTime;
+  LALDetector             *detectors[LAL_NUM_IFO];
+  REAL8                   *timeOffsets;
+  REAL8                   *Fplus;
+  REAL8                   *Fcross;
+  REAL8                   rA = 1.1;
+  REAL8                   dec = 1.1;
+  REAL8                   detLoc[3];
+  REAL4TimeSeries         *cohSNR = NULL;
+  LIGOTimeGPS             segStartTime;
+  MultiInspiralTable      *eventList = NULL;
+  UINT4                   eventId = 0;
+  UINT4                   numDetectors = 0;
+  UINT4                   singleDetector = 0;
   
   startTime = time(NULL);
 
@@ -148,6 +174,27 @@ int main( int argc, char **argv )
   revplan = coh_PTF_get_fft_revplan( params );
 
   fprintf(stdout,"Made fft plans %ld \n", time(NULL)-startTime);
+
+  /* Determine if we are analyzing single or multiple ifo data */
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+      numDetectors++;
+    }
+  }
+  
+  if (numDetectors == 0 )
+  {
+    fprintf(stderr,"You have not specified any detectors to analyse");
+    return 1;
+  }
+  else if (numDetectors == 1 )
+  {
+    fprintf(stdout,"You have only specified one detector, why are you using the coherent code?");
+    singleDetector = 1;
+  }
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -183,6 +230,34 @@ int main( int argc, char **argv )
     }
   }
 
+  /* Determine time delays and response functions */ 
+
+  timeOffsets = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
+  Fplus = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
+  Fcross = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
+    XLALReturnDetector(detectors[ifoNumber] ,ifoNumber);
+    for ( i = 0; i < 3; i++ )
+    {
+      detLoc[i] = (double) detectors[ifoNumber]->location[i];
+    }
+    for ( j = 0; j < numSegments; ++j )
+    {
+      /* Despite being called segStartTime we use the time at the middle 
+      * of a segment */
+      segStartTime = params->startTime;
+      XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);
+      timeOffsets[j*LAL_NUM_IFO+ifoNumber] = 
+          XLALTimeDelayFromEarthCenter(detLoc,rA,dec,&segStartTime);
+      XLALComputeDetAMResponse(&Fplus[j*LAL_NUM_IFO+ifoNumber],
+         &Fcross[j*LAL_NUM_IFO+ifoNumber],
+         detectors[ifoNumber]->response,rA,dec,0.,
+         XLALGreenwichMeanSiderealTime(&segStartTime));
+    }
+  }
+
   /* Create the relevant structures that will be needed */
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
   fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
@@ -204,7 +279,7 @@ int main( int argc, char **argv )
   {
     if ( params->haveTrig[ifoNumber] )
     {
-      PTFM[ifoNumber] = XLALCreateArrayL( 2, 5, 5 );
+      PTFM[ifoNumber] = XLALCreateREAL8ArrayL( 2, 5, 5 );
       PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
     }
   }
@@ -218,6 +293,10 @@ int main( int argc, char **argv )
 
   for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
   {
+    /* Determine if we can model this template as non-spinning */
+    spinTemplate = 1;
+    if (PTFtemplate->chi < 0.1) 
+      spinTemplate = 0;
     PTFtemplate->approximant = FindChirpPTF;
     PTFtemplate->order = LAL_PNORDER_TWO;
     PTFtemplate->fLower = 40.;
@@ -226,33 +305,53 @@ int main( int argc, char **argv )
 
     fprintf(stdout,"Generated template %d at %ld \n", i, time(NULL)-startTime);
 
-    for ( j = 0; j < numSegments; ++j )
+    for ( j = 0; j < 1; ++j ) /* Loop over segments */
     {
+      segStartTime = params->startTime;
+      XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);
+      cohSNR = XLALCreateREAL4TimeSeries("cohSNR",
+          &segStartTime,PTFtemplate->fLower,
+          (1.0/params->sampleRate),&lalDimensionlessUnit,
+          3*numPoints/4 - numPoints/4);
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if ( params->haveTrig[ifoNumber] )
         {
           /* Zero the storage vectors for the PTF filters */
-          memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL4) );
+          memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL8) );
           memset( PTFqVec[ifoNumber]->data, 0, 
                   5 * numPoints * sizeof(COMPLEX8) );
 
           /* And calculate A^I B^I and M^IJ */
           cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
-              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan);
+              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
+              spinTemplate);
+
           fprintf(stdout,
               "Made filters for ifo %d,segment %d, template %d at %ld \n", 
               ifoNumber,j,i,time(NULL)-startTime);
         }
       }
-    
-      cohPTFunconstrainedStatistic(PTFM,PTFqVec,params,
-                                 fcTmpltParams->deltaT,numPoints);
+      
+      /* Calculate the cohSNR time series */
+      cohPTFmodBasesUnconstrainedStatistic(cohSNR,PTFM,PTFqVec,params,
+                                 spinTemplate,singleDetector,timeOffsets,
+                                 Fplus,Fcross,j);
+     
       fprintf(stdout,
           "Made coherent statistic for segment %d, template %d at %ld \n",
+          j,i,time(NULL)-startTime);      
+
+      /* From this we want to construct triggers */
+      cohPTFaddTriggers(params,&eventList,cohSNR,*PTFtemplate,&eventId);
+
+      fprintf(stdout,
+          "Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
+      XLALDestroyREAL4TimeSeries(cohSNR);
     }
   }
+  cohPTF_output_events_xml( params->outputFile, eventList, procpar, params );
   exit(0);
 
 }
@@ -542,255 +641,116 @@ void generate_PTF_template(
   cohPTFTemplate( fcTmplt,PTFtemplate, fcTmpltParams );
 }
 
-void cohPTFStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec)
-{
-  UINT4 numPoints,i,j,k,l,m;
-  numPoints = h1PTFqVec->vectorLength;
-  REAL4Array *PTFM[3];
-  COMPLEX8VectorSequence *PTFqVec[3];
-  PTFqVec[0] = h1PTFqVec;
-  PTFqVec[1] = l1PTFqVec;
-  PTFqVec[2] = v1PTFqVec;
-  PTFM[0] = h1PTFM;
-  PTFM[1] = l1PTFM;
-  PTFM[2] = v1PTFM;
-  REAL4 P[10];
-  REAL4 a[3], b[3],theta[3],phi[3];
-  REAL8 A[12];
-  REAL8 CEmBF,AFmCD,BDmAE;
-  REAL4 tempSNR[2],cohSNR[numPoints];
-  REAL4 N,Ntmp[4];
-  REAL4 beta,lamda,Theta,varphi;
-  REAL4 ZH[25],SH[25],YU[25],zh[25],sh[25],yu[25];
-  FILE *outfile;
-  REAL4 deltaT = 1./4076.;
-  REAL4 numpi = 3.141592654;
-  UINT4 numvarphi = 10.;
-  UINT4 numTheta = 10.;
-
-  beta = 0.5;
-  lamda = 2.13;
-
-  /* For a given beta,lamda,Theta,varphi calculate the SNR */
-  /* We need to calculate a[3] and b[3]. This function needs to be written
-     properly (calculating theta and phi from beta and lamda for all ifos */
-  theta[0] = 0.5;
-  theta[1] = 1.1;
-  theta[2] = 0.2;
-  phi[0] = 1.5;
-  phi[1] = 2.7;
-  phi[0] = 0.03;
-  for (i = 0; i < 3; i++)
-  {
-    a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
-    b[i] = cos(theta[i]) * sin(2.*phi[i]);
-  }
-
-  for (i = 0; i < numPoints; i++)
-  {
-    cohSNR[i] = 0.;
-    /* Calculate the cyrillics */
-    for (j = 0; j < 5; j++)
-    {
-      for (k = 0; k < 5; k++)
-      {
-        ZH[j*5+k] = 0;
-        SH[j*5+k] = 0;
-        YU[j*5+k] = 0;
-        zh[j*5+k] = 0;
-        sh[j*5+k] = 0;
-        yu[j*5+k] = 0;
-        for (l=0; l < 3; l++)
-        {
-          for (m=0; m < 3; m++)
-          {
-            Ntmp[0] = PTFqVec[l]->data[j*numPoints+i].im;  
-            Ntmp[1] = PTFqVec[l]->data[k*numPoints+i].im;
-            Ntmp[2] = PTFqVec[l]->data[j*numPoints+i].re; 
-            Ntmp[3] = PTFqVec[l]->data[k*numPoints+i].re;
-            N = Ntmp[0]*Ntmp[1] + Ntmp[2]*Ntmp[3];
-            ZH[j*5+k] += a[l]*a[m] * N;
-            SH[j*5+k] += b[l]*b[m] * N;
-            YU[j*5+k] += 2.* a[l]*b[m] * N;
-          }
-          zh[j*5+k] += a[l]*a[l] * PTFM[l]->data[j*5+k];
-          sh[j*5+k] += b[l]*b[l] * PTFM[l]->data[j*5+k];
-          yu[j*5+k] += 2.*a[l]*b[l] * PTFM[l]->data[j*5+k];
-        }
-      }
-    }
-    /* Now we loop over varphi and Theta */
-    for (l=0; l < numTheta; l++)
-    {
-      for (m=0; m < numvarphi; m++)
-      {
-        A[0] = 0;
-        A[1] = 0;
-        A[2] = 0;
-        A[3] = 0;
-        A[4] = 0;
-        A[5] = 0;
-        /* Define varphi and Theta */
-        varphi = l/(REAL4) numvarphi * 2.*numpi;
-        Theta = l/(REAL4) numTheta * numpi;
-        /* Calculate the Ps */
-        P[0] = -0.25 * cos(2.*varphi) * ( 3. + cos(2*Theta));
-        P[1] = cos(Theta) * sin(2.*varphi);
-        P[2] = -0.25 * sin(2.*varphi) * ( 3. + cos(2*Theta));
-        P[3] = cos(Theta) * cos(2.*varphi);
-        P[4] = 0.5 * cos(varphi) * sin(2.*Theta);
-        P[5] = - sin(Theta) * sin(varphi);
-        P[6] = 0.5 * sin(varphi) * sin(2.*Theta);
-        P[7] = sin(Theta) * cos(varphi);
-        P[8] = 0.5 * (1 - cos(2.*Theta));
-        P[9] = 0;
-
-        /* Calculate the A[6] */
-        for (j = 0; j < 5; j++)
-        {
-          for (k = 0; k < 5; k++)
-          {
-            A[0]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
-            A[1]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(ZH[j*5+k]+SH[j*5+k]);
-            A[1]+=P[2*j]*P[2*k+1]*YU[j*5+k];
-            A[2]+=P[2*j]*P[2*k+1]*(ZH[j*5+k]-SH[j*5+k]);
-            A[2]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*YU[j*5+k];
-            A[3]+=0.5*(P[2*j]*P[2*k] + P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
-            A[4]+=0.5*(P[2*j]*P[2*k] - P[2*j+1]*P[2*k+1])*(zh[j*5+k]+sh[j*5+k]);
-            A[4]+=P[2*j]*P[2*k+1]*yu[j*5+k];
-            A[5]+=P[2*j]*P[2*k+1]*(zh[j*5+k]-sh[j*5+k]);
-            A[5]+=0.5*(P[2*j+1]*P[2*k+1] - P[2*j]*P[2*k])*yu[j*5+k];       
-          }
-        }
-        /* Now we calculate the SNR maximized over psi */
-        BDmAE = A[1]*A[3]-A[0]*A[4];
-        CEmBF = A[2]*A[4]-A[1]*A[5];
-        AFmCD = A[0]*A[5] - A[2]*A[3];
-        A[6] = pow(pow(AFmCD,2.) + pow(BDmAE,2.),0.5); 
-        A[7] = pow(pow(A[6],2.) - pow(CEmBF,2.),0.5);
-        A[8] = (A[7]*BDmAE + CEmBF*AFmCD) / pow(A[6],2.);
-        A[9] = (CEmBF*BDmAE - A[7]*AFmCD) / pow(A[6],2.);
-        A[10] = (-A[7]*BDmAE + CEmBF*AFmCD) / pow(A[6],2.);
-        A[11] = (CEmBF*BDmAE + A[7]*AFmCD) / pow(A[6],2.);
-        if ( A[8] > (1. + 1E-7) )
-          fprintf(stderr,"Error cos psi is greater than one %lf",A[8]);
-        if ( A[9] > (1. + 1E-7) )
-          fprintf(stderr,"Error sin psi is greater than one %lf",A[9]);
-        if ( A[10] > (1. + 1E-7) )
-          fprintf(stderr,"Error cos psi 2 is greater than one %lf",A[10]);
-        if ( A[11] > (1. + 1E-7) )
-          fprintf(stderr,"Error sin psi 2 is greater than one %lf",A[11]);
-        tempSNR[0] = (A[0]+A[1]*A[8]+A[2]*A[9])/(A[3]+A[4]*A[8]+A[5]*A[9]);
-        tempSNR[1] = (A[0]+A[1]*A[10]+A[2]*A[11])/(A[3]+A[4]*A[10]+A[5]*A[11]);
-        if ( tempSNR[0] > cohSNR[i])
-          cohSNR[i] = tempSNR[0];
-        if ( tempSNR[1] > cohSNR[i])
-          cohSNR[i] = tempSNR[1];
-      }
-    }
-  }
-  outfile = fopen("cohSNR_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR[i]);
-  }
-  fclose(outfile);
-
-}
-
 void cohPTFunconstrainedStatistic(
-    REAL4Array              *PTFM[LAL_NUM_IFO],
+    REAL4TimeSeries         *cohSNR,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
     struct coh_PTF_params   *params, 
-    REAL4                   deltaT,
-    UINT4                   numPoints
+    UINT4                   spinTemplate,
+    UINT4                   singleDetector,
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross,
+    INT4                    segmentNumber
 )
 
 {
-  LALStatus status = blank_status;
-  UINT4 i,j,k;
+  UINT4 i,j,k,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
+  INT4 timeOffsetPoints[LAL_NUM_IFO];
+  REAL4 deltaT = cohSNR->deltaT;
+  UINT4 numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
+  vecLength = 5;
+  vecLengthTwo = 10;
+  vecLengthSquare = 25;
+  vecLengthTwoSquare = 100;
+  if (spinTemplate == 0 && singleDetector == 1)
+  {
+    vecLength = 2;
+    vecLengthTwo = 2;
+    vecLengthSquare = 4;
+    vecLengthTwoSquare = 4;
+  }
+  else if (spinTemplate == 0)
+  {
+    vecLength = 2;
+    vecLengthTwo = 4;
+    vecLengthSquare = 4;
+    vecLengthTwoSquare = 16; 
+  }
+  else if (singleDetector == 1)
+  {
+    vecLengthTwo = 5;
+    vecLengthTwoSquare = 25;
+  }
   REAL4 count;
   FILE *outfile;
   REAL8        *det         = NULL;
-  REAL4 u1[10], u2[10], v1[10], v2[10];
 /*  REAL8Array  *B, *Binv;*/
+  REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
   REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO],theta[LAL_NUM_IFO],phi[LAL_NUM_IFO];
-  REAL4 zh[25],sh[25],yu[25];
+  REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
   REAL4 beta,lamda;
-  REAL4 cohSNR[numPoints];
 
-  gsl_matrix *B2 = gsl_matrix_alloc(10,10);
-  gsl_matrix *Binv2a = gsl_matrix_alloc(10,10);
-  gsl_matrix *Binv2 = gsl_matrix_alloc(10,10);
-  gsl_permutation *p = gsl_permutation_alloc(10);
+  gsl_matrix *B2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  gsl_matrix *Binv2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  gsl_permutation *p = gsl_permutation_alloc(vecLengthTwo);
+  gsl_vector *u1vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *u2vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *v1vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *v2vec = gsl_vector_alloc(vecLengthTwo);
 
 /*  B = XLALCreateREAL8ArrayL( 2, 10, 10 );
   Binv = XLALCreateREAL8ArrayL( 2, 10, 10 );
   memset( B->data, 0, 100 * sizeof(REAL8) );
   memset( Binv->data, 0, 100 * sizeof(REAL8) );*/
 
-  beta = 0.5;
-  lamda = 2.13;
-  /* We need to calculate a[3] and b[3]. This function needs to be written
-     properly (calculating theta and phi from beta and lamda for all ifos */
-  theta[1] = 0.5;
-  theta[3] = 1.1;
-  theta[5] = 0.2;
-  phi[1] = 1.5;
-  phi[3] = 2.7;
-  phi[5] = 0.03;
-  for (i = 1; i < 6; i = i+2)
+  for (i = 0; i < LAL_NUM_IFO; i++)
   {
-    a[i] = 0.5 * (1. + pow(cos(theta[i]),2.))*cos(2.*phi[i]);
-    b[i] = cos(theta[i]) * sin(2.*phi[i]);
+    a[i] = Fplus[segmentNumber*LAL_NUM_IFO+i];
+    b[i] = Fcross[segmentNumber*LAL_NUM_IFO+i];
   }
   
   /* Create and invert the Bmatrix */
-  for (i = 0; i < 5; i++ )
+  for (i = 0; i < vecLength; i++ )
   {
-    for (j = 0; j < 5; j++ )
+    for (j = 0; j < vecLength; j++ )
     {
-      zh[i*5+j] = 0;
-      sh[i*5+j] = 0;
-      yu[i*5+j] = 0;
+      zh[i*vecLength+j] = 0;
+      sh[i*vecLength+j] = 0;
+      yu[i*vecLength+j] = 0;
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
         {
-          zh[i*5+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
-          sh[i*5+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
-          yu[i*5+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
+          /* Note that PTFM is always 5x5 even for non-spin */
+          zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
+          sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
+          yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
         }
       }
     }
   }
 
-  for (i = 0; i < 10; i++ )
+  for (i = 0; i < vecLengthTwo; i++ )
   {
-    for (j = 0; j < 10; j++ )
+    for (j = 0; j < vecLengthTwo; j++ )
     {
-      if ( i < 5 && j < 5 )
+      if ( i < vecLength && j < vecLength )
       {
-        gsl_matrix_set(B2,i,j,zh[i*5+j]);
+        gsl_matrix_set(B2,i,j,zh[i*vecLength+j]);
       }
-      else if ( i > 4 && j > 4)
+      else if ( i > (vecLength-1) && j > (vecLength-1))
       {
-        gsl_matrix_set(B2,i,j,sh[(i-5)*5 + (j-5)]);
+        gsl_matrix_set(B2,i,j,sh[(i-vecLength)*vecLength + (j-vecLength)]);
       }
-      else if ( i < 5 && j > 4)
+      else if ( i < vecLength && j > (vecLength-1))
       {
-        gsl_matrix_set(B2,i,j, yu[i*5 + (j-5)]);
+        gsl_matrix_set(B2,i,j, yu[i*vecLength + (j-vecLength)]);
       }
-      else if ( i > 4 && j < 5)
+      else if ( i > (vecLength-1) && j < vecLength)
       {
-        gsl_matrix_set(B2,i,j,yu[j*5 + (i-5)]);
+        gsl_matrix_set(B2,i,j,yu[j*vecLength + (i-vecLength)]);
       }
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
@@ -798,171 +758,424 @@ void cohPTFunconstrainedStatistic(
     }
   }
 
-  /* This is the inversion of the B matrix */
+/*  for (i = 0; i < vecLengthTwo; i++ )
+  {
+    for (j = 0; j < vecLengthTwo; j++ )
+    {
+      fprintf(stderr,"%f ",gsl_matrix_get(B2,i,j));
+    }
+    fprintf(stderr,"\n");
+  }*/ 
+
+
+  /* This is the LU decomposition of the B matrix */
   int signum;
   gsl_linalg_LU_decomp(Binv2,p,&signum);
-  gsl_linalg_LU_invert(Binv2,p,Binv2a);
+/*  gsl_linalg_LU_invert(Binv2,p,Binv2a);*/
 
-
-  for ( i = 0; i < numPoints; ++i ) /* Main loop over time */
+  /* This loop takes the time offset in seconds and converts to time offset
+  * in data points */
+  for (i = 0; i < LAL_NUM_IFO; i++ )
   {
-    for ( j = 0; j < 10 ; j++ ) /* Construct the vi vectors */
+    timeOffsetPoints[i]=(int)(timeOffsets[segmentNumber*LAL_NUM_IFO+i]/deltaT);
+  }
+
+  for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
+  {
+    for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
     {
-      v1[j] = 0;
-      v2[j] = 0;
+      v1[j] = 0.;
+      v2[j] = 0.;
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
         {
-          if (j < 5)
+          if (j < vecLength)
           {
-            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].re;
-            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i].im;
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
           }
           else
           {
-            v1[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].re;
-            v2[j] += b[k] * PTFqVec[k]->data[(j-5)*numPoints+i].im;
+            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
           }
         }
       }
+      gsl_vector_set(v1vec,j,v1[j]);
+      gsl_vector_set(v2vec,j,v2[j]);
     }
-    for ( j = 0 ; j < 10 ; j ++ ) 
+    gsl_linalg_LU_solve(Binv2,p,v1vec,u1vec);
+    gsl_linalg_LU_solve(Binv2,p,v2vec,u2vec);
+    for ( j = 0 ; j < vecLengthTwo ; j ++ ) 
     {
-      u1[j] = 0.0;
-      u2[j] = 0.0;
-      for ( k = 0; k < 10; k++ )
-      {
-        u1[j] += gsl_matrix_get(Binv2a,j,k) * v1[k];
-        u2[j] += gsl_matrix_get(Binv2a,j,k) * v2[k];
-      }
+      u1[j] = gsl_vector_get(u1vec,j);
+      u2[j] = gsl_vector_get(u2vec,j);
     }
-
     
     /* Compute the dot products */
     v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
-    for (j = 0; j < 10; j++)
+    for (j = 0; j < vecLengthTwo; j++)
     {
       v1_dot_u1 += v1[j] * u1[j];
       v1_dot_u2 += v1[j] * u2[j];
       v2_dot_u1 += v2[j] * u1[j];
       v2_dot_u2 += v2[j] * u2[j];
     }
-    max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+    if (spinTemplate == 0)
+    {
+      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 );
+    }
+    else
+    {
+      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-/*    fprintf(stderr,"%f \n",max_eigen);*/
-    cohSNR[i] = sqrt(max_eigen);
+    }
+    /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
+    cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
   }
     
   outfile = fopen("cohSNR_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
+  for ( i = 0; i < cohSNR->data->length; ++i)
   {
-    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR[i]);
+    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
   fclose(outfile);
 }
 
+void cohPTFmodBasesUnconstrainedStatistic(
+    REAL4TimeSeries         *cohSNR,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    struct coh_PTF_params   *params,
+    UINT4                   spinTemplate,
+    UINT4                   singleDetector,
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross,
+    INT4                    segmentNumber
+)
 
-void cohPTFoldStatistic(
-    REAL4Array                 *h1PTFM,
-    COMPLEX8VectorSequence     *h1PTFqVec,
-    REAL4Array                 *l1PTFM,
-    COMPLEX8VectorSequence     *l1PTFqVec,
-    REAL4Array                 *v1PTFM,
-    COMPLEX8VectorSequence     *v1PTFqVec)
 {
-  UINT4 numPoints,i,j,k;
-  REAL4 MsumH,MsumL,MsumV,Msum;
-  REAL4Vector *Asum,*Bsum,*SNR;
-  REAL4 P[15];
+  UINT4 i,j,k,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
+  INT4 timeOffsetPoints[LAL_NUM_IFO];
+  REAL4 deltaT = cohSNR->deltaT;
+  UINT4 numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
+  vecLength = 5;
+  vecLengthTwo = 10;
+  vecLengthSquare = 25;
+  vecLengthTwoSquare = 100;
+  if (spinTemplate == 0 && singleDetector == 1)
+  {
+    vecLength = 2;
+    vecLengthTwo = 2;
+    vecLengthSquare = 4;
+    vecLengthTwoSquare = 4;
+  }
+  else if (spinTemplate == 0)
+  {
+    vecLength = 2;
+    vecLengthTwo = 4;
+    vecLengthSquare = 4;
+    vecLengthTwoSquare = 16;
+  }
+  else if (singleDetector == 1)
+  {
+    vecLengthTwo = 5;
+    vecLengthTwoSquare = 25;
+  }
+  REAL4 count;
   FILE *outfile;
-  REAL4 deltaT = 1./4076.;
-  numPoints = h1PTFqVec->vectorLength;
+  REAL8        *det         = NULL;
+/*  REAL8Array  *B, *Binv;*/
+  REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
+  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO],theta[LAL_NUM_IFO],phi[LAL_NUM_IFO];
+  REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
+  REAL4 beta,lamda;
+  REAL4 *testing1;
+  testing1  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing2;
+  testing2  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing3;
+  testing3  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing4;
+  testing4  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing5;
+  testing5  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing6;
+  testing6  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing7;
+  testing7  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing8;
+  testing8  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing9;
+  testing9  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
+  REAL4 *testing10;
+  testing10  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
 
-  Asum = XLALCreateREAL4Vector( numPoints );
-  Bsum = XLALCreateREAL4Vector( numPoints );
-  SNR = XLALCreateREAL4Vector( numPoints );
-  P[0] = 1.;
-  P[1] = 1.11503773;
-  P[2] = 0.61949214;
-  P[3] = 0.65593259;
-  P[4] = 0.27879013;
-  P[5] = 0.37759221;
-  P[6] = 0.47075501;
-  P[7] = 0.14902839;
-  P[8] = 0.20966414;
-  P[9] = 0.47096755;
-  P[10] = 1.100864;
-  P[11] = 1.2352822;
-  P[12] = 0.66869988;
-  P[13] = 0.7161475;
-  P[14] = 0.36410693;
-/*  P[0] = 0.;
-  P[1] = 0.;
-  P[2] = 0.;
-  P[3] = 0.;
-  P[4] = 0.;
-  P[5] = 0.;
-  P[6] = 0.;
-  P[7] = 0.;
-  P[8] = 0.;
-  P[9] = 0.;
-  P[10] = 0.;
-  P[11] = 0.;
-  P[12] = 0.;
-  P[13] = 0.;
-  P[14] = 0.; */
-  
+  gsl_matrix *B2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  gsl_matrix *Binv2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  gsl_permutation *p = gsl_permutation_alloc(vecLengthTwo);
+  gsl_vector *u1vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *u2vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *v1vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_vector *v2vec = gsl_vector_alloc(vecLengthTwo);
+  gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc (vecLengthTwo);
+  gsl_matrix *eigenvecs = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  gsl_vector *eigenvals = gsl_vector_alloc(vecLengthTwo);
 
-  memset( Asum->data, 0, Asum->length * sizeof(REAL4) );
-  memset( Bsum->data, 0, Bsum->length * sizeof(REAL4) );
-  memset( SNR->data, 0, Bsum->length * sizeof(REAL4) );
+/*  B = XLALCreateREAL8ArrayL( 2, 10, 10 );
+  Binv = XLALCreateREAL8ArrayL( 2, 10, 10 );
+  memset( B->data, 0, 100 * sizeof(REAL8) );
+  memset( Binv->data, 0, 100 * sizeof(REAL8) );*/
 
-  for ( i = 0; i < numPoints ; i++ ) 
+  for (i = 0; i < LAL_NUM_IFO; i++)
   {
-    for ( j = 0; j < 5; j++ )
-    {
-      Asum->data[i] += P[j] * h1PTFqVec->data[i + j*numPoints].re;
-      Asum->data[i] += P[j+5] * l1PTFqVec->data[i + j*numPoints].re;
-      Asum->data[i] += P[j+10] * v1PTFqVec->data[i + j*numPoints].re;
-      Bsum->data[i] += P[j] * h1PTFqVec->data[i + j*numPoints].im;
-      Bsum->data[i] += P[j+5] * l1PTFqVec->data[i + j*numPoints].im;
-      Bsum->data[i] += P[j+10] * v1PTFqVec->data[i + j*numPoints].im;
-    }
-  }
-  
-  MsumH = 0;
-  MsumL = 0;
-  MsumV = 0;
-  Msum  = 0;
-  for ( i = 0; i < 5 ; i++ )
-  {
-    for ( j = 0; j < 5; j++ )
-    {
-      MsumH += P[i]* P[j]* h1PTFM->data[i + j*5];
-      MsumL += P[i+5]* P[j+5]* l1PTFM->data[i + j*5];
-      MsumV += P[i+10]* P[j+10]* v1PTFM->data[i + j*5];
-    }
+    a[i] = Fplus[segmentNumber*LAL_NUM_IFO+i];
+    b[i] = Fcross[segmentNumber*LAL_NUM_IFO+i];
   }
 
-  Msum = MsumH + MsumL + MsumV;  
-/*  Msum = pow(MsumH*MsumH+MsumL*MsumL+MsumV+MsumV,0.5);*/
-  for ( i = 0; i < numPoints ; i++ )
+  /* Create and invert the Bmatrix */
+  for (i = 0; i < vecLength; i++ )
   {
-    SNR->data[i] = (pow(Asum->data[i],2.) + pow(Bsum->data[i],2))/Msum;
-    SNR->data[i] = pow(SNR->data[i],0.5);
+    for (j = 0; j < vecLength; j++ )
+    {
+      zh[i*vecLength+j] = 0;
+      sh[i*vecLength+j] = 0;
+      yu[i*vecLength+j] = 0;
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          /* Note that PTFM is always 5x5 even for non-spin */
+          zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
+          sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
+          yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
+        }
+      }
+    }
+  }
+
+  for (i = 0; i < vecLengthTwo; i++ )
+  {
+    for (j = 0; j < vecLengthTwo; j++ )
+    {
+      if ( i < vecLength && j < vecLength )
+      {
+        gsl_matrix_set(B2,i,j,zh[i*vecLength+j]);
+      }
+      else if ( i > (vecLength-1) && j > (vecLength-1))
+      {
+        gsl_matrix_set(B2,i,j,sh[(i-vecLength)*vecLength + (j-vecLength)]);
+      }
+      else if ( i < vecLength && j > (vecLength-1))
+      {
+        gsl_matrix_set(B2,i,j, yu[i*vecLength + (j-vecLength)]);
+      }
+      else if ( i > (vecLength-1) && j < vecLength)
+      {
+        gsl_matrix_set(B2,i,j,yu[j*vecLength + (i-vecLength)]);
+      }
+      else
+        fprintf(stderr,"BUGGER! Something went wrong.");
+      gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
+      fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));
+    }
+    fprintf(stdout,"\n");
+  }
+
+  fprintf(stdout,"\n \n");
+
+  /* Here we compute the eigenvalues and eigenvectors of B2 */
+  gsl_eigen_symmv (Binv2,eigenvals,eigenvecs,matTemp);
+
+  for (i = 0; i < vecLengthTwo; i++ )
+  {
+    for (j = 0; j < vecLengthTwo; j++ )
+    {
+      fprintf(stdout,"%f ",gsl_matrix_get(eigenvecs,i,j));
+    }
+    fprintf(stdout,"\n");
+  }
+
+  fprintf(stdout,"\n \n");
+
+  for (i = 0; i < vecLengthTwo; i++ )
+  {
+    fprintf(stdout,"%f ",gsl_vector_get(eigenvals,i));
+  }
+
+  fprintf(stdout,"\n \n");
+
+  /* This loop takes the time offset in seconds and converts to time offset
+  * in data points */
+  for (i = 0; i < LAL_NUM_IFO; i++ )
+  {
+    timeOffsetPoints[i]=(int)(timeOffsets[segmentNumber*LAL_NUM_IFO+i]/deltaT);
+  }
+
+  for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
+  {
+    for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
+    {
+      v1[j] = 0.;
+      v2[j] = 0.;
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          if (j < vecLength)
+          {
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+          }
+          else
+          {
+            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+          }
+        }
+      }
+    }
+
+    /* Now we rotate the v1 and v2 to be in orthogonal basis */
+    /* We can use gsl multiplication stuff to do this */
+    /* BLAS stuff is stupid so we'll do it explicitly! */
+   
+    for ( j = 0 ; j < vecLengthTwo ; j++ )
+    {
+      u1[j] = 0.;
+      u2[j] = 0.;
+      for ( k = 0 ; k < vecLengthTwo ; k++ )
+      {
+        /* NOTE: not too sure whether its j,k or k,j */
+        u1[j] += gsl_matrix_get(eigenvecs,k,j)*v1[k];
+        u2[j] += gsl_matrix_get(eigenvecs,k,j)*v2[k];
+      }
+      u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+      u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+    }
+    testing1[i-numPoints/4] = u1[0];
+    testing2[i-numPoints/4] = u1[1];
+    testing6[i-numPoints/4] = u2[0];
+    testing7[i-numPoints/4] = u2[1];
+    if (spinTemplate == 1)
+    {
+      testing3[i-numPoints/4] = u1[2];
+      testing4[i-numPoints/4] = u1[3];
+      testing5[i-numPoints/4] = u1[4];
+      testing8[i-numPoints/4] = u2[2];
+      testing9[i-numPoints/4] = u2[3];
+      testing10[i-numPoints/4] = u2[4];
+    }
+    /* Compute the dot products */
+    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+    for (j = 0; j < vecLengthTwo; j++)
+    {
+      v1_dot_u1 += u1[j] * u1[j];
+      v1_dot_u2 += u1[j] * u2[j];
+      v2_dot_u2 += u2[j] * u2[j];
+    }
+    if (spinTemplate == 0)
+    {
+      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 );
+    }
+    else
+    {
+      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
+          * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
+    }
+    /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
+    cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
   }
 
   outfile = fopen("cohSNR_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
+  for ( i = 0; i < cohSNR->data->length; ++i)
   {
-    fprintf (outfile,"%f %f \n",deltaT*i,SNR->data[i]);
+    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
+  }
+  fclose(outfile);
+  outfile = fopen("rebased_timeseries.dat","w");
+  if (spinTemplate == 1 && singleDetector == 1 )
+  {
+    for ( i = 0; i < cohSNR->data->length; ++i)
+    {
+      fprintf (outfile,"%f %f %f %f %f %f %f %f %f %f %f\n",deltaT*i,testing1[i],testing2[i],testing3[i],testing4[i],testing5[i],testing6[i],testing7[i],testing8[i],testing9[i],testing10[i]);
+    }
+  }
+  else if (singleDetector == 1 )
+  {
+    for ( i = 0; i < cohSNR->data->length; ++i)
+    {
+      fprintf (outfile,"%f %f %f %f %f \n",deltaT*i,testing1[i],testing2[i],testing6[i],testing7[i]);
+    }
   }
   fclose(outfile);
 
 }
-  
-    
+
+void cohPTFaddTriggers(
+    struct coh_PTF_params   *params,
+    MultiInspiralTable      **eventList,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT4                   *eventId)
+{
+  UINT4 i,j;
+  UINT4 check;
+  INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
+  LIGOTimeGPS trigTime;
+  MultiInspiralTable *lastEvent = NULL;
+  MultiInspiralTable *thisEvent = NULL;
+
+  for (i = 0 ; i < cohSNR->data->length ; i++)
+  {
+    if (cohSNR->data->data[i] > params->threshold)
+    {
+      check = 1;
+      for (j = i-numPointCheck; j < i+numPointCheck; j++)
+      {
+        if (cohSNR->data->data[j] > cohSNR->data->data[i])
+        {
+          check = 0;
+          break;
+        }
+      }
+      if (check) /* Add trigger to event list */
+      {
+        if ( !*eventList ) 
+        {
+          *eventList = (MultiInspiralTable *) 
+              LALCalloc( 1, sizeof(MultiInspiralTable) );
+          thisEvent = *eventList;
+        }
+        else
+        {
+          lastEvent = thisEvent;
+          thisEvent = (MultiInspiralTable *) 
+              LALCalloc( 1, sizeof(MultiInspiralTable) );
+          lastEvent->next = thisEvent;
+        }
+        thisEvent->event_id = (EventIDColumn *) 
+            LALCalloc(1, sizeof(EventIDColumn) );
+        thisEvent->event_id->id=eventId;
+        *eventId++;
+        trigTime = cohSNR->epoch;
+        XLALGPSAdd(&trigTime,i*cohSNR->deltaT);
+        thisEvent->snr = cohSNR->data->data[i];
+        thisEvent->mass1 = PTFTemplate.mass1;
+        thisEvent->mass2 = PTFTemplate.mass2;
+/*        thisEvent->chi = PTFTemplate.chi;
+        thisEvent->kappa = PTFTemplate.kappa;*/
+        thisEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
+        thisEvent->eta = PTFTemplate.eta;
+        thisEvent->end_time = trigTime;
+      }
+    }
+  }
+}
+        
 
   
 

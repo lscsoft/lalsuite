@@ -52,6 +52,8 @@ struct coh_PTF_params {
   REAL4        lowCutoffFrequency;
   REAL4        highpassFrequency;
   REAL4        invSpecLen;
+  REAL4        threshold;
+  REAL4        timeWindow;
   char         bankFile[256];
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
@@ -96,4 +98,11 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 int write_REAL4TimeSeries( REAL4TimeSeries *series );
 int write_REAL4FrequencySeries( REAL4FrequencySeries *series );
 int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
+
+int cohPTF_output_events_xml(
+    char               *outputFile,
+    MultiInspiralTable *events,
+    ProcessParamsTable *processParamsTable,
+    struct coh_PTF_params *params
+    );
 
