@@ -63,32 +63,23 @@ void
 make_gridding(LALStatus *s, gridding_t *g, 
               UINT4 num_ra, gridding_geom_t ra_geom, 
               UINT4 num_dec, gridding_geom_t dec_geom,
-              EphemerisData *e,
-              LIGOTimeGPS   *gps,
-              LALLeapSecAccuracy acc)
+              EphemerisData *e, LIGOTimeGPS   *gps )
 {
   UINT4 i, j;
   REAL8 pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
   REAL8 earth_phi; /* azi. position of Earth in solar system barycenter */
-  LALLeapSecFormatAndAcc leapsec_param = 
-    {LALLEAPSEC_GPSUTC, acc};
-  INT4  tmp_leapsecs;
   
   if (dec_geom == DETRESP_VARGRID)
   {
     fprintf(stderr, "gridding_t does not support variable Dec gridding\n");
     exit(11);
   }
-  
-  /* set up leap seconds for given GPS */
-  LALLeapSecs(s, &tmp_leapsecs, gps, &leapsec_param);
-  e->leap = (INT2)tmp_leapsecs;
-  
+
   g->gps.gpsSeconds = gps->gpsSeconds;
   g->gps.gpsNanoSeconds = gps->gpsNanoSeconds;
   g->ra_geom = ra_geom;
   g->dec_geom = dec_geom;
-  
+
 
   LALDCreateVector(s, &(g->dec), num_dec);
   

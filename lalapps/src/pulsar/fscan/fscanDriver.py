@@ -4,17 +4,23 @@
 fscanDriver.py - Driver script for calling other code to generates SFTs and turns these into plots showing spectra.
 
 
-$Id$
+$Id: fscanDriver.py,v 1.25 2009/03/13 01:51:46 collingill Exp $
 
 """
 
-__author__ = 'Rejean Dupuis <rejean@caltech.edu> & Greg Mendell<gmendell@ligo-wa.caltech.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__author__ = 'Rejean Dupuis <rejean@caltech.edu> & Greg Mendell<gmendell@ligo-wa.caltech.edu> & Colin Gill <c.gill@astro.gla.ac.uk>'
+__date__ = '$Date: 2009/03/13 01:51:46 $'
+__version__ = '$Revision: 1.25 $'[11:-2]
 
 # REVISIONS:
 # 03/02/2009 gam; implement -g --segment-file option; if not given run on Science,Injections times, if -g ALL given then use start and end times as segment.
 # 03/02/2009 gam; if createSFTs then splice in the SFT DAG.
+# 06/29/2009 gam; Add option to include matlab path, and run_plotSpecAvgOutput.sh rather than plotSpecAvgOutput.
+# 06/29/2009 gam; Include links to _2 plots, when making a comparisons with other fscans.
+# 06/29/2009 gam; Fix options and printing of extra debugging info.
+# 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
+# 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+# 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -56,15 +62,18 @@ Usage: [options]
   -c, --freq-res	     the frequency resolution of the spectragrams produced.
   -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
-  -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise LSCsegFind is used to find Science,Injection segments; if -g ALL is given then [start_time, start_time + duration) is used.
+  -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise ligolw_segment_query is used to find Science segments; if -g ALL is given then [start_time, start_time + duration) is used.
+  -t, --segment-type         (optional) segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1).
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
-  -i, --ifo                  (optional) ifo to use with LSCsegFind and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
+  -i, --ifo                  (optional) ifo to use with ligolw_segment_query and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
+  -I, --intersect-data       (optional) Run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
   -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz).
   -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory.
+  -m, --matlab-path          (optional) Path to matlab installation, e.g., /ldcg/matlab_r2008a. (Required if --plot-output-path is given.)
   -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
   -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
@@ -72,6 +81,8 @@ Usage: [options]
   -y  --coincidence-deltaf   (optional) if a reference and threshold on snr is given, then use this as the coincidence window on frequency.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -J  --psrInput             (optional) Input the name and path of tempo file used to overplot a source's freq onto specgrams
+  -j  --psrEphemeris         (optional) Input the name and path of ephemeris file used to overplot a source's freq onto specgrams
   
 """
   print >> sys.stdout, msg
@@ -83,7 +94,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:q:y:D:X:m:g:l:hSHZCR" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -102,6 +113,7 @@ longop = [  #cg; longopt is a list
   "sub-log-path=",
   "channel-name=",
   "ifo=",
+  "intersect-data",
   "frame-struct-type=",
   "window-type=",
   "overlap-fraction=",
@@ -111,6 +123,7 @@ longop = [  #cg; longopt is a list
   "band=",
   "sub-band=",
   "plot-output-path=",
+  "matlab-path=",
   "html-filename=",
   "html-reference-path=",
   "html-ref-ifo-epoch=",
@@ -120,11 +133,14 @@ longop = [  #cg; longopt is a list
   "misc-desc=",
   "max-num-per-node=",
   "segment-file=",
+  "segment-type=",
   "min-seg-length=",
   "use-single=",  
   "use-hot",
   "make-tmp-file",
   "run",
+  "psrInput=",
+  "psrEphmeris=",
   ]
 
 try:
@@ -152,6 +168,7 @@ logPath = "logs"
 subLogPath = "logs"
 channelName = None
 segIFO = None
+intersectData = False
 makeSFTIFO = None
 frameStructType = None
 windowType = 1
@@ -162,6 +179,7 @@ startFreq = 48.0
 freqBand = 50.0
 freqSubBand = 10.0
 plotOutputPath = None
+matlabPath = None
 makeMatlabPlots = False
 htmlFilename = None
 htmlReferenceDir = None
@@ -173,12 +191,15 @@ miscDesc = None
 maxNumPerNode = 1
 maxLengthAllJobs = None
 segmentFile = None
+segmentType = None
 minSegLength = 0L
 useSingle = False
 useHoT = False
 makeTmpFile = False
 runCondorSubmitDag = False
-freqRes = 2.0
+freqRes = 0.2
+psrInput = None
+psrEphemeris = None
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -212,6 +233,8 @@ for o, a in opts:
     channelName = a
   elif o in ("-i", "--ifo"):
     segIFO = a
+  elif o in ("-I", "--intersect-data"):
+    intersectData = True
   elif o in ("-u", "--frame-struct-type"):
     frameStructType = a
   elif o in ("-w", "--window-type"):
@@ -220,8 +243,6 @@ for o, a in opts:
     overlapFraction = float(a)
   elif o in ("-v", "--sft-version"):
     sftVersion = int(a)
-  elif o in ("-c", "--comment-field"):
-    commentField = a
   elif o in ("-F", "--start-freq"):
     startFreq = long(a)
   elif o in ("-B", "--band"):
@@ -230,6 +251,8 @@ for o, a in opts:
     freqSubBand = long(a)
   elif o in ("-O", "--plot-output-path"):
     plotOutputPath = a
+  elif o in ("-m", "--matlab-path"):
+    matlabPath = a
   elif o in ("-W", "--html-filename"):
     htmlFilename = a
   elif o in ("-r", "--html-reference-path"):
@@ -250,6 +273,8 @@ for o, a in opts:
     maxLengthAllJobs = long(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
+  elif o in ("-t", "--segment-type"):
+    segmentType = a
   elif o in ("-l", "--min-seg-length"):
     minSegLength = long(a)
   elif o in ("-S", "--use-single"):
@@ -260,6 +285,10 @@ for o, a in opts:
     runCondorSubmitDag = True
   elif o in ("-Z", "--make-tmp-file"):
     makeTmpFile = True
+  elif o in ("-J", "--psrInput"):
+    psrInput = a
+  elif o in ("-j", "--psrEphmeris"):
+    psrEphemeris = a
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -379,7 +408,11 @@ if (plotOutputPath == None):
    makeMatlabPlots = False
 else:
    makeMatlabPlots = True
-  
+   if (matlabPath == None):
+     print >> sys.stderr, "No matlab path specified."
+     print >> sys.stderr, "Use --help for usage details."
+     sys.exit(1)
+
 # try and make a directory to store the cache files and job logs
 try: os.makedirs(logPath)
 except: pass
@@ -410,22 +443,27 @@ if (createSFTs):
   except: pass
 
   ###################################################
-  # FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
+  # FIND SCIENCE MODE SEGMENTS; RUN ligolw_segment_query
   #
   # 03/02/2009 gam; in default case change Science to Science,Injection; add segment file options as elif and else options:
+  # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
   if not segmentFile:
     segmentFile = 'tmpSegs%stmp.txt' % tagString
-    segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
+    if not segmentType:
+       # set default segment type
+       segmentType = "%s:DMT-SCIENCE:1" % segIFO
+    #segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
+    segCommand = "ligolw_segment_query --database --query-segments --include-segments %s --gps-start-time %d --gps-end-time %d | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segmentType,analysisStartTime,analysisEndTime,segmentFile)
     print >> sys.stdout,"Trying: ",segCommand,"\n"
     try:
       segFindExit = os.system(segCommand)
       if (segFindExit > 0):
-         print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
+         print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
          sys.exit(1)
       else:
-         print >> sys.stderr, 'LSCsegFind succeeded! \n'
+         print >> sys.stderr, 'ligolw_segment_query succeeded! \n'
     except:
-      print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
+      print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
       sys.exit(1)
   elif segmentFile == "ALL":
     segmentFile = 'tmpSegs%stmp.txt' % tagString
@@ -445,7 +483,45 @@ if (createSFTs):
     # Just continue with the name given on the command line.
     print >> sys.stderr, 'Using segmentFile == %s \n' % segmentFile
 
-    
+  ###################################################
+  # Intersect with existing data if intersectData = True
+  #
+
+  if intersectData:
+    # Get the segments the data exist from ligo_data_find
+    dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
+    dataFindCommand = "ligo_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
+    try:
+      dataFindExit = os.system(dataFindCommand)
+      if (dataFindExit > 0):
+         print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'ligo_data_find succeeded! \n'
+    except:
+      print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+      sys.exit(1)
+
+    # Intersect the segments to run on with the segments data exist
+    intersectedSegmentFile = 'tmpIntersectedSegs%stmp.txt' % tagString
+    segexprCommand = "segexpr \"intersection(%s,%s)\" %s" % (segmentFile,dataFindSegmentFile,intersectedSegmentFile)
+    print >> sys.stdout,"Trying: ",segexprCommand,"\n"
+    try:
+      segexprExit = os.system(segexprCommand)
+      if (segexprExit > 0):
+         print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'segexpr succeeded! \n'
+    except:
+      print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+      sys.exit(1)
+
+    # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
+    segmentFile = intersectedSegmentFile
+  # End if intersectData
+
   ###################################################
   # CHECK THE SEGMENT FILE
   #
@@ -562,9 +638,10 @@ spectrumAverageFID.close()
 if (makeMatlabPlots):
   runMatlabScriptFID = file('runMatlabPlotScript.sub','w')
   runMatlabScriptLogFile = subLogPath + '/' + 'runMatlabPlotScript_' + dagFileName + '.log'
-  runMatlabScriptFID.write('universe = vanilla\n')
+  runMatlabScriptFID.write('universe = local\n')
   # Run compiled version plotSpecAvgOutput.m:
-  runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n')
+  # runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n'); # 06/29/09 gam; changed to run_plotSpecAvgOutput.sh. 
+  runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/run_plotSpecAvgOutput.sh\n')
   runMatlabScriptFID.write('getenv = True\n')
   runMatlabScriptFID.write('arguments = $(argList)\n')
   runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
@@ -587,12 +664,12 @@ if (htmlFilename != None):
   htmlFID.write('<h1>FSCAN PLOTS</h1>\n')
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')
-  if (htmlReferenceDir != None) and (thresholdSNR > 0):
+  if (htmlReferenceDir != None) and (thresholdSNR > 0):#If we want to compare to a reference, then lines below will create an extra page, and link to it...
     htmlLinesFilenameList = os.path.split(htmlFilename)
     htmlLinesFilenameShort = 'Lines_%s' % htmlLinesFilenameList[1]
     htmlLinesFilename = os.path.join(htmlLinesFilenameList[0],htmlLinesFilenameShort)
-    htmlLinesFID = file(htmlLinesFilename,'w')
-    htmlLinesFID.write('<html>\n')
+    htmlLinesFID = file(htmlLinesFilename,'w')#create a file whose name is stored in htmlLinesFilename, open it for writing.
+    htmlLinesFID.write('<html>\n')#write html into file, and go to next line.
     htmlLinesFID.write('<head>\n')
     htmlLinesFID.write('<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n')
     htmlLinesFID.write('<title>FSCANCOINCIDENTLINES</title>\n')
@@ -637,21 +714,25 @@ while (thisEndFreq < endFreq):
      # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
      #thisEndFreq = endFreq - 1
   
-  print >> sys.stdout,"startfreq: ",startFreq,"\n"
-  print >> sys.stdout,"endfreq: ",endFreq,"\n"
-  print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
-  print >> sys.stdout,"thisEndfreq: ",thisEndFreq,"\n"
+  #print >> sys.stdout,"startfreq: ",startFreq,"\n"
+  #print >> sys.stdout,"endfreq: ",endFreq,"\n"
+  #print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
+  #print >> sys.stdout,"thisEndfreq: ",thisEndFreq,"\n"
 
-  freqrange = thisEndFreq - thisStartFreq
+  fRange = thisEndFreq - thisStartFreq
 
   #This section of code writes the arguments for spec_avg.c
   #------------------------------------------------------------
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
-  dagFID.write('RETRY %s 10\n' % specAvgJobName)
+  dagFID.write('RETRY %s 0\n' % specAvgJobName)
   #the variable names in the arglist below are the names of the variables in spec_avg.c not in this code
-  if (sftVersion == 2):
+  if ((psrInput != None) and (sftVersion == 2)):
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft  --psrInput %s --psrEphemeris %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris)
+  elif ((psrInput == None) and (sftVersion == 2)):
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
+  elif ((psrInput != None) and (sftVersion != 2)):
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*   --psrInput %s --psrEphemeris %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris)
   else:
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
@@ -660,69 +741,111 @@ while (thisEndFreq < endFreq):
     # 03/02/2009 gam; use SPLICE to insert SFT DAG
     #dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
     dagFID.write('PARENT %s CHILD %s\n'%(spliceSFTDAGName,specAvgJobName))
+
+#write arguments to be passed to matlab job
   if (makeMatlabPlots):
-     runMatlabPlotScriptJobName = 'runMatlabPlotScript_%i' % nodeCount
-     dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
-     dagFID.write('RETRY %s 3\n' % runMatlabPlotScriptJobName)
-     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-     # Matlab will append .pdf and .png to outputFileName to save plots:
-     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
+    runMatlabPlotScriptJobName = 'runMatlabPlotScript_%i' % nodeCount
+    dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
+    dagFID.write('RETRY %s 0\n' % runMatlabPlotScriptJobName)
+    inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
+    # Matlab will append .pdf and .png to outputFileName to save plots:
+    outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
     
-     #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution.
-     if (freqRes < 1/timeBaseline):
-      freqRes = (1/timeBaseline)
-     effTBase = 1/freqRes
-     effTBaseFull = timeBaseline
+    #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution.
+    if (freqRes < 1/timeBaseline):
+	freqRes = (1/timeBaseline)
+    effTBase = 1/freqRes
+    effTBaseFull = timeBaseline
 
-     deltaFTicks=freqrange# divide deltaFticks by 10 in matlab script.
-     taveFlag = 1
+    #work out the best frequency interval to place ticks at.
+    
+    if (fRange >= 200):
+	deltaFTicks = 20
+    elif (fRange >= 100):
+	deltaFTicks = 10
+    elif (fRange >= 50):
+	deltaFTicks = 5
+    elif (fRange >= 5):
+	deltaFTicks = 1
+    else:
+	deltaFTicks = 0.1
+    
+    taveFlag = 1
+    
+    #Test to see if we have pulsar input
+    if (psrInput != None):
+        pulsar = 1
+    else:
+        pulsar = 0
 
-     if (htmlReferenceDir != None):
-        referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
-     else:
+    if (htmlReferenceDir != None):
+	referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+    else:
         referenceFileName = 'none'
-     argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
-     tagStringOut = '%s_%i' % (tagString, nodeCount)  
-     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
-     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
+    #argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName); # 06/29/09 gam; matlabPath has to be first argument.
+    #argList = '%s %s %s %s %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
+    argList = '%s %s %s %s %d %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
+    tagStringOut = '%s_%i' % (tagString, nodeCount)  
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
   
   #add stuff to the html file to show the plots produced in matlab.
   #-----------------------------------------------------------------
   if (htmlFilename != None):
-     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-     # Matlab will append .pdf and .png to outputFileName to save plots.
-     htmlFID.write('  <tr>\n')
-     htmlFID.write('  <td style="vertical-align: top;">\n')
-     htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
-     htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
-     #cg, to add in the extra image write a line here, similar to above, but with some changes to the file name.
-     #HERE ******************************  HERE ******************* HERE **********************
-     htmlFID.write('  </td>\n')
-     if (htmlReferenceDir != None):
+    inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
+    # Matlab will append .pdf and .png to outputFileName to save plots.
+    htmlFID.write('  <tr>\n')#tr adds a new table row.
+    htmlFID.write('  <td style="vertical-align: top;">\n')
+    htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('  </td>\n')#ends the current data cell.
+    if (htmlReferenceDir != None):
         referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
         htmlFID.write('  <td style="vertical-align: top;">\n')
         htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')     
-     htmlFID.write('  </tr>\n')
-     # Next row with links to text files:
-     htmlFID.write('  <tr>\n')
-     htmlFID.write('  <td style="vertical-align: top;">\n')
-     htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
-     htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
-     htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
-     if (htmlReferenceDir != None) and (thresholdSNR > 0):
-        htmlFID.write('    Coincident Lines: <a href="%s_lines.txt">%s_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('  </tr>\n')
+    # Topten lines code
+    #htmlFID.write('  <tr>\n')
+    #htmlFID.write('  <td style="vertical-align: top;">\n')
+    #htmlFID.write('<object data="%s_topten.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+    #htmlFID.write('  </td\n')
+    #htmlFID.write('  </tr>\n')
+    #end of topten lines.
+    htmlFID.write('  <tr>\n')#open new row in table for lines files.
+    htmlFID.write('  <td style="vertical-align: top;">\n')
+    htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+    if (htmlReferenceDir != None) and (thresholdSNR > 0):
+        #--------------------------
+	#coincident lines
+	htmlFID.write('    Coincident Lines: <a href="%s_coincident_lines.txt">%s_coincident_lines.txt</a><br>\n' % (inputFileName,inputFileName))
         htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+        htmlLinesFID.write('<object data="%s_coincident_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
         htmlLinesFID.write('<br>\n')
-     htmlFID.write('  </td>\n')
-     if (htmlReferenceDir != None):
+	#--------------------------
+	#new lines
+	htmlFID.write('    New Lines: <a href="%s_new_lines.txt">%s_new_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+        htmlLinesFID.write('<br>\n')
+        htmlLinesFID.write('<object data="%s_new_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+        htmlLinesFID.write('<br>\n')
+	#---------------------------
+	#old lines
+	htmlFID.write('    Old Lines: <a href="%s_old_lines.txt">%s_old_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+        htmlLinesFID.write('<br>\n')
+        htmlLinesFID.write('<object data="%s_old_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+        htmlLinesFID.write('<br>\n')
+	#---------------------------
+    htmlFID.write('  </td>\n')
+    if (htmlReferenceDir != None):
         htmlFID.write('  <td style="vertical-align: top;">\n')
         htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')
-     htmlFID.write('  </tr>\n')
+    htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand
   thisEndFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1

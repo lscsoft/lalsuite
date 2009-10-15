@@ -1,3 +1,4 @@
+#!/usr/bin/python
 try:
   import sqlite3
 except ImportError:
@@ -9,6 +10,7 @@ from pylal import db_thinca_rings
 from time import clock,time
 from optparse import *
 import glob
+import sys
 
 usage="""
 put the MVSC rank back into the SQL tables, after it's been turned into a likelihood, we put it in the likelihood column of the coinc_inspiral table
@@ -62,10 +64,10 @@ for database in databases:
 
 # pair up each file with the appropriate info file
 files.sort()
-#print files
 infofiles.sort()
-#print infofiles
-if len(files) != len(infofiles): print 'error'
+if len(files) != len(infofiles): 
+  print>> sys.stderr, "the number of infofiles does not match the number of files"
+  sys.exit(1)
 file_map=[]
 for i in range(len(files)):
   file_map.append([files[i],infofiles[i]])

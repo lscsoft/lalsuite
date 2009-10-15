@@ -330,7 +330,6 @@ if ( ! lalNoDebug ) {
 
   (*edat).ephiles.earthEphemeris = earth;
   (*edat).ephiles.sunEphemeris = sun;
-  (*edat).leap = 12;
 
   LALInitBarycenter(&status, edat);
 

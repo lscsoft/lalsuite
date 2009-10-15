@@ -3,7 +3,7 @@
 # set as the value, else it is chosen uniformly from _min to _max
 
 # Strength of signal
-h0 = 0.30
+h0 = 0.30*0
 
 # Cosine of iota
 cosi = -0.3
@@ -24,12 +24,11 @@ phi0_max = 1
 Dterms = 128
 
 # Interferometer
-#IFOs = 'H2 H1'
-IFOs = 'H2'
+IFOs = 'H2 H1'
+
 
 # Start Time
-#t0 = '820006091 820000000'
-t0 = '830000000'
+t0 = '820006091 820000000'
 
 # Reference Time in SSB
 refTime = 820000000
@@ -38,7 +37,7 @@ refTime = 820000000
 Out= './SFTs'
 
 # Ephemeris Directory 
-Ephem = '/home/ppatel/install/lal/share/lal'
+Ephem = '/Users/ppatel/home/install/lal/share/lal'
 
 # Ephemeris Year
 EphemYear = '05-09'
@@ -47,23 +46,20 @@ EphemYear = '05-09'
 Sh = 0.15
 
 # Duration of Analysis
-#TSpan = '36000 36000'
-TSpan = '72000'
+TSpan = '36000 36000'
+
 
 # SFT time baseline
 TSFT = 1800
 
 # Number of SFTs to add
-#NumSFTs = '20 20'
-#NumSFTs = '10 11'
-NumSFTs = '22'
+NumSFTs = '10 11'
 
 # Number of Gaps to add
-#NumGaps = '3 3'
-NumGaps = '3'
+NumGaps = '3 3'
 
 # Alpha (Right Ascension)
-Alpha = 2.0
+#Alpha = 2.0
 Alpha_min = 0
 Alpha_max = 6.28
 
@@ -96,10 +92,9 @@ FDotBand = 2e-8*0
 dFDot = 5e-9
 
 # Optional debug
-debug = 0
+debug = 1
 
 # Resolution
-#Res = 1.0/144000/4/2
 Res = 1.0/20/1800/10/10
 
 # OutputTimeSeries

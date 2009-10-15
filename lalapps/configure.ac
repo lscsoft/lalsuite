@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[6.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.4],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -11,6 +11,7 @@ AC_CONFIG_FILES([\
   man/Makefile \
   misc/Makefile \
   src/Makefile \
+  src/lalapps/defaults.py \
   src/lalapps/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
@@ -33,6 +34,7 @@ AC_CONFIG_FILES([\
   src/pulsar/TDS_isolated/Makefile \
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
+  src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
   src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
@@ -44,6 +46,7 @@ AC_CONFIG_FILES([\
 ])
 AM_INIT_AUTOMAKE([])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+AC_ARG_VAR(LAL_TOP_SRCDIR,[Set to top source directory of lal])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
@@ -154,21 +157,21 @@ AC_CHECK_LIB(z, compress)
 PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
 PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS"
-	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LALSTOCHASTIC_LIBS $LIBS"
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
 fi
 
-dnl LALFrame, LALMetaIo, and LALXML (optional).
+dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
 lalstochastic="true"
-PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
+PKG_CHECK_MODULES(LALFRAME, lalframe >= 1.0, [ true ], [ false ])
 PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
-PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
-PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic, [ true ], [ false ])
+PKG_CHECK_MODULES(LALXML, lalxml >= 1.0, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSTOCHASTIC, lalstochastic >= 1.0, [ true ], [ false ])
 if test "$LALSUITE_BUILD" != "true" ; then
 	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
 	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
@@ -204,21 +207,10 @@ if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, ,
+  AC_SEARCH_LIBS(MetaioOpen, metaio, ,
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
-dnl XML2 (libxml2)
-if test "${xml}" = "true"; then
-  PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= 2.6, [ true ], [ false ])
-  lal_pre_xml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
-  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
-                 [AC_MSG_WARN(disabling xml support)]
-                 [xml="false"]
-                 [LIBS="$lal_pre_xml2_LIBS"])
 fi
 
 dnl Check for libcfitsio
@@ -226,7 +218,7 @@ if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB(cfitsio, ffopen, , cfitsio="false")
 fi
 
-dnl Now check for LALFrame, LALMetaIo, and LALStohastic
+dnl Now check for LALFrame, LALMetaIo, LALXMl, and LALStohastic
 if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
@@ -292,6 +284,9 @@ AC_CHECK_FUNCS(setenv)
 if test "$LALSUITE_BUILD" = "true"; then
   LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
   CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
+  echo "LAL_TOP_SRCDIR=$LAL_LIBS"
+  echo "LAL_TOP_SRCDIR=$LAL_TOP_SRCDIR"
+  AC_SUBST(LAL_TOP_SRCDIR)
   lalframe="false"
   lalmetaio="false"
   lalxml="false"

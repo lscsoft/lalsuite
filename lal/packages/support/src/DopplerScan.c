@@ -577,7 +577,7 @@ plotSkyGrid (LALStatus *status,
     ABORT ( status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS );
   }
 
-  fprintf (fp, xmgrHeader);
+  fprintf (fp, "%s", xmgrHeader);
 
   set = 0;
 

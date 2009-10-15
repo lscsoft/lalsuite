@@ -58,7 +58,6 @@ family.
 
 #include <lal/LALDatatypes.h>
 #include <lal/RealFFT.h>
-#include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>

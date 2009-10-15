@@ -54,7 +54,6 @@ findchirp.
 #define _FINDCHIRPDATATYPESH_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 
 #ifdef  __cplusplus
@@ -107,6 +106,18 @@ tagFindChirpStandardCandle
 }
 FindChirpStandardCandle;
 /* </lalVerbatim> */
+
+typedef struct
+tagDataSegment
+{
+  REAL4TimeSeries         *chan;
+  REAL4FrequencySeries    *spec;
+  COMPLEX8FrequencySeries *resp;
+  INT4                     number;
+  UINT4                    analyzeSegment;
+}
+DataSegment;
+
 #if 0
 <lalLaTeX>
 \begin{description}

@@ -36,7 +36,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
-#include <lal/DataBuffer.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/DetectorSite.h>

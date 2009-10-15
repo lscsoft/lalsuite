@@ -111,13 +111,13 @@ NRCSID( STACKSLIDEFSTATH, "$Id$" );
 /* Function that stackslides a vector of Fstat frequency series or any REAL8FrequencySeriesVector. */
 void StackSlideVecF(LALStatus *status, 
                     SemiCohCandidateList *out, 
-                    REAL8FrequencySeriesVector *vecF, 
+                    REAL4FrequencySeriesVector *vecF, 
                     SemiCoherentParams *params);
 
 
 void StackSlideVecF_HoughMode(LALStatus *status,
 			      SemiCohCandidateList  *out,       
-			      REAL8FrequencySeriesVector *vecF, 
+			      REAL4FrequencySeriesVector *vecF, 
 			      SemiCoherentParams *params);   
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */

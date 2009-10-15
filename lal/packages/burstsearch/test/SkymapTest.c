@@ -11,12 +11,12 @@
 #include <fftw3.h>
 
 static void numericApply(
-    XLALSkymap2PlanType* plan,
-    XLALSkymap2DirectionPropertiesType* properties,
+    XLALSkymapPlanType* plan,
+    XLALSkymapDirectionPropertiesType* properties,
     double* wSw,
-    XLALSkymap2KernelType* kernel,
+    XLALSkymapKernelType* kernel,
     double** xSw,
-    int tau,
+    double tau,
     double* logPosterior
     )
 {
@@ -41,7 +41,7 @@ static void numericApply(
     {
         for (a[1] = - 5.0; a[1] <= 5.0; a[1] += da)
         {
-            double x[XLALSKYMAP2_N];
+            double x[XLALSKYMAP_N];
 
             // start accumulating inner products with the priors
             double q = (a[0] * a[0] + a[1] * a[1]);
@@ -52,7 +52,7 @@ static void numericApply(
             {
                 int k;
                 // get the time-shifted data
-                x[j] = XLALSkymap2Interpolate(xSw[j] + tau + properties->delay[j] - 1, properties->weight[j]);
+                x[j] = XLALSkymapInterpolate((tau + properties->delay[j]) * plan->sampleFrequency, xSw[j]);
 
 				// subtract the inner product
                 q -= x[j] * x[j] / wSw[j];
@@ -80,11 +80,11 @@ static void numericApply(
 
 static void numerical(void)
 {
-    XLALSkymap2PlanType plan;
+    XLALSkymapPlanType plan;
     double direction[2];
-    XLALSkymap2DirectionPropertiesType properties;
+    XLALSkymapDirectionPropertiesType properties;
     double wSw[5] = { 100., 100., 100., 100., 100. };
-    XLALSkymap2KernelType kernel;
+    XLALSkymapKernelType kernel;
     double *xSw[5];
     int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR, LAL_GEO_600_DETECTOR, LAL_LHO_2K_DETECTOR };
     RandomParams* rng;
@@ -95,14 +95,14 @@ static void numerical(void)
     for (n = 1; n != 6; ++n)
     {
 
-        XLALSkymap2PlanConstruct(8192, n, siteNumbers, &plan);
+        XLALSkymapPlanConstruct(8192, n, siteNumbers, &plan);
 
         direction[0] = LAL_PI * XLALUniformDeviate(rng);
         direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
 
-        XLALSkymap2DirectionPropertiesConstruct(&plan, direction, &properties);
+        XLALSkymapDirectionPropertiesConstruct(&plan, direction, &properties);
 
-        XLALSkymap2KernelConstruct(&plan, &properties, wSw, &kernel);
+        XLALSkymapKernelConstruct(&plan, &properties, wSw, &kernel);
 
         {
             int i;
@@ -122,13 +122,13 @@ static void numerical(void)
             double logPosteriorAnalytic;
             double logPosteriorNumerical;
 
-            XLALSkymap2Apply(&plan, &properties, &kernel, xSw, plan.sampleFrequency / 2, &logPosteriorAnalytic);
+            XLALSkymapApply(&plan, &properties, &kernel, xSw, 0.5, &logPosteriorAnalytic);
 
-            numericApply(&plan, &properties, wSw, &kernel, xSw, plan.sampleFrequency / 2, & logPosteriorNumerical);
+            numericApply(&plan, &properties, wSw, &kernel, xSw, 0.5, & logPosteriorNumerical);
 
             if (abs(logPosteriorAnalytic - logPosteriorNumerical) > 1e-3)
             {
-                // test failed
+                fprintf(stderr, "Analytic expression does not match numerical result to expected accuracy\n");
                 exit(1);
             }
 
@@ -144,6 +144,39 @@ static void numerical(void)
 
 }
 
+static void interpolation(void)
+{
+    double* x;
+    int n;
+
+    n = 1000;
+
+    x = (double*) malloc(sizeof(double) * n);
+
+    for (int i = 0; i != n; ++i)
+    {
+        x[i] = sin(i);
+    }
+
+    for (double t = n * 0.25; t < n * 0.75; t += 0.1)
+    {
+        if (abs(XLALSkymapInterpolate(t, x) - sin(t)) > 0.03)
+        {
+            fprintf(stderr, "Interpolation error larger than expected\n");
+            exit(1);
+        }
+    }
+
+    for (int t = n / 4; t < (n * 3) / 4; ++t)
+    {
+        if (abs(XLALSkymapInterpolate(t, x) - sin(t)) != 0)
+        {
+            fprintf(stderr, "Interpolation does not pass through data points\n");
+            exit(1);
+        }
+    }
+}
+
 int main(void)
 {
 
@@ -151,6 +184,8 @@ int main(void)
     // slower numerical integration
 
 	numerical();
+
+    interpolation();
 
     return 0;
 }

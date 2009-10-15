@@ -1727,7 +1727,6 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
-  amParams->leapAcc = LALLEAPSEC_STRICT;
 
  /* Mid point of each SFT */
    midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
@@ -2702,15 +2701,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * initialize Ephemeris-data 
    */
   {
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
-
     cfg->edat = (EphemerisData*)LALCalloc(1, sizeof(EphemerisData));
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
-
-    TRY (LALLeapSecs(status->statusPtr, &leap, &starttime, &formatAndAcc), status);
-    cfg->edat->leap = leap;
 
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
 

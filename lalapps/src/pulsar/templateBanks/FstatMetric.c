@@ -264,7 +264,7 @@ main(int argc, char *argv[])
   REAL8 m1, m2, m3;
   REAL8 mF, mFav, disc, mMin, mMax;
   gsl_matrix *g_ij, *gFlat_ij, *gamma_ij;
-  REAL8 mm, mm_projected;
+  REAL8 mm;
   UserVariables_t uvar = empty_UserVariables;
 
   FILE *fpMetric = 0;
@@ -345,6 +345,14 @@ main(int argc, char *argv[])
 	      return -1;
 	    }
 
+          if ( uvar.projection > 0 )
+            {
+              project_metric ( gamma_ij, gF_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( gF_ij, gamma_ij );
+              project_metric ( gamma_ij, gFav_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( gFav_ij, gamma_ij );
+            }
+
 	  mF   = quad_form ( gF_ij,   config.dopplerOffset );
 	  mFav = quad_form ( gFav_ij, config.dopplerOffset );
 
@@ -369,7 +377,7 @@ main(int argc, char *argv[])
 
 	  if ( fpMetric )
 	    {
-	      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n",
+	      fprintf ( fpMetric, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n",
 			config.Ad, config.Bd, config.Cd, config.Dd );
 
 	      fprintf ( fpMetric, "\ngF_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  gF_ij );
@@ -395,27 +403,28 @@ main(int argc, char *argv[])
 	      printf ("\nSomething failed in computePhaseMetric() \n\n");
 	      return -1;
 	    }
+
+          if ( uvar.projection > 0 )
+            {
+              project_metric ( gamma_ij, g_ij, (uvar.projection - 1) );
+              gsl_matrix_memcpy ( g_ij, gamma_ij );
+            }
+
 	  mm = quad_form ( g_ij, config.dopplerOffset );
 
 	  if ( fpMetric )
 	    {
 	      const CHAR *gprefix, *mprefix;
 	      if ( metricType == METRIC_PHASE ) {
-		if ( uvar.projection > 0 ) {
-		  project_metric(gamma_ij, g_ij, (uvar.projection - 1) );
-		  mm_projected = quad_form ( gamma_ij, config.dopplerOffset );
-		  gprefix = "gPh_projected_ij = \\\n"; mprefix = "mPh_projected = ";
-		  fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gamma_ij );
-		  fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm_projected );
-		}
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
 		gprefix = "gOrb_ij = \\\n"; mprefix = "mOrb = ";
 	      } else if ( metricType == METRIC_PTOLE ) {
 		gprefix = "gPtole_ij = \\\n"; mprefix = "mPtole = ";
 	      }
-	      fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
-	      fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
+
+              fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
+              fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 
 	    } /* if fpMetric */
 
@@ -432,14 +441,7 @@ main(int argc, char *argv[])
 	    REAL8 Rorb = LAL_AU_SI;
 
 	    /* ----- translate Doppler-offsets into 'canonical coords ----- */
-	    if ( config.edat->leap < 0 )	/* signals that we're dealing with LISA */
-	      {
-		sineps = 0; coseps = 1;	/* already working in ecliptic coords */
-	      }
-	    else
-	      {
-		sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
-	      }
+            sineps = sin ( LAL_IEARTH ); coseps = cos ( LAL_IEARTH );
 
 	    sind1 = sin(uvar.Delta); cosd1 = cos(uvar.Delta);
 	    sina1 = sin(uvar.Alpha); cosa1 = cos(uvar.Alpha);
@@ -1019,7 +1021,6 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   cfg->offsetUnits.skypos.system = COORDINATESYSTEM_EQUATORIAL;
   if ( uvar->unitsType == UNITS_NATURAL )
     {
-      REAL8 nNat = uvar->Freq * uvar->duration * ORB_V0;
       cfg->offsetUnits.fkdot->data[0] = 1.0 / ( LAL_TWOPI * uvar->duration );
       cfg->offsetUnits.fkdot->data[1] = 2.0 / ( LAL_TWOPI * SQ( uvar->duration ) );
       cfg->offsetUnits.skypos.longitude = 1.0;
@@ -1239,7 +1240,6 @@ getMultiPhaseDerivs (LALStatus *status,
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   MultiPhaseDerivs *mdPhi = NULL;
   REAL8 TspanInv;
-  REAL8 eps, zEcl[3], tmp[3], proj;
 
   INITSTATUS (status, "getMultiPhaseDerivs", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1328,32 +1328,11 @@ getMultiPhaseDerivs (LALStatus *status,
 	    case PHASE_PTOLE: /* use Ptolemaic orbital approximation */
 	      getPtolePosVel( &posvel, ti, times.tAutumn );
 	      COPY_VECT ( rX, posvel.pos );
-	      /* add on the detector-motion */
+	      /* add on the detector-motion due to the Earth's spin */
 
-	      /* ecliptic z-axis in equatorial coords */
-	      eps = 0.409092804;	/* Earth inclination to ecliptic in radians (23.439 degrees) */
-	      zEcl[0] = 0;
-	      zEcl[1] = -sin(eps);
-	      zEcl[2] =  cos(eps);
-
-	      /* projected out z-motion wrt to ecliptic plane */
-	      tmp[0] = rDet[0];
-	      tmp[1] = cos(eps) * rDet[1];
-	      tmp[2] = sin(eps) * rDet[1];
-
-	      /* projected pure ecliptic-z motion */
-	      proj = SCALAR ( zEcl, rDet );
-	      tmp[0] = proj * zEcl[0];
-	      tmp[1] = proj * zEcl[1];
-	      tmp[2] = proj * zEcl[2];
-
-	      /*
-		 printf ("%f \t %f %f %f \t %f %f %f\n", ti, rX[0], rX[1], rX[2], tmp[0], tmp[1], tmp[2] );
-	      */
-
-	      rX[0] += tmp[0];
-	      rX[1] += tmp[1];
-	      rX[2] += tmp[2];
+	      rX[0] += rDet[0];
+	      rX[1] += rDet[1];
+	      rX[2] += rDet[2];
 
 	      break;
 	    default:
@@ -1622,8 +1601,6 @@ InitEphemeris (LALStatus * status,
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-  INT4 leap;
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1659,16 +1636,6 @@ InitEphemeris (LALStatus * status,
   edat->ephiles.sunEphemeris = EphemSun;
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
-
-  if ( isLISA )
-    {
-      edat->leap = -1;	/* dirty hack: signal that ephemeris are in *ECLIPTIC* coords, not EQUATORIAL */
-    }
-  else
-    {
-      TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
-      edat->leap = (INT2) leap;
-    }
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );

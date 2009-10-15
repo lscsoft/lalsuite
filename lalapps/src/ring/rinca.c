@@ -826,13 +826,7 @@ if ( vrbflg)
         "%d specified\n", numIFO );
     exit ( 1 );
   }
-
-  if ( numIFO == 2 && multiIfoCoinc )
-  {
-    fprintf( stderr, "Must specify three IFOs to do multi-ifo coincidence\n");
-    exit ( 1 );
-  }
-
+ 
   if ( numIFO > 2 && vrbflg )
   {
     if ( !multiIfoCoinc )

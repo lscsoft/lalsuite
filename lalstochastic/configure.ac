@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,6 +7,8 @@ AC_CONFIG_FILES([ \
   lalstochastic.spec \
   lalstochastic.pc \
   Makefile \
+  gnuscripts/Makefile \
+  debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
@@ -85,11 +87,17 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
 PKG_CHECK_MODULES([LAL],[lal >= 6.3],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
-AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
 
 # check for lalsupport, needed for test suite
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+
+# check libraries if not a top-level build
+if test "$LALSUITE_BUILD" = "true" ; then
+  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
+else
+  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
+  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
+fi
 AM_CONDITIONAL([LALSUPPORT], [test x$lalsupport = xtrue])
 
 # add gcc specific flags
@@ -115,7 +123,7 @@ echo "
 
           ${prefix}
 
-        Now run 'make' to build LAL support
+        Now run 'make' to build LAL Stochastic
         and run 'make install' to install LAL Stochastic
 
 ================================================================="

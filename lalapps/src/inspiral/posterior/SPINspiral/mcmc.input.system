@@ -1,5 +1,0 @@
-  #SPINspiral:  System input file, with system-dependent variables
-
-  #Data directory (actual data files may be in a subdirectory of this, see mcmc.data):
-  /archive/home/sluys/data
-  

@@ -24,11 +24,11 @@
 #define max(A,B) (((A) > (B)) ? (A) : (B))
 #define NSIGMA 3
 
-typedef double XLALSkymap2SphericalPolarType[2];
+typedef double XLALSkymapSphericalPolarType[2];
         
 typedef struct 
 {
-    XLALSkymap2SphericalPolarType *directions;
+    XLALSkymapSphericalPolarType *directions;
     double* logPosteriors;
     double total_logPosterior;
     int count;
@@ -70,8 +70,9 @@ typedef struct
  */
 char* frame_file[6] = { 0, 0, 0, 0, 0, 0};
 char* xml_file[6] = { 0, 0, 0, 0, 0, 0 };
-typedef const char* cp;
-cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
+char* channel_name[6] = { 0, 0, 0, 0, 0, 0 };
+//typedef const char* cp;
+//cp channel_name[6] = { "T1" , "V1" , "G1" , "H2" , "H1" , "L1" };
 const char* output_file = "skymap.txt";
 
 /*
@@ -110,7 +111,11 @@ int main(int argc, char** argv)
 	  {"h1-frame-file", required_argument, 0, 'h'},
 	  {"l1-frame-file", required_argument, 0, 'l'},
 	  {"v1-frame-file", required_argument, 0, 'v'},
-	  {"h2-frame-file", required_argument, 0, 'i'},             
+	  {"h2-frame-file", required_argument, 0, 'i'}, 
+	  {"h1-channel-name", required_argument, 0, 'j'},
+	  {"l1-channel-name", required_argument, 0, 'k'},
+	  {"v1-channel-name", required_argument, 0, 'm'},
+	  {"h2-channel-name", required_argument, 0, 'n'}, 
 	  {"output-file", required_argument, 0, 'o'},
 	  {"ra-res", required_argument, 0, 'a'},
 	  {"dec-res", required_argument, 0, 'd'},
@@ -123,7 +128,7 @@ int main(int argc, char** argv)
 	  {0, 0, 0, 0}
 	};
       int option_index = 0;
-      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:", long_options, &option_index);
+      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
       if (c == -1)
 	break;
       
@@ -162,6 +167,18 @@ int main(int argc, char** argv)
 	case 'q':
 	  xml_file[LAL_LHO_2K_DETECTOR] = optarg;
 	  break;
+	case 'j':
+	  channel_name[LAL_LHO_4K_DETECTOR] = optarg;
+	  break;
+	case 'k':
+	  channel_name[LAL_LLO_4K_DETECTOR] = optarg;
+	  break;
+	case 'm':
+	  channel_name[LAL_VIRGO_DETECTOR] = optarg;
+	  break;
+	case 'n':
+	  channel_name[LAL_LHO_2K_DETECTOR] = optarg;
+	  break;
 	case 'e':
 	  event_id = optarg;
 	  break;
@@ -187,16 +204,20 @@ int main(int argc, char** argv)
   /* support "none" arguments */
   {
     int i;
+    int arg_test;
     for( i = 0 ; i < 6 ; ++i )
     {
-      if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; }
-      if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; }
-      if( ( frame_file[i] && !xml_file[i] ) || (xml_file[i] && !frame_file[i] ) )
+      arg_test = 0;
+      if( frame_file[i] && !strcmp("none", frame_file[i] ) ) { frame_file[i] = 0; arg_test+=1;}
+      if( xml_file[i] && !strcmp("none" , xml_file[i] ) ) { xml_file[i] = 0; arg_test+=1;}
+      if( channel_name[i] && !strcmp("none" , channel_name[i] ) ) { channel_name[i] = 0; arg_test+=1;}
+      fprintf(stderr, "argtest %d\n",arg_test);
+      if( arg_test!=0 && arg_test!=3 )
         {
-          fprintf( stderr , "error: Suppy matching pairs of frame & XML files\n");
+          fprintf( stderr , "error: Supply matching pairs of frame, channel-name & XML files %d\n", arg_test);
           exit(1);
         }//end if
-      if( xml_file[i] && frame_file[i] )
+      if( arg_test==0 && frame_file[i] )
         {
            ++numObs;
            printf("NUM OBS: %d\n" , numObs ); 
@@ -221,7 +242,7 @@ int main(int argc, char** argv)
    *  for each single detector:
    */
   NetworkProperties* network;
-  NetworkProperties* singleObs;
+  NetworkProperties* singleObs = 0; // Suppress warning
 
   {
     int i,k=0;
@@ -298,7 +319,7 @@ int main(int argc, char** argv)
    *  Analyze the data for the N single-detector cases, and store the net
    *  log posteriors...
    */
-  double* total_logPosteriors;
+  double* total_logPosteriors = 0; // suppress warning
   if( numObs > 1 )
     {
       total_logPosteriors = malloc(sizeof(double) * numObs );
@@ -331,14 +352,14 @@ int main(int argc, char** argv)
     double longMax = fmod( skyMap->directions[iMode][0] , LAL_TWOPI );
     double decMax = skyMap->directions[iMode][1];
 
-    printf("#EVENT ID \t FOUND RA \t FOUND DEC \t");
+    printf("#FOUND RA \t FOUND DEC \t");
     printf(" TOTAL PROB \t LONG \t LAT\t");
     if( numObs > 1 )
         for( i = 0 ; i != numObs ; ++i )
             printf(" Detector_%d \t " , i );
     printf("\n");
-    printf("%s  %f \t %f \t %e \t %f \t %f\t" ,
-           event_id , raMax , decMax , skyMap->total_logPosterior ,
+    printf("  %f \t %f \t %e \t %f \t %f\t" ,
+           raMax , decMax , skyMap->total_logPosterior ,
            longMax , decMax );
     if( numObs > 1 )
         for( i = 0 ; i != numObs ; ++i )
@@ -388,7 +409,7 @@ void load_metadata(NetworkProperties* network , int slot)
 void load_data(NetworkProperties* network , int slot )
 {
    const char* file = frame_file[ network->detectors[slot] ];
-   const char* initial = channel_name[ network->detectors[slot] ];
+   const char* selected_channel_name = channel_name[ network->detectors[slot] ];
   
   if (file)
     {
@@ -400,7 +421,7 @@ void load_data(NetworkProperties* network , int slot )
       COMPLEX8TimeSeries H1series;
       int i;
       
-      sprintf(H1series.name,"%s:CBC-CData_%s", initial, event_id);
+      sprintf(H1series.name,"%s", selected_channel_name);
       stream = XLALFrOpen("./", file);
       if (!stream)
         {
@@ -475,9 +496,9 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
 {
   int i,j;
   
-  XLALSkymap2PlanType* plan;
-  XLALSkymap2DirectionPropertiesType *properties;   
-  XLALSkymap2KernelType *kernels;
+  XLALSkymapPlanType* plan;
+  XLALSkymapDirectionPropertiesType *properties;   
+  XLALSkymapKernelType *kernels;
   
   double** xSw = malloc( sizeof( double* ) * network->N );
   double** xSw2 = malloc( sizeof( double* ) * network->N ); 
@@ -556,7 +577,7 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
    *  the sky tiles implied by the frequency) 
    */
   plan = malloc(sizeof(*plan));
-  XLALSkymap2PlanConstruct( frequency , network->N , network->detectors , plan ); 
+  XLALSkymapPlanConstruct( frequency , network->N , network->detectors , plan ); 
   
   /*
    *  Directions assigned for each pixel, using sine proj.
@@ -580,9 +601,9 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
   properties = malloc(sizeof(*properties) * skyMap->count );
   for (i = 0 ; i != skyMap->count ; ++i)
     {
-      XLALSkymap2DirectionPropertiesConstruct(
+      XLALSkymapDirectionPropertiesConstruct(
  		                              plan, 
-				              skyMap->directions + i,
+				              &((*(skyMap->directions + i))[0]),
 				              properties + i
 				              );
     }// end i for
@@ -626,7 +647,7 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
       for( k = 0 ; k < 4 ; ++k ) /* over 4 waveForm amplitudes */
         {
   	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
-	    XLALSkymap2KernelConstruct( plan , properties + i, wSw, kernels + i );
+	    XLALSkymapKernelConstruct( plan , properties + i, wSw, kernels + i );
           fprintf( stderr , "#samples = %d\n#count= %d\n" , samples , skyMap->count); //<< FIXME	
           
 	  for (i = 0; i != skyMap->count; ++i) /* over all pixels */
@@ -637,18 +658,18 @@ void analyze( NetworkProperties* network , SkyMapProperties* skyMap )
 	        {
                   double real , imag;
                   //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
-		  XLALSkymap2Apply( plan , 
+		  XLALSkymapApply( plan , 
                                     properties + i , 
                                     kernels + i , 
                                     xSw  , 
-                                    t , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
                                     &real );       
                   //fprintf(stderr, "%d: i = %d, t = %d\n", __LINE__, i, t);
-		  XLALSkymap2Apply( plan , 
+		  XLALSkymapApply( plan , 
                                     properties + i , 
                                     kernels + i , 
                                     xSw2 , 
-                                    t , 
+                                    ((double) t) / ((double) plan->sampleFrequency), 
                                     &imag );
 		  buffer[t] = real + imag;  
 	        }// end t for

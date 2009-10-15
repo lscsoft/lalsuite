@@ -388,6 +388,10 @@ LALGetApproximantFromString(
   {
     *approximant = GeneratePPN;
   }
+  else if ( strstr(thisEvent, "TaylorT4" ) )
+  {
+    *approximant = TaylorT4;
+  }
   else if ( strstr(thisEvent, "NumRel" ) )
   {
     *approximant = NumRel;
@@ -395,6 +399,10 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "IMRPhenomA" ) )
   {
     *approximant = IMRPhenomA;
+  }
+  else if ( strstr(thisEvent, "IMRPhenomB" ) )
+  {
+    *approximant = IMRPhenomB;
   }
   else
   {

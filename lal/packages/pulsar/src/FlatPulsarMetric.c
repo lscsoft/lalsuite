@@ -169,16 +169,8 @@ Phi_i ( double tt, void *params )
   REAL8 ti = par->startTime + tt * par->Tspan;
   REAL8 sineps, coseps;
 
-  if ( par->edat->leap < 0 )	/* used to communicate coordinate-system of ephemeris-file */
-    {
-      sineps = 0;	/* LISA: ephemeris is using ECLIPTIC coords */
-      coseps = 1;
-    }
-  else
-    {
-      sineps = SIN_EPS;	/* non-LISA: earth ephemeris is using EQUATORIAL coords */
-      coseps = COS_EPS;
-    }
+  sineps = SIN_EPS;	/* non-LISA: earth ephemeris is using EQUATORIAL coords */
+  coseps = COS_EPS;
 
   if ( par->comp < 0 )	  /* rX, rY */
     {

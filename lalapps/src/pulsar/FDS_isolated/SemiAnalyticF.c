@@ -324,7 +324,6 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   EarthState earth;
   AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
   LALDetector *Detector;              /* Our detector*/
   INT4 k;
 
@@ -378,8 +377,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 #define MAXFILENAME 256
   {
     CHAR filenameE[MAXFILENAME], filenameS[MAXFILENAME];
-    INT4 leap;
-    
+
     /* don't use absolute path if none was given, this
      * allows LAL to find the ephemeris in LAL_DATA_PATH */
     if ( LALUserVarWasSet (&(CLA->efiles)) ) 
@@ -398,9 +396,6 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
     (*edat).ephiles.earthEphemeris = filenameE;     
     (*edat).ephiles.sunEphemeris = filenameS;         
-
-    TRY ( LALLeapSecs(status->statusPtr, &leap, &(timestamps->data[0]), &formatAndAcc), status);
-    (*edat).leap=leap; 
 
     /* Reads in ephemeris files */
     TRY( LALInitBarycenter (status->statusPtr, edat), status );
@@ -436,7 +431,6 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   amParams->das->pSource->orientation = 0.0;
 
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc = formatAndAcc.accuracy;
   
   /* Allocate space for AMCoeffs */
   amc.a = NULL;

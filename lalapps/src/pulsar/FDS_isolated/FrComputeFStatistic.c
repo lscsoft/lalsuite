@@ -764,19 +764,14 @@ void CreateDemodParams (LALStatus *status)
   EmissionTime emit;
   AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
   INT4 k;
 
   INITSTATUS (status, "CreateDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
-  
+
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = GV.EphemEarth;     
   (*edat).ephiles.sunEphemeris = GV.EphemSun;         
-
-  TRY (LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
-  (*edat).leap=leap;
 
   /* Reads in ephemeris files */
   TRY (LALInitBarycenter(status->statusPtr, edat), status);               
@@ -806,7 +801,6 @@ void CreateDemodParams (LALStatus *status)
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc=formatAndAcc.accuracy;
 
  /* Mid point of each SFT */
    midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno,sizeof(LIGOTimeGPS));

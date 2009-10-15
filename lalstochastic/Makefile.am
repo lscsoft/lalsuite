@@ -1,7 +1,18 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
-EXTRA_DIST = doc gnuscripts lalstochastic.pc.in lalstochastic.spec.in \
-  lalstochastic.spec aclocal.m4
-SUBDIRS = include src test
+
+EXTRA_DIST = \
+	doc \
+	lalstochastic.pc.in \
+	lalstochastic.spec.in \
+	lalstochastic.spec \
+	aclocal.m4
+
+SUBDIRS = \
+	gnuscripts \
+	debian \
+	include \
+	src \
+	test
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc

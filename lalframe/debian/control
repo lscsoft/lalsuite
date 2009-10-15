@@ -1,0 +1,22 @@
+Source: lalframe
+Section: lscsoft
+Priority: optional
+Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, libframe-dev (>= 8.0), libframe1 (>= 8.0), lal-dev (>= 6.4), lal (>= 6.4), pkg-config
+Standards-Version: 3.7.2
+
+Package: lalframe
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, lal (>= 6.4), libframe1 (>= 8.0)
+Description: LSC Algorithm Library Frame
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL Frame library.
+
+Package: lalframe-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libframe-dev (>= 8.0), lal-dev (>= 6.4)
+Description: LSC Algorithm Library Frame Developers
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package contains files needed build applications that use the LAL
+ Frame library.

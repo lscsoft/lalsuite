@@ -130,7 +130,7 @@ void setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const Dopp
 
 hemisphere_t onWhichHemisphere ( const vect3Dlist_t *skypoints );
 int skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos );
-int vect2DToSkypos ( SkyPosition *skypos, const vect2D_t *vect2D, hemisphere_t hemi );
+int vect2DToSkypos ( SkyPosition *skypos, vect2D_t * const vect2D, hemisphere_t hemi );
 int findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points );
 
 int IndexToCanonical ( gsl_vector **canonicalOffset, const gsl_vector_int *Index, const DopplerLatticeScan *scan );
@@ -143,7 +143,7 @@ int convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canon
 int vect2DInPolygon ( const vect2D_t *point, const vect2Dlist_t *polygon );
 int isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary_t *boundary );
 
-int fprintf_vect2D ( FILE *fp, const vect2D_t *vect, hemisphere_t hemi );
+int fprintf_vect2D ( FILE *fp, vect2D_t * const vect, hemisphere_t hemi );
 int fprintf_vect2Dlist ( FILE *fp, const vect2Dlist_t *list, hemisphere_t hemi );
 DopplerLatticeScan *XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *scan );
 
@@ -504,7 +504,7 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
   }
 
   skypos.system = skyCoords;
-  if ( vect2DToSkypos ( &skypos, (const vect2D_t*)&(doppler.vn), scan->boundary.hemisphere) ) {
+  if ( vect2DToSkypos ( &skypos, &(doppler.vn), scan->boundary.hemisphere) ) {
     XLAL_ERROR (fn, XLAL_EFUNC );
   }
 
@@ -1114,7 +1114,7 @@ skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos )
  * return: 0=OK, -1=ERROR
  */
 int
-vect2DToSkypos ( SkyPosition *skypos, const vect2D_t *vect2D, hemisphere_t hemi )
+vect2DToSkypos ( SkyPosition *skypos, vect2D_t * const vect2D, hemisphere_t hemi )
 {
   REAL8 invnorm;
   vect3D_t nvect = {0,0,0};
@@ -1288,7 +1288,7 @@ vect2DInPolygon ( const vect2D_t *point, const vect2Dlist_t *polygon )
 } /* vect2DInPolygon() */
 
 int
-fprintf_vect2D ( FILE *fp, const vect2D_t *vect, hemisphere_t hemi )
+fprintf_vect2D ( FILE *fp, vect2D_t * const vect, hemisphere_t hemi )
 {
   SkyPosition skypos;
 
@@ -1313,7 +1313,7 @@ fprintf_vect2Dlist ( FILE *fp, const vect2Dlist_t *list, hemisphere_t hemi )
     return -1;
 
   for ( i=0; i < list->length; i ++ )
-    fprintf_vect2D ( fp, (const vect2D_t*)&(list->data[i]), hemi );
+    fprintf_vect2D ( fp, &(list->data[i]), hemi );
 
   return 0;
 }

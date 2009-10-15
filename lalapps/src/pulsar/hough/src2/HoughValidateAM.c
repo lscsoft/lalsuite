@@ -366,22 +366,12 @@ int main( int argc, char *argv[]){
     VelocityPar   velPar;
     REAL8     vel[3]; 
     UINT4     j; 
-    
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
-		     INT4, while EphemerisData defines it to be INT2. This won't
-                   cause problems before, oh, I don't know, the Earth has been 
-                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
-    
+
     velPar.detector = detector;
     velPar.tBase = timeBase;
     velPar.vTol = 0.0; /* irrelevant */
     velPar.edat = NULL;
-    
-    /* Leap seconds for the start time of the run */   
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
-    
+
     /* read in ephemeris data */
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;

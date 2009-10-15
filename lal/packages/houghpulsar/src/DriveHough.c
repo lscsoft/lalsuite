@@ -869,7 +869,6 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
-  amParams->leapAcc = LALLEAPSEC_STRICT;
 
   /* allocate memory for a[i] and b[i] */
   /*   TRY( LALSCreateVector( status, &(amc.a), length), status); */

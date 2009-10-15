@@ -81,8 +81,20 @@ typedef enum {
   DETMOTION_SPIN_PTOLEORBIT,	/**< ptole-orbital motion (on a circle) + Earth spin */
   DETMOTION_PTOLEORBIT,		/**< pure "Ptolemaic" orbital motion, no Earth spin */
 
+  DETMOTION_ORBIT_SPINZ,	/**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
+  DETMOTION_ORBIT_SPINXY,	/**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
+
   DETMOTION_LAST
 } DetectorMotionType;
+
+
+typedef enum {
+  METRIC_TYPE_PHASE = 0,	/**< compute phase metric only */
+  METRIC_TYPE_FSTAT = 1,	/**< compute full F-metric only */
+  METRIC_TYPE_ALL   = 2,	/**< compute both F-metric and phase-metric */
+  METRIC_TYPE_LAST
+} MetricType_t;
+
 
 /** Array of symbolic 'names' for various detector-motions
  */
@@ -94,6 +106,9 @@ const CHAR *DetectorMotionNames[] = {
 
   "spin+ptoleorbit",
   "ptoleorbit",
+
+  "orbit+spin_Z",
+  "orbit+spin_XY",
 
   "NONE"
 };
@@ -117,6 +132,19 @@ typedef enum {
   DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * Tspan^3 */
   DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * Tspan^4 */
 
+  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
+
+  DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
+  DOPPLERCOORD_N3X,			/**< experimental: unconstrained sky-vector n3: ecliptic-x coordinate */
+  DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
+  DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
+
+  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -138,6 +166,19 @@ const CHAR *DopplerCoordinateNames[] = {
   "f1dot_Nat",
   "f2dot_Nat",
   "f3dot_Nat",
+
+  "Alpha_Nat",
+  "Delta_Nat",
+
+  "nEcl_x_Nat",
+  "nEcl_y_Nat",
+
+  "n3_x",
+  "n3_y",
+  "n3_z",
+
+  "nEqu_x_Nat",
+  "nEqu_y_Nat",
 
   "NONE"
 };
@@ -162,6 +203,19 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! Tspan^2 [Units:1]",
   "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! Tspan^3 [Units:1]",
   "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! Tspan^4 [Units:1]",
+
+  "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
+  "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
+
+  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+
+  "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
+  "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
+  "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
+
+  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
 
   "NONE"
 };
@@ -201,6 +255,9 @@ typedef struct
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
+  INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
+
+  MetricType_t metricType;			/**< switch controlling which types of metric to compute: 0 = PhaseMetric g_ij, 1 = Fmetrics gF.., 2=BOTH */
 } DopplerMetricParams;
 
 
@@ -224,6 +281,7 @@ typedef struct
   gsl_matrix *a_b_i_j;	/**< \f$ \langle a\,b \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
   gsl_matrix *b_b_i_j;	/**< \f$ \langle b^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
 
+  double maxrelerr;	/**< estimate for largest relative error in metric component integrations */
 } FmetricAtoms_t;
 
 
@@ -235,12 +293,16 @@ typedef struct
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
+  double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
 
   gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
 
   gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
+
+  double maxrelerr_gF;			/**< estimate for largest relative error in Fmetric component integrations */
+
   REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
 } DopplerMetric;
 
@@ -252,7 +314,8 @@ extern MultiDetectorInfo empty_MultiDetectorInfo;
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *
 XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
-			 const EphemerisData *edat
+			 const EphemerisData *edat,
+                         double *relerr_max
 			 );
 
 DopplerMetric*

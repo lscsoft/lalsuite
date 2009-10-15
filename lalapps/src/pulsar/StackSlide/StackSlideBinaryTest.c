@@ -561,8 +561,6 @@ ASSERT(params->SemiMajorAxis>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINA
 
   /* Here we redefine the orbital variables for ease of use */
 
-/*printf("leap %d\n",(*edat).leap);*/
-
  a=params->SemiMajorAxis;  /* This is the projected semi-major axis of the orbit normalised by the speed of light */
  Period=params->OrbitalPeriod;  /* This is the period of the orbit in seconds */
  ecc=params->OrbitalEccentricity;  /* This is the eccentricity of the orbit */
@@ -627,9 +625,6 @@ ASSERT(tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH
  LALIncrementGPS(status->statusPtr,&(baryinput.tgps),&tGPS[n],&HalfSFT);
 
  /*fprintf(stdout,"half tgps in detector time %d\n",baryinput.tgps.gpsSeconds);*/
-
-/* fprintf(stdout,"leap %d\n",(*edat).leap);*/
-
 
 
      /* Convert this mid point detector time into barycentric time (SSB) */
@@ -848,15 +843,8 @@ FILE *fpS;
 	 fscanf(fpS,"%d \t %le \t %d\n",&x, &y, &z);
 	 
 	 /*fprintf(stdout,"x y z are %d \t %12.12le \t %d\n", x,y,z);*/
-      
-	 /*set leap seconds for 00-04*/
-	 (*edat).leap = 13;
-	 
-#ifdef DEBUG_STACKSLIDE_FNC	 
-	 printf("leap is %d\n",(*edat).leap);
-#endif
-	 	/*Read in ephemeris files*/
 
+         /*Read in ephemeris files*/
         LALInitBarycenter(&status, edat);
 
 #ifdef DEBUG_STACKSLIDE_FNC

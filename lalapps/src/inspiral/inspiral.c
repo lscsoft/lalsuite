@@ -320,7 +320,6 @@ int main( int argc, char *argv[] )
 {
   /* lal function variables */
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
   FrCache      *frInCache = NULL;
@@ -465,8 +464,7 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable,
@@ -2608,7 +2606,9 @@ int main( int argc, char *argv[] )
                       bankCurrent->end_time.gpsSeconds;
                     tempTmplt->end_time.gpsNanoSeconds =
                       bankCurrent->end_time.gpsNanoSeconds;
-                    tempTmplt->event_id->id = bankCurrent->event_id->id;
+                    if (bankCurrent->event_id)
+                      tempTmplt->event_id->id = bankCurrent->event_id->id;
+                    else tempTmplt->event_id->id = 0;
 
                     if ( ! eventList ) {
                       UINT4 kmax;
@@ -2648,14 +2648,11 @@ int main( int argc, char *argv[] )
                           &coherentInputData, fcFilterParams->cVec,
                           tempTmplt, 0.5, numPoints / 4 ), &status );
 
-                    LALFree( tempTmplt->event_id );
-                    LALFree( tempTmplt );
-
                     if ( coherentInputData )
                     {
                       cDataForFrame = 1;
                       snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                   "%Ld", bankCurrent->event_id->id );
+                                   "%Ld", tempTmplt->event_id->id );
                       snprintf( coherentInputData->name,
                                    LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
@@ -2676,6 +2673,8 @@ int main( int argc, char *argv[] )
                       LALFree( coherentInputData );
                       coherentInputData = NULL;
                     }
+                    LALFree( tempTmplt->event_id );
+                    LALFree( tempTmplt );
                   }
                 }
 
@@ -3121,8 +3120,7 @@ int main( int argc, char *argv[] )
   /* write the process table */
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,

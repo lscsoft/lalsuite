@@ -459,7 +459,7 @@ SimInspiralTable* XLALRandomNRInjectTotalMass(
   /* copy over the numrel information */
   inj->numrel_mode_min = nrInjParams->numrel_mode_min;
   inj->numrel_mode_max = nrInjParams->numrel_mode_max;
-  snprintf( inj->numrel_data, LIGOMETA_STRING_MAX,
+  snprintf(inj->numrel_data, LIGOMETA_STRING_MAX, "%s",
       nrInjParams->numrel_data);
 
   return ( inj );

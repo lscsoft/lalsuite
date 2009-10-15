@@ -175,7 +175,13 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case IMRPhenomA:
+      case IMRPhenomB:
            LALBBHPhenWaveTimeDom(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
+       break;
+      case IMRPhenomFA:
+      case IMRPhenomFB:
+           LALBBHPhenWaveFreqDom(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
        break;
       case BCV:
@@ -289,7 +295,13 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
            break;
       case IMRPhenomA:
+      case IMRPhenomB:
            LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
+           CHECKSTATUSPTR(status);
+           break;
+      case IMRPhenomFA:
+      case IMRPhenomFB:
+           LALBBHPhenWaveFreqDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case TaylorF1:
@@ -360,6 +372,7 @@ LALInspiralWaveForInjection(
        CHECKSTATUSPTR(status);
 	   break;
      case IMRPhenomA:
+     case IMRPhenomB:
        LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
        break;
@@ -379,7 +392,11 @@ LALInspiralWaveForInjection(
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);
-     	break;
+     	   break;
+      case TaylorT4:
+           LALTaylorT4WaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           CHECKSTATUSPTR(status);
+           break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
 

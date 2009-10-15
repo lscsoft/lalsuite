@@ -28,7 +28,7 @@ tol=1e-4	## error tolerance for v2-v4 strain comparison
 
 if [ -z "$LAL_DATA_PATH" ]; then
     if [ -n "$LAL_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+	LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
     else
 	echo
 	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
@@ -38,6 +38,7 @@ if [ -z "$LAL_DATA_PATH" ]; then
 	exit 1
     fi
 fi
+export LAL_DATA_PATH
 
 #prepare test subdirectory
 if [ ! -d "$testDIR" ]; then
@@ -47,7 +48,12 @@ else
     rm -f $testDIR/* || true
 fi
 
-ephemdir=$LAL_PREFIX/share/lal
+#ephemdir=$LAL_PREFIX/share/lal
+# determine ephemdir from LAL_DATA_PATH
+SAVEIFS="$IFS"
+IFS=:
+for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && break; done
+IFS="$SAVEIFS"
 
 # input parameters
 Tsft=20

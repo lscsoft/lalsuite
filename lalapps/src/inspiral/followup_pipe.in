@@ -454,7 +454,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
 # Prepare the qscan background
 if opts.background_qscan or opts.background_hoft_qscan or opts.background_seis_qscan:
   for ifo in ifos_list:
-    times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
+    times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo,segFile)
     for time in times:
       # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
       dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,'datafind')

@@ -321,6 +321,7 @@ int numberIfoSites(DataFramework *DF, int coherentN);
 double GMST(double GPSsec);
 double rightAscension(double longi, double gmst);
 double longitude(double rightascension, double gmst);
+void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coherentN);
 
 
 void vectorInit(vector *vec)
@@ -551,7 +552,7 @@ int char2template(char *templatename)
   else if (strcmp(templatename, "2025")==0)  
     result = i2025;
   else if (strcmp(templatename, "2535")==0)  
-    result = i2025;
+    result = i2535;
   else if (strcmp(templatename, "LALTaylorT2PN00")==0)  
     result = iLALTT2PN00;
   else if (strcmp(templatename, "LALTaylorT2PN10")==0)  
@@ -915,6 +916,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   int InitialisationOK = 1;
   double startGPS, endGPS;
   long lhdf = 0;
+  int dumponly = 0;
   static struct option long_options[] = {
     {"template",           required_argument, 0, 't'},
     {"outfilename",        required_argument, 0, 'l'},
@@ -944,6 +946,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     {"priorparameters",    required_argument, 0, 'O'},
     {"help",               no_argument,       0, 'h'},
     {"quiet",              no_argument,       0, 'q'},
+    {"dumponly",           no_argument,       0, 'o'},
     {0,                    0,                 0,   0}
   };
   int optparse, optionIndex;
@@ -983,7 +986,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   /* loop over command line arguments: */
   while (1) {
     optparse = getopt_long(argc, argv,
-                           "t::l::i::r::c::b::a::T::S::C::R::e::n::s::w::d::D::f::F::x::v::g::V::I::m::O::h::q::",
+                           "t::l::i::r::c::b::a::T::S::C::R::e::n::s::w::d::D::f::F::x::v::g::V::I::m::O::h::q::o::",
                            long_options, &optionIndex);
     if (optparse == -1) break;
     switch (optparse) {
@@ -1015,6 +1018,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       case 'O': {strcpy(CLpriorpar, optarg); break;}            /* --priorparameters             */
       case 'h': {printhelpmessage(); return 0; break;}          /* --help                        */
       case 'q': {break;}                                        /* --quiet                       */
+      case 'o': {dumponly=1; break;}                            /* --dumponly                    */
     }
   }
   /* command line arguments require further processing...: */
@@ -1787,7 +1791,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     inject(DF, *coherentN, injecttemplate, &injectpar);
     /* dumptemplates(DF, &injectpar, 
                      "/home/christian/temp/templatesF.txt", 
-                     "/home/christian/temp/templatesT.txt");*/ 
+                     "/home/christian/temp/templatesT.txt"); */
     vectorDispose(&injectpar);
   }
 
@@ -1808,6 +1812,9 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
 
   *DFarg = DF;
   *MFarg = MF;
+
+  if (InitialisationOK && dumponly)
+    InitialisationOK = 2;
 
   return InitialisationOK;
 } /*--  end of "init()".  --*/
@@ -4040,6 +4047,7 @@ void RandMVNorm(McmcFramework *MF, double *result)
   /* copy result to output: */
   for (i=0; i<MF->pardim; ++i)
     result[i] = gsl_vector_get(draw, i);
+  gsl_vector_free(draw);
 }
 
 
@@ -4389,7 +4397,7 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
   scalar = (d<=5) ? 1.0 : 2.4/sqrt(d);
   /* (see Gelman & al.: Bayesian Data Analysis, p.334)                  */
   /*scalar /= 5.0;*/
-  scalar /= 10.0;
+  scalar /= 5.0;
   /* (this seems to work better here than Gelman & al's recommendation) */
 
   /* generate the Gaussian / t-distributed proposal */
@@ -5014,7 +5022,7 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   int accept;
   time_t starttime, endtime;
   double seconds;
-  char logstring[32];
+  char logstring[256];
 
   DateTimeString(logstring);
   logtoLOGfile(MF, "metropolishastings() start", logstring);
@@ -5111,6 +5119,8 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   DateTimeString(logstring);
   logtoLOGfile(MF, "metropolishastings() finish", logstring);
 }
+
+
 
 
 void printDF(DataFramework *DF)
@@ -5222,6 +5232,88 @@ double longitude(double rightascension, double gmst)
 }
 
 
+void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coherentN)
+{
+  double complex *FourierTemplate=NULL;
+  long i, j, maxftsize;
+  double absdiff, chisquared=0.0;
+  double logfactor;
+  double locdeltat, locpolar, locazi, localti;
+  vector localparameter;
+  FILE *textfile;
+  double llikeli;
+  char logstring[128];
+  char templatefilename[256];
+
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "writeDataAndTemplatesToFile() start", logstring);
+
+  sprintf(logstring, "%.5f", MF->GMST);
+  logtoLOGfile(MF, "GMST", logstring);
+
+  llikeli = loglikelihood(DF, coherentN, MF->template, NULL);
+  sprintf(logstring, "%.5f", llikeli);
+  logtoLOGfile(MF, "null likelihood", logstring);
+
+  llikeli = loglikelihood(DF, coherentN, MF->template, &MF->startvalue);
+  sprintf(logstring, "%.5f", llikeli);
+  logtoLOGfile(MF, "startvalue likelihood", logstring);
+
+  maxftsize = 0;
+  for (i=0; i<coherentN; ++i)
+    if (DF[i].FTSize > maxftsize) maxftsize = DF[i].FTSize;
+  FourierTemplate = (double complex*) malloc(sizeof(double complex)*maxftsize);
+
+  vectorInit(&localparameter);
+  /* copy over everything except longitude & latitude, and add azimuth & altitude instead: */
+  for (j=0; j<MF->startvalue.dimension; ++j)
+    if ((strcmp(MF->startvalue.name[j],"longitude")!=0) 
+        && (strcmp(MF->startvalue.name[j],"latitude")!=0))
+      vectorAdd(&localparameter, MF->startvalue.name[j], MF->startvalue.value[j]);
+  vectorAdd(&localparameter, "azimuth", 0.0);
+  vectorAdd(&localparameter, "altitude", 0.0);
+
+  /* loop over individual data sets / interferometers: */
+  for (i=0; i<coherentN; ++i){
+    sprintf(templatefilename, "%s", MF->csvfilename);
+    j=0;
+    while (templatefilename[j]) ++j;
+    templatefilename[j-4] = 0;
+    sprintf(templatefilename, "%s-%d-%s.csv", templatefilename, i+1, DF[i].ifo->name);
+    printf(" : writing \"%s\"\n", templatefilename);
+    textfile = fopen(templatefilename, "w");
+    fprintf(textfile, "\"f\",\"logPSD\",\"dataReal\",\"dataImag\",\"templateReal\",\"templateImag\"\n");
+
+    /*logfactor = log(DF[i].dataDeltaT) - log(DF[i].dataSize) + log(2.0);*/
+    /* determine "local" parameters:    */
+    localParameters(&MF->startvalue, DF[i].ifo, &locdeltat, &locpolar, &localti, &locazi);
+    vectorSetValue(&localparameter, "time",         vectorGetValue(&MF->startvalue,"time")+locdeltat);
+    vectorSetValue(&localparameter, "polarisation", locpolar);
+    vectorSetValue(&localparameter, "azimuth",      locazi);
+    vectorSetValue(&localparameter, "altitude",     localti);
+    /* compute Fourier-domain template: */
+    signaltemplate(&DF[i], MF->template, &localparameter, FourierTemplate);
+
+    /* compute sum-of-squares:          */
+    for (j=0; j<DF[i].FTSize; ++j){
+      /*absdiff    =  cabs(DF[i].dataFT[j] - FourierTemplate[j]);
+	chisquared += exp(logfactor + 2.0*log(absdiff) - DF[i].powspec[j]);*/
+      fprintf(textfile, "%f,%e,%e,%e,%e,%e\n",
+                        ((double)j)*DF[i].FTDeltaF, DF[i].powspec[j],
+                        creal(DF[i].dataFT[j]), cimag(DF[i].dataFT[j]),
+                        creal(FourierTemplate[j]), cimag(FourierTemplate[j]));
+    }
+    fclose(textfile);
+  }
+
+  free(FourierTemplate);
+  vectorDispose(&localparameter);
+  
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "writeDataAndTemplatesToFile() finish", logstring);
+}
+
+
 int main(int argc, char *argv[])
 {
   DataFramework *DatFW;
@@ -5261,7 +5353,10 @@ int main(int argc, char *argv[])
 
     if (initOK) {
       /* for (i=0; i<coherentN; ++i) printDF(&DatFW[i]); */
-      metropolishastings(McmcFW, DatFW, coherentN);
+      if (initOK==1)
+        metropolishastings(McmcFW, DatFW, coherentN);
+      else
+        writeDataAndTemplatesToFile(McmcFW, DatFW, coherentN);
     }
     /* clearMF(McmcFW);          */
     /* clearDF(DatFW);           */

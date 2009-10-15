@@ -30,7 +30,6 @@
 
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
-#include <lal/FrameCache.h>
 #include <lal/LALStdlib.h>
 
 /* macro to "use" unused function parameters */

@@ -60,6 +60,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EONECONFIG   10
 #define USERINPUTH_ERECFORMAT   11
 #define USERINPUTH_EXLAL	12
+#define USERINPUTH_ENAMECOLL    13
 
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
@@ -74,6 +75,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
 #define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
 #define USERINPUTH_MSGEXLAL	"Failure in XLAL function"
+#define USERINPUTH_MSGENAMECOLL "Commandline option assigned more than once"
 
 /*@}*/
 /*************************************************** </lalErrTable> */

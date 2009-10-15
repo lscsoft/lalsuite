@@ -478,13 +478,6 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
 
     DT = time - T0;
 
-    if(time <= 820108813)
-      (*edat).leap = 13;
-    else if(time <= 914803214)
-      (*edat).leap = 14;
-    else
-      (*edat).leap = 15;
-
     /* only call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
     if( i==0 || DT > DTplus ){

@@ -14,10 +14,12 @@ AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 AC_DEFUN([DO_ENABLE_LAL_GCC_FLAGS],
 [
   lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length"
-  case $host_cpu-$host_os in
-    *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
-    *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
-  esac
+  if test "${cuda}" != "true"; then
+    case $host_cpu-$host_os in
+      *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
+      *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
+    esac
+  fi
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
@@ -86,40 +88,16 @@ AC_DEFUN([LAL_WITH_CC],
   ],)
 ])
 
-AC_DEFUN([LAL_ENABLE_FRAME],
-[AC_ARG_ENABLE(
-  [frame],
-  AC_HELP_STRING([--enable-frame],[compile code that requires Frame library [default=yes]]),
-  [ case "${enableval}" in
-      yes) frame=true ;;
-      no)  frame=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
-    esac
-  ], [ frame=true ] )
-])
-
 AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
-  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio/dataflow library [default=yes]]),
+  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio library [default=yes]]),
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
     esac
   ], [ metaio=true ] )
-])
-
-AC_DEFUN([LAL_ENABLE_XML],
-[AC_ARG_ENABLE(
-  [xml],
-  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
-  [ case "${enableval}" in
-      yes) xml=true;;
-      no)  xml=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
-    esac
-  ], [ xml=false ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
@@ -133,6 +111,37 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
     esac
   ], [ intelfft=false ] )
+])
+
+AC_DEFUN([LAL_WITH_CUDA],
+[AC_ARG_WITH(
+  [cuda],
+  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
+  [ case "$with_cuda" in
+    no)
+      cuda=false
+      ;;
+    yes)
+      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
+      cuda=true
+      CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
+      CUDA_CFLAGS="-I/opt/cuda/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
+      ;;
+    *)
+      AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
+      cuda=true
+      CUDA_LIBS="-L${with_cuda}/lib -lcufft -lcudart"
+      CUDA_CFLAGS="-I${with_cuda}/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
+    esac
+  ], [ cuda=false ])
 ])
 
 AC_DEFUN([LAL_ENABLE_DEBUG],

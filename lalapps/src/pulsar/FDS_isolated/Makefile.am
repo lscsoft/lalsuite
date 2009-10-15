@@ -59,6 +59,11 @@ lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticM
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
+
 TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh
+TESTS_ENVIRONMENT = \
+LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
+LAL_PREFIX=$(LAL_PREFIX) \
+LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
 
 CLEANFILES =

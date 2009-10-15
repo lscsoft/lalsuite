@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include <lal/DataBuffer.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
