@@ -29,7 +29,7 @@ from optparse import OptionParser
 import ConfigParser
 import time
 from glue import pipeline
-import tracksearch
+from lalapps import tracksearch
 from tracksearchutils import progressSpinner
 from tracksearchutils import autoCreateSegmentList
 from tracksearchutils import determineDataPadding
