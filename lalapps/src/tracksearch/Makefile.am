@@ -20,11 +20,7 @@ lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
 lalapps_tracksearch_datagen_SOURCES = $(TSDATAGENSRCS)
 lalapps_tracksearch_averager_SOURCES = $(TRACKSEARCHAVGSRC)
 lalapps_tracksearch_dat2pgm_SOURCES = $(TSUTILSRCS)
-else
-bin_PROGRAMS =
 endif
-else
-bin_PROGRAMS =
 endif
 
 if HAVE_PYTHON
