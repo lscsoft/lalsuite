@@ -69,6 +69,12 @@
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
+/** 5-point derivative formulas */
+#define DERIV5P_1(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 8.0 * (pm1) + 8.0 * (pp1) - (pp2)) / ( 12.0 * (h) ) )
+#define DERIV5P_2(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 16.0 * (pm1) - 30.0 * (p0) + 16.0 * (pp1) - (pp2) ) / ( 12.0 * (h) * (h) ) )
+#define DERIV5P_3(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 2.0 * (pm1) - 2.0 * (pp1) + (pp2) ) / ( 2.0 * (h) * (h) * (h) ) )
+#define DERIV5P_4(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 4.0 * (pm1) + 6.0 * (p0) - 4.0 * (pp1) + (pp2) ) / ( (h) * (h) * (h) * (h) ) )
+
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
 
@@ -2028,3 +2034,130 @@ matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in )
   return 0;
 
 } /* matrix33_in_vect3() */
+
+/** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
+ * \f$r_{\mathrm{orb}}(t)\f$.
+ *
+ * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
+ *
+ * Returns a vector of derivatives \f$\frac{d^n\,r_{\mathrm{orb}}}{d\,t^n}\f$ at the given
+ * GPS time. Note, the return vector includes the zeroth-order derivative, so we return
+ * (maxorder + 1) derivatives: n = 0 ... maxorder
+ *
+ */
+vect3Dlist_t *
+XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-order to compute */
+                                const LIGOTimeGPS *tGPS,	/**< [in] GPS time at which to compute the derivatives */
+                                const EphemerisData *edat	/**< [in] ephemeris data */
+                                )
+{
+  const char *fn = __func__;
+
+  EarthState earth;
+  LALStatus status;
+  LIGOTimeGPS ti;
+  INT4 h = 86400;	/* finite-differencing step-size: for rOrb, 1days seems like a reasonable choice */
+  vect3D_t r0m2h, r0mh, r0, r0_h, r0_2h;
+  vect3Dlist_t *ret = NULL;
+
+  /* check input consistency */
+#define MAX_MAXORDER 4
+  if ( maxorder > MAX_MAXORDER ) {
+    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", fn, maxorder, MAX_MAXORDER );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+
+  if ( !tGPS ) {
+    XLALPrintError ("%s: invalid NULL pointer received for 'tGPS'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( !edat ) {
+    XLALPrintError ("%s: invalid NULL pointer received for 'edat'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+
+  /* ----- find Earth's position at the 5 points: t0 -2h, t0-h, t0, t0+h, t0 + 2h ----- */
+
+  /* t = t0 */
+  ti = (*tGPS);
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0, earth.posNow );
+
+  /* t = t0 - h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds - h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0mh, earth.posNow );
+
+  /* t = t0 - 2h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds - 2 * h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0m2h, earth.posNow );
+
+  /* t = t0 + h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds + h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0_h, earth.posNow );
+
+  /* t = t0 + 2h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds + 2 * h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0_2h, earth.posNow );
+
+  /* use these 5 points to estimate derivatives */
+  UINT4 i;
+  vect3D_t rdn[MAX_MAXORDER+1];
+  COPY_VECT ( rdn[0], r0 );	// 0th order is imply r_orb(t0)
+  for ( i=0; i < 3; i ++ )
+    {
+      rdn[1][i] = DERIV5P_1(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[2][i] = DERIV5P_2(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[3][i] = DERIV5P_3(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[4][i] = DERIV5P_4(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+    } /* for i < 3 */
+
+  /* allocate return list */
+  if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  if ( (ret->data = XLALCalloc ( maxorder + 1, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", fn, maxorder + 1, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 n;
+  for ( n=0; n <= maxorder; n ++ ) {
+    COPY_VECT ( ret->data[n], rdn[n] );
+  }
+
+  return ret;
+
+} /* XLALComputeOrbitalDerivatives() */
+

@@ -354,6 +354,10 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 		    DetectorMotionType special
 		    );
 
+
+vect3Dlist_t *
+XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
+
 int
 XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams *Amp );
 
