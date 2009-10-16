@@ -609,7 +609,6 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
         self.__universe = cp.get('condor','tracksearch_universe');
-        self.add_condor_cmd('getenv','True')
         self.validJobTypes=['normal','injection']
         #If invalid type is requested display warning and
         #assume a normal injection was requested
@@ -619,6 +618,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.jobType='normal'
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         blockID=block_id
         layerID=layer_id
         layerPath=determineLayerPath(cp,blockID,layerID,channel)
