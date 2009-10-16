@@ -133,12 +133,9 @@ double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
-typedef REAL8 vect3[3];
-typedef REAL8 mat33[3][3];
-
-int equatorialVect2ecliptic ( vect3 *out, vect3 * const in );
-int eclipticVect2equatorial ( vect3 *out, vect3 * const in );
-int matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in );
+int equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in );
+int eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in );
+int matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -316,10 +313,10 @@ CWPhaseDeriv_i ( double tt, void *params )
   const CHAR *fn = "CWPhaseDeriv_i()";
   REAL8 ret;
   intparams_t *par = (intparams_t*) params;
-  vect3 nn_equ, nn_ecl;	/* skypos unit vector */
-  vect3 nDeriv_i;	/* derivative of sky-pos vector wrt i */
+  vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
+  vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
-  vect3 detpos_ecl, detpos_equ;
+  vect3D_t detpos_ecl, detpos_equ;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
   REAL8 Tspan = par->Tspan;
@@ -336,10 +333,13 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( &nn_ecl, (vect3 * const )&nn_equ );
+  equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
+
+  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
+    nn_ecl[2] = 1e-6;
 
   /*
-  vect3 nn_ecl0, nn_equ0;
+  vect3D_t nn_ecl0, nn_equ0;
   printf ("equatorialVect2ecliptic(): nn_ecl0 = { %g, %g, %g}\n", nn_ecl0[0], nn_ecl0[1], nn_ecl0[2] );
   nn_ecl[0] = nn_equ[0];
   nn_ecl[1] = cosiEcl * nn_equ[1] + siniEcl * nn_equ[2];
@@ -1977,11 +1977,11 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
  * return: 0 = OK, -1 = ERROR
  */
 int
-equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
+equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in )
 {
-  static mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
-                                    { 0.0,  cosiEcl, siniEcl },
-                                    { 0.0, -siniEcl, cosiEcl } };
+  static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
+                                { 0.0,  cosiEcl, siniEcl },
+                                { 0.0, -siniEcl, cosiEcl } };
   if (!out || !in )
     return -1;
 
@@ -1993,11 +1993,11 @@ equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-eclipticVect2equatorial ( vect3 *out, vect3 * const in )
+eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in )
 {
-  static mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
-                                     { 0.0,  cosiEcl, -siniEcl },
-                                     { 0.0,  siniEcl,  cosiEcl } };
+  static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
+                                 { 0.0,  cosiEcl, -siniEcl },
+                                 { 0.0,  siniEcl,  cosiEcl } };
 
   if (!out || !in )
     return -1;
@@ -2010,7 +2010,7 @@ eclipticVect2equatorial ( vect3 *out, vect3 * const in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in )
+matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in )
 {
   if ( !out || !mat || !in )
     return -1;

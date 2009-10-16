@@ -61,11 +61,27 @@ NRCSID( UNIVERSALDOPPLERMETRICH, "$Id$");
 
 
 /*---------- exported types ----------*/
+typedef REAL8 vect2D_t[2];	/**< 2D vector */
+typedef REAL8 vect3D_t[3];	/**< 3D vector */
+typedef REAL8 mat33_t[3][3];	/**< 3x3 matrix, useful for spatial 3D vector operations */
+
+/** variable-length list of 2D-vectors */
+typedef struct {
+  UINT4 length;			/**< number of elements */
+  vect2D_t *data;		/**< array of 2D vectors */
+} vect2Dlist_t;
+
+/** variable-length list of 3D vectors */
+typedef struct {
+  UINT4 length;			/**< number of elements */
+  vect3D_t *data;		/**< array of 3D vectors */
+} vect3Dlist_t;
+
 
 /** Small Container to hold two 3D vectors: position and velocity */
 typedef struct {
-  REAL8 pos[3];
-  REAL8 vel[3];
+  vect3D_t pos;
+  vect3D_t vel;
 } PosVel3D_t;
 
 
