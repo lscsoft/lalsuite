@@ -317,7 +317,7 @@ double
 CWPhaseDeriv_i ( double tt, void *params )
 {
   const CHAR *fn = "CWPhaseDeriv_i()";
-  REAL8 ret;
+  REAL8 ret = 0;
   intparams_t *par = (intparams_t*) params;
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */

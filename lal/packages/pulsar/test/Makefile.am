@@ -4,9 +4,17 @@
 LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
+  ResampleTest FoldAmplitudesTest LALBarycenterTest \
+  PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
+  ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest		\
+  UniversalDopplerMetricTest
+
+
 check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest \
 	FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest \
-	FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
+	FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest	\
+	UniversalDopplerMetricTest
 
 StackMetricTest_SOURCES = StackMetricTest.c
 FlatMeshTest_SOURCES = FlatMeshTest.c
@@ -26,7 +34,7 @@ PulsarCatTest_SOURCES = PulsarCatTest.c
 ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
 GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
 NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
-
+UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c
 
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
@@ -59,12 +67,6 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
 EXTRA_DIST = $(DATA) ephemtoilwd.sh
 EXTRA_TEXSOURCES =
 MOSTLYCLEANFILES = .dvi-dep times.blah
-
-
-TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
-  ResampleTest FoldAmplitudesTest LALBarycenterTest \
-  PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
-  ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
 
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
