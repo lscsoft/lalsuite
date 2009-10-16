@@ -136,7 +136,6 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   COMPLEX8TimeSeries *tsTest = NULL;
 
   COMPLEX8FFTPlan *LFTplanC8;
-  REAL4FFTPlan *LFTplanR4;
   LALStatus status = empty_LALStatus;
   UINT4 numSamples;
 
@@ -222,7 +221,6 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 
   XLALDestroySFTVector ( sfts );
   XLALDestroyCOMPLEX8FFTPlan ( LFTplanC8 );
-  XLALDestroyREAL4FFTPlan ( LFTplanR4 );
 
   status = empty_LALStatus;
   LALDestroySFTtype ( &status, &lftTest );

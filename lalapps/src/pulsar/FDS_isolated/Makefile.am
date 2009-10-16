@@ -61,8 +61,6 @@ lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticM
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
-lalapps_computeLFTfromSFTs_SOURCES = computeLFTfromSFTs.c
-
 lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 
 testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h

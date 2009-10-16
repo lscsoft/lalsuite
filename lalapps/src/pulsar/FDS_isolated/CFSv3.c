@@ -311,7 +311,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
     sftData->Tsft = 1.0 / catalog->data[0].header.deltaF;
     sftData->startTime = catalog->data[0].header.epoch;
     sftData->endTime   = catalog->data[numSFTs-1].header.epoch;
-    LALAddFloatToGPS(status->statusPtr, &sftData->endTime, &sftData->endTime, sftData->Tsft );	/* can't fail */
+    XLALGPSAdd( &sftData->endTime, sftData->Tsft );
     Tspan = XLALGPSGetREAL8(&sftData->endTime) - XLALGPSGetREAL8(&sftData->startTime);
     Tdata = numSFTs * sftData->Tsft;
   }
