@@ -138,7 +138,6 @@ static void print_usage(char *program)
       "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
       "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
       "\n"\
-      "  [--sample-rate]        srate     specify the sample rate used in the filtering code\n"\
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -267,7 +266,6 @@ int main( int argc, char *argv[] )
     {"h1-ds_sq-accuracy",   required_argument, 0,                    'E'},
     {"h2-ds_sq-accuracy",   required_argument, 0,                    'F'},
     {"l1-ds_sq-accuracy",   required_argument, 0,                    'G'},
-    {"sample-rate",         required_argument, 0,                    'K'},
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
@@ -465,12 +463,6 @@ int main( int argc, char *argv[] )
         /* quality factor accuracy L1 */
         accuracyParams.ifoAccuracy[LAL_IFO_L1].dQ = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
-
-      case 'K':
-        /* quality factor accuracy L1 */
-        accuracyParams.minimizerStep = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%le", optarg );
         break;
 
       case 'c':
@@ -767,14 +759,6 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "Error: --parameter-test must be specified\n" );
       exit( 1 );
     }
-  
-    /* time step for ds_sq_fQt minimizer */
-   if ( accuracyParams.test == ds_sq_fQt && ! accuracyParams.minimizerStep )
-      {
-        fprintf( stderr, "Error: --sample-rate must be specified for ds_sq_fQt parameter test\n");
-        exit(1);
-      }
-
 
   /* Data Type */
   if ( dataType == unspecified_data_type )
