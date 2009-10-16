@@ -57,7 +57,7 @@
 
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-#define MULT_VECT(lam, v) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
+#define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
 #define ADD_VECT(dst,src) do { (dst)[0] += (src)[0]; (dst)[1] += (src)[1]; (dst)[2] += (src)[2]; } while(0)
 #define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
 
@@ -68,6 +68,12 @@
 
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
+
+/** 5-point derivative formulas */
+#define DERIV5P_1(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 8.0 * (pm1) + 8.0 * (pp1) - (pp2)) / ( 12.0 * (h) ) )
+#define DERIV5P_2(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 16.0 * (pm1) - 30.0 * (p0) + 16.0 * (pp1) - (pp2) ) / ( 12.0 * (h) * (h) ) )
+#define DERIV5P_3(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 2.0 * (pm1) - 2.0 * (pp1) + (pp2) ) / ( 2.0 * (h) * (h) * (h) ) )
+#define DERIV5P_4(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 4.0 * (pm1) + 6.0 * (p0) - 4.0 * (pp1) + (pp2) ) / ( (h) * (h) * (h) * (h) ) )
 
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
@@ -133,12 +139,9 @@ double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
-typedef REAL8 vect3[3];
-typedef REAL8 mat33[3][3];
-
-int equatorialVect2ecliptic ( vect3 *out, vect3 * const in );
-int eclipticVect2equatorial ( vect3 *out, vect3 * const in );
-int matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in );
+int equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in );
+int eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in );
+int matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -314,12 +317,12 @@ double
 CWPhaseDeriv_i ( double tt, void *params )
 {
   const CHAR *fn = "CWPhaseDeriv_i()";
-  REAL8 ret;
+  REAL8 ret = 0;
   intparams_t *par = (intparams_t*) params;
-  vect3 nn_equ, nn_ecl;	/* skypos unit vector */
-  vect3 nDeriv_i;	/* derivative of sky-pos vector wrt i */
+  vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
+  vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
-  vect3 detpos_ecl, detpos_equ;
+  vect3D_t detpos_ecl, detpos_equ;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
   REAL8 Tspan = par->Tspan;
@@ -336,10 +339,13 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( &nn_ecl, (vect3 * const )&nn_equ );
+  equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
+
+  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
+    nn_ecl[2] = 1e-6;
 
   /*
-  vect3 nn_ecl0, nn_equ0;
+  vect3D_t nn_ecl0, nn_equ0;
   printf ("equatorialVect2ecliptic(): nn_ecl0 = { %g, %g, %g}\n", nn_ecl0[0], nn_ecl0[1], nn_ecl0[2] );
   nn_ecl[0] = nn_equ[0];
   nn_ecl[1] = cosiEcl * nn_equ[1] + siniEcl * nn_equ[2];
@@ -351,9 +357,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   exit(0);
   */
 
-  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
-    nn_ecl[2] = 1e-6;
-
+  /* get current detector position r(t) */
   REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
@@ -364,8 +368,17 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
   COPY_VECT ( detpos_equ, posvel.pos );
 
+
+  /* get 'reduced' detector position of order 'n': r_n(t),
+   * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) - 1/2! ddot{r_orb}(tau_re) - ....
+   */
+  vect3D_t rr_ord;
+  COPY_VECT ( rr_ord, posvel.pos );
+
+
   /* convert detector position in ecliptic coordinates */
   equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
+
 
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
@@ -411,6 +424,15 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
 
+      /* experimental 'global correlation' sky coordinate, if holding {nu, nu1, ...} fixed.
+       * Note: derivatives wrt to nu, nu1, ... are equivalent to f, fdot, ...
+       */
+    case DOPPLERCOORD_NEQU_X_GC:
+      break;
+
+    case DOPPLERCOORD_NEQU_Y_GC:
+      break;
+
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
       ret = detpos_ecl[0] / rOrb_c;
@@ -437,7 +459,6 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = tau;					/* in natural units: dPhi/dom0 = tau */
       if ( par->deriv == DOPPLERCOORD_FREQ_SI )
         ret *= LAL_TWOPI * Tspan * kfactinv[1];		/* dPhi/dFreq = 2 * pi * tSSB_i */
-
       break;
 
     case DOPPLERCOORD_F1DOT_SI:
@@ -479,7 +500,7 @@ CWPhaseDeriv_i ( double tt, void *params )
  *
  */
 int
-XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and velocity vector */
+XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and velocity vector */
 		     const LIGOTimeGPS *tGPS,	/**< [in] GPS time */
 		     const LALDetector *site,	/**< [in] detector info */
 		     const EphemerisData *edat,	/**< [in] ephemeris data */
@@ -534,10 +555,10 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and 
   REAL8 vz = SCALAR ( Det_wrt_Earth.vel, eZ );
 
   COPY_VECT ( Spin_z.pos, eZ );
-  MULT_VECT ( pz, Spin_z.pos );
+  MULT_VECT ( Spin_z.pos, pz );
 
   COPY_VECT ( Spin_z.vel, eZ );
-  MULT_VECT ( vz, Spin_z.vel );
+  MULT_VECT ( Spin_z.vel, vz );
 
   /* compute ecliptic-xy projected spin motion */
   COPY_VECT ( Spin_xy.pos, Det_wrt_Earth.pos );
@@ -803,7 +824,6 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
  * Note: if this function is called with multiple detectors, we compute the
  * phase metric using the *first* detector in the list!
  *
- * Note2: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
@@ -903,7 +923,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
  * The returned metric struct also carries the meta-info about
  * the metrics in the field 'DopplerMetricParams meta'.
  *
- * Note: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
@@ -1977,11 +1996,11 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
  * return: 0 = OK, -1 = ERROR
  */
 int
-equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
+equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in )
 {
-  static mat33 rotEqu2Ecl = { { 1.0,        0,       0 },
-                                    { 0.0,  cosiEcl, siniEcl },
-                                    { 0.0, -siniEcl, cosiEcl } };
+  static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
+                                { 0.0,  cosiEcl, siniEcl },
+                                { 0.0, -siniEcl, cosiEcl } };
   if (!out || !in )
     return -1;
 
@@ -1993,11 +2012,11 @@ equatorialVect2ecliptic ( vect3 *out, vect3 * const in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-eclipticVect2equatorial ( vect3 *out, vect3 * const in )
+eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in )
 {
-  static mat33 rotEcl2Equ =  { { 1.0,        0,       0 },
-                                     { 0.0,  cosiEcl, -siniEcl },
-                                     { 0.0,  siniEcl,  cosiEcl } };
+  static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
+                                 { 0.0,  cosiEcl, -siniEcl },
+                                 { 0.0,  siniEcl,  cosiEcl } };
 
   if (!out || !in )
     return -1;
@@ -2010,7 +2029,7 @@ eclipticVect2equatorial ( vect3 *out, vect3 * const in )
  * return: 0 = OK, -1 = ERROR
  */
 int
-matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in )
+matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in )
 {
   if ( !out || !mat || !in )
     return -1;
@@ -2028,3 +2047,145 @@ matrix33_in_vect3 ( vect3 *out, mat33 * mat, vect3 * const in )
   return 0;
 
 } /* matrix33_in_vect3() */
+
+/** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
+ * \f$r_{\mathrm{orb}}(t)\f$.
+ *
+ * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
+ *
+ * Returns a vector of derivatives \f$\frac{d^n\,r_{\mathrm{orb}}}{d\,t^n}\f$ at the given
+ * GPS time. Note, the return vector includes the zeroth-order derivative, so we return
+ * (maxorder + 1) derivatives: n = 0 ... maxorder
+ *
+ */
+vect3Dlist_t *
+XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-order to compute */
+                                const LIGOTimeGPS *tGPS,	/**< [in] GPS time at which to compute the derivatives */
+                                const EphemerisData *edat	/**< [in] ephemeris data */
+                                )
+{
+  const char *fn = __func__;
+
+  EarthState earth;
+  LALStatus status;
+  LIGOTimeGPS ti;
+  REAL8 h = 0.5 * 86400.0;	/* finite-differencing step-size for rOrb. Before CAREFUL before changing this! */
+  vect3D_t r0m2h, r0mh, r0, r0_h, r0_2h;
+  vect3Dlist_t *ret = NULL;
+
+  /* check input consistency */
+#define MAX_MAXORDER 4
+  if ( maxorder > MAX_MAXORDER ) {
+    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", fn, maxorder, MAX_MAXORDER );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+
+  if ( !tGPS ) {
+    XLALPrintError ("%s: invalid NULL pointer received for 'tGPS'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( !edat ) {
+    XLALPrintError ("%s: invalid NULL pointer received for 'edat'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+
+  /* ----- find Earth's position at the 5 points: t0 -2h, t0-h, t0, t0+h, t0 + 2h ----- */
+
+  /* t = t0 */
+  ti = (*tGPS);
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, &ti, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0, earth.posNow );
+
+  /* t = t0 - h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds - h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, &ti, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0mh, earth.posNow );
+
+  /* t = t0 - 2h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds - 2 * h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, &ti, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0m2h, earth.posNow );
+
+  /* t = t0 + h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds + h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, &ti, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0_h, earth.posNow );
+
+  /* t = t0 + 2h*/
+  ti.gpsSeconds = (*tGPS).gpsSeconds + 2 * h;
+  status = empty_status;
+  LALBarycenterEarth( &status, &earth, &ti, edat );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  COPY_VECT ( r0_2h, earth.posNow );
+
+  /* use these 5 points to estimate derivatives */
+  UINT4 i;
+  vect3D_t rdn[MAX_MAXORDER+1];
+  COPY_VECT ( rdn[0], r0 );	// 0th order is imply r_orb(t0)
+  for ( i=0; i < 3; i ++ )
+    {
+      rdn[1][i] = DERIV5P_1(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[2][i] = DERIV5P_2(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[3][i] = DERIV5P_3(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+      rdn[4][i] = DERIV5P_4(r0m2h[i], r0mh[i], r0[i], r0_h[i], r0_2h[i], h );
+    } /* for i < 3 */
+
+  /* allocate return list */
+  if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  if ( (ret->data = XLALCalloc ( maxorder + 1, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", fn, maxorder + 1, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 n;
+  for ( n=0; n <= maxorder; n ++ )
+    {
+      COPY_VECT ( ret->data[n], rdn[n] );
+    }
+
+  return ret;
+
+} /* XLALComputeOrbitalDerivatives() */
+
+void
+XLALDestroyVect3Dlist ( vect3Dlist_t *list )
+{
+  if ( !list )
+    return;
+
+  if ( list->data )
+    XLALFree ( list->data );
+
+  XLALFree ( list );
+
+  return;
+
+} /* XLALDestroyVect3Dlist() */

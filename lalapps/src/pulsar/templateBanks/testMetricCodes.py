@@ -25,12 +25,15 @@
 ## metric calculations, this provides a very powerful consistency test
 
 import os, sys
-##from pylab import *
-from numpy import *
 from optparse import OptionParser
 import subprocess
+import math
 
 debug = False
+
+## NOTE: because this is a lalapps test-code, using numpy,scipy,etc was
+## discouraged because of portability problems. We therefore try to do matrix
+## comparisons based on python lists only, which is a bit pedestrian in places..
 
 ## ----- test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if not "LAL_DATA_PATH" in os.environ.keys():
@@ -120,31 +123,19 @@ def run_code ( code, args, ps = [] ):
 
     return (stdoutdata, stderrdata)
 
-## ----- function to convert a python list into a square matrix ('array')
-def ConvertList2SquareMatrix ( slist ):
-    """Converts the given list into a square matrix, return None on error"""
-    mm = array ( slist )
-    dim = sqrt( len(mm) )
-    if ( int(dim) != dim ):
-        print ("Error: input list of length %d cannot be turned into a square matrix." % len(mm) )
-        return
-
-    mm.shape = ( dim, dim )
-
-    return mm
-
-
 ## ----- function to parse the octave-format metric files written by FstatMetric[_v2]
 def parse_octave_metrics ( octstring, metric_name="g_ij" ):
     """Parse octave-format metric of given name from the given octave-string, as written by FstatMetric[_v2]
-    Returns a square array containing the metric, raises NameError if that metric_name could not be parsed.
+    Returns a list containing the metric components.
+    Raises NameError if that metric_name could not be parsed.
     """
 
     content = octstring.replace("];","]").replace(";", ",").replace("%", "#").lstrip()
 
     exec ( content )	## this provides python *lists* for all metrics found in the file
 
-    stmt = "g_ij = ConvertList2SquareMatrix( %s )" % metric_name
+    ## make sure all components are converted to floats!
+    stmt = "ret_ij = map ( float, %s )" % metric_name
 
     try:
         exec(stmt)
@@ -152,7 +143,7 @@ def parse_octave_metrics ( octstring, metric_name="g_ij" ):
         print ("Failed to read metric named '%s' from input octave string." % metric_name )
         raise
 
-    return g_ij
+    return ret_ij
 
 
 ## ----- mini-function to load a text-file into a string
@@ -168,39 +159,36 @@ def load_file ( fname ):
 
     return filestring
 
-
 ## ----- function to compare two metrics and return measures of aggreement
 def compare_metrics ( g1_ij, g2_ij ):
-    """Compare two metrics and return a measure of aggreement, namely the 3-tuple
-    ( maxrel, rel2norm, reldet ), where
-    - maxrel: is the largest relative difference in any component.
-    - rel2norm: is the 2-norm of the difference-matrix divided by the 2-norm of the second matrix
-    - reldet: is the relative difference in determinants
+    """Compare two metrics and return the maximal relative component-difference as
+    a measure of aggreement.
     """
 
-    dg_ij = g1_ij - g2_ij
+    len1 = len(g1_ij)
+    len2 = len(g2_ij)
 
-    ## Note: for the relative component-error, we need to be careful if
-    ## any component is exactly zero: in that case we use the absolute error
-    ## instead:
-    inds0 = ( g2_ij == 0 )
-    g2_ijRel = g2_ij.copy()
-    g2_ijRel[inds0] = 1
+    if ( len1 != len2 ):
+        print ("Error: length of matrix g1_ij (%d) differs from g2_ij's (%d)." % ( g1_ij, g2_ij ) )
+        raise TypeError
 
-    maxrel =  abs ( dg_ij / g2_ijRel ).max()
+    maxrelerr = 0
+    for i in xrange ( 0, len1 ):
+        ##Note: for the relative component-error, we need to be careful if
+        ## any component is exactly zero: in that case we use the absolute error
+        ## instead:
+        if g2_ij[i] == 0:
+            base = 1.0
+        else:
+            base = g2_ij[i]
 
-    rel2norm = sqrt ( linalg.norm( dg_ij, 2 ) / linalg.norm ( g2_ij, 2 ) );
+        relerr = abs ( ( g1_ij[i] - g2_ij[i] ) / base )
 
-    detg1 = linalg.det(g1_ij)
-    detg2 = linalg.det(g2_ij)
+        maxrelerr = max ( relerr, maxrelerr )
 
-    if debug:
-        print ("det(g1) = %g, det(g2) = %g" % ( detg1, detg2 ) )
-        print ("cond(g1)= %g, cond(g2) = %g" % ( linalg.cond(g1_ij), linalg.cond(g2_ij) ) )
+        ##print ("relerr = %g, maxrelerr = %g" % ( relerr, maxrelerr ) )
 
-    reldet = abs(detg1 - detg2) / abs ( detg2 )
-
-    return ( maxrel, rel2norm, reldet )
+    return maxrelerr
 
 
 ## ----- set run parameters --------------------
@@ -303,14 +291,13 @@ for mettype in ["PHASE", "PTOLE"]:
     relerr02 = compare_metrics ( g0_ij,  g2_ij )
     relerr12 = compare_metrics ( g1_ij,  g2_ij )
 
-    print "relerr     = (       maxrel,              rel2norm,               reldet )"
-    print "relerr 0-1 = " + str(relerr01)
-    print "relerr 0-2 = " + str(relerr02)
-    print "relerr 1-2 = " + str(relerr12)
+    print "relerr 0-1 = %e" % relerr01
+    print "relerr 0-2 = %e" % relerr02
+    print "relerr 1-2 = %e" % relerr12
 
     tolPh = 0.01
-    if ( relerr01[0] > tolPh or relerr02[0] > tolPh or relerr12[0] > tolPh ):
-        print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolPh );
+    if ( relerr01 > tolPh or relerr02 > tolPh or relerr12 > tolPh ):
+        print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %e!\n" % tolPh );
         sys.exit(1)
 
 ## end of loop over metric types
@@ -359,12 +346,11 @@ if debug: print "FstatMetric_v2 output: g_ij = \n%s" % str(gF2_ij)
 
 ## ---------- compare F-metrics against each other:
 relerr12 = compare_metrics ( gF1_ij, gF2_ij )
-print "relerr     = (       maxrel,              rel2norm,               reldet )"
-print "relerr 1-2 = " + str(relerr12)
+print "relerr 1-2 = %e" % relerr12
 
 tolF = 0.10
-if ( relerr12[0] > tolF ):
-    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolF );
+if ( relerr12 > tolF ):
+    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %e!\n" % tolF );
     sys.exit(1)
 
 
@@ -398,30 +384,30 @@ gMid2_ij =  parse_octave_metrics ( octstr, "g_ij" )
 if debug: print "refTime=midTime: FstatMetric_v2 output: g_ij = \n%s" % str(gMid2_ij)
 
 ## analytic spin-metric for comparison
-gStart3_ij = matrix ( [ [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 ], \
-                      [ 1.0/12, 4.0/45, 1.0/12, 8.0/105], \
-                      [ 3.0/40, 1.0/12, 9.0/112,3.0/40 ], \
-                      [ 1.0/15, 8.0/105,3.0/40,16.0/225]  \
-                          ] );
+gStart3_ij = [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 , \
+               1.0/12, 4.0/45, 1.0/12, 8.0/105, \
+               3.0/40, 1.0/12, 9.0/112,3.0/40, \
+               1.0/15, 8.0/105,3.0/40,16.0/225 ];
+
 if debug: print "refTime=startTime: analytic spin-metric: g_ij = \n%s" % str(gStart3_ij)
 
-gMid3_ij = matrix ( [ [ 1.0/12,       0,   1.0/80,       0 ],  \
-                    [      0, 1.0/180,        0,  1.0/840],	\
-                    [ 1.0/80,       0,  1.0/448,       0 ],	\
-                    [      0, 1.0/840,        0, 1.0/3600]   \
-                        ] );
+gMid3_ij = [ 1.0/12,       0,   1.0/80,       0,  	\
+                  0, 1.0/180,        0,  1.0/840,	\
+             1.0/80,       0,  1.0/448,       0,	\
+                  0, 1.0/840,        0, 1.0/3600    ];
+
 if debug: print "refTime=midTime: analytic spin-metric: g_ij = \n%s" % str(gMid3_ij)
 
 ## compare metrics
 relerrStart_23 = compare_metrics ( gStart2_ij, gStart3_ij )
 relerrMid_23 = compare_metrics ( gMid2_ij, gMid3_ij )
-print "relerr          = (       maxrel,              rel2norm,               reldet )"
-print "relerrStart 2-3 = " + str(relerrStart_23)
-print "relerrMid 2-3   = " + str(relerrMid_23)
+
+print "relerrStart 2-3 = %e" % relerrStart_23
+print "relerrMid 2-3   = %e" % relerrMid_23
 
 tolSpin = 0.01
-if ( relerrStart_23[0] > tolSpin or relerrMid_23[0] > tolSpin ):
-    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %g!\n" % tolSpin );
+if ( relerrStart_23 > tolSpin or relerrMid_23 > tolSpin ):
+    print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %e!\n" % tolSpin );
     sys.exit(1)
 
 

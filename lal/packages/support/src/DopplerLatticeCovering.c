@@ -39,6 +39,8 @@
 #include <lal/DopplerFullScan.h>
 #include <lal/DopplerLatticeCovering.h>
 
+#include <lal/UniversalDopplerMetric.h>
+
 /*---------- DEFINES ----------*/
 NRCSID( DOPPLERLATTICECOVERING, "$Id$" );
 
@@ -74,20 +76,6 @@ typedef enum {
   HEMI_SOUTH =  2	/**< all points on southern hemisphere */
 } hemisphere_t;
 
-typedef REAL8 vect2D_t[2];	/**< 2D vector */
-typedef REAL8 vect3D_t[3];	/**< 3D vector */
-
-/** 2D-polygon of points {nX, nY} on a single hemisphere of ecliptic sky-sphere */
-typedef struct {
-  UINT4 length;			/**< number of elements */
-  vect2D_t *data;		/**< array of 2D vectors */
-} vect2Dlist_t;
-
-/** List of 3D vectors */
-typedef struct {
-  UINT4 length;			/**< number of elements */
-  vect3D_t *data;		/**< array of 3D vectors */
-} vect3Dlist_t;
 
 /** 'standard' representation of Doppler-paremeters */
 typedef struct {

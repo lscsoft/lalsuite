@@ -61,11 +61,27 @@ NRCSID( UNIVERSALDOPPLERMETRICH, "$Id$");
 
 
 /*---------- exported types ----------*/
+typedef REAL8 vect2D_t[2];	/**< 2D vector */
+typedef REAL8 vect3D_t[3];	/**< 3D vector */
+typedef REAL8 mat33_t[3][3];	/**< 3x3 matrix, useful for spatial 3D vector operations */
+
+/** variable-length list of 2D-vectors */
+typedef struct {
+  UINT4 length;			/**< number of elements */
+  vect2D_t *data;		/**< array of 2D vectors */
+} vect2Dlist_t;
+
+/** variable-length list of 3D vectors */
+typedef struct {
+  UINT4 length;			/**< number of elements */
+  vect3D_t *data;		/**< array of 3D vectors */
+} vect3Dlist_t;
+
 
 /** Small Container to hold two 3D vectors: position and velocity */
 typedef struct {
-  REAL8 pos[3];
-  REAL8 vel[3];
+  vect3D_t pos;
+  vect3D_t vel;
 } PosVel3D_t;
 
 
@@ -145,6 +161,10 @@ typedef enum {
   DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
+
+  DOPPLERCOORD_NEQU_X_GC,		/**< Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
+  DOPPLERCOORD_NEQU_Y_GC,		/**< Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -179,6 +199,9 @@ const CHAR *DopplerCoordinateNames[] = {
 
   "nEqu_x_Nat",
   "nEqu_y_Nat",
+
+  "nEqu_x_GC",
+  "nEqu_y_GC",
 
   "NONE"
 };
@@ -216,6 +239,10 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
 
   "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
   "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
+
+  "Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+  "Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+
 
   "NONE"
 };
@@ -338,6 +365,10 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 		    DetectorMotionType special
 		    );
 
+
+vect3Dlist_t *
+XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
+
 int
 XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams *Amp );
 
@@ -357,6 +388,8 @@ const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
+// destructor for vect3Dlist_t type
+void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 
 #ifdef  __cplusplus
 }

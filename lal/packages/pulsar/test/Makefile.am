@@ -1,6 +1,41 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
-#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest
+
+## global settings for all programs built here
+LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
+  ResampleTest FoldAmplitudesTest LALBarycenterTest \
+  PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
+  ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest		\
+  UniversalDopplerMetricTest
+
+
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest \
+	FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest \
+	FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest	\
+	UniversalDopplerMetricTest
+
+StackMetricTest_SOURCES = StackMetricTest.c
+FlatMeshTest_SOURCES = FlatMeshTest.c
+TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
+SkyMetricTest_SOURCES = SkyMetricTest.c
+DirectedMeshTest_SOURCES = DirectedMeshTest.c
+ResampleTest_SOURCES = ResampleTest.c
+##LALDemodTest_SOURCES = LALDemodTest.c
+FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
+LALBarycenterTest_SOURCES = LALBarycenterTest.c
+PtoleMetricTest_SOURCES = PtoleMetricTest.c
+PtoleMeshTest_SOURCES = PtoleMeshTest.c
+GeneralMetricTest_SOURCES = GeneralMetricTest.c
+GeneralMeshTest_SOURCES = GeneralMeshTest.c
+FitToPulsarTest_SOURCES = FitToPulsarTest.c
+PulsarCatTest_SOURCES = PulsarCatTest.c
+ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
+GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
+NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
+UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c
+
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
   earth98.dat sun98.dat \
@@ -28,55 +63,11 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   earth03.ilwd sun03.ilwd \
   earth04.ilwd sun04.ilwd \
   earth00-04.ilwd sun00-04.ilwd
-#EXTRA_DIST = $(DATA) ephemtoilwd.sh
-EXTRA_DIST = $(DATA) LALDemodTest.c ephemtoilwd.sh
-EXTRA_TEXSOURCES = LALDemodTest.c
+
+EXTRA_DIST = $(DATA) ephemtoilwd.sh
+EXTRA_TEXSOURCES =
 MOSTLYCLEANFILES = .dvi-dep times.blah
-StackMetricTest_SOURCES = StackMetricTest.c
-StackMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-FlatMeshTest_SOURCES = FlatMeshTest.c
-FlatMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
-TwoDMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-SkyMetricTest_SOURCES = SkyMetricTest.c
-SkyMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-DirectedMeshTest_SOURCES = DirectedMeshTest.c
-DirectedMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-ResampleTest_SOURCES = ResampleTest.c
-ResampleTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-#LALDemodTest_SOURCES = LALDemodTest.c
-#LALDemodTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
-FoldAmplitudesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-LALBarycenterTest_SOURCES = LALBarycenterTest.c
-LALBarycenterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-PtoleMetricTest_SOURCES = PtoleMetricTest.c
-PtoleMetricTest_LDADD = $(top_builddir)/lib/liblal.la
-PtoleMeshTest_SOURCES = PtoleMeshTest.c
-PtoleMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-GeneralMetricTest_SOURCES = GeneralMetricTest.c
-GeneralMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-GeneralMeshTest_SOURCES = GeneralMeshTest.c
-GeneralMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-FitToPulsarTest_SOURCES = FitToPulsarTest.c
-FitToPulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-PulsarCatTest_SOURCES = PulsarCatTest.c
-PulsarCatTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
-ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
-ExtrapolatePulsarSpinsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
-GetAMCoeffsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
-NewGetAMCoeffsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-
-
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-#TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest LALDemodTest
-TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
-  ResampleTest FoldAmplitudesTest LALBarycenterTest \
-  PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
-  ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
