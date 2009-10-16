@@ -212,11 +212,6 @@ typedef struct FFTTag
 void LALDemod (LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params);
 void LALDemodFAST (LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params);
 
-
-/* <lalLaTeX>
-\newpage\input{LALDemodTestC}
-</lalLaTeX> */
-
 #ifdef __cplusplus
 }
 #endif
