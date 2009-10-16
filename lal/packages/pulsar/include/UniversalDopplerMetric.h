@@ -161,6 +161,10 @@ typedef enum {
   DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
+
+  DOPPLERCOORD_NEQU_X_GC,		/**< Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
+  DOPPLERCOORD_NEQU_Y_GC,		/**< Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -195,6 +199,9 @@ const CHAR *DopplerCoordinateNames[] = {
 
   "nEqu_x_Nat",
   "nEqu_y_Nat",
+
+  "nEqu_x_GC",
+  "nEqu_y_GC",
 
   "NONE"
 };
@@ -232,6 +239,10 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
 
   "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
   "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
+
+  "Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+  "Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+
 
   "NONE"
 };

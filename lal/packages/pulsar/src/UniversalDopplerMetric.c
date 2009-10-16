@@ -357,9 +357,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   exit(0);
   */
 
-  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
-    nn_ecl[2] = 1e-6;
-
+  /* get current detector position r(t) */
   REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
@@ -370,8 +368,17 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
   COPY_VECT ( detpos_equ, posvel.pos );
 
+
+  /* get 'reduced' detector position of order 'n': r_n(t),
+   * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) - 1/2! ddot{r_orb}(tau_re) - ....
+   */
+  vect3D_t rr_ord;
+  COPY_VECT ( rr_ord, posvel.pos );
+
+
   /* convert detector position in ecliptic coordinates */
   equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
+
 
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
@@ -417,6 +424,15 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
       break;
 
+      /* experimental 'global correlation' sky coordinate, if holding {nu, nu1, ...} fixed.
+       * Note: derivatives wrt to nu, nu1, ... are equivalent to f, fdot, ...
+       */
+    case DOPPLERCOORD_NEQU_X_GC:
+      break;
+
+    case DOPPLERCOORD_NEQU_Y_GC:
+      break;
+
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
       ret = detpos_ecl[0] / rOrb_c;
@@ -443,7 +459,6 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = tau;					/* in natural units: dPhi/dom0 = tau */
       if ( par->deriv == DOPPLERCOORD_FREQ_SI )
         ret *= LAL_TWOPI * Tspan * kfactinv[1];		/* dPhi/dFreq = 2 * pi * tSSB_i */
-
       break;
 
     case DOPPLERCOORD_F1DOT_SI:
@@ -485,7 +500,7 @@ CWPhaseDeriv_i ( double tt, void *params )
  *
  */
 int
-XLALDetectorPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and velocity vector */
+XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and velocity vector */
 		     const LIGOTimeGPS *tGPS,	/**< [in] GPS time */
 		     const LALDetector *site,	/**< [in] detector info */
 		     const EphemerisData *edat,	/**< [in] ephemeris data */
@@ -809,7 +824,6 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
  * Note: if this function is called with multiple detectors, we compute the
  * phase metric using the *first* detector in the list!
  *
- * Note2: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
@@ -909,7 +923,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
  * The returned metric struct also carries the meta-info about
  * the metrics in the field 'DopplerMetricParams meta'.
  *
- * Note: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
