@@ -57,7 +57,7 @@
 
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-#define MULT_VECT(lam, v) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
+#define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
 #define ADD_VECT(dst,src) do { (dst)[0] += (src)[0]; (dst)[1] += (src)[1]; (dst)[2] += (src)[2]; } while(0)
 #define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
 
@@ -555,10 +555,10 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   REAL8 vz = SCALAR ( Det_wrt_Earth.vel, eZ );
 
   COPY_VECT ( Spin_z.pos, eZ );
-  MULT_VECT ( pz, Spin_z.pos );
+  MULT_VECT ( Spin_z.pos, pz );
 
   COPY_VECT ( Spin_z.vel, eZ );
-  MULT_VECT ( vz, Spin_z.vel );
+  MULT_VECT ( Spin_z.vel, vz );
 
   /* compute ecliptic-xy projected spin motion */
   COPY_VECT ( Spin_xy.pos, Det_wrt_Earth.pos );
@@ -2069,7 +2069,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   EarthState earth;
   LALStatus status;
   LIGOTimeGPS ti;
-  INT4 h = 86400;	/* finite-differencing step-size: for rOrb, 1days seems like a reasonable choice */
+  REAL8 h = 0.5 * 86400.0;	/* finite-differencing step-size for rOrb. Before CAREFUL before changing this! */
   vect3D_t r0m2h, r0mh, r0, r0_h, r0_2h;
   vect3Dlist_t *ret = NULL;
 
@@ -2095,7 +2095,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   /* t = t0 */
   ti = (*tGPS);
   status = empty_status;
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -2105,7 +2105,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   /* t = t0 - h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds - h;
   status = empty_status;
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -2115,7 +2115,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   /* t = t0 - 2h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds - 2 * h;
   status = empty_status;
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -2125,7 +2125,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   /* t = t0 + h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds + h;
   status = empty_status;
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -2135,7 +2135,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   /* t = t0 + 2h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds + 2 * h;
   status = empty_status;
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
+  LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
     XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -2166,11 +2166,26 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   }
 
   UINT4 n;
-  for ( n=0; n <= maxorder; n ++ ) {
-    COPY_VECT ( ret->data[n], rdn[n] );
-  }
+  for ( n=0; n <= maxorder; n ++ )
+    {
+      COPY_VECT ( ret->data[n], rdn[n] );
+    }
 
   return ret;
 
 } /* XLALComputeOrbitalDerivatives() */
 
+void
+XLALDestroyVect3Dlist ( vect3Dlist_t *list )
+{
+  if ( !list )
+    return;
+
+  if ( list->data )
+    XLALFree ( list->data );
+
+  XLALFree ( list );
+
+  return;
+
+} /* XLALDestroyVect3Dlist() */

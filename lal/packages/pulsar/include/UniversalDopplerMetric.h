@@ -388,6 +388,8 @@ const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
+// destructor for vect3Dlist_t type
+void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 
 #ifdef  __cplusplus
 }
