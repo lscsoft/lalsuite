@@ -571,6 +571,7 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe = cp.get('condor','housekeeper_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         for sec in ['housekeeper']:
             #Check the ini file and warn that we are enabling the rescue of RESULTS directory!
             ignorePathString=cp.get(sec,'ignore-path')
@@ -608,6 +609,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
         self.__universe = cp.get('condor','tracksearch_universe');
+        self.add_condor_cmd('getenv','True')
         self.validJobTypes=['normal','injection']
         #If invalid type is requested display warning and
         #assume a normal injection was requested
@@ -691,6 +693,7 @@ class tracksearchMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe = cp.get('condor','tracksearch_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         blockID=block_id
         layerID=layer_id
         ### WE NEED A CONDOR DAG VARIABLE TO THE INITIAL DIR ARGUMENT
@@ -731,6 +734,7 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe = cp.get('condor','averager_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         blockID=block_id
         layerID=layer_id
         layerPath=determineLayerPath(cp,blockID,layerID,channel)
@@ -769,6 +773,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe = cp.get('condor','cachebuilder_universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         blockID=block_id
         layerID=layer_id
         #WE NEED A DAG VARIABLE THE LAYERid FOR PROPER INITIAL DIR
@@ -870,6 +875,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe = cp.get('condor','clustertool_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         self.block_id=blockID=block_id
         layerID='RESULTS_'+channel+'_'+str(blockID)
         #Do not use channel information for initial dir.
@@ -915,6 +921,7 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.__universe= cp .get('condor','clustertool_universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
+        self.add_condor_cmd('getenv','True')
         self.block_id=blockID=block_id
         #layerID='RESULTS_'+str(blockID)
         layerID='RESULTS_'+channel+'_'+str(blockID)
