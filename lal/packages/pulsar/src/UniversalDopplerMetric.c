@@ -368,14 +368,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
   COPY_VECT ( detpos_equ, posvel.pos );
 
-
-  /* get 'reduced' detector position of order 'n': r_n(t),
-   * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) - 1/2! ddot{r_orb}(tau_re) - ....
-   */
-  vect3D_t rr_ord;
-  COPY_VECT ( rr_ord, posvel.pos );
-
-
   /* convert detector position in ecliptic coordinates */
   equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
 
@@ -391,6 +383,24 @@ CWPhaseDeriv_i ( double tt, void *params )
   REAL8 tau = tau0 + tt + dTRoemer;
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
+
+
+  /* get 'reduced' detector position of order 'n': r_n(t),
+   * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
+   */
+  vect3D_t rr_ord;
+  UINT4 order = 2;
+  vect3Dlist_t *rOrb_n;
+  if ( (rOrb_n = XLALComputeOrbitalDerivatives ( order, &par->dopplerPoint->refTime, par->edat )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
+    XLAL_ERROR( fn, XLAL_EFUNC );
+  }
+  UINT4 i;
+  REAL8 tauSec = tau * Tspan;
+  for (i=0; i<3; i++)
+    rr_ord[i] = detpos_equ[i] - rOrb_n->data[1][i] * tauSec - 0.5 * rOrb_n->data[2][i] * tauSec * tauSec ;
+
+  XLALDestroyVect3Dlist ( rOrb_n );
 
   switch ( par->deriv )
     {
@@ -428,9 +438,11 @@ CWPhaseDeriv_i ( double tt, void *params )
        * Note: derivatives wrt to nu, nu1, ... are equivalent to f, fdot, ...
        */
     case DOPPLERCOORD_NEQU_X_GC:
+      ret = ( rr_ord[0] - (nn_equ[0]/nn_equ[2]) * rr_ord[2] ) / rOrb_c;
       break;
 
     case DOPPLERCOORD_NEQU_Y_GC:
+      ret = ( rr_ord[1] - (nn_equ[1]/nn_equ[2]) * rr_ord[2] ) / rOrb_c;
       break;
 
       /* experimental: unconstrained skypos vector n3 */
