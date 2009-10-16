@@ -69,7 +69,7 @@
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
-/** 5-point derivative formulas */
+/** 5-point derivative formulas (eg see http://math.fullerton.edu/mathews/articles/2003NumericalDiffFormulae.pdf) */
 #define DERIV5P_1(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 8.0 * (pm1) + 8.0 * (pp1) - (pp2)) / ( 12.0 * (h) ) )
 #define DERIV5P_2(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 16.0 * (pm1) - 30.0 * (p0) + 16.0 * (pp1) - (pp2) ) / ( 12.0 * (h) * (h) ) )
 #define DERIV5P_3(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 2.0 * (pm1) - 2.0 * (pp1) + (pp2) ) / ( 2.0 * (h) * (h) * (h) ) )
