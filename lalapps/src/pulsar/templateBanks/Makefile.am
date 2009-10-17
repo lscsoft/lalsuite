@@ -34,6 +34,8 @@ lalapps_FstatMetric_SOURCES = FstatMetric.c
 lalapps_FstatMetric_v2_SOURCES = FstatMetric_v2.c
 
 
+EXTRA_DIST = testMetricCodes.py
+
 TESTS = testMetricCodes.py
 TESTS_ENVIRONMENT = \
 LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \

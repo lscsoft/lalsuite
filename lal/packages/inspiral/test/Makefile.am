@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 TESTS = NoTest.sh
 EXTRA_DIST = \
+	NoTest.sh \
 	ChirpSpace.c \
 	GenerateInspiralWaveform.c \
 	LALHybridTest.c \

@@ -31,7 +31,7 @@ import os
 import string
 import time
 import copy
-from tracksearchutils import *
+from lalapps.tracksearchutils import *
 disableGraphics=False
 try:
     from pylab import *
