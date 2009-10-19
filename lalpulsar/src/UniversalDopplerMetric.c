@@ -343,8 +343,10 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* and in an ecliptic coordinate-frame */
   equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
 
-  if ( abs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
+  if ( fabs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
     nn_ecl[2] = 1e-6;
+  if ( fabs(nn_equ[2]) < 1e-6 )	/* avoid singularity at equatorial equator */
+    nn_equ[2] = 1e-6;
 
   /*
   vect3D_t nn_ecl0, nn_equ0;
