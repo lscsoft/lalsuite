@@ -143,15 +143,15 @@ typedef enum {
   DOPPLERCOORD_F2DOT_SI,		/**< f2dot = d2Freq/dt2 in Hz/s^2 */
   DOPPLERCOORD_F3DOT_SI,		/**< f3dot = d3Freq/dt3 in Hz/s^3 */
 
-  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascencion (longitude) in radians, using coord-system of ephemeris-file */
+  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascension (longitude) in radians, using coord-system of ephemeris-file */
   DOPPLERCOORD_DELTA_RAD,		/**< declination (latitude) in radians,  using coord-system of ephemeris-file */
 
-  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * Tspan */
-  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * Tspan^2 */
-  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * Tspan^3 */
-  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * Tspan^4 */
+  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * (Tspan/2) */
+  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * (Tspan/2)^2 */
+  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * (Tspan/2)^3 */
+  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * (Tspan/2)^4 */
 
-  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
   DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
 
   DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
@@ -225,12 +225,12 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: Right-ascension (longitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
   "Sky-position: Declination (latitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
 
-  "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq Tspan [Units:1]",
-  "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! Tspan^2 [Units:1]",
-  "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! Tspan^3 [Units:1]",
-  "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! Tspan^4 [Units:1]",
+  "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq (Tspan/2) [Units:1]",
+  "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! (Tspan/2)^2 [Units:1]",
+  "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! (Tspan/2)^3 [Units:1]",
+  "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! (Tspan/2)^4 [Units:1]",
 
-  "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
+  "Sky-position: Right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
   "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",

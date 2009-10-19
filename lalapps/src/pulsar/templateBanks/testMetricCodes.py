@@ -383,18 +383,18 @@ octstr = load_file ( outfile2 )
 gMid2_ij =  parse_octave_metrics ( octstr, "g_ij" )
 if debug: print "refTime=midTime: FstatMetric_v2 output: g_ij = \n%s" % str(gMid2_ij)
 
-## analytic spin-metric for comparison
-gStart3_ij = [ 1.0/12, 1.0/12, 3.0/40, 1.0/15 , \
-               1.0/12, 4.0/45, 1.0/12, 8.0/105, \
-               3.0/40, 1.0/12, 9.0/112,3.0/40, \
-               1.0/15, 8.0/105,3.0/40,16.0/225 ];
+## analytic spin-metric for comparison, in 'new' natural units om_k = 2pi f^(k)/(k+1)! (T/2)^(k+1)
+gStart3_ij = [ 2**2 * 1.0/12, 2**3 * 1.0/12, 2**4 * 3.0/40, 2**5 * 1.0/15 , \
+               2**3 * 1.0/12, 2**4 * 4.0/45, 2**5 * 1.0/12, 2**6 * 8.0/105, \
+               2**4 * 3.0/40, 2**5 * 1.0/12, 2**6 * 9.0/112,2**7 * 3.0/40, \
+               2**5 * 1.0/15, 2**6 * 8.0/105,2**7 * 3.0/40, 2**8 * 16.0/225 ]
 
 if debug: print "refTime=startTime: analytic spin-metric: g_ij = \n%s" % str(gStart3_ij)
 
-gMid3_ij = [ 1.0/12,       0,   1.0/80,       0,  	\
-                  0, 1.0/180,        0,  1.0/840,	\
-             1.0/80,       0,  1.0/448,       0,	\
-                  0, 1.0/840,        0, 1.0/3600    ];
+gMid3_ij = [ 1.0/3,       0,   1.0/5,       0,  	\
+                  0, 4.0/45,        0,  8.0/105,	\
+             1.0/5,       0,  1.0/7,       0,	\
+                  0, 8.0/105,        0, 16.0/225    ];
 
 if debug: print "refTime=midTime: analytic spin-metric: g_ij = \n%s" % str(gMid3_ij)
 

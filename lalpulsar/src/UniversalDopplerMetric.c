@@ -325,14 +325,16 @@ CWPhaseDeriv_i ( double tt, void *params )
   vect3D_t detpos_ecl, detpos_equ;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
-  REAL8 Tspan = par->Tspan;
   static REAL8 kfactinv[] = { 1.0, 1.0/1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0 };	/* 1/k! */
+
+  REAL8 Tspan = par->Tspan;
 
   /* get skypos-vector */
   REAL8 cosa = cos(par->dopplerPoint->Alpha);
   REAL8 sina = sin(par->dopplerPoint->Alpha);
   REAL8 cosd = cos(par->dopplerPoint->Delta);
   REAL8 sind = sin(par->dopplerPoint->Delta);
+
   /* ... in an equatorial coordinate-frame */
   nn_equ[0] = cosd * cosa;
   nn_equ[1] = cosd * sina;
@@ -467,31 +469,31 @@ CWPhaseDeriv_i ( double tt, void *params )
 
       /* ----- frequency derivatives SI-units ----- */
     case DOPPLERCOORD_FREQ_SI:
-    case DOPPLERCOORD_FREQ_NAT:				/* om0 = 2pi f T */
-      ret = tau;					/* in natural units: dPhi/dom0 = tau */
+    case DOPPLERCOORD_FREQ_NAT:				/* om0 = 2pi f (T/2) */
+      ret = 2*tau;					/* in natural units: dPhi/dom0 = tau */
       if ( par->deriv == DOPPLERCOORD_FREQ_SI )
-        ret *= LAL_TWOPI * Tspan * kfactinv[1];		/* dPhi/dFreq = 2 * pi * tSSB_i */
+        ret *= 0.5 * LAL_TWOPI * Tspan * kfactinv[1];	/* dPhi/dFreq = 2 * pi * tSSB_i */
       break;
 
     case DOPPLERCOORD_F1DOT_SI:
-    case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! T^2 */
-      ret = tau * tau;					/* in natural units: dPhi/dom1 = tau^2 */
+    case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! (T/2)^2 */
+      ret = 2*tau * 2*tau;					/* in natural units: dPhi/dom1 = tau^2 */
       if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
-        ret *= LAL_TWOPI * (Tspan*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
+        ret *= 0.5*0.5 * LAL_TWOPI * (Tspan*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
       break;
 
     case DOPPLERCOORD_F2DOT_SI:
-    case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! T^3 */
-      ret =  tau * tau * tau;				/* in natural units: dPhi/dom2 = tau^3 */
+    case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! (T/2)^3 */
+      ret =  2*tau * 2*tau * 2*tau;				/* in natural units: dPhi/dom2 = tau^3 */
       if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
-        ret *= LAL_TWOPI * (Tspan*Tspan*Tspan) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
+        ret *= 0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
       break;
 
     case DOPPLERCOORD_F3DOT_SI:
-    case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! T^4 */
-      ret = tau * tau * tau * tau;			/* in natural units: dPhi/dom3 = tau^4 */
+    case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! (T/2)^4 */
+      ret = 2*tau * 2*tau * 2*tau * 2*tau;			/* in natural units: dPhi/dom3 = tau^4 */
       if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
-        ret *= LAL_TWOPI * (Tspan*Tspan*Tspan*Tspan) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
+        ret *= 0.5*0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan*Tspan) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       break;
 
     default:
