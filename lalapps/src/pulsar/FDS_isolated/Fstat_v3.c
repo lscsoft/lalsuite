@@ -143,7 +143,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
   NnegLFT = NhalfNeg ( numTimeSamples );
   f0LFT = fHet - NnegLFT / Tspan;
 
-  printf ("NSFT = %d, NLFT = %d, fminSFT = %.9f, fHet = %.9f, fminLFT = %.9f\n",
+  XLALPrintInfo ("NSFT = %d, NLFT = %d, fminSFT = %.9f, fHet = %.9f, fminLFT = %.9f\n",
 	  numBinsSFT, numTimeSamples, f0SFT, fHet, f0LFT );
 
 
@@ -213,8 +213,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
       {
 	REAL8 t0 = XLALGPSGetREAL8 ( &firstSFT->epoch );
-	printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
-		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
+	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+                       n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
       }
 
       if ( (nudge_n != 0) && (XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS) )
@@ -238,7 +238,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       fact_re = norm * hetCorr_re;
       fact_im = norm * hetCorr_im;
 
-      printf ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n", n, offset0, offsetEff, hetCycles, fact_re, fact_im );
+      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n", n, offset0, offsetEff, hetCycles, fact_re, fact_im );
 
       for ( k = 0; k < numBinsSFT; k ++ )
 	{
@@ -409,7 +409,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
       nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
       {
 	REAL8 t0 = XLALGPSGetREAL8 ( &firstSFT->epoch );
-	printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
 		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
       }
 
@@ -452,8 +452,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
 	  goto failed;
 	}
 
-      printf ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
-	      n, offset0, offsetEff, hetCycles, hetCorrection.re, hetCorrection.im );
+      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
+                     n, offset0, offsetEff, hetCycles, hetCorrection.re, hetCorrection.im );
 
       /* FIXME: check if required */
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
