@@ -1757,9 +1757,10 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   if ( !fp || !thisFCand )
     return -1;
 
-  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g %.9g %.9g %.9g %.9g\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
+	   thisFCand->Fstat.Fa.re,thisFCand->Fstat.Fa.im,thisFCand->Fstat.Fb.re,thisFCand->Fstat.Fb.im,
 	   2.0 * thisFCand->Fstat.F );
 
   return 0;

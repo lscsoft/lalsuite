@@ -140,6 +140,7 @@ RCSID( "$Id$");
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #endif
 
@@ -176,6 +177,7 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
+  BOOLEAN SignalOnly;              /**< signal only flag */
 } UsefulStageVariables;
 
 
@@ -226,7 +228,6 @@ void GetXiInSingleStack (LALStatus         *status,
 			 REAL8Vector       *out,
 			 HOUGHSizePar      *size,
 			 HOUGHDemodPar     *par);
-
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -414,6 +415,9 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
 
+  BOOLEAN uvar_resamp = FALSE;    /* flag for using resampling version of ComputeFstatFreqBand */
+  BOOLEAN uvar_SignalOnly = FALSE;    /* flag for using noise-free data for testing */
+
   global_status = &status;
 
 
@@ -497,6 +501,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "resamp",       0, UVAR_DEVELOPER, "Use resampling version of Fstat code ?", &uvar_resamp ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "SignalOnly",   0, UVAR_DEVELOPER, "Flag for noise-free injections", &uvar_SignalOnly ), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -654,6 +660,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.dopplerMax = uvar_dopplerMax;
+  usefulParams.SignalOnly = uvar_SignalOnly;    /* signal only flag */
 
   /* set reference time for pular parameters */
   if ( LALUserVarWasSet(&uvar_refTime)) 
@@ -1072,17 +1079,28 @@ int MAIN( int argc, char *argv[]) {
 	    
 	    /* this is the most costly function. We here allow for using an architecture-specific optimized
 	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
+	    if (uvar_resamp==TRUE) {
+	      printf("RESAMP\n");
+	      LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, fstatVector.data + k, &thisPoint, 
+						  stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+						  stackMultiDetStates.data[k], &CFparams), &status);
+	    }
+	    else {
+	      printf("NO-RESAMP\n");
+	      LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
 					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
 					     stackMultiDetStates.data[k], &CFparams), &status);
+	    }
 	  }
 	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
-	      for (k = 0; k < nStacks; k++)
+	      for (k = 0; k < nStacks; k++) {
+		thisPoint.fkdot[0] = fstatVector.data[k].f0;
 		LAL_CALL( PrintFstatVec ( &status, fstatVector.data + k, fpFstat1, &thisPoint, refTimeGPS, k+1), &status); 
+	      }
 	    }
 	  
 	  
@@ -1443,27 +1461,61 @@ void SetUpSFTs( LALStatus *status,
   if ( stackMultiDetStates->data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   }
-
+  
   /* loop over stacks and read sfts */  
   for (k = 0; k < in->nStacks; k++) {
-      
-    MultiPSDVector *psd = NULL;	
     
     /* load the sfts */
     TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + k,  catalogSeq.data + k, 
 			    fMin, fMax ), status);
-    
-    /* normalize sfts and compute noise weights and detector state */
-    TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
-				    in->blocksRngMed ), status );
-    
-    TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k, 
-					psd, in->blocksRngMed, 0 ), status );
-    
+
     TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + k, 
 				      stackMultiSFT->data[k], in->edat ), status );
     
-    TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+    if (!in->SignalOnly) {
+      
+      MultiPSDVector *psd = NULL;
+      printf("in the signal + noise case\n");
+      exit(0);
+      /* normalize sfts and compute noise weights and detector state */
+      TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
+				      in->blocksRngMed ), status ); 
+      
+      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k,  
+					  psd, in->blocksRngMed, 0 ), status ); 
+      
+      TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+      
+    } 
+    else {
+      
+      UINT4 numifos = stackMultiSFT->data[k]->length;
+      UINT4 X;
+     
+      if ( (stackMultiNoiseWeights->data[k] = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
+	ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
+      }
+      
+      stackMultiNoiseWeights->data[k]->length = numifos;
+      if ( (stackMultiNoiseWeights->data[k]->data = (REAL8Vector **)LALCalloc( numifos, sizeof(REAL8Vector *))) == NULL) {
+	ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);      
+      }
+      
+      for ( X = 0; X < numifos; X++) {
+	UINT4 alpha;
+	UINT4 numsfts = stackMultiSFT->data[k]->data[X]->length;
+	
+	/* create k^th weights vector */
+	LALDCreateVector ( status->statusPtr, &(stackMultiNoiseWeights->data[k]->data[X]), numsfts);	
+	  
+	/* loop over rngmeds and calculate weights -- one for each sft */
+	for ( alpha = 0; alpha < numsfts; alpha++) {
+	  stackMultiNoiseWeights->data[k]->data[X]->data[alpha] = 1.0;
+	} /* end loop over sfts for each ifo */
+	
+      } /* end loop over ifos */
+      
+    }  /* end if */
     
   } /* loop over k */
   
