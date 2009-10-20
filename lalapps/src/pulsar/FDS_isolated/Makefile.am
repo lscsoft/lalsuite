@@ -20,6 +20,9 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC
 
+EXTRA_PROGRAMS = lalapps_CFSv3
+check_PROGRAMS = testFstat_v3
+
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
 
@@ -58,9 +61,15 @@ lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticM
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
+lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
+
+testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
+
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
 
-TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh
+
+TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testFstat_v3
+
 TESTS_ENVIRONMENT = \
 LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
 LAL_PREFIX=$(LAL_PREFIX) \
