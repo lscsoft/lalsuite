@@ -19,15 +19,9 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
 
-#lalapps_HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
-#			  StackSlideFstat.c StackSlideFstat.h \
-#			  HoughFStatToplist.c HoughFStatToplist.h \
-#			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
-#			  ../../FDS_isolated/ComputeFStatistic.h
-
 lalapps_HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
-			  ComputeFstat.c ComputeFstat.h \
 			  StackSlideFstat.c StackSlideFstat.h \
+			  ComputeFstat_RS.c ComputeFstat_RS.h \
 			  HoughFStatToplist.c HoughFStatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h
