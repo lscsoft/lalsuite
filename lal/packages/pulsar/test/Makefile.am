@@ -62,7 +62,9 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   earth02.ilwd sun02.ilwd \
   earth03.ilwd sun03.ilwd \
   earth04.ilwd sun04.ilwd \
-  earth00-04.ilwd sun00-04.ilwd
+  earth00-04.ilwd sun00-04.ilwd \
+  circularEphem.dat
+
 
 EXTRA_DIST = $(DATA) ephemtoilwd.sh
 EXTRA_TEXSOURCES =
