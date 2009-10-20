@@ -885,7 +885,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	double dmin=1.0;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
