@@ -152,6 +152,8 @@ int main(int argc, char *argv[]){
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
+  INT4 tmpLeap;
+  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
   CHAR EphemEarth[MAXFILENAMELENGTH];
   CHAR EphemSun[MAXFILENAMELENGTH];
 
@@ -445,6 +447,9 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.earthEphemeris = EphemEarth;
   (*edat).ephiles.sunEphemeris = EphemSun;
 
+  LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
+  (*edat).leap = (INT2)tmpLeap;
+
   LAL_CALL( LALInitBarycenter( &status, edat), &status);
 
   /* set up skypatches */
@@ -623,7 +628,7 @@ int main(int argc, char *argv[]){
     sigmasq = NULL;
     gplus = NULL;
     gcross = NULL;
-
+    paramCounter = 0;
     counter = 0;
     /* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
     if (sftcounter > 0) {
@@ -671,10 +676,10 @@ int main(int argc, char *argv[]){
     }
 
     listLength = slidingcounter - sftcounter;
-   
     if (listLength > 1) {
 
       while (paramCounter < nParams) {
+
         if (uvar_QCoeffs) {
   	  skyCounter++;
 	  if (skyCounter == nSkyPatches) {
@@ -760,6 +765,7 @@ int main(int argc, char *argv[]){
           there is no need to check the lag as the sfts must satisfy this condition 
           already to be in the mini-list*/
          while (sftList->nextSFT) {
+
   	   /*if we are autocorrelating, we want the head to be paired with itself first*/
     	   if ((sftList == sftHead) && uvar_autoCorrelate) { 
 	     sft2 = &(sftList->sft);
@@ -790,7 +796,6 @@ int main(int argc, char *argv[]){
 	 }
                  /*strcmp returns 0 if strings are equal, >0 if strings are different*/
                  sameDet = strcmp(sft1->name, sft2->name);
-
     	         /* if they are different, set sameDet to 1 so that it will match if
 	 	   detChoice == DIFFERENT */
       	 	 if (sameDet != 0) { sameDet = 1; }
@@ -833,6 +838,8 @@ int main(int argc, char *argv[]){
 			      &status);
 		  }
 		  ualphacounter++;
+
+
                 }
 	      } /*finish loop over sft pairs*/
 
@@ -850,7 +857,11 @@ int main(int argc, char *argv[]){
 	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
 
-	        variance->data[counter] += tmpstat;	
+	        variance->data[counter] += tmpstat;
+
+
+//printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].re, yalpha->data[i].im);
+
 
 	        if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
 	 	   LAL_CALL( LALCalculateEstimators( &status, &tmpstat, &tmpstat2, &tmpstat3, &tmpstat4, yalpha, gplus, gcross, sigmasq), &status);
@@ -933,7 +944,7 @@ int main(int argc, char *argv[]){
 
 	        /*normalise rho by stddev */
 	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
-	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10g\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
 	
