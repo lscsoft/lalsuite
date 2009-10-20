@@ -830,7 +830,7 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	deltaEta=etaMax-etaMin;
 	double lmmin=log(inMc-deltaM);
 	double lmmax=log(inMc+deltaM);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	
 	/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
 	XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
@@ -858,7 +858,7 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmin-lmmax)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
