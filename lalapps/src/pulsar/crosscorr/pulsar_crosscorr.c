@@ -152,6 +152,8 @@ int main(int argc, char *argv[]){
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
+  INT4 tmpLeap;
+  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
   CHAR EphemEarth[MAXFILENAMELENGTH];
   CHAR EphemSun[MAXFILENAMELENGTH];
 
@@ -445,6 +447,9 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.earthEphemeris = EphemEarth;
   (*edat).ephiles.sunEphemeris = EphemSun;
 
+  /* LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status); */
+  /*  (*edat).leap = (INT2)tmpLeap;*/
+
   LAL_CALL( LALInitBarycenter( &status, edat), &status);
 
   /* set up skypatches */
@@ -624,7 +629,17 @@ int main(int argc, char *argv[]){
     gplus = NULL;
     gcross = NULL;
 
+    /* reset all search parameters */
+    paramCounter = 0;
     counter = 0;
+    nCounter = 0;
+    q1Counter = 0;
+    q2Counter = 0;
+    freqCounter = 0;
+    fdotCounter = 0;
+    fddotCounter = 0;
+    skyCounter = 0;
+
     /* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
     if (sftcounter > 0) {
 
@@ -671,7 +686,6 @@ int main(int argc, char *argv[]){
     }
 
     listLength = slidingcounter - sftcounter;
-   
     if (listLength > 1) {
 
       while (paramCounter < nParams) {
@@ -739,10 +753,10 @@ int main(int argc, char *argv[]){
          LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
 				     edat, &thisPoint), &status);
  
-          /* loop over SFT mini-list to get pairs */
+         /* loop over SFT mini-list to get pairs */
          ualphacounter = 0;
 
-        /*  correlate sft pairs  */
+         /*  correlate sft pairs  */
          sftList = sftHead;
          psdList = psdHead;
          freqList = freqHead;
@@ -760,6 +774,7 @@ int main(int argc, char *argv[]){
           there is no need to check the lag as the sfts must satisfy this condition 
           already to be in the mini-list*/
          while (sftList->nextSFT) {
+
   	   /*if we are autocorrelating, we want the head to be paired with itself first*/
     	   if ((sftList == sftHead) && uvar_autoCorrelate) { 
 	     sft2 = &(sftList->sft);
@@ -768,91 +783,97 @@ int main(int argc, char *argv[]){
 	     phase2 = phaseList->val;
 	     beamfns2 = &(beamList->beamfn);
  
-	   sftList = (SFTListElement *)sftList->nextSFT;
-	   psdList = (PSDListElement *)psdList->nextPSD;
-	   freqList = (REAL8ListElement *)freqList->nextVal;
-	   phaseList = (REAL8ListElement *)phaseList->nextVal;
-	   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+	     sftList = (SFTListElement *)sftList->nextSFT;
+	     psdList = (PSDListElement *)psdList->nextPSD;
+	     freqList = (REAL8ListElement *)freqList->nextVal;
+	     phaseList = (REAL8ListElement *)phaseList->nextVal;
+	     beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
  
 	   } else { /*otherwise just step to the next sft*/
 
-	   sftList = (SFTListElement *)sftList->nextSFT;
-	   psdList = (PSDListElement *)psdList->nextPSD;
-	   freqList = (REAL8ListElement *)freqList->nextVal;
-	   phaseList = (REAL8ListElement *)phaseList->nextVal;
-	   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+	     sftList = (SFTListElement *)sftList->nextSFT;
+	     psdList = (PSDListElement *)psdList->nextPSD;
+	     freqList = (REAL8ListElement *)freqList->nextVal;
+	     phaseList = (REAL8ListElement *)phaseList->nextVal;
+	     beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
 
-  	   sft2 = &(sftList->sft);
-	   psd2 = &(psdList->psd);
-  	   freq2 = freqList->val;
-	   phase2 = phaseList->val;
-	   beamfns2 = &(beamList->beamfn);
-	 }
-                 /*strcmp returns 0 if strings are equal, >0 if strings are different*/
-                 sameDet = strcmp(sft1->name, sft2->name);
-
-    	         /* if they are different, set sameDet to 1 so that it will match if
-	 	   detChoice == DIFFERENT */
-      	 	 if (sameDet != 0) { sameDet = 1; }
+  	     sft2 = &(sftList->sft);
+	     psd2 = &(psdList->psd);
+  	     freq2 = freqList->val;
+	     phase2 = phaseList->val;
+	     beamfns2 = &(beamList->beamfn);
+	   }
+           /*strcmp returns 0 if strings are equal, >0 if strings are different*/
+           sameDet = strcmp(sft1->name, sft2->name);
+    	   /* if they are different, set sameDet to 1 so that it will match if
+	    detChoice == DIFFERENT */
+      	   if (sameDet != 0) { sameDet = 1; }
       
-      		 /* however, if detChoice = ALL, then we want sameDet to match it */
-      		 if (detChoice == ALL) { sameDet = detChoice; }
+      	   /* however, if detChoice = ALL, then we want sameDet to match it */
+      	   if (detChoice == ALL) { sameDet = detChoice; }
 	  	  
-	         /* decide whether to add this pair or not */
-     		 if ((sameDet == (INT4)detChoice)) {
+	   /* decide whether to add this pair or not */
+     	   if ((sameDet == (INT4)detChoice)) {
 
-	          /* increment the size of  Y, u, sigmasq vectors by 1  */
- 	          yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
-      		  ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
-      		  sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
-		  gplus =  XLALResizeCOMPLEX16Vector(gplus, 1 + ualphacounter);
-		  gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
+	     /* increment the size of  Y, u, sigmasq vectors by 1  */
+ 	     yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
+      	     ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
+      	     sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
+	     gplus =  XLALResizeCOMPLEX16Vector(gplus, 1 + ualphacounter);
+	     gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
 
 
 
- 		  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
+ 	     LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),
 		  	    &status);
 
 
-	  	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
+	     LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
 						    freq1, freq2, psd1, psd2),
 			    &status);
-		  /*if we are averaging over psi and cos(iota), call the simplified 
- 	    	    Ualpha function*/
-	  	  if (uvar_averagePsi && uvar_averageIota) {
+	     /*if we are averaging over psi and cos(iota), call the simplified 
+ 	   	    Ualpha function*/
+	     if (uvar_averagePsi && uvar_averageIota) {
 		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
 						    phase1, phase2, *beamfns1, *beamfns2, 
 						    sigmasq->data[ualphacounter]),
 			       &status);
 
-		  } else {
+	     } else {
 		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
 						 phase1, phase2, *beamfns1, *beamfns2,
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
-		  }
-		  ualphacounter++;
-                }
-	      } /*finish loop over sft pairs*/
+	     }
+	     ualphacounter++;
 
-	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
- 	      if (ualphacounter > 0) {
-	        tmpstat = 0;
-		tmpstat2 = 0;
-		tmpstat3 =0;
-		tmpstat4 = 0;
-	        LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
+             }
+           } /*finish loop over sft pairs*/
+
+           /* calculate rho from Yalpha and Ualpha, if there were pairs */
+           if (ualphacounter > 0) {
+	     tmpstat = 0;
+	     tmpstat2 = 0;
+	     tmpstat3 =0;
+	     tmpstat4 = 0;
+	     LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
 			&status);
 
-	        rho->data[counter] += tmpstat;
-	        /* calculate standard deviation of rho (Eq 4.6) */
-	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
+	     rho->data[counter] += tmpstat;
+	     /* calculate standard deviation of rho (Eq 4.6) */
+	     LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
 
-	        variance->data[counter] += tmpstat;	
+	     variance->data[counter] += tmpstat;
 
-	        if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
+/*
+for (i=0; i < (INT4)ualpha->length; i++) {
+printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].re, yalpha->data[i].im);
+}
+*/
+
+	     if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
 	 	   LAL_CALL( LALCalculateEstimators( &status, &tmpstat, &tmpstat2, &tmpstat3, &tmpstat4, yalpha, gplus, gcross, sigmasq), &status);
 
 		   aplussq1->data[counter] += tmpstat;
@@ -865,19 +886,18 @@ int main(int argc, char *argv[]){
 		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
 		  }
 		   
-	        }
-	      }
+	     }
+	  } /* endif (ualphacounter > 0) */
 
-		if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
+	  if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
 	
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 
  		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
                   }
-		}
-
-	      counter++;
-	 paramCounter++;
+	  }
+          counter++;
+  	  paramCounter++;
 
       } /*endwhile*/
 
@@ -893,6 +913,7 @@ int main(int argc, char *argv[]){
 
     } /*end if listLength > 1 */
   } /* finish loop over all sfts */
+
   printf("finish loop over all sfts\n");
 
   time(&t2);
@@ -933,7 +954,7 @@ int main(int argc, char *argv[]){
 
 	        /*normalise rho by stddev */
 	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
-	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10g\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
 	
