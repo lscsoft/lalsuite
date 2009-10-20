@@ -51,7 +51,7 @@ proc clear_gps {IFO gps} {
 
 #If you create a segment list, it must have data for all ifos.
 
-if {$segment_file_name != unknown} {
+if {$segment_file_name != "unknown"} {
 	set FILE [open $segment_file_name "r"]
 	while { ![eof $FILE] } {
 		gets $FILE line
@@ -62,7 +62,7 @@ if {$segment_file_name != unknown} {
 	close $FILE
 	}
 
-if {$veto_segment_file_name != unknown} {
+if {$veto_segment_file_name != "unknown"} {
 	set FILE [open $veto_segment_file_name "r"]
 	while { ![eof $FILE] } {
 		gets $FILE line
