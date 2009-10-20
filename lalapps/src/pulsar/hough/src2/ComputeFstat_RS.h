@@ -46,6 +46,7 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
+#include <lal/ComputeFstat.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/DetectorStates.h>
 
@@ -68,17 +69,6 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 
 /*---------- exported types ----------*/
 
-/** Multi-IFO container for resampled timeseries */
-typedef struct {
-  UINT4 length;		                /**< number of IFOs */
-  REAL8 f0;                             /**< the heterodyne frequency */
-  REAL8 deltaT;                         /**< the sampling time */
-  LIGOTimeGPS epoch;                    /**< the timestamp of the first sample */
-  LIGOTimeGPS refTime;                  /**< the reference time for which the frequencies are defined */
-  COMPLEX8Vector **Fat;	                /**< array of COMPLEX8Vector (pointers) to Fa(t) */
-  COMPLEX8Vector **Fbt;	                /**< array of COMPLEX8Vector (pointers) to Fb(t) */
-} MultiCOMPLEX8TimeSeries;
-
 void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       REAL4FrequencySeries *fstatVector, 	
 			       const PulsarDopplerParams *doppler,	
@@ -93,10 +83,6 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiAMCoeffs *multiAMcoef,
 			 const MultiSSBtimes *multiSSB,
 			 const MultiSFTVector *multiSFTs);
-
-/* helpers */
-void REAL8toGPS(LIGOTimeGPS *tout,REAL8 tin);
-REAL8 GPStoREAL8(LIGOTimeGPS tin);
 
 #ifdef  __cplusplus
 }

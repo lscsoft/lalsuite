@@ -123,7 +123,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       const ComputeFParams *params		/**< addition computational params */
 			       )
 {
-  
+
   UINT4 numDetectors; 
   ComputeFBuffer *cfBuffer = NULL;
   MultiSSBtimes *multiSSB = NULL;
@@ -151,7 +151,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
   printf("numDetectors = %d\n",numDetectors);
   printf("alpha = %f delta = %f\n",doppler->Alpha,doppler->Delta);
-  printf("doppler ref time = %f\n",GPStoREAL8(doppler->refTime));
+  printf("doppler ref time = %f\n",XLALGPSGetREAL8(&(doppler->refTime)));
 
   /* check that the pre-allocated output vector doesn't point to NULL */ 
   ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
@@ -253,7 +253,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   printf("number of spin downs = %d\n",nspins); 
   
   /* compute the time differnce between timeseries epoch and reference time */
-  deltaref = GPStoREAL8(multiTimeseries->epoch) - GPStoREAL8(doppler->refTime);
+  deltaref = XLALGPSGetREAL8(&(multiTimeseries->epoch)) - XLALGPSGetREAL8(&(doppler->refTime));
   
   /* apply spin derivitive correction to resampled timeseries */
   /* loop over spin derivitives (nspins = 1 means first derivitive, = 2 means second derivitive etc.. )*/
@@ -289,7 +289,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     /* TESTING */
     FILE *fp = NULL;
     fp = fopen("/home/chmess/test/out/timeseries.txt","w");
-    REAL8 SSBstart = GPStoREAL8(multiTimeseries->epoch);
+    REAL8 SSBstart = XLALGPSGetREAL8(&(multiTimeseries->epoch));
     for (i=0;i<N;i++) fprintf(fp,"%6.12f %6.12f %6.12f %6.12f %6.12f\n",
 			      SSBstart + i*multiTimeseries->deltaT,
 			      multiTimeseries->Fat[0]->data[i].re,multiTimeseries->Fat[0]->data[i].im,
@@ -313,7 +313,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     COMPLEX8Vector *inb = NULL;
     COMPLEX8Vector *outa = NULL;
     COMPLEX8Vector *outb = NULL;
-    REAL8 startminusreftime = GPStoREAL8(multiTimeseries->epoch) - GPStoREAL8(multiTimeseries->refTime);
+    REAL8 startminusreftime = XLALGPSGetREAL8(&(multiTimeseries->epoch)) - XLALGPSGetREAL8(&(multiTimeseries->refTime));
     printf("startminusreftime = %6.12f\n",startminusreftime);
     printf("SSBstart = %d %d\n",multiTimeseries->epoch.gpsSeconds,multiTimeseries->epoch.gpsNanoSeconds);
     printf("SSBrefTime = %d %d\n",multiTimeseries->refTime.gpsSeconds,multiTimeseries->refTime.gpsNanoSeconds);
@@ -429,46 +429,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 } /* ComputeFStatFreqBand_RS() */
 
 
-
-/** Function to convert a REAL8 representation of a GPS time into a LIGOTimeGPS structure
-    (nothing complicated here)
-*/
-void REAL8toGPS(LIGOTimeGPS *tout,REAL8 tin)
-{
-
-  /* check if input time is positive */
-  if (tin>0.0) {
-    tout->gpsSeconds = floor(tin);
-    tout->gpsNanoSeconds = floor(0.5 + 1e9*(tin - floor(tin)));
-  }
-  else {
-    LALPrintError("\nREAL8toGPS() failed because input time was negative.\n\n");
-    exit(1);
-  }
-
-}
-  
-/** Function to convert a LIGOTimeGPS representation of a GPS time into a REAL8
-    (nothing complicated here)
-*/
-REAL8 GPStoREAL8(LIGOTimeGPS tin)
-{
-
-  REAL8 tout;
-
-  /* check if input time is positive */
-  if ((tin.gpsSeconds>0)&&(tin.gpsNanoSeconds>=0)&&(tin.gpsNanoSeconds<1e9)) {
-    tout = tin.gpsSeconds + 1e-9*tin.gpsNanoSeconds;
-  }
-  else {
-    LALPrintError("\nGPStoREAL() failed because input time was invalid.\n\n");
-    exit(1);
-  }
-  
-  return tout;
-
-}
-
 /** Function to compute a resampled timeseries from a multidetector set of SFTs */
 void ResampleMultiSFTs ( LALStatus *status, 
 			 MultiCOMPLEX8TimeSeries **multitimeseries,      	/**< [out] Array of resampled timeseries */
@@ -488,7 +448,7 @@ void ResampleMultiSFTs ( LALStatus *status,
   REAL8 deltaT;
   ComplexFFTPlan *prev = NULL;
   COMPLEX8Vector *out = NULL;
-  REAL8 SSBrefTime = GPStoREAL8(multiSSB->data[0]->refTime);
+  REAL8 SSBrefTime = XLALGPSGetREAL8(&(multiSSB->data[0]->refTime));
   LIGOTimeGPS SSBrefTime_GPS = multiSSB->data[0]->refTime;
 
   /* define the SFT parameters */
@@ -504,10 +464,10 @@ void ResampleMultiSFTs ( LALStatus *status,
 
   /* initialise the start and end SSB times for the SFTs */
   printf("multiSFTs->data[0]->data[0].epoch = %d %d\n",multiSFTs->data[0]->data[0].epoch.gpsSeconds,multiSFTs->data[0]->data[0].epoch.gpsNanoSeconds);
-  SSBstart = GPStoREAL8(multiSSB->data[0]->refTime) + multiSSB->data[0]->DeltaT->data[0] - 0.5*tSFT*multiSSB->data[0]->Tdot->data[0];
+  SSBstart = XLALGPSGetREAL8(&(multiSSB->data[0]->refTime)) + multiSSB->data[0]->DeltaT->data[0] - 0.5*tSFT*multiSSB->data[0]->Tdot->data[0];
   SSBend = SSBstart;
-  REAL8toGPS(&SSBstart_GPS,SSBstart);
-  REAL8toGPS(&SSBend_GPS,SSBend);
+  XLALGPSSetREAL8(&SSBstart_GPS,SSBstart);
+  XLALGPSSetREAL8(&SSBend_GPS,SSBend);
 
   /* loop over all SFTs to determine the earliest SFT midpoint of the input data in the SSB frame */
   for (i=0;i<multiSSB->length;i++) {
@@ -522,12 +482,12 @@ void ResampleMultiSFTs ( LALStatus *status,
       if (tempt<SSBstart) {
         SSBstart = tempt - 0.5*tSFT*multiSSB->data[i]->Tdot->data[j];     /* we approximate the SFT start time in the SSB by T_mid - 0.5*tSFT*(dt_SSB/dt_DET) */
 	DETstart = tempt - 0.5*tSFT;
-	REAL8toGPS(&SSBstart_GPS,SSBstart);
+	XLALGPSSetREAL8(&SSBstart_GPS,SSBstart);
       }
       if (tempt>SSBend) {
 	SSBend = tempt + 0.5*tSFT*multiSSB->data[i]->Tdot->data[j];       /* we approximate the SFT end time in the SSB by T_mid + 0.5*tSFT*(dt_SSB/dt_DET) */
 	DETend = tempt + 0.5*tSFT;
-        REAL8toGPS(&SSBend_GPS,SSBend);
+        XLALGPSSetREAL8(&SSBend_GPS,SSBend);
       }
 	
     }
@@ -603,7 +563,7 @@ void ResampleMultiSFTs ( LALStatus *status,
       REAL8 a = (REAL8)multiAMcoef->data[i]->a->data[j];                              /* value of the antenna pattern a(t) at the MID-POINT of the SFT */
       REAL8 b = (REAL8)multiAMcoef->data[i]->b->data[j];                              /* value of the antenna pattern b(t) at the MID-POINT of the SFT */
 
-      REAL8 SFTstartDET = GPStoREAL8(multiSFTs->data[i]->data[j].epoch);              /* START time of the SFT at the detector */
+      REAL8 SFTstartDET = XLALGPSGetREAL8(&(multiSFTs->data[i]->data[j].epoch));              /* START time of the SFT at the detector */
       REAL8 SFTmidDET = SFTstartDET + 0.5*tSFT;                                       /* MID-POINT time of the SFT at the detector */      
       REAL8 SFTmidSSB = SSBrefTime + multiSSB->data[i]->DeltaT->data[j];              /* MID-POINT time of the SFT at the SSB */  
       REAL8 Tdot = multiSSB->data[i]->Tdot->data[j];                                  /* the instantaneous time derivitive dt_SSB/dt_DET at the MID-POINT of the SFT */

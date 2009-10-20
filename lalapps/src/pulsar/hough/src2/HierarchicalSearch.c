@@ -113,7 +113,7 @@
 
 
 #include"HierarchicalSearch.h"
-
+#include "ComputeFstat_RS.h"
 
 /* This need to go here after HierarchicalSearch.h is included;
    StackSlideFstat.h needs SemiCohCandidateList defined. */
