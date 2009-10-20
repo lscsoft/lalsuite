@@ -447,8 +447,8 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.earthEphemeris = EphemEarth;
   (*edat).ephiles.sunEphemeris = EphemSun;
 
-  LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
-  (*edat).leap = (INT2)tmpLeap;
+  /* LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status); */
+  /*  (*edat).leap = (INT2)tmpLeap;*/
 
   LAL_CALL( LALInitBarycenter( &status, edat), &status);
 
