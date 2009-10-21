@@ -67,6 +67,65 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
 
+static double chirp_time (double m1, double m2, double fLower, int order)
+	{
+
+	/* variables used to compute chirp time */
+	double c0T, c2T, c3T, c4T, c5T, c6T, c6LogT, c7T;
+	double xT, x2T, x3T, x4T, x5T, x6T, x7T, x8T;
+	double m = m1 + m2;
+	double eta = m1 * m2 / m / m;
+
+	c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.;
+
+	/* Switch on PN order, set the chirp time coeffs for that order */
+	switch (order)
+		{
+		case 8:
+		case 7:
+			c7T = LAL_PI * (14809.0 * eta * eta - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0);
+		case 6:
+			c6T = LAL_GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + LAL_PI * LAL_PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - LAL_PI * LAL_PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + log (4.0) * 6848.0 / 105.0;
+     			c6LogT = 6848.0 / 105.0;
+		case 5:
+			c5T = 13.0 * LAL_PI * eta / 3.0 - 7729.0 / 252.0;
+		case 4:
+			c4T = 3058673.0 / 508032.0 + eta * (5429.0 / 504.0 + eta * 617.0 / 72.0);
+			c3T = -32.0 * LAL_PI / 5.0;
+			c2T = 743.0 / 252.0 + eta * 11.0 / 3.0;
+			c0T = 5.0 * m * LAL_MTSUN_SI / (256.0 * eta);	
+			break;
+		default:
+			fprintf (stderr, "ERROR!!!\n");
+			break;
+		}
+
+	/* This is the PN parameter v evaluated at the lower freq. cutoff */
+	xT = pow (LAL_PI * m * LAL_MTSUN_SI * fLower, 1.0 / 3.0);
+	x2T = xT * xT;
+	x3T = xT * x2T;
+	x4T = x2T * x2T;
+	x5T = x2T * x3T;
+	x6T = x3T * x3T;
+	x7T = x3T * x4T;
+	x8T = x4T * x4T;
+
+	/* Computes the chirp time as tC = t(v_low)    */
+	/* tC = t(v_low) - t(v_upper) would be more    */
+	/* correct, but the difference is negligble.   */
+
+	/* This formula works for any PN order, because */
+	/* higher order coeffs will be set to zero.     */
+
+	return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * log (xT)) * x6T + c7T * x7T) / x8T;
+}
+
+/* A convenience function to compute the time between two frequencies */
+static double chirp_time_between_f1_and_f2(double m1, double m2, double fLower, double fUpper, int order)
+	{
+	return chirp_time(m1,m2,fLower,order) - chirp_time(m1,m2,fUpper,order);
+	}
+
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
   bankVetoData->acorr = NULL;
@@ -249,6 +308,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
   REAL8 ABr, ABi, Br, Bi, sqResp, normfac;
   UINT4 stIX = floor( fLow / deltaF );
+  double deltaChirp;
 
   /* FIXME this should be a command line argument */
   bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
@@ -260,9 +320,21 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
   if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * iSize);
   if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpLen-1) * 2 , 0);
+  if ( !bankVetoData->tchirp) bankVetoData->tchirp = (double *) calloc(iSize*sizeof(double));
 
   /* deltaT is unused in this function */
   UNUSED(deltaT);
+
+  for ( i = 0; i < iSize; i++ )
+    {
+      /* FIXME find actual lal function */
+      bankVetoData->tchirp[i] = chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
+							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
+							     fLow,
+							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
+							     7);
+    }
+
 
   for ( i = 0; i < iSize; i++ )
   {
@@ -305,11 +377,17 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
-            ABr += bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br+
-                   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi;
+	    deltaChirp = bankVetoData->tchirp[i] - bankVetoData->tchirp[j];
 
-            ABi+=0.0-Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
-                + Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re;
+            ABr +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
+		            +   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi)
+	            - sin(2*LAL_PI*k*deltaF*deltaChirp)*(Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
+		            +   Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re);
+
+            ABi +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
+		            + Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re)
+	            + sin(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
+            		    + bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi);
           }
           /* if the templates are the same then do an autocorrelation function */
           if (i==j) 
@@ -321,8 +399,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
         }
 
         if (i==j)
-        {
-          XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
+        {          XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
           /* since the normalized first sample of the auto correlation is always 1, lets skip it */
 	  for (k=1; k < bankVetoData->acorrMatSize + 1; k++)
           {
