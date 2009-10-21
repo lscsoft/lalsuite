@@ -95,7 +95,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
 PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
 LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_WARN(cannot find frame library)])
+AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(cannot find frame library)])
 
 # check for lal
 PKG_CHECK_MODULES([LAL],[lal >= 6.4],[true],[false])
