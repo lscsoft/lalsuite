@@ -647,7 +647,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   elif vetoCat:
     if config.has_option("hipe-arguments","ringdown"):
-      hipe_args = ["coincidence", "ringdown"]
+      hipe_args = ["coincidence", "ringdown","coire-coincidence",
+        "summary-first-coinc-triggers","write-script"]
     else:
       hipe_args = ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
