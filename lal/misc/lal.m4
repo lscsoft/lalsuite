@@ -88,18 +88,6 @@ AC_DEFUN([LAL_WITH_CC],
   ],)
 ])
 
-AC_DEFUN([LAL_ENABLE_METAIO],
-[AC_ARG_ENABLE(
-  [metaio],
-  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio library [default=yes]]),
-  [ case "${enableval}" in
-      yes) metaio=true;;
-      no)  metaio=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
-    esac
-  ], [ metaio=true ] )
-])
-
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],

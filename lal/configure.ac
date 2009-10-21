@@ -6,7 +6,6 @@ AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
-  lalmetaio.pc \
   lalsupport.pc \
   Makefile \
   debian/Makefile \
@@ -159,7 +158,6 @@ LAL_WITH_EXTRA_LIBS
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
 LAL_ENABLE_GCC_FLAGS
-LAL_ENABLE_METAIO
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -314,17 +312,6 @@ else
   AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional metaio.
-if test "${metaio}" = "true"; then
-  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-  lal_pre_metaio_LIBS="$LIBS"
-  LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([disabling metaio support])]
-                 [metaio="false"]
-                 [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -343,14 +330,6 @@ AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
 
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([disabling metaio support])]
-                   [metaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS([pthread.h],[break])
 fi
@@ -362,10 +341,6 @@ fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
 fi
-if test "${metaio}" = "true"; then
-  AC_DEFINE([LAL_METAIO_ENABLED],[1],[Define if using MetaIo library])
-fi
-
 
 dnl Record the libraries needed for linking LAL.
 LALLIBADD="$LIBS"
@@ -397,7 +372,6 @@ pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
 AC_SUBST([pkgdocdir])
 
 dnl Setup automake conditionals
-AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
@@ -411,14 +385,7 @@ if test -d $srcdir/lalapps ; then
   LAL_CFLAGS=-I$lal_build_dir/include
   LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
   LALSUPPORT_CFLAGS=-I$lal_build_dir/include
-  if test x$metaio = xtrue ; then
-    LALMETAIO_LIBS=$lal_build_dir/packages/support/src/liblalmetaio.la
-    LALMETAIO_CFLAGS=-I$lal_build_dir/include
-  else
-    LALMETAIO_LIBS=""
-    LALMETAIO_CFLAGS=""
-  fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS
   AC_CONFIG_SUBDIRS([lalapps])
 fi
 
@@ -440,14 +407,12 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
-                LAL MetaIo library support is $metaioenabled
                 CUDA support is $cudaenabled
 
         Now run 'make' to build LAL
