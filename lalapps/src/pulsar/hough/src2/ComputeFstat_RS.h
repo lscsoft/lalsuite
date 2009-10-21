@@ -54,25 +54,27 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 
 /*----- Error-codes -----*/
 #define COMPUTEFSTATRSC_ENULL 		1
-#define COMPUTEFSTATRSC_ENONULL 		2
-#define COMPUTEFSTATRSC_EINPUT   		3
+#define COMPUTEFSTATRSC_ENONULL 	2
+#define COMPUTEFSTATRSC_EINPUT   	3
 #define COMPUTEFSTATRSC_EMEM   		4
 #define COMPUTEFSTATRSC_EXLAL		5
 #define COMPUTEFSTATRSC_EIEEE		6
 
-#define COMPUTEFSTATRSC_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATRSC_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATRSC_MSGENONULL 	"Output pointer is non-NULL"
 #define COMPUTEFSTATRSC_MSGEINPUT   	"Invalid input"
 #define COMPUTEFSTATRSC_MSGEMEM   	"Out of memory. Bad."
-#define COMPUTEFSTATRSC_MSGEXLAL		"XLAL function call failed"
-#define COMPUTEFSTATRSC_MSGEIEEE		"Floating point failure"
+#define COMPUTEFSTATRSC_MSGEXLAL	"XLAL function call failed"
+#define COMPUTEFSTATRSC_MSGEIEEE	"Floating point failure"
 
 /*---------- exported types ----------*/
+
+/*---------- exported prototypes [API] ----------*/
 
 void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       REAL4FrequencySeries *fstatVector, 	
 			       const PulsarDopplerParams *doppler,	
-			       const MultiSFTVector *multiSFTs, 
+			       MultiSFTVector *multiSFTs, 
 			       const MultiNoiseWeights *multiWeights,
 			       const MultiDetectorStateSeries *multiDetStates,
 			       const ComputeFParams *params);
@@ -83,6 +85,24 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiAMCoeffs *multiAMcoef,
 			 const MultiSSBtimes *multiSSB,
 			 const MultiSFTVector *multiSFTs);
+
+  MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts,  /**< input SFT vector, gets modified! */
+									 LIGOTimeGPS start,    /**< input start time */
+									  LIGOTimeGPS end       /**< input end time */
+									  ); 
+
+COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS ( SFTVector *sfts,      /**< input SFT vector, gets modified! */
+							      LIGOTimeGPS start,    /**< input start time */
+							      LIGOTimeGPS end       /**< input end time */
+							      );
+
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,
+				       MultiSFTVector *multisfts
+				       );     
+  
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,
+				     MultiSFTVector *multisfts
+				     );     
 
 #ifdef  __cplusplus
 }

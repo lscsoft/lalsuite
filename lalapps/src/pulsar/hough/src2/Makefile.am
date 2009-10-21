@@ -22,6 +22,7 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 lalapps_HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \
 			  ComputeFstat_RS.c ComputeFstat_RS.h \
+			  ../../FDS_isolated/Fstat_v3.c ../../FDS_isolated/Fstat_v3.h \
 			  HoughFStatToplist.c HoughFStatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h

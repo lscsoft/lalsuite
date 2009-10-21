@@ -84,17 +84,6 @@ typedef struct {
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
-/** Multi-IFO container for resampled timeseries */
-typedef struct {
-  UINT4 length;		                /**< number of IFOs */
-  REAL8 f0;                             /**< the heterodyne frequency */
-  REAL8 deltaT;                         /**< the sampling time */
-  LIGOTimeGPS epoch;                    /**< the timestamp of the first sample */
-  LIGOTimeGPS refTime;                  /**< the reference time for which the frequencies are defined */
-  COMPLEX8Vector **Fat;	                /**< array of COMPLEX8Vector (pointers) to Fa(t) */
-  COMPLEX8Vector **Fbt;	                /**< array of COMPLEX8Vector (pointers) to Fb(t) */
-} MultiCOMPLEX8TimeSeries;
-
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
  * \f{equation}
@@ -130,6 +119,12 @@ typedef struct {
   AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 } MultiAMCoeffs;
+
+/** Multi-IFO container for resampled timeseries */
+typedef struct {
+  UINT4 length;		                /**< number of IFOs */
+  COMPLEX8TimeSeries **data;	        /**< array of COMPLEX8Timeseries (pointers) to complex heterodyned downsampled timeseries */
+} MultiCOMPLEX8TimeSeries;
 
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
@@ -192,7 +187,9 @@ typedef struct {
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
-  MultiCOMPLEX8TimeSeries *multiTimeseries;
+  MultiCOMPLEX8TimeSeries *multiTimeseries;       /**< the buffered unweighted multi-detector timeseries */
+  MultiCOMPLEX8TimeSeries *Faoft;                 /**< the buffered multi-detector timeseries weighted by a(t) */
+  MultiCOMPLEX8TimeSeries *Fboft;                 /**< the buffered multi-detector timeseries weighted by b(t) */
 } ComputeFBuffer;
 
 /** Extra parameters controlling the actual computation of F */
