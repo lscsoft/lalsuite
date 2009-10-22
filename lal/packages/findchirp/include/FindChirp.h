@@ -707,7 +707,7 @@ tagFindChirpBankVetoData
   REAL4Vector		 *acorrMat;
   REAL4FFTPlan		 *revplan;
   UINT4 		 acorrMatSize;
-  double                 *tchirp;
+  REAL4Vector            *tchirp;
 }
 FindChirpBankVetoData;
 /* </lalVerbatim> */

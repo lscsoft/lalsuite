@@ -134,6 +134,7 @@ void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
   bankVetoData->workspace = NULL;
   bankVetoData->acorrMat = NULL;
   bankVetoData->revplan = NULL;
+  bankVetoData->tchirp = NULL;
 }
 
 void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
@@ -142,6 +143,7 @@ void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
   if (bvdata->workspace) XLALDestroyCOMPLEX8Vector(bvdata->workspace);
   if (bvdata->acorrMat) XLALDestroyREAL4Vector(bvdata->acorrMat);
   if (bvdata->revplan) XLALDestroyREAL4FFTPlan(bvdata->revplan);
+  if (bvdata->tchirp) XLALDestroyREAL4Vector(bvdata->tchirp);
   return; 
 }
 
@@ -312,7 +314,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   REAL8 Br = 0;
   REAL8 Bi = 0;
   UINT4 stIX = floor( fLow / deltaF );
-  double deltaChirp;
+  REAL4 deltaChirp;
   double fLowChirp = 150.0;
 
   /* FIXME this should be a command line argument */
@@ -325,7 +327,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
   if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * iSize);
   if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpLen-1) * 2 , 0);
-  if ( !bankVetoData->tchirp) bankVetoData->tchirp = (double *) calloc(iSize,sizeof(double));
+  if ( !bankVetoData->tchirp) bankVetoData->tchirp = XLALCreateREAL4Vector(iSize);
 
   /* deltaT is unused in this function */
   UNUSED(deltaT);
@@ -333,11 +335,18 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   for ( i = 0; i < iSize; i++ )
     {
       /* FIXME find actual lal function */
-      bankVetoData->tchirp[i] = chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
+      if ( i < vetoBank->subBankSize )
+	{
+      bankVetoData->tchirp->data[i] = (REAL4) chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
 							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
 							     fLowChirp,
 							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
 							     7);
+	}
+      else
+	{
+	bankVetoData->tchirp->data[i] = (REAL4) 0;
+	}
     }
 
 
@@ -382,7 +391,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
-	    deltaChirp = bankVetoData->tchirp[i] - bankVetoData->tchirp[j];
+	    deltaChirp = bankVetoData->tchirp->data[i] - bankVetoData->tchirp->data[j];
 
             ABr +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
 		            +   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi)
@@ -448,7 +457,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 *dof)
 {
 
-  
+  fprintf(stdout,"in");
   REAL8 iSNR_r = 0;
   REAL8 iSNR_i = 0;
   REAL8 iSNR = 0;
@@ -486,7 +495,9 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     fprintf(stdout,"%d",bankVetoData->qVecArray[j]->length);
     fprintf(stdout,"%d",snrIX);
-    snrIX += (UINT4)  round( (bankVetoData->tchirp[i]- bankVetoData->tchirp[j]) /deltaT );
+    
+    /* FIXME: warning -- this could go off the edge of the SNR time series */
+    snrIX += (UINT4)  round( (bankVetoData->tchirp->data[i]- bankVetoData->tchirp->data[j]) / deltaT );
     fprintf(stdout,"%d",snrIX);
 
     jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re

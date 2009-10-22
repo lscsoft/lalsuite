@@ -94,7 +94,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-/* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
+/* define the parameters for a 1.4,.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
@@ -2520,6 +2520,7 @@ int main( int argc, char *argv[] )
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
           dynRange, fLow, spec.deltaF, chan.deltaT);
           ccFlag = 0;
+	  fprintf(stdout,"done");
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
