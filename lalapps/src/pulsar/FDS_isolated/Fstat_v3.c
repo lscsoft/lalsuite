@@ -41,7 +41,7 @@
 
 
 #include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+/* #include <lalappsGitID.h> */
 
 #include <lalapps.h>
 
