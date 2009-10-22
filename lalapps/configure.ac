@@ -157,10 +157,10 @@ AC_CHECK_LIB([z],[compress])
 PKG_CHECK_MODULES([LAL],[lal],[true],[false])
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-	AC_CHECK_LIB([lal],[LALVersion],,[AC_MSG_ERROR([could not find the LAL library])])
-	AC_CHECK_LIB([lalsupport],[LALOpenDataFile],,[AC_MSG_ERROR([could not find the LAL support library])])
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+  LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+  AC_CHECK_LIB([lal],[LALVersion],,[AC_MSG_ERROR([could not find the LAL library])])
+  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],,[AC_MSG_ERROR([could not find the LAL support library])])
 fi
 
 dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
@@ -173,8 +173,8 @@ PKG_CHECK_MODULES([LALMETAIO],[lalmetaio],[true],[false])
 PKG_CHECK_MODULES([LALXML],[lalxml >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALSTOCHASTIC],[lalstochastic >= 1.0],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
-	CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
-	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
+  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
+  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 fi
 
 dnl cfitsio
