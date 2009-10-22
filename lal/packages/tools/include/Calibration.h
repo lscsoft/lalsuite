@@ -245,6 +245,7 @@ struct StrainInTag {
   COMPLEX16 Wo;            /* Whitening filter at cal line frequency */
   REAL8 f;                 /* calibration line frequency */
   REAL4 To;                /* factors integration time */
+  char filter_vc_info[1024];  /* version control information in the filter file */
   REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
   INT4 CinvUSF;            /* Upsampling factor for sensing function */
   INT4 CinvDelay;          /* Overall inverse sensing function delay */

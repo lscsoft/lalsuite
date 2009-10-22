@@ -149,7 +149,6 @@ INT4 lalDebugLevel=0;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 char ifo[2];
-char filtercvsinfo[16384];
 
 /***************************************************************************/
 /* to avoid a warning */
@@ -369,7 +368,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
 
   /* String containing the filter file cvs info (first line in filter file) */
-  FrHistoryAdd( frame, filtercvsinfo);
+  FrHistoryAdd( frame, InputData->filter_vc_info);
 
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);

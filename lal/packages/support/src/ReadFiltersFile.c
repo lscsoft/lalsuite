@@ -58,7 +58,6 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     char sensingstr[8], usfstr[18], delaystr[6];  /* filters labels */
     char aastr[10], servostr[6], awstr[14];
     int NCinv, NA, ND, NAW;     /* number of points in filter */
-    char filtercvsinfo[16348];  /* filter file cvs info (first line in file) */
     int err = 0;  /* error code */
 
     err = XLALParseDataFile(&Filters, filterfile);
@@ -77,10 +76,10 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     }
 
     /**------------------------------------------------------------------**/
-    /* Read CVS info */
+    /* Read VC info (CVS information for the moment) */
     i = 0;                                  /* start with first line */
     thisline = Filters->lines->tokens[i];   /* get line i */
-    strncpy(filtercvsinfo, thisline, sizeof(filtercvsinfo));
+    strncpy(InputData->filter_vc_info, thisline, 1024);
 
     /**------------------------------------------------------------------**/
     /* Read sensing function info */
