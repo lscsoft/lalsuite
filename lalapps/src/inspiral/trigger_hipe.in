@@ -530,6 +530,8 @@ parser.add_option("-g","--injection-config",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
 parser.add_option("-p", "--log-path",action="store",type="string",\
     metavar=" PATH",help="directory to write condor log file")
+parser.add_option("-u","--user-tag",action="store",type="string",\
+    default=None, help="user defined tag for naming the DAG file" )
 
 # Add some extra capabilities
 parser.add_option("", "--skip-datafind", action="store_false", default=True,
@@ -537,6 +539,10 @@ parser.add_option("", "--skip-datafind", action="store_false", default=True,
   "the file caches in ./GRBxxxxxx/datafind/cache).")
 parser.add_option("", "--skip-dataquality", action="store_false", default=True,
   dest="do_dataquality", help="skip a query for data quality")
+parser.add_option("", "--skip-onsource", action="store_false", default=True,
+  dest="do_onsource", help="skip the onsource DAG")
+parser.add_option("", "--skip-offsource", action="store_false", default=True,
+  dest="do_offsource", help="skip the offsource DAG")
 
 ( opts , args ) = parser.parse_args()
 
@@ -659,6 +665,8 @@ if opts.do_dataquality:
 # set up the über dag for all intervals and all injections
 
 tag = opts.config_file.rstrip(".ini")
+if opts.user_tag:
+  tag += '_'+opts.user_tag
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
 ligolwdag = pipeline.CondorDAG("%s/%s_ligolwdag.log" % (opts.log_path, tag))
@@ -776,39 +784,41 @@ for grb in ext_trigs:
     # the other nodes will try to use datafind_node as a parent; set to None.
     datafind_node = None
   
-  if opts.verbose: print "Creating DAG for offsource analysis"
-  offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
+  if opts.do_offsource:
+    if opts.verbose: print "Creating DAG for offsource analysis"
+    offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
                             opts.log_path, source_file, "offsource",
                             offSourceSegment, exttrig_seg = '../../'+buffer_segfile,
                             usertag=idirectory + "_OFFSOURCE_CATEGORY_1",
                             exttrig_analyze="off_source", verbose=opts.verbose,
                             dont_run=["datafind"])
-  offsource_node = offsource_analysis.finalize(uberdag=uberdag,
-                                               parent=datafind_node)
-  hipe_caches.append(offsource_analysis.get_cache_name())
-  if opts.do_dataquality:
-    for cat, subdict in veto_filename_dict.iteritems():
-      dq_analysis = make_dq_run(offsource_analysis, subdict, cat)
-      dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
-                                              parent=offsource_node)
-      hipe_caches.append(dq_analysis.get_cache_name())
+    offsource_node = offsource_analysis.finalize(uberdag=uberdag,
+                                                 parent=datafind_node)
+    hipe_caches.append(offsource_analysis.get_cache_name())
+    if opts.do_dataquality:
+      for cat, subdict in veto_filename_dict.iteritems():
+        dq_analysis = make_dq_run(offsource_analysis, subdict, cat)
+        dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
+                                                parent=offsource_node)
+        hipe_caches.append(dq_analysis.get_cache_name())
   
-  if opts.verbose: print "Creating DAG for onsource analysis"
-  onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
+  if opts.do_onsource:
+    if opts.verbose: print "Creating DAG for onsource analysis"
+    onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
                                opts.log_path, source_file, "onsource",
                                onSourceSegment, exttrig_analyze="on_source",
                                exttrig_seg = '../../'+onsource_segfile,
                                usertag=idirectory + "_ONSOURCE_CATEGORY_1",
                                verbose=opts.verbose, dont_run=["datafind"])
-  onsource_node = onsource_analysis.finalize(uberdag=uberdag,
-                                             parent=datafind_node)
-  hipe_caches.append(onsource_analysis.get_cache_name())
-  if opts.do_dataquality:
-    for cat, subdict in veto_filename_dict.iteritems():
-      dq_analysis = make_dq_run(onsource_analysis, subdict, cat)
-      dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
+    onsource_node = onsource_analysis.finalize(uberdag=uberdag,
+                                               parent=datafind_node)
+    hipe_caches.append(onsource_analysis.get_cache_name())
+    if opts.do_dataquality:
+      for cat, subdict in veto_filename_dict.iteritems():
+        dq_analysis = make_dq_run(onsource_analysis, subdict, cat)
+        dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
                                               parent=onsource_node)
-      hipe_caches.append(dq_analysis.get_cache_name())
+        hipe_caches.append(dq_analysis.get_cache_name())
 
   ############################################################################
   # create the config parser object and read in the ini file
