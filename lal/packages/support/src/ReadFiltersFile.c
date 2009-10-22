@@ -91,7 +91,14 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     thisline = Filters->lines->tokens[++i];   /* get next line */
     sscanf(thisline, "%" LAL_INT4_FORMAT " %s", &InputData->CinvUSF, usfstr);
     CHECK(usfstr, "UPSAMPLING_FACTOR");
-    /* FIXME: Check upsamplig factor USF, positive, and mod 2=0 */
+
+    /* Check upsamplig factor USF = 1, or positive and mod 2=0 */
+    if (! (InputData->CinvUSF == 1 ||
+           (InputData->CinvUSF > 1 && InputData->CinvUSF % 2 == 0)) ) {
+        fprintf(stderr, "ERROR: bad upsampling factor %g", InputData->CinvUSF);
+        XLALDestroyParsedDataFile(&Filters);
+        return -1;
+    }
 
     /* Read Delay */
     thisline = Filters->lines->tokens[++i];   /* get next line */
