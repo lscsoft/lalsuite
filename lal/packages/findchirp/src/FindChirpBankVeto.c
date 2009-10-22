@@ -391,7 +391,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
-	    deltaChirp = bankVetoData->tchirp->data[i] - bankVetoData->tchirp->data[j];
+	    deltaChirp = bankVetoData->tchirp->data[j] - bankVetoData->tchirp->data[i];
 
             ABr +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
 		            +   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi)
@@ -497,7 +497,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     fprintf(stdout,"%d",snrIX);
     
     /* FIXME: warning -- this could go off the edge of the SNR time series */
-    snrIX += (UINT4)  round( (bankVetoData->tchirp->data[i]- bankVetoData->tchirp->data[j]) / deltaT );
+    snrIX = (UINT4) ( (double) snrIX + round( ( bankVetoData->tchirp->data[j] -   bankVetoData->tchirp->data[i]) / deltaT ) );
     fprintf(stdout,"%d",snrIX);
 
     jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
