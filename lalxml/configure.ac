@@ -58,7 +58,7 @@ AC_PROG_LIBTOOL
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  AC_CHECK_PROGS([SW_VERS],[sw_vers])
   if test "x$SW_VERS" != "x"; then
     AC_MSG_CHECKING([Mac OS X version])
     MACOSX_VERSION=`$SW_VERS -productVersion`
@@ -84,10 +84,10 @@ AC_HEADER_STDC
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
 
 # check for libxml2
-PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.6], [true], [false])
+PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
 LIBS="$LIBS $LIBXML2_LIBS"
-AC_CHECK_LIB([xml2], [xmlInitParser],,[AC_MSG_ERROR(cannot find xml2 library)])
+AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR(cannot find xml2 library)])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -125,7 +125,7 @@ fi
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
