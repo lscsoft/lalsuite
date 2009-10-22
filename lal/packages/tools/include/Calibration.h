@@ -237,6 +237,9 @@ struct StrainInTag {
   REAL4TimeSeries DARM_ERR;/* timeseries containing DARM_ERR */
   REAL4TimeSeries DARM ;   /* timeseries containing DARM_CTRL */
   REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
+  REAL4TimeSeries StateVector;  /* timeseries containing the State Vector (IFO-SV_STATE_VECTOR) */
+  REAL4TimeSeries LAX;     /* timeseries containing the Light-in-X-arm (LSC-LA_PTRX_NORM) */
+  REAL4TimeSeries LAY;     /* timeseries containing the Light-in-Y-arm (LSC-LA_PTRY_NORM) */
   COMPLEX16 Do;            /* digital filter at cal line frequency */
   COMPLEX16 Go;            /* OLG at cal line frequency */
   COMPLEX16 Wo;            /* Whitening filter at cal line frequency */

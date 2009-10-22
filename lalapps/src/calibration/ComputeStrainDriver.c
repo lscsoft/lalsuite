@@ -142,10 +142,6 @@ StrainOut OutputData;
 INT4 duration;
 LIGOTimeGPS gpsStartepoch;
 
-REAL4TimeSeries StateVector;
-REAL4TimeSeries LAX;
-REAL4TimeSeries LAY;
-
 INT4TimeSeries OutputDQ;  /* data quality */
 
 static LALStatus status;
@@ -214,8 +210,8 @@ int main(int argc,char *argv[])
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
-  XLALComputeDQ(StateVector.data->data, StateVector.data->length/OutputDQ.data->length,
-                LAX.data->data, LAY.data->data, LAX.data->length/OutputDQ.data->length,
+  XLALComputeDQ(InputData.StateVector.data->data, InputData.StateVector.data->length/OutputDQ.data->length,
+                InputData.LAX.data->data, InputData.LAY.data->data, InputData.LAX.data->length/OutputDQ.data->length,
                 OutputData.alphabeta.data->data, OutputData.alphabeta.data->length/OutputDQ.data->length,
                 0, 0, InputData.wings,
                 0,   /* how can I actually know if it is missing in the DMT or not?? */
@@ -282,8 +278,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
     XLAL_ERROR(func, XLAL_EFUNC);
 
   /* Resize State Vector and Data Quality time series */
-  if(!XLALResizeREAL4TimeSeries(&(StateVector), (int)(InputData.wings/StateVector.deltaT),
-               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT)))
+  if(!XLALResizeREAL4TimeSeries(&(InputData.StateVector), (int)(InputData.wings/InputData.StateVector.deltaT),
+               InputData.StateVector.data->length-2*(UINT4)(InputData.wings/InputData.StateVector.deltaT)))
     XLAL_ERROR(func, XLAL_EFUNC);
   if(!XLALResizeINT4TimeSeries(&(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
 			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT)))
@@ -379,7 +375,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
 
   /* Add in the state vector data */
-  XLALFrameAddREAL4TimeSeriesProcData( frame, &StateVector);
+  XLALFrameAddREAL4TimeSeriesProcData( frame, &InputData.StateVector);
 
   /* Add in the data quality data */
   XLALFrameAddINT4TimeSeriesProcData( frame, &OutputDQ);
@@ -496,11 +492,11 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM_ERR,&chanin_darmerr,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&StateVector,&chanin_sv,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.StateVector,&chanin_sv,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&LAX,&chanin_lax,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.LAX,&chanin_lax,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&LAY,&chanin_lay,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.LAY,&chanin_lay,framestream);
   TESTSTATUS( &status );
 
   /* Allocate space for data vectors */
@@ -512,11 +508,11 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   TESTSTATUS( &status );
   LALSCreateVector(&status,&InputData.EXC.data,(UINT4)(duration/InputData.EXC.deltaT +0.5));
   TESTSTATUS( &status );
-  LALSCreateVector(&status,&StateVector.data,(UINT4)(duration/StateVector.deltaT +0.5));
+  LALSCreateVector(&status,&InputData.StateVector.data,(UINT4)(duration/InputData.StateVector.deltaT +0.5));
   TESTSTATUS( &status );
-  LALSCreateVector(&status,&LAX.data,(UINT4)(duration/LAX.deltaT +0.5));
+  LALSCreateVector(&status,&InputData.LAX.data,(UINT4)(duration/InputData.LAX.deltaT +0.5));
   TESTSTATUS( &status );
-  LALSCreateVector(&status,&LAY.data,(UINT4)(duration/LAX.deltaT +0.5));
+  LALSCreateVector(&status,&InputData.LAY.data,(UINT4)(duration/InputData.LAX.deltaT +0.5));
   TESTSTATUS( &status );
 
   /* Read in the data */
@@ -542,17 +538,17 @@ static FrChanIn chanin_lay;  /* light in y-arm */
 
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&StateVector,&chanin_sv,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.StateVector,&chanin_sv,framestream);
   TESTSTATUS( &status );
 
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&LAX,&chanin_lax,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.LAX,&chanin_lax,framestream);
   TESTSTATUS( &status );
 
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
-  LALFrGetREAL4TimeSeries(&status,&LAY,&chanin_lay,framestream);
+  LALFrGetREAL4TimeSeries(&status,&InputData.LAY,&chanin_lay,framestream);
   TESTSTATUS( &status );
 
   LALFrClose(&status,&framestream);
@@ -607,7 +603,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   LALZCreateVector(&status,&OutputData.beta.data,(UINT4)(duration/OutputData.beta.deltaT +0.5));
   TESTSTATUS( &status );
 
-  OutputDQ.epoch=StateVector.epoch;
+  OutputDQ.epoch=InputData.StateVector.epoch;
   OutputDQ.deltaT=1;  /* Data Quality channel written at 1 Hz */
   LALI4CreateVector(&status,&OutputDQ.data,(UINT4)(duration/OutputDQ.deltaT +0.5));
   TESTSTATUS( &status );
@@ -1035,11 +1031,11 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALSDestroyVector(&status,&InputData.EXC.data);
   TESTSTATUS( &status );
-  LALSDestroyVector(&status,&StateVector.data);
+  LALSDestroyVector(&status,&InputData.StateVector.data);
   TESTSTATUS( &status );
-  LALSDestroyVector(&status,&LAX.data);
+  LALSDestroyVector(&status,&InputData.LAX.data);
   TESTSTATUS( &status );
-  LALSDestroyVector(&status,&LAY.data);
+  LALSDestroyVector(&status,&InputData.LAY.data);
   TESTSTATUS( &status );
 
   /* Free filters */
