@@ -1107,6 +1107,7 @@ REAL4
 XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 i,
                      UINT4 snrIX,
+		     REAL4 deltaT,
                      UINT4 *dof);
 
 
@@ -1135,9 +1136,7 @@ XLALComputeFullChisq(
 InspiralTemplate *
 XLALFindChirpSortTemplates(
   InspiralTemplate *bankHead,
-  UINT4 num,
-  UINT4 subbanksize
-);
+  UINT4 num);
 
 #ifdef  __cplusplus
 #pragma {

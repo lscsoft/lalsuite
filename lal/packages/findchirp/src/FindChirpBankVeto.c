@@ -120,11 +120,13 @@ static double chirp_time (double m1, double m2, double fLower, int order)
 	return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * log (xT)) * x6T + c7T * x7T) / x8T;
 }
 
+
 /* A convenience function to compute the time between two frequencies */
 static double chirp_time_between_f1_and_f2(double m1, double m2, double fLower, double fUpper, int order)
 	{
 	return chirp_time(m1,m2,fLower,order) - chirp_time(m1,m2,fUpper,order);
 	}
+
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
@@ -306,9 +308,12 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   UINT4 i,j,k,iMax,jMax,correctFlag;
   UINT4 iSize = bankVetoData->length;
   UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
-  REAL8 ABr, ABi, Br, Bi, sqResp, normfac;
+  REAL8 ABr, ABi, sqResp, normfac; 
+  REAL8 Br = 0;
+  REAL8 Bi = 0;
   UINT4 stIX = floor( fLow / deltaF );
   double deltaChirp;
+  double fLowChirp = 150.0;
 
   /* FIXME this should be a command line argument */
   bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
@@ -320,7 +325,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
   if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * iSize);
   if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpLen-1) * 2 , 0);
-  if ( !bankVetoData->tchirp) bankVetoData->tchirp = (double *) calloc(iSize*sizeof(double));
+  if ( !bankVetoData->tchirp) bankVetoData->tchirp = (double *) calloc(iSize,sizeof(double));
 
   /* deltaT is unused in this function */
   UNUSED(deltaT);
@@ -330,7 +335,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
       /* FIXME find actual lal function */
       bankVetoData->tchirp[i] = chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
 							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
-							     fLow,
+							     fLowChirp,
 							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
 							     7);
     }
@@ -439,6 +444,7 @@ REAL4
 XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 i,
                      UINT4 snrIX,
+		     REAL4 deltaT,
                      UINT4 *dof)
 {
 
@@ -478,6 +484,11 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     bankNorm = 2.0 - ijsq;
 
+    fprintf(stdout,"%d",bankVetoData->qVecArray[j]->length);
+    fprintf(stdout,"%d",snrIX);
+    snrIX += (UINT4)  round( (bankVetoData->tchirp[i]- bankVetoData->tchirp[j]) /deltaT );
+    fprintf(stdout,"%d",snrIX);
+
     jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
            * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
     jSNR_i = bankVetoData->qVecArray[j]->data[snrIX].im
@@ -496,7 +507,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
 
 InspiralTemplate *
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize)
+XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
   {
   bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   breakUpRegions(bankHead);
