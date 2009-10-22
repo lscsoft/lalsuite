@@ -38,9 +38,11 @@ Usage: MainSubmit.tcl [var value]
 	set $var $value
 	}
 
-cd $work_dir
+cd "$work_dir/idx$outlier_index"
 
-source "configFile"
+source "$work_dir/config_file"
 
-exec "condor_submit_dag $work_dir/idx$outlier_index/run_${iteration}.dag "
+after 30000
+
+exec condor_submit_dag run_${iteration}.dag 
 
