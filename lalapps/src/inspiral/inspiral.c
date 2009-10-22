@@ -2128,7 +2128,7 @@ int main( int argc, char *argv[] )
     if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)
-         bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts, subBankSize);
+	bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts);
 
       if ( vrbflg ) fprintf( stdout,
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
