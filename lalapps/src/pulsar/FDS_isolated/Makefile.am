@@ -75,4 +75,4 @@ LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
 LAL_PREFIX=$(LAL_PREFIX) \
 LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
 
-CLEANFILES =
+CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
