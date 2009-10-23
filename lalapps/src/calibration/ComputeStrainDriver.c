@@ -111,13 +111,7 @@ struct CommandLineArgsTag {
   INT4 testsensing;
   INT4 testactuation;
   char *FrCacheFile;       /* Frame cache file for corresponding time */
-  char *exc_chan;          /* excitation channel name */    
-  char *darm_chan;         /* darm channel name */ 
-  char *darmerr_chan;      /* darm_err  channel name */ 
-  char *asq_chan;          /* asq channel name (deprecated) */
-  char *sv_chan;           /* state vector channel name */
-  char *lax_chan;          /* light in x-arm channel name */
-  char *lay_chan;          /* light in y-arm channel name */
+  char *ifo;               /* interferometer name (H1, H2, L1) */
   char *filterfile;        /* file with filter coefficients */
   char *frametype;
   char *strainchannel;
@@ -141,7 +135,12 @@ static LALStatus status;
 INT4 lalDebugLevel=0;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
-char ifo[2];
+char sv_cname[] = "Xn:IFO-SV_STATE_VECTOR",                      /* channel names */
+    lax_cname[] = "Xn:LSC-LA_PTRX_NORM", lay_cname[] = "Xn:LSC-LA_PTRY_NORM",
+    asq_cname[] = "Xn:LSC-DARM_ERR",  /* temporary hack: set name of (unused) asq to darm_err */
+    dctrl_cname[] = "Xn:LSC-DARM_CTRL",
+    derr_cname[] = "Xn:LSC-DARM_ERR", exc_cname[] = "Xn:LSC-DARM_CTRL_EXC_DAQ";
+
 
 /***************************************************************************/
 /* to avoid a warning */
@@ -166,7 +165,6 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
-
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
   /* Check whether files exist before proceeding */
@@ -177,7 +175,7 @@ int main(int argc,char *argv[])
       char site;
       INT4 t0, dt;
 
-      site = CommandLineArgs.darmerr_chan[0];
+      site = CommandLineArgs.ifo[0];
       
       t0 = CommandLineArgs.GPSStart+InputData.wings;
       dt = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart-2*InputData.wings;
@@ -210,7 +208,7 @@ int main(int argc,char *argv[])
                 OutputDQ.data->data, OutputDQ.data->length);
 
   if (WriteFrame(argc,argv,CommandLineArgs)) return 4;
-       
+
   if(FreeMem()) return 5;
 
   return 0;
@@ -255,6 +253,11 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
 
+  char *cnames[] = { alphaName, gammaName, alphaimName, gammaimName, dqName };
+
+  for (i = 0; i < 5; i++)
+      memcpy(cnames[i], CLA.ifo, 2);  /* set the proper name of the channels */
+
   /*re-size h(t) and data time series*/
   if(!XLALResizeREAL8TimeSeries(&(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
 			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT)))
@@ -276,8 +279,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   if(!XLALResizeINT4TimeSeries(&(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
 			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT)))
     XLAL_ERROR(func, XLAL_EFUNC);
-  strncpy(OutputDQ.name,
-          memcpy(dqName, OutputData.h.name, 2), sizeof( OutputDQ.name  ) );
+  strncpy(OutputDQ.name, dqName, sizeof(OutputDQ.name));   /* also set the name of the channel */
 
   /* Resize DARM_CTRL, DARM_ERR, EXC and AS_Q*/
   if(!XLALResizeREAL4TimeSeries(&(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
@@ -293,22 +295,16 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT)))
     XLAL_ERROR(func, XLAL_EFUNC);
   
-  /* Names for factors time series */
-  memcpy( alphaName, OutputData.h.name, 2 );
-  memcpy( gammaName, OutputData.h.name, 2 );
-  memcpy( alphaimName, OutputData.h.name, 2 );
-  memcpy( gammaimName, OutputData.h.name, 2 );
-  
   /* based on IFO name, choose the correct detector */
-  if ( 0 == strncmp( OutputData.h.name, "H2:", 3 ) )
+  if ( 0 == strcmp(CLA.ifo, "H2") )
     detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
-  else if ( 0 == strncmp( OutputData.h.name, "H1:", 3 ) )
+  else if ( 0 == strcmp( CLA.ifo, "H1") )
     detectorFlags = LAL_LHO_4K_DETECTOR_BIT;
-  else if ( 0 == strncmp( OutputData.h.name, "L1:", 3 ) )
+  else if ( 0 == strcmp( CLA.ifo, "L1") )
     detectorFlags = LAL_LLO_4K_DETECTOR_BIT;
   else
     return 1;  /* Error: not a recognized name */
-  site = OutputData.h.name[0];
+  site = CLA.ifo[0];
   
   /* based on series metadata, generate standard filename */
   FrDuration = OutputData.h.deltaT * OutputData.h.data->length;
@@ -449,13 +445,13 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   chanin_lax.type  = ADCDataChannel;
   chanin_lay.type  = ADCDataChannel;
 
-  chanin_asq.name  = CLA.asq_chan;
-  chanin_darm.name = CLA.darm_chan;
-  chanin_darmerr.name = CLA.darmerr_chan;
-  chanin_exc.name  = CLA.exc_chan; 
-  chanin_sv.name  = CLA.sv_chan;
-  chanin_lax.name  = CLA.lax_chan;
-  chanin_lay.name  = CLA.lay_chan;
+  chanin_asq.name  = asq_cname;
+  chanin_darm.name = dctrl_cname;
+  chanin_darmerr.name = derr_cname;
+  chanin_exc.name  = exc_cname;
+  chanin_sv.name  = sv_cname;
+  chanin_lax.name  = lax_cname;
+  chanin_lay.name  = lay_cname;
 
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
@@ -607,13 +603,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"factors-time",        required_argument, NULL,  't'},
     {"filters-file",        required_argument, NULL,  'F'},
     {"frame-cache",         required_argument, NULL,  'C'},
-    {"exc-channel",         required_argument, NULL,  'E'},
-    {"asq-channel",         required_argument, NULL,  'A'},
-    {"darm-channel",        required_argument, NULL,  'D'},
-    {"darmerr-channel",     required_argument, NULL,  'R'},
-    {"sv-channel",          required_argument, NULL,  'V'},
-    {"lax-channel",         required_argument, NULL,  'L'},
-    {"lay-channel",         required_argument, NULL,  'Y'},
+    {"ifo",                 required_argument, NULL,  'i'},
     {"gps-start-time",      required_argument, NULL,  's'},
     {"gps-end-time",        required_argument, NULL,  'e'},
     {"wings",               required_argument, NULL,  'o'},
@@ -633,19 +623,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                no_argument,       NULL,  'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:p:";
+  char args[] = "hrcdux:C:F:s:e:i:t:o:H:T:S:z:v:wy:p:";
   
   /* Initialize default values */
   CLA->To=0.0;
   CLA->FrCacheFile=NULL;
   CLA->filterfile=NULL;
-  CLA->exc_chan=NULL;
-  CLA->darm_chan=NULL;
-  CLA->darmerr_chan=NULL;
-  CLA->asq_chan=NULL;
-  CLA->sv_chan=NULL;
-  CLA->lax_chan=NULL;
-  CLA->lay_chan=NULL;
+  CLA->ifo=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->testsensing=0;
@@ -688,33 +672,21 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* name of filter cache file */
       CLA->filterfile=optarg;
       break;
-    case 'E':
-      /* name of excitation channel */
-      CLA->exc_chan=optarg;
-      break;
-    case 'A':
-      /* name of as_q channel */
-      CLA->asq_chan=optarg;  /* *** Warning: DEPRECATED *** */
-      break;
-    case 'D':
-      /* name of darm channel */
-      CLA->darm_chan=optarg;
-      break;
-    case 'R':
-      /* name of darm err channel */
-      CLA->darmerr_chan=optarg;
-      break;
-    case 'V':
-      /* name of state vector channel */
-      CLA->sv_chan=optarg;
-      break;
-    case 'L':
-      /* name of light in x-arm channel */
-      CLA->lax_chan=optarg;
-      break;
-    case 'Y':
-      /* name of light in y-arm channel */
-      CLA->lay_chan=optarg;
+    case 'i':
+      /* name of interferometer */
+      if (strcmp(optarg, "H1") != 0 && strcmp(optarg, "H2") != 0 &&
+          strcmp(optarg, "L1") != 0) {
+        fprintf(stderr, "Bad ifo: %s   (must be H1, H2 or L1)\n", optarg);
+        exit(1);
+      }
+      CLA->ifo=optarg;
+      {
+        int i;
+        char *cnames[] = { sv_cname, lax_cname, lay_cname, asq_cname,
+                           dctrl_cname, derr_cname, exc_cname };
+        for (i = 0; i < 7; i++)
+          memcpy(cnames[i], CLA->ifo, 2);  /* set channel names appropiately */
+      }
       break;
     case 's':
       /* GPS start */
@@ -778,13 +750,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 "\t-e, --gps-end-time    INT       GPS end time.\n"
 "\t-F, --filters-file    STRING    Name of file containing filters and histories.\n"
 "\t-C, --frame-cache     STRING    Name of frame cache file.\n"
-"\t-A, --asq-channel     STRING    AS_Q channel name (eg, L1:LSC-AS_Q) [DEPRECATED].\n"
-"\t-E, --exc-channel     STRING    Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ).\n"
-"\t-D, --darm-channel    STRING    Darm channel name (eg, L1:LSC-DARM_CTRL).\n"
-"\t-R, --darmerr-channel STRING    Darm ERR channel name (eg, L1:LSC-DARM_ERR).\n"
-"\t-V, --sv-channel      STRING    State Vector channel name (eg, L1:IFO-SV_STATE_VECTOR).\n"
-"\t-L, --lax-channel     STRING    Light in X-arm channel name (eg, L1:LSC-LA_PTRX_NORM).\n"
-"\t-Y, --lay-channel     STRING    Light in Y-arm channel name (eg, L1:LSC-LA_PTRY_NORM).\n"
+"\t-i, --ifo             STRING    Name of the interferometer (H1, H2, L1).\n"
 "\t-o, --wings           INTEGER   Size of wings in seconds.\n"
 "\t-r, --test-sensing    FLAG      Output residual strain only.\n"
 "\t-c, --test-actuation  FLAG      Output control strain only.\n"
@@ -840,48 +806,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
-   if(CLA->exc_chan == NULL)
+   if(CLA->ifo == NULL)
     {
-      fprintf(stderr,"No excitation channel specified.\n");
+      fprintf(stderr,"No ifo specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
-   if(CLA->darm_chan == NULL)
-    {
-      fprintf(stderr,"No darm channel specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
-   if(CLA->sv_chan == NULL)
-    {
-      fprintf(stderr,"No state vector channel specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
-   if(CLA->lax_chan == NULL)
-    {
-      fprintf(stderr,"No light in x-arm channel specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
-   if(CLA->lay_chan == NULL)
-    {
-      fprintf(stderr,"No light in y-arm  channel specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
-   if(CLA->darmerr_chan == NULL)
-    {
-      fprintf(stderr,"No darm err channel specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
-   if(CLA->asq_chan != NULL)
-    {
-      fprintf(stderr,"Warning: AS_Q channel specified, but it is not"
-              " used anymore in the calibration (it was only used"
-              " for computing the alpha factors before using the"
-              " Output Mode Cleaner). It will be renamed to the DARM_ERR channel.\n");
     }
    if(CLA->frametype == NULL)
     {
@@ -911,9 +840,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
        fprintf(stderr,"Overlap %d is either not >=2, or not exactly divisible by two. Exiting.",InputData.wings);
        return 1;
      }
-
-   /* temporary hack: set the name of the (unused) as_q channel to darm_err */
-   CLA->asq_chan=CLA->darmerr_chan;
 
    /* Set some global variables */
    duration = CLA->GPSEnd - CLA->GPSStart;
