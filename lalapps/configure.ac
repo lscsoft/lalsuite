@@ -121,7 +121,7 @@ fi
 
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
