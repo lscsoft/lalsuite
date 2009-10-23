@@ -79,7 +79,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     /* Read VC info (CVS information for the moment) */
     i = 0;                                  /* start with first line */
     thisline = Filters->lines->tokens[i];   /* get line i */
-    strncpy(InputData->filter_vc_info, thisline, 1024);
+    strncpy(InputData->filter_vc_info, thisline, sizeof(InputData->filter_vc_info));
 
     /**------------------------------------------------------------------**/
     /* Read sensing function info */
@@ -94,7 +94,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     /* Check upsamplig factor USF = 1, or positive and mod 2=0 */
     if (! (InputData->CinvUSF == 1 ||
            (InputData->CinvUSF > 1 && InputData->CinvUSF % 2 == 0)) ) {
-        fprintf(stderr, "ERROR: bad upsampling factor %g", InputData->CinvUSF);
+        fprintf(stderr, "ERROR: bad upsampling factor %d", InputData->CinvUSF);
         XLALDestroyParsedDataFile(&Filters);
         return -1;
     }
