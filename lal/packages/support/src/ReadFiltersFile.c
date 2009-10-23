@@ -55,6 +55,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     int numlines, i;  /* total number of lines and line counter */
     int n, l;         /* counters */
     CHAR *thisline;
+    char paramname[64];         /* name of the parameter */
     char sensingstr[8], usfstr[18], delaystr[6];  /* filters labels */
     char aastr[10], servostr[6], awstr[14];
     int NCinv, NA, ND, NAW;     /* number of points in filter */
@@ -80,6 +81,42 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     i = 0;                                  /* start with first line */
     thisline = Filters->lines->tokens[i];   /* get line i */
     strncpy(InputData->filter_vc_info, thisline, sizeof(InputData->filter_vc_info));
+
+    /**------------------------------------------------------------------**/
+    /* Read parameters that used to be passed manually */
+    /* (Do, Go, Wo, f) */
+
+    /* Frequency of the calibration line */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->f, paramname);
+    CHECK(paramname, "CAL_LINE_FREQ");
+
+    /* Open loop gain at cal line freq */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Go.re, paramname);
+    CHECK(paramname, "OLG_RE");
+
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Go.im, paramname);
+    CHECK(paramname, "OLG_IM");
+
+    /* Whitening filter at cal line freq */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Wo.re, paramname);
+    CHECK(paramname, "WHITENER_RE");
+
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Wo.im, paramname);
+    CHECK(paramname, "WHITENER_IM");
+
+    /* Digital filter (servo) at cal line freq */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Do.re, paramname);
+    CHECK(paramname, "SERVO_RE");
+
+    thisline = Filters->lines->tokens[++i];   /* get next line */
+    sscanf(thisline, "%" LAL_REAL8_FORMAT " %s", &InputData->Do.im, paramname);
+    CHECK(paramname, "SERVO_IM");
 
     /**------------------------------------------------------------------**/
     /* Read sensing function info */

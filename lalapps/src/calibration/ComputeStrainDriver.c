@@ -105,14 +105,7 @@ NRCSID(COMPUTESTRAINDRIVERC, "$Id$");
 
 /* STRUCTURES */
 struct CommandLineArgsTag {
-  REAL8 f;                 /* Frequency of the calibration line */
   REAL8 To;                /* factors integration time */
-  REAL8 G0Re;              /* Real part of open loop gain at cal line freq.*/
-  REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
-  REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
-  REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
-  REAL8 W0Re;              /* Real part of whitening filter at cal line freq.*/
-  REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
   INT4 GPSStart;           /* Start GPS time for the segment to be calibrated */
   INT4 GPSEnd;             /* End GPS time for the segment to be calibrated */
   INT4 testsensing;
@@ -202,9 +195,9 @@ int main(int argc,char *argv[])
       }
     }
 
-  if (ReadData(CommandLineArgs)) return 2;
-
   if (XLALReadFiltersFile(CommandLineArgs.filterfile, &InputData)) return 3;
+
+  if (ReadData(CommandLineArgs)) return 2;
 
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
@@ -554,13 +547,6 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   TESTSTATUS( &status );
 
   /* Set the rest of the input variables */
-  InputData.Go.re=CLA.G0Re;
-  InputData.Go.im=CLA.G0Im;
-  InputData.Do.re=CLA.D0Re;
-  InputData.Do.im=CLA.D0Im;
-  InputData.Wo.re=CLA.W0Re;
-  InputData.Wo.im=CLA.W0Im;
-  InputData.f=CLA.f;
   InputData.To=CLA.To;
 
   /* check input data epoch agrees with command line arguments */
@@ -618,7 +604,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   struct option long_options[] = {
-    {"cal-line-freq",       required_argument, NULL,  'f'},
     {"factors-time",        required_argument, NULL,  't'},
     {"filters-file",        required_argument, NULL,  'F'},
     {"frame-cache",         required_argument, NULL,  'C'},
@@ -631,12 +616,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"lay-channel",         required_argument, NULL,  'Y'},
     {"gps-start-time",      required_argument, NULL,  's'},
     {"gps-end-time",        required_argument, NULL,  'e'},
-    {"olg-re",              required_argument, NULL,  'i'},
-    {"olg-im",              required_argument, NULL,  'j'},
-    {"servo-re",            required_argument, NULL,  'k'},
-    {"servo-im",            required_argument, NULL,  'l'},
-    {"whitener-re",         required_argument, NULL,  'm'},
-    {"whitener-im",         required_argument, NULL,  'n'},
     {"wings",               required_argument, NULL,  'o'},
     {"test-sensing",        no_argument,       NULL,  'r'},
     {"test-actuation",      no_argument,       NULL,  'c'},
@@ -657,7 +636,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   char args[] = "hrcduxf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:v:wy:p:";
   
   /* Initialize default values */
-  CLA->f=0.0;
   CLA->To=0.0;
   CLA->FrCacheFile=NULL;
   CLA->filterfile=NULL;
@@ -670,12 +648,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->lay_chan=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
-  CLA->G0Re=0.0;
-  CLA->G0Im=0.0;
-  CLA->D0Re=0.0;
-  CLA->D0Im=0.0;
-  CLA->W0Re=0.0;
-  CLA->W0Im=0.0;
   CLA->testsensing=0;
   CLA->testactuation=0;
   CLA->frametype=NULL;
@@ -704,10 +676,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     switch ( c )
     {
-    case 'f':
-      /* calibration line frequency */
-      CLA->f=atof(optarg);
-      break;
     case 't':
       /* factors integration time */
       CLA->To=atof(optarg);
@@ -755,30 +723,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'e':
       /* GPS end */
       CLA->GPSEnd=atof(optarg);
-      break;
-    case 'i':
-      /* real part of OLG */
-      CLA->G0Re=atof(optarg);
-      break;
-    case 'j':
-      /* imaginary part of OLG */
-      CLA->G0Im=atof(optarg);
-      break;
-    case 'k':
-      /*  real part of servo*/
-      CLA->D0Re=atof(optarg);
-      break;
-    case 'l':
-      /*  imaginary part of servo */
-      CLA->D0Im=atof(optarg);
-      break;
-    case 'm':
-      /*  real part of servo*/
-      CLA->W0Re=atof(optarg);
-      break;
-    case 'n':
-      /*  imaginary part of servo */
-      CLA->W0Im=atof(optarg);
       break;
     case 'd':
       /*  use unit impulse*/
@@ -829,14 +773,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'h':
       /* print usage/help message */
       printf("Arguments are:\n"
-"\t-f, --cal-line-freq   FLOAT     Calibration line frequency in Hz.\n"
 "\t-t, --factors-time    FLOAT     Factors integration time in seconds.\n"
-"\t-i, --olg-re          FLOAT     Real part of the open loop gain at the calibration line frequency.\n"
-"\t-j, --olg-im          FLOAT     Imaginary part of the open loop gain at the calibration line frequency.\n"
-"\t-k, --servo-re        FLOAT     Real part of the digital filter at the calibration line frequency.\n"
-"\t-l, --servo-im        FLOAT     Imaginary part of digital filter at the calibration line frequency.\n"
-"\t-m, --whitener-re     FLOAT     Real part of the whitening filter at the calibration line frequency.\n"
-"\t-n, --whitener-im     FLOAT     Imaginary part of whitening filter at the calibration line frequency.\n"
 "\t-s, --gps-start-time  INT       GPS start time.\n"
 "\t-e, --gps-end-time    INT       GPS end time.\n"
 "\t-F, --filters-file    STRING    Name of file containing filters and histories.\n"
@@ -873,42 +810,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     }
   }
 
-  if(CLA->f == 0.0)
-    {
-      fprintf(stderr,"No calibration line frequency specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }      
   if(CLA->To == 0.0)
     {
       fprintf(stderr,"No integration time for the factors specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
-  if(CLA->G0Re == 0.0 )
-    {
-      fprintf(stderr,"No real part of open loop gain specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if(CLA->G0Im == 0.0 )
-    {
-      fprintf(stderr,"No imaginary part of open loop gain specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if(CLA->D0Re == 0.0 )
-    {
-      fprintf(stderr,"No real part of digital filter specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if(CLA->D0Im == 0.0 )
-    {
-      fprintf(stderr,"No imaginary part of digital filter specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
