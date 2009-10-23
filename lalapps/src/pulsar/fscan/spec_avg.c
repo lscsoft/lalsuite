@@ -148,9 +148,29 @@ endTime.gpsNanoSeconds = 0;
 constraints.endTime = &endTime;/*cg; This line puts the end time into the structure constraints*/
 constraints.detector = IFO;/*cg; this adds the interferometer into the contraints structure*/
 LALSFTdataFind ( &status, &catalog,SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
-LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
-LALDestroySFTCatalog( &status, &catalog);/*cg; obvisouly desctroys the SFT catalogue*/
 
+if (catalog == NULL)/*need to check for a NULL pointer, and print info about circumstances if it is null*/
+{
+fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with LALSFTdataFind\n");
+fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
+exit(0);
+}
+if (catalog->length == 0)
+{
+fprintf(stderr, "No SFTs found, please exmanine start time, end time, frequency range etc\n");
+exit(0);
+}
+
+LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
+
+if (sft_vect == NULL)
+{
+fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with LALLoadSFTs\n");
+fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
+exit(0);
+}
+
+LALDestroySFTCatalog( &status, &catalog);/*cg; obvisouly desctroys the SFT catalogue*/
 numBins = sft_vect->data->data->length;/*the number of bins in the freq_range*/
 nSFT = sft_vect->length;/* the number of sfts.*/
 
@@ -356,8 +376,9 @@ for (j=0;j<nSFT;j++)
     /*some header files for the crab*/
     /*#include "../TDS_isolated/HeterodyneCrabPulsar.h"*/
     /*#include "../TDS_isolated/heterodyne_pulsar.h"*/
-    #include<HeterodyneCrabPulsar.h>
+    #include<../TDS_isolated/HeterodyneCrabPulsar.h>
 
+    fprintf(stderr,"--------------------\n\n");
     fprintf(stderr,"start of crab stuff\n");
     LIGOTimeGPS dataEpoch;
     /*below 4 structures are from HeterodyneCrabPulsar.h*/
@@ -428,7 +449,7 @@ for (j=0;j<nSFT;j++)
     /*fprintf(stderr,"%s\n",psrInput);*/
     
     /*psrInput="../B0531+21";*//*../B0531+21" psrInput is now read in from the command line arguments and passed to this code*/
-    /*fprintf(stderr,"%s\n",psrInput);*/
+    fprintf(stderr,"%s\n",psrInput);
     XLALReadTEMPOParFile(&pulsarParams, psrInput);
 
     /*Make sure that posepoch and pepoch are set*/
@@ -436,7 +457,7 @@ for (j=0;j<nSFT;j++)
 	pulsarParams.pepoch = pulsarParams.posepoch;
     else if(pulsarParams.posepoch == 0. && pulsarParams.pepoch != 0.)
 	pulsarParams.posepoch = pulsarParams.pepoch;
-    /*fprintf(stderr,"Check on read tempo file, pepoch: %f\n", pulsarParams.pepoch);*/
+    fprintf(stderr,"Check on read tempo file, pepoch: %f\n", pulsarParams.pepoch);
 
     /*input.filename=psrEphemeris;*/ /*/archive/home/colingill/lalsuite/lalapps/src/pulsar/fscan/ /archive/home/colingill/public_html/crab_ephemeris.txt*/
     input.filename = XLALMalloc(sizeof(CHAR)*256);
@@ -448,18 +469,19 @@ for (j=0;j<nSFT;j++)
     /*The first stage is to read in f and fdot from the ephemeris, the ephemeris file is part of lalapps and is maintained by matt*/
     LALGetCrabEphemeris( &status, &crabEphemerisData, &input );
     /*check on the oputputs, crabEphemerisData is a struct of type CrabSpindownParamsInput, and has members tArr, f0, f1*/
-    /*fprintf(stderr,"input crab ephemeris present, number of entries: %i\n", crabEphemerisData.numOfData);
-    fprintf(stderr,"crabEphemerisData:\t%f\t%f\t%f\n", crabEphemerisData.tArr->data[0], crabEphemerisData.f0->data[0], crabEphemerisData.f1->data[0]);*/
+    fprintf(stderr,"input crab ephemeris present, number of entries: %i\n", crabEphemerisData.numOfData);
+    fprintf(stderr,"crabEphemerisData: \ttarr= %f\tf0= %f\tf_dot= %e\n", crabEphemerisData.tArr->data[0], crabEphemerisData.f0->data[0], crabEphemerisData.f1->data[0]);
     
     /*Now I have f and fdot, use function below to compute the higher order derrivatives of the crabs frequency*/
     LALComputeFreqDerivatives( &status, &crabOutput, &crabEphemerisData );
     /*check on this function, crabOutput is datatype CrabSpindownParamsOutput*/
-    /*fprintf(stderr,"crabOutput:\t%f\t%f\t%f\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);*/
+    fprintf(stderr,"crabOutput:\tf0= %f\tf1= %f\tf2= %f\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);
+    fprintf(stderr,"--------------------\n");
 
     /*Allocate memory for edat, no need to do in the loop*/
     edat = XLALMalloc(sizeof(*edat));
-    (*edat).ephiles.earthEphemeris =  "/archive/home/colingill/lalsuite/lalapps/src/pulsar/fscan/earth05-09.dat"; 
-    (*edat).ephiles.sunEphemeris = "/archive/home/colingill/lalsuite/lalapps/src/pulsar/fscan/sun05-09.dat";
+    (*edat).ephiles.earthEphemeris =  "/archive/home/colingill/lalsuite/lal/packages/pulsar/test/earth05-09.dat"; 
+    (*edat).ephiles.sunEphemeris = "/archive/home/colingill/lalsuite/lal/packages/pulsar/test/sun05-09.dat";
 
     
     for (i=0;i<l;i++)
@@ -475,14 +497,14 @@ for (j=0;j<nSFT;j++)
             cur_epoch = timestamps->data[i]+((timestamps->data[i+1] - timestamps->data[i])/2);
         }
 
-        /*fprintf(stderr,"cur_epoch:  %d\t", cur_epoch);*/
+        fprintf(stderr,"cur_epoch: %d\t", cur_epoch);
         /*The time has to be set so that the nearest entry to that time in the ephemeris can be used*/
         dataEpoch.gpsSeconds = cur_epoch; /*INT8)floor(time->data[j]);*/
         dataEpoch.gpsNanoSeconds = 0;
     
         /*prepare hetParams, which is then used to get the freq derrivatives out and also in the next sub-section for Bary functions*/
         LALSetSpindownParams( &status, &hetParams, &crabOutput, dataEpoch );
-        /*fprintf(fp5,"hetparams:\t%f\t%f\t%f\n", hetParams.epoch, hetParams.f0, hetParams.f1);*/
+        fprintf(stderr,"hetparams epoch: %f\t f0= %f\tf1= %e\n", hetParams.epoch, hetParams.f0, hetParams.f1);
     
         /*----------------------------------------------------------------------------------------------------------------*/
         /*    ---2---   */
@@ -493,10 +515,10 @@ for (j=0;j<nSFT;j++)
     
         /*Get the time difference between the current epoch and the epoch of the ephemeris entry*/
         tdt= cur_epoch - hetParams.epoch;
-        /*fprintf(fp5,"current epoch: %i\tephemeris epoch: %f\t delta t: %f\n", cur_epoch, hetParams.epoch, tdt);*/
+        fprintf(stderr,"dt: %f,\tf1= %e,\tf2= %e,\tf3= %e,\tf4=%e\n", tdt, hetParams.f1, hetParams.f2, hetParams.f3, hetParams.f4);
     
         freq = 2.0*( hetParams.f0 + ((hetParams.f1)*tdt) + (((hetParams.f2)*tdt*tdt)/2) + (((hetParams.f3)*tdt*tdt*tdt)/6) + (((hetParams.f4)*tdt*tdt*tdt*tdt)/24) );
-        /*fprintf(fp5,"crab fcoarse: %f\n", freq);*/
+        fprintf(stderr,"crab fcoarse: %f\t", freq);
     
         /*freq = 2.0*(params->f0 + params->f1*t1 + (params->f2)*t1*t1+ (params->f3)*t1*t1*t1 + (params->f4)*t1*t1*t1*t1);*/  /*cg;line 486 from hetcrabpulsar, works out freq, this is with one order of t removed for each of the derrivatives of f, and also each term is divided by a factorial, 1!, 2!, 3!, but this starts one term along from the oroginal code as we have integrated the orginal code to get freq not phase*/
     
@@ -544,7 +566,7 @@ for (j=0;j<nSFT;j++)
         finalFreq=freq+df;
         /*df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT - binOutput.deltaT);*//*use when have binary calcs in here also.*/
         fprintf(fp5,"%f\t%f\t%f\n", freq, df, finalFreq);
-        /*fprintf(stderr,"crab freq calc, i: %d,  f:  %f\n", i, finalFreq);*/
+        fprintf(stderr,"crab freq calc, i: %d,  f:  %f\n", i, finalFreq);
 
         /*----------------------------------------------------------------------------------------------------------------*/
     }
@@ -554,9 +576,9 @@ for (j=0;j<nSFT;j++)
     /*Free up any memory allocated in crab section*/
     XLALFree(edat);
     
-    #endif
+   #endif
 
-    fprintf(stderr,"end of spec_avg 1\n");
+    /*fprintf(stderr,"end of spec_avg 1\n");*/
 
     /*=======================================================================================================================*/
     /*=======================================================================================================================*/
@@ -567,22 +589,22 @@ for (j=0;j<nSFT;j++)
     LALCHARDestroyVector(&status, &year_date);
     LALDestroySFTVector (&status, &sft_vect );
 
-    fprintf(stderr,"end of spec_avg 2\n");
+    /*fprintf(stderr,"end of spec_avg 2\n");*/
 
     if (timeavg != NULL) XLALFree(timeavg);
 
-    fprintf(stderr,"end of spec_avg 3\n");
+    /*fprintf(stderr,"end of spec_avg 3\n");*/
 
     LAL_CALL(LALDestroyUserVars(&status), &status);
 
-    fprintf(stderr,"end of spec_avg 4\n");
+    /*fprintf(stderr,"end of spec_avg 4\n");*/
     /*close all the files, spec_avg.c is done, all info written to the files.*/
     fclose(fp);
     fclose(fp2);
     fclose(fp3);
     fclose(fp4);
 
-    fprintf(stderr,"end of spec_avg 5\n");
+    fprintf(stderr,"end of spec_avg\n");
     
     return(0);
 
