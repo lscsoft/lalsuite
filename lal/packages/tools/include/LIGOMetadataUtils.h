@@ -332,7 +332,8 @@ typedef enum
   ring_inject,
   imr_inject,
   imr_ring_inject,
-  EOBNR_inject
+  EOBNR_inject,
+  Phenom_inject
 }
 inject_type;
 

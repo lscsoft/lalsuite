@@ -25,30 +25,28 @@ export LALMETAIO_LIBS
 LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
 LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
 export LALFRAME_LIBS LALFRAME_CFLAGS
-LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
-LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
-export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
 LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
 LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
 export LALXML_LIBS LALXML_CFLAGS
+LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
+LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
+export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
 
 if test "$metaio" = "true" ; then
-	LIBS_save="$LIBS"
-	CPPFLAGS_save="$CPPFLAGS"
-	PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
-	LIBS="$METAIO_LIBS $LIBS"
-	CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-	AC_SEARCH_LIBS(MetaioOpen, metaio, , [AC_MSG_WARN(disabling metaio support)]
-		[metaio="false"])
-	CPPFLAGS="$CPPFLAGS_save"
-	LIBS="$LIBS_save"
-	LIBS_save="$LIBS"
-	CPPFLAGS_save="$CPPFLAGS"
+  LIBS_save="$LIBS"
+  CPPFLAGS_save="$CPPFLAGS"
+  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
+  LIBS="$METAIO_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  AC_SEARCH_LIBS([MetaioOpen],[metaio],,[AC_MSG_WARN([disabling metaio support])]
+    [metaio="false"])
+  CPPFLAGS="$CPPFLAGS_save"
+  LIBS="$LIBS_save"
 fi
 
 if test "$metaio" = "true" ; then
-	LALMETAIO_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalmetaio.la"
-	export LALMETAIO_LIBS
+  LALMETAIO_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalmetaio.la"
+  export LALMETAIO_LIBS
 fi
 
 AC_CONFIG_SUBDIRS([lal])
