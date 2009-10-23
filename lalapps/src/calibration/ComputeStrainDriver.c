@@ -148,18 +148,18 @@ int gethostname(char *name, size_t len);
 /* int getdomainname(char *name, size_t len); */
 
 
-/* FUNCTION PROTOTYPES */
+/* FUNCTION PROTOTYPES (defined static so they cannot be used outside) */
 /* Reads the command line */
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+static int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 
 /* Reads T seconds of AS_Q, EXC, and DARM_CTRL data */
-int ReadData(struct CommandLineArgsTag CLA);
+static int ReadData(struct CommandLineArgsTag CLA);
 
 /* Writes frame file */
-int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA);
+static int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA);
 
 /* Frees the memory */
-int FreeMem(void);                                        
+static int FreeMem(void);
 
 /************************************* MAIN PROGRAM *************************************/
 
