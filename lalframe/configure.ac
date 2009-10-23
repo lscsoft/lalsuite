@@ -54,7 +54,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LIBTOOL
+LT_INIT
 AC_CHECK_PROGS([M4],[gm4 m4],[m4])
 
 # check for supported mac os x version
