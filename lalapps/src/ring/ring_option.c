@@ -188,11 +188,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         {
           localparams.injectType = 3;
         }
+        else if( ! strcmp( "Phenom", optarg ) )
+        {
+          localparams.injectType = 4;
+        }
         else
         {
           localparams.injectType = -1;
           fprintf( stderr, "invalid --injection_type:\n"
-              "(must be ringdown, imr, imr_ringdown or EOBNR\n" );
+              "(must be ringdown, imr, imr_ringdown, EOBNR or Phenom)\n" );
           exit( 1 );
         }
         break;
