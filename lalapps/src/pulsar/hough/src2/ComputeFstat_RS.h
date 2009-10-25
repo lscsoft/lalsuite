@@ -161,6 +161,8 @@ int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 				       REAL8Vector *y
 				       );
 
+  int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x);
+
 #ifdef  __cplusplus
 }
 #endif

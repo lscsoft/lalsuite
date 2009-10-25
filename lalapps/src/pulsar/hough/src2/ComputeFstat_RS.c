@@ -398,25 +398,43 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     printf("outa->length = %d\n",outa->length);
     /* correct for reference time effects */
     /* loop over freq samples */
-    for (k=0;k<outa->length;k++) {
-      
-      REAL8 phase = -LAL_TWOPI*(k*fstatVector->deltaF)*startminusreftime;
-      REAL8 cosphase = cos(phase);
-      REAL8 sinphase = sin(phase);
-      /* printf("f = %6.12f phase = %6.12f\n",k*fstatVector->deltaF,phase); */
-      
-      REAL8 Fare = outa->data[k].re*cosphase - outa->data[k].im*sinphase;
-      REAL8 Faim = outa->data[k].re*sinphase + outa->data[k].im*cosphase;
-      REAL8 Fbre = outb->data[k].re*cosphase - outb->data[k].im*sinphase;
-      REAL8 Fbim = outb->data[k].re*sinphase + outb->data[k].im*cosphase;
-      
-      outa->data[k].re = Fare;
-      outa->data[k].im = Faim;
-      outb->data[k].re = Fbre;
-      outb->data[k].im = Fbim;
-      
+    if (0) {
+      for (k=0;k<outa->length;k++) {
+	
+	REAL8 phase = -LAL_TWOPI*(k*fstatVector->deltaF)*startminusreftime;
+	REAL8 cosphase = cos(phase);
+	REAL8 sinphase = sin(phase);
+	/* printf("f = %6.12f phase = %6.12f\n",k*fstatVector->deltaF,phase); */
+	
+	REAL8 Fare = outa->data[k].re*cosphase - outa->data[k].im*sinphase;
+	REAL8 Faim = outa->data[k].re*sinphase + outa->data[k].im*cosphase;
+	REAL8 Fbre = outb->data[k].re*cosphase - outb->data[k].im*sinphase;
+	REAL8 Fbim = outb->data[k].re*sinphase + outb->data[k].im*cosphase;
+	
+	outa->data[k].re = Fare;
+	outa->data[k].im = Faim;
+	outb->data[k].re = Fbre;
+	outb->data[k].im = Fbim;
+	
+      }
     }
+
+    /* the complex FFT output is shifted such that the heterodyne frequency is at DC */
+    /* we need to shift the negative frequencies to before the positive ones */
+    if ( XLALFFTShiftCOMPLEX8Vector(&outa) != XLAL_SUCCESS )
+      ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
+    if ( XLALFFTShiftCOMPLEX8Vector(&outb) != XLAL_SUCCESS ) 
+      ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
     
+    /* define new initial frequency */
+    /* before the shift the zero bin was the heterodyne frequency */
+    /* now we've shifted it by N - NhalfPosDC(N) bins */
+    printf("OLD f0 = %6.12f\n",f0);
+    f0 = Faoft_RS->data[i]->f0 - (outa->length - NhalfPosDC(outa->length))*fstatVector->deltaF;
+    printf("NEW f0 = %6.12f\n",f0);
+    printf("fHet = %6.12f\n",Faoft_RS->data[i]->f0);
+
+
     {
       /*  TESTING */
       FILE *fp = NULL;
@@ -1663,4 +1681,44 @@ int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 
    return(0);
  
+}
+
+/** Shifts an FFT output vector such that the Niquest frequency is the central bin 
+ *
+*/ 
+int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x)
+{
+  static const CHAR *fn = "XLALFFTShiftCOMPLEX8Vector()";
+
+  UINT4 N = (*x)->length;
+  UINT4 NQ = NhalfPosDC(N);
+  UINT4 NminusNQ = N - NQ;
+  printf("NQ = %d NminusNQ = %d N = %d\n",NQ,NminusNQ,N);
+       
+  /* allocate temp memory */
+  COMPLEX8 *temp = XLALMalloc(NQ*sizeof(COMPLEX8));
+  
+  /* copy the bins 0 -> NQ - 1 to temp memory */
+  if ( memcpy(temp,(*x)->data,NQ*sizeof(COMPLEX8)) == NULL ) {
+    XLALPrintError ("%s: memcpy() failed!  errno = %d!\n", fn, xlalErrno );
+    XLAL_ERROR (fn, XLAL_ENOMEM);
+  }
+  
+  /* copy the bins NQ -> N - 1 to the start */
+  if (memcpy((*x)->data,&((*x)->data[NQ]),NminusNQ*sizeof(COMPLEX8)) == NULL ) {
+    XLALPrintError ("%s: memcpy() failed!  errno = %d!\n", fn, xlalErrno );
+    XLAL_ERROR (fn, XLAL_ENOMEM);
+  }
+  
+  /* copy the temp bins to the end */
+  if (memcpy(&((*x)->data[NminusNQ]),temp,NQ*sizeof(COMPLEX8)) == NULL ) {
+    XLALPrintError ("%s: memcpy() failed!  errno = %d!\n", fn, xlalErrno );
+    XLAL_ERROR (fn, XLAL_ENOMEM);
+  }
+  
+  /* free temp memory */
+  XLALFree(temp);
+  
+  return(0);
+  
 }
