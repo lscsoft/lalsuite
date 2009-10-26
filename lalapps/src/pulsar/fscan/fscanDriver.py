@@ -19,6 +19,7 @@ __version__ = '$Revision: 1.25 $'[11:-2]
 # 06/29/2009 gam; Include links to _2 plots, when making a comparisons with other fscans.
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
+# 08/25/2009 cg; added lines 643 to 652 so that a single frequency band of less than 10 Hz can be run.
 # 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 
@@ -692,10 +693,9 @@ if (htmlFilename != None):
   htmlFID.write('<tbody>\n')
 
 
-if (freqSubBand == 0):
-  freqSubBand = 10
+if (freqSubBand  > freqBand):
+  freqSubBand = freqBand
 
-# Write lalapps_spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
@@ -703,7 +703,6 @@ nodeCount = 0L
 
 if (thisEndFreq == endFreq):
   endFreq=endFreq+1
-
 
 
 while (thisEndFreq < endFreq):
@@ -784,7 +783,7 @@ while (thisEndFreq < endFreq):
         referenceFileName = 'none'
     #argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName); # 06/29/09 gam; matlabPath has to be first argument.
     #argList = '%s %s %s %s %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
-    argList = '%s %s %s %s %d %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
+    argList = '%s %s %s %s %d %g %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
     tagStringOut = '%s_%i' % (tagString, nodeCount)  
     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
