@@ -116,8 +116,8 @@ vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 fn = sys.argv[1]
 
 pylab.figure(1)
-pylab.gray()
-pylab.pcolor(X,Y, log_vol)
+#pylab.gray()
+pylab.pcolor(X,Y, log_vol, vmin=0, vmax=10)
 #pylab.hold(1)
 #cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)
 #pylab.clabel(cn)
@@ -135,7 +135,7 @@ pylab.savefig(fn.split('-')[-1].replace('.xml','volume_time.png'))
 #pylab.show()
 
 pylab.figure(2)
-pylab.pcolor(X,Y, vol_error)
+pylab.pcolor(X,Y, vol_error, vmin=0, vmax=2)
 pylab.colorbar()
 pylab.ylim([0, 51])
 pylab.xlim([11, 101])
@@ -148,8 +148,14 @@ pylab.savefig(fn.split('-')[-1].replace('.xml','fractional_error.png'))
 
 if vA.shape[0] == 2:
   pylab.figure(3)
-  pylab.gray()
-  pylab.pcolor(X,Y, pylab.log10(vA[0]) /  pylab.log10(vA[1]) )
+  #pylab.gray()
+  vA0 = vA[0]
+  print vA0.min()
+  vA0[vA0 == vA0.min()] = 1.0
+  vA1 = vA[1]
+  vA1[vA1 == vA1.min()] = 1.0
+  print vA1.min()
+  pylab.pcolor(X,Y, pylab.log10(vA0 /  vA1), vmin=-1, vmax=1)
   #pylab.hold(1)
   #cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)
   #pylab.clabel(cn)
@@ -157,7 +163,7 @@ if vA.shape[0] == 2:
   pylab.colorbar()
   pylab.ylim([0, 51])
   pylab.xlim([11, 101])
-  pylab.title("Log10[< Volume >] Mpc^3\n" + sys.argv[1] + "\n" + sys.argv[2],fontsize=14)
+  pylab.title("Log10[Volume \n" + sys.argv[1] + "/\n" + sys.argv[2] +']',fontsize=14)
   pylab.xlabel("Mass 2",fontsize=14)
   pylab.ylabel("Mass 1",fontsize=14)
   pylab.gca().set_aspect(1)
