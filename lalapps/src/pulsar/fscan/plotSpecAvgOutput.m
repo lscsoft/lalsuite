@@ -57,10 +57,9 @@ tEnd = str2num(filename((undrscr(5)+1):end))                   % end time
 
 % calculate characteristic values   cg;  calculates a cutoffval for the data so really loud stuff does not dominate.
 
-y_temp1 = y;%make a copy of y that we can edit.
-y_temp3 = y;%copy of y needed for crab stuff that is completely intact.
+y_temp1 = y;
 
-%this little section gets rid of the cols of zeros for the cutoffval calc, without this the median value and therefore the cuttoffval will be calculated incorrectly and can be zero.
+%this little section gets rid of the xols of zeros for teh cutoffval calc, without this if there are more cols of zeros than non-zeros the median value and therefore the cuttoffval will be zero.
 ycols=(1:xlen);%create a vector, elements are the column indicies of y
 yzeros=find( sum(y(:,ycols)) == 0 );%find all the column indices where the sum of the columns are zero.
 y_temp1(:,yzeros)=[];%get rid of all the columns where the sum of the columns are zero.
@@ -103,9 +102,8 @@ fclose(fid_date);
 
 filename_time=sprintf('%s_timestamps',filename);
 fid_times = fopen(filename_time);
-timesin=textscan(fid_times, '%d %d');
+timesin=textscan(fid_times, '%d %d')
 fclose(fid_times);
-timesin=double(timesin{2});
 
 utcdate={};
 
@@ -162,7 +160,7 @@ ylabel('frequency [Hz]','FontSize',13);
 deltaFTicks;
 fRange=fEnd-fStart;
 numbins=effTBase*fRange; % this is the total number of bins in the matrix passed from spec_avg.c
-allf=(fStart:deltaFTicks:fEnd); %creates a 1D array with every freq between start and end in it, in ascending order.
+allf=(fStart:fEnd);%creates a 1D array with every freq between start and end in it, in aascending order.
 vecFLabels = allf( (mod(allf,deltaFTicks)==0)|(allf == fEnd)|(allf==fStart) ); %keeps fStart and fEnd, plus any values that are integer multiples of deltaFTicks.
 
 %work out the bin numbers associated with these freq values.  effTBase=bins per hz.
@@ -173,26 +171,24 @@ vecTicks(numTicks)=vecTicks(numTicks)-1;
 %deal with the x axis
 xlabel('Time in days since start date','FontSize',13);
 %calc x axis ticks and labels.  Show a label every tenth of the width, and the first and last sft.
+%deltaxticks=fix(xlen/10); %rounds to nearest whole number to zero.
 deltaxticks=round(xlen/10); %rounds to nearest whole number to zero.
 if (deltaxticks < 1 )%if in the inlikely circumstance there are less than 3 sfts, this will catch the error.
     deltaxticks= 1;
 end
 xticks = (1:deltaxticks:xlen);%creates an array from 1 to xlen with deltaxticks intervals.
 xnumticks= length(xticks);
-%xticks(xnumticks)=xlen;  %makes sure the last x tick is at the end of the specgram.
+xticks(xnumticks)=xlen;  %makes sure the last x tick is at the end of the specgram.
 
-list_days=(timesin-timesin(1))/86400; %converts the gps seconds into days, does not take into account leap seconds, but good enough for this plot.
 
 for kk=1:xnumticks;
     subsc=(xticks(kk));
     %xlabs(kk)= strcat(utcdate(subsc) ,utctime(subsc));
-    days = num2str( (double(list_days(subsc))),'%4.2f\n');
+    %days = num2str( (double(timesin{2}(subsc) - tStart) / 86400),'%2.1f\n');
+    days = num2str( (double(timesin{2}(subsc) - tStart) / 86400),'%4.2f\n');
     xlabs{kk}= days;
 end
 
-%  tStart
-%  timesin{2}(46)
-%  timesin{2}(46) - tStart
 %  xlabs = num2str(xlabs,'%2.1f\n')
 %  cellxlabs=cellstr(xlabs)
 
@@ -212,8 +208,9 @@ title(titleString,'Interpreter','none');
 %-------------------------------------------
 %now plot the crab frequency of this image.
 
-if (pulsar ~= 0) %only run if pulsar is not 0
+if (pulsar ~= 0) %only run if crab is not 0
     %need to load in the crab file.
+    
     filename_crab=sprintf('%s_crab',filename);
     crab=load(filename_crab);%load in all the data from the crab output file
     crabF = crab(:,3);%pick out the GW observed crab frequency
@@ -223,107 +220,46 @@ if (pulsar ~= 0) %only run if pulsar is not 0
     
     %convert crabF so that it appears at correct place on plot
     newcrabF=numbins+1-((crabF-fStart)*effTBase);
+    %  newcrabF(1)%for testing
+    %  size(crabF)
+    %  size(newcrabF)
+    %  size(sftno)
+    
     plot(sftno,newcrabF, 'Color', [0,0,0], 'linestyle', '--');
     
-    %produce a specgram plot centered on the crab frequency
-    %------------------------------------------------------
-    %effTBase is the frequency resolution., need to work out the number of bins either side of the crab bin to grab, this should be 1/60hz wide in total.Work out number of bins equalt to 1/120Hz
-    %this needs to come before the chunk of code that plots the crab freq over the specgram as the zeros are needed.
-    freqres=1/effTBase
-    winbins=round( (1/60)/freqres );%works out how many bins are equivlent to 1/60 hz
-%      if (winbins < 1 ), winbins=1, end;%just needed for testing, but will need a check that freqres is suffient for the window size.
-    %spec_crab needs as many rows as bins are needed to cover the 1/60hz window.
-    spec_crab=zeros(1,xlen);%creates a matrix with winbins number of rows and no of cols equal to the no of sfts.  This will be matrix used for specgram plot centred on the crab freq.
-    %spec_crab_plot=zeros(winbins,xlen);
-    winwidth=(winbins-1)/2%the number of bins each side of the bin the crab freq is in to use in order to get a 1/60hz window width.
-    %open a file for writing the raw output of spec_crab.
-    outputFileName3 = sprintf('%s_crab',outputFileName);
-    outputFileName4 = sprintf('%s_crab_spec',outputFileName);
-    fid_cspec=fopen(outputFileName4,'w');
+    %now find the time average noise power in the same bins as the crab freq
+    size(y_temp1)%use y_temp1 as its the data without the zeros. 
+    size(y_temp2)
+    newcrabF(yzeros)=[];%get rid of the elements in newcrabF associated with the zero cols.
+    newcrabF=fix(newcrabF);%round all the values of newcrabF down so they refer to the specgram bin number.
+    yt_cols=( 1:length(newcrabF));
+    cp_ind=sub2ind(size(y_temp1),newcrabF,yt_cols);%y_temp1 is raw values, y_temp2 is with higher values cut off.
+    crab_pow=y_temp1(cp_ind);%(newcrabF,yt_cols);%this produces a matrix not a vector as I want.
+    crab_pow_mean=mean(crab_pow)
     
-    for ii=1:xlen;%do for all sfts
-        count=1;
-        ii
-        for jj=-winwidth:winwidth;%for each sft use number of bins needed for 1/60 hz window.
-        newcrabF(ii)
-        bin_num=(fix(newcrabF(ii)) )+jj%finds the bin number to look at.
-        if (bin_num<0), bin_mum=0, end;
-        if (bin_num>ylen), bin_num=ylen, end;
-        count
-        bin_freq=(( (numbins+1-bin_num)*freqres )+fStart) + freqres/2;
-        deltaF=abs(bin_freq-crabF(ii));
-        w=sinc(deltaF);
-        spec_crab(ii)=spec_crab(ii)+w*(y_temp3(bin_num,ii));
-%          cout1=y_temp3(bin_num,ii);%use y_temp3 if you want real values of y that have not had cut-off applied.
-%          cout2=y(bin_num,ii);%use y if you want values of y that have had cut-off applied.
-%          spec_crab(count,ii)=cout1;
-%          spec_crab_plot(count,ii)=cout2;
-        
-        count =count+1;
-        end
-        fprintf(fid_cspec,'%1.6e\t',spec_crab(ii));
-        fprintf(fid_cspec,'\n');
-    end
+    %for testing
+    %  max(crab_pow)
+    %  min(crab_pow)
+    %y(cp_ind)=ymax+ymax;
+    %  newcrabF=fix(newcrabF)% for testing
+    %  yt_cols=( 1:length(newcrabF))
+    %  y(newcrabF,yt_cols)=ymax+ymax;
 
-    
-    fclose(fid_cspec);
 end
 %-------------------------------------------
 %cg, now print the outputs to a file.
 print('-dpng',[outputFileName '.png']);
 set(gcf, 'PaperUnits', 'centimeters');
-set(gcf, 'PaperOrientation', 'landscape');
-%set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-set (gcf, 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-print('-dpdf', '-painters', '-r300','-loose', [outputFileName '.pdf'])
+set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
+print('-dpdf','-loose',[outputFileName '.pdf'])
 
 filename_fig=sprintf('%s.fig',filename);
 saveas(1,filename_fig);
-filename_mat=sprintf('%s.mat',filename);
-save (filename_mat,'y');
 
 delete(1);%closes the figures.
-%-------------------------------------------
-%create extra specgram zoomed in and centred on the crab freq.
-if (pulsar ~= 0)%if we set the option to run the crab stuff.
-    
-    figure(3);
-    
-    %do rest of image stuff
-    %-------------------------
-    %crab_means=mean(spec_crab_plot, 1);%computes the mean of each row and sticks it into the 1d array cab_means.
-    plot(list_days, spec_crab);%makes a plot with y axis in log scale.
-    
-    set(gca, 'XTick', xticks);
-    set(gca, 'XTickLabel', xlabs);
-    xlabel('Time in days since start date','FontSize',13);
-    
-%      yticks = (1:winbins);
-%      ylabs=(winwidth:-1:-winwidth).*freqres
-%      set(gca, 'YTick', yticks);
-%      set(gca, 'YTickLabel', ylabs);
-      ylabel('Spectral power density','FontSize',13);
 
-    
-    titleString2 = sprintf('Noise in 1/60 Hz band at Crab frequency, %s to %s UTC.' ,startDateTime,endDateTime);
-    title(titleString2,'Interpreter','none');
-    
-%      colormap(cmap2);
-%      colorbar('eastoutside');
-    
-    
-    print('-dpng',[outputFileName3 '.png']);
-    set(gcf, 'PaperUnits', 'centimeters');
-    set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-    print('-dpdf','-loose',[outputFileName3 '.pdf'])
-    
-    filename_fig=sprintf('%s_crab.fig',filename);
-    saveas(3,filename_fig);
-    filename_mat=sprintf('%s_crab.mat',filename);
-    save (filename_mat,'spec_crab');
-    
-    delete(3);
-end
+
+%-------------------------------------------
 %-------------------------------------------
 
 %Now work on the normalised average power plot.
