@@ -211,7 +211,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
