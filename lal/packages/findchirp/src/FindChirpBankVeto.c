@@ -391,7 +391,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
-	    deltaChirp = bankVetoData->tchirp->data[j] - bankVetoData->tchirp->data[i];
+	    deltaChirp = bankVetoData->tchirp->data[i] - bankVetoData->tchirp->data[j];
 
             ABr +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
 		            +   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi)
