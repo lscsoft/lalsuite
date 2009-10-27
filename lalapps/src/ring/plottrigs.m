@@ -55,7 +55,7 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   H2vetoend=H2veto(:,3);
   j=1;
   for i=1:length(H2vetostart)
-    H2vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
+    H2vetolist=[H2vetolist, H2vetostart(i):H2vetoend(i)-1];
   end
   save H2vetolist.mat H2vetolist
   fprintf('H2 veto list saved\n')
@@ -66,7 +66,7 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   L1vetoend=L1veto(:,3);
   j=1;
   for i=1:length(L1vetostart)
-    L1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
+    L1vetolist=[L1vetolist, L1vetostart(i):L1vetoend(i)-1];
   end
   save L1vetolist.mat L1vetolist
   fprintf('L1 veto list saved\n')

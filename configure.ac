@@ -9,7 +9,7 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 LAL_ENABLE_METAIO
 
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'

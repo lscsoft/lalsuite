@@ -34,6 +34,7 @@ foreach {var value} $argv {
 source config_file
 
 proc clear_gps {IFO gps} {
+	global veto_segment_list segment_list
 	foreach {start stop ifo} $veto_segment_list {
 		if {($gps >= $start) & ($gps < $stop) & ($ifo == $IFO) } {
 			return 0
@@ -114,38 +115,14 @@ file mkdir $std_out_err_dir
 set start_freq [expr ($f0 - $f0_band/2.0 - $psd_estimation_wings/2.0)]
 set freq_band_pass [expr ($start_freq + $psd_estimation_wings)]
 
-set psd_file_name "$outlier_dir/Full_psd.txt"
-
-if { ![file exists $psd_file_name] } {
-	foreach {IFO sft_location} $sft_location_files { 
-
-		set SFT_FILE [open $sft_location "r"]
-		set node_directory {}
-		set directory_count 0
-		
-		while { ![eof $SFT_FILE] } {
-			gets $SFT_FILE line
-			if {$line == ""} { continue }
-			set new_node_directory [ file dirname $line ]
-			if { $new_node_directory != $node_directory } {
-				set node_directory $new_node_directory
-				puts "${script_dir}/lalapps_FreqAverager_v2 -i ${node_directory}/*$IFO* -f $start_freq -b $freq_band_pass -o ${outlier_dir}/psd_${IFO}_${directory_count}.txt"
-				exec ${script_dir}/lalapps_FreqAverager_v2 -i ${node_directory}/*$IFO* -f $start_freq -b $freq_band_pass -o ${outlier_dir}/psd_${IFO}_${directory_count}.txt 2>@stdout
-				incr directory_count
-				}
-			}
-		close SFT_FILE
-		}
-	exec cat $outlier_dir/psd_*_*.txt >> $psd_file_name
-	exec rm psd_${IFO}_*_*.txt
-	}
-
-set PSD_FILE [open $psd_file_name "r"]
 set L {}
+set file_name "$psd_dir/psd_[expr round($f0)]Hz.txt"
+
+set PSD_FILE [open $file_name "r"]
 while { ![eof $PSD_FILE] } {	
 	gets $PSD_FILE line
 	if {$line == ""} {continue}
-	if {![clear_gps [lindex $line 1] [lindex $line 0] } { continue }
+	if {![clear_gps [lindex $line 1] [lindex $line 0] ]} { continue }
 	lappend L $line
 	}
 close $PSD_FILE
@@ -217,8 +194,29 @@ foreach {IFO sft_location} $sft_location_files {
 			}
 		}
 	close $SFT_FILE
-	
-	exec find $band_passed_directory -name \*.sft | xargs cat >> $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft
+
+	cd ${band_passed_directory}
+
+	set OUTFILE [open $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft "w"]
+	fconfigure $OUTFILE -encoding binary -translation { binary binary }
+	foreach filename [lsort [glob *.sft]] {
+		set FILE [open $filename "r"]
+		fconfigure $FILE -encoding binary -translation { binary binary }
+		puts -nonewline $OUTFILE [read $FILE]
+		close $FILE
+		}
+	close $OUTFILE
+
+	#exec /bin/bash -c "'cat *.sft > $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft'"
+	#foreach {sft} [glob  -directory "$band_passed_directory" "*.sft"] {
+
+		#exec find $band_passed_directory -name \*.sft | xargs cat >> $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft
+	#	exec cat $sft >> $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft
+	#	}
+
+	puts finished
+
+	cd $outlier_dir
 
 	#exec rm -rf $band_passed_directory
 
@@ -253,13 +251,13 @@ set outlier_condorB_sub "$outlier_dir/run_${iteration}_B.sub"
 for {set job 0} {$job < $max_number_of_jobs} {incr job} {
 
 	puts $DAG_FILE "JOB A$job $outlier_condorA_sub"
-	puts $DAG_FILE "VARS A$job JobID=\"$job\" argList=\" --Alpha [expr $ra - $ra_band/2.0 ] --Delta [expr $dec - $dec_band/2.0]  --AlphaBand $ra_band --DeltaBand $dec_band --Freq [expr $f0 - $f0_band/2.0 + $freq_step_size*$job] --FreqBand $freq_step_size --dFreq $freq_resolution --f1dot [expr $f1 - $f1_band/2.0] --f1dotBand $f1_band --df1dot $dfreq_resolution --DataFiles $sft_dir/* --ephemDir $ephem_dir,--ephemYear $ephem_year --NumCandidatesToKeep $num_candidates_to_keep --refTime $param_time --gridType $grid_type --metricType $metric_type --metricMismatch $mismatch --TwoFthreshold $min_Fstat_to_keep --outputFstat $results_dir/result_$job --outputLoudest $results_dir/loudest_$job \""
+	puts $DAG_FILE "VARS A$job JobID=\"$job\" argList=\" --Alpha [expr $ra - $ra_band/2.0 ] --Delta [expr $dec - $dec_band/2.0]  --AlphaBand $ra_band --DeltaBand $dec_band --Freq [expr $f0 - $f0_band/2.0 + $freq_step_size*$job] --FreqBand $freq_step_size --dFreq $freq_resolution --f1dot [expr $f1 - $f1_band/2.0] --f1dotBand $f1_band --df1dot $dfreq_resolution --DataFiles $sft_dir/* --ephemDir $ephem_dir --ephemYear $ephem_year --NumCandidatesToKeep $num_candidates_to_keep --refTime $param_time --gridType $grid_type --metricType $metric_type --metricMismatch $mismatch --TwoFthreshold $min_Fstat_to_keep --outputFstat $results_dir/result_$job.txt --outputLoudest $results_dir/loudest_$job.txt --outputFstatHist $results_dir/hist_$job.txt \""
 	puts $DAG_FILE ""
 
 	}
 
-puts $DAG_FILE "JOB B$job $outlier_condorB_sub"
-	puts $DAG_FILE "VARS B$job JobID=\"$job\" outlier_index $outlier_index config_file $config_file work_dir \"$work_dir\""
+puts $DAG_FILE "JOB B0 $outlier_condorB_sub"
+	puts $DAG_FILE "VARS B0 JobID=\"0\" argList=\"outlier_index $outlier_index config_file $config_file work_dir $work_dir \""
 	puts $DAG_FILE ""
 
 
@@ -267,9 +265,11 @@ puts -nonewline $DAG_FILE  "PARENT"
 for {set job 0} {$job < $max_number_of_jobs} {incr job} {
 	puts -nonewline $DAG_FILE  " A$job"
 	}
-puts $DAG_FILE "CHILD B0"
+puts $DAG_FILE " CHILD B0"
 
 close $DAG_FILE
+
+exec sync
 
 set outlier_condorA_sub_text {
 universe = standard 
