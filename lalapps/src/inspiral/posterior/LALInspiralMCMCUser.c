@@ -372,6 +372,72 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	return parameter->logPrior;
 }
 
+REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter){
+	/* Calculate the likelihood for an amplitude-corrected waveform */
+	/* This template is generated in the time domain */
+	REAL8 logL=0.0,chisq=0.0;
+	REAL8 mc,eta,end_time;
+	UINT4 det_i=0,idx=0;
+	static LALStatus status;
+	CoherentGW coherent_gw;
+	PPNParamStruc PPNparams;
+	REAL4TimeSeries *timedomain=NULL;
+	REAL4FrequencySeries *freqdomain=NULL;
+	
+	memset(&PPNparams,0,sizeof(PPNparams));
+	memset(&coherent_gw,0,sizeof(CoherentGW));
+	memset(&status,0,sizeof(LALStatus));
+	
+	/* Populate the structures */
+	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else mc=XLALMCMCGetParameter(parameter,"mchirp");
+	eta=XLALMCMCGetParameter(parameter,"eta");
+	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"long");
+	PPNparams.position.latitude=XLALMCMCGetParameter(parameter,"lat");
+	PPNparams.position.system=COORDINATESYSTEM_EQUATORIAL;
+	PPNparams.psi=XLALMCMCGetParameter(parameter,"psi");
+	memcpy(&inputMCMC->segment[0].epoch,&PPNparams.epoch,sizeof(LIGOTimeGPS));
+	PPNparams.mTot=mc2mt(mc,eta);
+	PPNparams.eta=eta;
+	PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMetres;
+	PPNparams.inc=XLALMCMCGetParameter(parameter,"iota");
+	PPNparams.phi=XLALMCMCGetParameter(parameter,"phi");
+	PPNparams.fStartIn=inputMCMC.fLow;
+	PPNparams.fStopIn=0.5/inputMCMC.deltaT;
+	
+	/* Call LALGeneratePPNAmpCorInspiral */
+	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	/* Set the epoch so that the t_c is correct */
+	end_time = XLALMCMCGetParameter(parameter,"time");
+	/* Working here... */
+	XLALFloatToGPS(coherent_gw.epoch,end_time-coherent_gw->tc);
+
+	/* For each IFO */
+	for(det_i=0;det_i<inputMCMC.numberDataStreams;det_i++){
+		/* Simulate the response */
+		timedomain = XLALCreateREAL4TimeSeries("td",&inputMCMC->segment[det_i].epoch,
+											   inputMCMC->fLow,inputMCMC->segment[det_i]->deltaT,
+											   &lalDimensionlessUnit,inputMCMC->segment[det_i]->data->length);
+		LALSimulateCoherentGW(&status,&timedomain,&coherent_gw,&(inputMCMC->detector[det_i]));
+		/* Window the time domain model */
+		float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+		float Norm = winNorm * inputMCMC->deltaT;
+		for(idx=0;idx<timedomain->data->length;idx++) timedomain->data->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+		/* FFT the time domain to get f-domain */
+		if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&likelihoodPlan,
+															   (UINT4)inputMCMC->segment[det_i]->data->length,
+															   FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
+		LALREAL4VectorFFT(&status,freqdomain,timedomain,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+		/* Calculate the logL */
+		
+		/* Destroy the response series */
+		XLALDestroyREAL4TimeSeries(&timedomain);
+	}
+	/* return logL */
+	
+}
+
 REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 /* Calculate the likelihood of the signal using multiple interferometer data sets,
 in the frequency domain */
