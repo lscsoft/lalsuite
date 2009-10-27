@@ -136,9 +136,9 @@ void IFOinit(struct interferometer **ifo, int networkSize, struct runPar run)
     if((ifo[ifonr]->longi) < 0.0) sprintf(longchar, "W");
     else sprintf(longchar, "E");
     if(run.beVerbose>=2) printf(" at  %1.0f*%2.1f'%s  %1.0f*%2.1f'%s  (%3.0f/%3.0f)\n",
-			    floor(fabs(ifo[ifonr]->lati*r2d)),  (fabs(ifo[ifonr]->lati*r2d)-floor(fabs(ifo[ifonr]->lati*r2d)))*60.0, latchar,
-			    floor(fabs(ifo[ifonr]->longi*r2d)), (fabs(ifo[ifonr]->longi*r2d)-floor(fabs(ifo[ifonr]->longi*r2d)))*60.0, longchar,
-			    360.0 - ifo[ifonr]->rightArm*r2d, 360.0 - ifo[ifonr]->leftArm*r2d);
+                                floor(fabs(ifo[ifonr]->lati*r2d)),  (fabs(ifo[ifonr]->lati*r2d)-floor(fabs(ifo[ifonr]->lati*r2d)))*60.0, latchar,
+                                floor(fabs(ifo[ifonr]->longi*r2d)), (fabs(ifo[ifonr]->longi*r2d)-floor(fabs(ifo[ifonr]->longi*r2d)))*60.0, longchar,
+                                360.0 - ifo[ifonr]->rightArm*r2d, 360.0 - ifo[ifonr]->leftArm*r2d);
     if(ifo[ifonr]->ch1doubleprecision && run.beVerbose>=2) printf(" | Frame-file precision: double (64 bit)\n"); 
     else if(run.beVerbose>=2) printf(" | Frame-file precision: float (32 bit)\n"); 
     if(run.beVerbose>=2) printf(" | Frequency range: %.0f to %.0f Hz.\n", ifo[ifonr]->lowCut, ifo[ifonr]->highCut);
@@ -197,7 +197,7 @@ void IFOinit(struct interferometer **ifo, int networkSize, struct runPar run)
     
     // Read 'detector' noise and estimate PSD
     if(run.beVerbose>=1) printf("   Reading noise for the detector in %s and estimating the PSD using%6.1fs of data...\n",ifo[ifonr]->name,(double)run.PSDsegmentNumber*run.PSDsegmentLength);
-    noisePSDestimate(ifo,ifonr,networkSize,run);
+    noisePSDestimate(ifo,ifonr,run);
     
     
     // Read 'detector' data for injection
@@ -281,13 +281,12 @@ void IFOdispose(struct interferometer *ifo, struct runPar run)
 double* filter(int *order, int samplerate, double upperlimit, struct runPar run)
 {
   // Specify filter characteristics:
-  //int ncoef      = 129;  // number of filter coefficients... 129 should be sufficient
   int ncoef      = 129;  // number of filter coefficients... 129 should be sufficient
   int totalcoef  = ncoef+ncoef-1;   // total number of coefficients                  
   double desired[2] = {1.0, 0.0};      // desired gain                               
   double weights[2] = {1.0, 1.0};      // weight for 'loss' in pass- & stopband      
   //double transitionbandwidth=0.0125;    //0.0125 was suggested by Christian Roever via 07/30/08 e-mail
-  double transitionbandwidth=0.025;    
+  double transitionbandwidth=0.025;       //0.025 seems to be more stable (IM)
   // Place transition bandwidth half-way between upper edge of pass band, which is
   // (upperlimit/samplerate) in relative units, and new Nyquist frequency, which is
   // 0.5/downsampleFactor in relative units.
@@ -297,11 +296,11 @@ double* filter(int *order, int samplerate, double upperlimit, struct runPar run)
   if(0.5/(double)run.downsampleFactor - upperlimit/((double)samplerate) < transitionbandwidth){
     fprintf(stderr," *** ERROR in filter() function while downsampling ***\n");
     fprintf(stderr,"     The original sampling rate is %i Hz and the new Nyquist frequency after downsampling %dx is %g Hz.\n",
-	    samplerate,run.downsampleFactor, ((double)samplerate)/(double)run.downsampleFactor/2.0);
+            samplerate,run.downsampleFactor, ((double)samplerate)/(double)run.downsampleFactor/2.0);
     fprintf(stderr,"     The desired upper limit is %g Hz, and this doesn't leave enough room for a transition band of relative width %g.\n", 
-	    upperlimit,transitionbandwidth);
+            upperlimit,transitionbandwidth);
     fprintf(stderr,"     The maximum upper frequency cut that can be used is: %g Hz.\n", (double)samplerate * 
-	    (0.5/(double)run.downsampleFactor - transitionbandwidth));
+            (0.5/(double)run.downsampleFactor - transitionbandwidth));
     fprintf(stderr,"     Aborting!\n\n");
     exit(1);
   }
@@ -421,9 +420,9 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
   int           filecount = 0;
   double        from, to, delta;
   double        *injection;
-	int p = run.nFrame[ifonr] - 1;
-	int index=run.nFrame[ifonr]-1;
-	
+  int p = run.nFrame[ifonr] - 1;
+  int index=run.nFrame[ifonr]-1;
+  
   
   // 'from' and 'to' are determined so that the range specified by 'before_tc' and 'after_tc'
   // falls into the flat part of the (Tukey-) window:                                        
@@ -432,57 +431,57 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
   delta = (to) - (from);
   if(run.beVerbose>=2) printf(" | Investigated time range : from %.1f to %.1f (%.1f seconds)\n", from, to, delta);
   
-	if(run.commandSettingsFlag[15] == 0){  
-  // Starting time of first(!) Frame file to be read:
-  filestart = (((((long)(from))-ifo[ifonr]->ch1fileoffset) / ifo[ifonr]->ch1filesize) * ifo[ifonr]->ch1filesize) + ifo[ifonr]->ch1fileoffset;
-  
-  
-  // Assemble the filename character string:
-  while (((double)filestart) < to){
-    if(filecount == 0)
-      sprintf(filenames, "%s/%s%ld%s", ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Fill in filename etc. for first file
-    else
-      sprintf(filenames, "%s %s/%s%ld%s", filenames, ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Append filename etc. for following files
-    if(run.beVerbose>=2) printf(" |   %s%ld%s\n", ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);
-    filestart += ifo[ifonr]->ch1filesize;
-    filecount += 1;
+  if(run.commandSettingsFlag[15] == 0){  
+    // Starting time of first(!) Frame file to be read:
+    filestart = (((((long)(from))-ifo[ifonr]->ch1fileoffset) / ifo[ifonr]->ch1filesize) * ifo[ifonr]->ch1filesize) + ifo[ifonr]->ch1fileoffset;
+    
+    
+    // Assemble the filename character string:
+    while (((double)filestart) < to){
+      if(filecount == 0)
+        sprintf(filenames, "%s/%s%ld%s", ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Fill in filename etc. for first file
+      else
+        sprintf(filenames, "%s %s/%s%ld%s", filenames, ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Append filename etc. for following files
+      if(run.beVerbose>=2) printf(" |   %s%ld%s\n", ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);
+      filestart += ifo[ifonr]->ch1filesize;
+      filecount += 1;
+    }
   }
-	}
-	
-
-	
-	else{
-			filestart = (long) run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]; 
-			if(to >= (double)(run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1])){
-				fprintf(stderr, "\n\n   ERROR after_tc (after window) : %f greater than last GPS time available in cache file %d : %d, aborting.\n\n\n",to,ifonr+1,run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1]);
-				exit(1);
-			}
-			while(from < (double) filestart){
-				p--;
-				if(p < 0){
-					fprintf(stderr, "\n\n   ERROR before_tc (after window) : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",from,run.FrameGPSstart[ifonr][0]);
-					exit(1);
-				}
-				filestart= (long) run.FrameGPSstart[ifonr][p];
-				index = p;
-			}
-		
-		// Assemble the filename character string:
-		while (((double)filestart) < to){
-			if(filecount == 0) // Fill in filename for first file:
-				sprintf(filenames,"%s",run.FrameName[ifonr][index]);
-			else // Append filename for following files:
-				sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
-			filestart += run.FrameLength[ifonr][index];
-			filecount += 1;
-			index += 1;
-		}
-	}
-	
-	
-	
-	
-	
+  
+  
+  
+  else{
+    filestart = (long) run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]; 
+    if(to >= (double)(run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1])){
+      fprintf(stderr, "\n\n   ERROR after_tc (after window) : %f greater than last GPS time available in cache file %d : %d, aborting.\n\n\n",to,ifonr+1,run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1]);
+      exit(1);
+    }
+    while(from < (double) filestart){
+      p--;
+      if(p < 0){
+        fprintf(stderr, "\n\n   ERROR before_tc (after window) : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",from,run.FrameGPSstart[ifonr][0]);
+        exit(1);
+      }
+      filestart= (long) run.FrameGPSstart[ifonr][p];
+      index = p;
+    }
+    
+    // Assemble the filename character string:
+    while (((double)filestart) < to){
+      if(filecount == 0) // Fill in filename for first file:
+        sprintf(filenames,"%s",run.FrameName[ifonr][index]);
+      else // Append filename for following files:
+        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
+      filestart += run.FrameLength[ifonr][index];
+      filecount += 1;
+      index += 1;
+    }
+  }
+  
+  
+  
+  
+  
   
   // Open frame file(s):
   if(run.beVerbose>=2) printf(" | Opening %d signal data file(s)... \n", filecount);
@@ -527,7 +526,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
       printf(" :   m1 = %.1f Mo,  m2 = %.1f Mo  (Mc = %.3f Mo,  eta = %.4f)\n", m1, m2, Mc, eta);
       printf(" :   tc = %.4f s,  dist = %.1f Mpc\n", injectpar.par[run.injRevID[11]], exp(injectpar.par[run.injRevID[22]]));
       printf(" :   ra = %.2f h,  dec = %.2f deg  (GMST = %.2f h)\n",injectpar.par[run.injRevID[31]]/pi*12.0, asin(injectpar.par[run.injRevID[32]])/pi*180.0, 
-	     GMST(injectpar.par[run.injRevID[11]])/pi*12.0 );
+             GMST(injectpar.par[run.injRevID[11]])/pi*12.0 );
       printf(" :   phase = %.2f rad\n", injectpar.par[run.injRevID[41]]);
     }
     ifo[ifonr]->FTstart = from; // Temporary setting so that localPar() works properly
@@ -622,7 +621,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
     printf(" : %d missing data points in DATA file(s) !!\n",screwcount);
     printf(" : (maybe the precision is incorrect)\n");
   }
- 
+  
   // Downsample (by factor downsampleFactor):    *** changes value of N ***
   if(run.downsampleFactor!=1){
     if(run.beVerbose>=2) printf(" | Downsampling... \n");
@@ -631,7 +630,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
     /*
     //Print the filter coefficients:
     for(j=1; j<ncoef; ++j) {
-      printf("  %d  %lf\n",j,filtercoef[ncoef-1+j]);
+    printf("  %d  %lf\n",j,filtercoef[ncoef-1+j]);
     }
     printf("\n\n");
     */
@@ -708,7 +707,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
  * Data is split into K segments of M seconds, and K-1 overlapping segments of length 2M are eventually windowed and transformed.
  */
 // ****************************************************************************************************************************************************  
-void noisePSDestimate(struct interferometer *ifo[], int ifonr, int networkSize, struct runPar run)  
+void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run)  
 {
   struct FrFile  *iFile=NULL;  // Frame File
   struct FrVect   *vect=NULL;
@@ -742,61 +741,57 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, int networkSize, 
   char    filenames[2000];
   long             filestart;
   int            filecount=0;
-    int p = run.nFrame[ifonr] - 1;
-	int index=run.nFrame[ifonr]-1;
+  int p = run.nFrame[ifonr] - 1;
+  int index=run.nFrame[ifonr]-1;
   
   // Starting time of first(!) frame file to be read:
-		if(run.commandSettingsFlag[15] == 0){
-  filestart = (((ifo[ifonr]->noiseGPSstart-ifo[ifonr]->noisefileoffset) / ifo[ifonr]->noisefilesize) * ifo[ifonr]->noisefilesize) + ifo[ifonr]->noisefileoffset;
-
-			// Assemble the filename character string:
-			while (((double)filestart) < (((double)ifo[ifonr]->noiseGPSstart)+Nseconds)){
-				if(filecount == 0) // Fill in filename for first file:
-					sprintf(filenames,"%s/%s%ld%s",ifo[ifonr]->noisefilepath,ifo[ifonr]->noisefileprefix,(long)filestart,ifo[ifonr]->noisefilesuffix);
-				else // Append filename for following files:
-					sprintf(filenames,"%s %s/%s%ld%s",filenames,ifo[ifonr]->noisefilepath,ifo[ifonr]->noisefileprefix,(long)filestart,ifo[ifonr]->noisefilesuffix);
-				filestart += ifo[ifonr]->noisefilesize;
-				filecount += 1;
-			}
-		
-		}
-  else{
-	  if (run.commandSettingsFlag[13] == 0){ run.PSDstart = (double) run.FrameGPSstart[ifonr][0]; filestart = (long) run.FrameGPSstart[ifonr][0]; index = 0;}
-	  else {
-		  filestart = (long) run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]; 
-		  if(run.PSDstart+Nseconds >= (double)(run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1])){
-			  fprintf(stderr, "\n\n   ERROR PSD end : %f greater than last GPS time available in cache file %d : %d, aborting.\n\n\n",run.PSDstart+Nseconds,ifonr+1,run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1]);
-			  exit(1);
-		  }
-		  
-		  while(run.PSDstart < (double) filestart){
-			  p--;
-			  if(p < 0){
-				  fprintf(stderr, "\n\n   ERROR PSD start : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",run.PSDstart,run.FrameGPSstart[ifonr][0]);
-				  exit(1);
-			  }
-			  filestart= (long) run.FrameGPSstart[ifonr][p];
-			  index = p;
-		  }
-	  }
-	  
-	  ifo[ifonr]->noiseGPSstart = run.PSDstart;
-	  // Assemble the filename character string:
-	  while (((double)filestart) < (((double)ifo[ifonr]->noiseGPSstart)+Nseconds)){
-		  if(filecount == 0) // Fill in filename for first file:
-			  sprintf(filenames,"%s",run.FrameName[ifonr][index]);
-		  else // Append filename for following files:
-			  sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
-		  filestart += run.FrameLength[ifonr][index];
-		  filecount += 1;
-		  index += 1;
-	  }
+  if(run.commandSettingsFlag[15] == 0){
+    filestart = (((ifo[ifonr]->noiseGPSstart-ifo[ifonr]->noisefileoffset) / ifo[ifonr]->noisefilesize) * ifo[ifonr]->noisefilesize) + ifo[ifonr]->noisefileoffset;
+    
+    // Assemble the filename character string:
+    while (((double)filestart) < (((double)ifo[ifonr]->noiseGPSstart)+Nseconds)){
+      if(filecount == 0) // Fill in filename for first file:
+        sprintf(filenames,"%s/%s%ld%s",ifo[ifonr]->noisefilepath,ifo[ifonr]->noisefileprefix,(long)filestart,ifo[ifonr]->noisefilesuffix);
+      else // Append filename for following files:
+        sprintf(filenames,"%s %s/%s%ld%s",filenames,ifo[ifonr]->noisefilepath,ifo[ifonr]->noisefileprefix,(long)filestart,ifo[ifonr]->noisefilesuffix);
+      filestart += ifo[ifonr]->noisefilesize;
+      filecount += 1;
+    }
+    
   }
-	
-	
-	
-	
-
+  else{
+    if (run.commandSettingsFlag[13] == 0){ run.PSDstart = (double) run.FrameGPSstart[ifonr][0]; filestart = (long) run.FrameGPSstart[ifonr][0]; index = 0;}
+    else {
+      filestart = (long) run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]; 
+      if(run.PSDstart+Nseconds >= (double)(run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1])){
+        fprintf(stderr, "\n\n   ERROR PSD end : %f greater than last GPS time available in cache file %d : %d, aborting.\n\n\n",run.PSDstart+Nseconds,ifonr+1,run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1]);
+        exit(1);
+      }
+      
+      while(run.PSDstart < (double) filestart){
+        p--;
+        if(p < 0){
+          fprintf(stderr, "\n\n   ERROR PSD start : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",run.PSDstart,run.FrameGPSstart[ifonr][0]);
+          exit(1);
+        }
+        filestart= (long) run.FrameGPSstart[ifonr][p];
+        index = p;
+      }
+    }
+    
+    ifo[ifonr]->noiseGPSstart = (long)run.PSDstart;
+    // Assemble the filename character string:
+    while (((double)filestart) < (((double)ifo[ifonr]->noiseGPSstart)+Nseconds)){
+      if(filecount == 0) // Fill in filename for first file:
+        sprintf(filenames,"%s",run.FrameName[ifonr][index]);
+      else // Append filename for following files:
+        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
+      filestart += run.FrameLength[ifonr][index];
+      filecount += 1;
+      index += 1;
+    }
+  }
+  
   
   // Open Frame file:
   if(run.beVerbose>=2) printf(" | Opening %d noise data file(s)... \n",filecount);
@@ -925,12 +920,12 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, int networkSize, 
     
     // Downsample:
     if(run.downsampleFactor!=1){
-    	dummyN = 2*M;
-    	in = downsample(raw, &dummyN, filtercoef, ncoef, run);
+      dummyN = 2*M;
+      in = downsample(raw, &dummyN, filtercoef, ncoef, run);
     }else{
-    	in = (double*) fftw_malloc(sizeof(double)*N);
-    	for (i=0; i<N; ++i)
-      		in[i] = raw[i];
+      in = (double*) fftw_malloc(sizeof(double)*N);
+      for (i=0; i<N; ++i)
+        in[i] = raw[i];
     }
     
     // Window data:
@@ -981,13 +976,13 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, int networkSize, 
     sPSD[i-smoothrange] = sum / (2.0*smoothrange+1.0);
   }
   if(smoothrange>0 && run.beVerbose>=2) printf(" | and a range of +/- %0.2f Hz.\n", (((double)smoothrange)/((double)FTsize))*nyquist);
-
+  
   
   // PSD estimation finished
   free(PSD);
   ifo[ifonr]->raw_noisePSD = sPSD;
   free(raw);
-
+  
 } // End of void noisePSDestimate
 // ****************************************************************************************************************************************************  
 
@@ -1040,8 +1035,8 @@ void writeDataToFiles(struct interferometer *ifo[], int networkSize, struct runP
     }
     for(j=0; j<ifo[i]->samplesize; ++j)
       fprintf(dump, "%9.9f %13.6e\n", 
-	      ifo[i]->FTstart+(((double)j)/((double) (ifo[i]->samplerate))), 
-	      ifo[i]->rawDownsampledWindowedData[j]);
+              ifo[i]->FTstart+(((double)j)/((double) (ifo[i]->samplerate))), 
+              ifo[i]->rawDownsampledWindowedData[j]);
     fclose(dump);
     if(run.beVerbose>=2) printf(" : (data written to file)\n");
     
@@ -1060,7 +1055,7 @@ void writeDataToFiles(struct interferometer *ifo[], int networkSize, struct runP
       f = ((double)(j+ifo[i]->lowIndex))/((double) ifo[i]->deltaFT);
       //if(f>0.9*ifo[i]->lowCut) 
       fprintf(dump1, "%13.6e %13.6e %13.6e\n", 
-	      f, creal(ifo[i]->dataTrafo[j]), cimag(ifo[i]->dataTrafo[j]) );  
+              f, creal(ifo[i]->dataTrafo[j]), cimag(ifo[i]->dataTrafo[j]) );  
       //Save the real and imaginary parts of the data FFT
       //Note that data FFT is already properly normalized in dataFT()
     }
@@ -1147,8 +1142,8 @@ void writeSignalsToFiles(struct interferometer *ifo[], int networkSize, struct r
     }
     for(j=0; j<ifo[i]->samplesize; ++j)
       fprintf(dump, "%9.9f %13.6e\n", 
-	      ifo[i]->FTstart+((double)j)/((double)ifo[i]->samplerate),
-	      ifo[i]->FTin[j]);
+              ifo[i]->FTstart+((double)j)/((double)ifo[i]->samplerate),
+              ifo[i]->FTin[j]);
     fclose(dump);             
     if(run.beVerbose>=2) printf(" : (signal written to file)\n");
     
@@ -1189,8 +1184,8 @@ void printParameterHeaderToFile(FILE * dump)
   struct parSet par;
   fprintf(dump,"%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n","m1","m2","mc","eta","tc","dl","lat","lon","phase","spin","kappa","thJ0","phJ0","alpha");
   fprintf(dump,"%12g %12g %12g %12g %12g %12g %12g %12g %12g %12g %12g %12g %12g %12g\n",
-	  //par.m1,par.m2,par.mc,par.eta,par.tc,exp(par.logdl),asin(par.sinlati)*r2d,par.longi*r2d,par.phase,par.spin,par.kappa,par.sinthJ0,par.phiJ0,par.alpha);
-	  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0);  //CHECK: replace with par.par[]
+          //par.m1,par.m2,par.mc,par.eta,par.tc,exp(par.logdl),asin(par.sinlati)*r2d,par.longi*r2d,par.phase,par.spin,par.kappa,par.sinthJ0,par.phiJ0,par.alpha);
+          0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0);  //CHECK: replace with par.par[]
   freeParset(&par);
 } // End of printParameterHeaderToFile()
 // ****************************************************************************************************************************************************  

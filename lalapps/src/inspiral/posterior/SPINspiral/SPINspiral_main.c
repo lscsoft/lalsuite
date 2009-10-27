@@ -48,7 +48,7 @@
 int main(int argc, char* argv[])
 {
   printf("\n\n   Starting SPINspiral...\n");
-  printf("   Compiled from source code version $Id: SPINspiral_main.c 212 2009-07-21 23:40:55Z sluys $ \n");
+  printf("   Compiled from source code version $Id: SPINspiral_main.c 225 2009-10-23 00:10:48Z sluys $ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0,injectionWF=0,mcmcWF=0;
@@ -82,12 +82,10 @@ int main(int argc, char* argv[])
   readMCMCinputfile(&run);                 //Read the input data on how to do MCMC 
   setSeed(&run.MCMCseed);                  //Set MCMCseed if 0, otherwise keep the current value
   readInjectionInputfile(&run);            //Read the input data on whether and how to do a software injection
+  if(run.injXMLfilename != NULL && run.injXMLnr >= 0) readInjectionXML(&run);    //Read injection XML file if specified:
   readParameterInputfile(&run);            //Read the input data on how to handle MCMC parameters
   readSystemInputfile(&run);               //Read system-dependent data, e.g. path to data files
   
-  
-  //Read injection XML file if specified:
-  if(run.injXMLfilename != NULL && run.injXMLnr >= 0) readInjectionXML(&run);
   
   
   //Set up the data for the IFOs in an IFO database you may want to use (H1,L1 + VIRGO by default)
@@ -131,10 +129,10 @@ int main(int argc, char* argv[])
     run.netsnr = 0.0;
     if(run.doSNR==1) {
       for(ifonr=0; ifonr<networkSize; ++ifonr) {
-	injectionWF = 1;                           //Call signalToNoiseRatio with the injection waveform
-	snr = signalToNoiseRatio(&injParSet, network, ifonr, run.injectionWaveform, injectionWF, run);
-	network[ifonr]->snr = snr;
-	run.netsnr += snr*snr;
+        injectionWF = 1;                           //Call signalToNoiseRatio with the injection waveform
+        snr = signalToNoiseRatio(&injParSet, network, ifonr, run.injectionWaveform, injectionWF, run);
+        network[ifonr]->snr = snr;
+        run.netsnr += snr*snr;
       }
       run.netsnr = sqrt(run.netsnr);
     }
@@ -153,21 +151,21 @@ int main(int argc, char* argv[])
       // Recalculate SNR:
       run.netsnr = 0.0;
       if(run.doSNR==1) {
-	for(ifonr=0; ifonr<networkSize; ++ifonr) {
-	  injectionWF = 1;                           //Call signalToNoiseRatio with the injection waveform
-	  snr = signalToNoiseRatio(&injParSet, network, ifonr, run.injectionWaveform, injectionWF, run);
-	  network[ifonr]->snr = snr;
-	  run.netsnr += snr*snr;
-	}
-	run.netsnr = sqrt(run.netsnr);
+        for(ifonr=0; ifonr<networkSize; ++ifonr) {
+          injectionWF = 1;                           //Call signalToNoiseRatio with the injection waveform
+          snr = signalToNoiseRatio(&injParSet, network, ifonr, run.injectionWaveform, injectionWF, run);
+          network[ifonr]->snr = snr;
+          run.netsnr += snr*snr;
+        }
+        run.netsnr = sqrt(run.netsnr);
       }
       
       for(ifonr=0; ifonr<networkSize; ++ifonr) IFOdispose(network[ifonr], run);
       //Reinitialise interferometers, read and prepare data, inject signal (takes some time)
       if(networkSize == 1) {
-	printf("   Reinitialising 1 IFO, reading data...\n");
+        printf("   Reinitialising 1 IFO, reading data...\n");
       } else {
-	printf("   Reinitialising %d IFOs, reading datafiles...\n",networkSize);
+        printf("   Reinitialising %d IFOs, reading datafiles...\n",networkSize);
       }
       IFOinit(network, networkSize, run);
       printf("   A signal with the 'true' parameter values was injected.\n");
@@ -186,11 +184,11 @@ int main(int argc, char* argv[])
   if(run.beVerbose >= 1) {
     printf("\n\n");
     printf("%10s  %11s  %10s  %10s  %9s  %17s  %14s  %12s  %12s  %12s  %12s\n",
-	   "Detector","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Downsample","Sample rate","Sample size","FT size");
+           "Detector","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Downsample","Sample rate","Sample size","FT size");
     for(ifonr=0;ifonr<run.networkSize;ifonr++) {
       printf("%10s  %8.2lf Hz  %7.2lf Hz  %8.2lf s  %7.2lf s  %16.5lf s  %12.4lf s  %10d x  %9d Hz  %9d pt  %9d pt\n",
-	     network[ifonr]->name,network[ifonr]->lowCut,network[ifonr]->highCut,network[ifonr]->before_tc,network[ifonr]->after_tc,
-	     network[ifonr]->FTstart,network[ifonr]->deltaFT,run.downsampleFactor,network[ifonr]->samplerate,network[ifonr]->samplesize,network[ifonr]->FTsize);
+             network[ifonr]->name,network[ifonr]->lowCut,network[ifonr]->highCut,network[ifonr]->before_tc,network[ifonr]->after_tc,
+             network[ifonr]->FTstart,network[ifonr]->deltaFT,run.downsampleFactor,network[ifonr]->samplerate,network[ifonr]->samplesize,network[ifonr]->FTsize);
     }
   }
   
@@ -222,9 +220,9 @@ int main(int argc, char* argv[])
     printf("   Injection param:");
     for(i=0;i<run.nMCMCpar;i++) {
       if(run.parID[i]>=11 && run.parID[i]<=19) {  //GPS time
-	printf(" %18s",run.parAbrev[run.parID[i]]);
+        printf(" %18s",run.parAbrev[run.parID[i]]);
       } else {
-	printf(" %9s",run.parAbrev[run.parID[i]]);
+        printf(" %9s",run.parAbrev[run.parID[i]]);
       }
     }
     printf("\n");
@@ -232,9 +230,9 @@ int main(int argc, char* argv[])
     printf("                   ");
     for(i=0;i<run.nMCMCpar;i++) {
       if(run.parID[i]>=11 && run.parID[i]<=19) {  //GPS time
-	printf(" %18.4f",injParSet.par[i]);
+        printf(" %18.4f",injParSet.par[i]);
       } else {
-	printf(" %9.4f",injParSet.par[i]);
+        printf(" %9.4f",injParSet.par[i]);
       }
     }
     printf("\n\n");
@@ -255,7 +253,7 @@ int main(int argc, char* argv[])
   //Calculate matches between two signals
   if(run.doMatch==1) {
     /*
-    if(1==2) {
+      if(1==2) {
       printf("\n\n");
       getInjectionParameters(&injParSet, run.nMCMCpar, run.injParVal);
       allocParset(&injParSet, networkSize);
@@ -265,16 +263,16 @@ int main(int argc, char* argv[])
       double fac=0.0;
       double matchpar = injParSet.tc,matchres=0.0;
       for(fac=-0.002;fac<0.002;fac+=0.00005) {
-	injParSet.tc = matchpar+fac;
-	for(ifonr=0;ifonr<networkSize;ifonr++) {
-	  localPar(&injParSet, network, networkSize, injectionWF, run);
-	  matchres = match(&injParSet,network,ifonr,networkSize);
-	  printf("%10.6f  %10.6f\n",fac,matchres);
-	  fprintf(fout,"%10.6f  %10.6f\n",fac,matchres);
-	}
+      injParSet.tc = matchpar+fac;
+      for(ifonr=0;ifonr<networkSize;ifonr++) {
+      localPar(&injParSet, network, networkSize, injectionWF, run);
+      matchres = match(&injParSet,network,ifonr,networkSize);
+      printf("%10.6f  %10.6f\n",fac,matchres);
+      fprintf(fout,"%10.6f  %10.6f\n",fac,matchres);
+      }
       }
       fclose(fout);
-    }
+      }
     */
     
     
@@ -329,10 +327,10 @@ int main(int argc, char* argv[])
       //computeFisherMatrix(&par,run.nMCMCpar,network,networkSize,matrix);
       
       for(i=0;i<run.nMCMCpar;i++) {
-	for(j=0;j<run.nMCMCpar;j++) {
-	  printf("  %12.4g",matrix[i][j]/(double)networkSize);
-	}
-	printf("\n\n");
+        for(j=0;j<run.nMCMCpar;j++) {
+          printf("  %12.4g",matrix[i][j]/(double)networkSize);
+        }
+        printf("\n\n");
       }
       printf("\n\n");
       
@@ -340,15 +338,15 @@ int main(int argc, char* argv[])
       
       freeParset(&par);
       for(i=0;i<run.nMCMCpar;i++) {
-	free(matrix[i]);
+        free(matrix[i]);
       }
       free(matrix);
     }
   } //if(run.doMatch=1)
-
   
   
-    
+  
+  
   
   //Get rid of allocated memory and quit
   for(ifonr=0; ifonr<networkSize; ++ifonr) IFOdispose(network[ifonr], run);
