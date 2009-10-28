@@ -50,12 +50,12 @@ void waveformTemplate(struct parSet *par, struct interferometer *ifo[], int ifon
   
   //CHECK: test - remove this
   /*
-  int i=0;
-  printf("\n\n\n*** waveformTemplate(): %i %i  ", waveformVersion, injectionWF);
-  for(i=0;i<par->nPar;i++) {
+    int i=0;
+    printf("\n\n\n*** waveformTemplate(): %i %i  ", waveformVersion, injectionWF);
+    for(i=0;i<par->nPar;i++) {
     printf(" %i:%6.3lf", i, par->par[i]);
-  }
-  printf("\n");
+    }
+    printf("\n");
   */
   if(waveformVersion==1) {
     templateApostolatos(par, ifo, ifonr, injectionWF, run);  // Apostolatos 12-parameter template
@@ -99,7 +99,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
     pTc       = par->par[run.injRevID[11]];                                           // 11: t_c
     if(run.injParUse[21]) pDl = exp(log(par->par[run.injRevID[21]])/3.0);             // 21: (d_L)^3 -> d_L
     if(run.injParUse[22]) pDl = exp(par->par[run.injRevID[22]]);                      // 22: log(d_L) -> d_L
-    //pLogDl    = par->par[run.injRevID[22]];                                           // 22: log(d_L)	
+    //pLogDl    = par->par[run.injRevID[22]];                                           // 22: log(d_L) 
     pSpin1    = par->par[run.injRevID[71]];                                           // 71: a_spin1
     pSpCosTh1 = par->par[run.injRevID[72]];                                           // 72: cos(theta_spin1)
     pRA       = par->par[run.injRevID[31]];                                           // 31: RA
@@ -115,14 +115,14 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
     pTc       = par->par[run.parRevID[11]];                                           // 11: t_c
     if(run.mcmcParUse[21]) pDl = exp(log(par->par[run.parRevID[21]]/3.0));             // 21: (d_L)^3 -> d_L
     if(run.mcmcParUse[22]) pDl = exp(par->par[run.parRevID[22]]);                      // 22: log(d_L) -> d_L
-    //pLogDl    = par->par[run.parRevID[22]];                                           // 22: log(d_L)	
-    pSpin1    = par->par[run.parRevID[71]];                                           // 71: a_spin1		
+    //pLogDl    = par->par[run.parRevID[22]];                                           // 22: log(d_L) 
+    pSpin1    = par->par[run.parRevID[71]];                                           // 71: a_spin1            
     pSpCosTh1 = par->par[run.parRevID[72]];                                           // 72: cos(theta_spin1)
     pRA       = par->par[run.parRevID[31]];                                           // 31: RA
     pSinDec   = par->par[run.parRevID[32]];                                           // 32: sin(Dec)     
-    pPhase    = par->par[run.parRevID[41]];                                           // 41: phi_c	     
+    pPhase    = par->par[run.parRevID[41]];                                           // 41: phi_c           
     pSinThJ0  = par->par[run.parRevID[53]];                                           // 53: sin(theta_J0)
-    pPhiJ0    = par->par[run.parRevID[54]];                                           // 54: phi_J0	     
+    pPhiJ0    = par->par[run.parRevID[54]];                                           // 54: phi_J0          
     pSpPhi1   = par->par[run.parRevID[73]];                                           // 73: phi_spin1    
   }
   
@@ -226,12 +226,12 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
   //double omega_high = min(pi*ifo[ifonr]->highCut, exp(-1.5*log(cutoff_a) - log(Mtot)) );  //1600 Hz, translated from f_gw to omega_orb, or a/Mtot = cutoff_a, whichever is smaller
   
   /*
-  if(beVerbose>=1) {
+    if(beVerbose>=1) {
     double Tcoal = 5.0*pow(8.0*omega_low,-8.0*c3rd)*pow(Mc,-5.0*c3rd) * (1.0 + 4.0*c3rd*cst1*pow(omega_low*Mtot,2.0*c3rd) - 1.6*cst2*(omega_low*Mtot));   //Time between f_low and coalescence
     double t0 = localtc - Tcoal;
     double deltat = (double)length*inversesamplerate;
     printf("Times:  Tcoal: %g,  t0: %g,  localtc: %g,  length: %d,  dt: %g,  dt-ltc: %g\n",Tcoal,t0,localtc,length,deltat,deltat-localtc);
-  }
+    }
   */
   
   double oldomega = -1.e30;
@@ -280,31 +280,31 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
     if((omega_orb>=omega_low) && (terminate==0)) {  // After source comes into window, before tc and before frequency reaches its maximum  Careful, if t<0, omega = nan!!!
       
       if(omega_orb < oldomega || omega_orb >= omega_high){  // Frequency starts decreasing, or frequency higher than highCut --> terminate signal
-      //if(omega_orb < oldomega || omega_orb >= omega_high || taperx[i]>0.09){  // Frequency starts decreasing, or frequency higher than highCut, or v_orb>0.3c --> terminate signal
+        //if(omega_orb < oldomega || omega_orb >= omega_high || taperx[i]>0.09){  // Frequency starts decreasing, or frequency higher than highCut, or v_orb>0.3c --> terminate signal
         ifo[ifonr]->FTin[i] = 0.0; 
         if(omega_orb < oldomega) terminate = 2;
         if(omega_orb >= omega_high) terminate = 3;
-	//if(taperx[i]>0.09) terminate = 4;
-      
+        //if(taperx[i]>0.09) terminate = 4;
+	
       } else {             // Frequency still increasing --> keep on computing...
 	
-	if(i1==0) i1=i;  //Save initial i for tapering the beginning of the signal
-	i2 = i;          //Save final i for tapering the end of the signal
+        if(i1==0) i1=i;  //Save initial i for tapering the beginning of the signal
+        i2 = i;          //Save final i for tapering the end of the signal
         oldomega = omega_orb;
-	taperx[i] = exp(2.0*c3rd*log(Mtot*omega_orb));                                                                      // x := (Mtot*w)^(2/3)  =  v_orb^2
-        
+        taperx[i] = exp(2.0*c3rd*log(Mtot*omega_orb));                                                                      // x := (Mtot*w)^(2/3)  =  v_orb^2
+	
         //Compute orbital A.M.
         l_L = m1*m2*exp(-c3rd*log(omega_orb*Mtot));
-        
+	
         //GW and orbital phase
         phi_gw = pPhase - 2.0/pEta * (tau58 + 0.625*c3rd*cst1*tau38 - 0.1875*cst2*tau28);                                   // GW phase at coalescence
-	if(fabs(phi1)<1.e-30) phi1 = phi_gw;   //Save initial phi
-	//phi2 = phi_gw;                       //Save final phi
-        
+        if(fabs(phi1)<1.e-30) phi1 = phi_gw;   //Save initial phi
+        //phi2 = phi_gw;                       //Save final phi
+	
         Y = spin/l_L;                                                                                                    //Y = |S|/|L|, Eq.43
         Gsq = 1.0 + 2.0*pSpCosTh1*Y + Y*Y;                                                                                      //G^2, Eq.46
         G   = sqrt(Gsq);
-        
+	
         cst4 = l_L + pSpCosTh1*spin;
         x = mu*Mtot;
         x1 = x*x*x;
@@ -312,14 +312,14 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
         x2 = x*x*x;
         x3 = spin*spin*spin;
         alpha = pSpPhi1 - 5.0/(96.0*x1) * (1.0+0.75*m2/m1) * 
-	  (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*G*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
-	if(fabs(alpha1)<1.e-30) alpha1 = alpha;  //Save initial alpha
-	//alpha2 = alpha;                         //Save final alpha
+          (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*G*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
+        if(fabs(alpha1)<1.e-30) alpha1 = alpha;  //Save initial alpha
+        //alpha2 = alpha;                         //Save final alpha
 	
         slamL = cst5/(l_L*G);                                                                                            //sin(lambda_L), Eq.48a
         clamL = cst4/(l_L*G);                                                                                            //cos(lambda_L), Eq.48b
-        
-        
+	
+	
         //Construct Eq.41e
         facVec(n_J0,clamL,tvec1);                                                                                        //tvec1 = J0^*cos(lambda_L)
         facVec(cvec1,slamL*cos(alpha),tvec4);                                                                            //tvec4 = (n_z - J0^*cos(theta_J0))*sin(lambda_L)*cos(alpha)/sin(theta_J0)
@@ -327,38 +327,38 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
         addVec(tvec1,tvec4,tvec7);                                                                                       //Construct Eq.59
         addVec(tvec7,tvec6,n_L);                                                                                         //Eq.59: n_L=L^
 	
-        
+	
         LdotN  = dotProduct(n_L,n_N);                                                                                    //L^.N^
-	x1     = 2.0*exp(5.0*c3rd*log(Mc))/D_L;
+        x1     = 2.0*exp(5.0*c3rd*log(Mc))/D_L;
         x3     = exp(2.0*c3rd*log(omega_orb));
         hplus  =      x1 * (1.0 + LdotN*LdotN) * x3 * cos(phi_gw);
         hcross = -2.0*x1 * LdotN               * x3 * sin(phi_gw);
-        
-        
+	
+	
         //Local polarisation vector, F+,Fx:
         crossProduct(n_L,normalvec,tvec1);                                                                              //tvec1 = n_L x z^'
         locpolar  = atan(dotProduct(n_L,cvec3)/dotProduct(n_N,tvec1));                                                  //Eq.12 of Vecchio, result between -pi/2 and pi/2
         sin2polar = sin(2.0*locpolar);
-	cos2polar = sqrt(1.0-sin2polar*sin2polar);                                                                      //Since 2*locpolar should be between -pi and pi (?)
+        cos2polar = sqrt(1.0-sin2polar*sin2polar);                                                                      //Since 2*locpolar should be between -pi and pi (?)
         Fplus     =  cst6*cos2polar + cst7*sin2polar;                                                                   //Eq.8a
         Fcross    = -cst6*sin2polar + cst7*cos2polar;                                                                   //Eq.8b
-        
-	//Detector signal:
-	ifo[ifonr]->FTin[i] = Fplus*hplus + Fcross*hcross;                                                              //  (3.10)
+	
+        //Detector signal:
+        ifo[ifonr]->FTin[i] = Fplus*hplus + Fcross*hcross;                                                              //  (3.10)
 	
 	
 	
-	//Print some stuff for diagnostics:
-	//printf("i: %8d   t: %10g   f: %10g   h: %10g\n",i,t,omega_orb/pi,ifo[ifonr]->FTin[i]);
-	//if((omega_orb/pi<40.002 || fabs(t)<0.2) && beVerbose>=1) {
-	//if(beVerbose>=1) {
-	//printf("i: %8d   t: %10g   f: %10g   x: %10g\n",i,t,omega_orb/pi,taperx[i]);
-	//printf("omg_orb: %10g  phi_orb: %10g  l_L: %10g  S: %10g  k: %10g  Y: %10g  G: %10g  alpha: %10g  slamL: %10g  clamL: %10g \n",  omega_orb,phi_orb,l_L,spin,pSpCosTh1,Y,G,alpha,slamL,clamL);
-	//printf("i: %8d   t: %10g  alpha_c: %10g   alpha0: %10g   alpha: %10g  alpha/2pi: %10g\n",  i,t,pSpPhi1,alpha0,alpha,alpha/tpi);
-	//}
+        //Print some stuff for diagnostics:
+        //printf("i: %8d   t: %10g   f: %10g   h: %10g\n",i,t,omega_orb/pi,ifo[ifonr]->FTin[i]);
+        //if((omega_orb/pi<40.002 || fabs(t)<0.2) && beVerbose>=1) {
+        //if(beVerbose>=1) {
+        //printf("i: %8d   t: %10g   f: %10g   x: %10g\n",i,t,omega_orb/pi,taperx[i]);
+        //printf("omg_orb: %10g  phi_orb: %10g  l_L: %10g  S: %10g  k: %10g  Y: %10g  G: %10g  alpha: %10g  slamL: %10g  clamL: %10g \n",  omega_orb,phi_orb,l_L,spin,pSpCosTh1,Y,G,alpha,slamL,clamL);
+        //printf("i: %8d   t: %10g  alpha_c: %10g   alpha0: %10g   alpha: %10g  alpha/2pi: %10g\n",  i,t,pSpPhi1,alpha0,alpha,alpha/tpi);
+        //}
 	
 	
-      }
+      }  // end if: if not (omega_orb < oldomega || omega_orb >= omega_high)
     }  //end if((omega_orb>=omega_low) && (terminate==0)) {  // After source comes into window, before tc and before frequency reaches its maximum  Careful, if t<0, omega = nan!!!
     else {
       ifo[ifonr]->FTin[i]   = 0.0;  //  (If before omega_low, after t_c or after termination)

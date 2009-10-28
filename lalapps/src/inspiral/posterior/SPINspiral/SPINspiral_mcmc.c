@@ -211,12 +211,8 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   
   
   // *** Initialise covariance matrix (initially diagonal), to do updates in the first block ***
-  mcmc.corrUpdate[0] = 0;
-  if(mcmc.correlatedUpdates>0) {
-    for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.covar[mcmc.iTemp][j1][j1] = mcmc.parSigma[j1];
-    mcmc.corrUpdate[0] = 1; //Use the matrix above and don't change it
-    if(mcmc.correlatedUpdates==2) mcmc.corrUpdate[0] = 2; //Use the matrix above and update it every nCorr iterations
-  }
+  mcmc.corrUpdate[0] = mcmc.correlatedUpdates; // = 0 for no corr.upd, 1 to refresh matrix only once, 2 to refresh it every nCorr iterations
+  for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.covar[mcmc.iTemp][j1][j1] = mcmc.parSigma[j1];
   
   
   
@@ -234,7 +230,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   // *** Set the NEW array, sigma and scale ***
   for(i=0;i<mcmc.nMCMCpar;i++) {
     mcmc.nParam[mcmc.iTemp][i] = mcmc.param[mcmc.iTemp][i];
-    mcmc.adaptSigma[mcmc.iTemp][i]   = 0.1  * mcmc.parSigma[i];
+    mcmc.adaptSigma[mcmc.iTemp][i] = 0.1 * mcmc.parSigma[i];
     if(mcmc.adaptiveMCMC==1) mcmc.adaptSigma[mcmc.iTemp][i] = mcmc.parSigma[i]; //Don't use adaptation (?)
     mcmc.adaptScale[mcmc.iTemp][i] = 10.0 * mcmc.parSigma[i];
     //mcmc.adaptScale[mcmc.iTemp][i] = 0.0 * mcmc.parSigma[i]; //No adaptation
@@ -359,7 +355,6 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
 	
         // *** CORRELATION MATRIX *******************************************************************************************************************************************************
 	
-        //if(mcmc.corrUpdate[mcmc.iTemp]==2) {  //Calculate correlations only once
         if(mcmc.corrUpdate[mcmc.iTemp]>=2) { //Calculate correlations multiple times
 	  
           // *** Save state to calculate correlations ***
@@ -379,15 +374,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
             if(mcmc.parallelTempering>=1 && mcmc.prParTempInfo>0) writeChainInfo(mcmc);  //Print info on the current (temperature) chain(s) to screen
 	    
 	    
-            mcmc.iHist[mcmc.iTemp] = 0;        //Reset history counter for the covariance matrix  This is also used for parallel tempering, that should perhaps get its own counter
-	    
-            /* 
-               if( (mcmc.prMatrixInfo>0 || mcmc.prParTempInfo>0) && mcmc.iTemp==mcmc.nTemps-1 ) {
-               printf("\n\n");
-               //printf("\n%10s  %15s  %8s  %8s  %16s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s\n","cycle","logL","Mc","eta","tc","logdL","spin","kappa","RA","sindec","phase","sinthJ0","phiJ0","alpha");
-               printf("\n%9s %10s  %7s %7s %8s %6s %6s %6s %6s %6s %6s %6s %6s %6s\n","cycle","logL","Mc","eta","tc","logdL","spin","kappa","RA","sindec","phase","snthJ0","phiJ0","alpha");
-               }
-            */
+            mcmc.iHist[mcmc.iTemp] = 0;        //Reset history counter for the covariance matrix  This is also used for parallel tempering, which should perhaps get its own counter(?)
 	    
           } //if(mcmc.iHist[mcmc.iTemp]>=mcmc.nCorr)
         } //if(mcmc.corrUpdate[mcmc.iTemp]>=2)
@@ -1422,12 +1409,12 @@ void writeChainInfo(struct MCMCvariables mcmc)
   double tmpdbl = 0.0;
   
   if(tempi==0) {
-    printf("\n\n      Chain  log(T)   dlog(L)  AccEls AccMat     Swap  AccRat lgStdv:");
+    printf("\n\n      Chain  log(T)   AccEls AccMat    Swap  AccRat    lgStdv:");
     for(p=0;p<mcmc.nMCMCpar;p++) printf(" %6s",mcmc.parAbrv[mcmc.parID[p]]);
     printf("\n");
   }
   
-  printf("        %3d   %5.3f     %3d    %3d   %6.4f  %6.4f        ",
+  printf("        %3d   %5.3f     %3d    %3d   %6.4f  %6.4f           ",
          tempi,log10(mcmc.chTemp),mcmc.acceptElems[tempi],mcmc.corrUpdate[tempi]-2,  (double)mcmc.swapTs1[tempi]/(double)mcmc.iIter,(double)mcmc.accepted[tempi][0]/(double)mcmc.iIter);
   for(p=0;p<mcmc.nMCMCpar;p++) {
     tmpdbl = log10(mcmc.histDev[p]+1.e-30);
@@ -1546,7 +1533,7 @@ void startMCMCOffset(struct parSet *par, struct MCMCvariables *mcmc, struct inte
         if(mcmc->parStartMCMC[i]==2 || mcmc->parStartMCMC[i]==4 || mcmc->parStartMCMC[i]==5) {  //Then find random offset parameters
 	  
           if(mcmc->parStartMCMC[i]==2 || mcmc->parStartMCMC[i]==4) {
-            mcmc->param[mcmc->iTemp][i] = mcmc->nParam[mcmc->iTemp][i] + mcmc->offsetX * gsl_ran_gaussian(mcmc->ran, mcmc->parSigma[i]);  //Gaussian with width parSigma around either Injection or BestValue
+            mcmc->param[mcmc->iTemp][i] = mcmc->nParam[mcmc->iTemp][i] + gsl_ran_gaussian(mcmc->ran, mcmc->offsetX*mcmc->parSigma[i]);  //Gaussian with width offsetX*parSigma around either Injection or BestValue
           } else if(mcmc->parStartMCMC[i]==5) {
             db = mcmc->priorBoundUp[i]-mcmc->priorBoundLow[i];                                     // Width of range
             mcmc->param[mcmc->iTemp][i] = mcmc->priorBoundLow[i] + gsl_rng_uniform(mcmc->ran)*db;        // Draw random number uniform on range with width db
