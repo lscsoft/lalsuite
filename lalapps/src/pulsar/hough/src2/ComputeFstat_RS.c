@@ -147,7 +147,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   MultiCOMPLEX8TimeSeries *Fboft_RS = NULL;
   COMPLEX8Vector *Faf = NULL;
   COMPLEX8Vector *Fbf = NULL;
-/*   REAL8Vector *Fstat = NULL; */
+  REAL8Vector *Fstat = NULL; 
   UINT4 numTimeSamples;
   LIGOTimeGPS start,end;
   REAL8 Tsft;
@@ -218,13 +218,23 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   }
 
-  printf("fred\n");
-  for (i=0;i<10;i++) printf("before epoch = %d %d\n",multiDetStates->data[0]->data[i].tGPS.gpsSeconds,multiDetStates->data[0]->data[i].tGPS.gpsNanoSeconds);
+  /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
+  if (0)
+    {
+      
+      REAL8 shift = fmod(fstatVector->f0 - f0,fstatVector->deltaF);
+      printf("Shift = %6.12f Hz\n",shift);
+      if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      }
+      
+    }
+ 
   /* recompute the multidetector states for the possibly time shifted SFTs */
   XLALDestroyMultiDetectorStateSeries(multiDetStates);
   multiDetStates = NULL;
   LALGetMultiDetectorStates ( status->statusPtr, &multiDetStates, multiSFTs, params->edat );
-  for (i=0;i<10;i++) printf("after epoch = %d %d\n",multiDetStates->data[0]->data[i].tGPS.gpsSeconds,multiDetStates->data[0]->data[i].tGPS.gpsNanoSeconds);
  
   /* check whether the multi-detector SSB times and detector states are already buffered */
   if ( cfBuffer  
@@ -380,7 +390,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   numTimeSamples = Faoft_RS->data[0]->data->length;
   Faf = XLALCreateCOMPLEX8Vector(numTimeSamples);
   Fbf = XLALCreateCOMPLEX8Vector(numTimeSamples);
- /*  Fstat = XLALCreateREAL8Vector(numTimeSamples); */
+  Fstat = XLALCreateREAL8Vector(numTimeSamples);
   memset(Faf->data,0,numTimeSamples*sizeof(COMPLEX8));
   memset(Fbf->data,0,numTimeSamples*sizeof(COMPLEX8));
 
@@ -1798,3 +1808,86 @@ int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x)
   return(0);
   
 }
+
+/** Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries
+ *
+ * NOTE: this <b>modifies</b> the MultiCOMPLEX8Timeseries in place
+ */
+int
+XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
+					    REAL8 shift )	        /**< freq-shift in Hz */
+{
+  const CHAR *fn = "XLALFrequencyShiftMultiCOMPLEX8TimeSeries()";
+  UINT4 i;
+  
+  if ( !(*x) )
+    {
+      XLALPrintError ("%s: empty input COMPLEX8timeSeries!\n", fn );
+      XLAL_ERROR (fn, XLAL_EINVAL);
+    }
+
+  /* loop over detectors */
+  for ( i=0; i < (*x)->length; i++)
+    {
+      
+      if ( XLALFrequencyShiftCOMPLEX8TimeSeries ( &((*x)->data[i]), shift) != XLAL_SUCCESS ) {
+	XLALPrintError ("%s: memcpy() failed!  errno = %d!\n", fn, xlalErrno );
+	XLAL_ERROR (fn, XLAL_EFAULT);
+      }
+      
+    }
+  
+  return XLAL_SUCCESS;
+  
+} /* XLALFrequencyShiftMultiCOMPLEX8TimeSeries() */
+
+/** Freq-shift the given COMPLEX8Timeseries by an amount of 'shift' Hz,
+ * using the time-domain expression y(t) = x(t) * e^(-i 2pi df t),
+ * which shifts x(f) into y(f) = x(f - df)
+ *
+ * NOTE: this <b>modifies</b> the COMPLEX8TimeSeries in place
+ */
+int
+XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
+				       REAL8 shift )	        /**< freq-shift in Hz */
+{
+  const CHAR *fn = "XLALFrequencyShiftCOMPLEX8TimeSeries()";
+  UINT4 k;
+  REAL8 deltat;
+  
+  if ( !(*x) || !(*x)->data )
+    {
+      XLALPrintError ("%s: empty input COMPLEX8TimeSeries!\n", fn );
+      XLAL_ERROR (fn, XLAL_EINVAL);
+    }
+  printf("in XLALFrequencyShiftCOMPLEX8TimeSeries : f0 = %6.12f\n",(*x)->f0);
+  
+  /* get timeseries epoch */
+  deltat = (*x)->deltaT;
+
+  for ( k=0; k < (*x)->data->length; k++)
+    {
+      REAL8 tk = k * deltat;	/* time of k-th bin */
+      REAL8 shiftCycles = shift * tk;
+      REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
+      REAL4 yRe, yIm;
+      /* printf("tk = %6.12f shiftCycles = %6.12f\n",tk,shiftCycles); */
+
+      sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCycles );
+      
+      yRe = fact_re * (*x)->data->data[k].re - fact_im * (*x)->data->data[k].im;
+      yIm = fact_re * (*x)->data->data[k].im + fact_im * (*x)->data->data[k].re;
+      /* printf("data = %f %f -> %f %f\n",(*x)->data->data[k].re,(*x)->data->data[k].im,yRe,yIm); */
+
+      (*x)->data->data[k].re = yRe;
+      (*x)->data->data[k].im = yIm;
+      
+    } /* for k < numBins */
+
+  /* adjust timeseries heterodyne frequency to the shift */
+  (*x)->f0 += shift;
+  printf("new f0 = %6.12f\n",(*x)->f0);
+
+  return XLAL_SUCCESS;
+
+} /* XLALFrequencyShiftCOMPLEX8TimeSeries() */

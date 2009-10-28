@@ -158,10 +158,16 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
     
 int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline, 
 				       REAL8Vector *x, 
-				       REAL8Vector *y
+				       REAL8Vector *y 
 				       );
 
-  int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x);
+int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x);
+
+int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
+						REAL8 shift );	                /**< freq-shift in Hz */
+
+int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
+					   REAL8 shift );	        /**< freq-shift in Hz */
 
 #ifdef  __cplusplus
 }
