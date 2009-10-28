@@ -812,6 +812,7 @@ int MAIN( int argc, char *argv[]) {
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
+  CFparams.edat = edat;
 
 
   /* set up some semiCoherent parameters */
@@ -1476,7 +1477,7 @@ void SetUpSFTs( LALStatus *status,
       
       MultiPSDVector *psd = NULL;
       printf("in the signal + noise case\n");
-      exit(0);
+     
       /* normalize sfts and compute noise weights and detector state */
       TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
 				      in->blocksRngMed ), status ); 

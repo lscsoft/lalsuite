@@ -338,6 +338,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
   UINT4 NnegSFT;
   REAL8 f0SFT;
   REAL8 SFTFreqBand;
+  UINT4 numSFTsFit;
 
   /* check sanity of input */
   if ( !sfts || (sfts->length == 0) )
@@ -360,7 +361,20 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
   /* ---------- determine time-span of the final long time-series */
   Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft;
 
+  /* NOTE: Tspan MUST be an integer multiple of Tsft,
+   * in order for the frequency bins of the final FFT
+   * to be commensurate with the SFT bins.
+   * This is required so that fHet is an exact
+   * frequency-bin in both cases
+   */
+  numSFTsFit = (UINT4)ceil(Tspan / Tsft);	/* round */
+  Tspan = numSFTsFit * Tsft;
   numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
+
+  /* ---------- determine time-span of the final long time-series */
+ /*  Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft; */
+
+/*   numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5); */	/* round */
 
   /* determine the heterodyning frequency */
   /* fHet = DC of our internal DFTs */
@@ -639,7 +653,7 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
       XLALPrintError ("%s: empty input SFT!\n", fn );
       XLAL_ERROR (fn, XLAL_EINVAL);
     }
-
+  printf("in XLALTimeShift : f0 = %6.12f\n",sft->f0);
   for ( k=0; k < sft->data->length; k++)
     {
       REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */

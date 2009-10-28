@@ -200,6 +200,7 @@ typedef struct {
   BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
   BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
   ComputeFBuffer *buffer; /**< buffer for storing pre-resampled timeseries */
+  EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */ 
 } ComputeFParams;
 
 

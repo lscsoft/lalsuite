@@ -76,9 +76,9 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       REAL4FrequencySeries *fstatVector, 	
 			       const PulsarDopplerParams *doppler,	
-			       MultiSFTVector *multiSFTs, 
+			       MultiSFTVector *multiSFTs,                   /* modified */
 			       const MultiNoiseWeights *multiWeights,
-			       const MultiDetectorStateSeries *multiDetStates,
+			       MultiDetectorStateSeries *multiDetStates,    /* modified */
 			       const ComputeFParams *params
 			       );
 
