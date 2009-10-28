@@ -479,7 +479,6 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
-  LALMSTUnitsAndAcc UandA;
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
@@ -499,10 +498,10 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
 
   /* figure out GMST: */
   XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
-  UandA.units    = MST_RAD;
-  UandA.accuracy = LALLEAPSEC_LOOSE;
-  LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
-
+  //UandA.units    = MST_RAD;
+  //UandA.accuracy = LALLEAPSEC_LOOSE;
+  //LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+  gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
   intrinsicParams.head      = NULL;
   intrinsicParams.dimension = 0;
   copyVariables(currentParams, &intrinsicParams);
@@ -688,7 +687,6 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	double GPSdouble;
 	double timeTmp;
 	LIGOTimeGPS GPSlal;
-	LALMSTUnitsAndAcc UandA;
 	double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
 	double timeshift;  /* time shift (not necessarily same as above)                   */
 	double deltaT, deltaF, twopit, f, re, im;
@@ -712,10 +710,10 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 		
 	/* figure out GMST: */
 	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
-	UandA.units    = MST_RAD;
-	UandA.accuracy = LALLEAPSEC_LOOSE;
-	LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
-
+	//UandA.units    = MST_RAD;
+	//UandA.accuracy = LALLEAPSEC_LOOSE;
+	//LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+	gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 	intrinsicParams.head      = NULL;
 	intrinsicParams.dimension = 0;
 	copyVariables(currentParams, &intrinsicParams);
