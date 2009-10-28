@@ -5,22 +5,22 @@ function param_accuracy( type, ifo, injected_list, detected_list )
 %
 % The injected_list will be the sim table values.
 % The detected_list will be named inj*, bg*, or pg*.
-% type='RINGDOWN', 'EOBNR', 'PHENOM' 
+% type='RINGDOWN', 'EOBNR', 'PHENOM'
 %
 % Sarah Caudill, Oct 28th 2009
 
   % read in the injection list and corresponding detected list
   eval(['inj=load(''' injected_list ''');'])
   eval(['det' ifo '=load(''' detected_list ''');'])
-  
+
   % Find number of injections in file.
   eval(['num_inj=length(det' ifo '.q);'])
 
-  
+ 
   %============== Injected vs Detected Parameter Plots ==============%
-  
+ 
   %%%%%%%%%%%%%%%%%% INJ FREQUENCY VS DET FREQ %%%%%%%%%%%%%%%%
-  
+ 
   figure
   eval(['loglog(inj.f, det' ifo '.f, ''k.'')'])
   hold on
@@ -49,10 +49,10 @@ function param_accuracy( type, ifo, injected_list, detected_list )
   eval(['plot_title=title(''' ifo ' Mass_{det} versus ' ifo ' Mass_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
   eval(['saveas(gcf,''' ifo 'detvsinj_mass.png '')'])
-  
-  
+ 
+ 
   %%%%%%%%%%%%%%%%%% TIME HISTOGRAM %%%%%%%%%%%%%%%%
-  
+ 
   if(strcmp(ifo,'H1') || strcmp(ifo,'H2'))
     figure
     eval(['hist(inj.th - det' ifo '.t, 100)'])
@@ -80,10 +80,10 @@ function param_accuracy( type, ifo, injected_list, detected_list )
     set(plot_title,'FontSize',16,'FontWeight','b');
     eval(['saveas(gcf,''' ifo 'injminusdet_timehist.png '')'])
   end
-  
-  
+ 
+ 
   %%%%%%%%%%%%%%%%%% TIME VS FREQUENCY %%%%%%%%%%%%%%%%
-  
+ 
   if(strcmp(ifo,'H1') || strcmp(ifo,'H2'))
     figure
     eval(['semilogx(inj.f, inj.th - det' ifo '.t, ''k.'')'])
@@ -111,10 +111,10 @@ function param_accuracy( type, ifo, injected_list, detected_list )
     set(plot_title,'FontSize',16,'FontWeight','b');
     eval(['saveas(gcf,''' ifo 'detvsinj_timefreq.png '')'])
   end
-  
-  
+ 
+ 
   %%%%%%%%%%%%%%%%%% INJ EFF DISTANCE VS DET EFF DISTANCE %%%%%%%%%%%%%%%%
-  
+ 
   if(strcmp(ifo,'H1') || strcmp(ifo,'H2'))
     figure
     eval(['loglog(inj.dh, det' ifo '.d, ''k.'')'])
@@ -144,12 +144,12 @@ function param_accuracy( type, ifo, injected_list, detected_list )
     set(gca,'FontSize',14);
     eval(['plot_title=title(''' ifo ' Eff Distance_{det} versus ' ifo ' Eff Distance_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' ifo 'detvsinj_distance.png '')']) 
+    eval(['saveas(gcf,''' ifo 'detvsinj_distance.png '')'])
   end
-  
-  
+ 
+ 
   %%%%%%%%%%%%%%%%%% FRACTIONAL EFF DISTANCE %%%%%%%%%%%%%%%%
-  
+ 
 
   if(strcmp(ifo,'H1') || strcmp(ifo,'H2'))
     figure
@@ -176,12 +176,12 @@ function param_accuracy( type, ifo, injected_list, detected_list )
     set(gca,'FontSize',14);
     eval(['plot_title=title(''Fractional Effective Distance Accuracy in ' ifo ''');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' ifo 'accuracyvsinj_distance.png '')']) 
+    eval(['saveas(gcf,''' ifo 'accuracyvsinj_distance.png '')'])
   end
-  
-  
+
+ 
   %%%%%%%%%%%%%%%%%% FRACTIONAL FREQUENCY %%%%%%%%%%%%%%%%
-  
+ 
   figure
   eval(['semilogx(inj.f, (inj.f-det' ifo '.f)./((inj.f+det' ifo '.f)./2), ''k.'')'])
   hold on
