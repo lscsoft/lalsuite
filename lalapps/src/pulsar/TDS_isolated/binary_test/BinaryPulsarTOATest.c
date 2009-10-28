@@ -114,7 +114,6 @@ x,y,z components are got from tempo */
   
   /* initialise the solar system ephemerides */
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).leap = 13;
   sprintf(earthFile,
 "/home/matthew/lscsoft/lal/packages/pulsar/test/earth00-04.dat");
   sprintf(sunFile,
@@ -124,8 +123,6 @@ x,y,z components are got from tempo */
   LALInitBarycenter(&status, edat);
   
   /* convert TOAs from MJD into GPS */
-  /* input.leapSecs = 13; /* number of leap seconds since the start of GPS time -
-MJD 44244 */
   
   fpout1 = fopen("deltaT.txt", "w");
   

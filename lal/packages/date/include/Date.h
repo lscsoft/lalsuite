@@ -273,36 +273,6 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 </lalLaTeX> */
 
 /* <lalLaTeX>
-
-\subsection*{Types}
-
-\subsubsection*{Enumeration \texttt{LALMSTUnits}}
-\idx[Type]{LALMSTUnits}
-
-This enumerated type is used as a parameter for Mean Sidereal Time
-routines to specify the units in which to return the Mean Sidereal
-Time. The allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+MST_SEC+ & arc-seconds \\
-  \verb+MST_HRS+ & arc-hours (\textit{i.e.} units of Right Ascension)\\
-  \verb+MST_DEG+ & degrees \\
-  \verb+MST_RAD+ & radians
-\end{tabular}
-\bigskip
-
-</lalLaTeX> */
-
-typedef enum
-{
-  MST_SEC,       /* arc seconds */
-  MST_HRS,       /* arc hours (i.e. units of Right Ascension) */
-  MST_DEG,       /* degrees */
-  MST_RAD        /* radians */
-} LALMSTUnits;
-
-/* <lalLaTeX>
 \subsubsection*{Enumeration \texttt{LALMonth}}
 \idx[Type]{LALMonth}
 
@@ -349,9 +319,9 @@ typedef enum
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
 \idx[Type]{LALLeapSecAccuracy}
 
-This enumerated type is used as a parameter for \texttt{LALGPStoUTC()},
-\texttt{LALUTCtoGPS()}, and \texttt{LALLeapSecs()} to specify if complete
-accuracy is required in use of leap seconds.  The allowed values are:
+This enumerated type is used as a parameter for \texttt{LALLeapSecs()} to
+specify if complete accuracy is required in use of leap seconds.  The
+allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
@@ -576,23 +546,6 @@ tagLALLeapSecFormatAndAcc
 LALLeapSecFormatAndAcc;
 
 
-/* <lalLaTeX>
-\subsubsection{Structure \texttt{LALMSTUnitsAndAcc}}
-\index[Type]{LALMSTUnitsAndAcc}
-
-This structure aggregates the \texttt{LALMSTUnits} and
-\texttt{LALLeapSecAccuracy} parameters for passing to
-\texttt{LALGPStoGMST1()}.
-</lalLaTeX> */
-typedef struct
-tagLALMSTUnitsAndAcc
-{
-  LALMSTUnits        units;
-  LALLeapSecAccuracy accuracy;
-}
-LALMSTUnitsAndAcc;
-
-
 
 /*
  * Function prototypes
@@ -601,41 +554,10 @@ LALMSTUnitsAndAcc;
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
-/* <lalLaTeX>
-\newpage\input{DateStringC}
-</lalLaTeX> */
-
-void LALDateString (LALStatus     *status,
-                    CHARVector    *timestamp,
-                    const LALDate *date);
-
-
-/* <lalLaTeX>
-\newpage\input{LMST1C}
-</lalLaTeX> */
-
-void LALGPStoGMST1( LALStatus         *status,
-                    REAL8             *gmst,      /* output - GMST1 */
-                    const LIGOTimeGPS *gps,       /* input - GPS time */
-                    const LALMSTUnitsAndAcc *pUnitsAndAcc); /* GMST1 units and
-                                                        leapsec accuracy */
 
 /* <lalLaTeX>
 \newpage\input{GPStoUTCC}
 </lalLaTeX> */
-void
-LALGPStoUTC (LALStatus                *status,
-             LALDate                  *pUtcDate,
-             const LIGOTimeGPS        *pGpsTime,
-             const LALLeapSecAccuracy *pAccuracy);
-
-void
-LALUTCtoGPS (LALStatus                *status,
-             LIGOTimeGPS              *pGpsTime,
-             const LALDate            *pUtcDate,
-             const LALLeapSecAccuracy *pAccuracy);
-
-
 void
 LALLeapSecs (LALStatus                    *status,
              INT4                         *p_leapSecs,
@@ -691,19 +613,9 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
 /* This function returns the current GPS time according to the system clock */
-/* <lalLaTeX>
-\newpage\input{GPSTimeNowC}
-</lalLaTeX> */
 LIGOTimeGPS *
 XLALGPSTimeNow (
     LIGOTimeGPS *gpstime
-    );
-
-void
-LALGPSTimeNow (
-    LALStatus           *status,
-    LIGOTimeGPS         *gpstime,
-    const LALLeapSecAccuracy  *accuracy
     );
 
 /* <lalLaTeX>

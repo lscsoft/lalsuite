@@ -741,8 +741,7 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
   AMCoeffsParams *amParams;
   LIGOTimeGPS FirstStamp;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap,k;
+  INT4 k;
   AMCoeffs amc;
   REAL8 C;
 
@@ -750,9 +749,6 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
   FirstStamp.gpsSeconds=dataparams->stamps[0].gpsSeconds;
   FirstStamp.gpsNanoSeconds=dataparams->stamps[0].gpsNanoSeconds;
 
-  LALLeapSecs(&status,&leap,&FirstStamp,&formatAndAcc);
-  (*edat).leap=leap;
-  
   if(strcmp(detector,"GEO")) Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(strcmp(detector,"LLO")) Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if(strcmp(detector,"LHO")) Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -784,9 +780,7 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc=formatAndAcc.accuracy;
 
- 
   /* Allocate space for AMCoeffs */
   amc.a = NULL;
   amc.b = NULL;

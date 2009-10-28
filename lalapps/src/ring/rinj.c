@@ -127,7 +127,6 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 int main( int argc, char *argv[] )
 {
   LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   const INT4            S4StartTime = 793130413; /* Tues Feb 22, 2005 at 12:00 CST (10:00 PST) */
   const INT4            S4StopTime  = 795679213; /* Wed March 23, 2005 at 24:00 CST (22:00 PST) */
 
@@ -156,7 +155,6 @@ int main( int argc, char *argv[] )
   RandomParams *randParams = NULL;
   REAL4  u, exponent, expt;
   REAL4  deltaM;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
   SkyPosition           skyPos;
   LALSource             source;
@@ -236,8 +234,7 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION, "$Revi" "sion$"))
   {
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
@@ -798,9 +795,14 @@ int main( int argc, char *argv[] )
     gpsAndAcc.gps = this_inj->geocent_start_time;
 
     /* set gmst */
-    LAL_CALL( LALGPStoGMST1( &status, &(this_inj->start_time_gmst),
-          &(this_inj->geocent_start_time), &gmstUnits ), &status);
-    
+    this_inj->start_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+        &this_inj->geocent_start_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
+    if( XLAL_IS_REAL8_FAIL_NAN(this_inj->start_time_gmst) )
+    {
+      fprintf(stderr, "XLALGreenwichMeanSiderealTime() failed\n");
+      exit(1);
+    }
+
     memset( &skyPos, 0, sizeof(SkyPosition) );
     memset( &source, 0, sizeof(LALSource) );
     memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
@@ -915,8 +917,7 @@ int main( int argc, char *argv[] )
 
   /* write the process table */
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 

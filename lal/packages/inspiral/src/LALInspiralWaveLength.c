@@ -98,7 +98,6 @@ LALInspiralWaveLength(
    ASSERT (params.nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params.nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params.tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (&params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    LALInspiralSetup (status->statusPtr, &ak, &params);
    CHECKSTATUSPTR(status);

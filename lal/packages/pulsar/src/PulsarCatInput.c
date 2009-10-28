@@ -103,7 +103,7 @@ measured.  In most cases this means it will be treated as zero.
 \begin{verbatim}
 lalDebugLevel
 LALWarning()                  LALStringToU2()
-LALLeapSecs()
+XLALGPSLeapSeconds()
 LALDCreateVector()            LALDDestroyVector()
 \end{verbatim}
 
@@ -605,7 +605,6 @@ LALReadPulsarCatLine( LALStatus     *stat,
     INT8 gpsNan;       /* GPS nanoseconds */
     INT4 leap1, leap2; /* number of leap seconds to date */
     LIGOTimeGPS epoch; /* GPS epoch */
-    LALLeapSecFormatAndAcc acc; /* accuracy of leap second computation */
 
     /* Parse Julian date. */
     TRY( LALParseREAL8( stat->statusPtr, &jday, list->tokens[i],
@@ -617,15 +616,12 @@ LALReadPulsarCatLine( LALStatus     *stat,
       jday += 2.4e6;
 
     /* Convert Julian days to GPS nanoseconds. */
-    acc.accuracy = LALLEAPSEC_STRICT;
-    acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( jday - 2444244.5 )*(8.64e13L) );
     XLALINT8NSToGPS( &epoch, gpsNan );
     leap2 = 0;
     do {
       leap1 = leap2;
-      TRY( LALLeapSecs( stat->statusPtr, &leap2, &epoch, &acc ),
-	   stat );
+      leap2 = XLALGPSLeapSeconds ( epoch.gpsSeconds );
       epoch.gpsSeconds += leap2 - leap1;
     } while ( leap2 != leap1 );
     node->posepoch = epoch;
@@ -734,7 +730,6 @@ LALReadPulsarCatLine( LALStatus     *stat,
     INT8 gpsNan;       /* GPS nanoseconds */
     INT4 leap1, leap2; /* number of leap seconds to date */
     LIGOTimeGPS epoch; /* GPS epoch */
-    LALLeapSecFormatAndAcc acc; /* accuracy of leap second computation */
 
     /* Parse Julian date. */
     TRY( LALParseREAL8( stat->statusPtr, &jday, list->tokens[i],
@@ -746,15 +741,12 @@ LALReadPulsarCatLine( LALStatus     *stat,
       jday += 2.4e6;
 
     /* Convert Julian days to GPS nanoseconds. */
-    acc.accuracy = LALLEAPSEC_STRICT;
-    acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( jday - 2444244.5 )*(8.64e13L) );
     XLALINT8NSToGPS( &epoch, gpsNan );
     leap2 = 0;
     do {
       leap1 = leap2;
-      TRY( LALLeapSecs( stat->statusPtr, &leap2, &epoch, &acc ),
-	   stat );
+      leap2 = XLALGPSLeapSeconds ( epoch.gpsSeconds );
       epoch.gpsSeconds += leap2 - leap1;
     } while ( leap2 != leap1 );
     node->fepoch = epoch;

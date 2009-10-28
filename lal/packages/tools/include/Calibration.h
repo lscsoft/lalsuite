@@ -237,11 +237,15 @@ struct StrainInTag {
   REAL4TimeSeries DARM_ERR;/* timeseries containing DARM_ERR */
   REAL4TimeSeries DARM ;   /* timeseries containing DARM_CTRL */
   REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
+  REAL4TimeSeries StateVector;  /* timeseries containing the State Vector (IFO-SV_STATE_VECTOR) */
+  REAL4TimeSeries LAX;     /* timeseries containing the Light-in-X-arm (LSC-LA_PTRX_NORM) */
+  REAL4TimeSeries LAY;     /* timeseries containing the Light-in-Y-arm (LSC-LA_PTRY_NORM) */
   COMPLEX16 Do;            /* digital filter at cal line frequency */
   COMPLEX16 Go;            /* OLG at cal line frequency */
   COMPLEX16 Wo;            /* Whitening filter at cal line frequency */
   REAL8 f;                 /* calibration line frequency */
   REAL4 To;                /* factors integration time */
+  char filter_vc_info[1024];  /* version control information in the filters file */
   REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
   INT4 CinvUSF;            /* Upsampling factor for sensing function */
   INT4 CinvDelay;          /* Overall inverse sensing function delay */
@@ -360,6 +364,7 @@ void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, i
 int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
+
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/

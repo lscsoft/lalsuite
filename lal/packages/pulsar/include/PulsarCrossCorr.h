@@ -213,7 +213,9 @@ void LALCalculateUalpha(LALStatus *status,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq,
-			REAL8     *psi);
+			REAL8     *psi,
+			COMPLEX16 *gplus,
+			COMPLEX16 *gcross);
 
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
@@ -223,6 +225,16 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 void LALNormaliseCrossCorrPower(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
+				REAL8Vector      *sigmaAlphasq);
+
+void LALCalculateEstimators(LALStatus    *status,
+				REAL8 *aplussq1,
+				REAL8   *aplussq2,
+				REAL8   *acrossq1,
+				REAL8 *acrossq2,
+				COMPLEX16Vector  *yalpha,
+				COMPLEX16Vector  *gplus,
+				COMPLEX16Vector  *gcross,
 				REAL8Vector      *sigmaAlphasq);
 
 /* ****************************************************** */

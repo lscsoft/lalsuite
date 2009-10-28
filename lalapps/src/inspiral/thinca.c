@@ -245,7 +245,6 @@ fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   extern int vrbflg;
 
@@ -469,8 +468,7 @@ int main( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION, "$Revi" "sion$"))
   {
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
@@ -1002,6 +1000,7 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -1196,7 +1195,7 @@ int main( int argc, char *argv[] )
         sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( sourceFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-      	accuracyParams.exttrig=1;
+        accuracyParams.exttrig=1;
         break;
        
       default:
@@ -2271,8 +2270,7 @@ cleanexit:
 
   snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
 
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
+  XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 

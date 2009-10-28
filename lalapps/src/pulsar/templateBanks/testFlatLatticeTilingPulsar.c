@@ -324,7 +324,6 @@ int main(int argc, char *argv[]) {
   if (inject_count > 0) {
 
     UINT4 inject_unmatched = 0;
-    INT4 inject_hit_count_bins = 0;
 
     /* Allocate memory */
     ALLOC_GSL_VECTOR_INT(inject_min_mismatch_hist, inject_min_mismatch_bins, LALAPPS_ERROR);

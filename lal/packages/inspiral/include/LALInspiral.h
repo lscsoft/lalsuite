@@ -461,6 +461,9 @@ typedef enum {
    Eccentricity,
    EOBNR,
    IMRPhenomA,
+   IMRPhenomB,
+   IMRPhenomFA,
+   IMRPhenomFB,
    TaylorEt,
    TaylorT4,
    TaylorN,
@@ -1189,6 +1192,12 @@ void LALTaylorT4Waveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
+void LALTaylorT4WaveformForInjection(
+     LALStatus        *status,
+     CoherentGW       *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
+
 void LALBCVSpinWaveform(
      LALStatus *status,
      REAL4Vector *signalvec,
@@ -1637,10 +1646,6 @@ void
 LALInspiralITStructureHelp(void);
 
 /* --- TEST PROTOTYPES --- */
-
-/*  <lalLaTeX>
-\newpage\input{GenerateInspiralWaveformC}
-</lalLaTeX>  */
 
 INT4 XLALInspiralRingdownWave (
 	REAL4Vector			*rdwave1,

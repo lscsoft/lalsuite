@@ -1,5 +1,5 @@
 #include <lal/LALDatatypes.h>
-#include <CudaFunctions.h>
+#include "CudaFunctions.h"
 
 int cudafft_execute_r2c(cufftHandle plan,
     cufftComplex *output, const cufftReal *input,

@@ -670,17 +670,12 @@ int main(int argc, char *argv[]){
   { 
     MultiNoiseWeights *multweight = NULL;    
     MultiPSDVector *multPSD = NULL;  
-    INT4 tmpLeap;
     UINT4 j;
-    /*     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; */
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
 
     /*  get ephemeris  */
     edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
     (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
     (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
 
 

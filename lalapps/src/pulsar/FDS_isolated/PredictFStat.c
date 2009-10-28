@@ -297,8 +297,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
   LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
 
-  LALregREALUserStruct(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation angle in radians");
-  LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
+  LALregREALUserStruct(status,	psi,		 0, UVAR_REQUIRED, "Polarisation angle in radians");
+  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
 
   LALregREALUserStruct(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserStruct(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
@@ -362,8 +362,6 @@ InitEphemeris (LALStatus * status,
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-
-  edat->leap = (INT2) XLALGPSLeapSeconds ( epoch.gpsSeconds );
 
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 

@@ -132,20 +132,22 @@
 NRCSID( COMPLEXFFTC, "$Id$" );
 
 
+/** Plan to perform an FFT of COMPLEX8 data */
 struct
 tagCOMPLEX8FFTPlan
 {
-  INT4       sign;
-  UINT4      size;
-  fftwf_plan plan;
+  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /*< length of the complex data vector for this plan */
+  fftwf_plan plan; /*< the FFTW plan */
 };
 
+/** Plan to perform an FFT of COMPLEX16 data */
 struct
 tagCOMPLEX16FFTPlan
 {
-  INT4       sign;
-  UINT4      size;
-  fftw_plan  plan;
+  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /*< length of the complex data vector for this plan */
+  fftw_plan  plan; /*< the FFTW plan */
 };
 
 

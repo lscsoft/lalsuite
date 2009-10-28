@@ -22,9 +22,7 @@ SUBDIRS = \
 	burstsearch \
 	tracksearch \
 	timefreq \
-	stochastic \
-	support \
-	framedata
+	support
 
 include-links:
 	@set fnord $(MAKEFLAGS); amf=$$2; \

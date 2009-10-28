@@ -37,8 +37,8 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
-    self.set_stdout_file('logs/string-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/string-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/string-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/string-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('string.sub')
     
 
@@ -86,8 +86,8 @@ class InjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['injection']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/inj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/inj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/inj-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/inj-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('injection.sub')
 
 

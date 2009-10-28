@@ -146,10 +146,6 @@ cd packages/stats/src || fail "creating sources in packages/stats/src"
 ${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
 cd ../../.. || fail "creating sources in packages/stats/src"
 
-cd packages/framedata/src || fail "creating sources in packages/framedata/src"
-${M4} FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
-cd ../../.. || fail "creating sources in packages/framedata/src"
-
 cd packages/pulsar/test || fail "creating sources in packages/pulsar/test"
 /bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd || fail "creating sources in packages/pulsar/test"
 /bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd || fail "creating sources in packages/pulsar/test"

@@ -313,7 +313,6 @@ the geoid.
 
 \par Uses
 \code
-LALGPStoUTC()
 XLALGreenwichMeanSiderealTime()
 LALDHeapSort()
 \endcode

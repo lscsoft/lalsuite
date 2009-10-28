@@ -51,8 +51,6 @@ EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for baryce
 LALDetector Detector;              /* Our detector*/
 EarthState earth;
 EmissionTime emit;
-LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-INT4 leap;
 
 /* clargs */
 char presultsdir[256];
@@ -515,10 +513,6 @@ int SetupBaryInput(char *ephfile, char *year, char *detector, LIGOTimeGPS *tstar
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = filenameE;     
   (*edat).ephiles.sunEphemeris = filenameS;         
-
-  /* set up leap second information */
-  LALLeapSecs(&status,&leap,tstart,&formatAndAcc);
-  (*edat).leap=leap;
 
   /* Read in ephemeris files */
   LALInitBarycenter(&status,edat);             

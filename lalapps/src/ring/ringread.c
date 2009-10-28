@@ -126,7 +126,6 @@ int main( int argc, char *argv[] )
 {
   /* lal initialization variables */
   LALStatus stat = blank_status;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
   /*  program option variables */
   extern int vrbflg;
@@ -209,8 +208,7 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->start_time),
-        &accuracy ), &stat );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION, "$Revi" "sion$"))
   {
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
@@ -1407,8 +1405,7 @@ int main( int argc, char *argv[] )
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
-  LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->start_time),
-        &accuracy ), &stat );
+  XLALGPSTimeNow(&(proctable.processTable->start_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
       &stat );
   LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, proctable, 

@@ -17,7 +17,11 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_zellepolka		\
 	lalapps_ComputeFStatistic_v2 lalapps_PredictFStat \
-	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit
+	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
+	lalapps_synthesizeBstatMC
+
+EXTRA_PROGRAMS = lalapps_CFSv3
+check_PROGRAMS = testFstat_v3
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -55,7 +59,20 @@ lalapps_PredictFStat_SOURCES = PredictFStat.c
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
-TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh
+lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
-CLEANFILES =
+lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
+
+testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
+
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
+
+
+TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testFstat_v3
+
+TESTS_ENVIRONMENT = \
+LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
+LAL_PREFIX=$(LAL_PREFIX) \
+LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
+
+CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat

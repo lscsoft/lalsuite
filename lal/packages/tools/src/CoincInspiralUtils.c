@@ -887,7 +887,7 @@ XLALExtractSnglInspiralFromCoinc(
     )
 /* </lalVerbatim> */
 {
-  /*static const char *func = "ExtractSnglInspiralFromCoinc";*/
+  static const char *func = "ExtractSnglInspiralFromCoinc";
   SnglInspiralTable  *snglHead = NULL;
   SnglInspiralTable  *thisSngl = NULL;
   SnglInspiralTable  *thisCoincEntry = NULL;
@@ -903,9 +903,6 @@ XLALExtractSnglInspiralFromCoinc(
       );
     return( NULL );
   }
-
-  /* gpsStartTime is unused in this function */
-  gpsStartTime = NULL;
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
@@ -941,16 +938,23 @@ XLALExtractSnglInspiralFromCoinc(
           /* event id number exists, use it */
           eventId->id = thisCoincEntry->event_id->id;
         }
-        else if ( eventNum > 99999 )
+        else if ( gpsStartTime )
         {
-          /* put extra digits into overflow area (above slide number) */
-          eventId->id = ( LAL_INT8_C(1000000000) * (INT8) (eventNum / 100000) )
-          + (INT8) (eventNum % 100000);
+          eventId->id = LAL_INT8_C(1000000000) *
+            (INT8) (gpsStartTime->gpsSeconds + eventNum/100000) +
+            (INT8) (eventNum % 100000);
         }
         else
         {
-          /* just set eventId equal to eventNum */
-          eventId->id = (INT8) eventNum;
+          XLALPrintError(
+              "Event does not have id and no GPS start time given" );
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglInspiral( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EIO);
         }
 
         if ( slideNum < 0 )
@@ -1353,7 +1357,7 @@ XLALGenerateCoherentBank(
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
         /* set the ifo */
-        snprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
+        snprintf(currentTrigger->ifo, LIGOMETA_IFO_MAX, "%s", ifo);
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )

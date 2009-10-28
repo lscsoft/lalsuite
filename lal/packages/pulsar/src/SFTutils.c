@@ -145,6 +145,54 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 } /* XLALExtractBandfromSFTs() */
 
 
+/** XLAL function to create one SFT-struct.
+ *
+ * Note: Allows for numBins == 0, in which case only the header is
+ * allocated, with a NULL data pointer.
+ */
+SFTtype *
+XLALCreateSFT ( UINT4 numBins )
+{
+  const char *fn = "XLALCreateSFT()";
+  SFTtype *sft;
+
+  if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", fn, sizeof(*sft) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( numBins )
+    {
+      if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
+	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", fn, numBins, xlalErrno );
+	XLALFree ( sft );
+	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      }
+    }
+  else
+    sft->data = NULL;	/* no data, just header */
+
+  return sft;
+
+} /* XLALCreateSFT() */
+
+
+void
+XLALDestroySFT ( SFTtype *sft )
+{
+  if ( !sft )
+    return;
+
+  if ( sft->data )
+    XLALDestroyCOMPLEX8Vector ( sft->data );
+
+  XLALFree ( sft );
+
+  return;
+
+} /* XLALDestroySFT() */
+
+
 
 /** Create one SFT-struct. Allows for numBins == 0.
  */

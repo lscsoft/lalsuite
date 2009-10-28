@@ -515,9 +515,6 @@ int GenerateMesh(GlobVar GV,REAL4VectorSequence **XYmesh,XYparameterspace *XYspa
 
 int SetupBaryInput(GlobVar *GV,EphemerisData **edat,LALDetector *Detector)
 {
-  
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
   CHAR filenameE[256],filenameS[256];
   FILE *fp;
 
@@ -551,10 +548,6 @@ int SetupBaryInput(GlobVar *GV,EphemerisData **edat,LALDetector *Detector)
   (*edat)=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*(*edat)).ephiles.earthEphemeris = filenameE;     
   (*(*edat)).ephiles.sunEphemeris = filenameS;   
-
-  /* set up leap second information */
-  LALLeapSecs(&status,&leap,&GV->tstart,&formatAndAcc);
-  (*(*edat)).leap=leap;
 
   /* Read in ephemeris files */
   LALInitBarycenter(&status,(*edat));             
@@ -1265,11 +1258,13 @@ int CheckInput(GlobVar GV)
   beginDate.tm_hour=0;
   beginDate.tm_mday=0;
   beginDate.tm_mon=0;
+  beginDate.tm_isdst=0;
   endDate.tm_sec=0;
   endDate.tm_min=0;
   endDate.tm_hour=0;
   endDate.tm_mday=0;
   endDate.tm_mon=0;
+  endDate.tm_isdst=0;
 
   /* set the start and end times for the given year */
   if (strcmp(GV.yr,"98")==0) {
@@ -1332,6 +1327,16 @@ int CheckInput(GlobVar GV)
     beginDate.tm_year=105;
     endDate.tm_year=110;
   }
+
+  /* populate tm_wday, tm_yday.  NOTE:  this function does not understand
+   * leap seconds;  if tm_sec is set to 60 it will "normalize" it by
+   * settting it to 0 and bumping the minutes, which is not the same time
+   * if the previous minute had 61 seconds in it.  you can use these
+   * functions to populate the yday and wday fields, and then set the
+   * seconds, minutes, etc., *after* to avoid corrupting the time, but here
+   * we don't care because the times aren't leap seconds (see above). */
+  mktime(&beginDate);
+  mktime(&endDate);
  
   /* convert the beginning and end of the relevant year(s) to a GPS time */
   beginGPS = XLALUTCToGPS(&beginDate);

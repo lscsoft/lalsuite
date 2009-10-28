@@ -332,7 +332,8 @@ typedef enum
   ring_inject,
   imr_inject,
   imr_ring_inject,
-  EOBNR_inject
+  EOBNR_inject,
+  Phenom_inject
 }
 inject_type;
 
@@ -1592,7 +1593,17 @@ XLALCoincSimRingdownTest (
     CoincRingdownTable **missedCoincHead
     );
 
+REAL8
+XLAL2DRinca(
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
+    );
 
+REAL8
+XLAL3DRinca(
+    SnglRingdownTable         *aPtr,
+    SnglRingdownTable         *bPtr
+    );
 
 /* coinc ringdown */
 

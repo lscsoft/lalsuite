@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString \
+check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay \
                  TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs \
 		 TestGPStoFloat TestIncrementGPS TestStrToGPS
 TestJulianDay_SOURCES = TestJulianDay.c
@@ -13,8 +13,6 @@ TestLMST2_SOURCES = TestLMST2.c
 TestLMST2_LDADD = $(top_builddir)/lib/liblal.la
 TestDelay_SOURCES = TestDelay.c
 TestDelay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestDateString_SOURCES = TestDateString.c
-TestDateString_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestGPStoUTC_SOURCES = TestGPStoUTC.c
 TestGPStoUTC_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestUTCtoGPS_SOURCES = TestUTCtoGPS.c
@@ -32,7 +30,7 @@ TestIncrementGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $
 TestStrToGPS_SOURCES = TestStrToGPS.c
 TestStrToGPS_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC \
+TESTS = TestJulianDay TestLMST TestDelay TestGPStoUTC \
         TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
 TESTS_ENVIRONMENT = 1>/dev/null
 MOSTLYCLEANFILES = .dvi-dep

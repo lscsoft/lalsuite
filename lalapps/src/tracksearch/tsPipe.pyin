@@ -29,10 +29,10 @@ from optparse import OptionParser
 import ConfigParser
 import time
 from glue import pipeline
-import tracksearch
-from tracksearchutils import progressSpinner
-from tracksearchutils import autoCreateSegmentList
-from tracksearchutils import determineDataPadding
+from lalapps import tracksearch
+from lalapps.tracksearchutils import progressSpinner
+from lalapps.tracksearchutils import autoCreateSegmentList
+from lalapps.tracksearchutils import determineDataPadding
 
 #Parse the command line options and create help features
 parser = OptionParser()

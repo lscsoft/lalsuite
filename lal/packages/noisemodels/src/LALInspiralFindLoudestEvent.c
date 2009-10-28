@@ -198,10 +198,10 @@ LALInspiralFindLoudestEvent
 			   for (i=0;i<(INT4)output1.length;i++)
 				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
 		   }
-		   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
-		   CHECKSTATUSPTR(status);
-		   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
-		   CHECKSTATUSPTR(status);
+		   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
+         ABORTXLAL(status);
+		   if (XLALREAL4VectorFFT(&filter2, &output2, findeventsin->fwdp) != 0)
+         ABORTXLAL(status);
 		   break;
 
 	   case TaylorF1:
@@ -218,17 +218,17 @@ LALInspiralFindLoudestEvent
 
 		   if (findeventsin->displayTemplates)
 		   {
-			   LALREAL4VectorFFT(status->statusPtr, &output1, &filter1, findeventsin->revp);
-			   CHECKSTATUSPTR(status);
-			   LALREAL4VectorFFT(status->statusPtr, &output2, &filter2, findeventsin->revp);
-			   CHECKSTATUSPTR(status);
+			   if (XLALREAL4VectorFFT(&output1, &filter1, findeventsin->revp) != 0)
+				   ABORTXLAL(status);
+			   if (XLALREAL4VectorFFT(&output2, &filter2, findeventsin->revp) != 0)
+				   ABORTXLAL(status);
 			   for (i=0;i<(INT4)output1.length;i++)
 				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
 
-			   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
-			   CHECKSTATUSPTR(status);
-			   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
-			   CHECKSTATUSPTR(status);
+			   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
+				   ABORTXLAL(status);
+			   if (XLALREAL4VectorFFT(&filter2, &output2, findeventsin->fwdp) != 0)
+				   ABORTXLAL(status);
 		   }
 		   break;
            default:

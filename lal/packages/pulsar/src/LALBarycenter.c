@@ -88,6 +88,7 @@ by Cutler in Los Alamos preprint archive.
 
 </lalLaTeX> */
 
+#include <lal/Date.h>
 #include <lal/LALBarycenter.h>
 
 NRCSID(LALBARYCENTERC, "$Id$");
@@ -225,7 +226,14 @@ LALBarycenterEarth(LALStatus *stat,
    REAL8 eps0= 0.40909280422232891e0;/*obliquity of ecliptic at JD 245145.0*/
 
    leapsSince2000 = 0; /*right # for Jan. 1, 2000 */
-   leapsSince2000 = edat->leap - 13;
+   leapsSince2000 = XLALGPSLeapSeconds( tGPS->gpsSeconds ) - 13;
+   {
+     INT4 err = xlalErrno;
+     if ( err != XLAL_SUCCESS ) {
+       ABORT ( stat, err, "XLALGPSLeapSeconds() failed!\n");
+     }
+   }
+
    tuInt=tGPS->gpsSeconds -630720013; /*first subtract off value
                                  of gps clock at Jan 1, 2000 00:00:00 UTC */
 

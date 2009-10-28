@@ -54,8 +54,6 @@ EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for baryce
 LALDetector Detector;              /* Our detector*/
 EarthState earth;
 EmissionTime emit;
-LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-INT4 leap;
 BinaryMeshFileHeader BMFheader;
 INT4 exactflag;
 
@@ -151,10 +149,6 @@ int SetupBaryInput(void)
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = filenameE;     
   (*edat).ephiles.sunEphemeris = filenameS;         
-
-  /* set up leap second information */
-  LALLeapSecs(&status,&leap,&TstartDET,&formatAndAcc);
-  (*edat).leap=leap;
 
   /* Read in ephemeris files */
   LALInitBarycenter(&status,edat);             

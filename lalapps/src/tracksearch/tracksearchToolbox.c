@@ -17,7 +17,7 @@
   *  MA  02111-1307  USA
   */
 /*
- * Author: Torres C. (Univ of TX at Brownsville)
+ * Author: Torres Cristina (LLO)
  */
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
@@ -1088,4 +1088,3 @@ LALappsTSassert(UINT4               err,
     }
   return;
 }
- 

@@ -130,9 +130,9 @@ int main(int argc, char **argv)
 
   /* the gridding doesn't change with time */
   make_gridding(&s, &g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps), time_info.accuracy);
+                &ephem, &(time_info.gps));
   make_gridding(&s, &delta_g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps), time_info.accuracy);
+                &ephem, &(time_info.gps));
 
   for (i = 0; i < g.ra->length - 1; ++i)
   {

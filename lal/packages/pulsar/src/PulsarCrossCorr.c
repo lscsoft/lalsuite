@@ -37,7 +37,7 @@
 
 RCSID( "$Id$");
 
-
+/* this function is currently unused (20/07/09) */
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTListElement     *in,
@@ -211,6 +211,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
 
 /** Calculate the frequency of the SFT at a given epoch */
+/* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
 				LIGOTimeGPS		 *epoch,
@@ -260,6 +261,8 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 
 
 /** Get signal phase at a given epoch */
+/* This is according to Eqn 2.13 in Dhurandar et al 2008 */
+/* and includes the 2nd order term that is left out in the paper */
 void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
 			    LIGOTimeGPS 	    *epoch,
@@ -350,6 +353,8 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 }
 
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
+/* G_IJ is calculated according to Eqn 3.17 in Dhurandhar et al 2008
+ * and Ualpha is calculated according to Eqn 4.10 of the same paper */
 void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     phiI,
@@ -381,6 +386,10 @@ void LALCalculateAveUalpha(LALStatus *status,
 
 }
 /** Calculate pair weights (U_alpha) for the general case **/
+/* G_IJ is calculated according to Eqn 3.10 of Dhurandar et al 2008.
+ * deltaPhi is calculated from Eqn 3.11, and Ualpha is calculated according to
+ * Eqn 4.10 of the same paper.
+ * The Fplus, Fcross terms are calculated according to Eqns 2.9a and 2.9b */
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
@@ -389,7 +398,9 @@ void LALCalculateUalpha(LALStatus *status,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq,
-			REAL8     *psi)
+			REAL8     *psi,
+			COMPLEX16 *gplus,
+			COMPLEX16 *gcross)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
@@ -418,6 +429,13 @@ void LALCalculateUalpha(LALStatus *status,
 	          - (sin(deltaPhi) *
 		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
 
+  /*calculate estimators*/
+  gplus->re = 0.25*cos(deltaPhi)*FplusI*FplusJ;
+  gplus->im = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
+
+  gcross->re = 0.25*cos(deltaPhi)*FcrossI*FcrossJ;
+  gcross->im = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
+
 
   }
   else {
@@ -438,6 +456,7 @@ void LALCalculateUalpha(LALStatus *status,
 
   }
 
+
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
   out->im = -im/(sigmasq);
@@ -451,7 +470,8 @@ void LALCalculateUalpha(LALStatus *status,
 }
 
 
-
+/* Calculate rho, the cross correlation power,
+ * according to Eqn 4.4 in Dhurandhar et al 2008 */
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
 				COMPLEX16Vector *yalpha,
@@ -481,6 +501,8 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 
 }
 
+/* Calculate the variance of the cross correlation power.
+ * The variance is given by sigma^2 in Eqn 4.6 of Dhurandhar et al 2008 */
 void LALNormaliseCrossCorrPower(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
@@ -512,4 +534,45 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 }
 
+/* Calculate the estimators for Aplus, Asq.
+ * Eqn 6.4 of Dhurandhar et al 2008 */
+void LALCalculateEstimators(LALStatus    *status,
+				REAL8 *aplussq1,
+				REAL8 *aplussq2,
+				REAL8 *acrossq1,
+				REAL8 *acrossq2,
+				COMPLEX16Vector  *yalpha,
+				COMPLEX16Vector  *gplus,
+				COMPLEX16Vector  *gcross,
+				REAL8Vector      *sigmaAlphasq)
+{
+  INT4 i;
+  REAL8 ap1 = 0, ap2 = 0, ac1 = 0, ac2 = 0;
+
+  INITSTATUS (status, "CalculateEstimators", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (aplussq1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (yalpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+
+
+  for (i=0; i < (INT4)yalpha->length; i++) {
+	ap1 += 2.0*(SQUARE(gplus->data[i].re) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
+	ac1 += 2.0*(SQUARE(gcross->data[i].re) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
+	ap2 += 2.0*((yalpha->data[i].re * gplus->data[i].re) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i];
+	ac2 += 2.0*((yalpha->data[i].re * gcross->data[i].re) + (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
+  }
+
+  *aplussq1 = ap1;
+  *aplussq2 = ap2;
+  *acrossq1 = ac1;
+  *acrossq2 = ac2;
+  DETATCHSTATUSPTR (status);
+
+  /* normal exit */
+  RETURN (status);
+
+
+}
 
