@@ -95,6 +95,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         }
 
         light = (sum_x/r_light > 100 && sum_y/r_light > 100);
+        /* "is the mean higher than 100 for both arms?" */
 
         /* science, injection, up (stuff coming from the state vector) */
         science = 1;    /* in science mode */

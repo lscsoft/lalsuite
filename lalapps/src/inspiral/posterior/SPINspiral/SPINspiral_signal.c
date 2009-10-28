@@ -75,15 +75,15 @@ double IFOlogLikelihood(struct parSet *par, struct interferometer *ifo[], int if
   
   // Compute the overlap between waveform and data:
   double overlaphd = vecOverlap(ifo[ifonr]->raw_dataTrafo, 
-				ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
-				ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
+                                ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
+                                ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
   //correct FFT for sampling rate of waveform
   overlaphd/=((double)ifo[ifonr]->samplerate);  
   
   // Compute the overlap between waveform and itself:
   double overlaphh = vecOverlap(ifo[ifonr]->FTout,
-				ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
-				ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
+                                ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
+                                ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
   //correct FFT for sampling rate of waveform
   overlaphh/=((double)ifo[ifonr]->samplerate);
   overlaphh/=((double)ifo[ifonr]->samplerate);
@@ -137,8 +137,8 @@ double signalToNoiseRatio(struct parSet *par, struct interferometer *ifo[], int 
   
   // Compute the overlap between waveform and itself:
   double overlaphh = vecOverlap(ifo[ifonr]->FTout,
-				ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
-				ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
+                                ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
+                                ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
   
   // Correct FFT for sampling rate of waveform
   overlaphh /= ((double)ifo[ifonr]->samplerate);

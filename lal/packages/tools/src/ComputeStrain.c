@@ -74,6 +74,7 @@ RCSID("$Id$");
 /* Local helper functions, defined static so they cannot be used outside. */
 static void set_output_to_zero(StrainOut *output);
 static void check_nans_infs(LALStatus *status, StrainIn *input);
+static void remove_transients(StrainIn *input);
 
 
 
@@ -94,7 +95,11 @@ REAL8IIRFilter ALPHASLPFIR;
  ATTATCHSTATUSPTR( status );
 
  set_output_to_zero(output);
+
+ remove_transients(input);
+
  check_nans_infs(status, input);
+ if (! status->statusPtr) return;
 
  LALGetFactors(status->statusPtr, output, input);
  CHECKSTATUSPTR( status );
@@ -280,7 +285,7 @@ REAL8IIRFilter ALPHASLPFIR;
        }
      else
        {
-	 XLALFIRFilter(&(output->hC), input->A);
+	 XLALFIRFilter(&(output->hC), input->AW);
        }
    }else
    {
@@ -840,29 +845,29 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
  * Check if there are any nans or infs in the input data.
  */
 static void check_nans_infs(LALStatus *status, StrainIn *input)
- {
-     UINT4 p;
-
-     /* Check if there are nans or infs in DARM_ERR */
-     for (p=0; p < input->DARM_ERR.data->length; p++) {
-         REAL4 x = input->DARM_ERR.data->data[p];
-         if (isnan(x) || isinf(x)) {
-             fprintf(stderr, "ERROR: bad DARM_ERR\n");
-             ABORT(status, 1, "Bad DARM_ERR");
-         }
-     }
-
-     /* Same thing for DARM_CTRL if we use it */
-     if (input->darmctrl) {
-         for (p=0; p < input->DARM.data->length; p++) {
-             REAL4 x = input->DARM.data->data[p];
-             if (isnan(x) || isinf(x)) {
-                 fprintf(stderr, "ERROR: bad DARM_CTRL\n");
-                 ABORT(status, 2, "Bad DARM_CTRL");
-             }
-         }
-     }
- }
+{
+    UINT4 p;
+    
+    /* Check if there are nans or infs in DARM_ERR */
+    for (p=0; p < input->DARM_ERR.data->length; p++) {
+        REAL4 x = input->DARM_ERR.data->data[p];
+        if (isnan(x) || isinf(x)) {
+            fprintf(stderr, "ERROR: bad DARM_ERR\n");
+            ABORT(status, 1, "Bad DARM_ERR");
+        }
+    }
+    
+    /* Same thing for DARM_CTRL if we use it */
+    if (input->darmctrl) {
+        for (p=0; p < input->DARM.data->length; p++) {
+            REAL4 x = input->DARM.data->data[p];
+            if (isnan(x) || isinf(x)) {
+                fprintf(stderr, "ERROR: bad DARM_CTRL\n");
+                ABORT(status, 2, "Bad DARM_CTRL");
+            }
+        }
+    }
+}
 
 
 
@@ -875,4 +880,95 @@ static void set_output_to_zero(StrainOut *output)
     memset(output->alpha.data->data,      0,  output->alpha.data->length     * sizeof(COMPLEX16));
     memset(output->beta.data->data,       0,  output->beta.data->length      * sizeof(COMPLEX16));
     memset(output->alphabeta.data->data,  0,  output->alphabeta.data->length * sizeof(COMPLEX16));
+}
+
+
+
+/*
+ * Put DARM_ERR and DARM_CTRL to 0 if the detector is not UP. That
+ * way, we remove the huge transients with the new DC readout scheme.
+ *
+ * Also, even if the detector is UP, if DARM_ERR is way too big (~> 1)
+ * or its derivative (~> 1e-3), assume we have a glitch.
+ */
+static void remove_transients(StrainIn *input)
+{
+    int i, j;                   /* counters */
+    float sum_x, sum_y;
+    int light;                  /* is there light in the arms? */
+    int up;                     /* state vector up bit */
+
+    int nsecs;                  /* number of seconds of data */
+    int r_sv, r_light, r_darm;  /* samples per second */
+
+    const double DARM_ERR_THRESHOLD = 1e0;
+    int derr_small;                       /* is DARM_ERR believably small? */
+    const double DERIV_THRESHOLD = 1e-3;
+    int deriv_small;             /* is the derivative of DARM_ERR believably small? */
+
+    nsecs = (int) (input->DARM_ERR.data->length * input->DARM_ERR.deltaT);
+
+    r_sv = input->StateVector.data->length / nsecs;  /* # of IFO-SV_STATE_VECTOR per second */
+    r_light = input->LAX.data->length / nsecs;       /* # of LSC-LA_PTRX_NORM per second */
+    r_darm = input->DARM_ERR.data->length / nsecs;   /* # of DARM_ERR per second */
+
+    /* For each second, check the conditions and put DARM_* to 0 if not met */
+    for (i = 0; i < nsecs; i++) {
+        /*
+         * Is the detector UP? (state vector UP during the whole
+         * second, and light in the arms)
+         */
+
+        /* light */
+        sum_x = 0;
+        sum_y = 0;
+        for (j = 0; j < r_light; j++) {
+            sum_x += input->LAX.data->data[i*r_light + j];
+            sum_y += input->LAY.data->data[i*r_light + j];
+        }
+
+        light = (sum_x/r_light > 100 && sum_y/r_light > 100);
+        /* "is the mean higher than 100 for both arms?" */
+
+        /* state vector up */
+        up = 1;
+
+        for (j = 0; j < r_sv; j++) {
+            /* convert from float to int, and take the third rightmost bit */
+            int s = (int) input->StateVector.data->data[i*r_sv + j];
+            if ((s & (1 << 2)) == 0)  up = 0;
+        }
+
+        up = up && light;  /* this is the "up" definition of the DQ vector */
+
+        /* DARM_ERR below threshold */
+        REAL4 *derr = input->DARM_ERR.data->data;  /* for short notation */
+        derr_small = 1;
+        for (j = 0; j < r_darm; j++)
+            if (fabs(derr[i*r_darm + j]) > DARM_ERR_THRESHOLD)
+                derr_small = 0;
+
+        /* DARM_ERR derivative below threshold */
+        deriv_small = 1;
+        for (j = 0; j < r_darm-1; j++)
+            if (fabs(derr[i*r_darm + j+1] - derr[i*r_darm + j]) > DERIV_THRESHOLD)
+                deriv_small = 0;
+
+        /*
+         * Scare the users.
+         */
+        if (up && !(derr_small && deriv_small))
+            fprintf(stderr, "WARNING: glitch found by non-conventional methods. "
+                    "Zeroing presumed bad data so it doesn't affect the rest of the frame.\n");
+
+        /*
+         * Put DARM_ERR and DARM_CTRL to 0 if we don't meet the conditions.
+         */
+        if (! (up && derr_small && deriv_small) ) {
+            for (j = 0; j < r_darm; j++) {
+                input->DARM_ERR.data->data[i*r_darm + j] = 0.0;
+                input->DARM.data->data[i*r_darm + j] = 0.0;
+            }
+        }
+    }
 }

@@ -63,7 +63,6 @@
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
-#include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>

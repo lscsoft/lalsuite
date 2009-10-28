@@ -191,13 +191,6 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     
     /* set values for timing noise removal */
     LALSetSpindownParams( &status, &hetParams, &crabOutput, dataEpoch );
-  
-    if(time->data[j] <= 820108813)
-      (*edat).leap = 13;
-    else if(time->data[j] <= 914803214)
-      (*edat).leap = 14;
-    else
-      (*edat).leap = 15;
 
     baryinput.tgps.gpsSeconds = TNInput.epoch.gpsSeconds;
     baryinput.tgps.gpsNanoSeconds = TNInput.epoch.gpsNanoSeconds;

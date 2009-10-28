@@ -736,7 +736,6 @@ int prepare_baryinput(LALStatus* status){
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = earthdata;
   (*edat).ephiles.sunEphemeris = sundata;
-  (*edat).leap=13; 
 
   /* Read in ephemerides */  
   LALInitBarycenter(status, edat);

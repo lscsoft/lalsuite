@@ -228,7 +228,7 @@ FA_file.close()
 time.sleep(1)
 
 #Cat result files for easy printing
-os.system('cat ' + Vars['output_run_directory'].rstrip('/') + '/*' + Vars['results_base_prefix'] + '* > ' + Vars['events_directory'].rstrip('/') + '/plot_data_' + Vars['run_name'])
+os.system('cat ' + Vars['output_run_directory'].rstrip('/') + '/' + Vars['results_base_prefix'] + '* > ' + Vars['events_directory'].rstrip('/') + '/plot_data_' + Vars['run_name'])
 
 #Delete the previous run to save space
 if not Vars['messy']:

@@ -108,11 +108,6 @@ main( void )
 
   INT4 i,k; /*dummy indices*/
   EphemerisData *edat = NULL;
-  LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
-                   INT4, while EphemerisData defines it to be INT2. This won't
-                   cause problems before, oh, I don't know, the Earth has been
-                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
 
   char eEphFileBad[] = "earth47.dat";
   char eEphFile[] = "earth98.dat";
@@ -135,7 +130,6 @@ main( void )
 
   (*edat).ephiles.earthEphemeris = eEphFileBad;
   (*edat).ephiles.sunEphemeris = sEphFile;
-  (*edat).leap = 12;
   LALInitBarycenter(&stat, edat);
 
   if ( stat.statusCode != LALINITBARYCENTERH_EOPEN)
@@ -149,7 +143,6 @@ main( void )
 
   (*edat).ephiles.earthEphemeris = "earth98.dat";
   (*edat).ephiles.sunEphemeris = "sun98_corrupt.dat";
-  (*edat).leap = 12;
   LALInitBarycenter(&stat, edat);
 
       if ( stat.statusCode != LALINITBARYCENTERH_EEPHFILE
@@ -171,19 +164,6 @@ main( void )
 
   (*edat).ephiles.earthEphemeris = eEphFile;
   (*edat).ephiles.sunEphemeris = sEphFile;
-
-/* Next give the number of leap secs added from start of GPS epoch to
-   tgps. It's perfectly OK to instead give the number of leap
-   sec from start of GPS epoch to, say, Jan. 2 in year that contains
-   tgps. Currently have to specify leap by hand. This will be
-   replaced by a leap sec function being written by D. Chin.
-   Use: leap = 11 for 1997, leap = 12 for 1998, leap = 13 for 1999,
-   leap = 13 for 2000, leap = 13 for 2001, leap = 13 for 2002.
-   Yes, really: the last time it changed was end of 1998, and it's
-   not changing at end of 2001.
-*/
-
-  (*edat).leap = 12;
 
   LALInitBarycenter(&stat, edat);
   printf("stat.statusCode = %d\n",stat.statusCode);
@@ -269,10 +249,6 @@ sensible in degrees, but radians)*/
     tGPS.gpsSeconds = t1998;
     tGPS.gpsSeconds +=i*3600*50;
     tGPS.gpsNanoSeconds = 0;
-
-    /* addition by dwchin - 2004-02-29 */
-    LALLeapSecs(&stat, &tmpLeap, &tGPS, &lsfas);
-    edat->leap = (INT2)tmpLeap;
 
     LALBarycenterEarth(&stat, &earth, &tGPS, edat);
     REPORTSTATUS(&stat);

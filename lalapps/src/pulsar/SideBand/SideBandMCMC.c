@@ -116,8 +116,6 @@ int main(int argc,char *argv[])
   BarycenterInput baryinput;            /* Stores detector location and other barycentering data */
   LALDetector Detector;                 /* Our detector */
   EarthState earth;
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
   ABCcoParams abcparams;
   ABCcoefficients *ABCco = NULL;
   SideBandMCMCVector **MCMCchain = NULL;       /* a vector of MCMC parameter vectors where the Markov chain is stored */
@@ -273,10 +271,6 @@ int main(int argc,char *argv[])
   /* here we set up the detector */
   /************************************************************************/
 
-  /* sort out the leap seconds */
-  LALLeapSecs(&status,&leap,&(TParams->tstart),&formatAndAcc);
-  (*edat).leap=leap;
-  
   /* select the detector */
   if(!strcmp(uvar_ifo,"G1")) {
     Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];

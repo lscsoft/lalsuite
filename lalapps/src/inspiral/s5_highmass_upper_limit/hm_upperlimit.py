@@ -25,7 +25,7 @@ from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
 from pylal import SimInspiralUtils
-from pylal.xlal.date import LIGOTimeGPS
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
@@ -158,7 +158,7 @@ class upper_limit(object):
       """
       Construct the is_playground() SQL function.
       """
-      connection.create_function("is_playground", 2, lambda seconds, nanoseconds: LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
+      connection.create_function("is_playground", 2, lambda seconds, nanoseconds: lsctables.LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
 
     create_is_playground_func(connection)
 
@@ -479,7 +479,7 @@ WHERE
 #        """
 #        Construct the is_playground() SQL function.
 #        """
-#        connection.create_function("is_playground", 2, lambda seconds, nanoseconds: LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
+#        connection.create_function("is_playground", 2, lambda seconds, nanoseconds: lsctables.LIGOTimeGPS(seconds, nanoseconds) in playground_segs)
  
 
 ######################## ACTUAL PROGRAM #######################################

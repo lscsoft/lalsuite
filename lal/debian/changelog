@@ -1,3 +1,21 @@
+lal (6.4-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.4
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 30 Sep 2009 10:00:00 +0200
+
+lal (6.3.2-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 Oct 2009 10:59:32 -0600
+
+lal (6.3.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 08 Oct 2009 17:50:41 +0200
+
 lal (6.3-1lscsoft1) unstable; urgency=low
 
   * LAL 6.3

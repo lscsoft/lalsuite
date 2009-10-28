@@ -179,7 +179,7 @@ INT4 MCMCPriorTest(
 
 int ParamInRange(LALMCMCParameter *parameter)
 {
-int i;
+UINT4 i;
 int inrange=1;
 LALMCMCParam *p=parameter->param;
 for(i=0;i<parameter->dimension;i++){
@@ -191,12 +191,12 @@ return inrange;
 }
 
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT){
-REAL8 time,mcmin,mcmax;
+REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
 REAL4 mtot,eta,mwindow,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
-time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
+trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
 REAL8 mchirp,total;
 
 /*eta = injTable->eta;*/
@@ -223,7 +223,7 @@ XLALMCMCAddParam(parameter,"mchirp",mchirp,mcmin,mcmax,0);
 /*XLALMCMCAddParam(parameter,"mtotal",gsl_rng_uniform(RNG)*100.0+50.0,50.0,150.0,0);*/
 /*XLALMCMCAddParam(parameter,"mtotal",3.0+27.0*gsl_rng_uniform(RNG),3.0,30.0,0);*/
 XLALMCMCAddParam(parameter, "eta", eta , etamin, etamax, 0);
-XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + time ,time-0.5*timewindow,time+0.5*timewindow,0);
+XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 XLALMCMCAddParam(parameter, "distMpc", 499.0*gsl_rng_uniform(RNG)+1.0, 1.0, 500.0, 0);
 XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
@@ -236,12 +236,12 @@ return;
 }
 
 void NestInitInjNINJAHighMass(LALMCMCParameter *parameter, void *iT){
-REAL8 time,mcmin,mcmax;
+REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
 REAL4 mtot,eta,mwindow,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
-time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
+trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
 REAL8 mchirp,total;
 
 /*eta = injTable->eta;*/
@@ -268,7 +268,7 @@ XLALMCMCAddParam(parameter,"mchirp",mchirp,mcmin,mcmax,0);
 /*XLALMCMCAddParam(parameter,"mtotal",gsl_rng_uniform(RNG)*100.0+50.0,50.0,150.0,0);*/
 /*XLALMCMCAddParam(parameter,"mtotal",3.0+27.0*gsl_rng_uniform(RNG),3.0,30.0,0);*/
 XLALMCMCAddParam(parameter, "eta", eta , etamin, etamax, 0);
-XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + time ,time-0.5*timewindow,time+0.5*timewindow,0);
+XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 XLALMCMCAddParam(parameter, "distMpc", 499.0*gsl_rng_uniform(RNG)+1.0, 1.0, 500.0, 0);
 XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
@@ -282,19 +282,23 @@ return;
 
 REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-  REAL8 mNS,mComp;
+  REAL8 mNS,mComp,logmc;
   REAL8 mc,eta;
   /* Priors for the GRB component masses */
 #define m1min 1.0
 #define m1max 3.0
 #define m2min 1.0
 #define m2max 35.0
+  parameter->logPrior=0.0;
   if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
+  logmc=log(mc);
+  parameter->logPrior+=-(5.0/6.0)*logmc;
+
   eta=XLALMCMCGetParameter(parameter,"eta");
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-  parameter->logPrior+=logJacobianMcEta(mc,eta);
+  /*parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
   ParamInRange(parameter);
   /*check GRB component masses */
@@ -307,7 +311,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-  REAL8 m1,m2,logdl,ampli,a=50,b=21;
+  REAL8 m1,m2;
   parameter->logPrior=0.0;
   REAL8 mc,eta;
   REAL8 minCompMass = 1.0;
@@ -333,7 +337,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
-	REAL8 m1,m2,logdl,ampli,a=50,b=21;
+	REAL8 m1,m2;
 	parameter->logPrior=0.0;
 	REAL8 mc,eta;
 	REAL8 minCompMass = 1.0;
@@ -366,106 +370,6 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
-}
-
-REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int idx)
-{
-/* Function to generate a inspiral wave using LALInspiralWave, then calculate the log
-   likelihood for a single interferometer */
-
-/* WARNING! THIS ASSUMES THAT THE DATA IN inputMCMC->stilde IS NOT MULTIPLIED BY THE
-   PSD, i.e. IT IS JUST THE WINDOWED FFT OF THE TIME SERIES. We probably want to create a new field
-   in the inputMCMC structure to hold this data to avoid confusion */
-
-	static LALStatus status;
-	InspiralTemplate template;
-	UINT4 Nmodel; /* Length of the model */
-	INT4 i;
-	int Fdomain;
-/*	memset(&status,0,sizeof(LALStatus)); */
-	REAL8 chisq=0.0;
-	REAL8 real,imag,f,t;
-	REAL8 Mchirp;
-	REAL8 eta;
-	Fdomain = 1;
-	memset(&template,0,sizeof(InspiralTemplate));
-/* Populate the template */
-	if(XLALMCMCCheckParameter(parameter,"logM")) Mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
-	else Mchirp = XLALMCMCGetParameter(parameter,"mchirp");
-	eta = XLALMCMCGetParameter(parameter,"eta");
-	template.totalMass = mc2mt(Mchirp,eta);
-	template.eta = eta;
-	template.massChoice = totalMassAndEta;
-	template.fLower = inputMCMC->fLow;
-	template.distance = XLALMCMCGetParameter(parameter,"distMpc");
-	template.order=LAL_PNORDER_TWO;
-	template.approximant=inputMCMC->approximant;
-	template.tSampling = 1.0/inputMCMC->deltaT;
-	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
-	template.nStartPad = 0;
-	template.nEndPad =0;
-	template.startPhase = XLALMCMCGetParameter(parameter,"phi");
-	template.startTime = XLALMCMCGetParameter(parameter,"time");
-	template.startTime -= inputMCMC->stilde[idx]->epoch.gpsSeconds + 1e-9*inputMCMC->stilde[idx]->epoch.gpsNanoSeconds;
-	template.ieta = 1;
-	template.next = NULL;
-	template.fine = NULL;
-
-/*fprintf(stderr,"XLALErrNoGlobal=%i\n",*XLALGetErrnoPtr());
-XLALClearErrno();*/
-
-/* Is this the correct way to set the end time? */
-/*	XLALGPSSetREAL8((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
-/* Fill the rest of the mass/tc parameters in */
-	LALInspiralParameterCalc(&status,&template);
-
-	template.startTime-=template.tC;
-
-	LALInspiralRestrictedAmplitude(&status,&template);
-
-/* Find the number of points needed to store the template - disabled */
-	/*LALInspiralWaveLength(&status,&Nmodel,template);*/
-/* Set the number of points in the template from the lengh of the data */
-
-	if(Fdomain) Nmodel=inputMCMC->stilde[idx]->data->length*2; /* *2 for real/imag packing format */
-	else	Nmodel = inputMCMC->segment[idx]->data->length;
-
-	if(model==NULL)	LALCreateVector(&status,&model,Nmodel);
-
-	LALInspiralWave(&status,model,&template); /* Create the model */
-
-	if(inputMCMC->verbose) fprintf(stderr,"duration: %fs\tfinal freq: %f Hz \n",template.tC,template.fFinal);
-/*	FILE *fp=fopen("waveform.txt","w");
-	for(i=0;i<model->length;i++) fprintf(fp,"%e %e\n",i/(Nmodel/template.tSampling),model->data[i]);
-	fclose(fp);
-	fp=fopen("data.txt","w");
-	for(i=0;i<inputMCMC->stilde[idx]->data->length;i++) fprintf(fp,"%e %e %e\n",i*inputMCMC->stilde[idx]->deltaF,inputMCMC->stilde[idx]->data->data[i].re,inputMCMC->stilde[idx]->data->data[i].im);
-	fclose(fp);
-*/
-	if(Fdomain){
-	/* model is a f-domain vector with complex representation = model[j] + i*model[Nmodel-j] */
-	int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[idx]->deltaF);
-	/* Compute the -logL */
-	for(i=lowBin;i<Nmodel/2;i++){
-		real=inputMCMC->stilde[idx]->data->data[i].re - (REAL8) model->data[i];
-		imag=inputMCMC->stilde[idx]->data->data[i].im - (REAL8) model->data[Nmodel-i];
-		chisq+=(real*real + imag*imag)*inputMCMC->invspec[idx]->data->data[i];
-/*		printf("%e\t%e\t%e\t%e\n",inputMCMC->invspec[idx]->data->data[i],real,imag,chisq); */
-	}
-	chisq*=2.0; /* for 2 sigma^2 on denominator */
-/*	LALDestroyVector(&status,&model); */ /* Free the model vector */
-	/* add the normalisation constant */
-	for(i=lowBin;i<inputMCMC->invspec[idx]->data->length-1;i++) chisq+=0.5*log(inputMCMC->invspec[idx]->data->data[i]);
-	chisq+=(REAL8)( 0.5 * (inputMCMC->invspec[idx]->data->length-lowBin) * log(2.0*LAL_PI));
-	} /* end F domain part */
-	else {
-	/* T domain part yet to be written */
-
-
-	}
-
-
-	return(-chisq);
 }
 
 REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
@@ -615,8 +519,8 @@ in the frequency domain */
 		det_resp.cross*=ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
-		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
+		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
+		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
 		
 		for(idx=lowBin;idx<=highBin;idx++){
@@ -669,14 +573,14 @@ REAL8 MCMCSTLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *p
 in the frequency domain */
 {
 	REAL8 logL=0.0;
-	int det_i;
+	UINT4 det_i;
 	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL8 resp_r,resp_i,ci;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
-	INT4 i,NtimeModel;
+	UINT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
 	REAL4FFTPlan *likelihoodPlan=NULL;
 	int Fdomain;
@@ -856,149 +760,3 @@ that LAL uses. Please check this whenever any change is made */
 	return(logL);
 }
 
-
-
-REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
-{
-	REAL8 logL=0.0;
-	int det_i,i;
-	static LALStatus status;
-	PPNParamStruc PPNparams;
-	CoherentGW co_wave; /* output structure */
-	DetectorResponse det_resp;
-	REAL4TimeSeries *template;
-	REAL8TimeSeries *cur_seg;
-	COMPLEX8FrequencySeries *Ftemplate;
-	REAL4FFTPlan *FFTplan;
-	REAL8 mchirp=0;
-	REAL8 eta=0;
-        if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
-	else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
-	eta = XLALMCMCGetParameter(parameter,"eta");
-
-
-	/* Populate input struct */
-	PPNparams.mTot=(REAL4)mc2mt(mchirp,eta);
-	PPNparams.eta=(REAL4)eta;
-	PPNparams.d=(REAL4)XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
-	PPNparams.phi=(REAL4)XLALMCMCGetParameter(parameter,"phi");
-	PPNparams.position.system=COORDINATESYSTEM_EQUATORIAL;
-	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"long");
-	PPNparams.position.latitude=XLALMCMCGetParameter(parameter,"lat");
-	PPNparams.psi=(REAL4)XLALMCMCGetParameter(parameter,"psi");
-	PPNparams.inc=(REAL4)XLALMCMCGetParameter(parameter,"iota");
-	PPNparams.deltaT=(REAL8)inputMCMC->deltaT;
-	PPNparams.fStartIn=(REAL4)inputMCMC->fLow;
-	PPNparams.fStopIn=(REAL4)0.5/inputMCMC->deltaT - 1.0;
-	PPNparams.lengthIn=0; /* Let the waveform be as long as necessary */
-	PPNparams.ppn=NULL;
-
-	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
-
-	memset(&co_wave,0,sizeof(CoherentGW)); /* Blank the output fields */
-	memset(&det_resp,0,sizeof(DetectorResponse)); /* Only need the detector field in this struct, the rest are left blank */
-
-	/* Create coherent waveform */
-	LALGeneratePPNInspiral(&status,&co_wave,&PPNparams);
-
-
-	/* Adjust time */
-	REAL8 tC=XLALMCMCGetParameter(parameter,"time");
-	tC-=PPNparams.tc; /* tC is now the time the wave reaches the low frequency */
-	XLALGPSSetREAL8(&(co_wave.a->epoch),tC); /* which is the starting epoch of the co_wave */
-	memcpy(&(co_wave.f->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
-	memcpy(&(co_wave.phi->epoch),&(co_wave.a->epoch),sizeof(LIGOTimeGPS));
-
-	FFTplan=XLALCreateForwardREAL4FFTPlan(inputMCMC->segment[0]->data->length,0);
-	/* Loop over detectors */
-	for(det_i=0;det_i<inputMCMC->numberDataStreams;det_i++)
-	{
-		cur_seg=inputMCMC->segment[det_i];
-		/* Allocate template */
-		template=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("template",&(cur_seg->epoch),cur_seg->f0,cur_seg->deltaT,&(cur_seg->sampleUnits),(size_t)cur_seg->data->length);
-		/* compute waveform in detector det_i */
-		det_resp.site=inputMCMC->detector[det_i];
-		LALSimulateCoherentGW(&status,template,&co_wave,&det_resp);
-
-		/* Calculate likelihood in that detector */
-/*		char filename[100];
-		sprintf(filename,"wave_%s.dat",inputMCMC->ifoID[det_i]);
-		FILE *fpout=fopen(filename,"w");
-		for(i=0;i<template->data->length;i++) fprintf(fpout,"%e\t%10.10e\n",i*template->deltaT,template->data->data[i]);
-		fclose(fpout);
-*/
-		for(i=0;i<template->data->length;i++) template->data->data[i]*=(REAL4)inputMCMC->window->data->data[i];
-		Ftemplate=(COMPLEX8FrequencySeries *)XLALCreateCOMPLEX8FrequencySeries("Ftemplate",
-			&(cur_seg->epoch),
-			cur_seg->f0,
-			1.0/cur_seg->deltaT,
-			&(inputMCMC->stilde[det_i]->sampleUnits),
-			(size_t)inputMCMC->stilde[det_i]->data->length);
-
-		XLALREAL4TimeFreqFFT(Ftemplate,template,FFTplan);
-/*
-		sprintf(filename,"waveF_%sdat",inputMCMC->ifoID[det_i]);
-		fpout=fopen(filename,"w");
-		int N=inputMCMC->stilde[det_i]->data->length;
-		for(i=0;i<Ftemplate->data->length;i++) fprintf(fpout,"%e\t%10.10e\t%10.10e\t%10.10e\t%10.10e\n",i*Ftemplate->deltaF,Ftemplate->data->data[i].re,Ftemplate->data->data[i].im,inputMCMC->stilde[det_i]->data->data[i].re,inputMCMC->stilde[det_i]->data->data[i].im);
-		fclose(fpout);
-*/
-		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		/* Compute the -logL */
-		REAL8 chisq=0.0;
-		for(i=lowBin;i<Ftemplate->data->length;i++){
-			REAL8 real=inputMCMC->stilde[det_i]->data->data[i].re - (REAL8) Ftemplate->data->data[i].re;
-			REAL8 imag=inputMCMC->stilde[det_i]->data->data[i].im - (REAL8) Ftemplate->data->data[i].im;
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[i];
-		}
-		chisq*=0.5; /* for 2 sigma^2 on denominator */
-		/* add the normalisation constant */
-		for(i=lowBin;i<inputMCMC->invspec[det_i]->data->length-1;i++) chisq+=0.5*log(inputMCMC->invspec[det_i]->data->data[i]);
-		chisq+=(REAL8)( 0.5 * (inputMCMC->invspec[det_i]->data->length-lowBin) * log(2.0*LAL_PI));
-
-		/* Free template */
-		XLALDestroyREAL4TimeSeries(template);
-		XLALDestroyCOMPLEX8FrequencySeries(Ftemplate);
-		logL-=chisq;
-	}
-	/* Free co_wave structures */
-
-	XLALDestroyVectorSequence((co_wave.a->data));
-	LALFree(co_wave.a);
-	XLALDestroyREAL8TimeSeries(co_wave.phi);
-	XLALDestroyREAL4TimeSeries(co_wave.f);
-	LALDestroyREAL4FFTPlan(&status,&FFTplan);
-	parameter->logLikelihood=logL;
-	return(logL);
-}
-
-
-REAL8 MCMCLikelihoodMultiIFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
-{
-	REAL8 logL=0.0;
-	int i;
-	/* Loop over detectors/datasets */
-	for(i=0;i<inputMCMC->numberDataStreams;i++) logL+= MCMCLikelihood1IFO(inputMCMC,parameter,i);
-	parameter->logLikelihood=logL;
-	return logL;
-}
-
-void MCMCInit1IFO(LALMCMCParameter *parameter, SnglInspiralTable *inspiralTable)
-{
-REAL4 mass1,mass2;
-REAL8 time,length;
-
-mass1=inspiralTable->mass1;
-mass2=inspiralTable->mass2;
-time = (REAL8)inspiralTable->end_time.gpsSeconds + (REAL8)inspiralTable->end_time.gpsNanoSeconds * 1.0e-9;
-length=(REAL8)inspiralTable->template_duration;
-time=-length;
-	parameter->param=NULL;
-	parameter->dimension=0;
-	XLALMCMCAddParam(parameter,"mass1", mass1, 0.98*mass1, 1.02*mass1,0);
-	XLALMCMCAddParam(parameter,"mass2", mass2, 0.98*mass2, 1.02*mass2,0);
-	XLALMCMCAddParam(parameter,"time",time,time-0.01,time+0.01,0);
-	XLALMCMCAddParam(parameter,"phi",0.0,0.0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"logdistance",10.0,1.0,90.0,0);
-
-}

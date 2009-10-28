@@ -108,8 +108,6 @@ int main(int argc, char **argv)
     
     /* these varibales are for converting GPS seconds into UTC time and date*/
     LALUnixDate       date;
-    /*LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;*/
-    /*LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;*/
     CHARVector        *timestamp = NULL;
     CHARVector	     *year_date = NULL; /*cg; creates a char vector*/
     REAL8Vector     *timestamps=NULL;
@@ -124,7 +122,7 @@ lalDebugLevel = 0;
 LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
 LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
-LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'I', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
+LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
 LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
 LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
@@ -134,7 +132,7 @@ LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL, "
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputBname",  'o', UVAR_OPTIONAL, "Base name of output files",   &outputBname ), &status);
 LAL_CALL(LALRegisterREALUserVar  (&status, "freqRes",      'r', UVAR_REQUIRED, "Spectrogram freq resolution", &freqres     ), &status);
 LAL_CALL(LALRegisterREALUserVar  (&status, "timeBaseline", 't', UVAR_REQUIRED, "The time baseline of sfts",   &timebaseline), &status);
-LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",  'S', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
+LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",  'P', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
 LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrEphemeris",  'S', UVAR_OPTIONAL, "pulsar ephemeris file",   &psrEphemeris ), &status);
 
 LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -523,18 +521,7 @@ for (j=0;j<nSFT;j++)
         /* set up RA, DEC, and distance variables for LALBarycenter*/
         baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
         baryinput.alpha = pulsarParams.ra + dtpos*pulsarParams.pmra/cos(baryinput.delta);
-        
-        /* set leap seconds noting that for all runs prior to S5 that the number
-        of leap seconds was 13, 1 leap seconds was added on 31st
-        Dec 2005 24:00:00 i.e. GPS 820108813, and another was added on 31st
-        Dec 2008 24:00:00 i.e. GPS 91480321 */
-        if(cur_epoch <= 820108813)
-            (*edat).leap = 13;
-        else if(cur_epoch <= 914803214)
-            (*edat).leap = 14;
-        else
-            (*edat).leap = 15;
-        
+
         t2=cur_epoch+1;
     
         baryinput2 = baryinput;

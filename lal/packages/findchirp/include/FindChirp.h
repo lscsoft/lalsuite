@@ -100,7 +100,6 @@ that implement the search.
 
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
-#include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALInspiral.h>

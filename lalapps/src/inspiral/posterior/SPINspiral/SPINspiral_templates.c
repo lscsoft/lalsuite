@@ -280,7 +280,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
     if((omega_orb>=omega_low) && (terminate==0)) {  // After source comes into window, before tc and before frequency reaches its maximum  Careful, if t<0, omega = nan!!!
       
       if(omega_orb < oldomega || omega_orb >= omega_high){  // Frequency starts decreasing, or frequency higher than highCut --> terminate signal
-	//if(omega_orb < oldomega || omega_orb >= omega_high || taperx[i]>0.09){  // Frequency starts decreasing, or frequency higher than highCut, or v_orb>0.3c --> terminate signal
+        //if(omega_orb < oldomega || omega_orb >= omega_high || taperx[i]>0.09){  // Frequency starts decreasing, or frequency higher than highCut, or v_orb>0.3c --> terminate signal
         ifo[ifonr]->FTin[i] = 0.0; 
         if(omega_orb < oldomega) terminate = 2;
         if(omega_orb >= omega_high) terminate = 3;
@@ -358,7 +358,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
         //}
 	
 	
-      }
+      }  // end if: if not (omega_orb < oldomega || omega_orb >= omega_high)
     }  //end if((omega_orb>=omega_low) && (terminate==0)) {  // After source comes into window, before tc and before frequency reaches its maximum  Careful, if t<0, omega = nan!!!
     else {
       ifo[ifonr]->FTin[i]   = 0.0;  //  (If before omega_low, after t_c or after termination)

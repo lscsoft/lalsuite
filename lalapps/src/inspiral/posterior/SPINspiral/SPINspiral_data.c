@@ -136,9 +136,9 @@ void IFOinit(struct interferometer **ifo, int networkSize, struct runPar run)
     if((ifo[ifonr]->longi) < 0.0) sprintf(longchar, "W");
     else sprintf(longchar, "E");
     if(run.beVerbose>=2) printf(" at  %1.0f*%2.1f'%s  %1.0f*%2.1f'%s  (%3.0f/%3.0f)\n",
-				floor(fabs(ifo[ifonr]->lati*r2d)),  (fabs(ifo[ifonr]->lati*r2d)-floor(fabs(ifo[ifonr]->lati*r2d)))*60.0, latchar,
-				floor(fabs(ifo[ifonr]->longi*r2d)), (fabs(ifo[ifonr]->longi*r2d)-floor(fabs(ifo[ifonr]->longi*r2d)))*60.0, longchar,
-				360.0 - ifo[ifonr]->rightArm*r2d, 360.0 - ifo[ifonr]->leftArm*r2d);
+                                floor(fabs(ifo[ifonr]->lati*r2d)),  (fabs(ifo[ifonr]->lati*r2d)-floor(fabs(ifo[ifonr]->lati*r2d)))*60.0, latchar,
+                                floor(fabs(ifo[ifonr]->longi*r2d)), (fabs(ifo[ifonr]->longi*r2d)-floor(fabs(ifo[ifonr]->longi*r2d)))*60.0, longchar,
+                                360.0 - ifo[ifonr]->rightArm*r2d, 360.0 - ifo[ifonr]->leftArm*r2d);
     if(ifo[ifonr]->ch1doubleprecision && run.beVerbose>=2) printf(" | Frame-file precision: double (64 bit)\n"); 
     else if(run.beVerbose>=2) printf(" | Frame-file precision: float (32 bit)\n"); 
     if(run.beVerbose>=2) printf(" | Frequency range: %.0f to %.0f Hz.\n", ifo[ifonr]->lowCut, ifo[ifonr]->highCut);
@@ -281,13 +281,12 @@ void IFOdispose(struct interferometer *ifo, struct runPar run)
 double* filter(int *order, int samplerate, double upperlimit, struct runPar run)
 {
   // Specify filter characteristics:
-  //int ncoef      = 129;  // number of filter coefficients... 129 should be sufficient
   int ncoef      = 129;  // number of filter coefficients... 129 should be sufficient
   int totalcoef  = ncoef+ncoef-1;   // total number of coefficients                  
   double desired[2] = {1.0, 0.0};      // desired gain                               
   double weights[2] = {1.0, 1.0};      // weight for 'loss' in pass- & stopband      
   //double transitionbandwidth=0.0125;    //0.0125 was suggested by Christian Roever via 07/30/08 e-mail
-  double transitionbandwidth=0.025;    
+  double transitionbandwidth=0.025;       //0.025 seems to be more stable (IM)
   // Place transition bandwidth half-way between upper edge of pass band, which is
   // (upperlimit/samplerate) in relative units, and new Nyquist frequency, which is
   // 0.5/downsampleFactor in relative units.
@@ -440,9 +439,9 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
     // Assemble the filename character string:
     while (((double)filestart) < to){
       if(filecount == 0)
-	sprintf(filenames, "%s/%s%ld%s", ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Fill in filename etc. for first file
+        sprintf(filenames, "%s/%s%ld%s", ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Fill in filename etc. for first file
       else
-	sprintf(filenames, "%s %s/%s%ld%s", filenames, ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Append filename etc. for following files
+        sprintf(filenames, "%s %s/%s%ld%s", filenames, ifo[ifonr]->ch1filepath, ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);  // Append filename etc. for following files
       if(run.beVerbose>=2) printf(" |   %s%ld%s\n", ifo[ifonr]->ch1fileprefix, (long)filestart, ifo[ifonr]->ch1filesuffix);
       filestart += ifo[ifonr]->ch1filesize;
       filecount += 1;
@@ -460,8 +459,8 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
     while(from < (double) filestart){
       p--;
       if(p < 0){
-	fprintf(stderr, "\n\n   ERROR before_tc (after window) : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",from,run.FrameGPSstart[ifonr][0]);
-	exit(1);
+        fprintf(stderr, "\n\n   ERROR before_tc (after window) : %f smaller than first GPS time in cache file : %d, aborting.\n\n\n",from,run.FrameGPSstart[ifonr][0]);
+        exit(1);
       }
       filestart= (long) run.FrameGPSstart[ifonr][p];
       index = p;
@@ -470,9 +469,9 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
     // Assemble the filename character string:
     while (((double)filestart) < to){
       if(filecount == 0) // Fill in filename for first file:
-	sprintf(filenames,"%s",run.FrameName[ifonr][index]);
+        sprintf(filenames,"%s",run.FrameName[ifonr][index]);
       else // Append filename for following files:
-	sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
+        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
       filestart += run.FrameLength[ifonr][index];
       filecount += 1;
       index += 1;
@@ -926,7 +925,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
     }else{
       in = (double*) fftw_malloc(sizeof(double)*N);
       for (i=0; i<N; ++i)
-	in[i] = raw[i];
+        in[i] = raw[i];
     }
     
     // Window data:

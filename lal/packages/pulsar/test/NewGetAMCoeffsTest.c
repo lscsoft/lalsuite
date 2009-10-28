@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
   /* ----- init ephemeris ----- */
   edat.ephiles.earthEphemeris = earthEphem;
   edat.ephiles.sunEphemeris = sunEphem;
-  edat.leap = 0;
   SUB ( LALInitBarycenter(&status, &edat), &status);
 
   /* ----- get timestamps ----- */
@@ -218,7 +217,6 @@ int main(int argc, char *argv[])
   amParams.das->pSource->orientation = 0.0;
   amParams.das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams.polAngle = 0;
-  amParams.leapAcc = LALLEAPSEC_STRICT;
 
   SUB (LALComputeAM ( &status, &AMold, timestamps->data, &amParams), &status);
 

@@ -65,7 +65,6 @@ The null statistic will be defined here.
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/LALDatatypes.h>
-#include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>

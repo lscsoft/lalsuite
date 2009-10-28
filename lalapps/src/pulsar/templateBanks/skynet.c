@@ -121,7 +121,6 @@ int main( int argc, char *argv[] )
   EphemerisData *eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   eph->ephiles.earthEphemeris = earth;
   eph->ephiles.sunEphemeris = sun;
-  eph->leap = 13; /* not valid for 2005 - must change */
 
   /* Set up. */
   lal_errhandler = LAL_ERR_EXIT;

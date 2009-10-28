@@ -161,7 +161,7 @@ if open_box:
         for f in files: 
           page.write(f[i].strip())
         page.write("\n")
-    except: print >>sys.stderr, "WARNING: couldn't find Range summary " + f + ", continuing"
+    except: print >>sys.stderr, "WARNING: couldn't find Range summary , continuing"
 
     page.write("\n")
     image_list = page.image_glob(base_name+'-*_volume_time.png') 

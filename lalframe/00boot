@@ -1,0 +1,106 @@
+#!/bin/sh
+
+# function to report failure
+fail () {
+  echo "!!! 00boot: $1 failed" >&2
+  exit 1
+}
+
+# help message
+helpmsg="Usage $0 [options]
+Options: [defaults in brackets after description]"
+helpmsg="$helpmsg
+  --help                        print this message"
+helpmsg="$helpmsg
+  --with-m4=M4                  use GNU-m4 program M4 [m4]"
+helpmsg="$helpmsg
+  --with-autoreconf=AUTORECONF  use autoreconf program AUTORECONF [autoreconf]"
+helpmsg="$helpmsg
+  --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
+helpmsg="$helpmsg
+  --with-autoheader=AUTOHEADER  use autoheader program AUTOHEADER [autoheader]"
+helpmsg="$helpmsg
+  --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
+helpmsg="$helpmsg
+  --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
+helpmsg="$helpmsg
+  --include-deps                pass option --include-deps to automake [no]"
+
+# process args
+while test $# -gt 0 ; do
+  option=$1
+  case "$option" in
+    -*=*) optarg=`echo "$option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) optarg= ;;
+  esac
+  case $option in
+    -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -with-m4=* | --with-m4=* ) M4="$optarg";;
+    -with-autoreconf=* | --with-autoreconf=* ) AUTORECONF="$optarg";;
+    -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
+    -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
+    -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
+    -with-autoconf=* | --with-autoconf=* ) AUTOCONF="$optarg";;
+    *) echo "unrecognized option $option"; exit 1;;
+  esac
+  shift
+done
+
+# check autotools versions
+echo "00boot: checking versions of autotools"
+M4=${M4:-"m4"}
+AUTORECONF=${AUTORECONF:-"autoreconf"}
+ACLOCAL=${ACLOCAL:-"aclocal"}
+AUTOHEADER=${AUTOHEADER:-"autoheader"}
+AUTOMAKE=${AUTOMAKE:-"automake"}
+AUTOCONF=${AUTOCONF:-"autoconf"}
+autoreconf_version="`$AUTORECONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+if test -z "$autoreconf_version"; then
+  fail "finding program autoreconf"
+fi
+if test -z "$aclocal_version"; then
+  fail "finding program aclocal"
+fi
+if test -z "$autoheader_version"; then
+  fail "finding program autoheader"
+fi
+if test -z "$automake_version"; then
+  fail "finding program automake"
+fi
+if test -z "$autoconf_version"; then
+  fail "finding program autoconf"
+fi
+
+# report autotools versions
+echo "00boot: using:"
+printf "00boot:\t%-16s %s\n" "autoreconf-$autoreconf_version:" "`which $AUTORECONF`"
+printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
+printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
+printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
+printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
+
+# run m4 to generate sources
+echo "00boot: creating sources"
+cd src || fail "creating sources in src"
+${M4} FrameSeries.m4 > FrameSeries.c || fail "creating sources in src"
+cd .. || fail "creating sources in src"
+
+# generate build system
+echo "00boot: running autoreconf"
+$AUTORECONF || fail "autoreconf"
+
+# report success
+echo "00boot: success"
+echo "
+=================================================================
+
+        00boot has been run.
+
+        Now run './configure' with appropriate options
+        to configure LAL Frame.
+
+================================================================="

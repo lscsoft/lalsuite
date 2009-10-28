@@ -233,8 +233,6 @@ int main(int argc, char *argv[]){
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = EARTHDATA;
   (*edat).ephiles.sunEphemeris = SUNDATA;
-  /* is this the right number of leap seconds? */
-  (*edat).leap = 13;
 
   /* read in ephemeris data */
   SUB( LALInitBarycenter( &status, edat), &status);

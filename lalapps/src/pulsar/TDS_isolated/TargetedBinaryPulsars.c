@@ -623,7 +623,6 @@ main( int argc, char *argv[])
 	
 	/* set up LALBarycenter */
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));    
-  (*edat).leap = 13; 
   sprintf(earthfile,"%s/earth03-06.dat",argv[2]);
   sprintf(sunfile,"%s/sun03-06.dat",argv[2]);
   (*edat).ephiles.earthEphemeris = earthfile;
@@ -817,8 +816,6 @@ pname[i_pulsar],argv[4],starts[1]);
 			
 	 		/* set binary params */
 	 		params.binaryInput.tbflag = "GPS";
-		 	params.binaryInput.leapSecs = 13;
-	 
 	 		params.binaryParams.T0 = T0[i_pulsar];
 	 		params.binaryParams.Tasc = Tasc[i_pulsar];
 	 		params.binaryParams.Pb = Pb[i_pulsar];

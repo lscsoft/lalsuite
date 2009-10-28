@@ -1245,6 +1245,10 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 parser.add_option("-w", "--write-script", action="store_true", default=False,
       help="write the workflow to a locally executable script")
 
+parser.add_option("--summary-first-coinc-triggers", action='store_true', default=False,\
+    help="coire (first coincidence) files containing triggers from the whole run. "
+    "Use with care, as files can become very large.")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -1615,14 +1619,34 @@ sire_summary_job = inspiral.SireJob(cp)
 sire_summary_job.set_sub_file( basename + '.sire_summary' + subsuffix )
 
 # coire:
-coire_job = inspiral.CoireJob(cp)
-coire_job.set_sub_file( basename + '.coire' + subsuffix )
-coire_slide_job = inspiral.CoireJob(cp)
-coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
-coire_summary_job = inspiral.CoireJob(cp)
-coire_summary_job.set_sub_file( basename + '.coire_summary' + subsuffix )
-coire_slide_summary_job = inspiral.CoireJob(cp)
-coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
+coire_job = inspiral.CoireJob(cp, opts.dax)
+if opts.ringdown:
+  coire_job.set_exec_name('coincringread')
+  coire_job.set_sub_file( basename + '.coincringread' + subsuffix )
+else:
+  coire_job.set_sub_file( basename + '.coire' + subsuffix )
+
+coire_slide_job = inspiral.CoireJob(cp, opts.dax)
+if opts.ringdown:
+  coire_slide_job.set_exec_name('coincringread')
+  coire_slide_job.set_sub_file( basename + '.coincringread_slide' + subsuffix )
+else:
+  coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
+
+coire_summary_job = inspiral.CoireJob(cp, opts.dax)
+if opts.ringdown:
+  coire_summary_job.set_exec_name('coincringread')
+  coire_summary_job.set_sub_file( basename + '.coincringread_summary' + subsuffix )
+else:
+  coire_summary_job.set_sub_file( basename + '.coire_summary' + subsuffix )
+
+coire_slide_summary_job = inspiral.CoireJob(cp, opts.dax)
+if opts.ringdown:
+  coire_slide_summary_job.set_exec_name('coincringread')
+  coire_slide_summary_job.set_sub_file( basename + '.coincringread_slide_summary' + \
+      subsuffix )
+else:
+  coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
     subsuffix )
 
 # coire2:
@@ -2069,6 +2093,12 @@ for ifos in ifo_coincs:
         opts.coire_coincidence, opts.coincidence, ifos, inj_file=inj_file, 
         ifotag="FIRST", usertag=usertag, inspinjNode=inspinj) 
   
+    if len(coinc_nodes[ifos]):
+      coire_segments(coinc_nodes[ifos], coire_summary_job, dag,
+          opts.summary_first_coinc_triggers, 
+          opts.coire_coincidence, ifos, gps_start_time, gps_end_time, 
+          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, 
+          write_input_file = True,inspinjNode=inspinj)
 
 
   # Step 6 slide: Time slides 
@@ -2088,10 +2118,16 @@ for ifos in ifo_coincs:
         do_coire=opts.coire_coincidence, ifotag=ifotag, slides=num_slides )
 
     if not doExtTrig:
-      coire_segments_individually(coinc_slide_nodes[ifos], coire_slide_job, 
-          dag, opts.coire_coincidence, opts.coincidence, ifos, 
+      coinc_slide_nodes[ifos]=coire_segments_individually(coinc_slide_nodes[ifos], 
+          coire_slide_job, dag, opts.coire_coincidence, opts.coincidence, ifos, 
           inj_file = inj_file, num_slides = num_slides, ifotag="FIRST", 
           usertag=usertag,inspinjNode=inspinj)
+      if len(coinc_slide_nodes[ifos]):
+        coire_segments(coinc_slide_nodes[ifos], coire_slide_summary_job, dag,
+            opts.summary_first_coinc_triggers,
+            opts.coire_coincidence, ifos, gps_start_time, gps_end_time,
+            inj_file=inj_file, num_slides = num_slides, ifotag="SUMMARY_FIRST_" + ifos, 
+            usertag=usertag, write_input_file = True,inspinjNode=inspinj)
 
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
@@ -2198,11 +2234,11 @@ for ifos in ifo_coincs:
           inspinjNode=inspinj)
  
       if len(coire2_nodes[ifos]):
-        coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
-            opts.summary_coinc_triggers, 
-            opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
-            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
-            write_input_file = True,inspinjNode=inspinj)
+         coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
+             opts.summary_coinc_triggers, 
+             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
+             inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
+             write_input_file = True,inspinjNode=inspinj)
 
       for ifo in ifo_list:
         if ifo in ifos: 
