@@ -4,7 +4,7 @@ function separate(type, file_list )
 %
 % NULL = separate ( type, file_list )
 % 
-% separte breaks trigger files into subfiles (stored as .mat binaries) for each type of trigger: H1H2 doubles, 
+% separte breaks trigger files into subfiles (stored as .mat binaries) for each type of trigger: H1H2 doubles,
 % H1H2L1 triples, etc.
 % 
 % type = 'bg', 'inj', 'pg', 'int'
@@ -23,7 +23,7 @@ N_files = length(file_list(:,1));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% read in the file(s) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% read injection files  
+% read injection files
   if strcmp(type,'inj')
     %create the structure by reading in the first file
     eval(['coincs=readMeta(file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
@@ -33,7 +33,7 @@ N_files = length(file_list(:,1));
     end
     coincs.run=transpose(coincs.run);
 
-    % read in the rest of the injection files  
+    % read in the rest of the injection files
     for i=2:N_files
       eval(['coincsi=readMeta( file_list(i,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
       for k=1:length(coincsi.snr)
@@ -86,7 +86,7 @@ N_files = length(file_list(:,1));
 % create an index which is the same for each member of a triple or double
   j=1;
   coincs.ind(1)=1;
-  for i=2:length(coincs.f)  
+  for i=2:length(coincs.f)
     if strcmp(coincs.id(i),coincs.id(i-1))
       coincs.ind(i)=j;
     else
@@ -94,7 +94,7 @@ N_files = length(file_list(:,1));
       coincs.ind(i)=j;
     end
   end
-   
+ 
 
 % spilt the triggers into double and triples
 i=1;
@@ -350,7 +350,7 @@ if double>0
   trigH1inH2d.ds2_h2l1=trigH1d.ds2_h2l1(H1);
   trigH1inH2d.run=trigH1d.run(H1);
   trigH1inH2d.dst=trigH1d.dst(H1);
-  
+ 
   eval(['save ' type 'H1inH2_doub.mat -struct trigH1inH2d'])
 
   trigH2inH1d.ind=trigH2d.ind(H2);
