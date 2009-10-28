@@ -30,7 +30,7 @@
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
-
+#include <lal/Date.h>
 
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8), 
