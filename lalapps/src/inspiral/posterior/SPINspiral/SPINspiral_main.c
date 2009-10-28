@@ -27,7 +27,7 @@
 
 #include <SPINspiral.h>
 
-
+double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 
 /**
  * \mainpage documentation
@@ -48,7 +48,7 @@
 int main(int argc, char* argv[])
 {
   printf("\n\n   Starting SPINspiral...\n");
-  printf("   Compiled from source code version $Id: SPINspiral_main.c 225 2009-10-23 00:10:48Z sluys $ \n");
+  printf("   Compiled from source code version $Id: SPINspiral_main.c 227 2009-10-28 09:04:49Z vivien $ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0,injectionWF=0,mcmcWF=0;
