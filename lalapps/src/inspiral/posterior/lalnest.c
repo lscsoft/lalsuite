@@ -39,7 +39,7 @@
 [... -i FC -I IFO for as many data sources as desired] --seed i [integer, default use date] --dataseed i [for fake data]\n \
 --pad padding (1s) --Nsegs number of segments --deta width of eta window --dt time window (0.01)\n\
 --XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
---event trigNum (0) --end_time GPStime --Mmin m --Mmax M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2)]\n \
+--event trigNum (0) --end_time GPStime --Mmin m --Mmax M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2|AmpCorPPN|IMRPhenomA)]\n \
 --timeslide --studentt (use student-t likelihood function)\n \
 [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
 
@@ -700,12 +700,13 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 	
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomA";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomA"; CHAR AMPCOR[]="AmpCorPPN";
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
 	else if(!strcmp(approx,TT2)) inputMCMC.approximant=TaylorT2;
 	else if(!strcmp(approx,TT3)) inputMCMC.approximant=TaylorT3;
 	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomA;
+	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}
 	
 	/* Set the initialisation and likelihood functions */
@@ -719,6 +720,7 @@ int main( int argc, char *argv[])
 doneinit:
 	if(studentt) inputMCMC.funcLikelihood = MCMCSTLikelihoodMultiCoherentF;
 	else inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
+	if(inputMCMC.approximant==AmpCorPPN) inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor;
 	
 	inputMCMC.funcPrior = NestPrior;
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
