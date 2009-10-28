@@ -394,7 +394,7 @@ void Search(int r, int Ext[],
             { 
               alt = 0;
               break;              /* Ooops, found two non-alternating */
-	    }                      /* extrema.  Delete smallest of them */
+            }                      /* extrema.  Delete smallest of them */
         }  /* if the loop finishes, all extrema are alternating */
       
       /*

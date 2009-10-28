@@ -896,7 +896,10 @@ for grb in ext_trigs:
       # add these two files to the regular main cache 
       hipe_caches.append(ligolw_added_cache_filename)
   
-  grb_cache_name = idirectory + "/" + idirectory + ".cache"
+  if opts.user_tag:
+    grb_cache_name = idirectory + "/" + idirectory +"_"+ opts.cache_tag+".cache"	
+  else:
+    grb_cache_name = idirectory + "/" + idirectory + ".cache"
   concatenate_files(hipe_caches, grb_cache_name)
   grb_caches.append(grb_cache_name)
 

@@ -3,12 +3,12 @@
 # Configuration Script for the coherent followup pipeline.
 
 foreach {var value} {
-	search_name  "pf_S5_test4"
+	search_name  "pf_S5_outliers1"
 	work_dir  "/archive/home/josephb/PowerFluxFollowUpResamp/$search_name"
 	
 	fstat_binary  "/archive/home/josephb/PowerFluxFollowUpResamp/lalapps_ComputeFStatistic_resamp_orig"
 
-	parameter_source_file  "/archive/home/josephb/PowerFluxFollowUpResamp/test_run1.csv"
+	parameter_source_file  "/archive/home/josephb/PowerFluxFollowUpResamp/test_outliers1.csv"
 
 	ra_band  0.05
 	dec_band  0.05
@@ -21,7 +21,7 @@ foreach {var value} {
 	f2 0
 	f3 0
 	
-	coherence_time  "[expr 1*24*60*60]"
+	coherence_time  "[expr 14*24*60*60]"
 	param_time  846885755
 	start_time  815155213
 	end_time  877824097
@@ -40,7 +40,7 @@ foreach {var value} {
 	metric_type  1
 	mismatch  0.15
 	
-	max_number_of_jobs  500
+	max_number_of_jobs  1
 	SFT_length  1800
 	
 	frequency_band_wings  2.0
@@ -62,7 +62,8 @@ foreach {var value} {
 	false_alarm_results_directory "$work_dir/false_alarm"
 	events_directory "$work_dir/events"
 	script_dir  "/archive/home/josephb/PowerFluxFollowUpResamp"
-	
+	psd_dir "/archive/home/josephb/freq_band_psd"
+
 	main_dag_file_name "$work_dir/${search_name}.dag"
 	main_condorA_sub "$work_dir/${search_name}_prepare.sub"
 	main_condorB_sub "$work_dir/${search_name}_submit.sub"
@@ -86,6 +87,8 @@ error = $work_dir/std_out_err/node_${search_name}_A.err.\$(JobID)
 log = ${log_file_dir}/${search_name}.log
 notify_user=jcbetzwieser@gmail.com
 arguments = \$(arglist)
+requirements = Memory > 500
+should_transfer_files = NO
 queue
 }
 
@@ -98,5 +101,7 @@ error = $work_dir/std_out_err/node_${search_name}_B.err.\$(JobID)
 log = ${log_file_dir}/${search_name}.log
 notify_user=jcbetzwieser@gmail.com
 arguments = \$(arglist)
+requirements = Memory > 500
+should_transfer_files = NO
 queue
 }
