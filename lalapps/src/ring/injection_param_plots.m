@@ -7,7 +7,7 @@ function injection_param_plots( type, file_list )
 %
 % type = 'RINGDOWN', 'EOBNR', 'PHENOM'
 %
-% 
+%
 % Sarah Caudill, Oct 28th 2009
 
 N_files=length(file_list(:,1));
@@ -27,7 +27,7 @@ N_files=length(file_list(:,1));
   end
 
   %============== Injection Parameter Plots ==============%
-  
+ 
   %%%%%%%%%%%%%%%%%% QUALITY VS FREQUENCY %%%%%%%%%%%%%%%%
 
   figure
