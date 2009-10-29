@@ -212,23 +212,22 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   }
 
-  /* apply a frequency shift to the data  */ 
-  if ( (multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS(multiSFTs,&start,&end)) == NULL ) {
-    LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-  }
-
   /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
-  if (0)
+  if (1)
     {
-      
-      REAL8 shift = fmod(fstatVector->f0 - f0,fstatVector->deltaF);
+      REAL8 diff = multiTimeseries->data[0]->f0 - fstatVector->f0;
+      UINT4 bins = (UINT4)floor(0.5 + diff/fstatVector->deltaF);
+      REAL8 shift = diff - fstatVector->deltaF*bins;
       printf("Shift = %6.12f Hz\n",shift);
-      if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      printf("time series heterodyne freq = %6.12f\n",multiTimeseries->data[0]->f0);
+      printf("requested first frequency = %6.12f\n",fstatVector->f0);
+     
+      if (shift != 0.0) {
+	if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
+	  LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	  ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+	}
       }
-      
     }
  
   /* recompute the multidetector states for the possibly time shifted SFTs */
@@ -1885,7 +1884,7 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	/**< [in/out] tim
     } /* for k < numBins */
 
   /* adjust timeseries heterodyne frequency to the shift */
-  (*x)->f0 += shift;
+  (*x)->f0 -= shift;
   printf("new f0 = %6.12f\n",(*x)->f0);
 
   return XLAL_SUCCESS;
