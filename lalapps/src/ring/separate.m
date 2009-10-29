@@ -1,7 +1,7 @@
-function separate(trig_type, inj_type, file_list )
+function separate(trig_type, inj_type, veto_type, file_list )
 
 %
-% NULL = separate ( trip_type, inj_type, file_list )
+% NULL = separate ( trig_type, inj_type, veto_type, file_list )
 %
 % separate breaks trigger files into subfiles (stored as .mat binaries) for each type of trigger: H1H2 doubles,
 % H1H2L1 triples, etc.
@@ -11,6 +11,8 @@ function separate(trig_type, inj_type, file_list )
 %
 % inj_type = 'EOBNR', 'PHENOM', 'RINGDOWN', 'ALL', for injections,
 %             0 for background, playground, intime
+% veto_type= 'NOVETO', 'CAT2', 'CAT23'
+%
 % file_list
 %     is a column vector of filenames, typically output of lalapps_coincringread that you wish to separate.
 %
@@ -18,7 +20,7 @@ function separate(trig_type, inj_type, file_list )
 %
 % file_list = {'injH1H2L1coincs_m1-3.xml'; 'injH1H2L1coincs_m4-6.xml'};
 % note that curly brackets {} are necessary, as otherwise file names with varying lengths cannot be read in
-% separte( 'inj', file_list );
+% separate( 'inj', 'EOBNR','CAT2', file_list );
 %
 
 N_files = length(file_list(:,1));
@@ -231,13 +233,13 @@ end
 % save as a mat file
 if triple
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H1_trip.mat -struct trigH1t'])
-    eval(['save ' trig_type '' inj_type 'H2_trip.mat -struct trigH2t'])
-    eval(['save ' trig_type '' inj_type 'L1_trip.mat -struct trigL1t'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H1trip.mat -struct trigH1t'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H2trip.mat -struct trigH2t'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_L1trip.mat -struct trigL1t'])
   else
-    eval(['save ' trig_type 'H1_trip.mat -struct trigH1t'])
-    eval(['save ' trig_type 'H2_trip.mat -struct trigH2t'])
-    eval(['save ' trig_type 'L1_trip.mat -struct trigL1t'])
+    eval(['save ' veto_type '_' trig_type '_H1_trip.mat -struct trigH1t'])
+    eval(['save ' veto_type '_' trig_type '_H2_trip.mat -struct trigH2t'])
+    eval(['save ' veto_type '_' trig_type '_L1_trip.mat -struct trigL1t'])
   end
 end
 
@@ -304,13 +306,13 @@ if double>0
 %{
 % save as mat file
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H1d.mat -struct trigH1d'])
-    eval(['save ' trig_type '' inj_type 'H2d.mat -struct trigH2d'])
-    eval(['save ' trig_type '' inj_type 'L1d.mat -struct trigL1d'])
+    eval(['save ' veto_type '' trig_type '' inj_type 'H1d.mat -struct trigH1d'])
+    eval(['save ' veto_type '' trig_type '' inj_type 'H2d.mat -struct trigH2d'])
+    eval(['save ' veto_type '' trig_type '' inj_type 'L1d.mat -struct trigL1d'])
   else
-    eval(['save ' trig_type 'H1d.mat -struct trigH1d'])
-    eval(['save ' trig_type 'H2d.mat -struct trigH2d'])
-    eval(['save ' trig_type 'L1d.mat -struct trigL1d'])
+    eval(['save ' veto_type '' trig_type 'H1d.mat -struct trigH1d'])
+    eval(['save ' veto_type '' trig_type 'H2d.mat -struct trigH2d'])
+    eval(['save ' veto_type '' trig_type 'L1d.mat -struct trigL1d'])
   end
 %}
 
@@ -332,9 +334,9 @@ if double>0
   trigH1inL1d.dst=trigH1d.dst(H1);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H1inL1_doub.mat -struct trigH1inL1d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H1inL1doub.mat -struct trigH1inL1d'])
   else
-    eval(['save ' trig_type 'H1inL1_doub.mat -struct trigH1inL1d'])
+    eval(['save ' veto_type '_' trig_type '_H1inL1doub.mat -struct trigH1inL1d'])
   end
 
   trigL1inH1d.ind=trigL1d.ind(L1);
@@ -353,9 +355,9 @@ if double>0
   trigL1inH1d.dst=trigL1d.dst(L1);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'L1inH1_doub.mat -struct trigL1inH1d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_L1inH1doub.mat -struct trigL1inH1d'])
   else
-    eval(['save ' trig_type 'L1inH1_doub.mat -struct trigL1inH1d'])
+    eval(['save ' veto_type '_' trig_type '_L1inH1doub.mat -struct trigL1inH1d'])
   end
 
 % put the H1H2 doubles in a structure
@@ -376,9 +378,9 @@ if double>0
   trigH1inH2d.dst=trigH1d.dst(H1);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H1inH2_doub.mat -struct trigH1inH2d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H1inH2doub.mat -struct trigH1inH2d'])
   else
-    eval(['save ' trig_type 'H1inH2_doub.mat -struct trigH1inH2d'])
+    eval(['save ' veto_type '_' trig_type '_H1inH2doub.mat -struct trigH1inH2d'])
   end
 
   trigH2inH1d.ind=trigH2d.ind(H2);
@@ -397,9 +399,9 @@ if double>0
   trigH2inH1d.dst=trigH2d.dst(H2);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H2inH1_doub.mat -struct trigH2inH1d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H2inH1doub.mat -struct trigH2inH1d'])
   else
-    eval(['save ' trig_type 'H2inH1_doub.mat -struct trigH2inH1d'])
+    eval(['save ' veto_type '_' trig_type '_H2inH1doub.mat -struct trigH2inH1d'])
   end
 
 % put the L1H2 doubles in a structure
@@ -420,9 +422,9 @@ if double>0
   trigL1inH2d.dst=trigL1d.dst(L1);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'L1inH2_doub.mat -struct trigL1inH2d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_L1inH2doub.mat -struct trigL1inH2d'])
   else
-    eval(['save ' trig_type 'L1inH2_doub.mat -struct trigL1inH2d'])
+    eval(['save ' veto_type '_' trig_type '_L1inH2doub.mat -struct trigL1inH2d'])
   end
 
   trigH2inL1d.ind=trigH2d.ind(H2);
@@ -441,9 +443,9 @@ if double>0
   trigH2inL1d.dst=trigH2d.dst(H2);
 
   if strcmp(trig_type,'inj')
-    eval(['save ' trig_type '' inj_type 'H2inL1_doub.mat -struct trigH2inL1d'])
+    eval(['save ' veto_type '_' trig_type '_' inj_type '_H2inL1doub.mat -struct trigH2inL1d'])
   else
-    eval(['save ' trig_type 'H2inL1_doub.mat -struct trigH2inL1d'])
+    eval(['save ' veto_type '_' trig_type '_H2inL1doub.mat -struct trigH2inL1d'])
   end
 end
 
