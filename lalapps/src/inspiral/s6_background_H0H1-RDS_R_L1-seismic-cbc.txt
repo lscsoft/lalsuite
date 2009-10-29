@@ -42,7 +42,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -58,7 +58,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -74,7 +74,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -90,7 +90,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -106,7 +106,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -122,7 +122,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -138,7 +138,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -154,7 +154,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -170,7 +170,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -186,7 +186,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -202,7 +202,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -218,7 +218,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -234,7 +234,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -250,7 +250,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 {
@@ -266,7 +266,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              0
+  alwaysPlotFlag:              1
 }
 
 
