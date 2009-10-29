@@ -597,7 +597,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       injType = config.get(hipeDir,"injection-type")
       hipecp.set("inspiral","injection-type",injType)
       hipecp.remove_option("inspinj","injection-type")
-      if injType == "ringdown":
+      if injType == "RINGDOWN":
         executable = "../executables/lalapps_rinj"
         hipecp.set("condor","inspinj",executable)
     hipecp.remove_section(hipeDir)
