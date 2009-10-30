@@ -149,6 +149,18 @@ void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
 
 
 /* <lalVerbatim file="FindChirpBankVetoCP"> */
+
+/*
+|
+|  XLALFindChirpCreateSubBanks takes a linked list of InspiralTemplates
+|  and breaks the templates up into groups of roughly the same size.
+|  Each group is called a subbank.  The subbanks are disjoint so that 
+|  each template belongs to exactly one subbank.  The function returns
+|  a pointer to the first element
+|
+|
+*/
+
 FindChirpSubBank*
 XLALFindChirpCreateSubBanks(
     UINT4                      *maxSubBankSize,
@@ -168,6 +180,7 @@ XLALFindChirpCreateSubBanks(
   InspiralTemplate     *nextTmplt = NULL;
 
   numSubBanks = bankSize / subBankSize;
+  subBankRemainder = bankSize % subBankSize;
 
   /* if there are no templates return NULL */
   if ( ! bankSize )
@@ -184,7 +197,12 @@ XLALFindChirpCreateSubBanks(
     return subBankHead;
   }
 
-  subBankRemainder = bankSize % subBankSize;
+  /* determine whether all subBanks are the same size */
+  *maxSubBankSize = subBankSize;
+  if ( subBankRemainder )
+  {
+    *maxSubBankSize = subBankSize + 1; 
+  }
 
   /* create an array of subbank sizes with the minimum size */
   bankSizes = (UINT4 *) LALCalloc( numSubBanks, sizeof(UINT4) );
@@ -209,7 +227,6 @@ XLALFindChirpCreateSubBanks(
   }
 
   /* allocate storage for the subbanks */
-  *maxSubBankSize = 0;
   for ( i = 0; i < numSubBanks; ++i )
   {
     if ( ! subBankHead )
@@ -225,11 +242,6 @@ XLALFindChirpCreateSubBanks(
 
     thisSubBank->subBankSize = bankSizes[i];
 
-    /* store the size of the biggest bank */
-    if ( bankSizes[i] > *maxSubBankSize )
-    {
-      *maxSubBankSize = bankSizes[i];
-    }
   }
 
   /* chop up the template bank into subbanks */
@@ -307,21 +319,29 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                     REAL4 deltaT )
 
 {
-  UINT4 i,j,k,iMax,jMax,correctFlag;
-  UINT4 iSize = bankVetoData->length;
-  UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
-  REAL8 ABr, ABi, sqResp, normfac; 
-  REAL8 Br = 0;
-  REAL8 Bi = 0;
-  UINT4 stIX = floor( fLow / deltaF );
-  REAL4 deltaChirp;
-  double fLowChirp = 150.0;
+  REAL8 tmpltAreal = 0;  // temporary variables that hold the real and imaginary parts
+  REAL8 tmpltAimag = 0;  //  of the two templates, which will be multiplied together
+  REAL8 tmpltBreal = 0;  //  and added to the cross-correlation integral
+  REAL8 tmpltBimag = 0; 
+
+  REAL8 crossCorrABreal; // the cumulative real and imaginary parts of the cross-correlation
+  REAL8 crossCorrABimag; //  integral int( A*(f)B(f)/Sn(f) )df  /* FIXME TO GET CONJUGATION IN RIGHT PLACE */
+
+  REAL8 sqResp, normfac; /* FIXME what do I do? */
+
+  UINT4 i,j,k,iMax,jMax,correctFlag;  
+  UINT4 iSize = bankVetoData->length; // maximum number of templates in subbank
+  UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length; // template length in sample points
+
+  UINT4 stIX = floor( fLow / deltaF );  // index of start of integration
+  REAL4 deltaChirp;         // difference between chirp times of the two templates
+  double fBucket = 150.0;   // approximate frequency of the PSD bucket
 
   /* FIXME this should be a command line argument */
   bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
 
   /* if there isn't alread memory allocated for workspace and the autocorrelation 
-   * then do it
+   * then allocate it
    */
   if ( !bankVetoData->acorr ) bankVetoData->acorr = XLALCreateREAL4Vector((tmpLen-1) * 2);
   if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpLen);
@@ -332,24 +352,28 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   /* deltaT is unused in this function */
   UNUSED(deltaT);
 
+  /*
+   * Compute the chirp time from fBucket for each template in the subbank.
+   * We will use the chirp time to offset the templates so that they 
+   * enter the bucket at the same time. 
+   * 
+   */
   for ( i = 0; i < iSize; i++ )
-    {
+  {
       /* FIXME find actual lal function */
       if ( i < vetoBank->subBankSize )
-	{
-      bankVetoData->tchirp->data[i] = (REAL4) chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
-							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
-							     fLowChirp,
-							     bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
-							     7);
-	}
-      else
-	{
-	bankVetoData->tchirp->data[i] = (REAL4) 0;
-	}
-    }
+      {
+	  bankVetoData->tchirp->data[i] = (REAL4) chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
+									       bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
+									       fBucket,
+									       bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
+									       7);
+      }
+      else { bankVetoData->tchirp->data[i] = (REAL4) 0; }
+  }
 
 
+  /* Compute the cross-correlation between template i and template j */
   for ( i = 0; i < iSize; i++ )
   {
     correctFlag = 1;
@@ -357,25 +381,18 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     {
       /* FIXME find an XLAL Function to do this?*/
       if (i == j) memset(bankVetoData->workspace->data, 0, bankVetoData->workspace->length * sizeof(COMPLEX8));
-      if ( (i >= vetoBank->subBankSize) || (j >= vetoBank->subBankSize) )
+
+      if ( (i < vetoBank->subBankSize) && (j < vetoBank->subBankSize) )
       {
-        bankVetoData->ccMat->data[i*iSize + j].re = 0.0;
-        bankVetoData->ccMat->data[j*iSize + i].re = 0.0;
-        bankVetoData->ccMat->data[i*iSize + j].im = 0.0;
-        bankVetoData->ccMat->data[j*iSize + i].im = 0.0;
-        bankVetoData->normMat->data[i*iSize + j] = 0.0;
-        bankVetoData->normMat->data[j*iSize + i] = 0.0;
-      }
-      else
-      {
-        /* find the ending sample point of the templates */
-        iMax = bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal / deltaF;
-        jMax = bankVetoData->fcInputArray[j]->fcTmplt->tmplt.fFinal / deltaF;
-        ABr = ABi = 0;
-        for ( k = stIX; k < tmpLen-1; k++ )
-        {
-          if ( (k > iMax) || (k > jMax) ) break;
-          sqResp = ( bankVetoData->resp->data[k].re *
+	  /* find the ending sample point of the templates */
+	  iMax = bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal / deltaF;
+	  jMax = bankVetoData->fcInputArray[j]->fcTmplt->tmplt.fFinal / deltaF;
+	  
+	  ABr = ABi = 0;
+	  for ( k = stIX; k < tmpLen-1; k++ )
+	  {
+ 	      if ( (k > iMax) || (k > jMax) ) break;
+	      sqResp = ( bankVetoData->resp->data[k].re *
                      bankVetoData->resp->data[k].re +
                      bankVetoData->resp->data[k].im *
                      bankVetoData->resp->data[k].im ) * dynRange * dynRange;
@@ -383,17 +400,17 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
           if ( bankVetoData->spec->data[k] != 0 && sqResp != 0 )
           {
             /* Convention is that i is 'in the data' */
-            Br = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re /
+            tmpltBreal = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re /
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
-            Bi = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im /
+            tmpltBimag = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im /
                  ( bankVetoData->spec->data[k] * sqResp ) *
                  params->ampVec->data[k] * params->ampVec->data[k];
 
 	    deltaChirp = bankVetoData->tchirp->data[i] - bankVetoData->tchirp->data[j];
 
-            ABr +=    cos(2*LAL_PI*k*deltaF*deltaChirp)*(bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
+            ABr +=    (bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re*Br
 		            +   bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im*Bi)
 	            - sin(2*LAL_PI*k*deltaF*deltaChirp)*(Br*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im
 		            +   Bi*bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re);
@@ -431,6 +448,19 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
         /* the convention is that i is in the data */
         bankVetoData->normMat->data[j*iSize + i] = (REAL4) ABr;
       }
+      else
+      {
+        bankVetoData->ccMat->data[i*iSize + j].re = 0.0;
+        bankVetoData->ccMat->data[j*iSize + i].re = 0.0;
+        bankVetoData->ccMat->data[i*iSize + j].im = 0.0;
+        bankVetoData->ccMat->data[j*iSize + i].im = 0.0;
+        bankVetoData->normMat->data[i*iSize + j] = 0.0;
+        bankVetoData->normMat->data[j*iSize + i] = 0.0;
+      }
+
+
+
+
     }
   } /* end loop over templates */
 

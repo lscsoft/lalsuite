@@ -2183,6 +2183,8 @@ int main( int argc, char *argv[] )
      *
      */
 
+
+    /* Analyze all templates from a given subbank at once. */
     for ( subBankCurrent = subBankHead, thisTemplateIndex = 0;
         subBankCurrent;
         subBankCurrent = subBankCurrent->next, thisTemplateIndex++ )
@@ -2520,7 +2522,6 @@ int main( int argc, char *argv[] )
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
           dynRange, fLow, spec.deltaF, chan.deltaT);
           ccFlag = 0;
-	  fprintf(stdout,"done");
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
