@@ -223,6 +223,22 @@ class InspiralJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
+class PTFInspiralJob(InspiralAnalysisJob):
+  """
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
+  are read from the sections [data] and [inspiral] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specfied in the ini file. The path to the executable
+  is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'coh_PTF_inspiral'
+    sections = ['coh_PTF_inspiral']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 class TrigbankJob(InspiralAnalysisJob):
   """
@@ -857,6 +873,37 @@ class InspiralNode(InspiralAnalysisNode):
     """
     return self.__injections
 
+class PTFInspiralNode(InspiralAnalysisNode):
+  """
+  An InspiralNode runs an instance of the inspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__injections = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+
+  def set_output(self):
+    self.add_var_opt('output-file',self.get_output_base()+ '.xml.gz')
+
+  def set_injections(self, injections):
+    """
+    Set the injection file for this node
+    """
+    self.__injections = injections
+    self.add_var_opt('injection-file', injections)
+    self.add_input_file(injections)
+
+  def get_injections(self):
+    """
+    Returns the injection file
+    """
+    return self.__injections
 
 class TrigbankNode(InspiralAnalysisNode):
   """
