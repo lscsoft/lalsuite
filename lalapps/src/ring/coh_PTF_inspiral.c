@@ -8,26 +8,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/Date.h>
-#include <lal/RealFFT.h>
-#include <lal/Ring.h>
-#include <lal/FrameStream.h>
-#include <lal/LALInspiral.h>
-#include <lal/FindChirpDatatypes.h>
-#include <lal/FindChirp.h>
-#include <lal/FindChirpPTF.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/DetectorSite.h>
-#include <lal/TimeDelay.h>
-#include <lal/DetResponse.h>
-#include <lal/TimeSeries.h>
-#include <lal/Units.h>
+#include "coh_PTF.h"
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -36,8 +17,6 @@
 #include "spectrm.h"
 #include "segment.h"
 #include "errutil.h"
-
-#include "coh_PTF.h"
 
 RCSID( "$Id$" );
 #define PROGRAM_NAME "lalapps_coh_PTF_inspiral"
@@ -105,15 +84,38 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
     REAL8                   *Fcross,
-    INT4                    segmentNumber
+    INT4                    segmentNumber,
+    REAL4TimeSeries         *pValues[10],
+    REAL4TimeSeries         *gammaBeta[2]
     );
 void cohPTFaddTriggers(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
+    MultiInspiralTable      **thisEvent,
     REAL4TimeSeries         *cohSNR,
     InspiralTemplate        PTFTemplate,
-    UINT4                   *eventId);
-
+    UINT4                   *eventId,
+    UINT4                   spinTrigger,
+    REAL4TimeSeries         *pValues[10],
+    REAL4TimeSeries         *gammaBeta[2]
+    );
+static void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
+    ProcessParamsTable      *procpar,
+    REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *revplan,
+    COMPLEX8FFTPlan         *invPlan,
+    REAL4TimeSeries         *channel[LAL_NUM_IFO],
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO],
+    RingDataSegments        *segments[LAL_NUM_IFO],
+    MultiInspiralTable      *events,
+    InspiralTemplate        *PTFbankhead,
+    FindChirpTemplate       *fcTmplt,
+    FindChirpTmpltParams    *fcTmpltParams,
+    FindChirpInitParams     *fcInitParams,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO]
+    );
 
 int main( int argc, char **argv )
 {
@@ -123,7 +125,7 @@ int main( int argc, char **argv )
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
   REAL4FFTPlan            *revplan   = NULL;
-  COMPLEX8FFTPlan          *invPlan   = NULL;
+  COMPLEX8FFTPlan         *invPlan   = NULL;
   REAL4TimeSeries         *channel[LAL_NUM_IFO];
   REAL4FrequencySeries    *invspec[LAL_NUM_IFO];
   RingDataSegments        *segments[LAL_NUM_IFO];
@@ -132,8 +134,9 @@ int main( int argc, char **argv )
   INT4  stopTemplate      = -1;           /* index of last template       */
   INT4 numSegments        = 0;
   InspiralTemplate        *PTFtemplate = NULL;
+  InspiralTemplate        *PTFbankhead = NULL;
   FindChirpTemplate       *fcTmplt     = NULL;
-  FindChirpTmpltParams     *fcTmpltParams      = NULL;
+  FindChirpTmpltParams    *fcTmpltParams      = NULL;
   FindChirpInitParams     *fcInitParams = NULL;
   UINT4                   numPoints,ifoNumber,spinTemplate;
   REAL8Array              *PTFM[LAL_NUM_IFO];
@@ -143,12 +146,13 @@ int main( int argc, char **argv )
   REAL8                   *timeOffsets;
   REAL8                   *Fplus;
   REAL8                   *Fcross;
-  REAL8                   rA = 1.1;
-  REAL8                   dec = 1.1;
   REAL8                   detLoc[3];
   REAL4TimeSeries         *cohSNR = NULL;
+  REAL4TimeSeries         *pValues[10];
+  REAL4TimeSeries         *gammaBeta[2];
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
+  MultiInspiralTable      *thisEvent = NULL;
   UINT4                   eventId = 0;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
@@ -184,7 +188,14 @@ int main( int argc, char **argv )
       numDetectors++;
     }
   }
-  
+  /* NULL out the pValues pointer array */
+  for ( i = 0 ; i < 10 ; i++ )
+  {
+    pValues[i] = NULL;
+  }   
+  gammaBeta[0] = NULL;
+  gammaBeta[1] = NULL;
+
   if (numDetectors == 0 )
   {
     fprintf(stderr,"You have not specified any detectors to analyse");
@@ -192,7 +203,7 @@ int main( int argc, char **argv )
   }
   else if (numDetectors == 1 )
   {
-    fprintf(stdout,"You have only specified one detector, why are you using the coherent code?");
+    fprintf(stdout,"You have only specified one detector, why are you using the coherent code? \n");
     singleDetector = 1;
   }
 
@@ -250,11 +261,12 @@ int main( int argc, char **argv )
       segStartTime = params->startTime;
       XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);
       timeOffsets[j*LAL_NUM_IFO+ifoNumber] = 
-          XLALTimeDelayFromEarthCenter(detLoc,rA,dec,&segStartTime);
+          XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+          params->declination,&segStartTime);
       XLALComputeDetAMResponse(&Fplus[j*LAL_NUM_IFO+ifoNumber],
          &Fcross[j*LAL_NUM_IFO+ifoNumber],
-         detectors[ifoNumber]->response,rA,dec,0.,
-         XLALGreenwichMeanSiderealTime(&segStartTime));
+         detectors[ifoNumber]->response,params->rightAscension,
+         params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
     }
   }
 
@@ -263,6 +275,7 @@ int main( int argc, char **argv )
   fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
   fcTmplt = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams = LALCalloc ( 1, sizeof( *fcTmpltParams ) );
+  fcTmpltParams->approximant = FindChirpPTF;
   fcTmplt->PTFQtilde =
       XLALCreateCOMPLEX8VectorSequence( 5, numPoints / 2 + 1 );
 /*  fcTmplt->PTFBinverse = XLALCreateArrayL( 2, 5, 5 );
@@ -289,6 +302,7 @@ int main( int argc, char **argv )
   /* Read in the tmpltbank xml file */
   numTmplts = InspiralTmpltBankFromLIGOLw( &PTFtemplate, params->bankFile,
       startTemplate, stopTemplate );
+  PTFbankhead = PTFtemplate;
   /*fake_template (PTFtemplate);*/
 
   for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
@@ -305,10 +319,17 @@ int main( int argc, char **argv )
 
     fprintf(stdout,"Generated template %d at %ld \n", i, time(NULL)-startTime);
 
-    for ( j = 0; j < 1; ++j ) /* Loop over segments */
+    for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
     {
-      segStartTime = params->startTime;
-      XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
+          break;
+        }
+      }
+      XLALGPSAdd(&segStartTime,params->segmentDuration/4.0);
       cohSNR = XLALCreateREAL4TimeSeries("cohSNR",
           &segStartTime,PTFtemplate->fLower,
           (1.0/params->sampleRate),&lalDimensionlessUnit,
@@ -336,15 +357,21 @@ int main( int argc, char **argv )
       /* Calculate the cohSNR time series */
       cohPTFmodBasesUnconstrainedStatistic(cohSNR,PTFM,PTFqVec,params,
                                  spinTemplate,singleDetector,timeOffsets,
-                                 Fplus,Fcross,j);
+                                 Fplus,Fcross,j,pValues,gammaBeta);
      
       fprintf(stdout,
           "Made coherent statistic for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);      
 
       /* From this we want to construct triggers */
-      cohPTFaddTriggers(params,&eventList,cohSNR,*PTFtemplate,&eventId);
-
+      cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,&eventId,spinTemplate,pValues,gammaBeta);
+      for ( k = 0 ; k < 10 ; k++ )
+      {
+        if (pValues[k])
+            XLALDestroyREAL4TimeSeries(pValues[k]);
+      }
+      if (gammaBeta[0]) XLALDestroyREAL4TimeSeries(gammaBeta[0]);
+      if (gammaBeta[1]) XLALDestroyREAL4TimeSeries(gammaBeta[1]);
       fprintf(stdout,
           "Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
@@ -352,8 +379,14 @@ int main( int argc, char **argv )
     }
   }
   cohPTF_output_events_xml( params->outputFile, eventList, procpar, params );
-  exit(0);
 
+  fprintf(stdout, "Generated output xml file, cleaning up and exiting at %ld \n",time(NULL)-startTime);
+
+  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
+      invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
+      fcInitParams,PTFM,PTFqVec);
+  LALCheckMemoryLeaks();
+  return 0;
 }
 
 /* warning: returns a pointer to a static variable... not reenterant */
@@ -394,7 +427,11 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
       channel = get_simulated_data( ifoChannel, &params->startTime,
           params->duration, params->strainData, params->sampleRate,
           params->randomSeed, 1E-20 );
-
+    else if ( params->zeroData )
+    {
+      channel = get_zero_data( ifoChannel, &params->startTime,
+          params->duration, params->strainData, params->sampleRate );
+    }
     else if ( params->doubleData )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
@@ -415,7 +452,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
 
     /* inject signals */
     if ( params->injectFile )
-      inject_signal( channel, 3, params->injectFile,
+      inject_signal( channel, EOBNR_inject, params->injectFile,
           NULL, 1.0, NULL );
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );
@@ -425,9 +462,12 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
     if ( params->writeProcessedData ) /* write processed data */
       write_REAL4TimeSeries( channel );
 
-    highpass_REAL4TimeSeries( channel, params->highpassFrequency );
-    if ( params->writeProcessedData ) /* write processed data */
-      write_REAL4TimeSeries( channel );
+    if (! params->zeroData )
+    {
+      highpass_REAL4TimeSeries( channel, params->highpassFrequency );
+      if ( params->writeProcessedData ) /* write processed data */
+        write_REAL4TimeSeries( channel );
+    } 
 
     if ( stripPad )
     {
@@ -835,12 +875,12 @@ void cohPTFunconstrainedStatistic(
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
   }
     
-  outfile = fopen("cohSNR_timeseries.dat","w");
+  /*outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
 }
 
 void cohPTFmodBasesUnconstrainedStatistic(
@@ -853,7 +893,9 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
     REAL8                   *Fcross,
-    INT4                    segmentNumber
+    INT4                    segmentNumber,
+    REAL4TimeSeries         *pValues[10],
+    REAL4TimeSeries         *gammaBeta[2]
 )
 
 {
@@ -884,35 +926,32 @@ void cohPTFmodBasesUnconstrainedStatistic(
     vecLengthTwo = 5;
     vecLengthTwoSquare = 25;
   }
+  for ( i = 0 ; i < vecLengthTwo ; i++ )
+  {
+    pValues[i] = XLALCreateREAL4TimeSeries("Pvalue",
+          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+          &lalDimensionlessUnit,cohSNR->data->length);
+  }
+  gammaBeta[0] = XLALCreateREAL4TimeSeries("Gamma",
+          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+          &lalDimensionlessUnit,cohSNR->data->length);
+  gammaBeta[1] = XLALCreateREAL4TimeSeries("Beta",
+          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+          &lalDimensionlessUnit,cohSNR->data->length);
+
   REAL4 count;
   FILE *outfile;
   REAL8        *det         = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 recSNR;
+  REAL4 dAlpha,dBeta,dCee;
+  REAL4 pValsTemp[vecLengthTwo];
+  REAL4 betaGammaTemp[2];
   REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO],theta[LAL_NUM_IFO],phi[LAL_NUM_IFO];
   REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
   REAL4 beta,lamda;
-  REAL4 *testing1;
-  testing1  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing2;
-  testing2  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing3;
-  testing3  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing4;
-  testing4  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing5;
-  testing5  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing6;
-  testing6  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing7;
-  testing7  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing8;
-  testing8  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing9;
-  testing9  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
-  REAL4 *testing10;
-  testing10  = LALCalloc(1, cohSNR->data->length*sizeof( REAL4 ));
 
   gsl_matrix *B2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_matrix *Binv2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
@@ -924,11 +963,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
   gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc (vecLengthTwo);
   gsl_matrix *eigenvecs = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_vector *eigenvals = gsl_vector_alloc(vecLengthTwo);
-
-/*  B = XLALCreateREAL8ArrayL( 2, 10, 10 );
-  Binv = XLALCreateREAL8ArrayL( 2, 10, 10 );
-  memset( B->data, 0, 100 * sizeof(REAL8) );
-  memset( Binv->data, 0, 100 * sizeof(REAL8) );*/
 
   for (i = 0; i < LAL_NUM_IFO; i++)
   {
@@ -980,17 +1014,17 @@ void cohPTFmodBasesUnconstrainedStatistic(
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
       gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
-      fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));
+      /*fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));*/
     }
-    fprintf(stdout,"\n");
+    /*fprintf(stdout,"\n");*/
   }
 
-  fprintf(stdout,"\n \n");
+  /*fprintf(stdout,"\n \n");*/
 
   /* Here we compute the eigenvalues and eigenvectors of B2 */
   gsl_eigen_symmv (Binv2,eigenvals,eigenvecs,matTemp);
 
-  for (i = 0; i < vecLengthTwo; i++ )
+  /*for (i = 0; i < vecLengthTwo; i++ )
   {
     for (j = 0; j < vecLengthTwo; j++ )
     {
@@ -1007,7 +1041,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
 
   fprintf(stdout,"\n \n");
-
+*/
   /* This loop takes the time offset in seconds and converts to time offset
   * in data points */
   for (i = 0; i < LAL_NUM_IFO; i++ )
@@ -1056,19 +1090,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
       u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
       u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
     }
-    testing1[i-numPoints/4] = u1[0];
-    testing2[i-numPoints/4] = u1[1];
-    testing6[i-numPoints/4] = u2[0];
-    testing7[i-numPoints/4] = u2[1];
-    if (spinTemplate == 1)
-    {
-      testing3[i-numPoints/4] = u1[2];
-      testing4[i-numPoints/4] = u1[3];
-      testing5[i-numPoints/4] = u1[4];
-      testing8[i-numPoints/4] = u2[2];
-      testing9[i-numPoints/4] = u2[3];
-      testing10[i-numPoints/4] = u2[4];
-    }
     /* Compute the dot products */
     v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
     for (j = 0; j < vecLengthTwo; j++)
@@ -1088,14 +1109,63 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
     /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
+    if (cohSNR->data->data[i-numPoints/4] > 0.1 )
+    {
+      /* IF louder than threshold calculate maximized quantities */
+      v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
+      for (j = 0; j < vecLengthTwo; j++)
+      {
+        u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        v1[j] = u1[j] * gsl_vector_get(eigenvals,j);
+        v2[j] = u2[j] * gsl_vector_get(eigenvals,j);
+        v1_dot_u1 += v1[j]*u1[j];
+        v1_dot_u2 += v1[j]*u2[j];
+        v2_dot_u2 += v2[j]*u2[j];
+      }
+      if ( spinTemplate == 1 )
+        dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
+      else
+        dCee = 0;
+      dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
+      dAlpha = pow(dAlpha,0.5);
+      dBeta = dCee*dAlpha;
+      for ( j = 0 ; j < vecLengthTwo ; j++ )
+      {
+        pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
+      } 
+      recSNR = 0;
+      for ( j = 0 ; j < vecLengthTwo ; j++ )
+      {
+        for ( k = 0 ; k < vecLengthTwo ; k++ )
+        {
+          recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
+        }
+      }
+      fprintf(stdout,"%e %e \n",max_eigen,recSNR);
+      betaGammaTemp[0] = 0;
+      betaGammaTemp[1] = 0;
+      for ( j = 0 ; j < vecLengthTwo ; j++ )
+      {
+        betaGammaTemp[0] += pValsTemp[j]*v1[j];
+        betaGammaTemp[1] += pValsTemp[j]*v2[j];
+      }
+
+      fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);
+
+
+    }
   }
 
-  outfile = fopen("cohSNR_timeseries.dat","w");
+  
+ /* outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
   fclose(outfile);
+  */
+  /*
   outfile = fopen("rebased_timeseries.dat","w");
   if (spinTemplate == 1 && singleDetector == 1 )
   {
@@ -1112,22 +1182,26 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
   }
   fclose(outfile);
-
+  */
 }
 
 void cohPTFaddTriggers(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
+    MultiInspiralTable      **thisEvent,
     REAL4TimeSeries         *cohSNR,
     InspiralTemplate        PTFTemplate,
-    UINT4                   *eventId)
+    UINT4                   *eventId,
+    UINT4                   spinTrigger,
+    REAL4TimeSeries         *pValues[10],
+    REAL4TimeSeries         *gammaBeta[2])
 {
-  UINT4 i,j;
+  INT4 i,j;
   UINT4 check;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   LIGOTimeGPS trigTime;
   MultiInspiralTable *lastEvent = NULL;
-  MultiInspiralTable *thisEvent = NULL;
+  MultiInspiralTable *currEvent = *thisEvent;
 
   for (i = 0 ; i < cohSNR->data->length ; i++)
   {
@@ -1136,6 +1210,10 @@ void cohPTFaddTriggers(
       check = 1;
       for (j = i-numPointCheck; j < i+numPointCheck; j++)
       {
+        if (j < 0)
+          j = 0;
+        if (j > (cohSNR->data->length-1))
+          break;
         if (cohSNR->data->data[j] > cohSNR->data->data[i])
         {
           check = 0;
@@ -1148,34 +1226,166 @@ void cohPTFaddTriggers(
         {
           *eventList = (MultiInspiralTable *) 
               LALCalloc( 1, sizeof(MultiInspiralTable) );
-          thisEvent = *eventList;
+          currEvent = *eventList;
         }
         else
         {
-          lastEvent = thisEvent;
-          thisEvent = (MultiInspiralTable *) 
+          lastEvent = currEvent;
+          currEvent = (MultiInspiralTable *) 
               LALCalloc( 1, sizeof(MultiInspiralTable) );
-          lastEvent->next = thisEvent;
+          lastEvent->next = currEvent;
         }
-        thisEvent->event_id = (EventIDColumn *) 
+        currEvent->event_id = (EventIDColumn *) 
             LALCalloc(1, sizeof(EventIDColumn) );
-        thisEvent->event_id->id=eventId;
+        currEvent->event_id->id=eventId;
         *eventId++;
         trigTime = cohSNR->epoch;
         XLALGPSAdd(&trigTime,i*cohSNR->deltaT);
-        thisEvent->snr = cohSNR->data->data[i];
-        thisEvent->mass1 = PTFTemplate.mass1;
-        thisEvent->mass2 = PTFTemplate.mass2;
-/*        thisEvent->chi = PTFTemplate.chi;
-        thisEvent->kappa = PTFTemplate.kappa;*/
-        thisEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
-        thisEvent->eta = PTFTemplate.eta;
-        thisEvent->end_time = trigTime;
+        currEvent->snr = cohSNR->data->data[i];
+        currEvent->mass1 = PTFTemplate.mass1;
+        currEvent->mass2 = PTFTemplate.mass2;
+        currEvent->chi = PTFTemplate.chi;
+        currEvent->kappa = PTFTemplate.kappa;
+        currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
+        currEvent->eta = PTFTemplate.eta;
+        currEvent->end_time = trigTime;
+        if (pValues[0])
+          currEvent->h1quad.re = pValues[0]->data->data[i];
+        if (pValues[1]) 
+          currEvent->h1quad.im = pValues[1]->data->data[i];
+        if (pValues[2]) 
+          currEvent->h2quad.re = pValues[2]->data->data[i];
+        if (pValues[3]) 
+          currEvent->h2quad.im = pValues[3]->data->data[i];
+        if (pValues[4]) 
+          currEvent->l1quad.re = pValues[4]->data->data[i];
+        if (pValues[5]) 
+          currEvent->l1quad.im = pValues[5]->data->data[i];
+        if (pValues[6]) 
+          currEvent->v1quad.re = pValues[6]->data->data[i];
+        if (pValues[7]) 
+          currEvent->v1quad.im = pValues[7]->data->data[i];
+        if (pValues[8]) 
+          currEvent->t1quad.re = pValues[8]->data->data[i];
+        if (pValues[9]) 
+          currEvent->t1quad.im = pValues[9]->data->data[i];
+        if (spinTrigger == 1)
+          currEvent->snr_dof = 6;
+        else
+          currEvent->snr_dof = 2;
       }
     }
   }
+  *thisEvent = currEvent;
 }
         
+static void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
+    ProcessParamsTable      *procpar,
+    REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *revplan,
+    COMPLEX8FFTPlan         *invPlan,
+    REAL4TimeSeries         *channel[LAL_NUM_IFO],
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO],
+    RingDataSegments        *segments[LAL_NUM_IFO],
+    MultiInspiralTable      *events,
+    InspiralTemplate        *PTFbankhead,
+    FindChirpTemplate       *fcTmplt,
+    FindChirpTmpltParams    *fcTmpltParams,
+    FindChirpInitParams     *fcInitParams,
+    REAL8Array              *PTFM[LAL_NUM_IFO],
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO]
+    )
+{
+  UINT4 ifoNumber;
+  while ( events )
+  {
+    MultiInspiralTable *thisEvent;
+    thisEvent = events;
+    events = events->next;
+    if ( thisEvent->event_id )
+    {
+      LALFree( thisEvent->event_id );
+    }
+    LALFree( thisEvent );
+  }  
+  while ( PTFbankhead )
+  {
+    InspiralTemplate *thisTmplt;
+    thisTmplt = PTFbankhead;
+    PTFbankhead = PTFbankhead->next;
+    if ( thisTmplt->event_id )
+    {
+      LALFree( thisTmplt->event_id );
+    }
+    LALFree( thisTmplt );
+  }
+  UINT4 sgmnt;
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+      if ( segments[LAL_NUM_IFO] )
+      {
+        for ( sgmnt = 0; sgmnt < segments[ifoNumber]->numSgmnt; ++sgmnt )
+          if (segments[ifoNumber]->sgmnt[sgmnt].data)
+            XLALDestroyCOMPLEX8Vector(segments[ifoNumber]->sgmnt[sgmnt].data);
+        LALFree( segments[ifoNumber]->sgmnt );
+        LALFree( segments[ifoNumber] );
+      }
+      if ( invspec[ifoNumber] )
+      {
+        XLALDestroyREAL4Vector( invspec[ifoNumber]->data );
+        LALFree( invspec[ifoNumber] );
+      }
+      if ( channel[ifoNumber] )
+      {
+        XLALDestroyREAL4Vector( channel[ifoNumber]->data );
+        LALFree( channel[ifoNumber] );
+      }
+      XLALDestroyREAL8Array( PTFM[ifoNumber] );
+      XLALDestroyCOMPLEX8VectorSequence( PTFqVec[ifoNumber] );
+    }
+  }
+  if ( revplan )
+    XLALDestroyREAL4FFTPlan( revplan );
+  if ( fwdplan )
+    XLALDestroyREAL4FFTPlan( fwdplan );
+  if ( invPlan )
+    XLALDestroyCOMPLEX8FFTPlan( invPlan );
+  while ( procpar )
+  {
+    ProcessParamsTable *thisParam;
+    thisParam = procpar;
+    procpar = procpar->next;
+    LALFree( thisParam );
+  }
+  if (fcTmpltParams)
+  {
+    if ( fcTmpltParams->fwdPlan )
+      XLALDestroyREAL4FFTPlan( fcTmpltParams->fwdPlan );
+    if ( fcTmpltParams->PTFe1 )
+      XLALDestroyVectorSequence( fcTmpltParams->PTFe1 );
+    if ( fcTmpltParams->PTFe2 )
+      XLALDestroyVectorSequence( fcTmpltParams->PTFe2 );
+    if ( fcTmpltParams->PTFQ )
+      XLALDestroyVectorSequence( fcTmpltParams->PTFQ );
+    if ( fcTmpltParams->PTFphi )
+      XLALDestroyVector( fcTmpltParams->PTFphi );
+    if ( fcTmpltParams->PTFomega_2_3 )
+      XLALDestroyVector( fcTmpltParams->PTFomega_2_3 );
+    LALFree( fcTmpltParams );
+  }
+  if ( fcTmplt )
+  {
+    if ( fcTmplt->PTFQtilde )
+      XLALDestroyCOMPLEX8VectorSequence( fcTmplt->PTFQtilde );
+    LALFree( fcTmplt );
+  }
+  if ( fcInitParams )
+    LALFree( fcInitParams );
+
+}
 
   
 

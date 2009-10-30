@@ -20,7 +20,33 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
+#include <lal/Units.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/Date.h>
+#include <lal/RealFFT.h>
+#include <lal/FrameStream.h>
+#include <lal/LALInspiral.h>
+#include <lal/FindChirpDatatypes.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpPTF.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralHeaders.h>
+#include <lal/DetectorSite.h>
+#include <lal/TimeDelay.h>
+#include <lal/DetResponse.h>
+#include <lal/TimeSeries.h>
+#include <lal/Units.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 #include <lal/Ring.h>
+
 
 enum { write_frame, write_ascii };
 
@@ -54,6 +80,8 @@ struct coh_PTF_params {
   REAL4        invSpecLen;
   REAL4        threshold;
   REAL4        timeWindow;
+  REAL4        rightAscension;
+  REAL4        declination;
   char         bankFile[256];
   const char  *segmentsToDoList;
   const char  *templatesToDoList;

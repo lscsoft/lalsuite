@@ -24,11 +24,11 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <lal/LALStdio.h>
+#include "coh_PTF.h"
+
 #include "lalapps.h"
 #include "errutil.h"
 #include "gpstime.h"
-#include "coh_PTF.h"
 #include "injsgnl.h"
 
 RCSID( "$Id$" );
@@ -97,6 +97,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "trig-end-time",           required_argument, 0, 'U' },
     { "block-duration",          required_argument, 0, 'w' },
     { "pad-data",                required_argument, 0, 'W' },
+    { "right-ascension",         required_argument, 0, 'f' },
+    { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
   char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:h:i:k:K:n:N:o:O:r:R:s:S:T:u:U:V:w:W:y:Y:z:Z";
@@ -160,6 +162,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
+        break;
+      case 'f': /* right-ascension */
+        localparams.rightAscension = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'F': /* Declination */
+        localparams.declination = atof( optarg ) * LAL_PI_180;
         break;
       case 'h': /* help */
         coh_PTF_usage( program );
@@ -247,6 +255,10 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
 
+  /* Right Ascension and declination must be provided */
+  params->rightAscension = -1000.;
+  params->declination = -1000.;
+
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
 
@@ -333,6 +345,8 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
     /*sanity_check( params->channel );*/
     sanity_check( params->dynRangeFac > 0.0 );
   }
+  sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
+  sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
   return 0;
 }
 
@@ -382,6 +396,8 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
+  fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
+  fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );

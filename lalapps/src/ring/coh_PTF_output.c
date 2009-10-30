@@ -23,20 +23,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALStdio.h>
-#include <lal/Date.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/PrintFTSeries.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-#include <lal/LIGOLwXMLInspiralHeaders.h>
+#include "coh_PTF.h"
 
 #include "processtable.h"
 #include "lalapps.h"
 #include "errutil.h"
 #include "gpstime.h"
-#include "coh_PTF.h"
 
 RCSID( "$Id$" );
 

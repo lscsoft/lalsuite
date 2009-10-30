@@ -67,17 +67,12 @@ LALDestroyVector()
 </lalLaTeX>
 #endif
 
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-/*#include <lal/DataBuffer.h>*/
-#include <lal/LALInspiral.h>
-#include <lal/FindChirp.h>
-#include <lal/FindChirpPTF.h>
-#include <lal/MatrixUtils.h>
+#include "coh_PTF.h"
 
 #include "lalapps.h"
 #include "errutil.h"
-#include "coh_PTF.h"
+
+RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
@@ -93,6 +88,8 @@ cohPTFTemplate (
     )
 /* </lalVerbatim> */
 {
+/*  LALStatus status;
+  LAL_CALL (LALFindChirpPTFTemplate( &status,fcTmplt,InspTmplt,params), &status);*/
   UINT4 errcode;
   /* local variables */
   UINT4 i, N;
@@ -157,7 +154,6 @@ cohPTFTemplate (
     Q[i].data        = params->PTFQ->data + (i * N);
     Qtilde[i].data   = fcTmplt->PTFQtilde->data + (i * (N / 2 + 1)) ;
   }
-
 
   /* call the waveform generation function */
   errcode = XLALFindChirpPTFWaveform( params->PTFphi, params->PTFomega_2_3,
@@ -339,7 +335,8 @@ cohPTFNormalize(
   /* A routine to print out the M^IJ information */
  
   FILE *outfile;
-  /*outfile = fopen("M_array.dat","w");
+  /*
+  outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
   {
     for ( j = 0; j < 5; ++j )
@@ -348,8 +345,8 @@ cohPTFNormalize(
     }
   fprintf(outfile,"\n");
   }
-  fclose(outfile);*/
-  
+  fclose(outfile);
+  */
   
 
   for ( i = 0; i < vecLength; ++i )
@@ -380,7 +377,8 @@ cohPTFNormalize(
 
   /*Routines for printing the A and B time series */
   
-  /*outfile = fopen("A_timeseries.dat","w");
+  /*
+  outfile = fopen("A_timeseries.dat","w");
   for ( i = 0; i < numPoints; ++i)
   {
     fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
@@ -392,7 +390,7 @@ cohPTFNormalize(
   {
     fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
   }
-  fclose(outfile);*/
-  
+  fclose(outfile);
+  */
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }
