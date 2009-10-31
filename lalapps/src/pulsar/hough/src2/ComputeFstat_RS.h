@@ -169,6 +169,11 @@ int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
 					   REAL8 shift );	        /**< freq-shift in Hz */
 
+int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	/**< [in/out] timeseries to time-shift */
+				      MultiCOMPLEX8TimeSeries **Fb,	/**< [in/out] timeseries to time-shift */
+				      const PulsarDopplerParams *doppler		/**< parameter-space point to correct for */
+				      );
+
 #ifdef  __cplusplus
 }
 #endif
