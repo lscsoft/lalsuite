@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Reinhard Prix
+ * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -168,6 +168,10 @@ typedef enum {
   DOPPLERCOORD_NEQU_X_GC,		/**< Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
   DOPPLERCOORD_NEQU_Y_GC,		/**< Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
 
+  DOPPLERCOORD_NECL_X_GC,		/**< Sky-position: n_x in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
+  DOPPLERCOORD_NECL_Y_GC,		/**< Sky-position: n_y in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
+
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
@@ -205,6 +209,9 @@ const CHAR *DopplerCoordinateNames[] = {
 
   "nEqu_x_GC",
   "nEqu_y_GC",
+
+  "nEcl_x_GC",
+  "nEcl_y_GC",
 
   "NONE"
 };
@@ -246,6 +253,8 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
   "Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
 
+  "Sky-position: n_x in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+  "Sky-position: n_y in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
 
   "NONE"
 };

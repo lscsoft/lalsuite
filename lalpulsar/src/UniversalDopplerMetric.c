@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Reinhard Prix
+ * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -343,11 +343,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* and in an ecliptic coordinate-frame */
   equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
 
-  if ( fabs(nn_ecl[2]) < 1e-6 )	/* avoid singularity at ecliptic equator */
-    nn_ecl[2] = 1e-6;
-  if ( fabs(nn_equ[2]) < 1e-6 )	/* avoid singularity at equatorial equator */
-    nn_equ[2] = 1e-6;
-
   /*
   vect3D_t nn_ecl0, nn_equ0;
   printf ("equatorialVect2ecliptic(): nn_ecl0 = { %g, %g, %g}\n", nn_ecl0[0], nn_ecl0[1], nn_ecl0[2] );
@@ -392,7 +387,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* get 'reduced' detector position of order 'n': r_n(t),
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
    */
-  vect3D_t rr_ord;
+  vect3D_t rr_ord_Equ, rr_ord_Ecl;
   UINT4 order = 2;
   vect3Dlist_t *rOrb_n;
   if ( (rOrb_n = XLALComputeOrbitalDerivatives ( order, &par->dopplerPoint->refTime, par->edat )) == NULL ) {
@@ -402,9 +397,13 @@ CWPhaseDeriv_i ( double tt, void *params )
   UINT4 i;
   REAL8 tauSec = tau * Tspan;
   for (i=0; i<3; i++)
-    rr_ord[i] = detpos_equ[i] - rOrb_n->data[1][i] * tauSec - 0.5 * rOrb_n->data[2][i] * tauSec * tauSec ;
+    rr_ord_Equ[i] = detpos_equ[i] - rOrb_n->data[1][i] * tauSec - 0.5 * rOrb_n->data[2][i] * tauSec * tauSec ;
 
   XLALDestroyVect3Dlist ( rOrb_n );
+
+  /* convert rr_ord into ecliptic coordinates */
+  equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );
+
 
   switch ( par->deriv )
     {
@@ -442,12 +441,20 @@ CWPhaseDeriv_i ( double tt, void *params )
        * Note: derivatives wrt to nu, nu1, ... are equivalent to f, fdot, ...
        */
     case DOPPLERCOORD_NEQU_X_GC:
-      ret = ( rr_ord[0] - (nn_equ[0]/nn_equ[2]) * rr_ord[2] ) / rOrb_c;
+      ret = ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] ) / rOrb_c;
+      break;
+    case DOPPLERCOORD_NEQU_Y_GC:
+      ret = ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] ) / rOrb_c;
       break;
 
-    case DOPPLERCOORD_NEQU_Y_GC:
-      ret = ( rr_ord[1] - (nn_equ[1]/nn_equ[2]) * rr_ord[2] ) / rOrb_c;
+
+    case DOPPLERCOORD_NECL_X_GC:
+      ret = ( rr_ord_Ecl[0] - (nn_ecl[0]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
       break;
+    case DOPPLERCOORD_NECL_Y_GC:
+      ret = ( rr_ord_Ecl[1] - (nn_ecl[1]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
+      break;
+
 
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
@@ -738,6 +745,7 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
   int stat;
+  double ret;
 
   /* sanity-check: don't allow any AM-coeffs being turned on here! */
   if ( par.amcomp1 != AMCOMP_NONE || par.amcomp2 != AMCOMP_NONE ) {
@@ -826,7 +834,9 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
   if ( relerr_max )
     (*relerr_max) = maxrelerr;
 
-  return ( av_ij - av_i * av_j );	/* return covariance */
+  ret = av_ij - av_i * av_j;
+
+  return ret;	/* return covariance */
 
 } /* CWPhase_cov_Phi_ij() */
 
