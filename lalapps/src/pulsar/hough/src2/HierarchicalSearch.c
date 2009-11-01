@@ -1280,6 +1280,11 @@ int MAIN( int argc, char *argv[]) {
     }
   LALFree(fstatVector.data);
   
+  /* if resamp used then free buffer */
+  if (uvar_resamp==TRUE) {
+    XLALEmptyComputeFBuffer_RS ( CFparams.buffer );
+  }
+  
 
   /* free Vel/Pos vectors and ephemeris */
   LALFree(edat->ephemE);

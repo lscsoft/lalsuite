@@ -91,7 +91,7 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 );
   
 MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
-									  ); 
+									); 
   
 COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS ( SFTVector *sfts,      /**< input SFT vector, gets modified! */
 							      const LIGOTimeGPS *start_in,    /**< input start time */
@@ -120,23 +120,21 @@ int XLALAntennaWeightMultiCOMPLEX8TimeSeries(MultiCOMPLEX8TimeSeries **Faoft,   
 					     const MultiSFTVector *multisfts                        /**< [in] the multi-detector SFT data */
 					     );
 
-int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the timeseries weighted by a(t) */
-						     MultiCOMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the timeseries weighted by b(t) */
-						     const MultiCOMPLEX8TimeSeries *Faoft,                   /**< [in] the input multi-detector timeseries */
-						     const MultiCOMPLEX8TimeSeries *Fboft,                       /**< [in] the multi-detector AM coefficients */
-						     const MultiSSBtimes *multiSSB,                         /**< [in] the multi-detector SFT data */
-						     const MultiSFTVector *multiSFTs,                         /**< [in] the multi-detector SFT data */
-						     const REAL8 Tsft,
-						     const REAL8 deltaF                                             /**< [in] the user defined frequency resolution */ 
+int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the resampled timeseries Fa(t_SSB) */
+						     MultiCOMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the resampled timeseries Fb(t_SSB) */
+						     const MultiCOMPLEX8TimeSeries *Faoft,                       /**< [in] the detector frame timeseries Fa(t) */
+						     const MultiCOMPLEX8TimeSeries *Fboft,                       /**< [in] the detector frame timeseries Fb(t) */
+						     const MultiSSBtimes *multiSSB,                              /**< [in] the multi-detector SSB times data */
+						     const MultiSFTVector *multiSFTs,                            /**< [in] the multi-detector SFT data */
+						     const REAL8 deltaF                                          /**< [in] the user defined output frequency resolution */ 
 						     );
 
-int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the timeseries weighted by a(t) */
-						COMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the timeseries weighted by b(t) */
-						const COMPLEX8TimeSeries *Faoft,                      /**< [in] the input timeseries */
-						const COMPLEX8TimeSeries *Fboft,                      /**< [in] the AM coefficients */
-						const SSBtimes *SSB,                                   /**< [in] the SFT data */
-						const SFTVector *SFTs,                         /**< [in] the multi-detector SFT data */
-						const REAL8 Tsft
+int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the resampled timeseries Fa(t_SSB) */
+						COMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the resampled timeseries Fb(t_SSB) */
+						const COMPLEX8TimeSeries *Faoft,                       /**< [in] the input detector frame timeseries Fa(t) */
+						const COMPLEX8TimeSeries *Fboft,                       /**< [in] the input detector frame timeseries Fb(t) */
+						const SSBtimes *SSB,                                   /**< [in] the SSB times at the midpoints of each SFT */
+						const SFTVector *SFTs                                  /**< [in] the SFT data */
 						);
 
 int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output GPS time */
@@ -149,10 +147,10 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
 			     const REAL8 Tsft                    /**< the length of an SFT */ 
 			     );
 
-  int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,            /**< output interpolated timeseries */
-				      REAL8Vector *xi,              /**< input interpolation points */
-				      gsl_spline *spline
-				      );
+int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,            /**< output interpolated timeseries */
+				    REAL8Vector *xi,              /**< input interpolation points */
+				    gsl_spline *spline
+				    );
     
 int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline, 
 				       REAL8Vector *x, 
@@ -162,17 +160,19 @@ int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x);
 
 int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
-						REAL8 shift );	                /**< freq-shift in Hz */
+						const REAL8 shift );	        /**< [in] freq-shift in Hz */
 
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	/**< [in/out] timeseries to time-shift */
-					   REAL8 shift );	        /**< freq-shift in Hz */
+					   const REAL8 shift );	        /**< [in] freq-shift in Hz */
 
 int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	/**< [in/out] timeseries to time-shift */
 				      MultiCOMPLEX8TimeSeries **Fb,	/**< [in/out] timeseries to time-shift */
 				      const PulsarDopplerParams *doppler		/**< parameter-space point to correct for */
 				      );
 
-  void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
+void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
+
+void XLALEmptyComputeFBuffer_RS ( ComputeFBuffer *cfb);
 
 #ifdef  __cplusplus
 }
