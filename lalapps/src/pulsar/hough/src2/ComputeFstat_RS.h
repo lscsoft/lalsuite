@@ -79,7 +79,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       MultiSFTVector *multiSFTs,                   /* modified */
 			       const MultiNoiseWeights *multiWeights,
 			       MultiDetectorStateSeries *multiDetStates,    /* modified */
-			       const ComputeFParams *params
+			       ComputeFParams *params
 			       );
 
 void ResampleMultiSFTs ( LALStatus *status,
@@ -89,15 +89,13 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiSSBtimes *multiSSB,
 			 const MultiSFTVector *multiSFTs
 			 );
-
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts,  /**< input SFT vector, gets modified! */
-									LIGOTimeGPS *start,    /**< input start time */
-									LIGOTimeGPS *end       /**< input end time */
-									); 
-
+  
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
+									  ); 
+  
 COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS ( SFTVector *sfts,      /**< input SFT vector, gets modified! */
-							      LIGOTimeGPS *start,    /**< input start time */
-							      LIGOTimeGPS *end       /**< input end time */
+							      const LIGOTimeGPS *start_in,    /**< input start time */
+							      const LIGOTimeGPS *end_in       /**< input end time */
 							      );
   
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,
@@ -173,6 +171,8 @@ int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	/**< [in/out
 				      MultiCOMPLEX8TimeSeries **Fb,	/**< [in/out] timeseries to time-shift */
 				      const PulsarDopplerParams *doppler		/**< parameter-space point to correct for */
 				      );
+
+  void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 
 #ifdef  __cplusplus
 }

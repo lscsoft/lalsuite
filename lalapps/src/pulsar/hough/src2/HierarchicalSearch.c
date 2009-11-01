@@ -813,7 +813,7 @@ int MAIN( int argc, char *argv[]) {
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
   CFparams.edat = edat;
-
+ /*  CFparams.buffer = NULL; */
 
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;

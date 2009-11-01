@@ -653,7 +653,7 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
       XLALPrintError ("%s: empty input SFT!\n", fn );
       XLAL_ERROR (fn, XLAL_EINVAL);
     }
-  printf("in XLALTimeShift : f0 = %6.12f\n",sft->f0);
+  
   for ( k=0; k < sft->data->length; k++)
     {
       REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */

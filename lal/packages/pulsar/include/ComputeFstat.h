@@ -187,9 +187,9 @@ typedef struct {
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
-  MultiCOMPLEX8TimeSeries *multiTimeseries;       /**< the buffered unweighted multi-detector timeseries */
-  MultiCOMPLEX8TimeSeries *Faoft;                 /**< the buffered multi-detector timeseries weighted by a(t) */
-  MultiCOMPLEX8TimeSeries *Fboft;                 /**< the buffered multi-detector timeseries weighted by b(t) */
+  MultiCOMPLEX8TimeSeries *multiTimeseries;                   /**< the buffered unweighted multi-detector timeseries */
+  MultiCOMPLEX8TimeSeries *multiFa_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by a(t) */
+  MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by b(t) */
 } ComputeFBuffer;
 
 /** Extra parameters controlling the actual computation of F */
