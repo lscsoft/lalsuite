@@ -8,13 +8,8 @@ EXTRA_DIST = README.bugs README.contrib README.install \
   lal-config.in aclocal.m4 lal.spec.in lal.spec
 bin_SCRIPTS = lal-config
 
-if METAIO
-LALMETAIOPC = lalmetaio.pc
-else
-LALMETAIOPC =
-endif
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = lal.pc lalsupport.pc $(LALMETAIOPC)
+pkgconfig_DATA = lal.pc lalsupport.pc
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.

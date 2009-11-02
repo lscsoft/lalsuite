@@ -30,7 +30,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLRead.h>
 
-#include "SPINspiral.h"
+#include <SPINspiral.h>
 
 
 
@@ -167,14 +167,14 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       
       if(strcmp(long_options[option_index].name,"channel")==0) {
         parseCharacterOptionString(optarg,&channelseq,&nChannel);
-	if (run->networkSize != nChannel) {printf(" ERROR: number of IFOs %d should be the same as number of channels %d\n",nIFO,nChannel); exit(1);}
-	else {
-	  for(i=0;i<run->networkSize;i++) {
-	    strcpy(run->channelname[i],channelseq[i]);
-	    printf("    - From command line, channel %d\t\t\t\t= %s\n",(i+1),run->channelname[i]);
-	  }
-	  run->commandSettingsFlag[4] = 1;
-	}
+        if (run->networkSize != nChannel) {printf(" ERROR: number of IFOs %d should be the same as number of channels %d\n",nIFO,nChannel); exit(1);}
+        else {
+          for(i=0;i<run->networkSize;i++) {
+            strcpy(run->channelname[i],channelseq[i]);
+            printf("    - From command line, channel %d\t\t\t\t= %s\n",(i+1),run->channelname[i]);
+          }
+          run->commandSettingsFlag[4] = 1;
+        }
       }
       
       
@@ -231,11 +231,11 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       parseCharacterOptionString(optarg,&(run->cacheFilename),&nCache);
       if (run->networkSize != nCache) {printf(" ERROR: number of IFOs %d should be the same as number of cache files %d\n",nIFO,nCache); exit(1);}
       else {
-	for(i=0;i<run->networkSize;i++) {
-	  printf("    - From command line, cache file %d\t\t\t\t= %s\n",(i+1),run->cacheFilename[i]);
-	  readCachefile(run,i);
-	}
-	run->commandSettingsFlag[15] = 1;
+        for(i=0;i<run->networkSize;i++) {
+          printf("    - From command line, cache file %d\t\t\t\t= %s\n",(i+1),run->cacheFilename[i]);
+          readCachefile(run,i);
+        }
+        run->commandSettingsFlag[15] = 1;
       }
       break;
       
@@ -1198,7 +1198,7 @@ void readInjectionXML(struct runPar *run)
     
   } // i (injectPar)
   
-  
+  run->geocentricTc = run->injParVal[run->injRevID[11]];    // This value must be overwritten by the 'best' value in readParameterInputfile() which is called next, in the case of no SW injection
   run->lowFrequencyCutInj = injTable->f_lower;  // May be 0.0!
   
   printf("\n");
@@ -1220,7 +1220,6 @@ void readCachefile(struct runPar *run, int ifonr)
   int i;
   int line=0;
   char tmpStr[2048];
-  char * tmpname;
   FILE *fin;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
@@ -1254,15 +1253,15 @@ void readCachefile(struct runPar *run, int ifonr)
     fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
     //      printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
     
-	  //remove file://localhost at the beginning of the file name if present.
-	  if(strncmp("file://localhost",run->FrameName[ifonr][i],16)==0)
-	  {
-		  run->FrameName[ifonr][i] = &(run->FrameName[ifonr][i][16]);
-	  }
-
-	  
+    //remove file://localhost at the beginning of the file name if present.
+    if(strncmp("file://localhost",run->FrameName[ifonr][i],16)==0)
+      {
+	run->FrameName[ifonr][i] = &(run->FrameName[ifonr][i][16]);
+      }
+    
+    
   }
-		
+  
   fclose(fin);
 }  //End of readCachefile
 // ****************************************************************************************************************************************************  

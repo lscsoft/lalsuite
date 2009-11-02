@@ -1,0 +1,78 @@
+#!/usr/bin/python
+import sys, os
+
+
+class node(object):
+	def __init__(self, name, sub, done=False):
+		self.parents = []
+		self.children = []
+		self.name = name
+		self.sub = sub
+		self.done = done
+	def add_parent(self, parent):
+		self.parents.append(parent)
+	def extend_child(self, child_list):
+		self.children.extend(child_list)
+
+def fix_parents(node, nodes, level=1, cnt=0):
+	cnt+=1
+	for parent in nodes[node].parents:
+		print parent
+		if cnt <= level and nodes[parent].done: 
+			nodes[parent].done = False
+			print "fixing node %s" % (parent,)
+		fix_parents(nodes[parent].name, nodes, cnt)
+
+try:
+	dag = sys.argv[1]
+	out = sys.argv[2]
+	level = sys.argv[3]
+except ValueError:
+	print sys.stderr, "Couldn't parse command line: usage <myfile>.dag.rescueXXX <myfile>dagman.out level"
+	sys.exit(1)
+
+nodes = {}
+failed = []
+lines = open(out).readlines()
+
+# Find Failed
+for i in range(len(lines)):
+	line = lines[1-i]
+	if 'Node Name:' in line: 
+		l = line.split()
+		failed.append(l[4])
+	if 'ERROR: the following job(s) failed:' in line: break
+
+# Find parent/child relationships
+for line in open(dag).readlines():
+	if 'JOB' in line and 'DONE' in line: 
+		l = line.split()
+		nodes[l[1]] = node(l[1], l[2], done=True)
+		continue
+	if 'JOB' in line:
+		l = line.split()
+		nodes[l[1]] = node(l[1], l[2], done=False)
+		continue
+	# relies on parents at bottom
+	if 'PARENT' in line:
+		l = line.split()
+		nodes[l[1]].extend_child(l[3:])
+		nodes[l[3]].add_parent(l[1])
+
+# fix the parents
+for fail in failed:
+	fix_parents(fail, nodes, level=level)
+
+bkdag = dag + '.bk'
+os.rename(dag, bkdag)
+
+newdag = open(dag,'w')
+
+for line in open(bkdag).readlines():
+	if 'JOB' in line and 'DONE' in line:
+		l = line.split()
+		if not nodes[l[1]].done:
+			line = line.replace('DONE','')
+			print line
+	newdag.write(line)
+newdag.close()
