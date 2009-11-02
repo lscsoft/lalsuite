@@ -2520,7 +2520,7 @@ int main( int argc, char *argv[] )
         {
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
-          dynRange, fLow, spec.deltaF, chan.deltaT);
+          dynRange, fLow, spec.deltaF);
           ccFlag = 0;
         }
         /* now look through the filter outputs of the subbank for events */

@@ -1099,8 +1099,7 @@ XLALBankVetoCCMat (
     FindChirpDataParams         *params,
     REAL4 			dynRange,
     REAL4 			fLow,
-    REAL4 			deltaF,
-    REAL4			deltaT
+    REAL4 			deltaF
     );
 
 REAL4
