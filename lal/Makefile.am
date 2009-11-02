@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS = -I misc
-SUBDIRS = include packages doc lib misc debian @subdirs@
+SUBDIRS = include packages doc lib misc debian
 MAINTAINERCLEANFILES = lal.spec
 distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
 EXTRA_DIST = README.bugs README.contrib README.install \
