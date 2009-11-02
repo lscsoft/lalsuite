@@ -135,7 +135,7 @@ AC_CONFIG_FILES([ \
 ])
 AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
 AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
-AM_INIT_AUTOMAKE([])
+AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
