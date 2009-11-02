@@ -11,9 +11,9 @@ bin_SCRIPTS = lal-config
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lal.pc lalsupport.pc
 
-# cvs-clean: more than maintainer-clean, this cleans
-# everything not in the cvs archive.
-cvs-clean: maintainer-clean
+# vcs-clean: more than maintainer-clean, this cleans
+# everything not in the vcs archive.
+vcs-clean: maintainer-clean
 	rm -f Makefile.in
 	rm -f */Makefile.in
 	rm -f */*/Makefile.in
@@ -30,6 +30,15 @@ cvs-clean: maintainer-clean
 	rm -f config.status
 	rm -f config.log
 	rm -f config.h.in
+
+# map cvs-clean to vcs-clean for backwards compatibility
+cvs-clean: vcs-clean
+	@echo "";\
+		echo "=================================================================";\
+		echo "";\
+		echo "        cvs-clean is deprecated, use vcs-clean instead";\
+		echo "";\
+		echo "================================================================="
 
 all-local:
 	@echo "";\
