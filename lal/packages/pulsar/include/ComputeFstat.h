@@ -84,7 +84,6 @@ typedef struct {
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
-
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
  * \f{equation}
@@ -120,6 +119,12 @@ typedef struct {
   AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 } MultiAMCoeffs;
+
+/** Multi-IFO container for resampled timeseries */
+typedef struct {
+  UINT4 length;		                /**< number of IFOs */
+  COMPLEX8TimeSeries **data;	        /**< array of COMPLEX8Timeseries (pointers) to complex heterodyned downsampled timeseries */
+} MultiCOMPLEX8TimeSeries;
 
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
@@ -171,16 +176,6 @@ typedef enum {
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
-
-/** Extra parameters controlling the actual computation of F */
-typedef struct {
-  UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
-  REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
-  SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
-  BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
-  BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
-} ComputeFParams;
-
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
@@ -193,6 +188,20 @@ typedef struct {
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
+
+typedef struct tag_ComputeFBuffer_RS ComputeFBuffer_RS;
+
+
+/** Extra parameters controlling the actual computation of F */
+typedef struct {
+  UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
+  SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
+  BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
+  BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
+  ComputeFBuffer_RS *buffer; /**< buffer for storing pre-resampled timeseries (used for resampling implementation) */
+  EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */ 
+} ComputeFParams;
 
 
 /*---------- exported Global variables ----------*/
