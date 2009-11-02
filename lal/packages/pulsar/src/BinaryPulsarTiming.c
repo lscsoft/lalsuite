@@ -765,6 +765,20 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->DMErr=0.;
   output->DM1Err=0.;
 
+  output->h0=0.;
+  output->cosiota=0.;
+  output->psi=0.;
+  output->phi0=0.;
+  output->Aplus=0.;
+  output->Across=0.;
+  
+  output->h0Err=0.;
+  output->cosiotaErr=0.;
+  output->psiErr=0.;
+  output->phi0Err=0.;
+  output->AplusErr=0.;
+  output->AcrossErr=0.;
+
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_ERROR_VOID( fn, XLAL_EIO );
   }
@@ -1642,6 +1656,63 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
 
       output->nfb++;
+    }
+
+    /* read in pulsar gravitational wave parameters */
+    else if( !strcmp(val[i],"h0") || !strcmp(val[i],"H0") ) {
+      output->h0 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->h0Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"cosiota") || !strcmp(val[i],"COSIOTA") ||
+      !strcmp(val[i],"ciota") || !strcmp(val[i],"CIOTA") ) {
+      output->cosiota = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->cosiotaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"psi") || !strcmp(val[i],"PSI") ) {
+      output->psi = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->psiErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi0") || !strcmp(val[i],"PHI0") ) {
+      output->phi0 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi0Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"aplus") || !strcmp(val[i],"APLUS") ) {
+      output->Aplus = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->AplusErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"across") || !strcmp(val[i],"ACROSS") ) {
+      output->Across = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->AcrossErr = atof(val[i+3]);
+        j+=2;
+      }
     }
 
     if(j==i){
