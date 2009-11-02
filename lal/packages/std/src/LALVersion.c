@@ -83,11 +83,9 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
         "Git Tag:             %s\n"
         "Build Date:          %s\n"
         "Configure Date:      %s\n"
-        "Configure Arguments: %s\n"
-        "(RCS %s)\n",
+        "Configure Arguments: %s\n",
         lalVersion, lalHeaderVCSInfo.vcsId, lalHeaderVCSInfo.vcsTag,
-        lalBuildDate, lalConfigureDate, lalConfigureArgs,
-        LALVERSIONC ) :
+        lalBuildDate, lalConfigureDate, lalConfigureArgs) :
     snprintf( message, size, "LAL Version: %s\n", lalVersion ) ;
 
   if ( nchar < 0 )
