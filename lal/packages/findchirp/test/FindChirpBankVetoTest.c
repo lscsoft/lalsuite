@@ -90,9 +90,6 @@ int main(int argc, char ** argv)
     printf("maxsubbank size = %d\n",maxSubBankSize);
 
 
-    SanityCheckOnCCMatCalculation(
-
-
 
 
 
