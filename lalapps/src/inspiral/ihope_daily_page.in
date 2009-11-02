@@ -57,7 +57,7 @@ omega_frame_dir        = '/archive/frames/S6/L0/LHO/H-R-%d'
 
 # Location and configuration for the hw injection page
 ligolw_cbc_hardware_inj_page = '/archive/home/cbc/opt/s6/bin/ligolw_cbc_hardware_inj_page'
-hwinj_file                   = '/archive/home/cbc/opt/conf/HL-INJECTIONS_1-935798415-5270400_adj.xml'
+hwinj_file                   = '/archive/home/cbc/opt/conf/HL-INJECTIONS_S6_ALL.xml'
 
 
 ###############
@@ -108,9 +108,10 @@ html_template = """
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Hwinj" onclick="switchViewIframe()">HW Injections<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_hist" onclick="switchViewIframe()">SNR Histogram<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="rate_vs_time" onclick="switchViewIframe()">Rate vs. Time,<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Snr vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;high-rate times<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_vs_time" onclick="switchViewIframe()">SNR vs. Time<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="template" onclick="switchViewIframe()">Breakdown by template<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="bankchisq" onclick="switchViewIframe()">Bank &chi;<sup>2</sup><br>
   </form>
 
 
@@ -128,7 +129,7 @@ html_template = """
       <h3>%(start_time)d &mdash; %(end_time)d</h3>
     </div>
 
-    <iframe name="theframe" class="iframecontent" src="H1_CAT0_UNCLUSTERED_Summary.html" height="800">
+    <iframe name="theframe" class="iframecontent" src="H1_CAT0_UNCLUSTERED_Summary.html" height="600">
     </iframe>
 
   </div>
@@ -236,6 +237,7 @@ def make_dag(ifo, category, cluster, start_time, end_time):
                 job.add_sub_job('plot_template_counts',     ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_mass_hist',           ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_hexmass',             ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_bank_veto',           ifo, job.level, cluster, start_time, end_time)
 
                 job.add_sub_job('make_hwinj_page',          ifo, job.level, cluster, start_time, end_time, local = True)
 
@@ -425,7 +427,7 @@ def make_csv(ifo, category, cluster, start, end):
     """
     if category == 0:
         # Create unfiltered 
-        os.system('ligolw_print -i %s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq > %s-0-INSPIRAL_%s.csv' % (ifo, cluster, ifo, cluster))
+        os.system('ligolw_print -i %s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s-0-INSPIRAL_%s.csv' % (ifo, cluster, ifo, cluster))
 
         # and the templates
         os.system('ligolw_print -i %s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s-TMPLTBANK_%s.csv' % (ifo, cluster, ifo, cluster))
@@ -486,7 +488,7 @@ def make_database(ifo, level, cluster, start, end):
         os.remove(dbname)
 
     # Create the database and sngl_inspiral table
-    os.system("sqlite3 %s 'CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq  float)'" % dbname)
+    os.system("sqlite3 %s 'CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)'" % dbname)
     
     # populate it
     os.system('sqlite3 -separator , %s  ".import %s-%d-INSPIRAL_%s.csv sngl_inspiral"' % (dbname, ifo, level, cluster))
@@ -720,10 +722,10 @@ def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
         cmd += '--html-file %s ' % tmpfile
         cmd += '--ifo %s ' % ifo
         cmd += '--timestamp-file none --known-count 5 --unknown-count 5 '
-        cmd += '--gps-start-time %d ' % gps_start_time
-        cmd += '--gps-end-time %d '   % gps_end_time
-        cmd += '--omega-conf %s '     % omega_conf   
-        cmd += '--omega-frame-dir '   % omega_frame_dir  
+        cmd += '--gps-start-time %d '  % gps_start_time
+        cmd += '--gps-end-time %d '    % gps_end_time
+        cmd += '--omega-conf %s '      % omega_conf   
+        cmd += '--omega-frame-dir %s ' % omega_frame_dir  
         cmd += '--omega-out-dir omega '
 
         os.popen(cmd)
@@ -743,47 +745,50 @@ def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 def make_hwinj_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
     """Makes a hardware injection table """
 
-    out = open('%s_CAT%d_%s_Hwinj.html' % (ifo, veto_level, cluster), 'w')
-    print >>out, '<html>'
-    print >>out, '<head>'
-    print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
-    print >>out, '</head>'
+    #out = open('%s_CAT%d_%s_Hwinj.html' % (ifo, veto_level, cluster), 'w')
+    #print >>out, '<html>'
+    #print >>out, '<head>'
+    #print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+    #print >>out, '</head>'
 
-    print >>out, '<body>'
+    #print >>out, '<body>'
 
     ifo_args = {'H1':'-i ', 'L1':'-l ', 'V1':'-v '}
 
     anydata = True
 
     if cluster != 'TSSI_CLUSTERED':
+        out = open('%s_CAT%d_%s_Hwinj.html' % (ifo, veto_level, cluster), 'w')
+        print >>out, '<html>'
+        print >>out, '<head>'
+        print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+        print >>out, '</head>'
+
+        print >>out, '<body>'
         print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
+        print >>out, '</body>'
+        print >>out, '</html>'
+        out.close()
     else:   
         cmd  = '%s ' % ligolw_cbc_hardware_inj_page 
         cmd += '-t %d -e %d ' % (gps_start_time, gps_end_time)
         cmd += ifo_args[ifo]
         cmd += '-x %s ' % hwinj_file 
         cmd += '-s %s ' % os.environ['S6_SEGMENT_SERVER']
+        cmd += '-o %s-%d_%s_hwinj_page.html ' % (ifo, veto_level, cluster)
         cmd += ' '.join(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo))
 
-        pipe = os.popen(cmd)
-        
-        anydata = False
+        os.system(cmd)
 
-        for l in pipe:
-            anydata = True
-            print >>out, l
+    #print >>out, '</body>'
+    #print >>out, '</html>'
 
-        pipe.close()
-
-    print >>out, '</body>'
-    print >>out, '</body>'
-
-    out.close()
+    #out.close()
 
     # If it didn't work, flag the error to Condor
-    if not anydata:
-        print >>sys.stderr, 'Unspecified error running hwinj page for %s-%d_%s_hwinj_page.html' % (ifo, veto_level, cluster)
-        sys.exit(1)
+    #if not anydata:
+    #    print >>sys.stderr, 'Unspecified error running hwinj page for %s-%d_%s_hwinj_page.html' % (ifo, veto_level, cluster)
+    #    sys.exit(1)
 
     
 
@@ -792,7 +797,7 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 
     summary_names = ['%s-%d_%s_summary_table.html','%s-%d_%s_usage_table.html']
     section_names = ['%s-%d_%s_glitch_page.html',  '%s-%d_%s_hwinj_page.html']
-    image_names   = ['snr_vs_time','rate_vs_time','snr_hist']
+    image_names   = ['rate_vs_time','snr_hist']
 
     map['start_time'] = gps_start_time
     map['end_time']   = gps_end_time
@@ -827,7 +832,22 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                 print >>out, '</body>'
                 print >>out, '</html>'
                 out.close()
-    
+   
+                # Make the bank chisq page
+                out = open('%s_CAT%d_%s_bankchisq.html' % (ifo, cat, cluster), 'w')
+                print >>out, '<html>'
+                print >>out, '<head>'
+                print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+                print >>out, '</head>'
+                print >>out, '<body>'
+
+                imgs = sorted(glob.glob('%s_%d_%s_bank_veto_dof_*.png' % (ifo, cat, cluster)))
+                for i in imgs:
+                    print >>out, '<img src="%s"><p>' % i
+
+                print >>out, '</body>'
+                print >>out, '</html>'
+                out.close()
 
                 # Add the images
                 for name in image_names:
@@ -837,7 +857,6 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                     print >>out, '<head>'
                     print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
                     print >>out, '</head>'
-
                     print >>out, '<body>'
 
                     if name == 'snr_hist':
@@ -846,6 +865,8 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                     print >>out, '<img src="%s_%d_%s_%s.png">' % (ifo, cat, cluster, name)
 
                     if name == 'rate_vs_time':
+                        print >>out, '<img src="%s_%d_%s_snr_vs_time.png">' % (ifo, cat, cluster)
+
                         in_f = open('%s-%d_%s_glitchy_times_table.html' % (ifo, cat, cluster))
                         for l in in_f:
                             print >>out, l, 
@@ -947,16 +968,16 @@ def setup_memory_db(ifo, level, cluster):
     conn = sqlite3.connect(':memory:')
     cursor = conn.cursor()
 
-    cursor.execute('CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq  float)')
+    cursor.execute('CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)')
 
     f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, level, cluster))
-    totypes = [int, int, str, float, float, float, float, float, float, float, float, float]
+    totypes = [int, int, str, float, float, float, float, float, float, float, float, float, int, float, int]
 
     for l in f:
         vals = l.strip().split(',')
         typed_vals = tuple( map(lambda x,y: x(y), totypes, vals) )
 
-        cursor.execute('INSERT INTO sngl_inspiral VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', typed_vals)
+        cursor.execute('INSERT INTO sngl_inspiral VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', typed_vals)
 
     # make it fast
     cursor.execute('CREATE INDEX sngl_inspiral_snr ON sngl_inspiral(snr)')
@@ -1027,6 +1048,47 @@ def plot_rate_vs_time(ifo, veto_level, cluster, start_time, end_time):
     pylab.savefig('%s_%d_%s_rate_vs_time.png' % (ifo, veto_level, cluster))
     
 
+def plot_bank_veto(ifo, veto_level, cluster, start_time, end_time):
+    """Bank chi^2 vs snr"""
+
+    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+
+    snrs   = []
+    chisqs = []
+
+    for l in f:
+        data = l.split(',')
+        dof  = int(data[14])
+        rho  = float(data[3])
+        chisq = float(data[13])
+
+        while len(snrs) < dof+1:
+            snrs.append([])
+            chisqs.append([])
+
+        snrs[dof].append(rho)
+        chisqs[dof].append(chisq)
+
+    imgcount = 0
+
+    for i in range(len(snrs)):
+        if snrs[i]:
+            pylab.figure(imgcount)
+            imgcount += 1
+
+            pylab.plot(snrs[i],chisqs[i],'rx')
+            pylab.xscale('log')
+            pylab.yscale('log')
+            pylab.xlim(5.0,max(snrs[i]) * 1.1)
+            pylab.ylim(min(chisqs[i]) * 0.9, max(chisqs[i]) * 1.1)
+            pylab.grid()
+            pylab.xlabel('snr')
+            pylab.ylabel('chisq')
+            pylab.title(make_title(ifo, veto_level, cluster, start_time, desc='dof = %d' % i))
+
+            pylab.savefig('%s_%d_%s_bank_veto_dof_%d.png' % (ifo, veto_level, cluster, i))
+
+
 def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     """Histogram of SNRs"""
 
@@ -1035,11 +1097,14 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     remaining = 0
     huge_snrs = 0
     upper_lim = 1e7
+    total_count = 0
 
     for line in f:
         tmp    = line.strip().split(',')
         snrsq  = float(tmp[3])
         snrsq  = int(snrsq * snrsq)
+
+        total_count += 1
 
         if snrsq > 200:
             remaining += 1
@@ -1055,6 +1120,26 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
 
             bins[snrsq] += 1
 
+
+    total_count = float(total_count)
+    gaussian = None
+
+    if len(bins) > 31 and cluster != 'TSSI_CLUSTERED':
+        slope    = -0.5  # 1.0 - pylab.sqrt(2)
+        offset   = float(bins[30]) / pylab.exp(slope * 30.0)
+        gaussian = [offset * pylab.exp(slope * x) for x in range(len(bins))] 
+        gtotal   = 0
+
+        for i in range(31,len(bins)):
+            gtotal += bins[i] - gaussian[i]
+
+        non_gaussianity = gtotal / total_count
+
+        f_out = open('%s-%d-%s_nongaussianity.txt' % (ifo, veto_level, cluster), 'w')
+        print >>f_out, non_gaussianity
+        f_out.close()
+
+
     # Plot up to 200, with a cumulative dot showing the remaining
     fig = pylab.figure(0, figsize=(8.1,4.0))
     axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
@@ -1064,6 +1149,10 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
 
     pylab.semilogy(range(30,high_end), bins[30:high_end], color = ifo_colors[ifo], label='_nolegend_')
     pylab.plot([199.5], [remaining], 'ko', label='Count > 200')
+
+    if gaussian:
+        pylab.semilogy(range(30,high_end), gaussian[30:high_end], 'k--', label='_nolegend_')
+
     pylab.grid()
     pylab.legend()
     pylab.ylim(0.5,max(max(bins[30:high_end]), remaining) * 1.1)
@@ -1079,6 +1168,10 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     fig.add_axes(axes)
 
     pylab.loglog(range(30,len(bins)), bins[30:], color = ifo_colors[ifo])
+
+    if gaussian:
+        pylab.loglog(range(30,len(bins)), gaussian[30:], 'k--', label='_nolegend_')
+
     pylab.grid()
 
     if huge_snrs > 0:
@@ -1089,7 +1182,7 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.xlim(30, len(bins))
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel('SNR^2')
-    pylab.ylabel('Fraction')
+    pylab.ylabel('Count')
     pylab.savefig('%s_%d_%s_snr_hist_all.png' % (ifo, veto_level, cluster))
 
 
@@ -1250,6 +1343,7 @@ if __name__ == '__main__':
                'plot_snr_hist':        plot_snr_hist,
                'plot_template_counts': plot_template_counts,
                'plot_hexmass':         plot_hexmass,
+               'plot_bank_veto':         plot_bank_veto,
                'plot_mass_hist':       plot_mass_hist}
                
 

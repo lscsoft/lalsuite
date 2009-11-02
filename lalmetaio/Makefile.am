@@ -15,7 +15,9 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalmetaio.pc
 
-maintainer-clean-local:
+# vcs-clean: more than maintainer-clean, this cleans everything not in
+# the vcs archive
+vcs-clean: maintainer-clean
 	-rm -f aclocal.m4
 	-rm -f configure
 	-rm -f Makefile.in
