@@ -877,7 +877,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   COMPLEX16 dataTemp, dataTemp2;
 
-  REAL8 df=0., fcoarse=0., resp=0., srate=0.;
+  REAL8 df=0., fcoarse=0., ffine=0., resp=0., srate=0.;
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
 
@@ -1001,6 +1001,11 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       0.5*hetParams.het.f2*tdt2 + (1./6.)*hetParams.het.f3*tdt2*tdt +
       (1./24.)*hetParams.het.f4*tdt2*tdt2 + 
       (1./120.)*hetParams.het.f5*tdt2*tdt2*tdt);
+      
+    ffine = freqfactor*(hetParams.hetUpdate.f0 + hetParams.hetUpdate.f1*tdt +
+      0.5*hetParams.hetUpdate.f2*tdt2 + (1./6.)*hetParams.hetUpdate.f3*tdt2*tdt
+      + (1./24.)*hetParams.hetUpdate.f4*tdt2*tdt2 + 
+      (1./120.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt);
 
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
@@ -1058,6 +1063,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
         df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
           binOutput.deltaT);
+        df += (ffine - fcoarse);
 
         /*sample rate*/
         srate = (REAL8)filtresp->freqResp->length*filtresp->deltaf;
