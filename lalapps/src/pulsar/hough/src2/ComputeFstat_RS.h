@@ -70,6 +70,22 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 #define COMPUTEFSTATRSC_MSGEIEEE	"Floating point failure"
 
 /*---------- exported types ----------*/
+/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
+ * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
+ * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
+ */
+struct tag_ComputeFBuffer_RS {
+  const MultiDetectorStateSeries *multiDetStates;             /**< buffer for each detStates (store pointer) and skypos */
+  REAL8 Alpha, Delta;				              /**< skyposition of candidate */
+  MultiSSBtimes *multiSSB;
+  MultiSSBtimes *multiBinary;
+  MultiAMCoeffs *multiAMcoef;
+  MultiCmplxAMCoeffs *multiCmplxAMcoef;
+  MultiCOMPLEX8TimeSeries *multiTimeseries;                   /**< the buffered unweighted multi-detector timeseries */
+  MultiCOMPLEX8TimeSeries *multiFa_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by a(t) */
+  MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by b(t) */
+};
+
 
 /*---------- exported prototypes [API] ----------*/
 
@@ -90,13 +106,9 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiSFTVector *multiSFTs
 			 );
   
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
-									); 
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
+								  ); 
   
-COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS ( SFTVector *sfts,      /**< input SFT vector, gets modified! */
-							      const LIGOTimeGPS *start_in,    /**< input start time */
-							      const LIGOTimeGPS *end_in       /**< input end time */
-							      );
   
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,
 				 MultiSFTVector *multisfts
@@ -172,7 +184,7 @@ int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	/**< [in/out
 
 void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 
-void XLALEmptyComputeFBuffer_RS ( ComputeFBuffer *cfb);
+void XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *cfb);
 
 #ifdef  __cplusplus
 }

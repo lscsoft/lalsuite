@@ -67,8 +67,7 @@
 /* ----- Macros ----- */
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-#define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))	/* round up */
-#define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
+
 
 /* ---------- local types ---------- */
 
@@ -76,13 +75,12 @@
 
 /* ----- User-variables: can be set from config-file or command-line */
 /* ---------- local prototypes ---------- */
-int main(int argc, char *argv[]); 
+int main(int argc, char *argv[]);
 
 int test_XLALSFTVectorToCOMPLEX8TimeSeries(void);
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 
 void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-COMPLEX8TimeSeries* XLALHeterodyneREAL4TimeSeries( REAL4TimeSeries *tsOrig, REAL8 fHet);
 
 /*---------- empty initializers ---------- */
 static LALUnit empty_LALUnit;
@@ -130,54 +128,30 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 {
   const CHAR *fn = "test_XLALSFTVectorToCOMPLEX8TimeSeries()";
 
-  UINT4 i;
   SFTVector *sfts = NULL;
+  SFTtype *lftOrig = NULL;
   SFTtype *lftTest = NULL;
-  SFTtype *origlftTest = NULL;
 
   REAL4TimeSeries *tsOrig = NULL;
-  REAL4TimeSeries *tsOrig_pad = NULL;
   COMPLEX8TimeSeries *tsTest = NULL;
-  COMPLEX8TimeSeries *tsTest_pad = NULL;
-  
 
   COMPLEX8FFTPlan *LFTplanC8;
-  REAL4FFTPlan *origLFTplanR4;
   LALStatus status = empty_LALStatus;
-  UINT4 numSamples, numSamples_orig;
-  REAL8 fHet;
-  REAL8 padfactor = 5;
+  UINT4 numSamples;
 
-  /* returns a set of SFTs containing random data from within a certain band */ 
   if ( XLALgenerateRandomData ( &tsOrig, &sfts ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALgenerateRandomData() failed!\n", fn);
     return TEST_ABORTED;
   }
 
-  /* converts the sfts into a single complex time series */
+
   if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts ) ) == NULL ) {
     XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", fn, xlalErrno );
     return TEST_ABORTED;
   }
 
-  /* ---- Zero pad for more accurate comparsion ---- */
-  {
-    numSamples = (UINT4)floor(0.5 + tsTest->data->length*padfactor);	/* number of (complex) time- or frequency samples */
-    printf("numSamples = %d\n",numSamples);
-    
-    /* allocate memory */
-    if ( (tsTest_pad = XLALCreateCOMPLEX8TimeSeries ("H1:test heterodyned timeseries", &(tsTest->epoch), tsTest->f0, tsTest->deltaT, &empty_LALUnit, numSamples )) == NULL )
-      {
-	XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() failed for numSamples = %d\n", numSamples );
-	XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
-    
-    memset(tsTest_pad->data->data,0,numSamples*sizeof(COMPLEX8));
-    printf("done memset\n");
-    memcpy(tsTest_pad->data->data,tsTest->data->data,tsTest->data->length*sizeof(COMPLEX8));
-    printf("done memcpy\n");
-  }
-    
+  numSamples = tsTest->data->length;	/* number of (complex) time- or frequency samples */
+
   /* ----- prepare long-timebaseline FFT ---------- */
   status = empty_LALStatus;
   LALCreateSFTtype (&status, &lftTest, numSamples);
@@ -186,13 +160,11 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     return TEST_ABORTED;
   }
 
-  strcpy ( lftTest->name, tsTest_pad->name );
-  lftTest->epoch = tsTest_pad->epoch;
-  lftTest->deltaF = 1.0 / ( numSamples * tsTest_pad->deltaT );
-  fHet = tsTest_pad->f0;                                         /* the heterodyne frequency of the timeseries */
-  lftTest->f0 = fHet - NhalfNeg(numSamples)*lftTest->deltaF;     /* the lowest frequency in the timeseries */
-  printf("\nfHet = %6.12f f0 = %6.12f\n",fHet,lftTest->f0);
-  
+  strcpy ( lftTest->name, tsTest->name );
+  lftTest->f0 = 0;
+  lftTest->epoch = tsTest->epoch;
+  lftTest->deltaF = 1.0 / ( numSamples * tsTest->deltaT );
+
   /* ----- compute FFTW on computed C8 timeseries ---------- */
   if ( (LFTplanC8 = XLALCreateForwardCOMPLEX8FFTPlan( numSamples, 0 )) == NULL )
     {
@@ -200,7 +172,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
       return TEST_ABORTED;
     }
 
-  if ( XLALCOMPLEX8VectorFFT( lftTest->data, tsTest_pad->data, LFTplanC8 ) != XLAL_SUCCESS )
+  if ( XLALCOMPLEX8VectorFFT( lftTest->data, tsTest->data, LFTplanC8 ) != XLAL_SUCCESS )
     {
       XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
       return TEST_ABORTED;
@@ -212,86 +184,13 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
       return TEST_ABORTED;
     }
 
-  /* ---- Zero pad for more accurate comparsion ---- */
-  {
-    numSamples_orig = (UINT4)floor(0.5 + tsOrig->data->length*padfactor);	/* number of (complex) time- or frequency samples */
-    printf("numSamples_orig = %d\n",numSamples_orig);
-    
-    /* allocate memory */
-    if ( (tsOrig_pad = XLALCreateREAL4TimeSeries ("H1:test heterodyned timeseries", &(tsOrig->epoch), tsOrig->f0, tsOrig->deltaT, &empty_LALUnit, numSamples_orig )) == NULL )
-      {
-	XLALPrintError ("%s: XLALCreateREAL4TimeSeries() failed for numSamples = %d\n", numSamples_orig );
-	XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
-    
-    memset(tsOrig_pad->data->data,0,numSamples_orig*sizeof(REAL4));
-    printf("done memset\n");
-    memcpy(tsOrig_pad->data->data,tsOrig->data->data,tsOrig->data->length*sizeof(REAL4));
-    printf("done memcpy\n");
-  }
-
-  /* ----- heterodyne original timeseries ---------- */
-  /* if ( (tsOrig_het = XLALHeterodyneREAL4TimeSeries( tsOrig, 0 )) == NULL ) */
-/*     { */
-/*       XLALPrintError ( "%s: XLALHeterodyneREAL4TimeSeries() failed! errno = %d!\n", fn, xlalErrno ); */
-/*       return TEST_ABORTED; */
-/*     } */
-
-  /* ----- prepare original timeseries long-timebaseline FFT ---------- */
-  LALCreateSFTtype (&status, &origlftTest, numSamples_orig/2+1);
-  if ( status.statusCode ) {
-    XLALPrintError("\n%s: LALCreateSFTtype() failed, with LAL error %d\n", fn, status.statusCode );
-    return TEST_ABORTED;
-  }
-
-  strcpy ( origlftTest->name, tsOrig_pad->name );
-  origlftTest->epoch = tsOrig_pad->epoch;
-  origlftTest->deltaF = 1.0 / ( numSamples_orig * tsOrig_pad->deltaT );
-  origlftTest->f0 = 0.0;     
-
-  /* ----- compute FFTW on heterodyned original timeseries ---------- */
-  if ( (origLFTplanR4 = XLALCreateForwardREAL4FFTPlan( numSamples_orig, 0 )) == NULL )
-    {
-      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numSamples, xlalErrno );
-      return TEST_ABORTED;
-    }
-
-  if ( XLALREAL4ForwardFFT( origlftTest->data, tsOrig_pad->data, origLFTplanR4 ) != XLAL_SUCCESS )
-    {
-      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
-      return TEST_ABORTED;
-    }
-  
-  /* if ( XLALReorderFFTWtoSFT (origlftTest->data) != XLAL_SUCCESS ) */
-/*     { */
-/*       XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno ); */
-/*       return TEST_ABORTED; */
-/*     } */
-  
-  /* ---- Normalise SFTs for comparison ------------ */
-  for (i=0;i<numSamples_orig/2+1;i++)
-    {
-     
-      origlftTest->data->data[i].re *= tsOrig_pad->deltaT;
-      origlftTest->data->data[i].im *= tsOrig_pad->deltaT;
-      
-    }
-  for (i=0;i<numSamples;i++)
-    {
-      
-      lftTest->data->data[i].re *= tsTest_pad->deltaT;
-      lftTest->data->data[i].im *= tsTest_pad->deltaT;
-      
-    }
-
 
   /* debug output */
   {
     const CHAR *fnameTS = "testFstat_v3-timeseries.dat";
     const CHAR *fnameLFT = "testFstat_v3-LFT.sft";
-    const CHAR *fnameLFTorig = "testFstat_v3-LFTorig.sft";
     FILE *fp;
-    
+
     if ( (fp = fopen(fnameTS, "wb")) == NULL ) {
       LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", fn, fnameTS );
       return TEST_ABORTED;
@@ -314,28 +213,17 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
       return TEST_ABORTED;
     }
 
-    status = empty_LALStatus;
-    LALWriteSFT2file ( &status, origlftTest, fnameLFTorig, "test data LFT from SFTs");
-    if ( status.statusCode ) {
-      XLALPrintError("\n%s: LALWriteSFT2file() failed, with LAL error %d\n", fn, status.statusCode );
-      return TEST_ABORTED;
-    }
-
   } /* debug output */
 
   /* free memory */
   XLALDestroyREAL4TimeSeries ( tsOrig );
-  XLALDestroyREAL4TimeSeries ( tsOrig_pad ); 
   XLALDestroyCOMPLEX8TimeSeries ( tsTest );
-  XLALDestroyCOMPLEX8TimeSeries ( tsTest_pad );
 
   XLALDestroySFTVector ( sfts );
   XLALDestroyCOMPLEX8FFTPlan ( LFTplanC8 );
-  XLALDestroyREAL4FFTPlan ( origLFTplanR4 );
 
   status = empty_LALStatus;
   LALDestroySFTtype ( &status, &lftTest );
-  LALDestroySFTtype ( &status, &origlftTest );
 
   return TEST_PASSED;
 
@@ -353,10 +241,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   LIGOTimeGPS epoch0 = { 714180733, 0 };
   UINT4 numSFTs = 19;
 
-  REAL8 fmin_band = 0.314;
-  REAL8 fmax_band = 1.649;
-  REAL8 fmax = 2.0;
-  REAL8 f0 = 1.0;
+  REAL8 fmax = 10.0;
   REAL8 Tsft = 1800.0;
   REAL8 dFreq;
 
@@ -370,7 +255,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   REAL4TimeSeries *outTS;	/* input timeseries, generated randomly, with 2 random gaps */
   REAL4 *TSdata;		/* convenience pointer to outTS->data->data */
   SFTVector *outSFTs;		/* SFT vector created from input timeseries */
-  SFTVector *newoutSFTs;		/* SFT vector created from input timeseries containing extracted band */
   LIGOTimeGPSVector *timestampsSFT;	/* vector of SFT timestamps */
 
   UINT4 i1, i2, iGap1, iGap2;	/* leave 2 gaps at random indices */
@@ -463,8 +347,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
       /* generate all data-points of this SFT */
       for ( iBin=0; iBin < numSamplesSFT; iBin++ ) {
-/* 	TSdata[thisBin++] = sin(LAL_TWOPI*f0*thisBin*deltaT); */
- 	TSdata[thisBin++] = (REAL4)gsl_ran_gaussian (r, 1.0); 	/* unit-variance Gaussian noise */
+	TSdata[thisBin++] = (REAL4)gsl_ran_gaussian (r, 1.0);	/* unit-variance Gaussian noise */
 	/* TSdata[thisBin++] = (REAL4)( 2.0 * gsl_rng_uniform (r) - 1.0 );	*//* random-number in [-1, 1] */
       }
     } /* for iSFT < numSFTs */
@@ -494,22 +377,14 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
     }
   } /* turn timeseries into SFTs */
 
-  /* ----- extract a band from these SFTs --------------- */
-  if ( (newoutSFTs = XLALExtractBandfromSFTs(outSFTs,fmin_band,fmax_band)) == NULL )
-    {
-      XLALPrintError ("%s: XLALExtractBandFromSFTs() failed\n");
-      XLAL_ERROR ( fn, XLAL_EFUNC );
-    }
-  
   /* free memory */
   gsl_rng_free (r);
   XLALFree ( timestampsSFT->data );
   XLALFree ( timestampsSFT );
-  XLALDestroySFTVector ( outSFTs );
 
   /* return timeseries and SFTvector */
   (*ts)   = outTS;
-  (*sfts) = newoutSFTs;
+  (*sfts) = outSFTs;
 
   return XLAL_SUCCESS;
 
@@ -541,53 +416,3 @@ write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
   return;
 
 } /* write_timeSeriesR4() */
-
-/**
- * function to apply a heterodyne correction to a REAL4TimeSeries
- */
-COMPLEX8TimeSeries* XLALHeterodyneREAL4TimeSeries( REAL4TimeSeries *tsOrig,             /** input REAL4Timeseries */
-						   REAL8 fHet                           /** heterodyne frequency */                 
-						   )
-{
-  
-  const CHAR *fn = "XLALHeterodyneREAL4TimeSeries()";
-  
-  UINT4 i;
-  REAL8 deltaT;
-  UINT4 numSamples;
-  COMPLEX8TimeSeries *out = NULL;
-
-  /* check input */
-  if (tsOrig == NULL)
-    {
-      printf ("\nempty input!\n");
-      return out;
-    }
-  
-  deltaT = tsOrig->deltaT;
-  numSamples = tsOrig->data->length;
-
-  /* allocate memory */
-  if ( (out = XLALCreateCOMPLEX8TimeSeries ("H1:test heterodyned timeseries", &(tsOrig->epoch), 0, deltaT, &empty_LALUnit, numSamples )) == NULL )
-    {
-      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() failed for numSamples = %d\n", numSamples );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-    }
-
-
-  /* loop over each entry and apply phase correction */
-  for (i=0;i<numSamples;i++)
-    {
-      
-      REAL8 phase = -LAL_TWOPI*i*deltaT*fHet;
-      REAL8 cosphase = cos(phase);
-      REAL8 sinphase = sin(phase);
-
-      out->data->data[i].re = tsOrig->data->data[i]*cosphase;
-      out->data->data[i].im = tsOrig->data->data[i]*sinphase;
-      
-    }
-  
-  return out;
-
-}

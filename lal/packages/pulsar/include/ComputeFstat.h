@@ -187,10 +187,10 @@ typedef struct {
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
-  MultiCOMPLEX8TimeSeries *multiTimeseries;                   /**< the buffered unweighted multi-detector timeseries */
-  MultiCOMPLEX8TimeSeries *multiFa_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by a(t) */
-  MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by b(t) */
 } ComputeFBuffer;
+
+typedef struct tag_ComputeFBuffer_RS ComputeFBuffer_RS;
+
 
 /** Extra parameters controlling the actual computation of F */
 typedef struct {
@@ -199,7 +199,7 @@ typedef struct {
   SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
   BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
   BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
-  ComputeFBuffer *buffer; /**< buffer for storing pre-resampled timeseries */
+  ComputeFBuffer_RS *buffer; /**< buffer for storing pre-resampled timeseries (used for resampling implementation) */
   EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */ 
 } ComputeFParams;
 

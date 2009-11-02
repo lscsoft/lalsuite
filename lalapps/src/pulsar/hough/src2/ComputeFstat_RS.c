@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel
+ * Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author Chris Messenger, Reinhard Prix, Pinkesh Patel
+/** \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens
  * \ingroup pulsarCoherent
  * \file
  * \brief
@@ -127,7 +127,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 /*   static const CHAR *fn = "ComputeFStatFreqBand_RS()"; */
 
   UINT4 numDetectors; 
-  ComputeFBuffer *cfBuffer = NULL;
+  ComputeFBuffer_RS *cfBuffer = NULL;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCOMPLEX8TimeSeries *multiTimeseries = NULL;
@@ -197,7 +197,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     /* we need each timeseries to span the exact same amount of time and to start at the same time */
     /* because for the multi-detector Fstat we need frequency bins to be coincident */
     /* The memory allocated here is freed when the buffer is cleared in the calling program */
-    if ( (multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS(multiSFTs)) == NULL ) {
+    if ( (multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries(multiSFTs)) == NULL ) {
       LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
@@ -457,10 +457,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
  * NOTE : We enforce that each detectors timeseries has <b>equal</b> start times and time spans.
  * Also, the input MultiSFTs get <b>modified</b> in place.
  */
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFTVector *multisfts  /**< [in/out] multi SFT vector, gets modified! */							
-									)	
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector *multisfts  /**< [in/out] multi SFT vector, gets modified! */							
+								  )	
 {
-  static const CHAR *fn = "XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS()";
+  static const CHAR *fn = "XLALMultiSFTVectorToCOMPLEX8TimeSeries()";
 
   UINT4 i;
   MultiCOMPLEX8TimeSeries *out = NULL;		/* long time-series corresponding to full set of SFTs */
@@ -513,7 +513,7 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFT
   for (i=0;i<multisfts->length;i++) {
     
     /* call XLALSFTVectorToCOMPLEX8TimeSeries for each detector */
-    if ((out->data[i] = XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS(multisfts->data[i],&start,&end)) == NULL) {
+    if ((out->data[i] = XLALSFTVectorToCOMPLEX8TimeSeries(multisfts->data[i],&start,&end)) == NULL) {
       XLALPrintError ("%s: Failed to run XLALSFTVectorToCOMPLEX8TimeSeries()\n", fn);
       XLAL_ERROR_NULL (fn, XLAL_EFAULT );
     }
@@ -523,241 +523,6 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries_CHRIS ( MultiSFT
   return out;
   
 } /* XLALMultiSFTVectorToCOMPLEX8TimeSeries() */
-
-/** Turn the given SFTvector into one long time-series, properly dealing with gaps.
- *
- * NOTE: this function <b>modifies</b> the input SFTs in the process!
- * If you need to reuse the SFTvector afterwards, you need to copy it before
- * passing it into this function.  Also, if start and end are NULL then the 
- * start and end of the SFT vector is used.
- *
- */
-COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS ( SFTVector *sfts,             /**< [in/out] SFT vector, gets modified! */
-							      const LIGOTimeGPS *start_in,    /**< [in] start time */
-							      const LIGOTimeGPS *end_in       /**< [in] input end time */
-							      )
-{
-  static const CHAR *fn = "XLALSFTVectorToCOMPLEX8TimeSeries_CHRIS()";
-
-  COMPLEX8FFTPlan *SFTplan;
-
-  COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
-  COMPLEX8TimeSeries *sTS = NULL; 		/* short time-series corresponding to a single SFT */
-
-  REAL8 fHet;				/* heterodyning frequency */
-  LIGOTimeGPS epoch = {0,0};
-  LIGOTimeGPS start;
-  LIGOTimeGPS end;
-  
-  /* constant quantities for all SFTs */
-  SFTtype *firstSFT, *lastSFT;
-  UINT4 numBinsSFT;
-  REAL8 dfSFT;
-  REAL8 Tsft;
-  REAL8 deltaT;
-  UINT4 numSFTs;
-  UINT4 n;
-  REAL8 Tspan;
-  UINT4 numTimeSamples;
-  UINT4 NnegSFT;
-  REAL8 f0SFT;
-  REAL8 SFTFreqBand;
-
-  /* check sanity of input */
-  if ( !sfts || (sfts->length == 0) )
-    {
-      XLALPrintError ("%s: empty SFT input!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
-    }
-
-  /* define some useful shorthands */
-  numSFTs = sfts->length;
-  firstSFT = &(sfts->data[0]);
-  lastSFT = &(sfts->data[numSFTs-1]);
-  numBinsSFT = firstSFT->data->length;
-  dfSFT = firstSFT->deltaF;
-  Tsft = 1.0 / dfSFT;
-  SFTFreqBand = numBinsSFT * dfSFT;
-  deltaT = 1.0 / SFTFreqBand;	/* we'll put DC into the middle of [f0, f0+Band], so sampling at fSamp=Band is sufficient */
-  f0SFT = firstSFT->f0;
-
-  /* if the start and end input pointers are NOT NULL then determine start and time-span of the final long time-series */
-  if (start_in && end_in) 
-    {
-      start.gpsSeconds = start_in->gpsSeconds;
-      start.gpsNanoSeconds = start_in->gpsNanoSeconds;
-      end.gpsSeconds = end_in->gpsSeconds;
-      end.gpsNanoSeconds = end_in->gpsNanoSeconds;
-
-      /* do sanity checks */
-      if ( (XLALGPSDiff ( &end, &firstSFT->epoch ) ) < 0 ) 
-	{
-	  XLALPrintError ("%s: end time before first SFT!\n", fn );
-	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
-	}
-      if ( (XLALGPSDiff ( &start, &sfts->data[numSFTs-1].epoch) ) > Tsft ) 
-	{
-	  XLALPrintError ("%s: start time after end of data!\n", fn );
-	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
-	}
-    }
-  else {   /* otherwise we use the start and end of the sft vector */
-    start.gpsSeconds = firstSFT->epoch.gpsSeconds;
-    start.gpsNanoSeconds = firstSFT->epoch.gpsNanoSeconds;
-    end.gpsSeconds = lastSFT->epoch.gpsSeconds;
-    end.gpsNanoSeconds = lastSFT->epoch.gpsNanoSeconds;
-    if ( XLALGPSAdd(&end,Tsft) == NULL )
-    {
-      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EFAULT);
-    }
-    
-  }
- 
-  /* determine output time span */
-  if ( (Tspan = XLALGPSDiff ( &end, &start ) ) < 0 ) 
-    {
-      XLALPrintError ("%s: start time after end time!\n", fn );
-      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
-    }
-  
-  numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
-  printf("new Tspan = %6.12f\n",Tspan);
-  printf("new end time = %6.12f\n",GPS2REAL8(start)+Tspan);
-
-  /* determine the heterodyning frequency */
-  /* fHet = DC of our internal DFTs */
-  NnegSFT = NhalfNeg ( numBinsSFT );
-  fHet = f0SFT + 1.0 * NnegSFT * dfSFT;
-  printf("fHet = %6.12f\n",fHet);
-
-  /* ----- Prepare invFFT of SFTs: compute plan for FFTW */
-  if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
-    {
-      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
-      goto failed;
-    }
-
-  /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
-  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
-    {
-      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
-      goto failed;
-    }
-
-  /* ----- prepare long TimeSeries container ---------- */
-  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
-    {
-      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
-      goto failed;
-    }
-  memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); 	/* set all time-samples to zero (in case there are gaps) */
-
-
-  /* ---------- loop over all SFTs and inverse-FFT them ---------- */
-  for ( n = 0; n < numSFTs; n ++ )
-    {
-      SFTtype *thisSFT = &(sfts->data[n]);
-      UINT4 bin0_n;
-      REAL8 offset_n, nudge_n;
-      UINT4 copyLen, binsLeft;
-
-      REAL8 offset0, offsetEff, hetCycles;
-      COMPLEX8 hetCorrection;
-
-      /* find bin in long timeseries corresponding to starttime of *this* SFT */
-      offset_n = XLALGPSDiff ( &thisSFT->epoch, &start );
-      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
-
-      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
-      nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
-      {
-	REAL8 t0 = XLALGPSGetREAL8 ( &start );
-	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
-		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
-      }
-      
-     /*  printf("nudge_n = %6.12f\n",nudge_n); */
-      /* nudge SFT into integer timestep bin if necessary */
-      if ( nudge_n != 0 )
-	{
-	  if  ( XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS )
-	    {
-	      XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", fn, n, nudge_n, xlalErrno );
-	      goto failed;
-	    }
-	}
-
-      /* determine heterodyning phase-correction for this SFT */
-      offset0 = XLALGPSDiff ( &thisSFT->epoch, &start );
-
-      /* fHet * Tsft is an integer, because fHet is a frequency-bin of the input SFTs, so we only need the remainder offset_t0 % Tsft */
-      offsetEff = fmod ( offset0, Tsft );
-      offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
-      hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
-    
-      sin_cos_2PI_LUT (&hetCorrection.im, &hetCorrection.re, -hetCycles );
-     
-      /* Note: we also bundle the overall normalization of 'df' into the het-correction.
-       * This ensures that the resulting timeseries will have the correct normalization, according to
-       * x_l = invFT[sft]_l = df * sum_{k=0}^{N-1} xt_k * e^(i 2pi k l / N )
-       * where x_l is the l-th timestamp, and xt_k is the k-th frequency bin of the SFT.
-       * See the LAL-conventions on FFTs:  http://www.ligo.caltech.edu/docs/T/T010095-00.pdf
-       * (the FFTw convention does not contain the factor of 'df', which is why we need to
-       * apply it ourselves)
-       *
-       */
-      hetCorrection.re *= dfSFT;
-      hetCorrection.im *= dfSFT;
-
-      /* FIXME: check how time-critical this step is, using proper profiling! */
-      if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
-	{
-	  XLALPrintError ( "%s: XLALMultiplySFTbyCOMPLEX8(sft-%d) failed! errno = %d!\n", fn, n, xlalErrno );
-	  goto failed;
-	}
-
-      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
-                     n, offset0, offsetEff, hetCycles, hetCorrection.re, hetCorrection.im );
-
-      /* FIXME: check if required */
-      if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
-	{
-	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", fn, xlalErrno );
-	  goto failed;
-	}
-
-      if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
-	{
-	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
-	  goto failed;
-	}
-
-      /* copy short (shifted) timeseries into correct location within long timeseries */
-      binsLeft = numTimeSamples - bin0_n - 1;
-      copyLen = MYMIN ( numBinsSFT, binsLeft );		/* make sure not to write past the end of the long TS */
-      memcpy ( &lTS->data->data[bin0_n], sTS->data->data, copyLen * sizeof(lTS->data->data[0]) );
-
-    } /* for n < numSFTs */
-
-  goto success;
-
- failed:
-  /* cleanup memory */
-  XLALDestroyCOMPLEX8TimeSeries ( sTS );	/* short invSFT timeseries */
-  XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
-  XLALDestroyCOMPLEX8TimeSeries ( lTS );
-
-  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-
- success:
-  /* cleanup memory */
-  XLALDestroyCOMPLEX8TimeSeries ( sTS );	/* short invSFT timeseries */
-  XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
-
-  return lTS;
-
-} /* XLALSFTVectorToCOMPLEX8TimeSeries() */
 
 /** Finds the earliest timestamp in a multi-SFT data structure 
  *
@@ -1782,7 +1547,7 @@ XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
-XLALEmptyComputeFBuffer_RS ( ComputeFBuffer *cfb)
+XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *cfb)
 {
   XLALDestroyMultiSSBtimes ( cfb->multiSSB );
   cfb->multiSSB = NULL;
