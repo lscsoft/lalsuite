@@ -77,6 +77,7 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 struct tag_ComputeFBuffer_RS {
   const MultiDetectorStateSeries *multiDetStates;             /**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				              /**< skyposition of candidate */
+  LIGOTimeGPS segstart;                                       /**< the start time of the first SFT of the first detector (used to check if the segment has changed) */
   MultiSSBtimes *multiSSB;
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
