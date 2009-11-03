@@ -138,7 +138,7 @@ LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
 LALCreateTokenList()            LALDestroyTokenList()
 LALReadPulsarCatHead()          LALReadPulsarCatLine()
 LALStringToD()                  LALStringToI8()
-LALLeapSec()                    LALUpdatePulsarCat()
+XLALGPSLeapSeconds()            LALUpdatePulsarCat()
 snprintf()
 \end{verbatim}
 
@@ -737,7 +737,6 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
   if ( string[0] == 'J' ) {
     REAL8 julianDay;            /* Julian date */
     INT4 leap1, leap2;          /* number of leap seconds to date */
-    LALLeapSecFormatAndAcc acc; /* accuracy of leap second computation */
     if ( string[1] == 'D' ) {
       TRY( LALStringToD( stat->statusPtr, &julianDay, string+2,
 			 &endptr ), stat );
@@ -756,15 +755,12 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
     }
 
     /* Convert Julian days to GPS nanoseconds. */
-    acc.accuracy = LALLEAPSEC_STRICT;
-    acc.format = LALLEAPSEC_GPSUTC;
     gpsNan = (INT8)( ( julianDay - 2444244.5 )*(8.64e13L) );
     XLALINT8NSToGPS(epoch, gpsNan);
     leap2 = 0;
     do {
       leap1 = leap2;
-      TRY( LALLeapSecs( stat->statusPtr, &leap2, epoch, &acc ),
-	   stat );
+      leap2 = XLALGPSLeapSeconds ( epoch->gpsSeconds );
       epoch->gpsSeconds += leap2 - leap1;
     } while ( leap2 != leap1 );
   }

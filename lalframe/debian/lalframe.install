@@ -1,0 +1,5 @@
+#opt/lscsoft/lalframe/bin/lal-version
+opt/lscsoft/lalframe/etc/*
+#opt/lscsoft/lalframe/etc/*-user-env.*
+opt/lscsoft/lalframe/lib/*.so*
+#opt/lscsoft/lalframe/share/lal

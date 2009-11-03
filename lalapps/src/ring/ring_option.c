@@ -172,15 +172,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         localparams.injectFile = optarg;
         break;
       case 'J': /* injection type */
-        if( ! strcmp( "ringdown", optarg ) )
+        if( ! strcmp( "RINGDOWN", optarg ) )
         { 
           localparams.injectType = 0;
         }
-        else if( ! strcmp( "imr", optarg ) )
+        else if( ! strcmp( "IMR", optarg ) )
         {
           localparams.injectType = 1;
         }
-        else if( ! strcmp( "imr_ringdown", optarg ) )
+        else if( ! strcmp( "IMR_RINGDOWN", optarg ) )
         {
           localparams.injectType = 2;
         }
@@ -188,11 +188,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         {
           localparams.injectType = 3;
         }
+        else if( ! strcmp( "PHENOM", optarg ) )
+        {
+          localparams.injectType = 4;
+        }
         else
         {
           localparams.injectType = -1;
           fprintf( stderr, "invalid --injection_type:\n"
-              "(must be ringdown, imr, imr_ringdown or EOBNR\n" );
+              "(must be RINGDOWN, IMR, IMR_RINGDOWN, EOBNR or PHENOM)\n" );
           exit( 1 );
         }
         break;

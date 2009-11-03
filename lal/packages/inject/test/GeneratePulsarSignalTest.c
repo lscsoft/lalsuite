@@ -193,7 +193,6 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   EphemerisData *edat = NULL;
   CHAR sunFile[] = "sun00-04.dat";     /* 02/02/05 gam */
   CHAR earthFile[] = "earth00-04.dat"; /* 02/02/05 gam */
-  INT4 leap; /* 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
 
   /* containers for sky position and spindown data */
   REAL8 **skyPosData;
@@ -338,8 +337,6 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   edat->ephiles.earthEphemeris = "earth00-04.dat"; */
   edat->ephiles.sunEphemeris = sunFile;     /* 02/02/05 gam */
   edat->ephiles.earthEphemeris = earthFile; /* 02/02/05 gam */
-  leap = XLALLeapSeconds ( timeStamps->data[0].gpsSeconds ); /**< [In] Seconds relative to GPS epoch.*/
-  edat->leap = (INT2)leap;
   LALInitBarycenter(status->statusPtr, edat);
   CHECKSTATUSPTR (status);
 

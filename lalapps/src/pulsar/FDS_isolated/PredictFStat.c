@@ -363,8 +363,6 @@ InitEphemeris (LALStatus * status,
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
 
-  edat->leap = (INT2) XLALGPSLeapSeconds ( epoch.gpsSeconds );
-
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 
   DETATCHSTATUSPTR ( status );

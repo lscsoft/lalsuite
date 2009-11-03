@@ -10,8 +10,9 @@ pkgdata_DATA = VOTable-1.1.xsd
 EXTRA_DIST = VOTable-1.1.xsd
 
 LALXMLTest_SOURCES = LALXMLTest.c
-LALXMLTest_LDADD = $(top_builddir)/src/liblalxml.la \
-	$(LALSUPPORT_LIBS)
+LALXMLTest_LDADD = \
+	$(LALSUPPORT_LIBS) \
+	$(top_builddir)/src/liblalxml.la
 
 INCLUDES = -I../include
 
@@ -21,4 +22,4 @@ else
 TESTS =
 endif
 
-TESTS_ENVIRONMENT = 1>/dev/null
+TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)

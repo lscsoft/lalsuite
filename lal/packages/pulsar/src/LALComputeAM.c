@@ -119,9 +119,6 @@ void LALComputeAM (LALStatus          *status,
   cos2psi = cos(2.0 * params->polAngle);
   sin2psi = sin(2.0 * params->polAngle);
 
-
-  timeAndAcc.accuracy=params->leapAcc;
-
   /* Note the length is the same for the b vector */
   for(i=0; i<length; ++i)
     {

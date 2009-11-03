@@ -69,7 +69,7 @@ install: build
 	ls -lR $(CURDIR)/debian ;                                                    \
 	$(MAKE) clean
 # only if necessary overwrite user-env scripts
-#	cp -p debian/lalxml-user-env.* $(CURDIR)/debian/lalstochastic/$(PREFIX)/etc/
+#	cp -p debian/lalxml-user-env.* $(CURDIR)/debian/lalxml/$(PREFIX)/etc/
 
 binary-common: build install
 	dh_testdir

@@ -1,0 +1,32 @@
+# Q Scan configuration file
+# Automatically generated with qconfigure.sh
+# by user romain on 2007-07-21 21:55:11 PDT
+# from sample frame files:
+#   /data/node283/frames/S5/strain-LX/LHO/H-H1_RDS_C02_LX-8364/H-H1_RDS_C02_LX-836433119-128.gwf
+
+# Modified by Romain Gouaty on 06/29/09
+
+[Timing,Timing]
+
+[Parameters,Parameter Estimation]
+
+[Notes,Notes]
+
+[Gravitational,Gravitational wave data]
+
+{
+  channelName:                 'H1:LDAS-STRAIN'
+  frameType:                   'H1_LDAS_C00_L2'
+  sampleFrequency:             2048
+  searchTimeRange:             32
+  searchFrequencyRange:        [64 512]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e2
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              1
+}
+

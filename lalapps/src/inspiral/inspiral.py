@@ -1432,7 +1432,7 @@ class CoireNode(InspiralAnalysisNode):
     self.add_var_opt('input',input_file)
 
   def set_output_tag(self):
-    fname = "COIRE"
+    fname = self.job().get_exec_name().upper() 
     if self.get_slides(): fname += "_SLIDE"
     if self.get_inj_file():
       fname += "_" + \

@@ -105,7 +105,6 @@ This section briefly explains how to set-up the \texttt{MCMCInput} and the \text
 The first step is to initialize the \texttt{MCMCInput} structure with the output from data reading and conditioning, as well with user inputs to define settings for the MCMC. Also, the user is required to set the pointer to three functions which will initialize the parameter structure ({\tt funcInit}), that calculates the logarithm of the likelihood for a given set of parameters ({\tt funcLikelihood}) and that calculates the logarithm of the prior given a set of parameters ({\tt funcPrior}). Below is an example:
 
 \begin{verbatim}
-        /* populate the input structure*/
         LALMCMCInput inputMCMC;
         inputMCMC.fcFilterInput  = fcFilterInput;
         inputMCMC.fcFilterParams = fcFilterParams;
@@ -115,32 +114,26 @@ The first step is to initialize the \texttt{MCMCInput} structure with the output
         inputMCMC.approximant    = approximant;
         inputMCMC.inspiralTable  = inputCurrent;
 
-        /* just a 'dummy' parameter */
         inputMCMC.tmpltPtr = 
           (InspiralTemplate*)LALCalloc(sizeof(InspiralTemplate),1);
 
-        /* reset some counters etc */
         inputMCMC.counter=0;
 
-        /* set parameters for annealing */
         inputMCMC.useAnnealing = 0;        
         inputMCMC.numberAnneal=iterAnneal;
         inputMCMC.annealingTempBegin=4.0;
         inputMCMC.annealingTemp=1.0;
         inputMCMC.annealingSteps=0;
 
-        /* set parameters for scaling */
         inputMCMC.useScaling = 1;        
         inputMCMC.scalePeak=50.0;
         inputMCMC.scaleNormal=1.0;
         inputMCMC.scaleQ=0.84;
         inputMCMC.scalePA=1e-3;
 
-        /* set parameters for AcceptRatio */
         inputMCMC.flagAcceptRatio=1;
         inputMCMC.acceptRatioCounter=0;
 
-        /* set parameters for matrix updating */
         inputMCMC.useUpdate=1;
         inputMCMC.updateNumber=iterCovupdate;
         inputMCMC.updateOffset=100;
@@ -149,13 +142,11 @@ The first step is to initialize the \texttt{MCMCInput} structure with the output
         inputMCMC.xdiff=NULL;
         inputMCMC.ndiff=NULL;
 
-        /* set parameters for burnin */
         inputMCMC.flagBurnin = 1;        
         inputMCMC.burninNumber = 100;
-        inputMCMC.burninStep = 100;/*must be smaller or equal to burninNumber*/
+        inputMCMC.burninStep = 100;
         inputMCMC.burninTime = 0;
 
-        /* set the drawing number */
         inputMCMC.numberDraw=iterDraw;
 
         inputMCMC.verbose=1;
@@ -675,7 +666,7 @@ XLALMCMCSample(
   LALMCMCParameter *help=NULL;      /* help parameter set */
   LALMCMCParam* paraHead = NULL;
 
-  REAL4 alpha, random, s; 
+  REAL4 alpha, my_random, s; 
   REAL4 logPrior, logLikelihood, logPosterior;
   UINT4 move, accept, c;
   INT4 testPrior;
@@ -724,10 +715,10 @@ XLALMCMCSample(
     /* calculate the alpha-value and draw a random number */
     s=inputMCMC->scaling;
     alpha=exp( s*(logPosterior - *oldLogPosterior) );
-    LALUniformDeviate( &status, &random, inputMCMC->randParams );
+    LALUniformDeviate( &status, &my_random, inputMCMC->randParams );
     
     /* now check accept/reject criterion */
-    if ( random<=alpha ) 
+    if ( my_random<=alpha ) 
     {        
       /* accept the proposal set */
       move = 1;
@@ -750,7 +741,7 @@ XLALMCMCSample(
         printf("MCMCSAMPLE: --JumpNotAccepted ");
       printf("current logPost: %6.3f  proposal logPost: %6.3f alpha: %6.3f  "
              "u: %6.3f\n", 
-             *oldLogPosterior, logPosterior, alpha, random);
+             *oldLogPosterior, logPosterior, alpha, my_random);
     }
   }
  
@@ -809,11 +800,11 @@ return;
 
 void normalise(REAL8 vec[3]);
 void normalise(REAL8 vec[3]){
-REAL8 abs=0.0;
-abs=sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
-vec[0]/=abs;
-vec[1]/=abs;
-vec[2]/=abs;
+REAL8 my_abs=0.0;
+my_abs=sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
+vec[0]/=my_abs;
+vec[1]/=my_abs;
+vec[2]/=my_abs;
 return;
 }
 
@@ -862,7 +853,7 @@ INT4 XLALMCMCReflectDetPlane(
 { /* Function to reflect a point on the sky about the plane of 3 detectors */
   /* Returns -1 if not possible */
 static LALStatus status;
-int i,j,k;
+UINT4 i,j;
 int DetCollision=0;
 REAL4 randnum;
 REAL8 longi,lat,newlong,newlat;
@@ -973,7 +964,7 @@ void XLALMCMCRotateSky(
 	REAL8 vec[3];
 	REAL8 cur[3];
 	REAL8 longi,lat;
-	REAL8 vec_abs=0.0,theta,c,s,r;
+	REAL8 vec_abs=0.0,theta,c,s;
 	INT4 i,j;
 
 	if(inputMCMC->numberDataStreams<2) return;
@@ -1101,7 +1092,7 @@ XLALMCMCJump(
   LALMCMCParam *paraHead=NULL;
   REAL4Vector  *step=NULL;
   gsl_matrix *work=NULL; 
-  REAL8 aii, aij, ajj, delta;
+  REAL8 aii, aij, ajj;
   INT4 i, j, dim;
 
   /* set some values */
@@ -1150,7 +1141,8 @@ XLALMCMCJump(
   /*  if (inputMCMC->verbose)
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
              paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
-    paraHead->value += step->data[i];
+    
+	  if(paraHead->core->wrapping!=-1) paraHead->value += step->data[i];
 	}
   
   XLALMCMCCyclicReflectiveBound(parameter);
@@ -1171,7 +1163,7 @@ XLALMCMCJumpIntrinsic(
   LALMCMCParam *paraHead=NULL;
   REAL4Vector  *step=NULL;
   gsl_matrix *work=NULL; 
-  REAL8 aii, aij, ajj, delta;
+  REAL8 aii, aij, ajj;
   INT4 i, j, dim;
 
   /* set some values */
@@ -1215,7 +1207,7 @@ XLALMCMCJumpIntrinsic(
   /* loop over all parameters */
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
   { 
-	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time"))
+	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time")||paraHead->core->wrapping==-1)
 	{;}
   /*  if (inputMCMC->verbose)
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
@@ -1238,7 +1230,7 @@ function to keep its proposals inside the parameter space */
 	REAL8 delta;
 	for (paraHead=parameter->param;paraHead;paraHead=paraHead->next)
 	{
-		if(paraHead->core->wrapping) /* For cyclic boundaries */
+		if(paraHead->core->wrapping==1) /* For cyclic boundaries */
 		{
 			delta = paraHead->core->maxVal - paraHead->core->minVal;
 			while ( paraHead->value > paraHead->core->maxVal) 
@@ -1246,7 +1238,7 @@ function to keep its proposals inside the parameter space */
 			while ( paraHead->value < paraHead->core->minVal) 
 			paraHead->value += delta;
 		}
-		else /* Use reflective boundaries */
+		else if(paraHead->core->wrapping==0) /* Use reflective boundaries */
 		{
 			if(paraHead->core->maxVal < paraHead->value) paraHead->value-=2.0*(paraHead->value - paraHead->core->maxVal);
 			if(paraHead->core->minVal > paraHead->value) paraHead->value+=2.0*(paraHead->core->minVal - paraHead->value);
@@ -1266,6 +1258,13 @@ INT4 XLALMCMCCheckParameter(
 
 }
 
+INT4 XLALMCMCCheckWrapping(LALMCMCParameter *parameter,
+						   const char *name)
+{
+	LALMCMCParam *param=NULL;
+	param=XLALMCMCGetParam(parameter,name);
+	return param->core->wrapping;
+}
 
 /* *****************************
 XLALMCMCAddParam
@@ -1281,8 +1280,6 @@ XLALMCMCAddParam(
   INT4               wrapping
   )
 { /* </lalVerbatim>  */
-
-  static LALStatus status;
 
   LALMCMCParam* paraPointer;
 
@@ -1404,7 +1401,7 @@ XLALMCMCSetParameter(
   LALMCMCParam* param;
   param=XLALMCMCGetParam( parameter, name);
 
-  if (param)
+  if (param && param->core->wrapping!=-1)
   {
     param->value=value;
   }
@@ -1488,7 +1485,6 @@ XLALMCMCFreePara(
 { /* </lalVerbatim>  */
 
   LALMCMCParam* param=NULL; 
-  LALMCMCParam* paramNext=NULL;
   LALMCMCParam* thisParam=NULL;
 
   

@@ -47,6 +47,154 @@ class hm_post_DAG(pipeline.CondorDAG):
     node.add_macro("macroid", self.node_id)
     pipeline.CondorDAG.add_node(self, node)
 
+###############################################################################
+########## MUSIC STUFF ########################################################
+###############################################################################
+class mvsc_get_doubles_job(pipeline.CondorDAGJob):
+  """
+  A mvsc_get_doubles.py job: BLAH
+  """
+  def __init__(self, cp, tag_base='MVSC_GET_DOUBLES'):
+    """
+    """
+    self.__prog__ = 'mvsc_get_doubles.py'
+    self.__executable = string.strip(cp.get('condor','mvsc_get_doubles.py'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+
+class mvsc_get_doubles_node(pipeline.CondorDAGNode):
+  """
+  """
+# add default values
+  def __init__(self, job, dag, instruments, databases, number=10, trainingstr='training', testingstr='testing', zerolagstr='zerolag', p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.number = number
+    self.add_var_opt("instruments", instruments)
+    self.add_var_opt("trainingstr",trainingstr)
+    self.add_var_opt("testingstr",testingstr)
+    self.add_var_opt("zerolagstr",zerolagstr)
+    for database in databases:
+      self.add_file_arg(database)
+    ifos=instruments.strip().split(',')
+    ifos.sort()
+    self.out_file_group = {}
+    for i in range(number):
+      self.out_file_group[i] = ((''.join(ifos) + '_set' + str(i) + '_' + str(trainingstr) + '.pat'), (''.join(ifos) + '_set' + str(i) + '_' + str(testingstr) + '.pat'), self.add_output_file(''.join(ifos) + '_set' + str(i) + '_' + str(testingstr) + '_info.pat'))
+    self.zerolag_file = [''.join(ifos) + '_' + str(zerolagstr) + '.pat']
+
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class train_forest_job(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp, tag_base='TRAIN_FOREST'):
+    """
+    """
+    self.__prog__ = 'SprBaggerDecisionTreeApp'
+    self.__executable = string.strip(cp.get('condor','SprBaggerDecisionTreeApp'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class train_forest_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, trainingfile, p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_input_file(trainingfile)
+    self.trainingfile = self.get_input_files()[0]
+    self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
+    self.add_file_arg("-a 1 -n 100 -l 4 -s 4 - c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
+    self.add_output_file(self.trainedforest)
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class use_forest_job(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp, tag_base='USE_FOREST'):
+    """
+    """
+    self.__prog__ = 'SprOutputWriterApp'
+    self.__executable = string.strip(cp.get('condor','SprOutputWriterApp'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class use_forest_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, trainedforest, file_to_rank,  p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    self.add_input_file(trainedforest)
+    self.add_input_file(file_to_rank)
+    self.trainedforest = self.get_input_files()[0]
+    self.file_to_rank = self.get_input_files()[1]
+    self.ranked_file = self.file_to_rank.replace('.pat','.dat')
+    self.add_file_arg("-a 1 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
+    self.add_output_file(self.ranked_file)
+# I need to figure out how to parse these options
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+class mvsc_update_sql_job(pipeline.CondorDAGJob):
+  """
+  A mvsc_update_sql.py job: BLAH
+  """
+  def __init__(self, cp, tag_base='MVSC_UPDATE_SQL'):
+    """
+    """
+    self.__prog__ = 'mvsc_update_sql.py'
+    self.__executable = string.strip(cp.get('condor','mvsc_update_sql.py'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+class mvsc_update_sql_node(pipeline.CondorDAGNode):
+  """
+  """
+  def __init__(self, job, dag, files='*.dat', infofiles='*_info.pat', databases='*.sqlite', p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    # uhh these are still globs! FIXME
+    self.add_var_opt("files", files)
+    self.add_var_opt("infofiles", infofiles)
+    self.add_var_opt("databases", databases)
+    # do I need to put the databases as output files? 
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
+
+
+###############################################################################
+###### END MUSIC STUFF ########################################################
+###############################################################################
+
 
 class sqlite_job(pipeline.CondorDAGJob):
   """
@@ -406,7 +554,7 @@ class summary_page_node(pipeline.CondorDAGNode):
   """
   def __init__(self, job, dag, open_box=None, base_name=None, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
-    if open_box: self.add_var_opt("open-box","")
+    if open_box: self.add_var_arg("--open-box")
     if base_name: self.add_var_opt("output-name-tag", base_name)
     for p in p_node:
       self.add_parent(p)
@@ -485,6 +633,13 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
       o.write(new_list[i].replace('THINCA_SECOND','THINCA_SLIDE_SECOND'))
     return outnames
 
+def get_doubles(instruments):
+  all_ifos = instruments.strip().split(',')
+  ifo_combinations = list(iterutils.choices(all_ifos,2))
+  for comb in ifo_combinations:
+    comb=','.join(comb)
+  return comb
+
 ###############################################################################
 # MAIN PROGRAM
 ###############################################################################
@@ -555,6 +710,29 @@ hmUpperlimitPlotNode = {}
 farPlotNode = {}
 summaryPageNode = {}
 db = {}
+
+############# MUSIC STUFF ####################
+
+#mvsc_get_doubles
+get_job = mvsc_get_doubles_job(cp)
+get_node = {}
+
+#SprBaggerDecisionTreeApp
+train_job = train_forest_job(cp)
+train_node = {}
+
+#SprOutputWriterApp
+rank_job = use_forest_job(cp)
+rank_node = {}
+zl_rank_job = use_forest_job(cp)
+zl_rank_node = {}
+
+#mvsc_update_sql
+update_job = mvsc_update_sql_job(cp)
+update_node = {}
+
+#############################################
+
 
 # to get injection file entries from the cache
 injcache = map(lal.CacheEntry, file("inj.cache"))
@@ -651,6 +829,28 @@ for cat in cats:
   summaryPageNode[cat] = summary_page_node(summaryPageJob, dag, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
   summaryPageNode[cat+"open"] = summary_page_node(summaryPageJob, dag, open_box=True, base_name=base_name, p_node=[hmUpperlimitPlotNode[cat]]);
 
+
+  ############# MUSIC STUFF (A LOOP OVER DOUBLES) #############################
+  
+  for comb in get_doubles(instruments):
+    comb = ','.join(comb)
+    get_node[cat+comb] = mvsc_get_doubles_node(get_job, dag, comb, db[cat], trainingstr=base_name+"training",testingstr=base_name+"testing",zerolagstr=base_name+"zerolag",p_node=[hmUpperlimitNode[cat]])
+
+    for i in range(get_node[cat+comb].number):
+      file_for_this_set = get_node[cat+comb].out_file_group[i]
+      train_node[i] = train_forest_node(train_job, dag, file_for_this_set[0], p_node=[get_node[cat+comb]])
+      try: rank_node[cat+comb]
+      except: rank_node[cat+comb] = {}
+      rank_node[cat+comb][i] = use_forest_node(rank_job, dag, train_node[i].trainedforest, file_for_this_set[1], p_node=[train_node[i]])
+
+    zl_rank_node[cat+comb] = use_forest_node(zl_rank_job, dag, train_node[0].trainedforest, get_node[cat+comb].zerolag_file[0], p_node=[get_node[cat+comb],train_node[0]])
+
+  finished_rank_nodes=[]
+
+  for key in rank_node:
+    finished_rank_nodes.extend(rank_node[key].values())
+
+  update_node[cat] = mvsc_update_sql_node(update_job, dag, files='*'+base_name+'*.dat',infofiles='*'+base_name+'*.info',databases='*'+base_name+'*.sqlite',p_node=finished_rank_nodes+zl_rank_node.values())
 
 
 ###############################################

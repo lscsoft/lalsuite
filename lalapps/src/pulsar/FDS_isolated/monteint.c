@@ -79,7 +79,6 @@ typedef struct {
   REAL8 Fstat;
   REAL8 tsft;			/**< length of an SFT in seconds */
   LALDetector Detector;         /**< Our detector*/
-  REAL8 leap;
   CHAR *timestampsfile;
   CHAR *EphemEarth; 	/**< filename of earth-ephemeris data */
   CHAR *EphemSun;     /**< filename of sun-ephemeris data */
@@ -1042,25 +1041,6 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
   }
 
 
-  /* ----------------------------------------------------------------------*/
-  /*
-   * initialize Ephemeris-data 
-   */
-  {
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
-
-    LALLeapSecs(status->statusPtr, &leap, &starttime, &formatAndAcc);
-    BEGINFAIL(status) {
-      LALFree(cfg->timestampsfile);
-    } ENDFAIL(status);
-
-    cfg->leap = leap;
-
-  } /* end: init ephemeris data */
-
-
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 } /* void InitConfigVariables().  */
@@ -1187,7 +1167,6 @@ InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg
     }
     strcpy(bfparams->amParams->edat->ephiles.earthEphemeris, cfg->EphemEarth);
     strcpy(bfparams->amParams->edat->ephiles.sunEphemeris, cfg->EphemSun);
-    bfparams->amParams->edat->leap = cfg->leap;
 
     LALInitBarycenter(status->statusPtr, bfparams->amParams->edat);               
     BEGINFAIL(status) {
@@ -1203,7 +1182,6 @@ InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg
   bfparams->amParams->das->pSource->orientation = 0.0;
   bfparams->amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   bfparams->amParams->polAngle = bfparams->amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  bfparams->amParams->leapAcc = LALLEAPSEC_STRICT;
   bfparams->amParams->das->pSource->equatorialCoords.latitude = Delta;
   bfparams->amParams->das->pSource->equatorialCoords.longitude = Alpha;
   bfparams->amParams->baryinput = &(bfparams->baryinput);

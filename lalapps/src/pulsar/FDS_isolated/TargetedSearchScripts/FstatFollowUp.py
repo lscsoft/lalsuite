@@ -293,6 +293,16 @@ for x in Vars['time_array']:
 #Determine what the frequency we should be band passing around is
 parameter_time_difference = Vars['best_start_time'] - Vars['param_time']
 freq_current = Vars['f0'] + (Vars['f1'] * parameter_time_difference) + (Vars['f2'] * parameter_time_difference**2) + (Vars['f3'] * parameter_time_difference**3) 
+fdot_current = Vars['f1'] + (Vars['f2'] *  parameter_time_difference) + (Vars['f3'] * parameter_time_difference**2)
+
+fdotdot_current = Vars['f2'] + (Vars['f3'] * parameter_time_difference)
+
+
+Vars['param_time'] = Vars['best_start_time']
+Vars['f0'] = freq_current
+Vars['f1'] = fdot_current
+Vars['f2'] = fdotdot_current
+
 
 print "Best start time is = " + str(Vars['best_start_time'])
 
@@ -314,7 +324,7 @@ for this_IFO in valid_IFOs:
         
 
     #Create a temporary directory containing the band passed data
-    band_passed_directory = Vars['run_directory'] + 'band_passed_directory_' + Vars['run_name'] + '_' + this_IFO +'/'
+    band_passed_directory = Vars['run_directory'] + '/band_passed_directory_' + Vars['run_name'] + '_' + this_IFO +'/'
     if not (os.path.exists(band_passed_directory)):
       os.mkdir(band_passed_directory)
     else:
@@ -401,15 +411,20 @@ find_total_templates = ' '.join([Vars['code'],
                            '>',sky_template_count_file])
 
 
+print find_total_templates
 os.system(find_total_templates)
 templates_file = open(sky_template_count_file,'r')
 for line in templates_file:
   if line.split(':')[0] == '%% Number of templates':
     sky_grid_templates = float(line.split(':')[1])
 
-#Vars['angular_resolution'] = (Vars['alpha_band']*Vars['delta_band']/sky_grid_templates)**0.5
 
-#Vars['total_templates'] = sky_grid_templates * Vars['f0_band'] * Vars['f1_band'] / (Vars['freq_resolution'] * Vars['dfreq_resolution'])
+F_templates = (Vars['f0_band']/Vars['freq_resolution']) * (Vars['f1_band'] / Vars['dfreq_resolution'])
+
+sky_only_templates = sky_grid_templates / F_templates
+
+Vars['angular_resolution'] = (Vars['alpha_band']*Vars['delta_band']/sky_only_templates)**0.5
+
 
 Vars['total_templates'] = sky_grid_templates
 
@@ -456,40 +471,40 @@ for freq_count in range(0,Vars['max_number_of_jobs']):
   dag_file_handle.write('\n')
   job += 1
 
-job = 0
-for this_IFO in valid_IFOs:
-  if this_IFO in Vars['IFOs']:
-    for freq_count in range(0,Vars['max_number_of_jobs']):
-      arg_list = ' '.join([' argList=" ',
-                           '--Alpha', str(Vars['alpha'] - Vars['alpha_band']/2.0),
-                           '--Delta', str(Vars['delta'] - Vars['delta_band']/2.0),
-                           '--AlphaBand', str(Vars['alpha_band']),
-                           '--DeltaBand', str(Vars['delta_band']),
-                           '--Freq', str(Vars['f0'] - Vars['f0_band']/2.0 + Vars['freq_step_size']*freq_count),
-                           '--FreqBand', str(Vars['freq_step_size']),
-                           '--dFreq', str(Vars['freq_resolution']),
-                           '--f1dot', str(Vars['f1'] - Vars['f1_band']/2.0),
-                           '--f1dotBand', str(Vars['f1_band']),
-                           '--df1dot', str(Vars['dfreq_resolution']),
-                           '--DataFiles', ''.join([Vars['final_sft_run_directory'].rstrip('/'),'/',this_IFO,'*']),
-                           '--ephemDir', Vars['ephem_dir'],
-                           '--ephemYear', Vars['ephem_year'],
-                           '--NumCandidatesToKeep',str(Vars['num_candidates_to_keep']),
-                           '--refTime',str(Vars['param_time']),
-                           '--gridType',str(Vars['grid_type']),
-                           '--metricType',str(Vars['metric_type']),
-                           '--metricMismatch',str(Vars['mismatch']),
-                           '--TwoFthreshold',str(Vars['min_Fstat_to_keep']),
-                           '--outputFstat', ''.join([Vars['output_run_directory'],
-                                                     '/',this_IFO,'_',Vars['results_base_prefix'],str(job)]),
-                           '--outputLoudest', ''.join([Vars['output_run_directory'],'/', this_IFO,'_',
-                                                       Vars['loudest_base_prefix'],str(job)]),
-                           '"'])
-      
-      dag_file_handle.write('JOB D' + str(job) + ' ' + os.path.basename(Vars['self_sub_file_name']) +'\n')
-      dag_file_handle.write('VARS D' + str(job) + ' ' + 'JobID="' + str(job) + '" ' + arg_list + '\n')
-      dag_file_handle.write('\n')
-      job += 1
+#job = 0
+#for this_IFO in valid_IFOs:
+#  if this_IFO in Vars['IFOs']:
+#    for freq_count in range(0,Vars['max_number_of_jobs']):
+#      arg_list = ' '.join([' argList=" ',
+#                           '--Alpha', str(Vars['alpha'] - Vars['alpha_band']/2.0),
+#                           '--Delta', str(Vars['delta'] - Vars['delta_band']/2.0),
+#                           '--AlphaBand', str(Vars['alpha_band']),
+#                           '--DeltaBand', str(Vars['delta_band']),
+#                           '--Freq', str(Vars['f0'] - Vars['f0_band']/2.0 + Vars['freq_step_size']*freq_count),
+#                           '--FreqBand', str(Vars['freq_step_size']),
+#                           '--dFreq', str(Vars['freq_resolution']),
+#                           '--f1dot', str(Vars['f1'] - Vars['f1_band']/2.0),
+#                           '--f1dotBand', str(Vars['f1_band']),
+#                           '--df1dot', str(Vars['dfreq_resolution']),
+#                           '--DataFiles', ''.join([Vars['final_sft_run_directory'].rstrip('/'),'/',this_IFO,'*']),
+#                           '--ephemDir', Vars['ephem_dir'],
+#                           '--ephemYear', Vars['ephem_year'],
+#                           '--NumCandidatesToKeep',str(Vars['num_candidates_to_keep']),
+#                           '--refTime',str(Vars['param_time']),
+#                           '--gridType',str(Vars['grid_type']),
+#                           '--metricType',str(Vars['metric_type']),
+#                           '--metricMismatch',str(Vars['mismatch']),
+#                           '--TwoFthreshold',str(Vars['min_Fstat_to_keep']),
+#                           '--outputFstat', ''.join([Vars['output_run_directory'],
+#                                                     '/',this_IFO,'_',Vars['results_base_prefix'],str(job)]),
+#                           '--outputLoudest', ''.join([Vars['output_run_directory'],'/', this_IFO,'_',
+#                                                       Vars['loudest_base_prefix'],str(job)]),
+#                           '"'])
+#      
+#      dag_file_handle.write('JOB D' + str(job) + ' ' + os.path.basename(Vars['self_sub_file_name']) +'\n')
+#      dag_file_handle.write('VARS D' + str(job) + ' ' + 'JobID="' + str(job) + '" ' + arg_list + '\n')
+#      dag_file_handle.write('\n')
+#      job += 1
 
 ##############################################
 #Call followup script after dag searches finish
@@ -498,7 +513,7 @@ dag_file_handle.write('JOB B0 ' + os.path.basename(Vars['self_sub_examine_file_n
 arg_list_examine = ' '.join([' argList=" ',
                              '-o', str(Vars['base_name']),
                              '-C', str(Vars['config_file']),
-                             '-j', str(job),
+                             '-j', str(Vars['max_number_of_jobs']),
                              '-i', str(Vars['iteration']),
                              '-t', str(Vars['coherence_time']),
                              '-T', str(Vars['best_start_time']),
@@ -543,6 +558,7 @@ sub_file_handle.write('executable = ' + Vars['code'] +'\n')
 sub_file_handle.write('output = node_' + Vars['run_name'] + '_A.out.$(JobID)\n')
 sub_file_handle.write('error = node_' + Vars['run_name'] + '_A.err.$(JobID)\n')
 sub_file_handle.write('log = ' + Vars['submit_file_log_dir'].rstrip('/') + '/' + Vars['run_name'] + '.log\n' )
+sub_file_handle.write('notify_user=jcbetzwieser@gmail.com')
 sub_file_handle.write('\n')
 sub_file_handle.write('arguments = $(arglist)\n')
 sub_file_handle.write('queue\n')
@@ -556,6 +572,7 @@ sub_file_examine_handle.write('executable = ' + Vars['python_dir'] + '/FstatFoll
 sub_file_examine_handle.write('output = node_examine_' + Vars['run_name'] + '.out.$(JobID)\n')
 sub_file_examine_handle.write('error = node_examine_' + Vars['run_name'] + '.err.$(JobID)\n')
 sub_file_examine_handle.write('log = ' + Vars['submit_file_log_dir'].rstrip('/') + '/' + Vars['run_name'] + '.log\n')
+sub_file_examine_handle.write('notify_user=jcbetzwieser@gmail.com')
 sub_file_examine_handle.write('\n')
 sub_file_examine_handle.write('arguments = $(arglist)\n')
 sub_file_examine_handle.write('queue\n')
@@ -572,6 +589,7 @@ sub_file_resubmit.write('executable = ' + Vars['python_dir'].rstrip('/') + '/' +
 sub_file_resubmit.write('output = node_submit_' + Vars['run_name'] + '_C.out.$(JobID)\n')
 sub_file_resubmit.write('error = node_submit_' + Vars['run_name'] + '_C.err.$(JobID)\n')
 sub_file_resubmit.write('log = ' + Vars['submit_file_log_dir'].rstrip('/') + '/' + Vars['run_name'] + '.log\n')
+sub_file_resubmit.write('notify_user=jcbetzwieser@gmail.com')
 sub_file_resubmit.write('\n')
 sub_file_resubmit.write('arguments = $(arglist)\n')
 sub_file_resubmit.write('queue\n')

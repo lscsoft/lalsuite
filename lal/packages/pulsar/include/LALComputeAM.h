@@ -126,7 +126,6 @@ struct AMCoeffsParams
 \item[\texttt{LALDetAndSource *das}]  Detector and source information
 \item[\texttt{LALFrDetector}]  Detector geometry information
 \item[\texttt{REAL4 polAngle}]  Polarization angle
-\item[\texttt{LALLeapSecAccuracy leapAcc}] Leap sec accuracy
 \end{description}
 </lalLaTeX> */
 
@@ -154,7 +153,6 @@ typedef struct AMCoeffsParamsTag
   LALDetAndSource      *das;        /**< det and source information     */
   LALFrDetector        *det;        /**< detector geometry              */
   REAL4                polAngle;    /**< polarization angle             */
-  LALLeapSecAccuracy  leapAcc;     /**< accuracy in def of leap sec */
 } AMCoeffsParams;
 
 

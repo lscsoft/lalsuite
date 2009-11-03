@@ -905,14 +905,6 @@ InitEphemeris (LALStatus * status,
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
 
-  edat->leap = XLALGPSLeapSeconds( epoch.gpsSeconds );
-  {
-    INT4 err = xlalErrno;
-    if ( err != XLAL_SUCCESS ) {
-      ABORT ( status, err, "XLALLeapSeconds() failed!\n");
-    }
-  }
-
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
 
   DETATCHSTATUSPTR ( status );

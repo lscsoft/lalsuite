@@ -6,7 +6,7 @@
   10                                       nIter               Total number of iterations to be computed (e.g. 1e7).
   1                                        thinOutput          Number of iterations to be skipped between stored steps (100 for 1d).
   1                                        thinScreenOutput    Number of iterations between screen outputs im the MCMC (1000 for 1d).
-  1                                        MCMCseed            Random number seed to start the MCMC: 0-let system clock determine seed.
+  0                                        MCMCseed            Random number seed to start the MCMC: 0-let system clock determine seed.
   1                                        adaptiveMCMC        Use adaptation: 0-no, 1-yes.
   0.25                                     acceptRateTarget    Target acceptance rate for MCMC (0.0-1.0).  We used 0.25 for a long time.
   -1.e3                                    minlogL             Minimum value for the log Likelihood to accept a jump. We used 0 for a long time, this number shouldn't be positive! Try -1.e3.

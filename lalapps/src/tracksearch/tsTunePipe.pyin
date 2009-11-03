@@ -38,9 +38,9 @@ import os
 import string
 import time
 import pickle
-import tracksearch
-from tracksearchutils import *
-from tracksearch import buildDir
+from lalapps import tracksearch
+from lalapps.tracksearchutils import *
+from lalapps.tracksearch import buildDir
 
 
 #
