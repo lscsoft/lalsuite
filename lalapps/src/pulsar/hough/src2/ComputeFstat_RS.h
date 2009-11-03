@@ -70,6 +70,13 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 #define COMPUTEFSTATRSC_MSGEIEEE	"Floating point failure"
 
 /*---------- exported types ----------*/
+
+/** Multi-IFO container for COMPLEX8 resampled timeseries */
+typedef struct {
+  UINT4 length;		                /**< number of IFOs */
+  COMPLEX8TimeSeries **data;	        /**< array of COMPLEX8TimeSeries (pointers) */
+} MultiCOMPLEX8TimeSeries;
+
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
