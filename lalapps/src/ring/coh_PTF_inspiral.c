@@ -1133,6 +1133,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
       for ( j = 0 ; j < vecLengthTwo ; j++ )
       {
         pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
+        pValues[j]->data->data[i - numPoints/4] = 0;
       } 
       recSNR = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1142,7 +1143,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
       }
-      fprintf(stdout,"%e %e \n",max_eigen,recSNR);
+      /*fprintf(stdout,"%e %e \n",max_eigen,recSNR);*/
       betaGammaTemp[0] = 0;
       betaGammaTemp[1] = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1150,9 +1151,18 @@ void cohPTFmodBasesUnconstrainedStatistic(
         betaGammaTemp[0] += pValsTemp[j]*v1[j];
         betaGammaTemp[1] += pValsTemp[j]*v2[j];
       }
+      gammaBeta[0]->data->data[i - numPoints/4] = betaGammaTemp[0];
+      gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
 
-      fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);
+      for ( j = 0 ; j < vecLengthTwo ; j++ )
+      {
+        for ( k = 0 ; k < vecLengthTwo ; k++ )
+        {
+          pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
+        }
+      }
 
+      /*fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);*/
 
     }
   }
@@ -1269,6 +1279,8 @@ void cohPTFaddTriggers(
           currEvent->t1quad.re = pValues[8]->data->data[i];
         if (pValues[9]) 
           currEvent->t1quad.im = pValues[9]->data->data[i];
+        currEvent->g1quad.re = gammaBeta[0]->data->data[i];
+        currEvent->g1quad.im = gammaBeta[1]->data->data[i];
         if (spinTrigger == 1)
           currEvent->snr_dof = 6;
         else
