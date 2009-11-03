@@ -41,23 +41,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
-}
-
-{
-  channelName:                 'H1:LSC-AS_Q'
-  frameType:                   'H1_RDS_R_L1'
-  sampleFrequency:             4096
-  searchTimeRange:             64
-  searchFrequencyRange:        [0 Inf]
-  searchQRange:                [4 64]
-  searchMaximumEnergyLoss:     0.2
-  whiteNoiseFalseRate:         1e-3
-  searchWindowDuration:        2.0
-  plotTimeRanges:              [1 4 16]
-  plotFrequencyRange:          []
-  plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [Excitation,Calibration lines and injections]
@@ -75,7 +59,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -91,7 +75,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -107,7 +91,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -123,7 +107,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -139,7 +123,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -155,7 +139,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:LSC,H1 length sensing and control]
@@ -173,7 +157,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -189,7 +173,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -205,7 +189,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -221,7 +205,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -237,7 +221,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -253,7 +237,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -269,7 +253,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -285,7 +269,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -301,7 +285,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -317,7 +301,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -333,7 +317,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -349,7 +333,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:ASC,H1 alignment sensing and control]
@@ -367,7 +351,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -383,7 +367,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -399,7 +383,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -415,7 +399,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -431,7 +415,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -447,7 +431,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -463,7 +447,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -479,7 +463,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -495,7 +479,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -511,7 +495,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -527,7 +511,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -543,7 +527,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -559,7 +543,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -575,7 +559,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -591,7 +575,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -607,7 +591,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -623,7 +607,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -639,7 +623,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -655,7 +639,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -671,7 +655,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -687,7 +671,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -703,7 +687,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -719,7 +703,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -735,7 +719,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -751,7 +735,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -767,7 +751,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -783,7 +767,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -799,7 +783,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:IOO,H1 input/output optics]
@@ -817,7 +801,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:PSL,H1 pre-stabilized laser]
@@ -835,7 +819,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:SUS,H1 suspension system]
@@ -853,7 +837,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -869,7 +853,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -885,7 +869,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -901,7 +885,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -917,7 +901,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -933,7 +917,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -949,7 +933,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -965,7 +949,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -981,7 +965,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -997,7 +981,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1013,7 +997,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1029,7 +1013,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1045,7 +1029,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1061,7 +1045,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1077,7 +1061,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1093,7 +1077,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1109,7 +1093,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1125,7 +1109,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1141,7 +1125,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1157,7 +1141,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1173,7 +1157,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1189,7 +1173,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1205,7 +1189,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1221,7 +1205,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1237,7 +1221,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1253,7 +1237,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1269,7 +1253,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1285,7 +1269,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1301,7 +1285,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1317,7 +1301,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1333,7 +1317,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1349,7 +1333,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1365,7 +1349,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1381,7 +1365,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1397,7 +1381,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1413,7 +1397,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 [H1:TCS,H1 thermal compensation system]
@@ -1431,7 +1415,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1447,7 +1431,603 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+[H1:OMC,H1 output mode cleaner]
+
+{
+  channelName:                 'H1:OMC-HTR_DRV_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-NULLSTREAM_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_LSC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_VMON_AC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_VMON_DC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSPIT_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSPOS_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSYAW_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSPIT_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSPOS_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSYAW_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:ISI,H1 HAM6 ISI]
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RX_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RY_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RZ_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_X_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_Y_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_Z_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_DISPPF_H1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_DISPPF_V1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H2_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H3_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V2_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V3_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 [H0:PEM,LHO environment]
@@ -1465,7 +2045,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1481,7 +2061,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1497,7 +2077,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1513,7 +2093,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1529,7 +2109,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1545,7 +2125,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1561,7 +2141,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1577,7 +2157,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1593,7 +2173,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1609,7 +2189,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1625,7 +2205,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1641,7 +2221,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1657,7 +2237,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1673,7 +2253,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1689,7 +2269,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1705,7 +2285,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1721,7 +2301,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1737,7 +2317,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1753,7 +2333,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1769,7 +2349,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1785,7 +2365,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1801,7 +2381,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1817,7 +2397,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1833,7 +2413,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1849,7 +2429,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1865,7 +2445,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1881,7 +2461,23 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1897,7 +2493,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1913,7 +2509,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1929,7 +2525,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1945,11 +2541,11 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
-  channelName:                 'H0:PEM-EX_V2'
+  channelName:                 'H0:PEM-RACK_1Y22_MAGZ'
   frameType:                   'H1_RDS_R_L1'
   sampleFrequency:             2048
   searchTimeRange:             64
@@ -1961,7 +2557,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1977,7 +2573,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -1993,7 +2589,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2009,7 +2605,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2025,23 +2621,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
-}
-
-{
-  channelName:                 'H0:PEM-EY_V2'
-  frameType:                   'H1_RDS_R_L1'
-  sampleFrequency:             2048
-  searchTimeRange:             64
-  searchFrequencyRange:        [0 Inf]
-  searchQRange:                [4 64]
-  searchMaximumEnergyLoss:     0.2
-  whiteNoiseFalseRate:         1e-3
-  searchWindowDuration:        2.0
-  plotTimeRanges:              [1 4 16]
-  plotFrequencyRange:          []
-  plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2057,7 +2637,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2073,7 +2653,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2089,7 +2669,71 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2105,7 +2749,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2121,7 +2765,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2137,7 +2781,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2153,7 +2797,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2169,7 +2813,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2185,7 +2829,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2201,7 +2845,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2217,7 +2861,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2233,7 +2877,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2249,7 +2893,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2265,7 +2909,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2281,7 +2925,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2297,7 +2941,23 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_ACCPER'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2313,7 +2973,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2329,7 +2989,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2345,7 +3005,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2361,7 +3021,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2377,7 +3037,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2393,7 +3053,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2409,7 +3069,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2425,7 +3085,55 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2441,7 +3149,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2457,7 +3165,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2473,7 +3181,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2489,7 +3197,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2505,7 +3213,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2521,7 +3229,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2537,7 +3245,23 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2553,7 +3277,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2569,7 +3293,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2585,7 +3309,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2601,7 +3325,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2617,7 +3341,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2633,7 +3357,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2649,7 +3373,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2665,7 +3389,7 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2681,7 +3405,39 @@
   plotTimeRanges:              [8 64 512]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-OMC1_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-OUT_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2697,7 +3453,23 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL1_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2713,7 +3485,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2729,7 +3501,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2745,7 +3517,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2761,7 +3533,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2777,7 +3549,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2793,7 +3565,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2809,7 +3581,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2825,7 +3597,7 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 
 {
@@ -2841,6 +3613,6 @@
   plotTimeRanges:              [1 4 16]
   plotFrequencyRange:          []
   plotNormalizedEnergyRange:   [0 25.5]
-  alwaysPlotFlag:              1
+  alwaysPlotFlag:              0
 }
 

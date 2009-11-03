@@ -44,7 +44,7 @@ AC_CONFIG_FILES([\
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
-AM_INIT_AUTOMAKE([])
+AM_INIT_AUTOMAKE([foreign])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
 AC_ARG_VAR(LAL_TOP_SRCDIR,[Set to top source directory of lal])
 AH_TOP([
@@ -169,7 +169,7 @@ lalmetaio="true"
 lalxml="true"
 lalstochastic="true"
 PKG_CHECK_MODULES([LALFRAME],[lalframe >= 1.0],[true],[false])
-PKG_CHECK_MODULES([LALMETAIO],[lalmetaio],[true],[false])
+PKG_CHECK_MODULES([LALMETAIO],[lalmetaio >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALXML],[lalxml >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALSTOCHASTIC],[lalstochastic >= 1.0],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then

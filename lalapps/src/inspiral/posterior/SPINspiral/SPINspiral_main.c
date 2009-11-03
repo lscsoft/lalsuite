@@ -25,11 +25,9 @@
 */
 
 
-#include "SPINspiral.h"
+#include <SPINspiral.h>
 
 double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
-
-
 
 /**
  * \mainpage documentation
@@ -50,7 +48,7 @@ double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 int main(int argc, char* argv[])
 {
   printf("\n\n   Starting SPINspiral...\n");
-  printf("   Compiled from source code version $Id: SPINspiral_main.c 222 2009-09-19 13:40:12Z vivien $ \n");
+  printf("   Compiled from source code version $Id: SPINspiral_main.c 227 2009-10-28 09:04:49Z vivien $ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0,injectionWF=0,mcmcWF=0;
@@ -84,11 +82,11 @@ int main(int argc, char* argv[])
   readMCMCinputfile(&run);                 //Read the input data on how to do MCMC 
   setSeed(&run.MCMCseed);                  //Set MCMCseed if 0, otherwise keep the current value
   readInjectionInputfile(&run);            //Read the input data on whether and how to do a software injection
-	if(run.injXMLfilename != NULL && run.injXMLnr >= 0) readInjectionXML(&run);	 //Read injection XML file if specified:
+  if(run.injXMLfilename != NULL && run.injXMLnr >= 0) readInjectionXML(&run);    //Read injection XML file if specified:
   readParameterInputfile(&run);            //Read the input data on how to handle MCMC parameters
   readSystemInputfile(&run);               //Read system-dependent data, e.g. path to data files
   
-	
+  
   
   //Set up the data for the IFOs in an IFO database you may want to use (H1,L1 + VIRGO by default)
   run.maxIFOdbaseSize = 4;  //The maximum number of IFOs to read the properties in for from the data input file (SPINspiral.input.data or equivalent)
