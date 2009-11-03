@@ -338,7 +338,7 @@ void StackSlideVecF(LALStatus *status,
   } else if ( params->useToplist ) {
     /* 12/18/06 gm; Even if using a toplist, get candidate list based on threshold if thresold > 0.0 */
     /* First put candidates into the top list: */
-    for ( uk=0; uk<out->nCandidates; uk++) {
+    for ( uk=0; uk < (UINT4)out->nCandidates; uk++) {
         insert_into_toplist(stackslideToplist, out->list + uk);
     }
     /* Now put back into the output list: */
@@ -382,11 +382,6 @@ void StackSlideVecF_HoughMode(LALStatus *status,
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
   REAL8Vector *timeDiffV=NULL;
-  UINT8Vector hist; /* histogram vector */ 
-  UINT8Vector histTotal; /* total histogram vector */
-  HoughStats stats; /* statistics struct */
-  CHAR *fileStats = NULL;
-  FILE *fpStats = NULL;
 
   /* a minimal number of hough structs needed */
   HOUGHMapTotal ht;
@@ -574,8 +569,7 @@ void StackSlideVecF_HoughMode(LALStatus *status,
 
   while( fBin <= fBinFin ){
     INT8 fBinSearch, fBinSearchMax;
-    UINT4 i,j; 
-    REAL8UnitPolarCoor sourceLocation;
+    UINT4 j; 
     	
     parRes.f0Bin =  fBin;      
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );

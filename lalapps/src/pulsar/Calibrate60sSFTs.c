@@ -35,6 +35,8 @@ char filelist[MAXFILES][MAXFILENAMELENGTH];
 Sensing Sraw,So;
 Response Rraw,Ro;
 
+int Freemem(void);
+
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -531,7 +533,7 @@ int ReadCalibrationFiles(struct CommandLineArgsTag CLA)
 int ReadSFTDirectory(struct CommandLineArgsTag CLA)
 {
   char command[256];
-  INT4 fileno=0;
+  INT4 filenum=0;
   glob_t globbuf;
 
 
@@ -542,11 +544,11 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno < (int) globbuf.gl_pathc) 
+  while (filenum < (int) globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;
@@ -554,7 +556,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
     }
   globfree(&globbuf);
 
-  SFTno=fileno;  /* Global variable that keeps track of no of SFTs */
+  SFTno=filenum;  /* Global variable that keeps track of no of SFTs */
 
   return 0;
 }
@@ -654,7 +656,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 /*******************************************************************************/
 
 
-int Freemem()
+int Freemem(void)
 {
 
 

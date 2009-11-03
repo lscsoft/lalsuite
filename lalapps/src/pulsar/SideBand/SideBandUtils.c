@@ -396,8 +396,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
 void InitEphemeris (LALStatus * status,   
 		    EphemerisData *edat,	/**< [out] the ephemeris-data */
 		    const CHAR *ephemDir,	/**< directory containing ephems */
-		    const CHAR *ephemYear,	/**< which years do we need? */
-		    LIGOTimeGPS epoch	/**< epoch of observation */
+		    const CHAR *ephemYear	/**< which years do we need? */
 		    )
 {
 

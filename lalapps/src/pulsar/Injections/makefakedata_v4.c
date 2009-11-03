@@ -1634,7 +1634,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,
 /** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
  */
 void
-LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
+LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band )
 {
   UINT4 firstBin, numBins, numSFTs;
   UINT4 i;
@@ -1656,13 +1656,13 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
   SFTBand = df * inSFTs->data[0].data->length;
 
 
-  if ( (fmin < SFTf0) || ( fmin + Band > SFTf0 + SFTBand ) )
+  if ( (f_min < SFTf0) || ( f_min + Band > SFTf0 + SFTBand ) )
     {
       printf ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
       ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
     }
 
-  firstBin = floor ( fmin / df + 0.5 );
+  firstBin = floor ( f_min / df + 0.5 );
   numBins =  floor ( Band / df + 0.5 ) + 1;
 
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, numBins ), status );
@@ -1677,7 +1677,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
       memcpy ( dest, src, sizeof(*dest) );
       /* restore data-pointer */
       dest->data = ptr;
-      /* set correct fmin */
+      /* set correct f_min */
       dest->f0 = firstBin * df ;
 
       /* copy the relevant part of the data */

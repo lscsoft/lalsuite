@@ -398,7 +398,7 @@ fmin + delta f. Also set the SFT header structure appropriately.
 This code was taken almost completely from the file sft2frame.c written
 by Jolien Creighton. Errors are owned by Scott Koranda.
 */
-int read_sft( struct sftheader *header, float **dataF, const char *fname, float fmin, float deltaf )
+int read_sft( struct sftheader *header, float **dataF, const char *fname, float f_min, float deltaf )
 {
         FILE *fp;               /* pointer to SFT wide-band file */
         int swapbytes = 0;      /* flag for whether indianess is wrong and need to swap */
@@ -464,27 +464,27 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
         freqmin = (float) (header->first / tbase);
         freqmax = (float) ((header->first + header->nsamples) / tbase);
 
-        if ( fmin < freqmin )
+        if ( f_min < freqmin )
         {
-                fprintf(stderr, "Desired start frequency %f too small: SFT begins with %f\n", fmin, freqmin);
+                fprintf(stderr, "Desired start frequency %f too small: SFT begins with %f\n", f_min, freqmin);
                 return 4;
         }
 
-        if ( (fmin + deltaf) > freqmax )
+        if ( (f_min + deltaf) > freqmax )
         {
-                fprintf(stderr, "Desired end frequency %f too large: SFT ends with %f\n", fmin, freqmax);
+                fprintf(stderr, "Desired end frequency %f too large: SFT ends with %f\n", f_min, freqmax);
                 return 5;
         }
 
-        /* compute the min and max index necessary to ensure fmin to fmin + deltaf
+        /* compute the min and max index necessary to ensure f_min to f_min + deltaf
            is in extracted band */
 	if (sloppyness)
 	  {
-	    fminindex = (int)(fmin*tbase+0.5);
-	    fmaxindex = (int)((fmin+deltaf)*tbase+0.5);
+	    fminindex = (int)(f_min*tbase+0.5);
+	    fmaxindex = (int)((f_min+deltaf)*tbase+0.5);
 	  }else{
-	    fminindex = (int) floor(fmin * tbase);
-	    fmaxindex = (int) ceil((fmin + deltaf) * tbase);
+	    fminindex = (int) floor(f_min * tbase);
+	    fmaxindex = (int) ceil((f_min + deltaf) * tbase);
 	  }
 
         /* allocate data to store the narrow band complex series
@@ -545,18 +545,20 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
 /* directly from Jolien Creighton */
 void byte_swap( void *ptr, size_t size, size_t nobj )
 {
+  char *p1 = (char*)ptr;
+
         while ( nobj-- > 0 )
         {
                 size_t byte;
                 for ( byte = 0; byte < size / 2; ++byte )
                 {
-                        char *b1 = ptr + byte;
-                        char *b2 = ptr + size - byte - 1;
+                        char *b1 = p1 + byte;
+                        char *b2 = p1 + size - byte - 1;
                         char tmp = *b1;
                         *b1 = *b2;
                         *b2 = tmp;
                 }
-                ptr += size;
+                p1 += size;
         }
         return;
 }

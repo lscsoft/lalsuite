@@ -326,7 +326,7 @@ typedef struct CellDataTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT8 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT8 *datalen, const REAL8 myFthr );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT8 *datalen, const REAL8 myFthr );
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT8 *candlen );
 
 #ifdef USE_UNZIP
@@ -360,8 +360,8 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
-void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const INT8 datalen);
-void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const INT8 datalen);
+void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CandidateList *CList);
+void FreeMemoryCellsOnly(LALStatus *, CellData *cell, const INT8 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 void sortCandidates(INT8 *data, INT8 N);
@@ -411,7 +411,6 @@ int main(INT4 argc,CHAR *argv[])
   REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
-  REAL8 DeltaEdge=0;
   REAL8 d0=0,a0=0,k0=0;
   INT4  NumDeltaWins, idb;
   INT4  iDeltaMax1=0;
@@ -424,7 +423,6 @@ int main(INT4 argc,CHAR *argv[])
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT8  sizecells; /* Length of the cell list */
-  INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
   LALStatus *lalStatus = &global_status;
   setlocale(LC_ALL, "C");
@@ -459,7 +457,7 @@ int main(INT4 argc,CHAR *argv[])
   /* More efficent sorting in memory by using an integer list */
   SortedCListi = (INT8 *) LALCalloc(CLength, sizeof(INT8) );
   if( SortedCListi == NULL ) {
-    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+    return POLKAC_EMEM;
   }
 
 
@@ -487,7 +485,7 @@ int main(INT4 argc,CHAR *argv[])
     /* Allocate memory for the declination cell lookup table */
     LookupDelta1 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
     if( LookupDelta1 == NULL ) {
-      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+      return POLKAC_EMEM;
     }
     /* Finally calclate the 1st declination lookup table */
     idb=0;
@@ -522,7 +520,7 @@ int main(INT4 argc,CHAR *argv[])
     /* Allocate memory for the declination cell 2nd lookup table */
     LookupDelta2 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
     if( LookupDelta2 == NULL ) {
-      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+      return POLKAC_EMEM;
     }
     /* Finally calclate the 2nd declination lookup table */
     idb=0;
@@ -735,7 +733,7 @@ int main(INT4 argc,CHAR *argv[])
 	    
 	    
 	    /* clean memory for cells */
-	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, &PCV, cell, sizecells), lalStatus);
+	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, cell, sizecells), lalStatus);
 	    LALCheckMemoryLeaks(); 
 	    
 	    selectGrid++;
@@ -751,7 +749,7 @@ int main(INT4 argc,CHAR *argv[])
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
-  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC, sizecells), lalStatus);
+  LAL_CALL( FreeMemory(lalStatus, &PCV, SortedC), lalStatus);
   LALCheckMemoryLeaks(); 
 
   
@@ -1283,9 +1281,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 */
 void FreeMemory( LALStatus *lalStatus, 
 	    PolkaConfigVars *CLA, 
-	    CellData *cell, 
-	    CandidateList *CList, 
-	    const INT8 datalen)
+                 CandidateList *CList) 
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1321,7 +1317,6 @@ void FreeMemory( LALStatus *lalStatus,
   @param[in]     CLength   INT8            Number of the cells
 */
 void FreeMemoryCellsOnly( LALStatus *lalStatus, 
-			  PolkaConfigVars *CLA, 
 			  CellData *cell, 
 			  const INT8 datalen)
 {
@@ -1842,7 +1837,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
   else if ( CLA->FstatsFile != NULL ) 
     {
       *CList = NULL;
-      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile,CLA, clen, CLA->TwoFthr ), lalStatus );
+      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLA->TwoFthr ), lalStatus );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
@@ -1889,7 +1884,7 @@ GetFilesListInThisDir( LALStatus *lalStatus,
 {
 #ifdef HAVE_GLOB_H   
   CHAR *command = NULL;
-  UINT4 fileno=0;
+  UINT4 filenum=0;
   glob_t globbuf;
 #endif
 
@@ -1932,18 +1927,18 @@ GetFilesListInThisDir( LALStatus *lalStatus,
   if ( ( *filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
-  while ( fileno < (UINT4) globbuf.gl_pathc) 
+  while ( filenum < (UINT4) globbuf.gl_pathc) 
     {
-      (*filelist)[fileno] = NULL;
-      if ( ((*filelist)[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
+      (*filelist)[filenum] = NULL;
+      if ( ((*filelist)[filenum] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[filenum])+1)) == NULL) {
 	ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
       }
-      strcpy((*filelist)[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
+      strcpy((*filelist)[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
     }
   globfree(&globbuf);
 
-  *nfiles = fileno; /* remember this is 1 more than the index value */
+  *nfiles = filenum; /* remember this is 1 more than the index value */
 #endif
 
   LALFree(command);
@@ -2567,7 +2562,6 @@ void
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
-		      PolkaConfigVars *CLA,
 		      INT8 *candlen, 
 		      const REAL8 myFthr )
 {
