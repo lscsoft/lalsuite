@@ -45,7 +45,7 @@ struct tagLALVCSInfo lalLibraryVCSInfo = { \
   LAL_VCS_STATUS \
 };
 
-/* fucntion to compare two LALVCSInfo structures */
+/* function to compare two LALVCSInfo structures */
 int XLALVCSInfoCompare(LALVCSInfo *header, LALVCSInfo *library)
 {
   /* check for header/library mismatch */
