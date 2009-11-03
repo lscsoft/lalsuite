@@ -34,9 +34,16 @@ const char *lalVCSCommitter = LAL_VCS_COMMITTER;
 const char *lalVCSStatus = LAL_VCS_STATUS;
 
 /* library vcs information structure */
-struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
-  LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
-  LAL_VCS_COMMITTER, LAL_VCS_STATUS};
+struct tagLALVCSInfo lalLibraryVCSInfo = { \
+  LAL_VERSION, \
+  LAL_VCS_ID, \
+  LAL_VCS_DATE, \
+  LAL_VCS_BRANCH, \
+  LAL_VCS_TAG, \
+  LAL_VCS_AUTHOR, \
+  LAL_VCS_COMMITTER, \
+  LAL_VCS_STATUS \
+};
 
 /* fucntion to compare two LALVCSInfo structures */
 int XLALVCSInfoCompare(LALVCSInfo *header, LALVCSInfo *library)
