@@ -118,10 +118,10 @@ int finite(double x);
 void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
-			       MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-			       const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
-			       MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-			       ComputeFParams *params		/**< addition computational params */
+			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+			       const MultiNoiseWeights *multiWeights,	        /**< noise-weights of all SFTs */
+			       MultiDetectorStateSeries *multiDetStates,        /**< 'trajectories' of the different IFOs */
+			       ComputeFParams *params		                /**< addition computational params */
 			       )
 {
 /*   static const CHAR *fn = "ComputeFStatFreqBand_RS()"; */
@@ -184,14 +184,21 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   /* generate bandpassed and downsampled timeseries for each detector                         */
   /* we only ever do this once for a given dataset so we read it from the buffer if it exists */
   /* in future implementations we will pass this directly to the function instead of SFTs     */
-  if (cfBuffer) {
-    if (cfBuffer->multiTimeseries) multiTimeseries = cfBuffer->multiTimeseries;
-    else {
-      LALPrintError("\nComputeFstat buffer non-null but multiTimeseries is NULL, strange!\n\n");
-      ABORT ( status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
+  /* first, if there is no buffer allocate space for one */
+  if (!cfBuffer) 
+    {
+      if ( (cfBuffer = XLALMalloc(sizeof(ComputeFBuffer))) == NULL ) {
+	LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      }	
     }
-  }
-  else {
+  
+  /* check if there is an existing timeseries and the start time in the buffer matches the start time of the SFTs */
+  if (cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->startseg,&multisfts->data[0]->data[0].epoch) == 0) ) 
+    {
+      multiTimeseries = cfBuffer->multiTimeseries;	/* use the buffered multiTimeSeries */ 
+    }  
+  else {    /* otherwise we need to recompute the timeseries from the SFTs */
     
     /* generate multiple coincident timeseries - one for each detector spanning start -> end */ 
     /* we need each timeseries to span the exact same amount of time and to start at the same time */
@@ -231,18 +238,17 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     LALGetMultiDetectorStates ( status->statusPtr, &multiDetStates, multiSFTs, params->edat );    /* recompute the multiDetStates for the new SFT start times */
 
     /* point the buffer to the newly generated timeseries and set all other buffer pointers to NULL */
-    /* if we're in this if statement then we will always need to allocate mem for the buffer pointers */
-    if ( (cfBuffer = XLALMalloc(sizeof(ComputeFBuffer))) == NULL ) {
-      LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }			  
     cfBuffer->multiTimeseries = multiTimeseries;
     cfBuffer->multiSSB = NULL;
     cfBuffer->multiBinary = NULL;
     cfBuffer->multiAMcoef = NULL;
     cfBuffer->multiCmplxAMcoef = NULL; 
     cfBuffer->multiFa_resampled = NULL;                
-    cfBuffer->multiFb_resampled = NULL;         
+    cfBuffer->multiFb_resampled = NULL;
+
+    /* also buffer the current start time of the input data */ 
+    cfBuffer->segstart.gpsSeconds = multisfts->data[0]->data[0].epoch.gpsSeconds;
+    cfBuffer->segstart.gpsNanoSeconds = multisfts->data[0]->data[0].epoch.gpsNanoSeconds;
 
   }  /* if (cfBuffer->multiTimeseries) */
  
