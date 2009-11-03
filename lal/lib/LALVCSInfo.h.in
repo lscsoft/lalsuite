@@ -37,6 +37,15 @@ extern "C" {
 #define LAL_VCS_COMMITTER "@COMMITTER@"
 #define LAL_VCS_STATUS "@STATUS@"
 
+/* vcs information defines - identable*/
+#define LAL_VCS_IDENT_ID "$" "Id: @ID@ " "$"
+#define LAL_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
+#define LAL_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
+#define LAL_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
+#define LAL_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
+#define LAL_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
+#define LAL_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+
 /* global variables for vcs information, defined in LALVCSInfo.c */
 extern const char *lalVCSVersion;
 extern const char *lalVCSId;
