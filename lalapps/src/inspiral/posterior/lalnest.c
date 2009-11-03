@@ -89,6 +89,8 @@ REAL8 SNRfac=1.0;
 int HighMassFlag=0;
 int decohereflag=0;
 REAL8 offset=0.0;
+extern const LALUnit strainPerCount;
+
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -427,43 +429,43 @@ int main( int argc, char *argv[])
 		if(Ninj<event) {fprintf(stderr,"Error reading event %i from %s\n",event,injXMLFile); exit(-1);}
 		i=0;
 		while(i<event) {i++; injTable = injTable->next;} /* Select event */
-		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
-		else {injTable->f_lower = inputMCMC.fLow;
-		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
-		InjParams.deltaT=1.0/SampleRate;
-		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
-		memset(&InjectGW,0,sizeof(CoherentGW));
+//		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
+//		else {injTable->f_lower = inputMCMC.fLow;
+//		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
+//		InjParams.deltaT=1.0/SampleRate;
+//		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
+//		memset(&InjectGW,0,sizeof(CoherentGW));
 		fprintf(stderr,"Injected event %i:\tMass1: %lf\tMass2: %lf\n\tDistance: %lf Mpc\teta: %lf\n",event,injTable->mass1,injTable->mass2,injTable->distance,injTable->eta);
 		/*		memcpy(&(InjParams.epoch),&(injTable->geocent_end_time),sizeof(LIGOTimeGPS)); */
-		Approximant injapprox;
-		fprintf(stderr,"INJ: end time = %lf\n",injTable->geocent_end_time.gpsSeconds + injTable->geocent_end_time.gpsNanoSeconds*1.e-9);
-		LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
-		if(injapprox!=GeneratePPN) {fprintf(stderr,"WARNING!!!!! Not using GeneratePPN approximant may result in offset of the end time!\n");}
-		LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
-		if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!!!\n"); REPORTSTATUS(&status); }
+//		Approximant injapprox;
+//		fprintf(stderr,"INJ: end time = %lf\n",injTable->geocent_end_time.gpsSeconds + injTable->geocent_end_time.gpsNanoSeconds*1.e-9);
+//		LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
+//		if(injapprox!=GeneratePPN) {fprintf(stderr,"WARNING!!!!! Not using GeneratePPN approximant may result in offset of the end time!\n");}
+//		LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
+//		if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!!!\n"); REPORTSTATUS(&status); }
 		/****************************************************************************************************/
 		/********** THIS IS ONLY NECESSARY WHILE THE LALGenerateInspiral and LALInspiralParameterCalc *******/
 		/********** GIVE DIFFERENT CHIRP TIMES !                                                      *******/
 		
-		insptemplate.totalMass=InjParams.mTot;
-		insptemplate.eta = InjParams.eta;
-		insptemplate.approximant = TaylorF2;
-		insptemplate.order = LAL_PNORDER_TWO;
-		insptemplate.fLower = inputMCMC.fLow;
-		insptemplate.massChoice = totalMassAndEta;
-		LALInspiralParameterCalc(&status,&insptemplate);
+//		insptemplate.totalMass=InjParams.mTot;
+//		insptemplate.eta = InjParams.eta;
+//		insptemplate.approximant = TaylorF2;
+//		insptemplate.order = LAL_PNORDER_TWO;
+//		insptemplate.fLower = inputMCMC.fLow;
+//		insptemplate.massChoice = totalMassAndEta;
+//		LALInspiralParameterCalc(&status,&insptemplate);
 		/*		InjParams.tc = insptemplate.tC;*/
 		/*****************************************************************************************************/
 		
-		injstart = injTable->geocent_end_time;
-		XLALGPSAdd(&injstart, -InjParams.tc); /* makes injstart the time at fLow */
+//		injstart = injTable->geocent_end_time;
+//		XLALGPSAdd(&injstart, -InjParams.tc); /* makes injstart the time at fLow */
 		/*		fprintf(stderr,"start time = %lf\n",injstart.gpsSeconds + injstart.gpsNanoSeconds*1.e-9); */
-		fprintf(stderr,"INJ: Injected wave chirp time: %lf s\n",InjParams.tc);
-		if(InjectGW.h) memcpy(&(InjectGW.h->epoch),&injstart,sizeof(LIGOTimeGPS));
-		if(InjectGW.a) memcpy(&(InjectGW.a->epoch),&injstart,sizeof(LIGOTimeGPS));
-		if(InjectGW.f) memcpy(&(InjectGW.f->epoch),&injstart,sizeof(LIGOTimeGPS));
-		if(InjectGW.phi) memcpy(&(InjectGW.phi->epoch),&injstart,sizeof(LIGOTimeGPS));
-		if(InjectGW.shift) memcpy(&(InjectGW.shift->epoch),&injstart,sizeof(LIGOTimeGPS));
+//		fprintf(stderr,"INJ: Injected wave chirp time: %lf s\n",InjParams.tc);
+//		if(InjectGW.h) memcpy(&(InjectGW.h->epoch),&injstart,sizeof(LIGOTimeGPS));
+//		if(InjectGW.a) memcpy(&(InjectGW.a->epoch),&injstart,sizeof(LIGOTimeGPS));
+//		if(InjectGW.f) memcpy(&(InjectGW.f->epoch),&injstart,sizeof(LIGOTimeGPS));
+//		if(InjectGW.phi) memcpy(&(InjectGW.phi->epoch),&injstart,sizeof(LIGOTimeGPS));
+//		if(InjectGW.shift) memcpy(&(InjectGW.shift->epoch),&injstart,sizeof(LIGOTimeGPS));
 	}
 	
 	/* Get the end time of the trigger or injection */
@@ -607,8 +609,16 @@ int main( int argc, char *argv[])
 				XLALGPSAdd(&segmentStart,((REAL8) i+1)*offset);
 				fprintf(stdout,"Offset injection by %lf s\n",((REAL8) i+1)*offset);
 			}
-			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("injection",&(segmentStart),0.0,inputMCMC.deltaT,&lalDimensionlessUnit,(size_t)seglen);
-			LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
+			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOnames[i],&(segmentStart),0.0,inputMCMC.deltaT,&lalADCCountUnit,(size_t)seglen);
+			/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
+			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&segmentStart,0.0,inputMCMC.deltaF,&strainPerCount,(size_t)seglen);
+			for(j=0;j<resp->data->length;j++) {resp->data->data[j].re=(REAL4)1.0; resp->data->data[j].im=0.0;}
+			SimInspiralTable this_injection;
+			memcpy(&this_injection,injTable,sizeof(SimInspiralTable));
+			this_injection.next=NULL;
+			LALFindChirpInjectSignals(&status,injWave,&this_injection,resp);
+			XLALDestroyCOMPLEX8FrequencySeries(resp);
+			printf("Finished InjectSignals\n");
 			REPORTSTATUS(&status);
 			if(decohereflag) {
 				memcpy(&segmentStart,&realSegStart,sizeof(realSegStart));
@@ -623,6 +633,7 @@ int main( int argc, char *argv[])
 			REAL4 WinNorm = sqrt(windowplan->sumofsquares/windowplan->data->length);
 			for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=SNRfac*windowplan->data->data[j]/WinNorm;
 			XLALREAL8TimeFreqFFT(injF,inj8Wave,fwdplan); /* This calls XLALREAL8TimeFreqFFT which normalises by deltaT */
+			
 			REPORTSTATUS(&status);
 			if(estimatenoise){
 				for(j=(UINT4) (inputMCMC.fLow/inputMCMC.invspec[i]->deltaF),SNR=0.0;j<seglen/2;j++){
