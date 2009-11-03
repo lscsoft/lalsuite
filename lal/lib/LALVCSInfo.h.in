@@ -29,13 +29,13 @@ extern "C" {
 #endif
 
 /* vcs information defines */
-#define LAL_VCS_ID "$@ID@ $"
-#define LAL_VCS_DATE "$@DATE@ $"
-#define LAL_VCS_BRANCH "$@BRANCH@ $"
-#define LAL_VCS_TAG "$@TAG@ $"
-#define LAL_VCS_AUTHOR "$@AUTHOR@ $"
-#define LAL_VCS_COMMITTER "$@COMMITTER@ $"
-#define LAL_VCS_STATUS "$@STATUS@ $"
+#define LAL_VCS_ID "@ID@"
+#define LAL_VCS_DATE "@DATE@"
+#define LAL_VCS_BRANCH "@BRANCH@"
+#define LAL_VCS_TAG "@TAG@"
+#define LAL_VCS_AUTHOR "@AUTHOR@"
+#define LAL_VCS_COMMITTER "@COMMITTER@"
+#define LAL_VCS_STATUS "@STATUS@"
 
 /* global variables for vcs information, defined in LALVCSInfo.c */
 extern const char *lalVCSVersion;

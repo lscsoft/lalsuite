@@ -174,13 +174,13 @@ def generate_git_version_info():
     git_status = 'CLEAN: All modifications committed'
 
   # determine version strings
-  info.id = 'Id: %s' % git_id
-  info.date = 'Date: %s' % git_date
-  info.branch = 'Branch: %s' % git_branch
-  info.tag = 'Tag: %s' % git_tag
-  info.author = 'Author: %s' % git_author
-  info.committer = 'Committer: %s' % git_committer
-  info.status = 'Status: %s' % git_status
+  info.id = git_id
+  info.date = git_date
+  info.branch = git_branch
+  info.tag = git_tag
+  info.author = git_author
+  info.committer = git_committer
+  info.status = git_status
 
   return info
 
@@ -250,13 +250,13 @@ if git_ok:
       os.remove(tmpfile)
   else:
     # output version info
-    print info.id
-    print info.date
-    print info.branch
-    print info.tag
-    print info.author
-    print info.committer
-    print info.status
+    print 'Id: %s' % info.id
+    print 'Date: %s' % info.date
+    print 'Branch: %s' % info.branch
+    print 'Tag: %s' % info.tag
+    print 'Author: %s' % info.author
+    print 'Committer: %s' % info.committer
+    print 'Status: %s' % info.status
 
 # exit
 sys.exit(0)
