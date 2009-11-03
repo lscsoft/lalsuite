@@ -611,7 +611,7 @@ int main( int argc, char *argv[])
 			}
 			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOnames[i],&(segmentStart),0.0,inputMCMC.deltaT,&lalADCCountUnit,(size_t)seglen);
 			/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
-			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&segmentStart,0.0,inputMCMC.deltaF,&strainPerCount,(size_t)seglen);
+			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&segmentStart,0.0,inputMCMC.deltaF,(const LALUnit *)&strainPerCount,seglen);
 			for(j=0;j<resp->data->length;j++) {resp->data->data[j].re=(REAL4)1.0; resp->data->data[j].im=0.0;}
 			SimInspiralTable this_injection;
 			memcpy(&this_injection,injTable,sizeof(SimInspiralTable));
