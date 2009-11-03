@@ -169,7 +169,7 @@ def generate_git_version_info():
   status_cmd = 'git status'
   status_output = run_external_command(status_cmd, honour_ret_code=False)[1].strip()
   if status_output.endswith('no changes added to commit (use "git add" and/or "git commit -a")'):
-      git_status = 'UNCLEAN: Some modifications not committed'
+    git_status = 'UNCLEAN: Some modifications not committed'
   else:
     git_status = 'CLEAN: All modifications committed'
 
