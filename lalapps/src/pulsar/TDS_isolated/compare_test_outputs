@@ -1,0 +1,219 @@
+#!/usr/bin/python
+
+import sys
+import os
+import string
+import math
+
+# set up files to compare
+
+# this is a file produced with a code to simulate the output from
+# the fine heterodyne
+simfile = 'simulated_reference.txt'
+
+# this is a file produce with the heterodyne code and will be used
+# as a reference
+reffile = 'finehet_J0000+0000_H1'
+
+# the data files we've just produced
+f1 = '875206560-875292960/finehet_J0000+0000_H1.bin'
+f2 = '875206560-875292960/finehet_J0000+0000_H1.txt'
+f3 = '875206560-875292960/finehet_J0000+0000_H1.full'
+f4 = '875206560-875292960/finehet_J0000+0000_H1.off'
+f5 = '875206560-875292960/finehet_J0000+0000_H1'
+
+# read in all the data
+infile = open(f1, 'r')
+data1 = infile.read()
+infile.close()
+
+infile = open(f2, 'r')
+data2 = infile.read()
+infile.close()
+
+infile = open(f3, 'r')
+data3 = infile.read()
+infile.close()
+
+infile = open(f4, 'r')
+data4 = infile.read()
+infile.close()
+
+infile = open(f5, 'r')
+data5 = infile.read()
+infile.close()
+
+infile = open(simfile, 'r')
+datasim = infile.read()
+infile.close()
+
+infile = open(reffile, 'r')
+dataref = infile.read()
+infile.close()
+
+refnew = dataref.split('\n')
+i = 0
+timeref = []
+realref = []
+imagref = []
+while i < len(refnew) - 1:
+  line = refnew[i].split('\t')
+
+  timeref.append(float(line[0]))
+  realref.append(float(line[1]))
+  imagref.append(float(line[2]))
+
+  i += 1
+
+# get range of reference data
+refrealrange = max(realref) - min(realref)
+refimagrange = max(imagref) - min(imagref)
+
+simnew = datasim.split('\n')
+i = 0
+timesim = []
+realsim = []
+imagsim = []
+while i < len(simnew) - 1:
+  line = simnew[i].split('\t')
+
+  timesim.append(float(line[0]))
+  realsim.append(float(line[1]))
+  imagsim.append(float(line[2]))
+
+  i += 1
+
+# get range of simulated data
+simrealrange = max(realsim) - min(realsim)
+simimagrange = max(imagsim) - min(imagsim)
+
+# compare reference and simulated data against our outputs
+# say data has to be within a percent of the reference data range
+# and within 5% of the simulated data range
+data1new = data1.split('\n')
+i = 0
+print >> sys.stderr, "Comparing against ", f1
+while i < len(data1new) - 1:
+  line = data1new[i].split('\t')
+  
+  if float(line[0]) != timeref[i]:
+    print >> sys.stderr, "Error. Output times do not match!"
+    sys.exit(2)
+  elif float(line[1]) - realref[i] > refrealrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[1]) - realsim[i] > simrealrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagref[i] > refimagrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagsim[i] > simimagrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output imaginary data is not close enough!"
+    sys.exit(2)
+
+  i += 1
+
+data2new = data2.split('\n')
+i = 0
+print >> sys.stderr, "Comparing against ", f2
+while i < len(data2new) - 1:
+  line = data2new[i].split('\t')
+  
+  if float(line[0]) != timeref[i]:
+    print >> sys.stderr, "Error. Output times do not match!"
+    sys.exit(2)
+  elif float(line[1]) - realref[i] > refrealrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[1]) - realsim[i] > simrealrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagref[i] > refimagrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagsim[i] > simimagrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output imaginary data is not close enough!"
+    sys.exit(2)
+
+  i += 1
+
+# the heterodyne in full mode outputs twice as much data, so skip every other
+# line in the comparison
+data3new = data3.split('\n')
+i = 1
+j = 0
+print >> sys.stderr, "Comparing against ", f3
+while i < len(data3new) - 1:
+  line = data3new[i].split('\t')
+ 
+  if float(line[0]) != timeref[j]:
+    print >> sys.stderr, "Error. Output times do not match!"
+    sys.exit(2)
+  elif float(line[1]) - realref[j] > refrealrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[1]) - realsim[j] > simrealrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagref[j] > refimagrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagsim[j] > simimagrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output imaginary data is not close enough!"
+    sys.exit(2)
+
+  j += 1
+  i += 2
+
+data4new = data4.split('\n')
+i = 0
+print >> sys.stderr, "Comparing against ", f4
+while i < len(data4new) - 1:
+  line = data4new[i].split('\t')
+ 
+  if float(line[0]) != timeref[i]:
+    print >> sys.stderr, "Error. Output times do not match!"
+    sys.exit(2)
+  elif float(line[1]) - realref[i] > refrealrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[1]) - realsim[i] > simrealrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagref[i] > refimagrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagsim[i] > simimagrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output imaginary data is not close enough!"
+    sys.exit(2)
+
+  i += 1
+
+data5new = data5.split('\n')
+i = 0
+print >> sys.stderr, "Comparing against ", f5
+while i < len(data5new) - 1:
+  line = data5new[i].split('\t')
+ 
+  if float(line[0]) != timeref[i]:
+    print >> sys.stderr, "Error. Output times do not match!"
+    sys.exit(2)
+  elif float(line[1]) - realref[i] > refrealrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[1]) - realsim[i] > simrealrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagref[i] > refimagrange/100.0:
+    print >> sys.stderr, "Error. Output real data is not close enough!"
+    sys.exit(2)
+  elif float(line[2]) - imagsim[i] > simimagrange*(5.0/100.0):
+    print >> sys.stderr, "Error. Output imaginary data is not close enough!"
+    sys.exit(2)
+
+  i += 1
+
+print >> sys.stderr, "All is well"
+
+sys.exit(0)
