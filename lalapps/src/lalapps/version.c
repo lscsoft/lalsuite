@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALVersion.h>
 
@@ -37,10 +38,10 @@ int main( void )
 
   /* print version of this program */
   fprintf( stdout, "LALApps Version:     %s\n", LALAPPS_VERSION );
-  fprintf( stdout, "CVS Tag:             %s\n", LALAPPS_CVS_TAG );
+  fprintf( stdout, "Git Id:              %s\n", lalAppsVCSInfo.vcsId );
+  fprintf( stdout, "Git Tag:             %s\n", lalAppsVCSInfo.vcsTag );
   fprintf( stdout, "Configure Date:      %s\n", LALAPPS_CONFIGURE_DATE );
-  fprintf( stdout, "Configure Arguments: %s\n", LALAPPS_CONFIGURE_ARGS );
-  fprintf( stdout, "(RCS %s)\n\n", rcsid );
+  fprintf( stdout, "Configure Arguments: %s\n\n", LALAPPS_CONFIGURE_ARGS );
 
   LAL_CALL( LALVersion( &status, msg, sizeof( msg ), vrbflg ), &status );
   puts( msg );

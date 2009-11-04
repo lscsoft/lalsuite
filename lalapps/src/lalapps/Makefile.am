@@ -26,7 +26,8 @@ bin_PROGRAMS = \
 
 lalapps_version_SOURCES = \
 	version.c \
-	lalapps.h
+	lalapps.h \
+	LALAppsVCSInfo.h
 lalapps_tconvert_SOURCES = \
 	tconvert.c \
 	getdate.c \
