@@ -240,7 +240,7 @@ cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
 ucfar_job.set_sub_file( '.'.join([ basename, 'uncombined', 'cfar', 'sub' ]) )
 ccfar_job.set_sub_file( '.'.join([ basename, 'combined', 'cfar', 'sub' ]) )
 printlc_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
-printlc_sim_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
+printlc_sim_job.set_sub_file( '.'.join([ basename, 'printlc_sim', 'sub' ]) )
 minifup_job.set_sub_file( '.'.join([ basename, 'minifollowups', 'sub' ]) )
 plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', 'sub' ]) )
 plotslides_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotslides', 'sub' ]) )
@@ -268,7 +268,6 @@ veto_files = {}
 cluster_nodes = {}
 inspinjfind_parents = {}
 inj_types = []
-for tag in user_tags: print tag
 for tag in user_tags:
 
   print "Creating jobs for %s..." % tag
