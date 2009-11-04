@@ -47,6 +47,9 @@ EXTRA_DIST = \
 	series.c \
 	series.h \
 	getdate.y \
-	__init__.py
+	__init__.py \
+	defaults.py \
+	lalappsfrutils.c \
+	lalappsfrutils.h
 
 TESTS = lalapps_version
