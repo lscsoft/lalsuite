@@ -32,7 +32,7 @@ int main( void )
   char msg[16384];
 
   vrbflg = 1;
-  set_debug_level( "LALMSGLVL3" ); 
+  set_debug_level( "LALMSGLVL3" );
   lal_errhandler = LAL_ERR_EXIT;
 
   /* print version of this program */
