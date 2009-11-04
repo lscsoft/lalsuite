@@ -39,6 +39,7 @@
 #include <lal/Date.h>
 
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* flags for getopt_long */
 extern int vrbflg;
@@ -68,6 +69,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
       /* options that don't set a flag */
+      {"version", no_argument, 0, 'v'},
       {"help", no_argument, 0, 'a'},
       {"debug-level", required_argument, 0, 'b'},
       {"ifo", required_argument, 0, 'c'},
@@ -88,7 +90,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:h:i:j:k:l", \
+    c = getopt_long_only(argc, argv, "vab:c:d:e:f:g:h:i:j:k:l", \
         long_options, &option_index);
 
     if (c == -1)
@@ -113,10 +115,20 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         break;
 
+      case 'v':
+        /* version */
+        fprintf(stderr, "lalapps_online_datafind:\n");
+        fprintf(stderr, "Git Id: %s\n", lalAppsVCSInfo.vcsId);
+        fprintf(stderr, "Git Tag: %s\n", lalAppsVCSInfo.vcsTag);
+        fprintf(stderr, "Status: %s\n", lalAppsVCSInfo.vcsStatus);
+        exit(0);
+        break;
+
       case 'a':
         /* help */
         fprintf(stderr, "Usage: lalapps_online_datafind [options]\n");
         fprintf(stderr, " --help                 print this message\n");
+        fprintf(stderr, " --version              display version information\n");
         fprintf(stderr, " --verbose              run in verbose mode\n");
         fprintf(stderr, " --debug-level N        set lalDebugLevel\n");
         fprintf(stderr, " --ifo IFO              set IFO\n");
