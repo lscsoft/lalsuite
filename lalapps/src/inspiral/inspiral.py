@@ -2277,13 +2277,12 @@ class PrintLCJob(pipeline.SqliteJob):
   A printlc job. The static options are read from the section [printlc] in
   the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp, sections, dax = False):
     """
     @cp: ConfigParser object from which options are read.
     @sections: list of sections for cp to read from
     """
     exec_name = 'printlc'
-    sections = ['printlc']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
 
 
@@ -2300,6 +2299,7 @@ class PrintLCNode(pipeline.SqliteNode):
     self.__extract_to_xml = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
+    self.__sim_name = None
 
   def set_datatype(self, datatype):
     """
@@ -2352,6 +2352,19 @@ class PrintLCNode(pipeline.SqliteNode):
     Gets include-only-coincs option.
     """
     return self.__include_only_coincs
+
+  def set_sim_name(self, sim_name):
+    """
+    Sets the --sim-name option.
+    """
+    self.add_var_opt('sim-name', sim_name)
+    self.__sim_name = sim_name
+
+  def get_sim_name(self):
+    """
+    Gets sim-name option.
+    """
+    return self.__sim_name
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
