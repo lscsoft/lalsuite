@@ -51,5 +51,21 @@ EXTRA_DIST = \
 	defaults.py \
 	lalappsfrutils.c \
 	lalappsfrutils.h
+	git_version \
+	LALAppsVCSInfo.h.in
+
+BUILT_SOURCE = LALAppsVCSInfo.h
+
+MOSTLYCLEANFILES = .vcsinfo
+
+.vcsinfo:
+	@touch .vcsinfo
+
+LALAppsVCSInfo.h: LALAppsVCSInfo.h.in .vcsinfo git_version
+	@echo "creating LALAppsVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALApps $$sourced $$buildd
+	@-rm -f .vcsinfo
+
 
 TESTS = lalapps_version
