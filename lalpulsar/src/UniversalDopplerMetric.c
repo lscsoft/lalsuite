@@ -69,6 +69,9 @@
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
+/* highest supported spindown-order */
+#define MAX_SPDNORDER 4
+
 /** 5-point derivative formulas (eg see http://math.fullerton.edu/mathews/articles/2003NumericalDiffFormulae.pdf) */
 #define DERIV5P_1(pm2,pm1,p0,pp1,pp2,h) ( ( (pm2) - 8.0 * (pm1) + 8.0 * (pp1) - (pp2)) / ( 12.0 * (h) ) )
 #define DERIV5P_2(pm2,pm1,p0,pp1,pp2,h) ( (-(pm2) + 16.0 * (pm1) - 30.0 * (p0) + 16.0 * (pp1) - (pp2) ) / ( 12.0 * (h) * (h) ) )
@@ -100,6 +103,7 @@ typedef struct
   REAL8 Tspan;				/**< length of observation time in seconds */
   const LALDetector *site;		/**< detector site to compute metric for */
   const EphemerisData *edat;		/**< ephemeris data */
+  vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
 } intparams_t;
 
 
@@ -370,7 +374,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* convert detector position in ecliptic coordinates */
   equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
 
-
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
@@ -383,27 +386,17 @@ CWPhaseDeriv_i ( double tt, void *params )
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
 
-
-  /* get 'reduced' detector position of order 'n': r_n(t),
+  /* get 'reduced' detector position of order 'n': r_n(t), currently fixed to order n = 2
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
    */
   vect3D_t rr_ord_Equ, rr_ord_Ecl;
-  UINT4 order = 2;
-  vect3Dlist_t *rOrb_n;
-  if ( (rOrb_n = XLALComputeOrbitalDerivatives ( order, &par->dopplerPoint->refTime, par->edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
-    XLAL_ERROR( fn, XLAL_EFUNC );
-  }
   UINT4 i;
   REAL8 tauSec = tau * Tspan;
   for (i=0; i<3; i++)
-    rr_ord_Equ[i] = detpos_equ[i] - rOrb_n->data[1][i] * tauSec - 0.5 * rOrb_n->data[2][i] * tauSec * tauSec ;
-
-  XLALDestroyVect3Dlist ( rOrb_n );
+    rr_ord_Equ[i] = detpos_equ[i] - par->rOrb_n->data[1][i] * tauSec - 0.5 * par->rOrb_n->data[2][i] * tauSec * tauSec ;
 
   /* convert rr_ord into ecliptic coordinates */
   equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );
-
 
   switch ( par->deriv )
     {
@@ -901,6 +894,11 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;
+  /* compute rOrb(t) derivatives at reference time */
+  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( MAX_SPDNORDER, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
 
   /* ---------- compute components of the phase-metric ---------- */
   double maxrelerr = 0, err;
@@ -932,6 +930,9 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   if ( relerr_max )
     (*relerr_max) = maxrelerr;
+
+  /* free memory */
+  XLALDestroyVect3Dlist ( intparams.rOrb_n );
 
   return g_ij;
 
@@ -1122,6 +1123,11 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   intparams.refTime   = XLALGPSGetREAL8 ( refTime );
   intparams.Tspan = metricParams->Tspan;
   intparams.edat = edat;
+  /* compute rOrb(t) derivatives at reference time */
+  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( MAX_SPDNORDER, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
   A = B = C = 0;
@@ -1289,6 +1295,9 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* return error-estimate */
   ret->maxrelerr = max_relerr;
+
+  /* free memory */
+  XLALDestroyVect3Dlist ( intparams.rOrb_n );
 
   /* FIXME: should probably not be hardcoded */
   if ( max_relerr > relerr_thresh )
@@ -2076,9 +2085,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   vect3Dlist_t *ret = NULL;
 
   /* check input consistency */
-#define MAX_MAXORDER 4
-  if ( maxorder > MAX_MAXORDER ) {
-    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", fn, maxorder, MAX_MAXORDER );
+  if ( maxorder > MAX_SPDNORDER ) {
+    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", fn, maxorder, MAX_SPDNORDER );
     XLAL_ERROR_NULL ( fn, XLAL_EDOM );
   }
 
@@ -2146,7 +2154,7 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* use these 5 points to estimate derivatives */
   UINT4 i;
-  vect3D_t rdn[MAX_MAXORDER+1];
+  vect3D_t rdn[MAX_SPDNORDER+1];
   COPY_VECT ( rdn[0], r0 );	// 0th order is imply r_orb(t0)
   for ( i=0; i < 3; i ++ )
     {
