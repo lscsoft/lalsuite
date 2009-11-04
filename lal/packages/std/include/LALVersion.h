@@ -58,23 +58,6 @@ These constant variables are set at compile time and included into the LAL
 library.  They contain the information about the version of LAL and the
 configuration information.
 
-\subsection*{Macros}
-\begin{verbatim}
-#define LALVersionRequired( major, minor, micro )       \
-  ( LAL_VERSION_MAJOR > ( major ) ||                    \
-    ( LAL_VERSION_MAJOR == ( major ) &&                 \
-      ( LAL_VERSION_MINOR > ( minor ) ||                \
-        ( LAL_VERSION_MINOR == ( minor ) &&             \
-          LAL_VERSION_MICRO >= ( micro )                \
-        )                                               \
-      )                                                 \
-    )                                                   \
-  )
-\end{verbatim}
-
-This macro returns 0 (false) if you do not have the require version of LAL, or
-1 (true) if you do.
-
 \subsection*{Error conditions}
 \input{LALVersionHErrTab}
 
@@ -118,17 +101,6 @@ extern const char *lalConfigureArgs;
 extern const char *lalConfigureDate;
 extern const char *lalCVSTag;
 
-
-#define LALVersionRequired( major, minor, micro )       \
-  ( LAL_VERSION_MAJOR > ( major ) ||                    \
-    ( LAL_VERSION_MAJOR == ( major ) &&                 \
-      ( LAL_VERSION_MINOR > ( minor ) ||                \
-        ( LAL_VERSION_MINOR == ( minor ) &&             \
-          LAL_VERSION_MICRO >= ( micro )                \
-        )                                               \
-      )                                                 \
-    )                                                   \
-  )
 
 void
 LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose );

@@ -145,7 +145,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   }
 
 
-  if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts ) ) == NULL ) {
+  if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts, NULL, NULL ) ) == NULL ) {
     XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", fn, xlalErrno );
     return TEST_ABORTED;
   }

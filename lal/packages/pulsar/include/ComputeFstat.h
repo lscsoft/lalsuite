@@ -171,6 +171,8 @@ typedef enum {
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
+/** [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
+typedef struct tag_ComputeFBuffer_RS ComputeFBuffer_RS;
 
 /** Extra parameters controlling the actual computation of F */
 typedef struct {
@@ -179,7 +181,10 @@ typedef struct {
   SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
   BOOLEAN useRAA;        /**< whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
   BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
+  ComputeFBuffer_RS *buffer; /**< buffer for storing pre-resampled timeseries (used for resampling implementation) */
+  EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */ 
 } ComputeFParams;
+
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
@@ -193,6 +198,10 @@ typedef struct {
   MultiAMCoeffs *multiAMcoef;
   MultiCmplxAMCoeffs *multiCmplxAMcoef;
 } ComputeFBuffer;
+
+
+
+
 
 
 /*---------- exported Global variables ----------*/

@@ -5,9 +5,9 @@ function injection_param_plots( type, file_list )
 %
 % example: file_list = ['HL-INJECTIONS_1000_EOBNR_A-871147814-86400.xml';'HL-INJECTIONS_1002_EOBNR_A-871147814-86400.xml'];
 %
-% type = 'ringdown', 'EOBNR', 'Phenom'
+% type = 'RINGDOWN', 'EOBNR', 'PHENOM'
 %
-% 
+%
 % Sarah Caudill, Oct 28th 2009
 
 N_files=length(file_list(:,1));
@@ -27,7 +27,7 @@ N_files=length(file_list(:,1));
   end
 
   %============== Injection Parameter Plots ==============%
-  
+ 
   %%%%%%%%%%%%%%%%%% QUALITY VS FREQUENCY %%%%%%%%%%%%%%%%
 
   figure
@@ -41,7 +41,7 @@ N_files=length(file_list(:,1));
   set(gca,'FontSize',14);
   eval(['plot_title=title(''' type ': Quality_{inj} versus Freq_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''injectparams_' type '_qvsfreq.png '')'])
+  eval(['saveas(gcf,''' type '_injectparams_qvsfreq.png '')'])
 
 
   %%%%%%%%%%%%%%%%%% SPIN VS MASS %%%%%%%%%%%%%%%%
@@ -57,10 +57,10 @@ N_files=length(file_list(:,1));
   set(gca,'FontSize',14);
   eval(['plot_title=title(''' type ': Spin_{inj} versus Total Mass_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''injectparams_' type '_spinvsmass.png '')'])
+  eval(['saveas(gcf,''' type '_injectparams_spinvsmass.png '')'])
 
 
-  if strcmp(type,'EOBNR')||strcmp(type,'Phenom')
+  if strcmp(type,'EOBNR')||strcmp(type,'PHENOM')
 
     % create the ringdown params structure and inspiral params structure by reading in the first file
     eval(['insp_params=readMeta(''' file_list(1,:) ''',''sim_inspiral'',0,''mass1,mass2'');'])
@@ -87,6 +87,6 @@ N_files=length(file_list(:,1));
     set(gca,'FontSize',14);
     eval(['plot_title=title(''' type ': Mass1_{inj} versus Mass2_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''injectparams_' type '_mass1vsmass2.png '')'])
+    eval(['saveas(gcf,''' type '_injectparams_mass1vsmass2.png '')'])
 
   end

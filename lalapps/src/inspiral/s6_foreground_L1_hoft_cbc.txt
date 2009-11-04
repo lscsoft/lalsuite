@@ -15,8 +15,8 @@
 [Gravitational,Gravitational wave data]
 
 {
-  channelName:                 'L1:DMT-STRAIN'
-  frameType:                   'L1_DMT_C00_L2'
+  channelName:                 'L1:LDAS-STRAIN'
+  frameType:                   'L1_LDAS_C00_L2'
   sampleFrequency:             2048
   searchTimeRange:             32
   searchFrequencyRange:        [64 512]
