@@ -166,21 +166,21 @@ def generate_git_version_info():
   git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
 
   # determine tree status
-  status_cmd = 'git status'
+  status_cmd = 'git diff-index --name-only HEAD'
   status_output = run_external_command(status_cmd, honour_ret_code=False)[1].strip()
-  if status_output.endswith('no changes added to commit (use "git add" and/or "git commit -a")'):
-      git_status = 'UNCLEAN: Some modifications not committed'
+  if len(status_output) != 0:
+    git_status = 'UNCLEAN: Some modifications not committed'
   else:
     git_status = 'CLEAN: All modifications committed'
 
   # determine version strings
-  info.id = 'Id: %s' % git_id
-  info.date = 'Date: %s' % git_date
-  info.branch = 'Branch: %s' % git_branch
-  info.tag = 'Tag: %s' % git_tag
-  info.author = 'Author: %s' % git_author
-  info.committer = 'Committer: %s' % git_committer
-  info.status = 'Status: %s' % git_status
+  info.id = git_id
+  info.date = git_date
+  info.branch = git_branch
+  info.tag = git_tag
+  info.author = git_author
+  info.committer = git_committer
+  info.status = git_status
 
   return info
 
@@ -250,13 +250,13 @@ if git_ok:
       os.remove(tmpfile)
   else:
     # output version info
-    print info.id
-    print info.date
-    print info.branch
-    print info.tag
-    print info.author
-    print info.committer
-    print info.status
+    print 'Id: %s' % info.id
+    print 'Date: %s' % info.date
+    print 'Branch: %s' % info.branch
+    print 'Tag: %s' % info.tag
+    print 'Author: %s' % info.author
+    print 'Committer: %s' % info.committer
+    print 'Status: %s' % info.status
 
 # exit
 sys.exit(0)
