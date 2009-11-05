@@ -14,6 +14,8 @@ EXTRA_DIST = \
 	lalapps.spec.in \
 	lalapps.spec
 
+distcleancheck_listfiles = find . -type f \! -name "LALAppsVCSInfo.h" -print
+
 # vcs-clean: more than maintainer-clean, this cleans
 # everything not in the vcs archive.
 vcs-clean: maintainer-clean
