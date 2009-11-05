@@ -1014,9 +1014,9 @@ void cohPTFmodBasesUnconstrainedStatistic(
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
       gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
-      /*fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));*/
+      fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));
     }
-    /*fprintf(stdout,"\n");*/
+    fprintf(stdout,"\n");
   }
 
   /*fprintf(stdout,"\n \n");*/
@@ -1143,7 +1143,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
       }
-      /*fprintf(stdout,"%e %e \n",max_eigen,recSNR);*/
+      fprintf(stdout,"%e %e \n",max_eigen,recSNR);
       betaGammaTemp[0] = 0;
       betaGammaTemp[1] = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1162,6 +1162,37 @@ void cohPTFmodBasesUnconstrainedStatistic(
         }
       }
 
+      for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
+      {
+        v1[j] = 0.;
+        v2[j] = 0.;
+        for( k = 0; k < LAL_NUM_IFO; k++)
+        {
+          if ( params->haveTrig[k] )
+          {
+            if (j < vecLength)
+            {
+              v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+              v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+            }
+            else
+            {
+              v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+              v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+            }
+          }
+        }
+      }
+      recSNR = 0;
+      for ( j = 0 ; j < vecLengthTwo ; j++ )
+      {
+        for ( k = 0 ; k < vecLengthTwo ; k++ )
+        {
+          recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
+        }
+      }
+      fprintf(stdout,"%e %e %e %e \n",v1[0],v1[1],v1[2],v1[3]);
+      fprintf(stdout,"%e %e %e %e \n",v2[0],v2[1],v2[2],v2[3]);
       /*fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);*/
 
     }
