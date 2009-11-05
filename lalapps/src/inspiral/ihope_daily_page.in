@@ -899,7 +899,7 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 
     # Copy asset files
     shutil.copy('%s/ihopeFrog.jpg'         % asset_dir, '.')
-    shutil.copy('%s/hope_daily_toggle.js'  % asset_dir, '.')
+    shutil.copy('%s/ihope_daily_toggle.js' % asset_dir, '.')
     shutil.copy('%s/ihope_daily_style.css' % asset_dir, '.')
 
 
