@@ -44,14 +44,12 @@ Provides routines for reporting the LAL version.
 \idx[Constant]{lalVersionMinor}
 \idx[Constant]{lalConfigureArgs}
 \idx[Constant]{lalConfigureDate}
-\idx[Constant]{lalCVSTag}
 \begin{verbatim}
 extern const char *lalVersion;
 extern const int   lalVersionMajor;
 extern const int   lalVersionMinor;
 extern const char *lalConfigureArgs;
 extern const char *lalConfigureDate;
-extern const char *lalCVSTag;
 \end{verbatim}
 
 These constant variables are set at compile time and included into the LAL
@@ -96,10 +94,10 @@ extern const char *lalVersion;
 extern const int   lalVersionMajor;
 extern const int   lalVersionMinor;
 extern const int   lalVersionMicro;
+extern const int   lalVersionDevel;
 extern const char *lalBuildDate;
 extern const char *lalConfigureArgs;
 extern const char *lalConfigureDate;
-extern const char *lalCVSTag;
 
 
 void

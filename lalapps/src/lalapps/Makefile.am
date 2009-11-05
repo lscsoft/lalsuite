@@ -55,7 +55,7 @@ EXTRA_DIST = \
 	git_version \
 	LALAppsVCSInfo.h.in
 
-BUILT_SOURCE = LALAppsVCSInfo.h
+BUILT_SOURCES = LALAppsVCSInfo.h
 
 MOSTLYCLEANFILES = .vcsinfo
 

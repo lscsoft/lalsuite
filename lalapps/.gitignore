@@ -89,6 +89,7 @@ src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
 src/inspiral/lalapps_gwf2xml
 src/inspiral/lalapps_ihope
+src/inspiral/lalapps_ihope_daily_page
 src/inspiral/lalapps_ihope_status
 src/inspiral/lalapps_inca
 src/inspiral/lalapps_injcut
@@ -118,9 +119,9 @@ src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
+src/inspiral/posterior/SPINspiral/lalapps_spinspiral
 src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
-src/inspiral/posterior/SPINspiral/lalapps_spinspiral
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/defaults.py
 src/lalapps/git_version

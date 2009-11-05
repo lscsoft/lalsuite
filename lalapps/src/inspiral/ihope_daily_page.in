@@ -4,8 +4,9 @@ from matplotlib import use
 use('Agg')       
 
 import sys
-
 import os
+import shutil
+
 import pickle
 import operator
 import glob
@@ -60,6 +61,8 @@ ligolw_cbc_hardware_inj_page = '/archive/home/cbc/opt/s6/bin/ligolw_cbc_hardware
 hwinj_file                   = '/archive/home/cbc/opt/conf/HL-INJECTIONS_S6_ALL.xml'
 
 
+# Location of asset files
+asset_dir                    = '/archive/home/cbc/src/lalsuite/lalapps/src/inspiral'
 ###############
 # Page template
 ###############
@@ -68,9 +71,9 @@ html_template = """
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
-  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />
+  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />
   <title>Low mass CBC - %(date)s</title>
-  <script src="../../auxfiles/toggle.js" type="text/javascript"></script>
+  <script src="ihope_daily_toggle.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -121,7 +124,7 @@ html_template = """
 
     <div id="ihope">
       <h2> i h o p e </h2>
-      <img src="../../images/thomasLegacy.jpg">
+      <img src="ihopeFrog.jpg">
     </div>
 
     <div id="header">
@@ -893,6 +896,11 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                 print >>out, '</body>'
                 print >>out, '</html>'
                 out.close()
+
+    # Copy asset files
+    shutil.copy('%s/ihopeFrog.jpg'         % asset_dir, '.')
+    shutil.copy('%s/ihope_daily_toggle.js' % asset_dir, '.')
+    shutil.copy('%s/ihope_daily_style.css' % asset_dir, '.')
 
 
 #########################

@@ -45,6 +45,7 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/XLALError.h>
+#include <lal/LALVCSInfo.h>
 
 #ifdef fputs
 #	undef fputs
@@ -494,7 +495,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           fprintf( xml->fp, SEARCH_SUMMARY_ROW,
-              lalCVSTag,
+              lalHeaderVCSInfo.vcsTag,
               tablePtr.searchSummaryTable->comment,
               tablePtr.searchSummaryTable->ifos,
               tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
@@ -722,6 +723,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->mass2,
               tablePtr.multiInspiralTable->mchirp,
               tablePtr.multiInspiralTable->eta,
+              tablePtr.multiInspiralTable->chi,
+              tablePtr.multiInspiralTable->kappa,
               tablePtr.multiInspiralTable->tau0,
               tablePtr.multiInspiralTable->tau2,
               tablePtr.multiInspiralTable->tau3,
@@ -731,6 +734,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->ifo1_snr,
               tablePtr.multiInspiralTable->ifo2_snr,
               tablePtr.multiInspiralTable->snr,
+              tablePtr.multiInspiralTable->snr_dof,
               tablePtr.multiInspiralTable->chisq,
               tablePtr.multiInspiralTable->chisq_dof,
               tablePtr.multiInspiralTable->bank_chisq,
@@ -1203,7 +1207,7 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 			row_head,
 			search_summary->process_id,
-			lalCVSTag,
+			lalHeaderVCSInfo.vcsTag,
 			search_summary->comment,
 			search_summary->ifos,
 			search_summary->in_start_time.gpsSeconds,
