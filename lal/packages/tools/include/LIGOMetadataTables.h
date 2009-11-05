@@ -532,6 +532,8 @@ tagMultiInspiralTable
   REAL4         mass2;
   REAL4         mchirp;
   REAL4         eta;
+  REAL4         chi;
+  REAL4         kappa;
   REAL4         tau0;
   REAL4         tau2;
   REAL4         tau3;
@@ -539,6 +541,7 @@ tagMultiInspiralTable
   REAL4         tau5;
   REAL4         ttotal;
   REAL4         snr;
+  INT4          snr_dof;
   REAL4         ifo1_snr;
   REAL4         ifo2_snr;
   REAL4         chisq;
