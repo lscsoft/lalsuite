@@ -900,6 +900,15 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
 
+#if 0
+  /* diagnostic / debug output */
+  UINT4 n;
+  printf (" rOrb_n(%d) = [ ", intparams.dopplerPoint->refTime.gpsSeconds );
+  for ( n=0; n < intparams.rOrb_n->length; n ++)
+    printf ("[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
+            (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+#endif
+
   /* ---------- compute components of the phase-metric ---------- */
   double maxrelerr = 0, err;
   for ( i=0; i < dim; i ++ )
@@ -2169,8 +2178,9 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
     XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, sizeof(*ret) );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
-  if ( (ret->data = XLALCalloc ( maxorder + 1, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", fn, maxorder + 1, sizeof(*ret->data) );
+  ret->length = maxorder + 1;
+  if ( (ret->data = XLALCalloc ( ret->length, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", fn, ret->length, sizeof(*ret->data) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
