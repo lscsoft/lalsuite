@@ -89,6 +89,7 @@ src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
 src/inspiral/lalapps_gwf2xml
 src/inspiral/lalapps_ihope
+src/inspiral/lalapps_ihope_daily_page
 src/inspiral/lalapps_ihope_status
 src/inspiral/lalapps_inca
 src/inspiral/lalapps_injcut
