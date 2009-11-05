@@ -29,7 +29,10 @@ from optparse import OptionParser
 import subprocess
 import math
 
-debug = False
+if "DEBUG" in os.environ.keys():
+    debug = os.environ["DEBUG"]
+else:
+    debug = False
 
 ## NOTE: because this is a lalapps test-code, using numpy,scipy,etc was
 ## discouraged because of portability problems. We therefore try to do matrix
