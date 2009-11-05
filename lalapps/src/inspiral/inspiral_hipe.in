@@ -1111,11 +1111,12 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
           if inspiral.overlap_test(cohbank_done.get_chunk(), \
               done.get_chunk()):
             frjoin.add_file_arg( done.get_dag_node().get_froutput() )
-            if opts.coherent_inspiral: frjoin.add_parent(done.get_dag_node())
+            if opts.coherent_bank: frjoin.add_parent(done.get_dag_node())
 
         cohinsp.add_var_opt( ifo + '-framefile', frjoin.get_output() )
-        if opts.coherent_inspiral: dag.add_node(frjoin)
-        if opts.coherent_inspiral: cohinsp.add_parent(frjoin)
+        if opts.coherent_bank: dag.add_node(frjoin)
+        if opts.coherent_inspiral and opts.coherent_bank: 
+	  cohinsp.add_parent(frjoin)
 
     if opts.coherent_inspiral: dag.add_node(cohinsp)
 
