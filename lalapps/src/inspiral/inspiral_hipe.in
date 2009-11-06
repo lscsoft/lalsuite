@@ -1686,7 +1686,7 @@ if usertag:
       job.add_opt('user-tag',usertag)
 
 all_jobs.append(df_job)
-all_jobs.append(frjoin_job)
+#all_jobs.append(frjoin_job)
 
 ##############################################################################
 # set the condor job priority

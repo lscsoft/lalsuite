@@ -62,7 +62,7 @@ double XLALComputeIncohStatCase3b(INT4 caseID[6], double fplus[4], double fcross
 double XLALComputeNonQuadNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints[3], COMPLEX8TimeSeries *cData[4]);
 
 
-double XLALComputeNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
+double XLALComputeNullStatCase3b(INT4 caseID[6],double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
 
 
 double XLALComputeNullTimeSeriesCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]);
@@ -70,10 +70,10 @@ double XLALComputeNullTimeSeriesCase3b(INT4 caseID[6], double fplus[4], double f
 REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], REAL4 VVMinus[4], INT4 timeP, INT4 slidePoints4D[4], UINT4 numDetectors, REAL8 MM1, REAL8 MM2);
 REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], REAL4 VVMinus[4], INT4 timeP, INT4 slidePoints4D[4], UINT4 numDetectors, REAL8 MM1, REAL8 MM2);
 double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]);
-double XLALComputeNonQuadNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]);
+double XLALComputeNonQuadNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]);
 
 
-double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
+double XLALComputeNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
 
 double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]);
 
@@ -81,8 +81,8 @@ double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double f
 void XLALCoherentCBCEstimateDistanceCase2a(double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent);
 void XLALCoherentCBCEstimateDistanceCase2b(INT4 caseID[6], double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent);
 void XLALCoherentCBCEstimateDistanceCase3a(INT4 caseID[6], double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 sigmasq[4], REAL4 chisq[4], MultiInspiralTable *thisEvent);
-void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent, UINT4 case3b, UINT4 case4a);
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b, UINT4 case4a, INT4 caseID[6] );
+void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent, UINT4 case3b);
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b, INT4 caseID[6] );
 
 NRCSID (COHERENTINSPIRALFILTERC, "$Id$");
 
@@ -1691,10 +1691,11 @@ XLALCoherentInspiralFilterSegment (
   double         NN[4]={0.0,0.0,0.0,0.0};
 
   /* Variables for alternative statistics */
+  REAL4 autoCorrCohSq=0.0;
+  REAL4 autoCorrNullSq=0.0;
   REAL4 crossCorrCohSq=0.0;
-  REAL4 incohStatLocal=0.0;
+  REAL4 crossCorrNullSq=0.0;
   REAL4 ratioStatLocal=0.0;
-  REAL4 ratioStat = 0.0;
 
   INITSTATUS( status, "LALCoherentInspiralFilterSegment",
 	      COHERENTINSPIRALFILTERC );
@@ -2504,8 +2505,6 @@ XLALCoherentInspiralFilterSegment (
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
-	//DopplerSkyScanInit scanInit;// = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
-	//DopplerSkyScanState thisScan;// = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
         const DopplerSkyGrid *skyGrid;
 	UINT4 skyGridIdx=0;
 
@@ -2688,7 +2687,7 @@ XLALCoherentInspiralFilterSegment (
 		||  ( timePt[0]> (numPoints-sortedSlidePoints3D[2]) ) ) {
 	      cohSNR = 0.0;
 	      nullStatistic = 0.0;
-	      incohStatLocal = 0.0;
+	      autoCorrNullSq = 0.0;
 	      ratioStatLocal = 0.0;
 	      if( cohSNROut ) params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
 	      if( nullStatOut ) params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
@@ -2704,11 +2703,11 @@ XLALCoherentInspiralFilterSegment (
 		cohSnrSqLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,timePt[0],slidePoints,params->numDetectors,MM1,MM2);
 
 		/* Note that unlike above the next 3 are *squared* statistics */
-		incohStatLocal = (REAL4) XLALComputeIncohStatCase3b(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints,cData);
+		autoCorrNullSq = (REAL4) XLALComputeIncohStatCase3b(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints,cData);
 
 		nullStatistic = (REAL4) XLALComputeNonQuadNullStatCase3b(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints,cData);
 
-		ratioStatLocal = incohStatLocal / (nullStatistic + nullStatRegul);
+		ratioStatLocal = autoCorrNullSq / (nullStatistic + nullStatRegul);
 
 	      }
 	      /* Updating RatioStat here */
@@ -2790,7 +2789,7 @@ XLALCoherentInspiralFilterSegment (
 		  }
 		  /* Store the sigmasq's into event tables */
 		  XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 						  
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
@@ -2826,7 +2825,7 @@ XLALCoherentInspiralFilterSegment (
 		      (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
 		      (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
                       (double) quadTemp[2].im, (double) quadTemp[3].re,
-                      (double) quadTemp[3].im,sigmasq4DArray, case3b, case4a, caseID);
+                      (double) quadTemp[3].im,sigmasq4DArray, case3b,caseID);
 		      
 		    thisEvent->inclination = (REAL4) inclination;
 		    thisEvent->polarization = (REAL4) polarization;
@@ -2884,7 +2883,7 @@ XLALCoherentInspiralFilterSegment (
 		  }
 		  /* Store the sigmasq's into event tables */
 		  XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -2919,7 +2918,7 @@ XLALCoherentInspiralFilterSegment (
 		      (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
 		      (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
 		      (double) quadTemp[2].im, (double) quadTemp[3].re,
-                      (double) quadTemp[3].im,sigmasq4DArray, case3b, case4a, caseID);
+                      (double) quadTemp[3].im,sigmasq4DArray, case3b, caseID);
 
 		    thisEvent->inclination = (REAL4) inclination;
 		    thisEvent->polarization = (REAL4) polarization;
@@ -2989,7 +2988,7 @@ XLALCoherentInspiralFilterSegment (
 		  }
 		  /* Store the sigmasq's into event tables */
 		  XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3024,7 +3023,7 @@ XLALCoherentInspiralFilterSegment (
 		      (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
 		      (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
                       (double) quadTemp[2].im, (double) quadTemp[3].re,
-                      (double) quadTemp[3].im,sigmasq4DArray, case3b, case4a, caseID);
+                      (double) quadTemp[3].im,sigmasq4DArray, case3b, caseID);
 		      
 		    thisEvent->inclination = (REAL4) inclination;
 		    thisEvent->polarization = (REAL4) polarization;
@@ -3058,8 +3057,6 @@ XLALCoherentInspiralFilterSegment (
       double          psiInRadians = 0.0;
       double          detRefLocation[3];
       double          detNextLocation[3];
-      //DopplerSkyScanInit scanInit; // = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
-      //DopplerSkyScanState thisScan; //= empty_DopplerSkyScanState; /* current state of the Doppler-scan */
       const DopplerSkyGrid *skyGrid;
       UINT4 skyGridIdx=0;     
  
@@ -3250,7 +3247,7 @@ XLALCoherentInspiralFilterSegment (
 	      ||  ( timePt[0]> (numPoints-sortedSlidePoints4D[3]) ) ) {
 	    cohSNR = 0.0;
 	    nullStatistic = 0.0;
-	    incohStatLocal = 0.0;
+	    autoCorrNullSq = 0.0;
 	    ratioStatLocal = 0.0; 
 	    if( cohSNROut ) params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
 	    if( nullStatOut ) params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
@@ -3263,11 +3260,11 @@ XLALCoherentInspiralFilterSegment (
 	    else {
 	      cohSnrSqLocal = XLALComputeCohStatCase4a(cData,VVPlus,VVMinus,timePt[0],slidePoints4D,params->numDetectors,MM1,MM2);
 	      /* Note that unlike above, the next 3 are *squared* statistics */
-	      incohStatLocal = (REAL4) XLALComputeIncohStatCase4a(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData);
+	      autoCorrNullSq = (REAL4) XLALComputeIncohStatCase4a(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData);
 	      
-	      nullStatistic = (REAL4) XLALComputeNonQuadNullStatCase4a(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData);
+	      nullStatistic = (REAL4) XLALComputeNonQuadNullStatCase4a(fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData);
 	      
-	      ratioStatLocal = incohStatLocal / (nullStatistic + nullStatRegul);
+	      ratioStatLocal = autoCorrNullSq / (nullStatistic + nullStatRegul);
 
 	    }
 	    
@@ -3347,7 +3344,7 @@ XLALCoherentInspiralFilterSegment (
 		}
 		else {
 		  if ( (nullStatistic == 0.0)) {
-		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent); 
+		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(fplus,fcross,sigmasq,thisEvent); 
 		  }
 		  else {
 		    thisEvent->null_statistic = (REAL4) nullStatistic;
@@ -3355,7 +3352,7 @@ XLALCoherentInspiralFilterSegment (
 		}
 		/* Store the sigmasq's into event tables */
 		XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3392,7 +3389,7 @@ XLALCoherentInspiralFilterSegment (
 		    (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
 		    (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
 		    (double) quadTemp[2].im, (double) quadTemp[3].re,
-                    (double) quadTemp[3].im, sigmasq4DArray, case3b, case4a, caseID);
+                    (double) quadTemp[3].im, sigmasq4DArray, case3b, caseID);
 		  
 		  thisEvent->inclination = (REAL4) inclination;
 		  thisEvent->polarization = (REAL4) polarization;
@@ -3450,7 +3447,7 @@ XLALCoherentInspiralFilterSegment (
 		}
 		else {
 		  if ( (nullStatistic == 0.0)) {
-		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent); 
+		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(fplus,fcross,sigmasq,thisEvent); 
 		  }
 		  else {
 		    thisEvent->null_statistic = (REAL4) nullStatistic;
@@ -3458,7 +3455,7 @@ XLALCoherentInspiralFilterSegment (
 		}
 		/* Store the sigmasq's into event tables */
 		XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3493,7 +3490,7 @@ XLALCoherentInspiralFilterSegment (
                     (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
                     (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
 		    (double) quadTemp[2].im, (double) quadTemp[3].re,
-                    (double) quadTemp[3].im, sigmasq4DArray, case3b, case4a, caseID);
+                    (double) quadTemp[3].im, sigmasq4DArray, case3b, caseID);
 
 		  thisEvent->inclination = (REAL4) inclination;
 		  thisEvent->polarization = (REAL4) polarization;
@@ -3564,7 +3561,7 @@ XLALCoherentInspiralFilterSegment (
 		}
 		else {
 		  if ( (nullStatistic == 0.0)) {
-		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent); 
+		    thisEvent->null_statistic = (REAL4) XLALComputeNullStatCase4a(fplus,fcross,sigmasq,thisEvent); 
 		  }
 		  else {
 		    thisEvent->null_statistic = (REAL4) nullStatistic;
@@ -3574,7 +3571,7 @@ XLALCoherentInspiralFilterSegment (
 		polarization = 0.0;
 		/* Store the sigmasq's into event tables */
 		XLALCoherentCBCSigmasqFor3Sites(caseID,sigmasq4DArray,
-				    chisq4DArray,thisEvent,case3b,case4a);
+				    chisq4DArray,thisEvent,case3b);
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3609,7 +3606,7 @@ XLALCoherentInspiralFilterSegment (
 		    (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
 		    (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,
 		    (double) quadTemp[2].im, (double) quadTemp[3].re,
-                    (double) quadTemp[3].im, sigmasq4DArray, case3b, case4a, caseID);
+                    (double) quadTemp[3].im, sigmasq4DArray, case3b, caseID);
 		  
 		  thisEvent->inclination = (REAL4) inclination;
 		  thisEvent->polarization = (REAL4) polarization;
@@ -3848,8 +3845,6 @@ REAL4 XLALComputeCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
 REAL4 XLALComputeCrossCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], REAL4 VVMinus[4], INT4 timeP, INT4 slidePoints[3], UINT4 numDetectors, REAL8 MM1, REAL8 MM2) {
   
-  //cohSNRLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,slidePoints,params->numDetectors);
-  
   /*Initialize cohSNR components and time stamps */
   UINT4          detIdSlidTimePt = 0;
   UINT4          detId = 0;
@@ -3896,18 +3891,13 @@ REAL4 XLALComputeCrossCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
   /* Note that we are not taking the sqrt here, lest the quantity is negative*/
   crossCorrCohSq -= (Incohsq1 + Incohsq2)/MM1 + (Incohsq3 + Incohsq4)/MM2;
 
-  return cohSnrSqLocal;
+  return crossCorrCohSq;
 }
 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
 double XLALComputeNonQuadNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints[3], COMPLEX8TimeSeries *cData[4]) {
-  //cohSNRLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,slidePoints,params->numDetectors);
   
-  /*Initialize cohSNR components and time stamps */
-  UINT4          detIdSlidTimePt = 0;
-  UINT4          detId = 0;
-
   /* This trigger is from either H1 or H2 but not both */
   double sigmasqH = 0.0;
   double nullNorm8 = 0.0;
@@ -3930,9 +3920,6 @@ double XLALComputeNonQuadNullStatCase3b(INT4 caseID[6], double fplus[4], double 
   v1quadre = cData[2]->data->data[timeP+slidePoints[2]].re;
   v1quadim = cData[2]->data->data[timeP+slidePoints[2]].im;
   
-  //quadre = cData[]->data->data[timeP+slidePoints[]].re;
-  //quadim = cData[]->data->data[timeP+slidePoints[]].im;
-
   if ( (caseID[1] == 0) ) {
       /* This is a H2 trigger */
       sigmasqH = sigmasq[2];
@@ -3969,12 +3956,7 @@ double XLALComputeNonQuadNullStatCase3b(INT4 caseID[6], double fplus[4], double 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
 double XLALComputeIncohStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints[3], COMPLEX8TimeSeries *cData[4]) {
-  //cohSNRLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,slidePoints,params->numDetectors);
   
-  /*Initialize cohSNR components and time stamps */
-  UINT4          detIdSlidTimePt = 0;
-  UINT4          detId = 0;
-
   /* This trigger is from either H1 or H2 but not both */
   double sigmasqH = 0.0;
   double nullNorm8 = 0.0;
@@ -3997,9 +3979,6 @@ double XLALComputeIncohStatCase3b(INT4 caseID[6], double fplus[4], double fcross
   v1quadre = cData[2]->data->data[timeP+slidePoints[2]].re;
   v1quadim = cData[2]->data->data[timeP+slidePoints[2]].im;
   
-  //quadre = cData[]->data->data[timeP+slidePoints[]].re;
-  //quadim = cData[]->data->data[timeP+slidePoints[]].im;
-
   if ( (caseID[1] == 0) ) {
     /* This is a H2 trigger */
     sigmasqH = sigmasq[2];
@@ -4154,8 +4133,6 @@ REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
 REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], REAL4 VVMinus[4], INT4 timeP, INT4 slidePoints4D[4], UINT4 numDetectors, REAL8 MM1, REAL8 MM2) {
   
-  //cohSNRLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,slidePoints,params->numDetectors);
-  
   /*Initialize cohSNR components and time stamps */
   UINT4          detIdSlidTimePt = 0;
   UINT4          detId = 0;
@@ -4207,12 +4184,7 @@ REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
-double XLALComputeNonQuadNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]) {
-  //cohSNRLocal = XLALComputeCohStatCase3b(cData,VVPlus,VVMinus,slidePoints,params->numDetectors);
-  
-  /*Initialize cohSNR components and time stamps */
-  UINT4          detIdSlidTimePt = 0;
-  UINT4          detId = 0;
+double XLALComputeNonQuadNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]) {
 
   /* This trigger is from either H1 or H2 but not both */
   double nullNorm8 = 0.0;
@@ -4235,9 +4207,6 @@ double XLALComputeNonQuadNullStatCase4a(INT4 caseID[6], double fplus[4], double 
   v1quadre = cData[3]->data->data[timeP+slidePoints4D[3]].re;
   v1quadim = cData[3]->data->data[timeP+slidePoints4D[3]].im;
   
-  //quadre = cData[]->data->data[timeP+slidePoints4D[]].re;
-  //quadim = cData[]->data->data[timeP+slidePoints4D[]].im;
-
   nullNumerRe8 = (fplus[1]*fcross[2]-fplus[2]*fcross[1])*Hquadre/ sqrt(sigmasq[1]) +
     (fplus[2]*fcross[0]-fplus[0]*fcross[2])*l1quadre / sqrt(sigmasq[3]) +
     (fplus[0]*fcross[1]-fplus[1]*fcross[0])*v1quadre / sqrt(sigmasq[5]);
@@ -4259,10 +4228,8 @@ double XLALComputeNonQuadNullStatCase4a(INT4 caseID[6], double fplus[4], double 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
 double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4]) {
-  
-  /*Initialize cohSNR components and time stamps */
-  UINT4          detIdSlidTimePt = 0;
-  UINT4          detId = 0;
+  /* caseID is unused in this function */
+  UNUSED(caseID);
 
   /* This trigger is from either H1 or H2 but not both */
   double nullNorm8 = 0.0;
@@ -4285,9 +4252,6 @@ double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross
   v1quadre = cData[3]->data->data[timeP+slidePoints4D[3]].re;
   v1quadim = cData[3]->data->data[timeP+slidePoints4D[3]].im;
   
-  //quadre = cData[]->data->data[timeP+slidePoints4D[]].re;
-  //quadim = cData[]->data->data[timeP+slidePoints4D[]].im;
-   
   nullNumerSqRe8 = pow((fplus[1]*fcross[2]-fplus[2]*fcross[1])*Hquadre/ sqrt(sigmasq[1]),2) +
     pow((fplus[2]*fcross[0]-fplus[0]*fcross[2])*l1quadre / sqrt(sigmasq[3]),2) +
     pow((fplus[0]*fcross[1]-fplus[1]*fcross[0])*v1quadre / sqrt(sigmasq[5]),2);
@@ -4308,16 +4272,13 @@ double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross
 
 
 /* Function for computing 3-site-4-ifo null-statistic at trigger end-time*/
-double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent) {
+double XLALComputeNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent) {
     /* This trigger is from both H1 and H2;
      but using H1 and not H2 for now*/
     double nullNorm8 = 0.0;
     double nullNumerRe8 = 0.0;
     double nullNumerIm8 = 0.0;
     double nullStatistic = 0.0;
-
-    /* caseID is unused in this function */
-    UNUSED(caseID);
 
     /* Prepare norm for null statistic */
     nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
@@ -4406,6 +4367,13 @@ void XLALCoherentCBCEstimateDistanceCase2b(INT4 caseID[6], double C_Real0, doubl
   UINT4 det1Found = 0;
 
   thisEvent->distance = -1;
+  thisEvent->eff_dist_g = -1;
+  thisEvent->eff_dist_h1 = -1;
+  thisEvent->eff_dist_h2 = -1;
+  thisEvent->eff_dist_l = -1;
+  thisEvent->eff_dist_t = -1;
+  thisEvent->eff_dist_v = -1;
+  thisEvent->eff_dist_h1h2 = -1;
   thisEvent->inclination = -1001;
   thisEvent->polarization = -1001;
   thisEvent->ra = -1001;
@@ -4479,6 +4447,10 @@ void XLALCoherentCBCEstimateDistanceCase2b(INT4 caseID[6], double C_Real0, doubl
 
 void XLALCoherentCBCEstimateDistanceCase3a(INT4 caseID[6], double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 sigmasq[4], REAL4 chisq[4], MultiInspiralTable *thisEvent) {
   thisEvent->distance = -1;
+  thisEvent->eff_dist_g = -1;
+  thisEvent->eff_dist_l = -1;
+  thisEvent->eff_dist_t = -1;
+  thisEvent->eff_dist_v = -1;
   thisEvent->inclination = -1001;
   thisEvent->polarization = -1001;
   thisEvent->ra = -1001;
@@ -4534,7 +4506,7 @@ void XLALCoherentCBCEstimateDistanceCase3a(INT4 caseID[6], double C_Real0, doubl
 }
 
 
-void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq[4], REAL4 chisq[4], MultiInspiralTable *thisEvent, UINT4 case3b, UINT4 case4a) {
+void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq[4], REAL4 chisq[4], MultiInspiralTable *thisEvent, UINT4 case3b) {
   UINT4   det1Found = 0;
   UINT4   det2Found = 0;
 
@@ -4650,7 +4622,7 @@ void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq[4], REAL4 chi
   }
 }
 
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b, UINT4 case4a, INT4 caseID[6] ) {
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b,INT4 caseID[6] ) {
 
   double lum_dist_est,f_a,f_a_sq,g_a,h_a,sine_psi=0.0,sine_coa_phase=0.0,p=0.0;
   UINT4 det1Found = 0;
@@ -4658,6 +4630,13 @@ double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa
 
   /* chirpTime is unused in this function */
   UNUSED(chirpTime);
+  thisEvent->eff_dist_g = -1;
+  thisEvent->eff_dist_h1 = -1;
+  thisEvent->eff_dist_h2 = -1;
+  thisEvent->eff_dist_l = -1;
+  thisEvent->eff_dist_t = -1;
+  thisEvent->eff_dist_v = -1;
+  thisEvent->eff_dist_h1h2 = -1;
 
   p = a1*a4-a2*a3;
   f_a=2*p/(a1*a1+a2*a2+a3*a3+a4*a4);
