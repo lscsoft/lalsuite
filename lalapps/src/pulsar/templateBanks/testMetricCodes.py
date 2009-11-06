@@ -30,7 +30,7 @@ import subprocess
 import math
 
 if "DEBUG" in os.environ.keys():
-    debug = os.environ["DEBUG"]
+    debug = int ( os.environ["DEBUG"] )
 else:
     debug = False
 
