@@ -273,6 +273,7 @@ for mettype in ["PHASE", "PTOLE"]:
     args2["metricType"] = 0	## full-motion numerical phase metric
     args2["outputMetric"] = outfile2
     args2["coords"] = coords
+    args2["refTime"] = 0;	## use refTime=startTime
 
     if mettype == "PHASE":
         args2["detMotionType"] = 0	## full ephemeris-based spin+orbit motion
@@ -338,6 +339,7 @@ args2["IFOweights"] = options.IFOweights
 args2["metricType"] = 1	## full-motion numerical F-stat metric
 args2["outputMetric"] = outfile2
 args2["coords"] = "Freq,Alpha,Delta,f1dot"
+args2["refTime"] = 0;	## use refTime=startTime
 
 (stdout, stderr) = run_code ( code2, args2 )
 
