@@ -125,6 +125,7 @@ BOOLEAN outputIntegrand = 0;
 
 /* Some local constants. */
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
+#define rEarth_c (LAL_REARTH_SI / LAL_C_SI)
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 // sin,cos(LAL_IEARTH);
 #define cosiEcl 0.917482062157619
@@ -371,9 +372,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   }
   COPY_VECT ( detpos_equ, posvel.pos );
 
-  /* convert detector position in ecliptic coordinates */
-  equatorialVect2ecliptic ( &detpos_ecl, &detpos_equ );
-
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
@@ -386,17 +384,30 @@ CWPhaseDeriv_i ( double tt, void *params )
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
 
-  /* get 'reduced' detector position of order 'n': r_n(t), currently fixed to order n = 2
+  /* get 'reduced' detector position of order 'n': r_n(t) [passed in as argument]
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
    */
-  vect3D_t rr_ord_Equ, rr_ord_Ecl;
-  UINT4 i;
   REAL8 tauSec = tau * Tspan;
-  for (i=0; i<3; i++)
-    rr_ord_Equ[i] = detpos_equ[i] - par->rOrb_n->data[1][i] * tauSec - 0.5 * par->rOrb_n->data[2][i] * tauSec * tauSec ;
 
-  /* convert rr_ord into ecliptic coordinates */
-  equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );
+  vect3D_t rr_ord_Equ, rr_ord_Ecl;
+  UINT4 i, n;
+  COPY_VECT ( rr_ord_Equ, detpos_equ );
+  if ( par->rOrb_n )
+    {
+      for (n=0; n < par->rOrb_n->length; n ++ )
+        {
+          REAL8 pre_n = kfactinv[n] * pow(tauSec,n);
+          for (i=0; i<3; i++)
+            rr_ord_Equ[i] -=  pre_n * par->rOrb_n->data[n][i];
+        }
+    } /* if rOrb_n */
+
+
+  /* convert into ecliptic coordinates if required */
+  if ( par->deriv == DOPPLERCOORD_NECL_X_NAT || par->deriv == DOPPLERCOORD_NECL_Y_NAT )
+    {
+      equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );
+    }
 
   switch ( par->deriv )
     {
@@ -423,31 +434,19 @@ CWPhaseDeriv_i ( double tt, void *params )
         ret *= nNat;
       break;
 
+    case DOPPLERCOORD_NEQU_X_NAT:
+      ret = ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] ) / rEarth_c;
+      break;
+    case DOPPLERCOORD_NEQU_Y_NAT:
+      ret = ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] ) / rEarth_c;
+      break;
+
     case DOPPLERCOORD_NECL_X_NAT:
-      ret = ( detpos_ecl[0] - (nn_ecl[0]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
-      break;
-    case DOPPLERCOORD_NECL_Y_NAT:
-      ret = ( detpos_ecl[1] - (nn_ecl[1]/nn_ecl[2]) * detpos_ecl[2] ) / rOrb_c;
-      break;
-
-      /* experimental 'global correlation' sky coordinate, if holding {nu, nu1, ...} fixed.
-       * Note: derivatives wrt to nu, nu1, ... are equivalent to f, fdot, ...
-       */
-    case DOPPLERCOORD_NEQU_X_GC:
-      ret = ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] ) / rOrb_c;
-      break;
-    case DOPPLERCOORD_NEQU_Y_GC:
-      ret = ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] ) / rOrb_c;
-      break;
-
-
-    case DOPPLERCOORD_NECL_X_GC:
       ret = ( rr_ord_Ecl[0] - (nn_ecl[0]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
       break;
-    case DOPPLERCOORD_NECL_Y_GC:
+    case DOPPLERCOORD_NECL_Y_NAT:
       ret = ( rr_ord_Ecl[1] - (nn_ecl[1]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
       break;
-
 
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
@@ -460,18 +459,10 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = detpos_ecl[2] / rOrb_c;
       break;
 
-    case DOPPLERCOORD_NEQU_X_NAT:
-      ret = ( detpos_equ[0] - (nn_equ[0]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
-      break;
-    case DOPPLERCOORD_NEQU_Y_NAT:
-      ret = ( detpos_equ[1] - (nn_equ[1]/nn_equ[2]) * detpos_equ[2] ) / rOrb_c;
-      break;
-
-
-
       /* ----- frequency derivatives SI-units ----- */
     case DOPPLERCOORD_FREQ_SI:
     case DOPPLERCOORD_FREQ_NAT:				/* om0 = 2pi f (T/2) */
+    case DOPPLERCOORD_NU0:
       ret = 2*tau;					/* in natural units: dPhi/dom0 = tau */
       if ( par->deriv == DOPPLERCOORD_FREQ_SI )
         ret *= 0.5 * LAL_TWOPI * Tspan * kfactinv[1];	/* dPhi/dFreq = 2 * pi * tSSB_i */
@@ -479,21 +470,24 @@ CWPhaseDeriv_i ( double tt, void *params )
 
     case DOPPLERCOORD_F1DOT_SI:
     case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! (T/2)^2 */
-      ret = 2*tau * 2*tau;					/* in natural units: dPhi/dom1 = tau^2 */
+    case DOPPLERCOORD_NU1:
+      ret = 2*tau * 2*tau;				/* in natural units: dPhi/dom1 = tau^2 */
       if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
         ret *= 0.5*0.5 * LAL_TWOPI * (Tspan*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
       break;
 
     case DOPPLERCOORD_F2DOT_SI:
     case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! (T/2)^3 */
-      ret =  2*tau * 2*tau * 2*tau;				/* in natural units: dPhi/dom2 = tau^3 */
+    case DOPPLERCOORD_NU2:
+      ret =  2*tau * 2*tau * 2*tau;			/* in natural units: dPhi/dom2 = tau^3 */
       if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
         ret *= 0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
       break;
 
     case DOPPLERCOORD_F3DOT_SI:
     case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! (T/2)^4 */
-      ret = 2*tau * 2*tau * 2*tau * 2*tau;			/* in natural units: dPhi/dom3 = tau^4 */
+    case DOPPLERCOORD_NU3:
+      ret = 2*tau * 2*tau * 2*tau * 2*tau;		/* in natural units: dPhi/dom3 = tau^4 */
       if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
         ret *= 0.5*0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan*Tspan) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       break;
@@ -894,8 +888,21 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;
+
+  /* if using 'global correlation' frequency variables, determine the highest spindown order: */
+  UINT4 maxorder = 0;
+  for ( i=0; i < dim; i ++ )
+    {
+      UINT4 order;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU0 ) order = 1;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU1 ) order = 2;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU2 ) order = 3;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU3 ) order = 4;
+      maxorder = MYMAX ( maxorder, order );
+    }
+
   /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( MAX_SPDNORDER, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }

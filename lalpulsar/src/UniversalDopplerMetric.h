@@ -157,20 +157,17 @@ typedef enum {
   DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
+  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+
   DOPPLERCOORD_N3X,			/**< experimental: unconstrained sky-vector n3: ecliptic-x coordinate */
   DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
   DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
 
-  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-
-
-  DOPPLERCOORD_NEQU_X_GC,		/**< Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
-  DOPPLERCOORD_NEQU_Y_GC,		/**< Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
-
-  DOPPLERCOORD_NECL_X_GC,		/**< Sky-position: n_x in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
-  DOPPLERCOORD_NECL_Y_GC,		/**< Sky-position: n_y in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
-
+  DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
+  DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
+  DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
+  DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
@@ -200,18 +197,17 @@ const CHAR *DopplerCoordinateNames[] = {
   "nEcl_x_Nat",
   "nEcl_y_Nat",
 
+  "nEqu_x_Nat",
+  "nEqu_y_Nat",
+
   "n3_x",
   "n3_y",
   "n3_z",
 
-  "nEqu_x_Nat",
-  "nEqu_y_Nat",
-
-  "nEqu_x_GC",
-  "nEqu_y_GC",
-
-  "nEcl_x_GC",
-  "nEcl_y_GC",
+  "nu0",
+  "nu1",
+  "nu2",
+  "nu3",
 
   "NONE"
 };
@@ -243,18 +239,17 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
   "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
 
+  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
+
   "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
 
-  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
-  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
-
-  "Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
-  "Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
-
-  "Sky-position: n_x in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
-  "Sky-position: n_y in ECLIPTIC Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
+  "'global correlation' frequency coordinate nu_0",
+  "'global correlation' f1dot coordinate nu_1",
+  "'global correlation' f2dot coordinate nu_2",
+  "'global correlation' f3dot coordinate nu_3",
 
   "NONE"
 };
