@@ -1061,3 +1061,27 @@ void templateSinc(LALIFOData *IFOdata)
   IFOdata->modelDomain = timeDomain;
   return;
 }
+
+
+void templateASinOmegaT(LALIFOData *IFOdata)
+/************************************************************/
+/* Trivial h(t)=A*sin(Omega*t) template						*/
+/*  Required (`IFOdata->modelParams') parameters are:       */
+/*   - "A"       (dimensionless amplitude, REAL8)			*/
+/*   - "Omega"   (frequency; REAL8, radians/sec)            */
+/************************************************************/
+{
+  double A		= *(REAL8*) getVariable(IFOdata->modelParams, "A");				/* dim-less	   */
+  double Omega	= *(REAL8*) getVariable(IFOdata->modelParams, "Omega");			/* rad/sec     */
+  double t;
+  double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));	
+
+  long i;
+  for (i=0; i<IFOdata->timeData->data->length; ++i){
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS);  /* t-mu       */   
+    IFOdata->timeModelhPlus->data->data[i] = A * sin(Omega*t);
+    IFOdata->timeModelhCross->data->data[i] = 0.0;
+  }
+  IFOdata->modelDomain = timeDomain;
+  return;
+}

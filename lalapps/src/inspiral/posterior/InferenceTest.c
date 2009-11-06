@@ -51,8 +51,10 @@ int i, j, k;
 
 //Test LALProposalFunction
 void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 //Test LALPriorFunction
 REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
+REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params);
 //Test LALEvolveOneStepFunction
 void BasicMCMCOneStep(LALInferenceRunState *runState);
 //Test LALAlgorithm
@@ -409,7 +411,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 /* phase, time, rightascension,			*/
 /* desclination, polarisation, distance.*/
 /* Simply picks a new value based on	*/
-/* fixed Gaussian if within prior;		*/
+/* fixed Gaussian;						*/
 /* need smarter wall bounces in future.	*/
 /****************************************/
 {
@@ -457,6 +459,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 //	printVariables(proposedParams);
 }
 
+
 //Test LALPriorFunction
 REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 /****************************************/
@@ -485,6 +488,50 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 		return 1.0;
 	//TODO: should be properly normalized; pass in range via priorArgs?	
 	return 0;
+}
+
+
+//Test LALProposalFunction
+void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist:	A, Omega					*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian						*/
+/****************************************/
+{
+	REAL8 A, Omega;
+	REAL8 A_proposed, Omega_proposed;
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariables * currentParams = runState->currentParams;	
+
+	A		= *(REAL8*) getVariable(currentParams, "A");				/* dim-less	   */
+	Omega	= *(REAL8*) getVariable(currentParams, "Omega");			/* rad/sec     */	
+
+	A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
+	Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
+		
+	addVariable(proposedParams, "A",			&A_proposed,	REAL8_t);		
+	addVariable(proposedParams, "Omega",		&Omega_proposed,	REAL8_t);
+}
+
+
+//Test LALPriorFunction
+REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params)
+/****************************************/
+/* Prior for two-parameter				*/
+/* waveform family ASinOmegaT			*/
+/* Assumes the following parameters		*/
+/* exist:	A, Omega					*/
+/* Prior is flat if within range		*/
+/****************************************/
+{
+	REAL8 A, Omega;	
+	
+	A		= *(REAL8*) getVariable(params, "A");				/* dim-less	   */
+	Omega	= *(REAL8*) getVariable(params, "Omega");			/* rad/sec     */
+
+	return 1;
 }
 
 //Test LALEvolveOneStepFunction
