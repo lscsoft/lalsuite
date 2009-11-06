@@ -723,8 +723,6 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 
   LALTimeIntervalAndNSample time_info;
 
-  LALGPSandAcc gps_and_acc; /* 05/20/03 gam */
-
   INITSTATUS (status, "GenerateResponseFuncUsingLAL", LALINDEPENDENTTESTDETRESPONSEC);
   ATTATCHSTATUSPTR(status);
 
@@ -753,20 +751,14 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
     fprintf(stdout, "In GenerateResponseFuncUsingLAL LMST = %7e \n", lmsthours); /* 10/13/04 gam */
   }
 
-  /* Compute instantaneous AM response */
-  gps_and_acc.gps.gpsSeconds     = gps->gpsSeconds;
-  gps_and_acc.gps.gpsNanoSeconds = gps->gpsNanoSeconds;
-  gps_and_acc.accuracy = LALLEAPSEC_STRICT; /* 05/20/03 gam */
-
   /* LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps); */ /* 05/20/03 gam */
-  LALComputeDetAMResponse(status->statusPtr, &am_response, &det_and_pulsar, &gps_and_acc);
+  LALComputeDetAMResponse(status->statusPtr, &am_response, &det_and_pulsar, gps);
   CHECKSTATUSPTR (status);
 
   time_info.epoch.gpsSeconds     = gps->gpsSeconds;
   time_info.epoch.gpsNanoSeconds = gps->gpsNanoSeconds;
   time_info.deltaT               = 1.0/sampleRate;
   time_info.nSample              = lgthDataSet;
-  time_info.accuracy = LALLEAPSEC_STRICT; /* 09/26/03 gam */
 
    if (lalDebugLevel > 1) {
       printf("Start computing AM response vectors\n");
