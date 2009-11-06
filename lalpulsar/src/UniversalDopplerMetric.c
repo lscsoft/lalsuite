@@ -148,6 +148,8 @@ int equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in );
 int eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in );
 int matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in );
 
+UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
@@ -327,7 +329,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
   PosVel3D_t posvel = empty_PosVel3D_t;
-  vect3D_t detpos_ecl, detpos_equ;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
   static REAL8 kfactinv[] = { 1.0, 1.0/1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0 };	/* 1/k! */
@@ -348,19 +349,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* and in an ecliptic coordinate-frame */
   equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
 
-  /*
-  vect3D_t nn_ecl0, nn_equ0;
-  printf ("equatorialVect2ecliptic(): nn_ecl0 = { %g, %g, %g}\n", nn_ecl0[0], nn_ecl0[1], nn_ecl0[2] );
-  nn_ecl[0] = nn_equ[0];
-  nn_ecl[1] = cosiEcl * nn_equ[1] + siniEcl * nn_equ[2];
-  nn_ecl[2] = cosiEcl * nn_equ[2] - siniEcl * nn_equ[1];
-  printf ("manual conversion        : nn_ecl  = { %g, %g, %g}\n", nn_ecl[0], nn_ecl[1], nn_ecl[2] );
-  eclipticVect2equatorial ( nn_equ0, nn_ecl0 );
-  printf ("eclipticVect2equatorial(): nn_equ0 = { %g, %g, %g}\n", nn_equ0[0], nn_equ0[1], nn_equ0[2] );
-  printf ("original input           : nn_equ  = { %g, %g, %g}\n", nn_equ[0], nn_equ[1], nn_equ[2] );
-  exit(0);
-  */
-
   /* get current detector position r(t) */
   REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
@@ -370,13 +358,12 @@ CWPhaseDeriv_i ( double tt, void *params )
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", fn);
     XLAL_ERROR( fn, XLAL_EFUNC );
   }
-  COPY_VECT ( detpos_equ, posvel.pos );
 
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
   /* correct for time-delay from SSB to detector, neglecting relativistic effects */
-  REAL8 dTRoemerSI = SCALAR(nn_equ, detpos_equ );
+  REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
   REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
 
   /* barycentric time-delay since reference time, measured in units of Tspan */
@@ -391,7 +378,7 @@ CWPhaseDeriv_i ( double tt, void *params )
 
   vect3D_t rr_ord_Equ, rr_ord_Ecl;
   UINT4 i, n;
-  COPY_VECT ( rr_ord_Equ, detpos_equ );
+  COPY_VECT ( rr_ord_Equ, posvel.pos );		/* 0th order */
   if ( par->rOrb_n )
     {
       for (n=0; n < par->rOrb_n->length; n ++ )
@@ -401,14 +388,9 @@ CWPhaseDeriv_i ( double tt, void *params )
             rr_ord_Equ[i] -=  pre_n * par->rOrb_n->data[n][i];
         }
     } /* if rOrb_n */
+  equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
-
-  /* convert into ecliptic coordinates if required */
-  if ( par->deriv == DOPPLERCOORD_NECL_X_NAT || par->deriv == DOPPLERCOORD_NECL_Y_NAT )
-    {
-      equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );
-    }
-
+  /* now compute the requested phase derivative */
   switch ( par->deriv )
     {
       /* ----- sky derivatives ----- */
@@ -418,7 +400,7 @@ CWPhaseDeriv_i ( double tt, void *params )
       nDeriv_i[1] =   cosd * cosa;
       nDeriv_i[2] =   0;
 
-      ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
+      ret = LAL_TWOPI * Freq * SCALAR(rr_ord_Equ, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
       if ( par->deriv == DOPPLERCOORD_ALPHA_NAT )
         ret *= nNat;
       break;
@@ -429,7 +411,7 @@ CWPhaseDeriv_i ( double tt, void *params )
       nDeriv_i[1] = - sind * sina;
       nDeriv_i[2] =   cosd;
 
-      ret = LAL_TWOPI * Freq * SCALAR(posvel.pos, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
+      ret = LAL_TWOPI * Freq * SCALAR(rr_ord_Equ, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
       if ( par->deriv == DOPPLERCOORD_DELTA_NAT )
         ret *= nNat;
       break;
@@ -450,13 +432,13 @@ CWPhaseDeriv_i ( double tt, void *params )
 
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
-      ret = detpos_ecl[0] / rOrb_c;
+      ret = rr_ord_Ecl[0] / rOrb_c;
       break;
     case DOPPLERCOORD_N3Y:
-      ret = detpos_ecl[1] / rOrb_c;
+      ret = rr_ord_Ecl[1] / rOrb_c;
       break;
     case DOPPLERCOORD_N3Z:
-      ret = detpos_ecl[2] / rOrb_c;
+      ret = rr_ord_Ecl[2] / rOrb_c;
       break;
 
       /* ----- frequency derivatives SI-units ----- */
@@ -890,16 +872,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.amcomp2 = AMCOMP_NONE;
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
-  UINT4 maxorder = 0;
-  for ( i=0; i < dim; i ++ )
-    {
-      UINT4 order;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU0 ) order = 1;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU1 ) order = 2;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU2 ) order = 3;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU3 ) order = 4;
-      maxorder = MYMAX ( maxorder, order );
-    }
+  UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
 
   /* compute rOrb(t) derivatives at reference time */
   if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
@@ -1139,8 +1112,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   intparams.refTime   = XLALGPSGetREAL8 ( refTime );
   intparams.Tspan = metricParams->Tspan;
   intparams.edat = edat;
+
+  /* if using 'global correlation' frequency variables, determine the highest spindown order: */
+  UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
+
   /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( MAX_SPDNORDER, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
@@ -2216,3 +2193,27 @@ XLALDestroyVect3Dlist ( vect3Dlist_t *list )
   return;
 
 } /* XLALDestroyVect3Dlist() */
+
+/** Return the highest 'global-correlation' spindown order found in this coordinate system.
+    Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
+    order = 0 therefore means there are no GC spin coordinates at all
+*/
+UINT4
+findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
+{
+
+  UINT4 maxorder = 0;
+  UINT4 i;
+
+  for ( i=0; i < coordSys->dim; i ++ )
+    {
+      UINT4 order = 0;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU0 ) order = 1;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU1 ) order = 2;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU2 ) order = 3;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU3 ) order = 4;
+      maxorder = MYMAX ( maxorder, order );
+    }
+
+  return maxorder;
+} /*  findHighestSpinOrder() */
