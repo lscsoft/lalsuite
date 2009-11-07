@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.4],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -168,19 +168,18 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
-lal_version_micro=`echo "$VERSION" | cut -d. -f3-`
+lal_version_micro=`echo "$VERSION" | cut -d. -f3`
+lal_version_devel=`echo "$VERSION" | cut -d. -f4-`
 test -z "$lal_version_micro" && lal_version_micro=0
+test -z "$lal_version_devel" && lal_version_devel=0
 lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-# This sed script is more complex than it needs to be in order to prevent CVS
-# from corrupting it.
-lal_cvs_tag=`echo '$Name$' | sed -e 's? \\$\$??' -e 's?^\\$Name: ??'`
 AC_DEFINE_UNQUOTED([LAL_VERSION],["$VERSION"],[LAL Version])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MAJOR],[$lal_version_major],[LAL Version Major Number])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MINOR],[$lal_version_minor],[LAL Version Minor Number])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MICRO],[$lal_version_micro],[LAL Version Micro Number])
+AC_DEFINE_UNQUOTED([LAL_VERSION_DEVEL],[$lal_version_devel],[LAL Version Devel Number])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_ARGS],["$ac_configure_args"],[LAL Configure Arguments])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure Date])
-AC_DEFINE_UNQUOTED([LAL_CVS_TAG],["$lal_cvs_tag"],[LAL CVS Tag])
 test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
 AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 

@@ -1164,161 +1164,173 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 16 )
       {
-        thisEvent->coa_phase = r4colData;
+        thisEvent->chi = r4colData;
       }
       else if ( tableDir[j].idx == 17 )
       {
-        thisEvent->mass1 = r4colData;
+        thisEvent->kappa = r4colData;
       }
       else if ( tableDir[j].idx == 18 )
       {
-        thisEvent->mass2 = r4colData;
+        thisEvent->coa_phase = r4colData;
       }
       else if ( tableDir[j].idx == 19 )
       {
-        thisEvent->mchirp = r4colData;
+        thisEvent->mass1 = r4colData;
       }
       else if ( tableDir[j].idx == 20 )
       {
-        thisEvent->eta = r4colData;
+        thisEvent->mass2 = r4colData;
       }
       else if ( tableDir[j].idx == 21 )
       {
-        thisEvent->tau0 = r4colData;
+        thisEvent->mchirp = r4colData;
       }
       else if ( tableDir[j].idx == 22 )
       {
-        thisEvent->tau2 = r4colData;
+        thisEvent->eta = r4colData;
       }
       else if ( tableDir[j].idx == 23 )
       {
-        thisEvent->tau3 = r4colData;
+        thisEvent->tau0 = r4colData;
       }
       else if ( tableDir[j].idx == 24 )
       {
-        thisEvent->tau4 = r4colData;
+        thisEvent->tau2 = r4colData;
       }
       else if ( tableDir[j].idx == 25 )
       {
-        thisEvent->tau5 = r4colData;
+        thisEvent->tau3 = r4colData;
       }
       else if ( tableDir[j].idx == 26 )
       {
-        thisEvent->ttotal = r4colData;
+        thisEvent->tau4 = r4colData;
       }
       else if ( tableDir[j].idx == 27 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->tau5 = r4colData;
       }
       else if ( tableDir[j].idx == 28 )
       {
-        thisEvent->chisq = r4colData;
+        thisEvent->ttotal = r4colData;
       }
       else if ( tableDir[j].idx == 29 )
       {
-        thisEvent->chisq_dof = i4colData;
+        thisEvent->snr = r4colData;
       }
       else if ( tableDir[j].idx == 30 )
       {
-        thisEvent->bank_chisq = r4colData;
+        thisEvent->snr_dof = i4colData;
       }
       else if ( tableDir[j].idx == 31 )
       {
-        thisEvent->bank_chisq_dof = i4colData;
+        thisEvent->chisq = r4colData;
       }
       else if ( tableDir[j].idx == 32 )
       {
-        thisEvent->cont_chisq = r4colData;
+        thisEvent->chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 33 )
       {
-        thisEvent->cont_chisq_dof = i4colData;
+        thisEvent->bank_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 34 )
       {
-        thisEvent->sigmasq_h1 = r8colData;
+        thisEvent->bank_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 35 )
       {
-        thisEvent->sigmasq_h2 = r8colData;
+        thisEvent->cont_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 36 )
       {
-        thisEvent->sigmasq_l = r8colData;
+        thisEvent->cont_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 37 )
       {
-        thisEvent->sigmasq_g = r8colData;
+        thisEvent->sigmasq_h1 = r8colData;
       }
       else if ( tableDir[j].idx == 38 )
       {
-        thisEvent->sigmasq_t = r8colData;
+        thisEvent->sigmasq_h2 = r8colData;
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->sigmasq_v = r8colData;
+        thisEvent->sigmasq_l = r8colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
-        thisEvent->chisq_h1 = r4colData;
+        thisEvent->sigmasq_g = r8colData;
       }
       else if ( tableDir[j].idx == 41 )
       {
-        thisEvent->chisq_h2 = r4colData;
+        thisEvent->sigmasq_t = r8colData;
       }
       else if ( tableDir[j].idx == 42 )
       {
-        thisEvent->chisq_l = r4colData;
+        thisEvent->sigmasq_v = r8colData;
       }
       else if ( tableDir[j].idx == 43 )
       {
-        thisEvent->chisq_g = r4colData;
+        thisEvent->chisq_h1 = r4colData;
       }
       else if ( tableDir[j].idx == 44 )
       {
-        thisEvent->chisq_t = r4colData;
+        thisEvent->chisq_h2 = r4colData;
       }
       else if ( tableDir[j].idx == 45 )
       {
-        thisEvent->chisq_v = r4colData;
+        thisEvent->chisq_l = r4colData;
       }
       else if ( tableDir[j].idx == 46 )
       {
-        thisEvent->ra = r4colData;
+        thisEvent->chisq_g = r4colData;
       }
       else if ( tableDir[j].idx == 47 )
       {
-        thisEvent->dec = r4colData;
+        thisEvent->chisq_t = r4colData;
       }
       else if ( tableDir[j].idx == 48 )
       {
-        thisEvent->ligo_angle = r4colData;
+        thisEvent->chisq_v = r4colData;
       }
-      else if ( tableDir[j].idx == 49 )
+      else if ( tableDir[j].idx == 48 )
       {
-        thisEvent->ligo_angle_sig = r4colData;
+        thisEvent->ra = r4colData;
       }
       else if ( tableDir[j].idx == 50 )
       {
-        thisEvent->inclination = r4colData;
+        thisEvent->dec = r4colData;
       }
       else if ( tableDir[j].idx == 51 )
       {
-        thisEvent->polarization = r4colData;
+        thisEvent->ligo_angle = r4colData;
       }
       else if ( tableDir[j].idx == 52 )
       {
-        thisEvent->null_statistic = r4colData;
+        thisEvent->ligo_angle_sig = r4colData;
       }
       else if ( tableDir[j].idx == 53 )
       {
-        thisEvent->null_stat_h1h2 = r4colData;
+        thisEvent->inclination = r4colData;
       }
       else if ( tableDir[j].idx == 54 )
       {
-        thisEvent->null_stat_degen = r4colData;
+        thisEvent->polarization = r4colData;
       }
       else if ( tableDir[j].idx == 55 )
+      {
+        thisEvent->null_statistic = r4colData;
+      }
+      else if ( tableDir[j].idx == 56 )
+      {
+        thisEvent->null_stat_h1h2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 57 )
+      {
+        thisEvent->null_stat_degen = r4colData;
+      }
+      else if ( tableDir[j].idx == 58 )
       {
         if ( tableDir[j].pos > 0 )
         {
@@ -1339,83 +1351,83 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
           }
         }
       }
-      else if ( tableDir[j].idx == 56 )
+      else if ( tableDir[j].idx == 59 )
       {
         thisEvent->h1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 57 )
+      else if ( tableDir[j].idx == 60 )
       {
         thisEvent->h1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 58 )
+      else if ( tableDir[j].idx == 61 )
       {
         thisEvent->h2quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 59 )
+      else if ( tableDir[j].idx == 62 )
       {
         thisEvent->h2quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 60 )
+      else if ( tableDir[j].idx == 63 )
       {
         thisEvent->l1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 61 )
+      else if ( tableDir[j].idx == 64 )
       {
         thisEvent->l1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 62 )
+      else if ( tableDir[j].idx == 65 )
       {
         thisEvent->g1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 63 )
+      else if ( tableDir[j].idx == 66 )
       {
         thisEvent->g1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 64 )
+      else if ( tableDir[j].idx == 67 )
       {
         thisEvent->t1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 65 )
+      else if ( tableDir[j].idx == 68 )
       {
         thisEvent->t1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 66 )
+      else if ( tableDir[j].idx == 69 )
       {
         thisEvent->v1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 67 )
+      else if ( tableDir[j].idx == 70 )
       {
         thisEvent->v1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 68 )
+      else if ( tableDir[j].idx == 71 )
       {
         thisEvent->coh_snr_h1h2 = r4colData;
       }
-      else if ( tableDir[j].idx == 69 )
+      else if ( tableDir[j].idx == 72 )
       {
         thisEvent->cohSnrSqLocal = r4colData;
       }
-      else if ( tableDir[j].idx == 70 )
+      else if ( tableDir[j].idx == 73 )
       {
         thisEvent->autoCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 71 )
+      else if ( tableDir[j].idx == 74 )
       {
         thisEvent->crossCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 72 )
+      else if ( tableDir[j].idx == 75 )
       {
         thisEvent->autoCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 73 )
+      else if ( tableDir[j].idx == 76 )
       {
         thisEvent->crossCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 74 )
+      else if ( tableDir[j].idx == 77 )
       {
         thisEvent->ampMetricEigenVal1 = r8colData;
       }
-      else if ( tableDir[j].idx == 75 )
+      else if ( tableDir[j].idx == 78 )
       {
         thisEvent->ampMetricEigenVal2 = r8colData;
       }
@@ -3871,66 +3883,69 @@ LALMultiInspiralTableFromLIGOLw (
           {"eff_dist_t",              -1, 13},
           {"eff_dist_v",              -1, 14},
           {"eff_dist_h1h2",           -1, 15},
-          {"coa_phase",               -1, 16},
-          {"mass1",                   -1, 17},
-          {"mass2",                   -1, 18},
-          {"mchirp",                  -1, 19},
-          {"eta",                     -1, 20},
-          {"tau0",                    -1, 21},
-          {"tau2",                    -1, 22},
-          {"tau3",                    -1, 23},
-          {"tau4",                    -1, 24},
-          {"tau5",                    -1, 25},
-          {"ttotal",                  -1, 26},
-          {"snr",                     -1, 27},
-          {"chisq",                   -1, 28},
-          {"chisq_dof",               -1, 29},
-          {"bank_chisq",              -1, 30},
-          {"bank_chisq_dof",          -1, 31},
-          {"cont_chisq",              -1, 32},
-          {"cont_chisq_dof",          -1, 33},
-          {"sigmasq_h1",              -1, 34},
-          {"sigmasq_h2",              -1, 35},
-          {"sigmasq_l",               -1, 36},
-          {"sigmasq_g",               -1, 37},
-          {"sigmasq_t",               -1, 38},
-          {"sigmasq_v",               -1, 39},
-          {"chisq_h1",                -1, 40},
-          {"chisq_h2",                -1, 41},
-          {"chisq_l",                 -1, 42},
-          {"chisq_g",                 -1, 43},
-          {"chisq_t",                 -1, 44},
-          {"chisq_v",                 -1, 45},
-          {"ra",                      -1, 46},
-          {"dec",                     -1, 47},
-          {"ligo_angle",              -1, 48},
-          {"ligo_angle_sig",          -1, 49},
-          {"inclination",             -1, 50},
-          {"polarization",            -1, 51},
-          {"null_statistic",          -1, 52},          
-	  {"null_stat_h1h2",          -1, 53},          
-	  {"null_stat_degen",         -1, 54},
-          {"event_id",                -1, 55},
-          {"h1quad_re",               -1, 56},
-          {"h1quad_im",               -1, 57},
-          {"h2quad_re",               -1, 58},
-          {"h2quad_im",               -1, 59},
-          {"l1quad_re",               -1, 60},
-          {"l1quad_im",               -1, 61},
-          {"g1quad_re",               -1, 62},
-          {"g1quad_im",               -1, 63},
-          {"t1quad_re",               -1, 64},
-          {"t1quad_im",               -1, 65},
-          {"v1quad_re",               -1, 66},
-          {"v1quad_im",               -1, 67},
-          {"coh_snr_h1h2",            -1, 68},
-          {"cohSnrSqLocal",           -1, 69},
-          {"autoCorrCohSq",           -1, 70},
-          {"crossCorrCohSq",          -1, 71},
-          {"autoCorrNullSq",          -1, 72},
-          {"crossCorrNullSq",         -1, 73},
-          {"ampMetricEigenVal1",      -1, 74},
-          {"ampMetricEigenVal2",      -1, 75},
+          {"chi",                     -1, 16},
+          {"kappa",                   -1, 17},
+          {"coa_phase",               -1, 18},
+          {"mass1",                   -1, 19},
+          {"mass2",                   -1, 20},
+          {"mchirp",                  -1, 21},
+          {"eta",                     -1, 22},
+          {"tau0",                    -1, 23},
+          {"tau2",                    -1, 24},
+          {"tau3",                    -1, 25},
+          {"tau4",                    -1, 26},
+          {"tau5",                    -1, 27},
+          {"ttotal",                  -1, 28},
+          {"snr",                     -1, 29},
+          {"snr_dof",                 -1, 30},
+          {"chisq",                   -1, 31},
+          {"chisq_dof",               -1, 32},
+          {"bank_chisq",              -1, 33},
+          {"bank_chisq_dof",          -1, 34},
+          {"cont_chisq",              -1, 35},
+          {"cont_chisq_dof",          -1, 36},
+          {"sigmasq_h1",              -1, 37},
+          {"sigmasq_h2",              -1, 38},
+          {"sigmasq_l",               -1, 39},
+          {"sigmasq_g",               -1, 40},
+          {"sigmasq_t",               -1, 41},
+          {"sigmasq_v",               -1, 42},
+          {"chisq_h1",                -1, 43},
+          {"chisq_h2",                -1, 44},
+          {"chisq_l",                 -1, 45},
+          {"chisq_g",                 -1, 46},
+          {"chisq_t",                 -1, 47},
+          {"chisq_v",                 -1, 48},
+          {"ra",                      -1, 49},
+          {"dec",                     -1, 50},
+          {"ligo_angle",              -1, 51},
+          {"ligo_angle_sig",          -1, 52},
+          {"inclination",             -1, 53},
+          {"polarization",            -1, 54},
+          {"null_statistic",          -1, 55},          
+	  {"null_stat_h1h2",          -1, 56},          
+	  {"null_stat_degen",         -1, 57},
+          {"event_id",                -1, 58},
+          {"h1quad_re",               -1, 59},
+          {"h1quad_im",               -1, 60},
+          {"h2quad_re",               -1, 61},
+          {"h2quad_im",               -1, 62},
+          {"l1quad_re",               -1, 63},
+          {"l1quad_im",               -1, 64},
+          {"g1quad_re",               -1, 65},
+          {"g1quad_im",               -1, 66},
+          {"t1quad_re",               -1, 67},
+          {"t1quad_im",               -1, 68},
+          {"v1quad_re",               -1, 69},
+          {"v1quad_im",               -1, 70},
+          {"coh_snr_h1h2",            -1, 71},
+          {"cohSnrSqLocal",           -1, 72},
+          {"autoCorrCohSq",           -1, 73},
+          {"crossCorrCohSq",          -1, 74},
+          {"autoCorrNullSq",          -1, 75},
+          {"crossCorrNullSq",         -1, 76},
+          {"ampMetricEigenVal1",      -1, 77},
+          {"ampMetricEigenVal2",      -1, 78},
           {NULL,                       0, 0}
     };
 

@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I lal/misc
 SUBDIRS = @subdirs@
-distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
+distcleancheck_listfiles = find . -type f \! -name "LAL*VCSInfo.h" -print
 MAINTAINERCLEANFILES = lalsuite.spec
 vcs-clean: cvs-clean
 cvs-clean: maintainer-clean
