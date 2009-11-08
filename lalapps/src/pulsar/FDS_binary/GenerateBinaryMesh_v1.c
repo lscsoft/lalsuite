@@ -881,14 +881,10 @@ int CheckRTBoundary(REAL8 *sma_temp,LIGOTimeGPS *tp_temp,RTparameterspace *RTspa
 
   /* this routine simply checks wether a point in RT space lies within the space boundaries */
 
-  INT4 result;
-
   if (*sma_temp<(RTspace->sma_MIN)) return 0;
   if (*sma_temp>(RTspace->sma_MAX)) return 0;
-  LALCompareGPS(&status,&result,tp_temp,&(RTspace->tperi_MIN));
-  if (result==-1) return 0;
-  LALCompareGPS(&status,&result,tp_temp,&(RTspace->tperi_MAX));
-  if (result==1) return 0;
+  if (XLALGPSCmp(tp_temp,&(RTspace->tperi_MIN)) < 0) return 0;
+  if (XLALGPSCmp(tp_temp,&(RTspace->tperi_MAX)) > 0) return 0;
 
   return 1;
 

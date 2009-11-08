@@ -234,7 +234,6 @@ int main( int argc, char *argv[] )
   InspiralInjectionParameters         paramsIn;     
   MetadataTable                       injections;
   SimInspiralTable                    *this_inj = NULL;
-  LALGPSCompareResult                 compareGPS;
 
     /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
@@ -254,9 +253,8 @@ int main( int argc, char *argv[] )
    * loop over duration of desired output times
    *
    */
-  compareGPS = LALGPS_EARLIER;
 
-  while ( compareGPS == LALGPS_EARLIER )
+  while ( XLALGPSCmp(&(paramsIn.gpsStartTime), &(paramsIn.gpsEndTime)) < 0 )
   {
 
     /* rho, z and lGal are the galactocentric galactic axial coordinates */
@@ -289,10 +287,6 @@ int main( int argc, char *argv[] )
 
     /* increment the injection time */
     XLALGPSAdd( &(paramsIn.gpsStartTime), paramsIn.meanTimeStep );
-
-    LAL_CALL( LALCompareGPS( &status, &compareGPS, &(paramsIn.gpsStartTime), 
-                             &(paramsIn.gpsEndTime) ), &status );
-
 
     this_inj->f_lower  = paramsIn.fLower;
     memcpy (this_inj->waveform, paramsIn.waveform, sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX);  
@@ -1019,9 +1013,6 @@ void LALParserInspiralInjection(LALStatus *status,
 void LALCheckInspiralInjectionParameters(LALStatus *status, 
                                          InspiralInjectionParameters params)
 { 
-  LALGPSCompareResult        compareGPS;
-
-  
   if ( params.fLower <= 5 || params.fLower >=1000)
     {
       fprintf( stderr, "invalid argument to --%s:\n"
@@ -1049,8 +1040,6 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
       exit( 1 );
     }
   /* check that the start time is before the end time */
-  LAL_CALL( LALCompareGPS( status, &compareGPS, &(params.gpsStartTime), &(params.gpsEndTime)) ,
-            status );
   if ( params.gpsEndTime.gpsSeconds > 999999999 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"

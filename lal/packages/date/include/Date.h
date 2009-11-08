@@ -316,29 +316,6 @@ typedef enum
 
 
 /* <lalLaTeX>
-\subsubsection*{Enumeration \texttt{LALGPSCompareResult}}
-\idx[Type]{LALGPSCompareResult}
-
-This enumerated type is used as the output type for
-\texttt{LALCompareGPS()}.  The allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+LALGPS_EARLIER+ & GPS1 < GPS2 \\
-  \verb+LALGPS_EQUAL+ & GPS1 = GPS2 \\
-  \verb+LALGPS_LATER+ & GPS1 > GPS2
-\end{tabular}
-\bigskip
-</lalLaTeX> */
-typedef enum
-{
-  LALGPS_EARLIER = -1,
-  LALGPS_EQUAL   =  0,
-  LALGPS_LATER   =  1
-} LALGPSCompareResult;
-
-
-/* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALUnixDate}}
 \idx[Type]{LALUnixDate}
@@ -461,16 +438,6 @@ LALDeltaGPS (LALStatus         *status,
              LALTimeInterval   *pDeltaGPS, /* output: GPS1 - GPS2*/
              const LIGOTimeGPS *pGPS1, /* input: GPS1 */
              const LIGOTimeGPS *pGPS2); /* input: GPS2 */
-
-/* This function compares GPS1 to GPS2; returns 0 if GPS1 == GPS2,
- returns -1 if GPS1 < GPS2, +1 if GPS1 > GPS2 */
-void
-LALCompareGPS (LALStatus *status,
-               LALGPSCompareResult *pResult, /* output: -1 => GPS1 < GPS2
-                                                         0 => GPS1 = GPS2
-                                                         1 => GPS1 > GPS2 */
-               const LIGOTimeGPS *pGPS1, /* input: GPS1 */
-               const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
 /* This function returns the current GPS time according to the system clock */
 LIGOTimeGPS *
