@@ -220,9 +220,10 @@ FindChirpDataParams * initCCmatParams(FindChirpDataParams *params)
 
     FindChirpInitParams *initParams = (FindChirpInitParams *) calloc(1,sizeof(FindChirpInitParams));
 
+
     // FIXME status pointer not working correctly
     LALStatus *status = (LALStatus *) calloc(1,sizeof(LALStatus));
-    
+
     initParams->numSegments = 15;
     initParams->numPoints = 1048576;
     initParams->ovrlap = 524288;
@@ -237,8 +238,9 @@ FindChirpDataParams * initCCmatParams(FindChirpDataParams *params)
 
     LALFindChirpDataInit( status, &params, initParams );
 
-    fprintf(stderr,"%d\n",params->ampVec->length);
+    fprintf(stderr,"%d\n",params->fLow);
 
+    fprintf(stderr,"in\n");    
     return params;
 
 }
