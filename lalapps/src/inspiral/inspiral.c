@@ -2518,10 +2518,14 @@ int main( int argc, char *argv[] )
            for each segment now!!! */
         if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
+	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
+	  fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
           dynRange, fLow, spec.deltaF);
-          ccFlag = 0;
+          fprintf(stderr, "done with ccmat\n");
+	  
+	  ccFlag = 0;
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
