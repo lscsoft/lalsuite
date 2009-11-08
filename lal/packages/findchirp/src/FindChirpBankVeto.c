@@ -46,6 +46,7 @@ $Id$
 #include <lal/FindChirp.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
+#include <time.h>
 
 
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
@@ -66,6 +67,31 @@ static InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
+
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
+{
+    int row;
+    int col;
+
+    fprintf(stderr,"in");
+
+    for ( row = 0; row< maxSubBankSize; row++ )
+    {
+	for ( col = 0; col < maxSubBankSize; col++ )
+	{
+	    fprintf(fdOut,"%.8g+i%.8g\t",ccmat->data[row*maxSubBankSize+col].re,ccmat->data[row*maxSubBankSize+col].im);
+	}
+
+	fprintf(fdOut,"\n");
+
+    }
+
+    fprintf(stderr,"out");
+
+    return 0;
+}
+
+
 
 static double chirp_time (double m1, double m2, double fLower, int order)
 	{
@@ -317,246 +343,277 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                     REAL4 fLow,
                     REAL4 deltaF)
 {
-  REAL8 tmpltAreal = 0;  // temporary variables that hold the real and imaginary parts
-  REAL8 tmpltAimag = 0;  //  of the two templates, which will be multiplied together
-  REAL8 tmpltBreal = 0;  //  and added to the cross-correlation integral
-  REAL8 tmpltBimag = 0; 
+    /* Temporary variables that hold the real and imaginary parts
+     * of the two templates, which will be multiplied together
+     * and added to the cross-correlation integral */
+    REAL8 tmpltAreal = 0;  
+    REAL8 tmpltAimag = 0;    
+    REAL8 tmpltBreal = 0;    
+    REAL8 tmpltBimag = 0;  
 
-  REAL8 crossCorrABreal; // the cumulative real and imaginary parts of the cross-correlation
-  REAL8 crossCorrABimag; //  integral int( A*(f)B(f)/Sn(f) )df 
+    /* The cumulative real and imaginary parts of the cross-correlation
+     * integral int( A*(f)B(f)/Sn(f) )df */
+    REAL8 crossCorrABreal; 
+    REAL8 crossCorrABimag;   
 
-  REAL8 sqResp, normfac; /* FIXME what do these do? */
+    /* Indices used to iterate of CC matrix row and columns */
+    UINT4 row; 
+    UINT4 col;   
 
-  UINT4 i;
-  UINT4 j;
-  UINT4 k;     /* FIXME GIVE ME MORE DESCRIPTIVE NAMES */
-  UINT4 iMax;
-  UINT4 jMax;
-  UINT4 correctFlag;  
-  UINT4 maxSubBankSize = bankVetoData->length; // maximum number of templates in subbank
-  UINT4 tmpltLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length; // template length in sample points
+    /* Index used to integrate over frequencies */
+    UINT4 sample;           
+    
+    /* Indices which dictate the start and end of integration */
+    UINT4 startIndex = floor( fLow / deltaF ); 
+    UINT4 sampleMaxTmpltA;  // Maximum index available in template A
+    UINT4 sampleMaxTmpltB;  // Maximum index available in template B
+    UINT4 templateLength = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
 
-  UINT4 startIndex = floor( fLow / deltaF );  // index of start of integration
-  REAL4 phaseOffset;        // phase shift for template A
-  double fBucket = 150.0;   // approximate frequency of the PSD bucket
-
-  /* FIXME this should be a command line argument */
-  bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
-
-  /* if there isn't already memory allocated for workspace and the autocorrelation 
-   * then allocate it
-   */
-  if ( !bankVetoData->acorr ) bankVetoData->acorr = XLALCreateREAL4Vector((tmpltLen-1) * 2);
-  if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(tmpltLen);
-  if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * maxSubBankSize);
-  if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((tmpltLen-1) * 2 , 0);
-  if ( !bankVetoData->tchirp) bankVetoData->tchirp = XLALCreateREAL4Vector(maxSubBankSize);
-
-  /*
-   * Compute the chirp time from fBucket for each template in the subbank.
-   * We will use the chirp time to offset the templates so that they 
-   * enter the bucket at the same time. 
-   * 
-   */
-  for ( i = 0; i < maxSubBankSize; i++ )
-  {
-      /* FIXME find actual lal function */
-      if ( i < vetoBank->subBankSize )
-      {
-	  bankVetoData->tchirp->data[i] = (REAL4) chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass1, 
-									       bankVetoData->fcInputArray[i]->fcTmplt->tmplt.mass2,
-									       fBucket,
-									       bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal,
-									       7);
-      }
-      else { bankVetoData->tchirp->data[i] = (REAL4) 0; }
-  }
+    /* Parameters used to time shift templates */
+    REAL4 phaseOffset;        // phase shift for template A
+    double fBucket = 150.0;   // approximate frequency of the PSD bucket
+    REAL4 deltaChirp;
 
 
-  /* Compute the cross-correlation between template i and template j */
-  for ( i = 0; i < maxSubBankSize; i++ )
-  {
-    correctFlag = 1; // what does this even do?
-    for ( j = i; j < maxSubBankSize; j++ )
-    {          
-      /* initialize the cross-correlation integral */
-      crossCorrABreal = crossCorrABimag = 0;
+    /* FIXME what do these do? */
+    REAL8 sqResp, normfac; 
 
-     /* FIXME find an XLAL Function to do this?*/  //what does this do?
-      if ( i==j) memset(bankVetoData->workspace->data, 0, bankVetoData->workspace->length * sizeof(COMPLEX8));
-	 
-      if ( (i < vetoBank->subBankSize) && (j < vetoBank->subBankSize) )
-      {
-          /* if the templates are the same then do an autocorrelation function */
-	
-	  /* find the ending sample point of the templates */
-	  iMax = bankVetoData->fcInputArray[i]->fcTmplt->tmplt.fFinal / deltaF;
-	  jMax = bankVetoData->fcInputArray[j]->fcTmplt->tmplt.fFinal / deltaF;
+    /* FIXME this should be a command line argument */
+    bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
 
-	  /* Begin computation of the cross-correlation. */	  
-	  for ( k = startIndex; k < tmpltLen-1; k++ )
-	  {
- 	      if ( (k > iMax) || (k > jMax) ) break;
-	      sqResp = ( bankVetoData->resp->data[k].re *
-                     bankVetoData->resp->data[k].re +
-                     bankVetoData->resp->data[k].im *
-                     bankVetoData->resp->data[k].im ) * dynRange * dynRange;
+    /* Allocate memory for workspace and the autocorrelation if necessary */
+    if ( !bankVetoData->acorr ) bankVetoData->acorr = XLALCreateREAL4Vector((templateLength-1) * 2);
+    if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(templateLength);
+    if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * bankVetoData->length);
+    if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
+    if ( !bankVetoData->tchirp) bankVetoData->tchirp = XLALCreateREAL4Vector(bankVetoData->length);
 
-	      if ( bankVetoData->spec->data[k] != 0 && sqResp != 0 )
-	      {
-
-		  /*  
-		   *  tmpltA* x tmpltB = (tmpltAreal-i*tmpltAimag) x (tmpltBreal+i*tmpltBimag) =
-		   *     (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag) +
-		   *   i*(tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal)
-		   *
-		   */
-		  
-		  phaseOffset = 2*LAL_PI*deltaF*k*(bankVetoData->tchirp->data[j] - bankVetoData->tchirp->data[i]);
-		
-		  tmpltAreal = bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re;
-		  tmpltAimag = bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im;
-		  
-		  // Time shift tmplt A by deltaChirp
-		  tmpltAreal = tmpltAreal*cos(phaseOffset) - tmpltAimag*sin(phaseOffset);
-		  tmpltAimag = tmpltAimag*cos(phaseOffset) + tmpltAreal*sin(phaseOffset);
-
-		  tmpltBreal = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re /
-		    ( bankVetoData->spec->data[k] * sqResp ) *
-		    params->ampVec->data[k] * params->ampVec->data[k];
-		  
-		  tmpltBimag = bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im /
-		    ( bankVetoData->spec->data[k] * sqResp ) *
-		    params->ampVec->data[k] * params->ampVec->data[k];
-
-		  crossCorrABreal +=    (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag);
-		  
-		  crossCorrABimag +=    (tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal);
-
-	      }
-	 
-	      if ( i==j )
-	      {	      
-		  bankVetoData->workspace->data[k].re = (REAL4) tmpltBreal * bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].re 
-		    + tmpltBimag * bankVetoData->fcInputArray[i]->fcTmplt->data->data[k].im;
-		  bankVetoData->workspace->data[k].im = 0.0; /* must be 0 */
-	      }
-
-	  }
-
-	  
-	  if ( i == j )
-	  { 
-  
-	      XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
-	      /* since the normalized first sample of the auto correlation is always 1, lets skip it */
-	      for (k=1; k < bankVetoData->acorrMatSize + 1; k++)
-	      {
-		  /* Save the last acorrMatSize samples */
-		  bankVetoData->acorrMat->data[i*bankVetoData->acorrMatSize + k-1] = bankVetoData->acorr->data[k] / bankVetoData->acorr->data[0];
-	      }
-	  }
-
-      }
- 
-      /* Fill in the cross-correlation matrix.
-	 The matrix is hermitian so the imaginary flips sign. */
-      bankVetoData->ccMat->data[i*maxSubBankSize + j].re = (REAL4) crossCorrABreal;
-      bankVetoData->ccMat->data[j*maxSubBankSize + i].re = (REAL4) crossCorrABreal;
-      bankVetoData->ccMat->data[i*maxSubBankSize + j].im = (REAL4) crossCorrABimag;
-      bankVetoData->ccMat->data[j*maxSubBankSize + i].im = (REAL4) -crossCorrABimag;
-      
-      /* what is normMat ? FIXME */
-      bankVetoData->normMat->data[i*maxSubBankSize + j] = (REAL4) crossCorrABreal;
-      bankVetoData->normMat->data[j*maxSubBankSize + i] = (REAL4) crossCorrABreal;
-      
-    }
-  } /* end loop over templates */
-
-
-  // HUH?
-  for ( i = 0; i < maxSubBankSize; i++ ) 
-  {
-    if (i >= vetoBank->subBankSize) break;
-    for ( j = i; j < maxSubBankSize; j++ ) 
+    /* Compute chirp times for time shifting */
+    for (row = 0; row < vetoBank->subBankSize; row++ )
     {
-      if (j >= vetoBank->subBankSize) break;
-      normfac = (REAL8) 1.0 / sqrt(  bankVetoData->normMat->data[i*maxSubBankSize + i] * bankVetoData->normMat->data[j*maxSubBankSize + j]);
-      bankVetoData->ccMat->data[i*maxSubBankSize + j].re *= (REAL4) normfac;
-      if (j != i) bankVetoData->ccMat->data[j*maxSubBankSize + i].re *= (REAL4) normfac;
-      bankVetoData->ccMat->data[i*maxSubBankSize + j].im *= (REAL4) normfac;
-      if (j != i) bankVetoData->ccMat->data[j*maxSubBankSize + i].im *= (REAL4) normfac;
+	bankVetoData->tchirp->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1, 
+									   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
+									   fBucket,
+									   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal, 7) );
+    }		
+	
+
+    /* Compute the cross-correlation between template row and template col */
+    for ( row = 0; row < bankVetoData->length; row++ )
+    {
+	
+	for ( col = row; col < bankVetoData->length; col++ )
+	{          
+	    if ( row == col  )
+	    {
+		memset(bankVetoData->workspace->data, 0, bankVetoData->workspace->length * sizeof(COMPLEX8));
+	    }
+
+
+	    fprintf(stderr,"i=%d,j=%d\n",row,col);
+	    /* initialize the cross-correlation integral */
+	    crossCorrABreal = crossCorrABimag = 0;
+	    	    
+	    if ( (row < vetoBank->subBankSize) && (col < vetoBank->subBankSize) )
+	    {
+		/* if the templates are the same then do an autocorrelation function */
+		
+		/* find the ending sample point of the templates */
+		sampleMaxTmpltA = bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal / deltaF;
+		sampleMaxTmpltB = bankVetoData->fcInputArray[col]->fcTmplt->tmplt.fFinal / deltaF;
+		
+		/* Begin computation of the cross-correlation. */	  
+		for ( sample = startIndex; sample < templateLength-1; sample++ )
+		{
+		    if ( (sample > sampleMaxTmpltA) || (sample > sampleMaxTmpltB) ) break;
+		    sqResp = ( bankVetoData->resp->data[sample].re *
+			       bankVetoData->resp->data[sample].re +
+			       bankVetoData->resp->data[sample].im *
+			       bankVetoData->resp->data[sample].im ) * dynRange * dynRange;
+		    
+		    if ( bankVetoData->spec->data[sample] != 0 && sqResp != 0 )
+		    {
+
+			deltaChirp = bankVetoData->tchirp->data[col] - bankVetoData->tchirp->data[row];
+			phaseOffset = 2*LAL_PI*deltaF*sample*deltaChirp;
+
+			
+			/*  
+			 *  tmpltA* x tmpltB = (tmpltAreal-i*tmpltAimag) x (tmpltBreal+i*tmpltBimag) =
+			 *     (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag) +
+			 *   i*(tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal)
+			 *
+			 */
+
+			tmpltAreal = bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re;
+			tmpltAimag = bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im;
+			
+			/* Time shift tmplt A by deltaChirp */
+			tmpltAreal = tmpltAreal*cos(phaseOffset) - tmpltAimag*sin(phaseOffset);
+			tmpltAimag = tmpltAimag*cos(phaseOffset) + tmpltAreal*sin(phaseOffset);
+			
+			tmpltBreal = bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re /
+			  ( bankVetoData->spec->data[sample] * sqResp ) *
+			  params->ampVec->data[sample] * params->ampVec->data[sample];
+			
+			tmpltBimag = bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im /
+			  ( bankVetoData->spec->data[sample] * sqResp ) *
+			  params->ampVec->data[sample] * params->ampVec->data[sample];
+			
+			crossCorrABreal +=    (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag);
+			
+			crossCorrABimag +=    (tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal);
+			
+		    }
+		    
+		    if ( row == col )
+		    {	      
+			bankVetoData->workspace->data[sample].re = (REAL4) tmpltBreal * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re 
+			  + tmpltBimag * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im;
+			bankVetoData->workspace->data[sample].im = 0.0; /* must be 0 */
+		    }
+		    
+		}
+		
+		
+		if ( row == col )
+		{ 
+		    XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
+		    /* since the normalized first sample of the auto correlation is always 1, lets skip it */
+		    for (sample=1; sample < bankVetoData->acorrMatSize + 1; sample++)
+		    {
+			/* Save the last acorrMatSize samples */
+			bankVetoData->acorrMat->data[row*bankVetoData->acorrMatSize + sample-1] = bankVetoData->acorr->data[sample] / bankVetoData->acorr->data[0];
+		    }
+		}
+
+		
+	    }
+	    
+	    /* Fill in the cross-correlation matrix.
+	       The matrix is hermitian so the imaginary flips sign. */
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrABreal;
+	    bankVetoData->ccMat->data[col*bankVetoData->length + row].re = (REAL4) crossCorrABreal;
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) crossCorrABimag;
+	    bankVetoData->ccMat->data[col*bankVetoData->length + row].im = (REAL4) -crossCorrABimag;
+	    
+	    /* what is normMat ? FIXME */
+	    bankVetoData->normMat->data[row*bankVetoData->length + col] = (REAL4) crossCorrABreal;
+	    bankVetoData->normMat->data[col*bankVetoData->length + row] = (REAL4) crossCorrABreal;
+	    
+	}
+    } /* end loop over templates */
+    
+
+    // HUH?
+    for ( row = 0; row < vetoBank->subBankSize; row++ ) 
+    {
+	for ( col = row; col < vetoBank->subBankSize; col++ ) 
+	{
+	    normfac = (REAL8) 1.0 / sqrt(  bankVetoData->normMat->data[row*bankVetoData->length + row] * bankVetoData->normMat->data[col*bankVetoData->length + col]);
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re *= (REAL4) normfac;
+	    if (col != row) bankVetoData->ccMat->data[col*bankVetoData->length + row].re *= (REAL4) normfac;
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im *= (REAL4) normfac;
+	    if (col != row) bankVetoData->ccMat->data[col*bankVetoData->length + row].im *= (REAL4) normfac;
+	}
+    } /* end norm loop */
+
+
+
+    if ( 0 )
+    {
+
+    /* Output data */
+    CHAR ccFileName[100];
+    sprintf(ccFileName,"ccmat_%d.txt",time(NULL)-1257471720);
+    FILE *fdOut = fopen(ccFileName,"w");
+
+    writeCCmatToFile(bankVetoData->ccMat,bankVetoData->length,fdOut);
+
+    fclose(fdOut);
+    /* End output data */
+    
     }
-  } /* end norm loop */
 
 }
 
 
 REAL4
 XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
-                     UINT4 i,
-                     UINT4 snrIX,
+                     UINT4 row,
+                     UINT4 snrIndexRow,
 		     REAL4 deltaT,
                      UINT4 *dof)
 {
 
-  REAL8 iSNR_r = 0;
-  REAL8 iSNR_i = 0;
-  REAL8 iSNR = 0;
-  REAL8 jSNR_r = 0;
-  REAL8 jSNR_i = 0;
-  REAL8 chisq = 0;
-  REAL8 phi = 0;
-  UINT8 j = 0;
-  COMPLEX16 ij;
-  REAL8 ijsq;
-
-  REAL8 denomFac, bankNorm, chi_i, chi_r;
-  UINT4 maxSubBankSize = bankVetoData->length;
-  iSNR_r = bankVetoData->qVecArray[i]->data[snrIX].re
-         * sqrt(bankVetoData->fcInputArray[i]->fcTmplt->norm);
-  iSNR_i = bankVetoData->qVecArray[i]->data[snrIX].im
-         * sqrt(bankVetoData->fcInputArray[i]->fcTmplt->norm);
-  iSNR = sqrt(iSNR_r * iSNR_r + iSNR_i * iSNR_i);
-  phi = atan2(iSNR_i, iSNR_r);
-  bankNorm = 0.0;
-  denomFac = 0.0;
-  *dof = 0;
-  if (maxSubBankSize == 1) return 0;
-
-  for (j = 0; j < maxSubBankSize; j++)
-  {
-    if (i == j) continue;
-    if (bankVetoData->ccMat->data[i*maxSubBankSize + j].re == 0 && bankVetoData->ccMat->data[i*maxSubBankSize + j].im == 0) continue;
-
-    ij.re = bankVetoData->ccMat->data[i*maxSubBankSize + j].re * cos(phi) - bankVetoData->ccMat->data[i*maxSubBankSize + j].im * sin(phi);
-    ij.im = bankVetoData->ccMat->data[i*maxSubBankSize + j].im * cos(phi) + bankVetoData->ccMat->data[i*maxSubBankSize + j].re * sin(phi);
-    ijsq = ij.re * ij.re + ij.im * ij.im;
-
-    bankNorm = 2.0 - ijsq;
-
-    fprintf(stdout,"VecLen %d\n",bankVetoData->qVecArray[j]->length);
-    fprintf(stdout,"Index init %d\n",snrIX);
+    REAL8 tmpltA_SNR_real = 0;
+    REAL8 tmpltA_SNR_imag = 0;
+    REAL8 tmpltA_SNR_mag = 0;
+    REAL8 tmpltA_SNR_phi = 0;
     
-    /* FIXME: warning -- this could go off the edge of the SNR time series */
-    UNUSED(deltaT);
-    snrIX = (UINT4) ( (double) snrIX - round( ( bankVetoData->tchirp->data[j] -   bankVetoData->tchirp->data[i]) / deltaT ) );
-    fprintf(stdout,"Index after %d\n",snrIX);
+    REAL8 tmpltB_SNR_real = 0;
+    REAL8 tmpltB_SNR_imag = 0;
+    
+    UINT8 col;
+    UINT8 snrIndexCol;
 
-    jSNR_r = bankVetoData->qVecArray[j]->data[snrIX].re
-           * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
-    jSNR_i = bankVetoData->qVecArray[j]->data[snrIX].im
-           * sqrt(bankVetoData->fcInputArray[j]->fcTmplt->norm);
+    COMPLEX16 chisq;
+    REAL4 chisq_mag = 0;
+    REAL4 bankNorm;
+
+    COMPLEX16 crossCorrAB;
+    REAL8 crossCorrAB_mag;
+
+    /* Handle trivial case */
+    if (bankVetoData->length == 1) return 0;
+   
+    /* Lookup SNR for template A at time given by snrIndexRow */
+    tmpltA_SNR_real = bankVetoData->qVecArray[row]->data[snrIndexRow].re
+      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
+    tmpltA_SNR_imag = bankVetoData->qVecArray[row]->data[snrIndexRow].im
+      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
+    
+    tmpltA_SNR_mag = sqrt(tmpltA_SNR_real * tmpltA_SNR_real + tmpltA_SNR_imag * tmpltA_SNR_imag);
+    tmpltA_SNR_phi = atan2(tmpltA_SNR_imag, tmpltA_SNR_real);
+
+    chisq_mag = 0;
+    *dof = 0;
+
+    for (col = 0; col < bankVetoData->length; col++)
+    {
+	if (row == col) continue;
+	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
+	
+
+	tmpltA_SNR_phi = 0; //FIXME
+	/* Time shift the cross correlation of template B with template B by tmpltA_SNR_phi */ 
+	crossCorrAB.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(tmpltA_SNR_phi)
+	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(tmpltA_SNR_phi);
+	crossCorrAB.im = bankVetoData->ccMat->data[row*bankVetoData->length + col].im * cos(tmpltA_SNR_phi) 
+	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(tmpltA_SNR_phi);
+
+	crossCorrAB_mag = crossCorrAB.re * crossCorrAB.re + crossCorrAB.im * crossCorrAB.im;
+
+	bankNorm = 2.0 - crossCorrAB_mag;
+
+	/* FIXME: warning -- this could go off the edge of the SNR time series */
+	snrIndexCol = (UINT4) ( (double) snrIndexRow - round( ( bankVetoData->tchirp->data[col] -   bankVetoData->tchirp->data[row]) / deltaT ) );
+
+	tmpltB_SNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
+	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
+	tmpltB_SNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
+	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
       
-    chi_r = jSNR_r - ij.re * (iSNR);
-    chi_i = jSNR_i - ij.im * (iSNR);
-    chisq += (chi_r*chi_r + chi_i*chi_i) / bankNorm;
-    (*dof)++;
-  }
+	chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_real);
+	chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_imag);
+	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
+	(*dof)++;
 
-  /*FIXME Normalization now not necessarily chisquare distributed */
-  return (REAL4) chisq;
-  /*return (REAL4) chisq / bankNorm;*/
+    }
+
+    /*FIXME Normalization now not necessarily chisquare distributed */
+    return chisq_mag;
+    /*return (REAL4) chisq / bankNorm;*/
 }
 
 
