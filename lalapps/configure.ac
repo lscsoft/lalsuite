@@ -79,7 +79,6 @@ lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
 lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-lalapps_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
                    [LALApps Version Major Number])
@@ -93,7 +92,6 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALApps Configure Arguments])
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
-AC_DEFINE_UNQUOTED([LALAPPS_CVS_TAG],["$lalapps_cvs_tag"],[LALApps CVS Tag])
 
 
 dnl Remove -all-static from ldflags
