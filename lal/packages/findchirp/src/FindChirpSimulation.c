@@ -516,7 +516,7 @@ LALFindChirpInjectSignals (
 
     }
 
-
+	CHECKSTATUSPTR(status);
 
 
     if ( waveform.shift )
