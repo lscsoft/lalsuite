@@ -298,8 +298,9 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
 	
 	while(thisData){
-		minFlow=minFlow>thisData->fLow?thisData->fLow:minFlow;
-		MindeltaT=MindeltaT>thisData->timeData->deltaT?thisData->timeData->deltaT:MindeltaT;
+          minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
+          MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
+          thisData  = thisData->next;
 	}
 	InjParams.deltaT = MindeltaT;
 	InjParams.fStartIn=(REAL4)minFlow;
