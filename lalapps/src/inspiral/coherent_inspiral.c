@@ -80,6 +80,7 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/DopplerScan.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
 
@@ -117,6 +118,7 @@ snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
           "%s", sv_comment );                                         \
 
 #define rint(x) (floor((x)+0.5))
+#define ALLSKYSTR "allsky"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
@@ -159,6 +161,7 @@ UINT4  nullStatOut       = 0;    /* default is not to write frame */
 UINT4  nullStatH1H2Out       = 0;    /* default is not to write frame */
 UINT4  eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
+REAL4  nullStatRegul        = 0.1;
 UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
@@ -169,8 +172,10 @@ LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
 INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
 
-double raStep = 6.0;
-double decStep = 3.0;
+double raStep = 1.0;
+double decStep = 1.0;
+UINT4  estimParams = 1;
+UINT4  followup = 1;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -281,6 +286,11 @@ int main( int argc, char *argv[] )
 
   char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; /* cData chan names */
 
+  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  const DopplerSkyGrid *skyGrid;
+  UINT4 threeSiteCase = 0;
+
   /* set default debugging level */
   XLALSetErrorHandler( XLALAbortErrorHandler );
   set_debug_level( "1" ); /* change with parse option */
@@ -317,7 +327,6 @@ int main( int argc, char *argv[] )
   /* Set other variables */
   numPoints = rint(sampleRate * cohSegLength);
   savedEvents.multiInspiralTable = NULL;
-  k = 0; 
 
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable = 
@@ -326,7 +335,25 @@ int main( int argc, char *argv[] )
             "data sample rate" );
   this_search_summvar->value = (REAL8) sampleRate;
   
-  
+  /* Assess no. of points in skygrid for sky-map storage */
+  raStep *= LAL_PI_180;
+  decStep *= LAL_PI_180;
+  scanInit.dAlpha = raStep;
+  scanInit.dDelta = decStep;
+  scanInit.gridType = 1; /* (DopplerGridType) gridType = 1 is isotropic */
+  /* scanInit.skyRegionString = "allsky";*/
+  scanInit.skyRegionString = XLALMalloc( strlen(ALLSKYSTR) + 1 );
+  strcpy ( scanInit.skyRegionString, ALLSKYSTR );
+  InitDopplerSkyScan( &status, &thisScan, &scanInit);
+
+  k = 0; 
+  /* Loop over points in the sky-position grid */
+  for ( skyGrid = thisScan.skyGrid ; skyGrid ; skyGrid = skyGrid->next ) {
+    k++;
+  }
+  numBeamPoints = k;
+
+  k=0;
   /* Set the dynamic range; needed for distNorm, templateNorm calculation */
   dynRange = pow( 2.0, dynRangeExponent );
   
@@ -482,7 +509,17 @@ int main( int argc, char *argv[] )
         if( vrbflg ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
         if( vrbflg ) fprintf(stdout,"caseID = %d %d %d %d %d %d (G1,H1,H2,L1,T1,V1)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
         
-        
+     	/* Is this a 3-site network */
+	if ( (numDetectors == 3) ) {
+	  if (caseID[1] && caseID[2]) {
+	    threeSiteCase = 0;
+	  }
+	  else {
+	    threeSiteCase = 1;
+	  }
+	}
+	if ( (numDetectors == 4) ) threeSiteCase = 1;
+   
         /* Initialize the necessary structures for thisCoinc-ident trigger*/
         
         if( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
@@ -497,6 +534,7 @@ int main( int argc, char *argv[] )
         cohInspInitParams->numPoints               = numPoints;
         cohInspInitParams->numBeamPoints           = numBeamPoints;
         cohInspInitParams->cohSNROut               = cohSNROut;
+        cohInspInitParams->threeSiteCase           = threeSiteCase;
         /* In addition to the network cohSNR, output the cohH1H2SNR if
            the user wants it and the network has the ifos H1 and H2; since
            in a 2D network this will make one of cohSNR and cohH1H2SNR
@@ -572,6 +610,8 @@ int main( int argc, char *argv[] )
         cohInspFilterParams->numDetectors            = cohInspInitParams->numDetectors;
         cohInspFilterParams->raStep                  = raStep;
         cohInspFilterParams->decStep                 = decStep;
+        cohInspFilterParams->estimParams             = estimParams;
+        cohInspFilterParams->followup                = followup;
         /* initParams not needed anymore */
         free( cohInspInitParams );
         cohInspInitParams = NULL;
@@ -602,7 +642,7 @@ int main( int argc, char *argv[] )
               }                
               while( ! proc && (ifoFrame = FrameRead( frfileIn[j] )) ) {
                 proc = ifoFrame->procData;
-                if( vrbflg ) fprintf(stdout, "Proc name is %s \n", proc->name );
+                /* if( vrbflg ) fprintf(stdout, "Proc name is %s \n", proc->name ); */
                 /*while ( proc && ( strcmp( nameArrayCData[j], proc->name) == 0 ) ) {*/
                 while ( proc && strcmp( nameArrayCData[j], proc->name ) ) {
                   proc = proc->next;
@@ -643,12 +683,19 @@ int main( int argc, char *argv[] )
               */
               if ( !(cohInspCVec->cData[l]->f0 == 0.0) ) {
                 cohInspFilterParams->sigmasqVec->data[j] = cohInspCVec->cData[l]->f0;
+                /* CHECK: Temporary fix for reading chisq */
+                cohInspFilterParams->chisqVec->data[j] = cohInspCVec->cData[l]->data->data[numPoints-1].re;
+                cohInspCVec->cData[l]->data->data[numPoints-1].re = 0.0;
+                cohInspCVec->cData[l]->data->data[numPoints-1].im = 0.0;
               }
               else {
                 cohInspFilterParams->sigmasqVec->data[j] = 1.0;
+                cohInspCVec->cData[l]->data->data[numPoints-1].re = 0.0;
+                cohInspCVec->cData[l]->data->data[numPoints-1].im = 0.0;
               }                
               
               if (vrbflg)  fprintf( stdout, "sigmasq:%f\n",cohInspFilterParams->sigmasqVec->data[j]);
+	      if (vrbflg)  fprintf( stdout, "chisq:%f\n",cohInspFilterParams->chisqVec->data[j]);
               
               l++;
             }/* Closes "if( caseID[j] )" */
@@ -715,13 +762,20 @@ int main( int argc, char *argv[] )
         memset( &tempSnippet, 0, sizeof(COMPLEX8TimeSeries) );
         LAL_CALL( LALCCreateVector( &status, &(tempSnippet.data), numPoints ), &status );
         
-        /* If cohSNR is being output, then copy epoch */
+	/* If cohSNR is being output, then copy epoch */
         if( cohInspFilterParams->cohSNROut ) {
-          cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0]->epoch;
-          cohInspFilterParams->cohSNRVec->deltaT = cohInspCVec->cData[0]->deltaT;
-        }
-        
-        if( cohInspFilterParams->cohH1H2SNROut ) {
+	  if (threeSiteCase) { 
+	    cohInspFilterParams->cohSNRVec3Sites->epoch = 
+	      cohInspCVec->cData[0]->epoch;
+	    cohInspFilterParams->cohSNRVec3Sites->deltaT = 
+	      cohInspCVec->cData[0]->deltaT;
+	  } 
+	  else {
+	    cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0]->epoch;
+	    cohInspFilterParams->cohSNRVec->deltaT = cohInspCVec->cData[0]->deltaT;
+	  }
+	}
+	if( cohInspFilterParams->cohH1H2SNROut ) {
           cohInspFilterParams->cohH1H2SNRVec->epoch = cohInspCVec->cData[0]->epoch;
           cohInspFilterParams->cohH1H2SNRVec->deltaT = cohInspCVec->cData[0]->deltaT;
         }
@@ -732,13 +786,18 @@ int main( int argc, char *argv[] )
         }
         
         if( cohInspFilterParams->nullStatOut ) {
-          cohInspFilterParams->nullStatVec->epoch = cohInspCVec->cData[0]->epoch;
-          cohInspFilterParams->nullStatVec->deltaT = cohInspCVec->cData[0]->deltaT;
+	  if (threeSiteCase) { 
+	    cohInspFilterParams->nullStatVec3Sites->epoch = cohInspCVec->cData[0]->epoch;
+	    cohInspFilterParams->nullStatVec3Sites->deltaT = cohInspCVec->cData[0]->deltaT;
+	  }
+	  else {
+	    cohInspFilterParams->nullStatVec->epoch = cohInspCVec->cData[0]->epoch;
+	    cohInspFilterParams->nullStatVec->deltaT = cohInspCVec->cData[0]->deltaT;
+	  }
         }
-        
         /* Now that the time series are commensurate, do the filtering... */
-        LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
-        
+        XLALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, thisScan.skyGrid, nullStatRegul);
+          
         /* Save event id in multi_inspiral table */
         thisEventTemp =thisEvent;
         while( thisEventTemp )
@@ -751,10 +810,18 @@ int main( int argc, char *argv[] )
         
         if ( cohInspFilterParams->cohSNROut )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "SNR_%Ld", eventID );
-            strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
-            outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
+	    if ( threeSiteCase ) {
+	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			"SNR_%Ld", eventID );
+	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
+	      outFrameCoh = fr_add_proc_COMPLEX8TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
+	    }
+	    else {
+	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			"SNR_%Ld", eventID );
+	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
+	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
+	    }
           }
         
         /* save the coherent-snr of the H1-H2 pair */
@@ -778,11 +845,19 @@ int main( int argc, char *argv[] )
         /* save network null-stream statistic in frames */
         if ( cohInspFilterParams->nullStatOut )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "NullStat_%Ld", eventID );
-            strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
-            outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
-          }
+	    if ( threeSiteCase ) {
+	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			"NullStat_%Ld", eventID );
+	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
+	      outFrameNullStat = fr_add_proc_COMPLEX8TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
+	    }
+	    else {
+	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+			"NullStat_%Ld", eventID );
+	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
+	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
+	    }
+	  }
         
         if ( !eventsOut )
           {
@@ -1101,6 +1176,11 @@ int main( int argc, char *argv[] )
     }/* close "for( cohFileID...)" */
     
   }/* closes "if ( numTriggers < 0 )" */
+   
+  /* ----- clean up ----- */
+  /* Free DopplerSkyScan-stuff (grid) */
+  thisScan.state = STATE_FINISHED;
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
   
   free( proctable.processTable ); 
   while( procparams.processParamsTable )
@@ -1197,11 +1277,14 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
 "  [--numCohTrigs]   numCohTrigs number of coherent snr frames per output frame-file\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
+"  --null-stat-regul nullStatRegul  a regulator for computing the ratio-statistic\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
 "  --gps-end-time SEC           GPS second of data end time (needed if globbing)\n"\
 "  --ra-step         raStep     right-ascension step-size (in degrees)\n"\
 "  --dec-step        decStep    declination step-size (in degrees)\n"\
+"  --estimate-params estimParams  turn on parameter estimation\n"\
+"  --followup        followup   output parameter estimates required in follow-up studies \n"\
 "\n"
 #define USAGE3 \
 "  --write-events               write events\n"\
@@ -1243,6 +1326,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"v1-slide",                 required_argument, 0,                 'w'},
      {"numCohTrigs",              required_argument, 0,                 'n'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
+     {"null-stat-regul",          required_argument, 0,                 'C'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"write-events",             no_argument,       &eventsOut,         1 },
      {"write-cohsnr",             no_argument,       &cohSNROut,         1 },
@@ -1253,6 +1337,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"gps-end-time",             required_argument, 0,                 'b'},
      {"ra-step",                  required_argument, 0,                 'R'},
      {"dec-step",                 required_argument, 0,                 'D'},
+     {"estimate-params",          no_argument,       &estimParams,       1 },
+     {"followup",                 no_argument,       &followup,          1 },
      {"output-path",              required_argument, 0,                 'P'},
      {"H1-framefile",             required_argument, 0,                 'A'},
      {"H2-framefile",             required_argument, 0,                 'Z'},
@@ -1273,7 +1359,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-           "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:r:u:v:",
+	   "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:C:r:u:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1396,6 +1482,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          case 'p': /* set coherent SNR threshold */
            cohSNRThresh = atof (optarg);
            ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
+           break;
+
+         case 'C': /* set null-stream regulator */
+           nullStatRegul = atof (optarg);
+           ADD_PROCESS_PARAM( "float", "%e", nullStatRegul );
            break;
 
          case 'l':
@@ -1679,6 +1770,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    if ( cohSNRThresh < 0 )
      {
        fprintf( stderr, "--cohsnr-threshold must be specified\n" );
+       exit( 1 );
+     }
+
+   if ( nullStatRegul < 0 )
+     {
+       fprintf( stderr, "--null-stat-regul must be specified and positive\n" );
        exit( 1 );
      }
 
