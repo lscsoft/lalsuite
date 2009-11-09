@@ -388,8 +388,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	static LALStatus status;
 	CoherentGW coherent_gw;
 	PPNParamStruc PPNparams;
-	REAL4TimeSeries *timedomain=NULL;
-	COMPLEX8FrequencySeries *freqdomain=NULL;
+	REAL4TimeSeries *h_p_t,*h_c_t=NULL;
+	COMPLEX8FrequencySeries *H_p_t, H_c_t=NULL;
 	size_t NFD = 0;
 	memset(&PPNparams,0,sizeof(PPNparams));
 	memset(&coherent_gw,0,sizeof(CoherentGW));
@@ -425,25 +425,42 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	if(coherent_gw.a) XLALGPSSetREAL8(&(coherent_gw.a->epoch),adj_epoch);
 
 	/* Inject h+ and hx into time domain signal of correct length */
+	UINT4 NtimeDomain=inputMCMC->segment[det_i]?inputMCMC->segment[det_i]->data->length:2*(inputMCMC->stilde[det_i]->data->length-1);
+	h_p_t = XLALCreateREAL4TimeSeries("hplus",&inputMCMC->epoch,
+										   inputMCMC->fLow,inputMCMC->deltaT,
+										   &lalADCCountUnit,NtimeDomain);
+	h_x_t = XLALCreateREAL4TimeSeries("hcross",&inputMCMC->epoch,
+										 inputMCMC->fLow,inputMCMC->deltaT,
+										 &lalADCCountUnit,NtimeDomain);
+	/* Separate the + and x parts */
+	for(i=0;i<coherent_gw.h->data->length;i++){
+		h_p_t->data[i]=coherent_gw.h->data->data[2*i];
+		h_c_t->data[i]=coherent_gw.h->data->data[2*i + 1];
+	}
 	
 	/* Get H+ and Hx in the Freq Domain */
+	NFD=inputMCMC->stilde[det_i]->data->length;
+	H_p_t = XLALCreateCOMPLEX8FrequencySeries("Hplus",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
+	H_c_t = XLALCreateCOMPLEX8FrequencySeries("Hcross",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
+
+	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,
+																	  NtimeDomain,
+																	  FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
+	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
+	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
+	XLALDestroyREAL4TimeSeries(h_p_t);
+	XLALDestroyREAL4TimeSeries(h_c_t);
 	
 	/* For each IFO */
 	for(det_i=0;det_i<inputMCMC->numberDataStreams;det_i++){
 		/* Set up the detector */
 		det.site=inputMCMC->detector[det_i];
-		UINT4 NtimeDomain=inputMCMC->segment[det_i]?inputMCMC->segment[det_i]->data->length:2*(inputMCMC->stilde[det_i]->data->length-1);
 		/* Simulate the response */
 #if DEBUGMODEL !=0
 		char modelname[100];
 		sprintf(modelname,"model_%i.dat",det_i);
 		modelout = fopen(modelname,"w");
 #endif
-		timedomain = XLALCreateREAL4TimeSeries("td",&inputMCMC->epoch,
-											   inputMCMC->fLow,inputMCMC->deltaT,
-											   &lalADCCountUnit,NtimeDomain);
-		NFD=inputMCMC->stilde[det_i]->data->length;
-		freqdomain = XLALCreateCOMPLEX8FrequencySeries("fd",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
 		/*LALSimulateCoherentGW(&status,timedomain,&coherent_gw,&det);*/
 		REPORTSTATUS(&status);
 		
@@ -452,11 +469,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		float Norm = winNorm * inputMCMC->deltaT;
 		for(idx=0;idx<timedomain->data->length;idx++) timedomain->data->data[idx]*=(REAL4)inputMCMC->window->data->data[idx];/* * Norm;*/ /* window & normalise */
 		/* FFT the time domain to get f-domain */
-		if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,
-															   NtimeDomain,
-															   FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
-		LALTimeFreqRealFFT(&status,freqdomain,timedomain,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
-
+		
 		chisq=0.0;
 		/* Calculate the logL */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
