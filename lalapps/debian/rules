@@ -22,6 +22,7 @@ LALPREFIX = /opt/lscsoft/lal
 LALFRAMEPREFIX = /opt/lscsoft/lalframe
 LALMETAIOPREFIX = /opt/lscsoft/lalmetaio
 LALXMLPREFIX = /opt/lscsoft/lalxml
+LALBURSTPREFIX = /opt/lscsoft/lalburst
 LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
 
 CFLAGS = -Wall -g
@@ -41,7 +42,7 @@ config.status: configure
 #	LDFLAGS="-Wl,-z,defs" \
 # moved to install
 #	CFLAGS="$(CFLAGS)" \
-#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
+#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 #	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 #	    --prefix=$(PREFIX) \
 #	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
@@ -78,7 +79,7 @@ install: build
 	for v in 2.4 2.5; do                                                         \
 	PYTHON="/usr/bin/python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX)                                                \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \

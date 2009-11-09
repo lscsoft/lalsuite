@@ -73,9 +73,6 @@ packages/bank/test/MetricTestBCV
 packages/bank/test/MetricTestPTF
 packages/bank/test/PNTemplates
 packages/bank/test/SpaceCovering
-packages/burstsearch/test/ThresholdsTest
-packages/clremoval/test/CLRTest
-packages/clremoval/test/CLRoutdata.asc
 packages/date/test/TestDateString
 packages/date/test/TestDelay
 packages/date/test/TestGPStoFloat
@@ -200,12 +197,6 @@ packages/support/test/UserInputTest
 packages/tdfilter/test/BandPassTest
 packages/tdfilter/test/IIRFilterTest
 packages/tdfilter/test/LPCTest
-packages/timefreq/doc/Tfr.log
-packages/timefreq/doc/Tfr.pdf
-packages/timefreq/test/TfrPswvTest
-packages/timefreq/test/TfrRspTest
-packages/timefreq/test/TfrSpTest
-packages/timefreq/test/TfrWvTest
 packages/tools/include/FrequencySeries.h
 packages/tools/include/Sequence.h
 packages/tools/include/TimeSeries.h
@@ -224,7 +215,6 @@ packages/tools/test/SequenceTest
 packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
 packages/tools/test/UnitsTest
-packages/tracksearch/test/TrackSearchTest
 packages/utilities/src/MatrixOps.c
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
 packages/utilities/test/DCoarseGrainFrequencySeriesTest

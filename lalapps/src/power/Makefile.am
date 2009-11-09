@@ -2,9 +2,11 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 
 if LALFRAME
 if LALMETAIO
+if LALBURST
 bin_PROGRAMS = lalapps_power lalapps_binj
 lalapps_power_SOURCES = power.c
 lalapps_binj_SOURCES = binj.c
+endif
 endif
 endif
 
