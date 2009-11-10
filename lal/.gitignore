@@ -160,6 +160,7 @@ packages/pulsar/test/ResampleTest
 packages/pulsar/test/SkyMetricTest
 packages/pulsar/test/StackMetricTest
 packages/pulsar/test/TwoDMeshTest
+packages/pulsar/test/UniversalDopplerMetricTest
 packages/pulsar/test/earth*.ilwd
 packages/pulsar/test/sun*.ilwd
 packages/sample/test/LALSampleTest
