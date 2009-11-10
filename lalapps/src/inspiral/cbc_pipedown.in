@@ -732,10 +732,14 @@ for result_db in result_dbs_cache:
         # cycle over all ifos times, creating different tables for each
         for on_instruments in distinct_instrument_sets:
           on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
-          # set output and extracted xml file names
+          # set output-format to html for ALLINJ since won't run minifup on these types
+          if sim_tag == 'ALLINJ':
+            summ_file_type = 'html'
+          else:
+            summ_file_type = 'xml'
           summary_filename = '.'.join([
             '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
-            'xml' ])
+            summ_file_type ])
           xml_filename =  '.'.join([
             '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
             'xml' ])
@@ -749,11 +753,7 @@ for result_db in result_dbs_cache:
           printsims_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
           printsims_node.set_comparison_datatype( datatype )
           printsims_node.set_sim_tag( sim_tag )
-          if sim_tag == 'ALLINJ':
-            # set output-format to html since won't run minifup on these types
-            printsims_node.set_output_format( 'html' )
-          else:
-            printsims_node.set_output_format( 'xml' )
+          printsims_node.set_output_format( summ_file_type )
     
           # set parent node
           printsims_node.add_parent( ccfar_node )
@@ -787,10 +787,7 @@ for result_db in result_dbs_cache:
         # set output and extracted xml file names
         summary_filename = '.'.join([
           '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
-          'xml' ])
-        xml_filename =  '.'.join([
-          '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
-          'xml' ])
+          'html' ])
         # set node options
         printmissed_node = inspiral.PrintMissedNode( printmissed_job )
         printmissed_node.set_category('printmissed')
