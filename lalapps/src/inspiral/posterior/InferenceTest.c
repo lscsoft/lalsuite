@@ -316,6 +316,9 @@ int main(int argc, char *argv[]){
 	runstate->evolve=BasicMCMCOneStep;
 	runstate->prior=BasicUniformLALPrior;
 	runstate->proposal=BasicMCMCLALProposal;
+        runstate->proposalArgs = malloc(sizeof(LALVariables));
+        runstate->proposalArgs->head=NULL;
+        runstate->proposalArgs->dimension=0;
 	runstate->likelihood=FreqDomainLogLikelihood;
 	//runstate->template=templateLAL;
 	runstate->template=templateStatPhase;
@@ -419,6 +422,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
   REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
         ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   gsl_rng * GSLrandom=runState->GSLrandom;
   LALVariables * currentParams = runState->currentParams;	
 
@@ -455,6 +459,13 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   setVariable(proposedParams, "declination",    &dec_proposed);
   setVariable(proposedParams, "polarisation",   &psi_proposed);
   setVariable(proposedParams, "distance",       &dist_proposed);
+
+  // return ratio of proposal densities (for back & forth jumps) 
+  // in "runstate->proposalArgs" vector:
+  if (checkVariable(runstate->proposalArgs, "logProposalRatio"))
+    setVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
+  else
+    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t);
 }
 
 
@@ -509,6 +520,7 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
 {
   REAL8 A, Omega;
   REAL8 A_proposed, Omega_proposed;
+  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   gsl_rng * GSLrandom=runState->GSLrandom;
   LALVariables * currentParams = runState->currentParams;	
 
@@ -524,6 +536,13 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
   copyVariables(currentParams, proposedParams);
   setVariable(proposedParams, "A",     &A_proposed);		
   setVariable(proposedParams, "Omega", &Omega_proposed);
+
+  // return ratio of proposal densities (for back & forth jumps) 
+  // in "runstate->proposalArgs" vector:
+  if (checkVariable(runstate->proposalArgs, "logProposalRatio"))
+    setVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
+  else
+    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t);
 }
 
 
@@ -556,11 +575,12 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params)
 
 //Test LALEvolveOneStepFunction
 void BasicMCMCOneStep(LALInferenceRunState *runState)
-// Metropolis sampler.
+// Metropolis-Hastings sampler.
 {
   REAL8 logPriorCurrent, logPriorProposed;
   REAL8 logLikelihoodCurrent, logLikelihoodProposed;
   LALVariables proposedParams;
+  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   REAL8 logAcceptanceProbability;
 
   // current values:
@@ -571,6 +591,8 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
   proposedParams.head = NULL;
   proposedParams.dimension = 0;
   runState->proposal(runState, &proposedParams);
+  if (checkVariable(runstate->proposalArgs, "logProposalRatio"))
+    logProposalRatio = *(REAL8*) getVariable(runstate->proposalArgs, "logProposalRatio");
 
   // compute prior & likelihood:
   logPriorProposed = runState->prior(runState, &proposedParams);
@@ -581,7 +603,8 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 
   // determine acceptance probability:
   logAcceptanceProbability = (logLikelihoodProposed - logLikelihoodCurrent) 
-                             + (logPriorProposed - logPriorCurrent);
+                             + (logPriorProposed - logPriorCurrent)
+                             + logProposalRatio;
 
   // accept/reject:
   if ((logAcceptanceProbability > 0) 
