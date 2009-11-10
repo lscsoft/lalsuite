@@ -509,6 +509,7 @@ print "Creating inspinjfind nodes..."
 
 inspinjfind_nodes = {}
 sim_caches = {}
+sim_tags = set(sim_tags+['ALLINJ'])
 for veto_cat, node_list in inspinjfind_parents.items():
   
   # create a inspinjfind node for each veto_category
@@ -720,15 +721,14 @@ for result_db in result_dbs_cache:
     print "\tsetting up injection summary nodes..."
 
     # cycle over all the different types of injections
-    for sim_tag in sim_tags+['ALLINJ']:
+    for sim_tag in sim_tags:
   
       # printsims
       datatypes = ['all_data', 'playground', 'exclude_play']
   
       for datatype in datatypes:
         # set file naming type
-        type_prefix = sim_tag
-        type = '_'.join([ type_prefix, 'QUIETEST_FOUND_COMPARED_TO', datatype.upper(), 'BY', cp.get('printsims', 'ranking-stat').upper()])
+        type = '_'.join([ sim_tag, veto_cat, 'QUIETEST_FOUND_COMPARED_TO', datatype.upper(), 'BY', cp.get('printsims', 'ranking-stat').upper()])
         # cycle over all ifos times, creating different tables for each
         for on_instruments in distinct_instrument_sets:
           on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
@@ -780,8 +780,7 @@ for result_db in result_dbs_cache:
             dag.add_node( minifup_node )
 
       # printmissed
-      type_prefix = sim_tag
-      type = '_'.join([ type_prefix, 'CLOSEST_MISSED_INJECTIONS' ])
+      type = '_'.join([ sim_tag, veto_cat, 'CLOSEST_MISSED_INJECTIONS' ])
       # cycle over all ifos times, creating different tables for each
       for on_instruments in distinct_instrument_sets:
         on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
