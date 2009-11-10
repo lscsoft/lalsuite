@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   static LALStatus s;
   FILE            *cross = NULL;
   FILE            *plus  = NULL;
-  LALGPSandAcc     time_info;
+  LIGOTimeGPS      gps;
   EphemerisData    ephem;
   LALSource        source;
   LALFrDetector    frdetector;
@@ -103,12 +103,11 @@ int main(int argc, char **argv)
   /*
    * set up time and sampling
    */
-  time_info.accuracy           = LALLEAPSEC_STRICT;
-  time_info.gps.gpsSeconds     = 709398013;
-  time_info.gps.gpsNanoSeconds =         0;
+  gps.gpsSeconds     = 709398013;
+  gps.gpsNanoSeconds =         0;
 
   make_gridding(&s, &g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps));
+                &ephem, &gps);
 
   print_ra_grid(&g, "ifo_ra_grid.txt");
   print_dec_grid(&g, "ifo_dec_grid.txt");
@@ -131,7 +130,7 @@ int main(int argc, char **argv)
       det_and_src.pDetector = &detector;
       det_and_src.pSource   = &source;
     
-      LALComputeDetAMResponse(&s, &response, &det_and_src, &time_info);
+      LALComputeDetAMResponse(&s, &response, &det_and_src, &gps);
 
       fprintf(cross, "%14e\t", response.cross);
       fprintf(plus, "%14e\t", response.plus);

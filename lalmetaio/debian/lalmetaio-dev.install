@@ -1,0 +1,7 @@
+#opt/lscsoft/lalmetaio/bin/lal-config
+opt/lscsoft/lalmetaio/include/lal*
+opt/lscsoft/lalmetaio/lib/*a
+opt/lscsoft/lalmetaio/lib/pkgconfig
+#opt/lscsoft/lalmetaio/share/man/man1/lal-config.1*
+#opt/lscsoft/lalmetaio/share/man/man3/lal.3*
+#opt/lscsoft/lalmetaio/share/lal

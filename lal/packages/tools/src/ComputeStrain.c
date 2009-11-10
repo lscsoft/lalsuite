@@ -847,7 +847,7 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
 static void check_nans_infs(LALStatus *status, StrainIn *input)
 {
     UINT4 p;
-    
+
     /* Check if there are nans or infs in DARM_ERR */
     for (p=0; p < input->DARM_ERR.data->length; p++) {
         REAL4 x = input->DARM_ERR.data->data[p];
@@ -856,7 +856,7 @@ static void check_nans_infs(LALStatus *status, StrainIn *input)
             ABORT(status, 1, "Bad DARM_ERR");
         }
     }
-    
+
     /* Same thing for DARM_CTRL if we use it */
     if (input->darmctrl) {
         for (p=0; p < input->DARM.data->length; p++) {

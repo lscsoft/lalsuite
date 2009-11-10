@@ -237,7 +237,7 @@ LALInspiralWave(
 	   CHECKSTATUSPTR(status);
       	   break;
       default:
-           ABORT( status, 9999, "Unknown case in switch." );
+           ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
    }
 
    DETATCHSTATUSPTR(status);
@@ -323,7 +323,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
       	   break;
       default:
-           ABORT( status, 9999, "Unknown case in switch." );
+           ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
 
    }
 
@@ -398,7 +398,7 @@ LALInspiralWaveForInjection(
            CHECKSTATUSPTR(status);
            break;
       default:
-           ABORT( status, 9999, "Unknown case in switch." );
+           ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
 
    }
 

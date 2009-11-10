@@ -1,12 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.4],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
-  lalmetaio.pc \
   lalsupport.pc \
   Makefile \
   debian/Makefile \
@@ -136,7 +135,7 @@ AC_CONFIG_FILES([ \
 ])
 AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
 AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
-AM_INIT_AUTOMAKE([])
+AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
@@ -159,7 +158,6 @@ LAL_WITH_EXTRA_LIBS
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
 LAL_ENABLE_GCC_FLAGS
-LAL_ENABLE_METAIO
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -170,19 +168,18 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
-lal_version_micro=`echo "$VERSION" | cut -d. -f3-`
+lal_version_micro=`echo "$VERSION" | cut -d. -f3`
+lal_version_devel=`echo "$VERSION" | cut -d. -f4-`
 test -z "$lal_version_micro" && lal_version_micro=0
+test -z "$lal_version_devel" && lal_version_devel=0
 lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-# This sed script is more complex than it needs to be in order to prevent CVS
-# from corrupting it.
-lal_cvs_tag=`echo '$Name$' | sed -e 's? \\$\$??' -e 's?^\\$Name: ??'`
 AC_DEFINE_UNQUOTED([LAL_VERSION],["$VERSION"],[LAL Version])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MAJOR],[$lal_version_major],[LAL Version Major Number])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MINOR],[$lal_version_minor],[LAL Version Minor Number])
 AC_DEFINE_UNQUOTED([LAL_VERSION_MICRO],[$lal_version_micro],[LAL Version Micro Number])
+AC_DEFINE_UNQUOTED([LAL_VERSION_DEVEL],[$lal_version_devel],[LAL Version Devel Number])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_ARGS],["$ac_configure_args"],[LAL Configure Arguments])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure Date])
-AC_DEFINE_UNQUOTED([LAL_CVS_TAG],["$lal_cvs_tag"],[LAL CVS Tag])
 test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
 AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
@@ -314,17 +311,6 @@ else
   AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional metaio.
-if test "${metaio}" = "true"; then
-  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-  lal_pre_metaio_LIBS="$LIBS"
-  LIBS="$LIBS $METAIO_LIBS"
-  AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([disabling metaio support])]
-                 [metaio="false"]
-                 [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -343,14 +329,6 @@ AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
 
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([disabling metaio support])]
-                   [metaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS([pthread.h],[break])
 fi
@@ -362,10 +340,6 @@ fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
 fi
-if test "${metaio}" = "true"; then
-  AC_DEFINE([LAL_METAIO_ENABLED],[1],[Define if using MetaIo library])
-fi
-
 
 dnl Record the libraries needed for linking LAL.
 LALLIBADD="$LIBS"
@@ -397,7 +371,6 @@ pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
 AC_SUBST([pkgdocdir])
 
 dnl Setup automake conditionals
-AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
@@ -411,14 +384,7 @@ if test -d $srcdir/lalapps ; then
   LAL_CFLAGS=-I$lal_build_dir/include
   LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
   LALSUPPORT_CFLAGS=-I$lal_build_dir/include
-  if test x$metaio = xtrue ; then
-    LALMETAIO_LIBS=$lal_build_dir/packages/support/src/liblalmetaio.la
-    LALMETAIO_CFLAGS=-I$lal_build_dir/include
-  else
-    LALMETAIO_LIBS=""
-    LALMETAIO_CFLAGS=""
-  fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS
   AC_CONFIG_SUBDIRS([lalapps])
 fi
 
@@ -440,14 +406,12 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
-                LAL MetaIo library support is $metaioenabled
                 CUDA support is $cudaenabled
 
         Now run 'make' to build LAL

@@ -181,7 +181,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   LALSource               source;
   LALDetAndSource         det_and_source = {NULL, NULL};
   LALDetAMResponse        response;
-  LALGPSandAcc            gps_and_acc;
+  LIGOTimeGPS             gps;
   LIGOTimeGPS             start_time;
   LALTimeInterval         time_interval;
   REAL8                   det_velocity[3];
@@ -286,12 +286,11 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         args_info.nsample_given &&
         args_info.sampling_interval_given)
     {
-      gps_and_acc.gps.gpsSeconds = args_info.start_time_sec_arg;
-      gps_and_acc.gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
-    
-      start_time.gpsSeconds = gps_and_acc.gps.gpsSeconds;
-      start_time.gpsNanoSeconds = gps_and_acc.gps.gpsNanoSeconds;
-            
+      gps.gpsSeconds = args_info.start_time_sec_arg;
+      gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
+
+      start_time = gps;
+
       LALFloatToInterval(status, &time_interval, 
                            &(args_info.sampling_interval_arg));    
     }
@@ -305,8 +304,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   {
     if (args_info.start_time_sec_given)
     {
-      gps_and_acc.gps.gpsSeconds = args_info.start_time_sec_arg;
-      gps_and_acc.gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
+      gps.gpsSeconds = args_info.start_time_sec_arg;
+      gps.gpsNanoSeconds = args_info.start_time_nanosec_arg;
     }
     else
     {
@@ -360,7 +359,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       printf("relfreq_file_name = %s\n", relfreq_file_name);
     }    
 
-    LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
+    LALDetectorVel(status, det_velocity, &gps, detector, p_ephemeris_data);
     
     Pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
     for (j = start_ra; j < end_ra; ++j)
@@ -392,8 +391,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         printf("\tDec = % f\n", source.equatorialCoords.latitude / LAL_PI * 180.);
         */
 
-        LALComputeDetAMResponse(status, &response, &det_and_source,
-                                &gps_and_acc);
+        LALComputeDetAMResponse(status, &response, &det_and_source, &gps);
         
         grid_cros_sq->data[cnt] = response.cross * response.cross;
         grid_plus_sq->data[cnt] = response.plus  * response.plus;
@@ -403,10 +401,10 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       }
     }
 
-    skygrid_print(status, &(gps_and_acc.gps), grid_cros_sq, cross_file_name);
-    skygrid_print(status, &(gps_and_acc.gps), grid_plus_sq, plus_file_name);
-    skygrid_print(status, &(gps_and_acc.gps), grid_sum_sq, sum_file_name);
-    skygrid_print(status, &(gps_and_acc.gps), grid_relfreq, relfreq_file_name);
+    skygrid_print(status, &gps, grid_cros_sq, cross_file_name);
+    skygrid_print(status, &gps, grid_plus_sq, plus_file_name);
+    skygrid_print(status, &gps, grid_sum_sq, sum_file_name);
+    skygrid_print(status, &gps, grid_relfreq, relfreq_file_name);
   }
   else if (args_info.timeseries_given)
   {
@@ -435,10 +433,10 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     
     for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
-      fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
-      snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
+      fprintf(timesfile, "%.9d\n", gps.gpsSeconds);
+      snprintf(dottimestamp, LALNameLength, ".%.9d", gps.gpsSeconds);
 
-      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
+      LALDetectorVel(status, det_velocity, &gps, detector, p_ephemeris_data);
       
       for (j = start_ra; j < end_ra; ++j)
       {
@@ -451,7 +449,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
             asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
           LALComputeDetAMResponse(status, &response, &det_and_source,
-                                  &gps_and_acc);
+                                  &gps);
           
           grid_cros_sq->data[cnt] = response.cross * response.cross;
           grid_plus_sq->data[cnt] = response.plus  * response.plus;
@@ -466,13 +464,12 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       /*
        source.equatorialCoords.latitude = 0.1;
        source.equatorialCoords.longitude = 0.1;
-       printf("%.8e\n", doppler(status, &(gps_and_acc.gps), 
+       printf("%.8e\n", doppler(status, &gps, 
                                 &detectorvel_inputs, 
                                 &(source.equatorialCoords)));
        */
       
-      LALIncrementGPS(status, &(gps_and_acc.gps), &(gps_and_acc.gps),
-                      &time_interval);
+      LALIncrementGPS(status, &gps, &gps, &time_interval);
       
       /* set up filenames */
       (void)mystrlcpy(ser_cross_file_name, cross_file_name, LALNameLength);
@@ -494,10 +491,10 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         (void)mystrlcat(ser_relfreq_file_name, outfile_suffix, LALNameLength);  
       }
       
-      skygrid_print(status, &(gps_and_acc.gps), grid_cros_sq, ser_cross_file_name);
-      skygrid_print(status, &(gps_and_acc.gps), grid_plus_sq, ser_plus_file_name);
-      skygrid_print(status, &(gps_and_acc.gps), grid_sum_sq, ser_sum_file_name);
-      skygrid_print(status, &(gps_and_acc.gps), grid_relfreq, ser_relfreq_file_name);
+      skygrid_print(status, &gps, grid_cros_sq, ser_cross_file_name);
+      skygrid_print(status, &gps, grid_plus_sq, ser_plus_file_name);
+      skygrid_print(status, &gps, grid_sum_sq, ser_sum_file_name);
+      skygrid_print(status, &gps, grid_relfreq, ser_relfreq_file_name);
     } 
     fclose(timesfile);    
   }
@@ -533,7 +530,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     
     for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
-      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
+      LALDetectorVel(status, det_velocity, &gps, detector, p_ephemeris_data);
 
       for (j = start_ra; j < end_ra; ++j)
       {
@@ -545,8 +542,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
           source.equatorialCoords.latitude = 
             asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
-          LALComputeDetAMResponse(status, &response, &det_and_source,
-                                  &gps_and_acc);
+          LALComputeDetAMResponse(status, &response, &det_and_source, &gps);
           
           grid_cros_sq->data[cnt] += response.cross * response.cross /
             args_info.nsample_arg;
@@ -559,8 +555,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         }
       }
       
-      LALIncrementGPS(status, &(gps_and_acc.gps), &(gps_and_acc.gps),
-                      &time_interval);
+      LALIncrementGPS(status, &gps, &gps, &time_interval);
     }
     
     skygrid_print(status, &start_time, grid_cros_sq, cross_file_name);

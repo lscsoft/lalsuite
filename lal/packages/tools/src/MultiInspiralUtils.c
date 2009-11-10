@@ -536,7 +536,7 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              *ifo = NULL;
+  CHAR              ifo[3];
 
   int numSimFound  = 0;
   int coincidence = 0;
@@ -612,7 +612,7 @@ XLALMultiSimInspiralTest (
 	  */
 
 	  /* read in the first (single) ifo in the multiInspiral network (ifos) */
-	  snprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+	  LALSnprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
 		       "%s", thisEvent->ifos );
 
 	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, ifo );

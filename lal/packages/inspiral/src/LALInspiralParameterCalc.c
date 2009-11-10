@@ -66,7 +66,8 @@ in {\tt params->fLower.}}
 \end{table}
 
 If \texttt{massChoice} is not set properly an error condition will occur and
-the function is aborted with a return value 999.
+the function is aborted with status code defined by
+LALINSPIRALH_EMASSCHOICE in LALInspiral.h.
 In the above list $m_{1}$ and $m_{2}$ are the masses of
 the two compact objects, $m=m_{1}+m_{2}$ is the total
 mass, $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$ is the
@@ -375,7 +376,7 @@ LALInspiralParameterCalc (
       break;
 
      default:
-      ABORT (status, 999, "Improper choice for massChoice in LALInspiralParameterCalc\n");
+      ABORT (status, LALINSPIRALH_EMASSCHOICE, LALINSPIRALH_MSGEMASSCHOICE);
       break;
    }
 

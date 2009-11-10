@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: LALMetaIo
-Description: LAL MetaIo Library Support
+Description: LAL MetaIO Library Support
 Version: @VERSION@
 Requires: lal libmetaio
 Libs: -L${libdir} -llalmetaio

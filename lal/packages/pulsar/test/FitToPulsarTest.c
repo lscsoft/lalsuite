@@ -121,7 +121,6 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
         COMPLEX16               eh0;
         REAL8 oldMinEh0, oldMaxEh0, weh0;
         UINT4                   iH0, iCosIota, iPhase, iPsi, arg;
-        LALGPSandAcc            pGPSandAcc;
 
 
   INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
@@ -185,12 +184,10 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
     pulsar.orientation = psi;
     detAndSource.pSource = &pulsar;
 
-    pGPSandAcc.accuracy = 1.0;
    /* create vectors containing amplitude response of detector for specified times */
    for (i=0;i<n;i++)
    {
-     pGPSandAcc.gps =   input->t[i];
-     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &pGPSandAcc);
+     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &input->t[i]);
      Fp->data[i] = (REAL8)computedResponse.plus;
      Fc->data[i] = (REAL8)computedResponse.cross;
    }
@@ -417,7 +414,6 @@ int main(void)
   time_info.epoch.gpsNanoSeconds = 0;
   time_info.deltaT               = 60;
   time_info.nSample              = FITTOPULSARTEST_LENGTH;
-  time_info.accuracy              = 1.0;  /*tmp*/
 
   cosIota = 0.5;
   psi = 0.1;
