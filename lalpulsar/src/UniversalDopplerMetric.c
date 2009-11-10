@@ -432,13 +432,13 @@ CWPhaseDeriv_i ( double tt, void *params )
 
       /* experimental: unconstrained skypos vector n3 */
     case DOPPLERCOORD_N3X:
-      ret = rr_ord_Ecl[0] / rOrb_c;
+      ret = rr_ord_Equ[0] / rOrb_c;
       break;
     case DOPPLERCOORD_N3Y:
-      ret = rr_ord_Ecl[1] / rOrb_c;
+      ret = rr_ord_Equ[1] / rOrb_c;
       break;
     case DOPPLERCOORD_N3Z:
-      ret = rr_ord_Ecl[2] / rOrb_c;
+      ret = rr_ord_Equ[2] / rOrb_c;
       break;
 
       /* ----- frequency derivatives SI-units ----- */
