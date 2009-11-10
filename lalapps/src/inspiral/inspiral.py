@@ -2375,7 +2375,7 @@ class PrintLCNode(LigolwCBCPrintNode):
     """
     @job: a LigolwCBCPrintJob
     """
-    LigoLwCBCPrintNode.__init__(self, job)
+    LigolwCBCPrintNode.__init__(self, job)
     self.__datatype = None
 
   def set_datatype(self, datatype):
@@ -2399,7 +2399,7 @@ class PrintSimsNode(LigolwCBCPrintNode):
     """
     @job: a LigolwCBCPrintJob
     """
-    LigoLwCBCPrintNode.__init__(self, job)
+    LigolwCBCPrintNode.__init__(self, job)
     self.__comparison_datatype = None
     self.__simulation_table = None
     self.__recovery_table = None
@@ -2426,7 +2426,7 @@ class PrintMissedNode(LigolwCBCPrintNode):
     """
     @job: a LigolwCBCPrintJob
     """
-    LigoLwCBCPrintNode.__init__(self, job)
+    LigolwCBCPrintNode.__init__(self, job)
     self.__instrument_time = None
 
   def set_instrument_time(self, instruments):
