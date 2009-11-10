@@ -74,7 +74,6 @@ packages/bank/test/MetricTestPTF
 packages/bank/test/PNTemplates
 packages/bank/test/SpaceCovering
 packages/block/test/BlockTest
-packages/burstsearch/test/SkymapTest
 packages/burstsearch/test/ThresholdsTest
 packages/clremoval/test/CLRTest
 packages/clremoval/test/CLRoutdata.asc
@@ -106,14 +105,14 @@ packages/factories/test/VectorFactoriesTest
 packages/factories/test/VectorFactoriesTest.c
 packages/factories/test/VectorSequenceFactoriesTest
 packages/factories/test/VectorSequenceFactoriesTest.c
+packages/fft/src/CudaFFT.c
+packages/fft/src/CudaFFT.linkinfo
 packages/fft/test/*.dat
 packages/fft/test/AverageSpectrumTest
 packages/fft/test/AvgSpecTest
 packages/fft/test/ComplexFFTTest
 packages/fft/test/RealFFTTest
 packages/fft/test/TimeFreqFFTTest
-packages/fft/src/CudaFFT.c
-packages/fft/src/CudaFFT.linkinfo
 packages/findchirp/test/FindChirpBCVSpinTest
 packages/findchirp/test/FindChirpTDTest
 packages/hello/test/LALHelloTest
@@ -232,6 +231,7 @@ packages/tools/test/LALTestDetResponse0
 packages/tools/test/ResampleTimeSeriesTest
 packages/tools/test/SegmentsTest
 packages/tools/test/SequenceTest
+packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
 packages/tools/test/UnitsTest
 packages/tracksearch/test/TrackSearchTest
