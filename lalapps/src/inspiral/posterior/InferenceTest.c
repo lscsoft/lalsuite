@@ -446,16 +446,17 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 		
   copyVariables(currentParams, proposedParams);
-  setVariable(proposedParams, "chirpmass",       &mc_proposed);		
-  setVariable(proposedParams, "massratio",       &eta_proposed);
-  setVariable(proposedParams, "inclination",     &iota_proposed);
-  setVariable(proposedParams, "phase",           &phi_proposed);
-  setVariable(proposedParams, "time",            &tc_proposed); 
-  setVariable(proposedParams, "rightascension",  &ra_proposed);
-  setVariable(proposedParams, "declination",     &dec_proposed);
-  setVariable(proposedParams, "polarisation",    &psi_proposed);
-  setVariable(proposedParams, "distance",        &dist_proposed);
+  setVariable(proposedParams, "chirpmass",      &mc_proposed);		
+  setVariable(proposedParams, "massratio",      &eta_proposed);
+  setVariable(proposedParams, "inclination",    &iota_proposed);
+  setVariable(proposedParams, "phase",          &phi_proposed);
+  setVariable(proposedParams, "time",           &tc_proposed); 
+  setVariable(proposedParams, "rightascension", &ra_proposed);
+  setVariable(proposedParams, "declination",    &dec_proposed);
+  setVariable(proposedParams, "polarisation",   &psi_proposed);
+  setVariable(proposedParams, "distance",       &dist_proposed);
 }
+
 
 
 //Test LALPriorFunction
@@ -479,7 +480,7 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
   eta  = *(REAL8*) getVariable(params, "massratio");		/* dim-less    */
   iota = *(REAL8*) getVariable(params, "inclination");		/* radian      */
   tc   = *(REAL8*) getVariable(params, "time");			/* GPS seconds */
-  phi  = *(REAL8*) getVariable(params, "phase");			/* radian      */
+  phi  = *(REAL8*) getVariable(params, "phase");		/* radian      */
   ra   = *(REAL8*) getVariable(params, "rightascension");	/* radian      */
   dec  = *(REAL8*) getVariable(params, "declination");		/* radian      */
   psi  = *(REAL8*) getVariable(params, "polarisation"); 	/* radian      */
@@ -496,6 +497,7 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 }
 
 
+
 //Test LALProposalFunction
 void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 /****************************************/
@@ -505,20 +507,25 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
 /* fixed Gaussian						*/
 /****************************************/
 {
-	REAL8 A, Omega;
-	REAL8 A_proposed, Omega_proposed;
-	gsl_rng * GSLrandom=runState->GSLrandom;
-	LALVariables * currentParams = runState->currentParams;	
+  REAL8 A, Omega;
+  REAL8 A_proposed, Omega_proposed;
+  gsl_rng * GSLrandom=runState->GSLrandom;
+  LALVariables * currentParams = runState->currentParams;	
 
-	A		= *(REAL8*) getVariable(currentParams, "A");				/* dim-less	   */
-	Omega	= *(REAL8*) getVariable(currentParams, "Omega");			/* rad/sec     */	
+  A     = *(REAL8*) getVariable(currentParams, "A");				/* dim-less	   */
+  Omega = *(REAL8*) getVariable(currentParams, "Omega");			/* rad/sec     */	
 
-	A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
-	Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
-		
-	addVariable(proposedParams, "A",			&A_proposed,	REAL8_t);		
-	addVariable(proposedParams, "Omega",		&Omega_proposed,	REAL8_t);
+  //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
+  //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
+  // (above proposals not symmetric!)
+  A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
+  Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
+  
+  copyVariables(currentParams, proposedParams);
+  setVariable(proposedParams, "A",     &A_proposed);		
+  setVariable(proposedParams, "Omega", &Omega_proposed);
 }
+
 
 
 //Test LALPriorFunction
@@ -531,13 +538,20 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params)
 /* Prior is flat if within range		*/
 /****************************************/
 {
-	REAL8 A, Omega;	
-	
-	A		= *(REAL8*) getVariable(params, "A");				/* dim-less	   */
-	Omega	= *(REAL8*) getVariable(params, "Omega");			/* rad/sec     */
+  REAL8 A, Omega;
+  REAL8 logdensity;
+  
+  A     = *(REAL8*) getVariable(params, "A");				/* dim-less	   */
+  Omega = *(REAL8*) getVariable(params, "Omega");			/* rad/sec     */
+  
+  if ((A>0.0) & (Omega>0))
+    logdensity = 0.0;
+  else
+    logdensity = -HUGE_VAL;
 
-	return 1;
+  return logdensity;
 }
+
 
 
 //Test LALEvolveOneStepFunction
@@ -550,7 +564,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
   REAL8 logAcceptanceProbability;
 
   // current values:
-  logPriorCurrent  = runState->prior(runState, runState->currentParams);
+  logPriorCurrent      = runState->prior(runState, runState->currentParams);
   logLikelihoodCurrent = runState->currentLikelihood;
 
   // generate proposal:
@@ -580,8 +594,9 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
 }
 
 
+
 //Test LALAlgorithm
-void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
+void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
   int i;
   REAL8 dummyR8;
@@ -601,40 +616,3 @@ void MCMCAlgorithm (struct tagLALInferenceRunState *runState)
     }
   }
 }
-
-
-////Random variant algorithm initialization
-////see GSL documentation
-////http://www.gnu.org/software/gsl/manual/
-//gsl_rng * InitializeRandomSeed(void)
-//{
-//        const gsl_rng_type * T;
-//        gsl_rng * rng;
-//        gsl_rng_env_setup();
-//        T = gsl_rng_default;
-//        rng = gsl_rng_alloc (T);
-//        //long seed = time(NULL)*getpid();
-//        unsigned long seed=random_seed();
-//        gsl_rng_set(rng, seed);
-//        return rng;
-//}
-//
-//
-////http://www.cygwin.com/ml/gsl-discuss/2004-q1/msg00072.html
-//unsigned long int random_seed(){
-//        unsigned int seed;
-//        struct timeval tv;
-//        FILE *devrandom;
-//
-//        if ((devrandom = fopen("/dev/random","r")) == NULL) {
-//                gettimeofday(&tv,0);
-//                seed = tv.tv_sec + tv.tv_usec;
-//        } else {
-//                fread(&seed,sizeof(seed),1,devrandom);
-//                fclose(devrandom);
-//        }
-//
-//        return seed;
-//}
-//
-// (I moved the above part into the "initialize()" function.  Hope that's OK.  Christian.)
