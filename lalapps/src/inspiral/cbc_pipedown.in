@@ -728,7 +728,7 @@ for result_db in result_dbs_cache:
       for datatype in datatypes:
         # set file naming type
         type_prefix = sim_tag
-        type = '_'.join([ type_prefix, 'QUIETEST_FOUND_COMPARED_TO_', datatype.upper(), 'BY', cp.get('printsims', 'ranking-stat').upper()])
+        type = '_'.join([ type_prefix, 'QUIETEST_FOUND_COMPARED_TO', datatype.upper(), 'BY', cp.get('printsims', 'ranking-stat').upper()])
         # cycle over all ifos times, creating different tables for each
         for on_instruments in distinct_instrument_sets:
           on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
@@ -798,7 +798,6 @@ for result_db in result_dbs_cache:
         printmissed_node.set_tmp_space( tmp_space )
         printmissed_node.set_input( result_db.path() )
         printmissed_node.set_output( summary_filename )
-        printmissed_node.set_extract_to_xml( xml_filename )
         printmissed_node.set_instrument_time( on_instruments )
         printmissed_node.set_sim_tag( sim_tag )
   
