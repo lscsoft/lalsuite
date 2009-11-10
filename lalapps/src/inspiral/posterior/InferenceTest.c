@@ -438,7 +438,9 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
 
   //mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
   // (above proposal is not symmetric!)
-  mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
+  //mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
+  mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*0.001);          /* mc changed by ~0.1% */
+  logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
   eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
   //TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
   iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*0.1;
@@ -447,7 +449,9 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*0.05;
   dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*0.05;
   psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*0.1;
-  dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
+  //dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
+  dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*0.1); // ~10% change
+  logProposalRatio *= dist_proposed / dist;
 		
   copyVariables(currentParams, proposedParams);
   setVariable(proposedParams, "chirpmass",      &mc_proposed);		
@@ -530,8 +534,12 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
   //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
   //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
   // (above proposals not symmetric!)
-  A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
-  Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
+  //A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
+  //Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
+  A_proposed     = A     * exp(gsl_ran_ugaussian(GSLrandom)*0.1);   // ~ 10% change
+  logProposalRatio *= A_proposed / A;
+  Omega_proposed = Omega * exp(gsl_ran_ugaussian(GSLrandom)*0.01);  // ~ 1% change
+  logProposalRatio *= Omega_proposed / Omega;
   
   copyVariables(currentParams, proposedParams);
   setVariable(proposedParams, "A",     &A_proposed);		
