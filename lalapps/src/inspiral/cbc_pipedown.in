@@ -723,8 +723,6 @@ for result_db in result_dbs_cache:
     for sim_tag in sim_tags+['ALLINJ']:
   
       # printsims
-      print "\t\tfor printsims and minifollowup..."
-
       datatypes = ['all_data', 'playground', 'exclude_play']
   
       for datatype in datatypes:
@@ -782,8 +780,6 @@ for result_db in result_dbs_cache:
             dag.add_node( minifup_node )
 
       # printmissed
-      print "\t\tfor printmissed..."
-
       type_prefix = sim_tag
       type = '_'.join([ type_prefix, 'CLOSEST_MISSED_INJECTIONS' ])
       # cycle over all ifos times, creating different tables for each
