@@ -1,12 +1,24 @@
-## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS = -I misc
-SUBDIRS = src doc man misc debian
-EXTRA_DIST = README README.bugs README.contrib \
-	lalapps.spec.in lalapps.spec
 
-# cvs-clean: more than maintainer-clean, this cleans
-# everything not in the cvs archive.
-cvs-clean: maintainer-clean
+SUBDIRS = \
+	debian \
+	misc \
+	src \
+	doc \
+	man
+
+EXTRA_DIST = \
+	README \
+	README.bugs \
+	README.contrib \
+	lalapps.spec.in \
+	lalapps.spec
+
+distcleancheck_listfiles = find . -type f \! -name "LALAppsVCSInfo.h" -print
+
+# vcs-clean: more than maintainer-clean, this cleans
+# everything not in the vcs archive.
+vcs-clean: maintainer-clean
 	rm -f Makefile.in
 	rm -f */Makefile.in
 	rm -f src/*/Makefile.in
@@ -21,31 +33,40 @@ cvs-clean: maintainer-clean
 	rm -f config.log
 	rm -f lalapps.spec
 
+# map cvs-clean to vcs-clean for backwards compatibility
+cvs-clean: vcs-clean
+	@echo "";\
+		echo "=================================================================";\
+		echo "";\
+		echo "        cvs-clean is deprecated, use vcs-clean instead";\
+		echo "";\
+		echo "================================================================="
+
 all-local:
 	@echo "";\
-echo "=================================================================";\
-echo "";\
-echo "	LALApps has now been successfully built.";\
-echo "	Now run 'make install' to install LALApps.";\
-echo "";\
-echo "================================================================="
+		echo "=================================================================";\
+		echo "";\
+		echo "	LALApps has now been successfully built.";\
+		echo "	Now run 'make install' to install LALApps.";\
+		echo "";\
+		echo "================================================================="
 
 install-exec-local:
 	@echo "";\
-echo "=================================================================";\
-echo "";\
-echo "	LALApps has now been successfully installed.";\
-echo "";\
-echo "	Now you may want to setup your environment:";\
-echo "";\
-echo "	Bourne shell [bash] users: please add the";\
-echo "	following lines to your .profile file";\
-echo "";\
-echo '		. $(sysconfdir)/lalapps-user-env.sh';\
-echo "";\
-echo "	C-shell [tcsh] users: please add the following";\
-echo "	lines to your .login file";\
-echo "";\
-echo '	source $(sysconfdir)/lalapps-user-env.csh';\
-echo "";\
-echo "================================================================="
+		echo "=================================================================";\
+		echo "";\
+		echo "	LALApps has now been successfully installed.";\
+		echo "";\
+		echo "	Now you may want to setup your environment:";\
+		echo "";\
+		echo "	Bourne shell [bash] users: please add the";\
+		echo "	following lines to your .profile file";\
+		echo "";\
+		echo '		. $(sysconfdir)/lalapps-user-env.sh';\
+		echo "";\
+		echo "	C-shell [tcsh] users: please add the following";\
+		echo "	lines to your .login file";\
+		echo "";\
+		echo '	source $(sysconfdir)/lalapps-user-env.csh';\
+		echo "";\
+		echo "================================================================="

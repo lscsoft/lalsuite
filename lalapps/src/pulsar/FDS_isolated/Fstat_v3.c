@@ -41,7 +41,7 @@
 
 
 #include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+/* #include <lalappsGitID.h> */
 
 #include <lalapps.h>
 
@@ -311,9 +311,12 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
  *
  */
 COMPLEX8TimeSeries *
-XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, gets modified! */
+XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out] SFT vector, gets modified! */
+				    const LIGOTimeGPS *start_in,    /**< [in] start time */
+				    const LIGOTimeGPS *end_in       /**< [in] input end time */
+				    )
 {
-  static const CHAR *fn = "XLALSFTVectorToCOMPLEX8TimeSeries()";
+ static const CHAR *fn = "XLALSFTVectorToCOMPLEX8TimeSeries()";
 
   COMPLEX8FFTPlan *SFTplan;
 
@@ -322,15 +325,15 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
 
   REAL8 fHet;				/* heterodyning frequency */
   LIGOTimeGPS epoch = {0,0};
-
+  LIGOTimeGPS start;
+  LIGOTimeGPS end;
+  
   /* constant quantities for all SFTs */
-  SFTtype *firstSFT;
+  SFTtype *firstSFT, *lastSFT;
   UINT4 numBinsSFT;
   REAL8 dfSFT;
   REAL8 Tsft;
-
   REAL8 deltaT;
-
   UINT4 numSFTs;
   UINT4 n;
   REAL8 Tspan;
@@ -349,17 +352,54 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
   /* define some useful shorthands */
   numSFTs = sfts->length;
   firstSFT = &(sfts->data[0]);
+  lastSFT = &(sfts->data[numSFTs-1]);
   numBinsSFT = firstSFT->data->length;
   dfSFT = firstSFT->deltaF;
   Tsft = 1.0 / dfSFT;
   SFTFreqBand = numBinsSFT * dfSFT;
   deltaT = 1.0 / SFTFreqBand;	/* we'll put DC into the middle of [f0, f0+Band], so sampling at fSamp=Band is sufficient */
-
   f0SFT = firstSFT->f0;
 
-  /* ---------- determine time-span of the final long time-series */
-  Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft;
+  /* if the start and end input pointers are NOT NULL then determine start and time-span of the final long time-series */
+  if (start_in && end_in) 
+    {
+      start.gpsSeconds = start_in->gpsSeconds;
+      start.gpsNanoSeconds = start_in->gpsNanoSeconds;
+      end.gpsSeconds = end_in->gpsSeconds;
+      end.gpsNanoSeconds = end_in->gpsNanoSeconds;
 
+      /* do sanity checks */
+      if ( (XLALGPSDiff ( &end, &firstSFT->epoch ) ) < 0 ) 
+	{
+	  XLALPrintError ("%s: end time before first SFT!\n", fn );
+	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+	}
+      if ( (XLALGPSDiff ( &start, &sfts->data[numSFTs-1].epoch) ) > Tsft ) 
+	{
+	  XLALPrintError ("%s: start time after end of data!\n", fn );
+	  XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+	}
+    }
+  else {   /* otherwise we use the start and end of the sft vector */
+    start.gpsSeconds = firstSFT->epoch.gpsSeconds;
+    start.gpsNanoSeconds = firstSFT->epoch.gpsNanoSeconds;
+    end.gpsSeconds = lastSFT->epoch.gpsSeconds;
+    end.gpsNanoSeconds = lastSFT->epoch.gpsNanoSeconds;
+    if ( XLALGPSAdd(&end,Tsft) == NULL )
+    {
+      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", fn );
+      XLAL_ERROR_NULL (fn, XLAL_EFAULT);
+    }
+    
+  }
+ 
+  /* determine output time span */
+  if ( (Tspan = XLALGPSDiff ( &end, &start ) ) < 0 ) 
+    {
+      XLALPrintError ("%s: start time after end time!\n", fn );
+      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    }
+  
   numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
 
   /* determine the heterodyning frequency */
@@ -382,7 +422,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
     }
 
   /* ----- prepare long TimeSeries container ---------- */
-  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
       goto failed;
@@ -402,17 +442,17 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
       COMPLEX8 hetCorrection;
 
       /* find bin in long timeseries corresponding to starttime of *this* SFT */
-      offset_n = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      offset_n = XLALGPSDiff ( &thisSFT->epoch, &start );
       bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
 
       nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
       nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
       {
-	REAL8 t0 = XLALGPSGetREAL8 ( &firstSFT->epoch );
+	REAL8 t0 = XLALGPSGetREAL8 ( &start );
 	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
 		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
       }
-
+      
       /* nudge SFT into integer timestep bin if necessary */
       if ( nudge_n != 0 )
 	{
@@ -424,15 +464,15 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
 	}
 
       /* determine heterodyning phase-correction for this SFT */
-      offset0 = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      offset0 = XLALGPSDiff ( &thisSFT->epoch, &start );
 
       /* fHet * Tsft is an integer, because fHet is a frequency-bin of the input SFTs, so we only need the remainder offset_t0 % Tsft */
       offsetEff = fmod ( offset0, Tsft );
       offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
-
       hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
+    
       sin_cos_2PI_LUT (&hetCorrection.im, &hetCorrection.re, -hetCycles );
-
+     
       /* Note: we also bundle the overall normalization of 'df' into the het-correction.
        * This ensures that the resulting timeseries will have the correct normalization, according to
        * x_l = invFT[sft]_l = df * sum_{k=0}^{N-1} xt_k * e^(i 2pi k l / N )
@@ -493,7 +533,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts )		/**< input SFT vector, ge
   return lTS;
 
 } /* XLALSFTVectorToCOMPLEX8TimeSeries() */
-
 
 
 /** Change frequency-bin order from fftw-convention to a 'SFT'
@@ -639,7 +678,7 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
       XLALPrintError ("%s: empty input SFT!\n", fn );
       XLAL_ERROR (fn, XLAL_EINVAL);
     }
-
+  
   for ( k=0; k < sft->data->length; k++)
     {
       REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */

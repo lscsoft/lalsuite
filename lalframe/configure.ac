@@ -98,7 +98,7 @@ LIBS="$LIBS $LIBFRAME_LIBS"
 AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(cannot find frame library)])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.4],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
 

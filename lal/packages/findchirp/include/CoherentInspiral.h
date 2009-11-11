@@ -69,6 +69,7 @@ The coherent statistic will be defined here.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/DopplerScan.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -151,7 +152,7 @@ for the event.
 \item[\texttt{REAL4 chisq}] The value of the $\chi^2$ veto for the event, if
 it has been computed.
 
-\item[\texttt{REAL4 sigma}] The value of the normalisation constant $\sigma$
+\item[\texttt{REAL4 sigmasq}] The value of the normalisation constant $\sigmasq$
 for the event.
 
 \item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
@@ -187,6 +188,7 @@ tagCoherentInspiralInitParams
   UINT4                         cohH1H2SNROut;
   UINT4                         nullStatH1H2Out;
   UINT4                         nullStatOut;
+  UINT4                         threeSiteCase;
 }
 CoherentInspiralInitParams;
 /* </lalVerbatim> */
@@ -231,6 +233,7 @@ tagCoherentInspiralFilterParams
   REAL8                         deltaT;
   REAL4                         cohSNRThresh;
   REAL8Vector                  *sigmasqVec;
+  REAL4Vector                  *chisqVec;
   REAL4                         templateNorm;
   INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
@@ -243,9 +246,13 @@ tagCoherentInspiralFilterParams
   REAL4TimeSeries              *cohH1H2SNRVec;
   REAL4TimeSeries              *nullStatH1H2Vec;
   REAL4TimeSeries              *nullStatVec;
+  REAL4TimeSeries              *cohSNRVec3Sites;
+  REAL4TimeSeries              *nullStatVec3Sites;
   REAL4                         chirpTime;
   double                        decStep;
   double                        raStep;
+  UINT4                         estimParams;
+  UINT4                         followup;
 }
 CoherentInspiralFilterParams;
 #if 0
@@ -429,16 +436,15 @@ LALCoherentInspiralEstimateDistance (
     REAL4                                 *distance
     );
 
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double *eff_distanceH1H2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2, REAL8 *sigmasq);
-
 void
-LALCoherentInspiralFilterSegment (
+XLALCoherentInspiralFilterSegment (
     LALStatus                             *status,
     MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
-    CoherentInspiralFilterParams          *params
+    CoherentInspiralFilterParams          *params,
+    const DopplerSkyGrid                  *skyGridPtr,
+    REAL4                                 nullStatRegul
     );
-
 
 
 #ifdef  __cplusplus
