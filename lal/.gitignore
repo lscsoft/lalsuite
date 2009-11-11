@@ -73,12 +73,9 @@ packages/bank/test/MetricTestBCV
 packages/bank/test/MetricTestPTF
 packages/bank/test/PNTemplates
 packages/bank/test/SpaceCovering
-packages/block/test/BlockTest
 packages/burstsearch/test/ThresholdsTest
 packages/clremoval/test/CLRTest
 packages/clremoval/test/CLRoutdata.asc
-packages/comm/src/Exchange.c
-packages/comm/src/SendRecv.c
 packages/date/test/TestDateString
 packages/date/test/TestDelay
 packages/date/test/TestGPStoFloat
@@ -115,7 +112,6 @@ packages/fft/test/RealFFTTest
 packages/fft/test/TimeFreqFFTTest
 packages/findchirp/test/FindChirpBCVSpinTest
 packages/findchirp/test/FindChirpTDTest
-packages/hello/test/LALHelloTest
 packages/houghpulsar/test/OutHistogram.asc
 packages/houghpulsar/test/OutHough.asc
 packages/houghpulsar/test/TestConstructPLUT
@@ -163,8 +159,6 @@ packages/pulsar/test/TwoDMeshTest
 packages/pulsar/test/UniversalDopplerMetricTest
 packages/pulsar/test/earth*.ilwd
 packages/pulsar/test/sun*.ilwd
-packages/sample/test/LALSampleTest
-packages/sample/test/LALTemplateTest
 packages/slopefilters/test/SlopeDetectorFilterTest
 packages/stats/src/LALMoment.c
 packages/stats/test/LALCorrelationTest
@@ -206,11 +200,6 @@ packages/support/test/UserInputTest
 packages/tdfilter/test/BandPassTest
 packages/tdfilter/test/IIRFilterTest
 packages/tdfilter/test/LPCTest
-packages/tfclusters/test/TFCThresholdsTest1
-packages/tfclusters/test/TFClustersTest1
-packages/tfclusters/test/TFClustersTest2
-packages/tfclusters/test/TFClustersTest3
-packages/tfclusters/test/TFClustersTest4
 packages/timefreq/doc/Tfr.log
 packages/timefreq/doc/Tfr.pdf
 packages/timefreq/test/TfrPswvTest
