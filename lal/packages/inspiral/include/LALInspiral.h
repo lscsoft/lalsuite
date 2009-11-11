@@ -102,7 +102,8 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EFLOWERINJ     17
 #define LALINSPIRALH_EORDERMISSING  18
 #define LALINSPIRALH_EBPERR         19
-
+#define LALINSPIRALH_ESWITCH        20
+#define LALINSPIRALH_EMASSCHOICE    21
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
 #define LALINSPIRALH_MSGEMEM          "Memory allocation error"
@@ -123,6 +124,8 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEFLOWERINJ    "flower for the injection must be greater than zero"
 #define LALINSPIRALH_MSGEORDERMISSING "The PN order requested is not implemented for this approximant"
 #define LALINSPIRALH_MSGEBPERR        "Error in band passing signal"
+#define LALINSPIRALH_MSGESWITCH       "Unknown case in switch"
+#define LALINSPIRALH_MSGEMASSCHOICE   "Improper choice for massChoice"
 
 /** ---------------------------------------------------------------------  </lalErrTable> */
 

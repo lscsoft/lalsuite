@@ -129,7 +129,7 @@ void LALBBHPhenWaveFreqDom ( LALStatus        *status,
           break;
 
       default:
-           ABORT( status, 9999, "Unknown case in switch." );
+           ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
   }
 
   DETATCHSTATUSPTR(status);
@@ -627,7 +627,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
           XLALComputePhenomParams2(&phenParams, insp_template);
           break;
       default:
-           ABORT( status, 9999, "Unknown case in switch." );
+          ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
   }
 
   totalMass = insp_template->mass1 + insp_template->mass2;
@@ -673,7 +673,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
           XLALBBHPhenWaveFD2 (&phenParams, insp_template, signalFD1);
           break;
       default:
-          ABORT( status, 9999, "Unknown case in switch." );
+          ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
   }
 
   /* apply the softening window function */

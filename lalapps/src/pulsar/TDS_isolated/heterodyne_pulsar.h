@@ -116,13 +116,9 @@ extern "C" {
 " --binary-output     output data to a binary file\n"\
 "\n"
 
-/* FIXME: this memory should be allocated dynamically, not hardcoded */
-#define MAXLENGTH 10000000 /* max number of lines in heterodyned data file */
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
-#define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
-#define MAXNUMFRAMES 35000 /* maximum number of frame files in data file */
+#define MAXSTRLENGTH 256 /* maximum number of characters in a frame filename */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
-#define MAXCALIBLENGTH 650000 /* maximum length of a calibration file */
 
 #define ALPHAMIN 0.25 /* minimum acceptable value of alpha calib coefficient */
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
@@ -140,9 +136,9 @@ typedef struct tagCalibrationFiles{
 
 /* structure to store data from a lal frame cache as output from LSCdataFind */
 typedef struct tagFrameCache{
-  CHAR framelist[MAXNUMFRAMES][MAXSTRLENGTH]; /* list of file names in frame cache file */
-  INT4 duration[MAXNUMFRAMES]; /* duration of each frame file */
-  INT4 starttime[MAXNUMFRAMES]; /* start time of each frame file */
+  CHAR **framelist; /* list of file names in frame cache file */
+  INT4 *duration; /* duration of each frame file */
+  INT4 *starttime; /* start time of each frame file */
 }FrameCache;
 
 typedef struct tagInputParams{
@@ -232,8 +228,9 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
 void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
 
 /* reads in a time series from frames */
-REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, REAL8 length, INT4
-duration, REAL8 samplerate, REAL8 scalefac, REAL8 highpass);
+REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, 
+  REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac, 
+  REAL8 highpass);
 
 /* read in science segment list file - returns the number of segments */
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
