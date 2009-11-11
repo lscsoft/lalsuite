@@ -41,7 +41,6 @@ config.status : configure
 		--prefix=$(PREFIX) \
 		--mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 		--enable-nightly=no \
-		--enable-frame --enable-metaio \
 		--disable-debug \
 		--disable-gcc-flags
 
