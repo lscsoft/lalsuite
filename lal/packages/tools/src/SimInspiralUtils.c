@@ -456,7 +456,6 @@ LALGalacticInspiralParamsToSimInspiralTable(
 /* </lalVerbatim> */
 {
   PPNParamStruc         ppnParams;
-  LALGPSandAcc          gpsAndAcc;
   SkyPosition           skyPos;
   LALSource             source;
   LALPlaceAndGPS        placeAndGPS;
@@ -536,9 +535,6 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
   detAndSource.pSource = &source;
 
-  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = output->geocent_end_time;
-
 
   /*
    *
@@ -581,7 +577,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* compute the response of the LHO detectors */
   detAndSource.pDetector = &lho;
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
+      &output->geocent_end_time );
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance for LHO */
@@ -591,7 +587,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* compute the response of the LLO detector */
   detAndSource.pDetector = &llo;
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
+      &output->geocent_end_time );
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance for LLO */
@@ -622,7 +618,6 @@ LALInspiralSiteTimeAndDist(
     )
 /* </lalVerbatim> */
 {
-  LALGPSandAcc          gpsAndAcc;
   LALSource             source;
   LALPlaceAndGPS        placeAndGPS;
   DetTimeAndASource     detTimeAndSource;
@@ -664,9 +659,6 @@ LALInspiralSiteTimeAndDist(
   detAndSource.pSource = &source;
   detAndSource.pDetector = detector;
 
-  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = output->geocent_end_time;
-
   /* initialize end time with geocentric value */
   *endTime = output->geocent_end_time;
 
@@ -684,7 +676,7 @@ LALInspiralSiteTimeAndDist(
 
   /* compute the response of the detector */
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
+      &output->geocent_end_time );
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance */

@@ -186,10 +186,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
    /* create vectors containing amplitude response of detector for specified times */
    for (i=0;i<n;i++)
    {
-     LALGPSandAcc gpsAndAcc;
-     gpsAndAcc.gps = input->t[i];
-     gpsAndAcc.accuracy = LALLEAPSEC_STRICT; /* FIXME: check */
-     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &gpsAndAcc);
+     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &input->t[i]);
      Fp->data[i] = (REAL8)computedResponse.plus;
      Fc->data[i] = (REAL8)computedResponse.cross;
    }

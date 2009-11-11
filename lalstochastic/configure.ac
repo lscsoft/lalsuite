@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -54,11 +54,11 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LIBTOOL
+LT_INIT
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS(SW_VERS, sw_vers)
+  AC_CHECK_PROGS([SW_VERS],[sw_vers])
   if test "x$SW_VERS" != "x"; then
     AC_MSG_CHECKING([Mac OS X version])
     MACOSX_VERSION=`$SW_VERS -productVersion`
@@ -98,7 +98,7 @@ else
   AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
   AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
 fi
-AM_CONDITIONAL([LALSUPPORT], [test x$lalsupport = xtrue])
+AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -112,7 +112,7 @@ fi
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "

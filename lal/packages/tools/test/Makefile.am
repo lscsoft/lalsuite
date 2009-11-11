@@ -8,7 +8,7 @@
 NEED_FRAME =
 EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 #endif
-check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest SegmentsTest $(NEED_FRAME) SequenceTest TimeSeriesTest FrequencySeriesTest
+check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest SegmentsTest $(NEED_FRAME) SequenceTest TimeSeriesTest FrequencySeriesTest SkymapTest
 UnitsTest_SOURCES = UnitsTest.c
 UnitsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 DetectorSiteTest_SOURCES = DetectorSiteTest.c
@@ -29,6 +29,8 @@ SequenceTest_SOURCES = SequenceTest.c
 SequenceTest_LDADD = $(top_builddir)/lib/liblal.la
 TimeSeriesTest_SOURCES = TimeSeriesTest.c
 TimeSeriesTest_LDADD = $(top_builddir)/lib/liblal.la
+SkymapTest_SOURCES = SkymapTest.c
+SkymapTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 #if FRAME
 #ResampleTimeSeriesTest_SOURCES = ResampleTimeSeriesTest.c
 #ResampleTimeSeriesTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -41,7 +43,7 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest SequenceTest TimeSeriesTest FrequencySeriesTest
 #TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest FrequencySeriesTest
 #else
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest FrequencySeriesTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest FrequencySeriesTest SkymapTest
 #endif
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \

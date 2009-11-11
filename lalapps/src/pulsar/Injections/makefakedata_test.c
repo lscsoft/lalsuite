@@ -1158,7 +1158,6 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LALSource         source;
   LALDetAndSource   detectorandsource;
   LIGOTimeGPS       gps;
-  LALGPSandAcc      gpsandacc;
   const char *filename="AmplMod.dat";
   UINT4 i;
 
@@ -1177,9 +1176,8 @@ int write_modulated_amplitudes_file(LALStatus* status){
 
     gps.gpsSeconds=timestamps[i].gpsSeconds;
     gps.gpsNanoSeconds=timestamps[i].gpsNanoSeconds;
-    gpsandacc.gps=gps;
 
-    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &gpsandacc);
+    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &gps);
     fprintf(fp,"%f  %f\n",amresp.plus,amresp.cross);
 
   }
