@@ -7,9 +7,9 @@
 
 CODENAME=./lalapps_heterodyne_pulsar
 
-FRAMEFILE=framefiles.tar.gz
+FRAMEFILE=H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
-DATAEND=`expr $DATASTART + 24 \* 60 \* 60`
+DATAEND=`expr $DATASTART + 120`
 DETECTOR=H1
 CHANNEL=LSC-DARM_ERR
 FKNEE=0.25
@@ -107,17 +107,12 @@ if [ $? != "0" ]; then
 fi
 
 if [ ! -f $FRAMEFILE ]; then
-	echo Error. Frame tar file does not exist!
+	echo Error. Frame file does not exist!
 	exit 2
 fi
 
-tar -xvzf $FRAMEFILE
-if [ $? != "0" ]; then
-	echo Error. Could not unpack the frame files!
-	exit 2
-fi
-FILELIST=`tar -tzf $FRAMEFILE`
-mv $FILELIST ${LOCATION}/framedir 
+FILELIST=$FRAMEFILE
+cp $FILELIST ${LOCATION}/framedir 
 
 # use make_frame_cache to make a frame cache file
 if [ ! -f make_frame_cache ]; then
@@ -138,13 +133,12 @@ if [ -f segfile ]; then
 	rm -f segfile
 fi
 
-# make 24 segments of two minutes length each spanning a day
-for (( i=0; i<24; i++ )); do
-	SEGNUM=`expr $i + 1`
-	SEGSTART=`expr $DATASTART + $i \* 3600`
-	SEGEND=`expr $SEGSTART + 120`
-	echo $SEGNUM $SEGSTART $SEGEND 120 >> segfile
-done
+# make 1 segment of two minutes length
+SEGNUM=1
+SEGSTART=$DATASTART
+SEGEND=`expr $SEGSTART + 120`
+echo $SEGNUM $SEGSTART $SEGEND 120 >> segfile
+
 if [ $? != "0" ]; then
 	echo Could not create the segment file!
 	exit 2
@@ -341,25 +335,210 @@ if [ ! -f $FINEFILE ]; then
         exit 2
 fi
 
-###### CHECK THAT ALL VERSION PRODUCE MATCH THE PRE-MADE REFERENCES #####  
-echo Comparing outputs with reference files
+###### CHECK THAT OUTPUTS MATCH REEFERENCE VALUES #####  
+echo Comparing outputs with reference values
 
-# check reference files exist
-if [ ! -f simulated_reference.txt ]; then
-	echo Error. Reference file does not exist!
+# correct heterodyne output (check current outputs are with a percent of these)
+REALT=875206650
+REALR=-1.304235E-26
+REALR=`echo "$REALR" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+REALI=-4.617799E-26
+REALI=`echo "$REALI" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+
+RPER=1.304235E-28
+RPER=`echo "$RPER" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+IPER=4.617799E-28
+IPER=`echo "$IPER" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+
+# file from coarse heterodyne output as binary file
+f1=875206560-875206680/finehet_J0000+0000_H1.bin
+val=0
+while read line
+do
+	for args in $line; do
+		# pass lines through said and convert any exponents 
+		# expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+		if [ $val == 0 ]; then
+                	arrvals[$val]=$tempval
+		else
+			arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+		fi
+		((val++))
+	done
+done < $f1
+
+if (( ${#arrvals[@]} != 3 )); then
+	echo Error! Wrong number of data in the file
 	exit 2
 fi
 
-if [ ! -f finehet_J0000+0000_H1 ]; then
-	echo Error. Reference file does not exist!
+if [ ! `echo "${arrvals[0]} == $REALT" | bc` ]; then
+	echo Error! Time in data file is wrong!
         exit 2
 fi
 
-./compare_test_outputs
+if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
+	echo Error! Real data point in data file is wrong!
+        exit 2
+fi
 
-if [ $? != 0 ]; then
-	echo Error. Files do not match references!
-	exit 2
+if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+# file from coarse heterodyne output as text file
+f2=875206560-875206680/finehet_J0000+0000_H1.txt
+val=0
+while read line
+do
+        for args in $line; do
+                # pass lines through said and convert any exponents 
+                # expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+                if [ $val == 0 ]; then
+                        arrvals[$val]=$tempval
+                else
+                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                fi
+                ((val++))
+        done
+done < $f2
+
+if (( ${#arrvals[@]} != 3 )); then
+        echo Error! Wrong number of data in the file
+        exit 2
+fi
+
+if [ ! `echo "${arrvals[0]} == $REALT" | bc` ]; then
+        echo Error! Time in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+
+# file from heterodyne done in one go
+f3=875206560-875206680/finehet_J0000+0000_H1.full
+val=0
+while read line
+do
+        for args in $line; do
+                # pass lines through said and convert any exponents 
+                # expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+                if [ $val == 0 ]; then
+                        arrvals[$val]=$tempval
+                else
+                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                fi
+                ((val++))
+        done
+done < $f3
+
+if (( ${#arrvals[@]} != 3 )); then
+        echo Error! Wrong number of data in the file
+        exit 2
+fi
+
+if [ ! `echo "${arrvals[0]} == $REALT" | bc` ]; then
+        echo Error! Time in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+# file with offset parameters
+f4=875206560-875206680/finehet_J0000+0000_H1.off
+val=0
+while read line
+do
+        for args in $line; do
+                # pass lines through said and convert any exponents 
+                # expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+                if [ $val == 0 ]; then
+                        arrvals[$val]=$tempval
+                else
+                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                fi
+                ((val++))
+        done
+done < $f4
+
+if (( ${#arrvals[@]} != 3 )); then
+        echo Error! Wrong number of data in the file
+        exit 2
+fi
+
+if [ ! `echo "${arrvals[0]} == $REALT" | bc` ]; then
+        echo Error! Time in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+# file from heterodyne in mode 4
+f5=875206560-875206680/finehet_J0000+0000_H1
+val=0
+while read line
+do
+        for args in $line; do
+                # pass lines through said and convert any exponents 
+                # expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+                if [ $val == 0 ]; then
+                        arrvals[$val]=$tempval
+                else
+                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                fi
+                ((val++))
+        done
+done < $f5
+
+if (( ${#arrvals[@]} != 3 )); then
+        echo Error! Wrong number of data in the file
+        exit 2
+fi
+
+if [ ! `echo "${arrvals[0]} == $REALT" | bc` ]; then
+        echo Error! Time in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
+fi
+
+if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+        echo Error! Real data point in data file is wrong!
+        exit 2
 fi
 
 ################### CLEAN UP ##########################
