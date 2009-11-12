@@ -75,7 +75,7 @@ install: build
 
 	set -e; \
 	for v in 2.4 2.5; do                                                         \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
 	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
@@ -85,11 +85,11 @@ install: build
 	    --enable-frame --enable-metaio                                    \
 	    --disable-debug                                                   \
 	    --disable-gcc-flags ;                                                    \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) ;                                                                    \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install ;                           \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) clean ;                                                              \
 	done
 	set -e; \
