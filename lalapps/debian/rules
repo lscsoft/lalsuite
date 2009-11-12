@@ -20,7 +20,7 @@ FRAMEPREFIX = /opt/lscsoft/libframe
 METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
 LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
-LALFRAME = /opt/lscsoft/lalframe
+LALFRAMEPREFIX = /opt/lscsoft/lalframe
 LALXMLPREFIX = /opt/lscsoft/lalxml
 
 CFLAGS = -Wall -g
