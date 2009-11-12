@@ -460,7 +460,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     cmd   = 'lalapps_path2cache'
 
     # sngl_inspirals
-    files = glob.glob('%s/%s-INSPIRAL_%s*xml*' % (config['trigger_dir'], ifo, cluster))
+    files = glob.glob('%s/%s-INSPIRAL_%s-*xml*' % (config['trigger_dir'], ifo, cluster))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
