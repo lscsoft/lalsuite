@@ -52,8 +52,8 @@ build-stamp :  config.status
 
 	$(MAKE)
 	-yes "" | $(MAKE) dvi
-	-yes "" | $(MAKE) check
-	-yes "" | $(MAKE) distcheck
+#	-yes "" | $(MAKE) check
+#	-yes "" | $(MAKE) distcheck
 
 	touch $@
 
