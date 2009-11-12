@@ -909,7 +909,7 @@ LALInspiralChooseModel(
    ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
    break;
  default:
-   ABORT( status, 9999, "Unknown case in switch." );
+   ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
 }
 
    DETATCHSTATUSPTR(status);

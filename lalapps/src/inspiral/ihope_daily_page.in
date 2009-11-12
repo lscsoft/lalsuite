@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from optparse import OptionParser
+
 from matplotlib import use
 use('Agg')       
 
@@ -44,25 +46,6 @@ params = {'axes.labelsize'  : 12,
 
 pylab.rcParams.update(params)
 
-############################################
-# Configuration parameters, change as needed
-############################################
-
-# Where I live
-ihope_daily_page       = '/archive/home/cbc/opt/s6/bin/lalapps_ihope_daily_page'
-
-# The location and configuration for the glitch page
-ligolw_cbc_glitch_page = '/archive/home/cbc/opt/s6/bin/ligolw_cbc_glitch_page'
-omega_conf             = '/archive/home/omega/configurations/S6/H0H1-R_use_RDSL1_list.txt'
-omega_frame_dir        = '/archive/frames/S6/L0/LHO/H-R-%d'
-
-# Location and configuration for the hw injection page
-ligolw_cbc_hardware_inj_page = '/archive/home/cbc/opt/s6/bin/ligolw_cbc_hardware_inj_page'
-hwinj_file                   = '/archive/home/cbc/opt/conf/HL-INJECTIONS_S6_ALL.xml'
-
-
-# Location of asset files
-asset_dir                    = '/archive/home/cbc/src/lalsuite/lalapps/src/inspiral'
 ###############
 # Page template
 ###############
@@ -157,6 +140,7 @@ ifo_colors = {'H1':'red', 'L1':'green', 'V1':'magenta'}
 class Tree:
     id         = ''
     action     = ''
+    config     = ''
     ifo        = ''
     level      = ''
     cluster    = ''
@@ -165,9 +149,10 @@ class Tree:
     children   = []
     local      = False
     
-    def __init__(self, action, ifo, level, cluster, start_time, end_time, local = False):
+    def __init__(self, action, config, ifo, level, cluster, start_time, end_time, local = False):
         self.id         = self.make_id()
         self.action     = action
+        self.config     = config
         self.ifo        = ifo
         self.level      = level
         self.cluster    = cluster
@@ -184,8 +169,8 @@ class Tree:
         self.children.append(child)
         return child
 
-    def add_sub_job(self, action, ifo, level, cluster, start_time, end_time, local = False):
-        return self.add_child( Tree(action, ifo, level, cluster, start_time, end_time, local) )
+    def add_sub_job(self, action, config, ifo, level, cluster, start_time, end_time, local = False):
+        return self.add_child( Tree(action, config, ifo, level, cluster, start_time, end_time, local) )
 
 
     def add_sub_jobs(self, *args):
@@ -198,8 +183,8 @@ class Tree:
         else:
             print >>out, 'JOB %s daily_ihope_page.sub' % self.id
 
-        print >>out, 'RETRY %s 10' % self.id
-        print >>out, 'VARS %s macroaction="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s"' % (self.id, self.action, self.ifo, self.level, self.cluster, self.start_time, self.end_time)
+        print >>out, 'RETRY %s 3' % self.id
+        print >>out, 'VARS %s macroaction="%s" macroconfig="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s"' % (self.id, self.action, self.config['filename'], self.ifo, self.level, self.cluster, self.start_time, self.end_time)
 
 	if self.action in ['make_glitch_page','make_hwinj_page']:
 	    print >>out, 'CATEGORY %s database' % self.id
@@ -213,44 +198,65 @@ class Tree:
             c.render_relationships(out)
 
 
-def make_dag(ifo, category, cluster, start_time, end_time):
+def make_dag(config, ifo, category, cluster, start_time, end_time):
+    try:
+        os.makedirs(config['tmp_dir'])
+    except:
+        pass
+
+    try:
+        os.makedirs(config['tmp_dir'] + '/log')
+    except:
+        pass
+
+    try:
+        os.makedirs(config['tmp_dir'] + '/logs')
+    except:
+        pass
+
+    try:
+        os.makedirs(config['out_dir'])
+    except:
+        pass
+    
+
     roots = []
 
     for ifo in ['H1','L1','V1']:
-        veto_job = Tree('make_veto_files', ifo, 1, 'UNCLUSTERED', start_time, end_time, local = True)
+        veto_job = Tree('make_veto_files', config, ifo, 1, 'UNCLUSTERED', start_time, end_time, local = True)
 
         roots.append(veto_job)
 
-        veto_job = veto_job.add_sub_job('make_veto_files', ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
-        veto_job = veto_job.add_sub_job('make_veto_files', ifo, 3, 'UNCLUSTERED', start_time, end_time, local = True)
+        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
+        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 3, 'UNCLUSTERED', start_time, end_time, local = True)
 
         for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
-            root     = veto_job.add_sub_job('make_caches', ifo, category, cluster, start_time, end_time)
-            csv_jobs = [root.add_sub_job('make_csv', ifo, 0, cluster, start_time, end_time)]
-            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', ifo, i, cluster, start_time, end_time) for i in [1,2,3]]
+            root     = veto_job.add_sub_job('make_caches',   config, ifo, category, cluster, start_time, end_time)
+            csv_jobs = [root.add_sub_job('make_csv',         config, ifo, 0, cluster, start_time, end_time)]
+            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,3]]
  
             for job in csv_jobs:
-                job.add_sub_job('plot_rate_vs_time',        ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_snr_hist',            ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('make_glitchy_times_table', ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('make_usage_table',         ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('make_summary_table',       ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_rate_vs_time',        config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_snr_hist',            config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('make_glitchy_times_table', config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('make_usage_table',         config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('make_summary_table',       config, ifo, job.level, cluster, start_time, end_time)
 
-                job.add_sub_job('plot_snr_vs_time',         ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_template_counts',     ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_mass_hist',           ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_hexmass',             ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_bank_veto',           ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_snr_vs_time',         config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_template_counts',     config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_hexmass',             config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_bank_veto',           config, ifo, job.level, cluster, start_time, end_time)
 
-                job.add_sub_job('make_hwinj_page',          ifo, job.level, cluster, start_time, end_time, local = True)
+                job.add_sub_job('make_hwinj_page',          config, ifo, job.level, cluster, start_time, end_time, local = True)
 
                 if cluster == 'TSSI_CLUSTERED':
-                    dbjob = job.add_sub_job('make_database',    ifo, job.level, cluster, start_time, end_time)
-                    dbjob.add_sub_job('make_glitch_page',       ifo, job.level, cluster, start_time, end_time, local = True)
+                    dbjob = job.add_sub_job('make_database',    config, ifo, job.level, cluster, start_time, end_time)
+                    dbjob.add_sub_job('make_glitch_page',       config, ifo, job.level, cluster, start_time, end_time, local = True)
                 else:
-                     job.add_sub_job('make_glitch_page',       ifo, job.level, cluster, start_time, end_time, local = True)
+                     job.add_sub_job('make_glitch_page',        config, ifo, job.level, cluster, start_time, end_time, local = True)
 
-    out = open('daily_page.dag','w')
+    out = open(config['tmp_dir'] + '/daily_page.dag','w')
     for root in roots:
         root.render_job(out)
 
@@ -260,39 +266,100 @@ def make_dag(ifo, category, cluster, start_time, end_time):
     print >>out, "MAXJOBS database 4"
     out.close()
 
-    cwd = os.path.abspath('.')
 
-    out = open('daily_ihope_page.sub','w')
+    out = open(config['tmp_dir'] + '/daily_ihope_page.sub','w')
     print >>out, """universe = vanilla
 executable = %s
-arguments = " $(macroaction) $(macroifo) $(macrocategory) $(macrocluster) $(macrogpsstarttime) $(macrogpsendtime) "
+arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) "
 priority     = 20
 getenv       = True
 log          = %s/log/daily_plot.log
 error        = logs/daily_plot-$(cluster)-$(process).err
 output       = logs/daily_plot-$(cluster)-$(process).out
 notification = never
-queue 1""" % (ihope_daily_page, cwd.replace('/mnt/qfs1','/archive/home'))
+queue 1""" % (config['ihope_daily_page'], config['tmp_dir'])
     out.close()
 
-    out = open('daily_ihope_page_local.sub','w')
+    out = open(config['tmp_dir'] + '/daily_ihope_page_local.sub','w')
     print >>out, """universe = local
 executable = %s
-arguments = " $(macroaction) $(macroifo) $(macrocategory) $(macrocluster) $(macrogpsstarttime) $(macrogpsendtime) "
+arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) "
 priority = 20
 getenv = True
 log = %s/log/daily_plot.log
 error = logs/daily_plot-$(cluster)-$(process).err
 output = logs/daily_plot-$(cluster)-$(process).out
 notification = never
-queue 1""" % (ihope_daily_page, cwd.replace('/mnt/qfs1','/archive/home'))
+queue 1""" % (config['ihope_daily_page'], config['tmp_dir'])
     out.close()
+
+
+
+# Command line
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "%prog CVS $Header$",
+        usage   = "%prog --action action_name --gps-start-time start_time --ifos ifos --veto-categories vetoes --cluster-categories clusters [--gps-end-time end_time] [--config config_file]",
+        description = "Performs the named action from start time to end time (default = start + 1 day)\n"
+        "on the named ifos, at the named veto and cluster categories"
+	)
+    
+    parser.add_option("-a", "--action",             metavar = "action",      help = "Action to perform")
+    parser.add_option("-f", "--config",             metavar = "config_file", help = "Auxiliary config file")
+    parser.add_option("-i", "--ifos",               metavar = "ifos",        help = "Comma-separated list of IFOs")
+    parser.add_option("-v", "--veto-categories",    metavar = "veto_categories",      help = "Comma-separated list of veto levels (0=SCIENCE)")
+    parser.add_option("-c", "--cluster-categories", metavar = "cluster_categories",   help = "Comma-separated list of clusters")
+
+    parser.add_option("-s", "--gps-start-time",    metavar = "gps_start_time",    help="")
+    parser.add_option("-e", "--gps-end-time",      metavar = "gps_end_time",      help="")
+
+    options, filenames = parser.parse_args()
+
+    if not options.action:
+        print >>sys.stderr, "Please specify --action"
+        sys.exit(-1)
+
+    return options
+
 
 #########################
 #
 # Utilities
 #
 #########################
+def parse_config(filename):
+    if not os.path.exists(filename):
+        print >>sys.stderr, "Config file %s does not exist" % filename
+        sys.exit(1)
+
+    if not os.path.isfile(filename):
+        print >>sys.stderr, "Config file %s is not a file" % filename
+        sys.exit(1)
+    
+    ret = {'filename':filename}
+    f   = open(filename)
+
+    for l in f:
+        l = l.strip()
+
+        if not l:
+            continue
+
+        if l[0] == '#':
+            continue
+
+        key, value = l.split('=')
+        ret[key.strip()] = value.strip()
+
+    return ret
+
+
+
+
 def m1_m2_to_mtotal_eta(m1, m2):
     mtot = m1+m2
     eta  = (m1 * m2) / (mtot * mtot)
@@ -353,12 +420,13 @@ def chirplen(fstart, mtot, eta):
 # Methods that set up data
 #
 #########################
-def make_veto_files(engine, ifo, category, cluster, start_time, end_time):
+def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time):
     """
     Creates VETOCATS_(ifo)_(cat).p, which contains a dicionary mapping segment_definer
     names to segmentlists containing their active times.
     """
-    
+   
+    print (engine, config, ifo, category, cluster, start_time, end_time)
     def make_segdef(row, overall_interval):
         veto_interval = overall_interval & segmentlist([segment(row.start_time, row.end_time or end_time)])
 
@@ -369,8 +437,8 @@ def make_veto_files(engine, ifo, category, cluster, start_time, end_time):
 
 
     overall = segmentlist([segment(start_time, end_time)])
-    xmldoc  = utils.load_url('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_ONLINE-937526415-0.xml')
-
+    xmldoc  = utils.load_url(config['veto_definer_file'])
+    
     veto_definers = table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
     cats = [make_segdef(row, overall) for row in veto_definers if row.category == category and row.ifo == ifo]
 
@@ -378,12 +446,12 @@ def make_veto_files(engine, ifo, category, cluster, start_time, end_time):
     veto_arrays     = [ [(x[0], x[1]) for x in y] for y in vetoed_segments ]
     result          = map(lambda x,y: ('%s:%d' % (x[1], x[2]), y), cats, veto_arrays)
 
-    f = open('VETOCATS_%s_%d.p' % (ifo, category),'w')
+    f = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, category),'w')
     pickle.dump(result,f)
     f.close()
 
 
-def make_caches(ifo, level, cluster, start, end):
+def make_caches(config, ifo, level, cluster, start, end):
     """
     Creates (ifo)-INSPIRAL_(cluster).cache and (ifo)-TMPLTBANK_(cluster).cache suitable for pasing to ligolw_print.
 
@@ -391,36 +459,28 @@ def make_caches(ifo, level, cluster, start, end):
     """
     cmd   = 'lalapps_path2cache'
 
-    print "Starting up."
-    sys.stdout.flush()
-
     # sngl_inspirals
-    files = glob.glob('%s-INSPIRAL_%s*xml*' % (ifo, cluster))
-
-    print "Files for cache are: ", files
-    sys.stdout.flush()
-
+    files = glob.glob('%s/%s-INSPIRAL_%s*xml*' % (config['trigger_dir'], ifo, cluster))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
-    print "Did the call"
     sys.stdout.flush()
 
-    f = open('%s-INSPIRAL_%s.cache' % (ifo, cluster),'w')
+    f = open('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster),'w')
     print >>f, out.strip()
     f.close()
 
     # templates
-    files = glob.glob('%s-TMPLTBANK-*xml.gz' % ifo)
+    files = glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
-    f = open('%s-TMPLTBANK_%s.cache' % (ifo, cluster),'w')
+    f = open('%s/%s-TMPLTBANK_%s.cache' % (config['tmp_dir'], ifo, cluster),'w')
     print >>f, out.strip()
     f.close()
 
 
-def make_csv(ifo, category, cluster, start, end):
+def make_csv(config, ifo, category, cluster, start, end):
     """
     At category 0, reads (ifo)-INSPIRAL_(cluster).cache and (ifo)-TMPLTBANK_(cluster).cache
     and produces (ifo)-0-INSPIRAL_(cluster).csv,  (ifo)-TMPLTBANK.csv and (ifo)-0-SUMMARY_(cluster).csv
@@ -430,13 +490,36 @@ def make_csv(ifo, category, cluster, start, end):
     """
     if category == 0:
         # Create unfiltered 
-        os.system('ligolw_print -i %s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s-0-INSPIRAL_%s.csv' % (ifo, cluster, ifo, cluster))
+        os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
+
+        # Remove time outside the given range
+        in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+        out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+
+        for l in in_f:
+            end_time = int(l.split(',')[0])
+            if end_time >= start and end_time < end:
+                print >>out_f, l,
+        in_f.close()
+        out_f.close()
+        os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
 
         # and the templates
-        os.system('ligolw_print -i %s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s-TMPLTBANK_%s.csv' % (ifo, cluster, ifo, cluster))
+        os.system('ligolw_print -i %s/%s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
 
-	# and the search_summary
-    	os.system('ligolw_print -i %s-INSPIRAL_%s.cache -t search_summary -c out_start_time -c out_end_time > %s-0-SUMMARY_%s.csv' % (ifo, cluster, ifo, cluster))
+	    # and the search_summary
+    	os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t search_summary -c out_start_time -c out_end_time > %s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+
+        in_f  = open('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+        out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+
+        for l in in_f:
+            end_time = int(l.split(',')[0])
+            if end_time >= start and end_time < end:
+                print >>out_f, l,
+        in_f.close()
+        out_f.close()
+        os.remove('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
 
         return
 
@@ -444,7 +527,7 @@ def make_csv(ifo, category, cluster, start, end):
     vetoed_times = segmentlist([])
 
     for c in range(1,category+1):
-        f = open('VETOCATS_%s_%d.p' % (ifo, c))
+        f = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c))
         t = pickle.load(f)
         f.close()
 
@@ -453,8 +536,8 @@ def make_csv(ifo, category, cluster, start, end):
         vetoed_times   |= vetoed_segments
 
     # Filter triggers
-    infile  = open('%s-0-INSPIRAL_%s.csv' % (ifo, cluster))
-    outfile = open('%s-%d-INSPIRAL_%s.csv' % (ifo, category, cluster), 'w')
+    infile  = open('%s/%s-0-INSPIRAL_%s.csv'  % (config['tmp_dir'], ifo, cluster))
+    outfile = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, category, cluster), 'w')
 
     for l in infile:
         end_time = int(l[0:9])   # assumes that end_time is the first field and has only 9 digits!
@@ -465,8 +548,8 @@ def make_csv(ifo, category, cluster, start, end):
     outfile.close()
 
     # filter search summary
-    infile  = open('%s-0-SUMMARY_%s.csv' % (ifo, cluster))
-    outfile = open('%s-%d-SUMMARY_%s.csv' % (ifo, category, cluster), 'w')
+    infile  = open('%s/%s-0-SUMMARY_%s.csv'  % (config['tmp_dir'], ifo, cluster))
+    outfile = open('%s/%s-%d-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, category, cluster), 'w')
 
     lines   = [l.strip().split(',') for l in infile.readlines()]
     summary = segmentlist([segment(int(l[0]), int(l[1])) for l in lines]).coalesce()
@@ -480,13 +563,13 @@ def make_csv(ifo, category, cluster, start, end):
 
 
 
-def make_database(ifo, level, cluster, start, end):
+def make_database(config, ifo, level, cluster, start, end):
     """
     Reads (ifo)-(level)-INSPIRAL_(cluster).csv and  (ifo)-(level)-TEMPLATE_(cluster).csv, 
     produces (ifo)-(level)-INSPIRAL_(cluster).sqlite with the data loaded and indicies created.
     """
 
-    dbname = '%s-%d-INSPIRAL_%s.sqlite' % (ifo, level, cluster)
+    dbname = '%s/%s-%d-INSPIRAL_%s.sqlite' % (config['tmp_dir'], ifo, level, cluster)
     if os.path.exists(dbname):
         os.remove(dbname)
 
@@ -494,7 +577,7 @@ def make_database(ifo, level, cluster, start, end):
     os.system("sqlite3 %s 'CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)'" % dbname)
     
     # populate it
-    os.system('sqlite3 -separator , %s  ".import %s-%d-INSPIRAL_%s.csv sngl_inspiral"' % (dbname, ifo, level, cluster))
+    os.system('sqlite3 -separator , %s  ".import %s/%s-%d-INSPIRAL_%s.csv sngl_inspiral"' % (dbname, config['tmp_dir'], ifo, level, cluster))
 
     # make it fast
     os.system("sqlite3 %s 'CREATE INDEX sngl_inspiral_snr ON sngl_inspiral(snr)'" % dbname)
@@ -504,13 +587,13 @@ def make_database(ifo, level, cluster, start, end):
 
     # Create template table
     os.system("sqlite3 %s 'CREATE TABLE template (ifo char(2), mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float)'" % dbname)
-    os.system('sqlite3 -separator , %s  ".import %s-TMPLTBANK_%s.csv template"' %  (dbname, ifo, cluster))
+    os.system('sqlite3 -separator , %s  ".import %s/%s-TMPLTBANK_%s.csv template"' %  (dbname, config['tmp_dir'], ifo, cluster))
     os.system("sqlite3 %s 'CREATE INDEX template_mtotal ON template(mtotal)'" % dbname)
 
 
     # Create search summary table
     os.system("sqlite3 %s 'CREATE TABLE search_summary(out_start_time int, out_end_time int)'" % dbname)
-    os.system('sqlite3 -separator , %s  ".import %s-%d-SUMMARY_%s.csv search_summary"' % (dbname, ifo, level, cluster))
+    os.system('sqlite3 -separator , %s  ".import %s/%s-%d-SUMMARY_%s.csv search_summary"' % (dbname, config['tmp_dir'], ifo, level, cluster))
 
 
 
@@ -528,23 +611,23 @@ def setup_db():
 # Methods that extract data
 #
 ##########################
-def make_summary_table(ifo, veto_level, cluster, start_time, end_time):
+def make_summary_table(config, ifo, veto_level, cluster, start_time, end_time):
     # count triggers
     num_triggers = 0
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     for l in f:
         num_triggers += 1
     f.close()
 
     # Find active time
-    f     = open('%s-%d-SUMMARY_%s.csv' % (ifo, veto_level, cluster))
+    f     = open('%s/%s-%d-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     lines = [l.strip().split(',') for l in f]
     t     = segmentlist([segment(int(x[0]), int(x[1])) for x in lines]).coalesce()
     f.close()
     
     analyzed_time = abs(t)
 
-    out = open('%s-%d_%s_summary_table.html' % (ifo, veto_level, cluster), 'w')
+    out = open('%s/%s-%d_%s_summary_table.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
     print >>out, """<table>
 <tr><th>Veto level</th><th>Analyzed Time (s)</th><th>Num. Triggers</th></tr>
 <tr><td>%d</td><td>%d</td><td>%d</td></tr>
@@ -552,18 +635,18 @@ def make_summary_table(ifo, veto_level, cluster, start_time, end_time):
     out.close()
 
         
-def make_glitchy_times_table(ifo, veto_level, cluster, start_time, end_time):
+def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_time):
     """Find intervals with trigger rates > 200 Hz"""
 
     def tconvert(t):
         return os.popen('tconvert -f %H:%M:%S ' + str(t)).readlines()[0].strip()
 
 
-    out = open('%s-%d_%s_glitchy_times_table.html' % (ifo, veto_level, cluster), 'w')
+    out = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
 
     seconds_in_day = range(end_time - start_time)
     counts = [0 for i in seconds_in_day]
-    f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f      = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
 
     for line in f:
         counts[int(line.split(',')[0]) - start_time] += 1
@@ -621,7 +704,7 @@ def make_glitchy_times_table(ifo, veto_level, cluster, start_time, end_time):
     print >>out, '<a href="%s-%d_%s_glitchy_times.txt">All times with rates greater than 200 Hz</a>' % (ifo, veto_level, cluster)
     out.close()
 
-    out = open('%s-%d_%s_glitchy_times.txt' % (ifo, veto_level, cluster), 'w')
+    out = open('%s/%s-%d_%s_glitchy_times.txt' % (config['out_dir'], ifo, veto_level, cluster), 'w')
     print >>out, "# start time, end time, avg rate, duration"
     for r in results:
         print >>out, "%d\t%d\t%.0f\t%d" % r
@@ -629,19 +712,19 @@ def make_glitchy_times_table(ifo, veto_level, cluster, start_time, end_time):
 
 
 
-def make_usage_table(ifo, veto_level, cluster, start_time, end_time):
-    out = open('%s-%d_%s_usage_table.html' % (ifo, veto_level, cluster), 'w')
+def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
+    out = open('%s/%s-%d_%s_usage_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
 
     if veto_level == 0:
         out.close()
         return
  
     # Open the database at the previous level
-    connection = setup_memory_db(ifo, veto_level-1, cluster)
+    connection = setup_memory_db(config, ifo, veto_level-1, cluster)
     cursor     = connection.cursor()
 
     # and the veto information at this level
-    f      = open('VETOCATS_%s_%d.p' % (ifo, veto_level))
+    f      = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, veto_level))
     vetoes = pickle.load(f)
     f.close()
 
@@ -701,14 +784,14 @@ def make_usage_table(ifo, veto_level, cluster, start_time, end_time):
 
 
 
-def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
+def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_time):
     """Makes a glitch table """
 
-    out = open('%s_CAT%d_%s_Glitch.html' % (ifo, veto_level, cluster), 'w')
+    out = open('%s/%s_CAT%d_%s_Glitch.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
 
     print >>out, '<html>'
     print >>out, '<head>'
-    print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+    print >>out, '  <link media="all" href="../../auxfiles/ihope_daily_style.css" type="text/css" rel="stylesheet" />'
     print >>out, '</head>'
 
     print >>out, '<body>'
@@ -716,10 +799,9 @@ def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
     if cluster != 'TSSI_CLUSTERED':
         print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
     else:
-        # print >>out, "<p><p><H3>Database currently unavailable, this page will be regenerated shortly</H3>"
-        tmpfile = '%s-%d_glitchout.html' % (ifo, veto_level)
+        tmpfile = '%s/%s-%d_glitchout.html' % (config['tmp_dir'], ifo, veto_level)
     
-        cmd  = '%s ' % ligolw_cbc_glitch_page 
+        cmd  = '%s ' % config['ligolw_cbc_glitch_page']
         cmd += '--trigger-db %s-%d-INSPIRAL_TSSI_CLUSTERED.sqlite '  % (ifo, veto_level)
         cmd += '--segments %s '     % os.environ['S6_SEGMENT_SERVER']
         cmd += '--html-file %s ' % tmpfile
@@ -727,9 +809,9 @@ def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
         cmd += '--timestamp-file none --known-count 5 --unknown-count 5 '
         cmd += '--gps-start-time %d '  % gps_start_time
         cmd += '--gps-end-time %d '    % gps_end_time
-        cmd += '--omega-conf %s '      % omega_conf   
-        cmd += '--omega-frame-dir %s ' % omega_frame_dir  
-        cmd += '--omega-out-dir omega '
+        cmd += '--omega-conf %s '      % config['omega_conf']
+        cmd += '--omega-frame-dir %s ' % config['omega_frame_dir']  
+        cmd += '--omega-out-dir %s/omega ' % config['out_dir']
 
         os.popen(cmd)
 
@@ -745,13 +827,13 @@ def make_glitch_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 
 
 
-def make_hwinj_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
+def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_time):
     """Makes a hardware injection table """
 
     #out = open('%s_CAT%d_%s_Hwinj.html' % (ifo, veto_level, cluster), 'w')
     #print >>out, '<html>'
     #print >>out, '<head>'
-    #print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+    #print >>out, '  <link media="all" href="../../auxfiles/ihope_daily_style.css" type="text/css" rel="stylesheet" />'
     #print >>out, '</head>'
 
     #print >>out, '<body>'
@@ -761,10 +843,10 @@ def make_hwinj_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
     anydata = True
 
     if cluster != 'TSSI_CLUSTERED':
-        out = open('%s_CAT%d_%s_Hwinj.html' % (ifo, veto_level, cluster), 'w')
+        out = open('%s/%s_CAT%d_%s_Hwinj.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
         print >>out, '<html>'
         print >>out, '<head>'
-        print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+        print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
         print >>out, '</head>'
 
         print >>out, '<body>'
@@ -773,29 +855,20 @@ def make_hwinj_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
         print >>out, '</html>'
         out.close()
     else:   
-        cmd  = '%s ' % ligolw_cbc_hardware_inj_page 
+        cmd  = '%s ' % config['ligolw_cbc_hardware_inj_page']
         cmd += '-t %d -e %d ' % (gps_start_time, gps_end_time)
         cmd += ifo_args[ifo]
-        cmd += '-x %s ' % hwinj_file 
+        cmd += '-x %s ' % config['hwinj_file']
         cmd += '-s %s ' % os.environ['S6_SEGMENT_SERVER']
-        cmd += '-o %s-%d_%s_hwinj_page.html ' % (ifo, veto_level, cluster)
+        cmd += '-o %s/%s_CAT%d_%s_Hwinj.html ' % (config['out_dir'], ifo, veto_level, cluster)
         cmd += ' '.join(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo))
 
         os.system(cmd)
 
-    #print >>out, '</body>'
-    #print >>out, '</html>'
-
-    #out.close()
-
-    # If it didn't work, flag the error to Condor
-    #if not anydata:
-    #    print >>sys.stderr, 'Unspecified error running hwinj page for %s-%d_%s_hwinj_page.html' % (ifo, veto_level, cluster)
-    #    sys.exit(1)
 
     
 
-def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
+def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_time):
     map = {}
 
     summary_names = ['%s-%d_%s_summary_table.html','%s-%d_%s_usage_table.html']
@@ -807,7 +880,7 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
     map['date']       = os.popen('tconvert -f "%B %d, %Y" ' + str(gps_start_time)).readlines()[0].strip()
     template          = html_template % map
 
-    out = open('index.html','w')
+    out = open('%s/index.html' % config['out_dir'],'w')
     print >>out, template
     out.close()
 
@@ -816,16 +889,16 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
             for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
                 # Make the summary section
 
-                out = open('%s_CAT%d_%s_Summary.html' % (ifo, cat, cluster), 'w')
+                out = open('%s/%s_CAT%d_%s_Summary.html' % (config['out_dir'], ifo, cat, cluster), 'w')
                 print >>out, '<html>'
                 print >>out, '<head>'
-                print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
                 print >>out, '</head>'
 
                 print >>out, '<body>'
 
                 for name in summary_names:
-                    in_f = open(name % (ifo, cat, cluster))
+                    in_f = open(config['tmp_dir'] + '/' + name % (ifo, cat, cluster))
 
                     for l in in_f:
                         print >>out, l
@@ -837,16 +910,17 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                 out.close()
    
                 # Make the bank chisq page
-                out = open('%s_CAT%d_%s_bankchisq.html' % (ifo, cat, cluster), 'w')
+                out = open('%s/%s_CAT%d_%s_bankchisq.html' % (config['out_dir'], ifo, cat, cluster), 'w')
                 print >>out, '<html>'
                 print >>out, '<head>'
-                print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
                 print >>out, '</head>'
                 print >>out, '<body>'
 
-                imgs = sorted(glob.glob('%s_%d_%s_bank_veto_dof_*.png' % (ifo, cat, cluster)))
-                for i in imgs:
-                    print >>out, '<img src="%s"><p>' % i
+                #imgs = sorted(glob.glob('%s/%s_%d_%s_bank_veto_dof_*.png' % (config['out_dir'], ifo, cat, cluster)))
+                #for i in imgs:
+                #    print >>out, '<img src="%s"><p>' % i.split('/')[-1]
+                print >>out, '<img src="%s_%d_%s_bank_veto.png"><p>' % (ifo, cat, cluster)
 
                 print >>out, '</body>'
                 print >>out, '</html>'
@@ -854,11 +928,11 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 
                 # Add the images
                 for name in image_names:
-                    out = open('%s_CAT%d_%s_%s.html' % (ifo, cat, cluster, name), 'w')
+                    out = open('%s/%s_CAT%d_%s_%s.html' % (config['out_dir'], ifo, cat, cluster, name), 'w')
 
                     print >>out, '<html>'
                     print >>out, '<head>'
-                    print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+                    print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
                     print >>out, '</head>'
                     print >>out, '<body>'
 
@@ -870,7 +944,7 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                     if name == 'rate_vs_time':
                         print >>out, '<img src="%s_%d_%s_snr_vs_time.png">' % (ifo, cat, cluster)
 
-                        in_f = open('%s-%d_%s_glitchy_times_table.html' % (ifo, cat, cluster))
+                        in_f = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, cat, cluster))
                         for l in in_f:
                             print >>out, l, 
                         in_f.close()
@@ -880,10 +954,10 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                     out.close()
 
                 # And the template page
-                out = open('%s_CAT%d_%s_template.html' % (ifo, cat, cluster), 'w')
+                out = open('%s/%s_CAT%d_%s_template.html' % (config['out_dir'], ifo, cat, cluster), 'w')
                 print >>out, '<html>'
                 print >>out, '<head>'
-                print >>out, '  <link media="all" href="../../auxfiles/write_ihope_style.css" type="text/css" rel="stylesheet" />'
+                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
                 print >>out, '</head>'
                 
                 print >>out, '<body>'
@@ -898,9 +972,9 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
                 out.close()
 
     # Copy asset files
-    shutil.copy('%s/ihopeFrog.jpg'         % asset_dir, '.')
-    shutil.copy('%s/ihope_daily_toggle.js' % asset_dir, '.')
-    shutil.copy('%s/ihope_daily_style.css' % asset_dir, '.')
+    shutil.copy('%s/ihopeFrog.jpg'         % config['asset_dir'], config['out_dir'])
+    shutil.copy('%s/ihope_daily_toggle.js' % config['asset_dir'], config['out_dir'])
+    shutil.copy('%s/ihope_daily_style.css' % config['asset_dir'], config['out_dir'])
 
 
 #########################
@@ -908,7 +982,7 @@ def make_index_page(ifo, veto_level, cluster, gps_start_time, gps_end_time):
 # Methods that make plots
 #
 #########################
-def plot_snr_vs_time(ifo, veto_level, cluster, start_time, end_time):
+def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     """snr vs. time"""
 
     SECS_PER_HOUR = 60.0 * 60.0
@@ -917,7 +991,7 @@ def plot_snr_vs_time(ifo, veto_level, cluster, start_time, end_time):
     snrs  = []
     times = []
 
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     for line in f:
         tmp = line.strip().split(',')
         times.append( (float(tmp[0]) - start_time) / SECS_PER_HOUR )
@@ -930,16 +1004,21 @@ def plot_snr_vs_time(ifo, veto_level, cluster, start_time, end_time):
     fig.add_axes(axes)
 
     if len(snrs) > 0:
-        pylab.semilogy(times, snrs, ifo_colored_circle[ifo], markersize = 2)
+        pylab.plot(times, snrs, ifo_colored_circle[ifo], markersize = 2)
         pylab.grid()
         pylab.xlim(0, 24)
+
+        if max(snrs) > 11:
+            pylab.yscale('log')
+
         pylab.ylim(5.5, max(snrs) * 1.1)
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel(make_time_label(start_time))
     pylab.xticks(range(0,26,2))
+
     pylab.ylabel('SNR')
-    pylab.savefig('%s_%d_%s_snr_vs_time.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_snr_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
 
       
 
@@ -971,14 +1050,14 @@ def wait_for(filename):
     os.system('cat %s > tmp_%d_%s' % (filename, num, filename))
 
 
-def setup_memory_db(ifo, level, cluster):
-    wait_for('%s-%d-INSPIRAL_%s.csv' % (ifo, level, cluster))
+def setup_memory_db(config, ifo, level, cluster):
+    wait_for('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, level, cluster))
     conn = sqlite3.connect(':memory:')
     cursor = conn.cursor()
 
     cursor.execute('CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)')
 
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, level, cluster))
     totypes = [int, int, str, float, float, float, float, float, float, float, float, float, int, float, int]
 
     for l in f:
@@ -996,7 +1075,7 @@ def setup_memory_db(ifo, level, cluster):
     # Create template table
     cursor.execute('CREATE TABLE template (ifo char(2), mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float)')
 
-    f = open('%s-TMPLTBANK_%s.csv' % (ifo, cluster))
+    f = open('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster))
     totypes = [str, float, float, float, float, float, float]
 
     for l in f:
@@ -1011,7 +1090,7 @@ def setup_memory_db(ifo, level, cluster):
     # Create search summary table
     cursor.execute('CREATE TABLE search_summary(out_start_time int, out_end_time int)')
 
-    f = open('%s-%d-SUMMARY_%s.csv' % (ifo, level, cluster))
+    f = open('%s/%s-%d-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, level, cluster))
     totypes = [int, int]
 
     for l in f:
@@ -1023,13 +1102,13 @@ def setup_memory_db(ifo, level, cluster):
     return conn
 
 
-def plot_rate_vs_time(ifo, veto_level, cluster, start_time, end_time):
+def plot_rate_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     """Rate (per sec) vs. time"""
 
     num_min     = (end_time - start_time) / 60
     mins_in_day = range(num_min)
     counts = [1e-6 for i in mins_in_day]
-    f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f      = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
 
     for line in f:
         trig_end_time = int(line.split(',')[0]) 
@@ -1053,13 +1132,52 @@ def plot_rate_vs_time(ifo, veto_level, cluster, start_time, end_time):
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel(make_time_label(start_time))
     pylab.ylabel('Rate (Hz)')
-    pylab.savefig('%s_%d_%s_rate_vs_time.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_rate_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
     
 
-def plot_bank_veto(ifo, veto_level, cluster, start_time, end_time):
+
+
+def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
     """Bank chi^2 vs snr"""
 
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
+
+    snrs   = []
+    chisqs = []
+
+    for l in f:
+        data = l.split(',')
+        dof  = int(data[14])
+        rho  = float(data[3])
+        chisq = float(data[13])
+
+        snrs.append(rho)
+        chisqs.append(chisq / (2 * dof - 2))
+
+    pylab.figure(0)
+
+    pylab.plot(snrs,chisqs,'rx')
+    pylab.yscale('log')
+
+    if snrs:
+        if max(snrs) > 11:
+            pylab.xscale('log')
+
+        pylab.xlim(5.0,max(snrs) * 1.1)
+        pylab.ylim(min(chisqs) * 0.9, max(chisqs) * 1.1)
+
+    pylab.grid()
+    pylab.xlabel('snr')
+    pylab.ylabel('chisq / (2p-2)')
+    pylab.title(make_title(ifo, veto_level, cluster, start_time))
+
+    pylab.savefig('%s/%s_%d_%s_bank_veto.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+
+def plot_bank_veto_old(config, ifo, veto_level, cluster, start_time, end_time):
+    """Bank chi^2 vs snr: Old version, made each DOF a separate plot"""
+
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
 
     snrs   = []
     chisqs = []
@@ -1094,13 +1212,13 @@ def plot_bank_veto(ifo, veto_level, cluster, start_time, end_time):
             pylab.ylabel('chisq')
             pylab.title(make_title(ifo, veto_level, cluster, start_time, desc='dof = %d' % i))
 
-            pylab.savefig('%s_%d_%s_bank_veto_dof_%d.png' % (ifo, veto_level, cluster, i))
+            pylab.savefig('%s/%s_%d_%s_bank_veto_dof_%d.png' % (config['out_dir'], ifo, veto_level, cluster, i))
 
 
-def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
+def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
     """Histogram of SNRs"""
 
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     bins = [1e-40 for i in range(0,31)]  # Start off non-empty to avoid problems with no triggers
     remaining = 0
     huge_snrs = 0
@@ -1143,7 +1261,7 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
 
         non_gaussianity = gtotal / total_count
 
-        f_out = open('%s-%d-%s_nongaussianity.txt' % (ifo, veto_level, cluster), 'w')
+        f_out = open('%s/%s-%d-%s_nongaussianity.txt' % (config['out_dir'], ifo, veto_level, cluster), 'w')
         print >>f_out, non_gaussianity
         f_out.close()
 
@@ -1168,7 +1286,7 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel('SNR^2')
     pylab.ylabel('Count')
-    pylab.savefig('%s_%d_%s_snr_hist.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_snr_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
 
     # Plot everything!
     fig = pylab.figure(1, figsize=(8.1,4.3))
@@ -1191,14 +1309,14 @@ def plot_snr_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel('SNR^2')
     pylab.ylabel('Count')
-    pylab.savefig('%s_%d_%s_snr_hist_all.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_snr_hist_all.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 
-def plot_template_counts(ifo, veto_level, cluster, start_time, end_time):
+def plot_template_counts(config, ifo, veto_level, cluster, start_time, end_time):
     """Template counts as a 2-d scatter plot"""
 
-    connection = setup_memory_db(ifo, veto_level, cluster)
+    connection = setup_memory_db(config, ifo, veto_level, cluster)
     
     res    = [row for row in connection.cursor().execute('SELECT mtotal, eta, COUNT(*) FROM sngl_inspiral GROUP BY mtotal, eta')]
     mtots  = [float(x[0]) for x in res]
@@ -1223,12 +1341,12 @@ def plot_template_counts(ifo, veto_level, cluster, start_time, end_time):
     pylab.title('Log(count) of triggers per template')
     pylab.xlabel('Total Mass (M_sun)')
     pylab.ylabel('eta')
-    pylab.savefig('%s_%d_%s_template_counts.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_template_counts.png' % (config['out_dir'], ifo, veto_level, cluster))
 
     connection.close()
     
 
-def plot_hexmass(ifo, veto_level, cluster, start_time, end_time):
+def plot_hexmass(config, ifo, veto_level, cluster, start_time, end_time):
     """Hexbined plot of total mass vs. time"""
 
     SECS_PER_HOUR = 60.0 * 60.0
@@ -1237,7 +1355,7 @@ def plot_hexmass(ifo, veto_level, cluster, start_time, end_time):
     mtots = []
     times = []
 
-    f = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     for line in f:
         tmp = line.strip().split(',')
         times.append( (float(tmp[0]) - start_time) / SECS_PER_HOUR )
@@ -1254,11 +1372,11 @@ def plot_hexmass(ifo, veto_level, cluster, start_time, end_time):
     pylab.xlabel(make_time_label(start_time))
     pylab.xticks(range(0,26,2))
     pylab.ylabel('Mass (M_sun)')
-    pylab.savefig('%s_%d_%s_hexmass.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_hexmass.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 
-def plot_mass_hist(ifo, veto_level, cluster, start_time, end_time):
+def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
     """Histogram of templates by mass"""
 
     rnge = range(45)
@@ -1275,7 +1393,7 @@ def plot_mass_hist(ifo, veto_level, cluster, start_time, end_time):
 
         return bins
 
-    bins = filename_to_bins('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster), 6, 8)
+    bins = filename_to_bins('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster), 6, 8)
     fig  = pylab.figure(0, figsize=(8.1,4.0))
     # axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
     # fig.add_axes(axes)
@@ -1298,9 +1416,9 @@ def plot_mass_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.legend(['Triggers by duration'])
     pylab.xlabel('Duration (sec)')
     pylab.ylabel('Num. triggers')
-    pylab.savefig('%s_%d_%s_mass_hist.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_mass_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
 
-    weights = filename_to_bins('%s-TMPLTBANK_%s.csv' % (ifo, cluster), 3, 5)
+    weights = filename_to_bins('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster), 3, 5)
 
     pylab.figure(2, figsize=(8.1,4.0))
 
@@ -1317,7 +1435,7 @@ def plot_mass_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.legend(['Templates by duration'])
     pylab.xlabel('Duration (sec)')
     pylab.ylabel('Num. Templates')
-    pylab.savefig('%s_%d_%s_tmpl_hist.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_tmpl_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
 
     weights = [w or 1 for w in weights]
     wbins   = [bins[i] / weights[i] for i in rnge]
@@ -1331,7 +1449,7 @@ def plot_mass_hist(ifo, veto_level, cluster, start_time, end_time):
     pylab.xlabel('Duration (sec)')
     pylab.ylabel('Num. triggers / Num. templates')
 
-    pylab.savefig('%s_%d_%s_mass_hist_norm.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_mass_hist_norm.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 if __name__ == '__main__':
@@ -1354,37 +1472,30 @@ if __name__ == '__main__':
                'plot_bank_veto':         plot_bank_veto,
                'plot_mass_hist':       plot_mass_hist}
                
+    options = parse_command_line()
 
-    if len(sys.argv) == 3:
-        if sys.argv[1] in ['make_index_page','make_dag']:
-            start = int(sys.argv[2])
-            end   = start + (24 * 60 * 60)
-            actions[sys.argv[1]]('', 0, '', start, end)
-            sys.exit(0)
+    action     = options.action
+    start_time = int(options.gps_start_time)
+    end_time   = options.gps_end_time and int(options.gps_end_time) or start_time + (24*60*60)
+    ifos       = options.ifos and options.ifos.split(',') or ['none']
+    cats       = options.veto_categories and options.veto_categories.split(',') or [-1]
+    clusters   = options.cluster_categories and options.cluster_categories.split(',') or ['none']
+    config     = options.config and parse_config(options.config) or {}
 
-    if len(sys.argv) < 6:
-        print >>sys.stderr, "Usage: %s cmd ifos veto_levels cluster_types start_time [end_time]" % sys.argv[0]
-        print >>sys.stderr, "  where cmd is one of:\n   ", "\n    ".join(actions.keys())
-        sys.exit(1)
-        
-    if len(sys.argv) == 6:
-        action, ifos, cats, clusters, start = sys.argv[1:]
-        start = int(start)
-        end   = start + (24 * 60 * 60)
-    else:
-        action, ifos, cats, clusters, start, end = sys.argv[1:]
-        start = int(start)
-        end   = int(end)
+    for k in ['out_dir','trigger_dir','tmp_dir']:
+        if k not in config:
+            config[k] = '.'
+
 
     # Don't connect to the database unless we need to, since doing so
     # brings in all the pyglobus stuff that may not be available.
     if action == 'make_veto_files':
         engine = setup_db()
-        actions['make_veto_files'] = lambda ifo, cat, cluster, start, end: make_veto_files(engine, ifo, cat, cluster, start, end)
+        actions['make_veto_files'] = lambda config, ifo, cat, cluster, start, end: make_veto_files(engine, config, ifo, cat, cluster, start, end)
 
     # Run over all the ifos and categories provided
-    for ifo in ifos.split(','):
-        for cat in map(int, cats.split(',')):
-            for cluster in clusters.split(','):
-                actions[action](ifo, cat, cluster, start, end)
+    for ifo in ifos:
+        for cat in map(int, cats):
+            for cluster in clusters:
+                actions[action](config, ifo, cat, cluster, start_time, end_time)
 

@@ -28,7 +28,7 @@ lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
 bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) $(LALFRAMEONLYPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if HAVE_PYTHON
