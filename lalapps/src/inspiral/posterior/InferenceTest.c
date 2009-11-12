@@ -659,6 +659,7 @@ void NelderMeadEval(struct tagLALInferenceRunState *runState,
                     REAL8 *logprior, REAL8 *loglikelihood)
 // auxiliary function for "NelderMeadAlgorithm()".
 // evaluate Prior & Likelihood for a given (sub-) set of parameters.
+//  /!\  side effect: alters value of "runState->currentParams" !
 {
   int i;
   // copy over (subset of) values from "value" argument
@@ -694,19 +695,21 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
 /*    optimize. By now simply all "REAL8" values are used.                          */
 /*  - allow to specify "ML" option from outside function.                           */
 /*  - allow to supply starting simplex?                                             */
+/*  - allow to specify stop criteria from outside.                                  */
 /*  - get rid of text output.                                                       */
-/*  - still crashes sometimes in starting simplex generation (reason unknown)       */
 /************************************************************************************/
 {
   REAL8 a = 1.0; // Reflexion coefficient   :  a > 0
   REAL8 b = 0.5; // Contraction coefficient :  0 < b < 1
   REAL8 g = 2.9; // Expansion coefficient   :  g > 1
   //REAL8 e = sqrt(LAL_REAL8_EPS); // stop criterion
-  REAL8 e = 0.001; // stop criterion 
+  REAL8 e = 0.001;   // stop criterion 
+  int maxiter = 500; // also stop criterion
 
   int i, j;
   int ML = 1; // ML==1 --> Maximum-Likelihood (ML);  ML==0 --> Maximum-A-Posteriori (MAP).
   LALVariables param;
+  LALVariables startval;
   char str[VARNAME_MAX];
   int nmDim;            // dimension of (sub-) space to be optimized over.
   char **nameVec=NULL;  // vector of dimensions' names.
@@ -722,6 +725,9 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
   
   printf(" NelderMeadAlgorithm(); current parameter values:\n");
   printVariables(runState->currentParams);
+  startval.head=NULL;
+  startval.dimension=0;
+  copyVariables(runState->currentParams, &startval);
 
   // initialize "param":
   param.head=NULL;
@@ -769,13 +775,12 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
   if (!(loglikelihood>-HUGE_VAL))
     die(" ERROR in NelderMeadAlgorithm(): invalid starting value provided.\n");
   val_simplex[0] = ML ? loglikelihood : logprior+loglikelihood;
-  printf(" NelderMeadAlgorithm(): populating starting simplex...\n");
   // remaining corners are drawn from "runState->proposal()" function:
-  for (i=1; i<(nmDim+1); ++i) {
+  for (i=1; i<(nmDim+1); ++i) {  // (loop over vertices (except 1st))
     logprior = -HUGE_VAL;
-    printf("  [%d]",i);
     while (!(logprior > -HUGE_VAL)) {
       // draw a proposal & copy over:
+      copyVariables(&startval, runState->currentParams);
       runState->proposal(runState, &param);
       for (j=0; j<nmDim; ++j)
         simplex[i*nmDim+j] = *(REAL8*) getVariable(&param, nameVec[j]);
@@ -783,7 +788,6 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
       NelderMeadEval(runState, nameVec, &simplex[i*nmDim], nmDim, &logprior, &loglikelihood);
       val_simplex[i] = ML ? loglikelihood : logprior+loglikelihood;
     }    
-    printf(" done.\n");
   }
   // determine minimum & maximum in simplex:
   mini = maxi = 0;
@@ -791,7 +795,6 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     if (val_simplex[i] < val_simplex[mini]) mini = i;
     if (val_simplex[i] > val_simplex[maxi]) maxi = i;
   }
-  printf(" ...done.\n");
 
   // start actual Nelder-Mead iterations:
   iteration = 0;
@@ -874,7 +877,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     printf(" iter=%d,  maxi=%f,  range=%f\n", 
            iteration, val_simplex[maxi], val_simplex[maxi]-val_simplex[mini]);
     // termination condition:
-    terminate = ((val_simplex[maxi]-val_simplex[mini]<e) || (iteration>=500));
+    terminate = ((val_simplex[maxi]-val_simplex[mini]<e) || (iteration>=maxiter));
   }
   // copy optimized value over to "runState->currentParams":
   for (j=0; j<nmDim; ++j)
@@ -884,6 +887,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
   printf(" NelderMeadAlgorithm(); done.\n");
   printVariables(runState->currentParams);
 
+  destroyVariables(&startval);
   destroyVariables(&param);
   free(R8Vec);
   for (i=0; i<nmDim; ++i) free(nameVec[i]);
