@@ -24,7 +24,7 @@ lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
 lalapps_MakeCleanSFTsNObil2_SOURCES=MakeCleanSFTsNObil2.c
 lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c XLALPSSInterface.c
-lalapps_MakePSSCleanSFTs_LDADD = -lsfdb -lpss -lastro -lnovas
+lalapps_MakePSSCleanSFTs_LDADD = -lpsssfdb -lpss -lpssastro -lpssnovas
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
