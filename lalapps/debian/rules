@@ -19,9 +19,9 @@ PREFIX = /opt/lscsoft/lalapps
 FRAMEPREFIX = /opt/lscsoft/libframe
 METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
-LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
 LALFRAMEPREFIX = /opt/lscsoft/lalframe
 LALXMLPREFIX = /opt/lscsoft/lalxml
+LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
 
 CFLAGS = -Wall -g
 
@@ -40,7 +40,7 @@ config.status: configure
 #	LDFLAGS="-Wl,-z,defs" \
 # moved to install
 #	CFLAGS="$(CFLAGS)" \
-#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
+#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 #	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 #	    --prefix=$(PREFIX) \
 #	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
@@ -77,7 +77,7 @@ install: build
 	for v in 2.4 2.5; do                                                         \
 	PYTHON="/usr/bin/python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX)                                                \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
