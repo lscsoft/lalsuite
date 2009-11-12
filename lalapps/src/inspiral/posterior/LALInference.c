@@ -54,19 +54,38 @@ void die(char *message)
 
 
 LALVariableItem *getItem(LALVariables *vars,const char *name)
+/* (this function is only to be used internally) */
+/* Returns pointer to item for given item name.  */
 {
-  LALVariableItem *this=vars->head;
-  while(this!=NULL) { 
-    if(!strcmp(this->name,name)) break;
-    else this=this->next;
+  LALVariableItem *this = vars->head;
+  while (this != NULL) { 
+    if (!strcmp(this->name,name)) break;
+    else this = this->next;
   }
   return(this);
 }
 
 
+LALVariableItem *getItemNr(LALVariables *vars, int index)
+/* (this function is only to be used internally)  */
+/* Returns pointer to item for given item number. */
+{
+  int i=1;
+  if (index < i) die(" Error in getItemNr(): requesting zero or negative index entry.\n");
+  LALVariableItem *this=vars->head;
+  while (this != NULL) { 
+    if (i == index) break;
+    else {
+      this = this->next;
+      ++i;
+    }
+  }
+  return(this);
+}
+
 
 void *getVariable(LALVariables * vars,const char * name)
-/* Return the value of variable name from the vars structure by walking the list*/
+/* Return the value of variable name from the vars structure by walking the list */
 {
   LALVariableItem *item;
   item=getItem(vars,name);
@@ -78,8 +97,43 @@ void *getVariable(LALVariables * vars,const char * name)
 }
 
 
+INT4 getVariableDimension(LALVariables *vars)
+{
+  return(vars->dimension);
+}
 
-void setVariable(LALVariables * vars,const char * name, void *value)
+
+VariableType getVariableType(LALVariables *vars, int index)
+/* Returns type of the i-th entry, */
+/* where  1 <= index <= dimension. */
+{
+  LALVariableItem *item;
+  if ((index < 1) | (index > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
+            index, vars->dimension);
+    exit(1);
+  }
+  item = getItemNr(vars, index);
+  return(item->type);
+}
+
+
+char *getVariableName(LALVariables *vars, int index)
+/* Returns (pointer to) the name of the i-th entry, */
+/* where  1 <= index <= dimension.                  */
+{
+  LALVariableItem *item;
+  if ((index < 1) | (index > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
+            index, vars->dimension);
+    exit(1);
+  }
+  item = getItemNr(vars, index);
+  return(item->name);
+}
+
+
+void setVariable(LALVariables * vars, const char * name, void *value)
 /* Set the value of variable name in the vars structure to value */
 {
   LALVariableItem *item;
@@ -94,7 +148,7 @@ void setVariable(LALVariables * vars,const char * name, void *value)
 
 
 
-void addVariable(LALVariables * vars,const char * name, void *value, VariableType type)
+void addVariable(LALVariables * vars, const char * name, void *value, VariableType type)
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */

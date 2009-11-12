@@ -59,6 +59,10 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALVariables *params);
 void BasicMCMCOneStep(LALInferenceRunState *runState);
 //Test LALAlgorithm
 void MCMCAlgorithm (struct tagLALInferenceRunState *runState);
+void NelderMeadEval(struct tagLALInferenceRunState *runState,
+                    char **names, REAL8 *values, int dim,
+                    REAL8 *logprior, REAL8 *loglikelihood);
+void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables *subset);
 
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
@@ -325,6 +329,7 @@ int main(int argc, char *argv[]){
 	runstate->currentParams=&currentParams;
 	MCMCAlgorithm(runstate);
 	fprintf(stdout, "End of MCMC basic Sampler test\n");
+        NelderMeadAlgorithm(runstate, NULL);
 
     /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
@@ -646,4 +651,247 @@ void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
       printVariables(runState->currentParams);
     }
   }
+}
+
+
+void NelderMeadEval(struct tagLALInferenceRunState *runState,
+                    char **names, REAL8 *values, int dim,
+                    REAL8 *logprior, REAL8 *loglikelihood)
+// auxiliary function for "NelderMeadAlgorithm()".
+// evaluate Prior & Likelihood for a given (sub-) set of parameters.
+{
+  int i;
+  // copy over (subset of) values from "value" argument
+  // (other parameter values, if any, remain as they are):
+  for (i=0; i<dim; ++i) {
+    setVariable(runState->currentParams, names[i], &values[i]);
+  }
+  // evaluate prior & likelihood:
+  *logprior = runstate->prior(runstate, runstate->currentParams);
+  if (*logprior > -HUGE_VAL)
+    *loglikelihood = runState->likelihood(runstate->currentParams, runState->data, runState->template);
+  else
+    *loglikelihood = -HUGE_VAL;
+  runState->currentLikelihood = *loglikelihood;
+  // printf(" x");
+  return;
+}
+
+
+void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables *subset)
+/************************************************************************************/
+/*  Nelder-Mead (flexible polyhedron search) algorithm                              */
+/*  following D. M. Himmelblau (1972): Applied nonlinear programming. McGraw-Hill.  */
+/************************************************************************************/
+/* Starting values are generated from the "runState->currentParams" value, by       */
+/* using repeated draws from "runState->proposal()" function while ensuring         */
+/* non-zero prior density for these.                                                */
+/* Depending on the "ML" setting (still hard-coded, see below), it will either      */
+/* aim for Maximum-Likelihood (ML) or Maximum-A-Posteriori (MAP) values.            */
+/************************************************************************************/
+/* TO DO:                                                                           */
+/*  - use (named) "subset" argument to determine subset of parameters over which to */
+/*    optimize. By now simply all "REAL8" values are used.                          */
+/*  - allow to specify "ML" option from outside function.                           */
+/*  - allow to supply starting simplex?                                             */
+/*  - get rid of text output.                                                       */
+/*  - still crashes sometimes in starting simplex generation (reason unknown)       */
+/************************************************************************************/
+{
+  REAL8 a = 1.0; // Reflexion coefficient   :  a > 0
+  REAL8 b = 0.5; // Contraction coefficient :  0 < b < 1
+  REAL8 g = 2.9; // Expansion coefficient   :  g > 1
+  //REAL8 e = sqrt(LAL_REAL8_EPS); // stop criterion
+  REAL8 e = 0.001; // stop criterion 
+
+  int i, j;
+  int ML = 1; // ML==1 --> Maximum-Likelihood (ML);  ML==0 --> Maximum-A-Posteriori (MAP).
+  LALVariables param;
+  char str[VARNAME_MAX];
+  int nmDim;            // dimension of (sub-) space to be optimized over.
+  char **nameVec=NULL;  // vector of dimensions' names.
+  REAL8 *R8Vec=NULL;
+  REAL8 *simplex=NULL;  // (d x (d+1)) - matrix containing simplex vertices.
+  REAL8 *val_simplex;   // corresponding function values (likelihood or posterior).
+  REAL8 logprior, loglikelihood; // dummy variables.
+  REAL8 *centroid, *reflected, *expanded, *contracted; // proposed new vertices...
+  REAL8 val_centroid, val_reflected, val_expanded, val_contracted; // ...and corresponding function values
+  int iteration;
+  int terminate=0;
+  int mini, maxi;
+  
+  printf(" NelderMeadAlgorithm(); current parameter values:\n");
+  printVariables(runState->currentParams);
+
+  // initialize "param":
+  param.head=NULL;
+  param.dimension=0;
+  // "subset" specified? If not, simply gather all REAL8 elements of "currentParams" to optimize over:
+  if (subset==NULL) {
+    if (runstate->currentParams == NULL) 
+      die(" ERROR in NelderMeadAlgorithm(): no \"runstate->currentParams\" vector provided.\n");
+    i = getVariableDimension(runstate->currentParams);
+    if (i==0) 
+      die(" ERROR in NelderMeadAlgorithm(): empty \"runstate->currentParams\" vector provided.\n");
+    for (j=1; j<=i; ++j) {  // check "currentParams" entries and copy all REAL( values:
+      if (getVariableType(runstate->currentParams, j) == REAL8_t){
+	strcpy(str, getVariableName(runstate->currentParams, j));
+        addVariable(&param, str, getVariable(runstate->currentParams, str), REAL8_t);
+      }
+    }
+  }
+  else {
+    die(" ERROR in NelderMeadAlgorithm(): \"subset\" feature not yet implemented.\n");
+    // TODO: take a (named) "subset" vector of zeroes/ones indicating which variables optimize over and which to keep fixed.
+  }
+
+  // Figure out parameter space dimension, names, &c.:
+  nmDim   = getVariableDimension(&param);
+  R8Vec   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+  nameVec = (char**) malloc(sizeof(char*) * nmDim);
+  for (i=0; i<nmDim; ++i) {
+    nameVec[i] = (char*) malloc(sizeof(char) * VARNAME_MAX);
+    strcpy(nameVec[i], getVariableName(&param, i+1));
+    R8Vec[i] = *(REAL8*) getVariable(&param, nameVec[i]);
+  }
+  simplex       = (REAL8*) malloc(sizeof(REAL8) * nmDim * (nmDim+1));
+  val_simplex   = (REAL8*) malloc(sizeof(REAL8) * (nmDim+1));
+  centroid   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+  reflected  = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+  expanded   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+  contracted = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+
+  // populate simplex;
+  // first corner is starting value:
+  for (j=0; j<nmDim; ++j)
+    simplex[j] = *(REAL8*) getVariable(&param, nameVec[j]);
+  NelderMeadEval(runState, nameVec, &simplex[0], nmDim, &logprior, &loglikelihood);
+  if (!(loglikelihood>-HUGE_VAL))
+    die(" ERROR in NelderMeadAlgorithm(): invalid starting value provided.\n");
+  val_simplex[0] = ML ? loglikelihood : logprior+loglikelihood;
+  printf(" NelderMeadAlgorithm(): populating starting simplex...\n");
+  // remaining corners are drawn from "runState->proposal()" function:
+  for (i=1; i<(nmDim+1); ++i) {
+    logprior = -HUGE_VAL;
+    printf("  [%d]",i);
+    while (!(logprior > -HUGE_VAL)) {
+      // draw a proposal & copy over:
+      runState->proposal(runState, &param);
+      for (j=0; j<nmDim; ++j)
+        simplex[i*nmDim+j] = *(REAL8*) getVariable(&param, nameVec[j]);
+      // compute prior & likelihood:
+      NelderMeadEval(runState, nameVec, &simplex[i*nmDim], nmDim, &logprior, &loglikelihood);
+      val_simplex[i] = ML ? loglikelihood : logprior+loglikelihood;
+    }    
+    printf(" done.\n");
+  }
+  // determine minimum & maximum in simplex:
+  mini = maxi = 0;
+  for (i=1; i<(nmDim+1); ++i) {
+    if (val_simplex[i] < val_simplex[mini]) mini = i;
+    if (val_simplex[i] > val_simplex[maxi]) maxi = i;
+  }
+  printf(" ...done.\n");
+
+  // start actual Nelder-Mead iterations:
+  iteration = 0;
+  while (!terminate) {
+    ++iteration;
+    // determine centroid of simplex, excluding the worst (minimal) point:
+    for (i=0; i<nmDim; ++i) {      // (loop over parameter dimensions)
+      centroid[i] = 0.0;
+      for (j=0; j<(nmDim+1); ++j)  // (loop over simplex vertices)
+        centroid[i] += (j==mini) ? 0.0 : (1.0/((double)nmDim)) * simplex[j*nmDim+i];
+    }
+    NelderMeadEval(runState, nameVec, centroid, nmDim, &logprior, &loglikelihood);
+    val_centroid = ML ? loglikelihood : logprior+loglikelihood;
+
+    // REFLECT:
+    for (i=0; i<nmDim; ++i)
+      reflected[i] = centroid[i] + a*(centroid[i] - simplex[mini*nmDim + i]);
+    NelderMeadEval(runState, nameVec, reflected, nmDim, &logprior, &loglikelihood);
+    val_reflected = ML ? loglikelihood : logprior+loglikelihood;
+    if (val_reflected > val_simplex[maxi]) { // reflected better than best so far?
+      // EXPAND:
+      for (i=0; i<nmDim; ++i)
+        expanded[i] = centroid[i] + g*(reflected[i] - centroid[i]);
+      NelderMeadEval(runState, nameVec, expanded, nmDim, &logprior, &loglikelihood);
+      val_expanded = ML ? loglikelihood : logprior+loglikelihood;
+      if (val_expanded > val_simplex[maxi]) { // expanded better than best so far?
+        for (i=0; i<nmDim; ++i) // adopt expanded
+          simplex[mini*nmDim+i] = expanded[i];
+        val_simplex[mini] = val_expanded;
+      }
+      else {
+        for (i=0; i<nmDim; ++i) // adopt reflected
+          simplex[mini*nmDim+i] = reflected[i];
+        val_simplex[mini] = val_reflected;
+      }
+    }
+    else { // (reflected is worse that best so far)
+      // check: reflected better than any of current (except worst)?
+      j=0;
+      for (i=0; i<(nmDim+1); ++i)
+        j += ((i!=mini) && (val_reflected > val_simplex[i]));
+      if (j>0) {
+        for (i=0; i<nmDim; ++i) // adopt reflected
+          simplex[mini*nmDim+i] = reflected[i];
+        val_simplex[mini] = val_reflected;
+      }
+      else { // (reflected is either worst or 2nd worst)
+        if (val_reflected > val_simplex[mini]) { // if 2nd worst, adopt
+          for (i=0; i<nmDim; ++i) // adopt reflected
+            simplex[mini*nmDim+i] = reflected[i];
+          val_simplex[mini] = val_reflected;
+        }
+        // either way: CONTRACT:
+        for (i=0; i<nmDim; ++i)
+          contracted[i] = centroid[i] + b*(simplex[mini*nmDim+i] - centroid[i]);
+        NelderMeadEval(runState, nameVec, contracted, nmDim, &logprior, &loglikelihood);
+        val_contracted = ML ? loglikelihood : logprior+loglikelihood;
+        if (val_contracted > val_simplex[mini]) { // adopt contracted
+          for (i=0; i<nmDim; ++i)
+            simplex[mini*nmDim+i] = contracted[i];
+          val_simplex[mini] = val_contracted;
+        }
+        else { // contraction didn't help, REDUCE:
+          for (i=0; i<(nmDim+1); ++i)  // loop over vertices
+            if (i!=maxi) {
+              for (j=0; j<nmDim; ++j)  // loop over parameters
+                simplex[i*nmDim+j] += 0.5 * (simplex[maxi*nmDim+j] - simplex[i*nmDim+j]);
+              NelderMeadEval(runState, nameVec, &simplex[i*nmDim], nmDim, &logprior, &loglikelihood);
+              val_simplex[i] = ML ? loglikelihood : logprior+loglikelihood;
+	    }
+        }
+      }
+    }
+    // re-determine minimum & maximum:
+    mini = maxi = 0;
+    for (i=1; i<(nmDim+1); ++i) {
+      if (val_simplex[i] < val_simplex[mini]) mini = i;
+      if (val_simplex[i] > val_simplex[maxi]) maxi = i;
+    }
+    printf(" iter=%d,  maxi=%f,  range=%f\n", 
+           iteration, val_simplex[maxi], val_simplex[maxi]-val_simplex[mini]);
+    // termination condition:
+    terminate = ((val_simplex[maxi]-val_simplex[mini]<e) || (iteration>=500));
+  }
+  // copy optimized value over to "runState->currentParams":
+  for (j=0; j<nmDim; ++j)
+    setVariable(runState->currentParams, nameVec[j], &simplex[maxi*nmDim+j]);
+  runState->currentLikelihood = ML ? val_simplex[maxi] : runState->likelihood(runstate->currentParams, runState->data, runState->template);
+
+  printf(" NelderMeadAlgorithm(); done.\n");
+  printVariables(runState->currentParams);
+
+  destroyVariables(&param);
+  free(R8Vec);
+  for (i=0; i<nmDim; ++i) free(nameVec[i]);
+  free(nameVec);
+  free(simplex);
+  free(val_simplex);
+  free(centroid);
+  free(reflected);
+  free(expanded);
+  free(contracted);
 }

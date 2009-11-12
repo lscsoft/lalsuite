@@ -109,6 +109,9 @@ tagLALVariables
 } LALVariables;
 
 void *getVariable(LALVariables * vars, const char * name);
+INT4 getVariableDimension(LALVariables *vars);
+VariableType getVariableType(LALVariables *vars, int index);
+char *getVariableName(LALVariables *vars, int index);
 void setVariable(LALVariables * vars, const char * name, void * value);
 void addVariable(LALVariables * vars, const char * name, void * value, 
 	VariableType type);
