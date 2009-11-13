@@ -417,8 +417,13 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	
 	/* Call LALGeneratePPNAmpCorInspiral */
 	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
-	if(status.statusCode) REPORTSTATUS(&status);
-
+	if(status.statusCode)
+	{
+		REPORTSTATUS(&status);
+		chisq=DBL_MAX;
+		goto noWaveform;
+	}
+		
 	/* Set the epoch so that the t_c is correct */
 	end_time = XLALMCMCGetParameter(parameter,"time");
 
@@ -553,6 +558,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		XLALDestroyREAL4FrequencySeries(H_p_t);
 		XLALDestroyREAL4FrequencySeries(H_c_t);
 	}
+noWaveform:
 	/* return logL */
 	parameter->logLikelihood=logL;
 	return(logL);
