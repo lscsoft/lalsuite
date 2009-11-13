@@ -73,20 +73,16 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdO
     int row;
     int col;
 
-    fprintf(stderr,"in");
-
     for ( row = 0; row< maxSubBankSize; row++ )
     {
 	for ( col = 0; col < maxSubBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8g+i%.8g\t",ccmat->data[row*maxSubBankSize+col].re,ccmat->data[row*maxSubBankSize+col].im);
+	    fprintf(fdOut,"%.8g+(%.8g)*1j\t",ccmat->data[row*maxSubBankSize+col].re,ccmat->data[row*maxSubBankSize+col].im);
 	}
 
 	fprintf(fdOut,"\n");
 
     }
-
-    fprintf(stderr,"out");
 
     return 0;
 }
@@ -160,7 +156,7 @@ void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
   bankVetoData->workspace = NULL;
   bankVetoData->acorrMat = NULL;
   bankVetoData->revplan = NULL;
-  bankVetoData->tchirp = NULL;
+  bankVetoData->timeshift= NULL;
 }
 
 void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
@@ -169,7 +165,7 @@ void XLALDestroyBankVetoData(FindChirpBankVetoData *bvdata)
   if (bvdata->workspace) XLALDestroyCOMPLEX8Vector(bvdata->workspace);
   if (bvdata->acorrMat) XLALDestroyREAL4Vector(bvdata->acorrMat);
   if (bvdata->revplan) XLALDestroyREAL4FFTPlan(bvdata->revplan);
-  if (bvdata->tchirp) XLALDestroyREAL4Vector(bvdata->tchirp);
+  if (bvdata->timeshift) XLALDestroyREAL4Vector(bvdata->timeshift);
   return; 
 }
 
@@ -341,7 +337,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
                     FindChirpDataParams *params,
                     REAL4 dynRange,
                     REAL4 fLow,
-                    REAL4 deltaF)
+                    REAL4 deltaF,
+		    REAL4 deltaT)
 {
     /* Temporary variables that hold the real and imaginary parts
      * of the two templates, which will be multiplied together
@@ -372,7 +369,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     /* Parameters used to time shift templates */
     REAL4 phaseOffset;        // phase shift for template A
     double fBucket = 150.0;   // approximate frequency of the PSD bucket
-    REAL4 deltaChirp;
+    REAL4 deltaTimeShift;
 
 
     /* FIXME what do these do? */
@@ -386,15 +383,26 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     if ( !bankVetoData->workspace) bankVetoData->workspace = XLALCreateCOMPLEX8Vector(templateLength);
     if ( !bankVetoData->acorrMat) bankVetoData->acorrMat = XLALCreateREAL4Vector(bankVetoData->acorrMatSize * bankVetoData->length);
     if ( !bankVetoData->revplan) bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
-    if ( !bankVetoData->tchirp) bankVetoData->tchirp = XLALCreateREAL4Vector(bankVetoData->length);
+    if ( !bankVetoData->timeshift) bankVetoData->timeshift = XLALCreateREAL4Vector(bankVetoData->length);
 
-    /* Compute chirp times for time shifting */
+    /* Decide how to time shift each template */
     for (row = 0; row < vetoBank->subBankSize; row++ )
     {
-	bankVetoData->tchirp->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1, 
+
+	if ( 1 )
+	{
+	    //Try offseting by fixed time
+	    bankVetoData->timeshift->data[row] = (REAL4) 0*deltaT*row; 
+	}
+
+	if ( 0 )
+	{
+	    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1, 
 									   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
 									   fBucket,
 									   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal, 7) );
+	}
+
     }		
 	
 
@@ -409,14 +417,13 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		memset(bankVetoData->workspace->data, 0, bankVetoData->workspace->length * sizeof(COMPLEX8));
 	    }
 
-
-	    fprintf(stderr,"i=%d,j=%d\n",row,col);
 	    /* initialize the cross-correlation integral */
 	    crossCorrABreal = crossCorrABimag = 0;
 	    	    
 	    if ( (row < vetoBank->subBankSize) && (col < vetoBank->subBankSize) )
 	    {
-		/* if the templates are the same then do an autocorrelation function */
+		/* compute the amount of time to shift A relative to B */
+		deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
 		
 		/* find the ending sample point of the templates */
 		sampleMaxTmpltA = bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal / deltaF;
@@ -426,6 +433,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		for ( sample = startIndex; sample < templateLength-1; sample++ )
 		{
 		    if ( (sample > sampleMaxTmpltA) || (sample > sampleMaxTmpltB) ) break;
+
 		    sqResp = ( bankVetoData->resp->data[sample].re *
 			       bankVetoData->resp->data[sample].re +
 			       bankVetoData->resp->data[sample].im *
@@ -433,49 +441,49 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		    
 		    if ( bankVetoData->spec->data[sample] != 0 && sqResp != 0 )
 		    {
-
-			deltaChirp = bankVetoData->tchirp->data[col] - bankVetoData->tchirp->data[row];
-			phaseOffset = 2*LAL_PI*deltaF*sample*deltaChirp;
-
-			
-			/*  
-			 *  tmpltA* x tmpltB = (tmpltAreal-i*tmpltAimag) x (tmpltBreal+i*tmpltBimag) =
-			 *     (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag) +
-			 *   i*(tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal)
-			 *
-			 */
-
 			tmpltAreal = bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re;
 			tmpltAimag = bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im;
-			
-			/* Time shift tmplt A by deltaChirp */
+
+			phaseOffset = 2*LAL_PI*deltaF*sample*deltaTimeShift;			
+			/* 
+			 * Time shift tmplt A forward in time by deltaTimeShift, which is equivalent
+			 * to shifting A forward by timeshift[row] and B forward by timeshift[col].
+			 * This means that when comparing SNRs, we should look deltaTimeShift/deltaT
+			 * indices backwards in template B.
+			 */
 			tmpltAreal = tmpltAreal*cos(phaseOffset) - tmpltAimag*sin(phaseOffset);
 			tmpltAimag = tmpltAimag*cos(phaseOffset) + tmpltAreal*sin(phaseOffset);
 			
 			tmpltBreal = bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re /
 			  ( bankVetoData->spec->data[sample] * sqResp ) *
-			  params->ampVec->data[sample] * params->ampVec->data[sample];
-			
+			  params->ampVec->data[sample] * params->ampVec->data[sample];			
 			tmpltBimag = bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im /
 			  ( bankVetoData->spec->data[sample] * sqResp ) *
 			  params->ampVec->data[sample] * params->ampVec->data[sample];
 			
+			/*  
+			 *  tmpltA* x tmpltB = (tmpltAreal-i*tmpltAimag) x (tmpltBreal+i*tmpltBimag) =
+			 *     (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag) +
+			 *   i*(tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal)
+			 */
+
 			crossCorrABreal +=    (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag);
-			
 			crossCorrABimag +=    (tmpltAreal*tmpltBimag - tmpltAimag*tmpltBreal);
 			
 		    }
 		    
 		    if ( row == col )
 		    {	      
-			bankVetoData->workspace->data[sample].re = (REAL4) tmpltBreal * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re 
-			  + tmpltBimag * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im;
+			bankVetoData->workspace->data[sample].re = (REAL4)  (tmpltAreal*tmpltBreal + tmpltAimag*tmpltBimag);;
+			  //this should be the same as
+			  //tmpltBreal * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re 
+			  //+ tmpltBimag * bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im;
 			bankVetoData->workspace->data[sample].im = 0.0; /* must be 0 */
 		    }
 		    
 		}
 		
-		
+		/* if the templates are the same then do an autocorrelation function */
 		if ( row == col )
 		{ 
 		    XLALREAL4ReverseFFT( bankVetoData->acorr, bankVetoData->workspace, bankVetoData->revplan );
@@ -556,6 +564,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     
     UINT8 col;
     UINT8 snrIndexCol;
+    REAL4 deltaTimeShift;
 
     COMPLEX16 chisq;
     REAL4 chisq_mag = 0;
@@ -584,7 +593,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	if (row == col) continue;
 	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
 	
-
 	tmpltA_SNR_phi = 0; //FIXME
 	/* Time shift the cross correlation of template B with template B by tmpltA_SNR_phi */ 
 	crossCorrAB.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(tmpltA_SNR_phi)
@@ -597,7 +605,10 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	bankNorm = 2.0 - crossCorrAB_mag;
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
-	snrIndexCol = (UINT4) ( (double) snrIndexRow - round( ( bankVetoData->tchirp->data[col] -   bankVetoData->tchirp->data[row]) / deltaT ) );
+	//snrIndexCol = (UINT4) ( (double) snrIndexRow - round( ( bankVetoData->timeshift->data[col] -   bankVetoData->timeshift->data[row]) / deltaT ) );
+	deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
+	snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	//fprintf(stderr,"%d\t%d\n",snrIndexRow,snrIndexCol);
 
 	tmpltB_SNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
 	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
@@ -622,7 +633,7 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
   {
   bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   breakUpRegions(bankHead);
-  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
 
