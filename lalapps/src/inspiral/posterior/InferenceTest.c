@@ -657,16 +657,15 @@ void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
 void NelderMeadEval(struct tagLALInferenceRunState *runState,
                     char **names, REAL8 *values, int dim,
                     REAL8 *logprior, REAL8 *loglikelihood)
-// auxiliary function for "NelderMeadAlgorithm()".
-// evaluate Prior & Likelihood for a given (sub-) set of parameters.
-//  /!\  side effect: alters value of "runState->currentParams" !
+// Auxiliary function for "NelderMeadAlgorithm()" (see below).
+// Evaluates Prior & Likelihood for a given (sub-) set of parameters.
+//  /!\  Side effect: alters value of "runState->currentParams" !
 {
   int i;
   // copy over (subset of) values from "value" argument
   // (other parameter values, if any, remain as they are):
-  for (i=0; i<dim; ++i) {
+  for (i=0; i<dim; ++i)
     setVariable(runState->currentParams, names[i], &values[i]);
-  }
   // evaluate prior & likelihood:
   *logprior = runstate->prior(runstate, runstate->currentParams);
   if (*logprior > -HUGE_VAL)
@@ -689,6 +688,10 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
 /* non-zero prior density for these.                                                */
 /* Depending on the "ML" setting (still hard-coded, see below), it will either      */
 /* aim for Maximum-Likelihood (ML) or Maximum-A-Posteriori (MAP) values.            */
+/* In future, one should be able to specify the subset of parameters to be          */
+/* optimized over (since e.g. one wouldn't want to optimize over PN order, which    */
+/* may also be part of the parameters. Or one may want to keep sky location fixed). */
+/* By now the algorithm can only handle REAL8 parameters.                           */
 /************************************************************************************/
 /* TO DO:                                                                           */
 /*  - use (named) "subset" argument to determine subset of parameters over which to */
@@ -697,17 +700,16 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
 /*  - allow to supply starting simplex?                                             */
 /*  - allow to specify stop criteria from outside.                                  */
 /*  - get rid of text output.                                                       */
+/*  - somehow allow parameters like phase or rightascension to wrap around          */ 
+/*    (i.e. let the simplex move across parameter space bounds)                     */
 /************************************************************************************/
 {
-  REAL8 a = 1.0; // Reflexion coefficient   :  a > 0
-  REAL8 b = 0.5; // Contraction coefficient :  0 < b < 1
-  REAL8 g = 2.9; // Expansion coefficient   :  g > 1
+  int ML = 1; // ML==1 --> Maximum-Likelihood (ML);  ML==0 --> Maximum-A-Posteriori (MAP).
   //REAL8 e = sqrt(LAL_REAL8_EPS); // stop criterion
-  REAL8 e = 0.001;   // stop criterion 
-  int maxiter = 500; // also stop criterion
+  REAL8 epsilon = 0.001;  // stop criterion 
+  int maxiter = 500;      // also stop criterion
 
   int i, j;
-  int ML = 1; // ML==1 --> Maximum-Likelihood (ML);  ML==0 --> Maximum-A-Posteriori (MAP).
   LALVariables param;
   LALVariables startval;
   char str[VARNAME_MAX];
@@ -811,13 +813,13 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
 
     // REFLECT:
     for (i=0; i<nmDim; ++i)
-      reflected[i] = centroid[i] + a*(centroid[i] - simplex[mini*nmDim + i]);
+      reflected[i] = centroid[i] + 1.0*(centroid[i] - simplex[mini*nmDim + i]);
     NelderMeadEval(runState, nameVec, reflected, nmDim, &logprior, &loglikelihood);
     val_reflected = ML ? loglikelihood : logprior+loglikelihood;
     if (val_reflected > val_simplex[maxi]) { // reflected better than best so far?
       // EXPAND:
       for (i=0; i<nmDim; ++i)
-        expanded[i] = centroid[i] + g*(reflected[i] - centroid[i]);
+        expanded[i] = centroid[i] + 2.9*(reflected[i] - centroid[i]);
       NelderMeadEval(runState, nameVec, expanded, nmDim, &logprior, &loglikelihood);
       val_expanded = ML ? loglikelihood : logprior+loglikelihood;
       if (val_expanded > val_simplex[maxi]) { // expanded better than best so far?
@@ -849,7 +851,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
         }
         // either way: CONTRACT:
         for (i=0; i<nmDim; ++i)
-          contracted[i] = centroid[i] + b*(simplex[mini*nmDim+i] - centroid[i]);
+          contracted[i] = centroid[i] + 0.5*(simplex[mini*nmDim+i] - centroid[i]);
         NelderMeadEval(runState, nameVec, contracted, nmDim, &logprior, &loglikelihood);
         val_contracted = ML ? loglikelihood : logprior+loglikelihood;
         if (val_contracted > val_simplex[mini]) { // adopt contracted
@@ -877,7 +879,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     printf(" iter=%d,  maxi=%f,  range=%f\n", 
            iteration, val_simplex[maxi], val_simplex[maxi]-val_simplex[mini]);
     // termination condition:
-    terminate = ((val_simplex[maxi]-val_simplex[mini]<e) || (iteration>=maxiter));
+    terminate = ((val_simplex[maxi]-val_simplex[mini]<epsilon) || (iteration>=maxiter));
   }
   // copy optimized value over to "runState->currentParams":
   for (j=0; j<nmDim; ++j)
