@@ -707,7 +707,7 @@ tagFindChirpBankVetoData
   REAL4Vector		 *acorrMat;
   REAL4FFTPlan		 *revplan;
   UINT4 		 acorrMatSize;
-  REAL4Vector            *tchirp;
+  REAL4Vector            *timeshift;
 }
 FindChirpBankVetoData;
 /* </lalVerbatim> */
@@ -1099,7 +1099,8 @@ XLALBankVetoCCMat (
     FindChirpDataParams         *params,
     REAL4 			dynRange,
     REAL4 			fLow,
-    REAL4 			deltaF
+    REAL4 			deltaF,
+    REAL4                       deltaT
     );
 
 REAL4

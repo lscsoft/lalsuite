@@ -368,12 +368,12 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
     /* Parameters used to time shift templates */
     REAL4 phaseOffset;        // phase shift for template A
-    double fBucket = 150.0;   // approximate frequency of the PSD bucket
     REAL4 deltaTimeShift;
-
+    double fBucket = 150.0;   // approximate frequency of the PSD bucket
 
     /* FIXME what do these do? */
-    REAL8 sqResp, normfac; 
+    REAL8 sqResp; //Absolute value of response function
+    REAL8 normfac; 
 
     /* FIXME this should be a command line argument */
     bankVetoData->acorrMatSize = 200; /*200 points of autocorrelation function stored */
@@ -388,7 +388,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     /* Decide how to time shift each template */
     for (row = 0; row < vetoBank->subBankSize; row++ )
     {
-
 	if ( 1 )
 	{
 	    //Try offseting by fixed time
@@ -593,7 +592,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	if (row == col) continue;
 	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
 	
-	tmpltA_SNR_phi = 0; //FIXME
+	//tmpltA_SNR_phi = 0; //FIXME
 	/* Time shift the cross correlation of template B with template B by tmpltA_SNR_phi */ 
 	crossCorrAB.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(tmpltA_SNR_phi)
 	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(tmpltA_SNR_phi);
@@ -601,7 +600,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(tmpltA_SNR_phi);
 
 	crossCorrAB_mag = crossCorrAB.re * crossCorrAB.re + crossCorrAB.im * crossCorrAB.im;
-
 	bankNorm = 2.0 - crossCorrAB_mag;
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
@@ -615,8 +613,10 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	tmpltB_SNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
 	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
       
-	chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_real);
-	chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_imag);
+	//chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_real);
+	//chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_imag);
+	chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_mag);
+	chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_mag);
 	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
 	(*dof)++;
 
@@ -633,7 +633,8 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
   {
   bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   breakUpRegions(bankHead);
-  return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  //return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
 
