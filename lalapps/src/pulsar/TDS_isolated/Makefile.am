@@ -13,3 +13,5 @@ endif
 lalapps_pulsar_parameter_estimation_SOURCES = pulsar_parameter_estimation.c pulsar_parameter_estimation.h
 
 lalapps_heterodyne_pulsar_SOURCES = heterodyne_pulsar.c heterodyne_pulsar.h
+
+TESTS = test_heterodyne_pulsar.sh
