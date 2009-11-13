@@ -1085,3 +1085,109 @@ void templateASinOmegaT(LALIFOData *IFOdata)
   IFOdata->modelDomain = timeDomain;
   return;
 }
+
+void templateLALSTPN(LALIFOData *IFOdata)
+/********************************************************************************************/
+/* LALSTPN template																			*/
+/*  Required (`IFOdata->modelParams') parameters are:										*/
+/*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
+/*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
+/*   - "inclination"	(inclination angle; REAL8, radians)									*/
+/*   - "spin1x"			(x component of the spin of object 1; REAL8)						*/
+/*   - "spin1y"			(y component of the spin of object 1; REAL8)						*/
+/*   - "spin1z"			(z component of the spin of object 1; REAL8)						*/
+/*   - "spin2x"			(x component of the spin of object 2; REAL8)						*/
+/*   - "spin2y"			(y component of the spin of object 2; REAL8)						*/
+/*   - "spin2z"			(z component of the spin of object 2; REAL8)						*/
+/*	 - "phi0"			(here: 'startPhase', not coalescence phase; REAL8, radians)			*/
+/*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
+/*	 - "PNorder"		(Phase PN order; REAL8)												*/
+/********************************************************************************************/
+{
+
+	static LALStatus    status;
+	CoherentGW          waveform;
+	SimInspiralTable    injParams;
+	PPNParamStruc       ppnParams;
+	
+	double a1,a2,phi,shift;
+	
+	memset( &status, 0, sizeof(LALStatus) );
+	memset( &waveform, 0, sizeof(CoherentGW) );
+	memset( &injParams, 0, sizeof(SimInspiralTable) );
+	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+	
+	
+	injParams.mass1		    = *(REAL8*) getVariable(IFOdata->modelParams, "m1");				/* stellar mass */
+	injParams.mass2	        = *(REAL8*) getVariable(IFOdata->modelParams, "m2");			    /* stellar mass */
+	injParams.inclination   = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
+	injParams.spin1x		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1x");			/* dimentionless spin */
+	injParams.spin1y		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1y");			/* dimentionless spin */
+	injParams.spin1z		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1z");			/* dimentionless spin */
+	injParams.spin2x		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2x");		    /* dimentionless spin */
+	injParams.spin2y		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2y");		    /* dimentionless spin */
+	injParams.spin2z		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2z");		    /* dimentionless spin */
+	double phi0 = *(REAL8*) getVariable(IFOdata->modelParams, "phi0");							/* initial phase */
+	
+	double time			= *(REAL8*) getVariable(IFOdata->modelParams, "time");					/* time at coalescence */
+	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
+	
+	double PNorder = *(REAL8*) getVariable(IFOdata->modelParams, "PNorder");					/* Phase PN order, i.e. 0.0 ; 0.5 ; 1.5 ; 2.0; 2.5; 3.0 ; 3.5 */
+	
+	if (IFOdata->timeData==NULL) 
+		die(" ERROR in templateLALSTPN(): encountered unallocated 'timeData'.\n");
+	
+	ppnParams.deltaT = IFOdata->timeData->deltaT;
+	
+	injParams.f_final = IFOdata->fLow; // IFOdata->fLow * 0.9;
+	injParams.f_lower = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
+	
+
+//	char* waveformApproximant = (char*)calloc(128,sizeof(char));
+//	getWaveformApproximant("SpinTaylor",128,PNorder,waveformApproximant);  //Spinning
+//	snprintf(waveformApproximant,128,"SpinTaylorthreePointFivePN"); //Set it manually
+	
+	LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");
+	
+	
+    LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
+    if ( status.statusCode )
+    {
+		fprintf( stderr, " ERROR in templateLALSTPN(): error generating waveform.\n" );
+		exit( 1 );
+    }
+	
+
+	double chirptime = ppnParams.tc;
+	
+	
+  	long i;
+	for (i=0; i<IFOdata->timeData->data->length; ++i){
+		//t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu       */
+		a1  = waveform.a->data->data[2*i];
+        a2  = waveform.a->data->data[2*i+1];
+        phi     = waveform.phi->data->data[i] + phi0;
+        shift   = waveform.shift->data->data[i];
+		
+		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+	}
+	IFOdata->modelDomain = timeDomain;
+	
+//	free(waveformApproximant);
+	
+	LALSDestroyVectorSequence(&status, &( waveform.a->data ));
+	LALSDestroyVector(&status, &( waveform.f->data ));
+	LALDDestroyVector(&status, &( waveform.phi->data ));
+	LALSDestroyVector(&status, &( waveform.shift->data ));
+	
+	LALFree( waveform.a );
+	LALFree( waveform.f ); 
+	LALFree( waveform.phi) ;
+	LALFree( waveform.shift );
+	
+	
+	
+	return;
+}
+
