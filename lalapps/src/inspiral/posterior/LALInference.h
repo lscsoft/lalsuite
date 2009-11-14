@@ -239,6 +239,7 @@ void template3525TD(LALIFOData *IFOdata);
 void templateSineGaussian(LALIFOData *IFOdata);
 void templateDampedSinusoid(LALIFOData *IFOdata);
 void templateSinc(LALIFOData *IFOdata);
+void templateLALSTPN(LALIFOData *IFOdata);
 
 #endif
 

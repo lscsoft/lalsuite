@@ -235,7 +235,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout, " trying out 'templateStatPhase()'...\n");
     REAL8 mc   = 4.0;
     REAL8 eta  = 0.24;
-    REAL8 iota = 0.0;
+    REAL8 iota = 0.4;
     REAL8 phi  = 2.0;
     REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + 
 		(((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
@@ -340,7 +340,30 @@ int main(int argc, char *argv[]){
     dumptemplateTimeDomain(&currentParams, runstate->data, template3525TD, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
+	 
+	 double mass1=10.;
+	 double mass2=1.4;
+    addVariable(&currentParams, "m1",       &mass1,              REAL8_t);
+	addVariable(&currentParams, "m2",       &mass2,              REAL8_t);
+	  double spin1x = 0.5;
+	  double spin1y = 0.1;
+	  double spin1z = 0.0;
+	  double spin2x = 0.2;
+	  double spin2y = 0.0;
+	  double spin2z = 0.3;
+	  addVariable(&currentParams, "spin1x",       &spin1x,              REAL8_t);	  
+	  addVariable(&currentParams, "spin1y",       &spin1y,              REAL8_t);
+	  addVariable(&currentParams, "spin1z",       &spin1z,              REAL8_t);
+	  addVariable(&currentParams, "spin2x",       &spin2x,              REAL8_t);	  
+	  addVariable(&currentParams, "spin2y",       &spin2y,              REAL8_t);	  
+	  addVariable(&currentParams, "spin2z",       &spin2z,              REAL8_t);
+	  double phi0 = 0.3;
+	  addVariable(&currentParams, "phi0",       &phi0,              REAL8_t);	  
+	  double PNorder = 3.5;
+	  addVariable(&currentParams, "PNorder",       &PNorder,              REAL8_t);	  
+	  dumptemplateTimeDomain(&currentParams, runstate->data, templateLALSTPN, "test_TTemplateLALSTPN.csv");
 
+	  
     /* These are the LAL templates that (...seem to...) work right now: */
     /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
     numberI4 = LAL_PNORDER_TWO;
