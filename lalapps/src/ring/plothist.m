@@ -43,7 +43,8 @@ function plothist( veto_level, coinctype, ifo1, ifo2, bgfile, nonbgtype, nonbgfi
   hist(event,101)
   hold on
   h=findobj(gca,'Type','patch');
-  set(h,'FaceColor','r')  %set the time-slides to red
+  % set the time-slides to red
+  set(h,'FaceColor','r')
   [A,B]=hist(event,101);
 
   % plot number events in zerolag
