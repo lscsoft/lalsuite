@@ -331,13 +331,14 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   eta=XLALMCMCGetParameter(parameter,"eta");
   m1 = mc2mass1(mc,eta);
   m2 = mc2mass2(mc,eta);
+	parameter->logPrior+=-(5.0/6.0)*log(mc);
 
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+/*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; */
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
   return parameter->logPrior;
 }
@@ -373,7 +374,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+/*	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;*/
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
