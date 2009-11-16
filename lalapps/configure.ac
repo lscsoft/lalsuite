@@ -2,6 +2,7 @@ AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([\
   Makefile \
   lalapps.spec \
@@ -132,7 +133,7 @@ fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # further program checks
-AC_PROG_LIBTOOL
+LT_INIT
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
