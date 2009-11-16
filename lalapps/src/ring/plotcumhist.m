@@ -23,14 +23,17 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
 
   %%%%%%%%%%%%% CUMULATIVE HISTOGRAMS OF ZERO-LAG AND BACKGROUND COINC %%%%%%%%%%%%%
 
-  limit=max(max(bgdetstat),max(nonbgdetstat));  %plotting range
-  rho=0:limit/50:limit;   % binning the det stat
+  %plotting range
+  limit=max(max(bgdetstat),max(nonbgdetstat));
+  % binning the det stat
+  rho=0:limit/50:limit;
 
   for i=1:length(rho)
     % count the number of coincs below a given detstat value
     Nbg(i)=length(bgdetstat(bgdetstat>rho(i)));
   end
-  Nbg=Nbg./100;  %scaling the background to one "experiment"
+  %scaling the background to one "experiment"
+  Nbg=Nbg./100;
 
   for i=1:length(rho)
     Nnonbg(i)=length(nonbgdetstat(nonbgdetstat>rho(i)));
@@ -38,7 +41,8 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
 
   for i=1:length(Nnonbg)
     if Nnonbg(i)==0;
-       Nnonbg(i)=1e-5; % want to plot on a log scale, and so have to set values that are =0 to a small non-xero number
+       % want to plot on a log scale, and so have to set values that are =0 to a small non-xero number
+       Nnonbg(i)=1e-5;
     end
   end
 
@@ -48,7 +52,9 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
     end
   end
 
-  errp=Nbg+sqrt(Nbg);  % error bars
+
+  % error bars
+  errp=Nbg+sqrt(Nbg);
   errm=Nbg-sqrt(Nbg);
 
   for i=1:length(errm)
