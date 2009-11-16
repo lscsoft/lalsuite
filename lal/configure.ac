@@ -3,6 +3,7 @@ AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
@@ -186,7 +187,7 @@ dnl Checks for programs.
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LIBTOOL
+LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
