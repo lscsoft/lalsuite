@@ -178,12 +178,12 @@ __kernel void OpenCLComputeFstatFaFb(__global REAL4 *Fstat,
     Fb.im = 0.0f;
 
 #if !(USE_OPENCL_KERNEL_CPU)
-    int curSegment = get_group_id(0);
-    int curBin     = get_group_id(1);
+    int curSegment = get_group_id(1);
+    int curBin     = get_group_id(0);
     int maxSfts    = get_global_size(0) / get_num_groups(0);
     int curSfts    = get_local_id(0);
     int curIFO     = get_local_id(1);
-    int numSegs    = get_num_groups(0);
+    int numSegs    = get_num_groups(1);
 #endif    
 
     int offset = curIFO + NUM_IFOS * curSegment;

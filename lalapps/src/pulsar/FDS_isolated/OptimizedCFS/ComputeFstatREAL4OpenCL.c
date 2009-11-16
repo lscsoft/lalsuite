@@ -468,8 +468,8 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   size_t local_work_size[2], global_work_size[2];
   local_work_size[0] = clWp->maxNumSFTs;
   local_work_size[1] = clWp->numIFOs;
-  global_work_size[0] = local_work_size[0] * clWp->numSegments;
-  global_work_size[1] = local_work_size[1] * numBins;
+  global_work_size[0] = local_work_size[0] * numBins;
+  global_work_size[1] = local_work_size[1] * clWp->numSegments;
 
   err = clEnqueueNDRangeKernel(*(clWp->cmd_queue), *(clWp->kernel),
                                2, // Work dimensions
@@ -635,7 +635,8 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                       const MultiSFTVectorSequence *stackMultiSFT )
 {
   static const char *fn = "XLALInitCLWorkspace()";
-  static const char *cl_kernel_filepath = "/Users/oleg/lalsuite/lalapps/src/pulsar/FDS_isolated/kernel.cl"; //TODO: do something with hardcoded kernel path
+  // TODO: do something with the hardcoded kernel path
+  static const char *cl_kernel_filepath = "FStatOpenCLKernel.cl";
 
 #if USE_OPENCL_KERNEL
   cl_int err, err_total;
