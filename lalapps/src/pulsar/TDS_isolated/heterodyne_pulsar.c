@@ -1417,7 +1417,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     length = (INT4)floor( ROUND( resampleRate*data->data->length )/sampleRate );
   else
     length = data->data->length;
-  
+ 
   size = (INT4)ROUND( sampleRate/resampleRate );
 
   if( (series = XLALCreateCOMPLEX16TimeSeries( "", &epoch, 0., 1./resampleRate,
@@ -1573,7 +1573,6 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
   /* create time stamps */
   series->deltaT = 1./resampleRate;
   series->epoch = data->epoch;
-  series->data->length = count;
 
   return series;
 }
