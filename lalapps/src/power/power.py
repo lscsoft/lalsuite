@@ -969,7 +969,6 @@ def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, p
 	if preserve_cache is not None:
 		node.add_preserve_cache(preserve_cache)
 
-
 	# construct names for the node and output file, and override the
 	# segment if needed
 	[cache_entry] = node.get_output_cache()

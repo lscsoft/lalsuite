@@ -72,6 +72,9 @@ proc makeCalender {thisFid thisYearAndMonth} {
   if {$firstDayColOffset < 0} {
      set firstDayColOffset [expr 7 + $firstDayColOffset]; 
   }
+  if {$firstDayColOffset > 6} {
+     set firstDayColOffset [expr $firstDayColOffset - 7];
+  }
 
   # label the top of the calendar and the days of the week
   puts $thisFid "$thisMonthName $thisYear"
