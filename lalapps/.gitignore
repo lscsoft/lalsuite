@@ -51,7 +51,6 @@ src/detresponse/lalapps_ifo_response
 src/detresponse/lalapps_ifo_skyavg_ts
 src/detresponse/lalapps_test_earth
 src/detresponse/lalapps_test_gridding
-src/example/lalapps_hello
 src/findchirp/lalapps_BankEfficiency
 src/findchirp/lalapps_DistanceVsMass
 src/findchirp/lalapps_InspiralOverlap
@@ -89,6 +88,7 @@ src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
 src/inspiral/lalapps_gwf2xml
 src/inspiral/lalapps_ihope
+src/inspiral/lalapps_ihope_daily_page
 src/inspiral/lalapps_ihope_status
 src/inspiral/lalapps_inca
 src/inspiral/lalapps_injcut
@@ -118,10 +118,12 @@ src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
+src/inspiral/posterior/SPINspiral/lalapps_spinspiral
 src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
-src/inspiral/posterior/SPINspiral/lalapps_spinspiral
+src/lalapps/LALAppsVCSInfo.h
 src/lalapps/defaults.py
+src/lalapps/git_version
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version

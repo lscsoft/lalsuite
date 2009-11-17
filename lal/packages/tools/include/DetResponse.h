@@ -224,29 +224,6 @@ tagLALDetAMResponseSeries
 }
 LALDetAMResponseSeries;
 
-/* <lalLaTeX>
-\subsubsection*{Structure \texttt{LALGPSandAcc}}
-\idx[Type]{LALGPSandAcc}
-
-This structure aggregates GPS time and leap second accuracy requirement
-for converting GPS time to sidereal time (implicitly used in
-\texttt{LALComputeDetAMResponse()}).
-
-\begin{description}
-\item[\texttt{LIGOTimeGPS gps}] The GPS time
-\item[\texttt{LALLeapSecAccuracy accuracy}] The accuracy parameter
-\end{description}
-
-</lalLaTeX> */
-typedef struct
-tagLALGPSandAcc
-{
-  LIGOTimeGPS        gps;      /* GPS time */
-  LALLeapSecAccuracy accuracy; /* required accuracy in leap second
-                                  handling */
-}
-LALGPSandAcc;
-
 
 /* <lalLaTeX>
 \subsubsection*{Structure \texttt{LALTimeIntervalAndNSample}}
@@ -271,7 +248,6 @@ tagLALTimeIntervalAndNSample
   LIGOTimeGPS     epoch;
   REAL8           deltaT;    /* sampling interval */
   UINT4           nSample;   /* number of samples */
-  LALLeapSecAccuracy accuracy; /* accuracy for handling leap-seconds */
 }
 LALTimeIntervalAndNSample;
 
@@ -299,7 +275,7 @@ void
 LALComputeDetAMResponse( LALStatus             *status,
                          LALDetAMResponse      *pResponse,
                          const LALDetAndSource *pDetAndSrc,
-                         const LALGPSandAcc    *pGPSandAcc);
+                         const LIGOTimeGPS     *gps);
 
 void XLALComputeDetAMResponse(
 	double *fplus,

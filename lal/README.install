@@ -35,7 +35,7 @@ Other useful make targets are:
         make uninstall          # uninstall the library and header files
         make clean              # clean up compiled code (as before "make")
         make distclean          # clean up distribution (as before "configure")
-        make cvs-clean          # clean up to cvs files (as before "00boot")
+        make vcs-clean          # clean up to VCS files (as before "00boot")
 
 see the file INSTALL for additional details on configuring LAL.
 

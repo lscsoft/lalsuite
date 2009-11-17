@@ -9,5 +9,5 @@ endif
 
 bin_PROGRAMS = ${FRAME_PROGS}
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

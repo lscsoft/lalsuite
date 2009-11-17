@@ -605,7 +605,6 @@ LALSimulateCoherentGW( LALStatus        *stat,
     params.epoch.gpsSeconds -= dtPolBy2;
     params.deltaT = 2.0*dtPolBy2;
     params.nSample = nMax;
-    params.accuracy = LALLEAPSEC_STRICT;
 
     /* Compute table of responses. */
     LALComputeDetAMResponseSeries( stat->statusPtr, &polResponse,

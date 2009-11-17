@@ -47,7 +47,8 @@ int main(int argc, char **argv)
   FILE            *cross = NULL;
   FILE            *plus  = NULL;
   FILE            *times = NULL;
-  LALGPSandAcc     time_info, delta_t;
+  LIGOTimeGPS      gps;
+  INT4             delta_t;
   EphemerisData    ephem;
   LALSource        source;
   LALFrDetector    frdetector;
@@ -112,13 +113,10 @@ int main(int argc, char **argv)
   /*
    * set up time and sampling
    */
-  time_info.accuracy           = LALLEAPSEC_STRICT;
-  time_info.gps.gpsSeconds     = atoi(argv[7]);  /* start time */
-  time_info.gps.gpsNanoSeconds =         0;
+  gps.gpsSeconds     = atoi(argv[7]);  /* start time */
+  gps.gpsNanoSeconds =         0;
 
-  delta_t.accuracy           = LALLEAPSEC_STRICT;
-  delta_t.gps.gpsSeconds     = atoi(argv[8]);  /* sampling interval */
-  delta_t.gps.gpsNanoSeconds =         0;
+  delta_t = atoi(argv[8]);  /* sampling interval */
 
   n_timestep = atoi(argv[9]); /* no. of timesteps */
 
@@ -130,9 +128,9 @@ int main(int argc, char **argv)
 
   /* the gridding doesn't change with time */
   make_gridding(&s, &g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps));
+                &ephem, &gps);
   make_gridding(&s, &delta_g, n_ra, DETRESP_REGGRID, n_dec, DETRESP_REGGRID,
-                &ephem, &(time_info.gps));
+                &ephem, &gps);
 
   for (i = 0; i < g.ra->length - 1; ++i)
   {
@@ -165,7 +163,7 @@ int main(int argc, char **argv)
         det_and_src.pDetector = &detector;
         det_and_src.pSource   = &source;
       
-        LALComputeDetAMResponse(&s, &response, &det_and_src, &time_info);
+        LALComputeDetAMResponse(&s, &response, &det_and_src, &gps);
 
         /* really, am computing the square of the Fs multiplied by the area element */
         avg_plus  += (response.plus * response.plus) * sin(LAL_PI_2 - g.dec->data[j]) * delta_g.ra->data[i] * delta_g.dec->data[j];
@@ -181,9 +179,9 @@ int main(int argc, char **argv)
     /* writing out the mean square Fs */
     fprintf(plus,  "% .14e\n", avg_plus);
     fprintf(cross, "% .14e\n", avg_cross);
-    fprintf(times, "%ld\n", time_info.gps.gpsSeconds);
+    fprintf(times, "%d\n", gps.gpsSeconds);
 
-    time_info.gps.gpsSeconds += delta_t.gps.gpsSeconds;
+    gps.gpsSeconds += delta_t;
   }
 
   /*

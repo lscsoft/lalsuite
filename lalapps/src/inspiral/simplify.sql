@@ -1,3 +1,9 @@
+PRAGMA journal_mode = MEMORY;
+PRAGMA locking_mode = EXCLUSIVE;
+PRAGMA synchronous = OFF;
+PRAGMA temp_store = MEMORY;
+-- PRAGMA temp_store_directory = '/tmp';
+
 --
 -- coinc_definer clean up
 --
