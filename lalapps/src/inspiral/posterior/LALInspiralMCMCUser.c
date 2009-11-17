@@ -62,6 +62,9 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0
+#if DEBUGMODEL
+FILE *modelout=NULL;
+#endif
 gsl_rng *RNG;
 double timewindow;
 REAL4Vector *model;
@@ -459,12 +462,20 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 																	  NtimeDomain,
 																	  FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
 	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
-	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
+	LALTimeFreqRealFFT(&status,H_c_t,h_c_t,inputMCMC->likelihoodPlan); 
+	
+#if DEBUGMODEL !=0
+	char tmodelname[100];
+	sprintf(tmodelname,"tmodel_plus_%i.dat",det_i);
+	modelout = fopen(tmodelname,"w");
+	for(i=0;i<h_p_t->data->length;i++){
+		fprintf(modelout,"%g %g\n",h_p_t->data->data[i],h_c_t->data->data[i]);
+	}
+	fclose(modelout);
+#endif
 	XLALDestroyREAL4TimeSeries(h_p_t);
 	XLALDestroyREAL4TimeSeries(h_c_t);
-	
-	
-		
+
 	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
 	LALGPSandAcc GPSandAcc;
 	memcpy(&(GPSandAcc.gps),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
@@ -538,7 +549,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 			/* Student-t version */
 			/*			chisq+=log(real*real+imag*imag); */
 #if DEBUGMODEL !=0
-			fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
+			fprintf(modelout,"%lf %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",idx*deltaF,resp_r,resp_i,H_p_t->data->data[idx].re,H_p_t->data->data[idx].im,H_c_t->data->data[idx].re,H_c_t->data->data[idx].im);
 #endif
 		}
 #if DEBUGMODEL !=0
@@ -556,8 +567,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		if(coherent_gw.shift) XLALDestroyREAL4TimeSeries(coherent_gw.shift);
 		if(coherent_gw.h) {XLALDestroyREAL4VectorSequence(coherent_gw.h->data); LALFree(coherent_gw.h);}
 		if(coherent_gw.a) {XLALDestroyREAL4VectorSequence(coherent_gw.a->data); LALFree(coherent_gw.a);}
-		XLALDestroyREAL4FrequencySeries(H_p_t);
-		XLALDestroyREAL4FrequencySeries(H_c_t);
+		XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
+		XLALDestroyCOMPLEX8FrequencySeries(H_c_t);
 	}
 noWaveform:
 	/* return logL */
@@ -586,7 +597,6 @@ in the frequency domain */
 	REAL8 chisq=0.0;
 	REAL8 real,imag,f,t;
 	TofVIn TofVparams;
-	FILE *modelout;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
 	REAL8 ChirpISCOLength;
