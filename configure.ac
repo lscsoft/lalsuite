@@ -3,7 +3,6 @@ AC_CONFIG_SRCDIR([lal/configure.ac])
 AC_CONFIG_AUX_DIR([lal/misc])
 AC_CONFIG_MACRO_DIR([lal/misc])
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([lalsuite.spec])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
