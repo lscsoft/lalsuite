@@ -1,11 +1,11 @@
-function injection_param_plots( type, file_list )
+function injection_param_plots( injtype, file_list )
 
 %
-% NULL = injection_param_plots ( type, file_list )
+% NULL = injection_param_plots ( injtype, file_list )
 %
 % example: file_list = ['HL-INJECTIONS_1000_EOBNR_A-871147814-86400.xml';'HL-INJECTIONS_1002_EOBNR_A-871147814-86400.xml'];
 %
-% type = 'RINGDOWN', 'EOBNR', 'PHENOM'
+% injtype = 'RINGDOWN', 'EOBNR', 'PHENOM'
 %
 %
 % Sarah Caudill, Oct 28th 2009
@@ -39,9 +39,9 @@ N_files=length(file_list(:,1));
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title(''' type ': Quality_{inj} versus Freq_{inj}'');'])
+  eval(['plot_title=title(''' injtype ': Quality_{inj} versus Freq_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''' type '_injectparams_qvsfreq.png '')'])
+  eval(['saveas(gcf,''' injtype '_injectparams_qvsfreq.png'')'])
 
 
   %%%%%%%%%%%%%%%%%% SPIN VS MASS %%%%%%%%%%%%%%%%
@@ -55,12 +55,12 @@ N_files=length(file_list(:,1));
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title(''' type ': Spin_{inj} versus Total Mass_{inj}'');'])
+  eval(['plot_title=title(''' injtype ': Spin_{inj} versus Total Mass_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''' type '_injectparams_spinvsmass.png '')'])
+  eval(['saveas(gcf,''' injtype '_injectparams_spinvsmass.png'')'])
 
 
-  if strcmp(type,'EOBNR')||strcmp(type,'PHENOM')
+  if strcmp(injtype,'EOBNR')||strcmp(injtype,'PHENOM')
 
     % create the ringdown params structure and inspiral params structure by reading in the first file
     eval(['insp_params=readMeta(''' file_list(1,:) ''',''sim_inspiral'',0,''mass1,mass2'');'])
@@ -85,8 +85,8 @@ N_files=length(file_list(:,1));
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' type ': Mass1_{inj} versus Mass2_{inj}'');'])
+    eval(['plot_title=title(''' injtype ': Mass1_{inj} versus Mass2_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' type '_injectparams_mass1vsmass2.png '')'])
+    eval(['saveas(gcf,''' injtype '_injectparams_mass1vsmass2.png'')'])
 
   end

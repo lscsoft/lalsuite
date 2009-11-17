@@ -2272,47 +2272,33 @@ class CFarNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
-class PrintLCJob(pipeline.SqliteJob):
+class LigolwCBCPrintJob(pipeline.SqliteJob):
   """
-  A printlc job. The static options are read from the section [printlc] in
-  the ini file.
+  A LigolwCBCPrintJob is a generic job class for ligolw_cbc_print* programs, e.g., ligolw_cbc_printlc.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp, exec_name, sections, dax = False):
     """
     @cp: ConfigParser object from which options are read.
     @sections: list of sections for cp to read from
     """
-    exec_name = 'printlc'
-    sections = ['printlc']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
 
 
-class PrintLCNode(pipeline.SqliteNode):
+class LigolwCBCPrintNode(pipeline.SqliteNode):
   """
-  A PrintLC node.
+  A LigolwCBCPrintJob is a generic node class for ligolw_cbc_print* programs, e.g., ligolw_cbc_printlc.
+  This class offers options common to these programs.
   """
   def __init__(self, job):
     """
     @job: a PrintLCJob
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.__datatype = None
     self.__extract_to_xml = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
-
-  def set_datatype(self, datatype):
-    """
-    Sets datatype option.
-    """
-    self.add_var_opt('datatype', datatype)
-    self.__datatype = datatype
-
-  def get_datatype(self):
-    """
-    Gets datatype.
-    """
-    return self.__datatype
+    self.__sim_type = None
+    self.__output_format = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2352,6 +2338,112 @@ class PrintLCNode(pipeline.SqliteNode):
     Gets include-only-coincs option.
     """
     return self.__include_only_coincs
+
+  def set_sim_tag(self, sim_tag):
+    """
+    Sets the --sim-tag option.
+    """
+    self.add_var_opt('sim-tag', sim_tag)
+    self.__sim_tag = sim_tag
+
+  def get_sim_tag(self):
+    """
+    Gets sim-tag option.
+    """
+    return self.__sim_tag
+
+  def set_output_format(self, output_format):
+    """
+    Sets the output-format option. (Note that the default
+    for all ligolw_cbc_print* jobs is xml.)
+    """
+    self.add_var_opt('output-format', output_format)
+    self.__output_format = output_format
+
+  def get_output_format(self):
+    """
+    Gets the output-format option.
+    """
+    return self.__output_format
+
+
+class PrintLCNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printlc-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
+    self.__datatype = None
+
+  def set_datatype(self, datatype):
+    """
+    Sets datatype option.
+    """
+    self.add_var_opt('datatype', datatype)
+    self.__datatype = datatype
+
+  def get_datatype(self):
+    """
+    Gets datatype.
+    """
+    return self.__datatype
+
+class PrintSimsNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printsims-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
+    self.__comparison_datatype = None
+    self.__simulation_table = None
+    self.__recovery_table = None
+
+  def set_comparison_datatype(self, datatype):
+    """
+    Sets comparison-datatype option.
+    """
+    self.add_var_opt('comparison-datatype', datatype)
+    self.__comparison_datatype = datatype
+
+  def get_comparison_datatype(self):
+    """
+    Gets comparison-datatype.
+    """
+    return self.__comparison_datatype
+
+
+class PrintMissedNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printmissed-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
+    self.__instrument_time = None
+
+  def set_instrument_time(self, instruments):
+    """
+    Sets instrument-time options. If instruments
+    is a set, will convert to a sorted string.
+    """
+    if isinstance(instruments, set) or isinstance(instruments, frozenset):
+      intruments = ','.join(sorted(instruments))
+    self.add_var_opt('instrument-time', instruments)
+    self.__instrument_time = instruments
+
+  def get_instrument_time(self):
+    """
+    Gets instrument-time.
+    """
+    return self.__instrument_time
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
