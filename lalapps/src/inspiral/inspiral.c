@@ -2596,7 +2596,19 @@ int main( int argc, char *argv[] )
                   if ( trigTime >= lowerBound && trigTime <= upperBound )
                   {
                     REAL8 sigmasq = 0.0;
+		    REAL4 chisq=0.0;
 
+                    if ( ! eventList ) {
+                      chisq = 1.0;
+		      if ( vrbflg ) fprintf(stdout,
+			  "No eventlist found! chisq is set to %e\n",chisq);
+                    } 
+		    else {
+		      chisq = eventList->chisq;
+		      if ( vrbflg ) fprintf(stdout,
+			  "Eventlist found; chisq read is %e\n",chisq);
+		    }
+		    
                     tempTmplt = (SnglInspiralTable *)
                       LALCalloc(1, sizeof(SnglInspiralTable) );
                     tempTmplt->event_id = (EventIDColumn *)
@@ -2643,6 +2655,8 @@ int main( int argc, char *argv[] )
                     else {
                       tempTmplt->sigmasq = eventList->sigmasq;
                     }
+
+		    tempTmplt->chisq = chisq;
 
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,

@@ -316,32 +316,6 @@ typedef enum
 
 
 /* <lalLaTeX>
-\subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
-\idx[Type]{LALLeapSecAccuracy}
-
-This enumerated type is used as a parameter for \texttt{LALLeapSecs()} to
-specify if complete accuracy is required in use of leap seconds.  The
-allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+LALLEAPSEC_LOOSE+ & may miss leap seconds \\
-  \verb+LALLEAPSEC_STRICT+ & require all leap seconds
-\end{tabular}
-\bigskip
-
-If strict accuracy is selected, the code will \texttt{ABORT} if leap second
-data is not current.  Otherwise, a warning will be printed, and the code
-will continue execution.
-
-</lalLaTeX> */
-typedef enum
-{
-  LALLEAPSEC_LOOSE,
-  LALLEAPSEC_STRICT
-} LALLeapSecAccuracy;
-
-/* <lalLaTeX>
 \subsubsection*{Enumeration \texttt{LALGPSCompareResult}}
 \idx[Type]{LALGPSCompareResult}
 
@@ -362,33 +336,6 @@ typedef enum
   LALGPS_EQUAL   =  0,
   LALGPS_LATER   =  1
 } LALGPSCompareResult;
-
-
-/* <lalLaTeX>
-
-\subsubsection*{Enumeration \texttt{LALLeapSecFormat}}
-\idx[Type]{LALLeapSecFormat}
-
-This enumerated type is used as a parameter for \texttt{LALLeapSecs()} to
-specify whether TAI-UTC or GPS-UTC should be returned.  TAI-UTC is the
-total number of leap seconds added to UTC since the TAI epoch.  GPS-UTC is
-the total number of leap seconds added since the GPS epoch.  These two
-quantities are related by:  TAI-UTC = GPS-UTC + 19.
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+LALLEAPSEC_TAIUTC+ & return TAI-UTC \\
-  \verb+LALLEAPSEC_GPSUTC+ & return GPS-UTC
-\end{tabular}
-\bigskip
-
-</lalLaTeX> */
-
-typedef enum
-{
-  LALLEAPSEC_TAIUTC,
-  LALLEAPSEC_GPSUTC
-} LALLeapSecFormat;
 
 
 /* <lalLaTeX>
@@ -438,33 +385,6 @@ tagLALTimeInterval
 }
 LALTimeInterval;
 
-/* <lalLaTeX>
-
-
-\subsubsection{Structure \texttt{LALDate}}
-\idx[Type]{LALDate}
-
-This structure is an extension of \texttt{LALUnixDate} to include residual
-nanosecond information.  The fields are:
-
-\begin{description}
-\item{\texttt{LALUnixDate unixDate}} Unix date in \texttt{struct tm}
-  format
-\item{\texttt{INT4 residualNanoSeconds}} Residual nanoseconds
-\end{description}
-</lalLaTeX> */
-
-/*
- * Date and time structure
- */
-typedef struct
-tagLALDate
-{
-    LALUnixDate unixDate;
-    INT4        residualNanoSeconds; /* residual nanoseconds */
-}
-LALDate;
-
 
 /* <lalLaTeX>
 
@@ -495,57 +415,6 @@ tagLALPlaceAndGPS
 }
 LALPlaceAndGPS;
 
-/* <lalLaTeX>
-
-
-\subsubsection{Structure \texttt{LALPlaceAndDate}}
-\idx[Type]{LALPlaceAndDate}
-
-Like \texttt{LALPlaceAndGPS}, this structure aggregates a pointer to a
-detector and a pointer to a date.  This is another (in)convenience
-structure.  The fields are:
-
-\begin{description}
-\item{\verb+LALDetector *p_detector+} Pointer to a detector
-\item{\verb+LALDate *p_date+} Pointer to a date
-\end{description}
-
-</lalLaTeX> */
-
-/* Second, with Date-Time */
-typedef struct
-tagLALPlaceAndDate
-{
-    LALDetector *p_detector;   /* pointer to a detector */
-    LALDate     *p_date;       /* pointer to a date */
-}
-LALPlaceAndDate;
-
-/* <lalLaTeX>
-
-\subsubsection{Structure \texttt{LALLeapSecFormatAndAcc}}
-\idx[Type]{LALLeapSecFormatAndAcc}
-
-This structure aggregates the \texttt{LALLeapSecFormat} and
-\texttt{LALLeapSecAccuracy} parameters for passing to
-\texttt{LALLeapSecs()}.
-
-The \texttt{format} field specifies whether \texttt{LALLeapSecs()} returns
-TAI-UTC or GPS-UTC.  The \texttt{accuracy} field specifies whether a
-warning/error should be produced if the function is given an input GPS time
-that may result in a leap second not being accounted for.
-
-</lalLaTeX> */
-
-typedef struct
-tagLALLeapSecFormatAndAcc
-{
-  LALLeapSecFormat   format;
-  LALLeapSecAccuracy accuracy;
-}
-LALLeapSecFormatAndAcc;
-
-
 
 /*
  * Function prototypes
@@ -554,15 +423,6 @@ LALLeapSecFormatAndAcc;
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
-
-/* <lalLaTeX>
-\newpage\input{GPStoUTCC}
-</lalLaTeX> */
-void
-LALLeapSecs (LALStatus                    *status,
-             INT4                         *p_leapSecs,
-             const LIGOTimeGPS            *p_gpsTime,
-             const LALLeapSecFormatAndAcc *p_formatAndAcc);
 
 /* The following 2 functions are from S.J. Berukoff, included at his request */
 /* <lalLaTeX>

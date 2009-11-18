@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[6.4],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.3.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -76,18 +76,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 dnl Put version/configure info in config.h header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-lalapps_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
                    [LALApps Version Major Number])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MINOR],[$lalapps_version_minor],
                    [LALApps Version Minor Number])
+AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MICRO],[$lalapps_version_micro],
+                   [LALApps Version Micro Number])
+AC_DEFINE_UNQUOTED([LALAPPS_VERSION_DEVEL],[$lalapps_version_devel],
+                   [LALApps Version Devel Number])
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALApps Configure Arguments])
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
-AC_DEFINE_UNQUOTED([LALAPPS_CVS_TAG],["$lalapps_cvs_tag"],[LALApps CVS Tag])
 
 
 dnl Remove -all-static from ldflags
@@ -155,7 +159,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-PKG_CHECK_MODULES([LAL],[lal],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
   CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"

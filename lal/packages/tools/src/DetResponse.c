@@ -153,7 +153,7 @@ void XLALComputeDetAMResponse(
 
 
 /* <lalVerbatim file="DetResponseCP"> */
-void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LALGPSandAcc * pGPSandAcc)
+void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LIGOTimeGPS * gps)
 {				/* </lalVerbatim> */
 	double fplus, fcross;
 
@@ -164,12 +164,12 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 
 	ASSERT(pDetAndSrc != NULL, status, DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
-	ASSERT(pGPSandAcc != (LALGPSandAcc *) NULL, status, DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
+	ASSERT(gps != (LIGOTimeGPS *) NULL, status, DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
 	/* source coordinates must be in equatorial system */
 	ASSERT(pDetAndSrc->pSource->equatorialCoords.system == COORDINATESYSTEM_EQUATORIAL, status, DETRESPONSEH_ESRCNOTEQUATORIAL, DETRESPONSEH_MSGESRCNOTEQUATORIAL);
 
-	XLALComputeDetAMResponse(&fplus, &fcross, pDetAndSrc->pDetector->response, pDetAndSrc->pSource->equatorialCoords.longitude, pDetAndSrc->pSource->equatorialCoords.latitude, pDetAndSrc->pSource->orientation, XLALGreenwichMeanSiderealTime(&pGPSandAcc->gps));
+	XLALComputeDetAMResponse(&fplus, &fcross, pDetAndSrc->pDetector->response, pDetAndSrc->pSource->equatorialCoords.longitude, pDetAndSrc->pSource->equatorialCoords.latitude, pDetAndSrc->pSource->orientation, XLALGreenwichMeanSiderealTime(gps));
 
 	pResponse->plus = fplus;
 	pResponse->cross = fcross;
@@ -240,7 +240,6 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 	LALDetAMResponse instResponse;
 	LIGOTimeGPS gps;
 	LIGOTimeGPS tmpgps;
-	LALGPSandAcc gps_and_acc;
 	LALTimeInterval dt;
 	unsigned i;
 	char infostr[128];
@@ -341,9 +340,7 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 			LALInfo(status, infostr);
 		}
 
-		gps_and_acc.gps = gps;
-		gps_and_acc.accuracy = pTimeInfo->accuracy;
-		TRY(LALComputeDetAMResponse(status->statusPtr, &instResponse, pDetAndSource, &gps_and_acc), status);
+		TRY(LALComputeDetAMResponse(status->statusPtr, &instResponse, pDetAndSource, &gps), status);
 
 		pResponseSeries->pPlus->data->data[i] = instResponse.plus;
 		pResponseSeries->pCross->data->data[i] = instResponse.cross;

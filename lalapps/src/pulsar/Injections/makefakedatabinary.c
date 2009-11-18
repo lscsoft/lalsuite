@@ -952,7 +952,6 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LALDetAMResponse  amresp;
   LALSource         source;
   LALDetAndSource   detectorandsource;
-  LALGPSandAcc       gps;
   const char *filename="AmplMod.dat";
   int i;
 
@@ -969,11 +968,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   detectorandsource.pSource=&source;
 
   for (i=0;i<=nTsft;i++){
-  
-    gps.gps.gpsSeconds=timestamps[i].gpsSeconds;
-    gps.gps.gpsNanoSeconds=timestamps[i].gpsNanoSeconds;
-
-    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &gps);
+    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &timestamps[i]);
     fprintf(fp,"%f  %f\n",amresp.plus,amresp.cross);
     
   }

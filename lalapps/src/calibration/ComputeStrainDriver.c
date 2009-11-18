@@ -78,6 +78,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/FrequencySeries.h>
 #include <lal/LALVCSInfo.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #include "LALASCIIFileRead.h"
 
@@ -328,8 +329,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, headerinfo);
 
   /* Add lalapps info */
-  snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          CVS Tag: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
-	       LALAPPS_VERSION , LALAPPS_CVS_TAG , LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
+  snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
+	       LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
   FrHistoryAdd( frame, lalappsconfargs);  
 
   /* Add lal info */
