@@ -11,19 +11,18 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 
-#define SUBBANKSIZE 16
-#define STARTTEMPLATE -1
-#define ENDTEMPLATE -1
-#define FLOW 40
-#define DELTAF 0.04
-#define DYNRANGE 1
-#define NUMBER_OF_SUBBANKS_TO_WRITE_TO_FILE 10
+#include <math.h>
 
+#define SUBBANKSIZE 5
+#define TEMPLATE_LENGTH 1000
+#define FLOW 0.0
+#define DELTAF 1.0
+#define DYNRANGE 1.0
 
-FindChirpDataParams * initCCmatParams(FindChirpDataParams *params);
 
 SnglInspiralTable * convertTemplateBankToInspiralTable(InspiralTemplate *bankHead,SnglInspiralTable *rowHead);
 
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut);
 
 /* Program to test the essential bank chisquare functions.
  *
@@ -37,136 +36,74 @@ SnglInspiralTable * convertTemplateBankToInspiralTable(InspiralTemplate *bankHea
  */
 int main(int argc, char ** argv)
 {
-    /* Input and output file names */
-    CHAR tmpltBankFileName[100];
-    CHAR sortedBankFileName[100];
-    CHAR subBankFileName[100];
-    CHAR ccOutFileName[100];
-
-    /* Construct needed for writing xml output */
-    LIGOLwXMLStream *xmlStreamOut;
-
-    /* Input to sub bank functions */
-    InspiralTemplate *bankHead = NULL;
-    FindChirpSubBank *subBankHead = NULL;
-    FindChirpSubBank *subBank = NULL;
-    FindChirpBankVetoData *bankVetoData = NULL;
-    SnglInspiralTable *snglInspiralHead  = NULL;
-    FindChirpDataParams *params = NULL;
-
-    UINT4 numberTemplates;
+    /* Input params to XLALBankVetoCCMat */
+    FindChirpBankVetoData *bankVetoData = 
+      (FindChirpBankVetoData *) calloc(1,sizeof(FindChirpBankVetoData));
     UINT4 subBankSize = SUBBANKSIZE;
-    UINT4 maxSubBankSize = SUBBANKSIZE;
+    REAL4Vector *ampVec = XLALCreateREAL4Vector(TEMPLATE_LENGTH);
+    REAL4 dynRange = DYNRANGE;
     REAL4 fLow = FLOW;
     REAL4 deltaF = DELTAF;
-    REAL4 dynRange = DYNRANGE;
+    REAL4 deltaT = DELTAF;
 
-    UINT4 subbankIndex=0;
+    /* Params needs for main */
+    UINT4 sampleIndex;
+    UINT4 templateIndex;
+    REAL8 phase;
 
-    sprintf(tmpltBankFileName,"%s","in.xml");
-    sprintf(sortedBankFileName,"%s","sorted.xml");
+    /* initiate ccmat */
+    bankVetoData->ccMat = XLALCreateCOMPLEX8Vector(subBankSize*subBankSize);
+    bankVetoData->normMat = XLALCreateREAL4Vector(subBankSize);
 
-
-    /* Read in the template bank from file */
-    numberTemplates = InspiralTmpltBankFromLIGOLw( &bankHead, tmpltBankFileName,
-						   STARTTEMPLATE,ENDTEMPLATE);
-
-    /* Sort templates, convert to inspiral table and 
-       write out table to file */
-    bankHead = XLALFindChirpSortTemplates( bankHead, numberTemplates );
-    
-    snglInspiralHead = convertTemplateBankToInspiralTable( bankHead, snglInspiralHead);
-   
-    xmlStreamOut = XLALOpenLIGOLwXMLFile(sortedBankFileName);
-    XLALWriteLIGOLwXMLSnglInspiralTable(xmlStreamOut,snglInspiralHead);
-    XLALCloseLIGOLwXMLFile(xmlStreamOut);    
-
-    /* Create subbanks from template bank and write a few of the
-       subbanks out to file */
-    subBankHead = XLALFindChirpCreateSubBanks(&maxSubBankSize,
-					      subBankSize,
-					      numberTemplates,
-					      bankHead);
-
-    
-    /* Add the minimal information needed for CC mat to FCparams and bankVetoData */
-    params = initCCmatParams(params);
-
-    /* Write a few subbanks to file and compute a few CC mats */
-    for (subBank=subBankHead; subBank; subBank = subBank->next)
+    /* Create unity response function, spectrum and ampVec */
+    bankVetoData->resp = XLALCreateCOMPLEX8Vector(TEMPLATE_LENGTH);
+    bankVetoData->spec = XLALCreateREAL4Vector(TEMPLATE_LENGTH);
+    for (sampleIndex = 0; sampleIndex < TEMPLATE_LENGTH; sampleIndex++)
     {
-	if (subbankIndex == NUMBER_OF_SUBBANKS_TO_WRITE_TO_FILE) 
-	  break;
-	subbankIndex++;
-
-	convertTemplateBankToInspiralTable(subBankHead->bankHead,snglInspiralHead);
-
-	sprintf(subBankFileName,"subbank%d.xml",subbankIndex);
-	xmlStreamOut = XLALOpenLIGOLwXMLFile(subBankFileName);
-	XLALWriteLIGOLwXMLSnglInspiralTable(xmlStreamOut,snglInspiralHead);
-	XLALCloseLIGOLwXMLFile(xmlStreamOut);	
-
-
-	//convertSubbankTemplateToFreqSeries(subbank,bankVetoData);
-
-	//XLALBankVetoCCMat(bankVetoData,subBank,params,
-	//		  dynRange,fLow, deltaF);
-	
-	//sprintf(ccOutFileName,"subBank%d-ccOut.txt",subbankIndex);
-	
-	//writeCCMatToFile(ccOutFileName,bankVetoData);
-
-
+	bankVetoData->resp->data[sampleIndex].re = 1;
+	bankVetoData->resp->data[sampleIndex].im = 0;
+	bankVetoData->spec->data[sampleIndex] = 1;
+	ampVec->data[sampleIndex] = 1;
     }
 
 
-
-
-
-    
-
-    
-    /* Generate templates from first bank and compute CC */
-    //    bankVetoData->length = maxSubBankSize;
-    // bankVetoData->fcInputArray = (FindChirpFilterInput **)
-    //calloc( bankVetoData->length, sizeof(FindChirpFilterInput*) );
-
-    /*
-    LALStatus status;
-    FindChirpTmpltParams *tmpltParams = NULL;
-    FindChirpInitParams *initParams;
-    initParams->approximant = FindChirpSP;
-    initParams->numPoints = 1000;
-
-    tmpltParams->deltaT = 1;
-    tmpltParams->fLow = fLow;
-    tmpltParams->reverseChirpBank = 0;
-    tmpltParams->order = LAL_PNORDER_THREE_POINT_FIVE;
-    tmpltParams->bandPassTmplt = 0;
-    
-    int j;
-    int k;
-    for (j=0, bank = subBankHead->bankHead; bank; bank = bank->next,j++)
+    /* Fill in templates */
+    bankVetoData->length = subBankSize;
+    bankVetoData->fcInputArray = 
+      (FindChirpFilterInput **) calloc(subBankSize,sizeof(FindChirpFilterInput *));
+    for ( templateIndex = 0; templateIndex < subBankSize; templateIndex++)
     {
+	bankVetoData->fcInputArray[templateIndex] = 
+	  (FindChirpFilterInput *) calloc(1,sizeof(FindChirpFilterInput));
+	bankVetoData->fcInputArray[templateIndex]->fcTmplt = 
+	  (FindChirpTemplate *) calloc(1,sizeof(FindChirpTemplate));
+	bankVetoData->fcInputArray[templateIndex]->fcTmplt->data =
+	  XLALCreateCOMPLEX8Vector(TEMPLATE_LENGTH);
 
-      /* initialize the template functions 
-      LALFindChirpTemplateInit( &status, &tmpltParams,initParams );
+	for (sampleIndex = 0; sampleIndex < TEMPLATE_LENGTH; sampleIndex++)
+	{
+	    phase = 2*LAL_PI*( (REAL8) (templateIndex*sampleIndex) ) / ( (REAL8) TEMPLATE_LENGTH );
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].re =
+	      cos(phase);
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
+	      sin(phase);
+	}
 
-      LALFindChirpSPTemplate( &status, bankVetoData->fcInputArray[j]->fcTmplt,
-			      bank,tmpltParams );
-
-      for (k=0; (UINT4) k < bankVetoData->fcInputArray[j]->fcTmplt->data->length; k++)
-	fprintf(stderr,"%g+i%g\n",
-		bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].re,
-		bankVetoData->fcInputArray[j]->fcTmplt->data->data[k].im);
-
+	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal = 
+	  (REAL8) (DELTAF*TEMPLATE_LENGTH-FLOW);
     }
 
-    */
-
+    /* Pass to CCMat function */
+    XLALBankVetoCCMat (bankVetoData,
+		       ampVec,
+		       subBankSize,
+		       dynRange,
+		       fLow,
+		       deltaF,
+		       deltaT);
 
     return 0;
-     
+
 }
 
 
@@ -209,38 +146,39 @@ SnglInspiralTable *convertTemplateBankToInspiralTable(InspiralTemplate *bankHead
     // Null terminate the table (to tell where the table ends)
     snglInspiralRow->next = NULL;
 
-    return rowHead;
+
+
+
+    return 0;
 
 }
 
 
 
-FindChirpDataParams * initCCmatParams(FindChirpDataParams *params)
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
 {
+    int row;
+    int col;
 
-    FindChirpInitParams *initParams = (FindChirpInitParams *) calloc(1,sizeof(FindChirpInitParams));
+    // print a matrix of the real parts
+        for ( row = 0; row< maxSubBankSize; row++ )
+    {
+	for ( col = 0; col < maxSubBankSize; col++ )
+	{
+	    fprintf(fdOut,"%.8g\t",ccmat->data[row*maxSubBankSize+col].re);
+	}
+	fprintf(fdOut,"\n");
+    }
 
+    // print a matrix of the imaginary parts
+    for ( row = 0; row< maxSubBankSize; row++ )
+    {
+	for ( col = 0; col < maxSubBankSize; col++ )
+	{
+	    fprintf(fdOut,"%.8g\t",ccmat->data[row*maxSubBankSize+col].im);
+	}
+	fprintf(fdOut,"\n");
+    }
 
-    // FIXME status pointer not working correctly
-    LALStatus *status = (LALStatus *) calloc(1,sizeof(LALStatus));
-
-    initParams->numSegments = 15;
-    initParams->numPoints = 1048576;
-    initParams->ovrlap = 524288;
-    initParams->numChisqBins = 0;
-    initParams->createRhosqVec = 0;
-    initParams->createCVec = 0;
-    initParams->approximant = FindChirpSP;
-    initParams->order = LAL_PNORDER_THREE;
-
-    if (!params)
-      params = (FindChirpDataParams *) calloc(1,sizeof(FindChirpDataParams));
-
-    LALFindChirpDataInit( status, &params, initParams );
-
-    fprintf(stderr,"%d\n",params->fLow);
-
-    fprintf(stderr,"in\n");    
-    return params;
-
+    return 0;
 }
