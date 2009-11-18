@@ -341,7 +341,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-/*  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; */
+  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; 
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
   return parameter->logPrior;
 }
@@ -377,7 +377,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-/*	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;*/
+	if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
@@ -520,9 +520,9 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		/* Calculate the logL */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		UINT4 highBin = (UINT4)(PPNparams.fStop / inputMCMC->stilde[det_i]->deltaF);
-		/*if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)*/
-		highBin=inputMCMC->stilde[det_i]->data->length-1; /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
+		UINT4 highBin = (UINT4)(PPNparams.fStop *(3./2.) / inputMCMC->stilde[det_i]->deltaF); /* Factor 3/2 for AmpCor 3rd harmonic */
+		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)
+		   highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
 		for(idx=lowBin;idx<=highBin;idx++){
 			REAL8 ang = 2.0*LAL_PI*(TimeFromGC+TimeShiftToGC)*inputMCMC->stilde[det_i]->deltaF*idx;
 			/* Calculate rotated parts of the plus and cross */
