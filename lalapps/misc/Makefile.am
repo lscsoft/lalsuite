@@ -2,7 +2,6 @@ EXTRA_DIST = \
 	config.guess \
 	config.sub \
 	depcomp \
-	generateGitID.sh \
 	install-sh \
 	lalapps.m4 \
 	lalapps_c99.m4 \

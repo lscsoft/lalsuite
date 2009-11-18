@@ -6,7 +6,6 @@ EXTRA_DIST = \
 	depcomp \
 	doc.mk \
 	dvi.mk \
-	generateGitID.sh \
 	include.mk \
 	install-sh \
 	lal.m4 \
