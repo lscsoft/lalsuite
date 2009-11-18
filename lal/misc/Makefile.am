@@ -1,10 +1,21 @@
 EXTRA_DIST = \
+	acx_pthread.m4 \
+	compile \
+	config.guess \
+	config.sub \
+	depcomp \
 	doc.mk \
 	dvi.mk \
+	generateGitID.sh \
 	include.mk \
-	main.tex.in \
+	install-sh \
 	lal.m4 \
+	lal_c99.m4 \
 	lallibtool.m4 \
+	ltmain.sh \
+	main.tex.in \
+	missing \
+	mkinstalldirs \
 	pkg.m4
 
 CLEANFILES = lal-user-env.sh lal-user-env.csh
