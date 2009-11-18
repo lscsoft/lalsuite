@@ -22,7 +22,7 @@
 
 SnglInspiralTable * convertTemplateBankToInspiralTable(InspiralTemplate *bankHead,SnglInspiralTable *rowHead);
 
-static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut);
+int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut);
 
 /* Program to test the essential bank chisquare functions.
  *
@@ -93,14 +93,33 @@ int main(int argc, char ** argv)
 	  (REAL8) (DELTAF*TEMPLATE_LENGTH-FLOW);
     }
 
-    /* Pass to CCMat function */
-    XLALBankVetoCCMat (bankVetoData,
-		       ampVec,
-		       subBankSize,
-		       dynRange,
-		       fLow,
-		       deltaF,
-		       deltaT);
+
+    UINT4 trial;
+    CHAR ccFileName[100];
+    FILE *fdOut;
+    bankVetoData->timeshift = XLALCreateREAL4Vector(subBankSize);
+    for (trial = 0; trial < subBankSize; trial++)
+    {
+	/* set the time shift for all but one template to be 1 unit */
+	memset(bankVetoData->timeshift->data, 0, subBankSize * sizeof(REAL4));
+	bankVetoData->timeshift->data[trial] = 1.0/ (REAL4) TEMPLATE_LENGTH;
+
+	/* Pass to CCMat function */
+	XLALBankVetoCCMat (bankVetoData,
+			   ampVec,
+			   subBankSize,
+			   dynRange,
+			   fLow,
+			   deltaF,
+			   deltaT);
+
+
+	/* write out results */
+	sprintf(ccFileName,"ccmat_%d.txt",trial);
+	fdOut = fopen(ccFileName,"w");
+	writeCCmatToFile(bankVetoData->ccMat,bankVetoData->length,fdOut);
+	fclose(fdOut);
+    }
 
     return 0;
 
@@ -155,7 +174,7 @@ SnglInspiralTable *convertTemplateBankToInspiralTable(InspiralTemplate *bankHead
 
 
 
-static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
+int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
 {
     int row;
     int col;
@@ -165,7 +184,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdO
     {
 	for ( col = 0; col < maxSubBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8g\t",ccmat->data[row*maxSubBankSize+col].re);
+	    fprintf(fdOut,"%.4g\t",ccmat->data[row*maxSubBankSize+col].re);
 	}
 	fprintf(fdOut,"\n");
     }
@@ -175,10 +194,13 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdO
     {
 	for ( col = 0; col < maxSubBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8g\t",ccmat->data[row*maxSubBankSize+col].im);
+	    fprintf(fdOut,"%.4g\t",ccmat->data[row*maxSubBankSize+col].im);
 	}
 	fprintf(fdOut,"\n");
     }
+
+
+
 
     return 0;
 }
