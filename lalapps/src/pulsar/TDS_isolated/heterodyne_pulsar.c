@@ -1534,7 +1534,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       }
       else{
         frombeg = 0;
-        fromend = -2;
+        fromend = -1;
       }
 
       prevdur = j;
