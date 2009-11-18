@@ -1,7 +1,17 @@
 EXTRA_DIST = \
+	config.guess \
+	config.sub \
+	depcomp \
+	generateGitID.sh \
+	install-sh \
 	lalapps.m4 \
+	lalapps_c99.m4 \
 	lalappslibtool.m4 \
-	pkg.m4
+	ltmain.sh \
+	missing \
+	mkinstalldirs \
+	pkg.m4 \
+	py-compile
 
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
