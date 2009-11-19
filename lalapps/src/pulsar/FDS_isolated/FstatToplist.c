@@ -78,7 +78,7 @@ int finite(double);
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
-static int _atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum, int write_done);
+static int _atomic_write_fstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
 static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen);
 
 
@@ -369,14 +369,14 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    The name of the temporary file is derived from the filename by appending ".tmp". Returns the
    number of chars written or -1 if the temp file could not be opened.
    This just calls _atomic_write_fstat_toplist_to_file() telling it not to write a %DONE marker*/
-int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+int atomic_write_fstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
   return(_atomic_write_fstat_toplist_to_file(l, filename, checksum, 0));
 }
 
 /* function that does the actual work of atomic_write_fstat_toplist_to_file(),
    appending a %DONE marker if specified (not when called from atomic_write_fstat_toplist_to_file().
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
-static int _atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum, int write_done) {
+static int _atomic_write_fstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
     char* tempname;
     INT4 length;
     FILE * fpnew;
