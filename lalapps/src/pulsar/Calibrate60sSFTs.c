@@ -327,7 +327,7 @@ int CalibrateSfts(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ComputeInitialRSFunctions()
+int ComputeInitialRSFunctions(void)
 {
   FILE *fp;
   INT4 i,j;

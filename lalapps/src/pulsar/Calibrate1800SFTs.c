@@ -725,7 +725,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 /*******************************************************************************/
 
 
-int Freemem()
+int Freemem(void)
 {
 
 
