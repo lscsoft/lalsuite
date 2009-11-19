@@ -49,7 +49,7 @@ struct sftheader
 /* function prototypes */
 int parse_command_line(int argc, char *argv[]);
 int fileURL_to_localPath(char *url, char *path);
-int read_sft( struct sftheader *header, float **dataF, const char *fname, float fmin, float deltaf );
+int read_sft( struct sftheader *header, float **dataF, const char *fname, float f_min, float deltaf );
 void byte_swap( void *ptr, size_t size, size_t nobj );
 int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, FrFile *outputFrameFile); 
 int add_sft_to_mergedSFT_file(struct sftheader *header, float *dataF, FILE *outputSFTFile); 

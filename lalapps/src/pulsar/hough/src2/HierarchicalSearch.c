@@ -223,7 +223,7 @@ void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList 
 
 void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot, REAL8 f0, REAL8 deltaF);
 
-void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 index);
+void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 ind);
 
 void GetXiInSingleStack (LALStatus         *status,
 			 HOUGHSizePar      *size,

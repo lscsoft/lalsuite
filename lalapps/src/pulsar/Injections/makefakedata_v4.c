@@ -131,7 +131,7 @@ void LoadTransferFunctionFromActuation(LALStatus *,
 				       REAL8 actuationScale,
 				       const CHAR *fname);
 
-void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band );
+void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band );
 
 void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params );
 
