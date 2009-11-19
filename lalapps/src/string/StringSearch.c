@@ -93,6 +93,9 @@ extern int optind, opterr, optopt;
 #define SCALE 1e20
 #define MAXTEMPLATES 1000
 
+#define DELTATMAX 1
+#define NSAMPLE 2000
+
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
 
@@ -111,6 +114,7 @@ struct CommandLineArgsTag {
   REAL4 fbankstart;           /* lowest frequency of templates */
   REAL4 fbankhighfcutofflow;  /* lowest high frequency cut-off */
   REAL4 fmismatchmax;         /* maximal mismatch allowed from 1 template to the next */
+  REAL4 fchi2duration;        /* duration on which the chi2 is computed */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
@@ -154,6 +158,7 @@ struct StringTemplateTag {
   REAL4 norm;                 /* Template normalisation */
   REAL4 mismatch;             /* Template mismatch relative to last one*/
   REAL4FrequencySeries StringFilter; /* Frequency domain filter corresponding to this template */
+  REAL4Vector    *auto_cor_vector;
 } StringTemplate;
 
 /***************************************************************************/
@@ -218,6 +223,9 @@ int CreateStringFilters(struct CommandLineArgsTag CLA);
 
 /* Filters the data through the template banks  */
 int FindStringBurst(struct CommandLineArgsTag CLA);
+
+/* Get the Chi2 of a given event */
+/*int GetChi2();*/
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
@@ -453,12 +461,17 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int p;
-  REAL4 maximum;
+  int p, pp, chi2start, chi2end;
+  REAL4 maximum, sum1, sum2;
   REAL8 duration;
   INT4 pmax, pend, pstart;
   INT8  peaktime, starttime;
   INT8  timeNS;
+
+  
+  chi2start = -(int)(CLA.fchi2duration/2/GV.ht_proc->deltaT);
+  chi2end   = (int)(CLA.fchi2duration/2/GV.ht_proc->deltaT)+1;
+  sum1=0, sum2=0;
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
@@ -529,8 +542,20 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.fbankstart;				     
       (*thisEvent)->snr          = maximum;
       (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
-      (*thisEvent)->confidence   = -fabs((*thisEvent)->amplitude); /* FIXME */
       (*thisEvent)->string_cluster_t = CLA.cluster;
+
+      /* Compute Chi2 and store it*/
+      for ( pp=chi2start; pp < chi2end; pp++ ){
+	
+	sum1+=
+	  (vector->data[pmax+pp]-strtemplate[m].auto_cor_vector->data[GV.seg_length/2+pp]*vector->data[pmax])*
+	  (vector->data[pmax+pp]-strtemplate[m].auto_cor_vector->data[GV.seg_length/2+pp]*vector->data[pmax]);
+
+	sum2+=
+	  (1-strtemplate[m].auto_cor_vector->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor_vector->data[GV.seg_length/2+pp]);
+      }
+      (*thisEvent)->confidence   = sum1/sum2;
+	  
     }
   }
   
@@ -703,8 +728,13 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA){
   REAL8 fmax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon;
-  int p, pcut, f_min_index, f_max_index, f_cut_index, k;
+  REAL4 norm;
+  int m, p, pcut, f_min_index, f_max_index, f_cut_index, k, 
+    f_low_cutoff_index, f_high_cutoff_index;
   REAL4Vector *integral;
+  REAL4Vector    *vector; /* time-domain vector workspace */
+  REAL4Vector *vtilde; /* frequency-domain vector workspace */
+  COMPLEX8Vector *vTemp;  /* frequency-domain vector workspace */
 
   fmax = (1.0/GV.ht_proc->deltaT) / 2.0;
   f_min_index = CLA.fbankstart / GV.Spec.deltaF;
@@ -785,9 +815,67 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
       pcut+=15;
 
   }
- 
+
   NTemplates=k;
   XLALDestroyREAL4Vector( integral );
+
+
+  /* Now, the point is to get the template time-waveform vector,
+     then to compute the auto-correlation vector */ 
+  vector = XLALCreateREAL4Vector( GV.seg_length );
+  vtilde = XLALCreateREAL4Vector( GV.seg_length / 2 + 1 );
+  vTemp = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
+  f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec.deltaF+0.5);
+  
+  /* Create the template autocorrelation vector */
+  for (m = 0; m < NTemplates; m++){
+    f_high_cutoff_index = (int) (strtemplate[m].f/ GV.Spec.deltaF+0.5);
+
+    /* populate vtilde with the template waveform */
+    for ( p = f_low_cutoff_index; p < (int) vtilde->length; p++ ){
+      f=p*GV.Spec.deltaF;
+      if(f<=strtemplate[m].f) vtilde->data[p] = sqrt(pow(f,CLA.power));
+      else vtilde->data[p] = sqrt(pow(f,CLA.power)*exp(1-f/strtemplate[m].f));
+    }
+    /* set all frequencies below the low freq cutoff to zero */
+    memset( vtilde->data, 0, f_low_cutoff_index  * sizeof( *vtilde->data ) );
+    
+    /* set DC and Nyquist to zero anyway */
+    vtilde->data[0] = vtilde->data[vtilde->length - 1] = 0;
+   
+    /* create the space for the autocor vector */
+    strtemplate[m].auto_cor_vector = XLALCreateREAL4Vector(GV.seg_length);
+    
+    for (p=0 ; p<(int) vtilde->length; p++){
+      vTemp->data[p].re = vtilde->data[p]*vtilde->data[p];
+      vTemp->data[p].im = 0;
+    }
+
+    /* reverse FFT to get the auto-correlation vector */
+    if(XLALREAL4ReverseFFT(strtemplate[m].auto_cor_vector, vTemp, GV.rplan)) return 1;
+             
+    /* Normalize the vector by the central value */
+    norm=strtemplate[m].auto_cor_vector->data[0];
+    for ( p = 0 ; p < (int)strtemplate[m].auto_cor_vector->length; p++ ){
+      strtemplate[m].auto_cor_vector->data[p] /= norm;
+      vector->data[p]=strtemplate[m].auto_cor_vector->data[p];
+    }
+
+    /* The vector is reshuffled in the right order */
+    for ( p = 0 ; p < GV.seg_length/2; p++ ){
+      strtemplate[m].auto_cor_vector->data[p] = vector->data[GV.seg_length/2+p];
+      strtemplate[m].auto_cor_vector->data[GV.seg_length/2+p] = vector->data[p];
+    }
+    
+  }
+  /*
+  for ( p = 0 ; p < GV.seg_length; p++ )
+    printf("%f\n",strtemplate[1].auto_cor_vector->data[p]);
+  */
+  XLALDestroyREAL4Vector( vector );
+  XLALDestroyREAL4Vector( vtilde );
+  XLALDestroyCOMPLEX8Vector( vTemp );
+
 
   return 0;
 }
@@ -977,6 +1065,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"bank-freq-start",             required_argument, NULL,           'L'}, 
     {"bank-lowest-hifreq-cutoff",   required_argument, NULL,           'H'},
     {"max-mismatch",                required_argument, NULL,           'M'},
+    {"chi2-duration",               required_argument, NULL,           'D'},
     {"threshold",                   required_argument, NULL,           't'},
     {"frame-cache",                 required_argument, NULL,           'F'},
     {"channel-name",                required_argument, NULL,           'C'},
@@ -1003,7 +1092,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwabrxyzl:f:L:M:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwabrxyzl:f:L:M:D:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   optarg = NULL;
   /* set up xml output stuff */
@@ -1031,6 +1120,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->fbankstart=0.0;
   CLA->fbankhighfcutofflow=0.0;
   CLA->fmismatchmax=0.05;
+  CLA->fchi2duration=0.03;
   CLA->FrCacheFile=NULL;
   CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
@@ -1088,6 +1178,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     case 'M':
       /* Maximal mismatch */
       CLA->fmismatchmax=atof(optarg);
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      break;
+    case 'D':
+      /* Duration on which Chi2 is calculated */
+      CLA->fchi2duration=atof(optarg);
       ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 'L':
@@ -1213,6 +1308,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
       fprintf(stdout,"\t--bank-lowest-hifreq-cutoff (-H)\tFLOAT\t Template bank lowest high frequency cut-off.\n");
       fprintf(stdout,"\t--max-mismatch (-M)\tFLOAT\t Maximal mismatch allowed from 1 template to the next.\n");
+      fprintf(stdout,"\t--chi2-duration (-D)\tFLOAT\t Duration (in sec) on which the chi2 is computed.\n");
       fprintf(stdout,"\t--bank-freq-start (-L)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
@@ -1267,8 +1363,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
-  if(CLA->fmismatchmax == 0.0){
-    fprintf(stderr,"No maximal mismatch specified.\n");
+  if(CLA->fchi2duration == 0.0){
+    fprintf(stderr,"No chi2 duration specified.\n");
     fprintf(stderr,"Try %s -h \n",argv[0]);
     return 1;
   }      
@@ -1340,10 +1436,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     }    
   }
 
-  /* check mismatch */
+  /* check chi2 duration */
   {
-    if(CLA->fmismatchmax < 0.0 || CLA->fmismatchmax > 1.0){
-      fprintf(stderr,"ERROR : the maximal mismatch is not authorized.\n");
+    if(CLA->fchi2duration < 0.0 || CLA->fchi2duration > 2.0){
+      fprintf(stderr,"ERROR : this chi2 duration is not authorized.\n");
       return 1;
     }      
   }
@@ -1385,9 +1481,11 @@ int FreeMem(void){
   XLALDestroyREAL4TimeSeries(GV.ht_proc);
   XLALDestroyREAL4Vector(GV.Spec.data);
   
-  for (m=0; m < NTemplates; m++)
+  for (m=0; m < NTemplates; m++){
     XLALDestroyREAL4Vector(strtemplate[m].StringFilter.data);
-  
+    XLALDestroyREAL4Vector(strtemplate[m].auto_cor_vector);
+  }
+
   XLALDestroyREAL4FFTPlan( GV.fplan );
   XLALDestroyREAL4FFTPlan( GV.rplan );
   
