@@ -24,14 +24,15 @@
 /*********************************************************************************/
 /** \author Holger Pletsch
  * \file
- * \brief Hierarchical semi-coherent CW search code based on F-Statstic
+ * \brief Hierarchical semi-coherent CW search code based on F-Statstic exploting
+ *  global parameter-space correlations   
  *
  *********************************************************************************/
 
 /* ---------- Includes -------------------- */
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
-#include"HierarchSearchGCT.h"
+#include "HierarchSearchGCT.h"
 
 RCSID( "$Id: HierarchSearchGCT.c,v 1.58 2009/11/17 12:27:01 hpletsch Exp $");
 
@@ -107,6 +108,7 @@ typedef struct {
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
 } UsefulStageVariables;
+
 
 /* ------------------------ Functions -------------------------------- */
 void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, 
@@ -224,13 +226,11 @@ int MAIN( int argc, char *argv[]) {
   REAL8 f_tmp,f1dot_tmp;
   REAL8 TwoFthreshold, TwoFmax, TwoFtemp;
   UINT4 ic,ic2,ic3,icoarse,ifine,length,ifreq,nc_max;
-  
-  /* (Orbital) Pos, Vel and Acc of Earth's barycenter */
   REAL8 pos[3];
   REAL8 vel[3];
   REAL8 acc[3];
   
-  /* Support variables for speedup */
+  /* GCT helper variables for fast calc */
   REAL8 A1,B1,A2,B2;
   REAL8 cosAlpha,sinAlpha,cosDelta,sinDelta;
   REAL8 CosAlphaCosDelta,SinAlphaCosDelta, PdotN, VdotN, AdotN;
@@ -936,12 +936,6 @@ int MAIN( int argc, char *argv[]) {
       finegrid.length = nf1dotsFG * nfreqsFG;
       LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
 
-      /*fprintf( stderr, "%% Fine-grid length:%d  Freq:%d  Spindown:%d  df:%g  Df:%f\n", \
-                           finegrid.length, nfreqsFG, nf1dotsFG, fg_freq_step, fg_fband);	*/
-
-      /*fprintf( stderr, "%% fine-grid  nf1dotsFG:%d  fg_f1dot_step:%g  fkdotBand[1]:%g fg_fmin:%f freqmax:%f reftime:%d\n",
-                          nf1dotsFG,fg_f1dot_step,fg_f1dotband,fg_fmin,fg_fmin+fg_fband,tMidGPS.gpsSeconds); */
-
       /* reference time for finegrid: mid point of observation time */
       finegrid.refTime = tMidGPS;
 
@@ -979,7 +973,7 @@ int MAIN( int argc, char *argv[]) {
           f_tmp = f_tmp + fg_freq_step;
           }
 
-      /* ----------------------------------------------------------------*/
+      /* --------------------------------------------------------------- */
       
       /* U-map configuration */
       u1fac=1.0;
@@ -988,8 +982,6 @@ int MAIN( int argc, char *argv[]) {
       /* Keeping track of maximum number count */
       nc_max=0;    /* initialize */
       TwoFmax=0.0; /* initialize */
-      TwoFtemp=0.0;
-      
       
       /* ##########################################################*/
       /* ------------- MAIN LOOP over Segments --------------------*/
@@ -1179,30 +1171,8 @@ int MAIN( int argc, char *argv[]) {
         finegrid.list[ifine].sumTwoF=-1.0;
       }
     }     
-
-    /* write loudest number-count candidates to file */
-    /*
-    qsort(finegrid.list, (size_t)finegrid.length, sizeof(FineGridPoint), compareFineGridNC);
-    for (ifine = 0; ifine < uvar_nCand1; ifine++)  {
-      fprintf(fpCToutNC, "%.8f %.8f %.8f %.8g %d %f\n",\
-              finegrid.list[ifine].F, finegrid.list[ifine].Alpha,\
-              finegrid.list[ifine].Delta, finegrid.list[ifine].F1dot,\
-              finegrid.list[ifine].nc, finegrid.list[ifine].sumTwoF);
-    }
-    */
-    /* write loudest 2F-sum candidates to file */
-    /*
-    qsort(finegrid.list, (size_t)finegrid.length, sizeof(FineGridPoint), compareFineGridsumTwoF);
-    for (ifine = 0; ifine < uvar_nCand1; ifine++)  {
-      fprintf(fpCToutS2F, "%.8f %.8f %.8f %.8g %d %f %d\n",\
-              finegrid.list[ifine].F, finegrid.list[ifine].Alpha,\
-              finegrid.list[ifine].Delta, finegrid.list[ifine].F1dot,\
-              finegrid.list[ifine].nc, finegrid.list[ifine].sumTwoF, finegrid.list[ifine].Index);
-    }
-    */
-
-
-    /*----------------------------------------------------------------------------------------*/
+   
+   /*----------------------------------------------------------------------*/
 	  	        
 	  if( uvar_semiCohToplist) {
 	    /* this is necessary here, because GetSemiCohToplist() might set
@@ -1215,7 +1185,6 @@ int MAIN( int argc, char *argv[]) {
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid), &status); 
 	  }
 	  
-
     /* continue forward till the end if uvar_skyPointIndex is set
     ---This probably doesn't make sense when checkpointing is turned on */
     if ( LALUserVarWasSet(&uvar_skyPointIndex) ) {
@@ -1930,7 +1899,7 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 
-/** Comparison function for sorting the coarse grid */
+/** Comparison function for sorting the coarse grid in u1 and u2 */
 int compareCoarseGridU1U2(const void *a,const void *b) {
   CoarseGridPoint a1, b1;
   a1 = *((const CoarseGridPoint *)a);
@@ -1946,7 +1915,9 @@ int compareCoarseGridU1U2(const void *a,const void *b) {
     else if( a1.U2i > b1.U2i)
       return(1);
     else {
-      /*if( a1.TwoF < b1.TwoF )
+      /* The following is not needed
+         since the coarse is unique in u1 and u2 */
+      /*if( a1.TwoF < b1.TwoF )  
         return(1);
       else if( a1.TwoF > b1.TwoF)
         return(-1);
@@ -1956,7 +1927,7 @@ int compareCoarseGridU1U2(const void *a,const void *b) {
   } 
 }
 
-
+/** Comparison function for sorting the fine grid in u1 and u2*/
 int compareFineGridU1U2(const void *a,const void *b) {
   FineGridPoint a1, b1;
   a1 = *((const FineGridPoint *)a);
@@ -1976,6 +1947,7 @@ int compareFineGridU1U2(const void *a,const void *b) {
   } 
 }
 
+/** Comparison function for sorting the fine grid in number count */
 int compareFineGridNC(const void *a,const void *b) {
   FineGridPoint a1, b1;
   a1 = *((const FineGridPoint *)a);
@@ -1989,6 +1961,7 @@ int compareFineGridNC(const void *a,const void *b) {
     return(0);
 }
 
+/** Comparison function for sorting the fine grid in summed 2F */
 int compareFineGridsumTwoF(const void *a,const void *b) {
   FineGridPoint a1, b1;
   a1 = *((const FineGridPoint *)a);
