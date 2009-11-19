@@ -224,9 +224,6 @@ int CreateStringFilters(struct CommandLineArgsTag CLA);
 /* Filters the data through the template banks  */
 int FindStringBurst(struct CommandLineArgsTag CLA);
 
-/* Get the Chi2 of a given event */
-/*int GetChi2();*/
-
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
 	       INT4 i, INT4 m, SnglBurst **thisEvent);
