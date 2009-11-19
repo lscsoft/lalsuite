@@ -93,6 +93,7 @@ static LALUnit empty_LALUnit;
 static const LALStatus empty_status;
 static const AMCoeffs empty_AMCoeffs;
 
+/*
 const SSBtimes empty_SSBtimes;
 const MultiSSBtimes empty_MultiSSBtimes;
 const AntennaPatternMatrix empty_AntennaPatternMatrix;
@@ -101,6 +102,7 @@ const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
 const EarthState empty_EarthState;
+*/
 
 /*---------- internal prototypes ----------*/
 int finite(double x);
@@ -194,7 +196,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     }
   
   /* check if there is an existing timeseries and the start time in the buffer matches the start time of the SFTs */
-  if (cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->startseg,&multisfts->data[0]->data[0].epoch) == 0) ) 
+  if (cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) == 0) ) 
     {
       multiTimeseries = cfBuffer->multiTimeseries;	/* use the buffered multiTimeSeries */ 
     }  
@@ -247,8 +249,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     cfBuffer->multiFb_resampled = NULL;
 
     /* also buffer the current start time of the input data */ 
-    cfBuffer->segstart.gpsSeconds = multisfts->data[0]->data[0].epoch.gpsSeconds;
-    cfBuffer->segstart.gpsNanoSeconds = multisfts->data[0]->data[0].epoch.gpsNanoSeconds;
+    cfBuffer->segstart.gpsSeconds = multiSFTs->data[0]->data[0].epoch.gpsSeconds;
+    cfBuffer->segstart.gpsNanoSeconds = multiSFTs->data[0]->data[0].epoch.gpsNanoSeconds;
 
   }  /* if (cfBuffer->multiTimeseries) */
  
@@ -463,8 +465,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
  * NOTE : We enforce that each detectors timeseries has <b>equal</b> start times and time spans.
  * Also, the input MultiSFTs get <b>modified</b> in place.
  */
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector *multisfts  /**< [in/out] multi SFT vector, gets modified! */							
-								  )	
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( 
+                     MultiSFTVector *multisfts  /**< [in/out] multi SFT vector, gets modified! */					       )	
 {
   static const CHAR *fn = "XLALMultiSFTVectorToCOMPLEX8TimeSeries()";
 
@@ -529,6 +531,8 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector
   return out;
   
 } /* XLALMultiSFTVectorToCOMPLEX8TimeSeries() */
+
+
 
 /** Finds the earliest timestamp in a multi-SFT data structure 
  *

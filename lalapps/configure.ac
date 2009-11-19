@@ -172,14 +172,16 @@ dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
+lalburst="true"
 lalstochastic="true"
 PKG_CHECK_MODULES([LALFRAME],[lalframe >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALMETAIO],[lalmetaio >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALXML],[lalxml >= 1.0],[true],[false])
+PKG_CHECK_MODULES([LALBURST],[lalburst >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALSTOCHASTIC],[lalstochastic >= 1.0],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
-  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
-  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
+  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALBURST_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
+  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALBURST_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 fi
 
 dnl cfitsio
@@ -228,6 +230,7 @@ if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB([lalframe],[LALFrOpen],,[lalframe="false"])
   AC_CHECK_LIB([lalmetaio],[LALSnglInspiralTableFromLIGOLw],,[lalmetaio="false"])
   AC_CHECK_LIB([lalxml],[XLALXMLFilePrintElements],,[lalxml="false"])
+  AC_CHECK_LIB([lalburst],[XLALEPSearch],,[lalburst="false"])
   AC_CHECK_LIB([lalstochastic],[LALStochasticOptimalFilter],,[lalstochastic="false"])
 fi
 
@@ -287,18 +290,20 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 AC_CHECK_FUNCS([setenv])
 
 if test "$LALSUITE_BUILD" = "true"; then
-  LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
-  CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
+  LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALBURST_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
+  CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALBURST_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
   echo "LAL_TOP_SRCDIR=$LAL_LIBS"
   echo "LAL_TOP_SRCDIR=$LAL_TOP_SRCDIR"
   AC_SUBST([LAL_TOP_SRCDIR])
   lalframe="false"
   lalmetaio="false"
   lalxml="false"
+  lalburst="false"
   lalstochastic="false"
   test -n "$LALFRAME_LIBS" && lalframe="true"
   test -n "$LALMETAIO_LIBS" && lalmetaio="true"
   test -n "$LALXML_LIBS" && lalxml="true"
+  test -n "$LALBURST_LIBS" && lalburst="true"
   test -n "$LALSTOCHASTIC_LIBS" && lalstochastic="true"
 fi
 
@@ -306,6 +311,7 @@ AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
 AM_CONDITIONAL([LALFRAME],[test x$lalframe = xtrue])
 AM_CONDITIONAL([LALMETAIO],[test x$lalmetaio = xtrue])
 AM_CONDITIONAL([LALXML],[test x$lalxml = xtrue])
+AM_CONDITIONAL([LALBURST],[test x$lalburst = xtrue])
 AM_CONDITIONAL([LALSTOCHASTIC],[test x$lalstochastic = xtrue])
 AM_CONDITIONAL([DATAFLOW],[test x$metaio = xtrue])
 AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
@@ -331,6 +337,7 @@ AC_OUTPUT
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalxmlenabled="`test x${lalxml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+lalburstenabled="`test x${lalburst} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalstochasticenabled="`test x${lalstochastic} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
@@ -341,6 +348,7 @@ echo "
                 LAL Frame library support is $lalframeenabled
                 LAL MetaIo library support is $lalmetaioenabled
                 LAL XML library support is $lalxmlenabled
+                LAL Burst library support is $lalburstenabled
                 LAL Stochastic library support is $lalstochasticenabled
                 FITS library support is $cfitsioenabled
 

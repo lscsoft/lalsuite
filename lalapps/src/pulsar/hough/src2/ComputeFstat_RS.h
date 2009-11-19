@@ -114,8 +114,9 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiSFTVector *multiSFTs
 			 );
   
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
-								  ); 
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( 
+                         MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
+			 ); 
   
   
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,

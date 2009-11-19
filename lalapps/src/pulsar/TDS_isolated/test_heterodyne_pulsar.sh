@@ -383,7 +383,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -421,7 +421,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -430,9 +430,16 @@ fi
 # file from heterodyne done in one go
 f3=875206560-875206680/finehet_J0000+0000_H1.full
 val=0
+skip=0
 while read line
 do
-        for args in $line; do
+        # this file has an extra line, so skip the first one
+	if [ $skip == 0 ]; then
+		((skip++))
+		continue
+	fi	
+	
+	for args in $line; do
                 # pass lines through said and convert any exponents 
                 # expressed as e's to E's and then convert to decimal format (for bc)
                 tempval=`echo $args | sed 's/e/E/g'`
@@ -460,7 +467,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -498,7 +505,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -536,7 +543,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi

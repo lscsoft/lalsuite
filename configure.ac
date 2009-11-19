@@ -3,7 +3,6 @@ AC_CONFIG_SRCDIR([lal/configure.ac])
 AC_CONFIG_AUX_DIR([lal/misc])
 AC_CONFIG_MACRO_DIR([lal/misc])
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([lalsuite.spec])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
@@ -27,6 +26,9 @@ export LALMETAIO_LIBS LALMETAIO_CFLAGS
 LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
 LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
 export LALXML_LIBS LALXML_CFLAGS
+LALBURST_LIBS="${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
+LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
+export LALBURST_LIBS LALBURST_CFLAGS
 LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
 LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
 export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
@@ -35,6 +37,7 @@ AC_CONFIG_SUBDIRS([lal])
 AC_CONFIG_SUBDIRS([lalframe])
 AC_CONFIG_SUBDIRS([lalmetaio])
 AC_CONFIG_SUBDIRS([lalxml])
+AC_CONFIG_SUBDIRS([lalburst])
 AC_CONFIG_SUBDIRS([lalstochastic])
 AC_CONFIG_SUBDIRS([lalapps])
 

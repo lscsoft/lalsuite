@@ -93,6 +93,7 @@ html_template = """
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Glitch" onclick="switchViewIframe()">Loudest Triggers<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Hwinj" onclick="switchViewIframe()">HW Injections<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_hist" onclick="switchViewIframe()">SNR Histogram<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="glitchgram" onclick="switchViewIframe()">Glitchgram<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="rate_vs_time" onclick="switchViewIframe()">Rate vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Snr vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;high-rate times<br>
@@ -245,6 +246,8 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
                 job.add_sub_job('plot_snr_vs_time',         config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_template_counts',     config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_glitchgram',          config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_rate_vs_time_all',    config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_hexmass',             config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_bank_veto',           config, ifo, job.level, cluster, start_time, end_time)
 
@@ -460,7 +463,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     cmd   = 'lalapps_path2cache'
 
     # sngl_inspirals
-    files = glob.glob('%s/%s-INSPIRAL_%s-*xml*' % (config['trigger_dir'], ifo, cluster))
+    files = sorted(glob.glob('%s/%s-INSPIRAL_%s-*xml*' % (config['trigger_dir'], ifo, cluster)))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
@@ -471,7 +474,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     f.close()
 
     # templates
-    files = glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo))
+    files = sorted(glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo)))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
@@ -861,7 +864,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
         cmd += '-x %s ' % config['hwinj_file']
         cmd += '-s %s ' % os.environ['S6_SEGMENT_SERVER']
         cmd += '-o %s/%s_CAT%d_%s_Hwinj.html ' % (config['out_dir'], ifo, veto_level, cluster)
-        cmd += ' '.join(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo))
+        cmd += ' '.join(sorted(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo)))
 
         os.system(cmd)
 
@@ -873,7 +876,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     summary_names = ['%s-%d_%s_summary_table.html','%s-%d_%s_usage_table.html']
     section_names = ['%s-%d_%s_glitch_page.html',  '%s-%d_%s_hwinj_page.html']
-    image_names   = ['rate_vs_time','snr_hist']
+    image_names   = ['rate_vs_time','snr_hist', 'glitchgram']
 
     map['start_time'] = gps_start_time
     map['end_time']   = gps_end_time
@@ -1452,25 +1455,108 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.savefig('%s/%s_%d_%s_mass_hist_norm.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
+def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
+    f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    data   = [l.split(',') for l in f]
+    data   = [ (float(d[0]), float(d[3]), chirplen(40.0,float(d[6]), float(d[7]))) for d in data ]
+    data   = sorted(data, cmp = lambda x,y: cmp(y[1],x[1]))
+
+    min_in_day = 60.0 * 60.0
+    data       = [ ((d[0] - start_time) / min_in_day, d[1], d[2]) for d in data]
+
+    loudest = data[0]
+    data    = data[1:]
+
+    ranges = [[ 0, 8,'b', 3],
+              [ 8,16,'g',15],
+              [16,float('inf'),'r',15]]
+
+    fig  = pylab.figure(1, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    for r in ranges:
+        subset = [d for d in data if d[1] >= r[0] and d[1] < r[1]]
+
+        pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
+
+    pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=50)
+
+
+    tau0s = [d[2] for d in data]
+    pylab.yscale('log')
+    pylab.ylim(min(tau0s) * 0.9, max(tau0s) * 1.1)
+    
+    pylab.xlabel(make_time_label(start_time))
+    pylab.xlim(0, 24)
+    pylab.xticks(range(0,26,2))
+    pylab.ylabel('Template length (sec)')
+    pylab.title('Loudest: GPS=%d  SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[1]))
+    pylab.savefig('%s_%d_%s_glitchgram.png' % (ifo, veto_level, cluster))
+
+
+
+def plot_rate_vs_time_all(config, ifo, veto_level, cluster, start_time, end_time):
+    """Rate (per sec) vs. time"""
+
+    num_min     = (end_time - start_time) / 60
+    mins_in_day = range(num_min)
+
+    fig  = pylab.figure(0, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    times  = [float(x) / 60.0 for x in mins_in_day]
+    maxcount = 0
+
+    for ifo in ['H1','L1','V1']:
+        counts = [1e-6 for i in mins_in_day]
+        f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+
+        for line in f:
+            trig_end_time = int(line.split(',')[0]) 
+            counts[ (trig_end_time - start_time) / 60 ] += 1
+
+        counts   = [c / 60.0 for c in counts]
+        maxcount = max(maxcount, max(counts))
+
+        foo = {'H1':'red', 'L1':'green', 'V1':'magenta'}
+        pylab.scatter(times, counts, color=foo[ifo], edgecolor='none', alpha=0.8)
+        pylab.yscale('log')
+
+    pylab.xlim(0, 24)
+    min_y = cluster.find('TSSI') > -1 and 1e-2 or 1
+    pylab.ylim(min_y, maxcount * 1.1)
+    pylab.xticks(range(0,26,2))
+
+
+    pylab.grid()
+    pylab.title('Rate vs. Time, all IFOs, TrigScan, Cat 1')
+    pylab.xlabel(make_time_label(start_time))
+    pylab.ylabel('Rate (Hz)')
+    pylab.savefig('%s_%d_%s_rate_vs_time_all.png' % (ifo, veto_level, cluster))
+
 if __name__ == '__main__':
-    actions = {'make_dag':        make_dag,
-               'make_veto_files': make_veto_files,
-               'make_caches':     make_caches,
-               'make_csv':        make_csv,
-               'make_database':   make_database,
+    actions = {'make_dag'                : make_dag,
+               'make_veto_files'         : make_veto_files,
+               'make_caches'             : make_caches,
+               'make_csv'                : make_csv,
+               'make_database'           : make_database,
                'make_glitchy_times_table': make_glitchy_times_table,
                'make_summary_table'      : make_summary_table,
                'make_usage_table'        : make_usage_table,
                'make_glitch_page'        : make_glitch_page,
                'make_hwinj_page'         : make_hwinj_page,
                'make_index_page'         : make_index_page,
-               'plot_snr_vs_time':     plot_snr_vs_time,
-               'plot_rate_vs_time':    plot_rate_vs_time,
-               'plot_snr_hist':        plot_snr_hist,
-               'plot_template_counts': plot_template_counts,
-               'plot_hexmass':         plot_hexmass,
-               'plot_bank_veto':         plot_bank_veto,
-               'plot_mass_hist':       plot_mass_hist}
+               'plot_snr_vs_time'        : plot_snr_vs_time,
+               'plot_rate_vs_time'       : plot_rate_vs_time,
+               'plot_snr_hist'           : plot_snr_hist,
+               'plot_template_counts'    : plot_template_counts,
+               'plot_hexmass'            : plot_hexmass,
+               'plot_bank_veto'          : plot_bank_veto,
+               'plot_mass_hist'          : plot_mass_hist,
+               'plot_glitchgram'         : plot_glitchgram,
+               'plot_rate_vs_time_all'   : plot_rate_vs_time_all}
                
     options = parse_command_line()
 
