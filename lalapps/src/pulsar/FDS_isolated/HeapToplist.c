@@ -175,12 +175,12 @@ void go_through_toplist(toplist_t*list, void (*handle)(void *)) {
     handle(list->heap[i]);
 }
 
-void* toplist_elem(toplist_t*list, size_t index) {
+void* toplist_elem(toplist_t*list, size_t ind) {
   if (list == NULL)
     return(NULL);
-  if (index >= list->elems)
+  if (ind >= list->elems)
     return(NULL);
-  return(list->heap[index]);
+  return(list->heap[ind]);
 }
 
 int compare_toplists(toplist_t*list1, toplist_t*list2) {

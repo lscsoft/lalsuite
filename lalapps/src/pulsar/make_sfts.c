@@ -124,6 +124,8 @@ RealFFTPlan *pfwd = NULL;
 int gethostname(char *name, int len);
 #endif
 
+FILE* tryopen(char *name, char *mode);
+
 /* This is an error handler that prints a bit of extra info */
 #ifdef __GNUC__
 void pout(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));

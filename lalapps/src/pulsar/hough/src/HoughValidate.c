@@ -101,11 +101,11 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_sftDir = NULL; /* the directory where the SFT  could be */
   CHAR   *uvar_fnameOut = NULL;               /* The output prefix filename */
   CHAR   *uvar_fnameIn = NULL;  
-  INT4   numberCount, index;
+  INT4   numberCount, ind;
   UINT8  nTemplates;   
   UINT4   mObsCoh, nfSizeCylinder;
   REAL8  uvar_peakThreshold;
-  REAL8  fmin, fmax, fWings, timeBase;
+  REAL8  f_min, f_max, fWings, timeBase;
   INT4  uvar_blocksRngMed;
   UINT4  sftlength; 
   INT4   sftFminBin;
@@ -259,9 +259,9 @@ int main(int argc, char *argv[]){
   /**************************************************/
   /* read sfts */     
   /*************************************************/
-  fmin = freqVec[0];     /* initial frequency to be analyzed */
+  f_min = freqVec[0];     /* initial frequency to be analyzed */
   /* assume that the last frequency in the templates file is also the highest frequency */
-  fmax = freqVec[nTemplates-1] ; 
+  f_max = freqVec[nTemplates-1] ; 
   
   /* we need to add wings to fmin and fmax to account for 
      the Doppler shift, the size of the rngmed block size
@@ -269,9 +269,9 @@ int main(int argc, char *argv[]){
      specified in terms of frequency bins...this goes as one of the arguments of 
      LALReadSFTfiles */
   /* first correct for Doppler shift */
-  fWings =  fmax * VTOT; 
-  fmin -= fWings;    
-  fmax += fWings; 
+  fWings =  f_max * VTOT; 
+  f_min -= fWings;    
+  f_max += fWings; 
   
   /* create pattern to look for in SFT directory */   
 
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]){
     mObsCoh = catalog->length;
     timeBase = 1.0 / catalog->data->header.deltaF;
 
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
 
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
 
@@ -531,10 +531,10 @@ int main(int argc, char *argv[]){
 	  pg1 = pgV[j];
 	  
 	  /* calculate frequency bin for template */
-	  index =  floor( foft * timeBase + 0.5 ) - sftFminBin; 
+	  ind =  floor( foft * timeBase + 0.5 ) - sftFminBin; 
 	  
 	  /* update the number count */
-	  numberCount+=pg1->data[index]; 
+	  numberCount+=pg1->data[ind]; 
 	}      
       
     } /* end of block calculating frequency path and number count */      

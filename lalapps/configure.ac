@@ -38,6 +38,7 @@ AC_CONFIG_FILES([\
   src/zmsearch/Makefile \
   src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
+  src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \

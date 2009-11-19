@@ -229,7 +229,7 @@ void getMultiPhaseDerivs (LALStatus *, MultiPhaseDerivs **derivs,
 			  PhaseType_t type,
 			  const DopplerPoint *offsetUnits );
 
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, BOOLEAN isLISA);
 
 int computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 			 gsl_matrix *m1_ij, gsl_matrix *m2_ij, gsl_matrix *m3_ij,
@@ -1011,7 +1011,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     if ( uvar->IFOs->data[0][0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar->ephemYear, cfg->startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar->ephemYear, isLISA ), status);
   }
 
   /* ----- which units to use? 'natural' or SI ----- */
@@ -1594,7 +1594,6 @@ InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
-	       LIGOTimeGPS epoch,	/**< epoch of observation */
 	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */
 	       )
 {

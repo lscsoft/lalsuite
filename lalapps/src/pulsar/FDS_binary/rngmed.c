@@ -473,8 +473,8 @@ This function is passed to qsort
 int rngmed_sortindex(const void *elem1, const void *elem2){
     /*Used in running qsort*/
     
-    const struct rngmed_val_index *A = (struct rngmed_val_index *)elem1;
-    const struct rngmed_val_index *B = (struct rngmed_val_index *)elem2;
+    const struct rngmed_val_index *A = (const struct rngmed_val_index *)elem1;
+    const struct rngmed_val_index *B = (const struct rngmed_val_index *)elem2;
 
     double data1, data2;
 
