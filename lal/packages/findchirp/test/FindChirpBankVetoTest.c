@@ -13,16 +13,17 @@
 
 #include <math.h>
 
-#define SUBBANKSIZE 5
+#define SUBBANKSIZE 10
 #define TEMPLATE_LENGTH 1000
 #define FLOW 0.0
-#define DELTAF 1.0
+#define DELTAT 1.0
 #define DYNRANGE 1.0
 
 
-SnglInspiralTable * convertTemplateBankToInspiralTable(InspiralTemplate *bankHead,SnglInspiralTable *rowHead);
-
-int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut);
+static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength);
+static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
+static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial);
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName);
 
 /* Program to test the essential bank chisquare functions.
  *
@@ -34,31 +35,68 @@ int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut);
  *  XLALBankVetoCCMat by computing the CC matrix for the first subbank.
  *
  */
+
 int main(int argc, char ** argv)
 {
     /* Input params to XLALBankVetoCCMat */
     FindChirpBankVetoData *bankVetoData = 
       (FindChirpBankVetoData *) calloc(1,sizeof(FindChirpBankVetoData));
-    UINT4 subBankSize = SUBBANKSIZE;
     REAL4Vector *ampVec = XLALCreateREAL4Vector(TEMPLATE_LENGTH);
     REAL4 dynRange = DYNRANGE;
     REAL4 fLow = FLOW;
-    REAL4 deltaF = DELTAF;
-    REAL4 deltaT = DELTAF;
+    REAL4 deltaT = DELTAT;
+    UINT4 subBankSize = SUBBANKSIZE;
+    REAL4 templateLength = TEMPLATE_LENGTH;
+    REAL4 deltaF = 1.0/(deltaT*templateLength);
 
     /* Params needs for main */
+    UINT4 trial;
+    CHAR ccFileName[100];
+
+    /* Initiate/fill basic structures needed by XLALBankVetoCCMat */
+    initBankVetoData(bankVetoData,ampVec,subBankSize,templateLength);
+
+    /* Create mock templates which are orthogonal */
+    makeOrthogonalTemplates(bankVetoData,subBankSize,templateLength,deltaF);
+
+    /* 
+     * Make repeated calls to XLALBankVetoCCMat with time shifts 
+     * in some of the templates. 
+     */
+    for (trial = 0; trial < subBankSize; trial++)
+    {
+	/* set the time shift for all but one template to be 1 unit */
+	timeshiftTemplates(bankVetoData->timeshift,trial);
+
+	/* Pass to CCMat function */
+	XLALBankVetoCCMat (bankVetoData, ampVec, subBankSize,
+			   dynRange, fLow, deltaF, deltaT);
+
+	/* write out results */
+	sprintf(ccFileName,"ccmat_%d.txt",trial);
+	writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
+    }
+
+    return 0;
+
+}
+
+
+
+static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength)
+{
     UINT4 sampleIndex;
-    UINT4 templateIndex;
-    REAL8 phase;
 
     /* initiate ccmat */
     bankVetoData->ccMat = XLALCreateCOMPLEX8Vector(subBankSize*subBankSize);
+    
+    /* initiate normMat */
     bankVetoData->normMat = XLALCreateREAL4Vector(subBankSize);
 
     /* Create unity response function, spectrum and ampVec */
-    bankVetoData->resp = XLALCreateCOMPLEX8Vector(TEMPLATE_LENGTH);
-    bankVetoData->spec = XLALCreateREAL4Vector(TEMPLATE_LENGTH);
-    for (sampleIndex = 0; sampleIndex < TEMPLATE_LENGTH; sampleIndex++)
+    bankVetoData->resp = XLALCreateCOMPLEX8Vector(templateLength);
+    bankVetoData->spec = XLALCreateREAL4Vector(templateLength);
+    for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
     {
 	bankVetoData->resp->data[sampleIndex].re = 1;
 	bankVetoData->resp->data[sampleIndex].im = 0;
@@ -66,8 +104,20 @@ int main(int argc, char ** argv)
 	ampVec->data[sampleIndex] = 1;
     }
 
+    /* initiate timeshift */
+    bankVetoData->timeshift = XLALCreateREAL4Vector(subBankSize);
 
-    /* Fill in templates */
+    return;
+
+}
+
+
+static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF)
+{
+    UINT4 templateIndex;
+    UINT4 sampleIndex;
+    REAL8 phase;
+
     bankVetoData->length = subBankSize;
     bankVetoData->fcInputArray = 
       (FindChirpFilterInput **) calloc(subBankSize,sizeof(FindChirpFilterInput *));
@@ -78,104 +128,42 @@ int main(int argc, char ** argv)
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt = 
 	  (FindChirpTemplate *) calloc(1,sizeof(FindChirpTemplate));
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->data =
-	  XLALCreateCOMPLEX8Vector(TEMPLATE_LENGTH);
+	  XLALCreateCOMPLEX8Vector(templateLength);
 
-	for (sampleIndex = 0; sampleIndex < TEMPLATE_LENGTH; sampleIndex++)
+	for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
 	{
-	    phase = 2*LAL_PI*( (REAL8) (templateIndex*sampleIndex) ) / ( (REAL8) TEMPLATE_LENGTH );
+	    phase = 2*LAL_PI*( (REAL8) (templateIndex*sampleIndex) ) / ( (REAL8) templateLength );
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].re =
 	      cos(phase);
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
 	      sin(phase);
 	}
-
+	
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal = 
-	  (REAL8) (DELTAF*TEMPLATE_LENGTH-FLOW);
+	  (REAL8) (deltaF*templateLength-FLOW);
+	
     }
 
-
-    UINT4 trial;
-    CHAR ccFileName[100];
-    FILE *fdOut;
-    bankVetoData->timeshift = XLALCreateREAL4Vector(subBankSize);
-    for (trial = 0; trial < subBankSize; trial++)
-    {
-	/* set the time shift for all but one template to be 1 unit */
-	memset(bankVetoData->timeshift->data, 0, subBankSize * sizeof(REAL4));
-	bankVetoData->timeshift->data[trial] = 1.0/ (REAL4) TEMPLATE_LENGTH;
-
-	/* Pass to CCMat function */
-	XLALBankVetoCCMat (bankVetoData,
-			   ampVec,
-			   subBankSize,
-			   dynRange,
-			   fLow,
-			   deltaF,
-			   deltaT);
-
-
-	/* write out results */
-	sprintf(ccFileName,"ccmat_%d.txt",trial);
-	fdOut = fopen(ccFileName,"w");
-	writeCCmatToFile(bankVetoData->ccMat,bankVetoData->length,fdOut);
-	fclose(fdOut);
-    }
-
-    return 0;
+    return;
 
 }
 
 
-SnglInspiralTable *convertTemplateBankToInspiralTable(InspiralTemplate *bankHead,
-				       SnglInspiralTable *rowHead)
+static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial)
 {
-    // Return with error if bank is empty
-    if (!bankHead)
-      return NULL;
+    /* shift only one of the templates by only one time unit */
+    memset(timeshift->data, 0, (timeshift->length) * sizeof(REAL4));
+    timeshift->data[trial] = 1.0;
 
-    // Allocate space for inspiral table if necessary
-    if (!rowHead)
-      rowHead = (SnglInspiralTable *) calloc(1,sizeof(SnglInspiralTable));
-
-    // Make copies of the pointers
-    InspiralTemplate *bank = bankHead;
-    SnglInspiralTable *snglInspiralRow  = rowHead;
-
-    // Write data in bank to inspiral rows
-    for ( bank = bankHead; bank; bank = bank->next)
-    {
-
-	snglInspiralRow->mass1 = bank->mass1;
-	snglInspiralRow->mass2 = bank->mass2;
-	snglInspiralRow->snr = 3.7;
-	snglInspiralRow->chisq = 3.8;
-	snglInspiralRow->chisq_dof = 100;
-	snglInspiralRow->bank_chisq = 3.9;
-	snglInspiralRow->bank_chisq_dof = 100;
-	snglInspiralRow->cont_chisq = 4.0;
-	snglInspiralRow->cont_chisq_dof = 100;
-
-	if (!snglInspiralRow->next) 
-	  snglInspiralRow->next = (SnglInspiralTable *) calloc(1,sizeof(SnglInspiralTable));
-
-	snglInspiralRow = snglInspiralRow->next;
-    
-    }
-
-    // Null terminate the table (to tell where the table ends)
-    snglInspiralRow->next = NULL;
-
-
-
-
-    return 0;
+    return;
 
 }
 
 
 
-int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,CHAR *ccFileName)
 {
+    FILE *fdOut = fopen(ccFileName,"w");
     int row;
     int col;
 
@@ -199,8 +187,7 @@ int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,FILE *fdOut)
 	fprintf(fdOut,"\n");
     }
 
-
-
+    fclose(fdOut);
 
     return 0;
 }
