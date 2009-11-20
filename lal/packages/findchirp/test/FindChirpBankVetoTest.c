@@ -14,7 +14,7 @@
 #include <math.h>
 
 #define SUBBANKSIZE 10
-#define TEMPLATE_LENGTH 1000
+#define TEMPLATE_LENGTH 10000
 #define FLOW 0.0
 #define DELTAT 1.0
 #define DYNRANGE 1.0
@@ -116,7 +116,7 @@ static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 su
 {
     UINT4 templateIndex;
     UINT4 sampleIndex;
-    REAL8 phase;
+    REAL4 phase;
 
     bankVetoData->length = subBankSize;
     bankVetoData->fcInputArray = 
@@ -132,7 +132,7 @@ static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 su
 
 	for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
 	{
-	    phase = 2*LAL_PI*( (REAL8) (templateIndex*sampleIndex) ) / ( (REAL8) templateLength );
+	    phase = 2*LAL_PI*( (REAL4) (templateIndex*sampleIndex) ) / ( (REAL4) templateLength );
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].re =
 	      cos(phase);
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
@@ -140,7 +140,7 @@ static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 su
 	}
 	
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal = 
-	  (REAL8) (deltaF*templateLength-FLOW);
+	  (REAL4) (deltaF*templateLength-FLOW);
 	
     }
 
@@ -153,7 +153,7 @@ static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial)
 {
     /* shift only one of the templates by only one time unit */
     memset(timeshift->data, 0, (timeshift->length) * sizeof(REAL4));
-    timeshift->data[trial] = 1.0;
+    timeshift->data[trial] = 2.0*DELTAT;
 
     return;
 
@@ -161,28 +161,30 @@ static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial)
 
 
 
-static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 maxSubBankSize,CHAR *ccFileName)
+static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName)
 {
     FILE *fdOut = fopen(ccFileName,"w");
     int row;
     int col;
 
     // print a matrix of the real parts
-        for ( row = 0; row< maxSubBankSize; row++ )
+    fprintf(fdOut,"#Real part:\n");
+    for ( row = 0; row< subBankSize; row++ )
     {
-	for ( col = 0; col < maxSubBankSize; col++ )
+	for ( col = 0; col < subBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.4g\t",ccmat->data[row*maxSubBankSize+col].re);
+	    fprintf(fdOut,"%.8f\t",ccmat->data[row*subBankSize+col].re);
 	}
 	fprintf(fdOut,"\n");
     }
 
     // print a matrix of the imaginary parts
-    for ( row = 0; row< maxSubBankSize; row++ )
+    fprintf(fdOut,"#Imaginary part:\n");
+    for ( row = 0; row< subBankSize; row++ )
     {
-	for ( col = 0; col < maxSubBankSize; col++ )
+	for ( col = 0; col < subBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.4g\t",ccmat->data[row*maxSubBankSize+col].im);
+	    fprintf(fdOut,"%.8f\t",ccmat->data[row*subBankSize+col].im);
 	}
 	fprintf(fdOut,"\n");
     }

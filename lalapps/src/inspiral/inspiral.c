@@ -2159,7 +2159,7 @@ int main( int argc, char *argv[] )
       bankVetoData.ccMat =
         XLALCreateCOMPLEX8Vector( bankVetoData.length * bankVetoData.length );
       bankVetoData.normMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateVector( bankVetoData.length );
       /* point to response and spectrum */
       bankVetoData.spec = spec.data;
       bankVetoData.resp = resp.data;
@@ -2310,6 +2310,7 @@ int main( int argc, char *argv[] )
         if (templateFFTDataVector) XLALDestroyCOMPLEX8Vector(templateFFTDataVector);
         if (plan) XLALDestroyREAL4FFTPlan( plan );
       }
+
 
       ccFlag = 1;
       /* loop over data segments */
@@ -2521,10 +2522,12 @@ int main( int argc, char *argv[] )
 	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
 	  fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
+          XLALBankVetoCCMat( &bankVetoData, 
+			     fcDataParams->ampVec,
+			     subBankCurrent->subBankSize, 
 			     dynRange, fLow, spec.deltaF,chan.deltaT);
           fprintf(stderr, "done with ccmat\n");
-	  
+
 	  ccFlag = 0;
         }
         /* now look through the filter outputs of the subbank for events */
