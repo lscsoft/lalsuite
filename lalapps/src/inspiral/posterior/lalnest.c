@@ -593,7 +593,14 @@ int main( int argc, char *argv[])
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&(inputMCMC.segment[i]->epoch),0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			
 			XLALDestroyREAL8TimeSeries(RawData);
-			
+
+			/* Window and FFT the data */
+			XLALDDVectorMultiply(inputMCMC.segment[i]->data,inputMCMC.segment[i]->data,windowplan->data);
+			check=XLALREAL8TimeFreqFFT(inputMCMC.stilde[i],inputMCMC.segment[i],fwdplan); /* XLALREAL8TimeFreqFFT multiplies by deltaT */
+			for(j=0;j<inputMCMC.stilde[i]->data->length;j++) {
+				inputMCMC.stilde[i]->data->data[j].re/=sqrt(windowplan->sumofsquares / windowplan->data->length);
+				inputMCMC.stilde[i]->data->data[j].im/=sqrt(windowplan->sumofsquares / windowplan->data->length);
+			}
 		} /* End if(!FakeFlag) */
 		
 		/* Perform injection in time domain */
@@ -667,16 +674,6 @@ int main( int argc, char *argv[])
 			
 			if(status.statusCode==0) {fprintf(stderr,"Injected signal into %s. SNR=%lf\n",IFOnames[i],SNR);}
 			else {fprintf(stderr,"injection failed!!!\n"); REPORTSTATUS(&status); exit(-1);}
-		}
-		
-		if(!FakeFlag){
-			/* Window and FFT the data */
-			XLALDDVectorMultiply(inputMCMC.segment[i]->data,inputMCMC.segment[i]->data,windowplan->data);
-			check=XLALREAL8TimeFreqFFT(inputMCMC.stilde[i],inputMCMC.segment[i],fwdplan); /* XLALREAL8TimeFreqFFT multiplies by deltaT */
-			for(j=0;j<inputMCMC.stilde[i]->data->length;j++) {
-				inputMCMC.stilde[i]->data->data[j].re/=sqrt(windowplan->sumofsquares / windowplan->data->length);
-				inputMCMC.stilde[i]->data->data[j].im/=sqrt(windowplan->sumofsquares / windowplan->data->length);
-			}
 		}
 		
 	} /* End loop over IFOs */
@@ -961,7 +958,7 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	etamin=0.01;
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
-	mcmin=m2mc(1.0,1.0);
+	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
 	

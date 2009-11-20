@@ -387,13 +387,14 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	/* Calculate the likelihood for an amplitude-corrected waveform */
 	/* This template is generated in the time domain */
 	REAL8 logL=0.0,chisq=0.0;
-	REAL8 mc,eta,end_time,resp_r,resp_i,real,imag;
+	REAL8 mc,eta,end_time,resp_r,resp_i,real,imag,ci;
 	UINT4 det_i=0,idx=0;
 	UINT4 i=0;
 	DetectorResponse det;
 	static LALStatus status;
 	CoherentGW coherent_gw;
 	PPNParamStruc PPNparams;
+	LALDetAMResponse det_resp;
 	REAL4TimeSeries *h_p_t,*h_c_t=NULL;
 	COMPLEX8FrequencySeries *H_p_t=NULL, *H_c_t=NULL;
 	size_t NFD = 0;
@@ -418,7 +419,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	PPNparams.fStartIn=inputMCMC->fLow;
 	PPNparams.fStopIn=0.5/inputMCMC->deltaT;
 	PPNparams.deltaT=inputMCMC->deltaT;
-	
+	ci=cos(PPNparams.inc);
 	/* Call LALGeneratePPNAmpCorInspiral */
 	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
 	if(status.statusCode)
@@ -515,6 +516,13 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	
 		det_gps.p_detector = (inputMCMC->detector[det_i]); /* Select detector */
 		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
+		/* Compute detector amplitude response */
+		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
+		LALComputeDetAMResponse(&status,&det_resp,&det_source,&GPSandAcc); /* Compute det_resp */
+		det_resp.plus*=0.5*(1.0+ci*ci);
+		det_resp.cross*=ci;
+		
+		
 		
 		chisq=0.0;
 		/* Calculate the logL */
@@ -532,14 +540,11 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 			cross_re = H_c_t->data->data[idx].re*cos(ang)+H_c_t->data->data[idx].im*sin(ang);
 			cross_im = H_c_t->data->data[idx].im*cos(ang)+H_c_t->data->data[idx].re*sin(ang);
 			
-			
 			/* Compute total real and imaginary responses */
-			
-			
-			resp_r = (REAL8)(plus_re+cross_re);
-			resp_i = (REAL8)(plus_im+cross_im);
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
+			resp_r = (REAL8)(plus_re*det_resp.plus+cross_re*det_resp.cross);
+			resp_i = (REAL8)(plus_im*det_resp.plus+cross_im*det_resp.cross);
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/*/deltaF*/;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/*/deltaF*/;
 			
 			/* Gaussian version */
 			/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
