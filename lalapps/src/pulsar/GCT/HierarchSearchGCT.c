@@ -212,6 +212,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 dFreqStack; /* frequency resolution of Fstat calculation */
   REAL8 df1dot;  /* coarse grid resolution in spindown */
   UINT4 nf1dot;  /* number of coarse-grid spindown values */
+  UINT4 ifdot;  /* counter for coarse-grid spindown values */
   
   /* fine grid */
   FineGrid finegrid;
@@ -220,20 +221,23 @@ int MAIN( int argc, char *argv[]) {
   REAL8 gamma2, sigmasq;  /* refinement factor and variance */
   
   /* GCT helper variables */
+  UINT4 ic,ic2,ic3,ifine,fveclength,ifreq;
   REAL8 myf0,f_event,f1dot_event,deltaF;
   REAL8 fg_freq_step,fg_f1dot_step,fg_fmin,f1dotmin,fg_fband,fg_f1dotband;
-  REAL8 u1win,u2win,u1winInv,u2winInv,u1fac,u2fac,u1start,u2start;
+  REAL8 u1win,u2win,u1winInv,u2winInv,u1fac,u2fac;
+  REAL8 u1start,u2start;
   REAL8 f_tmp,f1dot_tmp;
-  REAL8 TwoFthreshold, TwoFmax, TwoFtemp;
-  UINT4 ic,ic2,ic3,icoarse,ifine,length,ifreq,nc_max;
+  REAL8 TwoFthreshold;
+  REAL8 TwoFmax;
+  UINT4 nc_max;
   REAL8 pos[3];
   REAL8 vel[3];
   REAL8 acc[3];
   
   /* GCT helper variables for fast calc */
-  REAL8 A1,B1,A2,B2;
-  REAL8 cosAlpha,sinAlpha,cosDelta,sinDelta;
-  REAL8 CosAlphaCosDelta,SinAlphaCosDelta, PdotN, VdotN, AdotN;
+  REAL8 A1, B1, A2, B2;
+  REAL8 cosAlpha, sinAlpha, cosDelta,sinDelta;
+  REAL8 CosAlphaCosDelta, SinAlphaCosDelta, PdotN, VdotN, AdotN;
      
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
@@ -483,14 +487,8 @@ int MAIN( int argc, char *argv[]) {
   
 
   /* initializations of coarse and fine grids */
-  coarsegrid.list=NULL;
-  finegrid.list=NULL;
-  
-  /* initialize constants for GPSC equations */
-  A1=0.0; 
-  B1=0.0;
-  A2=0.0;
-  B2=0.0;
+  coarsegrid.list = NULL;
+  finegrid.list = NULL;
 
   /* initialize ephemeris info */ 
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
@@ -770,9 +768,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
   LogPrintfVerbatim(LOG_DETAIL, "done\n");  
 
-  /*----- start main calculations by going over coarse grid points --------*/
+  
+  /* ----- start main calculations by going over coarse grid points --------*/
  
-  /* loop over skygrid points */
+  /* ########## loop over SKY coarse-grid points ########## */
   skyGridCounter = 0;
 
   XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
@@ -805,9 +804,8 @@ int MAIN( int argc, char *argv[]) {
 #endif 
 
 
-  while(thisScan.state != STATE_FINISHED)
-    {
-      UINT4 ifdot;  /* counter for spindown values */
+  while(thisScan.state != STATE_FINISHED) {
+    
       SkyPosition skypos;
 
       /* if (skyGridCounter == 25965) { */
@@ -822,9 +820,8 @@ int MAIN( int argc, char *argv[]) {
 		    skyGridCounter,thisScan.numSkyGridPoints,
 		    uvar_Freq, uvar_FreqBand);
 
-      LogPrintfVerbatim(LOG_DEBUG, "\n%% --- Sky point: %d\n", skyGridCounter );
       
-      /*------------- calculate F statistic for each stack --------------*/
+      /*------------- calculate F-Statistic for each segment --------------*/
       
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
       thisPoint.Alpha = dopplerpos.Alpha;
@@ -835,12 +832,9 @@ int MAIN( int argc, char *argv[]) {
       skypos.latitude = thisPoint.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
       
-      semiCohPar.alpha = thisPoint.Alpha;
-      semiCohPar.delta = thisPoint.Delta;
-      
       {  /********Allocate fstat vector memory *****************/
 	
-        /* extra bins for fstat due to skypatch and spindowns */
+        /* extra bins for F-Statistic due to spin-down */
         REAL8 freqHighest;
 	
         /* calculate number of bins for fstat overhead */
@@ -892,322 +886,337 @@ int MAIN( int argc, char *argv[]) {
       } /* fstat memory allocation block */
 
 
-      /* ------------- Set up coarse grid --------------------------------------*/
-      coarsegrid.length = (INT4) (binsFstat1 * nf1dot);
-      LogPrintf(LOG_DEBUG, "Coarse-grid points per segment = %d\n",coarsegrid.length);
+      /* ########## loop over F-Statistic calculation on coarse-grid f1dot values ########## */
+      for (ifdot = 0; ifdot < nf1dot; ifdot++) { 
+
+        LogPrintfVerbatim(LOG_DEBUG, "\n%% --- Sky point: %d / %d   Spin-down: %d / %d\n", \
+                        skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot );
+      
+        /* ------------- Set up coarse grid --------------------------------------*/
+        coarsegrid.length = (UINT4) (binsFstat1);
+        LogPrintf(LOG_DEBUG, "Coarse-grid points in frequency per segment = %d\n",coarsegrid.length);
      
-      /* allocate memory for coarsegrid */
-      coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
-      if ( coarsegrid.list == NULL) {
-        fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-        return(HIERARCHICALSEARCH_EMEM);
-      }
+        /* allocate memory for coarsegrid */
+        coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
+        if ( coarsegrid.list == NULL) {
+          fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+          return(HIERARCHICALSEARCH_EMEM);
+        }
 
-      /* Initialize first coarsegrid point */
-      thisCgPoint.Index=0;
-      thisCgPoint.U1i=0;
-      thisCgPoint.U2i=0;
-      thisCgPoint.TwoF=0.0;
+        /* Initialize first coarsegrid point */
+        thisCgPoint.Index=0;
+        thisCgPoint.U1i=0;
+        thisCgPoint.U2i=0;
+        thisCgPoint.TwoF=0.0;
       
-      
-      
-      /* ------------- Set up fine grid --------------------------------------*/
 
-      /* fine-grid borders */
-      fg_fmin = usefulParams.spinRange_midTime.fkdot[0];
-      fg_fband = usefulParams.spinRange_midTime.fkdotBand[0];
-      f1dotmin = usefulParams.spinRange_midTime.fkdot[1];
-      fg_f1dotband = usefulParams.spinRange_midTime.fkdotBand[1];
+        /* ------------- Set up fine grid --------------------------------------*/
 
-      /* fine-grid freq resoultion */
-      fg_freq_step = dFreqStack;
-      nfreqsFG = ceil(fg_fband / fg_freq_step);  /* number of points in frequency */
+        /* fine-grid borders */
+        fg_fmin = usefulParams.spinRange_midTime.fkdot[0];
+        fg_fband = usefulParams.spinRange_midTime.fkdotBand[0];
+        f1dotmin = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+        fg_f1dotband = usefulParams.spinRange_midTime.fkdotBand[1];
+
+        /* fine-grid freq resoultion */
+        fg_freq_step = dFreqStack;
+        nfreqsFG = ceil(fg_fband / fg_freq_step);  /* number of points in frequency */
       
-      /* fine-grid f1dot resoultion */
-      nf1dotsFG = gamma2;  /* number of points in fine-grid spindown */
-      fg_f1dot_step = df1dot / nf1dotsFG;  
+        /* fine-grid f1dot resoultion */
+        nf1dotsFG = ceil(gamma2);            /* number of spindown fine-grid  points */
+        fg_f1dot_step = df1dot / nf1dotsFG;  /* spindown fine-grid  stepsize */
     
-      /* adjust f1dotmin from upper to lower limit */
-      if (fg_f1dot_step > 0.0) {
-        f1dotmin = f1dotmin - df1dot/2.0;
-      } 
+        /* adjust f1dotmin from upper to lower limit */
+        if (fg_f1dot_step > 0.0) {
+          f1dotmin = f1dotmin - df1dot/2.0;
+        } 
 
-      /* total number of fine-grid points */
-      finegrid.length = nf1dotsFG * nfreqsFG;
-      LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
+        /* total number of fine-grid points */
+        finegrid.length = nf1dotsFG * nfreqsFG;
+        LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
 
-      /* reference time for finegrid: mid point of observation time */
-      finegrid.refTime = tMidGPS;
+        /* reference time for finegrid: mid point of observation time */
+        finegrid.refTime = tMidGPS;
 
-      /* allocate memory for finegrid points */
-      finegrid.list = (FineGridPoint *)LALRealloc( finegrid.list, finegrid.length * sizeof(FineGridPoint));
-      if ( finegrid.list == NULL) {
-        fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-        return(HIERARCHICALSEARCH_EMEM);
-      }
+        /* allocate memory for finegrid points */
+        finegrid.list = (FineGridPoint *)LALRealloc( finegrid.list, finegrid.length * sizeof(FineGridPoint));
+        if ( finegrid.list == NULL) {
+          fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+          return(HIERARCHICALSEARCH_EMEM);
+        }
+      
+        /* copy sky coarse-grid point to finegrid, because sky is not refined */
+        finegrid.Alpha = thisPoint.Alpha;
+        finegrid.Delta = thisPoint.Delta;
 
-      /* initialize first finegrid point */
-      thisFgPoint.F=0.0;
-      thisFgPoint.F1dot=0.0;
-      thisFgPoint.Alpha=thisPoint.Alpha;
-      thisFgPoint.Delta=thisPoint.Delta;
-      thisFgPoint.Index=0;
-      thisFgPoint.U1i=0;
-      thisFgPoint.U2i=0;
-      thisFgPoint.nc=0;
-      thisFgPoint.sumTwoF=0.0;
+        /* initialize first finegrid point */
+        thisFgPoint.F=0.0;
+        thisFgPoint.F1dot=0.0;
+        thisFgPoint.Index=0;
+        thisFgPoint.U1i=0;
+        thisFgPoint.U2i=0;
+        thisFgPoint.nc=0;
+        thisFgPoint.sumTwoF=0.0;
 
-      /* construct entire finegrid */
-      ic=0;
-      f_tmp = fg_fmin;
-          for(ic2=0;ic2<nfreqsFG;ic2++) {
-            f1dot_tmp = f1dotmin;
-            for(ic3=0;ic3<nf1dotsFG;ic3++) {
+        /* construct entire finegrid */
+        ic=0;
+        f_tmp = fg_fmin;
+        for(ic2=0;ic2<nfreqsFG;ic2++) {
+          f1dot_tmp = f1dotmin;
+          for(ic3=0;ic3<nf1dotsFG;ic3++) {
               thisFgPoint.F     = f_tmp;
               thisFgPoint.F1dot = f1dot_tmp;
               thisFgPoint.Index = ic;
               finegrid.list[ic] = thisFgPoint;
               f1dot_tmp = f1dot_tmp + fg_f1dot_step;
               ic++;
-            }
-          f_tmp = f_tmp + fg_freq_step;
           }
+          f_tmp = f_tmp + fg_freq_step;
+        }
 
-      /* --------------------------------------------------------------- */
+        /* --------------------------------------------------------------- */
       
-      /* U-map configuration */
-      u1fac=1.0;
-      u2fac=1.0;
+        /* U-map configuration */
+        u1fac=1.0;
+        u2fac=1.0;
 
-      /* Keeping track of maximum number count */
-      nc_max=0;    /* initialize */
-      TwoFmax=0.0; /* initialize */
+        /* Keeping track of maximum number count */
+        nc_max=0;    /* initialize */
+        TwoFmax=0.0; /* initialize */
       
-      /* ##########################################################*/
-      /* ------------- MAIN LOOP over Segments --------------------*/
+        /* ##########################################################*/
+        /* ------------- MAIN LOOP over Segments --------------------*/
       
-      for (k = 0; k < nStacks; k++) {
+        for (k = 0; k < nStacks; k++) {
         
-        /* Get pos vel acc for this segment */
-        pos[0] = semiCohPar.pos->data[3*k];
-        pos[1] = semiCohPar.pos->data[3*k + 1];
-        pos[2] = semiCohPar.pos->data[3*k + 2];
-        vel[0] = semiCohPar.vel->data[3*k];
-        vel[1] = semiCohPar.vel->data[3*k + 1];
-        vel[2] = semiCohPar.vel->data[3*k + 2];  
-        acc[0] = semiCohPar.acc->data[3*k];
-        acc[1] = semiCohPar.acc->data[3*k + 1];
-        acc[2] = semiCohPar.acc->data[3*k + 2];
-        
-        /* reference time for Fstat has to be midpoint of segment */
-        startTstackGPS = startTstack->data[k];
-        midTstackGPS   = midTstack->data[k];
-        endTstackGPS   = endTstack->data[k];
-        
-        startTseg = XLALGPSGetREAL8( &startTstackGPS );
-        midTseg = XLALGPSGetREAL8( &midTstackGPS );
-        endTseg = XLALGPSGetREAL8( &endTstackGPS );
-        refTime = XLALGPSGetREAL8( &thisPoint.refTime );
-        timeDiffSeg = midTseg - refTime;   
+          /* Get pos vel acc for this segment */
+          pos[0] = semiCohPar.pos->data[3*k];
+          pos[1] = semiCohPar.pos->data[3*k + 1];
+          pos[2] = semiCohPar.pos->data[3*k + 2];
+          
+          vel[0] = semiCohPar.vel->data[3*k];
+          vel[1] = semiCohPar.vel->data[3*k + 1];
+          vel[2] = semiCohPar.vel->data[3*k + 2];
+          
+          acc[0] = semiCohPar.acc->data[3*k];
+          acc[1] = semiCohPar.acc->data[3*k + 1];
+          acc[2] = semiCohPar.acc->data[3*k + 2];
+          
+          /* reference time for Fstat has to be midpoint of segment */
+          startTstackGPS = startTstack->data[k];
+          midTstackGPS   = midTstack->data[k];
+          endTstackGPS   = endTstack->data[k];
+          
+          startTseg = XLALGPSGetREAL8( &startTstackGPS );
+          midTseg = XLALGPSGetREAL8( &midTstackGPS );
+          endTseg = XLALGPSGetREAL8( &endTstackGPS );
+          refTime = XLALGPSGetREAL8( &thisPoint.refTime );
+          timeDiffSeg = midTseg - refTime;   
                 
-        /* ---------------------------------------------------------------------------------------- */ 
-        
-        SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, skyGridCounter + (REAL4)k / (REAL4)nStacks, 
-                      thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
+          /* ---------------------------------------------------------------------------------------- */ 
+          
+          SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, skyGridCounter + (REAL4)k / (REAL4)nStacks, 
+                        thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
 
-        /********************* Compute Global-Correlation Constants for the COARSE grid *************/
+          /********************* Compute Global-Correlation Constants for the COARSE grid *************/
+          
+          A1 =  1.0 + ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
+                      + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
+                      + vel[2] * sin(thisPoint.Delta) );
+          
+          B1 = ( pos[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + pos[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + pos[2] * sin(thisPoint.Delta) );
+          
+          A2 = ( acc[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + acc[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + acc[2] * sin(thisPoint.Delta) );
+          
+          B2 = ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
+               + vel[2] * sin(thisPoint.Delta) );
+          
+          /* setup the tolerance windows in the U-map */
+          u1win = u1fac * dFreqStack * LAL_TWOPI * A1;
+          u2win = u2fac * 0.5 * LAL_TWOPI * df1dot;
+
+          /* initialize */
+          u1start = 0.0;
+          u2start = 0.0;
         
-        A1 =  1.0 + ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
-                    + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
-                    + vel[2] * sin(thisPoint.Delta) );
-        
-        B1 = ( pos[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + pos[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + pos[2] * sin(thisPoint.Delta) );
-        
-        A2 = ( acc[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + acc[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + acc[2] * sin(thisPoint.Delta) );
-        
-        B2 = ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
-             + vel[2] * sin(thisPoint.Delta) );
-        
-        /* setup the tolerance windows in the U-map */
-        u1win = u1fac * dFreqStack * LAL_TWOPI * A1;
-        u2win = u2fac * 0.5 * LAL_TWOPI * df1dot;
-        
-        /* take the inverse outside the hot loop for speed */
-        u1winInv=1.0/u1win;
-        u2winInv=1.0/u2win;
-              
-        /* ---------------------------------------------------------------------------------------- */ 
-        /********************* Compute F-Statistic and set up COARSE grid *************/ 
-        icoarse = 0;
-        
-        /* loop over f1dot values, spindown range and resolution has been set earlier */
-        /*for (ifdot = 0; ifdot < nf1dot; ifdot++) {   FIX THIS !!!!!!!!!!!!!!!!*/  
-        for (ifdot = 0; ifdot < 1; ifdot++) {
-	    
+          /* take the inverse before the hot loop */
+          u1winInv=1.0/u1win;
+          u2winInv=1.0/u2win;
+                
+          /* ----------------------------------------------------------------- */ 
+          /************************ Compute F-Statistic ************************/         
+          
           LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid point and %d/%d spindown values\n",
-                    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);                    
-	    
+                      skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);                    
+        
+          /* Set starting frequency for Fstat calculation */
+          thisPoint.fkdot[0] = fstatVector.data[k].f0; 
+          
           /* set spindown value for Fstat calculation */
           thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-          thisPoint.fkdot[0] = fstatVector.data[k].f0;      
-          
+                 
           /* this is the most costly function. We here allow for using an architecture-specific optimized
-            function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-          LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint, 
-					       stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
-					       stackMultiDetStates.data[k], &CFparams), &status);
-            
+              function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+          LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint, \
+                                          stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], \
+                                          stackMultiDetStates.data[k], &CFparams), &status);
+              
           f1dot_event = thisPoint.fkdot[1];
           myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg;
-          length = fstatVector.data[k].data->length;
+          fveclength = fstatVector.data[k].data->length;
           deltaF = fstatVector.data[k].deltaF;
-
           u1start = LAL_TWOPI * (myf0 * A1 + f1dot_event * B1);
           u2start = LAL_TWOPI * (f1dot_event * 0.5 + myf0 * 0.5 * A2 + f1dot_event * B2);
-                                           
-          for (ifreq = 0; ifreq < length; ifreq++) {
+                    
+          for (ifreq = 0; ifreq < fveclength; ifreq++) {
             
             /* translate frequency from reftime to midpoint of this segment */
             f_event = myf0 + ifreq * deltaF;
-            
+              
             /* compute the global-correlation coordinate indices */
-            thisCgPoint.U1i = (INT4) ( ( ((LAL_TWOPI*(f_event * A1 + f1dot_event * B1)) - u1start) * u1winInv + 0.5) );
-            thisCgPoint.U2i = (INT4) ( ( ((LAL_TWOPI*(f1dot_event * 0.5 + f_event * 0.5 * A2 + f1dot_event * B2)) - u2start) * u2winInv + 0.5) );   
+            thisCgPoint.U1i = (INT4) ( ( (LAL_TWOPI * (f_event * A1 + f1dot_event * B1)) \
+                                        - u1start ) * u1winInv + 0.5);
+            thisCgPoint.U2i = (INT4) ( ( (LAL_TWOPI * (0.5 * f1dot_event + 0.5 * f_event * A2 + f1dot_event * B2)) \
+                                        - u2start ) * u2winInv + 0.5);   
             
-            /* assign the 2F value and index */
+            /* copy the 2F value and index integer number */
             thisCgPoint.TwoF = 2.0 * fstatVector.data[k].data->data[ifreq];
-            thisCgPoint.Index = icoarse;
-            coarsegrid.list[icoarse] = thisCgPoint;
-            
-            icoarse++;
+            thisCgPoint.Index = ifreq;
+            coarsegrid.list[ifreq] = thisCgPoint;
+              
           }
-          
-	    } /* --- end loop over Fstat f1dot's ---*/
-	
-      /* Sort the coarse grid (this is fast) */
-      qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridU1U2);   
-        
-        
-      /* ---------------------------------------------------------------------------------------- */ 
 
-        
-      /* ---------- Compute finegrid U-map --------------- */
-      for (ifine = 0; ifine < finegrid.length; ifine++) {
+          /* --- Sort the coarse grid in u1 and u2 --- */
+          qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridU1U2);          
+          
+          /* ---------------------------------------------------------------------------------------- */ 
 
-          /* translate frequency from reftime to midpoint of this segment */
-          f_tmp = finegrid.list[ifine].F + finegrid.list[ifine].F1dot * timeDiffSeg;
+          /*
+           LogPrintfVerbatim(LOG_DEBUG, "%%  --- Seg: %03d  u1start: %f  u2start: %g \n", k, u1start, u2start);
+           */
         
-          f1dot_tmp = finegrid.list[ifine].F1dot;
-          
-          cosAlpha = cos(finegrid.list[ifine].Alpha);
-          sinAlpha = sin(finegrid.list[ifine].Alpha);
-          cosDelta = cos(finegrid.list[ifine].Delta);
-          sinDelta = sin(finegrid.list[ifine].Delta);
-          
+          /* Pre-compute constants for global-correlation parameters */
+          cosAlpha = cos(finegrid.Alpha);
+          sinAlpha = sin(finegrid.Alpha);
+          cosDelta = cos(finegrid.Delta);
+          sinDelta = sin(finegrid.Delta);
           CosAlphaCosDelta = cosAlpha * cosDelta;
           SinAlphaCosDelta = sinAlpha * cosDelta;
-          
           PdotN = pos[0] * CosAlphaCosDelta + pos[1] * SinAlphaCosDelta + pos[2] * sinDelta;
           VdotN = vel[0] * CosAlphaCosDelta + vel[1] * SinAlphaCosDelta + vel[2] * sinDelta;
           AdotN = acc[0] * CosAlphaCosDelta + acc[1] * SinAlphaCosDelta + acc[2] * sinDelta;
-
-          finegrid.list[ifine].U1i = (INT4) ( ( (LAL_TWOPI*( f_tmp + f_tmp * VdotN + f1dot_tmp * PdotN ) - u1start) * u1winInv + 0.5));
           
-          finegrid.list[ifine].U2i = (INT4) ( ( (LAL_TWOPI*( f1dot_tmp * 0.5 + f_tmp * 0.5 * AdotN + f1dot_tmp * VdotN) - u2start) * u2winInv + 0.5));
-          
-        
-          if (finegrid.list[ifine].U2i == coarsegrid.list[finegrid.list[ifine].U1i].U2i) {
-            if (finegrid.list[ifine].U1i != coarsegrid.list[finegrid.list[ifine].U1i].U1i) {
-              fprintf(stderr, "error FG - CG difference in U1!   U1-fg:%d  U1-cg:%d \n", \
-                      finegrid.list[ifine].U1i,coarsegrid.list[finegrid.list[ifine].U1i].U1i);
-              return(HIERARCHICALSEARCH_ECG);
-            }
+          /* ---------- Compute finegrid U-map --------------- */
+          for (ifine = 0; ifine < finegrid.length; ifine++) {
 
-            if (coarsegrid.list[finegrid.list[ifine].U1i].TwoF >= TwoFthreshold) { 
-              finegrid.list[ifine].nc++;
-            }
-            
-            if(finegrid.list[ifine].U1i < 0.0) {
-              fprintf(stderr, "error FG - CG difference in U1!   U1-fg:%d  U1-cg:%d \n", \
-                      finegrid.list[ifine].U1i,coarsegrid.list[finegrid.list[ifine].U1i].U1i);
-            }
-              
-            finegrid.list[ifine].sumTwoF = finegrid.list[ifine].sumTwoF + coarsegrid.list[finegrid.list[ifine].U1i].TwoF;
-
-            
-            /* Find strongest candidate */
-            if(finegrid.list[ifine].nc > nc_max) {
-              nc_max = finegrid.list[ifine].nc;
-            }
-            if(finegrid.list[ifine].sumTwoF > TwoFmax) {
-              TwoFmax = finegrid.list[ifine].sumTwoF;
-            }
-                        
-            /* Select special template in fine grid */
-            /*
-            if(finegrid.list[ifine].Index == 5206950 ) {
-              nc_max = finegrid.list[ifine].nc;
-              TwoFmax = finegrid.list[ifine].sumTwoF;
-              TwoFtemp = coarsegrid.list[finegrid.list[ifine].U1i].TwoF;
-            }
-            */
-            
-          }
-      }
-      LogPrintfVerbatim(LOG_DEBUG, "%% --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax);
+            /* translate frequency from reftime to midpoint of this segment */
+            f_tmp = finegrid.list[ifine].F + finegrid.list[ifine].F1dot * timeDiffSeg;
+           
+            f1dot_tmp = finegrid.list[ifine].F1dot;
       
+            finegrid.list[ifine].U1i = (INT4) ( ( (LAL_TWOPI * (f_tmp * (1.0 + VdotN) + f1dot_tmp * PdotN)) \
+                                                 - u1start) * u1winInv + 0.5);
+            
+            finegrid.list[ifine].U2i = (INT4) ( ( (LAL_TWOPI * (0.5 * f1dot_tmp + 0.5 * f_tmp * AdotN + f1dot_tmp * VdotN)) \
+                                                 - u2start) * u2winInv + 0.5);
 
-    } /* end ------------- MAIN LOOP over Segments --------------------*/
-    /* ############################################################### */
-
-    /* sort out the crap --- this should be replaced by something BETTER! */
-    for (ifine = 0; ifine < finegrid.length; ifine++)  {
-      if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
-        finegrid.list[ifine].sumTwoF=-1.0;
-      }
-    }     
+            /* map coarse-grid to appropriate fine-grid points */
+            if (finegrid.list[ifine].U2i == coarsegrid.list[finegrid.list[ifine].U1i].U2i) {
+              
+              if (finegrid.list[ifine].U1i != coarsegrid.list[finegrid.list[ifine].U1i].U1i) {
+                fprintf(stderr, "error FG - CG difference in U1!   U1-fg:%d  U1-cg:%d \n", \
+                        finegrid.list[ifine].U1i,coarsegrid.list[finegrid.list[ifine].U1i].U1i);
+                return(HIERARCHICALSEARCH_ECG);
+              }
+              
+              if (coarsegrid.list[finegrid.list[ifine].U1i].TwoF >= TwoFthreshold) { 
+                finegrid.list[ifine].nc++;
+              }
+              
+              if(finegrid.list[ifine].U1i < 0.0) {
+                fprintf(stderr, "error in FG's U1!   U1-fg:%d  U1-cg:%d \n", \
+                        finegrid.list[ifine].U1i,coarsegrid.list[finegrid.list[ifine].U1i].U1i);
+              }
+                
+              /* Add the 2F value to the 2F sum */
+              finegrid.list[ifine].sumTwoF = finegrid.list[ifine].sumTwoF + coarsegrid.list[finegrid.list[ifine].U1i].TwoF;
    
-   /*----------------------------------------------------------------------*/
-	  	        
-	  if( uvar_semiCohToplist) {
-	    /* this is necessary here, because GetSemiCohToplist() might set
-	       a checkpoint that needs some information from here */
-	    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-			  skyGridCounter,thisScan.numSkyGridPoints,
-			  uvar_Freq, uvar_FreqBand);
+              /* Find strongest candidate (maximum 2F sum and number count) */
+              if(finegrid.list[ifine].nc > nc_max) {
+                nc_max = finegrid.list[ifine].nc;
+              }
+              if(finegrid.list[ifine].sumTwoF > TwoFmax) {
+                TwoFmax = finegrid.list[ifine].sumTwoF;
+              }
+                          
+              /* Select special template in fine grid */
+              /*
+              if(finegrid.list[ifine].Index == 5206950 ) {
+                nc_max = finegrid.list[ifine].nc;
+                TwoFmax = finegrid.list[ifine].sumTwoF;
+                TwoFtemp = coarsegrid.list[finegrid.list[ifine].U1i].TwoF;
+              }
+              */
+              
+            }
+            
+          } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
+          
+          LogPrintfVerbatim(LOG_DEBUG, "   --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax);
+
+        } /* end ------------- MAIN LOOP over Segments --------------------*/
+        /* ############################################################### */
+
+        /* sort out the crap --- this should be replaced by something BETTER! */
+        for (ifine = 0; ifine < finegrid.length; ifine++)  {
+          if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
+            finegrid.list[ifine].sumTwoF=-1.0;
+          }
+        }     
+   
+        if( uvar_semiCohToplist) {
+          /* this is necessary here, because GetSemiCohToplist() might set
+           a checkpoint that needs some information from here */
+          SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
+                        skyGridCounter,thisScan.numSkyGridPoints, \
+                        uvar_Freq, uvar_FreqBand);
 	    
-	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
-	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid), &status); 
-	  }
+          LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
+          LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid), &status); 
+        }
 	  
-    /* continue forward till the end if uvar_skyPointIndex is set
-    ---This probably doesn't make sense when checkpointing is turned on */
-    if ( LALUserVarWasSet(&uvar_skyPointIndex) ) {
-      while(thisScan.state != STATE_FINISHED) {
-        skyGridCounter++;
-        XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+      } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
+       
+      
+      /* continue forward till the end if uvar_skyPointIndex is set
+         ---This probably doesn't make sense when checkpointing is turned on */
+      if ( LALUserVarWasSet(&uvar_skyPointIndex) ) {
+        while(thisScan.state != STATE_FINISHED) {
+          skyGridCounter++;
+          XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+        }
       }
-    }
-    else {      
-      skyGridCounter++;
-	  
-      /* this is necessary here, because the checkpoint needs some information from here */
-      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-                      skyGridCounter,thisScan.numSkyGridPoints,
-                      uvar_Freq, uvar_FreqBand);
-	  
-      SET_CHECKPOINT;
-	  
-      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
-    }
+      else {      
+        skyGridCounter++;
+  
+        /* this is necessary here, because the checkpoint needs some information from here */
+        SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
+                    skyGridCounter,thisScan.numSkyGridPoints, \
+                    uvar_Freq, uvar_FreqBand);
+  
+        SET_CHECKPOINT;
+  
+        XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
+      }
 
-  } /* end while loop over 1st stage coarse skygrid */
-
+  } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
+  /*---------------------------------------------------------------------------------*/
+  
 #ifdef OUTPUT_TIMING
   {
     time_t tau = time(NULL) - clock0;
@@ -1253,18 +1262,18 @@ int MAIN( int argc, char *argv[]) {
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
-  if ( uvar_printCand1 )
-    {
-      LALFree(fnameSemiCohCand);
-    }
+  if ( uvar_printCand1 ) {
+    LALFree(fnameSemiCohCand);
+  }
   
-  if ( version_string ) XLALFree ( version_string );
+  if ( version_string ) {
+    XLALFree ( version_string );
+  }
   
-  if ( uvar_printFstat1 )
-    {
-      fclose(fpFstat1);
-      LALFree( fnameFstatVec1 );
-    }
+  if ( uvar_printFstat1 ) {
+    fclose(fpFstat1);
+    LALFree( fnameFstatVec1 );
+  }
   
   /* free first stage memory */
   for ( k = 0; k < nStacks; k++) {
@@ -1809,8 +1818,8 @@ void GetSemiCohToplist(LALStatus *status,
   for ( k = 0; k < in->length; k++) {
 
     line.Freq = in->list[k].F;
-    line.Alpha = in->list[k].Alpha;
-    line.Delta = in->list[k].Delta;
+    line.Alpha = in->Alpha;
+    line.Delta = in->Delta;
     line.F1dot = in->list[k].F1dot;
     line.nc = in->list[k].nc;
     line.sumTwoF = in->list[k].sumTwoF;
