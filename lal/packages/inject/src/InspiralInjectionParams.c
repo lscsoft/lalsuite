@@ -400,7 +400,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
       inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
           (inj->spin1x * inj->spin1x)) , 0.5);
     }
-    else { /* aligned */ 
+    else { /* aligned */
       inj->spin1x = 0;
       inj->spin1y = 0;
     }
@@ -415,7 +415,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
     if (! aligned) {
       inj->spin1x = r1 * cos(phi1);
       inj->spin1y = r1 * sin(phi1);
-    } 
+    }
     else { /* aligned */
       inj->spin1x = 0;
       inj->spin1y = 0;
@@ -443,7 +443,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
     inj->spin1x = 0;
     inj->spin1y = 0;
   }
-    
+
   return ( inj );
 }
 
