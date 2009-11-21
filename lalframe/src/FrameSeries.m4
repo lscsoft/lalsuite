@@ -767,7 +767,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 		/* advance a frame -- failure is benign */
 		stream->mode |= LAL_FR_IGNOREGAP_MODE;
 		XLALFrNext( stream );
-		if ( ! stream->state & LAL_FR_GAP )
+		if ( ! (stream->state & LAL_FR_GAP) )
 			stream->epoch = keep;
 		stream->mode = keepmode;
 	}

@@ -902,6 +902,8 @@ int main( int argc, char *argv[] )
   REAL8 drawnDeclination = 0.0;
   CHAR  drawnSourceName[LIGOMETA_SOURCE_MAX];
 
+  int aligned = 0;
+
   status=blank_status;
   gpsStartTime.gpsSeconds=-1;
   gpsEndTime.gpsSeconds=-1;
@@ -2233,11 +2235,16 @@ int main( int argc, char *argv[] )
     /* populate spins, if required */
     if (spinInjections)
     {
+      /* FIXME Temporary measure until we figure out how to better handle
+         spin distributions for waveforms under development */
+      if ( ! strcmp(waveform, "IMRPhenomBpseudoFourPN"))
+        aligned = 1;
       simTable = XLALRandomInspiralSpins( simTable, randParams, 
           minSpin1, maxSpin1,
           minSpin2, maxSpin2,
           minKappa1, maxKappa1,
-          minabsKappa1, maxabsKappa1);
+          minabsKappa1, maxabsKappa1,
+          aligned);
     }
 
     /* populate the site specific information */

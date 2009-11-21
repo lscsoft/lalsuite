@@ -148,10 +148,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8VectorSequence *pos;  /**< Earth orbital position for each segment */
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
     REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
-    REAL8 alpha;               /**< right ascension of demodulation point */
-    REAL8 delta;               /**< declination of demodulation point*/
-    REAL8 patchSizeX;          /**< Size of semicoherent sky-patch */
-    REAL8 patchSizeY;          /**< Size of semicoherent sky-patch */
     REAL8 fdot;                /**< spindown value of demodulation point */
     UINT4 gamma2;               /**< refinement factor in spindown */ 
     REAL8 dfdot;               /**< resolution in residual spindowns */
@@ -185,8 +181,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   /** one fine-grid point */
   typedef struct tagFineGridPoint {
     REAL8 F;           /**< frequency */
-    REAL8 Alpha;       /**< right ascension */
-    REAL8 Delta;       /**< declination */
     REAL8 F1dot;       /**< spindown */
     UINT4 Index;        /**< index */
     INT4 U1i;          /**< U1 index */
@@ -197,6 +191,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
   /** structure for storing fine-grid points */
   typedef struct tagFineGrid {
+    REAL8 Alpha;       /**< right ascension */
+    REAL8 Delta;       /**< declination */
     LIGOTimeGPS refTime;       /**< reference time for candidates */
     UINT4 length;               /**< maximum allowed length of vectors */
     FineGridPoint *list;    /**> list of finegrid points */
