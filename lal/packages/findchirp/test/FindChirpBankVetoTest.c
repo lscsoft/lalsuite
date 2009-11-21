@@ -13,29 +13,35 @@
 
 #include <math.h>
 
-#define SUBBANKSIZE 10
-#define TEMPLATE_LENGTH 10000
+/* TEST FUNCTION WILL BREAK IF THESE PARAMETERS ARE CHANGED*/
 #define FLOW 0.0
-#define DELTAT 1.0
-#define DYNRANGE 1.0
+#define TOLERANCE 0.000001
 
+/* THESE PARAMETERS CAN TAKE ANY VALUE */
+#define SUBBANKSIZE 15 
+#define TEMPLATE_LENGTH 1024
+#define DELTAT 1.0 
+#define DYNRANGE 1.0 
 
 static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength);
-static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
-static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial);
+static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
+static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial);
+static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift, REAL4 deltaT);
 static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName);
 
-/* Program to test the essential bank chisquare functions.
+/* 
+ * This program is intended to check the computation of the cross-correlation
+ * matrix in XLALBankVetoCCMat.  The program generates time domain delta functions
+ * and computes the CC matrix for these templates using XLALBankVetoCCMat.  
+ * The program then inspects the output to make sure that it agrees with the 
+ * expected result.  Any matrix that fails the test is printed to file.  The program
+ * exits with exit value equal to the number of matrices that failed the test.
  *
- * 1) This program tests the bank sorting algorithm XLALFindChirpSortTemplates,
- *  printing the sorted template bank out to file.
- * 2) This program tests the subbank creation algorithm XLALFindChirpCreateSubBanks,
- *  printing a few of the subbanks out to file.
- * 3) This program tests the cross-correlation matrix calculation in
- *  XLALBankVetoCCMat by computing the CC matrix for the first subbank.
+ * author: Stephen Privitera
+ * contact: sprivite@ligo.caltech.edu
+ * date: 11/20/2009
  *
- */
-
+ */ 
 int main(int argc, char ** argv)
 {
     /* Input params to XLALBankVetoCCMat */
@@ -52,37 +58,51 @@ int main(int argc, char ** argv)
     /* Params needs for main */
     UINT4 trial;
     CHAR ccFileName[100];
+    UINT4 error_flag;
+    UINT4 trial_max = subBankSize*subBankSize/2;
+    int exit_status = 0;
 
-    /* Initiate/fill basic structures needed by XLALBankVetoCCMat */
+    /* Fill basic structures needed by XLALBankVetoCCMat */
     initBankVetoData(bankVetoData,ampVec,subBankSize,templateLength);
 
     /* Create mock templates which are orthogonal */
-    makeOrthogonalTemplates(bankVetoData,subBankSize,templateLength,deltaF);
+    makeDeltaFunctionTemplates(bankVetoData,subBankSize,templateLength,deltaF);
 
     /* 
      * Make repeated calls to XLALBankVetoCCMat with time shifts 
      * in some of the templates. 
      */
-    for (trial = 0; trial < subBankSize; trial++)
+    for (trial = 0; trial < trial_max; trial++)
     {
 	/* set the time shift for all but one template to be 1 unit */
-	timeshiftTemplates(bankVetoData->timeshift,trial);
+	timeshiftTemplates(bankVetoData->timeshift,deltaT,trial);
 
 	/* Pass to CCMat function */
 	XLALBankVetoCCMat (bankVetoData, ampVec, subBankSize,
 			   dynRange, fLow, deltaF, deltaT);
 
-	/* write out results */
-	sprintf(ccFileName,"ccmat_%d.txt",trial);
-	writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
+	/* check whether output is as expected */
+	error_flag = checkCCmatForErrors(bankVetoData->ccMat,bankVetoData->timeshift,deltaT);
+
+	if ( error_flag )
+	{
+	    /* write out the offending matrix */
+	    //sprintf(ccFileName,"cross_corr_mat_%d.txt",trial);
+	    //writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
+	    
+	    /* raise the exit status */
+	    exit_status++;
+	}
     }
-
-    return 0;
-
+    return exit_status;
 }
 
 
 
+/*
+ * This function fills in the basic structures in the bankVetoData
+ * structure (making most of them unity or zero).
+ */
 static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength)
 {
     UINT4 sampleIndex;
@@ -112,7 +132,15 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
 }
 
 
-static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF)
+
+/*
+ * This function fills the bankVetoData templates with the frequency domain 
+ * representation of time domain delta functions.  These function are orthogonal
+ * and remain orthogonal under an integral number of deltaT time shifts.  The
+ * cross-correlation matrix that results from this template bank and time shifts
+ * of this bank will consist of 1's and 0's only.
+ */
+static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF)
 {
     UINT4 templateIndex;
     UINT4 sampleIndex;
@@ -121,6 +149,7 @@ static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 su
     bankVetoData->length = subBankSize;
     bankVetoData->fcInputArray = 
       (FindChirpFilterInput **) calloc(subBankSize,sizeof(FindChirpFilterInput *));
+
     for ( templateIndex = 0; templateIndex < subBankSize; templateIndex++)
     {
 	bankVetoData->fcInputArray[templateIndex] = 
@@ -137,30 +166,86 @@ static void makeOrthogonalTemplates(FindChirpBankVetoData *bankVetoData,UINT4 su
 	      cos(phase);
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
 	      sin(phase);
-	}
-	
+	}       
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal = 
-	  (REAL4) (deltaF*templateLength-FLOW);
-	
+	  (REAL4) (deltaF*templateLength-FLOW);	
     }
 
     return;
-
 }
 
 
-static void timeshiftTemplates(REAL4Vector * timeshift,UINT4 trial)
+
+/*
+ * This function fills in the time shift array for the templates.
+ * The timeshifts are forced to be integral multiples of deltaT so that
+ * the templates (which are originally orthogonal) will remain orthogonal
+ * under time shifting.
+ */
+static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
 {
-    /* shift only one of the templates by only one time unit */
-    memset(timeshift->data, 0, (timeshift->length) * sizeof(REAL4));
-    timeshift->data[trial] = 2.0*DELTAT;
+    /* Force all time shifts to be integral multiples of deltaT */
+    UINT4 thisShift;
+    UINT4 templateIndex;
 
+    UINT4 shiftAmount = floor(trial/timeshift->length);
+    UINT4 whoToShift = trial % timeshift->length;
+      
+    /* Choose a time shift for each template */
+    for ( templateIndex = 0; templateIndex < timeshift->length; templateIndex++)
+    {
+	if (templateIndex == whoToShift )  
+	{
+	    thisShift = shiftAmount;
+	}
+	else 
+	{
+	    thisShift = 0;
+	}	    
+	timeshift->data[templateIndex] = ((REAL4)thisShift)*deltaT;
+    }
     return;
-
 }
 
 
 
+/*
+ * This function checks whether the cross-correlation matrix returned
+ * by XLALBankVetoCCMat is consistent with the time shift array.
+ */
+static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL4 deltaT)
+{
+    REAL4 tolerance = TOLERANCE;
+    REAL4 expectedValue;
+    INT4 row;
+    INT4 col;
+
+    for ( row = 0; row < timeshift->length; row++)
+    {
+	for ( col = 0; col < timeshift->length; col++)
+	{
+	    expectedValue = ( ( (timeshift->data[row]-timeshift->data[col])/deltaT == (REAL4)(col - row) )
+			      ? 1.0
+			      : 0.0 );
+	                                              
+	    /* real part will be 1 or 0 */
+	    if ( fabs(expectedValue - ccMat->data[row*timeshift->length+col].re) > tolerance)
+	      return 1;
+
+	    /* imaginary part should always be zero */
+	    if ( fabs( ccMat->data[row*timeshift->length+col].im) > tolerance)
+	      return 1;
+	   
+	}
+    }
+    return 0;
+}
+
+
+
+/*
+ * This function can be used to write out cross-corr matrices.
+ */
 static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName)
 {
     FILE *fdOut = fopen(ccFileName,"w");
