@@ -13,15 +13,15 @@
 
 #include <math.h>
 
-/* TEST FUNCTION WILL BREAK IF THESE PARAMETERS ARE CHANGED*/
+/* TEST FUNCTION WILL (LIKELY) BREAK IF THESE PARAMETERS ARE CHANGED*/
 #define FLOW 0.0
 #define TOLERANCE 0.000001
 
 /* THESE PARAMETERS CAN TAKE ANY VALUE */
-#define SUBBANKSIZE 15 
+#define SUBBANKSIZE 15
 #define TEMPLATE_LENGTH 1024
-#define DELTAT 1.0 
-#define DYNRANGE 1.0 
+#define DELTAT 0.25 
+#define DYNRANGE 2.0 
 
 static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength);
 static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
@@ -42,7 +42,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
  * date: 11/20/2009
  *
  */ 
-int main(int argc, char ** argv)
+int main()
 {
     /* Input params to XLALBankVetoCCMat */
     FindChirpBankVetoData *bankVetoData = 
@@ -59,7 +59,7 @@ int main(int argc, char ** argv)
     UINT4 trial;
     CHAR ccFileName[100];
     UINT4 error_flag;
-    UINT4 trial_max = subBankSize*subBankSize/2;
+    UINT4 trial_max = 10*subBankSize;
     int exit_status = 0;
 
     /* Fill basic structures needed by XLALBankVetoCCMat */
@@ -87,9 +87,12 @@ int main(int argc, char ** argv)
 	if ( error_flag )
 	{
 	    /* write out the offending matrix */
-	    //sprintf(ccFileName,"cross_corr_mat_%d.txt",trial);
-	    //writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
-	    
+	    if ( 0 )
+	    {
+		sprintf(ccFileName,"cross_corr_mat_%d.txt",trial);
+		writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
+	    }
+
 	    /* raise the exit status */
 	    exit_status++;
 	}
@@ -188,20 +191,16 @@ static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
     UINT4 thisShift;
     UINT4 templateIndex;
 
-    UINT4 shiftAmount = floor(trial/timeshift->length);
+    UINT4 shiftAmount = floor(trial/timeshift->length) + 1;
     UINT4 whoToShift = trial % timeshift->length;
       
     /* Choose a time shift for each template */
     for ( templateIndex = 0; templateIndex < timeshift->length; templateIndex++)
     {
-	if (templateIndex == whoToShift )  
-	{
-	    thisShift = shiftAmount;
-	}
-	else 
-	{
-	    thisShift = 0;
-	}	    
+	thisShift = ( (templateIndex == whoToShift )  
+		      ? shiftAmount
+		      : 0 );
+	    
 	timeshift->data[templateIndex] = ((REAL4)thisShift)*deltaT;
     }
     return;
@@ -220,17 +219,20 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
     INT4 row;
     INT4 col;
 
-    for ( row = 0; row < timeshift->length; row++)
+    for ( row = 0; (UINT4)row < timeshift->length; row++)
     {
-	for ( col = 0; col < timeshift->length; col++)
+	for ( col = 0; (UINT4)col < timeshift->length; col++)
 	{
-	    expectedValue = ( ( (timeshift->data[row]-timeshift->data[col])/deltaT == (REAL4)(col - row) )
-			      ? 1.0
-			      : 0.0 );
+	    /* The expected value depends on the specific way we have chosen to set up the template
+	       bank, but does not depend on how we choose the time shifts, except that the time shifts
+	       must be integral multiples of deltaT. */
+	    expectedValue = (REAL4) ( ( (INT4)( (timeshift->data[row]-timeshift->data[col])/deltaT ) == (col - row) )
+				      ? 1.0
+				      : 0.0 );
 	                                              
 	    /* real part will be 1 or 0 */
 	    if ( fabs(expectedValue - ccMat->data[row*timeshift->length+col].re) > tolerance)
-	      return 1;
+		return 1;
 
 	    /* imaginary part should always be zero */
 	    if ( fabs( ccMat->data[row*timeshift->length+col].im) > tolerance)
@@ -249,8 +251,8 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
 static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName)
 {
     FILE *fdOut = fopen(ccFileName,"w");
-    int row;
-    int col;
+    UINT4 row;
+    UINT4 col;
 
     // print a matrix of the real parts
     fprintf(fdOut,"#Real part:\n");
