@@ -90,6 +90,8 @@ extern int lalDebugLevel;
 #define FALSE (1==0)
 
 
+static REAL8Vector empty_REAL8Vector;
+
 /******************************************/
 void ComputeFoft_NM(LALStatus   *status,
                  REAL8Vector          *foft,
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]){
   UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector      weightsV, weightsNoise,  weightsAM;
+  REAL8Vector      weightsV, weightsNoise,  weightsAM = empty_REAL8Vector;
   REAL8      alphaPeak, meanN, sigmaN, significance;
   
   REAL4TimeSeries   *signalTseries = NULL;
@@ -808,7 +810,6 @@ int main(int argc, char *argv[]){
     MultiAMCoeffs   *multiAMcoef = NULL;
     
     weightsAM.length = mObsCoh;
-    weightsAM.data=NULL;
     weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
     
@@ -938,7 +939,7 @@ int main(int argc, char *argv[]){
 	  memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
         }
 	
-	if (uvar_weighAM) {
+	if (uvar_weighAM && weightsAM.data ) {
 	  for (j=0; j<mObsCoh; j++){
 	    weightsV.data[j] = weightsV.data[j]*weightsAM.data[j];
 	  }
@@ -1000,7 +1001,7 @@ int main(int argc, char *argv[]){
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);
-  if (uvar_weighAM){ 
+  if (uvar_weighAM && weightsAM.data){ 
       LALFree(weightsAM.data); 
   }
 
