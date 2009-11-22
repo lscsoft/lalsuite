@@ -42,7 +42,7 @@
 #include <lal/PrintVector.h>
 
 /* Frame headers */
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 /* Define the parameters to make the window */
 #define WINSTART 4096
