@@ -474,9 +474,8 @@ XLAL3DRinca(
 {
 
   INT8    ta,  tb;
-  REAL8   fa, fb, Qa, Qb, ds2_min;
-  REAL8   step = 1./16384.;
-  REAL8   dt_min, dt_max, dt_min_ab, dt, dt_best;
+  REAL8   fa, fb, Qa, Qb, ds2_min, ds2;
+  REAL8   dt_min, dt_max, dt, dt_best;
   REAL8   lightTravel;
   const LALDetector *aDet;
   const LALDetector *bDet;
@@ -492,8 +491,8 @@ XLAL3DRinca(
   lightTravel = 1.e-9 * XLALLightTravelTime(aDet,bDet);
 
   dt = 1.e-9 * (ta - tb);
-  dt_min = dt - lighttravel;
-  dt_max = dt + lighttravel;
+  dt_min = dt - lightTravel;
+  dt_max = dt + lightTravel;
 
   ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
 
