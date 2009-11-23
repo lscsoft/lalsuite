@@ -30,7 +30,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   PSSEventParams*ep = NULL;
   if ( length == 0 )
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EINVAL ); 
-  ep = crea_evenparam(length);
+  ep = crea_evenparam(length,0);
   if ( ep == NULL )
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EFAULT );
   /* values that differ from the defaults set in crea_evenpar() */
