@@ -30,8 +30,6 @@
  *********************************************************************************/
 
 /* ---------- Includes -------------------- */
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include "HierarchSearchGCT.h"
 
 RCSID( "$Id$");
@@ -134,7 +132,6 @@ void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL
 int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
-void OutputVersion( void );
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
@@ -321,6 +318,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
+  BOOLEAN uvar_version = 0;
 
   global_status = &status;
 
@@ -396,6 +394,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
 
+  LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
+
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
@@ -405,23 +405,21 @@ int MAIN( int argc, char *argv[]) {
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
-
-	/* assemble version string */
-  CHAR *version_string;
-  {
-    CHAR *id1, *id2;
-    id1 = XLALClearLinebreaks ( lalGitID );
-    id2 = XLALClearLinebreaks ( lalappsGitID );
-    UINT4 len = strlen ( id1 ) + strlen ( id2 ) + 20;
-    if ( ( version_string = XLALMalloc ( len )) == NULL ) {
-      XLALPrintError ("Failed to XLALMalloc ( %d ).\n", len );
-      return( HIERARCHICALSEARCH_EMEM );
-    }
-    sprintf (version_string, "%%%% %s\n%%%% %s\n", id1, id2 );
-    XLALFree ( id1 );
-    XLALFree ( id2 );
+  
+  /* assemble version string */
+  CHAR *VCSInfoString;
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    return HIERARCHICALSEARCH_ESUB;
   }
-  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
+
+  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
+
+  if ( uvar_version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
 
   /* exit if help was required */
   if (uvar_help)
@@ -480,8 +478,8 @@ int MAIN( int argc, char *argv[]) {
       LALFree(logstr);
 
       /* add code version ID (only useful for git-derived versions) */
-      fprintf ( fpLog, "# version: %s\n", version_string );
-
+      fprintf ( fpLog, "# version: %s\n", VCSInfoString );
+      
       fclose (fpLog);
       LALFree(fnamelog);
 
@@ -1249,9 +1247,7 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_printCand1 ) {
     LALFree( fnameSemiCohCand );
   }
-  if ( version_string ) {
-    XLALFree ( version_string );
-  }
+  
   if ( uvar_printFstat1 ) {
     fclose(fpFstat1);
     LALFree( fnameFstatVec1 );
@@ -1310,6 +1306,8 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
+
+  XLALFree ( VCSInfoString );
 
   LALCheckMemoryLeaks();
 
@@ -2112,19 +2110,3 @@ int compareFineGridsumTwoF(const void *a,const void *b) {
   else
     return(0);
 }
-
-
-
-
-
-/** Simply output version information to stdout */
-void OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */
-
-

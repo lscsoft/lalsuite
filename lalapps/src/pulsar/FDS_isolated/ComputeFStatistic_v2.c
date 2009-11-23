@@ -67,9 +67,6 @@ int finite(double);
 
 #include <lalapps.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 /* local includes */
 #include "HeapToplist.h"
 
@@ -151,9 +148,10 @@ typedef struct {
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
-  CHAR *logstring;                          /**< log containing max-info on this search setup */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
+  CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
+  CHAR *logstring;                          /**< log containing max-info on the whole search setup */
 } ConfigVariables;
 
 
@@ -280,7 +278,6 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
-void OutputVersion ( void );
 
 CHAR *append_string ( CHAR *str1, const CHAR *append );
 
@@ -325,7 +322,7 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
-  lalDebugLevel = 0;
+  lalDebugLevel = LALERROR;	/* only output error-messages by default */
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -335,6 +332,11 @@ int main(int argc,char *argv[])
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 
+  if ( (GV.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
   /* do ALL cmdline and cfgfile handling */
   LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
 
@@ -343,7 +345,7 @@ int main(int argc,char *argv[])
 
   if ( uvar.version )
     {
-      OutputVersion();
+      printf ( "%s\n", GV.VCSInfoString );
       exit (0);
     }
 
@@ -1304,11 +1306,11 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   struct tm utc;
   time_t tp;
 #define BUFLEN 1024
-  CHAR dateStr[BUFLEN], line[BUFLEN];
+  CHAR dateStr[BUFLEN];
+  CHAR line[BUFLEN];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
   CHAR *ret = NULL;
-  CHAR *id1, *id2;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1319,14 +1321,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   LALFree ( cmdline );
   ret = append_string ( ret, line );
 
-  /* add code version ID (only useful for git-derived versions) */
-  id1 = XLALClearLinebreaks ( lalGitID );
-  id2 = XLALClearLinebreaks ( lalappsGitID );
-  snprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
-  LALFree ( id1 );
-  LALFree ( id2 );
-  ret = append_string ( ret, line );
-
+  ret = append_string ( ret, cfg->VCSInfoString );
 
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
@@ -1444,6 +1439,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->ephemeris->ephemS);
   LALFree(cfg->ephemeris);
 
+  if ( cfg->VCSInfoString )
+    XLALFree ( cfg->VCSInfoString );
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
 
@@ -1891,17 +1888,6 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
   return TRUE;
 
 } /* XLALCenterIsLocalMax() */
-
-/** Simply output version information to stdout */
-void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */
 
 /** Mini helper-function: append string 'str2' to string 'str1',
  * returns pointer to new concatenated string

@@ -39,9 +39,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lalapps.h>
 
 RCSID ("$Id");
@@ -91,7 +88,6 @@ REAL4 getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2);
 void scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFTtype *sft2);
 void scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect1, const SFTVector *sftvect2);
 void subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1, const SFTVector *sftvect2);
-void OutputVersion ( void );
 void initUserVars (LALStatus *status, UserVar *uvar);
 REAL4 XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 );
 REAL4Vector *XLALREAL4VectorFromFile ( const CHAR *fname );
@@ -131,9 +127,16 @@ main(int argc, char *argv[])
 
   if (uvar.version)
     {
-      OutputVersion();
+      CHAR *VCSInfoString;
+      if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+        XLALPrintError("XLALGetVersionString(0) failed.\n");
+        exit(1);
+      }
+      printf ("%s\n", VCSInfoString );
+      XLALFree ( VCSInfoString );
       exit(0);
     }
+
   LogSetLevel ( lalDebugLevel );
 
   /* now read in the two timeseries */
@@ -200,18 +203,6 @@ initUserVars (LALStatus *status, UserVar *uvar)
   RETURN (status );
 
 } /* initUserVars() */
-
-
-/** Simply output version information to stdout */
-void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */
 
 
 /** Compare two REAL8 vectors, returns a measure of the difference.

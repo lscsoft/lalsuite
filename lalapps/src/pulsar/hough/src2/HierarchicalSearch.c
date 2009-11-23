@@ -110,9 +110,6 @@
 
  */
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 
@@ -245,8 +242,6 @@ void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CH
 void GetXiInSingleStack (LALStatus         *status,
 			 HOUGHSizePar      *size,
 			 HOUGHDemodPar     *par);
-
-void OutputVersion ( void );
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -533,9 +528,17 @@ int MAIN( int argc, char *argv[]) {
     return(0);
 
 
+  /* assemble version string */
+  CHAR *VCSInfoString;
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    return( HIERARCHICALSEARCH_EBAD );
+  }
+  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
+
   if ( uvar_version )
     {
-      OutputVersion();
+      printf ("%s\n", VCSInfoString );
       return (0);
     }
 
@@ -545,22 +548,6 @@ int MAIN( int argc, char *argv[]) {
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
-
-  /* assemble version string */
-  {
-    CHAR *id1, *id2;
-    id1 = XLALClearLinebreaks ( lalGitID );
-    id2 = XLALClearLinebreaks ( lalappsGitID );
-    UINT4 len = strlen ( id1 ) + strlen ( id2 ) + 20;
-    if ( ( version_string = XLALMalloc ( len )) == NULL ) {
-      XLALPrintError ("Failed to XLALMalloc ( %d ).\n", len );
-      return( HIERARCHICALSEARCH_EMEM );
-    }
-    sprintf (version_string, "%%%% %s\n%%%% %s\n", id1, id2 );
-    XLALFree ( id1 );
-    XLALFree ( id2 );
-  }
-  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
@@ -613,8 +600,8 @@ int MAIN( int argc, char *argv[]) {
       fprintf( fpLog, logstr);
       LALFree(logstr);
 
-      /* add code version ID (only useful for git-derived versions) */
-      fprintf ( fpLog, version_string );
+      /* add code version ID */
+      fprintf ( fpLog, VCSInfoString );
 
       fclose (fpLog);
 
@@ -1299,7 +1286,7 @@ int MAIN( int argc, char *argv[]) {
       LALFree(fnameSemiCohCand);
     }
 
-  if ( version_string ) XLALFree ( version_string );
+  if ( VCSInfoString ) XLALFree ( VCSInfoString );
 
   if ( uvar_printFstat1 )
     {
@@ -3569,14 +3556,3 @@ void GetXiInSingleStack (LALStatus         *status,
   /* normal exit */
   RETURN (status);
 }
-
-/** Simply output version information to stdout */
-void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */

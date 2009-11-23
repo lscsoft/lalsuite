@@ -52,16 +52,14 @@
 #include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 
-#include <lalapps.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lal/FlatPulsarMetric.h>
 #include <lal/UniversalDopplerMetric.h>
+
+#include <lalapps.h>
 
 RCSID("$Id");
 
@@ -117,8 +115,7 @@ typedef struct
 {
   CHAR *app_name;			/**< name (and path) of this application */
   CHAR *cmdline;			/**< commandline used to produce this result */
-  CHAR *LAL_VCS_Version;		/**< lal source-version from VCS */
-  CHAR *LALApps_VCS_Version;		/**< lalapps source-version from VCS */
+  CHAR *VCSInfoString;			/**< lal+lalapps source-version + configure string */
 } ResultHistory_t;
 
 
@@ -226,9 +223,14 @@ main(int argc, char *argv[])
   if (uvar.help) 	/* help requested: we're done */
     return 0;
 
+  CHAR *VCSInfoString;
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
   if ( uvar.version ) {
-    printf ( "%s\n", lalGitID );
-    printf ( "%s\n", lalappsGitID );
+    printf ( "%s\n", VCSInfoString );
     return 0;
   }
 
@@ -250,6 +252,8 @@ main(int argc, char *argv[])
     LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", fn, xlalErrno );
     return FSTATMETRIC_EXLAL;
   }
+  config.history->VCSInfoString = VCSInfoString;
+
 
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
@@ -483,9 +487,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     }
     cfg->history->cmdline = cmdline;
 
-    cfg->history->LAL_VCS_Version     = XLALClearLinebreaks ( (char*)lalGitID );
-    cfg->history->LALApps_VCS_Version = XLALClearLinebreaks ( (char*)lalappsGitID );
-
   } /* record history */
 
 
@@ -606,8 +607,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     {
       if ( history->app_name ) fprintf (fp, "%%%% app_name: %s\n", history->app_name );
       if ( history->cmdline) fprintf (fp, "%%%% commandline: %s\n", history->cmdline );
-      if ( history->LAL_VCS_Version ) fprintf (fp, "%%%% LAL Version: %s\n", history->LAL_VCS_Version );
-      if ( history->LALApps_VCS_Version ) fprintf (fp, "%%%% LALApps Version: %s\n", history->LALApps_VCS_Version );
+      if ( history->VCSInfoString ) fprintf (fp, "%%%% Code Version: %s\n", history->VCSInfoString );
     }
 
   fprintf ( fp, "%%%% DopplerCoordinates = [ " );
@@ -719,11 +719,8 @@ XLALDestroyResultHistory ( ResultHistory_t * history )
   if ( history->cmdline )
     XLALFree ( history->cmdline );
 
-  if ( history->LAL_VCS_Version )
-    XLALFree ( history->LAL_VCS_Version );
-
-  if ( history->LALApps_VCS_Version )
-    XLALFree ( history->LALApps_VCS_Version );
+  if ( history->VCSInfoString )
+    XLALFree ( history->VCSInfoString );
 
   XLALFree ( history );
 
