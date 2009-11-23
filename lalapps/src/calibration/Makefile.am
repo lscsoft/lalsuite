@@ -36,17 +36,9 @@ bin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
 pkgpython_DATA = mkcal.py strain.py
 endif
 
-pkgdata_DATA = \
-  S1-L1-CAL-FACTORS.txt S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt \
-  S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
-  S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt
 EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh mkcal.py \
 	     simplereadcalframe.c \
-  S1-L1-CAL-FACTORS.txt S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt \
-  S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
-  S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt \
-  filters-H1-S2.h filters-H1-S3.h filters-H2-S2.h filters-H2-S3.h \
-  filters-L1-S2.h filters-L1-S2.h strain_pipe.in noise_comp_pipe.in \
+  strain_pipe.in noise_comp_pipe.in \
   mkcal.py strain.py
 MOSTLYCLEANFILES = *.ilwd *.gwf
 CLEANFILES = python_config.sed lalapps_strain_pipe lalapps_noise_comp_pipe
