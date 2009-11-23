@@ -23,14 +23,16 @@ function separate(trig_type, inj_type, veto_type, file_list )
 % separate( 'inj', 'EOBNR','CAT2', file_list );
 %
 
-N_files = length(file_list(:,1));
+%N_files = length(file_list(:,1));
+N_files = length(file_list);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% read in the file(s) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % read injection files
   if strcmp(trig_type,'inj')
     %create the structure by reading in the first file
-    eval(['coincs=readMeta(file_list{1,:},''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
+%    eval(['coincs=readMeta(file_list{1,:},''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
+   eval(['coincs=readMeta(file_list{1},''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
 
     for k=1:length(coincs.snr)
       coincs.run(k)=1;  % this is just an index to identify the injection run
@@ -39,7 +41,7 @@ N_files = length(file_list(:,1));
 
     % read in the rest of the injection files
     for i=2:N_files
-      eval(['coincsi=readMeta( file_list{i,:},''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
+      eval(['coincsi=readMeta( file_list{i},''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
       for k=1:length(coincsi.snr)
         coincsi.run(k)=i;
       end
@@ -65,7 +67,7 @@ N_files = length(file_list(:,1));
 % read background, playground or intime
   if strcmp(trig_type,'bg')||strcmp(trig_type,'pg')||strcmp(trig_type,'int')
 
-    coincs=readMeta( file_list{1,:},'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id');
+    coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,mass,spin,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id');
     % add a field which says which run a trigger is from
     for k=1:length(coincs.snr)
       coincs.run(k)=1;
@@ -302,19 +304,6 @@ if double>0
     end
     i=i+1;
   end
-
-%{
-% save as mat file
-  if strcmp(trig_type,'inj')
-    eval(['save ' veto_type '' trig_type '' inj_type 'H1d.mat -struct trigH1d'])
-    eval(['save ' veto_type '' trig_type '' inj_type 'H2d.mat -struct trigH2d'])
-    eval(['save ' veto_type '' trig_type '' inj_type 'L1d.mat -struct trigL1d'])
-  else
-    eval(['save ' veto_type '' trig_type 'H1d.mat -struct trigH1d'])
-    eval(['save ' veto_type '' trig_type 'H2d.mat -struct trigH2d'])
-    eval(['save ' veto_type '' trig_type 'L1d.mat -struct trigL1d'])
-  end
-%}
 
 % put the H1L1 doubles in a structure
   [com,H1,L1]=intersect(trigH1d.ind,trigL1d.ind);
