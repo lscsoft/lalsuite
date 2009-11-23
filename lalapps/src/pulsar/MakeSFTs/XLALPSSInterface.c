@@ -364,14 +364,21 @@ PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PS
   return tsout;
 }
 
-PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
+PSSEventParams *XLALPSSComputeARMeanAndStdev(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
+  long ret;
+  if ( !events || !ts || !hp)
+    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFAULT );
+  if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
+    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFUNC );
+  }
+  return events;
+}
+
+PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts) {
   long ret;
   if ( !events || !ts )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
-  if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
-    fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
-    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
-  }
   if ((ret = even_anst(ts,events)) != ts->n ) {
     fprintf(stderr, "[DEBUG] even_anst: %ld\n", ret );
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
