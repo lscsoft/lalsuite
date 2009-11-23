@@ -193,6 +193,7 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude );
 REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb );
 REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt );
+REAL8 REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb);
 REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_sq );
 
 int XLALComputeRingTemplate(
