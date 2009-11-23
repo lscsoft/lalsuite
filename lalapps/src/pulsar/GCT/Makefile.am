@@ -9,12 +9,6 @@ EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc) -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 EXTRA_PROGRAMS = eah_HierarchSearchGCT
 
@@ -41,5 +35,11 @@ libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 libz.a:
 	cp -f `$(CC) -print-file-name=$@` $@
+
 exchndl.o: $(EAHsrc)/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
+

@@ -1,20 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 
-## make sure lalapps.la is built
-lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
-$(lalappsla):
-	cd $(top_builddir)/src/lalapps && $(MAKE)
-LDADD = $(lalappsla)
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS = OptimizedCFS ResamplingFstat
-
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
@@ -117,3 +108,7 @@ CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
