@@ -364,12 +364,27 @@ PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PS
   return tsout;
 }
 
+PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
+  long ret;
+  if ( !events || !ts )
+    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
+  if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
+    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
+  }
+  if ((ret = even_anst(ts,events)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] even_anst: %ld\n", ret );
+    XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
+  }
+  return events;
+}
+
 PSSTimeseries *XLALSubstractPSSCleaningEvents(PSSTimeseries *tsout, PSSTimeseries *tsin,
 					      PSSTimeseries *tshp, PSSEventParams *events,
 					      PSSHeaderParams* hp) {
   if ( !tsout || !tsin || !tshp || !events )
     XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFAULT );
-  fprintf(stderr, "[DEBUG] purge_data_subtract: %d\n", purge_data_subtract(tsout,tsin,tshp,events,hp) );
+  fprintf(stderr, "[DEBUG] data_subtract: %d\n", data_subtract(tsout,tsin,tshp,events,hp) );
   /* XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC ); */
   return tsout;
 }
