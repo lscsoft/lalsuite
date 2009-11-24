@@ -22,12 +22,11 @@ lalapps_getresp_SOURCES = getresp.c
 else
 LALFRAMEONLYPROGRAMS =
 endif
-lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
-bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) $(LALFRAMEONLYPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
+bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) $(LALFRAMEONLYPROGRAMS) lalapps_NoiseComparison lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
@@ -39,7 +38,7 @@ endif
 EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh mkcal.py \
 	     simplereadcalframe.c \
   strain_pipe.in noise_comp_pipe.in \
-  mkcal.py strain.py
+  mkcal.py strain.py ComputeStrain.c
 MOSTLYCLEANFILES = *.ilwd *.gwf
 CLEANFILES = python_config.sed lalapps_strain_pipe lalapps_noise_comp_pipe
 
