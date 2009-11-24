@@ -26,7 +26,7 @@ extern void XLALDestroyPSSEventParams(PSSEventParams *ts);
 
 /* open and close a log file */
 /* the PSS functions definitely need a working file pointer they can log to */
-/* opening a log file "-" logs to stderr */
+/* XLALPSSOpenLog("-") logs to stderr */
 extern FILE* XLALPSSOpenLog(char*name);
 extern void XLALPSSCloseLog(void);
 
@@ -57,7 +57,7 @@ REAL4TimeSeries
 (REAL4TimeSeries *r4ts,
  REAL8TimeSeries *r8ts);
 
-/* debug: write PSS timeseries data to a file */
+/* debug: write timeseries data to a file */
 extern PSSTimeseries
 *XLALPrintPSSTimeseriesToFile
 (PSSTimeseries *tsPSS,
@@ -92,6 +92,12 @@ extern PSSEventParams
  PSSHeaderParams* hp);
 
 extern PSSEventParams
+*XLALPSSComputeExtARMeanAndStdev
+(PSSEventParams *events,
+ PSSTimeseries *ts,
+ PSSHeaderParams* hp);
+
+extern PSSEventParams
 *XLALIdentifyPSSCleaningEvents
 (PSSEventParams *events,
  PSSTimeseries *ts);
@@ -104,4 +110,18 @@ extern PSSTimeseries
  PSSEventParams *events,
  PSSHeaderParams* hp);
 
-#endif /* XLALPSSINTERFACE_H double inclusion protection */
+/* debug: just for testing backwards compatibility.
+   This function should not be used anymore, instead use the sequence
+   XLALPSSComputeARMeanAndStdev();
+   XLALIdentifyPSSCleaningEvents();
+   XLALSubstractPSSCleaningEvents();
+*/
+extern PSSTimeseries
+*XLALPSSPurgeEvents
+(PSSTimeseries *tsout,
+ PSSTimeseries *tsin,
+ PSSTimeseries *tshp,
+ PSSEventParams *events,
+ PSSHeaderParams* hp);
+
+#endif /*< XLALPSSINTERFACE_H double inclusion protection */

@@ -443,3 +443,13 @@ PSSTimeseries *XLALSubstractPSSCleaningEvents(PSSTimeseries *tsout, PSSTimeserie
   /* XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC ); */
   return tsout;
 }
+
+PSSTimeseries *XLALPSSPurgeEvents(PSSTimeseries *tsout, PSSTimeseries *tsin,
+				  PSSTimeseries *tshp, PSSEventParams *events,
+				  PSSHeaderParams* hp) {
+  if ( !tsout || !tsin || !tshp || !events )
+    XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFAULT );
+  fprintf(stderr, "[DEBUG] purge_data_subtract: %d\n", purge_data_subtract(tsout,tsin,tshp,events,hp) );
+  /* XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC ); */
+  return tsout;
+}
