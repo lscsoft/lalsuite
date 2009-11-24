@@ -97,7 +97,7 @@ AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.4],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
 

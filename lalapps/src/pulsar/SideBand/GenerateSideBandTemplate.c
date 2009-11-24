@@ -177,7 +177,7 @@ int main(int argc,char *argv[])
   
   /* load ephemeris-data */
   edat = LALCalloc(1,sizeof(EphemerisData));
-  InitEphemeris(&status,edat,uvar_ephemdir,uvar_ephemyear,uvar_tstart);
+  InitEphemeris(&status,edat,uvar_ephemdir,uvar_ephemyear);
 
   if (lalDebugLevel) printf ("Finished initialising ephemeris.\n");
 

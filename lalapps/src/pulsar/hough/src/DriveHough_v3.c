@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
   static HoughSignificantEventVector nStarEventVec;
 
   /* miscellaneous */
-  INT4   houghThreshold, iHmap, nSpin1Max;
+  INT4   houghThreshold=0, iHmap, nSpin1Max;
   UINT4  mObsCoh;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]){
     static SFTConstraints constraints;
 
     CHAR *tempDir;
-    REAL8 doppWings, fmin, fmax;
+    REAL8 doppWings, f_min, f_max;
     INT4 length;
 
     /* set detector constraint */
@@ -427,12 +427,12 @@ int main(int argc, char *argv[]){
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_min = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_max = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
 
     /* clean sfts if required */
     if ( LALUserVarWasSet( &uvar_linefile ) )

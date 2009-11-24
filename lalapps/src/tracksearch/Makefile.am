@@ -3,6 +3,7 @@
 #
 if LALFRAME
 if LALMETAIO
+if LALBURST
 bin_PROGRAMS = lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
@@ -19,11 +20,8 @@ lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
 lalapps_tracksearch_datagen_SOURCES = $(TSDATAGENSRCS)
 lalapps_tracksearch_averager_SOURCES = $(TRACKSEARCHAVGSRC)
 lalapps_tracksearch_dat2pgm_SOURCES = $(TSUTILSRCS)
-else
-bin_PROGRAMS =
 endif
-else
-bin_PROGRAMS =
+endif
 endif
 
 if HAVE_PYTHON

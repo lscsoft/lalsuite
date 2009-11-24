@@ -467,7 +467,6 @@ main(int argc, char **argv)
   time_info.epoch.gpsNanoSeconds = 640000000;
   time_info.deltaT               = dt;
   time_info.nSample              = waveform.h->data->length;
-  time_info.accuracy             = LALLEAPSEC_STRICT;
 
   LALComputeDetAMResponseSeries(&stat,
                                 &am_response_series,

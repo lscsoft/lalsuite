@@ -403,7 +403,7 @@ int CalculateSensitivity(sensitivityparams *sensparams,binarysource *sourceparam
 int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparams,REAL8 t_span,INT4 bandno,FFT ***SFTData) 
 {
 
-  INT4 fileno=0,offset;
+  INT4 filenum=0,offset;
   FILE *fp;
   size_t errorcode;
   UINT4 ndeltaf=0;
@@ -442,11 +442,11 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   for (i=0;i<globbuf.gl_pathc;i++) filelist[i]=(char *)LALMalloc(256*sizeof(char));
   
   /* read all file names into memory */
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  while ((UINT4)filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"\nToo many files in directory! Exiting... \n");
 	  exit(1);
@@ -454,7 +454,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
     }
   globfree(&globbuf);
 
-  nfiles=fileno;
+  nfiles=filenum;
 
   /* open the first file to read header information */
   if (!(fp=fopen(filelist[0],"rb"))) {
@@ -474,7 +474,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   if (header.tbase<=0.0)
     {
       fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-	      header.tbase,filelist[fileno]);
+	      header.tbase,filelist[filenum]);
       return 3;
     }
 
@@ -498,7 +498,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   errorcode=fread((void*)&header,sizeof(header),1,fp);
   if (errorcode!=1) 
     {
-      fprintf(stderr,"No header in data file %s\n",filelist[fileno]);
+      fprintf(stderr,"No header in data file %s\n",filelist[filenum]);
       return 1;
     }
 
@@ -526,13 +526,13 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
 
   /* loop over all files in the given data directory */
   dataparams->sftno=0;
-  fileno=0;
+  filenum=0;
   flag=0;
-  while ((fileno<nfiles)&&(flag==0)) {
+  while ((filenum<nfiles)&&(flag==0)) {
     
     /* open the SFT file */
-    if (!(fp=fopen(filelist[fileno],"rb"))) {
-      fprintf(stderr,"Weird... %s doesn't exist!\n",filelist[fileno]);
+    if (!(fp=fopen(filelist[filenum],"rb"))) {
+      fprintf(stderr,"Weird... %s doesn't exist!\n",filelist[filenum]);
       return 1;
     }
       
@@ -540,7 +540,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-	fprintf(stderr,"No header in data file %s\n",filelist[fileno]);
+	fprintf(stderr,"No header in data file %s\n",filelist[filenum]);
 	return 1;
       }
         
@@ -550,7 +550,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
         /* Check that data is correct endian order */
       if (header.endian!=1.0)
 	{
-	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",filelist[fileno]);
+	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",filelist[filenum]);
 	  fprintf(stderr,"It could be a file format error (big/little\n");
 	  fprintf(stderr,"endian) or the file might be corrupted\n\n");
 	  return 2;
@@ -560,7 +560,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
       if (header.tbase<=0.0)
 	{
 	  fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-		  header.tbase,filelist[fileno]);
+		  header.tbase,filelist[filenum]);
 	  return 3;
 	}
       
@@ -574,7 +574,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
 	{
 	  fprintf(stderr,"Freq index range %d->%d not in %d to %d (file %s)\n",
 		  ifmin,ifmax,header.firstfreqindex,
-		  header.firstfreqindex+header.nsamples,filelist[fileno]);
+		  header.firstfreqindex+header.nsamples,filelist[filenum]);
 	  return 4;
 	}
       
@@ -589,8 +589,8 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
       errorcode=fseek(fp,offset,SEEK_CUR);
       if (errorcode) 
 	{
-	  perror(filelist[fileno]);
-	  fprintf(stderr,"Can't get to offset %d in file %s\n",offset,filelist[fileno]);
+	  perror(filelist[filenum]);
+	  fprintf(stderr,"Can't get to offset %d in file %s\n",offset,filelist[filenum]);
 	  return 5;
 	}
       
@@ -604,7 +604,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
       /* Fill in actual SFT data, and housekeeping */
       errorcode=fread((void*)((*SFTData)[dataparams->sftno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
-	perror(filelist[fileno]);
+	perror(filelist[filenum]);
 	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
 	return 6;
       }
@@ -621,7 +621,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
       /* ending if data in observation window */ 
     }
 
-    fileno++;
+    filenum++;
 
     /* close the file */
     fclose(fp);     

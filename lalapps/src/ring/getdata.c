@@ -117,7 +117,7 @@ REAL4TimeSeries * get_zero_data(
     series->sampleUnits = lalADCCountUnit;
   
   for ( j = 0; j < series->data->length; ++j )
-    series->data->data[j] *= 0;
+    series->data->data[j] = 0;
 
   return series;
 }

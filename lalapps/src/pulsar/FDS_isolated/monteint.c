@@ -331,7 +331,9 @@ void testCode(LALStatus *status, BayesFstatParams *bfparams)
 
   INITSTATUS (status, "testCode", rcsid);
   ATTATCHSTATUSPTR (status);
-  ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
+  if ( bfparams == NULL ) {
+    ABORT (status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
+  }
 
 #ifdef TEST_MONTEINT
   TRY( integrateDSquare(status->statusPtr, bfparams), status);

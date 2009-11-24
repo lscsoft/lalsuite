@@ -219,7 +219,7 @@ extern "C" {
   void ReadTimeStamps(LALStatus *,CHAR *,INT4, SideBandTemplateParams **);
   void ComputeSideBandWindow(LALStatus *,ABCcoefficients *, CHAR *,SideBandTemplateParams **);
   void ComputeSideBandLikelihood(LALStatus *,SideBandMCMCVector *,SideBandDataSet *,SideBandTemplate **,SideBandTemplateParams *);
-  void InitEphemeris(LALStatus *,EphemerisData *,const CHAR *,const CHAR *,LIGOTimeGPS);
+  void InitEphemeris(LALStatus *,EphemerisData *,const CHAR *,const CHAR *);
   void ReadSideBandPriors(LALStatus *status,CHAR *,SideBandMCMCRanges *,SideBandMCMCJumpProbs *,SideBandTemplateParams *);
   void SelectSideBandFrequencies (LALStatus *,SideBandDataSet **,SelectSideBandFrequencyParams *,SideBandDataSet **);
   void ReadSideBandData (LALStatus *,ReadSideBandDataParams *,SideBandDataSet **);
