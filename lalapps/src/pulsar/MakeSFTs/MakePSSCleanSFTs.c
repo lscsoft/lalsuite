@@ -2942,9 +2942,8 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
   XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
 
-
-  if( XLALPSSComputeARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALPSSComputeARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+  if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+    fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
     retval = -2;
     goto PSSTDCleaningREAL8FreeAll;
   }
