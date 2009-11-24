@@ -382,7 +382,7 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   if ( !events || !ts || !hp)
     XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFAULT );
 
-  pre = events->tau / ts->dx;
+  pre = ceil(events->tau / ts->dx);
   len = ts->n;
   newlen = len+pre;
 
@@ -393,6 +393,7 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   events->xastd = (float*) malloc(newlen*sizeof(float));
   tsdata = ts->y;
   ts->y = (float*) malloc(newlen*sizeof(float));
+  ts->n = newlen;
 
   /* fill extended timeseries */
   for(i=0;i<pre;i++)
@@ -417,6 +418,7 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   events->xamed = xamed;
   free(events->xastd);
   events->xastd = xastd;
+  ts->n = len;
   free(ts->y);
   ts->y = tsdata;
 
