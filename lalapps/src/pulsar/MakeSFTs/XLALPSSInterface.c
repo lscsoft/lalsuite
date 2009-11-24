@@ -360,7 +360,6 @@ PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PS
   if ( !tsout || !tsin || !hp )
     XLAL_ERROR_NULL( "XLALPSSHighpassData", XLAL_EFAULT );
   fprintf(stderr, "[DEBUG] highpass_data_bil: %d\n", highpass_data_bil(tsout,tsin,hp,f) );
-  /* XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT ); */
   return tsout;
 }
 
@@ -372,6 +371,55 @@ PSSEventParams *XLALPSSComputeARMeanAndStdev(PSSEventParams *events, PSSTimeseri
     fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
     XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFUNC );
   }
+  return events;
+}
+
+PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
+  long ret;
+  unsigned long len, newlen, pre, i;
+  float *xamed, *xastd, *tsdata;
+
+  if ( !events || !ts || !hp)
+    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFAULT );
+
+  pre = events->tau / ts->dx;
+  len = ts->n;
+  newlen = len+pre;
+
+  /* allocate extended data, save original data in local pointers */
+  xamed = events->xamed;
+  events->xamed = (float*) malloc(newlen*sizeof(float));
+  xastd = events->xastd;
+  events->xastd = (float*) malloc(newlen*sizeof(float));
+  tsdata = ts->y;
+  ts->y = (float*) malloc(newlen*sizeof(float));
+
+  /* fill extended timeseries */
+  for(i=0;i<pre;i++)
+    ts->y[i] = tsdata[pre-i-1];
+  for(i=0;i<len;i++)
+    ts->y[i+pre] = tsdata[i];
+
+  /* call original PSS routine */
+  if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
+    fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
+    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFUNC );
+  }
+
+  /* get results back into original structures */
+  for(i=0;i<len;i++) {
+    xamed[i] = events->xamed[i+pre];
+    xastd[i] = events->xastd[i+pre];
+  }
+
+  /* free extended arrays and restore original pointers */
+  free(events->xamed);
+  events->xamed = xamed;
+  free(events->xastd);
+  events->xastd = xastd;
+  free(ts->y);
+  ts->y = tsdata;
+
   return events;
 }
 
