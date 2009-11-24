@@ -1095,8 +1095,8 @@ XLALFindChirpCreateSubBanks(
 void
 XLALBankVetoCCMat (
     FindChirpBankVetoData 	*bankVetoData,
-    FindChirpSubBank            *vetoBank,
-    FindChirpDataParams         *params,
+    REAL4Vector                 *ampVec,
+    UINT4                       subBankSize,
     REAL4 			dynRange,
     REAL4 			fLow,
     REAL4 			deltaF,
