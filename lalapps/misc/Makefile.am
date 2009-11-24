@@ -1,5 +1,17 @@
-## Process this file with automake to produce Makefile.in
-EXTRA_DIST = lalapps.m4 lalappslibtool.m4 pkg.m4
+EXTRA_DIST = \
+	config.guess \
+	config.sub \
+	depcomp \
+	install-sh \
+	lalapps.m4 \
+	lalapps_c99.m4 \
+	lalappslibtool.m4 \
+	ltmain.sh \
+	missing \
+	mkinstalldirs \
+	pkg.m4 \
+	py-compile
+
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
 CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh

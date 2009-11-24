@@ -178,18 +178,6 @@ PrintLALDetector(LALDetector * const detector)
 
 void print_time_info(const LALTimeIntervalAndNSample * p_time_info)
 {
-  printf("Accuracy: ");
-  switch (p_time_info->accuracy) {
-    case LALLEAPSEC_STRICT:
-      printf("strict\n");
-      break;
-    case LALLEAPSEC_LOOSE:
-      printf("loose\n");
-      break;
-    default:
-      printf("undefined\n");
-      break;
-  }
   printf("time_info.epoch.gpsSeconds     = % 14d\n",
          (*p_time_info).epoch.gpsSeconds);
   printf("time_info.epoch.gpsNanoSeconds = % 14d\n",

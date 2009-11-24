@@ -9,12 +9,11 @@ libinject_la_SOURCES =	\
 	InjectVector.c			InjectTimeSeries.c \
 	CelestialCoordinates.c		TerrestrialCoordinates.c \
 	SkyCoordinates.c		SimulateInspiral.c \
-	GenerateBurst.c\
 	GenerateInspiral.c		GenerateInspiralSmooth.c  \
 	GeneratePulsarSignal.c		SimulatePulsarSignal.c	 \
 	CelestialCoordinatesLaldoc.c    NRWaveInject.c \
 	InspiralInjectionParams.c    GenerateInspRing.c	 \
-	LALSimulation.c 		LALSimBurst.c \
+	LALSimulation.c \
 	LALSimInspiral.c 		LALSimInspiralPNMode.c \
 	check_series_macros.h
 

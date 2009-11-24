@@ -221,7 +221,6 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 extern int vrbflg;
 LIGOLwXMLStream       xmlfp;
 CHAR                  fname[256];
-LALGPSandAcc          gpsAndAcc;
 RandomParams *randParams = NULL;
 
 
@@ -553,10 +552,7 @@ void LALSetSiteParameters(LALStatus *status,
   detTimeAndSource.p_source = &skyPos;
   
   detAndSource.pSource = &source;
-  
-  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = this_inj->geocent_end_time;
-  
+
   /*
    * compute site end times
    * (copied from SnglInspiralUtils.c)
@@ -601,7 +597,7 @@ void LALSetSiteParameters(LALStatus *status,
   
   detAndSource.pDetector = &lho;
   LAL_CALL( LALComputeDetAMResponse( status, &resp, &detAndSource,
-                                     &gpsAndAcc ), status );
+                                     &this_inj->geocent_end_time ), status );
   
 
   /* compute the effective distance for LHO */
@@ -612,7 +608,7 @@ void LALSetSiteParameters(LALStatus *status,
   /* compute the response of the LLO detector */
   detAndSource.pDetector = &llo;
   LAL_CALL( LALComputeDetAMResponse( status, &resp, &detAndSource,
-                                     &gpsAndAcc ), status);
+                                     &this_inj->geocent_end_time ), status);
 
   
   /* compute the effective distance for LLO */

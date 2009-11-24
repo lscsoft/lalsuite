@@ -173,13 +173,13 @@ int ConvertRTperitoXY(RTPLocation *RTPloc, XYLocation *XYloc, REAL8 *alpha)
 
 /*******************************************************************************/
 
-static void OrbPhaseFunc(LALStatus *status, REAL8 *y, REAL8 alpha, void *y0)
+static void OrbPhaseFunc(LALStatus *status, REAL8 *y, REAL8 alpha, void *y_0)
 {
   INITSTATUS(status, "OrbPhaseFunc", "Function OrbPhaseFunc()");
-  ASSERT(y0,status, 1, "Null pointer");
+  ASSERT(y_0,status, 1, "Null pointer");
   /* this is the transendental function we need to solve to find the true initial phase */
   /* note that it also includes a retarded time delay */
-  *y = *(REAL8 *)y0*(-1.0) + alpha*(period_GLOBAL/LAL_TWOPI)+sma_GLOBAL*sin(alpha);
+  *y = *(REAL8 *)y_0*(-1.0) + alpha*(period_GLOBAL/LAL_TWOPI)+sma_GLOBAL*sin(alpha);
   RETURN(status);
 }
 

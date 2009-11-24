@@ -1,24 +1,37 @@
-## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS = -I misc
-SUBDIRS = include packages doc lib misc debian @subdirs@
+
+SUBDIRS = \
+	debian \
+	misc \
+	include \
+	packages \
+	doc \
+	lib
+
 MAINTAINERCLEANFILES = lal.spec
 distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
-EXTRA_DIST = README.bugs README.contrib README.install \
-  lal.pc.in lalsupport.pc.in lalmetaio.pc.in \
-  lal-config.in aclocal.m4 lal.spec.in lal.spec
+
+EXTRA_DIST = \
+	README.bugs \
+	README.contrib \
+	README.install \
+	lal.pc.in \
+	lalsupport.pc.in \
+	lal-config.in \
+	aclocal.m4 \
+	lal.spec.in \
+	lal.spec
+
 bin_SCRIPTS = lal-config
 
-if METAIO
-LALMETAIOPC = lalmetaio.pc
-else
-LALMETAIOPC =
-endif
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = lal.pc lalsupport.pc $(LALMETAIOPC)
+pkgconfig_DATA = \
+	lal.pc \
+	lalsupport.pc
 
-# cvs-clean: more than maintainer-clean, this cleans
-# everything not in the cvs archive.
-cvs-clean: maintainer-clean
+# vcs-clean: more than maintainer-clean, this cleans
+# everything not in the vcs archive.
+vcs-clean: maintainer-clean
 	rm -f Makefile.in
 	rm -f */Makefile.in
 	rm -f */*/Makefile.in
@@ -36,32 +49,40 @@ cvs-clean: maintainer-clean
 	rm -f config.log
 	rm -f config.h.in
 
+# map cvs-clean to vcs-clean for backwards compatibility
+cvs-clean: vcs-clean
+	@echo "";\
+		echo "=================================================================";\
+		echo "";\
+		echo "        cvs-clean is deprecated, use vcs-clean instead";\
+		echo "";\
+		echo "================================================================="
+
 all-local:
 	@echo "";\
-echo "=================================================================";\
-echo "";\
-echo "        LAL has now been successfully built.";\
-echo "        Now run 'make install' to install LAL.";\
-echo "";\
-echo "================================================================="
+		echo "=================================================================";\
+		echo "";\
+		echo "        LAL has now been successfully built.";\
+		echo "        Now run 'make install' to install LAL.";\
+		echo "";\
+		echo "================================================================="
 
 install-exec-local:
 	@echo "";\
-echo "=================================================================";\
-echo "";\
-echo "        LAL has now been successfully installed.";\
-echo "";\
-echo "        Now you may want to setup your environment:";\
-echo "";\
-echo "        Bourne shell [bash] users: please add the";\
-echo "        following lines to your .profile file";\
-echo "";\
-echo '            . $(sysconfdir)/lal-user-env.sh';\
-echo "";\
-echo "        C-shell [tcsh] users: please add the following";\
-echo "        lines to your .login file";\
-echo "";\
-echo '            source $(sysconfdir)/lal-user-env.csh';\
-echo "";\
-echo "================================================================="
-
+		echo "=================================================================";\
+		echo "";\
+		echo "        LAL has now been successfully installed.";\
+		echo "";\
+		echo "        Now you may want to setup your environment:";\
+		echo "";\
+		echo "        Bourne shell [bash] users: please add the";\
+		echo "        following lines to your .profile file";\
+		echo "";\
+		echo '            . $(sysconfdir)/lal-user-env.sh';\
+		echo "";\
+		echo "        C-shell [tcsh] users: please add the following";\
+		echo "        lines to your .login file";\
+		echo "";\
+		echo '            source $(sysconfdir)/lal-user-env.csh';\
+		echo "";\
+		echo "================================================================="

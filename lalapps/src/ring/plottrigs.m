@@ -1,5 +1,5 @@
 % This code reads in a list of found injections, a list of missed injections,
-%  and a list of vetoes (if required). Missed / found plots (altogether and 
+%  and a list of vetoes (if required). Missed / found plots (altogether and
 %  individually are made. Also produced is ths efficiency curve for triples.
 % Please note that the  distance range is hard-coded in the efficiency calculation.
 %
@@ -7,24 +7,23 @@
 % >> found_list=['injH1H2L1coincs1001.xml';'injH1H2L1coincs1002.xml';'injH1H2L1coincs1003.xml'];
 % >> missed_list=['injH1H2L1missed1001.xml';'injH1H2L1missed1002.xml';'injH1H2L1missed1002.xml'];
 % >> veto_list = [];
-% >> plottrigs( found_list,missed_list,veto_list )
+% >> inj_type = ['EOBNR']; ( other types can be 'PHENOM', 'RINGDOWN', or 'ALL')
+% >> veto_type = ['NOVETO']; or CAT2, CAT23
+% >> plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 
-function plottrigs( found_list,missed_list,veto_list )
+function plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 % read in the injection lists
-injH1t=load('injH1_trip.mat');
-injL1t=load('injL1_trip.mat');
-injH2t=load('injH2_trip.mat');
-injH1d=load('injH1d.mat');
-injH2d=load('injH2d.mat');
-injL1d=load('injL1d.mat');
-injH1inL1d=load('injH1inL1_doub.mat');
-injL1inH1d=load('injL1inH1_doub.mat');
-injH1inH2d=load('injH1inH2_doub.mat');
-injH2inH1d=load('injH2inH1_doub.mat');
-injL1inH2d=load('injL1inH2_doub.mat');
-injH2inL1d=load('injH2inL1_doub.mat');
+eval(['injH1t=load(''' veto_type '_inj_' inj_type '_H1trip.mat'');'])
+eval(['injL1t=load(''' veto_type '_inj_' inj_type '_L1trip.mat'');'])
+eval(['injH2t=load(''' veto_type '_inj_' inj_type '_H2trip.mat'');'])
+eval(['injH1inL1d=load(''' veto_type '_inj_' inj_type '_H1inL1doub.mat'');'])
+eval(['injL1inH1d=load(''' veto_type '_inj_' inj_type '_L1inH1doub.mat'');'])
+eval(['injH1inH2d=load(''' veto_type '_inj_' inj_type '_H1inH2doub.mat'');'])
+eval(['injH2inH1d=load(''' veto_type '_inj_' inj_type '_H2inH1doub.mat'');'])
+eval(['injL1inH2d=load(''' veto_type '_inj_' inj_type '_L1inH2doub.mat'');'])
+eval(['injH2inL1d=load(''' veto_type '_inj_' inj_type '_H2inL1doub.mat'');'])
 
 % if no cut
 injH1inL1dcut.ind = [];
@@ -37,36 +36,30 @@ injH2inL1daftercut.ind = injH2inL1d.ind;
 % make veto files into .mat files
 if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   fprintf('generating veto lists\n   This might take a while.....\n');
-  H1veto=load(veto_list(1,:));
+  [num,H1vetostart,H1vetoend,duration]=textread(veto_list(1,:),'%d %d %d %d','commentstyle','shell');
   H1vetolist=[];
-  H1vetostart=H1veto(:,2);
-  H1vetoend=H1veto(:,3);
   % make a list of all the gps seconds vetoes
   j=1;
   for i=1:length(H1vetostart)
-    H1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
+    H1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)];
   end
   save H1vetolist.mat H1vetolist
   fprintf('H1 veto list saved\n')
 
-  H2veto=load(veto_list(2,:));
+  [num,H2vetostart,H2vetoend,duration]=textread(veto_list(2,:),'%d %d %d %d','commentstyle','shell');
   H2vetolist=[];
-  H2vetostart=H2veto(:,2);
-  H2vetoend=H2veto(:,3);
   j=1;
   for i=1:length(H2vetostart)
-    H2vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
+    H2vetolist=[H2vetolist, H2vetostart(i):H2vetoend(i)];
   end
   save H2vetolist.mat H2vetolist
   fprintf('H2 veto list saved\n')
 
-  L1veto=load(veto_list(3,:));
+  [num,L1vetostart,L1vetoend,duration]=textread(veto_list(3,:),'%d %d %d %d','commentstyle','shell');
   L1vetolist=[];
-  L1vetostart=L1veto(:,2);
-  L1vetoend=L1veto(:,3);
   j=1;
   for i=1:length(L1vetostart)
-    L1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
+    L1vetolist=[L1vetolist, L1vetostart(i):L1vetoend(i)];
   end
   save L1vetolist.mat L1vetolist
   fprintf('L1 veto list saved\n')
@@ -75,11 +68,11 @@ end
 %=========================== Injected Quantities ===========================%
 
 % Read in missed and found sim_ringdown tables
-N_files = length(found_list(:,1))
+N_files = length(found_list)
 
-eval(['fsim=readMeta(found_list(1,:),''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['fsim=readMeta(found_list{1},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 
-eval(['msim=readMeta(missed_list(1,:),''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['msim=readMeta(missed_list{1},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 A=1:N_files
 for k=1:length(fsim.mass)
   fsim.run(k)=A(1);
@@ -92,8 +85,8 @@ end
 msim.run=transpose(msim.run);
 
 for i=2:N_files
-eval(['fsimi=readMeta(found_list(i,:),''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
-eval(['msimi=readMeta(missed_list(i,:),''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['fsimi=readMeta(found_list{i},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['msimi=readMeta(missed_list{i},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 
   for k=1:length(fsimi.quality)
     fsimi.run(k)=A(i);
@@ -160,39 +153,68 @@ for i=1:length(fsim.th)
   fsim.ind(i)=i;
 end
 
-% the index of fsim is the same as the fsim.ind
+% In separate.m we assign a unique index to each coincidence, which
+% maps over to the fsim array (assuming we have read the sim files in 
+% in the same order as we did the sngl files in separate.m).
+fsimH1H2L1.ind=fsim.ind(injH1t.ind);
+fsimH1H2L1.f=transpose(fsim.f(injH1t.ind));
+fsimH1H2L1.q=transpose(fsim.q(injH1t.ind));
+fsimH1H2L1.m=transpose(fsim.m(injH1t.ind));
+fsimH1H2L1.a=transpose(fsim.a(injH1t.ind));
+fsimH1H2L1.d=transpose(fsim.d(injH1t.ind));
+fsimH1H2L1.dh=transpose(fsim.dh(injH1t.ind));
+fsimH1H2L1.dl=transpose(fsim.dl(injH1t.ind));
+fsimH1H2L1.th=transpose(fsim.th(injH1t.ind));
+fsimH1H2L1.tl=transpose(fsim.tl(injH1t.ind));
+fsimH1H2L1.run=transpose(fsim.run(injH1t.ind));
+fsimH1H2L1.hrss_h=transpose(fsim.hrss_h(injH1t.ind));
+fsimH1H2L1.hrss_l=transpose(fsim.hrss_l(injH1t.ind));
+eval(['save ' veto_type '_' inj_type '_simH1H2L1.mat -struct fsimH1H2L1'])
+
 fsimH1L1d.ind=fsim.ind(injH1inL1daftercut.ind);
-fsimH1L1d.f=fsim.f(injH1inL1daftercut.ind);
-fsimH1L1d.d=fsim.d(injH1inL1daftercut.ind);
-fsimH1L1d.dh=fsim.dh(injH1inL1daftercut.ind);
-fsimH1L1d.dl=fsim.dl(injH1inL1daftercut.ind);
-fsimH1L1d.th=fsim.th(injH1inL1daftercut.ind);
-fsimH1L1d.tl=fsim.tl(injH1inL1daftercut.ind);
-fsimH1L1d.run=fsim.run(injH1inL1daftercut.ind);
-fsimH1L1d.hrss_h=fsim.hrss_h(injH1inL1daftercut.ind);
-fsimH1L1d.hrss_l=fsim.hrss_l(injH1inL1daftercut.ind);
+fsimH1L1d.f=transpose(fsim.f(injH1inL1daftercut.ind));
+fsimH1L1d.q=transpose(fsim.q(injH1inL1daftercut.ind));
+fsimH1L1d.m=transpose(fsim.m(injH1inL1daftercut.ind));
+fsimH1L1d.a=transpose(fsim.a(injH1inL1daftercut.ind));
+fsimH1L1d.d=transpose(fsim.d(injH1inL1daftercut.ind));
+fsimH1L1d.dh=transpose(fsim.dh(injH1inL1daftercut.ind));
+fsimH1L1d.dl=transpose(fsim.dl(injH1inL1daftercut.ind));
+fsimH1L1d.th=transpose(fsim.th(injH1inL1daftercut.ind));
+fsimH1L1d.tl=transpose(fsim.tl(injH1inL1daftercut.ind));
+fsimH1L1d.run=transpose(fsim.run(injH1inL1daftercut.ind));
+fsimH1L1d.hrss_h=transpose(fsim.hrss_h(injH1inL1daftercut.ind));
+fsimH1L1d.hrss_l=transpose(fsim.hrss_l(injH1inL1daftercut.ind));
+eval(['save  ' veto_type '_' inj_type '_simH1L1.mat -struct fsimH1L1d'])
 
 fsimH1H2d.ind=fsim.ind(injH1inH2daftercut.ind);
-fsimH1H2d.f=fsim.f(injH1inH2daftercut.ind);
-fsimH1H2d.d=fsim.d(injH1inH2daftercut.ind);
-fsimH1H2d.dh=fsim.dh(injH1inH2daftercut.ind);
-fsimH1H2d.dl=fsim.dl(injH1inH2daftercut.ind);
-fsimH1H2d.th=fsim.th(injH1inH2daftercut.ind);
-fsimH1H2d.tl=fsim.tl(injH1inH2daftercut.ind);
-fsimH1H2d.run=fsim.run(injH1inH2daftercut.ind);
-fsimH1H2d.hrss_h=fsim.hrss_h(injH1inH2daftercut.ind);
-fsimH1H2d.hrss_l=fsim.hrss_l(injH1inH2daftercut.ind);
+fsimH1H2d.f=transpose(fsim.f(injH1inH2daftercut.ind));
+fsimH1H2d.q=transpose(fsim.q(injH1inH2daftercut.ind));
+fsimH1H2d.m=transpose(fsim.m(injH1inH2daftercut.ind));
+fsimH1H2d.a=transpose(fsim.a(injH1inH2daftercut.ind));
+fsimH1H2d.d=transpose(fsim.d(injH1inH2daftercut.ind));
+fsimH1H2d.dh=transpose(fsim.dh(injH1inH2daftercut.ind));
+fsimH1H2d.dl=transpose(fsim.dl(injH1inH2daftercut.ind));
+fsimH1H2d.th=transpose(fsim.th(injH1inH2daftercut.ind));
+fsimH1H2d.tl=transpose(fsim.tl(injH1inH2daftercut.ind));
+fsimH1H2d.run=transpose(fsim.run(injH1inH2daftercut.ind));
+fsimH1H2d.hrss_h=transpose(fsim.hrss_h(injH1inH2daftercut.ind));
+fsimH1H2d.hrss_l=transpose(fsim.hrss_l(injH1inH2daftercut.ind));
+eval(['save  ' veto_type '_' inj_type '_simH1H2.mat -struct fsimH1H2d'])
 
 fsimL1H2d.ind=fsim.ind(injH2inL1daftercut.ind);
-fsimL1H2d.f=fsim.f(injH2inL1daftercut.ind);
-fsimL1H2d.d=fsim.d(injH2inL1daftercut.ind);
-fsimL1H2d.dh=fsim.dh(injH2inL1daftercut.ind);
-fsimL1H2d.dl=fsim.dl(injH2inL1daftercut.ind);
-fsimL1H2d.th=fsim.th(injH2inL1daftercut.ind);
-fsimL1H2d.tl=fsim.tl(injH2inL1daftercut.ind);
-fsimL1H2d.run=fsim.run(injH2inL1daftercut.ind);
-fsimL1H2d.hrss_h=fsim.hrss_h(injH2inL1daftercut.ind);
-fsimL1H2d.hrss_l=fsim.hrss_l(injH2inL1daftercut.ind);
+fsimL1H2d.f=transpose(fsim.f(injH2inL1daftercut.ind));
+fsimL1H2d.q=transpose(fsim.q(injH2inL1daftercut.ind));
+fsimL1H2d.m=transpose(fsim.m(injH2inL1daftercut.ind));
+fsimL1H2d.a=transpose(fsim.a(injH2inL1daftercut.ind));
+fsimL1H2d.d=transpose(fsim.d(injH2inL1daftercut.ind));
+fsimL1H2d.dh=transpose(fsim.dh(injH2inL1daftercut.ind));
+fsimL1H2d.dl=transpose(fsim.dl(injH2inL1daftercut.ind));
+fsimL1H2d.th=transpose(fsim.th(injH2inL1daftercut.ind));
+fsimL1H2d.tl=transpose(fsim.tl(injH2inL1daftercut.ind));
+fsimL1H2d.run=transpose(fsim.run(injH2inL1daftercut.ind));
+fsimL1H2d.hrss_h=transpose(fsim.hrss_h(injH2inL1daftercut.ind));
+fsimL1H2d.hrss_l=transpose(fsim.hrss_l(injH2inL1daftercut.ind));
+eval(['save ' veto_type '_' inj_type '_simH2L1.mat -struct fsimL1H2d'])
 
 foundd=[fsimH1L1d.ind,fsimH1H2d.ind,fsimL1H2d.ind];
 threshcut.ind=fsim.ind([injH1inH2dcut.ind,injH2inL1dcut.ind,injH1inL1dcut.ind]);
@@ -245,11 +267,11 @@ vetoedinL1=setdiff(L1vetolist,union(H2vetolist,H1vetolist));
 losttriptimes=[vetoedinH1H2L1,vetoedinH1H2,vetoedinH1L1,vetoedinL1H2,vetoedinH1,vetoedinH2,vetoedinL1];
 
 % list the injections that were missed during these times
-vetot.t=msim.th(ismember(floor(msim.th),losttriptimes));
-vetot.d=msim.d(ismember(floor(msim.th),losttriptimes));
-vetot.dh=msim.dh(ismember(floor(msim.th),losttriptimes));
-vetot.dl=msim.dl(ismember(floor(msim.th),losttriptimes));
-vetot.f=msim.f(ismember(floor(msim.th),losttriptimes));
+vetot.t=transpose(msim.th(ismember(floor(msim.th),losttriptimes)));
+vetot.d=transpose(msim.d(ismember(floor(msim.th),losttriptimes)));
+vetot.dh=transpose(msim.dh(ismember(floor(msim.th),losttriptimes)));
+vetot.dl=transpose(msim.dl(ismember(floor(msim.th),losttriptimes)));
+vetot.f=transpose(msim.f(ismember(floor(msim.th),losttriptimes)));
 
 % list the injections that were missed outside of these times (ie MISSED in TRIPLE time)
 [missed.th,ind]=setdiff(msim.th,vetot.t);
@@ -295,7 +317,7 @@ fsimH1H2dd.run=fsimH1H2d.run(ismember(floor(fsimH1H2d.th),vetoedinL1));
 fsimH1H2dd.hrss_h=fsimH1H2d.hrss_h(ismember(floor(fsimH1H2d.th),vetoedinL1));
 fsimH1H2dd.hrss_l=fsimH1H2d.hrss_l(ismember(floor(fsimH1H2d.th),vetoedinL1));
 
-fdoubs=[fsimL1H2dd.th;fsimH1L1dd.th;fsimH1H2dd.th];
+fdoubs=[fsimL1H2dd.th,fsimH1L1dd.th,fsimH1H2dd.th];
 doubtimes=[vetoedinH1,vetoedinH2,vetoedinL1];
 
 % list the injections that were  MISSED in DOUBLE time
@@ -346,7 +368,7 @@ fsimL1H2dt.hrss_h=fsimL1H2d.hrss_h(ind);
 fsimL1H2dt.hrss_l=fsimL1H2d.hrss_l(ind);
 
 %totals
-doubsintrip.th=[fsimH1L1dt.th;fsimH1H2dt.th;fsimL1H2dt.th];
+doubsintrip.th=[fsimH1L1dt.th,fsimH1H2dt.th,fsimL1H2dt.th];
 
 % Bookkeeping
 % The number of missed and found injections in each category should equal the total number 
@@ -373,30 +395,31 @@ if exist('injH1t','var')
   ht=loglog(fsim.f(injH1t.ind),fsim.dh(injH1t.ind),'x');
   hold on
 end
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dh,fsimH1H2dd.dh],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dh,fsimH1L1dd.dh],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dh,fsimL1H2dd.dh],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh;vetot.dh],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f,vetot.f],[fsimH1H2dd.dh,fsimH1L1dd.dh,fsimL1H2dd.dh,vetot.dh],'ko');
 end
 %hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'r.');
 hm=loglog(msim.f,msim.dh,'r.');
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
 if length(veto_list)>0
-  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed','template bank boundary');
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed');
 else
-  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed','template bank boundary');
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed');
 end
+eval(['title(''' veto_type ' ' inj_type ': Missed/found plot of frequency vs Hanford d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'mf_allvH.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type '_MF_allH.png'')'])
 
 % Livingston effective distance v's frequency, all missed/found
 figure(2)
@@ -404,30 +427,31 @@ if exist('injH1t','var')
   ht=loglog(fsim.f(injH1t.ind),fsim.dl(injH1t.ind),'x');
   hold on
 end
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dl,fsimH1H2dd.dl],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dl,fsimH1L1dd.dl],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dl,fsimL1H2dd.dl],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl;vetot.dl],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f,vetot.f],[fsimH1H2dd.dl,fsimH1L1dd.dl,fsimL1H2dd.dl,vetot.dl],'ko');
 end
 %hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
 hm=loglog(msim.f,msim.dl,'r.');
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
 if length(veto_list)>0
-  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed','template bank boundary');
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed');
 else
-  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed','template bank boundary');
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed');
 end
+eval(['title(''' veto_type ' ' inj_type ': Missed/found plot of frequency vs Livingston d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'mf_allvL.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type '_MF_allL.png'')'])
 
 % Hanford effective distance versus frequency, missed injs
 figure(3)
@@ -437,21 +461,22 @@ hold on
 if length(veto_list)>0
   hv=semilogy(vetot.f,vetot.dh,'ko');
 end
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
 if length(veto_list)>0
-  hleg=legend('missed','vetoed','template bank boundary');
+  hleg=legend('missed','vetoed');
 else
-  hleg=legend('missed','template bank boundary');
+  hleg=legend('missed');
 end
+eval(['title(''' veto_type ' ' inj_type ': Missed injections, frequency vs Hanford d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'m_vH.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type '_M_H.png'')'])
 
 % Livingston effective distance versus frequency, missed injs
 figure(4)
@@ -461,72 +486,75 @@ hold on
 if length(veto_list)>0
   hv=semilogy(vetot.f,vetot.dl,'ko');
 end
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
 if length(veto_list)>0
-  hleg=legend('missed','vetoed','template bank boundary');
+  hleg=legend('missed','vetoed');
 else
-  hleg=legend('missed','template bank boundary');
+  hleg=legend('missed');
 end
+eval(['title(''' veto_type ' ' inj_type ': Missed injections, frequency vs Livingston d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'m_vL.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type '_M_L.png'')'])
 
 
 % Hanford effectve distance vs frequency, doubles
 figure(5)
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dh,fsimH1H2dd.dh],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dh,fsimH1L1dd.dh],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dh,fsimL1H2dd.dh],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f],[fsimH1H2dd.dh,fsimH1L1dd.dh,fsimL1H2dd.dh],'ko');
 end
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
 if length(veto_list)>0
-  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','template bank boundary');
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed');
 else
-  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','template bank boundary');
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles');
 end
+eval(['title(''' veto_type ' ' inj_type ': Found doubles, frequency vs Hanford d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'fd_vH.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type '_F_dH.png'')'])
 
 % Livingston effectve distance vs frequency, doubles
 figure(6)
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dl,fsimH1H2dd.dl],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dl,fsimH1L1dd.dl],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dl,fsimL1H2dd.dl],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f],[fsimH1H2dd.dl,fsimH1L1dd.dl,fsimL1H2dd.dl],'ko');
 end
-hl=plot([50,50],[1e-2,1e5],'k');
-hu=plot([2000,2000],[1e-2,1e5],'k');
+%hl=plot([50,50],[1e-2,1e5],'k');
+%hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
 if length(veto_list)>0
-  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','template bank boundary');
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed');
 else
-  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','template bank boundary');
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles');
 end
+eval(['title(''' veto_type ' ' inj_type ': Found doubles, frequency vs Livingston d_{eff}'')']);
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-saveas(gcf,'fd_vL.png')
+eval(['saveas(gcf,''' veto_type '_' inj_type 'F_dL.png'')'])
 
 
 %%%%%%%%%%%%%%%%%%%%%%% EFFICIENCY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -598,9 +626,9 @@ h_xlab=xlabel('d / Mpc');
 set(h_xlab,'FontSize',16,'FontName','Times');
 h_ylab=ylabel('\epsilon');
 set(h_ylab,'FontSize',16,'FontName','Times');
-eval(['title(''Efficiency vs distance for triples in triple time in frequency band ' num2str(flow) '-' num2str(fhigh) 'Hz'')']);
+eval(['title(''' veto_type ' ' inj_type ' Efficiency vs distance for triples in f band ' num2str(flow) '-' num2str(fhigh) 'Hz'')']);
 grid on
 set(gca,'FontSize',16,'FontName','Times');
 axis([1e-3 1e3 0 1])
-eval(['saveas(gcf,''effvd_trip.png'')'])
+eval(['saveas(gcf,''' veto_type '_' inj_type '_effvd_trip.png'')'])
 

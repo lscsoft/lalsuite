@@ -4,6 +4,12 @@ lalapps (6.4-1lscsoft1) unstable; urgency=low
 
  -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 30 Sep 2009 10:00:00 +0200
 
+lalapps (6.3.2-1lscsoft1) unstable; urgency=low
+
+  * LALApps 6.3.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 19 Nov 2009 13:20:22 -0600
+
 lalapps (6.3.1-1lscsoft1) unstable; urgency=low
 
   * LALApps 6.3.1

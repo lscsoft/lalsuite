@@ -94,7 +94,6 @@ void LALComputeAM (LALStatus          *status,
   REAL4 zeta;                  /* sine of angle between detector arms        */
   INT4 i;                      /* temporary loop index                       */
   LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
-  LALGPSandAcc timeAndAcc;     /* parameter structure to LALComputeAMResponse*/
 
   REAL4 sumA2=0.0;
   REAL4 sumB2=0.0;
@@ -125,9 +124,8 @@ void LALComputeAM (LALStatus          *status,
       REAL4 *a = coe->a->data;
       REAL4 *b = coe->b->data;
 
-      timeAndAcc.gps=ts[i];
       /* Compute F_plus, F_cross */
-      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &timeAndAcc);
+      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &ts[i]);
 
       /*  Compute a, b from JKS eq 10,11
        *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))

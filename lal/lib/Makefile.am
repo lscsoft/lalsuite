@@ -18,17 +18,13 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/tdfilter/src/libtdfilter.la \
 	$(top_builddir)/packages/window/src/libwindow.la \
 	$(top_builddir)/packages/fft/src/libfft.la \
-	$(top_builddir)/packages/clremoval/src/libclremoval.la \
 	$(top_builddir)/packages/inspiral/src/libinspiral.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
 	$(top_builddir)/packages/bank/src/libbank.la \
 	$(top_builddir)/packages/ring/src/libring.la \
 	$(top_builddir)/packages/findchirp/src/libfindchirp.la \
 	$(top_builddir)/packages/pulsar/src/libpulsar.la \
-	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la \
-	$(top_builddir)/packages/burstsearch/src/libburstsearch.la \
-	$(top_builddir)/packages/tracksearch/src/libtracksearch.la \
-	$(top_builddir)/packages/timefreq/src/libtimefreq.la
+	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
@@ -42,7 +38,7 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo git_version
 	@echo "creating LALVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-	./git_version --sed $$sourced $$buildd
+	./git_version --sed LAL $$sourced $$buildd
 	@-rm -f .vcsinfo
 
 all-local: include-link

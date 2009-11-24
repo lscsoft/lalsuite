@@ -268,7 +268,7 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
@@ -797,7 +797,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "The orbital eccentricity");
 
   LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
+  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files"); 
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
@@ -864,7 +864,6 @@ InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
-	       LIGOTimeGPS epoch,	/**< epoch of observation */
 	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */
 	       )
 {
@@ -1091,7 +1090,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar->ephemYear, startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar->ephemYear, isLISA ), status);
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */

@@ -155,7 +155,6 @@ int main( int argc, char *argv[] )
   RandomParams *randParams = NULL;
   REAL4  u, exponent, expt;
   REAL4  deltaM;
-  LALGPSandAcc          gpsAndAcc;
   SkyPosition           skyPos;
   LALSource             source;
   LALPlaceAndGPS        placeAndGPS;
@@ -171,8 +170,6 @@ int main( int argc, char *argv[] )
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
   CHAR coordinates[LIGOMETA_COORDINATES_MAX];  
   
-  LALGPSCompareResult        compareGPS;
-
   /*  xml output data */
   CHAR                  fname[256];
   MetadataTable         proctable;
@@ -683,17 +680,13 @@ int main( int argc, char *argv[] )
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
-  /* check that the start time is before the end time */
-  LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
-      &status );
-  
   /*
    *
    * loop over duration of desired output times
    *
    */
 
-  while ( compareGPS == LALGPS_EARLIER )
+  while ( XLALGPSCmp(&gpsStartTime, &gpsEndTime) < 0 )
   {
     /* create the sim_ringdown table */
     if ( injections.simRingdownTable )
@@ -792,8 +785,6 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->polarization = LAL_TWOPI * u ;
     
-    gpsAndAcc.gps = this_inj->geocent_start_time;
-
     /* set gmst */
     this_inj->start_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
         &this_inj->geocent_start_time), LAL_TWOPI) * 24.0 / LAL_TWOPI; /* hours */
@@ -822,9 +813,6 @@ int main( int argc, char *argv[] )
     detTimeAndSource.p_source = &skyPos;
     detAndSource.pSource = &source;
                     
-    gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-    gpsAndAcc.gps = this_inj->geocent_start_time;
-    
     /* calculate h0 */
     this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
         this_inj->quality, this_inj->distance, this_inj->epsilon );
@@ -852,7 +840,7 @@ int main( int argc, char *argv[] )
     /* compute the response of the LHO detectors */
     detAndSource.pDetector = &lho;
     LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
-          &gpsAndAcc ), &status );
+          &this_inj->geocent_start_time ), &status );
     
     /* compute the effective distance for LHO */
     this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
@@ -874,7 +862,7 @@ int main( int argc, char *argv[] )
     /* compute the response of the LLO detector */
     detAndSource.pDetector = &llo;
     LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
-          &gpsAndAcc ), &status);
+          &this_inj->geocent_start_time ), &status);
     
     /* compute the effective distance for LLO */
     this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
@@ -889,10 +877,6 @@ int main( int argc, char *argv[] )
         
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
-    LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
-          &gpsEndTime ), &status );
-
-
   } /* end loop over injection times */
 
   

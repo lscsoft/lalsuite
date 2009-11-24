@@ -293,7 +293,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		logZ=logadd(logZ,Live[i]->logLikelihood+logw);
 		for(j=0;j<Nruns;j++){
 			logwarray[j]+=sample_logt(Nlive);
-			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]-log((double)Nlive));
+			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]);
 		}
 		fprintSample(fpout,Live[i]);
 	}

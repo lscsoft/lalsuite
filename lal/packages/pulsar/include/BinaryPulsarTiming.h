@@ -226,6 +226,14 @@ tagBinaryPulsarParams
   REAL8 DM;     /**> dispersion measure */
   REAL8 DM1;    /**> first derivative of dispersion measure */
 
+  /* gravitational wave parameters */
+  REAL8 h0;     /**> gravitational wave amplitude */
+  REAL8 cosiota;/**> cosine of the pulsars orientation angle */
+  REAL8 psi;    /**> polarisation angle */
+  REAL8 phi0;   /**> initial phase */
+  REAL8 Aplus;  /**> 0.5*h0*(1+cos^2iota) */
+  REAL8 Across; /**> h0*cosiota */
+
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
   REAL8 f1Err;
@@ -279,6 +287,14 @@ tagBinaryPulsarParams
 
   REAL8 DMErr;
   REAL8 DM1Err;
+
+  /* gravitational wave parameters */
+  REAL8 h0Err;
+  REAL8 cosiotaErr;
+  REAL8 psiErr;
+  REAL8 phi0Err;
+  REAL8 AplusErr;
+  REAL8 AcrossErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */

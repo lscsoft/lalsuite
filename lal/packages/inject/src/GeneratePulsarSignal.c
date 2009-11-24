@@ -526,7 +526,6 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
   EmissionTime emit;
   LALDetAMResponse response;  /* output of LALComputeDetAMResponse */
   LALDetAndSource      *das;  /* input for LALComputeDetAMResponse */
-  LALGPSandAcc   timeAndAcc;  /* input for LALComputeDetAMResponse */
   REAL8 halfTsft;             /* half the time of one SFT */
   LIGOTimeGPS midTS;          /* midpoint time for an SFT */
 
@@ -612,15 +611,13 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
   das->pSource->equatorialCoords.longitude = params->pSigParams->pulsar.position.longitude;
   das->pSource->orientation = 0.0;  /* NOTE THIS FUNCTION COMPUTE F_+ and F_x for ZERO Psi!!! */
   das->pSource->equatorialCoords.system = params->pSigParams->pulsar.position.system;
-  timeAndAcc.accuracy=LALLEAPSEC_STRICT;
 
   /* loop that calls LALComputeDetAMResponse to find F_+ and F_x at the midpoint of each SFT for ZERO Psi */
   for(i=0; i<numSFTs; i++) {
       /* Find mid point from timestamp, half way through SFT. */
       midTS = params->pSFTParams->timestamps->data[i];
       XLALGPSAdd(&midTS, halfTsft);
-      timeAndAcc.gps=midTS;
-      TRY ( LALComputeDetAMResponse(status->statusPtr, &response, das, &timeAndAcc), status);
+      TRY ( LALComputeDetAMResponse(status->statusPtr, &response, das, &midTS), status);
       output->fPlusZeroPsi[i] = response.plus;
       output->fCrossZeroPsi[i] = response.cross;
   }

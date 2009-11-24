@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   UINT4 sftFminBin;
   UINT4 numsft;
 
-  INT4 k,j;
+  INT4 k;
   FILE *fp=NULL;
 
   /* information about all the ifos */
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    REAL8 doppWings, fmin, fmax;
+    REAL8 doppWings, f_min, f_max;
     INT4 length;
 
     /* set detector constraint */
@@ -355,12 +355,12 @@ int main(int argc, char *argv[]){
   
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_fStart + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_fStart + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_min = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_max = uvar_fStart + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
 
 
     /* clean sfts if required */
@@ -541,7 +541,7 @@ int main(int argc, char *argv[]){
   /* block for calculating peakgram and number count */  
   {
     UINT4 iIFO, iSFT, ii, numberSFTp;
-    INT4 index;
+    INT4 ind;
     REAL8 sumWeightSquare;
     SFTtype  *sft;        
   
@@ -563,7 +563,7 @@ int main(int argc, char *argv[]){
    LAL_CALL(SplitSFTs(&status, &weightsV, &chi2Params), &status);
    
    /* loop over SFT, generate peakgram and get number count */
-
+   UINT4 j;
    j=0;
    iIFO=0;
    iSFT=0;
@@ -582,9 +582,9 @@ int main(int argc, char *argv[]){
 
             LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
 
-            index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+            ind = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
             
-	    numberCount += pg1.data[index]*weightsV.data[j];
+	    numberCount += pg1.data[ind]*weightsV.data[j];
 	    
 	    j++;
 
@@ -621,7 +621,7 @@ int main(int argc, char *argv[]){
       }
       
       eta=numberCountTotal/mObsCoh;
-      
+      INT4 j;
       for(j=0 ; j<(uvar_p) ; j++){
 	  
 	  nj=numberCountV.data[j];

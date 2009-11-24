@@ -164,6 +164,7 @@ LALFindChirpCreateCoherentInput(
 	from inspiral to coherent_inspiral via the f0 member of
 	the COMPLEX8TimeSeries structure*/
       cohInputData->f0 = (REAL8) templt->sigmasq;
+      cohInputData->data->data[fullCohSegLength-1].re = (REAL4) templt->chisq;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart * deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;

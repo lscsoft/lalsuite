@@ -42,7 +42,7 @@
 #include <lal/PrintVector.h>
 
 /* Frame headers */
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 /* Define the parameters to make the window */
 #define WINSTART 4096
@@ -123,6 +123,8 @@ RealFFTPlan *pfwd = NULL;
 #ifndef HAVE_GETHOSTNAME_PROTOTYPE
 int gethostname(char *name, int len);
 #endif
+
+FILE* tryopen(char *name, char *mode);
 
 /* This is an error handler that prints a bit of extra info */
 #ifdef __GNUC__

@@ -195,8 +195,6 @@ LALCoherentEstimation ( LALStatus          *stat,
 
   for(i=0; i<(INT4)params->Ndetectors; i++) {
 
-    LALGPSandAcc gpsAndAcc;
-
     pGPS.p_detector = dAs.pDetector = params->detectors + i;
 
     /* tDelays = arrival time at detector - arrival time a center of Earth */
@@ -211,12 +209,10 @@ LALCoherentEstimation ( LALStatus          *stat,
     }
     */
 
-    gpsAndAcc.gps = *pGPS.p_gps;
-    gpsAndAcc.accuracy = LALLEAPSEC_LOOSE; /* FIXME ??? */
     TRY ( LALComputeDetAMResponse ( stat->statusPtr,
 				    F + i,
 				    &dAs,
-				    &gpsAndAcc ), stat );
+				    pGPS.p_gps ), stat );
 
     /* JC: isnan is not allowed
     if(isnan(F[i].cross) || isnan(F[i].plus)) {

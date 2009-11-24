@@ -3,6 +3,7 @@
 #
 if LALFRAME
 if LALMETAIO
+if LALBURST
 bin_PROGRAMS = lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \

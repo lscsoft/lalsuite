@@ -82,7 +82,6 @@ int main(int argc, char *argv[]){
   
   /* time and velocity  */
   static LIGOTimeGPSVector    timeV;
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 timeBase;
 
 
@@ -140,7 +139,7 @@ int main(int argc, char *argv[]){
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
-    INT4 k;
+    UINT4 k;
 
     /* set detector constraint */
     constraints.detector = NULL;

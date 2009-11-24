@@ -76,7 +76,6 @@ int main(int argc, char **argv)
     FILE *fp2 = NULL;
     FILE *fp3 = NULL;
     FILE *fp4 = NULL;
-    FILE *fp5 = NULL;
     FILE *fp6 = NULL;
     LALStatus status = blank_status;
     
@@ -89,7 +88,7 @@ int main(int argc, char **argv)
     REAL8 avg =0;
     REAL4 *timeavg =NULL;
     REAL8 f =0;
-    CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256], outfile5[256], outfile6[256];
+    CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256], outfile6[256];
     REAL8 NumBinsAvg =0;
     REAL8 timebaseline =0;
     /*CHAR *missing_sft;*/
@@ -410,6 +409,8 @@ for (j=0;j<nSFT;j++)
     
     /*----------------------------------------------------------------------------------------------------------------*/
     /*for debuging */
+    char outfile5[256];
+    FILE *fp5 = NULL;
     sprintf(outfile5, "%s_crab", outbase);
     fp5 = fopen(outfile5, "w");
     

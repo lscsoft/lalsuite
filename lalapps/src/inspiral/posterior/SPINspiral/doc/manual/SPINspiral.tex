@@ -6,9 +6,9 @@
 \title{Documentation \textsc{SPINspiral}:\\
   Parameter estimation on gravitational-wave signals\\
   from spinning binary inspirals}
-\author{Marc van der Sluys, Vivien Raymond, Ilya Mandel \\
-  Northwestern University \\
-  \small\texttt{\href{http://www.astro.northwestern.edu/~sluys/index.php?title=SPINspiral}{http://www.astro.northwestern.edu/$\sim$sluys/index.php?title=SPINspiral}}}
+\author{Marc van der Sluys$^1$, Vivien Raymond$^2$, Ilya Mandel$^2$ \\
+  \small$^1$University of Alberta, $^2$Northwestern University \\
+  \small\texttt{\href{http://www.phys.ualberta.ca/~sluys/index.php?title=SPINspiral}{http://www.phys.ualberta.ca/$\sim$sluys/index.php?title=SPINspiral}}}
 
 
 \usepackage[pdftex=true]{hyperref}  
@@ -54,14 +54,15 @@
 \item You will need to install the LIGO Analysis Library (LAL)~\cite{lal} if you want to use the LAL waveforms.
 \item Check out a working copy from the \texttt{SVN} and cd to the directory \texttt{trunk}, or go to the
   directory \texttt{trunk} and update your working copy (\texttt{svn up}).
-\item Check whether a proper \texttt{Makefile} is in your trunk.  There's an example file in \texttt{doc/}, 
-  make sure it is configured for your compiler and type \texttt{make clean all} for the first compilation
-  and \texttt{make all} for subsequent ones.  The executable files \texttt{mcmc\_nolal} and \texttt{mcmc\_lal} should be produced.
-\item Make sure you have the configuration files \texttt{SPINspiral.input*} in your trunk.  There are example
-  files in \texttt{doc/input\_*}.  Set \texttt{nIter} in \texttt{SPINspiral.input.mcmc} to 10 or 100 for a first test run.
-  Example input files are available for both \texttt{mcmc\_nolal} and \texttt{mcmc\_lal}.
-\item Type \texttt{./mcmc\_nolal} or \texttt{./mcmc\_lal} and \textsc{SPINspiral} should run with the parameters specified
-  in the input files.
+\item Check whether a proper \texttt{Makefile} is in your trunk.  There's an example file in \texttt{doc/Makefiles/}, 
+  make sure it is configured for your compiler and type \texttt{make clean SPINspiral} for the first compilation
+  and \texttt{make SPINspiral} for subsequent ones.  On Fugu, use \texttt{make clean \&\& condor\_compile make -j6 SPINspiral}.
+  The executable file \texttt{SPINspiral} should be produced.
+\item Make sure you have the six configuration files \texttt{SPINspiral.input*} in your trunk.  There are example
+  files in \texttt{doc/input\_*/}; you'll need four files from \texttt{doc/input\_all/} and two from one or two of the other
+  directories, depending on which waveforms to use for injection and parameter estimation.  If unsure, use the two from
+  \texttt{doc/input\_apostolatos/}.  Set \texttt{nIter} in \texttt{SPINspiral.input.mcmc} to 10 or 100 for a first test run.
+\item Type \texttt{./SPINspiral} and \textsc{SPINspiral} should run with the parameters specified in the input files.
 \end{enumerate}
 
 
@@ -69,13 +70,13 @@
 \subsection{SVN}
 
 \textsc{SPINspiral} is currently maintained at Northwestern in a version-control system called \texttt{Subversion} or \texttt{SVN}.  The
-repository can be found at \texttt{https://www.astro.northwestern.edu/svn/sluys/mcmc\_code/}.
-A quick \texttt{SVN} HOWTO with links for more info can be found at \\
-\texttt{http://www.astro.northwestern.edu/$\sim$sluys/public/svn-howto.html}.  
+repository can be found at \texttt{\href{https://ciera.northwestern.edu/svn/sluys/mcmc_code/}{https://ciera.northwestern.edu/svn/sluys/mcmc\_code/}}.
+A concise \texttt{SVN} HOWTO with links for more info can be found at
+\texttt{\href{http://www.phys.ualberta.ca/~sluys/index.php?page=Public/svn-howto}{http://www.phys.ualberta.ca/$\sim$sluys/index.php?page=Public/svn-howto}}.  
 The first time you want
 to retrieve the source code from the server, you need to check it out with: \\ 
-\texttt{svn checkout --username <user> https://astro.astro.northwestern.edu/svn/sluys/mcmc\_code/},
-which will prompt for a password.  It will create a directory \texttt{mcmc\_code/} in your current 
+\texttt{svn checkout --username <user> https://ciera.northwestern.edu/svn/sluys/mcmc\_code/},
+which will prompt for the password that comes with your user name \texttt{<user>}.  It will create a directory \texttt{mcmc\_code/} in your current 
 directory, and the default working directory is \texttt{mcmc\_code/trunk/}.
 
 
@@ -120,6 +121,29 @@ using command-line options:
   \item[\texttt{-i <main input file name>}] override the name of the main input file (Section~\ref{sec:SPINspiral.input})
   \item[\texttt{--injXMLfilename <file name>}] specify an XML file to read injection data from
   \item[\texttt{--injXMLnr <0-\ldots>}] specify the injection number in the injection XML file
+
+  \item[\texttt{--mChirp}] specify a trigger value for the chirp mass ($\cal{M}$) in $M_\odot$
+  \item[\texttt{--eta}] specify a trigger value for the mass ratio ($\eta$)
+  \item[\texttt{--tc}] specify a trigger value for the GPS time of coalescence (s)
+  \item[\texttt{--dist}] specify a trigger value for the distance (Mpc)
+    
+  \item[\texttt{--nIter}] specify the desired number of MCMC iterations
+  \item[\texttt{--nSkip}] specify the number of step of which the output should be skipped between two saved iterations
+  \item[\texttt{--network}] specify the network configuration, \textit{e.g.} H1=[1], H1L1=[1,2], H1L1V1=[1,2,3], V1H1=[3,1]
+  \item[\texttt{--downsample}] specify the downsample factor for the data
+  \item[\texttt{--beforetc}] specify the number of seconds of data before $t_\mathrm{c}$ that should be analysed
+  \item[\texttt{--aftertc}] specify the number of seconds of data after $t_\mathrm{c}$ that should be analysed
+  \item[\texttt{--Flow}] specify the low frequency cut-off (Hz)
+  \item[\texttt{--Fhigh}] specify the high frequency cut-off (Hz)
+  \item[\texttt{--nPSDsegment}] specify number of data segments to estimate the PSD
+  \item[\texttt{--lPSDsegment}] specify length of each data segment to estimate the PSD
+  \item[\texttt{--outputPath}] specify the directory where the output will be stored. Default is running directory.
+  \item[\texttt{--cache}] specify the cache files to run. Overrides most of the information form SPINspiral.input.data.
+  \item[\texttt{--channel}] specify the list of channels to run, e.g. [H1:LSC-STRAIN,L1:LSC-STRAIN].
+  \item[\texttt{--PSDstart}] specify the GPS time for the start of the PSD. The default value is the begining of the cache file.
+  
+%  \item[\texttt{-- }] specify 
+  
 \end{description}
   
   
@@ -439,7 +463,7 @@ A file with system-dependent parameters (well, currently one).
 \pagebreak
 \section{Output files}
 
-\subsection{SPINspiral.output.abcdef.xy}
+\subsection{SPINspiral.output.123456.12}
 
 
 
@@ -482,7 +506,7 @@ signifies whether the parameter with ID $i$ is defined (1) or not (0).
 \subsection{Phase}
 \begin{tabular}{lllll}
   \textbf{Number} & \textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Range} \\
-  \textbf{41} & $\varphi_\mathrm{orb,1}$  & Orbital phase & rad & $[0,2\pi[$ \\
+  \textbf{41} & $\varphi_\mathrm{orb,c}$  & Orbital phase at coalescence & rad & $[0,2\pi[$ \\
 \end{tabular}
 
 \subsection{Orientation}

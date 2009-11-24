@@ -1574,7 +1574,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
 {
   INT4 irec,jrec;
-  INT4 index,krec=0;
+  INT4 ind,krec=0;
   CHAR filename[MAXFILENAMELENGTH]; /* Base of the output file name */
   CHAR noiseswitch[16];
   CHAR clusterno[16];
@@ -1612,13 +1612,13 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
     /* N the number of points in the cluster */
     /* the Frequency where the maximum amplitude is */
     /* A,B,C coefficients */
-    index=highFLines->Iclust[krec];
+    ind=highFLines->Iclust[krec];
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
             GV.spinRange.fkdot[0] + maxIndex[irec]* DemodParams->df,
             Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",GV.spinRange.fkdot[0] + index * DemodParams->df, DemodParams->df);
+    fprintf(fp,"%22.12f %22.12f\n",GV.spinRange.fkdot[0] + ind * DemodParams->df, DemodParams->df);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -1651,29 +1651,29 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
      */ 
 
     for(jrec=0;jrec<N;jrec++) {
-      index=highFLines->Iclust[krec];
+      ind=highFLines->Iclust[krec];
       krec++;
 
 #ifdef DEBG_FAFB
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-              GV.spinRange.fkdot[0] + index* DemodParams->df,Fstat.F[index]*bias*bias,
+              GV.spinRange.fkdot[0] + ind* DemodParams->df,Fstat.F[ind]*bias*bias,
               DemodParams->spinDwn[0], searchpos.Alpha, searchpos.Delta,
-              Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
+              Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
               amc.A,amc.B,amc.C);
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-              GV.spinRange.fkdot[0] + index* DemodParams->df,
-              Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
-              Fstat.F[index]*bias*bias);
+              GV.spinRange.fkdot[0] + ind* DemodParams->df,
+              Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
+              Fstat.F[ind]*bias*bias);
 #endif
 
 
@@ -1795,15 +1795,15 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
 int 
 writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
 {
-  INT4 i,j,j1,j2,k,N;
+  INT4 i,j,j_1,j_2,k,N;
   REAL8 max,log2val,mean,var,std,R;
   REAL8 freq;
   INT4 imax;
 
   log2val=medianbias;
  
-  j1=0;
-  j2=0;
+  j_1=0;
+  j_2=0;
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -1815,9 +1815,9 @@ writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
     mean=0.0;
     std=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2val*highFLines->clusters[j1];
-      k=highFLines->Iclust[j1];
-      j1=j1+1;
+      R=2.0*log2val*highFLines->clusters[j_1];
+      k=highFLines->Iclust[j_1];
+      j_1=j_1+1;
       mean=mean+R;
       if( R > max){
         max=R;
@@ -1829,8 +1829,8 @@ writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
     mean=mean/N;
     var=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2val*highFLines->clusters[j2];
-      j2=j2+1;
+      R=2.0*log2val*highFLines->clusters[j_2];
+      j_2=j_2+1;
       var=var+(R-mean)*(R-mean);
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
@@ -1854,7 +1854,7 @@ writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
 int 
 writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*bytecount, UINT4*checksum)
 {
-  INT4 i,j,j1,j2,k,N;
+  INT4 i,j,j_1,j_2,k,N;
   REAL8 max,log2val,mean,var,std,R;
   REAL8 freq;
   INT4 imax;
@@ -1863,8 +1863,8 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
 
   log2val=medianbias;
  
-  j1=0;
-  j2=0;
+  j_1=0;
+  j_2=0;
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -1876,9 +1876,9 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
     mean=0.0;
     std=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2val*highFLines->clusters[j1];
-      k=highFLines->Iclust[j1];
-      j1=j1+1;
+      R=2.0*log2val*highFLines->clusters[j_1];
+      k=highFLines->Iclust[j_1];
+      j_1=j_1+1;
       mean=mean+R;
       if( R > max){
         max=R;
@@ -1890,8 +1890,8 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
     mean=mean/N;
     var=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2val*highFLines->clusters[j2];
-      j2=j2+1;
+      R=2.0*log2val*highFLines->clusters[j_2];
+      j_2=j_2+1;
       var=var+(R-mean)*(R-mean);
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
@@ -1931,7 +1931,7 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
  */
 int ReadSFTData(void)
 {
-  INT4 fileno=0,offset;
+  INT4 filenum=0,offset;
   FILE *fp=NULL;
   size_t errorcode;
   UINT4 ndeltaf;
@@ -1944,20 +1944,20 @@ int ReadSFTData(void)
   if (uvar_mergedSFTFile)
     fp=fp_mergedSFT;
 
-  for (fileno=0;fileno<GV.SFTno; /* INCREMENT IN LOOP */ ) 
+  for (filenum=0;filenum<GV.SFTno; /* INCREMENT IN LOOP */ ) 
     {
       REAL8 thisSFTtime;
 
-      /* seek to fileno'th SFT k bytes in */
+      /* seek to filenum'th SFT k bytes in */
       if (uvar_mergedSFTFile){
         if (fseek(fp,k,SEEK_SET)) {
-          LogPrintf (LOG_CRITICAL, "Unable to seek to the start of %s !\n",GV.filelist[fileno]);
+          LogPrintf (LOG_CRITICAL, "Unable to seek to the start of %s !\n",GV.filelist[filenum]);
           return 1;
         }
       }
       else {
-        if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
-          LogPrintf (LOG_CRITICAL, "Weird... %s doesn't exist!\n", GV.filelist[fileno]);
+        if (!(fp=fopen(GV.filelist[filenum],"rb"))) {
+          LogPrintf (LOG_CRITICAL, "Weird... %s doesn't exist!\n", GV.filelist[filenum]);
           return 1;
         }
       }
@@ -1966,7 +1966,7 @@ int ReadSFTData(void)
       errorcode=fread((void*)&header,sizeof(header),1,fp);
       if (errorcode!=1) 
         {
-          LogPrintf( LOG_CRITICAL, "No header in data file %s\n", GV.filelist[fileno]);
+          LogPrintf( LOG_CRITICAL, "No header in data file %s\n", GV.filelist[filenum]);
           return 1;
         }
 
@@ -1975,7 +1975,7 @@ int ReadSFTData(void)
       
       if (header.endian!=1.0)
         {
-          LogPrintf (LOG_CRITICAL,  "First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
+          LogPrintf (LOG_CRITICAL,  "First object in file %s is not (double)1.0!\n",GV.filelist[filenum]);
           LogPrintf (LOG_CRITICAL,  "The file might be corrupted\n\n");
           return 2;
         }
@@ -1984,7 +1984,7 @@ int ReadSFTData(void)
       if (header.tbase<=0.0)
         {
           LogPrintf ( LOG_CRITICAL, "Timebase %f from data file %s non-positive!\n",
-                  header.tbase,GV.filelist[fileno]);
+                  header.tbase,GV.filelist[filenum]);
           return 3;
         }
         
@@ -1994,7 +1994,7 @@ int ReadSFTData(void)
         {
           LogPrintf (LOG_CRITICAL, "Freq index range %d->%d not in %d to %d (file %s)\n",
 		     GV.ifmin,GV.ifmax,header.firstfreqindex,
-		     header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
+		     header.firstfreqindex+header.nsamples,GV.filelist[filenum]);
           return 4;
         }
 
@@ -2003,8 +2003,8 @@ int ReadSFTData(void)
       errorcode=fseek(fp,offset,SEEK_CUR);
       if (errorcode) 
         {
-          perror(GV.filelist[fileno]);
-          LogPrintf (LOG_CRITICAL, "Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
+          perror(GV.filelist[filenum]);
+          LogPrintf (LOG_CRITICAL, "Can't get to offset %d in file %s\n",offset,GV.filelist[filenum]);
           return 5;
         }
 
@@ -2017,18 +2017,18 @@ int ReadSFTData(void)
       if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
 
       /* Make data structures and put time stamps from file into array */
-      timestamps[fileno].gpsSeconds = header.gps_sec;
-      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
+      timestamps[filenum].gpsSeconds = header.gps_sec;
+      timestamps[filenum].gpsNanoSeconds = header.gps_nsec;
       ndeltaf=GV.ifmax-GV.ifmin+1;
-      SFTData[fileno]=(FFT *)LALMalloc(sizeof(FFT));
-      SFTData[fileno]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
-      SFTData[fileno]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
-      SFTData[fileno]->fft->data->data=(COMPLEX8 *)LALMalloc(ndeltaf*sizeof(COMPLEX8));
+      SFTData[filenum]=(FFT *)LALMalloc(sizeof(FFT));
+      SFTData[filenum]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+      SFTData[filenum]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
+      SFTData[filenum]->fft->data->data=(COMPLEX8 *)LALMalloc(ndeltaf*sizeof(COMPLEX8));
 
       /* Fill in actual SFT data, and housekeeping */
-      errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
+      errorcode=fread((void*)(SFTData[filenum]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
-        perror(GV.filelist[fileno]);
+        perror(GV.filelist[filenum]);
         LogPrintf (LOG_CRITICAL,  "The SFT data was truncated.  Only read %d not %d complex floats\n", 
 		(int)errorcode, ndeltaf);
         return 6;
@@ -2037,16 +2037,16 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].re));
-          swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].im));
+          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].re));
+          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].im));
         }
       }
       
-      SFTData[fileno]->fft->epoch=timestamps[fileno];
-      SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
-      SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
-      SFTData[fileno]->fft->data->length = ndeltaf;
-      fileno++;
+      SFTData[filenum]->fft->epoch=timestamps[filenum];
+      SFTData[filenum]->fft->f0 = GV.ifmin / GV.tsft;
+      SFTData[filenum]->fft->deltaF = 1.0 / GV.tsft;
+      SFTData[filenum]->fft->data->length = ndeltaf;
+      filenum++;
       }
 
       if (uvar_mergedSFTFile)
@@ -2066,7 +2066,7 @@ int ReadSFTData(void)
  */
 int UpsampleSFTData(void)
 {
-  INT4 fileno=0;
+  INT4 filenum=0;
   INT4 k=0,i;
   /* sorry - variable array size is a gcc extension.
      As this is not changed anywhere in this function, I put this as a macro.
@@ -2087,34 +2087,34 @@ int UpsampleSFTData(void)
 
   UpSFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
 
-  for (fileno=0;fileno<GV.SFTno; fileno++ ) 
+  for (filenum=0;filenum<GV.SFTno; filenum++ ) 
     {
   
-      UpSFTData[fileno]=(FFT *)LALMalloc(sizeof(FFT));
+      UpSFTData[filenum]=(FFT *)LALMalloc(sizeof(FFT));
 
-      UpSFTData[fileno]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
-      UpSFTData[fileno]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
-      UpSFTData[fileno]->fft->data->data=(COMPLEX8 *)LALMalloc(imax*sizeof(COMPLEX8));
+      UpSFTData[filenum]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+      UpSFTData[filenum]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
+      UpSFTData[filenum]->fft->data->data=(COMPLEX8 *)LALMalloc(imax*sizeof(COMPLEX8));
 
       /* Loop over frequencies to be upsampled to */
       for(i=0 ; i <  imax ; i++ )
 	{
 	  REAL8 f =  GV.ifmin/GV.tsft+ i*df;
 	  REAL8 xTemp, realXP, imagXP, tempFreq, tsin, tcos;
-	  INT4 index, k1;
+	  INT4 ind, k1;
 
 	  xTemp=f*GV.tsft;
 	  realXP=0.0;
 	  imagXP=0.0;
 	  /* find correct index into LUT -- pick closest point */
 	  tempFreq=xTemp-(INT4)xTemp;
-	  index=(INT4)(tempFreq*res+0.5); 
+	  ind=(INT4)(tempFreq*res+0.5); 
 
 	  {
-	    REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/64.0);/*just like res above*/
+	    REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)ind/64.0);/*just like res above*/
 	    REAL8 d2=0.5*d*d;
-	    REAL8 ts=sinVal[index];
-	    REAL8 tc=cosVal[index];
+	    REAL8 ts=sinVal[ind];
+	    REAL8 tc=cosVal[ind];
 	    
 	    tsin=ts+d*tc-d2*ts;
 	    tcos=tc-d*ts-d2*tc-1.0;
@@ -2149,7 +2149,7 @@ int UpsampleSFTData(void)
 		{
 		  Xalpha_k.re= Xalpha_k.im=0.0;
 		}else{
-		Xalpha_k=SFTData[fileno]->fft->data->data[SFTIndex];
+		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
 
 	      /* these four lines compute P*xtilde */
@@ -2160,30 +2160,30 @@ int UpsampleSFTData(void)
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[fileno]->fft->data->data[i].re= realXP;
-	  UpSFTData[fileno]->fft->data->data[i].im= imagXP;
+	  UpSFTData[filenum]->fft->data->data[i].re= realXP;
+	  UpSFTData[filenum]->fft->data->data[i].im= imagXP;
 	  
-/*  	  fprintf(stdout,"%d %d %e %e\n", i, fileno, realXP, imagXP); */
+/*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
 
 	}
 
       /* Fill in actual SFT data, and housekeeping */
-      UpSFTData[fileno]->fft->epoch=timestamps[fileno];
-      UpSFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
+      UpSFTData[filenum]->fft->epoch=timestamps[filenum];
+      UpSFTData[filenum]->fft->f0 = GV.ifmin / GV.tsft;
       /* The line below is a total hack. I need to have this be the wrong resolution to pass it to 
 	 LALDemodFAST; should move this to DemodParams */
-      UpSFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
-      UpSFTData[fileno]->fft->data->length = imax;
+      UpSFTData[filenum]->fft->deltaF = 1.0 / GV.tsft;
+      UpSFTData[filenum]->fft->data->length = imax;
 
     }
 
-/*   for (fileno=0;fileno<GV.SFTno; fileno++ )  */
+/*   for (filenum=0;filenum<GV.SFTno; filenum++ )  */
 /*     { */
 /*       for(i=0 ; i <  imax ; i++ ) */
 /* 	{ */
-/* 	 fprintf(stdout,"%d %d %e %e\n", i, fileno, */
-/* 		 UpSFTData[fileno]->fft->data->data[i].re, */
-/* 		 UpSFTData[fileno]->fft->data->data[i].im); */
+/* 	 fprintf(stdout,"%d %d %e %e\n", i, filenum, */
+/* 		 UpSFTData[filenum]->fft->data->data[i].re, */
+/* 		 UpSFTData[filenum]->fft->data->data[i].im); */
 /* 	} */
 /*     } */
 
@@ -2208,11 +2208,11 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   CHAR command[512];
   FILE *fp;
   size_t errorcode;
-  INT4 fileno=0;   
+  INT4 filenum=0;   
 #ifdef HAVE_GLOB_H
   glob_t globbuf;
 #endif
-  LIGOTimeGPS starttime;
+  LIGOTimeGPS starttime = {0,0};
   INT4 last_time_used=0;
   REAL8 thisSFTtime;
   INT4 blockno=0;
@@ -2296,20 +2296,20 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
     }
 
-    fileno = 0;
+    filenum = 0;
     while (fread((void*)&header,sizeof(header),1,fp) == 1) {
       char tmp[MAXFILENAMELENGTH];
 
       /* prepare memory for another filename */
-      if ( (cfg->filelist=(CHAR**)LALRealloc(cfg->filelist, (fileno+1)*sizeof(CHAR*)))==NULL) {
+      if ( (cfg->filelist=(CHAR**)LALRealloc(cfg->filelist, (filenum+1)*sizeof(CHAR*)))==NULL) {
         ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, ++blockno);
-      if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
+      if ( (cfg->filelist[filenum] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
         ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
       }
-      strcpy(cfg->filelist[fileno],tmp);
+      strcpy(cfg->filelist[filenum],tmp);
       
       /* check that data is correct endian order and swap if needed */
       if (-1 == reverse_endian) {
@@ -2323,13 +2323,13 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
         swapheader(&header);
 
       if (header.endian!=1.0) {
-        LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
+        LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[filenum]);
         LogPrintf (LOG_CRITICAL, "The file might be corrupted\n\n");
         ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
       
       /* if this is the first SFT, save initial time */
-      if (fileno==0) {
+      if (filenum==0) {
         cfg->Ti=header.gps_sec;
         starttime.gpsSeconds = header.gps_sec;
         starttime.gpsNanoSeconds = header.gps_nsec;
@@ -2337,11 +2337,11 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       /* increment file no and pointer to the start of the next header */
       thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
       if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
-        fileno++;
+        filenum++;
         last_time_used=header.gps_sec;
       }
       else
-        LALFree(cfg->filelist[fileno]);
+        LALFree(cfg->filelist[filenum]);
 
       k=header.nsamples*8;
       fseek(fp,k,SEEK_CUR);
@@ -2385,19 +2385,19 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if ( (cfg->filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
       ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
     }
-    while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
+    while ((UINT4)filenum < (UINT4)globbuf.gl_pathc) 
       {
-        if ((cfg->filelist[fileno]=(CHAR*)LALCalloc(1,strlen(globbuf.gl_pathv[fileno])+1))== NULL)
+        if ((cfg->filelist[filenum]=(CHAR*)LALCalloc(1,strlen(globbuf.gl_pathv[filenum])+1))== NULL)
 	  {
 	    ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
 	  }
-        strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
-        fileno++;
+        strcpy(cfg->filelist[filenum],globbuf.gl_pathv[filenum]);
+        filenum++;
       }
     globfree(&globbuf);
 #endif
   }
-  cfg->SFTno = fileno; /* remember this is 1 more than the index value */
+  cfg->SFTno = filenum; /* remember this is 1 more than the index value */
 
   /* check that we found any suitable SFTs at all!! */
   if ( cfg->SFTno  == 0 )
@@ -2446,12 +2446,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->Ti = header.gps_sec; 
     
     /* open LAST file and get info from it*/
-    fp=fopen(cfg->filelist[fileno-1],"rb");
+    fp=fopen(cfg->filelist[filenum-1],"rb");
     /* read in the header from the file */
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-        LogPrintf (LOG_CRITICAL, "No header in data file %s\n", cfg->filelist[fileno-1]);
+        LogPrintf (LOG_CRITICAL, "No header in data file %s\n", cfg->filelist[filenum-1]);
         ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
     if (reverse_endian)
@@ -2460,7 +2460,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
-        LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
+        LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[filenum-1]);
         LogPrintf (LOG_CRITICAL, "The file might be corrupted\n\n");
         ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
@@ -4015,7 +4015,7 @@ void sighandler(int sig){
   size = backtrace (array, 64);
   LogPrintf (LOG_CRITICAL,   "Obtained %zd stack frames for this thread.\n", size);
   LogPrintf (LOG_CRITICAL,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
-  backtrace_symbols_fd(array, size, fileno(stderr));
+  backtrace_symbols_fd(array, size, filenum(stderr));
 #endif /* __GLIBC__ */
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);

@@ -195,7 +195,7 @@ int freemem(LALStatus* status){
 
 int make_filelist(LALStatus* status) {
 
-  UINT4 fileno=0;
+  UINT4 filenum=0;
   char command[256];
   glob_t globbuf;
 
@@ -209,11 +209,11 @@ int make_filelist(LALStatus* status) {
   glob(command, GLOB_ERR, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno< globbuf.gl_pathc) 
+  while (filenum< globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;
