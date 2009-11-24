@@ -266,8 +266,8 @@ REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb)
   gtf = - ( LAL_PI * Q ) * ( 1. + 4.*Q2) / ( 1. + 2.*Q2 );
   gtQ = ( LAL_PI * f ) * ( 1. - 2.*Q2 ) / ( ( 1. + 2.*Q2 )*( 1. + 2.*Q2 ) );
   
-  df = fb - fa;
-  dQ = Qb - Qa;
+  df = fa - fb;
+  dQ = Qa - Qb;
   
   dt = -(gtf * df + gtQ * dQ)/gtt;
 
