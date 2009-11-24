@@ -24,6 +24,8 @@
 #include <lalapps.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
+#include <lal/LALVCSInfo.h>
+#include <LALAppsVCSInfo.h>
 
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
@@ -152,3 +154,76 @@ int set_debug_level( const char *s )
 
   return lalDebugLevel = level;
 }
+
+
+/** Function that assembles a default VCS info/version string from LAL and LALapps
+ *  Also checks LAL header<>library version consistency and returns NULL on error.
+ *
+ * The VCS version string is allocated here and must be freed by caller.
+ */
+char *
+XLALGetVersionInfoString(void)
+{
+  const char *fn = __func__;
+  char lal_info[1024], lalapps_info[1024];
+  char *ret;
+
+  /* check version consistency between LAL headers <> library */
+  if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalLibraryVCSInfo) )
+    {
+      XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
+                     fn, lalHeaderVCSInfo.vcsId, lalLibraryVCSInfo.vcsId );
+      XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
+      XLAL_ERROR_NULL (fn, XLAL_EERR );
+    }
+
+  /* Get lal info */
+  snprintf( lal_info, sizeof(lal_info),
+            "%%%% LAL-Version: %s\n"
+            "%%%% LAL-Id: %s\n"
+            "%%%% LAL-Date: %s\n"
+            "%%%% LAL-Branch: %s\n"
+            "%%%% LAL-Tag: %s\n"
+            "%%%% LAL-Status: %s\n"
+            "%%%% LAL-Configure Date: %s\n"
+            "%%%% LAL-Configure Arguments: %s\n",
+            lalLibraryVCSInfo.version,
+            lalLibraryVCSInfo.vcsId,
+            lalLibraryVCSInfo.vcsDate,
+            lalLibraryVCSInfo.vcsBranch,
+            lalLibraryVCSInfo.vcsTag,
+            lalLibraryVCSInfo.vcsStatus,
+            LAL_CONFIGURE_DATE ,
+            LAL_CONFIGURE_ARGS );
+
+  /* Add lalapps info */
+  snprintf( lalapps_info, sizeof(lalapps_info),
+            "%%%% LALApps-Version: %s\n"
+            "%%%% LALApps-Id: %s\n"
+            "%%%% LALApps-Date: %s\n"
+            "%%%% LALApps-Branch: %s\n"
+            "%%%% LALApps-Tag: %s\n"
+            "%%%% LALApps-Status: %s\n"
+            "%%%% LALApps-Configure Date: %s\n"
+            "%%%% LALApps-Configure Arguments: %s\n",
+            lalAppsVCSInfo.version,
+            lalAppsVCSInfo.vcsId,
+            lalAppsVCSInfo.vcsDate,
+            lalAppsVCSInfo.vcsBranch,
+            lalAppsVCSInfo.vcsTag,
+            lalAppsVCSInfo.vcsStatus,
+            LALAPPS_CONFIGURE_DATE ,
+            LALAPPS_CONFIGURE_ARGS );
+
+  size_t len = strlen(lal_info) + strlen(lalapps_info) + 1;
+  if ( (ret = XLALMalloc ( len )) == NULL ) {
+    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  strcpy ( ret, lal_info );
+  strcat ( ret, lalapps_info );
+
+  return ( ret );
+
+} /* XLALGetVersionInfoString() */
