@@ -444,7 +444,7 @@ static int _atomic_write_fstat_toplist_to_file(toplist_t *l, const char *filenam
    - reduces toplist precision
    - sorts the toplist
    - then calls atomic_write_fstat_toplist_to_file() */
-int final_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+int final_write_fstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
   reduce_fstat_toplist_precision(l);
   sort_fstat_toplist(l);
   return(atomic_write_fstat_toplist_to_file(l,filename,checksum));

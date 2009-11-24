@@ -79,7 +79,7 @@ extern int atomic_write_fstat_toplist_to_file(toplist_t*list, const char*filenam
    - reduces toplist precision
    - sorts the toplist
    - finally calls atomic_write_fstat_toplist_to_file() */
-extern int final_write_fstat_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
+extern int final_write_fstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 
 

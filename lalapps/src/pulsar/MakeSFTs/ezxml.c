@@ -908,7 +908,7 @@ ezxml_t ezxml_add_child(ezxml_t xml, char *name, size_t off)
     if (! xml) return NULL;
     child = (ezxml_t)memset(malloc(sizeof(struct ezxml)), '\0',
                             sizeof(struct ezxml));
-    child->name = (char *)name;
+    child->name = name;
     child->attr = EZXML_NIL;
     child->off = off;
     child->parent = xml;
@@ -952,7 +952,7 @@ ezxml_t ezxml_set_txt(ezxml_t xml, char *txt)
     if (! xml) return NULL;
     if (xml->flags & EZXML_TXTM) free(xml->txt); /* existing txt was malloced */
     xml->flags &= ~EZXML_TXTM;
-    xml->txt = (char *)txt;
+    xml->txt = txt;
     return xml;
 }
 
