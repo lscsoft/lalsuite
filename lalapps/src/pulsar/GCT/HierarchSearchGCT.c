@@ -24,8 +24,8 @@
 /*********************************************************************************/
 /** \author Holger Pletsch
  * \file
- * \brief Hierarchical semi-coherent CW search code based on F-Statstic exploting
- *  global parameter-space correlations   
+ * \brief Hierarchical semicoherent CW search code based on F-Statistic, 
+ *  exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)  
  *
  *********************************************************************************/
 
@@ -34,7 +34,7 @@
 #include <lalappsGitID.h>
 #include "HierarchSearchGCT.h"
 
-RCSID( "$Id: HierarchSearchGCT.c,v 1.58 2009/11/17 12:27:01 hpletsch Exp $");
+RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
 #define TRUE (1==1)
@@ -235,7 +235,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 vel[3];
   REAL8 acc[3];
   
-  /* GCT helper variables for fast calc */
+  /* GCT helper variables for faster calculation of u1, u2 */
   REAL8 A1, B1, A2, B2;
   REAL8 cosAlpha, sinAlpha, cosDelta,sinDelta;
   REAL8 CosAlphaCosDelta, SinAlphaCosDelta, PdotN, VdotN, AdotN;
@@ -290,7 +290,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_ThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1 = MISMATCH; /* metric mismatch for first stage coarse grid */
 
-  REAL8 uvar_threshold1 = 0;
+  REAL8 uvar_threshold1 = 0.0;
   REAL8 uvar_minStartTime1 = 0;
   REAL8 uvar_maxEndTime1 = LAL_INT4_MAX;
   REAL8 uvar_dopplerMax = 1.05e-4;
@@ -448,7 +448,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   
-  /* 2F threshold for 1st stage */
+  /* 2F threshold for semicoherent stage */
   TwoFthreshold = 2.0 * uvar_ThrF;
     
   /* create toplist -- semiCohToplist has the same structure 
@@ -676,9 +676,10 @@ int MAIN( int argc, char *argv[]) {
 
       INT4 tmpVar = stackMultiSFT.data[k]->data[j]->length;
       LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
-
     } /* loop over ifos */    
+
     LogPrintfVerbatim(LOG_DETAIL, "\n");
+    
   } /* loop over segments */
 
 
@@ -958,7 +959,7 @@ int MAIN( int argc, char *argv[]) {
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
 
-        /* construct entire finegrid */
+        /* initialize the entire finegrid */
         ic=0;
         f_tmp = fg_fmin;
         for(ic2=0;ic2<nfreqsFG;ic2++) {
@@ -1006,11 +1007,12 @@ int MAIN( int argc, char *argv[]) {
           startTstackGPS = startTstack->data[k];
           midTstackGPS   = midTstack->data[k];
           endTstackGPS   = endTstack->data[k];
-          
           startTseg = XLALGPSGetREAL8( &startTstackGPS );
           midTseg = XLALGPSGetREAL8( &midTstackGPS );
           endTseg = XLALGPSGetREAL8( &endTstackGPS );
           refTime = XLALGPSGetREAL8( &thisPoint.refTime );
+          
+          /* differentce in time between this segment's midpoint and Fstat reftime */
           timeDiffSeg = midTseg - refTime;   
                 
           /* ---------------------------------------------------------------------------------------- */ 
@@ -1104,10 +1106,6 @@ int MAIN( int argc, char *argv[]) {
           qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridU1U2);          
           
           /* ---------------------------------------------------------------------------------------- */ 
-
-          /*
-           LogPrintfVerbatim(LOG_DEBUG, "%%  --- Seg: %03d  u1start: %f  u2start: %g \n", k, u1start, u2start);
-           */
         
           /* Pre-compute constants for global-correlation parameters */
           cosAlpha = cos(finegrid.Alpha);
@@ -1175,7 +1173,7 @@ int MAIN( int argc, char *argv[]) {
             
           } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
-          LogPrintfVerbatim(LOG_DEBUG, "   --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax);
+          /* LogPrintfVerbatim(LOG_DEBUG, "   --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); */
 
         } /* end ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
