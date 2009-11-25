@@ -380,95 +380,20 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     if ( !bankVetoData->revplan) 
       bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
 
-    
-    /* DEBUGGING TEMPORARY CODE */
-
-    /*
-    FILE *specFile = fopen("spectrum.txt","w");
-    for ( sample = startIndex; sample < bankVetoData->spec->length; sample++)
-    { 
-	sqResp = ( bankVetoData->resp->data[sample].re *
-		   bankVetoData->resp->data[sample].re +
-		   bankVetoData->resp->data[sample].im *
-		   bankVetoData->resp->data[sample].im ) * dynRange * dynRange;
-	
-	fprintf(specFile,"%g\t%g\n",sample*deltaF,bankVetoData->spec->data[sample] * sqResp);
-    }
-    fclose(specFile);
-
-
-    CHAR templateName[100];
-    FILE *templateFile; 
-    for ( row = 0; row < bankVetoData->length;row++ )
-    {
- 	sampleMaxTmpltRow = bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal / deltaF;
-	sprintf(templateName,"template_%d.txt",row);
-
-	templateFile = fopen(templateName,"w");
-	fprintf(templateFile,"#freq\treal\timag\n");
-	for ( sample = startIndex; sample < templateLength-1; sample++ )
-	{
-       	    if ( (sample > sampleMaxTmpltRow-1) ) break;
-
-	    tmpltRowReal = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
-	    tmpltRowImag = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-
-	    fprintf(templateFile,"%.8f\t%.8f\t%.8f\n",
-		    ((REAL8) sample)*((REAL8) deltaF), 
-		    tmpltRowReal,
-		    tmpltRowImag);
-	}
-	fclose(templateFile);
-
-	if (bankVetoData->timeshift->data[row] > 0)
-	{			
-	    sprintf(templateName,"template_offset_%d.txt",row);
-	    templateFile = fopen(templateName,"w");
-	    //fprintf(templateFile,"#freq\treal\timag\n");
-	    fprintf(templateFile,"#reali\timagi\tphase\tcos\tsin\trealf\timagf\n");
-	    for ( sample = startIndex; sample < templateLength-1; sample++ )
-	    {
-		if ( (sample > sampleMaxTmpltRow-1) ) break;
-
-		tmpltRowReal = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
-		tmpltRowImag = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-
-		phaseOffsetRow = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)(bankVetoData->timeshift->data[row]));
-
-		fprintf(templateFile,"%.8f\t%.8f\t%.8f\t%.8f\t%.8f\t",tmpltRowReal,tmpltRowImag,phaseOffsetRow,cos(phaseOffsetRow),sin(phaseOffsetRow));
-
-		tmpltRowReal = tmpltRowReal*((REAL8)cos(phaseOffsetRow)) - tmpltRowImag*((REAL8)sin(phaseOffsetRow));
-		tmpltRowImag = tmpltRowImag*((REAL8)cos(phaseOffsetRow)) + tmpltRowReal*((REAL8)sin(phaseOffsetRow));
-
-		fprintf(templateFile,"%.8f\t%.8f\n",tmpltRowReal,tmpltRowImag);
-
-		//fprintf(templateFile,"%.8f\t%.8f\t%.8f\n",
-		//((REAL8) sample)*((REAL8) deltaF), 
-		//tmpltRowReal,
-		//tmpltRowImag);
-	    }
-	    fclose(templateFile);
-	}
-
-	}
-    */
-    /* END DEBUGGING CODE */
-  
-
-
-    /* Decide how to time shift each template, if necessary */
+    /* Decide how to time shift each template if necessary */
     if ( !bankVetoData->timeshift) 
     {
 	bankVetoData->timeshift = XLALCreateREAL4Vector(bankVetoData->length);
 	
 	for (row = 0; row < subBankSize; row++ )
 	{
-	    bankVetoData->timeshift->data[row] = 
-	      (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
+	    bankVetoData->timeshift->data[row] = 0;
+
+	    /*(REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
 						     bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
 						     fBucket,
 						     bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal, 
-						     7) );
+						     7) );*/
 	
 	}		
     }
@@ -614,67 +539,88 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
                      UINT4 *dof)
 {
 
-    REAL8 tmpltA_SNR_real = 0;
-    REAL8 tmpltA_SNR_imag = 0;
-    REAL8 tmpltA_SNR_mag = 0;
-    REAL8 tmpltA_SNR_phi = 0;
+    /* SNR (and derived quantities) for reference (input) template */
+    REAL8 rowSNR_real = 0;
+    REAL8 rowSNR_imag = 0;
+    REAL8 rowSNR_mag = 0;
+    REAL8 rowSNR_phi = 0;
     
-    REAL8 tmpltB_SNR_real = 0;
-    REAL8 tmpltB_SNR_imag = 0;
+    /* SNR (and derived quantities) for comparison templates */
+    REAL8 colSNR_real = 0;
+    REAL8 colSNR_imag = 0;
     
+    /* index to loop over comparison templates */
     UINT8 col;
+
+    /* Time index at which to get the SNR of the comparison template.  This
+     * will be related to the SNR index of the input template by the time shift
+     * introduced in the templates in the cross-correlation computation. */
     UINT8 snrIndexCol;
+
+    /* The time shift between the reference and comparison template */
     REAL4 deltaTimeShift;
 
+    /* temporary storage for cross-corr data */
+    COMPLEX16 crossCorr;
+    REAL8 crossCorr_mag;
+
+    /* complex cross correlation */
     COMPLEX16 chisq;
-    REAL4 chisq_mag = 0;
+    
+    /* normalization factor to make chi-sq distributed */
     REAL4 bankNorm;
 
-    COMPLEX16 crossCorrAB;
-    REAL8 crossCorrAB_mag;
+    /* Output of function */
+    REAL4 chisq_mag = 0;
+
 
     /* Handle trivial case */
     if (bankVetoData->length == 1) return 0;
    
     /* Lookup SNR for template A at time given by snrIndexRow */
-    tmpltA_SNR_real = bankVetoData->qVecArray[row]->data[snrIndexRow].re
+    rowSNR_real = bankVetoData->qVecArray[row]->data[snrIndexRow].re
       * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
-    tmpltA_SNR_imag = bankVetoData->qVecArray[row]->data[snrIndexRow].im
+    rowSNR_imag = bankVetoData->qVecArray[row]->data[snrIndexRow].im
       * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
     
-    tmpltA_SNR_mag = sqrt(tmpltA_SNR_real * tmpltA_SNR_real + tmpltA_SNR_imag * tmpltA_SNR_imag);
-    tmpltA_SNR_phi = atan2(tmpltA_SNR_imag, tmpltA_SNR_real);
+    rowSNR_mag = sqrt(rowSNR_real * rowSNR_real + rowSNR_imag * rowSNR_imag);
+    rowSNR_phi = atan2(rowSNR_imag, rowSNR_real);
 
     chisq_mag = 0;
     *dof = 0;
 
+    /* 
+     * For each comparison template, compare its SNR to the SNR it would have if the signal were
+     * precisely equal to the reference template. Deviations from this expected SNR will be chi-sq
+     * distributed in Guassian noise. 
+     */ 
     for (col = 0; col < bankVetoData->length; col++)
     {
 	if (row == col) continue;
 	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
 	
-	/* Phase shift the cross correlation of template B with template B by tmpltA_SNR_phi */ 
-	crossCorrAB.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(tmpltA_SNR_phi)
-	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(tmpltA_SNR_phi);
-	crossCorrAB.im = bankVetoData->ccMat->data[row*bankVetoData->length + col].im * cos(tmpltA_SNR_phi) 
-	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(tmpltA_SNR_phi);
+	/* Phase shift the cross correlation of template B with template B by rowSNR_phi */ 
+	crossCorr.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(rowSNR_phi)
+	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(rowSNR_phi);
+	crossCorr.im = bankVetoData->ccMat->data[row*bankVetoData->length + col].im * cos(rowSNR_phi) 
+	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(rowSNR_phi);
 
-	crossCorrAB_mag = crossCorrAB.re * crossCorrAB.re + crossCorrAB.im * crossCorrAB.im;
-	bankNorm = 2.0 - crossCorrAB_mag;
+	crossCorr_mag = crossCorr.re * crossCorr.re + crossCorr.im * crossCorr.im;
+	bankNorm = 2.0 - crossCorr_mag;
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
+	/* Look at the col SNR deltaTimeShift/deltaT samples in the past.  The choice of sign
+	 * depends on the sign convention choice made in computing ccmat. */
 	deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
 	snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
 
-	tmpltB_SNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
+	colSNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
 	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
-	tmpltB_SNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
+	colSNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
 	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
       
-	//chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_real);
-	//chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_imag);
-	chisq.re = tmpltB_SNR_real - crossCorrAB.re * (tmpltA_SNR_mag);
-	chisq.im = tmpltB_SNR_imag - crossCorrAB.im * (tmpltA_SNR_mag);
+	chisq.re = colSNR_real - crossCorr.re * (rowSNR_mag);
+	chisq.im = colSNR_imag - crossCorr.im * (rowSNR_mag);
 	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
 	(*dof)++;
 
@@ -682,7 +628,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     /*FIXME Normalization now not necessarily chisquare distributed */
     return chisq_mag;
-    /*return (REAL4) chisq / bankNorm;*/
 }
 
 
