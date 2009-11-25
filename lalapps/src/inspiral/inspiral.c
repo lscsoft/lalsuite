@@ -2521,12 +2521,10 @@ int main( int argc, char *argv[] )
         {
 	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-	  fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, 
 			     fcDataParams->ampVec,
 			     subBankCurrent->subBankSize, 
 			     dynRange, fLow, spec.deltaF,chan.deltaT);
-          fprintf(stderr, "done with ccmat\n");
 
 	  ccFlag = 0;
         }
@@ -2568,7 +2566,6 @@ int main( int argc, char *argv[] )
                       fcDataParams ), &status );
                 }
               case FindChirpSP:
-		fprintf(stderr,"Clustering...\n");
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
                       &eventList, fcFilterInput, fcFilterParams,
