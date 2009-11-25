@@ -160,6 +160,12 @@ XLALPTFWaveformDerivatives(
               REAL8  dydt[14],
               void  *params );
 
+void XLALCreatePTFStrainData(
+    CoherentGW              *waveform,
+    InspiralTemplate        *PTFtemplate,
+    PPNParamStruc           *ppnParams
+    );
+
 #if 0
 <lalLaTeX>
 \newpage\input{FindChirpPTFFilterC}

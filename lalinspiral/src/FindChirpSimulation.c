@@ -476,10 +476,12 @@ LALFindChirpInjectSignals (
 
       /* set the start times for injection */
       XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
-      memcpy( &(waveform.f->epoch), &(waveform.h->epoch),
+      /*memcpy( &(waveform.f->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
       memcpy( &(waveform.phi->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
+      memcpy( &(waveform.a->epoch), &(waveform.a->epoch),
+          sizeof(LIGOTimeGPS) );*/
 
       wfmLength = waveform.h->data->length;
       dataLength = 2*wfmLength;

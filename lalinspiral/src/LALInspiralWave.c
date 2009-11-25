@@ -128,6 +128,7 @@ Depending on the user inputs one of the following functions is called:\\
 #include <lal/LALNoiseModels.h>
 #include <lal/LALStdlib.h>
 #include <lal/GeneratePPNInspiral.h>
+#include <lal/FindChirpPTF.h>
 
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
@@ -388,6 +389,9 @@ LALInspiralWaveForInjection(
       case SpinTaylor:
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
+           break;
+      case PTF:
+           XLALCreatePTFStrainData(waveform, inspiralParams, ppnParams);
            break;
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);

@@ -208,7 +208,7 @@ LALGenerateInspiral(
   }
 
   /* If no waveform has been generated. (AmpCorPPN fills waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN )
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PTF )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
@@ -218,7 +218,7 @@ LALGenerateInspiral(
 
 
   /* If sampling problem. (AmpCorPPN may not be compatible) */
-  if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
+  if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN && approximant != PTF)
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Waveform sampling interval is too large:\n"
@@ -375,6 +375,10 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "SpinTaylor" ) )
   {
     *approximant = SpinTaylor;
+  }
+  else if ( strstr(thisEvent, "PTF" ) )
+  {
+    *approximant = PTF;
   }
   else if ( strstr(thisEvent, "PadeT1" ) )
   {
