@@ -269,7 +269,9 @@ cohPTFNormalize(
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
   deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
   f_min     = (REAL4) fcTmplt->tmplt.fLower;
+  f_min     = 40.;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);

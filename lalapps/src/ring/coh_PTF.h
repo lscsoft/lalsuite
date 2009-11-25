@@ -41,10 +41,10 @@
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeSeries.h>
-#include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
+#include <lal/FindChirpPTF.h>
 #include <lal/Ring.h>
 
 

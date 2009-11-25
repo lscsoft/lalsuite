@@ -171,13 +171,13 @@ int main( int argc, char **argv )
   /* create process params */
   procpar = create_process_params( argc, argv, PROGRAM_NAME );
 
-  fprintf(stdout,"Read input params %ld \n", time(NULL)-startTime);
+  verbose("Read input params %ld \n", time(NULL)-startTime);
 
   /* create forward and reverse fft plans */
   fwdplan = coh_PTF_get_fft_fwdplan( params );
   revplan = coh_PTF_get_fft_revplan( params );
 
-  fprintf(stdout,"Made fft plans %ld \n", time(NULL)-startTime);
+  verbose("Made fft plans %ld \n", time(NULL)-startTime);
 
   /* Determine if we are analyzing single or multiple ifo data */
 
@@ -237,7 +237,7 @@ int main( int argc, char **argv )
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
-      fprintf(stdout,"Created segments for one ifo %ld \n", time(NULL)-startTime);
+      verbose("Created segments for one ifo %ld \n", time(NULL)-startTime);
     }
   }
 
@@ -313,11 +313,11 @@ int main( int argc, char **argv )
       spinTemplate = 0;
     PTFtemplate->approximant = FindChirpPTF;
     PTFtemplate->order = LAL_PNORDER_TWO;
-    PTFtemplate->fLower = 40.;
+    PTFtemplate->fLower = 30.;
     /* Generate the Q freq series of the template */
     generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
 
-    fprintf(stdout,"Generated template %d at %ld \n", i, time(NULL)-startTime);
+    verbose("Generated template %d at %ld \n", i, time(NULL)-startTime);
 
     for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
     {
@@ -348,8 +348,7 @@ int main( int argc, char **argv )
               PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
               spinTemplate);
 
-          fprintf(stdout,
-              "Made filters for ifo %d,segment %d, template %d at %ld \n", 
+          verbose("Made filters for ifo %d,segment %d, template %d at %ld \n", 
               ifoNumber,j,i,time(NULL)-startTime);
         }
       }
@@ -359,8 +358,7 @@ int main( int argc, char **argv )
                                  spinTemplate,singleDetector,timeOffsets,
                                  Fplus,Fcross,j,pValues,gammaBeta);
      
-      fprintf(stdout,
-          "Made coherent statistic for segment %d, template %d at %ld \n",
+      verbose("Made coherent statistic for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);      
 
       /* From this we want to construct triggers */
@@ -372,15 +370,15 @@ int main( int argc, char **argv )
       }
       if (gammaBeta[0]) XLALDestroyREAL4TimeSeries(gammaBeta[0]);
       if (gammaBeta[1]) XLALDestroyREAL4TimeSeries(gammaBeta[1]);
-      fprintf(stdout,
-          "Generated triggers for segment %d, template %d at %ld \n",
+      verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       XLALDestroyREAL4TimeSeries(cohSNR);
     }
   }
   cohPTF_output_events_xml( params->outputFile, eventList, procpar, params );
 
-  fprintf(stdout, "Generated output xml file, cleaning up and exiting at %ld \n",time(NULL)-startTime);
+  verbose("Generated output xml file, cleaning up and exiting at %ld \n",
+      time(NULL)-startTime);
 
   coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
@@ -662,7 +660,7 @@ void fake_template (InspiralTemplate *template)
   template->order = LAL_PNORDER_TWO;
   template->mass1 = 14.;
   template->mass2 = 1.;
-  template->fLower = 40.;
+  template->fLower = 30.;
   template->chi = 0.9;
   template->kappa = 0.1;
 /*  template->t0 = 6.090556;
@@ -1014,9 +1012,9 @@ void cohPTFmodBasesUnconstrainedStatistic(
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
       gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
-      fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));
+      /*fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));*/
     }
-    fprintf(stdout,"\n");
+    /*fprintf(stdout,"\n");*/
   }
 
   /*fprintf(stdout,"\n \n");*/
@@ -1143,7 +1141,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
       }
-      fprintf(stdout,"%e %e \n",max_eigen,recSNR);
+      /*fprintf(stdout,"%e %e \n",max_eigen,recSNR);*/
       betaGammaTemp[0] = 0;
       betaGammaTemp[1] = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1191,21 +1189,21 @@ void cohPTFmodBasesUnconstrainedStatistic(
           recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
       }
-      fprintf(stdout,"%e %e %e %e \n",v1[0],v1[1],v1[2],v1[3]);
-      fprintf(stdout,"%e %e %e %e \n",v2[0],v2[1],v2[2],v2[3]);
+      /*fprintf(stdout,"%e %e %e %e \n",v1[0],v1[1],v1[2],v1[3]);
+      fprintf(stdout,"%e %e %e %e \n",v2[0],v2[1],v2[2],v2[3]);*/
       /*fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);*/
 
     }
   }
 
   
- /* outfile = fopen("cohSNR_timeseries.dat","w");
+  outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
   fclose(outfile);
-  */
+  
   /*
   outfile = fopen("rebased_timeseries.dat","w");
   if (spinTemplate == 1 && singleDetector == 1 )
