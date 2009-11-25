@@ -42,7 +42,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
  * date: 11/20/2009
  *
  */ 
-int main()
+int main(int argc, char *argv[])
 {
     /* Input params to XLALBankVetoCCMat */
     FindChirpBankVetoData *bankVetoData = 
@@ -61,6 +61,11 @@ int main()
     UINT4 error_flag;
     UINT4 trial_max = 10*subBankSize;
     int exit_status = 0;
+
+    /* verbosity level (warning: this program can be very verbose) */
+    int verbose = ( (argc == 2) && (strcmp(argv[1],"dump") == 0) 
+		    ? 1
+		    : 0 );
 
     /* Fill basic structures needed by XLALBankVetoCCMat */
     initBankVetoData(bankVetoData,ampVec,subBankSize,templateLength);
@@ -87,7 +92,7 @@ int main()
 	if ( error_flag )
 	{
 	    /* write out the offending matrix */
-	    if ( 0 )
+	    if ( verbose )
 	    {
 		sprintf(ccFileName,"cross_corr_mat_%d.txt",trial);
 		writeCCmatToFile(bankVetoData->ccMat,subBankSize,ccFileName);
@@ -97,6 +102,7 @@ int main()
 	    exit_status++;
 	}
     }
+
     return exit_status;
 }
 
