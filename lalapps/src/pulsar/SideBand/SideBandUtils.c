@@ -396,8 +396,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
 void InitEphemeris (LALStatus * status,   
 		    EphemerisData *edat,	/**< [out] the ephemeris-data */
 		    const CHAR *ephemDir,	/**< directory containing ephems */
-		    const CHAR *ephemYear,	/**< which years do we need? */
-		    LIGOTimeGPS epoch	/**< epoch of observation */
+		    const CHAR *ephemYear	/**< which years do we need? */
 		    )
 {
 
@@ -447,8 +446,8 @@ void InitEphemeris (LALStatus * status,
 void ReadSideBandPriors(LALStatus *status,
 			CHAR *rangefile,
 			SideBandMCMCRanges *ranges,
-			SideBandMCMCJumpProbs *jumpsizes,
-			SideBandTemplateParams *TParams)
+			SideBandMCMCJumpProbs *jumpsizes
+                        )
 {
   
   FILE *fprange = NULL;
@@ -464,7 +463,6 @@ void ReadSideBandPriors(LALStatus *status,
 
   ASSERT (ranges,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
   ASSERT (jumpsizes,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
-  ASSERT (TParams,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
   
   /* open and read parameter range file */
   if ((fprange = fopen(rangefile,"r"))==NULL) {
@@ -944,7 +942,7 @@ void GenerateSideBandTemplate (LALStatus *status,
   INT4 nmax;
   INT4 nmin;
   REAL8 kappa;
-  REAL8 gamma;
+  REAL8 gam;
   REAL8 R1,R2;
   REAL8 e;
   REAL8 a;
@@ -1012,12 +1010,12 @@ void GenerateSideBandTemplate (LALStatus *status,
   
   /* define some intermediate variables */
   kappa = LAL_TWOPI*BSParams->f0*a*sin(argp);
-  gamma = atan2(tan(argp),sqrt(1-e*e));
+  gam = atan2(tan(argp),sqrt(1-e*e));
   
-  /* make sure gamma is correctly defined */
-  if ((argp>=LAL_PI/2.0)&&(argp<3.0*LAL_PI/2.0)) gamma += LAL_PI;
-  else if (argp>=3.0*LAL_PI/2.0) gamma += LAL_TWOPI;
-  /* printf("gamma = %f\n",gamma);*/ 
+  /* make sure gam is correctly defined */
+  if ((argp>=LAL_PI/2.0)&&(argp<3.0*LAL_PI/2.0)) gam += LAL_PI;
+  else if (argp>=3.0*LAL_PI/2.0) gam += LAL_TWOPI;
+  /* printf("gam = %f\n",gam);*/ 
   
   /* printf("BinaryFDTemplate : A = %f B = %f C = %f D = %f\n",A,B,C,D);
      printf("P = %6.12f argp = %f sPe = %6.12f w0 = %f\n",P,argp,sPe,w0);
@@ -1104,7 +1102,7 @@ void GenerateSideBandTemplate (LALStatus *status,
 	q = n - p;
 	
 	/* compute phase of this sideband */
-	y = n*(-LAL_TWOPI*tp/P) + q*(gamma + LAL_PI) + 3.0*kappa*e/2.0;
+	y = n*(-LAL_TWOPI*tp/P) + q*(gam + LAL_PI) + 3.0*kappa*e/2.0;
 	
 	/* compute y phase factor */
 	cosy = cos(y);

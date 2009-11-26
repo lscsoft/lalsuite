@@ -33,7 +33,7 @@
 #include <getopt.h>
 #include <math.h>
 
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 /* SFT header structure as of 7/21/2004 */
 struct sftheader
@@ -49,7 +49,7 @@ struct sftheader
 /* function prototypes */
 int parse_command_line(int argc, char *argv[]);
 int fileURL_to_localPath(char *url, char *path);
-int read_sft( struct sftheader *header, float **dataF, const char *fname, float fmin, float deltaf );
+int read_sft( struct sftheader *header, float **dataF, const char *fname, float f_min, float deltaf );
 void byte_swap( void *ptr, size_t size, size_t nobj );
 int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, FrFile *outputFrameFile); 
 int add_sft_to_mergedSFT_file(struct sftheader *header, float *dataF, FILE *outputSFTFile); 
@@ -243,7 +243,7 @@ int parse_command_line(int argc, char *argv[])
                 {0, 0, 0, 0}
         };
 
-        char *short_options = "i:o:f:b:y:hms";
+        const char *short_options = "i:o:f:b:y:hms";
         int c;
 
         while ( 1 )
@@ -398,7 +398,7 @@ fmin + delta f. Also set the SFT header structure appropriately.
 This code was taken almost completely from the file sft2frame.c written
 by Jolien Creighton. Errors are owned by Scott Koranda.
 */
-int read_sft( struct sftheader *header, float **dataF, const char *fname, float fmin, float deltaf )
+int read_sft( struct sftheader *header, float **dataF, const char *fname, float f_min, float deltaf )
 {
         FILE *fp;               /* pointer to SFT wide-band file */
         int swapbytes = 0;      /* flag for whether indianess is wrong and need to swap */
@@ -464,27 +464,27 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
         freqmin = (float) (header->first / tbase);
         freqmax = (float) ((header->first + header->nsamples) / tbase);
 
-        if ( fmin < freqmin )
+        if ( f_min < freqmin )
         {
-                fprintf(stderr, "Desired start frequency %f too small: SFT begins with %f\n", fmin, freqmin);
+                fprintf(stderr, "Desired start frequency %f too small: SFT begins with %f\n", f_min, freqmin);
                 return 4;
         }
 
-        if ( (fmin + deltaf) > freqmax )
+        if ( (f_min + deltaf) > freqmax )
         {
-                fprintf(stderr, "Desired end frequency %f too large: SFT ends with %f\n", fmin, freqmax);
+                fprintf(stderr, "Desired end frequency %f too large: SFT ends with %f\n", f_min, freqmax);
                 return 5;
         }
 
-        /* compute the min and max index necessary to ensure fmin to fmin + deltaf
+        /* compute the min and max index necessary to ensure f_min to f_min + deltaf
            is in extracted band */
 	if (sloppyness)
 	  {
-	    fminindex = (int)(fmin*tbase+0.5);
-	    fmaxindex = (int)((fmin+deltaf)*tbase+0.5);
+	    fminindex = (int)(f_min*tbase+0.5);
+	    fmaxindex = (int)((f_min+deltaf)*tbase+0.5);
 	  }else{
-	    fminindex = (int) floor(fmin * tbase);
-	    fmaxindex = (int) ceil((fmin + deltaf) * tbase);
+	    fminindex = (int) floor(f_min * tbase);
+	    fmaxindex = (int) ceil((f_min + deltaf) * tbase);
 	  }
 
         /* allocate data to store the narrow band complex series
@@ -545,18 +545,20 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
 /* directly from Jolien Creighton */
 void byte_swap( void *ptr, size_t size, size_t nobj )
 {
+  char *p1 = (char*)ptr;
+
         while ( nobj-- > 0 )
         {
                 size_t byte;
                 for ( byte = 0; byte < size / 2; ++byte )
                 {
-                        char *b1 = ptr + byte;
-                        char *b2 = ptr + size - byte - 1;
+                        char *b1 = p1 + byte;
+                        char *b2 = p1 + size - byte - 1;
                         char tmp = *b1;
                         *b1 = *b2;
                         *b2 = tmp;
                 }
-                ptr += size;
+                p1 += size;
         }
         return;
 }
@@ -574,10 +576,11 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         char comment[] = "Generated from SFT data by narrowBandExtract";
         char hertz[] = "Hz";
         char units[] = "s";
+        char name[] = "LIGO";
         int ret;
 
         /* create a new frame */
-        frame = FrameHNew( "LIGO" );
+        frame = FrameHNew( name );
         if ( ! frame )
         {
             fprintf( stderr, "Could not create frame in frame file\n" );
@@ -607,7 +610,10 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         step unit is Hertz
         the units of the series is seconds
         */
-        vect = FrVectNew1D( "SFT", FR_VECT_8C, header->nsamples, 1.0 / header->tbase, hertz, units );
+        {
+          char tmpname[] = "SFT";
+          vect = FrVectNew1D( tmpname, FR_VECT_8C, header->nsamples, 1.0 / header->tbase, hertz, units );
+        }
         if ( ! vect )
         {
             fprintf( stderr, "Could not create vector for frame file\n");
@@ -635,8 +641,10 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         proc->data      = vect;                 
         proc->next      = frame->procData;
         frame->procData = proc;
-
-        FrStrCpy( &proc->name, "SFT" );
+        {
+          char tmpname[] = "SFT";
+          FrStrCpy( &proc->name, tmpname );
+        }
         FrStrCpy( &proc->comment, comment );
 
         /* copy the series into the vector */

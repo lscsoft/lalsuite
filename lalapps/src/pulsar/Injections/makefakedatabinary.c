@@ -952,7 +952,6 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LALDetAMResponse  amresp;
   LALSource         source;
   LALDetAndSource   detectorandsource;
-  LALGPSandAcc       gps;
   const char *filename="AmplMod.dat";
   int i;
 
@@ -969,11 +968,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   detectorandsource.pSource=&source;
 
   for (i=0;i<=nTsft;i++){
-  
-    gps.gps.gpsSeconds=timestamps[i].gpsSeconds;
-    gps.gps.gpsNanoSeconds=timestamps[i].gpsNanoSeconds;
-
-    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &gps);
+    LALComputeDetAMResponse(status, &amresp, &detectorandsource, &timestamps[i]);
     fprintf(fp,"%f  %f\n",amresp.plus,amresp.cross);
     
   }
@@ -986,7 +981,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
 
 int make_filelist(void) {
 
-  unsigned int fileno=0;
+  unsigned int filenum=0;
   char command[256];
   glob_t globbuf;
 
@@ -997,11 +992,11 @@ int make_filelist(void) {
   glob(command, GLOB_ERR, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno< globbuf.gl_pathc) 
+  while (filenum< globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;

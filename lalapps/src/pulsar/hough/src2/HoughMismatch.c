@@ -93,7 +93,7 @@ int main( int argc, char *argv[]){
   
   EphemerisData   *edat = NULL;
 
-  INT4   mObsCoh, j, numberCount;
+  INT4   mObsCoh, numberCount;
   REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold;
   UINT4  sftlength; 
@@ -433,9 +433,10 @@ int main( int argc, char *argv[]){
 	  
 	  numberCount = 0;
 	  /* now calculate the number count for the template */
+          INT4 j;
 	  for (j=0; j < mObsCoh; j++)  
 	    {
-	      INT4 index;
+	      INT4 ind;
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
 	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -450,9 +451,9 @@ int main( int argc, char *argv[]){
 	      
 	      SUB( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
 	      
-	      index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+	      ind = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 	      
-	      numberCount += pg1.data[index]; 
+	      numberCount += pg1.data[ind]; 
 	    } 
 	  /* print the number count */
 	  fprintf(stdout, "%d    %d    %d\n", mmT, mmP, numberCount);

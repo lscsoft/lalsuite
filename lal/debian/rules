@@ -41,7 +41,6 @@ config.status : configure
 		--prefix=$(PREFIX) \
 		--mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 		--enable-nightly=no \
-		--enable-frame --enable-metaio \
 		--disable-debug \
 		--disable-gcc-flags
 
@@ -53,8 +52,8 @@ build-stamp :  config.status
 
 	$(MAKE)
 	-yes "" | $(MAKE) dvi
-	-yes "" | $(MAKE) check
-	-yes "" | $(MAKE) distcheck
+#	-yes "" | $(MAKE) check
+#	-yes "" | $(MAKE) distcheck
 
 	touch $@
 
@@ -65,7 +64,7 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) cvs-clean
+	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 
@@ -93,7 +92,7 @@ install : build
 binary-common :
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs ChangeLog
+	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
 #	dh_install

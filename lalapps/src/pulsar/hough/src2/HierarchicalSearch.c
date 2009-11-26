@@ -110,6 +110,9 @@
 
  */
 
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
 
 
 #include"HierarchicalSearch.h"
@@ -220,13 +223,13 @@ void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList 
 
 void ComputeNumExtraBins(LALStatus *status, SemiCoherentParams *par, REAL8 fdot, REAL8 f0, REAL8 deltaF);
 
-void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 index);
+void DumpLUT2file(LALStatus *status, HOUGHptfLUT *lut, HOUGHPatchGrid *patch, CHAR *basename, INT4 ind);
 
 void GetXiInSingleStack (LALStatus         *status,
-			 REAL8Vector       *out,
 			 HOUGHSizePar      *size,
 			 HOUGHDemodPar     *par);
 
+void OutputVersion ( void );
 
 /* default values for input variables */
 #define EARTHEPHEMERIS 		"earth05-09.dat"
@@ -325,7 +328,7 @@ int MAIN( int argc, char *argv[]) {
   static HOUGHPeakGramVector pgV;
   static SemiCoherentParams semiCohPar;
   static SemiCohCandidateList semiCohCandList;
-  REAL8 alphaPeak, sumWeightSquare, meanN, sigmaN;
+  REAL8 alphaPeak, sumWeightSquare, meanN=0, sigmaN=0;
 
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
@@ -412,6 +415,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_DataFiles1 = NULL;
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
+  BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
 
   global_status = &status;
@@ -498,12 +502,21 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
 
+  LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
+
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
   /* exit if help was required */
   if (uvar_help)
-    return(0); 
+    return(0);
+
+
+  if ( uvar_version )
+    {
+      OutputVersion();
+      return (0);
+    }
 
   /* set log-level */
 #ifdef EAH_LOGLEVEL
@@ -511,6 +524,23 @@ int MAIN( int argc, char *argv[]) {
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
+
+  /* assemble version string */
+  CHAR *version_string;
+  {
+    CHAR *id1, *id2;
+    id1 = XLALClearLinebreaks ( lalGitID );
+    id2 = XLALClearLinebreaks ( lalappsGitID );
+    UINT4 len = strlen ( id1 ) + strlen ( id2 ) + 20;
+    if ( ( version_string = XLALMalloc ( len )) == NULL ) {
+      XLALPrintError ("Failed to XLALMalloc ( %d ).\n", len );
+      return( HIERARCHICALSEARCH_EMEM );
+    }
+    sprintf (version_string, "%%%% %s\n%%%% %s\n", id1, id2 );
+    XLALFree ( id1 );
+    XLALFree ( id2 );
+  }
+  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
@@ -536,7 +566,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* probability of peak selection */
   alphaPeak = (1+uvar_peakThrF)*exp(-uvar_peakThrF);
-  
+
   /* create toplist -- semiCohToplist has the same structure 
      as a fstat candidate, so treat it as a fstat candidate */
   create_houghFStat_toplist(&semiCohToplist, uvar_nCand1);
@@ -556,31 +586,22 @@ int MAIN( int argc, char *argv[]) {
 
       /* get the log string */
       LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
-      
+
       fprintf( fpLog, "## Log file for HierarchicalSearch.c\n\n");
       fprintf( fpLog, "# User Input:\n");
       fprintf( fpLog, "#-------------------------------------------\n");
       fprintf( fpLog, logstr);
       LALFree(logstr);
-      
-      /*get the cvs tags */
-      {
-	CHAR command[1024] = "";
-	fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-	fprintf (fpLog, "# -----------------------------------------\n");
-	fclose (fpLog);
-	
-	sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-	system (command);	/* we don't check this. If it fails, we assume that */
-	/* one of the system-commands was not available, and */
-	/* therefore the CVS-versions will not be logged */
-	
-	LALFree(fnamelog); 
-	
-      } /* end of cvs tags block */
-      
+
+      /* add code version ID (only useful for git-derived versions) */
+      fprintf ( fpLog, version_string );
+
+      fclose (fpLog);
+
+      LALFree(fnamelog);
+
     } /* end of logging */
-  
+
 
   /*--------- Some initializations ----------*/
 
@@ -1231,7 +1252,9 @@ int MAIN( int argc, char *argv[]) {
     {
       LALFree(fnameSemiCohCand);
     }
-  
+
+  if ( version_string ) XLALFree ( version_string );
+
   if ( uvar_printFstat1 )
     {
       fclose(fpFstat1);
@@ -2308,7 +2331,7 @@ void DumpLUT2file(LALStatus       *status,
 		  HOUGHptfLUT     *lut,
 		  HOUGHPatchGrid  *patch,
 		  CHAR            *basename,
-		  INT4            index)
+		  INT4            ind)
 {
 
   FILE  *fp=NULL;
@@ -2328,7 +2351,7 @@ void DumpLUT2file(LALStatus       *status,
 
   strcpy(  filename, basename);
   strcat(  filename, ".lut");
-  sprintf( filenumber, ".%06d",index); 
+  sprintf( filenumber, ".%06d",ind); 
   strcat(  filename, filenumber);
 
   fp=fopen(filename,"w");  
@@ -3406,7 +3429,6 @@ void ComputeNumExtraBins(LALStatus            *status,
 
 
 void GetXiInSingleStack (LALStatus         *status,
-			 REAL8Vector       *out,
 			 HOUGHSizePar      *size,
 			 HOUGHDemodPar     *par)  /* demodulation parameters */
 { /* </lalVerbatim> */
@@ -3416,7 +3438,6 @@ void GetXiInSingleStack (LALStatus         *status,
   REAL8   f0;  /* frequency corresponding to f0Bin */
   INT8    f0Bin;
   REAL8   deltaF;  /*  df=1/TCOH  */
-  REAL8   delta;
   REAL8   vFactor, xFactor;
   REAL8   xiX, xiY, xiZ;
   REAL8   modXi,invModXi;
@@ -3431,7 +3452,6 @@ void GetXiInSingleStack (LALStatus         *status,
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
-  ASSERT (out, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
   ASSERT (par, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
   ASSERT (size, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL);
   
@@ -3504,3 +3524,13 @@ void GetXiInSingleStack (LALStatus         *status,
   RETURN (status);
 }
 
+/** Simply output version information to stdout */
+void
+OutputVersion ( void )
+{
+  printf ( "%s\n", lalGitID );
+  printf ( "%s\n", lalappsGitID );
+
+  return;
+
+} /* OutputVersion() */

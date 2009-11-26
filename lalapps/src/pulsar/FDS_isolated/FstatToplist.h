@@ -73,13 +73,13 @@ extern int write_fstat_toplist_item_to_fp(FstatOutputEntry line, FILE*fp, UINT4*
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
-extern int atomic_write_fstat_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
+extern int atomic_write_fstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 /** meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
    - finally calls atomic_write_fstat_toplist_to_file() */
-extern int final_write_fstat_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
+extern int final_write_fstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 
 

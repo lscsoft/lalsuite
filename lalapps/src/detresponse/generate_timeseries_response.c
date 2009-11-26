@@ -121,8 +121,6 @@ void generate_timeseries_response(LALStatus * status)
       args_info.nsample_given &&
       args_info.sampling_interval_given)
     {
-      time_info.accuracy             = LALLEAPSEC_STRICT;
-      
       if (verbosity_level == 13)
         {
           time_info.epoch.gpsSeconds     = 709398013;

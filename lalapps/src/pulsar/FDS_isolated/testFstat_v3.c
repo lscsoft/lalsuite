@@ -75,7 +75,7 @@
 
 /* ----- User-variables: can be set from config-file or command-line */
 /* ---------- local prototypes ---------- */
-int main(int argc, char *argv[]);
+int main(void);
 
 int test_XLALSFTVectorToCOMPLEX8TimeSeries(void);
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
@@ -94,7 +94,7 @@ int lalDebugLevel = 1;
 /**
  * MAIN function
  */
-int main(int argc, char *argv[])
+int main(void)
 {
   const CHAR *fn = "testFstat_v3";
   int res1;
@@ -129,7 +129,6 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   const CHAR *fn = "test_XLALSFTVectorToCOMPLEX8TimeSeries()";
 
   SFTVector *sfts = NULL;
-  SFTtype *lftOrig = NULL;
   SFTtype *lftTest = NULL;
 
   REAL4TimeSeries *tsOrig = NULL;
@@ -145,7 +144,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   }
 
 
-  if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts ) ) == NULL ) {
+  if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts, NULL, NULL ) ) == NULL ) {
     XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", fn, xlalErrno );
     return TEST_ABORTED;
   }
@@ -241,7 +240,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   LIGOTimeGPS epoch0 = { 714180733, 0 };
   UINT4 numSFTs = 19;
 
-  REAL8 fmax = 10.0;
+  REAL8 f_max = 10.0;
   REAL8 Tsft = 1800.0;
   REAL8 dFreq;
 
@@ -278,7 +277,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
   /* prepare sampling constants */
   dFreq         = 1.0 / Tsft;
-  numFreqBins   = (UINT4)(fmax / dFreq);
+  numFreqBins   = (UINT4)(f_max / dFreq);
   BandEff       = numFreqBins * dFreq;
   deltaT        = 1.0 / (2.0 * BandEff);
   numSamplesSFT = 2 * numFreqBins;		/* real-valued timeseries */

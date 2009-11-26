@@ -35,6 +35,8 @@ double N,deltaT,*po;
 extern char *optarg;
 extern int optind, opterr, optopt;
 
+int Freemem(void);
+
 int main(int argc,char *argv[]) 
 {
 
@@ -65,7 +67,7 @@ int main(int argc,char *argv[])
 
 int ComputePSD(struct CommandLineArgsTag CLA)
 {
-  FILE *fp,*fpo;
+  FILE *fp = NULL,*fpo;
   INT4 i,j=0;
   size_t errorcode;
   double f,Sh;
@@ -155,7 +157,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   char command[256];
   size_t errorcode;
   FILE *fp;
-  INT4 fileno=0,j;
+  INT4 filenum=0,j;
   glob_t globbuf;
 
 
@@ -166,11 +168,11 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno < (int) globbuf.gl_pathc) 
+  while (filenum < (int) globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;
@@ -178,7 +180,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
     }
   globfree(&globbuf);
 
-  SFTno=fileno;  /* Global variable that keeps track of no of SFTs */
+  SFTno=filenum;  /* Global variable that keeps track of no of SFTs */
 
 
   /* open FIRST file and get info from it*/
@@ -239,8 +241,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   
   /* Initialize default values */
-  CLA->directory="";
-  CLA->outputfile="";
+  CLA->directory=NULL;
+  CLA->outputfile=NULL;
 
   /* Scan through list of command line arguments */
   while (!errflg && ((c = getopt(argc, argv,"hb:D:r:I:C:o:"))!=-1))
@@ -269,13 +271,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     }
 
-  if(CLA->directory == "")
+  if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
       return 1;
     }      
-  if(CLA->outputfile == "")
+  if(CLA->outputfile == NULL)
     {
       fprintf(stderr,"No output directory specified; input directory with -o option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
@@ -288,7 +290,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 /*******************************************************************************/
 
 
-int Freemem()
+int Freemem(void)
 {
 
   LALFree(po);

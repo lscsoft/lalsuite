@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[6.4],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -38,13 +38,15 @@ AC_CONFIG_FILES([\
   src/zmsearch/Makefile \
   src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
+  src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
-AM_INIT_AUTOMAKE([])
+AC_CONFIG_FILES([src/lalapps/git_version],[chmod +x src/lalapps/git_version])
+AM_INIT_AUTOMAKE([foreign])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
 AC_ARG_VAR(LAL_TOP_SRCDIR,[Set to top source directory of lal])
 AH_TOP([
@@ -75,18 +77,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 dnl Put version/configure info in config.h header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-lalapps_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
                    [LALApps Version Major Number])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MINOR],[$lalapps_version_minor],
                    [LALApps Version Minor Number])
+AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MICRO],[$lalapps_version_micro],
+                   [LALApps Version Micro Number])
+AC_DEFINE_UNQUOTED([LALAPPS_VERSION_DEVEL],[$lalapps_version_devel],
+                   [LALApps Version Devel Number])
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALApps Configure Arguments])
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
-AC_DEFINE_UNQUOTED([LALAPPS_CVS_TAG],["$lalapps_cvs_tag"],[LALApps CVS Tag])
 
 
 dnl Remove -all-static from ldflags
@@ -154,7 +160,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-PKG_CHECK_MODULES([LAL],[lal],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.2.1],[true],[false])
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
   CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
@@ -167,14 +173,16 @@ dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
 lalframe="true"
 lalmetaio="true"
 lalxml="true"
+lalburst="true"
 lalstochastic="true"
 PKG_CHECK_MODULES([LALFRAME],[lalframe >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALMETAIO],[lalmetaio >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALXML],[lalxml >= 1.0],[true],[false])
+PKG_CHECK_MODULES([LALBURST],[lalburst >= 1.0],[true],[false])
 PKG_CHECK_MODULES([LALSTOCHASTIC],[lalstochastic >= 1.0],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
-  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
-  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALSTOCHASTIC_LIBS $LIBS"
+  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALBURST_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
+  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALBURST_LIBS $LALSTOCHASTIC_LIBS $LIBS"
 fi
 
 dnl cfitsio
@@ -223,6 +231,7 @@ if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB([lalframe],[LALFrOpen],,[lalframe="false"])
   AC_CHECK_LIB([lalmetaio],[LALSnglInspiralTableFromLIGOLw],,[lalmetaio="false"])
   AC_CHECK_LIB([lalxml],[XLALXMLFilePrintElements],,[lalxml="false"])
+  AC_CHECK_LIB([lalburst],[XLALEPSearch],,[lalburst="false"])
   AC_CHECK_LIB([lalstochastic],[LALStochasticOptimalFilter],,[lalstochastic="false"])
 fi
 
@@ -282,18 +291,20 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 AC_CHECK_FUNCS([setenv])
 
 if test "$LALSUITE_BUILD" = "true"; then
-  LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
-  CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
+  LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALBURST_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
+  CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALBURST_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
   echo "LAL_TOP_SRCDIR=$LAL_LIBS"
   echo "LAL_TOP_SRCDIR=$LAL_TOP_SRCDIR"
   AC_SUBST([LAL_TOP_SRCDIR])
   lalframe="false"
   lalmetaio="false"
   lalxml="false"
+  lalburst="false"
   lalstochastic="false"
   test -n "$LALFRAME_LIBS" && lalframe="true"
   test -n "$LALMETAIO_LIBS" && lalmetaio="true"
   test -n "$LALXML_LIBS" && lalxml="true"
+  test -n "$LALBURST_LIBS" && lalburst="true"
   test -n "$LALSTOCHASTIC_LIBS" && lalstochastic="true"
 fi
 
@@ -301,6 +312,7 @@ AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
 AM_CONDITIONAL([LALFRAME],[test x$lalframe = xtrue])
 AM_CONDITIONAL([LALMETAIO],[test x$lalmetaio = xtrue])
 AM_CONDITIONAL([LALXML],[test x$lalxml = xtrue])
+AM_CONDITIONAL([LALBURST],[test x$lalburst = xtrue])
 AM_CONDITIONAL([LALSTOCHASTIC],[test x$lalstochastic = xtrue])
 AM_CONDITIONAL([DATAFLOW],[test x$metaio = xtrue])
 AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
@@ -326,6 +338,7 @@ AC_OUTPUT
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalxmlenabled="`test x${lalxml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+lalburstenabled="`test x${lalburst} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalstochasticenabled="`test x${lalstochastic} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
@@ -336,6 +349,7 @@ echo "
                 LAL Frame library support is $lalframeenabled
                 LAL MetaIo library support is $lalmetaioenabled
                 LAL XML library support is $lalxmlenabled
+                LAL Burst library support is $lalburstenabled
                 LAL Stochastic library support is $lalstochasticenabled
                 FITS library support is $cfitsioenabled
 

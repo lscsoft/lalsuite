@@ -1,0 +1,7 @@
+#opt/lscsoft/lalburst/bin/lal-config
+opt/lscsoft/lalburst/include/lal*
+opt/lscsoft/lalburst/lib/*a
+opt/lscsoft/lalburst/lib/pkgconfig
+#opt/lscsoft/lalburst/share/man/man1/lal-config.1*
+#opt/lscsoft/lalburst/share/man/man3/lal.3*
+#opt/lscsoft/lalburst/share/lal

@@ -90,6 +90,8 @@ extern int lalDebugLevel;
 #define FALSE (1==0)
 
 
+static REAL8Vector empty_REAL8Vector;
+
 /******************************************/
 void ComputeFoft_NM(LALStatus   *status,
                  REAL8Vector          *foft,
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]){
   UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector      weightsV, weightsNoise,  weightsAM;
+  REAL8Vector      weightsV, weightsNoise,  weightsAM = empty_REAL8Vector;
   REAL8      alphaPeak, meanN, sigmaN, significance;
   
   REAL4TimeSeries   *signalTseries = NULL;
@@ -391,7 +393,7 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    REAL8   doppWings, fmin, fmax;
+    REAL8   doppWings, f_min, f_max;
  
     /* set detector constraint */
     constraints.detector = NULL;
@@ -436,11 +438,11 @@ int main(int argc, char *argv[]){
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_min = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_max = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read sft files making sure to add extra bins for running median */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
  
     /* SFT info -- assume all SFTs have same length */
     numifo = inputSFTs->length;
@@ -808,7 +810,6 @@ int main(int argc, char *argv[]){
     MultiAMCoeffs   *multiAMcoef = NULL;
     
     weightsAM.length = mObsCoh;
-    weightsAM.data=NULL;
     weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
     
@@ -840,7 +841,7 @@ int main(int argc, char *argv[]){
 	     
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
-      UINT4       j, index, itemplate; 
+      UINT4       j, ind, itemplate; 
       UINT4       iIFO, numsft, iSFT;
       COMPLEX8   *noiseSFT;
       COMPLEX8   *signalSFT;
@@ -938,7 +939,7 @@ int main(int argc, char *argv[]){
 	  memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
         }
 	
-	if (uvar_weighAM) {
+	if (uvar_weighAM && weightsAM.data ) {
 	  for (j=0; j<mObsCoh; j++){
 	    weightsV.data[j] = weightsV.data[j]*weightsAM.data[j];
 	  }
@@ -967,12 +968,12 @@ int main(int argc, char *argv[]){
 	    
 	    sft = sumSFTs->data[iIFO]->data + iSFT;
 	    LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
-	    index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
-	    numberCount+=pg1.data[index]*weightsV.data[j]; /* adds 0 or 1 to the counter*/
+	    ind = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
+	    numberCount+=pg1.data[ind]*weightsV.data[j]; /* adds 0 or 1 to the counter*/
 	    
 	    for (itemplate=0; itemplate<nTemplates; ++itemplate) {
-	      index = floor( foftV[itemplate].data[j]*timeBase -sftFminBin+0.5); 
-	      numberCountV[itemplate]+=pg1.data[index]*weightsV.data[j];
+	      ind = floor( foftV[itemplate].data[j]*timeBase -sftFminBin+0.5); 
+	      numberCountV[itemplate]+=pg1.data[ind]*weightsV.data[j];
 	    }	    
 	  } /* loop over SFTs */	  
 	} /* loop over IFOs */
@@ -1000,7 +1001,7 @@ int main(int argc, char *argv[]){
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);
-  if (uvar_weighAM){ 
+  if (uvar_weighAM && weightsAM.data){ 
       LALFree(weightsAM.data); 
   }
 

@@ -160,7 +160,8 @@ for i=1:N_ifos
       title(['dt v. f for ', ifos(i,:), ifos(j,:), ' background events'])
       grid on
       saveas(gcf,[ifos(i,:), ifos(j,:), 'bgdtvf.png'])
-
+      
+      clear bg1in2 bg2in1 dt ave_num_bg ave A B event tmp alsotmp
     end
   end
 end

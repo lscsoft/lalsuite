@@ -29,7 +29,7 @@ TestIncrementGPS_SOURCES = TestIncrementGPS.c
 TestIncrementGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestStrToGPS_SOURCES = TestStrToGPS.c
 TestStrToGPS_LDADD = $(top_builddir)/lib/liblal.la
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../src
 TESTS = TestJulianDay TestLMST TestDelay TestGPStoUTC \
         TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
 TESTS_ENVIRONMENT = 1>/dev/null

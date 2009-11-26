@@ -64,6 +64,13 @@
 #define EZXML_WS   "\t\r\n "  /* whitespace */
 #define EZXML_ERRL 128        /* maximum error string length */
 
+
+/* global strings to avoid const warnings */
+static char asterisk_string[] = "*";
+static char space_string[] = " ";
+static char empty_string[] = "";
+
+
 typedef struct ezxml_root *ezxml_root_t;
 struct ezxml_root {       /* additional data for the root tag */
   struct ezxml xml;     /* is a super-struct built on top of ezxml struct */
@@ -407,7 +414,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
                 else { ezxml_err(root, t, "malformed <!ATTLIST"); break; }
 
 	      s += strspn(s + 1, EZXML_WS) + 1; /* find next token */
-	      c = (strncmp(s, "CDATA", 5)) ? "*" : " "; /* is it cdata? */
+	      c = (strncmp(s, "CDATA", 5)) ? asterisk_string : space_string; /* is it cdata? */
                 if (! strncmp(s, "NOTATION", 8))
                     s += strspn(s + 8, EZXML_WS) + 8;
                 s = (*s == '(') ? strchr(s, ')') : s + strcspn(s, EZXML_WS);
@@ -546,7 +553,7 @@ ezxml_t ezxml_parse_str(char *s, size_t len)
 		  : malloc(2); /* mem for list of maloced vals */
                 strcpy(attr[l + 3] + (l / 2), " "); /* value is not malloced */
                 attr[l + 2] = NULL; /* null terminate list */
-                attr[l + 1] = ""; /* temporary attribute value */
+                attr[l + 1] = empty_string; /* temporary attribute value */
                 attr[l] = s; /* set attribute name */
 
                 s += strcspn(s, EZXML_WS "=/>");
@@ -740,7 +747,7 @@ char *ezxml_toxml_r(ezxml_t xml, char **s, size_t *len, size_t *max,
                     size_t start, char ***attr)
 {
     int i, j;
-    char *txt = (xml->parent) ? xml->parent->txt : "";
+    char *txt = (xml->parent) ? xml->parent->txt : empty_string;
     size_t off = 0;
 
     /* parent character content up to this tag */
@@ -853,10 +860,10 @@ void ezxml_free(ezxml_t xml)
             for (j = 1; root->pi[i][j]; j++);
             free(root->pi[i][j + 1]);
             free(root->pi[i]);
-        }            
+        }
         if (root->pi[0]) free(root->pi); /* free processing instructions */
 
-        if (root->len == -1) free(root->m); /* malloced xml data */
+        if (root->len == (size_t)(-1)) free(root->m); /* malloced xml data */
 #ifndef EZXML_NOMMAP
         else if (root->len) munmap(root->m, root->len); /* mem mapped xml data */
 #endif /* EZXML_NOMMAP */
@@ -877,15 +884,16 @@ const char *ezxml_error(ezxml_t xml)
 }
 
 /* returns a new empty ezxml structure with the given root tag name */
-ezxml_t ezxml_new(const char *name)
+ezxml_t ezxml_new(char *name)
 {
     static const char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
                            "apos;", "&#39;", "amp;", "&#38;", NULL };
     ezxml_root_t root = (ezxml_root_t)memset(malloc(sizeof(struct ezxml_root)), 
                                              '\0', sizeof(struct ezxml_root));
-    root->xml.name = (char *)name;
+
+    root->xml.name = name;
     root->cur = &root->xml;
-    strcpy(root->err, root->xml.txt = "");
+    strcpy(root->err, root->xml.txt = empty_string);
     root->ent = memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
     root->attr = root->pi = (char ***)(root->xml.attr = EZXML_NIL);
     return &root->xml;
@@ -893,18 +901,18 @@ ezxml_t ezxml_new(const char *name)
 
 /* Adds a child tag. off is the offset of the child tag relative to the start */
 /* of the parent tag's character content. returns the child tag */
-ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
+ezxml_t ezxml_add_child(ezxml_t xml, char *name, size_t off)
 {
     ezxml_t cur, head, child;
 
     if (! xml) return NULL;
     child = (ezxml_t)memset(malloc(sizeof(struct ezxml)), '\0',
                             sizeof(struct ezxml));
-    child->name = (char *)name;
+    child->name = name;
     child->attr = EZXML_NIL;
     child->off = off;
     child->parent = xml;
-    child->txt = "";
+    child->txt = empty_string;
 
     if ((head = xml->child)) { /* already have sub tags */
       if (head->off <= off) { /* not first subtag */
@@ -939,12 +947,12 @@ ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
 }
 
 /* sets the character content for the given tag and returns the tag */
-ezxml_t ezxml_set_txt(ezxml_t xml, const char *txt)
+ezxml_t ezxml_set_txt(ezxml_t xml, char *txt)
 {
     if (! xml) return NULL;
     if (xml->flags & EZXML_TXTM) free(xml->txt); /* existing txt was malloced */
     xml->flags &= ~EZXML_TXTM;
-    xml->txt = (char *)txt;
+    xml->txt = txt;
     return xml;
 }
 
