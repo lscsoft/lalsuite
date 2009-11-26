@@ -1,10 +1,15 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 #
+if LALFRAME
+if LALBURST
 bin_PROGRAMS = lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgm
+endif
+endif
+
 TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c tracksearch.h \
 	tracksearchAverager.h tracksearchToolbox.h
 TRACKSEARCHSRCS = tracksearch.c	tracksearchToolbox.c \
