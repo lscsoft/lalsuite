@@ -1275,8 +1275,9 @@ int ReadData(struct CommandLineArgsTag CLA)
 int HighPass(struct CommandLineArgsTag CLA)
 {
   PassBandParamStruc filterpar;
+  char tmpname[] = "Butterworth High Pass";
 
-  filterpar.name  = "Butterworth High Pass";
+  filterpar.name  = tmpname;
   filterpar.nMax  = 10;
   filterpar.f2    = CLA.HPf;
   filterpar.a2    = 0.5;

@@ -1,5 +1,5 @@
 % This code reads in a list of found injections, a list of missed injections,
-%  and a list of vetoes (if required). Missed / found plots (altogether and 
+%  and a list of vetoes (if required). Missed / found plots (altogether and
 %  individually are made. Also produced is ths efficiency curve for triples.
 % Please note that the  distance range is hard-coded in the efficiency calculation.
 %
@@ -12,7 +12,7 @@
 % >> plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 
-function new_plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
+function plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 % read in the injection lists
 eval(['injH1t=load(''' veto_type '_inj_' inj_type '_H1trip.mat'');'])

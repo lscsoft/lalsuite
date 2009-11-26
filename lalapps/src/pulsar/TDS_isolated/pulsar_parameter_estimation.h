@@ -58,85 +58,6 @@ extern "C" {
 /* logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
 #define LOG_TRAPEZIUM(h1, h2, w) ( -0.693147180559945 + log(w) + PLUS(h1, h2) )
 
-/* Usage format string */
-#define USAGE \
-"Usage: %s [options]\n\n"\
-" --help              display this message\n"\
-" --verbose           display all error messages\n"\
-" --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
-                     (delimited by commas)\n"\
-" --pulsar            name of pulsar e.g. J0534+2200\n"\
-" --par-file          pulsar parameter (.par) file (full path) \n"\
-" --input-dir         directory containing the input data files\n"\
-" --output-dir        directory for output data files\n"\
-" --dob-ul            (REAL8) percentage degree-of-belief for upper limit\n\
-                     - if 0 (default no upper limit is produced)\n"\
-" --output-post       output the full log(posterior)\n"\
-" --chunk-min         (INT4) minimum stationary length of data to be used in\n\
-                     the likelihood e.g. 5 mins\n"\
-" --chunk-max         (INT4) maximum stationary length of data to be used in\n\
-                     the likelihood e.g. 30 mins\n"\
-"\n"\
-" Parameter space grid values:-\n"\
-" --minh0             (REAL8) minimum of the h0 grid\n"\
-" --maxh0             (REAL8) maximum of the h0 grid, if maxh0=0 then\n\
-                     calculate range from the data\n"\
-" --h0steps           (INT4) number of steps in the h0 grid\n"\
-" --minphi0           (REAL8) minimum of the phi0 grid\n"\
-" --maxphi0           (REAL8) maximum of the phi0 grid\n"\
-" --phi0steps         (INT4) number of steps in the phi0 grid\n"\
-" --minpsi            (REAL8) minimum of the psi grid\n"\
-" --maxpsi            (REAL8) maximum of the psi grid\n"\
-" --psisteps          (INT4) number of steps in the psi grid\n"\
-" --minci             (REAL8) minimum of the cos(iota) grid\n"\
-" --maxci             (REAL8) maximum of the cos(iota) grid\n"\
-" --cisteps           (INT4) number of steps in the cos(iota) grid\n"\
-" --psi-bins          (INT4) no. of psi bins in the time-psi lookup table\n"\
-" --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
-"\n"\
-" Prior values:-\n"\
-" --use-priors        set to use priors in the posterior calculation\n"\
-" --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
-" --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
-" --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
-" --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
-" --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
-" --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
-" --psiprior          type of prior on psi - uniform or gaussian\n"\
-" --psimean           (REAL8) mean of a gaussian prior on psi\n"\
-" --psisig            (REAL8) std. dev. of a gaussian prior on psi\n"\
-" --iotaprior         type of prior on iota - uniform or gaussian\n"\
-" --iotamean          (REAL8) mean of a gaussian prior on iota\n"\
-" --iotasig           (REAL8) std. dev. of a gaussian prior on iota\n"\
-"\n"\
-" MCMC parameters:-\n"\
-" --mcmc              set to perform an MCMC\n"\
-" --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
-" --burn-in           (INT4) the number of burn in iterations\n"\
-" --temperature       (REAL8) the temperatue to start of the simulated\n\
-                     annealing in the burn in stage\n"\
-" --h0-width          (REAL8) width of the h0 proposal distribution (if set\n\
-                     to 0 this will be worked out in the code)\n"\
-" --h0-scale          (REAL8) scale factor for h0 proposal width\n"\
-" --psi-width         (REAL8) width of the psi proposal distribution\n"\
-" --phi0-width        (REAL8) width of the phi proposal distribution\n"\
-" --ci-width          (REAL8) width of the cos(iota) proposal distribution\n"\
-" --output-rate       (INT4) rate at which to output chain e.g. 10 means\n\
-                     output every tenth sample\n"\
-" --nglitch           (INT4) number of glitches\n"\
-" --glitch-times      (CHAR) a string of pulsar glitch times given in MJD\n\
-                     e.g. 45623.872,52839.243,53992.091 - at each\n\
-                     glitch an additional MCMC phase parameter will be used\n"\
-" --glitch-cut        (REAL8) the number of seconds of data to ignore\n\
-                     before and after a glitch\n"\
-" --earth-ephem       Earth ephemeris file\n"\
-" --sun-ephem         Sun ephemeris file\n"\
-" --covariance        pulsar parameter covariance matrix file (.mat)\n"\
-" --only-joint        set this to only produce the joint MCMC when given \n\
-                     muliple detectors (MCMC only)\n"\
-" --output-burn-in    set this to also output the burn in stage to the chain\n"\
-"\n"
-
 #define MAXLENGTH 1000000
 #define MAXPARAMS 35
 
@@ -301,7 +222,7 @@ typedef struct tagResults{
 }Results;
 
 typedef struct tagParamData{
-  CHAR *name;  /* parameter name as given by the conventions in the .mat file
+  const CHAR *name;  /* parameter name as given by the conventions in the .mat file
 (see param variable in TEMPOs mxprt.f file */
   REAL8 val;   /* parameter value */
   REAL8 sigma; /* standard deviation on the parameter as read from the .par
@@ -371,7 +292,7 @@ REAL8Vector *get_phi(DataStructure data, BinaryPulsarParams params,
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);
 
-REAL8Array *cholesky_decomp( REAL8Array *M, CHAR* uOrl );
+REAL8Array *cholesky_decomp( REAL8Array *M, const CHAR* uOrl );
 
 REAL8Array *read_correlation_matrix( CHAR *matrixFile, 
   BinaryPulsarParams params, ParamData *data );
