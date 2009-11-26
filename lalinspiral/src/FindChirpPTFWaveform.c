@@ -737,9 +737,9 @@ Distance is given in Mpc.*/
 
 /* Read values from ppnParams */
 
-  REAL4 Theta  = ppnParams->inc;
+  REAL4 Theta  = LAL_PI - ppnParams->inc;
   REAL4 varphi = ppnParams->phi;
-  REAL4 Distance= ppnParams->d/LAL_PC_SI;
+  REAL4 Distance= ppnParams->d;
 
 /* Read and set values from PTFtemplate */
 
@@ -747,12 +747,14 @@ Distance is given in Mpc.*/
   REAL8 m2 = PTFtemplate->mass2;
   REAL8 mu = (m1*m2)/(m1+m2);
   PTFtemplate->chi = pow(pow(PTFtemplate->spin1[0],2) + pow(PTFtemplate->spin1[1],2) + pow(PTFtemplate->spin1[2],2),0.5);
-  PTFtemplate->kappa = PTFtemplate->spin1[2]/PTFtemplate->chi;
+  if (PTFtemplate->chi != 0)
+    PTFtemplate->kappa = PTFtemplate->spin1[2]/PTFtemplate->chi;
+  else
+    PTFtemplate->kappa = 0;
   PTFtemplate->orbitPhi0 = atan2(PTFtemplate->spin1[1],PTFtemplate->spin1[0]);
   
   /* Need to convert diastance into an amplitude for the Ps*/
-  Amp = mu/Distance * 4.7854158491342463e-20;
-  Amp = 1;
+  Amp = 2*mu/Distance * 1476.6250399999999;
 
   /* Here we define the P responses following Diego's thesis p50 */
   Pplus[0] = -sqrtoftwo/4. * cos(2*varphi)*(3 + cos(2*Theta));
@@ -772,7 +774,7 @@ Distance is given in Mpc.*/
   PTFe2 = XLALCreateVectorSequence( 3, N );
   strain=(REAL4TimeVectorSeries *)LALMalloc(sizeof(REAL4TimeVectorSeries));
   memset( strain, 0, sizeof(REAL4TimeVectorSeries) );
-  strain->data = XLALCreateVectorSequence(2,N);
+  strain->data = XLALCreateVectorSequence(N,2);
   strain->deltaT = deltaT;
   strain->sampleUnits = lalStrainUnit;
   snprintf( strain->name,LALNameLength, "PTF strains" );
@@ -806,8 +808,8 @@ Distance is given in Mpc.*/
             e1y * e2y - 2 * e1z * e2z ));
     for ( j=0; j<5; j++ )
     {
-      strain->data->data[i] += strains[j]*Pplus[j];
-      strain->data->data[i+N] += strains[j]*Pcross[j];
+      strain->data->data[2*i] += strains[j]*Pplus[j];
+      strain->data->data[2*i+1] += strains[j]*Pcross[j];
     }
   }
   waveform->position = ppnParams->position;
@@ -817,4 +819,20 @@ Distance is given in Mpc.*/
   waveform->f = NULL;
   waveform->phi = NULL;
   waveform->shift = NULL;
+  waveform->h->epoch = ppnParams->epoch;
+  ppnParams->tc = 0.;
+  ppnParams->length = 256.;
+  ppnParams->dfdt = deltaT/256.;
+  ppnParams->fStart = 30.;
+  ppnParams->fStop = PTFtemplate->fFinal;
+  
+  for ( i=0; i<N; i++)
+  {
+    e1x = PTFe1->data[i];
+    e2x = PTFe2->data[i];
+    e1y = PTFe1->data[i + N];
+    e2y = PTFe2->data[i + N];
+    e1z = PTFe1->data[i + 2*N];
+    e2z = PTFe2->data[i + 2*N];
+  }
 }
