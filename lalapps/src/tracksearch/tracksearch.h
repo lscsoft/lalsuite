@@ -38,8 +38,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
