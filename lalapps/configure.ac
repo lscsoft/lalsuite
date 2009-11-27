@@ -266,7 +266,7 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 AC_CHECK_FUNCS([setenv])
 
 AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
-AM_CONDITIONAL([DATAFLOW],[test x$metaio = xtrue])
+AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
 AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
