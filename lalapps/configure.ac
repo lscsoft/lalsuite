@@ -228,6 +228,7 @@ if test "${frame}" = "true"; then
                    [frame="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
+LALSUITE_ENABLE_MODULE([FRAME],[frame])
 
 # check for libmetaio headers
 if test "${metaio}" = "true"; then
@@ -238,6 +239,7 @@ if test "${metaio}" = "true"; then
                    [metaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
+LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
@@ -247,6 +249,7 @@ if test "${cfitsio}" = "true"; then
                   [cfitsio="false"]
                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
+LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
@@ -260,10 +263,7 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 
 AC_CHECK_FUNCS([setenv])
 
-# set conditionals
-AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
-AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
-AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
+# set prefix
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
 # add gcc specific flags
@@ -283,18 +283,19 @@ fi
 
 AC_OUTPUT
 
-cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LALApps has now been successfully configured:
 
+                Frame library support is $FRAME_ENABLE_VAL
+                MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
                 LAL MetaIo library support is $LALMETAIO_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
-                FITS library support is $cfitsioenabled
+                FITS library support is $CFITSIO_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
