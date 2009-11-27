@@ -2,12 +2,14 @@
 # $Id$
 #
 if LALFRAME
-if LALMETAIO
 if LALBURST
 bin_PROGRAMS = lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgm
+endif
+endif
+
 TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c tracksearch.h \
 	tracksearchAverager.h tracksearchToolbox.h
 TRACKSEARCHSRCS = tracksearch.c	tracksearchToolbox.c \
@@ -20,9 +22,6 @@ lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
 lalapps_tracksearch_datagen_SOURCES = $(TSDATAGENSRCS)
 lalapps_tracksearch_averager_SOURCES = $(TRACKSEARCHAVGSRC)
 lalapps_tracksearch_dat2pgm_SOURCES = $(TSUTILSRCS)
-endif
-endif
-endif
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_tracksearch_handler \
@@ -72,9 +71,16 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = lalapps_tracksearch_handler \
-	lalapps_tracksearch_pipe lalapps_tracksearch_housekeeper \
-	lalapps_tracksearch_tune_pipe lalapps_tracksearch_cutpipe \
-	lalapps_tracksearch_mapcachebuilder python_config.sed
+	lalapps_tracksearch_pipe \
+	lalapps_tracksearch_housekeeper \
+	lalapps_tracksearch_tune_pipe \
+	lalapps_tracksearch_cutpipe \
+	lalapps_tracksearch_mapcachebuilder \
+	python_config.sed \
+	lalapps_tracksearch \
+	lalapps_tracksearch_datagen \
+	lalapps_tracksearch_averager \
+	lalapps_tracksearch_dat2pgmy
 
 MOSTLYCLEANFILES = *.candidates *.dat *.pgm *.aux *.raw *.diag \
 	*.pyc tsaMap* Candidate* Pre-*

@@ -969,7 +969,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
   }
   
   /* else if we are doing a mimatched template */
@@ -998,7 +998,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : a randomly mismatched signal has been put in the original parameter space.\n");
   
@@ -1020,7 +1020,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : none of the points lie in the original parameter space.\n");
     fprintf(stderr,"          This could be a single filter target but futher investigation\n");
