@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[6.3.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -72,11 +72,6 @@ AC_CONFIG_FILES([ \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
-  packages/clremoval/Makefile \
-  packages/clremoval/doc/Makefile \
-  packages/clremoval/include/Makefile \
-  packages/clremoval/src/Makefile \
-  packages/clremoval/test/Makefile \
   packages/inspiral/Makefile \
   packages/inspiral/doc/Makefile \
   packages/inspiral/include/Makefile \
@@ -112,21 +107,6 @@ AC_CONFIG_FILES([ \
   packages/houghpulsar/include/Makefile \
   packages/houghpulsar/src/Makefile \
   packages/houghpulsar/test/Makefile \
-  packages/burstsearch/Makefile \
-  packages/burstsearch/doc/Makefile \
-  packages/burstsearch/include/Makefile \
-  packages/burstsearch/src/Makefile \
-  packages/burstsearch/test/Makefile \
-  packages/tracksearch/Makefile \
-  packages/tracksearch/doc/Makefile \
-  packages/tracksearch/include/Makefile \
-  packages/tracksearch/src/Makefile \
-  packages/tracksearch/test/Makefile \
-  packages/timefreq/Makefile \
-  packages/timefreq/doc/Makefile \
-  packages/timefreq/include/Makefile \
-  packages/timefreq/src/Makefile \
-  packages/timefreq/test/Makefile \
   packages/support/Makefile \
   packages/support/doc/Makefile \
   packages/support/include/Makefile \

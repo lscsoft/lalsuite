@@ -105,9 +105,8 @@ int main(int argc, char *argv[]){
 
   static LALStatus       status;  /* LALStatus pointer */ 
   
-  INT4 j, k, nBins, iIFO, iSFT, numsft; 
+  INT4 k, nBins, iIFO, iSFT, numsft; 
   INT4 numifo;
-  REAL8 deltaF;
   FILE *fpOut=NULL;
 
   REAL8 ShAvg;

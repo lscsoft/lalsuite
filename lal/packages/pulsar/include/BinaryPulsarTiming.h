@@ -287,7 +287,7 @@ tagBinaryPulsarParams
 
   REAL8 DMErr;
   REAL8 DM1Err;
-  
+
   /* gravitational wave parameters */
   REAL8 h0Err;
   REAL8 cosiotaErr;

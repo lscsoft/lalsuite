@@ -49,8 +49,8 @@ int nseg[N],tseg[N],tbase[N];
 int main(int argc, char* argv[]) {
   FILE *fp=NULL,*fp1=NULL,*fp2=NULL;
   int *nstart,*tstart,*bstart,code,totalsegs=0,framesec=-1;
-  int locksegs=0,i,j=0,k,firstframe,lastframe,nframes;
-  int jobno=0,segno=0,filepointer1=0,filepointer2=0,fileno=0,thistime;
+  int locksegs=0,j=0,k,firstframe,lastframe,nframes;
+  int jobno=0,segno=0,filepointer1=0,filepointer2=0,filenum=0,thistime;
   char bigbuff[1024];
 
   if (argc!=4) {
@@ -106,29 +106,29 @@ int main(int argc, char* argv[]) {
     }
     
     /* check that there is still space left */
-    if (fileno>=FN){
-      fprintf(stderr, "Too many files: %d.  Please recompile with bigger FN=%d\n", fileno, FN);
+    if (filenum>=FN){
+      fprintf(stderr, "Too many files: %d.  Please recompile with bigger FN=%d\n", filenum, FN);
       exit(1);
     }
 
     /* save file name in array */
-    strcpy(filenames[fileno], bigbuff);
+    strcpy(filenames[filenum], bigbuff);
 
     /* locate the start time and length of the data */
-    for (i=strlen(filenames[fileno])-1; i>=0; i--)
-      if (filenames[fileno][i]=='-')
+    for (i=strlen(filenames[filenum])-1; i>=0; i--)
+      if (filenames[filenum][i]=='-')
 	break;
 
     /* does dash appear as separator in the right place */
     if (i<9){
       fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\ndoesn't have '-' separator in right place\n", 
-	      filenames[fileno], fileno+1, argv[2]);
+	      filenames[filenum], filenum+1, argv[2]);
       exit(1); 
     }
 
     /* get start time and duration of file from name */
-    starttimes[fileno]=atoi(filenames[fileno]+i-9);
-    deltat=atoi(filenames[fileno]+i+1);
+    starttimes[filenum]=atoi(filenames[filenum]+i-9);
+    deltat=atoi(filenames[filenum]+i+1);
     if (deltat<0)
       deltat=0;
 
@@ -139,41 +139,42 @@ int main(int argc, char* argv[]) {
     /* check that duration is what's expected */
     if (deltat!=framesec){
             fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (framesec=%d)\n", 
-	      filenames[fileno], fileno+1, argv[2], deltat, framesec);
+	      filenames[filenum], filenum+1, argv[2], deltat, framesec);
       exit(1); 
     }
 
     /* see if start time same as the previous file (NDAS data can do this!) */
-    if (fileno==0 || starttimes[fileno]>starttimes[fileno-1])
-      fileno++;
-    else if (starttimes[fileno]==starttimes[fileno-1]){
+    if (filenum==0 || starttimes[filenum]>starttimes[filenum-1])
+      filenum++;
+    else if (starttimes[filenum]==starttimes[filenum-1]){
       /* NOTE THAT WE DON'T EXIT -- THIS IS A WARNING ONLY */
 #if (0)      
       fprintf(stderr,"Identical timestamps:\n%d: %s\n%d: %s\n",
-	      starttimes[fileno], filenames[fileno], starttimes[fileno-1], filenames[fileno-1]);
+	      starttimes[filenum], filenames[filenum], starttimes[filenum-1], filenames[filenum-1]);
 #endif
     }
     else {
       fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%d: %s\n%d: %s\n",
-	      fileno+1, argv[2], starttimes[fileno], filenames[fileno], 
-	      starttimes[fileno-1], filenames[fileno-1]);
+	      filenum+1, argv[2], starttimes[filenum], filenames[filenum], 
+	      starttimes[filenum-1], filenames[filenum-1]);
       exit(1);
     }
   };
 
   /* Check that file of frame file names was in expected format */
   if (code!=EOF){
-    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[2], fileno);
+    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[2], filenum);
     exit(1); 
   }
   fclose(fp);
   
   /* clear array to keep track of what is printed */
-  for (i=0;i<fileno;i++)
+  int i;
+  for (i=0;i<filenum;i++)
     printed[i]=0;
   
   /* check that files names/times are properly ordered */
-  for (i=0;i<fileno-1;i++){
+  for (i=0;i<filenum-1;i++){
     if (starttimes[i]>=starttimes[i+1]){
       fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%d: %s\n%d: %s\n",
 	      i+1, argv[2], starttimes[i], filenames[i], starttimes[i+1], filenames[i+1]);
@@ -207,7 +208,7 @@ int main(int argc, char* argv[]) {
 	j0=j-2;
 	if (j0<0) j0=0;
 	j1=j+2;
-	if (j1>fileno) j1=fileno;
+	if (j1>filenum) j1=filenum;
 	for (j=j0;j<j1;j++)
 	  printed[j]=0;
 	
@@ -243,9 +244,9 @@ int main(int argc, char* argv[]) {
       nframes=1+(lastframe-firstframe)/framesec;
       
       /* find correct data files */
-      while (filepointer1<fileno && starttimes[filepointer1]<firstframe)
+      while (filepointer1<filenum && starttimes[filepointer1]<firstframe)
 	filepointer1++;
-      while (filepointer2<fileno && starttimes[filepointer2]<lastframe)
+      while (filepointer2<filenum && starttimes[filepointer2]<lastframe)
 	filepointer2++;
       
       /* see if data files are there */
