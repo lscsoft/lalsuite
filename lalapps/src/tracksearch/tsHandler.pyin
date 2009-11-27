@@ -392,6 +392,9 @@ elif (glob and (canList.__len__() >= 1)):
         #Just join the files
         nullLibrary=candidateList()
         for libraryEntry in canList:
+            if verboseSwitch:
+                sys.stdout.write("Processing file : %s"%libraryEntry.filename[0])
+                sys.stdout.flush()
             nullLibrary.globListFile(outName,libraryEntry)
     else:
         #Glob them through RAM allowing the proper adjustments to be made
