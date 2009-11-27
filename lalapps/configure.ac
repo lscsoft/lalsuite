@@ -238,15 +238,6 @@ if test "${metaio}" = "true"; then
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
 
-if test "${xml}" = "true"; then
-  lal_pre_xml2_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  AC_CHECK_HEADERS([libxml/xmlversion.h],,
-                   [AC_MSG_WARN([disabling xml support])]
-                   [xml="false"]
-                   [CPPFLAGS="$lal_pre_xml2_CPPFLAGS"])
-fi
-
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
