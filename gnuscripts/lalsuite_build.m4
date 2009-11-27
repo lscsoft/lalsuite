@@ -1,3 +1,8 @@
+AC_DEFUN([LALSUITE_ENABLE_MODULE],[
+AM_CONDITIONAL([$1],[test x$$2 = xtrue])
+eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLED"`"
+])
+
 AC_DEFUN([LALSUITE_CHECK_LIB],[
 PKG_CHECK_MODULES([$1],[$2 >= $3],[eval $2="true"],[eval $2="false"])
 if test "$$2" = "true"; then
