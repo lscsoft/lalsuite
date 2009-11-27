@@ -476,7 +476,7 @@ heterodyne.\n");  }
     }
 
     XLALGPSSetREAL8(&data->epoch, hetParams.timestamp);
-    
+
     /* heterodyne data */
     heterodyne_data(data, times, hetParams, inputParams.freqfactor, filtresp);
     if( verbose ){ fprintf(stderr, "I've heterodyned the data.\n"); }
@@ -1539,7 +1539,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
 
       prevdur = j;
 
-      for( j=prevdur+frombeg;j<prevdur + (INT4)(duration*sampleRate)
+      for( j=prevdur+frombeg;j<prevdur + (INT4)ROUND(duration*sampleRate)
           -fromend-1 ; j+=size ){
         tempData.re = 0.;
         tempData.im = 0.;
@@ -1561,7 +1561,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       }
     }
   }
-
+  
   if( (INT4)times->length > count )
     if( (times = XLALResizeREAL8Vector( times, count )) == NULL )
       { XLALPrintError("Error resizing resampled times.\n");  }
@@ -1573,7 +1573,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
   /* create time stamps */
   series->deltaT = 1./resampleRate;
   series->epoch = data->epoch;
-
+  
   return series;
 }
 
