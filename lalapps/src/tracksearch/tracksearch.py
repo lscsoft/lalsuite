@@ -941,10 +941,13 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
         self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('transfer_input_files',self.candUtil)
-        self.add_condor_cmd('initialdir',self.initialDir)
+        if ((self.__universe == 'scheduler') or (self.__universe == 'local')):
+            self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
+        else:
+            self.add_condor_cmd('should_transfer_files','yes')
+            self.add_condor_cmd('when_to_transfer_output','on_exit')
+            self.add_condor_cmd('transfer_input_files',self.candUtil)
+            self.add_condor_cmd('initialdir',self.initialDir)
         #Setp escaping possible quotes in threshold string!
         optionText=str('expression-threshold')
         oldVal=None
@@ -1643,6 +1646,10 @@ class tracksearch:
             self.dag.set_dag_file(self.dagFilename)
         self.dag.write_sub_files()
         self.dag.write_dag()
+        try:
+            self.dag.write_script()
+        except:
+            sys.stderr.write("Had trouble writing shell script equivalent of DAG skipping...\n")
         #Read in the resulting text file and prepend the DOT
         #information writing the DAG back to disk.
         input_fp=open(self.dag.get_dag_file(),'r')
