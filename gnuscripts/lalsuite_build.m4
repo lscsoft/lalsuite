@@ -18,8 +18,7 @@ if test "$$2" = "true"; then
 else
   AC_MSG_ERROR([could not find the $1 library])
 fi
-AM_CONDITIONAL([$1],[test x$$2 = xtrue])
-eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLED"`"
+LALSUITE_ENABLE_MODULE([$1],[$2])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
@@ -40,6 +39,5 @@ if test "$$2" = "true"; then
     fi
   fi
 fi
-AM_CONDITIONAL([$1],[test x$$2 = xtrue])
-eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLED"`"
+LALSUITE_ENABLE_MODULE([$1],[$2])
 ])
