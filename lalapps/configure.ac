@@ -161,11 +161,6 @@ fi
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-# check for libcfitsio
-PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
-CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
-LIBS="$CFITSIO_LIBS $LIBS"
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
@@ -199,7 +194,12 @@ fi
 
 # check for libcfitsio
 if test "${cfitsio}" = "true"; then
-  AC_CHECK_LIB([cfitsio],[ffopen],,[cfitsio="false"])
+  PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
+  lal_pre_cfitsio_libs="$LIBS"
+  LIBS="$CFITSIO_LIBS $LIBS"
+  AC_SEARCH_LIBS([ffopen],[cfitsio],,
+                 [cfitsio="false"]
+                 [LIBS="$lal_pre_cfitsio_LIBS"])
 fi
 
 # check for lal libararies
