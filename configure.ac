@@ -6,8 +6,6 @@ AC_CONFIG_FILES([Makefile])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
-AC_PROG_LIBTOOL
-
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 LALSUITE_BUILD="true"
