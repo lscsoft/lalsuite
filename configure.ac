@@ -1,8 +1,11 @@
 AC_INIT([lalsuite],[6.4],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
-AC_CONFIG_AUX_DIR([lal/misc])
-AC_CONFIG_MACRO_DIR([lal/misc])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_AUX_DIR([gnuscripts])
+AC_CONFIG_MACRO_DIR([gnuscripts])
+AC_CONFIG_FILES([
+  Makefile \
+  gnuscripts/Makefile
+])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
