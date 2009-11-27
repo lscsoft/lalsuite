@@ -6,6 +6,7 @@ EXTRA_DIST = \
 	lalapps.m4 \
 	lalapps_c99.m4 \
 	lalappslibtool.m4 \
+	lalsuite_build.m4 \
 	ltmain.sh \
 	missing \
 	mkinstalldirs \

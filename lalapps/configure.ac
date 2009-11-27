@@ -160,31 +160,6 @@ dnl Checks for libraries.
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-PKG_CHECK_MODULES([LAL],[lal >= 6.3.2.1],[true],[false])
-PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-if test "$LALSUITE_BUILD" != "true" ; then
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-  LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  AC_CHECK_LIB([lal],[LALVersion],,[AC_MSG_ERROR([could not find the LAL library])])
-  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],,[AC_MSG_ERROR([could not find the LAL support library])])
-fi
-
-dnl LALFrame, LALMetaIo, LALStochastic and LALXML (optional).
-lalframe="true"
-lalmetaio="true"
-lalxml="true"
-lalburst="true"
-lalstochastic="true"
-PKG_CHECK_MODULES([LALFRAME],[lalframe >= 1.0],[true],[false])
-PKG_CHECK_MODULES([LALMETAIO],[lalmetaio >= 1.0],[true],[false])
-PKG_CHECK_MODULES([LALXML],[lalxml >= 1.0],[true],[false])
-PKG_CHECK_MODULES([LALBURST],[lalburst >= 1.0],[true],[false])
-PKG_CHECK_MODULES([LALSTOCHASTIC],[lalstochastic >= 1.0],[true],[false])
-if test "$LALSUITE_BUILD" != "true" ; then
-  CPPFLAGS="$LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $LALBURST_CFLAGS $LALSTOCHASTIC_CFLAGS $CPPFLAGS"
-  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LALBURST_LIBS $LALSTOCHASTIC_LIBS $LIBS"
-fi
-
 dnl cfitsio
 PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
 CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
@@ -226,14 +201,14 @@ if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB([cfitsio],[ffopen],,[cfitsio="false"])
 fi
 
-dnl Now check for LALFrame, LALMetaIo, LALXMl, and LALStohastic
-if test "$LALSUITE_BUILD" != "true" ; then
-  AC_CHECK_LIB([lalframe],[LALFrOpen],,[lalframe="false"])
-  AC_CHECK_LIB([lalmetaio],[LALSnglInspiralTableFromLIGOLw],,[lalmetaio="false"])
-  AC_CHECK_LIB([lalxml],[XLALXMLFilePrintElements],,[lalxml="false"])
-  AC_CHECK_LIB([lalburst],[XLALEPSearch],,[lalburst="false"])
-  AC_CHECK_LIB([lalstochastic],[LALStochasticOptimalFilter],,[lalstochastic="false"])
-fi
+# check for lal libararies
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw])
+LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements])
+LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter])
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -290,30 +265,7 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 
 AC_CHECK_FUNCS([setenv])
 
-if test "$LALSUITE_BUILD" = "true"; then
-  LIBS="$LAL_LIBS $LALSUPPORT_LIBS $LALSTOCHASTIC_LIBS $LALBURST_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
-  CPPFLAGS="$LAL_CFLAGS $LALSUPPORT_CFLAGS $LALSTOCHASTIC_CFLAGS $LALBURST_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS $CPPFLAGS"
-  echo "LAL_TOP_SRCDIR=$LAL_LIBS"
-  echo "LAL_TOP_SRCDIR=$LAL_TOP_SRCDIR"
-  AC_SUBST([LAL_TOP_SRCDIR])
-  lalframe="false"
-  lalmetaio="false"
-  lalxml="false"
-  lalburst="false"
-  lalstochastic="false"
-  test -n "$LALFRAME_LIBS" && lalframe="true"
-  test -n "$LALMETAIO_LIBS" && lalmetaio="true"
-  test -n "$LALXML_LIBS" && lalxml="true"
-  test -n "$LALBURST_LIBS" && lalburst="true"
-  test -n "$LALSTOCHASTIC_LIBS" && lalstochastic="true"
-fi
-
 AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
-AM_CONDITIONAL([LALFRAME],[test x$lalframe = xtrue])
-AM_CONDITIONAL([LALMETAIO],[test x$lalmetaio = xtrue])
-AM_CONDITIONAL([LALXML],[test x$lalxml = xtrue])
-AM_CONDITIONAL([LALBURST],[test x$lalburst = xtrue])
-AM_CONDITIONAL([LALSTOCHASTIC],[test x$lalstochastic = xtrue])
 AM_CONDITIONAL([DATAFLOW],[test x$metaio = xtrue])
 AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
@@ -335,22 +287,17 @@ fi
 
 AC_OUTPUT
 
-lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-lalxmlenabled="`test x${lalxml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-lalburstenabled="`test x${lalburst} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-lalstochasticenabled="`test x${lalstochastic} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LALApps has now been successfully configured:
 
-                LAL Frame library support is $lalframeenabled
-                LAL MetaIo library support is $lalmetaioenabled
-                LAL XML library support is $lalxmlenabled
-                LAL Burst library support is $lalburstenabled
-                LAL Stochastic library support is $lalstochasticenabled
+                LAL Frame library support is $LALFRAME_ENABLE_VAL
+                LAL MetaIo library support is $LALMETAIO_ENABLE_VAL
+                LAL XML library support is $LALXML_ENABLE_VAL
+                LAL Burst library support is $LALBURST_ENABLE_VAL
+                LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 FITS library support is $cfitsioenabled
 
         Now run 'make' to build LALApps
