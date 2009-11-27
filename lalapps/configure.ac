@@ -165,8 +165,6 @@ AC_CHECK_LIB([z],[compress])
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
-extra_CPPFLAGS="$extra_CPPFLAGS $GSL_CFLAGS"
-extra_LIBS="$GSL_LIBS $extra_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_version])
 
