@@ -1,4 +1,3 @@
-dnl Process this file with autoconf to produce a configure script.
 AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
@@ -74,7 +73,7 @@ LALAPPS_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
-dnl Put version/configure info in config.h header
+# put version/configure info in config.h header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
@@ -95,7 +94,7 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
 
-dnl Remove -all-static from ldflags
+# remove -all-static from ldflags, breaks test
 allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
 if test "x$allstatic" = "x" ; then
   allstatic="false"
@@ -111,10 +110,11 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-dnl Checks for programs.
+# checks for programs
 AC_PROG_AWK
 AC_PROG_CPP
 
+# check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile])
@@ -125,6 +125,7 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
+# further program checks
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_LIBTOOL
@@ -156,16 +157,16 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
-dnl Checks for libraries.
+# check for system libraries
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-dnl cfitsio
+# check for libcfitsio
 PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
 CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
 LIBS="$CFITSIO_LIBS $LIBS"
 
-dnl GSL
+# check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
@@ -174,7 +175,7 @@ extra_LIBS="$GSL_LIBS $extra_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_version])
 
-dnl FrameL (libframe)
+# check for libFrame
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
   lal_pre_frame_LIBS="$LIBS"
@@ -185,7 +186,7 @@ if test "${frame}" = "true"; then
                  [LIBS="$lal_pre_frame_LIBS"])
 fi
 
-dnl MetaIo (libmetaio)
+# check for libmetaio
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
   lal_pre_metaio_LIBS="$LIBS"
@@ -196,7 +197,7 @@ if test "${metaio}" = "true"; then
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
 
-dnl Check for libcfitsio
+# check for libcfitsio
 if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB([cfitsio],[ffopen],,[cfitsio="false"])
 fi
@@ -210,7 +211,7 @@ LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements])
 LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch])
 LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter])
 
-dnl Checks for header files.
+# check for header files
 AC_HEADER_STDC
 AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
@@ -220,6 +221,7 @@ fi
 AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 
+# check for libFrame headers
 if test "${frame}" = "true"; then
   lal_pre_frame_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
@@ -229,6 +231,7 @@ if test "${frame}" = "true"; then
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
 
+# check for libmetaio headers
 if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
@@ -238,6 +241,7 @@ if test "${metaio}" = "true"; then
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
 
+# check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
@@ -246,8 +250,10 @@ if test "${cfitsio}" = "true"; then
                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
 
+# check for qthread
 LALAPPS_CHECK_QTHREAD
 
+# check for gethostname prototype
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
   [AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
@@ -256,6 +262,7 @@ AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
 
 AC_CHECK_FUNCS([setenv])
 
+# set conditionals
 AM_CONDITIONAL([FRAME],[test x$frame = xtrue])
 AM_CONDITIONAL([METAIO],[test x$metaio = xtrue])
 AM_CONDITIONAL([CFITSIO],[test x$cfitsio = xtrue])
