@@ -6,8 +6,7 @@ SUBDIRS = \
 
 distcleancheck_listfiles = find . -type f \! -name "LAL*VCSInfo.h" -print
 
-vcs-clean: cvs-clean
-cvs-clean: maintainer-clean
+vcs-clean: maintainer-clean
 	rm -f Makefile.in
 	rm -f configure
 	rm -f aclocal.m4
@@ -15,3 +14,5 @@ cvs-clean: maintainer-clean
 	rm -f config.status
 	rm -f config.log
 	rm -f gnuscripts/Makefile.in
+
+cvs-clean: vcs-clean
