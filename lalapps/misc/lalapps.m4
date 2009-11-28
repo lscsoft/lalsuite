@@ -68,7 +68,7 @@ AC_DEFUN([LALAPPS_ENABLE_GCC_FLAGS],
 
 AC_DEFUN([DO_ENABLE_LALAPPS_GCC_FLAGS],
 [
-  lalapps_gcc_flags="-g3 -O4 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -Wno-format-zero-length"
+  lalapps_gcc_flags="-g3 -O4 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length"
 ])
 
 AC_DEFUN([LALAPPS_WITH_CC],

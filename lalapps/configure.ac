@@ -160,7 +160,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
-PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.2.1],[true],[false])
 PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
 if test "$LALSUITE_BUILD" != "true" ; then
   CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"

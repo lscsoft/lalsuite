@@ -247,7 +247,10 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
                 job.add_sub_job('plot_template_counts',     config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_glitchgram',          config, ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_rate_vs_time_all',    config, ifo, job.level, cluster, start_time, end_time)
+                
+                # Ugh.  This one is actually a child of all the csv jobs, needs some tweaking...
+                # job.add_sub_job('plot_rate_vs_time_all',    config, ifo, job.level, cluster, start_time, end_time)
+
                 job.add_sub_job('plot_hexmass',             config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_bank_veto',           config, ifo, job.level, cluster, start_time, end_time)
 
@@ -429,7 +432,6 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
     names to segmentlists containing their active times.
     """
    
-    print (engine, config, ifo, category, cluster, start_time, end_time)
     def make_segdef(row, overall_interval):
         veto_interval = overall_interval & segmentlist([segment(row.start_time, row.end_time or end_time)])
 
@@ -492,37 +494,60 @@ def make_csv(config, ifo, category, cluster, start, end):
     VETOCATS_(ifo)_(category).p and produces (ifo)-(cat)-INSPIRAL.csv and (ifo)-(cat)-SUMMARY.csv
     """
     if category == 0:
-        # Create unfiltered 
-        os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
+        # ligolw_print doesn't like empty cache files
+        cache_size = os.path.getsize('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster))
 
-        # Remove time outside the given range
-        in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
-        out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+        if cache_size < 10:
+            out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+            out_f.close()
+            out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster), 'w')
+            out_f.close()
+            out_f = open('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster), 'w')
+            out_f.close()
+        else:
+            # Create unfiltered 
+            os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
 
-        for l in in_f:
-            end_time = int(l.split(',')[0])
-            if end_time >= start and end_time < end:
-                print >>out_f, l,
-        in_f.close()
-        out_f.close()
-        os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            # Remove time outside the given range
+            in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
 
-        # and the templates
-        os.system('ligolw_print -i %s/%s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+            for l in in_f:
+                end_time = int(l.split(',')[0])
+                if end_time >= start and end_time < end:
+                    print >>out_f, l,
+                    print l,
+            in_f.close()
+            out_f.close()
+            os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
 
-	    # and the search_summary
-    	os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t search_summary -c out_start_time -c out_end_time > %s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+            # and the search_summary
+            search_seg = segment(start, end)
 
-        in_f  = open('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
-        out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+            in_f  = open('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster))
+            out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
 
-        for l in in_f:
-            end_time = int(l.split(',')[0])
-            if end_time >= start and end_time < end:
-                print >>out_f, l,
-        in_f.close()
-        out_f.close()
-        os.remove('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            for l in in_f:
+                start_time, duration = l.split(' ')[2:4]
+                start_time = int(start_time)
+                end_time   = start_time + int(duration)
+                seg        = segment(start_time, end_time)
+
+                # if they don't overlap this will fail
+                try:
+                    overlap = search_seg & seg
+                    print >>out_f, '%d,%d' % (overlap[0], overlap[1])
+                except:
+                    pass
+
+            in_f.close()
+            out_f.close()
+
+            os.system('ligolw_print -i %s/%s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+
+
+        # Give files time to propogate over nfs
+        time.sleep(120)
 
         return
 
@@ -564,6 +589,8 @@ def make_csv(config, ifo, category, cluster, start, end):
     infile.close()
     outfile.close()
 
+    # Give files time to propogate over nfs
+    time.sleep(120)
 
 
 def make_database(config, ifo, level, cluster, start, end):
@@ -1456,13 +1483,25 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
 
 
 def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
-    f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+    f      = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     data   = [l.split(',') for l in f]
     data   = [ (float(d[0]), float(d[3]), chirplen(40.0,float(d[6]), float(d[7]))) for d in data ]
     data   = sorted(data, cmp = lambda x,y: cmp(y[1],x[1]))
 
     min_in_day = 60.0 * 60.0
     data       = [ ((d[0] - start_time) / min_in_day, d[1], d[2]) for d in data]
+
+    if len(data) == 0:
+        # If there's no data generate an empty plot
+        fig  = pylab.figure(1, figsize=(8.1,4.0))
+        axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+        fig.add_axes(axes)
+        pylab.xlim(0, 24)
+        pylab.xticks(range(0,26,2))
+        pylab.ylabel('Template length (sec)')
+        pylab.title('No triggers')
+        pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+        return
 
     loudest = data[0]
     data    = data[1:]
@@ -1492,7 +1531,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.xticks(range(0,26,2))
     pylab.ylabel('Template length (sec)')
     pylab.title('Loudest: GPS=%d  SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[1]))
-    pylab.savefig('%s_%d_%s_glitchgram.png' % (ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 

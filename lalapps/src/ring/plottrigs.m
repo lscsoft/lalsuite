@@ -1,5 +1,5 @@
 % This code reads in a list of found injections, a list of missed injections,
-%  and a list of vetoes (if required). Missed / found plots (altogether and 
+%  and a list of vetoes (if required). Missed / found plots (altogether and
 %  individually are made. Also produced is ths efficiency curve for triples.
 % Please note that the  distance range is hard-coded in the efficiency calculation.
 %
@@ -12,7 +12,7 @@
 % >> plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 
-function new_plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
+function plottrigs( inj_type, veto_type, found_list,missed_list,veto_list )
 
 % read in the injection lists
 eval(['injH1t=load(''' veto_type '_inj_' inj_type '_H1trip.mat'');'])
@@ -36,10 +36,8 @@ injH2inL1daftercut.ind = injH2inL1d.ind;
 % make veto files into .mat files
 if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   fprintf('generating veto lists\n   This might take a while.....\n');
-  H1veto=load(veto_list(1,:));
+  [num,H1vetostart,H1vetoend,duration]=textread(veto_list(1,:),'%d %d %d %d','commentstyle','shell');
   H1vetolist=[];
-  H1vetostart=H1veto(:,2);
-  H1vetoend=H1veto(:,3);
   % make a list of all the gps seconds vetoes
   j=1;
   for i=1:length(H1vetostart)
@@ -48,10 +46,8 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   save H1vetolist.mat H1vetolist
   fprintf('H1 veto list saved\n')
 
-  H2veto=load(veto_list(2,:));
+  [num,H2vetostart,H2vetoend,duration]=textread(veto_list(2,:),'%d %d %d %d','commentstyle','shell');
   H2vetolist=[];
-  H2vetostart=H2veto(:,2);
-  H2vetoend=H2veto(:,3);
   j=1;
   for i=1:length(H2vetostart)
     H2vetolist=[H2vetolist, H2vetostart(i):H2vetoend(i)];
@@ -59,10 +55,8 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   save H2vetolist.mat H2vetolist
   fprintf('H2 veto list saved\n')
 
-  L1veto=load(veto_list(3,:));
+  [num,L1vetostart,L1vetoend,duration]=textread(veto_list(3,:),'%d %d %d %d','commentstyle','shell');
   L1vetolist=[];
-  L1vetostart=L1veto(:,2);
-  L1vetoend=L1veto(:,3);
   j=1;
   for i=1:length(L1vetostart)
     L1vetolist=[L1vetolist, L1vetostart(i):L1vetoend(i)];
@@ -74,11 +68,11 @@ end
 %=========================== Injected Quantities ===========================%
 
 % Read in missed and found sim_ringdown tables
-N_files = length(found_list(:,1))
+N_files = length(found_list)
 
-eval(['fsim=readMeta(found_list{1,:},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['fsim=readMeta(found_list{1},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 
-eval(['msim=readMeta(missed_list{1,:},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['msim=readMeta(missed_list{1},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,frequency,quality,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 A=1:N_files
 for k=1:length(fsim.mass)
   fsim.run(k)=A(1);
@@ -91,8 +85,8 @@ end
 msim.run=transpose(msim.run);
 
 for i=2:N_files
-eval(['fsimi=readMeta(found_list{i,:},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
-eval(['msimi=readMeta(missed_list{i,:},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['fsimi=readMeta(found_list{i},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
+eval(['msimi=readMeta(missed_list{i},''sim_ringdown'',0,''h_start_time,h_start_time_ns,l_start_time,l_start_time_ns,mass,spin,quality,frequency,eff_dist_h,eff_dist_l,distance,hrss_h,hrss_l'');'])
 
   for k=1:length(fsimi.quality)
     fsimi.run(k)=A(i);
@@ -175,7 +169,7 @@ fsimH1H2L1.tl=transpose(fsim.tl(injH1t.ind));
 fsimH1H2L1.run=transpose(fsim.run(injH1t.ind));
 fsimH1H2L1.hrss_h=transpose(fsim.hrss_h(injH1t.ind));
 fsimH1H2L1.hrss_l=transpose(fsim.hrss_l(injH1t.ind));
-eval(['save ' veto_type '_' inj_type '_simH1H2L1 -struct fsimH1H2L1'])
+eval(['save ' veto_type '_' inj_type '_simH1H2L1.mat -struct fsimH1H2L1'])
 
 fsimH1L1d.ind=fsim.ind(injH1inL1daftercut.ind);
 fsimH1L1d.f=transpose(fsim.f(injH1inL1daftercut.ind));
@@ -273,11 +267,11 @@ vetoedinL1=setdiff(L1vetolist,union(H2vetolist,H1vetolist));
 losttriptimes=[vetoedinH1H2L1,vetoedinH1H2,vetoedinH1L1,vetoedinL1H2,vetoedinH1,vetoedinH2,vetoedinL1];
 
 % list the injections that were missed during these times
-vetot.t=msim.th(ismember(floor(msim.th),losttriptimes));
-vetot.d=msim.d(ismember(floor(msim.th),losttriptimes));
-vetot.dh=msim.dh(ismember(floor(msim.th),losttriptimes));
-vetot.dl=msim.dl(ismember(floor(msim.th),losttriptimes));
-vetot.f=msim.f(ismember(floor(msim.th),losttriptimes));
+vetot.t=transpose(msim.th(ismember(floor(msim.th),losttriptimes)));
+vetot.d=transpose(msim.d(ismember(floor(msim.th),losttriptimes)));
+vetot.dh=transpose(msim.dh(ismember(floor(msim.th),losttriptimes)));
+vetot.dl=transpose(msim.dl(ismember(floor(msim.th),losttriptimes)));
+vetot.f=transpose(msim.f(ismember(floor(msim.th),losttriptimes)));
 
 % list the injections that were missed outside of these times (ie MISSED in TRIPLE time)
 [missed.th,ind]=setdiff(msim.th,vetot.t);
@@ -323,7 +317,7 @@ fsimH1H2dd.run=fsimH1H2d.run(ismember(floor(fsimH1H2d.th),vetoedinL1));
 fsimH1H2dd.hrss_h=fsimH1H2d.hrss_h(ismember(floor(fsimH1H2d.th),vetoedinL1));
 fsimH1H2dd.hrss_l=fsimH1H2d.hrss_l(ismember(floor(fsimH1H2d.th),vetoedinL1));
 
-fdoubs=[fsimL1H2dd.th;fsimH1L1dd.th;fsimH1H2dd.th];
+fdoubs=[fsimL1H2dd.th,fsimH1L1dd.th,fsimH1H2dd.th];
 doubtimes=[vetoedinH1,vetoedinH2,vetoedinL1];
 
 % list the injections that were  MISSED in DOUBLE time
@@ -401,12 +395,12 @@ if exist('injH1t','var')
   ht=loglog(fsim.f(injH1t.ind),fsim.dh(injH1t.ind),'x');
   hold on
 end
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dh,fsimH1H2dd.dh],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dh,fsimH1L1dd.dh],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dh,fsimL1H2dd.dh],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh;vetot.dh],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f,vetot.f],[fsimH1H2dd.dh,fsimH1L1dd.dh,fsimL1H2dd.dh,vetot.dh],'ko');
 end
 %hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'r.');
 hm=loglog(msim.f,msim.dh,'r.');
@@ -433,12 +427,12 @@ if exist('injH1t','var')
   ht=loglog(fsim.f(injH1t.ind),fsim.dl(injH1t.ind),'x');
   hold on
 end
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dl,fsimH1H2dd.dl],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dl,fsimH1L1dd.dl],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dl,fsimL1H2dd.dl],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl;vetot.dl],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f,vetot.f],[fsimH1H2dd.dl,fsimH1L1dd.dl,fsimL1H2dd.dl,vetot.dl],'ko');
 end
 %hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
 hm=loglog(msim.f,msim.dl,'r.');
@@ -512,12 +506,12 @@ eval(['saveas(gcf,''' veto_type '_' inj_type '_M_L.png'')'])
 
 % Hanford effectve distance vs frequency, doubles
 figure(5)
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dh,fsimH1H2dd.dh],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dh,fsimH1L1dd.dh],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dh,fsimL1H2dd.dh],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f],[fsimH1H2dd.dh,fsimH1L1dd.dh,fsimL1H2dd.dh],'ko');
 end
 %hl=plot([50,50],[1e-2,1e5],'k');
 %hu=plot([2000,2000],[1e-2,1e5],'k');
@@ -538,12 +532,12 @@ eval(['saveas(gcf,''' veto_type '_' inj_type '_F_dH.png'')'])
 
 % Livingston effectve distance vs frequency, doubles
 figure(6)
-hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
+hH1H2=loglog([fsimH1H2dt.f,fsimH1H2dd.f],[fsimH1H2dt.dl,fsimH1H2dd.dl],'g*');
 hold on
-hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
-hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
+hH1L1=loglog([fsimH1L1dt.f,fsimH1L1dd.f],[fsimH1L1dt.dl,fsimH1L1dd.dl],'c*');
+hL1H2=loglog([fsimL1H2dt.f,fsimL1H2dd.f],[fsimL1H2dt.dl,fsimL1H2dd.dl],'m*');
 if length(veto_list)>0
-  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl],'ko');
+  hv=semilogy([fsimH1H2dd.f,fsimH1L1dd.f,fsimL1H2dd.f],[fsimH1H2dd.dl,fsimH1L1dd.dl,fsimL1H2dd.dl],'ko');
 end
 %hl=plot([50,50],[1e-2,1e5],'k');
 %hu=plot([2000,2000],[1e-2,1e5],'k');
