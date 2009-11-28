@@ -71,7 +71,7 @@ if test "x$build_vendor" = "xapple"; then
       ;;
     10.4*|10.5*|10.6*)
       # supported version
-    ;;
+      ;;
     *)
       AC_MSG_WARN([Unknown Mac OS X version])
       ;;
