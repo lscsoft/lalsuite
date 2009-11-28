@@ -89,7 +89,7 @@ LIBS="$LIBS $METAIO_LIBS"
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR(cannot find metaio library)])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
+PKG_CHECK_MODULES([LAL],[lal >= 6.3.2.1],[true],[false])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
 LIBS="$LIBS $LAL_LIBS"
 
