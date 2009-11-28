@@ -1,6 +1,11 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
-SUBDIRS = gnuscripts @subdirs@
+
+SUBDIRS = \
+	gnuscripts \
+	@subdirs@
+
 distcleancheck_listfiles = find . -type f \! -name "LAL*VCSInfo.h" -print
+
 vcs-clean: cvs-clean
 cvs-clean: maintainer-clean
 	rm -f Makefile.in
