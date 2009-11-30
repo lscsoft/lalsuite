@@ -54,7 +54,7 @@
 # Roland McGrath, Noah Friedman, david d zuhn, and many others.
 
 
-# _LAL_AC_C_STD_TRY(STANDARD, TEST-PROLOGUE, TEST-BODY, OPTION-LIST,
+# _LALSUITE_AC_C_STD_TRY(STANDARD, TEST-PROLOGUE, TEST-BODY, OPTION-LIST,
 #		ACTION-IF-AVAILABLE, ACTION-IF-UNAVAILABLE)
 # --------------------------------------------------------------
 # Check whether the C compiler accepts features of STANDARD (e.g `c89', `c99')
@@ -62,7 +62,7 @@
 # try again with each compiler option in the space-separated OPTION-LIST; if one
 # helps, append it to CC.  If eventually successful, run ACTION-IF-AVAILABLE,
 # else ACTION-IF-UNAVAILABLE.
-AC_DEFUN([_LAL_AC_C_STD_TRY],
+AC_DEFUN([_LALSUITE_AC_C_STD_TRY],
 [AC_MSG_CHECKING([for $CC option to accept ISO ]m4_translit($1, [c], [C]))
 AC_CACHE_VAL(ac_cv_prog_cc_$1,
 [ac_cv_prog_cc_$1=no
@@ -87,10 +87,10 @@ case "x$ac_cv_prog_cc_$1" in
     AC_MSG_RESULT([$ac_cv_prog_cc_$1]) ;;
 esac
 AS_IF([test "x$ac_cv_prog_cc_$1" != xno], [$5], [$6])
-])# _LAL_AC_C_STD_TRY
+])# _LALSUITE_AC_C_STD_TRY
 
 
-# _LAL_AC_PROG_CC_C99 ([ACTION-IF-AVAILABLE], [ACTION-IF-UNAVAILABLE])
+# _LALSUITE_AC_PROG_CC_C99 ([ACTION-IF-AVAILABLE], [ACTION-IF-UNAVAILABLE])
 # ----------------------------------------------------------------
 # If the C compiler is not in ISO C99 mode by default, try to add an
 # option to output variable CC to make it so.  This macro tries
@@ -100,8 +100,8 @@ AS_IF([test "x$ac_cv_prog_cc_$1" != xno], [$5], [$6])
 # code and declarations, named initialization of structs, restrict,
 # va_copy, varargs macros, variable declarations in for loops and
 # variable length arrays.
-AC_DEFUN([_LAL_AC_PROG_CC_C99],
-[_LAL_AC_C_STD_TRY([c99],
+AC_DEFUN([_LALSUITE_AC_PROG_CC_C99],
+[_LALSUITE_AC_C_STD_TRY([c99],
 [[#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -243,12 +243,12 @@ dnl		as it incorrectly assumes C99 semantics for library functions)
 dnl Tru64	-c99
 dnl with extended modes being tried first.
 [[-std=gnu99 -std=c99 -c99 -AC99 -xc99=all -qlanglvl=extc99]], [$1], [$2])[]dnl
-])# _LAL_AC_PROG_CC_C99
+])# _LALSUITE_AC_PROG_CC_C99
 
 
-# LAL_AC_PROG_CC_C99
+# LALSUITE_AC_PROG_CC_C99
 # --------------
-AC_DEFUN([LAL_AC_PROG_CC_C99],
+AC_DEFUN([LALSUITE_AC_PROG_CC_C99],
 [ AC_REQUIRE([AC_PROG_CC])dnl
-  _LAL_AC_PROG_CC_C99
+  _LALSUITE_AC_PROG_CC_C99
 ])
