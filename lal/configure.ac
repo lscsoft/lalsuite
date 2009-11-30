@@ -356,19 +356,6 @@ AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 
-dnl Configure subdirectory lalapps if present
-if test -d $srcdir/lalapps ; then
-  lal_build_dir='$(top_builddir)/..'
-  LAL_BUILD="true"
-  LAL_LIBS=$lal_build_dir/lib/liblal.la
-  LAL_CFLAGS=-I$lal_build_dir/include
-  LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
-  LALSUPPORT_CFLAGS=-I$lal_build_dir/include
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS
-  AC_CONFIG_SUBDIRS([lalapps])
-fi
-
-
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
