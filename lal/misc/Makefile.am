@@ -1,6 +1,5 @@
 EXTRA_DIST = \
 	acx_pthread.m4 \
-	compile \
 	config.guess \
 	config.sub \
 	depcomp \

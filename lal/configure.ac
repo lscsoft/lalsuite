@@ -183,11 +183,9 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 dnl Checks for programs.
-AC_PROG_AWK
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)

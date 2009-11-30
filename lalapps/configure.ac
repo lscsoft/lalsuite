@@ -111,8 +111,9 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 # checks for programs
-AC_PROG_AWK
 AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -126,8 +127,6 @@ if test "x$condor" = "xtrue"; then
 fi
 
 # further program checks
-AC_PROG_INSTALL
-AC_PROG_LN_S
 AC_PROG_LIBTOOL
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
