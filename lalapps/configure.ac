@@ -125,6 +125,7 @@ if test "x$condor" = "xtrue"; then
   esac
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
+CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # further program checks
 AC_PROG_LIBTOOL
@@ -295,6 +296,7 @@ echo "
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
+                Condor support is $CONDOR_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
