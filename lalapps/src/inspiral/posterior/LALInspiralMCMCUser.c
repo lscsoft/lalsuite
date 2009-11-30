@@ -324,10 +324,9 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   REAL8 m1,m2;
   parameter->logPrior=0.0;
   REAL8 mc,eta;
-  REAL8 minCompMass = 2.0;
+  REAL8 minCompMass = 1.0;
   REAL8 maxCompMass = 100.0;
-  REAL8 maxTotalMass = 100.0;
-	
+
   /* Check in range */
   if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
   else mc=XLALMCMCGetParameter(parameter,"mchirp");
@@ -344,7 +343,6 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
   if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; 
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
-  if((m1+m2)>maxTotalMass) parameter->logPrior = -DBL_MAX;
   return parameter->logPrior;
 }
 

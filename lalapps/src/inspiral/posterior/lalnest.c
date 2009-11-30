@@ -178,8 +178,6 @@ void initialise(int argc, char *argv[]){
 			break;
 		case 15:
 			HighMassFlag=1;
-			manual_mass_low=5.0;
-			manual_mass_high=90.0;
 			break;
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
@@ -431,9 +429,9 @@ int main( int argc, char *argv[])
 		if(Ninj<event) {fprintf(stderr,"Error reading event %i from %s\n",event,injXMLFile); exit(-1);}
 		i=0;
 		while(i<event) {i++; injTable = injTable->next;} /* Select event */
-		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
-		else {injTable->f_lower = inputMCMC.fLow;
-		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
+//		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
+//		else {injTable->f_lower = inputMCMC.fLow;
+//		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
 //		InjParams.deltaT=1.0/SampleRate;
 //		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
 //		memset(&InjectGW,0,sizeof(CoherentGW));
