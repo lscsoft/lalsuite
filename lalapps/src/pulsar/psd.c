@@ -241,8 +241,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   
   /* Initialize default values */
-  CLA->directory="";
-  CLA->outputfile="";
+  CLA->directory=NULL;
+  CLA->outputfile=NULL;
 
   /* Scan through list of command line arguments */
   while (!errflg && ((c = getopt(argc, argv,"hb:D:r:I:C:o:"))!=-1))
@@ -271,13 +271,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     }
 
-  if(CLA->directory == "")
+  if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
       return 1;
     }      
-  if(CLA->outputfile == "")
+  if(CLA->outputfile == NULL)
     {
       fprintf(stderr,"No output directory specified; input directory with -o option.\n");
       fprintf(stderr,"For help type ./psd -h \n");

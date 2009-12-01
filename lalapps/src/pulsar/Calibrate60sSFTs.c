@@ -570,11 +570,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   
   /* Initialize default values */
-  CLA->directory="";
-  CLA->run="";
-  CLA->IFO="";
-  CLA->caldirectory="";
-  CLA->outputdirectory="";
+  CLA->directory=NULL;
+  CLA->run=NULL;
+  CLA->IFO=NULL;
+  CLA->caldirectory=NULL;
+  CLA->outputdirectory=NULL;
 
   /* Scan through list of command line arguments */
   while (!errflg && ((c = getopt(argc, argv,"hb:D:r:I:C:o:"))!=-1))
@@ -618,31 +618,31 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     }
 
-  if(CLA->directory == "")
+  if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->caldirectory == "")
+  if(CLA->caldirectory == NULL)
     {
       fprintf(stderr,"No calibration directory specified; input directory with -C option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->outputdirectory == "")
+  if(CLA->outputdirectory == NULL)
     {
       fprintf(stderr,"No output directory specified; input directory with -o option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->run == "")
+  if(CLA->run == NULL)
     {
       fprintf(stderr,"No run specified; input run with -r option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->IFO == "")
+  if(CLA->IFO == NULL)
     {
       fprintf(stderr,"No interferometer specified; input interferometer with -I option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");

@@ -133,13 +133,13 @@ AC_DEFUN([LALAPPS_ENABLE_XML],
 AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
 [AC_ARG_ENABLE(
   [cfitsio],
-  AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=yes]]),
+  AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=no]]),
   [ case "${enableval}" in
       yes) cfitsio=true;;
       no) cfitsio=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-cfitsio) ;;
     esac
-  ], [ cfitsio=true ] )
+  ], [ cfitsio=false ] )
 ])
 
 AC_DEFUN([LALAPPS_DISABLE_FRAME],

@@ -14,6 +14,11 @@ lalapps_pulsar_parameter_estimation_SOURCES = pulsar_parameter_estimation.c puls
 
 lalapps_heterodyne_pulsar_SOURCES = heterodyne_pulsar.c heterodyne_pulsar.h
 
-# EXTRA_DIST = test_heterodyne_pulsar.sh make_frame_cache H1response.txt H-CW_Injection-875206560-120.gwf
+EXTRA_DIST = test_heterodyne_pulsar.sh make_frame_cache H1response.txt H-CW_Injection-875206560-120.gwf
 
-# TESTS = test_heterodyne_pulsar.sh
+TESTS = test_heterodyne_pulsar.sh
+
+TESTS_ENVIRONMENT = \
+LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
+LAL_PREFIX=$(LAL_PREFIX) \
+LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}

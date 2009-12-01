@@ -646,8 +646,8 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   for (i=0;i<(UINT4)nfiles;i++) LALFree(filelist[i]);
   LALFree(filelist);
    
-  LALRealloc((*SFTData),dataparams->sftno*sizeof(FFT *));
-  LALRealloc(dataparams->stamps,dataparams->sftno*sizeof(LIGOTimeGPS));
+  XLALRealloc((*SFTData),dataparams->sftno*sizeof(FFT *));
+  XLALRealloc(dataparams->stamps,dataparams->sftno*sizeof(LIGOTimeGPS));
 
 
   return 0;  

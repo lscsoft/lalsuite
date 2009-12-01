@@ -1,12 +1,13 @@
 AC_INIT([lalsuite],[6.4],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_SRCDIR([lal/configure.ac])
-AC_CONFIG_AUX_DIR([lal/misc])
-AC_CONFIG_MACRO_DIR([lal/misc])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_SRCDIR([configure.ac])
+AC_CONFIG_AUX_DIR([gnuscripts])
+AC_CONFIG_MACRO_DIR([gnuscripts])
+AC_CONFIG_FILES([
+  Makefile \
+  gnuscripts/Makefile
+])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
-
-AC_PROG_LIBTOOL
 
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
@@ -16,7 +17,8 @@ LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 LAL_TOP_SRCDIR="${lalsuite_top_srcdir}/lal"
 export LALSUITE_BUILD LAL_LIBS LAL_CFLAGS LAL_TOP_SRCDIR
 LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
-export LALSUPPORT_LIBS
+LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
+export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
 LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
 export LALFRAME_LIBS LALFRAME_CFLAGS
