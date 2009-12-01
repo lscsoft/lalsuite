@@ -43,7 +43,7 @@ static FILE * fopen_if_null( FILE *fp, const char *name, const char *extn )
 	if ( ! fp ) {
 		char fname[FILENAME_MAX];
 		snprintf( fname, sizeof( fname ), "%s.%s", name, extn );
-		fp = fopen( fname, "w" );
+		fp = LALFopen( fname, "w" );
 	}
 	return fp;
 }

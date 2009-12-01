@@ -675,7 +675,7 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
 #ifdef DEBUG_ANS
   /* ===== debug ===== */
   {
-    FILE *fp = fopen ("gridpoints.dat", "ab");
+    FILE *fp = LALFopen ("gridpoints.dat", "ab");
     fprintf (fp, "%f, %f, ", skyPoint[0], skyPoint[1] );
     fprintf_vect2D ( fp, (const vect2D_t*)skyPoint, boundary->hemisphere );
     fclose(fp);
@@ -793,7 +793,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 #ifdef DEBUG_ANS
   /* ===== debug ===== */
   {
-    FILE *fp = fopen ( "boundary.dat", "wb" );
+    FILE *fp = LALFopen ( "boundary.dat", "wb" );
 
     for (i=0; i < scan->boundary.skyRegion.length; i ++ )
       fprintf (fp, "%f, %f\n", scan->boundary.skyRegion.data[i][0], scan->boundary.skyRegion.data[i][1] );

@@ -133,7 +133,7 @@ LALMathNDPlot( LALStatus *stat,
   }
 
   /* Open a file for writing a notebook */
-  if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL) {
+  if ((nb = LALFopen("MathNDNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
 

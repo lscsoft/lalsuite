@@ -108,7 +108,7 @@ LALMath3DPlot( LALStatus *stat,
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
   }
 
-  if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL) {
+  if ((nb = LALFopen("Math3DNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
 
