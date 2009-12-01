@@ -129,6 +129,8 @@ if test "x$condor" = "xtrue"; then
   AC_DISABLE_SHARED
   AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
+  # FIXME condor_compile should correctly identify the linker
+  LD="/usr/bin/ld"
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
