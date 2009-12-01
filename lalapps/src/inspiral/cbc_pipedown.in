@@ -724,7 +724,7 @@ for result_db in result_dbs_cache:
     for sim_tag in sim_tags:
   
       # printsims
-      datatypes = ['all_data', 'playground', 'exclude_play']
+      datatypes = ['all_data', 'playground']
   
       for datatype in datatypes:
         # set file naming type
@@ -794,7 +794,7 @@ for result_db in result_dbs_cache:
         printmissed_node.set_tmp_space( tmp_space )
         printmissed_node.set_input( result_db.path() )
         printmissed_node.set_output( summary_filename )
-        printmissed_node.set_instrument_time( on_instruments )
+        printmissed_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
         printmissed_node.set_sim_tag( sim_tag )
   
         # set parent node

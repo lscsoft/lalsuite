@@ -2427,23 +2427,6 @@ class PrintMissedNode(LigolwCBCPrintNode):
     @job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
-    self.__instrument_time = None
-
-  def set_instrument_time(self, instruments):
-    """
-    Sets instrument-time options. If instruments
-    is a set, will convert to a sorted string.
-    """
-    if isinstance(instruments, set) or isinstance(instruments, frozenset):
-      intruments = ','.join(sorted(instruments))
-    self.add_var_opt('instrument-time', instruments)
-    self.__instrument_time = instruments
-
-  def get_instrument_time(self):
-    """
-    Gets instrument-time.
-    """
-    return self.__instrument_time
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
