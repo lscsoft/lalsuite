@@ -123,7 +123,10 @@ AC_PROG_LN_S
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
-  AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile])
+  AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
+  if test "x$CONDOR_COMPILE" = "xfalse"; then
+    AC_MSG_ERROR([condor_compile not found])
+  fi
   CC="$CONDOR_COMPILE $CC"
   AM_LDFLAGS="$AM_LDFLAGS -all-static"
   AC_DISABLE_SHARED
