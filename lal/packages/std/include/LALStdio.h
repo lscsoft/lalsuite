@@ -58,7 +58,12 @@ extern "C" {
 
 NRCSID( LALSTDIOH, "$Id$" );
 
+#if LAL_BOINC_ENABLED
+#include <boinc/filesys.h>
+#define LALFopen boinc_fopen
+#else
 #define LALFopen fopen
+#endif
 #define LALFclose fclose
 
 
