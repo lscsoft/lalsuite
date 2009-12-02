@@ -175,11 +175,11 @@ AC_CHECK_HEADERS([getopt.h])
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
-AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_version])
+AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
+AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 
 # check for gsl headers
-AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
+AC_CHECK_HEADERS([gsl/gsl_fft_real.h],,[AC_MSG_ERROR([could not find the gsl/gsl_fft_real.h header])])
 
 # check for libFrame
 if test "${frame}" = "true"; then

@@ -89,13 +89,13 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
           [AC_MSG_RESULT]([no]))
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for frame library
 PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
 LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(cannot find frame library)])
+AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(could not find the frame library)])
 
 # check for frame library headers
 AC_CHECK_HEADER([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
