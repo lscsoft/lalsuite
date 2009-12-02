@@ -87,7 +87,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
 LIBS="$LIBS $LIBXML2_LIBS"
-AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR(cannot find the xml2 library)])
+AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR([cannot find the xml2 library])])
 
 # check for libxml2 headers
 AC_CHECK_HEADER([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.h header])])
@@ -96,8 +96,8 @@ AC_CHECK_HEADER([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.h
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
-AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find the gsl library)])
+AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 
 # check for gsl headers
 AC_CHECK_HEADER([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])

@@ -86,7 +86,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
 CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
 LIBS="$LIBS $METAIO_LIBS"
-AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR(could not find the metaio library)])
+AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
 AC_CHECK_HEADER([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])

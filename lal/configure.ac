@@ -282,7 +282,7 @@ PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find the gsl library)])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LAL_CHECK_GSL_VERSION([1.9])
 
 # check for gsl headers
@@ -294,27 +294,27 @@ if test "${intelfft}" = "false" ; then
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
   CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
   LIBS="$LIBS $FFTW3_LIBS"
-  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR(could not find the fftw3f library)],[-lm])
-  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR(could not find the fftw3 library)],[-lm])
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR([could not find the fftw3f library])],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3 library])],[-lm])
 else
   AC_MSG_WARN([Using Intel FFT routines])
   if test "x${qthread}" = "xtrue" ; then
     LAL_INTEL_MKL_QTHREAD_WARNING
   else
-    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR(could not find the pthread library)])
+    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([could not find the pthread library])])
   fi
-  AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR(could not find the guide library included with Intel MKL)])
-  AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR(could not find the pthread.h header)])
+  AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR([could not find the guide library included with Intel MKL])])
+  AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR([could not find the pthread.h header])])
   if test "${enable_static}" = "yes"; then
     if test "${enable_shared}" = "yes" ; then
       LAL_INTEL_FFT_LIBS_MSG_ERROR
     else
-      AC_CHECK_LIB([mkl_ia32],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
+      AC_CHECK_LIB([mkl_ia32],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
     fi
   else
-    AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
+    AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
   fi
-  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find the Intel FFT header)])
+  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
 
 # check for fft headers

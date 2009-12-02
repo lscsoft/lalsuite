@@ -95,7 +95,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
 LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(could not find the frame library)])
+AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
 
 # check for frame library headers
 AC_CHECK_HEADER([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
