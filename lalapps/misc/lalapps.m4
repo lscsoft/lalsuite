@@ -118,18 +118,6 @@ AC_DEFUN([LALAPPS_ENABLE_METAIO],
   ], [ metaio=true ] )
 ])
 
-AC_DEFUN([LALAPPS_ENABLE_XML],
-[AC_ARG_ENABLE(
-  [xml],
-  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
-  [ case "${enableval}" in
-      yes) xml=true;;
-      no)  xml=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
-    esac
-  ], [ xml=false ] )
-])
-
 AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
 [AC_ARG_ENABLE(
   [cfitsio],
@@ -140,6 +128,72 @@ AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-cfitsio) ;;
     esac
   ], [ cfitsio=false ] )
+])
+
+AC_DEFUN([LALAPPS_ENABLE_LALFRAME],
+[AC_ARG_ENABLE(
+  [lalframe],
+  AC_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalframe=true;;
+      no) lalframe=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+    esac
+  ], [ lalframe=true ] )
+if test "$frame" = "false"; then
+  lalframe=false
+fi
+])
+
+AC_DEFUN([LALAPPS_ENABLE_LALMETAIO],
+[AC_ARG_ENABLE(
+  [lalmetaio],
+  AC_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalmetaio=true;;
+      no) lalmetaio=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
+    esac
+  ], [ lalmetaio=true ] )
+if test "$metaio" = "false"; then
+  lalmetaio=false
+fi
+])
+
+AC_DEFUN([LALAPPS_ENABLE_LALXML],
+[AC_ARG_ENABLE(
+  [lalxml],
+  AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
+  [ case "${enableval}" in
+      yes) lalxml=true;;
+      no) lalxml=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
+    esac
+  ], [ lalxml=false ] )
+])
+
+AC_DEFUN([LALAPPS_ENABLE_LALBURST],
+[AC_ARG_ENABLE(
+  [lalburst],
+  AC_HELP_STRING([--enable-burst],[compile code that requires lalburst library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalburst=true;;
+      no) lalburst=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-burst) ;;
+    esac
+  ], [ lalburst=true ] )
+])
+
+AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
+[AC_ARG_ENABLE(
+  [lalstochastic],
+  AC_HELP_STRING([--enable-stochastic],[compile code that requires lalstochastic library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalstochastic=true;;
+      no) lalstochastic=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-stochastic) ;;
+    esac
+  ], [ lalstochastic=true ] )
 ])
 
 AC_DEFUN([LALAPPS_DISABLE_FRAME],
