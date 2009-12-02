@@ -196,16 +196,6 @@ AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
   ], [ lalstochastic=true ] )
 ])
 
-AC_DEFUN([LALAPPS_DISABLE_FRAME],
-[echo "**************************************************************"
- echo "*                                                            *"
- echo "* Frame support will be DISABLED:                            *"
- echo "* LALApps is being configured with --disable-frame settings. *"
- echo "*                                                            *"
- echo "**************************************************************"
- frame=false
-])
-
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 [AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
 AC_TRY_RUN([

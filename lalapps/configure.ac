@@ -187,7 +187,7 @@ if test "${frame}" = "true"; then
   lal_pre_frame_LIBS="$LIBS"
   LIBS="$LIBS $FRAME_LIBS"
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
-                 [LALAPPS_DISABLE_FRAME]
+                 [AC_MSG_WARN([could not find the frame library])]
                  [frame="false"]
                  [lalframe="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
@@ -198,7 +198,7 @@ if test "${frame}" = "true"; then
   lal_pre_frame_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
   AC_CHECK_HEADERS([FrameL.h],,
-                   [LALAPPS_DISABLE_FRAME]
+                   [AC_MSG_WARN([could not find the FrameL.h header])]
                    [frame="false"]
                    [lalframe="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
