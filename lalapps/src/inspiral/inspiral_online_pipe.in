@@ -521,18 +521,18 @@ for ifo in ifo_list:
         # dag.add_node(tsnode)
 
         # sicluster works in-place, so copy unclustered triggers to 
-        # new files for 100 ms and 12 sec clustering
+        # new files for 100 ms and 16 sec clustering
         clustered_100ms_name = output_name.replace('UNCLUSTERED','100MILLISEC_CLUSTERED')
-        clustered_12s_name   = output_name.replace('UNCLUSTERED','12SEC_CLUSTERED')
+        clustered_16s_name   = output_name.replace('UNCLUSTERED','16SEC_CLUSTERED')
 
-        for cname in [clustered_100ms_name, clustered_12s_name]:
+        for cname in [clustered_100ms_name, clustered_16s_name]:
             cpnode = pipeline.CondorDAGNode(cp_job)
             cpnode.add_file_arg(output_name)
             cpnode.add_file_arg(cname)
             cpnode.add_parent(lwadd)
             dag.add_node(cpnode)
 
-            if cname == clustered_12s_name:
+            if cname == clustered_16s_name:
                 sinode = inspiral.InspiralAnalysisNode(si_job_coarse)
             else:
                 sinode = inspiral.InspiralAnalysisNode(si_job_fine)

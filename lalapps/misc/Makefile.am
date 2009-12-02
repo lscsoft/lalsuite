@@ -4,8 +4,9 @@ EXTRA_DIST = \
 	depcomp \
 	install-sh \
 	lalapps.m4 \
-	lalapps_c99.m4 \
-	lalappslibtool.m4 \
+	lalsuite_build.m4 \
+	lalsuite_c99.m4 \
+	libtool.m4 \
 	ltmain.sh \
 	missing \
 	mkinstalldirs \
