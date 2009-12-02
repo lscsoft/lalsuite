@@ -90,6 +90,9 @@ LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
 
+# check for gsl headers
+AC_CHECK_HEADER([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find gsl/gsl_errno.h])])
+
 # check for lal
 LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
