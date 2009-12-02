@@ -92,7 +92,7 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR(cannot find metaio library)])
 LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_OPT_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
