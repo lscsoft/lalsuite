@@ -3,6 +3,7 @@ AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
@@ -177,18 +178,16 @@ fi
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 dnl Checks for programs.
-AC_PROG_AWK
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
@@ -209,7 +208,7 @@ if test "x$build_vendor" = "xapple"; then
       ;;
     10.4*|10.5*|10.6*)
       # supported version
-    ;;
+      ;;
     *)
       AC_MSG_WARN([Unknown Mac OS X version])
       ;;
@@ -354,19 +353,6 @@ dnl Setup automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
-
-
-dnl Configure subdirectory lalapps if present
-if test -d $srcdir/lalapps ; then
-  lal_build_dir='$(top_builddir)/..'
-  LAL_BUILD="true"
-  LAL_LIBS=$lal_build_dir/lib/liblal.la
-  LAL_CFLAGS=-I$lal_build_dir/include
-  LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
-  LALSUPPORT_CFLAGS=-I$lal_build_dir/include
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS
-  AC_CONFIG_SUBDIRS([lalapps])
-fi
 
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
