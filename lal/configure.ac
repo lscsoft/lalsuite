@@ -258,6 +258,25 @@ case "${host_os}" in
   solaris*) AC_CHECK_LIB([sunmath],[sincosp]);;
 esac
 
+# check for system headers files
+AC_HEADER_STDC
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
+AC_CHECK_HEADER([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
+AC_CHECK_HEADER([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
+AC_MSG_CHECKING([for gethostname prototype in unistd.h])
+AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
+
+# check for pthread headers
+if test "${lal_pthread_lock}" = "true"; then
+  AC_CHECK_HEADERS([pthread.h],[break])
+fi
+
+# check for platform specific headers
+case "${host_os}" in
+  solaris*) AC_CHECK_HEADERS([sunmath.h]);;
+esac
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
@@ -265,6 +284,9 @@ LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
 LAL_CHECK_GSL_VERSION([1.9])
+
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find gsl/gsl_errno.h])])
 
 # check for fft libraries
 if test "${intelfft}" = "false" ; then
@@ -295,31 +317,9 @@ else
   AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-# check for system headers files
-AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
-AC_CHECK_HEADER([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
-AC_CHECK_HEADER([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
-AC_MSG_CHECKING([for gethostname prototype in unistd.h])
-AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
-AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
-
-# check for platform specific headers
-case "${host_os}" in
-  solaris*) AC_CHECK_HEADERS([sunmath.h]);;
-esac
-
-# check for gsl headers
-AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find gsl/gsl_errno.h])])
-
 # check for fft headers
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find fftw3.h])])
-fi
-
-# check for pthread headers
-if test "${lal_pthread_lock}" = "true"; then
-  AC_CHECK_HEADERS([pthread.h],[break])
 fi
 
 # define what is being enabled
