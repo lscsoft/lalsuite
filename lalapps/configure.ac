@@ -211,7 +211,7 @@ if test "${metaio}" = "true"; then
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([disabling metaio support])]
+                 [AC_MSG_WARN([could not find the metaio library])]
                  [metaio="false"]
                  [lalmetaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
@@ -222,7 +222,7 @@ if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
   AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([disabling metaio support])]
+                   [AC_MSG_WARN([could not find the metaio.h header])]
                    [metaio="false"]
                    [lalmetaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
