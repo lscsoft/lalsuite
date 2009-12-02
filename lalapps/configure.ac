@@ -165,12 +165,21 @@ fi
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
+# check for system headers
+AC_HEADER_STDC
+AC_CHECK_HEADERS([glob.h])
+AC_CHECK_HEADERS([punistd.h])
+AC_CHECK_HEADERS([getopt.h])
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_version])
+
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
 
 # check for libFrame
 if test "${frame}" = "true"; then
@@ -180,8 +189,21 @@ if test "${frame}" = "true"; then
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
                  [LALAPPS_DISABLE_FRAME]
                  [frame="false"]
+                 [lalframe="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
 fi
+
+# check for libFrame headers
+if test "${frame}" = "true"; then
+  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
+  AC_CHECK_HEADERS([FrameL.h],,
+                   [LALAPPS_DISABLE_FRAME]
+                   [frame="false"]
+                   [lalframe="false"]
+                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([FRAME],[frame])
 
 # check for libmetaio
 if test "${metaio}" = "true"; then
@@ -191,8 +213,21 @@ if test "${metaio}" = "true"; then
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
                  [AC_MSG_WARN([disabling metaio support])]
                  [metaio="false"]
+                 [lalmetaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
+
+# check for libmetaio headers
+if test "${metaio}" = "true"; then
+  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  AC_CHECK_HEADERS([metaio.h],,
+                   [AC_MSG_WARN([disabling metaio support])]
+                   [metaio="false"]
+                   [lalmetaio="false"]
+                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 
 # check for libcfitsio
 if test "${cfitsio}" = "true"; then
@@ -204,47 +239,6 @@ if test "${cfitsio}" = "true"; then
                  [LIBS="$lal_pre_cfitsio_LIBS"])
 fi
 
-# check for lal libararies
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
-LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw])
-LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements])
-LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter])
-
-# check for header files
-AC_HEADER_STDC
-AC_CHECK_HEADERS([getopt.h])
-AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-if test "$LALSUITE_BUILD" != "true" ; then
-  AC_CHECK_HEADERS([lal/LALStdlib.h])
-fi
-AC_CHECK_HEADERS([glob.h])
-AC_CHECK_HEADERS([punistd.h])
-
-# check for libFrame headers
-if test "${frame}" = "true"; then
-  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
-  AC_CHECK_HEADERS([FrameL.h],,
-                   [LALAPPS_DISABLE_FRAME]
-                   [frame="false"]
-                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([FRAME],[frame])
-
-# check for libmetaio headers
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([disabling metaio support])]
-                   [metaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([METAIO],[metaio])
-
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
@@ -254,6 +248,20 @@ if test "${cfitsio}" = "true"; then
                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
+
+# check for lal libararies
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw])
+LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements])
+LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter])
+
+# check for lal headers
+if test "$LALSUITE_BUILD" != "true" ; then
+  AC_CHECK_HEADERS([lal/LALStdlib.h])
+fi
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
