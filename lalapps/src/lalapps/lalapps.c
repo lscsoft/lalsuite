@@ -227,3 +227,36 @@ XLALGetVersionString(void)
   return ( ret );
 
 } /* XLALGetVersionString() */
+
+
+/** Simply outputs version information to fp.
+ *
+ * Returns != XLAL_SUCCESS on error (version-mismatch or writing to fp)
+ */
+int
+XLALOutputVersionString ( FILE *fp )
+{
+  const char *fn = __func__;
+
+  char *VCSInfoString;
+
+  if (!fp ) {
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( (VCSInfoString = XLALGetVersionString()) == NULL ) {
+    XLALPrintError("%s: XLALGetVersionString() failed.\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  if ( fprintf (fp, "%s\n", VCSInfoString ) < 0 ) {
+    XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", fn);
+    XLALFree ( VCSInfoString);
+    XLAL_ERROR ( fn, XLAL_EIO );
+  }
+
+  XLALFree ( VCSInfoString);
+
+  return XLAL_SUCCESS;
+
+} /* XLALOutputVersionString() */
