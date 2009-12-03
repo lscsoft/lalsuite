@@ -98,7 +98,7 @@ LIBS="$LIBS $LIBFRAME_LIBS"
 AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
 
 # check for frame library headers
-AC_CHECK_HEADER([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
+AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
 
 # check for lal
 LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])

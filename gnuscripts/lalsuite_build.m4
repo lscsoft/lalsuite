@@ -13,7 +13,7 @@ if test "$$2" = "true"; then
     eval $2="true"
   else
     AC_CHECK_LIB([$2],[$4],[eval $2="true"],[AC_MSG_ERROR([could not find the $1 library])])
-    AC_CHECK_HEADER([$5],,[AC_MSG_ERROR([could not find the $5 header])])
+    AC_CHECK_HEADERS([$5],,[AC_MSG_ERROR([could not find the $5 header])])
     AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
   fi
 else
@@ -37,7 +37,7 @@ if test "$$2" = "true"; then
       AC_CHECK_LIB([$2],[$4],[eval $2="true"],[eval $2=false
         AC_MSG_WARN([could not find the $1 library])])
       if test "$$2" = true; then
-        AC_CHECK_HEADER([$5],,[eval $2=false])
+        AC_CHECK_HEADERS([$5],,[eval $2=false])
         if test "$$2" = true; then
           AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
         fi

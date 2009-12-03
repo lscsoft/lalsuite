@@ -261,8 +261,8 @@ esac
 # check for system headers files
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
-AC_CHECK_HEADER([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
-AC_CHECK_HEADER([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
+AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
+AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))

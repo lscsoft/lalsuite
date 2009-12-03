@@ -243,9 +243,9 @@ fi
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
-  AC_CHECK_HEADER([fitsio.h],,
-                  [cfitsio="false"]
-                  [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
+  AC_CHECK_HEADERS([fitsio.h],,
+                   [cfitsio="false"]
+                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
