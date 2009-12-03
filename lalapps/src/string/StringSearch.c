@@ -159,6 +159,7 @@ struct StringTemplateTag {
   REAL4FrequencySeries StringFilter; /* Frequency domain filter corresponding to this template */
   REAL4Vector *waveform_t;    /* Template waveform - time-domain */
   COMPLEX8Vector *waveform_f; /* Template waveform - frequency domain */
+  REAL4Vector *auto_cor;      /* Auto-correlation vector */
 } StringTemplate;
 
 /***************************************************************************/
@@ -225,7 +226,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA);
 int FindStringBurst(struct CommandLineArgsTag CLA);
 
 /* Finds events above SNR threshold specified  */
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *data_t, REAL4Vector *vector, 
+int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
 	       INT4 i, INT4 m, SnglBurst **thisEvent);
 
 /* Writes out the xml file with the events it found  */
@@ -457,7 +458,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector  *data_t, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
+int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
   int p, pp;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
@@ -543,8 +544,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector  *data_t, REAL4Vector 
       if(maximum>68){
 		
 	for(pp=0; pp<strtemplate[m].waveform_t->length; pp++){
-	  /*printf("%f\n",strtemplate[m].waveform_t->data[pp]);*/
-	  printf("%f\n",data_t->data[pp]);
+	  printf("%f\n",strtemplate[m].auto_cor->data[pp]);
+	  chi2=1;
 	}
       }
       
@@ -562,13 +563,11 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
   int i,p,m; 
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
-  REAL4Vector *data_t = NULL;
   SnglBurst *thisEvent = NULL;
 
   /* create vector that will hold the data for each overlapping chunk */ 
   vector = XLALCreateREAL4Vector( GV.seg_length);
-  data_t = XLALCreateREAL4Vector( GV.seg_length);
-
+  
   /* create vector that will hold FFT of data*/
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
   
@@ -579,10 +578,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       /* populate vector that will hold the data for each overlapping chunk */
       memcpy( vector->data, GV.ht_proc->data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
 	  
-      /* Save the the data vector */
-      for (p = 0; p < (int)data_t->length; p++)
-	data_t->data[p] = vector->data[p];
-
       /* fft it */
       if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
       
@@ -601,7 +596,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
       
-      if(FindEvents(CLA, data_t, vector, i, m, &thisEvent)) return 1;
+      if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
     }
   }
 
@@ -610,7 +605,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
     XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
   
   XLALDestroyCOMPLEX8Vector( vtilde );
-  XLALDestroyREAL4Vector( data_t );
   XLALDestroyREAL4Vector( vector );
 
   return 0;
@@ -714,11 +708,12 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA){
-  REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon;
+  REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm;
   int m, p, pcut, f_min_index, f_max_index, f_cut_index, k, f_low_cutoff_index;
   REAL4Vector *integral;
   REAL4Vector    *vector; /* time-domain vector workspace */
-  
+  COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
+
   fMax = (1.0/GV.ht_proc->deltaT) / 2.0;
   f_min_index = CLA.fbankstart / GV.Spec.deltaF;
   f_max_index = fMax / GV.Spec.deltaF;
@@ -805,12 +800,14 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
 
   /* Now, the point is to store the template waveform vector */
   vector = XLALCreateREAL4Vector( GV.seg_length);
+  vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
   f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec.deltaF+0.5);
   for (m = 0; m < NTemplates; m++){
     
     /* create the space for the waveform vectors */
     strtemplate[m].waveform_f = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
     strtemplate[m].waveform_t = XLALCreateREAL4Vector( GV.seg_length);
+    strtemplate[m].auto_cor   = XLALCreateREAL4Vector( GV.seg_length);
     
     /* populate with the template waveform */
     for ( p = f_low_cutoff_index; p < (int)strtemplate[m].waveform_f->length; p++ ){
@@ -829,18 +826,39 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
     strtemplate[m].waveform_f->data[0].re = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].re = 0;
     strtemplate[m].waveform_f->data[0].im = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].im = 0;
     
+    for (p=0 ; p<(int) vtilde->length; p++){
+      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re;
+      vtilde->data[p].im = 0;
+    }
+    
     /* reverse FFT */
     if(XLALREAL4ReverseFFT(vector, strtemplate[m].waveform_f, GV.rplan)) return 1;
-    
+    if(XLALREAL4ReverseFFT(strtemplate[m].auto_cor, vtilde, GV.rplan)) return 1;
+
     /* The vector is reshuffled in the right order */
     for ( p = 0 ; p < GV.seg_length/2; p++ ){
       strtemplate[m].waveform_t->data[p] = vector->data[GV.seg_length/2+p]*GV.Spec.deltaF;;
       strtemplate[m].waveform_t->data[GV.seg_length/2+p] = vector->data[p]*GV.Spec.deltaF;;
     }
+
+    /* Normalize the autocorrelation by the central value */
+    norm=strtemplate[m].auto_cor->data[0];
+    for ( p = 0 ; p < (int)strtemplate[m].auto_cor->length; p++ ){
+      strtemplate[m].auto_cor->data[p] /= norm;
+      vector->data[p]=strtemplate[m].auto_cor->data[p];
+    }
+
+    /* The vector is reshuffled in the right order */
+    for ( p = 0 ; p < GV.seg_length/2; p++ ){
+      strtemplate[m].auto_cor->data[p] = vector->data[GV.seg_length/2+p];
+      strtemplate[m].auto_cor->data[GV.seg_length/2+p] = vector->data[p];
+    }
+
   }
   
   XLALDestroyREAL4Vector( vector );
-  
+  XLALDestroyCOMPLEX8Vector( vtilde );
+
   return 0;
 }
 
@@ -1428,6 +1446,7 @@ int FreeMem(void){
   for (m=0; m < NTemplates; m++){
     XLALDestroyREAL4Vector(strtemplate[m].StringFilter.data);
     XLALDestroyREAL4Vector(strtemplate[m].waveform_t);
+    XLALDestroyREAL4Vector(strtemplate[m].auto_cor);
     XLALDestroyCOMPLEX8Vector(strtemplate[m].waveform_f);
   }
 
