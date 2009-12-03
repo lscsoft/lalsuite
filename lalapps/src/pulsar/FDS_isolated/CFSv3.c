@@ -44,10 +44,6 @@
 #include <lal/ComputeFstat.h>
 #include "Fstat_v3.h"
 
-
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lalapps.h>
 
 /* local includes */
@@ -119,7 +115,7 @@ int main(int argc, char *argv[])
   MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
   UINT4 X;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = LALERROR;	/* by default output only error-messages */
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -135,11 +131,14 @@ int main(int argc, char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
-  if ( uvar.version ) {
-    printf ( "%s\n", lalGitID );
-    printf ( "%s\n", lalappsGitID );
-    return 0;
-  }
+  if ( uvar.version )
+    {
+      if ( XLALOutputVersionString(stdout) != XLAL_SUCCESS ) {
+        XLALPrintError("XLALOutputVersionString() failed.\n");
+        exit(1);
+      }
+      exit(0);
+    }
 
   /* ----- Load SFTs */
   LAL_CALL ( LoadInputSFTs(&status, &inputData, &uvar ), &status);

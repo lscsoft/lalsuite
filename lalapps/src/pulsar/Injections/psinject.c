@@ -52,11 +52,10 @@
 #include "SIStr.h"
 #endif
 
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
-/* include lalsuite git IDs for this code */
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+#include <lal/XLALError.h>
+#include <lalapps.h>
 
 
 #define MAXPULSARS 64
@@ -123,7 +122,6 @@ void syserror(int showerrno, const char *fmt, ...);
 void sighandler(int sig);
 void usage(FILE *filep);
 int parseinput(int argc, char **argv);
-void OutputVersion ( void );
 
 /* signal handler to monitor the status of children catch SIGCHLD */
 void sighandler(int sig){
@@ -191,10 +189,10 @@ void syserror(int showerrno, const char *fmt, ...){
 }
 
 /* usage message */
-void usage(FILE *filep){    
+void usage(FILE *filep){
   fprintf(filep,
           "--------------------------------------------------------------------------------\n"
-          "%s: %s\n" 
+          "%s: \n"
           "--------------------------------------------------------------------------------\n"
 	  "Options are:\n"
 	  "-h            THIS help message\n"
@@ -219,7 +217,7 @@ void usage(FILE *filep){
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
           "--------------------------------------------------------------------------------\n"
-	  , programname, lalappsGitCommitID, MAXPULSARS
+	  , programname, MAXPULSARS
 	  );
   return;
 }
@@ -241,8 +239,13 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-        OutputVersion();
-        exit(0);
+      if ( XLALOutputVersionString(stdout) != XLAL_SUCCESS ) {
+        XLALPrintError("XLALOutputVersionString() failed!\n");
+        exit(1);
+      }
+      exit(0);
+      break;
+
     case 'p':
       printf("The calibration line frequencies are:\n"
 	     "  L: %18.14f Hz\n"
@@ -250,10 +253,13 @@ int parseinput(int argc, char **argv){
 	     "  H: %18.14f Hz\n",
 	     calfreq[0], calfreq[1], calfreq[2]);
       exit(0);
+      break;
     case 'h':
       /* usage message */
       usage(stdout);
       exit(0);
+      break;
+
     case 'n':
       /* number of pulsars to simulate */
       npulsars=atoi(optarg);
@@ -865,15 +871,3 @@ int main(int argc, char *argv[]){
   /* and exit cleanly */
   exit(0);
 }
-
-
-/** Simply output version information to stdout */
-void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */
