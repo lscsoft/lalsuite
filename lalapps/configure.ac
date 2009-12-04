@@ -67,8 +67,12 @@ LALAPPS_ENABLE_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
-LALAPPS_ENABLE_XML
 LALAPPS_ENABLE_CFITSIO
+LALAPPS_ENABLE_LALFRAME
+LALAPPS_ENABLE_LALMETAIO
+LALAPPS_ENABLE_LALXML
+LALAPPS_ENABLE_LALBURST
+LALAPPS_ENABLE_LALSTOCHASTIC
 LALAPPS_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
@@ -161,12 +165,21 @@ fi
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
 
+# check for system headers
+AC_HEADER_STDC
+AC_CHECK_HEADERS([glob.h])
+AC_CHECK_HEADERS([punistd.h])
+AC_CHECK_HEADERS([getopt.h])
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
-AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_version])
+AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
+AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
+
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for libFrame
 if test "${frame}" = "true"; then
@@ -174,10 +187,23 @@ if test "${frame}" = "true"; then
   lal_pre_frame_LIBS="$LIBS"
   LIBS="$LIBS $FRAME_LIBS"
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
-                 [LALAPPS_DISABLE_FRAME]
+                 [AC_MSG_WARN([could not find the frame library])]
                  [frame="false"]
+                 [lalframe="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
 fi
+
+# check for libFrame headers
+if test "${frame}" = "true"; then
+  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
+  AC_CHECK_HEADERS([FrameL.h],,
+                   [AC_MSG_WARN([could not find the FrameL.h header])]
+                   [frame="false"]
+                   [lalframe="false"]
+                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([FRAME],[frame])
 
 # check for libmetaio
 if test "${metaio}" = "true"; then
@@ -185,10 +211,23 @@ if test "${metaio}" = "true"; then
   lal_pre_metaio_LIBS="$LIBS"
   LIBS="$LIBS $METAIO_LIBS"
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([disabling metaio support])]
+                 [AC_MSG_WARN([could not find the metaio library])]
                  [metaio="false"]
+                 [lalmetaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
+
+# check for libmetaio headers
+if test "${metaio}" = "true"; then
+  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  AC_CHECK_HEADERS([metaio.h],,
+                   [AC_MSG_WARN([could not find the metaio.h header])]
+                   [metaio="false"]
+                   [lalmetaio="false"]
+                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 
 # check for libcfitsio
 if test "${cfitsio}" = "true"; then
@@ -200,56 +239,24 @@ if test "${cfitsio}" = "true"; then
                  [LIBS="$lal_pre_cfitsio_LIBS"])
 fi
 
-# check for lal libararies
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
-LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw])
-LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements])
-LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter])
-
-# check for header files
-AC_HEADER_STDC
-AC_CHECK_HEADERS([getopt.h])
-AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-if test "$LALSUITE_BUILD" != "true" ; then
-  AC_CHECK_HEADERS([lal/LALStdlib.h])
-fi
-AC_CHECK_HEADERS([glob.h])
-AC_CHECK_HEADERS([punistd.h])
-
-# check for libFrame headers
-if test "${frame}" = "true"; then
-  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
-  AC_CHECK_HEADERS([FrameL.h],,
-                   [LALAPPS_DISABLE_FRAME]
-                   [frame="false"]
-                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([FRAME],[frame])
-
-# check for libmetaio headers
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([disabling metaio support])]
-                   [metaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([METAIO],[metaio])
-
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
-  AC_CHECK_HEADER([fitsio.h],,
-                  [cfitsio="false"]
-                  [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
+  AC_CHECK_HEADERS([fitsio.h],,
+                   [cfitsio="false"]
+                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
+
+# check for lal libararies and headers
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
