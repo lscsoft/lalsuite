@@ -13,6 +13,7 @@ if test "$$2" = "true"; then
     eval $2="true"
   else
     AC_CHECK_LIB([$2],[$4],[eval $2="true"],[AC_MSG_ERROR([could not find the $1 library])])
+    AC_CHECK_HEADERS([$5],,[AC_MSG_ERROR([could not find the $5 header])])
     AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
   fi
 else
@@ -22,20 +23,25 @@ LALSUITE_ENABLE_MODULE([$1],[$2])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
-PKG_CHECK_MODULES([$1],[$2 >= $3],[eval $2="true"],[eval $2="false"])
 if test "$$2" = "true"; then
-  if test "$LALSUITE_BUILD" = "true"; then
-    AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
-    eval $2="true"
-    CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
-    LIBS="$LIBS $$1_LIBS"
-  else
-    CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
-    LIBS="$LIBS $$1_LIBS"
-    AC_CHECK_LIB([$2],[$4],[eval $2="true"],[eval $2=false
-      AC_MSG_WARN([could not find the $1 library])])
-    if test "$$2" = true; then
+  PKG_CHECK_MODULES([$1],[$2 >= $3],[eval $2="true"],[eval $2="false"])
+  if test "$$2" = "true"; then
+    if test "$LALSUITE_BUILD" = "true"; then
       AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
+      eval $2="true"
+      CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
+      LIBS="$LIBS $$1_LIBS"
+    else
+      CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
+      LIBS="$LIBS $$1_LIBS"
+      AC_CHECK_LIB([$2],[$4],[eval $2="true"],[eval $2=false
+        AC_MSG_WARN([could not find the $1 library])])
+      if test "$$2" = true; then
+        AC_CHECK_HEADERS([$5],,[eval $2=false])
+        if test "$$2" = true; then
+          AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
+        fi
+      fi
     fi
   fi
 fi
