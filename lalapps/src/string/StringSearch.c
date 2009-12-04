@@ -160,6 +160,7 @@ struct StringTemplateTag {
   REAL4Vector *waveform_t;    /* Template waveform - time-domain */
   COMPLEX8Vector *waveform_f; /* Template waveform - frequency domain */
   REAL4Vector *auto_cor;      /* Auto-correlation vector */
+  INT4 chi2_index;            /* index to compute chi2 */
 } StringTemplate;
 
 /***************************************************************************/
@@ -330,7 +331,7 @@ int main(int argc,char *argv[])
 }
 
 
-/************************************* MAIN PROGRAM ENDS *************************************/
+/**************************** MAIN PROGRAM ENDS ********************************/
 
 
 /*******************************************************************************/
@@ -465,8 +466,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
   INT4 pmax, pend, pstart;
   INT8  peaktime, starttime;
   INT8  timeNS;
-  
-  chi2=0, ndof=0;
+
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
@@ -540,16 +540,16 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       (*thisEvent)->string_cluster_t = CLA.cluster;
 
       /* Compute Chi2 and store it*/
-      
-      if(maximum>68){
-		
-	for(pp=0; pp<strtemplate[m].waveform_t->length; pp++){
-	  printf("%f\n",strtemplate[m].auto_cor->data[pp]);
-	  chi2=1;
-	}
+      chi2=0, ndof=0;
+      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
+	
+	chi2+=
+	  (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+	ndof+=
+	  (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+	
       }
-      
-      
+      	      
       (*thisEvent)->confidence = chi2/ndof;
     }
   }
@@ -708,8 +708,8 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA){
-  REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm;
-  int m, p, pcut, f_min_index, f_max_index, f_cut_index, k, f_low_cutoff_index;
+  REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
+  int m, p, pcut, f_min_index, f_max_index, f_cut_index, k, f_low_cutoff_index, extr_ctr;
   REAL4Vector *integral;
   REAL4Vector    *vector; /* time-domain vector workspace */
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
@@ -827,7 +827,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
     strtemplate[m].waveform_f->data[0].im = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].im = 0;
     
     for (p=0 ; p<(int) vtilde->length; p++){
-      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re;
+      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re/GV.Spec.data->data[p];
       vtilde->data[p].im = 0;
     }
     
@@ -853,6 +853,22 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
       strtemplate[m].auto_cor->data[p] = vector->data[GV.seg_length/2+p];
       strtemplate[m].auto_cor->data[GV.seg_length/2+p] = vector->data[p];
     }
+
+    /* search for the index of the 3rd extremum */
+    extr_ctr=0;
+    strtemplate[m].chi2_index=0;
+    for ( p = GV.seg_length/2+1; p< GV.seg_length-1; p++ ){
+
+      slope1 = strtemplate[m].waveform_t->data[p+1]-strtemplate[m].waveform_t->data[p];
+      slope0 = strtemplate[m].waveform_t->data[p]-strtemplate[m].waveform_t->data[p-1];
+      strtemplate[m].chi2_index++;
+      if(slope0*slope1<0){
+	extr_ctr++;
+	if(extr_ctr==2) break;
+      }
+
+    }
+      
 
   }
   
