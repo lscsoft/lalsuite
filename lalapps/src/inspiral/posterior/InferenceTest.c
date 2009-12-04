@@ -357,10 +357,12 @@ int main(int argc, char *argv[]){
 	  addVariable(&currentParams, "spin2x",       &spin2x,              REAL8_t);	  
 	  addVariable(&currentParams, "spin2y",       &spin2y,              REAL8_t);	  
 	  addVariable(&currentParams, "spin2z",       &spin2z,              REAL8_t);
-	  double phi0 = 0.3;
-	  addVariable(&currentParams, "phi0",       &phi0,              REAL8_t);	  
+	  double shift0 = 0.3;
+	  addVariable(&currentParams, "shift0",       &shift0,              REAL8_t);
+	  double coa_phase = 0.1;
+	  addVariable(&currentParams, "coa_phase",    &coa_phase,           REAL8_t);	  
 	  double PNorder = 3.5;
-	  addVariable(&currentParams, "PNorder",       &PNorder,              REAL8_t);	  
+	  addVariable(&currentParams, "PNorder",      &PNorder,             REAL8_t);	  
 	  dumptemplateTimeDomain(&currentParams, runstate->data, templateLALSTPN, "test_TTemplateLALSTPN.csv");
 
 	  

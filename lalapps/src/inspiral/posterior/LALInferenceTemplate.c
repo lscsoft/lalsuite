@@ -1093,14 +1093,15 @@ void templateLALSTPN(LALIFOData *IFOdata)
 /*  Required (`IFOdata->modelParams') parameters are:										*/
 /*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
 /*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "inclination"	(inclination angle; REAL8, radians)									*/
+/*   - "inclination"	(inclination angle; REAL8, radians)                                 */
+/*   - "coa_phase"      (phase angle; REAL8, radians)                                       */
 /*   - "spin1x"			(x component of the spin of object 1; REAL8)						*/
 /*   - "spin1y"			(y component of the spin of object 1; REAL8)						*/
 /*   - "spin1z"			(z component of the spin of object 1; REAL8)						*/
 /*   - "spin2x"			(x component of the spin of object 2; REAL8)						*/
 /*   - "spin2y"			(y component of the spin of object 2; REAL8)						*/
 /*   - "spin2z"			(z component of the spin of object 2; REAL8)						*/
-/*	 - "phi0"			(here: 'startPhase', not coalescence phase; REAL8, radians)			*/
+/*	 - "shift0"			(shift offset; REAL8, radians)			                            */
 /*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
 /*	 - "PNorder"		(Phase PN order; REAL8)												*/
 /********************************************************************************************/
@@ -1121,14 +1122,15 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	injParams.mass1			= *(REAL8*) getVariable(IFOdata->modelParams, "m1");				/* stellar mass */
 	injParams.mass2			= *(REAL8*) getVariable(IFOdata->modelParams, "m2");			    /* stellar mass */
 	injParams.inclination	= *(REAL8*) getVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
+	injParams.coa_phase		= *(REAL8*) getVariable(IFOdata->modelParams, "coa_phase");
 	injParams.spin1x		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1x");			/* dimentionless spin */
 	injParams.spin1y		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1y");			/* dimentionless spin */
 	injParams.spin1z		= *(REAL8*) getVariable(IFOdata->modelParams, "spin1z");			/* dimentionless spin */
 	injParams.spin2x		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2x");		    /* dimentionless spin */
 	injParams.spin2y		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2y");		    /* dimentionless spin */
 	injParams.spin2z		= *(REAL8*) getVariable(IFOdata->modelParams, "spin2z");		    /* dimentionless spin */
-	REAL8 phi0				= *(REAL8*) getVariable(IFOdata->modelParams, "phi0");				/* initial phase */	
-	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams,"time");   			/* time at coalescence */
+	REAL8 shift0			= *(REAL8*) getVariable(IFOdata->modelParams, "shift0");				/* initial phase */	
+	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
 	
 	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
 		fprintf(stderr, "ERROR: Desired tc is before start of segment\n");
@@ -1144,7 +1146,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	ppnParams.deltaT = IFOdata->timeData->deltaT;
 	double deltaT = IFOdata->timeData->deltaT;
 	
-	injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
+	//injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
 	injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
 
 	int PNorderTimesTwo = (int)rint(PNorder*2.0);
@@ -1201,11 +1203,11 @@ void templateLALSTPN(LALIFOData *IFOdata)
 		else{
 		a1  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+2];
         a2  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)+1]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+3];
-        phi     = (1.0-fractionalRightShift)*waveform.phi->data->data[i+integerLeftShift]+fractionalRightShift*waveform.phi->data->data[i+integerLeftShift+1] + phi0;
+        phi     = (1.0-fractionalRightShift)*waveform.phi->data->data[i+integerLeftShift]+fractionalRightShift*waveform.phi->data->data[i+integerLeftShift+1];
         shift   = (1.0-fractionalRightShift)*waveform.shift->data->data[i+integerLeftShift]+fractionalRightShift*waveform.shift->data->data[i+integerLeftShift+1];
 		
-		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
-		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift-shift0)*cos(phi) - a2*sin(shift-shift0)*sin(phi);
+		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift-shift0)*cos(phi) + a2*cos(shift-shift0)*sin(phi);
 		}
 	}	
 	
