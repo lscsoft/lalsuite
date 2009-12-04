@@ -1,9 +1,19 @@
-## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = support.tex LALMathematicaHplot1.eps LALMathematicaHplot1.pdf
+DOCSOURCEFILES = \
+	support.tex \
+	LALMathematicaHplot1.eps \
+	LALMathematicaHplot1.pdf
+
 MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = main.dvi main.pdf main.ps
+CLEANFILES = \
+	main.dvi \
+	main.pdf \
+	main.ps
+
 EXTRA_DIST = $(DOCSOURCEFILES)
-dvi-local: .dvi-dep
+
 distclean-local:
 	-rm -fr .adoc
+
+dvi-local: .dvi-dep
+
 @DOCMKFILE@
