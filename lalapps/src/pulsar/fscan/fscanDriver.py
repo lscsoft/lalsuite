@@ -22,6 +22,7 @@ __version__ = '$Revision: 1.25 $'[11:-2]
 # 08/25/2009 cg; added lines 643 to 652 so that a single frequency band of less than 10 Hz can be run.
 # 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
+# 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -147,7 +148,7 @@ longop = [  #cg; longopt is a list
   "psrInput=",
   "psrEphmeris=",
   "earthFile=",
-  "sunFile="
+  "sunFile=",
   ]
 
 try:
@@ -569,9 +570,12 @@ if (createSFTs):
   # MAKE THE .dag FILE; RUN MakeSFTDAG
   #
   sftDAGFile = 'tmpSFTDAG%stmp.dag' % tagString
+  # Make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq). 
   if (freqBand < 2):
-        checked_freqBand = 2
-  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,checked_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
+     sft_freqBand = 2
+  else:
+     sft_freqBand = freqBand + 1;
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
   if (makeSFTIFO != None):
@@ -715,18 +719,15 @@ thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
 nodeCount = 0L
 
-if (thisEndFreq == endFreq):
-  endFreq=endFreq+1
+# Next lines should not be needed because sft_freqBand goes beyond endFreq above
+#if (thisEndFreq == endFreq):
+#  endFreq=endFreq+1
 
+# Note that sft_freqBand goes beyond endFreq above, so problem that lalapps_spec_avg
+# works on [startFreq,endFreq], not [startFreq,endFreq), should now be avoided.
+# Thus, can use "while (thisEndFreq <= endFreq)" rather than "while (thisEndFreq < endFreq)".
+while (thisEndFreq <= endFreq):
 
-while (thisEndFreq < endFreq):
-  # Because SFTs are in the band [startFreq,endFreq) but lalapps_spec_avg works on [startFreq,endFreq]
-  # we need to avoid the last subBand requested. The user thus should request 1 Hz more than
-  # wanted and the last one Hz band will not be used.
-  #if (thisEndFreq >= endFreq):
-     # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
-     #thisEndFreq = endFreq - 1
-  
   #print >> sys.stdout,"startfreq: ",startFreq,"\n"
   #print >> sys.stdout,"endfreq: ",endFreq,"\n"
   #print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"

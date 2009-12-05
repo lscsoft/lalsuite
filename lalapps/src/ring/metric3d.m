@@ -12,12 +12,11 @@ function ds2 = metric3d(fa,fb,Qa,Qb,dt)
 % Qa = Q in ifo1
 % Qb = Q in ifo2
 %
-% ta = t in ifo1
-% tb = t in ifo2
+% dt = t_b-t_a
 %
 % Usage Example:
 %
-% ds2_H1L1 = metric3d(f_H1,f_L1,Q_H1,Q_L1,t_H1,t_L1);
+% ds2_H1L1 = metric3d(f_H1,f_L1,Q_H1,Q_L1,dt);
 %
 % Author: Fiona Speirits
 
