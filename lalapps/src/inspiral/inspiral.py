@@ -2314,6 +2314,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     self.__include_only_coincs = None
     self.__sim_type = None
     self.__output_format = None
+    self.__columns = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2393,6 +2394,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets the output-format option.
     """
     return self.__output_format
+
+  def set_columns(self, columns):
+    """
+    Sets the columns option.
+    """
+    self.add_var_opt('columns', columns)
+    self.__columns = columns
+
+  def get_columns(self):
+    """
+    Gets the columns option.
+    """
+    return self.__columns
 
 
 class PrintLCNode(LigolwCBCPrintNode):
