@@ -212,6 +212,7 @@ if options.generate_all_data_plots:
 # and missed injection minifollowups don't use full xml files
 minifup_job = inspiral.MiniFollowupsJob(cp)
 minifup_ts_job = inspiral.MiniFollowupsJob(cp)
+minifup_ts_job.set_time_slides()
 minifup_cm_job = inspiral.MiniFollowupsJob(cp)
 
 # all other jobs: all the nodes share the same static options for these
@@ -711,7 +712,6 @@ for result_db in result_dbs_cache:
   
         if datatype == 'slide':
           minifup_node = inspiral.MiniFollowupsNode( minifup_ts_job )
-          minifup_node.set_time_slides()
         else:
           minifup_node = inspiral.MiniFollowupsNode( minifup_job )
         minifup_node.set_category('minifollowups')

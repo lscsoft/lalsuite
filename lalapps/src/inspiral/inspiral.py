@@ -2019,6 +2019,12 @@ class MiniFollowupsJob(InspiralPlottingJob):
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
+  def set_time_slides(self):
+    """
+    Turns on the --time-slides argument.
+    """
+    self.add_opt('time-slides', None)
+
 
 class MiniFollowupsNode(InspiralPlottingNode):
   """
@@ -2037,7 +2043,6 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml_summary = None
     self.__output_html_table = None
     self.__table_name = None
-    self.__time_slides = False
 
   def set_cache_file(self, cache_file):
     """
@@ -2142,13 +2147,6 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the table_name that's set.
     """
     return self.__table_name
-
-  def set_time_slides(self):
-    """
-    Turns on the --time-slides argument.
-    """
-    self.add_var_opt('time-slides')
-    self.__time_slides = True
 
 
 #############################################################################
