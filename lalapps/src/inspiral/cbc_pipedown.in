@@ -869,6 +869,7 @@ for result_db in result_dbs_cache:
         printmissed_node.set_output( summary_filename )
         printmissed_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
         printmissed_node.set_sim_tag( sim_tag )
+        printmissed_node.set_output_format( summ_file_type )
   
         # set parent node
         printmissed_node.add_parent( ccfar_node )
