@@ -56,8 +56,7 @@ TESTS = \
 	GeneratePulsarSignalTest \
 	GeocentricGeodeticTest \
 	SimulateTaylorCWTest \
-	SkyCoordinatesTest \
-	$(NEED_MEATIO)
+	SkyCoordinatesTest
 
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test
 
