@@ -18,7 +18,6 @@ libpulsar_la_SOURCES = \
 	FlatPulsarMetric.c \
 	FoldAmplitudes.c \
 	GetEarthTimes.c \
-	LALBarycenter.c \
 	LALComputeAM.c \
 	LALDemod.c \
 	LALDemodFAST.c \
