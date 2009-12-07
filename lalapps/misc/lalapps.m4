@@ -175,7 +175,7 @@ AC_DEFUN([LALAPPS_ENABLE_LALXML],
 AC_DEFUN([LALAPPS_ENABLE_LALBURST],
 [AC_ARG_ENABLE(
   [lalburst],
-  AC_HELP_STRING([--enable-burst],[compile code that requires lalburst library [default=yes]]),
+  AC_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
   [ case "${enableval}" in
       yes) lalburst=true;;
       no) lalburst=false;;
@@ -187,7 +187,7 @@ AC_DEFUN([LALAPPS_ENABLE_LALBURST],
 AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
 [AC_ARG_ENABLE(
   [lalstochastic],
-  AC_HELP_STRING([--enable-stochastic],[compile code that requires lalstochastic library [default=yes]]),
+  AC_HELP_STRING([--enable-lalstochastic],[compile code that requires lalstochastic library [default=yes]]),
   [ case "${enableval}" in
       yes) lalstochastic=true;;
       no) lalstochastic=false;;
