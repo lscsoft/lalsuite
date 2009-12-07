@@ -400,11 +400,11 @@ for tag in user_tags:
   t2c2sql_node.set_input_cache( t2c_output_cache )
   t2c2sql_node.set_tmp_space( tmp_space )
   # database name has form: 
-  # distinct_ifos-USER_TAG_CBC_RAW_RESULTS-cache_start-cache_duration.sql
+  # distinct_ifos-USER_TAG_CBC_RAW_RESULTS-cache_start-cache_duration.sqlite
   db_type = tag + '_RAW_CBC_RESULTS'
   raw_result_db = '.'.join([
     '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
-    'sql' ])
+    'sqlite' ])
   # check to make sure the database doesn't already exist
   if os.path.exists( raw_result_db ):
     print "WARNING: Raw result database %s already exists; " % raw_result_db + \
@@ -444,11 +444,11 @@ for tag in user_tags:
   cluster_node.set_tmp_space( tmp_space )
   cluster_node.set_input( raw_result_db )
   # output database name has form:
-  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
+  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
   db_type = tag + '_CLUSTERED_CBC_RESULTS'
   result_db = '.'.join([
     '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
-    'sql' ]) 
+    'sqlite' ]) 
   cluster_node.set_output(result_db)
   
   # set parent node
@@ -485,7 +485,7 @@ for tag in user_tags:
     simxml_node.set_category('ligolw_sqlite')
     simxml_node.set_tmp_space( tmp_space )
     simxml_node.set_database( result_db )
-    sim_xml = result_db.replace('.sql', '.xml')
+    sim_xml = result_db.replace('.sqlite', '.xml')
     simxml_node.set_xml_output( sim_xml )
 
     simxml_node.add_parent( dbaddinj_node )
@@ -679,16 +679,15 @@ for result_db in result_dbs_cache:
       summary_filename = '.'.join([
         '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
         'xml' ])
-      xml_filename =  '.'.join([
-        '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
-        'xml' ])
+      full_filename = '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ])
       # set node options
       printlc_node = inspiral.PrintLCNode( printlc_job )
       printlc_node.set_category('printlc')
       printlc_node.set_tmp_space( tmp_space )
       printlc_node.set_input( result_db.path() )
       printlc_node.set_output( summary_filename )
-      printlc_node.set_extract_to_xml( xml_filename )
+      printlc_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
+      printlc_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
       printlc_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
       printlc_node.set_datatype( datatype )
 
@@ -747,16 +746,15 @@ for result_db in result_dbs_cache:
           summary_filename = '.'.join([
             '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
             summ_file_type ])
-          xml_filename =  '.'.join([
-            '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ]),
-            'xml' ])
+          full_filename = '-'.join([ ''.join(on_instruments.split(',')), type, experiment_start, experiment_duration ])
           # set node options
           printsims_node = inspiral.PrintSimsNode( printsims_job )
           printsims_node.set_category('printsims')
           printsims_node.set_tmp_space( tmp_space )
           printsims_node.set_input( result_db.path() )
           printsims_node.set_output( summary_filename )
-          printsims_node.set_extract_to_xml( xml_filename )
+          printsims_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
+          printsims_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
           printsims_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
           printsims_node.set_comparison_datatype( datatype )
           printsims_node.set_sim_tag( sim_tag )
