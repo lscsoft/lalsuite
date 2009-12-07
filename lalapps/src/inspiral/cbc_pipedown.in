@@ -273,7 +273,7 @@ for tag in user_tags:
   # determine whether or not this was an injection run by checking if there
   # is an injection file for this tag
 
-  file_sieve = ''.join([ '*', tag.split('_CAT')[0], '*' ])
+  file_sieve = '_'.join([ r'INJECTIONS_[0-9][0-9][0-9][0-9]', tag.split('_CAT')[0] ])
   inj_file = inj_cache.sieve( description = file_sieve, exact_match = True )
   if len(inj_file) == 0:
     simulation = False
@@ -665,7 +665,7 @@ for result_db in result_dbs_cache:
   if 'PLAYGROUND' in tag:
     datatypes = ['playground', 'slide']
   else:
-    datatypes = ['all_data', 'playground', 'exclude_play', 'slide']
+    datatypes = ['all_data', 'playground', 'slide']
 
   for datatype in datatypes:
     print "\t\tfor %s..." % datatype
@@ -696,22 +696,23 @@ for result_db in result_dbs_cache:
 
       dag.add_node( printlc_node )
 
-      # create the minifollowups nodes
-      prefix = '-'.join([ ''.join(on_instruments.split(',')), tag ])
-      suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
-
-      minifup_node = inspiral.MiniFollowupsNode( minifup_job )
-      minifup_node.set_category('minifollowups')
-      minifup_node.set_cache_file( options.ihope_cache )
-      minifup_node.set_cache_string( tag.split('_CAT_')[0] )
-      minifup_node.set_prefix( prefix )
-      minifup_node.set_suffix( suffix )
-      minifup_node.set_input_xml( xml_filename )
-      minifup_node.set_input_xml_summary( summary_filename )
-      minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
-
-      minifup_node.add_parent( printlc_node )
-      dag.add_node( minifup_node )
+      # create the minifollowups nodes (not for CAT_1)
+      if veto_cat != 'CAT_1_VETO':
+        prefix = '-'.join([ ''.join(on_instruments.split(',')), tag ])
+        suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
+  
+        minifup_node = inspiral.MiniFollowupsNode( minifup_job )
+        minifup_node.set_category('minifollowups')
+        minifup_node.set_cache_file( options.ihope_cache )
+        minifup_node.set_cache_string( tag.split('_CAT_')[0] )
+        minifup_node.set_prefix( prefix )
+        minifup_node.set_suffix( suffix )
+        minifup_node.set_input_xml( xml_filename )
+        minifup_node.set_input_xml_summary( summary_filename )
+        minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+  
+        minifup_node.add_parent( printlc_node )
+        dag.add_node( minifup_node )
       
   ############################################################################
   # Injection summary: Setup printsims, minifollowup, and printmissed nodes
@@ -741,6 +742,17 @@ for result_db in result_dbs_cache:
           # set output-format to html for ALLINJ since won't run minifup on these types
           if sim_tag == 'ALLINJ':
             summ_file_type = 'html'
+            columns = ','.join([
+              'rank',
+              'injected_end_time',
+              'injected_end_time_utc__Px_click_for_daily_ihope_xP_',
+              'elogs',
+              'injected_mass1',
+              'injected_mass2',
+              'injected_distance'
+              'sim_tag',
+              'recovered_combined_far',
+              'recovered_snr'])
           else:
             summ_file_type = 'xml'
           summary_filename = '.'.join([
@@ -759,6 +771,8 @@ for result_db in result_dbs_cache:
           printsims_node.set_comparison_datatype( datatype )
           printsims_node.set_sim_tag( sim_tag )
           printsims_node.set_output_format( summ_file_type )
+          if sim_tag == 'ALLINJ':
+            printsims_node.set_columns( columns )
     
           # set parent node
           printsims_node.add_parent( ccfar_node )
@@ -767,7 +781,7 @@ for result_db in result_dbs_cache:
     
           # create the minifollowups nodes
           # this is not done for ALLINJ because there is no ALLINJ tag in the ihope_cache
-          if sim_tag != 'ALLINJ': 
+          if not (veto_cat == 'CAT_1_VETO' or sim_tag == 'ALLINJ'):
             prefix = '-'.join([ ''.join(on_instruments.split(',')), '_'.join([sim_tag, veto_cat]) ])
             suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
       
@@ -795,6 +809,26 @@ for result_db in result_dbs_cache:
         # set output and extracted xml file names
         if sim_tag == 'ALLINJ':
           summ_file_type = 'html'
+          columns = ','.join([
+            'rank',
+            'decisive_distance',
+            'end_time',
+            'end_time_utc__Px_click_for_daily_ihope_xP_',
+            'elogs',
+            'mchirp',
+            'mass1',
+            'mass2',
+            'eff_dist_h',
+            'eff_dist_l',
+            'eff_dist_v',
+            'sim_tag',
+            'mini_followup'
+            'mass1',
+            'mass2',
+            'eff_dist_h',
+            'eff_dist_l',
+            'eff_dist_v',
+            'sim_tag'])
         else:
           summ_file_type = 'xml'
         summary_filename = '.'.join([
@@ -809,6 +843,8 @@ for result_db in result_dbs_cache:
         printmissed_node.set_output( summary_filename )
         printmissed_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
         printmissed_node.set_sim_tag( sim_tag )
+        if sim_tag == 'ALLINJ':
+          printmissed_node.set_columns( columns )
   
         # set parent node
         printmissed_node.add_parent( ccfar_node )
@@ -817,7 +853,7 @@ for result_db in result_dbs_cache:
 
         # create the minifollowups nodes
         # this is not done for ALLINJ because there is no ALLINJ tag in the ihope_cache
-        if sim_tag != 'ALLINJ': 
+        if not (veto_cat == 'CAT_1_VETO' or sim_tag == 'ALLINJ'):
           prefix = '-'.join([ ''.join(on_instruments.split(',')), '_'.join([sim_tag, veto_cat]) ])
           suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
     
