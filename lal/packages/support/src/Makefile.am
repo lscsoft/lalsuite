@@ -53,7 +53,6 @@ MAINTAINERCLEANFILES = \
 	StreamVectorSequenceInput.c
 
 EXTRA_DIST = \
-	$(LALXMLSOURCES) \
 	LALPrintFrequencySeries.m4 \
 	LALPrintTimeSeries.m4 \
 	LALPrintVector.m4 \
