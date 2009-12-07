@@ -2309,6 +2309,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__extract_to_xml = None
+    self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
     self.__sim_type = None
@@ -2326,6 +2327,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_extract_to_database(self, database_filename):
+    """
+    Sets the extract-to-database option.
+    """
+    self.add_var_opt('extract-to-database', database_filename)
+    self.__extract_to_database = database_filename
+
+  def get_extract_to_database(self):
+    """
+    Gets database-filename if extract-to-database is set.
+    """
+    return self.__extract_to_database
 
   def set_exclude_coincs(self, exclude_coincs):
     """
