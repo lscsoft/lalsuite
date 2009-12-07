@@ -2166,8 +2166,8 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
   else
     UserFmin_Closest = TSeries->f_het + floor((uvar_Freq-TSeries->f_het)/Vars->dF_closest+0.5)*Vars->dF_closest;
   
-  UserFmin_Diff = uvar_Freq - UserFmin_Closest;
-  TSeries->f_het += UserFmin_Diff;
+  UserFmin_Diff = UserFmin_Closest - uvar_Freq;
+  TSeries->f_het -= UserFmin_Diff;
   
   /* Store the Starting time */
   TSeries->epoch = StartTime; 
