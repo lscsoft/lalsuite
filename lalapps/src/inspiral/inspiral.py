@@ -2036,6 +2036,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml = None
     self.__input_xml_summary = None
     self.__output_html_table = None
+    self.__table_name = None
 
   def set_cache_file(self, cache_file):
     """
@@ -2127,6 +2128,19 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the output_html_table that's set.
     """
     return self.__output_html_table
+
+  def set_table_name(self, table_name):
+    """
+    Sets the table-name argument.
+    """
+    self.add_var_opt( 'table-name', table_name )
+    self.__table_name = table_name
+
+  def get_table_name(self):
+    """
+    Return the table_name that's set.
+    """
+    return self.__table_name
 
 
 #############################################################################

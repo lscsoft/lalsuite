@@ -723,8 +723,15 @@ for result_db in result_dbs_cache:
     # cycle over all the different types of injections
     for sim_tag in sim_tags:
   
-      # printsims
-      datatypes = ['all_data', 'playground']
+      # 
+      # Printsims
+      #
+      datatypes = ['playground']
+      # TODO: if you're wondering why the list only has one entry... this originally cycled over
+      # all_data and playground. As the rank column was dropped from minifollowups, and since
+      # this would require wip to pick up two different files (playground for closed box, all_data for open)
+      # I'm just dropping the all_data for now. If we decide to put it back later, I'll do so; otherwise,
+      # if it isn't a useful feature, I'll drop the list and hardcode a datatype below at a future date.
   
       for datatype in datatypes:
         # set file naming type
@@ -763,7 +770,7 @@ for result_db in result_dbs_cache:
           # create the minifollowups nodes
           # this is not done for ALLINJ because there is no ALLINJ tag in the ihope_cache
           if sim_tag != 'ALLINJ': 
-            prefix = '-'.join([ ''.join(on_instruments.split(',')), tag ])
+            prefix = '-'.join([ ''.join(on_instruments.split(',')), '_'.join([sim_tag, veto_cat]) ])
             suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
       
             minifup_node = inspiral.MiniFollowupsNode( minifup_job )
@@ -775,19 +782,27 @@ for result_db in result_dbs_cache:
             minifup_node.set_input_xml( xml_filename )
             minifup_node.set_input_xml_summary( summary_filename )
             minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+            minifup_node.set_table_name( 'selected_found_injections' )
       
             minifup_node.add_parent( printsims_node )
             dag.add_node( minifup_node )
-
-      # printmissed
+      
+      #
+      #  Printmissed
+      #
       type = '_'.join([ sim_tag, veto_cat, 'CLOSEST_MISSED_INJECTIONS' ])
       # cycle over all ifos times, creating different tables for each
       for on_instruments in distinct_instrument_sets:
         on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
         # set output and extracted xml file names
+        if sim_tag == 'ALLINJ':
+          summ_file_type = 'html'
+        else:
+          summ_file_type = 'xml'
         summary_filename = '.'.join([
           '-'.join([ ''.join(on_instruments.split(',')), type + '_SUMMARY', experiment_start, experiment_duration ]),
-          'html' ])
+          summ_file_type ])
+
         # set node options
         printmissed_node = inspiral.PrintMissedNode( printmissed_job )
         printmissed_node.set_category('printmissed')
@@ -801,6 +816,27 @@ for result_db in result_dbs_cache:
         printmissed_node.add_parent( ccfar_node )
   
         dag.add_node( printmissed_node )
+
+        # create the minifollowups nodes
+        # this is not done for ALLINJ because there is no ALLINJ tag in the ihope_cache
+        if sim_tag != 'ALLINJ': 
+          prefix = '-'.join([ ''.join(on_instruments.split(',')), '_'.join([sim_tag, veto_cat]) ])
+          suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
+    
+          minifup_node = inspiral.MiniFollowupsNode( minifup_job )
+          minifup_node.set_category('minifollowups')
+          minifup_node.set_cache_file( options.ihope_cache )
+          minifup_node.set_cache_string( sim_tag )
+          minifup_node.set_prefix( prefix )
+          minifup_node.set_suffix( suffix )
+          minifup_node.set_input_xml( xml_filename )
+          minifup_node.set_input_xml_summary( summary_filename )
+          minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+          minifup_node.set_table_name( 'close_missed_injections' )
+    
+          minifup_node.add_parent( printmissed_node )
+          dag.add_node( minifup_node )
+
 
   ############################################################################
   # Plotting: Generate all result plots
