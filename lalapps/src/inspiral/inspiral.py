@@ -2019,6 +2019,12 @@ class MiniFollowupsJob(InspiralPlottingJob):
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
+  def set_time_slides(self):
+    """
+    Turns on the --time-slides argument.
+    """
+    self.add_opt('time-slides', None)
+
 
 class MiniFollowupsNode(InspiralPlottingNode):
   """
@@ -2036,6 +2042,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml = None
     self.__input_xml_summary = None
     self.__output_html_table = None
+    self.__table_name = None
 
   def set_cache_file(self, cache_file):
     """
@@ -2127,6 +2134,19 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the output_html_table that's set.
     """
     return self.__output_html_table
+
+  def set_table_name(self, table_name):
+    """
+    Sets the table-name argument.
+    """
+    self.add_var_opt( 'table-name', table_name )
+    self.__table_name = table_name
+
+  def get_table_name(self):
+    """
+    Return the table_name that's set.
+    """
+    return self.__table_name
 
 
 #############################################################################
@@ -2295,10 +2315,12 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__extract_to_xml = None
+    self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
     self.__sim_type = None
     self.__output_format = None
+    self.__columns = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2312,6 +2334,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_extract_to_database(self, database_filename):
+    """
+    Sets the extract-to-database option.
+    """
+    self.add_var_opt('extract-to-database', database_filename)
+    self.__extract_to_database = database_filename
+
+  def get_extract_to_database(self):
+    """
+    Gets database-filename if extract-to-database is set.
+    """
+    return self.__extract_to_database
 
   def set_exclude_coincs(self, exclude_coincs):
     """
@@ -2365,6 +2400,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets the output-format option.
     """
     return self.__output_format
+
+  def set_columns(self, columns):
+    """
+    Sets the columns option.
+    """
+    self.add_var_opt('columns', columns)
+    self.__columns = columns
+
+  def get_columns(self):
+    """
+    Gets the columns option.
+    """
+    return self.__columns
 
 
 class PrintLCNode(LigolwCBCPrintNode):
@@ -2427,23 +2475,6 @@ class PrintMissedNode(LigolwCBCPrintNode):
     @job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
-    self.__instrument_time = None
-
-  def set_instrument_time(self, instruments):
-    """
-    Sets instrument-time options. If instruments
-    is a set, will convert to a sorted string.
-    """
-    if isinstance(instruments, set) or isinstance(instruments, frozenset):
-      intruments = ','.join(sorted(instruments))
-    self.add_var_opt('instrument-time', instruments)
-    self.__instrument_time = instruments
-
-  def get_instrument_time(self):
-    """
-    Gets instrument-time.
-    """
-    return self.__instrument_time
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
