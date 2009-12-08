@@ -491,6 +491,13 @@ int main(int argc,char *argv[])
         /* Continue with no windowing; parsing of command line args makes sure options are one of the above or 0 for now windowing. */
       }
 
+#ifdef PSS_ENABLED
+      /* Time Domain cleaning procedure */
+      if (CommandLineArgs.TDcleaningProc)
+	if(PSSTDCleaningDouble(CommandLineArgs))
+	  return 6;
+#endif
+
       /* create an SFT */
       if(CreateSFT(CommandLineArgs)) return 6;
 
