@@ -66,6 +66,7 @@ LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
+LALAPPS_ENABLE_BOINC
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
@@ -113,6 +114,11 @@ fi
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+
+# boinc requires a c++ compiler
+if test "${boinc}" = "true" ; then
+  AC_PROG_CXX
+fi
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -184,6 +190,31 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 AC_CHECK_HEADERS([getopt.h])
+
+# check for boinc
+if test "${boinc}" = "true" ; then
+  if test -n "$BOINC_PREFIX}" ; then
+    # has lal build built with boinc support
+    LALAPPS_CHECK_BOINC
+
+    # do compilation checks with c++
+    AC_LANG_PUSH([C++])
+
+    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
+    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
+
+    # check for boinc libraries
+    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
+    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
+
+    # check for boinc headers
+    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
+
+    # go back to c
+    AC_LANG_POP([C++])
+  fi
+fi
+BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -359,6 +390,7 @@ echo "
                 FITS library support is $CFITSIO_ENABLE_VAL
                 PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
