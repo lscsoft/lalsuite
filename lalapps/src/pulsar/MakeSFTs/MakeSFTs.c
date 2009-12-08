@@ -127,6 +127,8 @@ struct CommandLineArgsTag {
   char *IFO;               /* 01/14/07 gam */
   char *SFTpath;           /* path to SFT file location */
   char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
+  INT4 PSSCleaning;	   /* 1=YES and 0=NO*/
+  REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
@@ -190,6 +192,10 @@ int HighPass(struct CommandLineArgsTag CLA);
 int WindowData(struct CommandLineArgsTag CLA);
 int WindowDataTukey2(struct CommandLineArgsTag CLA);
 int WindowDataHann(struct CommandLineArgsTag CLA);
+
+/* Time Domain Cleaning with PSS functions */
+int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency);
 
 /* create an SFT */
 int CreateSFT(struct CommandLineArgsTag CLA);
@@ -429,6 +435,23 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 }
 #endif
 
+
+/* debug function */
+int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
+  UINT4 i;
+  FILE*fp=fopen(name,"w");
+  if(!fp) {
+    fprintf(stderr,"Could not open file '%s' for writing\n",name);
+    return -1;
+  } else {
+    for(i=0;i<length;i++)
+      fprintf(fp,"%23.16e\n",array[i]);
+    fclose(fp);
+  }
+  return 0;
+}
+
+
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -493,9 +516,9 @@ int main(int argc,char *argv[])
 
 #ifdef PSS_ENABLED
       /* Time Domain cleaning procedure */
-      if (CommandLineArgs.TDcleaningProc)
+      if (CommandLineArgs.PSSCleaning)
 	if(PSSTDCleaningDouble(CommandLineArgs))
-	  return 6;
+	  return 9;
 #endif
 
       /* create an SFT */
@@ -1575,7 +1598,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if (xlalErrno)
     fprintf(stderr,"PSSTDCleaningREAL8 (after alloc): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
 
-  /* initialize the header params */
+  /* initialize the 'header' params */
   memset(&headerParams,0,sizeof(headerParams));
   /* this implies
      headerParams.typ = 0;
@@ -1679,7 +1702,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
 
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL8(&dataDouble, CLA.fc));
+  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf));
 }
 
 #endif /* PSS_ENABLED */
