@@ -12,17 +12,29 @@ gitID:
 BUILT_SOURCES = gitID
 
 if FRAME
-frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs
-EXTRA_PROGRAMS = lalapps_MakePSSCleanSFTs
+frameprogs = lalapps_MakeSFTs
+frameexprogs = lalapps_MakeCleanSFTs
 else
 frameprogs =
+frameexprogs =
 endif
 
-bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+## PSS requires FrameLib anyway
+if PSS
+pssprogs = lalapps_MakePSSCleanSFTs
+else
+pssprogs =
+endif
+
+bin_PROGRAMS = $(frameprogs) $(pssprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
+endif
+
+if PSS
 lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c XLALPSSInterface.c
 lalapps_MakePSSCleanSFTs_LDADD = -lpsssfdb -lpss -lpssastro -lpssnovas
 endif
