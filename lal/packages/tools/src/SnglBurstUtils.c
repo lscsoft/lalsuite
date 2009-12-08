@@ -306,36 +306,6 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 
 
 /*
- * Check if two string events overlap in time. The peak times are uncertain
- * to whatever the high frequency cutoff is
- */
-
-
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
-int XLALCompareStringBurstByTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-/* </lalVerbatim> */
-{
-	INT8 ta, tb;
-	INT8 epsilon;
-
-	epsilon = (*a)->string_cluster_t * 1e9;
-	if(epsilon < (*b)->string_cluster_t * 1e9)
-		epsilon = (*b)->string_cluster_t * 1e9;
-
-	ta = peak_time(*a);
-	tb = peak_time(*b);
-	if(ta > tb + epsilon)
-		return(1);
-	if(ta < tb - epsilon)
-		return(-1);
-	return(0);
-}
-
-
-/*
  * Compare the low frequency limits of two SnglBurst events.
  */
 
@@ -394,18 +364,8 @@ void XLALStringBurstCluster(
 )
 /* </lalVerbatim> */
 {
-	REAL4 snra=a->snr, snrb=b->snr;
-
-	if(snrb > snra) {
-		a->central_freq =  b->central_freq;
-		a->bandwidth = b->bandwidth;
-		a->start_time = b->start_time;
-		a->duration = b->duration;
-		a->amplitude = b->amplitude;
-		a->snr = b->snr;
-		a->confidence = b->confidence;
-		a->peak_time = b->peak_time;
-	}
+	if(b->snr > a->snr)
+		*a = *b;
 }
 
 
@@ -483,8 +443,8 @@ SnglBurst *XLALCreateSnglBurst(void)
 	new->amplitude = XLAL_REAL4_FAIL_NAN;
 	new->snr = XLAL_REAL4_FAIL_NAN;
 	new->confidence = XLAL_REAL4_FAIL_NAN;
-	/* FIXME:  remove string_cluster_t from the structure */
-	new->string_cluster_t = XLAL_REAL4_FAIL_NAN;
+	new->chisq = XLAL_REAL8_FAIL_NAN;
+	new->chisq_dof = XLAL_REAL8_FAIL_NAN;
 
 	return new;
 }

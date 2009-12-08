@@ -1324,12 +1324,6 @@ XLALCompareSnglBurstByExactPeakTime(
 );
 
 int
-XLALCompareStringBurstByTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
 XLALCompareSnglBurstBySNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
