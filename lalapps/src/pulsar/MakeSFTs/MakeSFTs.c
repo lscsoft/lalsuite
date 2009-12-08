@@ -88,6 +88,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 
+#ifdef PSS_ENABLED
+#include <XLALPSSInterface.h>
+#endif
+
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -1500,6 +1504,179 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       return 0;
 }
 /*******************************************************************************/
+
+/* time-domain cleaning routines */
+
+#ifdef PSS_ENABLED
+
+/**
+  returns
+  -1 if out of memory
+  -2 if some computation failes
+  -3 if input parameters are invalid
+   0 otherwise (all went well)
+*/
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
+  UINT4 samples;                /**< number of samples in the timeseries */
+  PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
+  PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
+  PSSTimeseries *cleanedTS;     /**< originalTS after cleaning */
+  PSSEventParams *eventParams;  /**< keeps track of the "events" */
+  PSSHeaderParams headerParams; /**< dummy, we don't actually use this to write SFTs */
+  int retval = 0;               /**< return value of the function */
+  int debug = 0;
+
+  fprintf(stderr,"[DEBUG] PSSTDCleaningREAL8 called\n");
+
+  /* input sanity checks */
+  if( !(LALTS) || !(LALTS->data) )
+    return -3;
+
+  /* number of samples in the original timeseries */
+  samples = LALTS->data->length;
+
+  /* reset errno before calling XLAL functions */
+  xlalErrno = 0;
+
+  /* open a log file, currently necessary for PSS */
+  XLALPSSOpenLog("-");
+
+  /* creation / memory allocation */
+  /* there can't be more events than there are samples,
+     so we prepare for as many events as we have samples */
+  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
+    fprintf(stderr,"XLALCreatePSSEventParams call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -1;
+    goto PSSTDCleaningREAL8FreeNothing;
+  }
+  if( (originalTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -1;
+    goto PSSTDCleaningREAL8FreeEventParams;
+  }
+  if( (highpassTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -1;
+    goto PSSTDCleaningREAL8FreeOriginalTS;
+  }
+  if( (cleanedTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -1;
+    goto PSSTDCleaningREAL8FreeHighpassTS;
+  }
+
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after alloc): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  /* initialize the header params */
+  memset(&headerParams,0,sizeof(headerParams));
+  /* this implies
+     headerParams.typ = 0;
+     headerParams.nfft = 0;
+
+     The PSS function to allocate and initialize the header parameters is crea_sfdbheader()
+  */
+  headerParams.tsamplu = LALTS->deltaT;
+
+
+  /* the actual cleaning */
+  if( XLALConvertREAL8TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {
+    fprintf(stderr,"XLALConvertREAL8TimeseriesToPSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  if(debug)
+    XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",50,-1);
+  if(debug)
+    XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",0);
+
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
+    fprintf(stderr,"XLALPSSHighpassData call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+
+  if(debug)
+    XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
+
+  if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+    fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+
+  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS) == NULL) {
+    fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+
+  if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
+    fprintf(stderr,"XLALSubstractPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+
+  if(debug)
+    XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",0);
+
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (before convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  if( XLALConvertPSSTimeseriesToREAL8Timeseries(LALTS, cleanedTS) == NULL) {
+    fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries call failed %s,%d\n",__FILE__,__LINE__);
+    retval = -2;
+    goto PSSTDCleaningREAL8FreeAll;
+  }
+
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after PSS): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  /* debug: write out autoregressive mean and std */
+  if(debug)
+    PrintREAL4ArrayToFile( "PSS_ARmed.dat", eventParams->xamed, dataDouble.data->length );
+  if(debug)
+    PrintREAL4ArrayToFile( "PSS_ARstd.dat", eventParams->xastd, dataDouble.data->length );
+
+  /* cleanup & return */
+ PSSTDCleaningREAL8FreeAll:
+  XLALDestroyPSSTimeseries(cleanedTS);
+  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
+ PSSTDCleaningREAL8FreeHighpassTS:
+  XLALDestroyPSSTimeseries(highpassTS);
+  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
+ PSSTDCleaningREAL8FreeOriginalTS:
+  XLALDestroyPSSTimeseries(originalTS);
+  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
+ PSSTDCleaningREAL8FreeEventParams:
+  XLALDestroyPSSEventParams(eventParams);
+  fprintf(stderr, "[DEBUG] XLALDestroyPSSEventParams done.\n");
+ PSSTDCleaningREAL8FreeNothing:
+  XLALPSSCloseLog();
+  fprintf(stderr, "[DEBUG] XLALPSSCloseLog done.\n");
+
+  if (xlalErrno)
+    fprintf(stderr,"PSSTDCleaningREAL8 (after free()): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
+
+  if (retval)
+    fprintf(stderr,"PSSTDCleaningREAL8 nonzero retval %d\n", retval);
+
+  return retval;
+}
+
+
+int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
+  return(PSSTDCleaningREAL8(&dataDouble, CLA.fc));
+}
+
+#endif /* PSS_ENABLED */
+
 
 /*******************************************************************************/
 int WriteSFT(struct CommandLineArgsTag CLA)

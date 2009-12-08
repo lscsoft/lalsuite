@@ -21,22 +21,26 @@ endif
 
 ## PSS requires FrameLib anyway
 if PSS
-pssprogs = lalapps_MakePSSCleanSFTs
+pss_progs = lalapps_MakePSSCleanSFTs
+pss_src = XLALPSSInterface.c
 else
-pssprogs =
+pss_progs =
+pssinterface =
 endif
 
-bin_PROGRAMS = $(frameprogs) $(pssprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+bin_PROGRAMS = $(frameprogs) $(pss_progs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
 EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
-lalapps_MakeSFTs_SOURCES = MakeSFTs.c
+lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
 lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
 endif
 
 if PSS
-lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c XLALPSSInterface.c
+lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c $(pss_src)
+lalapps_MakePSSCleanSFTs_CPPFLAGS = -DPSS_ENABLED $(AM_CPPFLAGS)
 lalapps_MakePSSCleanSFTs_LDADD = -lpsssfdb -lpss -lpssastro -lpssnovas
+lalapps_MakeSFTs_CPPFLAGS = -DPSS_ENABLED $(AM_CPPFLAGS)
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
