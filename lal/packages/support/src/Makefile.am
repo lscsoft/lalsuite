@@ -1,51 +1,87 @@
-## Process this file with automake to produce Makefile.in
-## $Id$
-
 lib_LTLIBRARIES = liblalsupport.la
-
-liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
-  PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
-  ReadNoiseSpectrum.c \
-  StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
-  StreamSeriesInput.c StreamSeriesOutput.c \
-  StreamGridInput.c StreamGridOutput.c \
-  LALCache.c \
-  LALInitBarycenter.c LALXMGRInterface.c \
-  LIGOLwXML.c LIGOLwXMLArray.c SFTfileIO.c \
-  LogPrintf.c UserInput.c ConfigFile.c getopt.c getopt.h getopt1.c \
-  LALMath3DPlot.c LALMathNDPlot.c SegmentsIO.c \
-  Audio.c NRWaveIO.c	\
-  DopplerScan.c DopplerFullScan.c DopplerLatticeCovering.c \
-  VeryBasicXMLOutput.c ReadFiltersFile.c
-
+liblalsupport_la_SOURCES = \
+	Audio.c \
+	ConfigFile.c \
+	DopplerFullScan.c \
+	DopplerLatticeCovering.c \
+	DopplerScan.c \
+	FileIO.c \
+	LALCache.c \
+	LALInitBarycenter.c \
+	LALMath3DPlot.c \
+	LALMathNDPlot.c \
+	LALXMGRInterface.c \
+	LIGOLwXML.c \
+	LIGOLwXMLArray.c \
+	LogPrintf.c \
+	NRWaveIO.c \
+	PrintFrequencySeries.c \
+	PrintTimeSeries.c \
+	PrintVector.c \
+	ReadFiltersFile.c \
+	ReadFrequencySeries.c \
+	ReadTimeSeries.c \
+	ReadNoiseSpectrum.c \
+	SFTfileIO.c \
+	SegmentsIO.c \
+	StreamSeriesInput.c \
+	StreamSeriesOutput.c \
+	StreamSequenceInput.c \
+	StreamGridInput.c \
+	StreamGridOutput.c \
+	StreamVectorInput.c \
+	StreamVectorSequenceInput.c \
+	UserInput.c \
+	VeryBasicXMLOutput.c \
+	getopt.c \
+	getopt.h \
+	getopt1.c
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
 
+MAINTAINERCLEANFILES = \
+	PrintFrequencySeries.c \
+	PrintTimeSeries.c \
+	PrintVector.c \
+	ReadFrequencySeries.c \
+	ReadTimeSeries.c \
+	StreamGridInput.c \
+	StreamGridOutput.c \
+	StreamSequenceInput.c \
+	StreamSeriesInput.c \
+	StreamSeriesOutput.c \
+	StreamVectorInput.c \
+	StreamVectorSequenceInput.c
 
-MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
-  ReadFrequencySeries.c ReadTimeSeries.c \
-  StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
-  StreamSeriesInput.c StreamSeriesOutput.c \
-  StreamGridInput.c StreamGridOutput.c
-
-EXTRA_DIST = $(LALXMLSOURCES)\
-             PrintVector.m4 LALPrintVector.m4 \
-             PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
-	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
-	     ReadFrequencySeries.m4 LALReadFrequencySeries.m4\
-             snprintf_LICENSE.txt snprintf_README \
-             ReadTimeSeries.m4 LALReadTimeSeries.m4 \
-             StreamVectorInput.m4 LALReadVector.m4 \
-             StreamVectorSequenceInput.m4 LALReadVectorSequence.m4 \
-             StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexSequence.m4 \
-             StreamSeriesInput.m4 LALReadSeries.m4 \
-             StreamSeriesOutput.m4 LALWriteSeries.m4 \
-             StreamGridInput.m4 LALReadGrid.m4 \
-             StreamGridOutput.m4 LALWriteGrid.m4
+EXTRA_DIST = \
+	LALPrintFrequencySeries.m4 \
+	LALPrintTimeSeries.m4 \
+	LALPrintVector.m4 \
+	LALReadComplexSequence.m4 \
+	LALReadFrequencySeries.m4 \
+	LALReadGrid.m4 \
+	LALReadSequence.m4 \
+	LALReadSeries.m4 \
+	LALReadTimeSeries.m4 \
+	LALReadVector.m4 \
+	LALReadVectorSequence.m4 \
+	LALWriteGrid.m4 \
+	LALWriteSeries.m4 \
+	PrintFrequencySeries.m4 \
+	PrintTimeSeries.m4 \
+	PrintVector.m4 \
+	ReadFrequencySeries.m4 \
+	ReadTimeSeries.m4 \
+	StreamGridInput.m4 \
+	StreamGridOutput.m4 \
+	StreamSeriesInput.m4 \
+	StreamSeriesOutput.m4 \
+	StreamSequenceInput.m4 \
+	StreamVectorInput.m4 \
+	StreamVectorSequenceInput.m4 \
+	snprintf_LICENSE.txt \
+	snprintf_README
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
 
 PrintVector.c: PrintVector.m4 LALPrintVector.m4
 	cd $(srcdir) && @M4@ PrintVector.m4 > PrintVector.c
@@ -82,4 +118,9 @@ StreamGridInput.c: StreamGridInput.m4 LALReadGrid.m4
 
 StreamGridOutput.c: StreamGridOutput.m4 LALWriteGrid.m4
 	cd $(srcdir) && @M4@ StreamGridOutput.m4 > StreamGridOutput.c
+
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep
+
 @DVIMKFILE@

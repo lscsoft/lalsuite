@@ -1,4 +1,3 @@
-dnl Process this file with autoconf to produce a configure script.
 AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
@@ -147,6 +146,7 @@ LAL_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
+# get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
 lal_version_micro=`echo "$VERSION" | cut -d. -f3`
@@ -164,6 +164,7 @@ AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure D
 test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
 AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
+# check for pthreads
 lal_pthread_available="yes"
 ACX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
@@ -183,7 +184,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-dnl Checks for programs.
+# check for programs
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -215,6 +216,7 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# check for support tex flags
 if test -z "$TEXFLAGS"
 then
 AC_MSG_CHECKING([if $LATEX accepts --interaction=batchmode])
@@ -235,7 +237,7 @@ rm -f conflatextest.*
 fi
 AC_SUBST([TEXFLAGS])
 
-dnl Set needed compiler flags
+# set additional compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
   solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
@@ -243,76 +245,84 @@ case "${host_os}" in
   *) AC_MSG_RESULT([none]);;
 esac
 
-dnl Checks for libraries.
+# initialise lalsupport libs
 LALSUPPORT_LIBADD=""
 lal_save_LIBS="$LIBS"
+
+# system library checks
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"])
 
-dnl if solaris, check for sunmath library
+# check for platform specific libs
 case "${host_os}" in
   solaris*) AC_CHECK_LIB([sunmath],[sincosp]);;
 esac
 
+# check for system headers files
+AC_HEADER_STDC
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
+AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
+AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
+AC_MSG_CHECKING([for gethostname prototype in unistd.h])
+AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
+
+# check for pthread headers
+if test "${lal_pthread_lock}" = "true"; then
+  AC_CHECK_HEADERS([pthread.h],[break])
+fi
+
+# check for platform specific headers
+case "${host_os}" in
+  solaris*) AC_CHECK_HEADERS([sunmath.h]);;
+esac
+
+# check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LAL_CHECK_GSL_VERSION([1.9])
 
-dnl Checks for fft libraries.
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
+
+# check for fft libraries
 if test "${intelfft}" = "false" ; then
   fftw3="true"
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
   CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
   LIBS="$LIBS $FFTW3_LIBS"
-  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR(could not find fftw3f library)],[-lm])
-  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR(could not find fftw3 library)],[-lm])
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR([could not find the fftw3f library])],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3 library])],[-lm])
 else
   AC_MSG_WARN([Using Intel FFT routines])
   if test "x${qthread}" = "xtrue" ; then
     LAL_INTEL_MKL_QTHREAD_WARNING
   else
-    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR(could not find pthread library)])
+    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([could not find the pthread library])])
   fi
-  AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR(could not find guide library included with Intel MKL)])
-  AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR(could not find pthread header)])
+  AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR([could not find the guide library included with Intel MKL])])
+  AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR([could not find the pthread.h header])])
   if test "${enable_static}" = "yes"; then
     if test "${enable_shared}" = "yes" ; then
       LAL_INTEL_FFT_LIBS_MSG_ERROR
     else
-      AC_CHECK_LIB([mkl_ia32],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
+      AC_CHECK_LIB([mkl_ia32],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
     fi
   else
-    AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR(could not find the Intel FFT library)])
+    AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
   fi
-  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR(could not find Intel FFT header)])
+  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
 
-
-dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
-case "${host_os}" in
-  solaris*) AC_CHECK_HEADERS([sunmath.h]);;
-esac
-AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find gsl/gsl_errno.h])])
+# check for fft headers
 if test "${intelfft}" = "false" ; then
-  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find fftw3.h])])
-fi
-AC_CHECK_HEADER([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
-AC_CHECK_HEADER([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
-
-AC_MSG_CHECKING([for gethostname prototype in unistd.h])
-AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
-AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
-
-if test "${lal_pthread_lock}" = "true"; then
-  AC_CHECK_HEADERS([pthread.h],[break])
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 fi
 
-dnl Define variables describing what was enabled.
+# define what is being enabled
 if test "${cuda}" = "true"; then
   AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
@@ -320,7 +330,7 @@ if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
 fi
 
-dnl Record the libraries needed for linking LAL.
+# record the libraries needed for linking lal
 LALLIBADD="$LIBS"
 LIBS="$lal_save_LIBS"
 AC_SUBST(LALLIBADD)
@@ -328,8 +338,7 @@ LAL_LIBADD="$LIBS $LALLIBADD"
 AC_SUBST(LAL_LIBADD)
 AC_SUBST(LALSUPPORT_LIBADD)
 
-
-dnl Checks for typedefs, structures, and compiler characteristics.
+# checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_STRINGIZE
@@ -338,24 +347,23 @@ AC_HEADER_TIME
 LAL_CHECK_SIZEOF([float],[4])
 LAL_CHECK_SIZEOF([double],[8])
 
-dnl Checks for library functions.
+# checks for library functions
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getopt_long])
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([vsnprintf])
 AC_CHECK_FUNCS([putenv])
 
-dnl Set package documentation install path
+# set package documentation install path
 pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
 AC_SUBST([pkgdocdir])
 
-dnl Setup automake conditionals
+# set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
-
-dnl Add gcc specific flags --- must be done at end or tests will break!
+# add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
 
