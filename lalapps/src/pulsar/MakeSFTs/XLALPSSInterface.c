@@ -46,6 +46,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
 }
 
 void XLALDestroyPSSEventParams(PSSEventParams *ts) {
+  /* not using (X)LALFree because PSS isn't using (X)LALMalloc */
   if ( !ts )
     XLAL_ERROR_VOID( "XLALDestroyPSSEventParams", XLAL_EFAULT );
   if(ts->xamed)
@@ -83,20 +84,21 @@ PSSTimeseries *XLALCreatePSSTimeseries(UINT4 length) {
   PSSTimeseries *pssGD;
   if ( length == 0 )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EINVAL );
-  pssGD = crea_gd(length,0,0,captionString); /* unit of a timeseries should be seconds */
+  pssGD = crea_gd(length,0,0,captionString); /* unit of a timeseries is 'count' */
   if( !pssGD )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
   return(pssGD);
 }
 
 void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
+  /* not using (X)LALFree because PSS isn't using (X)LALMalloc */
   if ( !ts )
     XLAL_ERROR_VOID( "XLALDestroyPSSTimeseries", XLAL_EFAULT );
   if(ts->x)
     free(ts->x);
   if(ts->y)
     free(ts->y);
-  /* where does the caption come from if it can't be freed? */
+  /* where does the caption come from if it can't be freed?
   if(ts->capt)
     if(ts->capt != captionString)
       free(ts->capt);
@@ -257,6 +259,8 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
     fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALGPSSetREAL8 %s,%d\n",__FILE__,__LINE__);
   ts->deltaT = tsPSS->dx;
   ts->f0     = 0.0; /* no heterodyning */
+  /* caption / unit handling disabled until we know how PSS actually handles them */
+  /*
   XLALParseUnitString( &(ts->sampleUnits), tsPSS->capt );
   if (xlalErrno) {
     fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALParseUnitString:%d %s,%d\n",xlalErrno,__FILE__,__LINE__);
@@ -264,13 +268,15 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
       fprintf(stderr,"[DEBUG] PSS caption: '%s'\n", tsPSS->capt); 
     xlalErrno = 0;
   }
+  */
 
   return ts;
 }
 
 PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, REAL8TimeSeries *ts) {
   UINT4 i;
-  char unit[LALNameLength];
+  /* caption / unit handling disabled until we know how PSS actually handles them */
+  /* char unit[LALNameLength]; */
 
   /* input sanity checking */
   if ( !tsPSS || !ts )
@@ -279,7 +285,8 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
     XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
 
   /* handle caption / units first, because it involves memory allocation for the string */
-  if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
+  /* 
+    if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
     tsPSS->capt = (char*)malloc(strlen(unit)+1);
     if( !tsPSS->capt )
       XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_ENOMEM );
@@ -288,6 +295,7 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   } else {
     tsPSS->capt = NULL;
   }
+  */
 
   /* now convert the actual data */
   for(i = 0; i < ts->data->length; i++)
@@ -324,7 +332,8 @@ REAL4TimeSeries *XLALConvertPSSTimeseriesToREAL4Timeseries(REAL4TimeSeries *ts, 
 
 PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, REAL4TimeSeries *ts) {
   UINT4 i;
-  char unit[LALNameLength];
+  /* caption / unit handling disabled until we know how PSS actually handles them */
+  /* char unit[LALNameLength]; */
 
   /* input sanity checking */
   if ( !tsPSS || !ts )
@@ -333,6 +342,7 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
     XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
 
   /* handle caption / units first, because it involves memory allocation for the string */
+  /*
   if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
     tsPSS->capt = (char*)malloc(strlen(unit)+1);
     if( !tsPSS->capt )
@@ -341,6 +351,7 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   } else {
     tsPSS->capt = NULL;
   }
+  */
 
   /* now convert the actual data */
   for(i = 0; i < ts->data->length; i++)
@@ -386,12 +397,33 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   newlen = len+pre;
 
   /* allocate extended data, save original data in local pointers */
+
   xamed = events->xamed;
-  events->xamed = (float*) malloc(newlen*sizeof(float));
+  events->xamed = (float*)XLALMalloc(newlen*sizeof(float));
+  if( !events->xastd ) {
+    events->xamed = xamed;
+    XLAL_ERROR_NULL( "XLALPSSComputeExtARMeanAndStdev", XLAL_ENOMEM );
+  }
+
   xastd = events->xastd;
-  events->xastd = (float*) malloc(newlen*sizeof(float));
+  events->xastd = (float*)XLALMalloc(newlen*sizeof(float));
+  if( !events->xastd ) {
+    events->xastd = xastd;
+    XLALFree(events->xamed);
+    events->xamed = xamed;
+    XLAL_ERROR_NULL( "XLALPSSComputeExtARMeanAndStdev", XLAL_ENOMEM );
+  }
+
   tsdata = ts->y;
-  ts->y = (float*) malloc(newlen*sizeof(float));
+  ts->y = (float*)XLALMalloc(newlen*sizeof(float));
+  if( !ts->y ) {
+    ts->y = tsdata;
+    XLALFree(events->xamed);
+    events->xamed = xamed;
+    XLALFree(events->xastd);
+    events->xastd = xastd;
+    XLAL_ERROR_NULL( "XLALPSSComputeExtARMeanAndStdev", XLAL_ENOMEM );
+  }
   ts->n = newlen;
 
   /* fill extended timeseries */
@@ -413,12 +445,12 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   }
 
   /* free extended arrays and restore original pointers */
-  free(events->xamed);
+  XLALFree(events->xamed);
   events->xamed = xamed;
-  free(events->xastd);
+  XLALFree(events->xastd);
   events->xastd = xastd;
   ts->n = len;
-  free(ts->y);
+  XLALFree(ts->y);
   ts->y = tsdata;
 
   return events;
