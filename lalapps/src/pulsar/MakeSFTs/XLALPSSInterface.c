@@ -101,6 +101,25 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
   free(ts);
 }
 
+PSSHeaderParams* XLALPSSInitializeHeaderParams(PSSHeaderParams* headerParams, REAL8 deltaT) {
+  /*
+    we don't actually use the header params here to write SFTs,
+    we only need them as an argument to the PSS functions for
+    time-domain cleaning. Note that this initialization 
+    probably doesn't work for any other application.
+    
+    The PSS function to allocate and initialize the header parameters is crea_sfdbheader()
+  */
+
+  memset(headerParams,0,sizeof(PSSHeaderParams));
+  /*
+    this implies
+    headerParams.typ = 0;
+    headerParams.nfft = 0;
+  */
+  headerParams->tsamplu = deltaT;
+}
+
 PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UINT4 numToPrint) {
   UINT4 i,n,len;
   FILE*fp;

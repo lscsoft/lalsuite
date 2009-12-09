@@ -23,6 +23,7 @@ extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length);
 extern PSSTimeseries  *XLALCreatePSSTimeseries(UINT4 length);
 extern void XLALDestroyPSSTimeseries(PSSTimeseries *ts);
 extern void XLALDestroyPSSEventParams(PSSEventParams *ts);
+extern PSSHeaderParams* XLALPSSInitializeHeaderParams(PSSHeaderParams* headerParams, REAL8 deltaT);
 
 /* open and close a log file */
 /* the PSS functions definitely need a working file pointer they can log to */
