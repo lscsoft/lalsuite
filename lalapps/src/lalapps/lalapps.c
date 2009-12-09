@@ -162,7 +162,7 @@ int set_debug_level( const char *s )
  * The VCS version string is allocated here and must be freed by caller.
  */
 char *
-XLALGetVersionInfoString(void)
+XLALGetVersionString(void)
 {
   const char *fn = __func__;
   char lal_info[1024], lalapps_info[1024];
@@ -226,4 +226,4 @@ XLALGetVersionInfoString(void)
 
   return ( ret );
 
-} /* XLALGetVersionInfoString() */
+} /* XLALGetVersionString() */
