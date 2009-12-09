@@ -264,13 +264,40 @@ fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
 # check for pss
-# FIXME also needs to check for libraries and headers
 if test "${pss}" = "true"; then
-  PKG_CHECK_MODULES([PSS],[pss],[pss="true"],[pss="false"])
-  if test "x$pss" = "xtrue"; then
-    CPPFLAGS="$CPPFLAGS $PSS_CFLAGS"
-    LIBS="$LIBS $PSS_LIBS"
-  fi
+  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
+  lal_pre_pss_LIBS="$LIBS"
+  LIBS="$PSS_LIBS $LIBS"
+  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([pss_set_gw],[pss],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([app_star],[pssnovas],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+fi
+
+# check for pss headers
+if test "${pss}" = "true"; then
+  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$PSS_CFLAGS $CPPFLAGS"
+  AC_CHECK_HEADERS([pss_sfdb.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_gw.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_astro.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([novas.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
