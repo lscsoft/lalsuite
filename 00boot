@@ -14,7 +14,7 @@ for d in lal lalframe lalmetaio lalxml lalburst lalstochastic lalapps; do
 done
 
 echo "00boot: running autoreconf"
-autoreconf --no-recursive || fail "autoreconf"
+autoreconf || fail "autoreconf"
 
 echo "00boot: success"
 echo "
