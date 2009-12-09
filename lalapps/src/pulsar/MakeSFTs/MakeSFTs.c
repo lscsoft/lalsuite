@@ -572,12 +572,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"ifo",                  optional_argument, NULL,          'i'},
     {"window-type",          optional_argument, NULL,          'w'},
     {"overlap-fraction",     optional_argument, NULL,          'P'},
+    {"td-cleaning-freq",     optional_argument, NULL,          'b'},
+    {"td-cleaning",          no_argument,       NULL,          'a'},
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:";
+  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:ab:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -597,8 +599,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
-  CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
+  CLA->useSingle = 0;        /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
+  CLA->PSSCleaning = 0;	     /* 1=YES and 0=NO*/
+  CLA->PSSCleanHPf = 0.0;    /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
 
   strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
@@ -699,6 +703,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'p':
       CLA->SFTpath=optarg;       
       break;
+    case 'a':
+      CLA->PSSCleaning = 1;
+      break;
+    case 'b':
+      CLA->PSSCleanHPf = atof(optarg);
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -722,6 +732,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
       fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
+      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines");
+      fprintf(stdout,"\ttd-cleaning-freq (-b) \tFLOAT\t(optional) Cut frequency for the bilateral highpass filter for time-domain cleaning");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
       break;
@@ -813,6 +825,27 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
+  if(CLA->PSSCleaning)
+#ifdef PSS_ENABLED
+    {
+      if(CLA->useSingle)
+	{
+	  fprintf(stderr,"Time-domain cleaning is currently only implemented for double-precision data.\n");
+	  return 1;
+	}    
+      if(CLA->PSSCleanHPf == 0.0)
+	{
+	  fprintf(stderr,"A cutoff frequency must be specified for time-domain cleaning.\n");
+	  return 1;
+	}
+    }
+#else
+    {
+      fprintf(stderr,"Time-domain cleaning has been disabled.\n");
+      fprintf(stderr,"Configure for PSS linking to enable it.\n");
+      return 1;
+    }      
+#endif
 
   return errflg;
 }
