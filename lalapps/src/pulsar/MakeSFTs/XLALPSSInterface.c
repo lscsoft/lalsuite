@@ -98,11 +98,6 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
     free(ts->x);
   if(ts->y)
     free(ts->y);
-  /* where does the caption come from if it can't be freed?
-  if(ts->capt)
-    if(ts->capt != captionString)
-      free(ts->capt);
-  /**/
   free(ts);
 }
 
@@ -259,8 +254,6 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
     fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALGPSSetREAL8 %s,%d\n",__FILE__,__LINE__);
   ts->deltaT = tsPSS->dx;
   ts->f0     = 0.0; /* no heterodyning */
-  /* caption / unit handling disabled until we know how PSS actually handles them */
-  /*
   XLALParseUnitString( &(ts->sampleUnits), tsPSS->capt );
   if (xlalErrno) {
     fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries: unhandled XLAL Error in XLALParseUnitString:%d %s,%d\n",xlalErrno,__FILE__,__LINE__);
@@ -268,15 +261,12 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
       fprintf(stderr,"[DEBUG] PSS caption: '%s'\n", tsPSS->capt); 
     xlalErrno = 0;
   }
-  */
 
   return ts;
 }
 
 PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, REAL8TimeSeries *ts) {
   UINT4 i;
-  /* caption / unit handling disabled until we know how PSS actually handles them */
-  /* char unit[LALNameLength]; */
 
   /* input sanity checking */
   if ( !tsPSS || !ts )
@@ -284,20 +274,7 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   if (tsPSS->nall != (int)ts->data->length)
     XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
 
-  /* handle caption / units first, because it involves memory allocation for the string */
-  /* 
-    if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
-    tsPSS->capt = (char*)malloc(strlen(unit)+1);
-    if( !tsPSS->capt )
-      XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_ENOMEM );
-    strncpy(tsPSS->capt,unit,strlen(unit)+1);
-    fprintf(stderr,"[DEBUG] PSS caption: '%s'\n", tsPSS->capt); 
-  } else {
-    tsPSS->capt = NULL;
-  }
-  */
-
-  /* now convert the actual data */
+  /* convert the actual data */
   for(i = 0; i < ts->data->length; i++)
     tsPSS->y[i] = ts->data->data[i];
   tsPSS->n = ts->data->length;
@@ -306,6 +283,7 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   strncpy(tsPSS->name, ts->name, sizeof(tsPSS->name)); /* sizeof(tsPSS->name) = 20 */
   tsPSS->ini = XLALGPSGetREAL8(&(ts->epoch));
   tsPSS->dx = ts->deltaT;
+  tsPSS->capt = captionString;
 
   return tsPSS;
 }
@@ -332,8 +310,6 @@ REAL4TimeSeries *XLALConvertPSSTimeseriesToREAL4Timeseries(REAL4TimeSeries *ts, 
 
 PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, REAL4TimeSeries *ts) {
   UINT4 i;
-  /* caption / unit handling disabled until we know how PSS actually handles them */
-  /* char unit[LALNameLength]; */
 
   /* input sanity checking */
   if ( !tsPSS || !ts )
@@ -341,19 +317,7 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   if (tsPSS->nall != (int)ts->data->length)
     XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
 
-  /* handle caption / units first, because it involves memory allocation for the string */
-  /*
-  if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
-    tsPSS->capt = (char*)malloc(strlen(unit)+1);
-    if( !tsPSS->capt )
-      XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_ENOMEM );
-    strncpy(tsPSS->capt,unit,strlen(unit)+1);
-  } else {
-    tsPSS->capt = NULL;
-  }
-  */
-
-  /* now convert the actual data */
+  /* convert the actual data */
   for(i = 0; i < ts->data->length; i++)
     tsPSS->y[i] = ts->data->data[i];
   tsPSS->n = ts->data->length;
@@ -362,6 +326,7 @@ PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   strncpy(tsPSS->name, ts->name, sizeof(tsPSS->name)); /* sizeof(tsPSS->name) = 20 */
   tsPSS->ini = XLALGPSGetREAL8(&(ts->epoch));
   tsPSS->dx = ts->deltaT;
+  tsPSS->capt = captionString;
 
   return tsPSS;
 }
