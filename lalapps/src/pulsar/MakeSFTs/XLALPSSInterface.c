@@ -400,7 +400,15 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   /* call original PSS routine */
   if ((ret = sn_medsig(ts,events,hp)) != ts->n ) {
     fprintf(stderr, "[DEBUG] sn_medsig: %ld\n", ret);
-    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFUNC );
+    /* cleanup extended timeseries */
+    XLALFree(events->xamed);
+    events->xamed = xamed;
+    XLALFree(events->xastd);
+    events->xastd = xastd;
+    ts->n = len;
+    XLALFree(ts->y);
+    ts->y = tsdata;
+    XLAL_ERROR_NULL( "XLALPSSComputeExtARMeanAndStdev", XLAL_EFUNC );
   }
 
   /* get results back into original structures */
