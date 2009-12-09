@@ -9,7 +9,6 @@
 
 /* variables in PSS that aren't exported in the headers */
 extern FILE*LOG_INFO;
-/* extern */ float notzero;
 
 static char* captionString = "count";
 
@@ -40,7 +39,7 @@ PSSEventParams *XLALCreatePSSEventParams(UINT4 length) {
   ep->factor = ep->tau/(6.103515625e-05f);
   ep->cr = 5.0f;            /* CR of the threshold */
   ep->edge = 0.00061035f;   /* how many seconds around (before and after) the event have to be "purged" */
-  notzero = 1e-25f;
+  ep->notzero = 1e-25f;
   ep->w_norm=1.0f;          /* to be sure, might already be set in crea_evenparam() */
 
   return ep;
