@@ -478,9 +478,6 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	XLALDestroyREAL4TimeSeries(h_c_t);
 
 	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
-	LALGPSandAcc GPSandAcc;
-	memcpy(&(GPSandAcc.gps),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
-	GPSandAcc.accuracy = LALLEAPSEC_LOOSE; /* Don't need to worry about leap seconds for AM response func */
 	LALSource source; /* The position and polarisation of the binary */
 	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
 	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
@@ -518,7 +515,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
-		LALComputeDetAMResponse(&status,&det_resp,&det_source,&GPSandAcc); /* Compute det_resp */
+		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
 		det_resp.cross*=ci;
 		
