@@ -37,7 +37,6 @@
 #define _USERINPUT_H
 
 #include <lal/ConfigFile.h>
-#include <lal/SFTutils.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
