@@ -73,6 +73,7 @@ LALAPPS_ENABLE_LALFRAME
 LALAPPS_ENABLE_LALMETAIO
 LALAPPS_ENABLE_LALXML
 LALAPPS_ENABLE_LALBURST
+LALAPPS_ENABLE_LALPULSAR
 LALAPPS_ENABLE_LALSTOCHASTIC
 LALAPPS_ENABLE_NIGHTLY
 
@@ -268,6 +269,7 @@ LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h]
 LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
 LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # check for qthread
@@ -313,6 +315,7 @@ echo "
                 LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
+                LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
