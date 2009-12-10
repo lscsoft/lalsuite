@@ -368,27 +368,32 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
 			  const REAL4TimeVectorSeries *in   /**< input strain time series */)
 {
 
-  size_t *ind=NULL;
+/*  size_t *ind=NULL; */
   size_t len;
-  REAL4 *sumSquare=NULL;
+  size_t idxMax;
+  REAL4 sumSquare=0.0;
+  REAL4 maxSq=0.0;
   UINT4 k;
 
   len = in->data->vectorLength;
-  ind = LALCalloc(1,len*sizeof(*ind));
+/*  ind = LALCalloc(1,len*sizeof(*ind));*/
 
-  sumSquare = LALCalloc(1, len*sizeof(*sumSquare));
+/*  sumSquare = LALCalloc(1, len*sizeof(*sumSquare));*/
 
   for (k=0; k < len; k++) {
-    sumSquare[k] = in->data->data[k]*in->data->data[k] +
+    sumSquare = in->data->data[k]*in->data->data[k] +
       in->data->data[k + len]*in->data->data[k + len];
+	  if(fabs(sumSquare)>maxSq) {
+		  maxSq=fabs(sumSquare);
+		  idxMax=k;}
   }
 
-  gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float);
+/*  gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float); */
 
-  *tc = ind[len-1] * in->deltaT;
-
-  LALFree(ind);
-  LALFree(sumSquare);
+/*  *tc = ind[len-1] * in->deltaT; */
+	*tc = idxMax * in->deltaT;
+/*  LALFree(ind); */
+/*  LALFree(sumSquare); */
 
   return 0;
 }
@@ -425,17 +430,27 @@ XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
 			       const REAL8TimeSeries *in   /**< input strain time series */)
 {
 
-  size_t *ind=NULL;
+  /*size_t *ind=NULL;*/
+  size_t maxIdx;
   size_t len;
-
+  UINT4 i;
+  REAL8 max;
+	
   len = in->data->length;
-  ind = LALCalloc(len, sizeof(*ind));
+/*  ind = LALCalloc(len, sizeof(*ind)); */
 
-  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL8), compare_abs_double);
+/*  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL8), compare_abs_double); */
 
-  *tc = ind[len-1] * in->deltaT;
-
-  LALFree(ind);
+  for (i=0;i<len;i++){
+	if (fabs(in->data->data[i])>max){
+		max=fabs(in->data->data[i]);
+		maxIdx=i;
+	}
+  }
+	
+/*  *tc = ind[len-1] * in->deltaT; */
+	*tc=maxIdx * in->deltaT;
+/*  LALFree(ind); */
 
   return 0;
 }
