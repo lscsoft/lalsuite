@@ -9,7 +9,6 @@ check_PROGRAMS = \
 	PrintFTSeriesTest \
 	PrintVectorTest \
 	ReadFTSeriesTest \
-	SFTfileIOTest \
 	SegmentsIOTest \
 	StreamInputTest \
 	StreamSeriesInputTest \
@@ -17,33 +16,9 @@ check_PROGRAMS = \
 
 noinst_DATA = \
 	ConfigFileSample.cfg \
-	SFT-bad1 \
-	SFT-bad10 \
-	SFT-bad11 \
-	SFT-bad12 \
-	SFT-bad13 \
-	SFT-bad14 \
-	SFT-bad2 \
-	SFT-bad3 \
-	SFT-bad4 \
-	SFT-bad5 \
-	SFT-bad6 \
-	SFT-bad7 \
-	SFT-bad8 \
-	SFT-bad9 \
-	SFT-good \
-	SFT-test1 \
-	SFT-test2 \
-	SFT-test3 \
-	SFT-test4 \
-	SFT-test5 \
-	SFT-test6 \
-	SFT-test7 \
 	SegmentsInput1.data \
 	StreamInput.data \
-	StreamSeriesInput.data \
-	inputsft.0 \
-	inputsft.1
+	StreamSeriesInput.data
 
 EXTRA_DIST = $(DATA)
 
@@ -82,11 +57,6 @@ ReadFTSeriesTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-SFTfileIOTest_SOURCES = SFTfileIOTest.c
-SFTfileIOTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
 SegmentsIOTest_SOURCES = SegmentsIOTest.c
 SegmentsIOTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
@@ -116,7 +86,6 @@ TESTS = \
 	PrintFTSeriesTest \
 	PrintVectorTest \
 	ReadFTSeriesTest \
-	SFTfileIOTest \
 	SegmentsIOTest \
 	StreamInputTest \
 	StreamSeriesInputTest \
@@ -127,14 +96,9 @@ MOSTLYCLEANFILES = \
 	*.out \
 	*PrintVector.00* \
 	.dvi-dep \
-	H-1_H1*.sft \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \
-	SegmentsOutput1.data \
-	TestOutputSFT.0 \
-	TestOutputSFT.1 \
-	outputsft*.sft \
-	outputsft.0
+	SegmentsOutput1.data
 
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

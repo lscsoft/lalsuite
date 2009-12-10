@@ -1,11 +1,11 @@
-AC_INIT([lalxml],[1.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalxml.spec \
-  lalxml.pc \
+  lalpulsar.spec \
+  lalpulsar.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -38,7 +38,7 @@ AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # default install path
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalxml])
+AC_PREFIX_DEFAULT([/opt/lscsoft/lalpulsar])
 
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
@@ -83,15 +83,6 @@ AC_HEADER_STDC
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
-# check for libxml2
-PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-LIBS="$LIBS $LIBXML2_LIBS"
-AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR([cannot find the xml2 library])])
-
-# check for libxml2 headers
-AC_CHECK_HEADERS([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.h header])])
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
@@ -107,9 +98,6 @@ LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
-
-# check for lalpulsar
-LALSUITE_CHECK_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -129,12 +117,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL XML has now been successfully configured
+        LAL Pulsar has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL XML
-        and run 'make install' to install LAL XML
+        Now run 'make' to build LAL Pulsar
+        and run 'make install' to install LAL Pulsar
 
 ================================================================="
