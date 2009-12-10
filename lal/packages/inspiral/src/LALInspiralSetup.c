@@ -339,6 +339,9 @@ LALInspiralSetup (
       case LAL_PNORDER_PSEUDO_FOUR:
             vpole = ak->vpoleP6;
          break;
+      default:
+         ABORT( status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER );
+         break;
    }
 
    ak->fTa1 = ak->FTa1 - 1./vpole;
