@@ -9,6 +9,7 @@ check_PROGRAMS = \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
+	LALBarycenterTest \
 	LALRunningMedianTest \
 	MersenneRandomTest \
 	NormalizeSFTRngMedTest \
@@ -61,6 +62,11 @@ IntegrateTest_LDADD = \
 
 InterpolateTest_SOURCES = InterpolateTest.c
 InterpolateTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+LALBarycenterTest_SOURCES = LALBarycenterTest.c
+LALBarycenterTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -120,7 +126,9 @@ ZCoarseGrainFrequencySeriesTest_LDADD = \
 
 EXTRA_DIST = \
 	CheckStatus.c \
-	CheckStatus.h
+	CheckStatus.h \
+	earth98.dat \
+	sun98.dat
 
 TESTS = \
 	CCoarseGrainFrequencySeriesTest \
@@ -131,6 +139,7 @@ TESTS = \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
+	LALBarycenterTest \
 	LALRunningMedianTest \
 	MersenneRandomTest \
 	ODETest \

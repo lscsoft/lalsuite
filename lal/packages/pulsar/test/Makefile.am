@@ -10,7 +10,6 @@ TESTS = \
 	GeneralMeshTest \
 	GeneralMetricTest \
 	GetAMCoeffsTest \
-	LALBarycenterTest \
 	NewGetAMCoeffsTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
@@ -30,7 +29,6 @@ check_PROGRAMS = \
 	GeneralMeshTest \
 	GeneralMetricTest \
 	GetAMCoeffsTest \
-	LALBarycenterTest \
 	NewGetAMCoeffsTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
@@ -49,7 +47,6 @@ FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
 GeneralMeshTest_SOURCES = GeneralMeshTest.c
 GeneralMetricTest_SOURCES = GeneralMetricTest.c
 GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
-LALBarycenterTest_SOURCES = LALBarycenterTest.c
 #LALDemodTest_SOURCES = LALDemodTest.c
 NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
 PtoleMeshTest_SOURCES = PtoleMeshTest.c
