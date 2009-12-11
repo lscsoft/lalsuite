@@ -707,6 +707,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		int amplitude;
 		int snr;
 		int confidence;
+		int chisq;
+		int chisq_dof;
 		int event_id;
 	} column_pos;
 
@@ -739,6 +741,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_4, 1);
 	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", METAIO_TYPE_REAL_4, 1);
 	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
+	column_pos.chisq = XLALLIGOLwFindColumn(&env, "chisq", METAIO_TYPE_REAL_8, 1);
+	column_pos.chisq_dof = XLALLIGOLwFindColumn(&env, "chisq_dof", METAIO_TYPE_REAL_8, 1);
 	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
@@ -785,6 +789,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_4;
 		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
+		row->chisq = env.ligo_lw.table.elt[column_pos.chisq].data.real_8;
+		row->chisq_dof = env.ligo_lw.table.elt[column_pos.chisq_dof].data.real_8;
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);

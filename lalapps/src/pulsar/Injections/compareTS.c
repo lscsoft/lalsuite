@@ -37,6 +37,7 @@
 #include <lal/AVFactories.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/SFTutils.h>
 
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>

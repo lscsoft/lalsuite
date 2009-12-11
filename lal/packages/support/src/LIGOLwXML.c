@@ -1296,6 +1296,8 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	fputs("\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:chisq\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:chisq_dof\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
@@ -1304,7 +1306,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	/* rows */
 
 	for(; sngl_burst; sngl_burst = sngl_burst->next) {
-		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.16g,%.16g,\"sngl_burst:event_id:%ld\"",
 			row_head,
 			sngl_burst->process_id,
 			sngl_burst->ifo,
@@ -1320,6 +1322,8 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 			sngl_burst->amplitude,
 			sngl_burst->snr,
 			sngl_burst->confidence,
+			sngl_burst->chisq,
+			sngl_burst->chisq_dof,
 			sngl_burst->event_id
 		) < 0)
 			XLAL_ERROR(func, XLAL_EFUNC);

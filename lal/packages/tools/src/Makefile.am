@@ -17,6 +17,7 @@ libtools_la_SOURCES = \
 	FlatLatticeTiling.c \
 	FrequencySeries.c \
 	GetErrorMatrixFromSnglInspiral.c \
+	LALBarycenter.c \
 	LALCalibration.c \
 	LALTrigScanCluster.c \
 	LIGOMetadataUtils.c \

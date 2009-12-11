@@ -730,6 +730,7 @@ for result_db in result_dbs_cache:
         minifup_node.set_input_xml( '.'.join([ full_filename, 'xml' ]) )
         minifup_node.set_input_xml_summary( summary_filename )
         minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+        minifup_node.set_table_name( 'loudest_events' )
   
         minifup_node.add_parent( printlc_node )
         dag.add_node( minifup_node )
@@ -769,7 +770,7 @@ for result_db in result_dbs_cache:
               'elogs',
               'injected_mass1',
               'injected_mass2',
-              'injected_distance'
+              'injected_distance',
               'sim_tag',
               'recovered_combined_far',
               'recovered_snr'])
