@@ -26,3 +26,32 @@ vcs-clean: maintainer-clean
 	-rm -f include/lal/Makefile.in
 	-rm -r src/Makefile.in
 	-rm -f test/Makefile.in
+
+all-local:
+	@echo "";\
+		echo "=================================================================";\
+		echo "";\
+		echo "        LAL MetaIO has now been successfully built.";\
+		echo "        Now run 'make install' to install LAL MetaIO.";\
+		echo "";\
+		echo "================================================================="
+
+install-exec-local:
+	@echo "";\
+		echo "=================================================================";\
+		echo "";\
+		echo "        LAL MetaIO has now been successfully installed.";\
+		echo "";\
+		echo "        Now you may want to setup your environment:";\
+		echo "";\
+		echo "        Bourne shell [bash] users: please add the";\
+		echo "        following lines to your .profile file";\
+		echo "";\
+		echo '            . $(sysconfdir)/lalmetaio-user-env.sh';\
+		echo "";\
+		echo "        C-shell [tcsh] users: please add the following";\
+		echo "        lines to your .login file";\
+		echo "";\
+		echo '            source $(sysconfdir)/lalmetaio-user-env.csh';\
+		echo "";\
+		echo "================================================================="
