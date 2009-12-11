@@ -1,9 +1,11 @@
-function plothist( veto_level, coinctype, ifo1, ifo2, bgfile, nonbgtype, nonbgfile )
+function plothist( veto_level, coinctype, ifotime, ifo1, ifo2, bgfile, nonbgtype, nonbgfile )
 
 %
-% veto_level = 'NOVETO','CAT2','CAT23'
+% veto_level = 'CAT2','CAT23','CAT234'
 %
 % coinctype = 'trip', 'doub'
+%
+% ifotime = 'trip', 'doub'
 %
 % ifo1, ifo2 can both be 'trip' if plothist is passed its options
 % through trip_hist or one of 'H1', 'H2', or 'L1' if plothist
@@ -66,10 +68,12 @@ function plothist( veto_level, coinctype, ifo1, ifo2, bgfile, nonbgtype, nonbgfi
 
   h_xlab=xlabel('SlideNumber');
   h_ylab=ylabel('Number of Coincidences');
-  if(strcmp(ifo1,'trip'))
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
     eval(['h_t=title( ''Number of H1H2L1 background events in H1H2L1 time'' );'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['h_t=title( ''Number of ' ifo1 '' ifo2 '  background events in H1H2L1 time'' );'])
   else
-    eval(['h_t=title( ''Number of ' ifo1 '' ifo2 '  background events in ' ifo1 '' ifo2 ' ' coinctype ' time'' );'])
+    eval(['h_t=title( ''Number of ' ifo1 '' ifo2 '  background events in ' ifo1 '' ifo2 ' time'' );'])
   end
   set(h_xlab,'FontSize',14);
   set(h_ylab,'FontSize',14);
@@ -78,13 +82,14 @@ function plothist( veto_level, coinctype, ifo1, ifo2, bgfile, nonbgtype, nonbgfi
   axis([-60 60 0 320])
   set(gca,'FontSize',14);
   axis autoy
-  if(strcmp(ifo1,'trip'))
-    eval(['saveas(gcf,''' veto_level '_H1H2L1_' coinctype '_bg' nonbgtype 'hist.png'')'])
-    close;
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_H1H2L1_H1H2L1_bg' nonbgtype '_hist.png'')'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_H1H2L1_bg' nonbgtype '_hist.png'')'])
   else
-    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' coinctype '_bg' nonbgtype 'hist.png'')'])
-    close;
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_bg' nonbgtype '_hist.png'')'])
   end
+  close;
   ave_num_bg = ave;
 
   %%%%%%%%%%%%% TIMESLIDE NUMBER OF EVENTS AS FUNCTION OF FREQ %%%%%%%%%%%%%
@@ -93,20 +98,23 @@ function plothist( veto_level, coinctype, ifo1, ifo2, bgfile, nonbgtype, nonbgfi
   hist(log10(bg.f),100)
   h_xlab=xlabel('log_{10}(f)');
   h_ylab=ylabel('Number of Coincidences');
-  if(strcmp(ifo1,'trip'))
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
     eval(['h_t=title(''Number of H1H2L1 background events in H1H2L1 time as a function of frequency'');'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['h_t=title(''Number of ' ifo1 '' ifo2 '   background events in H1H2L1 time as a function of frequency'');'])
   else
-    eval(['h_t=title(''Number of ' ifo1 '' ifo2 '   background events in ' ifo1 '' ifo2 ' ' coinctype ' time as a function of frequency'');'])
+    eval(['h_t=title(''Number of ' ifo1 '' ifo2 '   background events in ' ifo1 '' ifo2 ' time as a function of frequency'');'])
   end
   set(gca,'FontSize',14);
   grid on
   set(h_xlab,'FontSize',14);
   set(h_ylab,'FontSize',14);
   set(h_t,'FontSize',14,'FontWeight','b');
-  if(strcmp(ifo1, 'trip'))
-    eval(['saveas(gcf,''' veto_level '_H1H2L1_' coinctype '_bg' nonbgtype 'fhist.png'')'])
-    close;
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_H1H2L1_H1H2L1_bg' nonbgtype '_fhist.png'')'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_H1H2L1_bg' nonbgtype '_fhist.png'')'])
   else
-    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' coinctype '_bg' nonbgtype 'fhist.png'')'])
-    close;
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_bg' nonbgtype '_fhist.png'')'])
   end
+  close;

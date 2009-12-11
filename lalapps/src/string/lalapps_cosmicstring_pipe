@@ -16,9 +16,10 @@ __version__ = '$Revision$'[11:-2]
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os, random
-import getopt, re, string
+import re, string
 import tempfile
 import ConfigParser
+from optparse import OptionParser
 
 # import the modules we need to build the pipeline
 from glue import pipeline
@@ -26,83 +27,31 @@ from glue import segments
 from glue import segmentsUtils
 from lalapps import cosmicstring
 
-def usage():
-  msg = """\
-Usage: lalapps_ring_pipe [options]
 
-  -h, --help               display this message
-  -v, --version            print version information and exit
-  -i, --injections         add simulated bursts
-  -f, --config-file FILE   use configuration file FILE
-  -l, --log-path PATH      directory to write condor log file
-  -p, --playground         run on playground data only 
-  -d, --datafind           perform the datafind step
-  -b, --burst-search       perform the burst search
-"""
-  print >> sys.stderr, msg
+def parse_command_line():
+  parser = OptionParser(
+    usage = "%prog [options] ...",
+    description = "FIXME"
+  )
+  parser.add_option("-i", "--injections", action = "store_true", help = "Add simulated bursts.")
+  parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file.")
+  parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory.")
+  parser.add_option("-p", "--playground", action = "store_true", help = "Run on playground data only.")
+  parser.add_option("-d", "--datafind", action = "store_true", help = "Do datafind step.")
+  parser.add_option("-b", "--burst-search", action = "store_true", help = "Do the burst search.")
+  parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 
-# pasrse the command line options to figure out what we should do
-shortop = "hvipf:l:db"
-longop = [
-  "help",
-  "version",
-  "injections",
-  "playground",
-  "config-file=",
-  "log-path=",
-  "datafind",
-  "burst-search",
-  ]
+  options, filenames = parser.parse_args()
 
-try:
-  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
-except getopt.GetoptError:
-  usage()
-  sys.exit(1)
+  required_options = ["log_path", "config_file"]
+  missing_options = [option for option in required_options if getattr(options, option) is None]
+  if missing_options:
+  	raise ValueError, "missing required options %s" % (sorted("--%s" % option.replace("_", "-") for option in missing_options))
 
-config_file = None
-do_inj = 0
-config_file = None
-log_path = None
-do_slides = None
-playground = 0
-do_datafind = None
-do_burstsearch = None
-do_coincidence = None
+  return options, filenames
 
-for o, a in opts:
-  if o in ("-v", "--version"):
-    print "$Id$"
-    sys.exit(0)
-  elif o in ("-h", "--help"):
-    usage()
-    sys.exit(0)
-  elif o in ("-i", "--injections"):
-    do_inj = 1
-  elif o in ("-p", "--playground"):
-    playground = 1
-  elif o in ("-f", "--config-file"):
-    config_file = a
-  elif o in ("-l", "--log-path"):
-    log_path = a
-  elif o in ("-d", "--datafind"):
-    do_datafind = 1
-  elif o in ("-b", "--burst-search"):
-    do_burstsearch = 1
-  else:
-    print >> sys.stderr, "Unknown option:", o
-    usage()
-    sys.exit(1)
+options, filenames = parse_command_line()
 
-if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
-  sys.exit(1)
-
-if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
-  sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
 try: os.mkdir('logs')
@@ -116,11 +65,11 @@ except: pass
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
-cp.read(config_file)
+cp.read(options.config_file)
 
 # create a log file that the Condor jobs will write to
-basename = os.path.splitext(os.path.basename(config_file))[0]
-tempfile.tempdir = log_path
+basename = os.path.splitext(os.path.basename(options.config_file))[0]
+tempfile.tempdir = options.log_path
 
 tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
@@ -134,14 +83,14 @@ dag.set_dag_file(basename)
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 string_job = cosmicstring.StringJob(cp)
-if do_inj: 
+if options.injections: 
   injection_job = cosmicstring.InjJob(cp)
 
 # set better submit file names than the default
 subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 string_job.set_sub_file( basename + '.string' + subsuffix )
-if do_inj: 
+if options.injections: 
   injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
 # get chunk lengths from the values in the ini file
@@ -159,7 +108,7 @@ snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
 
 # create injection job
-if do_inj:
+if options.injections:
   seg = seglists.extent_all()
   inject = cosmicstring.InjNode(injection_job)
   inject.set_start(int(seg[0]))
@@ -174,8 +123,8 @@ log_fh = open(basename + '.pipeline.log', 'w')
 
 print >>log_fh, "$Id$\n"
 print >>log_fh, "Invoked with arguments:"
-for o, a in opts:
-  print >>log_fh, "%s %s" % (o, a)
+for name, value in options.__dict__.items():
+  print >>log_fh, "%s %s" % (name, value)
 print >>log_fh
 
 # loop over instruments, constructing trigger generator jobs
@@ -186,9 +135,9 @@ for ifo in ifos:
   data.read(cp.get('input','segments_%s' % ifo),length)
 
   # create the chunks from the science segments
-  data.make_chunks(length,overlap+trig_overlap,playground,0,0)
+  data.make_chunks(length,overlap+trig_overlap,options.playground,0,0)
   #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-  data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,0,0,0)
+  data.make_chunks_from_unused(length,overlap/2+trig_overlap,options.playground,0,0,0)
   #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
   # create all the LSCdataFind jobs to run in sequence
@@ -205,7 +154,7 @@ for ifo in ifos:
     df.set_observatory(ifo[0])
     df.set_type(datatype)
     df.set_name("df_%s_%d" % (ifo, segment_number))
-    if do_datafind:
+    if options.datafind:
       dag.add_node(df)
 
     # string jobs for this segment
@@ -219,13 +168,13 @@ for ifo in ifos:
       string.add_var_opt('threshold',snr[ifo])
       string.add_var_opt('trig-start-time',chunk.trig_start())
       string.add_var_opt('outfile',string.get_output())
-      if do_datafind:
+      if options.datafind:
         string.add_parent(df)
       string.set_name("string_%s_%d_%d" % (ifo, segment_number, chunk_number))
-      if do_inj:
+      if options.injections:
         string.add_parent(inject)
         string.add_var_opt('injection-file',inject.get_output())
-      if do_burstsearch:
+      if options.burst_search:
         dag.add_node(string)
 
   print >>log_fh, "\n===========================================\n"

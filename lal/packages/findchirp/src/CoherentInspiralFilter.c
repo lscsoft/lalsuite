@@ -46,7 +46,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
-#include <lal/DopplerScan.h>
 
 /* macro to "use" unused function parameters */
 #define UNUSED(expr) do { (void)(expr); } while(0)
@@ -1578,7 +1577,7 @@ XLALCoherentInspiralFilterSegment (
     MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params,
-    const DopplerSkyGrid                  *skyGridPtr,
+    const SkyGrid                         *skyGridPtr,
     REAL4                                 nullStatRegul
     )
 {
@@ -2505,7 +2504,7 @@ XLALCoherentInspiralFilterSegment (
 	double          psiInRadians = 0.0;
 	double          detRefLocation[3];
 	double          detNextLocation[3];
-        const DopplerSkyGrid *skyGrid;
+        const SkyGrid *skyGrid;
 	UINT4 skyGridIdx=0;
 
         /* This is case 3b, which pertains to a 3D network
@@ -3057,7 +3056,7 @@ XLALCoherentInspiralFilterSegment (
       double          psiInRadians = 0.0;
       double          detRefLocation[3];
       double          detNextLocation[3];
-      const DopplerSkyGrid *skyGrid;
+      const SkyGrid  *skyGrid;
       UINT4 skyGridIdx=0;
 
       /* This is case "4a", which pertains to a 4D network

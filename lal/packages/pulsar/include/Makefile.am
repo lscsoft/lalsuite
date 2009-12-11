@@ -11,7 +11,6 @@ pkginclude_HEADERS = \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
-	LALBarycenter.h \
 	LALComputeAM.h \
 	LALDemod.h \
 	LISAspecifics.h \

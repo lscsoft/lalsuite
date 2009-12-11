@@ -7,18 +7,18 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS =  MakeSFTs Injections FDS_isolated FDS_griphyn hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan
 
-if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
+if LALFRAME
+# this only requires LALFrame because of usage of LALFrameL.h
+LALFRAMEPROGS = lalapps_make_sfts
 else
-FRAMEPROGS =
+LALFRAMEPROGS =
 endif
 
-bin_PROGRAMS = $(FRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
+bin_PROGRAMS = $(LALFRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
 	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
-        lalapps_ComputeWeightedMultiAMCoeffs
+        lalapps_ComputeWeightedMultiAMCoeffs lalapps_make_job_input_data
 
-if FRAME
-lalapps_make_job_input_data_SOURCES = make_job_input_data.c
+if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
@@ -32,6 +32,7 @@ lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
 lalapps_ComputeWeightedMultiAMCoeffs_SOURCES = ComputeWeightedMultiAMCoeffs.c
+lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 
 
 EXTRA_DIST = \

@@ -57,8 +57,6 @@ code. It is called InjectionInterfaceTest.c
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 
-#include <lal/GenerateSpinOrbitCW.h>
-#include <lal/GenerateTaylorCW.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/SeqFactories.h>
 

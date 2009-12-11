@@ -835,8 +835,8 @@ INT4 XLALMCMCDifferentialEvolution(
 	same=1;
 	while(paraHead)
 	{
-		if(paraA->value!=paraB->value) same=0;
 		paraHead->value+=paraB->value-paraA->value;
+		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value) same=0;
 		paraB=paraB->next; paraA=paraA->next;
 		paraHead=paraHead->next;
 	}

@@ -236,6 +236,9 @@ int OutputEvents(struct CommandLineArgsTag CLA);
 /* Frees the memory */
 int FreeMem(void);                                        
 
+/* Clustering comparison function */
+static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBurst * const *);
+
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -333,6 +336,30 @@ int main(int argc,char *argv[])
 
 /**************************** MAIN PROGRAM ENDS ********************************/
 
+/*******************************************************************************/
+
+/*
+ * Check if two string events overlap in time. The peak times are uncertain
+ * to whatever the high frequency cutoff is
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+static int XLALCompareStringBurstByTime(
+  const SnglBurst * const *a,
+  const SnglBurst * const *b
+)
+/* </lalVerbatim> */
+{
+  double delta_t = XLALGPSDiff(&(*a)->peak_time, &(*b)->peak_time);
+  /* FIXME:  global variables = BAD BAD BAD! (my fault -- Kipp) */
+  double epsilon = CommandLineArgs.cluster;
+
+  if(delta_t > epsilon)
+    return(1);
+  if(delta_t < -epsilon)
+    return(-1);
+  return(0);
+}
 
 /*******************************************************************************/
 
@@ -527,30 +554,23 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       /* give trigger a 1 sample fuzz on either side */
       starttime -= GV.ht_proc->deltaT *1e9;
       duration += 2*GV.ht_proc->deltaT;
-      
-      (*thisEvent)->start_time.gpsSeconds     = starttime / 1000000000;
-      (*thisEvent)->start_time.gpsNanoSeconds = starttime % 1000000000;
-      (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
-      (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
+
+      /* compute \chi^{2} */
+      chi2=0, ndof=0;
+      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
+        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+        ndof += (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+      }
+
+      XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
+      XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
       (*thisEvent)->duration     = duration;
       (*thisEvent)->central_freq = (strtemplate[m].f+CLA.fbankstart)/2.0;	   
       (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.fbankstart;				     
       (*thisEvent)->snr          = maximum;
       (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
-      (*thisEvent)->string_cluster_t = CLA.cluster;
-
-      /* Compute Chi2 and store it*/
-      chi2=0, ndof=0;
-      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
-	
-	chi2+=
-	  (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
-	ndof+=
-	  (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
-	
-      }
-      	      
-      (*thisEvent)->confidence = chi2/ndof;
+      (*thisEvent)->chisq = chi2;
+      (*thisEvent)->chisq_dof = ndof;
     }
   }
     
