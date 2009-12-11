@@ -6,7 +6,6 @@ check_PROGRAMS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
-	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
@@ -137,7 +136,6 @@ TESTS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
-	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
