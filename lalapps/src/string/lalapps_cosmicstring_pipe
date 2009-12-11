@@ -94,10 +94,11 @@ if options.injections:
   injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
 # get chunk lengths from the values in the ini file
-short_seg_lenth = int(cp.get('string', 'short-segment-duration'))
-pad = int(cp.get('string', 'pad'))
-length = int(cp.get('pipeline', 'segment-length'))+2*pad
-trig_overlap = int(cp.get('pipeline', 'trig-overlap'))
+short_seg_lenth = cp.getint('string', 'short-segment-duration')
+pad = cp.getint('string', 'pad')
+short_segment_duration = cp.getint('string', 'short-segment-duration')
+length = cp.getint('pipeline', 'segment-length')+2*pad
+trig_overlap = cp.getint('pipeline', 'trig-overlap')
 overlap = 2*(short_seg_lenth/4+pad)
 
 # get the instruments and snr thresholds
@@ -127,66 +128,76 @@ for name, value in options.__dict__.items():
   print >>log_fh, "%s %s" % (name, value)
 print >>log_fh
 
+
+def clip_segment(seg, pad, short_segment_duration):
+  # clip segment to the length required by lalapps_StringSearch.  if
+  #
+  #   duration = segment length - padding
+  #
+  # then
+  #
+  #   duration / short_segment_duration - 0.5
+  #
+  # must be an odd integer, therefore
+  #
+  #   2 * duration + short_segment_duration
+  #
+  # must be divisble by (4 * short_segment_duration)
+  duration = float(abs(seg)) - 2 * pad
+  extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
+  extra /= 2
+
+  # clip segment
+  seg = segments.segment(seg[0], seg[1] - extra)
+
+  # bounds must be integers
+  if int(seg[0]) != seg[0] or int(seg[1]) != seg[1]:
+    raise ValueError, "segment %s does not have integer boundaries" % str(seg)
+  seg = segments.segment(int(seg[0]), int(seg[1]))
+
+  # done
+  return seg
+
+
 # loop over instruments, constructing trigger generator jobs
 
 for ifo in ifos:
-  # read science segs that are greater or equal to a chunk from the input file
-  data = pipeline.ScienceData()
-  data.read(cp.get('input','segments_%s' % ifo),length)
-
-  # create the chunks from the science segments
-  data.make_chunks(length,overlap+trig_overlap,options.playground,0,0)
-  #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-  data.make_chunks_from_unused(length,overlap/2+trig_overlap,options.playground,0,0,0)
-  #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
-
   # create all the LSCdataFind jobs to run in sequence
-  datatype = cp.get('input','type_%s' % ifo) 
-  channeltype = cp.get('input','channel_%s' % ifo) 
+  datatype = cp.get('input', 'type_%s' % ifo) 
+  channel = cp.get('input', 'channel_%s' % ifo) 
 
   # loop over segments
-  for segment_number, seg in enumerate(data):
-
+  for segment_number, seg in enumerate(seglists[ifo]):
     # find all the data for ifo
     df = pipeline.LSCDataFindNode(df_job)
-    df.set_start(seg.start())
-    df.set_end(seg.end())
+    df.set_start(seg[0])
+    df.set_end(seg[1])
     df.set_observatory(ifo[0])
     df.set_type(datatype)
     df.set_name("df_%s_%d" % (ifo, segment_number))
     if options.datafind:
       dag.add_node(df)
 
-    # string jobs for this segment
-    for chunk_number, chunk in enumerate(seg):
-      string = cosmicstring.StringNode(string_job)
-      string.set_start(chunk.start())
-      string.set_end(chunk.end())
-      string.set_ifo(ifo)
-      string.set_cache(df.get_output())
-      string.add_var_opt('channel',channeltype)
-      string.add_var_opt('threshold',snr[ifo])
-      string.add_var_opt('trig-start-time',chunk.trig_start())
-      string.add_var_opt('outfile',string.get_output())
-      if options.datafind:
-        string.add_parent(df)
-      string.set_name("string_%s_%d_%d" % (ifo, segment_number, chunk_number))
-      if options.injections:
-        string.add_parent(inject)
-        string.add_var_opt('injection-file',inject.get_output())
-      if options.burst_search:
-        dag.add_node(string)
+    # string job for this segment
+    string_seg = clip_segment(seg, pad, short_segment_duration)
 
-  print >>log_fh, "\n===========================================\n"
-  print >>log_fh, "Parsed %d science segments for %s" % (len(data), ifo)
-  print >>log_fh, "total data = %d" % sum(len(chunk) for seg in data for chunk in seg)
-  print >>log_fh, "\n===========================================\n"
-  print >>log_fh, data
-  for seg in data:
-    print >>log_fh, seg
-    for chunk in seg:
-      print >>log_fh, chunk
-  print >>log_fh, "\n===========================================\n"
+    string = cosmicstring.StringNode(string_job)
+    string.set_start(string_seg[0])
+    string.set_end(string_seg[1])
+    string.set_ifo(ifo)
+    string.set_cache(df.get_output())
+    string.add_var_opt('channel', channel)
+    string.add_var_opt('threshold', snr[ifo])
+    string.add_var_opt('trig-start-time', string_seg[0])
+    string.add_var_opt('outfile', string.get_output())
+    if options.datafind:
+      string.add_parent(df)
+    string.set_name("string_%s_%d" % (ifo, segment_number))
+    if options.injections:
+      string.add_parent(inject)
+      string.add_var_opt('injection-file', inject.get_output())
+    if options.burst_search:
+      dag.add_node(string)
 
 # write out the DAG
 dag.write_sub_files()
@@ -206,5 +217,3 @@ proxy certificate on the condor submit machine by running the commands
 Contact the administrator of your cluster to find the hostname and port of the
 LSCdataFind server.
 """
-
-sys.exit(0)
