@@ -32,7 +32,7 @@ all-local:
 	@echo "";\
 		echo "=================================================================";\
 		echo "";\
-		echo "        LAL XMLhas now been successfully built.";\
+		echo "        LAL XML has now been successfully built.";\
 		echo "        Now run 'make install' to install LAL XML.";\
 		echo "";\
 		echo "================================================================="
