@@ -78,9 +78,6 @@ fi
 if [ -n "$LAL_PREFIX" ]; then
 	EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
         SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
-elif [ -n "$LSCSOFT_PREFIX" ]; then
-        EEPHEM=$LSCSOFT_PREFIX/share/lal/earth05-09.dat
-        SEPHEM=$LSCSOFT_PREFIX/share/lal/sun05-09.dat
 elif [ -n "$LAL_TOP_SRCDIR" ]; then
         EEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/earth05-09.dat
         SEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/sun05-09.dat
