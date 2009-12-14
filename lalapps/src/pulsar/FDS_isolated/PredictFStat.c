@@ -144,7 +144,7 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear);
 
 /*---------- empty initializers ---------- */
 
@@ -330,8 +330,7 @@ void
 InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear,	/**< which years do we need? */
-	       LIGOTimeGPS epoch	/**< epoch of observation */
+	       const CHAR *ephemYear	/**< which years do we need? */
 	       )
 {
 #define FNAME_LENGTH 1024
@@ -532,7 +531,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ephemDir = uvar->ephemDir;
     else
       ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear, startTime ), status);
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */

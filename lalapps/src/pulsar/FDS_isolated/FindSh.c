@@ -177,7 +177,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   char command[256];
   size_t errorcode;
   FILE *fp;
-  UINT4 fileno=0;
+  UINT4 filenum=0;
   UINT4 j;
   glob_t globbuf;
 
@@ -189,11 +189,11 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno < globbuf.gl_pathc) 
+  while (filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;
@@ -201,7 +201,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
     }
   globfree(&globbuf);
 
-  SFTno=fileno;  /* Global variable that keeps track of no of SFTs*/
+  SFTno=filenum;  /* Global variable that keeps track of no of SFTs*/
 
 
   /* open FIRST file and get info from it*/

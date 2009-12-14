@@ -230,7 +230,7 @@ int ReadDataParams(char *datadir, GlobVar *GV)
   /* the main point of this function is to extract the observation span */
   /* and observation start time at the detector site */
 
-  INT4 fileno=0;
+  INT4 filenum=0;
   FILE *fp;
   size_t errorcode;
   char **filelist;
@@ -260,11 +260,11 @@ int ReadDataParams(char *datadir, GlobVar *GV)
   for (i=0;i<globbuf.gl_pathc;i++) filelist[i]=(char *)LALMalloc(256*sizeof(char));
   
   /* read all file names into memory */
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  while ((UINT4)filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXSFTS)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXSFTS)
 	{
 	  fprintf(stderr,"\nToo many files in directory! Exiting... \n");
 	  exit(1);
@@ -272,7 +272,7 @@ int ReadDataParams(char *datadir, GlobVar *GV)
     }
   globfree(&globbuf);
 
-  nfiles=fileno;
+  nfiles=filenum;
   
   /* open the first file to read header information */
   if (!(fp=fopen(filelist[0],"rb"))) {
@@ -292,7 +292,7 @@ int ReadDataParams(char *datadir, GlobVar *GV)
   if (header.tbase<=0.0)
     {
       fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-	      header.tbase,filelist[fileno]);
+	      header.tbase,filelist[filenum]);
       return 3;
     }
 
@@ -313,7 +313,7 @@ int ReadDataParams(char *datadir, GlobVar *GV)
   errorcode=fread((void*)&header,sizeof(header),1,fp);
   if (errorcode!=1) 
     {
-      fprintf(stderr,"No header in data file %s\n",filelist[fileno]);
+      fprintf(stderr,"No header in data file %s\n",filelist[filenum]);
       return 1;
     }
 
@@ -965,7 +965,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
   }
   
   /* else if we are doing a mimatched template */
@@ -994,7 +994,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : a randomly mismatched signal has been put in the original parameter space.\n");
   
@@ -1016,7 +1016,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : none of the points lie in the original parameter space.\n");
     fprintf(stderr,"          This could be a single filter target but futher investigation\n");

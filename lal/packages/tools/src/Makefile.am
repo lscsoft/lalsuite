@@ -1,32 +1,72 @@
-## Process this file with automake to produce Makefile.in
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+
 noinst_LTLIBRARIES = libtools.la
 libtools_la_SOURCES = \
-  UnitDefs.c UnitNormalize.c UnitRaise.c UnitMultiply.c UnitCompare.c \
-  CreateDetector.c DetResponse.c LALCalibration.c ComputeTransfer.c \
-  CoherentEstimation.c ResampleTimeSeries.c SnglInspiralUtils.c \
-  MultiInspiralUtils.c SnglBurstUtils.c SnglRingdownUtils.c \
-  CoincInspiralUtils.c CoincRingdownUtils.c SimInspiralUtils.c \
-  ComputeCalibrationFactors.c LIGOMetadataUtils.c \
-  NDTemplateBank.c ComputeStrain.c ComputeStrainDMT.c \
-  Sequence.c TimeSeries.c FrequencySeries.c \
-  Segments.c LALTrigScanCluster.c TrigScanEThincaCommon.c \
-  EllipsoidOverlapTools.c GetErrorMatrixFromSnglInspiral.c \
-  CoincInspiralEllipsoid.c SimRingdownUtils.c \
-  FlatLatticeTiling.c ComputeDataQualityVector.c Skymap.c
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
-EXTRA_DIST = \
-  FrequencySeries.m4 Sequence.m4 TimeSeries.m4 MakeTemplateBank.c \
-  FrequencySeriesC.m4 SequenceC.m4 TimeSeriesC.m4
-EXTRA_TEXSOURCES = MakeTemplateBank.c
-MOSTLYCLEANFILES = .dvi-dep
+	CoherentEstimation.c \
+	CoincInspiralEllipsoid.c \
+	CoincInspiralUtils.c \
+	CoincRingdownUtils.c \
+	ComputeCalibrationFactors.c \
+	ComputeDataQualityVector.c \
+	ComputeStrain.c \
+	ComputeStrainDMT.c \
+	ComputeTransfer.c \
+	CreateDetector.c \
+	DetResponse.c \
+	EllipsoidOverlapTools.c \
+	FlatLatticeTiling.c \
+	FrequencySeries.c \
+	GetErrorMatrixFromSnglInspiral.c \
+	LALBarycenter.c \
+	LALCalibration.c \
+	LALTrigScanCluster.c \
+	LIGOMetadataUtils.c \
+	MultiInspiralUtils.c \
+	NDTemplateBank.c \
+	ResampleTimeSeries.c \
+	Segments.c \
+	Sequence.c \
+	SimInspiralUtils.c \
+	SimRingdownUtils.c \
+	Skymap.c \
+	SnglBurstUtils.c \
+	SnglInspiralUtils.c \
+	SnglRingdownUtils.c \
+	TimeSeries.c \
+	TrigScanEThincaCommon.c \
+	UnitCompare.c \
+	UnitDefs.c \
+	UnitMultiply.c \
+	UnitNormalize.c \
+	UnitRaise.c
+
+MAINTAINERCLEANFILES = \
+	FrequencySeries.c \
+	Sequence.c \
+	TimeSeries.c
 DISTCLEANFILES = *.tex
+
+EXTRA_DIST = \
+	FrequencySeries.m4 \
+	Sequence.m4 \
+	TimeSeries.m4 \
+	MakeTemplateBank.c \
+	FrequencySeriesC.m4 \
+	SequenceC.m4 \
+	TimeSeriesC.m4
+
+EXTRA_TEXSOURCES = MakeTemplateBank.c
+
+MOSTLYCLEANFILES = .dvi-dep
+
 dvi-local: .dvi-dep
 
 FrequencySeries.c : FrequencySeries.m4 FrequencySeriesC.m4
 	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.c
+
 Sequence.c : Sequence.m4 SequenceC.m4
 	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.c
+
 TimeSeries.c : TimeSeries.m4 TimeSeriesC.m4
 	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.c
 

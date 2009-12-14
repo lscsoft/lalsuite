@@ -19,9 +19,11 @@ PREFIX = /opt/lscsoft/lalapps
 FRAMEPREFIX = /opt/lscsoft/libframe
 METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
-LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
-LALFRAME = /opt/lscsoft/lalframe
+LALFRAMEPREFIX = /opt/lscsoft/lalframe
+LALMETAIOPREFIX = /opt/lscsoft/lalmetaio
 LALXMLPREFIX = /opt/lscsoft/lalxml
+LALBURSTPREFIX = /opt/lscsoft/lalburst
+LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
 
 CFLAGS = -Wall -g
 
@@ -40,7 +42,7 @@ config.status: configure
 #	LDFLAGS="-Wl,-z,defs" \
 # moved to install
 #	CFLAGS="$(CFLAGS)" \
-	#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
+#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 #	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 #	    --prefix=$(PREFIX) \
 #	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
@@ -75,9 +77,9 @@ install: build
 
 	set -e; \
 	for v in 2.4 2.5; do                                                         \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX)                                                \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
@@ -85,11 +87,11 @@ install: build
 	    --enable-frame --enable-metaio                                    \
 	    --disable-debug                                                   \
 	    --disable-gcc-flags ;                                                    \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) ;                                                                    \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install ;                           \
-	PYTHON="python$$v"                                                    \
+	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) clean ;                                                              \
 	done
 	set -e; \
@@ -110,7 +112,7 @@ install: build
 binary-common: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs ChangeLog
+	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
 #	dh_install

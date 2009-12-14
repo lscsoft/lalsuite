@@ -293,7 +293,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		logZ=logadd(logZ,Live[i]->logLikelihood+logw);
 		for(j=0;j<Nruns;j++){
 			logwarray[j]+=sample_logt(Nlive);
-			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]-log((double)Nlive));
+			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]);
 		}
 		fprintSample(fpout,Live[i]);
 	}
@@ -356,13 +356,13 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 				/* if(gsl_rng_uniform(RNG)<0.1) XLALMCMC1PNMasseta(MCMCInput,temp); */
 			}
 			else  XLALMCMCDifferentialEvolution(MCMCInput,temp);
-			/* Evaluate MH ratio */
 		}
-		else if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
-		/*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
-		else XLALMCMCJump(MCMCInput,temp,covM);
-		
-		
+		else 
+		{
+			if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
+			else XLALMCMCJump(MCMCInput,temp,covM);
+		}
+		/* Evoluate the MH ratio */		
 		MCMCInput->funcPrior(MCMCInput,temp);
 		if(temp->logPrior!=-DBL_MAX && ( (temp->logPrior - sample->logPrior) > log(gsl_rng_uniform(RNG)) )) {
 			/* this would be accepted based on the priors, we can now confirm that its likelihood is above the limit

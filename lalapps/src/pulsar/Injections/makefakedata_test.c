@@ -1192,7 +1192,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
 
 int make_filelist(void) {
 
-  UINT4 fileno=0;
+  UINT4 filenum=0;
   CHAR command[256];
   glob_t globbuf;
 
@@ -1203,11 +1203,11 @@ int make_filelist(void) {
   glob(command, GLOB_ERR, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno< globbuf.gl_pathc)
+  while (filenum< globbuf.gl_pathc)
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  error("Too many files in directory! Exiting... \n");
 	  return 1;
@@ -1328,12 +1328,12 @@ INT4 myRound(REAL8 x)
 {
   REAL8 sign=1.0;
   REAL8 roundedValue=0.0;
-  REAL8 remainder=0.0;
+  REAL8 rmdr=0.0;
 
   if(x<0) sign=-1.0;
   roundedValue= floor(sign*x);
-  remainder=sign*x-roundedValue;
-  if(remainder>=0.5)
+  rmdr=sign*x-roundedValue;
+  if(rmdr>=0.5)
     roundedValue=roundedValue+1.0;
   roundedValue=sign*roundedValue;
 

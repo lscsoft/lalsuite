@@ -373,7 +373,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
       stream->mode = keepmode;
       XLAL_ERROR( func, XLAL_EFUNC );
     }
-    if ( ! stream->state & LAL_FR_GAP )
+    if ( ! (stream->state & LAL_FR_GAP) )
       stream->epoch = keep;
     stream->mode = keepmode;
   }
@@ -573,7 +573,7 @@ FUNC (
     /* failure is benign, so we return results */
     stream->mode |= LAL_FR_IGNOREGAP_MODE;
     TRY( LALFrNext( status->statusPtr, stream ), status );
-    if ( ! stream->state & LAL_FR_GAP )
+    if ( ! (stream->state & LAL_FR_GAP) )
     {
       stream->epoch = keep;
     }

@@ -1324,12 +1324,6 @@ XLALCompareSnglBurstByExactPeakTime(
 );
 
 int
-XLALCompareStringBurstByTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
 XLALCompareSnglBurstBySNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -1768,6 +1762,14 @@ XLALPlayTestCoincRingdown(
 INT4
 XLALCountCoincRingdown(
     CoincRingdownTable *head
+    );
+
+void
+LALRingdownH1H2Consistency(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincRingdown,
+    REAL4                       H2snrCutThreshold,
+    LALSegList                 *vetoSegsH2
     );
 
 

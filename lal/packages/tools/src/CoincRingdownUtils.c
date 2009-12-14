@@ -1979,3 +1979,73 @@ XLALSortCoincRingdown (
 
 }
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALRingdownH1H2Consistency(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincRingdown,
+    REAL4			H1snrCutThreshold,
+    LALSegList                 *vetoSegsH2
+    )
+/* </lalVerbatim> */
+{
+  CoincRingdownTable   *thisCoinc = NULL;
+  CoincRingdownTable   *prevCoinc = NULL;
+  CoincRingdownTable   *coincHead = NULL;
+  REAL4 snrH1;
+  INITSTATUS( status, "LALRingdownH1H2Consistency", COINCRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  thisCoinc = *coincRingdown;
+  coincHead = NULL;
+
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    CoincRingdownTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if( tmpCoinc->snglRingdown[LAL_IFO_H1] && !tmpCoinc->snglRingdown[LAL_IFO_H2])
+    {
+      snrH1 = tmpCoinc->snglRingdown[LAL_IFO_H1]->snr;
+      if( snrH1 > H1snrCutThreshold )
+      {
+        if ( vetoSegsH2->initMagic == SEGMENTSH_INITMAGICVAL )
+	{
+	  if (!XLALSegListSearch( vetoSegsH2,
+			      &(tmpCoinc->snglRingdown[LAL_IFO_H1]->start_time)))
+          {
+            discardTrigger =1;
+          }
+        }
+        else
+        {
+          discardTrigger = 1;
+        }
+      }
+    }
+    if( discardTrigger )
+    {
+      XLALFreeCoincRingdown( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincRingdown = coincHead;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+

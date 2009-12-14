@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   /* Load the SFTs */
   {
     SFTConstraints constraints = empty_SFTConstraints;
-    REAL8 extra = 0.0, fmin = 0.0, fmax = 0.0;
+    REAL8 extra = 0.0, f_min = 0.0, f_max = 0.0;
     
     /* Load the catalog */
     LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");
@@ -246,12 +246,12 @@ int main(int argc, char *argv[]) {
     
     /* Determine the frequency range */
     extra = catalog->data[0].header.deltaF * (rng_med_win/2 + 1);
-    fmin = freq - extra;
-    fmax = freq + extra + freq_band;
+    f_min = freq - extra;
+    f_max = freq + extra + freq_band;
     
     /* Load the SFTs */
-    LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", fmin, fmax);
-    LAL_CALL(LALLoadMultiSFTs(&status, &sfts, catalog, fmin, fmax), &status);
+    LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", f_min, f_max);
+    LAL_CALL(LALLoadMultiSFTs(&status, &sfts, catalog, f_min, f_max), &status);
     LogPrintfVerbatim(LOG_DEBUG, "done\n");
   }
   
@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
 
       /* Output at beginning of loop */
       LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%i\n", h0_iter, h0, dh0, MC_trials);
-      fprintf(fp, "MC_trials=%li ", MC_trials);
+      fprintf(fp, "MC_trials=%" LAL_INT8_FORMAT, MC_trials);
 
       /* Destroy any previous histogram */
       if (twoF_pdf_hist) {

@@ -5,9 +5,16 @@
 # the code in all its 4 modes and compare the results to standard
 # archived files 
 
-CODENAME=./lalapps_heterodyne_pulsar
+## allow 'make test' to work from builddir != srcdir
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+else
+    srcdir=.
+fi
 
-FRAMEFILE=H-CW_Injection-875206560-120.gwf
+CODENAME=${builddir}lalapps_heterodyne_pulsar
+
+FRAMEFILE=${srcdir}/H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
 DATAEND=`expr $DATASTART + 120`
 DETECTOR=H1
@@ -67,13 +74,26 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
+# check that LAL_PREFIX is set
+if [ -n "$LAL_PREFIX" ]; then
+	EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
+        SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
+elif [ -n "$LSCSOFT_PREFIX" ]; then
+        EEPHEM=$LSCSOFT_PREFIX/share/lal/earth05-09.dat
+        SEPHEM=$LSCSOFT_PREFIX/share/lal/sun05-09.dat
+elif [ -n "$LAL_TOP_SRCDIR" ]; then
+        EEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/earth05-09.dat
+        SEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/sun05-09.dat
+else
+	echo Need an environment variable that points to the LAL location 
+        exit 2
+fi
+
 if [ ! -f $EEPHEM ]; then
 	echo Error! Earth ephemeris file does not exist!
 	exit 2
 fi
 
-SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
 if [ ! -f $SEPHEM ]; then
 	echo Error! Sun ephemeris file does not exist!
 	exit 2
@@ -115,12 +135,12 @@ FILELIST=$FRAMEFILE
 cp $FILELIST ${LOCATION}/framedir 
 
 # use make_frame_cache to make a frame cache file
-if [ ! -f make_frame_cache ]; then
+if [ ! -f ${srcdir}/make_frame_cache ]; then
 	echo Error! make_frame_cache does not exist!
 	exit 2
 fi
 
-./make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
+${srcdir}/make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
 	echo Could not create the cache file!
 	exit 2
@@ -218,7 +238,7 @@ fi
 mv $COARSEFILE $COARSEFILE.off
 
 # set calibration files
-RESPFILE=$LOCATION/H1response.txt
+RESPFILE=${srcdir}/H1response.txt
 
 ################### FINE HETERODYNES #######################
 
@@ -383,7 +403,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -421,7 +441,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -430,9 +450,16 @@ fi
 # file from heterodyne done in one go
 f3=875206560-875206680/finehet_J0000+0000_H1.full
 val=0
+skip=0
 while read line
 do
-        for args in $line; do
+        # this file has an extra line, so skip the first one
+	if [ $skip == 0 ]; then
+		((skip++))
+		continue
+	fi	
+	
+	for args in $line; do
                 # pass lines through said and convert any exponents 
                 # expressed as e's to E's and then convert to decimal format (for bc)
                 tempval=`echo $args | sed 's/e/E/g'`
@@ -460,7 +487,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -498,7 +525,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi
@@ -536,7 +563,7 @@ if [ ! `echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;a > $RPER" | bc` ]; then
         exit 2
 fi
 
-if [ ! `echo "a=(${arrvals[1]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
+if [ ! `echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;a > $IPER" | bc` ]; then
         echo Error! Real data point in data file is wrong!
         exit 2
 fi

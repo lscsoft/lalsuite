@@ -184,7 +184,7 @@ extern int vrbflg;
 void initUserVars (LALStatus *status, UserVariables_t *uvar);
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
-EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear, const LIGOTimeGPS *epoch );
+EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
 
 int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
 
@@ -392,7 +392,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   /* ----- determine start-time from user-input */
   XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
 
-  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear, &(cfg->startTime) )) == NULL ) {
+  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
     LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", fn);
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
@@ -483,8 +483,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     }
     cfg->history->cmdline = cmdline;
 
-    cfg->history->LAL_VCS_Version     = XLALClearLinebreaks ( lalGitID );
-    cfg->history->LALApps_VCS_Version = XLALClearLinebreaks ( lalappsGitID );
+    cfg->history->LAL_VCS_Version     = XLALClearLinebreaks ( (char*)lalGitID );
+    cfg->history->LALApps_VCS_Version = XLALClearLinebreaks ( (char*)lalappsGitID );
 
   } /* record history */
 
@@ -528,8 +528,7 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 /** Load Ephemeris from ephemeris data-files  */
 EphemerisData *
 InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear,	/**< which years do we need? */
-	       const LIGOTimeGPS *epoch	/**< epoch of observation */
+	       const CHAR *ephemYear	/**< which years do we need? */
 	       )
 {
 #define FNAME_LENGTH 1024

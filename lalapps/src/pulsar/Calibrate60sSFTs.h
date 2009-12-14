@@ -81,9 +81,9 @@ struct FactorsTag
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadSFTDirectory(struct CommandLineArgsTag CLA);
 int ReadCalibrationFiles(struct CommandLineArgsTag CLA);
-int ComputeInitialRSFunctions();
+int ComputeInitialRSFunctions(void);
 int CalibrateSfts(struct CommandLineArgsTag CLA);
-int Freemem();
+int Freemem(void);
 
 
 COMPLEX8 tmpa, tmpb, tmpc; 

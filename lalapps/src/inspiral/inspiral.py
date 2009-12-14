@@ -2019,6 +2019,12 @@ class MiniFollowupsJob(InspiralPlottingJob):
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
+  def set_time_slides(self):
+    """
+    Turns on the --time-slides argument.
+    """
+    self.add_opt('time-slides', None)
+
 
 class MiniFollowupsNode(InspiralPlottingNode):
   """
@@ -2036,6 +2042,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml = None
     self.__input_xml_summary = None
     self.__output_html_table = None
+    self.__table_name = None
 
   def set_cache_file(self, cache_file):
     """
@@ -2127,6 +2134,19 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the output_html_table that's set.
     """
     return self.__output_html_table
+
+  def set_table_name(self, table_name):
+    """
+    Sets the table-name argument.
+    """
+    self.add_var_opt( 'table-name', table_name )
+    self.__table_name = table_name
+
+  def get_table_name(self):
+    """
+    Return the table_name that's set.
+    """
+    return self.__table_name
 
 
 #############################################################################
@@ -2272,47 +2292,35 @@ class CFarNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
-class PrintLCJob(pipeline.SqliteJob):
+class LigolwCBCPrintJob(pipeline.SqliteJob):
   """
-  A printlc job. The static options are read from the section [printlc] in
-  the ini file.
+  A LigolwCBCPrintJob is a generic job class for ligolw_cbc_print* programs, e.g., ligolw_cbc_printlc.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp, exec_name, sections, dax = False):
     """
     @cp: ConfigParser object from which options are read.
     @sections: list of sections for cp to read from
     """
-    exec_name = 'printlc'
-    sections = ['printlc']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
 
 
-class PrintLCNode(pipeline.SqliteNode):
+class LigolwCBCPrintNode(pipeline.SqliteNode):
   """
-  A PrintLC node.
+  A LigolwCBCPrintJob is a generic node class for ligolw_cbc_print* programs, e.g., ligolw_cbc_printlc.
+  This class offers options common to these programs.
   """
   def __init__(self, job):
     """
     @job: a PrintLCJob
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.__datatype = None
     self.__extract_to_xml = None
+    self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
-
-  def set_datatype(self, datatype):
-    """
-    Sets datatype option.
-    """
-    self.add_var_opt('datatype', datatype)
-    self.__datatype = datatype
-
-  def get_datatype(self):
-    """
-    Gets datatype.
-    """
-    return self.__datatype
+    self.__sim_type = None
+    self.__output_format = None
+    self.__columns = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2326,6 +2334,19 @@ class PrintLCNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_extract_to_database(self, database_filename):
+    """
+    Sets the extract-to-database option.
+    """
+    self.add_var_opt('extract-to-database', database_filename)
+    self.__extract_to_database = database_filename
+
+  def get_extract_to_database(self):
+    """
+    Gets database-filename if extract-to-database is set.
+    """
+    return self.__extract_to_database
 
   def set_exclude_coincs(self, exclude_coincs):
     """
@@ -2352,6 +2373,108 @@ class PrintLCNode(pipeline.SqliteNode):
     Gets include-only-coincs option.
     """
     return self.__include_only_coincs
+
+  def set_sim_tag(self, sim_tag):
+    """
+    Sets the --sim-tag option.
+    """
+    self.add_var_opt('sim-tag', sim_tag)
+    self.__sim_tag = sim_tag
+
+  def get_sim_tag(self):
+    """
+    Gets sim-tag option.
+    """
+    return self.__sim_tag
+
+  def set_output_format(self, output_format):
+    """
+    Sets the output-format option. (Note that the default
+    for all ligolw_cbc_print* jobs is xml.)
+    """
+    self.add_var_opt('output-format', output_format)
+    self.__output_format = output_format
+
+  def get_output_format(self):
+    """
+    Gets the output-format option.
+    """
+    return self.__output_format
+
+  def set_columns(self, columns):
+    """
+    Sets the columns option.
+    """
+    self.add_var_opt('columns', columns)
+    self.__columns = columns
+
+  def get_columns(self):
+    """
+    Gets the columns option.
+    """
+    return self.__columns
+
+
+class PrintLCNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printlc-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
+    self.__datatype = None
+
+  def set_datatype(self, datatype):
+    """
+    Sets datatype option.
+    """
+    self.add_var_opt('datatype', datatype)
+    self.__datatype = datatype
+
+  def get_datatype(self):
+    """
+    Gets datatype.
+    """
+    return self.__datatype
+
+class PrintSimsNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printsims-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
+    self.__comparison_datatype = None
+    self.__simulation_table = None
+    self.__recovery_table = None
+
+  def set_comparison_datatype(self, datatype):
+    """
+    Sets comparison-datatype option.
+    """
+    self.add_var_opt('comparison-datatype', datatype)
+    self.__comparison_datatype = datatype
+
+  def get_comparison_datatype(self):
+    """
+    Gets comparison-datatype.
+    """
+    return self.__comparison_datatype
+
+
+class PrintMissedNode(LigolwCBCPrintNode):
+  """
+  A special instance of LigolwCBCPrintNode that adds printmissed-specific methods.
+  """
+  def __init__(self, job):
+    """
+    @job: a LigolwCBCPrintJob
+    """
+    LigolwCBCPrintNode.__init__(self, job)
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
