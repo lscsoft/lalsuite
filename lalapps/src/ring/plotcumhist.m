@@ -38,6 +38,10 @@ function plotcumhist( veto_level, coinctype, ifotime, ifo1, ifo2, bgdetstat, non
   for i=1:length(rho)
     Nnonbg(i)=length(nonbgdetstat(nonbgdetstat>rho(i)));
   end
+  %scaling playground histogram to full data
+  if(strcmp(nonbgtype,'pg'))
+    Nnonbg(i)=length(nonbgdetstat(nonbgdetstat>rho(i))).*6370./600;
+  end
 
   for i=1:length(Nnonbg)
     if Nnonbg(i)==0;
@@ -56,6 +60,11 @@ function plotcumhist( veto_level, coinctype, ifotime, ifo1, ifo2, bgdetstat, non
   % error bars
   errp=Nbg+sqrt(Nbg);
   errm=Nbg-sqrt(Nbg);
+  % scaling playground errorbars to full data error bars
+  if(strcmp(nonbgtype,'pg'))
+    errp=Nbg+sqrt(Nbg).*6370./600;
+    errm=Nbg-sqrt(Nbg).*6370./600;
+  end
 
   for i=1:length(errm)
     if errm(i)<=0;
