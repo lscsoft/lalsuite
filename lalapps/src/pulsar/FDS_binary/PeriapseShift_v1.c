@@ -128,8 +128,8 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
   static LALStatus status;
   REAL8 shift;
   REAL8 twoPeriod;
-  LALGPSCompareResult compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
-  LALGPSCompareResult compone,comptwo,compthree,compfour;
+  int compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
+  int compone,comptwo,compthree,compfour;
   LALTimeInterval interval;
   LIGOTimeGPS tempone,temptwo,tempthree,tempfour;
   LALTimeInterval intervalone,intervaltwo;
@@ -201,41 +201,41 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
   LALDecrementGPS(&status,&tempthree,&Tpstart,&intervaltwo);
   
   /* compare the input time to the start time */
-  LALCompareGPS(&status,&compSHIFT,&Tpstart,&TpIN);
+  compSHIFT = XLALGPSCmp(&Tpstart,&TpIN);
   /*printf("start : input -> %d\n",compSHIFT);*/
 
   /* compare the input time to the start-period */
-  LALCompareGPS(&status,&compSHIFTone,&tempone,&TpIN);
+  compSHIFTone = XLALGPSCmp(&tempone,&TpIN);
   /*printf("start-period : input -> %d\n",compSHIFTone);*/
 
   /* compare the input time to the start+period */
-  LALCompareGPS(&status,&compSHIFTtwo,&temptwo,&TpIN);
+  compSHIFTtwo = XLALGPSCmp(&temptwo,&TpIN);
   /*printf("start+period : input -> %d\n",compSHIFTtwo);*/
 
   /* compare the input time to the start-2*period */
-  LALCompareGPS(&status,&compSHIFTthree,&tempthree,&TpIN);
+  compSHIFTthree = XLALGPSCmp(&tempthree,&TpIN);
   /*printf("start-2period : input -> %d\n",compSHIFTthree);*/
 
   /* if input time is after the start time by less than one orbit */
-  if ((compSHIFT==LALGPS_EARLIER)&&(compSHIFTtwo==LALGPS_LATER)) {
+  if ((compSHIFT < 0)&&(compSHIFTtwo > 0)) {
     printf("input time is after the start time and less than starttime+period -> NORB=NORB+1\n");
     NORB=NORB+1;
   }
 
   /* if input time is before the start time by more than one orbit */
-  else if ((compSHIFTone==LALGPS_LATER)&&(compSHIFTthree==LALGPS_EARLIER)) {
+  else if ((compSHIFTone > 0)&&(compSHIFTthree < 0)) {
     printf("input time is before the start time-period and after the starttime-2period -> NORB=NORB-1\n");
     NORB=NORB-1;
   }
 
   /* if input time is after the start time by more than one orbit */
-  else if (compSHIFTtwo==LALGPS_EARLIER) {
+  else if (compSHIFTtwo < 0) {
     fprintf(stderr,"ERROR in PeripaseShiftBack : input time is after the start time by more than one orbital period !!!\n");
     exit(1);
   }
 
   /* if input time is before the start time by more than two orbits */
-  else if (compSHIFTthree==LALGPS_LATER) {
+  else if (compSHIFTthree > 0) {
     fprintf(stderr,"ERROR in PeripaseShiftBack : input time is before the start time by more than two orbital periods !!!\n");
     exit(1);
   }
@@ -273,29 +273,29 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
   LALIncrementGPS(&status,&tempfour,&Tp0,&intervaltwo);
 
   /* test if in the right range */
-  LALCompareGPS(&status,&compone,TpOUT,&tempone);
-  LALCompareGPS(&status,&comptwo,TpOUT,&temptwo);
-  LALCompareGPS(&status,&compthree,TpOUT,&tempthree);
-  LALCompareGPS(&status,&compfour,TpOUT,&tempfour);
+  compone = XLALGPSCmp(TpOUT,&tempone);
+  comptwo = XLALGPSCmp(TpOUT,&temptwo);
+  compthree = XLALGPSCmp(TpOUT,&tempthree);
+  compfour = XLALGPSCmp(TpOUT,&tempfour);
 
-  if ((compone==LALGPS_LATER)&&(comptwo==LALGPS_EARLIER)) return 0;
-  else if ((compone==LALGPS_EARLIER)&&(compthree==LALGPS_LATER)) {
+  if ((compone > 0)&&(comptwo < 0)) return 0;
+  else if ((compone < 0)&&(compthree > 0)) {
     tempOUT.gpsSeconds=TpOUT->gpsSeconds;
     tempOUT.gpsNanoSeconds=TpOUT->gpsNanoSeconds;
     LALIncrementGPS(&status,TpOUT,&tempOUT,&intervaltwo);
     return 0;
   }
-  else if ((comptwo==LALGPS_LATER)&&(compfour==LALGPS_EARLIER)) {
+  else if ((comptwo > 0)&&(compfour < 0)) {
     tempOUT.gpsSeconds=TpOUT->gpsSeconds;
     tempOUT.gpsNanoSeconds=TpOUT->gpsNanoSeconds;
     LALDecrementGPS(&status,TpOUT,&tempOUT,&intervaltwo);
     return 0;
   }
-  else if (compthree==LALGPS_EARLIER) {
+  else if (compthree < 0) {
     printf("ERROR : output Tp is earlier than Tp0 by more than a period !!!\n");
     exit(1);
   }
-  else if (compfour==LALGPS_LATER) {
+  else if (compfour > 0) {
     printf("ERROR : output Tp is later than Tp0 by more than a period !!!\n");
     exit(1);
   }
