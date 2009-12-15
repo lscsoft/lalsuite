@@ -100,10 +100,10 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_ihope_daily_page \
               lalapps_check_hipe_times lalapps_ihope \
-              lalapps_followup_pipe lalapps_plot_hipe \
+              lalapps_followup0_pipe lalapps_plot_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
-	      lalapps_generate_upper_limits lalapps_followup_page \
+	      lalapps_generate_upper_limits lalapps_followup0_page \
 	      lalapps_cbc_pipedown
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
@@ -139,10 +139,10 @@ lalapps_link_old_ihope: $(srcdir)/link_old_ihope.in python_config.sed
 lalapps_compare_ini: $(srcdir)/compare_ini.in python_config.sed
 	sed -f python_config.sed $(srcdir)/compare_ini.in > lalapps_compare_ini
 	chmod +x lalapps_compare_ini
-lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
-lalapps_followup_pipe: $(srcdir)/followup_pipe.in python_config.sed
-	sed -f python_config.sed $(srcdir)/followup_pipe.in > lalapps_followup_pipe
-	chmod +x lalapps_followup_pipe
+lalapps_followup0_pipe: $(srcdir)/followup0_pipe.in python_config.sed
+lalapps_followup0_pipe: $(srcdir)/followup0_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/followup0_pipe.in > lalapps_followup0_pipe
+	chmod +x lalapps_followup0_pipe
 lalapps_multi_hipe: $(srcdir)/multi_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/multi_hipe.in > lalapps_multi_hipe
 	chmod +x lalapps_multi_hipe
@@ -164,15 +164,15 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 lalapps_generate_upper_limits: $(srcdir)/generate_upper_limits.in python_config.sed
 	sed -f python_config.sed $(srcdir)/generate_upper_limits.in > lalapps_generate_upper_limits
 	chmod +x lalapps_generate_upper_limits
-lalapps_followup_page: $(srcdir)/followup_page.in python_config.sed
-	sed -f python_config.sed $(srcdir)/followup_page.in > lalapps_followup_page
-	chmod +x lalapps_followup_page
+lalapps_followup0_page: $(srcdir)/followup0_page.in python_config.sed
+	sed -f python_config.sed $(srcdir)/followup0_page.in > lalapps_followup0_page
+	chmod +x lalapps_followup0_page
 lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	chmod +x lalapps_cbc_pipedown
 
 
-pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini cbc_pipedown.ini followup_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css s5_background_H0H1-RDS_R_L1-cbc.txt s5_background_H0H1-RDS_R_L1-seismic-cbc.txt s5_background_H0H2-RDS_R_L1-cbc.txt s5_background_H0H2-RDS_R_L1-seismic-cbc.txt s5_background_H1_hoft_cbc.txt s5_background_H2_hoft_cbc.txt s5_background_L0L1-RDS_R_L1-cbc.txt s5_background_L0L1-RDS_R_L1-seismic-cbc.txt s5_background_L1_hoft_cbc.txt s5_background_V1-raw-cbc.txt s5_background_V1-raw-seismic-cbc.txt s5_background_V1_hoft_cbc.txt s5_foreground_H0H1-RDS_R_L1-cbc.txt s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s5_foreground_H0H2-RDS_R_L1-cbc.txt s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt s5_foreground_H1_hoft_cbc.txt s5_foreground_H2_hoft_cbc.txt s5_foreground_L0L1-RDS_R_L1-cbc.txt s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s5_foreground_L1_hoft_cbc.txt s5_foreground_V1-raw-cbc.txt s5_foreground_V1-raw-seismic-cbc.txt s5_foreground_V1_hoft_cbc.txt s6_background_H0H1-RDS_R_L1-cbc.txt s6_background_H0H1-RDS_R_L1-seismic-cbc.txt s6_background_H1_hoft_cbc.txt s6_background_L0L1-RDS_R_L1-cbc.txt s6_background_L0L1-RDS_R_L1-seismic-cbc.txt s6_background_L1_hoft_cbc.txt s6_background_V1-raw-cbc.txt s6_background_V1-raw-seismic-cbc.txt s6_background_V1_hoft_cbc.txt s6_foreground_H0H1-RDS_R_L1-cbc.txt s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s6_foreground_H1_hoft_cbc.txt s6_foreground_L0L1-RDS_R_L1-cbc.txt s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s6_foreground_L1_hoft_cbc.txt s6_foreground_V1-raw-cbc.txt s6_foreground_V1-raw-seismic-cbc.txt s6_foreground_V1_hoft_cbc.txt ratioTest.pickle remove_h1h2.sql cluster.sql simplify.sql
+pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini cbc_pipedown.ini followup0_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css s5_background_H0H1-RDS_R_L1-cbc.txt s5_background_H0H1-RDS_R_L1-seismic-cbc.txt s5_background_H0H2-RDS_R_L1-cbc.txt s5_background_H0H2-RDS_R_L1-seismic-cbc.txt s5_background_H1_hoft_cbc.txt s5_background_H2_hoft_cbc.txt s5_background_L0L1-RDS_R_L1-cbc.txt s5_background_L0L1-RDS_R_L1-seismic-cbc.txt s5_background_L1_hoft_cbc.txt s5_background_V1-raw-cbc.txt s5_background_V1-raw-seismic-cbc.txt s5_background_V1_hoft_cbc.txt s5_foreground_H0H1-RDS_R_L1-cbc.txt s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s5_foreground_H0H2-RDS_R_L1-cbc.txt s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt s5_foreground_H1_hoft_cbc.txt s5_foreground_H2_hoft_cbc.txt s5_foreground_L0L1-RDS_R_L1-cbc.txt s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s5_foreground_L1_hoft_cbc.txt s5_foreground_V1-raw-cbc.txt s5_foreground_V1-raw-seismic-cbc.txt s5_foreground_V1_hoft_cbc.txt s6_background_H0H1-RDS_R_L1-cbc.txt s6_background_H0H1-RDS_R_L1-seismic-cbc.txt s6_background_H1_hoft_cbc.txt s6_background_L0L1-RDS_R_L1-cbc.txt s6_background_L0L1-RDS_R_L1-seismic-cbc.txt s6_background_L1_hoft_cbc.txt s6_background_V1-raw-cbc.txt s6_background_V1-raw-seismic-cbc.txt s6_background_V1_hoft_cbc.txt s6_foreground_H0H1-RDS_R_L1-cbc.txt s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s6_foreground_H1_hoft_cbc.txt s6_foreground_L0L1-RDS_R_L1-cbc.txt s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s6_foreground_L1_hoft_cbc.txt s6_foreground_V1-raw-cbc.txt s6_foreground_V1-raw-seismic-cbc.txt s6_foreground_V1_hoft_cbc.txt ratioTest.pickle remove_h1h2.sql cluster.sql simplify.sql
 
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
@@ -182,9 +182,9 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe.in inspiral_hipe.in \
 	     multi_hipe.in trigger_hipe.in ihope.in ihope_status.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
-	     followup_pipe.in plot_hipe.in  write_ihope_page.in\
+	     followup0_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup_page.in cbc_pipedown.in ihope_daily_page.in $(DATA)
+	     followup0_page.in cbc_pipedown.in ihope_daily_page.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
