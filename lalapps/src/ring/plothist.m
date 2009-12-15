@@ -59,7 +59,13 @@ function plothist( veto_level, coinctype, ifotime, ifo1, ifo2, bgfile, nonbgtype
     set(s,'LineStyle','none')
     set(s,'LineWidth',1)
   else
-    bar(0,length(nonbg.snr));
+    x=0.0;
+    y=length(nonbg.snr);
+    bar(x,length(nonbg.snr));
+    err=sqrt(length(nonbg.snr));
+    s=errorbar(x,y,err,'g');
+    set(s,'LineStyle','none')
+    set(s,'LineWidth',1)
   end
 
   % plot line for average number in each timeslide

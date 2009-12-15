@@ -9,6 +9,7 @@ check_PROGRAMS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
+	LALBarycenterTest \
 	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SegmentsTest \
@@ -34,6 +35,11 @@ DetectorSiteTest_LDADD = \
 
 FrequencySeriesTest_SOURCES = FrequencySeriesTest.c
 FrequencySeriesTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+LALBarycenterTest_SOURCES = LALBarycenterTest.c
+LALBarycenterTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -76,14 +82,17 @@ EXTRA_DIST = \
 	ComputeCalibrationFactorsTest.c \
 	LALIndTestDetRes.sh \
 	ResampleTimeSeriesTest.c \
+	earth98.dat \
 	indTestDetResGEO.cfg \
 	indTestDetResLHO.cfg \
-	indTestDetResLLO.cfg
+	indTestDetResLLO.cfg \
+	sun98.dat
 
 TESTS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
+	LALBarycenterTest \
 	LALIndTestDetRes.sh \
 	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
