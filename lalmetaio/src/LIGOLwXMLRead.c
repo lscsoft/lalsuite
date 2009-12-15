@@ -191,10 +191,16 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	}
 
 	/*
-	 * find table (parse error is interpreted as table is missing)
+	 * find table.  note:  parse errors are interpreted as "table is
+	 * missing".  metaio provides no other mechanism for testing for
+	 * the presence of a table.
 	 */
 
 	has_table = !MetaioOpenTableOnly(&env, table_name);
+	/* FIXME:  when we can rely on newer versions of libmetaio use this
+	 * function instead of what follows */
+	/*MetaioClearErrno(&env);*/
+	env.mierrno = 0;
 
 	/*
 	 * close

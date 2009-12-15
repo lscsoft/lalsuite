@@ -1,9 +1,11 @@
-function background_param_plots( veto_level,coinctype, ifo1, ifo2, bgfile1, bgfile2 )
+function background_param_plots( veto_level,coinctype, ifotime, ifo1, ifo2, bgfile1, bgfile2 )
 
 %
-% veto_level = 'NOVETO','CAT2','CAT23'
+% veto_level = 'CAT2','CAT23','CAT234'
 %
 % coinctype = 'trip', 'doub'
+%
+% ifotime = 'trip', 'doub'
 %
 % ifo1, ifo2 = 'H1', 'H2', 'L1'
 %
@@ -28,8 +30,14 @@ function background_param_plots( veto_level,coinctype, ifo1, ifo2, bgfile1, bgfi
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title([''dt (' ifo1 '' ifo2 ') v. f for ' coinctype ' time background events'']);'])
+  eval(['plot_title=title([''dt (' ifo1 '' ifo2 ') v. f for ' coinctype ' coincidence background events in ' ifotime ' time'']);'])
   set(plot_title,'FontSize',14,'FontWeight','b');
   grid on;
-  eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' coinctype 'bgdtvsf.png'')'])
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_H1H2L1_H1H2L1_bg_dtvsf.png'')'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_H1H2L1_bg_dtvsf.png'')'])
+  else
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_bg_dtvsf.png'')'])
+  end
   close;

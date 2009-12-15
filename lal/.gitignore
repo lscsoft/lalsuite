@@ -206,6 +206,7 @@ packages/tools/test/CoherentEstimationTest
 packages/tools/test/ComputeTransferTest
 packages/tools/test/DetectorSiteTest
 packages/tools/test/FrequencySeriesTest
+packages/tools/test/LALBarycenterTest
 packages/tools/test/LALIndependentTestDetResponse
 packages/tools/test/LALTestDetResponse0
 packages/tools/test/ResampleTimeSeriesTest
@@ -223,7 +224,6 @@ packages/utilities/test/EigenTest
 packages/utilities/test/FindRootTest
 packages/utilities/test/IntegrateTest
 packages/utilities/test/InterpolateTest
-packages/utilities/test/LALBarycenterTest
 packages/utilities/test/LALRunningMedianTest
 packages/utilities/test/MersenneRandomTest
 packages/utilities/test/NormalizeSFTRngMedTest
