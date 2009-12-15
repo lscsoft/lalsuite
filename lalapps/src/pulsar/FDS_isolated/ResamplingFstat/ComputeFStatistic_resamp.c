@@ -227,6 +227,8 @@ REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
 REAL8 uvar_WinFrac;
 REAL8 uvar_BandFrac;
+BOOLEAN uvar_version;		/**< output version information */
+
 
 REAL8 BaryRefTime;
 
@@ -406,6 +408,12 @@ int main(int argc,char *argv[])
 
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
+
+  if ( uvar_version )
+    {
+      XLALOutputVersionString ( stdout );
+      exit(0);
+    }
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -851,6 +859,8 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
   LALregREALUserVar(status, 	WinFrac,  0,  UVAR_OPTIONAL, "Fraction of Window to use as transition (0 -> Rectangular window , 1-> Hann Window) [Default: 0.01]");
   LALregREALUserVar(status, 	BandFrac,  0,  UVAR_OPTIONAL, "Extra Fracion of Band to use, to minimize interpolation losses (1.0 -> Use Full Band , 2.0 -> Double the Band, 3.0 -> Triple the band) [Default: 1.0]");
+
+  LALregBOOLUserVar( status,    version,	'V', UVAR_SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
