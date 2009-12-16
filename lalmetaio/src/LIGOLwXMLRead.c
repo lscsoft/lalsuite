@@ -576,14 +576,11 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -612,7 +609,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -627,7 +623,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
@@ -641,7 +636,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
@@ -661,7 +655,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -669,8 +662,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -724,7 +715,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "sngl_burst")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
