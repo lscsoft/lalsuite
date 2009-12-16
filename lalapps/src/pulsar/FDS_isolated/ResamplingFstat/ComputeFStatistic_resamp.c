@@ -1265,16 +1265,22 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   CHAR dateStr[512], line[512], summary[4096];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-  const CHAR *codeID = "$Id: ComputeFStatistic_resamp.c,v 1.46 2009/03/10 08:40:27 ppatel Exp $";
+  CHAR *codeID = NULL;
   CHAR *ret = NULL;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  if ( (codeID = XLALGetVersionString()) == NULL ) {
+    XLALPrintError ("XLALGetVersionString() failed!.\n");
+    ABORT (status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL);
+  }
+
   /* first get full commandline describing search*/
   TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-  sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
+  sprintf (summary, "%s\n%%%% %s\n", codeID, cmdline );
   LALFree ( cmdline );
+  XLALFree ( codeID );
 
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
@@ -2166,8 +2172,8 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
   else
     UserFmin_Closest = TSeries->f_het + floor((uvar_Freq-TSeries->f_het)/Vars->dF_closest+0.5)*Vars->dF_closest;
   
-  UserFmin_Diff = uvar_Freq - UserFmin_Closest;
-  TSeries->f_het += UserFmin_Diff;
+  UserFmin_Diff = UserFmin_Closest - uvar_Freq;
+  TSeries->f_het -= UserFmin_Diff;
   
   /* Store the Starting time */
   TSeries->epoch = StartTime; 
