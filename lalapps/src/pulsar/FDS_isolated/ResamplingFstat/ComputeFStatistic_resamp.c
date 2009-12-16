@@ -1265,16 +1265,22 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   CHAR dateStr[512], line[512], summary[4096];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-  const CHAR *codeID = "$Id: ComputeFStatistic_resamp.c,v 1.46 2009/03/10 08:40:27 ppatel Exp $";
+  CHAR *codeID = NULL;
   CHAR *ret = NULL;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  if ( (codeID = XLALGetVersionString()) == NULL ) {
+    XLALPrintError ("XLALGetVersionString() failed!.\n");
+    ABORT (status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL);
+  }
+
   /* first get full commandline describing search*/
   TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-  sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
+  sprintf (summary, "%s\n%%%% %s\n", codeID, cmdline );
   LALFree ( cmdline );
+  XLALFree ( codeID );
 
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
