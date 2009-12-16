@@ -11,3 +11,5 @@ EXTRA_PROGRAMS = resampling
 resampling_SOURCES = proc.c fstat.c
 
 lalapps_ComputeFStatistic_resamp_SOURCES = ComputeFStatistic_resamp.c ../HeapToplist.c ../HeapToplist.h
+
+TESTS = testCFS_resamp.sh
