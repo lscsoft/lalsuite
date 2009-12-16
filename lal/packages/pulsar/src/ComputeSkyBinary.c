@@ -97,9 +97,6 @@ void LALComputeSkyBinary	(LALStatus	*status,
 
 	INT4	m, n, nP;
 	REAL8	dTbary;
-	LALTimeInterval dTBaryInterval;
-	LALTimeInterval HalfSFT;
-	REAL8 HalfSFTfloat;
 	REAL8   dTbarySP;
 	REAL8   dTperi;
 	REAL8   dTcoord;
@@ -142,10 +139,6 @@ void LALComputeSkyBinary	(LALStatus	*status,
  Tperi.gpsSeconds=params->TperiapseSSB.gpsSeconds;  /* This is the GPS time as measured in the SSB of the observed */
  Tperi.gpsNanoSeconds=params->TperiapseSSB.gpsNanoSeconds;  /* periapse passage of the source */
 
- /* Convert half the SFT length to a LALTimeInterval for later use */
- HalfSFTfloat=params->tSFT/2.0;
- LALFloatToInterval(status->statusPtr,&HalfSFT,&HalfSFTfloat);
-
  /* Here we check that the GPS timestamps are greater than zero */
  for(n=0;n<params->mObsSFT;n++)
    {
@@ -171,7 +164,8 @@ void LALComputeSkyBinary	(LALStatus	*status,
  for (n=0; n<params->mObsSFT; n++)
    {
      /* Calculate the detector time at the mid point of current SFT ( T(i)+(tsft/2) ) using LAL functions */
-     LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
+     params->baryinput->tgps = params->tGPS[n];
+     XLALGPSAdd(&(params->baryinput->tgps), params->tSFT / 2.0);
 
      /* Convert this mid point detector time into barycentric time (SSB) */
      LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
@@ -180,8 +174,7 @@ void LALComputeSkyBinary	(LALStatus	*status,
      /* Calculate the time difference since the observed periapse passage in barycentric time (SSB). */
      /* This time difference, when converted to REAL8, should lose no precision unless we are dealing */
      /* with periods >~ 1 Year */
-     LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(params->emit->te),&Tperi);
-     LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);
+     dTbary = XLALGPSDiff(&(params->emit->te),&Tperi);
 
      /* Calculate the time since the last periapse passage ( < Single Period (SP) ) */
      dTbarySP=Period*((dTbary/(1.0*Period))-(REAL8)floor(dTbary/(1.0*Period)));

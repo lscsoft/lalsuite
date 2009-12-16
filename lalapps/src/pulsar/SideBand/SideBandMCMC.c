@@ -675,7 +675,7 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   INT4 i;
   REAL8 f0jump,ajump,ejump,xjump,yjump,h0jump,psijump,cosijump,phi0jump,periodjump;
   int compare1,compare2,compare3;
-  LALTimeInterval delta1;
+  double delta1;
 
   INITSTATUS( status, "MakeJump", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -813,20 +813,22 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
 	/* printf("newlambda->tp = %d %d tpmin = %d %d tpmax = %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds,ranges.tpmin.gpsSeconds,ranges.tpmin.gpsNanoSeconds,ranges.tpmax.gpsSeconds,ranges.tpmax.gpsNanoSeconds);
 	   printf(" new tp < min\n"); */
 	/* find difference between new tp and min boundary */
-	LALDeltaGPS(status->statusPtr,&delta1,&(ranges.tpmin),&(newlambda->tp));
+        delta1 = XLALGPSDiff(&(ranges.tpmin),&(newlambda->tp));
 	/* printf("interval = %d %d\n",delta1.seconds,delta1.nanoSeconds); */
 	/* minus interval from max boundary (max boundary must be one orbital period from min boundary) */
-	LALDecrementGPS(status->statusPtr,&(newlambda->tp),&(ranges.tpmax),&delta1);
+        newlambda->tp = ranges.tpmax;
+        XLALGPSAdd(&(newlambda->tp), -delta1);
 	/* printf("changed newlambda->tp to %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds); */
       }
       else if (compare2==1) {
 	/* printf("newlambda->tp = %d %d tpmin = %d %d tpmax = %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds,ranges.tpmin.gpsSeconds,ranges.tpmin.gpsNanoSeconds,ranges.tpmax.gpsSeconds,ranges.tpmax.gpsNanoSeconds);
 	   printf(" new tp > max\n"); */
 	/* find difference between new tp and max boundary */
-	LALDeltaGPS(status->statusPtr,&delta1,&(newlambda->tp),&(ranges.tpmax));
+        delta1 = XLALGPSDiff(&(newlambda->tp),&(ranges.tpmax));
 	/* printf("interval = %d %d\n",delta1.seconds,delta1.nanoSeconds); */
 	/* add interval to the min boundary (max boundary must be one orbital period from min boundary) */
-	LALIncrementGPS(status->statusPtr,&(newlambda->tp),&(ranges.tpmin),&delta1);
+        newlambda->tp = ranges.tpmin;
+	XLALGPSAdd(&(newlambda->tp), delta1);
 	/* printf("changed newlambda->tp to %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds); */
       }
       else tpflag = 0;
