@@ -152,7 +152,6 @@ LALDecrementGPS (LALStatus             *status,
   LIGOTimeGPS         deltaT_gps;
   LIGOTimeGPS         tmp_gps;    /* tmp so that we can use a call like:
                                      LALDecrementGPS(&stat, &gps, &gps, &interval)*/
-  LALGPSCompareResult comparison_result;
 
   INITSTATUS( status, "LALDecrementGPS", INCREMENTGPSC );
   ATTATCHSTATUSPTR(status);
@@ -169,10 +168,7 @@ LALDecrementGPS (LALStatus             *status,
   deltaT_gps.gpsSeconds     = pDeltaT->seconds;
   deltaT_gps.gpsNanoSeconds = pDeltaT->nanoSeconds;
 
-  TRY( LALCompareGPS(status->statusPtr, &comparison_result, &deltaT_gps,
-                     pInitialGPS), status);
-
-  ASSERT (comparison_result != LALGPS_LATER, status,
+  ASSERT (XLALGPSCmp(&deltaT_gps, pInitialGPS) <= 0, status,
           DATEH_EDECRTIMETOOLARGE, DATEH_MSGEDECRTIMETOOLARGE);
 
   if (pInitialGPS->gpsNanoSeconds < pDeltaT->nanoSeconds)
@@ -298,31 +294,3 @@ LALDeltaGPS (LALStatus         *status,
   DETATCHSTATUSPTR(status);
   RETURN( status );
 } /* END: LALDeltaGPS() */
-
-
-
-
-/* <lalVerbatim file="IncrementGPSCP"> */
-void
-LALCompareGPS(LALStatus           *status,
-              LALGPSCompareResult *pResult, /* output: -1 => GPS1 < GPS2
-                                                        0 => GPS1 = GPS2
-                                                        1 => GPS1 > GPS2 */
-              const LIGOTimeGPS   *pGPS1, /* input: GPS1 */
-              const LIGOTimeGPS   *pGPS2) /* input: GPS2 */
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALCompareGPS", INCREMENTGPSC );
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(pResult, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-  ASSERT(pGPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-  ASSERT(pGPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-  XLALPrintDeprecationWarning("LALCompareGPS", "XLALGPSCmp");
-
-  *pResult = XLALGPSCmp(pGPS1, pGPS2);
-
-  DETATCHSTATUSPTR(status);
-  RETURN( status );
-} /* END: LALCompareGPS() */

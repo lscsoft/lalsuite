@@ -74,7 +74,7 @@ int ReadHeader(char *,BinaryMeshFileHeader *);
 int FindCoincidence(FreqMeshes **,REAL8,Result,Results *,CoResults **);
 int OutputCoincidence(char *,REAL8,REAL8,CoResults *);
 int FreeMem(void);
-int SetupBaryInput(char *,char *,char *,LIGOTimeGPS *);
+int SetupBaryInput(char *,char *,char *);
 int GetSSBTime(LALDetector *,REAL8 *,REAL8 *,LIGOTimeGPS *, LIGOTimeGPS *);
 int CalculateDistance(XYLocation *, XYLocation *, BinaryMeshFileHeader *, REAL8 *);
 int CheckCoincidence(RTPLocation *,RTPLocation *,BinaryMeshFileHeader *,BinaryMeshFileHeader *);
@@ -250,7 +250,7 @@ int ReadResults(char *resultsdir, REAL8 min_f, REAL8 max_f, REAL8 *deltaf, Resul
   /* this function reads in files from a given results directory.  It stores only */
   /* those results that lie within a given frequency window. */
   
-  INT4 fileno=0;
+  INT4 filenum=0;
   FILE *fp;
   char **filelist;
   char command[512];
@@ -287,11 +287,11 @@ int ReadResults(char *resultsdir, REAL8 min_f, REAL8 max_f, REAL8 *deltaf, Resul
   for (i=0;i<(INT4)globbuf.gl_pathc;i++) filelist[i]=(char *)LALMalloc(256*sizeof(char));
   
   /* read all file names into memory */
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  while ((UINT4)filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"\nToo many files in directory! Exiting... \n");
 	  exit(1);
@@ -299,7 +299,7 @@ int ReadResults(char *resultsdir, REAL8 min_f, REAL8 max_f, REAL8 *deltaf, Resul
     }
   globfree(&globbuf);
 
-  nfiles=fileno;
+  nfiles=filenum;
   /*printf("nfiles id %d\n",nfiles);*/
 
   k=0;
@@ -474,7 +474,7 @@ int GetSSBTime(LALDetector *Det, REAL8 *skyRA, REAL8 *skydec, LIGOTimeGPS *tdet,
 
 /*******************************************************************************/
 
-int SetupBaryInput(char *ephfile, char *year, char *detector, LIGOTimeGPS *tstart)
+int SetupBaryInput(char *ephfile, char *year, char *detector)
 {
 
   /* this function sets up all the required variables and structures for */
@@ -558,11 +558,11 @@ int GetSSBTimes(BinaryMeshFileHeader *pheader,BinaryMeshFileHeader *sheader)
   /* both datasets */
   
   /* get the ssb time of the start of the primary observation so also do setup baryinput */
-  if (SetupBaryInput(ephdir,yr,pheader->det,&pheader->tstart)) return 1;
+  if (SetupBaryInput(ephdir,yr,pheader->det)) return 1;
   if (GetSSBTime(&Detector,&pheader->RA,&pheader->dec,&pheader->tstart,&pstartSSB)) return 2;
 
   /* get the ssb time of the start of the secondary observation so also do setup baryinput */
-  if (SetupBaryInput(ephdir,yr,sheader->det,&sheader->tstart)) return 1;
+  if (SetupBaryInput(ephdir,yr,sheader->det)) return 1;
   if (GetSSBTime(&Detector,&sheader->RA,&sheader->dec,&sheader->tstart,&sstartSSB)) return 2;
   
   return 0;

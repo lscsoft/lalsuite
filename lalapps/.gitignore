@@ -162,6 +162,7 @@ src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
+src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
 src/pulsar/Injections/lalapps_compareTS

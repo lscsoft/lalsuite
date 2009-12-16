@@ -177,7 +177,7 @@ static void convertendianness(double *val) {
 
 static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     ezxml_t param, array, dim, stream;
-    const char *name, *timeoffset, *cadence, *length, *records, *type, *encoding, *binaryfile;
+    const char *name=NULL, *timeoffset=NULL, *cadence=NULL, *length=NULL, *records=NULL, *type=NULL, *encoding=NULL, *binaryfile=NULL;
 
     TimeSeries *timeseries;
     double *buffer;
@@ -339,7 +339,7 @@ void freeLISASources(LISASource *lisasource) {
 
 LISASource *getLISASources(char *filename) {
     ezxml_t tree, section, source, param, series;
-    const char *type, *name, *elat, *elon, *pol;
+    const char *type=NULL, *name=NULL, *elat=NULL, *elon=NULL, *pol=NULL;
 
     LISASource *first = 0, *current = 0;
     /* TimeSeries *timeseries; */ /* unused */

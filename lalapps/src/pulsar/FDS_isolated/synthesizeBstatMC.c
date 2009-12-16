@@ -1339,7 +1339,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   double eta, etaSQ, etaSQp1SQ;
   double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
   double gammaSQ, qSQ, Xi;
-  double integrand, integrand2;
+  double integrand;
 
   if ( dim != 2 ) {
     LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
@@ -1380,7 +1380,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   integrand = exp(Xi); /* * pow(gammaSQ, -0.5) * gsl_sf_bessel_I0(Xi); */
 
   if ( lalDebugLevel >= 2 )
-    printf ("%f   %f    %f   %f %f %f\n", eta, psi, integrand, gammaSQ, Xi, integrand2 );
+    printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, gammaSQ, Xi );
 
   return integrand;
 

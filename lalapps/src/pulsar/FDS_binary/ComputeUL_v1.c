@@ -456,7 +456,7 @@ int ReadInjections(char *inputdir,FreqMesh freqmesh,REAL8 h0,REAL8Vector **resul
   char line[1024];
   FILE *fp;
   INT4 count,i;
-  INT4 fileno=0;
+  INT4 filenum=0;
   REAL8 sig;
   char **filelist;
   glob_t globbuf;
@@ -483,18 +483,18 @@ int ReadInjections(char *inputdir,FreqMesh freqmesh,REAL8 h0,REAL8Vector **resul
   for (i=0;i<(INT4)globbuf.gl_pathc;i++) filelist[i]=(char *)LALMalloc(256*sizeof(char));
   
   /* read all file names into memory */
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  while ((UINT4)filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"\nToo many files in directory! Exiting... \n");
 	  exit(1);
 	}
     }
   globfree(&globbuf);
-  nfiles=fileno;
+  nfiles=filenum;
 
   count=0;
   /* loop over these files to ocount results first*/
@@ -699,7 +699,7 @@ int Readh0File(char *filename, INT4 *N, REAL8 **h0)
 int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest **loudest)
 {
 
-  INT4 fileno=0;
+  INT4 filenum=0;
   FILE *fp;
   char **filelist;
   char command[512];
@@ -733,18 +733,18 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
   for (i=0;i<(INT4)globbuf.gl_pathc;i++) filelist[i]=(char *)LALMalloc(256*sizeof(char));
   
   /* read all file names into memory */
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  while ((UINT4)filenum < globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"\nToo many files in directory! Exiting... \n");
 	  exit(1);
 	}
     }
   globfree(&globbuf);
-  nfiles=fileno;
+  nfiles=filenum;
 
   /* allocate memory for loudest events */
   (*loudest)=(Loudest *)LALMalloc(freqmeshes->Nheaders*sizeof(Loudest));
@@ -754,7 +754,7 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
   for (j=0;j<freqmeshes->Nheaders;j++) (*loudest)[j].co_sig=999999999;
   
   /* so lets loop over every file in the results directory */
-  for (i=0;i<fileno;i++) {
+  for (i=0;i<filenum;i++) {
 
     /* open this file */
     fp=fopen(filelist[i],"r");

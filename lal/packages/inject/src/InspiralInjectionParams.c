@@ -343,7 +343,8 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  kappa1Min,
     REAL4  kappa1Max,
     REAL4  abskappa1Min,
-    REAL4  abskappa1Max
+    REAL4  abskappa1Max,
+    int aligned
     )
 {
   REAL4 spin1Mag;
@@ -394,9 +395,15 @@ SimInspiralTable* XLALRandomInspiralSpins(
     inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
 
     /* spin1x and spin1y */
-    inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
-    inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
+    if (!aligned) {
+      inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
+      inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
           (inj->spin1x * inj->spin1x)) , 0.5);
+    }
+    else { /* aligned */
+      inj->spin1x = 0;
+      inj->spin1y = 0;
+    }
   }
   else
   {
@@ -405,8 +412,14 @@ SimInspiralTable* XLALRandomInspiralSpins(
     /* phi1 */
     r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
     phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
-    inj->spin1x = r1 * cos(phi1);
-    inj->spin1y = r1 * sin(phi1);
+    if (! aligned) {
+      inj->spin1x = r1 * cos(phi1);
+      inj->spin1y = r1 * sin(phi1);
+    }
+    else { /* aligned */
+      inj->spin1x = 0;
+      inj->spin1y = 0;
+    }
   }
 
   /* spin2Mag */
@@ -422,8 +435,14 @@ SimInspiralTable* XLALRandomInspiralSpins(
   phi2 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
 
   /* spin2x and spin2y */
-  inj->spin2x = r2 * cos(phi2);
-  inj->spin2y = r2 * sin(phi2);
+  if (! aligned) {
+    inj->spin2x = r2 * cos(phi2);
+    inj->spin2y = r2 * sin(phi2);
+  }
+  else { /* aligned */
+    inj->spin1x = 0;
+    inj->spin1y = 0;
+  }
 
   return ( inj );
 }
@@ -575,7 +594,7 @@ COMPLEX8FrequencySeries *generateActuation(
     fNorm = k * resp->deltaF / pendF;
     denom->data[k].re = ( 1 - fNorm * fNorm );
     denom->data[k].im = - fNorm / pendQ;
-    num->data[k].re = 1.0 * ETMcal;
+    num->data[k].re = -1.0 * ETMcal;
     num->data[k].im = 0.0;
   }
 

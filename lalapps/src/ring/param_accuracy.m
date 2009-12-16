@@ -1,10 +1,10 @@
-function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
+function param_accuracy( veto_level, injtype, ifo, injected_list, detected_list )
 
 %
-% NULL = param_accuracy ( veto_level, type, ifo, injected_list, detected_list )
+% NULL = param_accuracy ( veto_level, injtype, ifo, injected_list, detected_list )
 %
-% veto_level='NOVETO', 'CAT2', 'CAT23'
-% type='RINGDOWN', 'EOBNR', 'PHENOM'
+% veto_level='CAT2', 'CAT23','CAT234'
+% injtype='RINGDOWN', 'EOBNR', 'PHENOM'
 % The injected_list will be the sim table values.
 % The detected_list will be named inj*, bg*, or pg*.
 %
@@ -32,9 +32,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Freq_{det} versus ' ifo ' Freq_{inj}'');'])
+  eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Freq_{det} versus ' ifo ' Freq_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_freq.png '')'])
+  eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_freq.png'')'])
 
 
   %%%%%%%%%%%%%%%%%% INJ MASS VS DET MASS %%%%%%%%%%%%%%%%
@@ -48,9 +48,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Mass_{det} versus ' ifo ' Mass_{inj}'');'])
+  eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Mass_{det} versus ' ifo ' Mass_{inj}'');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_mass.png '')'])
+  eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_mass.png'')'])
  
  
   %%%%%%%%%%%%%%%%%% TIME HISTOGRAM %%%%%%%%%%%%%%%%
@@ -65,9 +65,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set( y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': Histogram of ' ifo ' Time_{inj} - Time_{det}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': Histogram of ' ifo ' Time_{inj} - Time_{det}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'injminusdet_timehist.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_injminusdet_timehist.png'')'])
   else
     figure
     eval(['hist(inj.tl - det' ifo '.t, 100)'])
@@ -78,9 +78,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': Histogram of ' ifo ' Time_{inj} - Time_{det}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': Histogram of ' ifo ' Time_{inj} - Time_{det}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'injminusdet_timehist.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_injminusdet_timehist.png'')'])
   end
  
  
@@ -96,9 +96,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Time_{inj} - Time_{det} versus ' ifo ' Freq_{inj}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Time_{inj} - Time_{det} versus ' ifo ' Freq_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_timefreq.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_timefreq.png'')'])
   else
     figure
     eval(['semilogx(inj.f, inj.tl - det' ifo '.t, ''k.'')'])
@@ -109,9 +109,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Time_{inj} - Time_{det} versus ' ifo ' Freq_{inj}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Time_{inj} - Time_{det} versus ' ifo ' Freq_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_timefreq.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_timefreq.png'')'])
   end
  
  
@@ -129,9 +129,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Eff Distance_{det} versus ' ifo ' Eff Distance_{inj}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Eff Distance_{det} versus ' ifo ' Eff Distance_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_distance.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_distance.png'')'])
   else
     figure
     eval(['loglog(inj.dl, det' ifo '.d, ''k.'')'])
@@ -144,9 +144,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': ' ifo ' Eff Distance_{det} versus ' ifo ' Eff Distance_{inj}'');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo ' Eff Distance_{det} versus ' ifo ' Eff Distance_{inj}'');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'detvsinj_distance.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_detvsinj_distance.png'')'])
   end
  
  
@@ -163,9 +163,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': Fractional Effective Distance Accuracy in ' ifo ''');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': Fractional Effective Distance Accuracy in ' ifo ''');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'accuracyvsinj_distance.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_accuracyvsinj_distance.png'')'])
   else
     figure
     eval(['semilogx(inj.dl, (inj.dl-det' ifo '.d)./((inj.dl+det' ifo '.d)./2), ''k.'')'])
@@ -176,9 +176,9 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
     set(x_lab,'FontSize',14);
     set(y_lab,'FontSize',14);
     set(gca,'FontSize',14);
-    eval(['plot_title=title(''' veto_level ' ' type ': Fractional Effective Distance Accuracy in ' ifo ''');'])
+    eval(['plot_title=title(''' veto_level ' ' injtype ': Fractional Effective Distance Accuracy in ' ifo ''');'])
     set(plot_title,'FontSize',16,'FontWeight','b');
-    eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'accuracyvsinj_distance.png '')'])
+    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_accuracyvsinj_distance.png'')'])
   end
  
  
@@ -193,6 +193,6 @@ function param_accuracy( veto_level, type, ifo, injected_list, detected_list )
   set(x_lab,'FontSize',14);
   set(y_lab,'FontSize',14);
   set(gca,'FontSize',14);
-  eval(['plot_title=title(''' veto_level ' ' type ': Fractional Frequency Accuracy in ' ifo ''');'])
+  eval(['plot_title=title(''' veto_level ' ' injtype ': Fractional Frequency Accuracy in ' ifo ''');'])
   set(plot_title,'FontSize',16,'FontWeight','b');
-  eval(['saveas(gcf,''' veto_level '_' type '_' ifo 'accuracyvsinj_frequency.png '')'])
+  eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo '_accuracyvsinj_frequency.png'')'])

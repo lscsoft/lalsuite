@@ -359,7 +359,7 @@ static INT4 zrhqr(REAL4 a[], INT4 m, REAL4 rtr[], REAL4 rti[])
 	  hess[j] = (REAL4 *)LALCalloc(1+MAXM, sizeof(REAL4));
 	}
 
-	if (m > MAXM || a[m] == 0.0) {fprintf(stderr,"bad args in zrhqr"); return 1;}
+	if (a[m] == 0.0) {fprintf(stderr,"bad args in zrhqr"); return 1;}
 	for (k=1;k<=m;k++) {
 		hess[1][k] = -a[m-k]/a[m];
 		for (j=2;j<=m;j++) hess[j][k]=0.0;

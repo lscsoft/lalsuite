@@ -131,6 +131,7 @@ extern REAL4Vector *Tmodel;
 extern REAL8Vector **topdown_sum;
 extern REAL8 *normalisations;
 
+REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
 
 REAL8 MCMCSTLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 

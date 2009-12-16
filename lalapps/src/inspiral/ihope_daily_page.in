@@ -81,9 +81,8 @@ html_template = """
   <p>Cluster level:
   <form id="whichCluster">
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="UNCLUSTERED" onclick="switchViewIframe()" checked>Raw triggers<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="TS_CLUSTERED" onclick="switchViewIframe()">TrigScan clustering<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="TSSI_CLUSTERED" onclick="switchViewIframe()">TrigScan &amp; 16 sec<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window clustering<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="100MILLISEC_CLUSTERED" onclick="switchViewIframe()">100 msec window<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="16SEC_CLUSTERED" onclick="switchViewIframe()">16 sec window<br>
   </form>
 
   <p>Contents:
@@ -93,6 +92,7 @@ html_template = """
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Glitch" onclick="switchViewIframe()">Loudest Triggers<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Hwinj" onclick="switchViewIframe()">HW Injections<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_hist" onclick="switchViewIframe()">SNR Histogram<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="glitchgram" onclick="switchViewIframe()">Glitchgram<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="rate_vs_time" onclick="switchViewIframe()">Rate vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Snr vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;high-rate times<br>
@@ -230,7 +230,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 3, 'UNCLUSTERED', start_time, end_time, local = True)
 
-        for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
+        for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
             root     = veto_job.add_sub_job('make_caches',   config, ifo, category, cluster, start_time, end_time)
             csv_jobs = [root.add_sub_job('make_csv',         config, ifo, 0, cluster, start_time, end_time)]
             csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,3]]
@@ -245,12 +245,17 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
                 job.add_sub_job('plot_snr_vs_time',         config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_template_counts',     config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_glitchgram',          config, ifo, job.level, cluster, start_time, end_time)
+                
+                # Ugh.  This one is actually a child of all the csv jobs, needs some tweaking...
+                # job.add_sub_job('plot_rate_vs_time_all',    config, ifo, job.level, cluster, start_time, end_time)
+
                 job.add_sub_job('plot_hexmass',             config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_bank_veto',           config, ifo, job.level, cluster, start_time, end_time)
 
                 job.add_sub_job('make_hwinj_page',          config, ifo, job.level, cluster, start_time, end_time, local = True)
 
-                if cluster == 'TSSI_CLUSTERED':
+                if cluster == '16SEC_CLUSTERED':
                     dbjob = job.add_sub_job('make_database',    config, ifo, job.level, cluster, start_time, end_time)
                     dbjob.add_sub_job('make_glitch_page',       config, ifo, job.level, cluster, start_time, end_time, local = True)
                 else:
@@ -369,8 +374,8 @@ def m1_m2_to_mtotal_eta(m1, m2):
 def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
     veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         'TS_CLUSTERED':'TrigScan clustered',
-                         'TSSI_CLUSTERED':'TrigScan & 16 sec window'}
+                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '16SEC_CLUSTERED':'16 sec window'}
 
 
     if desc:
@@ -382,8 +387,8 @@ def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
 def make_title(ifo, veto_level, cluster, start_time, desc = None):
     veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         'TS_CLUSTERED':'TrigScan clustered',
-                         'TSSI_CLUSTERED':'TrigScan & 16 sec window'}
+                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '16SEC_CLUSTERED':'16 sec window'}
 
 
     tstring =  os.popen('tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
@@ -426,7 +431,6 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
     names to segmentlists containing their active times.
     """
    
-    print (engine, config, ifo, category, cluster, start_time, end_time)
     def make_segdef(row, overall_interval):
         veto_interval = overall_interval & segmentlist([segment(row.start_time, row.end_time or end_time)])
 
@@ -460,7 +464,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     cmd   = 'lalapps_path2cache'
 
     # sngl_inspirals
-    files = glob.glob('%s/%s-INSPIRAL_%s*xml*' % (config['trigger_dir'], ifo, cluster))
+    files = sorted(glob.glob('%s/%s-INSPIRAL_%s-*xml*' % (config['trigger_dir'], ifo, cluster)))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
@@ -471,7 +475,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     f.close()
 
     # templates
-    files = glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo))
+    files = sorted(glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo)))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
@@ -489,37 +493,60 @@ def make_csv(config, ifo, category, cluster, start, end):
     VETOCATS_(ifo)_(category).p and produces (ifo)-(cat)-INSPIRAL.csv and (ifo)-(cat)-SUMMARY.csv
     """
     if category == 0:
-        # Create unfiltered 
-        os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
+        # ligolw_print doesn't like empty cache files
+        cache_size = os.path.getsize('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster))
 
-        # Remove time outside the given range
-        in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
-        out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+        if cache_size < 10:
+            out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+            out_f.close()
+            out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster), 'w')
+            out_f.close()
+            out_f = open('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster), 'w')
+            out_f.close()
+        else:
+            # Create unfiltered 
+            os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
 
-        for l in in_f:
-            end_time = int(l.split(',')[0])
-            if end_time >= start and end_time < end:
-                print >>out_f, l,
-        in_f.close()
-        out_f.close()
-        os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            # Remove time outside the given range
+            in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            out_f = open('%s/%s-0-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
 
-        # and the templates
-        os.system('ligolw_print -i %s/%s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+            for l in in_f:
+                end_time = int(l.split(',')[0])
+                if end_time >= start and end_time < end:
+                    print >>out_f, l,
+                    print l,
+            in_f.close()
+            out_f.close()
+            os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
 
-	    # and the search_summary
-    	os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t search_summary -c out_start_time -c out_end_time > %s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+            # and the search_summary
+            search_seg = segment(start, end)
 
-        in_f  = open('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
-        out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
+            in_f  = open('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster))
+            out_f = open('%s/%s-0-SUMMARY_%s.csv' % (config['tmp_dir'], ifo, cluster),'w')
 
-        for l in in_f:
-            end_time = int(l.split(',')[0])
-            if end_time >= start and end_time < end:
-                print >>out_f, l,
-        in_f.close()
-        out_f.close()
-        os.remove('%s/%s-0-SUMMARY_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
+            for l in in_f:
+                start_time, duration = l.split(' ')[2:4]
+                start_time = int(start_time)
+                end_time   = start_time + int(duration)
+                seg        = segment(start_time, end_time)
+
+                # if they don't overlap this will fail
+                try:
+                    overlap = search_seg & seg
+                    print >>out_f, '%d,%d' % (overlap[0], overlap[1])
+                except:
+                    pass
+
+            in_f.close()
+            out_f.close()
+
+            os.system('ligolw_print -i %s/%s-TMPLTBANK_%s.cache -t sngl_inspiral -c ifo -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration > %s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster, config['tmp_dir'], ifo, cluster))
+
+
+        # Give files time to propogate over nfs
+        time.sleep(120)
 
         return
 
@@ -561,6 +588,8 @@ def make_csv(config, ifo, category, cluster, start, end):
     infile.close()
     outfile.close()
 
+    # Give files time to propogate over nfs
+    time.sleep(120)
 
 
 def make_database(config, ifo, level, cluster, start, end):
@@ -796,13 +825,13 @@ def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_t
 
     print >>out, '<body>'
 
-    if cluster != 'TSSI_CLUSTERED':
-        print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
+    if cluster != '16SEC_CLUSTERED':
+        print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with a 16-second window</H3>"
     else:
         tmpfile = '%s/%s-%d_glitchout.html' % (config['tmp_dir'], ifo, veto_level)
     
         cmd  = '%s ' % config['ligolw_cbc_glitch_page']
-        cmd += '--trigger-db %s-%d-INSPIRAL_TSSI_CLUSTERED.sqlite '  % (ifo, veto_level)
+        cmd += '--trigger-db %s-%d-INSPIRAL_16SEC_CLUSTERED.sqlite '  % (ifo, veto_level)
         cmd += '--segments %s '     % os.environ['S6_SEGMENT_SERVER']
         cmd += '--html-file %s ' % tmpfile
         cmd += '--ifo %s ' % ifo
@@ -842,7 +871,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     anydata = True
 
-    if cluster != 'TSSI_CLUSTERED':
+    if cluster != '16SEC_CLUSTERED':
         out = open('%s/%s_CAT%d_%s_Hwinj.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
         print >>out, '<html>'
         print >>out, '<head>'
@@ -850,7 +879,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
         print >>out, '</head>'
 
         print >>out, '<body>'
-        print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
+        print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with a 16-second window</H3>"
         print >>out, '</body>'
         print >>out, '</html>'
         out.close()
@@ -861,7 +890,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
         cmd += '-x %s ' % config['hwinj_file']
         cmd += '-s %s ' % os.environ['S6_SEGMENT_SERVER']
         cmd += '-o %s/%s_CAT%d_%s_Hwinj.html ' % (config['out_dir'], ifo, veto_level, cluster)
-        cmd += ' '.join(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo))
+        cmd += ' '.join(sorted(glob.glob('%s-INSPIRAL_16SEC_CLUSTERED-*xml' % ifo)))
 
         os.system(cmd)
 
@@ -873,7 +902,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     summary_names = ['%s-%d_%s_summary_table.html','%s-%d_%s_usage_table.html']
     section_names = ['%s-%d_%s_glitch_page.html',  '%s-%d_%s_hwinj_page.html']
-    image_names   = ['rate_vs_time','snr_hist']
+    image_names   = ['rate_vs_time','snr_hist', 'glitchgram']
 
     map['start_time'] = gps_start_time
     map['end_time']   = gps_end_time
@@ -886,7 +915,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     for ifo in ['H1','L1','V1']:
         for cat in [0,1,2,3]:
-            for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
+            for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
 
                 out = open('%s/%s_CAT%d_%s_Summary.html' % (config['out_dir'], ifo, cat, cluster), 'w')
@@ -1250,7 +1279,7 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
     total_count = float(total_count)
     gaussian = None
 
-    if len(bins) > 31 and cluster != 'TSSI_CLUSTERED':
+    if len(bins) > 31 and cluster != '16SEC_CLUSTERED':
         slope    = -0.5  # 1.0 - pylab.sqrt(2)
         offset   = float(bins[30]) / pylab.exp(slope * 30.0)
         gaussian = [offset * pylab.exp(slope * x) for x in range(len(bins))] 
@@ -1452,25 +1481,123 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.savefig('%s/%s_%d_%s_mass_hist_norm.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
+def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
+    f      = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
+    data   = [l.split(',') for l in f]
+    data   = [ (float(d[0]), float(d[3]), chirplen(40.0,float(d[6]), float(d[7]))) for d in data ]
+    data   = sorted(data, cmp = lambda x,y: cmp(y[1],x[1]))
+
+    min_in_day = 60.0 * 60.0
+    data       = [ ((d[0] - start_time) / min_in_day, d[1], d[2]) for d in data]
+
+    if len(data) == 0:
+        # If there's no data generate an empty plot
+        fig  = pylab.figure(1, figsize=(8.1,4.0))
+        axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+        fig.add_axes(axes)
+        pylab.xlim(0, 24)
+        pylab.xticks(range(0,26,2))
+        pylab.ylabel('Template length (sec)')
+        pylab.title('No triggers')
+        pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+        return
+
+    loudest = data[0]
+    data    = data[1:]
+
+    ranges = [[ 0, 8,'b', 3],
+              [ 8,16,'g',15],
+              [16,float('inf'),'r',15]]
+
+    fig  = pylab.figure(1, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    for r in ranges:
+        subset = [d for d in data if d[1] >= r[0] and d[1] < r[1]]
+
+        pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
+
+    pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=100)
+
+
+    tau0s = [d[2] for d in data]
+    pylab.yscale('log')
+    pylab.ylim(min(tau0s) * 0.9, max(tau0s) * 1.1)
+    
+    pylab.xlabel(make_time_label(start_time))
+    pylab.xlim(0, 24)
+    pylab.xticks(range(0,26,2))
+    pylab.ylabel('Template length (sec)')
+    pylab.title('Loudest: GPS=%d  SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[1]))
+    pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+
+
+def plot_rate_vs_time_all(config, ifo, veto_level, cluster, start_time, end_time):
+    """Rate (per sec) vs. time"""
+
+    num_min     = (end_time - start_time) / 60
+    mins_in_day = range(num_min)
+
+    fig  = pylab.figure(0, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    times  = [float(x) / 60.0 for x in mins_in_day]
+    maxcount = 0
+
+    for ifo in ['H1','L1','V1']:
+        counts = [1e-6 for i in mins_in_day]
+        f      = open('%s-%d-INSPIRAL_%s.csv' % (ifo, veto_level, cluster))
+
+        for line in f:
+            trig_end_time = int(line.split(',')[0]) 
+            counts[ (trig_end_time - start_time) / 60 ] += 1
+
+        counts   = [c / 60.0 for c in counts]
+        maxcount = max(maxcount, max(counts))
+
+        foo = {'H1':'red', 'L1':'green', 'V1':'magenta'}
+        pylab.scatter(times, counts, color=foo[ifo], edgecolor='none', alpha=0.8)
+
+    pylab.xlim(0, 24)
+
+    if maxcount > 10:
+        pylab.yscale('log')
+
+    min_y = cluster.find('16SEC') > -1 and 1e-2 or 1
+    pylab.ylim(min_y, maxcount * 1.1)
+    pylab.xticks(range(0,26,2))
+
+
+    pylab.grid()
+    pylab.title('Rate vs. Time, 100 msec cluster, Cat 1')
+    pylab.xlabel(make_time_label(start_time))
+    pylab.ylabel('Rate (Hz)')
+    pylab.savefig('%s_%d_%s_rate_vs_time_all.png' % (ifo, veto_level, cluster))
+
 if __name__ == '__main__':
-    actions = {'make_dag':        make_dag,
-               'make_veto_files': make_veto_files,
-               'make_caches':     make_caches,
-               'make_csv':        make_csv,
-               'make_database':   make_database,
+    actions = {'make_dag'                : make_dag,
+               'make_veto_files'         : make_veto_files,
+               'make_caches'             : make_caches,
+               'make_csv'                : make_csv,
+               'make_database'           : make_database,
                'make_glitchy_times_table': make_glitchy_times_table,
                'make_summary_table'      : make_summary_table,
                'make_usage_table'        : make_usage_table,
                'make_glitch_page'        : make_glitch_page,
                'make_hwinj_page'         : make_hwinj_page,
                'make_index_page'         : make_index_page,
-               'plot_snr_vs_time':     plot_snr_vs_time,
-               'plot_rate_vs_time':    plot_rate_vs_time,
-               'plot_snr_hist':        plot_snr_hist,
-               'plot_template_counts': plot_template_counts,
-               'plot_hexmass':         plot_hexmass,
-               'plot_bank_veto':         plot_bank_veto,
-               'plot_mass_hist':       plot_mass_hist}
+               'plot_snr_vs_time'        : plot_snr_vs_time,
+               'plot_rate_vs_time'       : plot_rate_vs_time,
+               'plot_snr_hist'           : plot_snr_hist,
+               'plot_template_counts'    : plot_template_counts,
+               'plot_hexmass'            : plot_hexmass,
+               'plot_bank_veto'          : plot_bank_veto,
+               'plot_mass_hist'          : plot_mass_hist,
+               'plot_glitchgram'         : plot_glitchgram,
+               'plot_rate_vs_time_all'   : plot_rate_vs_time_all}
                
     options = parse_command_line()
 

@@ -44,7 +44,7 @@ LAL_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -69,7 +69,7 @@ if test "x$build_vendor" = "xapple"; then
       ;;
     10.4*|10.5*|10.6*)
       # supported version
-    ;;
+      ;;
     *)
       AC_MSG_WARN([Unknown Mac OS X version])
       ;;
@@ -80,30 +80,22 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
 CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
 LIBS="$LIBS $METAIO_LIBS"
-AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR(cannot find metaio library)])
+AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
+
+# check for libmetaio headers
+AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
-CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
-LIBS="$LIBS $LAL_LIBS"
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-
-# check libraries if not a top-level build
-if test "$LALSUITE_BUILD" = "true" ; then
-  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
-else
-  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
-  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
-fi
-AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

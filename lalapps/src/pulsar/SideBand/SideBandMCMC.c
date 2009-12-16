@@ -87,6 +87,8 @@ BOOLEAN uvar_ampmod;
 
 REAL8 jumptemp;
 
+static SideBandMCMCVector empty_SideBandMCMCVector;
+
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
@@ -121,7 +123,7 @@ int main(int argc,char *argv[])
   SideBandMCMCVector **MCMCchain = NULL;       /* a vector of MCMC parameter vectors where the Markov chain is stored */
   SideBandMCMCVector lambda;                   /* stores the current MCMC parameter vector */
   SideBandMCMCVector newlambda;                /* stores the prospective MCMC parameter vector */
-  SideBandMCMCVector currentlambda;            /* stores the last successful MCMC jump parameter vector */
+  SideBandMCMCVector currentlambda = empty_SideBandMCMCVector; /* stores the last successful MCMC jump parameter vector */
   SideBandMCMCRanges ranges;                   /* used to store the prior ranges on all MCMC parameters */
   SideBandMCMCJumpProbs jumpsizes;                 /* used to store the jump sizes for all MCMC parameters */
   RandomParams *randparams = NULL;
@@ -190,7 +192,7 @@ int main(int argc,char *argv[])
   /* here we read in the MCMC parameter ranges from file */
   /**************************************************************************************/
   
-  ReadSideBandPriors(&status,uvar_rangefile,&ranges,&jumpsizes,TParams);
+  ReadSideBandPriors(&status,uvar_rangefile,&ranges,&jumpsizes);
 
   printf("f0min = %6.12f f0max = %6.12f\n",ranges.f0min,ranges.f0max);
 
@@ -263,7 +265,7 @@ int main(int argc,char *argv[])
 
   /* load ephemeris-data */
   edat = LALCalloc(1,sizeof(EphemerisData));
-  InitEphemeris(&status,edat,uvar_ephemdir,uvar_ephemyear,TParams->tstart);
+  InitEphemeris(&status,edat,uvar_ephemdir,uvar_ephemyear);
 
   if (lalDebugLevel) printf ("Finished initialising ephemeris.\n");
 
@@ -613,7 +615,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
   REAL4Vector *vector = NULL;          /* stores vector of random parameters */
   INT4 i;                              /* general loop index */
   REAL8 temp;                          /* temporary time used for setting tp */
-  LALGPSCompareResult compareGPS;
+  int compareGPS;
 
   INITSTATUS( status, "InitialiseLambda", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -629,7 +631,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
   /* initialise the parameters */
   lambda->f0 = ranges.f0min + (REAL8)vector->data[0]*(ranges.f0max - ranges.f0min);
   lambda->a = ranges.amin + (REAL8)vector->data[1]*(ranges.amax - ranges.amin);
-  LALCompareGPS(status->statusPtr,&compareGPS,&(ranges.tpmin),&(ranges.tpmax));
+  compareGPS = XLALGPSCmp(&(ranges.tpmin),&(ranges.tpmax));
   if (compareGPS!=0) {
     temp = ranges.tpmin.gpsSeconds+1e-9*ranges.tpmin.gpsNanoSeconds + 
       (REAL8)vector->data[2]*(ranges.tpmax.gpsSeconds+1e-9*ranges.tpmax.gpsNanoSeconds 
@@ -663,7 +665,7 @@ void
 MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlambda,SideBandMCMCJumpProbs jumpsizes,SideBandMCMCRanges ranges,RandomParams *randparams)
 {
   
-  REAL4Vector *random = NULL;           /* vector for storing random numbers */
+  REAL4Vector *rndm = NULL;           /* vector for storing random numbers */
   REAL8 temp;                           /* used to store a temporary random time jump */
   REAL8 temptp;
   INT4 tpflag = 1;
@@ -672,7 +674,7 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   REAL8 y,newy;
   INT4 i;
   REAL8 f0jump,ajump,ejump,xjump,yjump,h0jump,psijump,cosijump,phi0jump,periodjump;
-  LALGPSCompareResult compare1,compare2,compare3;
+  int compare1,compare2,compare3;
   LALTimeInterval delta1;
 
   INITSTATUS( status, "MakeJump", rcsid );
@@ -681,8 +683,8 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   /* ASSERT (newlambda,status,SIDEBANDMCMCC_ENULL,SIDEBANDMCMCC_MSGENULL ); */
 
   /* generate random numbers for actual jumps */
-  random = XLALCreateREAL4Vector(NPARAMS+1);
-  LALNormalDeviates(status->statusPtr,random,randparams);
+  rndm = XLALCreateREAL4Vector(NPARAMS+1);
+  LALNormalDeviates(status->statusPtr,rndm,randparams);
   
   /* generate random numbers to determine jump scale */
   randomscale = XLALCreateREAL4Vector(NPARAMS+1);
@@ -759,8 +761,8 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
 
     /* make the x,y jumps */
     /* printf("xjump = %6.12f yjump = %6.12f\n",xjump,yjump); */
-    newx = x + (REAL8)random->data[1]*xjump;
-    newy = y + (REAL8)random->data[2]*yjump; 
+    newx = x + (REAL8)rndm->data[1]*xjump;
+    newy = y + (REAL8)rndm->data[2]*yjump; 
     /* printf("newx = %6.12f newy = %6.12f\n",newx,newy); */
 
     /* printf("old tp = %6.12f old argp = %6.12f\n",lambda.tp.gpsSeconds+1e-9*lambda.tp.gpsNanoSeconds,lambda.argp); */
@@ -774,28 +776,28 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   else {
 
     /* make the tp,argp jumps */
-    temp = (REAL8)random->data[1]*xjump;
+    temp = (REAL8)rndm->data[1]*xjump;
     newlambda->tp = lambda.tp;
     XLALGPSAdd(&(newlambda->tp), temp);
-    newlambda->argp = lambda.argp + (REAL8)random->data[2]*yjump;
+    newlambda->argp = lambda.argp + (REAL8)rndm->data[2]*yjump;
   }  
 
 
-  /* printf("jumping fi %f\n",(REAL8)random->data[0]*fijump); */
-  newlambda->f0 = lambda.f0 + (REAL8)random->data[0]*f0jump;
-  newlambda->a = lambda.a + (REAL8)random->data[3]*ajump;
-  newlambda->e = lambda.e + (REAL8)random->data[4]*ejump;
-  newlambda->h0 = lambda.h0 + (REAL8)random->data[5]*h0jump;
-  newlambda->period = lambda.period + (REAL8)random->data[6]*periodjump;
-  newlambda->cosi = lambda.cosi + (REAL8)random->data[7]*cosijump;
-  newlambda->psi = lambda.psi + (REAL8)random->data[8]*psijump;
-  newlambda->phi0 = lambda.phi0 + (REAL8)random->data[9]*phi0jump;
+  /* printf("jumping fi %f\n",(REAL8)rndm->data[0]*fijump); */
+  newlambda->f0 = lambda.f0 + (REAL8)rndm->data[0]*f0jump;
+  newlambda->a = lambda.a + (REAL8)rndm->data[3]*ajump;
+  newlambda->e = lambda.e + (REAL8)rndm->data[4]*ejump;
+  newlambda->h0 = lambda.h0 + (REAL8)rndm->data[5]*h0jump;
+  newlambda->period = lambda.period + (REAL8)rndm->data[6]*periodjump;
+  newlambda->cosi = lambda.cosi + (REAL8)rndm->data[7]*cosijump;
+  newlambda->psi = lambda.psi + (REAL8)rndm->data[8]*psijump;
+  newlambda->phi0 = lambda.phi0 + (REAL8)rndm->data[9]*phi0jump;
 
   /* make sure we are within prior boundaries */
 
   /* wrap time of periapse around range */
   /* make comparisons between boundary values */
-  LALCompareGPS(status->statusPtr,&compare3,&(ranges.tpmin),&(ranges.tpmax));
+  compare3 = XLALGPSCmp(&(ranges.tpmin),&(ranges.tpmax));
 
   /* if boundary values not equal to each other */
   if (compare3!=0) {
@@ -803,8 +805,8 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
     while (tpflag) {
 
       /* make comparisons between new tp and boundary values */
-      LALCompareGPS(status->statusPtr,&compare1,&(newlambda->tp),&(ranges.tpmin));
-      LALCompareGPS(status->statusPtr,&compare2,&(newlambda->tp),&(ranges.tpmax));
+      compare1 = XLALGPSCmp(&(newlambda->tp),&(ranges.tpmin));
+      compare2 = XLALGPSCmp(&(newlambda->tp),&(ranges.tpmax));
 
       /* if new tp is less than min boundary */
       if (compare1==-1) {
@@ -895,7 +897,7 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   else newlambda->e = lambda.e; 
  
   /* free memory */
-  XLALDestroyREAL4Vector(random);
+  XLALDestroyREAL4Vector(rndm);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -912,7 +914,7 @@ void
 TestJump(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCVector *newlambda,SideBandMCMCVector *chain,RandomParams *randparams,INT4 n,INT4 out,INT4 *flag)
 {
   
-  REAL4 random;                        /* stores a single random number */
+  REAL4 rndm;                        /* stores a single random number */
   REAL8 R;                             /* the ratio of likelihoods */
   REAL8 T = 1e6;                       /* starting temperature */
   REAL8 logrand;
@@ -928,17 +930,17 @@ TestJump(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCVector *newlam
   if (out==0) {
 
     /* generate random numbers */
-    LALUniformDeviate(status->statusPtr,&random,randparams);
+    LALUniformDeviate(status->statusPtr,&rndm,randparams);
     
     /* printf("comparing (old) %f - (new) %f\n",lambda->logL,newlambda->logL); */
     
     if (n<=uvar_Nburn) R = log(T)*(1.0 - ((REAL8)n/(REAL8)uvar_Nburn)) + newlambda->logL - lambda->logL;
     else R = newlambda->logL - lambda->logL;
     /* R = newlambda->L/lambda->L;  */
-    logrand = log((REAL8)random);
+    logrand = log((REAL8)rndm);
 
     /* printf("R = %f logrand = %f\n",R,logrand); 
-       printf("random = %f\n",(REAL8)random); */
+       printf("rndm = %f\n",(REAL8)rndm); */
     
 
     /* if new likelihood is greater than old likelihood then defineitely jump there */
@@ -990,13 +992,13 @@ void
 PriorRanges(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCRanges ranges, INT4 *out)
 {
 
-  LALGPSCompareResult compare1, compare2;
+  int compare1, compare2;
 
   INITSTATUS( status, "PriorRanges", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  LALCompareGPS(status->statusPtr,&compare1,&(lambda.tp),&(ranges.tpmin));
-  LALCompareGPS(status->statusPtr,&compare2,&(lambda.tp),&(ranges.tpmax));
+  compare1 = XLALGPSCmp(&(lambda.tp),&(ranges.tpmin));
+  compare2 = XLALGPSCmp(&(lambda.tp),&(ranges.tpmax));
 
 
   *out = 0;

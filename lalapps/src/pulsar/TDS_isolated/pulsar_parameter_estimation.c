@@ -39,6 +39,94 @@ RCSID("$Id$");
 /* global variable */
 INT4 verbose=0;
 
+static char joint_string[] = "Joint";
+static char uniform_string[] = "uniform";
+const OutputParams empty_OutputParams;
+
+/* Usage format string */
+#define USAGE1 \
+"Usage: %s [options]\n\n"\
+" --help              display this message\n"\
+" --verbose           display all error messages\n"\
+" --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
+                     (delimited by commas)\n"\
+" --pulsar            name of pulsar e.g. J0534+2200\n"\
+" --par-file          pulsar parameter (.par) file (full path) \n"\
+" --input-dir         directory containing the input data files\n"\
+" --output-dir        directory for output data files\n"\
+" --dob-ul            (REAL8) percentage degree-of-belief for upper limit\n\
+                     - if 0 (default no upper limit is produced)\n"\
+" --output-post       output the full log(posterior)\n"\
+" --chunk-min         (INT4) minimum stationary length of data to be used in\n\
+                     the likelihood e.g. 5 mins\n"\
+" --chunk-max         (INT4) maximum stationary length of data to be used in\n\
+                     the likelihood e.g. 30 mins\n"\
+"\n"\
+" Parameter space grid values:-\n"\
+" --minh0             (REAL8) minimum of the h0 grid\n"\
+" --maxh0             (REAL8) maximum of the h0 grid, if maxh0=0 then\n\
+                     calculate range from the data\n"\
+" --h0steps           (INT4) number of steps in the h0 grid\n"\
+" --minphi0           (REAL8) minimum of the phi0 grid\n"\
+" --maxphi0           (REAL8) maximum of the phi0 grid\n"\
+" --phi0steps         (INT4) number of steps in the phi0 grid\n"\
+" --minpsi            (REAL8) minimum of the psi grid\n"\
+" --maxpsi            (REAL8) maximum of the psi grid\n"\
+" --psisteps          (INT4) number of steps in the psi grid\n"\
+" --minci             (REAL8) minimum of the cos(iota) grid\n"\
+" --maxci             (REAL8) maximum of the cos(iota) grid\n"\
+" --cisteps           (INT4) number of steps in the cos(iota) grid\n"\
+" --psi-bins          (INT4) no. of psi bins in the time-psi lookup table\n"\
+" --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
+"\n"\
+" Prior values:-\n"\
+" --use-priors        set to use priors in the posterior calculation\n"\
+" --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
+" --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
+" --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
+" --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
+" --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
+" --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
+" --psiprior          type of prior on psi - uniform or gaussian\n"\
+" --psimean           (REAL8) mean of a gaussian prior on psi\n"\
+" --psisig            (REAL8) std. dev. of a gaussian prior on psi\n"\
+" --iotaprior         type of prior on iota - uniform or gaussian\n"\
+" --iotamean          (REAL8) mean of a gaussian prior on iota\n"\
+" --iotasig           (REAL8) std. dev. of a gaussian prior on iota\n"\
+"\n"
+
+#define USAGE2 \
+" MCMC parameters:-\n"\
+" --mcmc              set to perform an MCMC\n"\
+" --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
+" --burn-in           (INT4) the number of burn in iterations\n"\
+" --temperature       (REAL8) the temperatue to start of the simulated\n\
+                     annealing in the burn in stage\n"\
+" --h0-width          (REAL8) width of the h0 proposal distribution (if set\n\
+                     to 0 this will be worked out in the code)\n"\
+" --h0-scale          (REAL8) scale factor for h0 proposal width\n"\
+" --psi-width         (REAL8) width of the psi proposal distribution\n"\
+" --phi0-width        (REAL8) width of the phi proposal distribution\n"\
+" --ci-width          (REAL8) width of the cos(iota) proposal distribution\n"\
+" --output-rate       (INT4) rate at which to output chain e.g. 10 means\n\
+                     output every tenth sample\n"\
+" --nglitch           (INT4) number of glitches\n"\
+" --glitch-times      (CHAR) a string of pulsar glitch times given in MJD\n\
+                     e.g. 45623.872,52839.243,53992.091 - at each\n\
+                     glitch an additional MCMC phase parameter will be used\n"\
+" --glitch-cut        (REAL8) the number of seconds of data to ignore\n\
+                     before and after a glitch\n"\
+" --earth-ephem       Earth ephemeris file\n"\
+" --sun-ephem         Sun ephemeris file\n"\
+" --covariance        pulsar parameter covariance matrix file (.mat)\n"\
+" --only-joint        set this to only produce the joint MCMC when given \n\
+                     muliple detectors (MCMC only)\n"\
+" --output-burn-in    set this to also output the burn in stage to the chain\n"\
+"\n"
+
+
+
+
 INT4 main(INT4 argc, CHAR *argv[]){
   static LALStatus status;
 
@@ -64,13 +152,13 @@ INT4 main(INT4 argc, CHAR *argv[]){
   CHAR dataFile[256];
   CHAR outputFile[256];
 
-  OutputParams output;
+  OutputParams output = empty_OutputParams;
   REAL8 maxPost=0.;
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
   REAL8 h0ul=0.;
 
-  CHAR *params[]={"h0", "phi", "psi", "ciota"};
+  CHAR params[][10]={"h0", "phi", "psi", "ciota"};
 
   EphemerisData *edat=NULL;
 
@@ -350,7 +438,7 @@ defined!\n");
 
   /*=================== CREATE THE JOINT POSTERIOR IF REQUIRED ===============*/
   if( numDets > 1 ){
-    output.det = "Joint";
+    output.det = joint_string;
 
     if( inputs.mcmc.doMCMC == 0 ){
       REAL8 totLogNoiseEv=0.;
@@ -496,6 +584,10 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
 y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   CHAR *program = argv[0];
 
+  static char USAGE[strlen(USAGE1)+strlen(USAGE2)+1];
+  strcpy ( USAGE, USAGE1 );
+  strcat ( USAGE, USAGE2 );
+
   /* set defaults */
   inputParams->mcmc.doMCMC = 0;/* by default don't perform an MCMC */
   inputParams->verbose = 0;    /* by default don't do verbose */
@@ -530,10 +622,10 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
                                    iota, psi */
 
   /* default priors are uniform */
-  inputParams->priors.h0Prior = "uniform";
-  inputParams->priors.phiPrior = "uniform";
-  inputParams->priors.psiPrior = "uniform";
-  inputParams->priors.iotaPrior = "uniform";
+  inputParams->priors.h0Prior = uniform_string;
+  inputParams->priors.phiPrior = uniform_string;
+  inputParams->priors.psiPrior = uniform_string;
+  inputParams->priors.iotaPrior = uniform_string;
 
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
@@ -956,7 +1048,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   COMPLEX16 B;
 
   REAL8 exclamation[data.chunkMax+1]; /* all factorials up to chunkMax */
-  REAL8 log2=log(2.);
+  REAL8 logOf2=log(2.);
 
   REAL8 noiseEvidence=0.; /* the log evidence that the data is just noise */
 
@@ -1045,15 +1137,15 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       /* reset array if first time in loop - otherwise joint likelihoods
          will be wrong */
       if( first == 0 )
-        likeArray[k] = (chunkLength - 1.)*log2;
-      else likeArray[k] += (chunkLength - 1.)*log2;
+        likeArray[k] = (chunkLength - 1.)*logOf2;
+      else likeArray[k] += (chunkLength - 1.)*logOf2;
 
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
     }
 
     /* get the log evidence for the data not containing a signal */
-    noiseEvidence += (chunkLength - 1.)*log2;
+    noiseEvidence += (chunkLength - 1.)*logOf2;
     noiseEvidence += exclamation[(INT4)chunkLength];
     noiseEvidence -= chunkLength*log(data.sumData->data[count]);
 
@@ -1672,7 +1764,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
   INT4Vector *matPos=NULL; /* position of parameters in ParamData */
 
-  BarycenterInput baryinput;
+  BarycenterInput baryinput = empty_BarycenterInput;
   REAL8Vector *phi1[numDets], *phi2=NULL;
 
   INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn;  
@@ -2714,7 +2806,7 @@ void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data){
    This is pretty much copied from the GSL function gsl_linalg_cholesky_decomp
    although this works with matrices where the values are close to zero
 */
-REAL8Array *cholesky_decomp(REAL8Array *M, CHAR* uOrl){
+REAL8Array *cholesky_decomp(REAL8Array *M, const CHAR* uOrl){
   INT4 i=0, j=0, k=0;
 
   REAL8 A_00=0., L_00=0.;

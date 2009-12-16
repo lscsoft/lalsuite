@@ -1,12 +1,30 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = FlatMesh.h TwoDMesh.h PulsarTimes.h StackMetric.h 		\
-	Resample.h LALComputeAM.h ComputeSky.h ComputeSkyBinary.h 		\
-	LALDemod.h FoldAmplitudes.h LALBarycenter.h PtoleMetric.h 		\
-	PulsarCat.h FitToPulsar.h BinaryPulsarTiming.h 	\
-	PulsarDataTypes.h ExtrapolatePulsarSpins.h LatticeCovering.h		\
-	ComputeFstat.h SFTutils.h DetectorStates.h LISAspecifics.h		\
-	FlatPulsarMetric.h ComplexAM.h UniversalDopplerMetric.h                 \
-	FlatLatticeTilingPulsar.h PulsarCrossCorr.h
+pkginclude_HEADERS = \
+	BinaryPulsarTiming.h \
+	ComplexAM.h \
+	ComputeFstat.h \
+	ComputeSky.h \
+	ComputeSkyBinary.h \
+	DetectorStates.h \
+	ExtrapolatePulsarSpins.h \
+	FitToPulsar.h \
+	FlatLatticeTilingPulsar.h \
+	FlatMesh.h \
+	FlatPulsarMetric.h \
+	FoldAmplitudes.h \
+	LALComputeAM.h \
+	LALDemod.h \
+	LISAspecifics.h \
+	LatticeCovering.h \
+	PtoleMetric.h \
+	PulsarCat.h \
+	PulsarCrossCorr.h \
+	PulsarDataTypes.h \
+	PulsarTimes.h \
+	Resample.h \
+	SFTutils.h \
+	StackMetric.h \
+	TwoDMesh.h \
+	UniversalDopplerMetric.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
