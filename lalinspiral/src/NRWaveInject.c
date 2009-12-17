@@ -385,7 +385,7 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
 
   gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float);
 
-  *tc = ind[len-1] * in->deltaT;
+  *tc = (len-1) * in->deltaT;
 
   LALFree(ind);
   LALFree(sumSquare);

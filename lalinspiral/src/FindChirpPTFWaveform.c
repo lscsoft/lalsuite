@@ -751,20 +751,23 @@ Distance is given in Mpc.*/
     PTFtemplate->kappa = PTFtemplate->spin1[2]/PTFtemplate->chi;
   else
     PTFtemplate->kappa = 0;
-  PTFtemplate->orbitPhi0 = atan2(PTFtemplate->spin1[1],PTFtemplate->spin1[0]);
+  if (PTFtemplate->spin1[1] != 0 || PTFtemplate->spin1[0] != 0 )
+    PTFtemplate->orbitPhi0 = atan2(PTFtemplate->spin1[1],PTFtemplate->spin1[0]);
+  else
+    PTFtemplate->orbitPhi0 = 0.;
   
   /* Need to convert diastance into an amplitude for the Ps*/
   Amp = 2*mu/Distance * 1476.6250399999999;
 
   /* Here we define the P responses following Diego's thesis p50 */
   Pplus[0] = -sqrtoftwo/4. * cos(2*varphi)*(3 + cos(2*Theta));
-  Pcross[0] += sqrtoftwo * cos(Theta) * sin(2*varphi) ;
+  Pcross[0] = sqrtoftwo * cos(Theta) * sin(2*varphi) ;
   Pplus[1] = -sqrtoftwo * cos(varphi)*sin(varphi)*(1+cos(Theta)*cos(Theta));
-  Pcross[1] -= sqrtoftwo * cos(Theta)*cos(2*varphi);
+  Pcross[1] = -sqrtoftwo * cos(Theta)*cos(2*varphi);
   Pplus[2] = sqrtoftwo * cos(varphi)*sin(Theta)*cos(Theta);
-  Pcross[2] -= sqrtoftwo*sin(Theta)*sin(varphi);
+  Pcross[2] = -sqrtoftwo*sin(Theta)*sin(varphi);
   Pplus[3] = sqrtoftwo * sin(varphi)*sin(Theta)*cos(Theta);
-  Pcross[3] += sqrtoftwo * sin(Theta) * cos(varphi);
+  Pcross[3] = sqrtoftwo * sin(Theta) * cos(varphi);
   Pplus[4] = sqrt(3./2.) * sin(Theta)*sin(Theta);
   Pcross[4] = 0;
 
@@ -802,7 +805,7 @@ Distance is given in Mpc.*/
           e2x * e2z ) + sin(2 * phi) * ( e1x * e2z + e1z * e2x ));
     strains[3] = Amp*omega_2_3*sqrtoftwo*( cos(2 * phi) * (e1y*e1z -
           e2y * e2z ) + sin(2 * phi) * ( e1y * e2z + e1z * e2y ));
-    strains[4] = Amp*onebysqrtofsix * ( cos(2 * phi) *
+    strains[4] = Amp*omega_2_3*onebysqrtofsix * ( cos(2 * phi) *
         ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y -
           e2x * e2x - e2y * e2y ) + 2 * sin(2 * phi) * ( e1x * e2x +
             e1y * e2y - 2 * e1z * e2z ));
