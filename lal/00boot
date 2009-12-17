@@ -169,9 +169,18 @@ ${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
 ${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
+# FIXME: autoreconf from Ubuntu 9.10 (and probably also from recent
+# Debian versions) automatically run libtoolize with the --copy option
+# therefore over writing the supplied libtool scripts with system
+# version. This can lead to unexpected build failures therefore to work
+# round this "feature" we set the LIBTOOLIZE enviroment variable to
+# point to the the true executable which bypasses the running of
+# libtoolize, this will not effect the vast majority of users and those
+# it will effect will know how to run libtoolize, if required.
+
 # generate build system
 echo "00boot: running autoreconf"
-$AUTORECONF || fail "autoreconf"
+LIBTOOLIZE=true $AUTORECONF || fail "autoreconf"
 
 # if there is a lalapps subdirectory run 00boot within this directory too
 if test -d lalapps ; then
