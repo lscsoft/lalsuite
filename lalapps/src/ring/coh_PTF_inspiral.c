@@ -259,7 +259,11 @@ int main( int argc, char **argv )
       /* Despite being called segStartTime we use the time at the middle 
       * of a segment */
       segStartTime = params->startTime;
-      XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);
+      
+      /*XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);*/
+      XLALGPSAdd(&segStartTime,8.5*params->segmentDuration/2.0);
+      /*XLALGPSMultiply(&segStartTime,0.);
+      XLALGPSAdd(&segStartTime,874610713.072549154);*/
       timeOffsets[j*LAL_NUM_IFO+ifoNumber] = 
           XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
           params->declination,&segStartTime);
@@ -447,6 +451,9 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
     }
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
+
+    /* Function to put injections overhead */
+    snprintf( channel->name, LALNameLength * sizeof(CHAR), "ZENITH" );
 
     /* inject signals */
     if ( params->injectFile )
@@ -1022,7 +1029,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   /* Here we compute the eigenvalues and eigenvectors of B2 */
   gsl_eigen_symmv (Binv2,eigenvals,eigenvecs,matTemp);
 
-  /*for (i = 0; i < vecLengthTwo; i++ )
+  for (i = 0; i < vecLengthTwo; i++ )
   {
     for (j = 0; j < vecLengthTwo; j++ )
     {
@@ -1039,7 +1046,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
 
   fprintf(stdout,"\n \n");
-*/
+
   /* This loop takes the time offset in seconds and converts to time offset
   * in data points */
   for (i = 0; i < LAL_NUM_IFO; i++ )
@@ -1107,7 +1114,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
     /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
-    if (cohSNR->data->data[i-numPoints/4] > 0.1 )
+    if (cohSNR->data->data[i-numPoints/4] > 27.00 )
     {
       /* IF louder than threshold calculate maximized quantities */
       v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
@@ -1122,16 +1129,22 @@ void cohPTFmodBasesUnconstrainedStatistic(
         v2_dot_u2 += v2[j]*u2[j];
       }
       if ( spinTemplate == 1 )
+      {
         dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
+        dCee = 1.04707590;
+        fprintf(stdout,"%f %f %f \n",max_eigen,v1_dot_u1,v1_dot_u2);
+      }
       else
         dCee = 0;
       dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
       dAlpha = pow(dAlpha,0.5);
       dBeta = dCee*dAlpha;
+      fprintf(stdout,"dAlpha %f dBeta %f \n",dAlpha,dBeta);
       for ( j = 0 ; j < vecLengthTwo ; j++ )
       {
         pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
         pValues[j]->data->data[i - numPoints/4] = 0;
+        fprintf(stdout,"Rot v1: %f  v2: %f  u1:%e u2:%e P %e\n",v1[j],v2[j],u1[j],u2[j],pValsTemp[j]);
       } 
       recSNR = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1188,7 +1201,10 @@ void cohPTFmodBasesUnconstrainedStatistic(
         {
           recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
+        fprintf(stdout,"true  v1:%f v2:%f P %f\n",v1[j],v2[j],pValues[j]->data->data[i-numPoints/4]);
+        
       }
+
       /*fprintf(stdout,"%e %e %e %e \n",v1[0],v1[1],v1[2],v1[3]);
       fprintf(stdout,"%e %e %e %e \n",v2[0],v2[1],v2[2],v2[3]);*/
       /*fprintf(stdout,"%e %e \n",betaGammaTemp[0],betaGammaTemp[1]);*/
@@ -1197,13 +1213,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
 
   
-  outfile = fopen("cohSNR_timeseries.dat","w");
+  /*outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
   fclose(outfile);
-  
+  */
   /*
   outfile = fopen("rebased_timeseries.dat","w");
   if (spinTemplate == 1 && singleDetector == 1 )

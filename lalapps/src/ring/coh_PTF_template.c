@@ -208,14 +208,15 @@ cohPTFTemplate (
 
   /* This block outputs a file containing all 5 Q frequency series (and time) */
   /* It prints only the magnitude of the frequency */
-  /* Need to make a option to print this if required and use deltaF not T
+  /* Need to make a option to print this if required and use deltaF not T*/
+/*  FILE *outfile;
   outfile = fopen("Q_freqseries.dat","w");
   for ( i = 0; i < N/2 + 1; ++i)
   {
-    fprintf (outfile,"%f %f %f %f %f %f \n",params->deltaT*i,Qtilde[0].data[i].re*Qtilde[0].data[i].re + Qtilde[0].data[i].im*Qtilde[0].data[i].im,Qtilde[1].data[i].re*Qtilde[1].data[i].re + Qtilde[1].data[i].im*Qtilde[1].data[i].im,Qtilde[2].data[i].re*Qtilde[2].data[i].re + Qtilde[2].data[i].im*Qtilde[2].data[i].im,Qtilde[3].data[i].re*Qtilde[3].data[i].re + Qtilde[3].data[i].im*Qtilde[3].data[i].im,Qtilde[4].data[i].re*Qtilde[4].data[i].re + Qtilde[4].data[i].im*Qtilde[4].data[i].im);
+    fprintf (outfile,"%f %f %f %f %f %f %f %f %f %f %f\n",1./(N*params->deltaT)*i,Qtilde[0].data[i].re,Qtilde[0].data[i].im,Qtilde[1].data[i].re,Qtilde[1].data[i].im,Qtilde[2].data[i].re,Qtilde[2].data[i].im,Qtilde[3].data[i].re,Qtilde[3].data[i].im,Qtilde[4].data[i].re,Qtilde[4].data[i].im);
   }
   fclose(outfile);
-  */
+*/
 
   /* XXX set this to be the correct values XXX */
   fcTmplt->tmplt.tC = InspTmplt->tC; /* length of template in seconds */
@@ -274,6 +275,7 @@ cohPTFNormalize(
   f_min     = 40.;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
+  fFinal    = 200.;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -304,8 +306,8 @@ cohPTFNormalize(
   {
     for ( k = kmin; k < kmax ; ++k )
     {
-      PTFQtilde[k + len].re = -PTFQtilde[k].im;
-      PTFQtilde[k + len].im = PTFQtilde[k].re;
+      PTFQtilde[k].im = PTFQtilde[k+len].re;
+      PTFQtilde[k + len].im = -PTFQtilde[k].re;
     }
   }
 
