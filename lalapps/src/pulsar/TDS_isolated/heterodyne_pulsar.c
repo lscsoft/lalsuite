@@ -47,7 +47,8 @@ void printmemuse() {
    pid_t mypid=getpid();
    char commandline[256];
    fflush(NULL);
-   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   snprintf(commandline, sizeof(commandline), "cat /proc/%d/status | /bin/grep\
+ Vm | /usr/bin/fmt -140 -u", (int)mypid);
    system(commandline);
    fflush(NULL);
  }
@@ -119,8 +120,10 @@ pulsars spin frequency.\n", inputParams.freqfactor);
   }
 
   hetParams.samplerate = inputParams.samplerate;
-  sprintf(hetParams.earthfile, "%s", inputParams.earthfile);
-  sprintf(hetParams.sunfile,"%s" ,inputParams.sunfile);
+  snprintf(hetParams.earthfile, sizeof(hetParams.earthfile), "%s",
+    inputParams.earthfile);
+  snprintf(hetParams.sunfile, sizeof(hetParams.sunfile), "%s",
+    inputParams.sunfile);
 
   /* set detector */
   hetParams.detector = *XLALGetSiteInfo( inputParams.ifo );
@@ -215,6 +218,8 @@ data!\n");
       return 1;
     }
     
+    cache.length = cachecount;
+    
     if(verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
   
@@ -254,20 +259,21 @@ directory of the form /GPS_START_TIME-GPS_END_TIME!\n");
   }
   
   if(inputParams.heterodyneflag == 0){
-    sprintf(outputfile, "%s/coarsehet_%s_%s_%s", inputParams.outputdir,
-      inputParams.pulsar, inputParams.ifo, pos+1);
+    snprintf(outputfile, sizeof(outputfile), "%s/coarsehet_%s_%s_%s",
+      inputParams.outputdir, inputParams.pulsar, inputParams.ifo, pos+1);
     if(verbose){  fprintf(stderr, "I'm performing a coarse \
 heterodyne.\n");  }
   }
   else{
-    sprintf(outputfile, "%s/finehet_%s_%s", inputParams.outputdir,
-      inputParams.pulsar, inputParams.ifo);
+    snprintf(outputfile, sizeof(outputfile), "%s/finehet_%s_%s",
+      inputParams.outputdir, inputParams.pulsar, inputParams.ifo);
     if(verbose){  fprintf(stderr, "I'm performing a fine \
 heterodyne.\n");  }
   }
 
   remove(outputfile); /* if output file already exists remove it */
-  sprintf(channel, "%s:%s", inputParams.ifo, inputParams.channel);
+  snprintf(channel, sizeof(channel), "%s:%s", inputParams.ifo,
+    inputParams.channel);
 
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use before entering main loop:\n"); printmemuse();
@@ -610,7 +616,7 @@ file!\n");
   XLALDestroyINT4Vector( starts );
   
   if( inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){
-    INT4 ii=0, cachecount=sizeof(cache.starttime)/sizeof(INT4);
+    UINT4 ii=0, cachecount=cache.length;
     
     XLALFree( cache.starttime );
     XLALFree( cache.duration );
@@ -700,7 +706,7 @@ pulsar spin frequency */
   inputParams->manualEpoch = 0.; /* default to zero i.e. it takes the epoch from
 the pulsar parameter file */
   /* channel defaults to DARM_ERR */
-  sprintf(inputParams->channel, "DARM_ERR");
+  snprintf(inputParams->channel, sizeof(inputParams->channel), "DARM_ERR");
 
   /* get input arguments */
   while(1){
@@ -725,14 +731,15 @@ the pulsar parameter file */
         inputParams->verbose = 1;
         break;
       case 'i': /* interferometer */
-        sprintf(inputParams->ifo, "%s", optarg);
+        snprintf(inputParams->ifo, sizeof(inputParams->ifo), "%s", optarg);
         break;
       case 'z': /* heterodyne flag - 0 for coarse, 1 for fine, 2 for update to
                    params, 3 for a one step fine heteroydne (like old code)*/
         inputParams->heterodyneflag = atoi(optarg);
         break;
       case 'p': /* pulsar name */
-        sprintf(inputParams->pulsar, "%s", optarg);
+        snprintf(inputParams->pulsar, sizeof(inputParams->pulsar), "%s",
+          optarg);
         break;
       case 'A': /* calibration flag */
         inputParams->calibrate = 1;
@@ -744,10 +751,12 @@ the pulsar parameter file */
         inputParams->binaryoutput = 1;
         break;
       case 'f': /* initial heterodyne parameter file */
-        sprintf(inputParams->paramfile, "%s", optarg);
+        snprintf(inputParams->paramfile, sizeof(inputParams->paramfile), "%s",
+          optarg);
         break;
       case 'g': /*secondary heterodyne parameter file - for updated parameters*/
-        sprintf(inputParams->paramfileupdate, "%s", optarg);
+        snprintf(inputParams->paramfileupdate,
+          sizeof(inputParams->paramfileupdate), "%s", optarg);
         break;
       case 'k': /* low-pass filter knee frequency */
         {/* find if the string contains a / and get its position */
@@ -806,22 +815,28 @@ the pulsar parameter file */
         break;
       case 'd': /* file containing list of frame files, or file with previously
                    heterodyned data */
-        sprintf(inputParams->datafile, "%s", optarg);
+        snprintf(inputParams->datafile, sizeof(inputParams->datafile), "%s",
+          optarg);
         break;
       case 'c': /* frame channel */
-        sprintf(inputParams->channel, "%s", optarg);
+        snprintf(inputParams->channel, sizeof(inputParams->channel), "%s",
+          optarg);
         break;
       case 'o': /* output data directory */
-        sprintf(inputParams->outputdir, "%s", optarg);
+        snprintf(inputParams->outputdir, sizeof(inputParams->outputdir), "%s",
+          optarg);
         break;
       case 'e': /* earth ephemeris file */
-        sprintf(inputParams->earthfile, "%s", optarg);
+        snprintf(inputParams->earthfile, sizeof(inputParams->earthfile), "%s",
+          optarg);
         break;
       case 'S': /* sun ephemeris file */
-        sprintf(inputParams->sunfile, "%s", optarg);
+        snprintf(inputParams->sunfile, sizeof(inputParams->sunfile), "%s",
+          optarg);
         break;
       case 'l':
-        sprintf(inputParams->segfile, "%s", optarg);
+        snprintf(inputParams->segfile, sizeof(inputParams->segfile), "%s",
+          optarg);
         break;
       case 'R':
         inputParams->calibfiles.responsefunctionfile = optarg;
@@ -1672,13 +1687,13 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
       cache.starttime[i]+cache.duration[i] &&
       cache.starttime[i] < tempstop){
       if( check == 0 ){
-        sprintf(smalllist, "%s %d %d ", cache.framelist[i], cache.starttime[i],
-          cache.duration[i]);
+        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %d %d",
+          cache.framelist[i], cache.starttime[i], cache.duration[i]);
         check++;
       }
       else{
-        sprintf(smalllist, "%s %s %d %d ", smalllist, cache.framelist[i],
-          cache.starttime[i], cache.duration[i]);
+        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %s %d %d ",
+          smalllist, cache.framelist[i], cache.starttime[i], cache.duration[i]);
       }
       tempstart += cache.duration[i];
     }
@@ -1995,7 +2010,8 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
   if( filterKnee <= 0. )
     return NULL;
 
-  srate = 16384; /* sample at 16384 Hz */
+  srate = 16;
+  /* srate = 16384; */ /* sample at 16384 Hz */
   ttime = FILTERFFTTIME; /* have 200 second long data stretch - might need
     longer to increase resolution */
 

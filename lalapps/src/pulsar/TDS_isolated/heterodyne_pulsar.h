@@ -139,6 +139,7 @@ typedef struct tagFrameCache{
   CHAR **framelist; /* list of file names in frame cache file */
   INT4 *duration; /* duration of each frame file */
   INT4 *starttime; /* start time of each frame file */
+  UINT4 length;    /* length of cache */
 }FrameCache;
 
 typedef struct tagInputParams{
