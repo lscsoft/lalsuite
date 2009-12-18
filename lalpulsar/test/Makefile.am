@@ -11,12 +11,10 @@ check_PROGRAMS = \
 	GeneratePulsarSignalTest \
 	GetAMCoeffsTest \
 	NewGetAMCoeffsTest \
-	NormalizeSFTRngMedTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
 	PulsarCatTest \
 	ResampleTest \
-	SFTCleanTest \
 	SFTfileIOTest \
 	SimulateTaylorCWTest \
 	SkyMetricTest \
@@ -33,6 +31,9 @@ check_PROGRAMS = \
 	TestVelocity \
 	TwoDMeshTest \
 	UniversalDopplerMetricTest
+
+##	SFTCleanTest \
+##	NormalizeSFTRngMedTest \
 else
 check_PROGRAMS =
 endif
@@ -77,10 +78,10 @@ NewGetAMCoeffsTest_LDADD = \
 	$(LALSUPPORT_LIBS) \
 	$(top_builddir)/src/liblalpulsar.la
 
-NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
-NormalizeSFTRngMedTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
+#NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
+#NormalizeSFTRngMedTest_LDADD = \
+#	$(LALSUPPORT_LIBS) \
+#	$(top_builddir)/src/liblalpulsar.la
 
 PtoleMeshTest_SOURCES = PtoleMeshTest.c
 PtoleMeshTest_LDADD = \
@@ -102,12 +103,13 @@ ResampleTest_LDADD = \
 	$(LALSUPPORT_LIBS) \
 	$(top_builddir)/src/liblalpulsar.la
 
-SFTCleanTest_SOURCES = SFTCleanTest.c
-SFTCleanTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
+#SFTCleanTest_SOURCES = SFTCleanTest.c
+#SFTCleanTest_LDADD = \
+#	$(LALSUPPORT_LIBS) \
+#	$(top_builddir)/src/liblalpulsar.la
 
 SFTfileIOTest_SOURCES = SFTfileIOTest.c
+SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 SFTfileIOTest_LDADD = \
 	$(LALSUPPORT_LIBS) \
 	$(top_builddir)/src/liblalpulsar.la
@@ -193,7 +195,7 @@ else
 TESTS =
 endif
 
-TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=.
+TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 
 noinst_DATA = \
 	SFT-bad1 \

@@ -1,4 +1,3 @@
-AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 check_PROGRAMS = \
