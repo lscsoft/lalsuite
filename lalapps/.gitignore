@@ -82,8 +82,8 @@ src/inspiral/lalapps_coinj
 src/inspiral/lalapps_coire
 src/inspiral/lalapps_compare_ini
 src/inspiral/lalapps_corse
-src/inspiral/lalapps_followup_page
-src/inspiral/lalapps_followup_pipe
+src/inspiral/lalapps_followup0_page
+src/inspiral/lalapps_followup0_pipe
 src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
 src/inspiral/lalapps_gwf2xml
