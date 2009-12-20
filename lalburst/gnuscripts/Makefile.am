@@ -5,6 +5,7 @@ EXTRA_DIST = \
 	header-link.mk \
 	install-sh \
 	lalburst.m4 \
+	lalsuite_build.m4 \
 	lalsuite_c99.m4 \
 	libtool.m4 \
 	ltmain.sh \
