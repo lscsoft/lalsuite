@@ -1,3 +1,9 @@
+PRAGMA journal_mode = MEMORY;
+PRAGMA locking_mode = EXCLUSIVE;
+PRAGMA synchronous = OFF;
+PRAGMA temp_store = MEMORY;
+-- PRAGMA temp_store_directory = '/tmp';
+
 -- remove coincs when H1+H2 are the only instruments on
 
 DELETE FROM

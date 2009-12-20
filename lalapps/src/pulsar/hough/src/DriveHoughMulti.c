@@ -514,7 +514,7 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    REAL8 doppWings, fmin, fmax;
+    REAL8 doppWings, f_min, f_max;
     INT4 k;
 
     /* set detector constraint */
@@ -560,11 +560,11 @@ int main(int argc, char *argv[]){
     /* read sft files making sure to add extra bins for running median */
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_freqBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_freqBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_min = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_max = uvar_f0 + uvar_freqBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
     numifo = inputSFTs->length;    
 
     /* find number of sfts */
@@ -837,15 +837,15 @@ int main(int argc, char *argv[]){
 
       /* allocating histogram of the number-counts in the Hough maps */
       if ( uvar_EnableExtraInfo ) {
-	UINT4 k;	
+	UINT4 k0;	
 	hist = XLALCreateUINT8Vector (uvar_binsHisto);
 	histTotal = XLALCreateUINT8Vector (uvar_binsHisto);	
 
 	/* initialize to 0 */
 	/*  memset(histTotal->data, histTotal->length*sizeof(histTotal->data[0]), 0); */
-	for (k = 0; k < histTotal->length; k++) {
-	  histTotal->data[k] = 0;
-	  hist->data[k] = 0;
+	for (k0 = 0; k0 < histTotal->length; k0++) {
+	  histTotal->data[k0] = 0;
+	  hist->data[k0] = 0;
 	}
       }
 
@@ -1191,7 +1191,7 @@ int main(int argc, char *argv[]){
 
 int CreateSkypatchDirs(CHAR *filestats,
 		       CHAR *base,
-		       INT4 index)
+		       INT4 ind)
 {
   CHAR tempstr[16];
   INT4 mkdir_result;
@@ -1200,7 +1200,7 @@ int CreateSkypatchDirs(CHAR *filestats,
   strcpy(  filestats, base);
 
   strcat( filestats, "/skypatch_");
-  sprintf( tempstr, "%d", index);
+  sprintf( tempstr, "%d", ind);
   strcat( filestats, tempstr);  
   strcat( filestats, "/");
   
@@ -1211,7 +1211,7 @@ int CreateSkypatchDirs(CHAR *filestats,
 
   if ( (mkdir_result == -1) && (errno != EEXIST) )
     {
-      fprintf(stderr, "unable to create skypatch directory %d\n", index);
+      fprintf(stderr, "unable to create skypatch directory %d\n", ind);
       return 1;
     }
 
@@ -1913,7 +1913,7 @@ void SelectBestStuff(LALStatus      *status,
 		     UINT4          mObsCohBest)
 {
 
-  size_t *index=NULL;
+  size_t *ind=NULL;
   UINT4 k, mObsCoh;
 
   INITSTATUS (status, "SelectBestStuff", rcsid);
@@ -1968,26 +1968,26 @@ void SelectBestStuff(LALStatus      *status,
     out->pgV->pg = (HOUGHPeakGram *)LALCalloc(1, mObsCohBest*sizeof(HOUGHPeakGram));
   }
 
-  index = LALCalloc(1, mObsCohBest*sizeof(size_t));  
-  gsl_sort_largest_index( index, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
+  ind = LALCalloc(1, mObsCohBest*sizeof(size_t));  
+  gsl_sort_largest_index( ind, mObsCohBest, in->weightsV->data, 1, mObsCoh);	
 
   for ( k = 0; k < mObsCohBest; k++) {
 
-    out->weightsV->data[k] = in->weightsV->data[index[k]];    
-    out->timeDiffV->data[k] = in->timeDiffV->data[index[k]];    
+    out->weightsV->data[k] = in->weightsV->data[ind[k]];    
+    out->timeDiffV->data[k] = in->timeDiffV->data[ind[k]];    
 
-    out->velV->data[k].x = in->velV->data[index[k]].x;
-    out->velV->data[k].y = in->velV->data[index[k]].y;
-    out->velV->data[k].z = in->velV->data[index[k]].z;
+    out->velV->data[k].x = in->velV->data[ind[k]].x;
+    out->velV->data[k].y = in->velV->data[ind[k]].y;
+    out->velV->data[k].z = in->velV->data[ind[k]].z;
 
     /* this copies the pointers to the peakgram data from the input */
-    out->pgV->pg[k] = in->pgV->pg[index[k]];
+    out->pgV->pg[k] = in->pgV->pg[ind[k]];
 
   }
 
   /*   gsl_sort_index( index, timeDiffV.data, 1, mObsCohBest);	 */
   
-  LALFree(index);
+  LALFree(ind);
 
   DETATCHSTATUSPTR (status);
 	
@@ -2448,7 +2448,7 @@ int OpenExtraInfoFiles(  CHAR          *fileMaps,
                          CHAR          *filehisto,
 			 CHAR	       *dirname,
 			 CHAR  	       *basename,
-			 INT4          index)								
+			 INT4          ind)								
 {
 CHAR   filestats[ MAXFILENAMELENGTH ];
 /*CHAR   fileMaps[ MAXFILENAMELENGTH ];*/
@@ -2457,7 +2457,7 @@ FILE    *fp1 = NULL;
 
 /* --------------------------------------------------*/
 /* Create directory fnameout/skypatch_$j using mkdir if required */
-	if(CreateSkypatchDirs(filestats, dirname,index))
+	if(CreateSkypatchDirs(filestats, dirname,ind))
 		return DRIVEHOUGHCOLOR_EFILE;
 	
 /* --------------------------------------------------*/	
@@ -2663,7 +2663,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     HoughTemplate    pulsarTemplate;
     UINT4            mObsCoh; 
     UINT4    k, i, j, ii, numberSFTp ;
-    INT4    index;
+    INT4    ind;
     REAL8  sumWeightSquare, meanN, sigmaN;       
     REAL8   eta, numberCount;                 
     REAL8   nj, sumWeightj, sumWeightSquarej;
@@ -2786,9 +2786,9 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	    
 	    for (ii=0 ; (ii < numberSFTp) ; ii++) {
 		
-		index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+		ind = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 		
-		numberCount += upgV->upg[j].data[index]*weightsV.data[j];
+		numberCount += upgV->upg[j].data[ind]*weightsV.data[j];
 		
 		j++;
 		

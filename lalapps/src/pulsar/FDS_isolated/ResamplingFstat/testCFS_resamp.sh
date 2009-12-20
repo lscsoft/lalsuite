@@ -1,16 +1,24 @@
 #!/bin/sh
 
-## take user-arguments for CFS
+## take user-arguments for CFS-resamp:
 extra_args="$@"
 
-##---------- names of codes and input/output files
-saf_code="lalapps_SemiAnalyticF"
-mfd_code="lalapps_Makefakedata_v4"
-cfs_code="lalapps_ComputeFStatistic"
-cfs_resamp_code="lalapps_ComputeFStatistic_resamp"
-cmp_code="lalapps_compareFstats"
+## allow 'make test' to work from builddir != srcdir
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+    injectdir="../../Injections/"
+else
+    srcdir=.
+fi
 
-SFTdir="./_testSFTs"
+##---------- names of codes and input/output files
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
+saf_code="${builddir}../lalapps_SemiAnalyticF"
+cfs_code="${builddir}../lalapps_ComputeFStatistic"
+cfs2_code="${builddir}lalapps_ComputeFStatistic_resamp"
+cmp_code="${builddir}../lalapps_compareFstats"
+
+SFTdir="./testSFTs"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -45,8 +53,9 @@ psi=0.6
 phi0=1.5
 
 Freq=100.12345
-cfsFreqBand=4e-5;
+cfsFreqBand=4e-6;
 dFreq=6.944444444e-06
+
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 f1dot=-1e-10;
@@ -112,14 +121,14 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_v1="./Fstat_v1.dat";
-## common cmdline-options for v1 and _resamp
-cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$cfsFreqBand --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+outfile_v1="Fstat_v1.dat";
+## common cmdline-options for v1 and resamp
+cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$cfsFreqBand --dFreq=$dFreq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0 --dFreq=$dFreq";
+cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
 echo $cmdline;
 
 if ! eval $cmdline; then
@@ -132,11 +141,19 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_resamp with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_resamp="./Fstat_resamp.dat";
-cmdline_resamp="$cfs_resamp_code $cfs_CL --outputFstat=$outfile_resamp --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
-echo $cmdline_resamp;
-if ! eval $cmdline_resamp; then
-    echo "Error.. something failed when running '$cfs_resamp_code' ..."
+outfile_resampNWon="Fstat_resampNWon.dat";
+cmdlineNoiseWeightsOn="$cfs2_code $cfs_CL --outputFstat=$outfile_resampNWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
+echo $cmdlineNoiseWeightsOn;
+if ! eval $cmdlineNoiseWeightsOn; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
+outfile_resampNWoff="Fstat_resampNWoff.dat";
+cmdlineNoiseWeightsOff="$cfs2_code $cfs_CL --outputFstat=$outfile_resampNWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
+echo $cmdlineNoiseWeightsOff;
+if ! eval $cmdlineNoiseWeightsOff; then
+    echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
 
@@ -147,16 +164,32 @@ echo "----------------------------------------"
 echo
 echo "----- CFS v1: "
 cat $outfile_v1 | sed -e"/^%.*/{d}"
-echo "----- CFS resamp (with noise-weights turned OFF): "
-cat $outfile_resamp | sed -e"/^%.*/{d}"
+echo "----- CFS resamp WITH noise-weights: "
+cat $outfile_resampNWon | sed -e"/^%.*/{d}"
+echo "----- CFS resamp WITHOUT noise-weights: "
+cat $outfile_resampNWoff | sed -e"/^%.*/{d}"
 
 
 echo
-cmdline="$cmp_code -1 $outfile_v1 -2 $outfile_resamp --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_resampNWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
 else
     echo "OK."
+fi
+
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_resampNWon --clusterFiles=0 --Ftolerance=$Ftolerance"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "OUCH... files differ. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+## clean up files
+if [ -z "$NOCLEANUP" ]; then
+    rm -rf $SFTdir $outfile_v1 $outfile_resampNWon $outfile_resampNWoff Fstats Fstats.log
 fi

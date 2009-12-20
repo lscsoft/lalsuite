@@ -326,7 +326,7 @@ typedef struct CellDataTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT8 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT8 *datalen, const REAL8 myFthr );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT8 *datalen, const REAL8 myFthr );
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT8 *candlen );
 
 #ifdef USE_UNZIP
@@ -360,8 +360,8 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
-void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const INT8 datalen);
-void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const INT8 datalen);
+void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CandidateList *CList);
+void FreeMemoryCellsOnly(LALStatus *, CellData *cell, const INT8 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 void sortCandidates(INT8 *data, INT8 N);
@@ -373,7 +373,7 @@ void sortFreqCells2(INT8 *data, INT8 left, INT8 right);
 /* Global Variables */
 
 CandidateList *SortedC = NULL; /* need to be global to access them in compare functions for qsort */
-CellData *cell = NULL;
+CellData *global_cell = NULL;
 
 /*
 ListForSort *SortedCList = NULL;
@@ -411,7 +411,6 @@ int main(INT4 argc,CHAR *argv[])
   REAL8 *LookupDelta2 = NULL;
   REAL8 DeltaWin=0;
   REAL8 DeltaBorder=0;
-  REAL8 DeltaEdge=0;
   REAL8 d0=0,a0=0,k0=0;
   INT4  NumDeltaWins, idb;
   INT4  iDeltaMax1=0;
@@ -424,7 +423,6 @@ int main(INT4 argc,CHAR *argv[])
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT8  sizecells; /* Length of the cell list */
-  INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
   LALStatus *lalStatus = &global_status;
   setlocale(LC_ALL, "C");
@@ -459,7 +457,7 @@ int main(INT4 argc,CHAR *argv[])
   /* More efficent sorting in memory by using an integer list */
   SortedCListi = (INT8 *) LALCalloc(CLength, sizeof(INT8) );
   if( SortedCListi == NULL ) {
-    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+    return POLKAC_EMEM;
   }
 
 
@@ -487,7 +485,7 @@ int main(INT4 argc,CHAR *argv[])
     /* Allocate memory for the declination cell lookup table */
     LookupDelta1 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
     if( LookupDelta1 == NULL ) {
-      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+      return POLKAC_EMEM;
     }
     /* Finally calclate the 1st declination lookup table */
     idb=0;
@@ -522,7 +520,7 @@ int main(INT4 argc,CHAR *argv[])
     /* Allocate memory for the declination cell 2nd lookup table */
     LookupDelta2 = (REAL8 *) LALCalloc(NumDeltaWins+1, sizeof(REAL8) );
     if( LookupDelta2 == NULL ) {
-      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+      return POLKAC_EMEM;
     }
     /* Finally calclate the 2nd declination lookup table */
     idb=0;
@@ -567,9 +565,9 @@ int main(INT4 argc,CHAR *argv[])
 	    fprintf(stdout,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 
 	     /* Prepare cells. */
-	    cell = NULL;
+	    global_cell = NULL;
 	    sizecells = ADDITIONAL_MEM;
-	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
+	    LAL_CALL( PrepareCells( lalStatus, &global_cell, sizecells ), lalStatus);  
 
 	    /* Assigning four indices to each candidate event */
 	    for (icand=0;icand<CLength;icand++) 
@@ -655,12 +653,12 @@ int main(INT4 argc,CHAR *argv[])
 	    /* Initialise the first cell by the first candidate. */
 	    icell = 0;
 	    icand = 0;
-	    cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
-	    cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
-	    cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
-	    cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-	    cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand; 
-	    cell[icell].nCand = 1;
+	    global_cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+	    global_cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+	    global_cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+	    global_cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+	    global_cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand; 
+	    global_cell[icell].nCand = 1;
 	    	    
 	    /* ------------------------------------------------------------------------------*/      
 	    /* main loop over candidates  */
@@ -670,18 +668,18 @@ int main(INT4 argc,CHAR *argv[])
 		/* Skip candidate events with 2F values below the threshold of TwoFthr. */
 		if ( SortedC[SortedCListi[icand]].TwoF > PCV.TwoFthr ) 
 		  {
-		    if( SortedC[SortedCListi[icand]].iFreq  == cell[icell].iFreq  && 
-			SortedC[SortedCListi[icand]].iDelta == cell[icell].iDelta &&
-			SortedC[SortedCListi[icand]].iAlpha == cell[icell].iAlpha &&
-			SortedC[SortedCListi[icand]].iF1dot == cell[icell].iF1dot ) 
+		    if( SortedC[SortedCListi[icand]].iFreq  == global_cell[icell].iFreq  && 
+			SortedC[SortedCListi[icand]].iDelta == global_cell[icell].iDelta &&
+			SortedC[SortedCListi[icand]].iAlpha == global_cell[icell].iAlpha &&
+			SortedC[SortedCListi[icand]].iF1dot == global_cell[icell].iF1dot ) 
 		      {
 			/* This candidate is in this cell. */
-			INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
+			INT4 lastFileIDinThisCell = SortedC[global_cell[icell].CandID->data].FileID;
 			if( SortedC[SortedCListi[icand]].FileID != lastFileIDinThisCell ) 
 			  { 
 			    /* This candidate has a different file id from the candidates in this cell. */
-			    LAL_CALL( add_int8_data( lalStatus, &(cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
-			    cell[icell].nCand += 1;
+			    LAL_CALL( add_int8_data( lalStatus, &(global_cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
+			    global_cell[icell].nCand += 1;
 			  }  
 			else  
 			  { 
@@ -698,15 +696,15 @@ int main(INT4 argc,CHAR *argv[])
 			/* Re-allocate Memory for more cells */
 			if( icell >= sizecells ) {
 			  sizecells = sizecells + ADDITIONAL_MEM;
-			  LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);
+			  LAL_CALL( RePrepareCells(lalStatus, &global_cell, sizecells, icell), lalStatus);
 			}
 			
-			cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
-			cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
-			cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
-			cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-			cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand;
-			cell[icell].nCand = 1;
+			global_cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+			global_cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+			global_cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+			global_cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+			global_cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand;
+			global_cell[icell].nCand = 1;
 		
 		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
 		    
@@ -723,7 +721,7 @@ int main(INT4 argc,CHAR *argv[])
 	    cellListi = (INT8 *) LALCalloc(ncell, sizeof(INT8) );
 
 	    for(icell=0;icell<ncell;icell++) {
-	      LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
+	      LAL_CALL( get_info_of_the_cell( lalStatus, &global_cell[icell], SortedC), lalStatus);
 	      cellListi[icell] = icell;
 	    }  
 	 
@@ -731,11 +729,11 @@ int main(INT4 argc,CHAR *argv[])
 
 	    /* -----------------------------------------------------------------------------------------*/      
 	    /* Output results */
-	    LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC, selectGrid, cellListi),lalStatus );
+	    LAL_CALL( PrintResult( lalStatus, &PCV, global_cell, &ncell, SortedC, selectGrid, cellListi),lalStatus );
 	    
 	    
 	    /* clean memory for cells */
-	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, &PCV, cell, sizecells), lalStatus);
+	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, global_cell, sizecells), lalStatus);
 	    LALCheckMemoryLeaks(); 
 	    
 	    selectGrid++;
@@ -751,7 +749,7 @@ int main(INT4 argc,CHAR *argv[])
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
-  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC, sizecells), lalStatus);
+  LAL_CALL( FreeMemory(lalStatus, &PCV, SortedC), lalStatus);
   LALCheckMemoryLeaks(); 
 
   
@@ -1283,9 +1281,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 */
 void FreeMemory( LALStatus *lalStatus, 
 	    PolkaConfigVars *CLA, 
-	    CellData *cell, 
-	    CandidateList *CList, 
-	    const INT8 datalen)
+                 CandidateList *CList) 
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1321,7 +1317,6 @@ void FreeMemory( LALStatus *lalStatus,
   @param[in]     CLength   INT8            Number of the cells
 */
 void FreeMemoryCellsOnly( LALStatus *lalStatus, 
-			  PolkaConfigVars *CLA, 
 			  CellData *cell, 
 			  const INT8 datalen)
 {
@@ -1842,7 +1837,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
   else if ( CLA->FstatsFile != NULL ) 
     {
       *CList = NULL;
-      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile,CLA, clen, CLA->TwoFthr ), lalStatus );
+      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLA->TwoFthr ), lalStatus );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
@@ -1889,7 +1884,7 @@ GetFilesListInThisDir( LALStatus *lalStatus,
 {
 #ifdef HAVE_GLOB_H   
   CHAR *command = NULL;
-  UINT4 fileno=0;
+  UINT4 filenum=0;
   glob_t globbuf;
 #endif
 
@@ -1932,18 +1927,18 @@ GetFilesListInThisDir( LALStatus *lalStatus,
   if ( ( *filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
-  while ( fileno < (UINT4) globbuf.gl_pathc) 
+  while ( filenum < (UINT4) globbuf.gl_pathc) 
     {
-      (*filelist)[fileno] = NULL;
-      if ( ((*filelist)[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
+      (*filelist)[filenum] = NULL;
+      if ( ((*filelist)[filenum] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[filenum])+1)) == NULL) {
 	ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
       }
-      strcpy((*filelist)[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
+      strcpy((*filelist)[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
     }
   globfree(&globbuf);
 
-  *nfiles = fileno; /* remember this is 1 more than the index value */
+  *nfiles = filenum; /* remember this is 1 more than the index value */
 #endif
 
   LALFree(command);
@@ -2567,7 +2562,6 @@ void
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
-		      PolkaConfigVars *CLA,
 		      INT8 *candlen, 
 		      const REAL8 myFthr )
 {
@@ -3217,21 +3211,21 @@ void sortFreqCells2(INT8 *data, INT8 left, INT8 right)
 
   for (i = left + 1; i <= right; i++)
   {
-    if(cell[data[i]].iFreq < cell[data[left]].iFreq)  {
+    if(global_cell[data[i]].iFreq < global_cell[data[left]].iFreq)  {
       last++;
       t =  data[last]; 
       data[last] = data[i]; 
       data[i] = t;
     }
-    else if (cell[data[i]].iFreq == cell[data[left]].iFreq) {
-      if(cell[data[i]].nCand > cell[data[left]].nCand)  {
+    else if (global_cell[data[i]].iFreq == global_cell[data[left]].iFreq) {
+      if(global_cell[data[i]].nCand > global_cell[data[left]].nCand)  {
 	last++;
 	t =  data[last]; 
 	data[last] = data[i]; 
 	data[i] = t;
       }
-      else if (cell[data[i]].nCand == cell[data[left]].nCand) {
-	 if (cell[data[i]].significance > cell[data[left]].significance)  {
+      else if (global_cell[data[i]].nCand == global_cell[data[left]].nCand) {
+	 if (global_cell[data[i]].significance > global_cell[data[left]].significance)  {
 	   last++;
 	   t =  data[last]; 
 	   data[last] = data[i]; 

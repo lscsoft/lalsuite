@@ -1,13 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-if FRAME
-FRAMEPROGRAMS = lalapps_narrowBandExtract
+if LALFRAME
+# this only requires LALFrame because of usage of LALFrameL.h
+LALFRAMEPROGRAMS = lalapps_narrowBandExtract
 else
-FRAMEPROGRAMS =
+LALFRAMEPROGRAMS =
 endif
-bin_PROGRAMS = $(FRAMEPROGRAMS)
+bin_PROGRAMS = $(LALFRAMEPROGRAMS)
 bin_SCRIPTS = lalapps_GatherLFN lalapps_QueryMetadataLFN lalapps_ClusterComputeF lalapps_QueryMetadataEphemeris
-if FRAME
+if LALFRAME
 lalapps_narrowBandExtract_SOURCES = narrowBandExtract.c
 endif
 

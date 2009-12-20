@@ -131,7 +131,7 @@ void LoadTransferFunctionFromActuation(LALStatus *,
 				       REAL8 actuationScale,
 				       const CHAR *fname);
 
-void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band );
+void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band );
 
 void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params );
 
@@ -238,6 +238,8 @@ BOOLEAN uvar_lineFeature;	/**< generate a monochromatic line instead of a pulsar
 BOOLEAN uvar_version;		/**< output version information */
 
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
+
+CHAR *uvar_parfile;             /** option .par file path */ 
 
 /*----------------------------------------------------------------------*/
 
@@ -529,6 +531,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   static const char *fn = "InitMakefakedata()";
 
   CHAR *channelName = NULL;
+  BinaryPulsarParams pulparams;
 
   INITSTATUS( status, fn, rcsid );
   ATTATCHSTATUSPTR (status);
@@ -539,6 +542,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* read cmdline & cfgfile  */
   TRY (LALUserVarReadAllInput(status->statusPtr, argc,argv), status);
 
+  BOOLEAN have_parfile = LALUserVarWasSet (&uvar_parfile);
+
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
@@ -547,6 +552,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       OutputVersion();
       exit (0);
     }
+
+  /* read in par file parameters if given */
+   if (have_parfile)
+      XLALReadTEMPOParFile( &pulparams, uvar_parfile);
 
   /* if requested, log all user-input and code-versions */
   if ( uvar_logfile ) {
@@ -603,12 +612,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     }
     cfg->pulsar.Amp.phi0 = uvar_phi0;
     cfg->pulsar.Amp.psi  = uvar_psi;
+
     /* ----- signal Frequency ----- */
     if ( have_f0 && have_Freq ) {
       printf ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( have_Freq )
+    if ( have_parfile ) 
+      cfg->pulsar.Doppler.fkdot[0] = 2.*pulparams.f0;
+    else if ( have_Freq )
       cfg->pulsar.Doppler.fkdot[0] = uvar_Freq;
     else if ( have_f0 )
       cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
@@ -632,7 +644,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( have_Alpha )
+    if ( have_parfile) 
+      {
+	cfg->pulsar.Doppler.Alpha = pulparams.ra;
+	cfg->pulsar.Doppler.Delta = pulparams.dec;
+      }
+    else if ( have_Alpha )
       {
 	cfg->pulsar.Doppler.Alpha = uvar_Alpha;
 	cfg->pulsar.Doppler.Delta = uvar_Delta;
@@ -653,6 +670,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
+    if ( have_parfile ) 
+      {
+	uvar_f1dot = 2.*pulparams.f1;
+	uvar_f2dot = 2.*pulparams.f2;
+	uvar_f3dot = 2.*pulparams.f3;
+      }
     cfg->pulsar.Doppler.fkdot[1] = uvar_f1dot;
     cfg->pulsar.Doppler.fkdot[2] = uvar_f2dot;
     cfg->pulsar.Doppler.fkdot[3] = uvar_f3dot;
@@ -1012,6 +1035,34 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */
   {
+    if (have_parfile){
+      if (pulparams.model != NULL) {
+	uvar_orbitasini = pulparams.x;
+	uvar_orbitPeriod = pulparams.Pb*86400;
+	if (strstr(pulparams.model,"ELL1") != NULL) {
+	  REAL8 w,e,eps1,eps2;
+	  eps1 = pulparams.eps1;
+	  eps2 = pulparams.eps2;
+	  w = atan2(eps1,eps2);
+	  e = sqrt(eps1*eps1+eps2*eps2);
+	  uvar_orbitArgp = w;
+	  uvar_orbitEcc = e;
+	}
+	else {
+	  uvar_orbitArgp = pulparams.w0;
+	  uvar_orbitEcc = pulparams.e;
+	}
+	if (strstr(pulparams.model,"ELL1") != NULL) {
+	  REAL8 fe, uasc,Dt;
+	  fe = sqrt((1.0-uvar_orbitEcc)/(1.0+uvar_orbitEcc));
+	  uasc = 2.0*atan(fe*tan(uvar_orbitArgp/2.0));
+	  Dt = (uvar_orbitPeriod/LAL_TWOPI)*(uasc-uvar_orbitEcc*sin(uasc));
+	  pulparams.T0 = pulparams.Tasc + Dt;
+	}
+	uvar_orbitTpSSBsec = (UINT4)floor(pulparams.T0);
+	uvar_orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar_orbitTpSSBsec)*1e9);
+      }
+    }
     BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitasini);
     BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitEcc);
     BOOLEAN set3 = LALUserVarWasSet(&uvar_orbitPeriod);
@@ -1117,7 +1168,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet(&uvar_refTime) && LALUserVarWasSet(&uvar_refTimeMJD))
+  if (LALUserVarWasSet (&uvar_parfile)) {
+    REAL8 FloatGPS;
+    FloatGPS = LALTTMJDtoGPS(pulparams.pepoch);
+    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),FloatGPS);
+  }
+  else if (LALUserVarWasSet(&uvar_refTime) && LALUserVarWasSet(&uvar_refTimeMJD))
     {
       printf ( "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
       ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
@@ -1315,6 +1371,8 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   version,	         'V', UVAR_SPECIAL, "Output version information");
 
   LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+
+  LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1634,7 +1692,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,
 /** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
  */
 void
-LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
+LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band )
 {
   UINT4 firstBin, numBins, numSFTs;
   UINT4 i;
@@ -1656,13 +1714,13 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
   SFTBand = df * inSFTs->data[0].data->length;
 
 
-  if ( (fmin < SFTf0) || ( fmin + Band > SFTf0 + SFTBand ) )
+  if ( (f_min < SFTf0) || ( f_min + Band > SFTf0 + SFTBand ) )
     {
       printf ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
       ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
     }
 
-  firstBin = floor ( fmin / df + 0.5 );
+  firstBin = floor ( f_min / df + 0.5 );
   numBins =  floor ( Band / df + 0.5 ) + 1;
 
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, numBins ), status );
@@ -1677,7 +1735,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
       memcpy ( dest, src, sizeof(*dest) );
       /* restore data-pointer */
       dest->data = ptr;
-      /* set correct fmin */
+      /* set correct f_min */
       dest->f0 = firstBin * df ;
 
       /* copy the relevant part of the data */

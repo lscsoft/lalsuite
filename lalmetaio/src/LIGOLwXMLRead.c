@@ -191,10 +191,16 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	}
 
 	/*
-	 * find table (parse error is interpreted as table is missing)
+	 * find table.  note:  parse errors are interpreted as "table is
+	 * missing".  metaio provides no other mechanism for testing for
+	 * the presence of a table.
 	 */
 
 	has_table = !MetaioOpenTableOnly(&env, table_name);
+	/* FIXME:  when we can rely on newer versions of libmetaio use this
+	 * function instead of what follows */
+	/*MetaioClearErrno(&env);*/
+	env.mierrno = 0;
 
 	/*
 	 * close
@@ -570,14 +576,11 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -606,7 +609,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -621,7 +623,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
@@ -635,7 +636,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
@@ -655,7 +655,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -663,8 +662,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -707,6 +704,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		int amplitude;
 		int snr;
 		int confidence;
+		int chisq;
+		int chisq_dof;
 		int event_id;
 	} column_pos;
 
@@ -716,7 +715,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "sngl_burst")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -739,6 +738,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_4, 1);
 	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", METAIO_TYPE_REAL_4, 1);
 	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
+	column_pos.chisq = XLALLIGOLwFindColumn(&env, "chisq", METAIO_TYPE_REAL_8, 1);
+	column_pos.chisq_dof = XLALLIGOLwFindColumn(&env, "chisq_dof", METAIO_TYPE_REAL_8, 1);
 	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
@@ -785,6 +786,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_4;
 		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
+		row->chisq = env.ligo_lw.table.elt[column_pos.chisq].data.real_8;
+		row->chisq_dof = env.ligo_lw.table.elt[column_pos.chisq_dof].data.real_8;
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
@@ -3922,8 +3925,8 @@ LALMultiInspiralTableFromLIGOLw (
           {"ligo_angle_sig",          -1, 52},
           {"inclination",             -1, 53},
           {"polarization",            -1, 54},
-          {"null_statistic",          -1, 55},          
-	  {"null_stat_h1h2",          -1, 56},          
+          {"null_statistic",          -1, 55},
+	  {"null_stat_h1h2",          -1, 56},
 	  {"null_stat_degen",         -1, 57},
           {"event_id",                -1, 58},
           {"h1quad_re",               -1, 59},

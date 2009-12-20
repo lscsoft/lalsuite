@@ -51,7 +51,6 @@ src/detresponse/lalapps_ifo_response
 src/detresponse/lalapps_ifo_skyavg_ts
 src/detresponse/lalapps_test_earth
 src/detresponse/lalapps_test_gridding
-src/example/lalapps_hello
 src/findchirp/lalapps_BankEfficiency
 src/findchirp/lalapps_DistanceVsMass
 src/findchirp/lalapps_InspiralOverlap
@@ -83,8 +82,8 @@ src/inspiral/lalapps_coinj
 src/inspiral/lalapps_coire
 src/inspiral/lalapps_compare_ini
 src/inspiral/lalapps_corse
-src/inspiral/lalapps_followup_page
-src/inspiral/lalapps_followup_pipe
+src/inspiral/lalapps_followup0_page
+src/inspiral/lalapps_followup0_pipe
 src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
 src/inspiral/lalapps_gwf2xml
@@ -163,6 +162,7 @@ src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
+src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
 src/pulsar/Injections/lalapps_compareTS

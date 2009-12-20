@@ -170,8 +170,6 @@ int main( int argc, char *argv[] )
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
   CHAR coordinates[LIGOMETA_COORDINATES_MAX];  
   
-  LALGPSCompareResult        compareGPS;
-
   /*  xml output data */
   CHAR                  fname[256];
   MetadataTable         proctable;
@@ -682,17 +680,13 @@ int main( int argc, char *argv[] )
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
-  /* check that the start time is before the end time */
-  LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
-      &status );
-  
   /*
    *
    * loop over duration of desired output times
    *
    */
 
-  while ( compareGPS == LALGPS_EARLIER )
+  while ( XLALGPSCmp(&gpsStartTime, &gpsEndTime) < 0 )
   {
     /* create the sim_ringdown table */
     if ( injections.simRingdownTable )
@@ -883,10 +877,6 @@ int main( int argc, char *argv[] )
         
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
-    LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
-          &gpsEndTime ), &status );
-
-
   } /* end loop over injection times */
 
   

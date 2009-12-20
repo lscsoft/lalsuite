@@ -45,12 +45,6 @@ from pylal import grbsummary
 from pylal import dqutils
 from lalapps import inspiralutils
 
-# For Python 2.3 compatibility
-try:
-  set
-except NameError:
-  from sets import Set as set
-  
 ##############################################################################
 # define a few utility functions that make this job easier
 

@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     /* Load the SFTs */
     {
       SFTConstraints constraints = empty_SFTConstraints;
-      REAL8 extra = 0.0, fmin = 0.0, fmax = 0.0;
+      REAL8 extra = 0.0, f_min = 0.0, f_max = 0.0;
       
       /* Load the catalog */
       LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");
@@ -133,12 +133,12 @@ int main(int argc, char *argv[]) {
       
       /* Determine the frequency range */
       extra = catalog->data[0].header.deltaF * (rng_med_win/2 + 1);
-      fmin = freq_i - extra;
-      fmax = freq_i + extra + band;
+      f_min = freq_i - extra;
+      f_max = freq_i + extra + band;
       
       /* Load the SFTs */
-      LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", fmin, fmax);
-      LAL_CALL(LALLoadMultiSFTs(&status, &sfts, catalog, fmin, fmax), &status);
+      LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", f_min, f_max);
+      LAL_CALL(LALLoadMultiSFTs(&status, &sfts, catalog, f_min, f_max), &status);
       LogPrintfVerbatim(LOG_DEBUG, "done\n");
     }
     
