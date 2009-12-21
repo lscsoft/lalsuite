@@ -37,9 +37,9 @@ lalapps_FstatMetric_v2_SOURCES = FstatMetric_v2.c
 EXTRA_DIST = testMetricCodes.py
 
 TESTS = testMetricCodes.py
+
 TESTS_ENVIRONMENT = \
 LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
-LAL_PREFIX=$(LAL_PREFIX) \
-LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/../lalpulsar/test/"}
 
 CLEANFILES = Fmetric.dat Fmetric_v2.dat

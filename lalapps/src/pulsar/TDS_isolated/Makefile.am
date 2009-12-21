@@ -18,9 +18,7 @@ lalapps_heterodyne_pulsar_SOURCES = heterodyne_pulsar.c heterodyne_pulsar.h
 
 EXTRA_DIST = test_heterodyne_pulsar.sh make_frame_cache H1response.txt H-CW_Injection-875206560-120.gwf
 
-
-
 TESTS_ENVIRONMENT = \
 LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
-LAL_PREFIX=$(LAL_PREFIX) \
-LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/../lalpulsar/test/"}
+

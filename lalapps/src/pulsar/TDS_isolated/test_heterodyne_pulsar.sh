@@ -75,12 +75,12 @@ fi
 
 # set ephemeris file
 # check that LAL_PREFIX is set
-if [ -n "$LAL_PREFIX" ]; then
-	EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
-        SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
+if [ -n "$LALPULSAR_PREFIX" ]; then
+	EEPHEM=$LALPULSAR_PREFIX/share/lal/earth05-09.dat
+        SEPHEM=$LALPULSAR_PREFIX/share/lal/sun05-09.dat
 elif [ -n "$LAL_TOP_SRCDIR" ]; then
-        EEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/earth05-09.dat
-        SEPHEM=$LAL_TOP_SRCDIR/packages/pulsar/test/sun05-09.dat
+        EEPHEM=$LAL_TOP_SRCDIR/../lalpulsar/test/earth05-09.dat
+        SEPHEM=$LAL_TOP_SRCDIR/../lalpulsar/test/sun05-09.dat
 else
 	echo Need an environment variable that points to the LAL location 
         exit 2
