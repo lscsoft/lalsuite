@@ -48,7 +48,7 @@ AC_CONFIG_FILES([\
 AC_CONFIG_FILES([src/lalapps/git_version],[chmod +x src/lalapps/git_version])
 AM_INIT_AUTOMAKE([foreign])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
-AC_ARG_VAR(LAL_TOP_SRCDIR,[Set to top source directory of lal])
+AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])

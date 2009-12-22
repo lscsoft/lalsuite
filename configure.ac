@@ -12,10 +12,10 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 LALSUITE_BUILD="true"
+LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
 LAL_LIBS="${lalsuite_top_builddir}/lal/lib/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
-LAL_TOP_SRCDIR="${lalsuite_top_srcdir}/lal"
-export LALSUITE_BUILD LAL_LIBS LAL_CFLAGS LAL_TOP_SRCDIR
+export LALSUITE_BUILD LALSUITE_TOP_SRCDIR LAL_LIBS LAL_CFLAGS
 LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS

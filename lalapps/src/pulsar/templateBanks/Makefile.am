@@ -39,7 +39,7 @@ EXTRA_DIST = testMetricCodes.py
 TESTS = testMetricCodes.py
 
 TESTS_ENVIRONMENT = \
-LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
-LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/../lalpulsar/test/"}
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 CLEANFILES = Fmetric.dat Fmetric_v2.dat
