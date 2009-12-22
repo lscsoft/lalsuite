@@ -224,8 +224,10 @@ noinst_DATA = \
 	inputsft.1
 
 MOSTLYCLEANFILES = \
+	H-1_H1*.sft \
 	OutHistogram.asc \
-	OutHough.asc
+	OutHough.asc \
+	outputsft*.sft
 
 pkgdata_DATA = \
 	circularEphem.dat \
