@@ -190,6 +190,7 @@ packages/utilities/test/DetInverseTest
 packages/utilities/test/DirichletTest
 packages/utilities/test/EigenTest
 packages/utilities/test/FindRootTest
+packages/utilities/test/FlatMeshTest
 packages/utilities/test/IntegrateTest
 packages/utilities/test/InterpolateTest
 packages/utilities/test/LALRunningMedianTest
