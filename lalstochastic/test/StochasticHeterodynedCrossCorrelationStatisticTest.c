@@ -187,7 +187,7 @@ extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 BOOLEAN optVerbose = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FALSE;
 BOOLEAN optMatch   = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE;
 UINT4 optLength     = 0;
@@ -244,6 +244,8 @@ int main( int argc, char *argv[] )
   UINT4 i;
   REAL4 f, x;
   INT4 code;
+
+  lalDebugLevel = LALNDEBUG;
 
   ParseOptions( argc, argv );
 
