@@ -26,7 +26,7 @@ NRCSID (FRAMECACHETESTC,"$Id$");
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( void )
 {
@@ -34,6 +34,8 @@ int main( void )
   static FrCache      *input;
   static FrCache      *cache;
   static FrCacheSieve  sieve;
+
+  lalDebugLevel = 1;
 
   LALFrCacheImport( &status, &input, "catalog.test" );
   TESTSTATUS( &status );
