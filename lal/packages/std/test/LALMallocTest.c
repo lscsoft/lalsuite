@@ -129,7 +129,7 @@ while ( 0 )
 #define die( msg ) ( fputs( "Error: " #msg "\n", mystderr ), exit( 1 ), 1 )
 
 
-int lalDebugLevel = LALMEMDBG;
+extern int lalDebugLevel;
 
 /* make these global so they don't get clobbered by longjmp */
 size_t   i;
@@ -340,6 +340,8 @@ int main( void )
 #if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
   return 77; /* don't do any testing */
 #else
+  lalDebugLevel = LALMEMDBG;
+
   /* get rid of annoying messages from elsewhere */
   setvbuf( mystderr = stdout, NULL, _IONBF, 0 );
   freopen( "/dev/null", "w", stderr );
