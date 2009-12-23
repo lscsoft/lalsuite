@@ -102,7 +102,7 @@ LALGetEarthTimes()
 NRCSID(STACKMETRICTESTC,"$Id$");
 
 /* Default parameter settings. */
-int lalDebugLevel=0;
+extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 100000.0  /* arbitrary */
 #define STARTTIME 0.0         /* arbitrary */
@@ -202,6 +202,8 @@ main(int argc, char **argv)
   static PulsarTimesParamStruc baryParams;
   static PulsarTimesParamStruc compParams;
   static MetricParamStruc params;
+
+  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;

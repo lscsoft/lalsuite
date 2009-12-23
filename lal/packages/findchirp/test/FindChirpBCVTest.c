@@ -73,7 +73,7 @@ InputDataType;
 extern char    *optarg;
 extern int      optind;
 
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 static InputDataType    inputDataType   = gaussian;
 static BOOLEAN          rhosqout        = 0;
@@ -143,7 +143,7 @@ main (int argc, char *argv[])
   InspiralTemplate             *tmplt = NULL;
   InspiralEvent                *event = NULL;
 
-
+  lalDebugLevel = 1;
 
   /*
    *

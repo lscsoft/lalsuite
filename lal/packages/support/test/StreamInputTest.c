@@ -135,7 +135,7 @@ LALZReadSequence()              LALZDestroyVector()
 NRCSID(STREAMINPUTTESTC,"$Id$");
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define INFILE "StreamInput.data"
 
 /* Usage format string. */
@@ -327,6 +327,8 @@ main(int argc, char **argv)
   FILE *fpIn = NULL;           /* input file pointer */
   FILE *fpOut = NULL;          /* output file pointer */
   clock_t start = 0, stop = 0; /* data input timestamps */
+
+  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;

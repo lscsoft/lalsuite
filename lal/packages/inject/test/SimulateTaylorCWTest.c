@@ -196,7 +196,7 @@ LALGenerateTaylorCW()           LALSDestroyVectorSequence()
 NRCSID( SIMULATETAYLORCWTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define EPOCH  (0LL) /* about Jan. 1, 1990 */
 #define APLUS  (1000.0)
 #define ACROSS (1000.0)
@@ -321,6 +321,8 @@ main(int argc, char **argv)
   INT8 tStart, tStop;        /* start and stop times for waveform */
   DetectorResponse detector; /* the detector in question */
   REAL4TimeSeries output;    /* detector output */
+
+  lalDebugLevel = 0;
 
   /*******************************************************************
    * ARGUMENT PARSING (arg stores the current position)              *

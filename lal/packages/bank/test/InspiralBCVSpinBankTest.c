@@ -60,7 +60,7 @@
 #define INSPIRALBCVSPINBANKTESTC_MSGEFILE  "File I/O error"
 /* </lalErrTable> */
 
-int lalDebugLevel=33;
+extern int lalDebugLevel;
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALGSL.h>
@@ -74,6 +74,7 @@ void testfunction(LALStatus *status);
 int main (void)
 {
   static LALStatus status;
+  lalDebugLevel = 33;
   testfunction(&status);
   return 0;
 }

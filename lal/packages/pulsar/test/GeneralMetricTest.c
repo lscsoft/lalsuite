@@ -174,7 +174,7 @@ NRCSID( GENERALMETRICTESTC, "$Id" );
 #define SPOKES 30
 #define MAGNIFY 1.0            /* Magnification factor of ellipses */
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
@@ -214,6 +214,8 @@ int main( int argc, char *argv[] ) {
   UINT2           numSpindown;      /* Number of spindowns */
   char earth[] = "earth00-04.dat";
   char sun[] = "sun00-04.dat";
+
+  lalDebugLevel = 0;
 
   /* Defaults that can be overwritten: */
   metric_code = 1;
