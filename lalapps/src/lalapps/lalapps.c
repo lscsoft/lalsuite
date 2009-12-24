@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +28,10 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALVCSInfo.h>
 #include <LALAppsVCSInfo.h>
+
+#ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameVCSInfo.h>
+#endif
 
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
@@ -165,7 +171,11 @@ char *
 XLALGetVersionString( int level )
 {
   const char *fn = __func__;
-  char lal_info[1024], lalapps_info[1024];
+  char lal_info[1024];
+#ifdef HAVE_LIBLALFRAME
+  char lalframe_info[1024];
+#endif
+  char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
   char *tree_status;
@@ -187,6 +197,14 @@ XLALGetVersionString( int level )
       snprintf(lal_info, sizeof(lal_info),
           "%%%% LAL: %s (%s %s)\n", lalLibraryVCSInfo.version, \
           strsep(&tree_status, delim), lalLibraryVCSInfo.vcsId);
+
+#ifdef HAVE_LIBLALFRAME
+      /* get lalframe info */
+      tree_status = strdup(lalFrameVCSInfo.vcsStatus);
+      snprintf(lalframe_info, sizeof(lalframe_info),
+          "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
+          strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
+#endif
 
       /* get lalapps info */
       tree_status = strdup(lalAppsVCSInfo.vcsStatus);
@@ -216,6 +234,27 @@ XLALGetVersionString( int level )
           LAL_CONFIGURE_DATE ,
           LAL_CONFIGURE_ARGS );
 
+#ifdef HAVE_LIBLALFRAME
+      /* get lalframe info */
+      snprintf( lalframe_info, sizeof(lalframe_info),
+          "%%%% LALFrame-Version: %s\n"
+          "%%%% LALFrame-Id: %s\n"
+          "%%%% LALFrame-Date: %s\n"
+          "%%%% LALFrame-Branch: %s\n"
+          "%%%% LALFrame-Tag: %s\n"
+          "%%%% LALFrame-Status: %s\n"
+          "%%%% LALFrame-Configure Date: %s\n"
+          "%%%% LALApps-Configure Arguments: %s\n",
+          lalFrameVCSInfo.version,
+          lalFrameVCSInfo.vcsId,
+          lalFrameVCSInfo.vcsDate,
+          lalFrameVCSInfo.vcsBranch,
+          lalFrameVCSInfo.vcsTag,
+          lalFrameVCSInfo.vcsStatus,
+          LALFRAME_CONFIGURE_DATE ,
+          LALFRAME_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -239,12 +278,18 @@ XLALGetVersionString( int level )
   }
 
   size_t len = strlen(lal_info) + strlen(lalapps_info) + 1;
+#ifdef HAVE_LIBLALFRAME
+  len += strlen(lalframe_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
   strcpy ( ret, lal_info );
+#ifdef HAVE_LIBLALFRAME
+  strcat ( ret, lalframe_info );
+#endif
   strcat ( ret, lalapps_info );
 
   return ( ret );
