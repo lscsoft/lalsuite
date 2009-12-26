@@ -411,7 +411,7 @@ int main(int argc,char *argv[])
 
   if ( uvar_version )
     {
-      XLALOutputVersionString ( stdout );
+      XLALOutputVersionString ( stdout, 0 );
       exit(0);
     }
 
@@ -1271,7 +1271,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  if ( (codeID = XLALGetVersionString()) == NULL ) {
+  if ( (codeID = XLALGetVersionString(0)) == NULL ) {
     XLALPrintError ("XLALGetVersionString() failed!.\n");
     ABORT (status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL);
   }
