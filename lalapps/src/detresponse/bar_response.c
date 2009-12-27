@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
@@ -55,7 +55,9 @@ int main(int argc, char **argv)
   UINT4            i, j;
   UINT4            n_ra, n_dec;
   REAL8		   src_orientation;
-  
+
+  lalDebugLevel = 0;
+
   if (argc != 7)
   {
     fprintf(stderr, "Error: need N_RA, N_DEC, bar longitude, bar latitude, bar azimuth, src orientation\n");

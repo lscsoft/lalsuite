@@ -43,7 +43,7 @@
   } while( 0 )
 
 const LALStatus blank_status;
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int vrbflg = 0;
 
 lal_errhandler_t lal_errhandler = LAL_ERR_DFLT;
