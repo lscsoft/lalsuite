@@ -121,7 +121,7 @@ LALUnitPair
 
 NRCSID( READFTSERIESTESTC, "$Id$" );
 
-int lalDebugLevel = LALMSGLVL3;
+extern int lalDebugLevel;
 
 
 int main( void )
@@ -184,6 +184,8 @@ int main( void )
 
   /* Data Test Variable */
   UINT4   j;
+
+  lalDebugLevel = LALMSGLVL3;
 
   fprintf(stderr,"Testing value of LALUnitTextSize ... ");
   if ( (int)LALSupportUnitTextSize != (int)LALUnitTextSize )

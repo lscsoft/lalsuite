@@ -197,7 +197,7 @@ LALDSymmetricEigenVectors()     snprintf()
 NRCSID( DIRECTEDMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 86400.0 /* arbitrary */
 #define STARTTIME 0.0       /* arbitrary */
@@ -329,6 +329,8 @@ main(int argc, char **argv)
   static PulsarTimesParamStruc baryParams; /* barycentring parameters */
   static PulsarTimesParamStruc spinParams; /* spindown parameters */
   static PulsarTimesParamStruc compParams; /* composite parameters */
+
+  lalDebugLevel = 0;
 
   /* Set up array creation structure. */
   dimLength.length = 2;

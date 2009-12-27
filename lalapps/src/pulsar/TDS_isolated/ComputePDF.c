@@ -39,7 +39,7 @@ $Id$
 
 #define MAXLENGTH 330000
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int main(int argc, char **argv)
 {
   /***** declare variables *****/
@@ -73,7 +73,9 @@ int main(int argc, char **argv)
   LALDetector 	detectorLHO,detectorLLO, detectorGEO;
   LALSource pulsar;
   PulsarPdfs prob1, prob2, prob3, prob4, prob;
-  
+
+  lalDebugLevel = 0;
+
 /* get command line arguments and print error if there is wrong number of arguments.  if 
 the variable condor is defined, then read in the first argument pulsar_name from stdin */
 

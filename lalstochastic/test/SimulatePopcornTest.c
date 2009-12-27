@@ -90,7 +90,7 @@ static void wformfunc (REAL4 *result,REAL4 x)
    return;
  }
 
-int lalDebugLevel = 3;
+extern int lalDebugLevel;
 int main ( void )
 {
   static LALStatus status;
@@ -122,6 +122,8 @@ int main ( void )
 
   char fname[50];
   FILE *pfzero,*pfone;
+
+  lalDebugLevel = 3;
 
   /* input parameters */
    PopcornInput.inputwform = &wformfunc;

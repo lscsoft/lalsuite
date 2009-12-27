@@ -571,7 +571,7 @@ global \texttt{lalDebugLevel}}
 As mentioned above, any module including \verb@LALStatusMacros.h@
 includes the global variable \verb@lalDebugLevel@ as an
 \verb@extern int@.  At least one module in the final executable
-program must have a global \emph{declaration} of \verb@int lalDebugLevel@
+program must have a global \emph{declaration} of \verb@extern int lalDebugLevel@
 (not \verb@extern int@), and assign \verb@lalDebugLevel@ a value.  In
 most cases \verb@lalDebugLevel@ will be declared in the module containing
 the \verb@main()@ function, and will be assigned a value on
@@ -591,11 +591,12 @@ many LAL functions are called.
 Thus a typical LAL program might look something like the following:
 
 \begin{verbatim}
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( int argc, char **argv )
 {
   static LALStatus stat;
+  lalDebugLevel = 1;
   MyFunction( &stat );
   REPORTSTATUS( &stat );
   return stat.statusCode;

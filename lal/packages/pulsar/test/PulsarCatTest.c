@@ -171,7 +171,7 @@ this with the \verb@-i@ option.
 NRCSID( PULSARCATTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define J2000GPS 630763213 /* J2000.0 epoch in GPS seconds */
 #define J2000JD    2451545 /* J2000.0 epoch in Julian days */
 
@@ -277,6 +277,8 @@ main(int argc, char **argv)
   LIGOTimeGPS epoch;           /* epoch of update */
   LALPlaceAndGPS detectorTime; /* epoch and detector site */
   EphemerisData *edat = NULL;  /* detector ephemerides */
+
+  lalDebugLevel = 0;
 
   /* First set up some defaults. */
   memset( &node, 0, sizeof(PulsarCatNode) );

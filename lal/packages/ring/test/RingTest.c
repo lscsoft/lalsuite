@@ -59,7 +59,7 @@ NRCSID (RINGTESTC,"$Id$");
     exit( 1 ); \
   } else ((void)0)
 
-int lalDebugLevel = LALMSGLVL3;
+extern int lalDebugLevel;
 
 int main( void )
 {
@@ -75,6 +75,7 @@ int main( void )
   UINT4 i;
   FILE *fp;
 
+  lalDebugLevel = LALMSGLVL3;
 
   LALCreateVector( &status, &ring.data, npts );
   TestStatus( &status );

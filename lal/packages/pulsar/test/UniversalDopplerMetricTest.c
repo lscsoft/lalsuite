@@ -52,7 +52,7 @@
 // ---------- global variables --------------------
 static LALStatus empty_status;
 
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 // ---------- local prototypes
 static int test_XLALComputeOrbitalDerivatives(void);
@@ -64,6 +64,8 @@ int main( void )
 {
   const char *fn = __func__;
   INT4 ret;
+
+  lalDebugLevel = 1;
 
   ret = test_XLALComputeOrbitalDerivatives();
 

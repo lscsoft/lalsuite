@@ -176,7 +176,7 @@ LALDTBaryPtolemaic()            LALGetEarthTimes()
 NRCSID( SKYMETRICTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 86400.0 /* arbitrary */
 #define STARTTIME 0.0       /* arbitrary */
@@ -302,6 +302,8 @@ main(int argc, char **argv)
   INT4 *topRange2, *botRange2;   /* adjusted grid range limits */
   static MetricParamStruc params; /* metric computation parameters */
   static PulsarTimesParamStruc baryParams; /* barycentring parameters */
+
+  lalDebugLevel = 0;
 
   /* Some more initializations. */
   ra[0] = RA_MIN; dec[0] = DEC_MIN;
