@@ -15,7 +15,7 @@ liblalxml_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = lalxml-user-env.sh lalxml-user-env.csh
 sysconf_DATA = lalxml-user-env.sh lalxml-user-env.csh
-BUILT_SOURCE = lalxml-user-env.sh lalxml-user-env.csh
+BUILT_SOURCES = lalxml-user-env.sh lalxml-user-env.csh
 
 lalxml-user-env.sh: Makefile
 	@echo "creating $@" ;\

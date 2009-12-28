@@ -25,7 +25,7 @@ liblalstochastic_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = lalstochastic-user-env.sh lalstochastic-user-env.csh
 sysconf_DATA = lalstochastic-user-env.sh lalstochastic-user-env.csh
-BUILT_SOURCE = lalstochastic-user-env.sh lalstochastic-user-env.csh
+BUILT_SOURCES = lalstochastic-user-env.sh lalstochastic-user-env.csh
 
 lalstochastic-user-env.sh: Makefile
 	@echo "creating $@" ;\
