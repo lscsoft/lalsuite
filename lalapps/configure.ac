@@ -310,7 +310,7 @@ echo "
                 Frame library support is $FRAME_ENABLE_VAL
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
-                LAL MetaIo library support is $LALMETAIO_ENABLE_VAL
+                LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
