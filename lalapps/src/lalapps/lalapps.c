@@ -33,6 +33,10 @@
 #include <lal/LALFrameVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALMETAIO
+#include <lal/LALMetaIOVCSInfo.h>
+#endif
+
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
     if ( lalDebugLevel & LALERROR )                                            \
@@ -175,6 +179,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALFRAME
   char lalframe_info[1024];
 #endif
+#ifdef HAVE_LIBLALMETAIO
+  char lalmetaio_info[1024];
+#endif
   char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
@@ -204,6 +211,14 @@ XLALGetVersionString( int level )
       snprintf(lalframe_info, sizeof(lalframe_info),
           "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
           strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALMETAIO
+      /* get lalmetaio info */
+      tree_status = strdup(lalMetaIOVCSInfo.vcsStatus);
+      snprintf(lalmetaio_info, sizeof(lalmetaio_info),
+          "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
+          strsep(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -255,6 +270,27 @@ XLALGetVersionString( int level )
           LALFRAME_CONFIGURE_ARGS );
 #endif
 
+#ifdef HAVE_LIBLALMETAIO
+      /* get lalmetaio info */
+      snprintf( lalmetaio_info, sizeof(lalmetaio_info),
+          "%%%% LALMetaIO-Version: %s\n"
+          "%%%% LALMetaIO-Id: %s\n"
+          "%%%% LALMetaIO-Date: %s\n"
+          "%%%% LALMetaIO-Branch: %s\n"
+          "%%%% LALMetaIO-Tag: %s\n"
+          "%%%% LALMetaIO-Status: %s\n"
+          "%%%% LALMetaIO-Configure Date: %s\n"
+          "%%%% LALMetaIO-Configure Arguments: %s\n",
+          lalMetaIOVCSInfo.version,
+          lalMetaIOVCSInfo.vcsId,
+          lalMetaIOVCSInfo.vcsDate,
+          lalMetaIOVCSInfo.vcsBranch,
+          lalMetaIOVCSInfo.vcsTag,
+          lalMetaIOVCSInfo.vcsStatus,
+          LALMETAIO_CONFIGURE_DATE ,
+          LALMETAIO_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -281,6 +317,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALFRAME
   len += strlen(lalframe_info);
 #endif
+#ifdef HAVE_LIBLALMETAIO
+  len += strlen(lalmetaio_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
@@ -289,6 +328,9 @@ XLALGetVersionString( int level )
   strcpy ( ret, lal_info );
 #ifdef HAVE_LIBLALFRAME
   strcat ( ret, lalframe_info );
+#endif
+#ifdef HAVE_LIBLALMETAIO
+  strcat ( ret, lalmetaio_info );
 #endif
   strcat ( ret, lalapps_info );
 
