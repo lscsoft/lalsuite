@@ -37,6 +37,10 @@
 #include <lal/LALMetaIOVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALBURST
+#include <lal/LALBurstVCSInfo.h>
+#endif
+
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
     if ( lalDebugLevel & LALERROR )                                            \
@@ -182,6 +186,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALMETAIO
   char lalmetaio_info[1024];
 #endif
+#ifdef HAVE_LIBLALBURST
+  char lalburst_info[1024];
+#endif
   char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
@@ -219,6 +226,14 @@ XLALGetVersionString( int level )
       snprintf(lalmetaio_info, sizeof(lalmetaio_info),
           "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
           strsep(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALBURST
+      /* get lalburst info */
+      tree_status = strdup(lalBurstVCSInfo.vcsStatus);
+      snprintf(lalburst_info, sizeof(lalburst_info),
+          "%%%% LALBurst: %s (%s %s)\n", lalBurstVCSInfo.version, \
+          strsep(&tree_status, delim), lalBurstVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -291,6 +306,27 @@ XLALGetVersionString( int level )
           LALMETAIO_CONFIGURE_ARGS );
 #endif
 
+#ifdef HAVE_LIBLALBURST
+      /* get lalburst info */
+      snprintf( lalburst_info, sizeof(lalburst_info),
+          "%%%% LALBurst-Version: %s\n"
+          "%%%% LALBurst-Id: %s\n"
+          "%%%% LALBurst-Date: %s\n"
+          "%%%% LALBurst-Branch: %s\n"
+          "%%%% LALBurst-Tag: %s\n"
+          "%%%% LALBurst-Status: %s\n"
+          "%%%% LALBurst-Configure Date: %s\n"
+          "%%%% LALBurst-Configure Arguments: %s\n",
+          lalBurstVCSInfo.version,
+          lalBurstVCSInfo.vcsId,
+          lalBurstVCSInfo.vcsDate,
+          lalBurstVCSInfo.vcsBranch,
+          lalBurstVCSInfo.vcsTag,
+          lalBurstVCSInfo.vcsStatus,
+          LALBURST_CONFIGURE_DATE ,
+          LALBURST_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -320,6 +356,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALMETAIO
   len += strlen(lalmetaio_info);
 #endif
+#ifdef HAVE_LIBLALBURST
+  len += strlen(lalburst_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
@@ -331,6 +370,9 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALMETAIO
   strcat ( ret, lalmetaio_info );
+#endif
+#ifdef HAVE_LIBLALBURST
+  strcat ( ret, lalburst_info );
 #endif
   strcat ( ret, lalapps_info );
 
