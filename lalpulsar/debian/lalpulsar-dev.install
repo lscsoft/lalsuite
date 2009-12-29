@@ -1,0 +1,7 @@
+#opt/lscsoft/lalpulsar/bin/lal-config
+opt/lscsoft/lalpulsar/include/lal*
+opt/lscsoft/lalpulsar/lib/*a
+opt/lscsoft/lalpulsar/lib/pkgconfig
+#opt/lscsoft/lalpulsar/share/man/man1/lal-config.1*
+#opt/lscsoft/lalpulsar/share/man/man3/lal.3*
+#opt/lscsoft/lalpulsar/share/lal

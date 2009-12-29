@@ -162,6 +162,9 @@ src/pulsar/FDS_isolated/lalapps_polka
 src/pulsar/FDS_isolated/lalapps_synthesizeBstatMC
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
+src/pulsar/FDS_isolated/testFstat_v3
+src/pulsar/FDS_isolated/testFstat_v3-LFT.sft
+src/pulsar/FDS_isolated/testFstat_v3-timeseries.dat
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
@@ -208,6 +211,8 @@ src/pulsar/lalapps_create_solar_system_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts
 src/pulsar/lalapps_psd
+src/pulsar/templateBanks/Fmetric.dat
+src/pulsar/templateBanks/Fmetric_v2.dat
 src/pulsar/templateBanks/lalapps_FstatMetric
 src/pulsar/templateBanks/lalapps_FstatMetric_v2
 src/pulsar/templateBanks/lalapps_getMesh

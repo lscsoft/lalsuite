@@ -97,16 +97,6 @@ AC_CONFIG_FILES([ \
   packages/findchirp/include/Makefile \
   packages/findchirp/src/Makefile \
   packages/findchirp/test/Makefile \
-  packages/pulsar/Makefile \
-  packages/pulsar/doc/Makefile \
-  packages/pulsar/include/Makefile \
-  packages/pulsar/src/Makefile \
-  packages/pulsar/test/Makefile \
-  packages/houghpulsar/Makefile \
-  packages/houghpulsar/doc/Makefile \
-  packages/houghpulsar/include/Makefile \
-  packages/houghpulsar/src/Makefile \
-  packages/houghpulsar/test/Makefile \
   packages/support/Makefile \
   packages/support/doc/Makefile \
   packages/support/include/Makefile \
