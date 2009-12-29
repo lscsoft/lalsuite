@@ -131,7 +131,7 @@ NRCSID( PTOLEMETRICTESTC, "$Id" );
 #define SPOKES 30
 #define MAGNIFY 1.0           /* Magnification factor of ellipses */
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
@@ -148,6 +148,7 @@ int main( int argc, char *argv[] ) {
   FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
   FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
 
+  lalDebugLevel = 0;
 
   /* Default values. */
   in.duration = DEFAULT_DURATION;

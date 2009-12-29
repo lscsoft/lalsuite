@@ -275,7 +275,7 @@ LALPlotTwoDMesh()
 NRCSID( TWODMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define X1 (1.0)
 #define Y1 (0.0)
 #define X2 (0.0)
@@ -363,6 +363,8 @@ main(int argc, char **argv)
   REAL4 a = A_DEFAULT, b = B_DEFAULT, c = C_DEFAULT; /* ellipse params. */
   REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;       /* ellipse x gradient */
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;       /* ellipse y gradient */
+
+  lalDebugLevel = 0;
 
   /******************************************************************
    * ARGUMENT PARSING                                               *

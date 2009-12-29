@@ -84,7 +84,7 @@ NRCSID (TIMEFREQFFTTESTC,"$Id$");
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose       = 0;
 
 static void
@@ -128,6 +128,8 @@ int main( int argc, char *argv[] )
   REAL4 var[] = { 5, 16 };
 
   UINT4 j, sr, np, vr;
+
+  lalDebugLevel = 0;
 
   /*CHAR fname[2048];*/
 

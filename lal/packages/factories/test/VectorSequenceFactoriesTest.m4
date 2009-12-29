@@ -72,7 +72,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -125,6 +125,8 @@ include(`VectorSequenceFactoriesTestFunction.m4')
 
 int main( int argc, char *argv[] )
 {
+  lalDebugLevel = 0;
+
   ParseOptions( argc, argv );
 
   VectorSequenceFactoriesTest();

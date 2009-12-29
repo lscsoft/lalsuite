@@ -102,7 +102,7 @@ NRCSID( HETERODYNEPULSARTESTC, "$Id$" );
 #define HETERODYNEPULSARTEST_F2 0  /* 2nd time derivative of pulsar frequency */
 /******* DECLARE AND SET GLOBAL lalDebugLevel ************/
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int main(void)
 {
   UINT4 		i;
@@ -129,6 +129,7 @@ int main(void)
   char earth[] = "earth00.dat";
   char sun[] = "sun00.dat";
 
+  lalDebugLevel = 0;
 
   /******* ALLOCATE MEMORY *************/
 

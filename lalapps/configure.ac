@@ -2,6 +2,7 @@ AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([\
   Makefile \
   lalapps.spec \
@@ -122,17 +123,28 @@ AC_PROG_LN_S
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
-  AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile])
+  AC_CHECK_PROGS([CONDOR_VERSION],[condor_version],[false])
+  if test "x$CONDOR_VERSION" != "xfalse"; then
+    AC_MSG_CHECKING([Condor version])
+    CONDOR_VERS=`$CONDOR_VERSION | grep CondorVersion | awk '{print $2}'`
+    AC_MSG_RESULT([$CONDOR_VERS])
+  fi
+  AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
+  if test "x$CONDOR_COMPILE" = "xfalse"; then
+    AC_MSG_ERROR([condor_compile not found])
+  fi
   CC="$CONDOR_COMPILE $CC"
-  case "$host" in
-    *-*-linux* | *-*-osf* | *-*-hpux* ) CFLAGS="$CFLAGS -static" AC_DISABLE_SHARED;;
-  esac
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
+  # FIXME condor_compile should correctly identify the linker
+  LD="/usr/bin/ld"
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # further program checks
-AC_PROG_LIBTOOL
+LT_INIT
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
@@ -298,7 +310,7 @@ echo "
                 Frame library support is $FRAME_ENABLE_VAL
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
-                LAL MetaIo library support is $LALMETAIO_ENABLE_VAL
+                LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL

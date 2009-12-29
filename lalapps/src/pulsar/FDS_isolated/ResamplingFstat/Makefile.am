@@ -19,3 +19,9 @@ resampling_SOURCES = proc.c fstat.c
 lalapps_ComputeFStatistic_resamp_SOURCES = ComputeFStatistic_resamp.c ../HeapToplist.c ../HeapToplist.h
 
 TESTS = testCFS_resamp.sh
+EXTRA_DIST = testCFS_resamp.sh
+
+TESTS_ENVIRONMENT = \
+LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
+LAL_PREFIX=$(LAL_PREFIX) \
+LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}

@@ -66,13 +66,15 @@ to.
 
 NRCSID (LALVERSIONTESTC,"$Id$");
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int main( void )
 {
   static LALStatus status;
   char msg[1024];
   int verbose = 1;
+
+  lalDebugLevel = 0;
 
   if ( strcmp( LAL_VERSION, lalVersion ) ||
        strcmp( LAL_CONFIGURE_ARGS, lalConfigureArgs ) ||

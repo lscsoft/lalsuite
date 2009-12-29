@@ -260,7 +260,7 @@ static void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
-int lalDebugLevel = 3;
+extern int lalDebugLevel;
 
 int main(int argc, char **argv)
 {
@@ -348,6 +348,7 @@ int main(int argc, char **argv)
 
   /***** END VARIABLE DECLARATION *****/
 
+  lalDebugLevel = 3;
 
   /***** PARSE COMMAND LINE OPTIONS *****/
   basicInputsFile=(char *)LALMalloc(50*sizeof(char));

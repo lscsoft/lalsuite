@@ -17,6 +17,7 @@ liblalapps_la_SOURCES = \
 	getopt.h \
 	processtable.c \
 	processtable.h \
+	LALAppsVCSInfo.h \
 	$(FRAMESRCS)
 
 bin_PROGRAMS = \

@@ -12,7 +12,7 @@ liblalmetaio_la_SOURCES = \
 
 CLEANFILES = lalmetaio-user-env.sh lalmetaio-user-env.csh
 sysconf_DATA = lalmetaio-user-env.sh lalmetaio-user-env.csh
-BUILT_SOURCE = lalmetaio-user-env.sh lalmetaio-user-env.csh
+BUILT_SOURCES = lalmetaio-user-env.sh lalmetaio-user-env.csh
 
 lalmetaio-user-env.sh: Makefile
 	@echo "creating $@" ;\
