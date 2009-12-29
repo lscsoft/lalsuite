@@ -22,9 +22,7 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
 	$(top_builddir)/packages/bank/src/libbank.la \
 	$(top_builddir)/packages/ring/src/libring.la \
-	$(top_builddir)/packages/findchirp/src/libfindchirp.la \
-	$(top_builddir)/packages/pulsar/src/libpulsar.la \
-	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la
+	$(top_builddir)/packages/findchirp/src/libfindchirp.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
