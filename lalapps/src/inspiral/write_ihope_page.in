@@ -549,6 +549,18 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   configs[section] = None
   images_dirs[section] = ZLdir
 
+  section = 'ifar2'
+  sections.append(section)
+  htmlAndPlot.append(section)
+  titles[section] = "IFAR and loudest event tables at CAT_2 (these include the hardware injections)."
+  tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1] + '*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  imagetags[section] = ['cumhist_combined_ifar']
+  captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
   section = 'ifar3'
   sections.append(section)
   htmlAndPlot.append(section)

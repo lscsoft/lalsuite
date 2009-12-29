@@ -150,7 +150,7 @@ LALSCreateVector()              LALSDestroyVector()
 NRCSID(FLATMESHTESTC,"$Id$");
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define MISMATCH 0.1
 #define DIM 2
 REAL4 defaultMatrix[] = { 1.0, 0.0, 0.0, 1.0 };
@@ -211,6 +211,8 @@ main(int argc, char **argv)
   REAL4VectorSequence *corners = NULL;   /* corners of serach region */
   REAL4VectorSequence *mesh = NULL;      /* mesh of parameter values */
   FILE *fp;                  /* input/output file pointer */
+
+  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;

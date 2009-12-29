@@ -358,7 +358,7 @@ NRCSID( FitToPulsarTestC, "$Id$" );
 #define FITTOPULSARTEST_T0 630720013  /* Jan 1, 2000, 00:00:00 */
 
 /* int lalDebugLevel = LALMSGLVL1; */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int main(void)
 {
   static LALStatus      status;
@@ -382,7 +382,7 @@ int main(void)
   LALTimeIntervalAndNSample     time_info;
   UINT4                         i;
 
-
+  lalDebugLevel = 0;
 
   /* Allocate memory */
   input.B = NULL;

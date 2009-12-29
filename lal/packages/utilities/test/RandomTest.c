@@ -87,7 +87,7 @@ extern char *optarg;
 extern int   optind;
 
 int output     = 0;
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -111,6 +111,7 @@ main (int argc, char *argv[])
   static RandomParams *randpar;
   UINT4                i;
 
+  lalDebugLevel = 0;
 
   /*
    *

@@ -30,7 +30,7 @@
 #include "util.h"
 #include <string.h>
 
-int lalDebugLevel = 7;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
@@ -44,6 +44,8 @@ main(int argc, char **argv)
                               system barycenter */
   LIGOTimeGPS   gps;
   UINT4         i;
+
+  lalDebugLevel = 7;
 
   s.statusPtr = NULL;
     

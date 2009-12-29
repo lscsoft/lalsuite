@@ -23,7 +23,7 @@ liblalframe_la_SOURCES = \
 
 CLEANFILES = lalframe-user-env.sh lalframe-user-env.csh
 sysconf_DATA = lalframe-user-env.sh lalframe-user-env.csh
-BUILT_SOURCE = lalframe-user-env.sh lalframe-user-env.csh
+BUILT_SOURCES = lalframe-user-env.sh lalframe-user-env.csh
 
 lalframe-user-env.sh: Makefile
 	@echo "creating $@" ;\

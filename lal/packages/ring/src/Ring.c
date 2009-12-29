@@ -254,7 +254,7 @@ REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt
 /* <lalVerbatim file="RingCP"> */
 REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb)
 /* </lalVerbatim> */
-{  
+{
   REAL8 gtt;
   REAL8 gtf, gtQ;
   REAL8 df, dQ, dt;
@@ -265,10 +265,10 @@ REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb)
   gtt = ( LAL_PI*LAL_PI * f*f ) * ( 1. + 4.*Q2 ) / ( Q2 );
   gtf = - ( LAL_PI * Q ) * ( 1. + 4.*Q2) / ( 1. + 2.*Q2 );
   gtQ = ( LAL_PI * f ) * ( 1. - 2.*Q2 ) / ( ( 1. + 2.*Q2 )*( 1. + 2.*Q2 ) );
-  
+
   df = fa - fb;
   dQ = Qa - Qb;
-  
+
   dt = -(gtf * df + gtQ * dQ)/gtt;
 
   return ( dt );

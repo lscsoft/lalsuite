@@ -39,7 +39,7 @@ liblalburst_la_SOURCES = \
 
 CLEANFILES = lalburst-user-env.sh lalburst-user-env.csh
 sysconf_DATA = lalburst-user-env.sh lalburst-user-env.csh
-BUILT_SOURCE = lalburst-user-env.sh lalburst-user-env.csh
+BUILT_SOURCES = lalburst-user-env.sh lalburst-user-env.csh
 
 lalburst-user-env.sh: Makefile
 	@echo "creating $@" ;\
