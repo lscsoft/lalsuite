@@ -18,8 +18,12 @@ lalpulsar-*.tar.gz
 lalpulsar.pc
 lalpulsar.spec
 libtool
+src/LALPulsarConfig.h
+src/LALPulsarVCSInfo.h
+src/git_version
 src/lalpulsar-user-env.csh
 src/lalpulsar-user-env.sh
+src/stamp-h2
 test/ExtrapolatePulsarSpinsTest
 test/FitToPulsarTest
 test/FoldAmplitudesTest
