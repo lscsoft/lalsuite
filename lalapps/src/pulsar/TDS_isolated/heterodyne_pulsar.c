@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
   Filters iirFilters;
 
   FILE *fpin=NULL, *fpout=NULL;
-  FrameCache cache;
+  static FrameCache cache;
   INT4 count=0, frcount=0;
 
   CHAR outputfile[256]="";
