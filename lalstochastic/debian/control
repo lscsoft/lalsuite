@@ -2,7 +2,7 @@ Source: lalstochastic
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, lal-dev (>= 6.3), lal (>= 6.3), pkg-config
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, lal-dev (>= 6.3), lal (>= 6.3), pkg-config, python
 Standards-Version: 3.7.2
 
 Package: lalstochastic
