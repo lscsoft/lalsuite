@@ -41,6 +41,10 @@
 #include <lal/LALBurstVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALSTOCHASTIC
+#include <lal/LALStochasticVCSInfo.h>
+#endif
+
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
     if ( lalDebugLevel & LALERROR )                                            \
@@ -189,6 +193,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALBURST
   char lalburst_info[1024];
 #endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  char lalstochastic_info[1024];
+#endif
   char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
@@ -234,6 +241,14 @@ XLALGetVersionString( int level )
       snprintf(lalburst_info, sizeof(lalburst_info),
           "%%%% LALBurst: %s (%s %s)\n", lalBurstVCSInfo.version, \
           strsep(&tree_status, delim), lalBurstVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALSTOCHASTIC
+      /* get lalstochastic info */
+      tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
+      snprintf(lalstochastic_info, sizeof(lalstochastic_info),
+          "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
+          strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -327,6 +342,27 @@ XLALGetVersionString( int level )
           LALBURST_CONFIGURE_ARGS );
 #endif
 
+#ifdef HAVE_LIBLALSTOCHASTIC
+      /* get lalstochastic info */
+      snprintf( lalstochastic_info, sizeof(lalstochastic_info),
+          "%%%% LALStochastic-Version: %s\n"
+          "%%%% LALStochastic-Id: %s\n"
+          "%%%% LALStochastic-Date: %s\n"
+          "%%%% LALStochastic-Branch: %s\n"
+          "%%%% LALStochastic-Tag: %s\n"
+          "%%%% LALStochastic-Status: %s\n"
+          "%%%% LALStochastic-Configure Date: %s\n"
+          "%%%% LALStochastic-Configure Arguments: %s\n",
+          lalStochasticVCSInfo.version,
+          lalStochasticVCSInfo.vcsId,
+          lalStochasticVCSInfo.vcsDate,
+          lalStochasticVCSInfo.vcsBranch,
+          lalStochasticVCSInfo.vcsTag,
+          lalStochasticVCSInfo.vcsStatus,
+          LALSTOCHASTIC_CONFIGURE_DATE ,
+          LALSTOCHASTIC_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -359,6 +395,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALBURST
   len += strlen(lalburst_info);
 #endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  len += strlen(lalstochastic_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
@@ -373,6 +412,9 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALBURST
   strcat ( ret, lalburst_info );
+#endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  strcat ( ret, lalstochastic_info );
 #endif
   strcat ( ret, lalapps_info );
 
