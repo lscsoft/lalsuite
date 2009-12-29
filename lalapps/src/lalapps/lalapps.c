@@ -45,6 +45,10 @@
 #include <lal/LALStochasticVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALPULSAR
+#include <lal/LALPulsarVCSInfo.h>
+#endif
+
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
     if ( lalDebugLevel & LALERROR )                                            \
@@ -196,6 +200,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALSTOCHASTIC
   char lalstochastic_info[1024];
 #endif
+#ifdef HAVE_LIBLALPULSAR
+  char lalpulsar_info[1024];
+#endif
   char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
@@ -249,6 +256,14 @@ XLALGetVersionString( int level )
       snprintf(lalstochastic_info, sizeof(lalstochastic_info),
           "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
           strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALPULSAR
+      /* get lalpulsar info */
+      tree_status = strdup(lalPulsarVCSInfo.vcsStatus);
+      snprintf(lalpulsar_info, sizeof(lalpulsar_info),
+          "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
+          strsep(&tree_status, delim), lalPulsarVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -363,6 +378,27 @@ XLALGetVersionString( int level )
           LALSTOCHASTIC_CONFIGURE_ARGS );
 #endif
 
+#ifdef HAVE_LIBLALPULSAR
+      /* get lalpulsar info */
+      snprintf( lalpulsar_info, sizeof(lalpulsar_info),
+          "%%%% LALPulsar-Version: %s\n"
+          "%%%% LALPulsar-Id: %s\n"
+          "%%%% LALPulsar-Date: %s\n"
+          "%%%% LALPulsar-Branch: %s\n"
+          "%%%% LALPulsar-Tag: %s\n"
+          "%%%% LALPulsar-Status: %s\n"
+          "%%%% LALPulsar-Configure Date: %s\n"
+          "%%%% LALPulsar-Configure Arguments: %s\n",
+          lalPulsarVCSInfo.version,
+          lalPulsarVCSInfo.vcsId,
+          lalPulsarVCSInfo.vcsDate,
+          lalPulsarVCSInfo.vcsBranch,
+          lalPulsarVCSInfo.vcsTag,
+          lalPulsarVCSInfo.vcsStatus,
+          LALPULSAR_CONFIGURE_DATE ,
+          LALPULSAR_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -398,6 +434,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALSTOCHASTIC
   len += strlen(lalstochastic_info);
 #endif
+#ifdef HAVE_LIBLALPULSAR
+  len += strlen(lalpulsar_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
@@ -415,6 +454,9 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALSTOCHASTIC
   strcat ( ret, lalstochastic_info );
+#endif
+#ifdef HAVE_LIBLALPULSAR
+  strcat ( ret, lalpulsar_info );
 #endif
   strcat ( ret, lalapps_info );
 
