@@ -49,6 +49,10 @@
 #include <lal/LALPulsarVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALXML
+#include <lal/LALXMLVCSInfo.h>
+#endif
+
 #define FAILMSG( stat, func, file, line, id )                                  \
   do {                                                                         \
     if ( lalDebugLevel & LALERROR )                                            \
@@ -203,6 +207,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALPULSAR
   char lalpulsar_info[1024];
 #endif
+#ifdef HAVE_LIBLALXML
+  char lalxml_info[1024];
+#endif
   char lalapps_info[1024];
   char *ret;
   const char delim[] = ":";
@@ -264,6 +271,14 @@ XLALGetVersionString( int level )
       snprintf(lalpulsar_info, sizeof(lalpulsar_info),
           "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
           strsep(&tree_status, delim), lalPulsarVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALXML
+      /* get lalxml info */
+      tree_status = strdup(lalXMLVCSInfo.vcsStatus);
+      snprintf(lalxml_info, sizeof(lalxml_info),
+          "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
+          strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -399,6 +414,27 @@ XLALGetVersionString( int level )
           LALPULSAR_CONFIGURE_ARGS );
 #endif
 
+#ifdef HAVE_LIBLALXML
+      /* get lalxml info */
+      snprintf( lalxml_info, sizeof(lalxml_info),
+          "%%%% LALXML-Version: %s\n"
+          "%%%% LALXML-Id: %s\n"
+          "%%%% LALXML-Date: %s\n"
+          "%%%% LALXML-Branch: %s\n"
+          "%%%% LALXML-Tag: %s\n"
+          "%%%% LALXML-Status: %s\n"
+          "%%%% LALXML-Configure Date: %s\n"
+          "%%%% LALXML-Configure Arguments: %s\n",
+          lalXMLVCSInfo.version,
+          lalXMLVCSInfo.vcsId,
+          lalXMLVCSInfo.vcsDate,
+          lalXMLVCSInfo.vcsBranch,
+          lalXMLVCSInfo.vcsTag,
+          lalXMLVCSInfo.vcsStatus,
+          LALXML_CONFIGURE_DATE ,
+          LALXML_CONFIGURE_ARGS );
+#endif
+
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -437,6 +473,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALPULSAR
   len += strlen(lalpulsar_info);
 #endif
+#ifdef HAVE_LIBLALXML
+  len += strlen(lalxml_info);
+#endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
@@ -457,6 +496,9 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALPULSAR
   strcat ( ret, lalpulsar_info );
+#endif
+#ifdef HAVE_LIBLALXML
+  strcat ( ret, lalxml_info );
 #endif
   strcat ( ret, lalapps_info );
 
