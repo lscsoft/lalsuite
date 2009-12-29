@@ -3,6 +3,8 @@ INCLUDES = -I$(top_builddir)/include
 lalxmlincludedir = $(includedir)/lal
 lalxmlinclude_HEADERS = \
 	LALXML.h \
+	LALXMLConfig.h \
+	LALXMLVCSInfo.h \
 	LALXMLVOTableCommon.h \
 	LALXMLVOTableSerializers.h
 
@@ -13,9 +15,18 @@ liblalxml_la_SOURCES = \
 	LALXMLVOTableSerializers.c
 liblalxml_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = lalxml-user-env.sh lalxml-user-env.csh
-sysconf_DATA = lalxml-user-env.sh lalxml-user-env.csh
-BUILT_SOURCES = lalxml-user-env.sh lalxml-user-env.csh
+CLEANFILES = \
+	lalxml-user-env.sh \
+	lalxml-user-env.csh
+
+sysconf_DATA = \
+	lalxml-user-env.sh \
+	lalxml-user-env.csh
+
+BUILT_SOURCES = \
+	LALXMLVCSInfo.h \
+	lalxml-user-env.sh \
+	lalxml-user-env.csh
 
 lalxml-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -54,5 +65,21 @@ lalxml-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+EXTRA_DIST = \
+	LALXMLConfig.h.in \
+	LALXMLVCSInfo.h.in \
+	git_version.in
+
+MOSTLYCLEANFILES = .vcsinfo
+
+.vcsinfo:
+	@touch .vcsinfo
+
+LALXMLVCSInfo.h: LALXMLVCSInfo.h.in .vcsinfo git_version
+	@echo "creating LALXMLVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALXML $$sourced $$buildd
+	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@
