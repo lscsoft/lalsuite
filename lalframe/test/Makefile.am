@@ -1,4 +1,5 @@
 AMCFLAGS = $(LALSUPPORT_CFLAGS)
+LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalframe.la
 
 FRAMEFILES = \
 	F-TEST-600000000-60.gwf \
@@ -40,37 +41,13 @@ EXTRA_DIST = \
 	FrameCacheTest.sh
 
 AggregationTest_SOURCES = AggregationTest.c
-AggregationTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 FrameCacheTest_SOURCES = FrameCacheTest.c
-FrameCacheTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 FrameDataTest_SOURCES = FrameDataTest.c
-FrameDataTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 FrameStreamTest_SOURCES = FrameStreamTest.c
-FrameStreamTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 MakeFrames_SOURCES = MakeFrames.c
-MakeFrames_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 Read40mData_SOURCES = Read40mData.c
-Read40mData_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 ReadGEOData_SOURCES = ReadGEOData.c
-ReadGEOData_LDADD = \
-$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 ReadLHOData_SOURCES = ReadLHOData.c
-ReadLHOData_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalframe.la
 
 MOSTLYCLEANFILES = *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
 CLEANFILES = catalog catalog.test H-H1_LSC_AS_Q-600000120-60.gwf
