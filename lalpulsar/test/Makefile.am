@@ -1,5 +1,4 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
-INCLUDES = -I../include
 
 if LALSUPPORT
 check_PROGRAMS = \
