@@ -40,15 +40,6 @@ EXTRA_DIST = \
 	L1-CAL-V03-729273600-734367600.cache \
 	FrameCacheTest.sh
 
-AggregationTest_SOURCES = AggregationTest.c
-FrameCacheTest_SOURCES = FrameCacheTest.c
-FrameDataTest_SOURCES = FrameDataTest.c
-FrameStreamTest_SOURCES = FrameStreamTest.c
-MakeFrames_SOURCES = MakeFrames.c
-Read40mData_SOURCES = Read40mData.c
-ReadGEOData_SOURCES = ReadGEOData.c
-ReadLHOData_SOURCES = ReadLHOData.c
-
 MOSTLYCLEANFILES = *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
 CLEANFILES = catalog catalog.test H-H1_LSC_AS_Q-600000120-60.gwf
 
