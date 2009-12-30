@@ -2223,6 +2223,59 @@ class candidateList:
             print entry,
     # End printSummary method
     
+    def applyPercentageThreshold(self,propertyString="P",percentile=0.05):
+        """
+        Uses the text label propertyString to give the top percentile
+        of that property. A '!' negates the expresion and gives the
+        result below that cutoff.
+        """
+        #Load up curve elements and make a vector to find stats
+        if self.curves.__len__() < 1:
+            print "Warning no information to threshold."
+            return self
+        if propertyString.lower().strip() == "curveid":
+            print "Warning can not threashold on CURVEID"
+            return self
+        #Is negate symbol present?
+        topCut=True
+        if properteryString.__contains__("!"):
+            topCut=False
+            propertyString=propertyString.strip("!")
+        #If verbose call setup spinner
+        resultsList=[]
+        lineInfoVector=[[float(self.__getCurveField__(lineInfo,propertyString.lower().strip())[0]),
+                         lineInfo]
+                        for lineInfo in self.curves]
+        #Determine cutoff values
+        lineInfoVector.sort()
+        cutIndex=int(len(lineInfoVector)*(1-percentile))
+        #Extract lineInfo objects
+        #If want top percentile
+        if topCut:
+            if cutIndex < len(lineInfoVector):
+                resultsList=[lineInfo for val,lineInfo in LineInfoVector[cutIndex:len(lineInfoVector)]]
+            else:
+                resultList=self.curves
+        else:
+            if cutIndex-1 > 0:
+                resultsList=[lineInfo for val,lineInfo in LineInfoVector[0:cutIndex]]
+            else:
+                resultsList=self.curves
+        if self.verboseMode:
+            rCount=int(resultsList.__len__())
+            sCount=int(self.curves.__len__())
+            percentile=100*(rCount/float(sCount))
+            sys.stdout.write("There are %i candidates (%f %s) passing the %s threshold requested\n"%
+                             (rCount,percentile,"%",testExp))
+        outputObject=candidateList()
+        outputObject.__cloneCandidateList__(self)
+        outputObject.curves=copy.deepcopy(resultsList)
+        outputObject.totalCount=resultsList.__len__()
+        #Set the curve structure as valid here!
+        outputObject.validCurves=bool(True)
+        outputObject.createTraitSummary()
+        return outputObject
+    
     def applyArbitraryThresholds(self,expressionString):
         """
         This method takes in a string and uses it literally to construct a
