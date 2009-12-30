@@ -38,66 +38,8 @@ else
 check_PROGRAMS =
 endif
 
-ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
-
-FitToPulsarTest_SOURCES = FitToPulsarTest.c
-
-FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
-
-GeneralMeshTest_SOURCES = GeneralMeshTest.c
-
-GeneralMetricTest_SOURCES = GeneralMetricTest.c
-
-GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
-
-GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
-
-NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
-
-#NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
-
-PtoleMeshTest_SOURCES = PtoleMeshTest.c
-
-PtoleMetricTest_SOURCES = PtoleMetricTest.c
-
-PulsarCatTest_SOURCES = PulsarCatTest.c
-
-ResampleTest_SOURCES = ResampleTest.c
-
-#SFTCleanTest_SOURCES = SFTCleanTest.c
-
-SFTfileIOTest_SOURCES = SFTfileIOTest.c
 SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
-
-SimulateTaylorCWTest_SOURCES = SimulateTaylorCWTest.c
-
-SkyMetricTest_SOURCES = SkyMetricTest.c
-
-StackMetricTest_SOURCES = StackMetricTest.c
-
-TestConstructPLUT_SOURCES = TestConstructPLUT.c
-
-TestDriveHough_SOURCES = TestDriveHough.c
-
-TestDriveNDHough_SOURCES = TestDriveNDHough.c
-
-TestHoughMap_SOURCES = TestHoughMap.c
-
-TestNDConstructPLUT_SOURCES = TestNDConstructPLUT.c
-
-TestNDHoughMap_SOURCES = TestNDHoughMap.c
-
-TestNDPeak2PHMD_SOURCES = TestNDPeak2PHMD.c
-
-TestPeak2PHMD_SOURCES = TestPeak2PHMD.c
-
-TestStatistics_SOURCES = TestStatistics.c
-
-TestVelocity_SOURCES = TestVelocity.c
-
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
-
-UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c
 
 if LALSUPPORT
 TESTS = $(check_PROGRAMS)
