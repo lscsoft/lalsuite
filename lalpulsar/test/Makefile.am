@@ -31,21 +31,16 @@ check_PROGRAMS = \
 	TestVelocity \
 	TwoDMeshTest \
 	UniversalDopplerMetricTest
-
 ##	SFTCleanTest \
 ##	NormalizeSFTRngMedTest \
+TESTS = $(check_PROGRAMS)
 else
 check_PROGRAMS =
+TESTS =
 endif
 
 SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
-
-if LALSUPPORT
-TESTS = $(check_PROGRAMS)
-else
-TESTS =
-endif
 
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 
