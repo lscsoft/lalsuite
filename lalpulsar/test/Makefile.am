@@ -113,5 +113,4 @@ pkgdata_DATA = \
 	sun98.dat \
 	sun99.dat
 
-
 EXTRA_DIST = $(DATA)
