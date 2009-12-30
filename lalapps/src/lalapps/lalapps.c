@@ -121,7 +121,7 @@ int set_debug_level( const char *s )
   /* skip whitespace */
   while ( isspace( *s ) )
     ++s;
-  
+
   /* a value is set */
   if ( isdigit( *s ) )
     return lalDebugLevel = atoi( s );
