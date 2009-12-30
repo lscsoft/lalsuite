@@ -26,12 +26,4 @@ noinst_DATA = \
 EXTRA_DIST = \
 	$(DATA)
 
-CLRTest_SOURCES = CLRTest.c
-TfrPswvTest_SOURCES = TfrPswvTest.c
-TfrRspTest_SOURCES = TfrRspTest.c
-TfrSpTest_SOURCES = TfrSpTest.c
-TfrWvTest_SOURCES = TfrWvTest.c
-ThresholdsTest_SOURCES = ThresholdsTest.c
-TrackSearchTest_SOURCES = TrackSearchTest.c
-
 MOSTLYCLEANFILES = CLRoutdata.asc
