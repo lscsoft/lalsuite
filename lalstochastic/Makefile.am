@@ -17,6 +17,8 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc
 
+distcleancheck_listfiles = find . -type f \! -name "LALStochasticVCSInfo.h" -print
+
 # vcs-clean: more than maintainer-clean, this cleans everything not in
 # the vcs archive
 vcs-clean: maintainer-clean
