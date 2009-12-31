@@ -1,0 +1,15 @@
+/* only include this file if LALFrame's config.h has not been included */
+
+#ifndef _LALFRAMECONFIG_H
+#define _LALFRAMECONFIG_H
+
+/* LALFrame Version */
+#undef LALFRAME_VERSION
+
+/* LALFrame Configure Arguments */
+#undef LALFRAME_CONFIGURE_ARGS
+
+/* LALFrame Configure Date */
+#undef LALFRAME_CONFIGURE_DATE
+
+#endif /* _LALFRAMECONFIG_H */

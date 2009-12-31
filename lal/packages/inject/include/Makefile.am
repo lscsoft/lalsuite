@@ -2,9 +2,6 @@ pkginclude_HEADERS = \
 	GenerateInspRing.h \
 	GenerateInspiral.h \
 	GeneratePPNInspiral.h \
-	GeneratePulsarSignal.h \
-	GenerateSpinOrbitCW.h \
-	GenerateTaylorCW.h \
 	Inject.h \
 	InspiralInjectionParams.h \
 	LALSimInspiral.h \

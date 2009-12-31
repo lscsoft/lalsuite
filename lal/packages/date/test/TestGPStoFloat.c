@@ -60,73 +60,12 @@ static int test_random_doubles(unsigned int seed)
 
 int main(int argc, char *argv[])
 {
-  static LALStatus   status;
-#if 0
-  LIGOTimeGPS        gpsTime = {0, 0};
-  REAL8              realTime = 0.;
-#endif
-  LALTimeInterval    interval = {0, 0};
-  REAL8              deltaT = 0.;
-
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
 
-  /* 3 */
-  interval.seconds     = 123;
-  interval.nanoSeconds = 654;
-
-  LALIntervalToFloat(&status, &deltaT, &interval);
-
-  if (status.statusCode && lalDebugLevel)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() failed; line %i, %s\n",
-              __LINE__, LALTESTGPSTOFLOATC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-
-  if (lalDebugLevel)
-    {
-      printf("TestGPStoFloat: expected (%18.9f)\n", 123.000000654);
-      printf("                     got (%18.9f)\n", deltaT);
-    }
-
-  if (deltaT != 123.000000654)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() returned wrong value; ");
-      fprintf(stderr, "expected %18.9f, got %18.9f\n", 123.000000654, deltaT);
-      return 3;
-    }
-
-  /* 4 */
-  LALFloatToInterval(&status, &interval, &deltaT);
-
-  if (status.statusCode && lalDebugLevel)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() failed; line %i, %s\n",
-              __LINE__, LALTESTGPSTOFLOATC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-
-  if (lalDebugLevel)
-    {
-      printf("TestGPStoFloat: expected (%9d:%09d)\n", 123, 654);
-      printf("                     got (%9d:%09d)\n", interval.seconds, interval.nanoSeconds);
-    }
-
-  if (interval.seconds != 123 || interval.nanoSeconds != 654)
-    {
-      fprintf(stderr, "TestGPStoFloat: LALFloatToInterval() returned wrong value; ");
-      fprintf(stderr, "expected (%9d:%09d), got (%9d:%09d)\n", 123, 654, interval.seconds,
-              interval.nanoSeconds);
-      return 4;
-    }
-
   /* 5 */
-  if(test_random_doubles(time(NULL))) {
+  if(test_random_doubles(time(NULL)))
       return 5;
-  }
 
   return 0;
 }

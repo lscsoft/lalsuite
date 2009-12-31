@@ -37,7 +37,7 @@
 
 #define DEGTORAD (LAL_PI/180.)
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
@@ -61,8 +61,9 @@ int main(int argc, char **argv)
   UINT4            n_ra, n_dec, n_timestep;
   REAL8		   src_orientation;
   REAL8            avg_plus, avg_cross;
-  
-  
+
+  lalDebugLevel = 0;
+
   if (argc != 10)
   {
     fprintf(stderr, "Error: need N_RA, N_DEC, ifo long., ifo lat., x-arm azi, src orien, start time, sampling interval, no. of timesteps.\n");
