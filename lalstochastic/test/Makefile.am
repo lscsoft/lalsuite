@@ -16,8 +16,10 @@ check_PROGRAMS = \
 	AstroOmegaTest \
 	SimulateSBTest \
 	SimulatePopcornTest
+TESTS = $(check_PROGRAMS)
 else
 check_PROGRAMS =
+TESTS =
 endif
 
 StochasticCrossCorrelationStatisticTest_SOURCES = \
@@ -39,12 +41,6 @@ OverlapReductionFunctionTest_SOURCES = \
 StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
-
-if LALSUPPORT
-TESTS = $(check_PROGRAMS)
-else
-TESTS =
-endif
 
 TESTS_ENVIRONMENT = 1>/dev/null
 
