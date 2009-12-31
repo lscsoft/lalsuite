@@ -57,7 +57,7 @@ NRCSID( INSPAWGFILEC, "$Id$" );
 #define INSPAWGFILEC_MSGEMEM   "Out of memory"
 
 /* Default parameter settings. */
-int lalDebugLevel = LALINFO | LALNMEMDBG;
+extern int lalDebugLevel;
 #define EPOCH (0)
 #define DIST  (0.00002*LAL_MRSUN_SI )
 #define M1    (1.4)
@@ -176,6 +176,7 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
 
+  lalDebugLevel = LALINFO | LALNMEMDBG;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *

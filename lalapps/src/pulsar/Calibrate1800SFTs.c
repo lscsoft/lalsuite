@@ -94,9 +94,9 @@ struct FactorsTag
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadSFTDirectory(struct CommandLineArgsTag CLA);
 int ReadCalibrationFiles(struct CommandLineArgsTag CLA);
-int ComputeInitialRSFunctions();
+int ComputeInitialRSFunctions(void);
 int CalibrateSfts(struct CommandLineArgsTag CLA);
-int Freemem();
+int Freemem(void);
 
 
 COMPLEX8 tmpa, tmpb, tmpc; 
@@ -382,7 +382,7 @@ int CalibrateSfts(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ComputeInitialRSFunctions()
+int ComputeInitialRSFunctions(void)
 {
   FILE *fp;
   INT4 i,j;
@@ -590,7 +590,7 @@ int ReadCalibrationFiles(struct CommandLineArgsTag CLA)
 int ReadSFTDirectory(struct CommandLineArgsTag CLA)
 {
   char command[256];
-  INT4 fileno=0;
+  INT4 filenum=0;
   glob_t globbuf;
 
 
@@ -601,11 +601,11 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names */
-  while (fileno < (int) globbuf.gl_pathc) 
+  while (filenum < (int) globbuf.gl_pathc) 
     {
-      strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
+      strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
+      filenum++;
+      if (filenum > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
 	  return 1;
@@ -613,7 +613,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
     }
   globfree(&globbuf);
 
-  SFTno=fileno;  /* Global variable that keeps track of no of SFTs */
+  SFTno=filenum;  /* Global variable that keeps track of no of SFTs */
 
   return 0;
 }
@@ -627,11 +627,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   
   /* Initialize default values */
-  CLA->directory="";
-  CLA->run="";
-  CLA->IFO="";
-  CLA->caldirectory="";
-  CLA->outputdirectory="";
+  CLA->directory=NULL;
+  CLA->run=NULL;
+  CLA->IFO=NULL;
+  CLA->caldirectory=NULL;
+  CLA->outputdirectory=NULL;
   CLA->NoOfAlphas=0;
 
   /* Scan through list of command line arguments */
@@ -681,31 +681,31 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     }
 
-  if(CLA->directory == "")
+  if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->caldirectory == "")
+  if(CLA->caldirectory == NULL)
     {
       fprintf(stderr,"No calibration directory specified; input directory with -C option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->outputdirectory == "")
+  if(CLA->outputdirectory == NULL)
     {
       fprintf(stderr,"No output directory specified; input directory with -o option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->run == "")
+  if(CLA->run == NULL)
     {
       fprintf(stderr,"No run specified; input run with -r option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
       return 1;
     }      
-  if(CLA->IFO == "")
+  if(CLA->IFO == NULL)
     {
       fprintf(stderr,"No interferometer specified; input interferometer with -I option.\n");
       fprintf(stderr,"For help type ./CalibrateSFTs -h \n");
@@ -725,7 +725,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 /*******************************************************************************/
 
 
-int Freemem()
+int Freemem(void)
 {
 
 

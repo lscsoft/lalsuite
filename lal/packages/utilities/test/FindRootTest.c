@@ -87,7 +87,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -143,6 +143,7 @@ main (int argc, char *argv[])
   REAL8          yy0;
   REAL8          droot;
 
+  lalDebugLevel = 0;
 
   /*
    *

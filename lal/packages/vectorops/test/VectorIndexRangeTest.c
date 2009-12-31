@@ -85,7 +85,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 BOOLEAN verbose_p = FALSE;
 
 #if 0
@@ -112,6 +112,8 @@ main(int argc, char **argv)
   UINT4Vector     *index_range = NULL;
   BOOLEAN          result_ok_p = TRUE;
   int              retval = 1;
+
+  lalDebugLevel = 0;
 
   if (argc > 1)
     {

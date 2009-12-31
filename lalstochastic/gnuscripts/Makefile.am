@@ -4,8 +4,9 @@ EXTRA_DIST = \
 	depcomp \
 	header-link.mk \
 	install-sh \
-	lal_c99.m4 \
 	lalstochastic.m4 \
+	lalsuite_build.m4 \
+	lalsuite_c99.m4 \
 	libtool.m4 \
 	ltmain.sh \
 	ltoptions.m4 \

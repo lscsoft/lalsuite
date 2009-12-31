@@ -11,17 +11,11 @@ SUBDIRS = \
 	tdfilter \
 	window \
 	fft \
-	clremoval \
 	inspiral \
 	noisemodels \
 	bank \
 	ring \
 	findchirp \
-	pulsar \
-	houghpulsar \
-	burstsearch \
-	tracksearch \
-	timefreq \
 	support
 
 include-links:

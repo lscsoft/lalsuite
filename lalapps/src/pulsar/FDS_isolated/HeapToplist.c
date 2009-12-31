@@ -49,7 +49,7 @@
 #include <string.h>
 #include "HeapToplist.h"
 
-static const char *HEAPTOPLISTCID  = "$Id$";
+NRCSID(HEAPTOPLISTCID, "$Id$");
 
 
 /* this function gets a "partial heap", i.e. a heap where only the top
@@ -101,10 +101,7 @@ int create_toplist(toplist_t**list,
 		   size_t size,
 		   int (*smaller)(const void *, const void *)) {
   toplist_t *listp;
-  const char *rcsidh, *rcsidc;
 
-  rcsidh = HEAPTOPLISTHID;
-  rcsidc = HEAPTOPLISTCID;
   if (!(listp = malloc(sizeof(toplist_t))))
     return(-1);
   if (!(listp->data = malloc(size * length))) {
@@ -175,12 +172,12 @@ void go_through_toplist(toplist_t*list, void (*handle)(void *)) {
     handle(list->heap[i]);
 }
 
-void* toplist_elem(toplist_t*list, size_t index) {
+void* toplist_elem(toplist_t*list, size_t ind) {
   if (list == NULL)
     return(NULL);
-  if (index >= list->elems)
+  if (ind >= list->elems)
     return(NULL);
-  return(list->heap[index]);
+  return(list->heap[ind]);
 }
 
 int compare_toplists(toplist_t*list1, toplist_t*list2) {
@@ -213,11 +210,11 @@ int compare_toplists(toplist_t*list1, toplist_t*list2) {
 static int (*_qsort_compare1)(const void*, const void*);
 /* wrapper function for qsort */
 static int _qsort_compare2(const void*a, const void*b){
-  return (_qsort_compare1(*(void**)a,*(void**)b));
+  return (_qsort_compare1(a,b));
 }
 /* inverse wrapper */
 static int _qsort_compare3(const void*b, const void*a){
-  return (_qsort_compare1(*(void**)a,*(void**)b));
+  return (_qsort_compare1(a,b));
 }
 
 /* sorts the toplist with an arbitrary sorting function

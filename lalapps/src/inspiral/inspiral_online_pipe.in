@@ -42,15 +42,27 @@ class TrigscanJob(inspiral.InspiralAnalysisJob):
       inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
-class SiClusterJob(inspiral.InspiralAnalysisJob):
+class SiClusterJobCoarse(inspiral.InspiralAnalysisJob):
     # lalapps_trigscan --ifo H1 --gps-start-time 939296936 --gps-end-time 939298856 --ts-cluster T0T3TcAS --ts-metric-scaling 0.12 H1-INSPIRAL_UNCLUSTERED-939296936-1920.xml
 
     def __init__(self,cp,dax=False):
       """
       cp = ConfigParser object from which options are read.
       """
-      exec_name = 'sicluster'
-      sections = ['sicluster']
+      exec_name = 'siclustercoarse'
+      sections = ['siclustercoarse']
+      extension = 'xml'
+      inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+class SiClusterJobFine(inspiral.InspiralAnalysisJob):
+    # lalapps_trigscan --ifo H1 --gps-start-time 939296936 --gps-end-time 939298856 --ts-cluster T0T3TcAS --ts-metric-scaling 0.12 H1-INSPIRAL_UNCLUSTERED-939296936-1920.xml
+
+    def __init__(self,cp,dax=False):
+      """
+      cp = ConfigParser object from which options are read.
+      """
+      exec_name = 'siclusterfine'
+      sections = ['siclusterfine']
       extension = 'xml'
       inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
@@ -292,10 +304,13 @@ for ifo in ifo_list:
     df_job    = pipeline.LSCDataFindJob('cache','logs',cp)
     tmplt_job = inspiral.TmpltBankJob(cp)
 
-    ts_job = TrigscanJob(cp)
-    si_job = SiClusterJob(cp)
-    mv_job = FilesystemJob('mv')
-    cp_job = FilesystemJob('cp')
+    # Based on S6A results ttrigscan clustering has
+    # been replaced with 100-ms window clustering
+    # ts_job = TrigscanJob(cp)
+
+    si_job_coarse = SiClusterJobCoarse(cp)
+    si_job_fine   = SiClusterJobFine(cp)
+    cp_job        = FilesystemJob('cp')
 
     # Add ifo-specific template config
     if cp.has_section(ifo.lower() + '-tmpltbank'):
@@ -495,36 +510,37 @@ for ifo in ifo_list:
         #start_str = str(start)
         dag.add_node(lwadd)
 
-        tsnode = inspiral.InspiralAnalysisNode(ts_job)
-        tsnode.set_start(analysis_seg[0])
-        tsnode.set_end(analysis_seg[1])
-        tsnode.add_var_opt('ifo',ifo)
-        tsnode.add_file_arg(output_name)
+        # TrigScan's out, 100-ms window clustering is in
+        # tsnode = inspiral.InspiralAnalysisNode(ts_job)
+        # tsnode.set_start(analysis_seg[0])
+        # tsnode.set_end(analysis_seg[1])
+        # tsnode.add_var_opt('ifo',ifo)
+        # tsnode.add_file_arg(output_name)
+        # 
+        # tsnode.add_parent(lwadd)
+        # dag.add_node(tsnode)
 
-        tsnode.add_parent(lwadd)
-        dag.add_node(tsnode)
+        # sicluster works in-place, so copy unclustered triggers to 
+        # new files for 100 ms and 16 sec clustering
+        clustered_100ms_name = output_name.replace('UNCLUSTERED','100MILLISEC_CLUSTERED')
+        clustered_16s_name   = output_name.replace('UNCLUSTERED','16SEC_CLUSTERED')
 
-        trigscan_name  = output_name.replace('INSPIRAL_UNCLUSTERED-','TRIGSCAN_').replace('.gz','')
-        tscluster_name = output_name.replace('UNCLUSTERED','TS_CLUSTERED').replace('.gz','')
-        sicluster_name = output_name.replace('UNCLUSTERED','TSSI_CLUSTERED').replace('.gz','')
+        for cname in [clustered_100ms_name, clustered_16s_name]:
+            cpnode = pipeline.CondorDAGNode(cp_job)
+            cpnode.add_file_arg(output_name)
+            cpnode.add_file_arg(cname)
+            cpnode.add_parent(lwadd)
+            dag.add_node(cpnode)
+
+            if cname == clustered_16s_name:
+                sinode = inspiral.InspiralAnalysisNode(si_job_coarse)
+            else:
+                sinode = inspiral.InspiralAnalysisNode(si_job_fine)
+
+            sinode.add_file_arg(cname)
+            sinode.add_parent(cpnode)
+            dag.add_node(sinode)
         
-        mvnode = pipeline.CondorDAGNode(mv_job)
-        mvnode.add_file_arg(trigscan_name)
-        mvnode.add_file_arg(tscluster_name)
-        mvnode.add_parent(tsnode)
-        dag.add_node(mvnode)
-
-        cpnode = pipeline.CondorDAGNode(cp_job)
-        cpnode.add_file_arg(tscluster_name)
-        cpnode.add_file_arg(sicluster_name)
-        cpnode.add_parent(mvnode)
-        dag.add_node(cpnode)
-
-        sinode = inspiral.InspiralAnalysisNode(si_job)
-        sinode.add_file_arg(sicluster_name)
-        sinode.add_parent(cpnode)
-        dag.add_node(sinode)
-
 # write the dag
 dag.write_sub_files()
 dag.write_dag()

@@ -105,8 +105,8 @@ int main(int argc, char *argv[]){
  /* vector of weights */
   REAL8Vector weightsV;
      
-  UINT4 iIFO, iSFT, numsft;
-  INT4 k,j;
+  UINT4 numsft;
+  INT4 k;
  
   /* miscellaneous */
   UINT4  mObsCoh;
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
     
-    REAL8 doppWings, fmin, fmax;
+    REAL8 doppWings, f_min, f_max;
 
     /* set detector constraint */
     constraints.detector = NULL;
@@ -259,11 +259,11 @@ int main(int argc, char *argv[]){
   
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_min = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    f_max = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
     numifo = inputSFTs->length;
 
     /* find number of sfts */     
@@ -438,7 +438,7 @@ int main(int argc, char *argv[]){
     {
       REAL8 *sumweights=NULL;    
       sumweights = (REAL8 *)LALCalloc(1, numifo*sizeof(REAL8));
-
+      UINT4 j, iIFO, iSFT;
       for (j=0, iIFO = 0; iIFO < numifo; iIFO++ ) {      
         numsft = mdetStates->data[iIFO]->length;
       

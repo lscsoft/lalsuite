@@ -1,17 +1,37 @@
-## Process this file with automake to produce Makefile.in
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+
 noinst_LTLIBRARIES = libutilities.la
 libutilities_la_SOURCES = \
-  Random.c MersenneRandom.c FindRoot.c Integrate.c Interpolate.c \
-  HeapSort.c ODE.c CoarseGrainFrequencySeries.c Dirichlet.c \
-  MatrixOps.c DetInverse.c DetInverseInternal.c Eigen.c EigenInternal.c \
-  LALRunningMedian.c RngMedBias.c SFTClean.c NormalizeSFTRngMed.c GSLSupport.c
+	CoarseGrainFrequencySeries.c \
+	DetInverse.c \
+	DetInverseInternal.c \
+	Dirichlet.c \
+	Eigen.c \
+	EigenInternal.c \
+	FlatMesh.c \
+	FindRoot.c \
+	GSLSupport.c \
+	HeapSort.c \
+	Integrate.c \
+	Interpolate.c \
+	LALRunningMedian.c \
+	MatrixOps.c \
+	MersenneRandom.c \
+	ODE.c \
+	Random.c \
+	RngMedBias.c
+
 MAINTAINERCLEANFILES = MatrixOps.c
-EXTRA_DIST = MatrixOps.m4 LALMatrixOps.m4
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+
+EXTRA_DIST = \
+	LALMatrixOps.m4 \
+	MatrixOps.m4
+
 dvi-local: .dvi-dep
 
 MatrixOps.c: MatrixOps.m4 LALMatrixOps.m4
 	cd $(srcdir) && @M4@ MatrixOps.m4 > MatrixOps.c
+
 @DVIMKFILE@

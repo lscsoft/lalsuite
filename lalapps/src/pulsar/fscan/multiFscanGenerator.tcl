@@ -257,6 +257,10 @@ set fixedComparisonSNR "";
 set moveSFTsFromDirList "";
 set moveSFTsFromSuffix "";
 
+set crab 0; #if crab stuff is to be run then rsc file sets crab to 1, default is not to run.X
+
+set submitLogFileDir "/usr1/pulsar"; # directory location for log files given in the condor submit files, for use with fscanDriver.py -o option.
+
 ##### MAIN CODE STARTS HERE #####
 
 # Parse command line arguements
@@ -368,6 +372,12 @@ set subBandList [list ];
 set extraTimeList [list ];
 set freqResList [list ];
 set chanAltDirName "";
+if {$crab != 0} {
+    set psrInputList [list ];
+    set psrEphemerisList [list ];
+    set earthFileList [list ];
+    set sunFileList [list ];
+}
 
 #for {set i 0} {$i < [llength $::masterList]} {incr i} {}
 foreach item $::masterList {
@@ -395,6 +405,12 @@ foreach item $::masterList {
     lappend subBandList [lindex $item 12];
     lappend extraTimeList [lindex $item 13];
     lappend freqResList [lindex $item 14];
+    if {$crab != 0} {
+        lappend psrInputList [lindex $item 16];
+        lappend psrEphemerisList [lindex $item 17];
+        lappend earthFileList [lindex $item 18];
+        lappend sunFileList [lindex $item 19];
+    }
 }
 
 #puts "";
@@ -501,6 +517,12 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     set thisSubBand [lindex $subBandList $i];
     set thisExtraTime [lindex $extraTimeList $i];
     set thisFreqRes [lindex $freqResList $i];
+    if {$crab != 0} {
+        set thispsrInput [lindex $psrInputList $i];
+        set thispsrEphemeris [lindex $psrEphemerisList $i];
+        set thisearthFile [lindex $earthFileList $i];
+        set thissunFile [lindex $sunFileList $i];
+    }
 
     set cmd "exec mkdir $thisChanDir";
     eval $cmd
@@ -529,7 +551,7 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
        append cmd " -s $startTime -L $duration -G $thisG -d $thisFrameType -k $thisKneeFreq -T $thisSFTTimeBase -C -u $thisChanType -i $thisIFO";
     }
     append cmd " -p $thisSFTOutDir -N $thisChan -F $thisStartFreq -B $thisBand -b $thisSubBand";
-    append cmd " -X fscan$thisChanDir -o /usr1/pulsar"
+    append cmd " -X fscan$thisChanDir -o $submitLogFileDir"
     append cmd " -O $thisDir -m $matlabPath"
     append cmd " -W $thisDir/fscan$thisG.html"
     if {$useSegFileList} {
@@ -538,6 +560,9 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     }
     append cmd " -x $thisExtraTime -v 2 -g $segFile --freq-res $thisFreqRes"
     # Set up comparison with another fscan:
+    if {$crab != 0} {
+       append cmd " -J $thispsrInput -j $thispsrEphemeris -E $thisearthFile -z $thissunFile";
+    }
     if {$thisComparisonChan != "none"} {
        set thisComparisonChan [split $thisComparisonChan ":"]
        set thisComparisonIFO [lindex $thisComparisonChan 0]

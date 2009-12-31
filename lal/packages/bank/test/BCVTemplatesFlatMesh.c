@@ -85,7 +85,7 @@ LALSCreateVector()              LALSDestroyVector()
 NRCSID(FLATMESHTESTC,"$Id$");
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define MISMATCH 0.3
 #define DIM 2
 
@@ -161,6 +161,8 @@ main(int argc, char **argv)
   REAL8 samplingRate;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
+
+  lalDebugLevel = 0;
 
   argc = 0;
 

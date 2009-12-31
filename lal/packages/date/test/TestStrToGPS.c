@@ -28,7 +28,7 @@
 NRCSID(STRINGCONVERTTESTC, "$Id$");
 
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 
 struct TESTCASE {
@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
 	};
 	struct TESTCASE *testcase;
 	int failures = 0;
+
+  lalDebugLevel = 0;
 
 	/* set lalDebugLevel */
 	if(argc > 1)

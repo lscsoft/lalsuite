@@ -1,6 +1,24 @@
-## Process this file with automake to produce Makefile.in
-EXTRA_DIST = doc.mk dvi.mk include.mk main.tex.in \
-             lal.m4 lallibtool.m4 pkg.m4
+EXTRA_DIST = \
+	acx_pthread.m4 \
+	config.guess \
+	config.sub \
+	depcomp \
+	doc.mk \
+	dvi.mk \
+	include.mk \
+	install-sh \
+	lal.m4 \
+	lalsuite_c99.m4 \
+	libtool.m4 \
+	ltmain.sh \
+	ltoptions.m4 \
+	ltsugar.m4 \
+	ltversion.m4 \
+	lt~obsolete.m4 \
+	main.tex.in \
+	missing \
+	mkinstalldirs \
+	pkg.m4
 
 CLEANFILES = lal-user-env.sh lal-user-env.csh
 MAINTAINERCLEANFILES = __lalGitID.h lalGitID.h

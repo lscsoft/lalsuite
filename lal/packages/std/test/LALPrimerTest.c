@@ -24,7 +24,7 @@
 
 NRCSID( LALPRIMERTESTC, "$Id$" );
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int
 main( int argc, char **argv )
@@ -32,6 +32,8 @@ main( int argc, char **argv )
 {
   static LALStatus stat;
   REAL4 ratio;
+
+  lalDebugLevel = 0;
 
   /* Parse input line. */
   if ( argc == 4 )

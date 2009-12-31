@@ -548,12 +548,12 @@ INT4 myRound(REAL8 x)
 {
   REAL8 sign=1.0;
   REAL8 roundedValue=0.0;
-  REAL8 remainder=0.0;
+  REAL8 rmdr=0.0;
 
   if(x<0) sign=-1.0;
   roundedValue= floor(sign*x);
-  remainder=sign*x-roundedValue;
-  if(remainder>=0.5) 
+  rmdr=sign*x-roundedValue;
+  if(rmdr>=0.5) 
     roundedValue=roundedValue+1.0;
   roundedValue=sign*roundedValue;
 
