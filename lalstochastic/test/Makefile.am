@@ -39,8 +39,6 @@ OverlapReductionFunctionTest_SOURCES = \
 StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
-SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
-AstroOmegaTest_SOURCES = AstroOmegaTest.c
 
 INCLUDES = -I../include
 
