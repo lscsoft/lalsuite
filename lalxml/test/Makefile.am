@@ -10,8 +10,6 @@ endif
 pkgdata_DATA = VOTable-1.1.xsd
 EXTRA_DIST = VOTable-1.1.xsd
 
-LALXMLTest_SOURCES = LALXMLTest.c
-
 INCLUDES = -I../include
 
 if LALSUPPORT
