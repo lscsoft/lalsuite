@@ -40,8 +40,6 @@ StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
 
-INCLUDES = -I../include
-
 if LALSUPPORT
 TESTS = $(check_PROGRAMS)
 else
