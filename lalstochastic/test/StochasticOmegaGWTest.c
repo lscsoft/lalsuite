@@ -186,7 +186,7 @@ extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 BOOLEAN optVerbose    = STOCHASTICOMEGAGWTESTC_FALSE;
 REAL8 optDeltaF     = -1.0;
 UINT4 optLength     = 0;
