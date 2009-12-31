@@ -10,8 +10,6 @@ endif
 pkgdata_DATA = VOTable-1.1.xsd
 EXTRA_DIST = VOTable-1.1.xsd
 
-INCLUDES = -I../include
-
 if LALSUPPORT
 TESTS = $(check_PROGRAMS)
 else
