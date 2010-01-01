@@ -2229,6 +2229,7 @@ class candidateList:
         of that property. A '!' negates the expresion and gives the
         result below that cutoff.
         """
+        percentile=float(percentile)
         #Load up curve elements and make a vector to find stats
         if self.curves.__len__() < 1:
             print "Warning no information to threshold."
@@ -2238,7 +2239,7 @@ class candidateList:
             return self
         #Is negate symbol present?
         topCut=True
-        if properteryString.__contains__("!"):
+        if propertyString.__contains__("!"):
             topCut=False
             propertyString=propertyString.strip("!")
         #If verbose call setup spinner
@@ -2249,16 +2250,17 @@ class candidateList:
         #Determine cutoff values
         lineInfoVector.sort()
         cutIndex=int(len(lineInfoVector)*(1-percentile))
+        #print "Len:",len(lineInfoVector),"Per:",percentile,"Cut_k:",cutIndex
         #Extract lineInfo objects
         #If want top percentile
         if topCut:
             if cutIndex < len(lineInfoVector):
-                resultsList=[lineInfo for val,lineInfo in LineInfoVector[cutIndex:len(lineInfoVector)]]
+                resultsList=[lineInfo for val,lineInfo in lineInfoVector[cutIndex:len(lineInfoVector)]]
             else:
                 resultList=self.curves
         else:
             if cutIndex-1 > 0:
-                resultsList=[lineInfo for val,lineInfo in LineInfoVector[0:cutIndex]]
+                resultsList=[lineInfo for val,lineInfo in lineInfoVector[0:cutIndex]]
             else:
                 resultsList=self.curves
         if self.verboseMode:
@@ -2266,7 +2268,7 @@ class candidateList:
             sCount=int(self.curves.__len__())
             percentile=100*(rCount/float(sCount))
             sys.stdout.write("There are %i candidates (%f %s) passing the %s threshold requested\n"%
-                             (rCount,percentile,"%",testExp))
+                             (rCount,percentile,"%",percentile))
         outputObject=candidateList()
         outputObject.__cloneCandidateList__(self)
         outputObject.curves=copy.deepcopy(resultsList)

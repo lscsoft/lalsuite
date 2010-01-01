@@ -150,12 +150,6 @@ def wrapperShowHistogram(candidateObject):
             sys.stdout.write("Creating histogram for %s \n"%
                              (property[1]))
             sys.stdout.flush()
-
-#         candidateObject.setHistogramType(histogramType)
-#         candidateObject.showHistogram(myTrait,
-#                                       graph2file,
-#                                       newHistCol,
-#                                       topTol)
         try:
             candidateObject.setHistogramType(histogramType)
             candidateObject.showHistogram(myTrait,
