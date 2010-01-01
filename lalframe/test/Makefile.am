@@ -30,11 +30,11 @@ endif
 
 TESTS_ENVIRONMENT = LAL_FRAME_PATH=$(srcdir)
 
-pkgdata_DATA = catalog $(FRAMEFILES)
-noinst_DATA = catalog.test
+noinst_DATA = catalog catalog.test $(FRAMEFILES)
 
 EXTRA_DIST = \
 	$(FRAMEFILES) \
+	catalog \
 	mkcatalog.sh \
 	H1-CAL-V03-729273600-734367600.cache \
 	L1-CAL-V03-729273600-734367600.cache \
