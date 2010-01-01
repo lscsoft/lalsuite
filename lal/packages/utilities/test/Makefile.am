@@ -6,17 +6,16 @@ check_PROGRAMS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
+	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
 	LALRunningMedianTest \
 	MersenneRandomTest \
-	NormalizeSFTRngMedTest \
 	ODETest \
 	RandomTest \
 	RngMedBiasTest \
 	SCoarseGrainFrequencySeriesTest \
-	SFTCleanTest \
 	SortTest \
 	ZCoarseGrainFrequencySeriesTest
 
@@ -49,6 +48,11 @@ EigenTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
+FlatMeshTest_SOURCES = FlatMeshTest.c
+FlatMeshTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
 FindRootTest_SOURCES = FindRootTest.c
 FindRootTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
@@ -74,11 +78,6 @@ MersenneRandomTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
-NormalizeSFTRngMedTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
 ODETest_SOURCES = ODETest.c
 ODETest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
@@ -93,11 +92,6 @@ SCoarseGrainFrequencySeriesTest_SOURCES = \
 	CheckStatus.c \
 	SCoarseGrainFrequencySeriesTest.c
 SCoarseGrainFrequencySeriesTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-SFTCleanTest_SOURCES = SFTCleanTest.c
-SFTCleanTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -128,6 +122,7 @@ TESTS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
+	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \

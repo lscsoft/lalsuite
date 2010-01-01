@@ -1,4 +1,5 @@
 AMCFLAGS = $(LALSUPPORT_CFLAGS)
+LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalstochastic.la
 
 if LALSUPPORT
 check_PROGRAMS = \
@@ -15,78 +16,31 @@ check_PROGRAMS = \
 	AstroOmegaTest \
 	SimulateSBTest \
 	SimulatePopcornTest
+TESTS = $(check_PROGRAMS)
 else
 check_PROGRAMS =
+TESTS =
 endif
 
 StochasticCrossCorrelationStatisticTest_SOURCES = \
   StochasticCrossCorrelationStatisticTest.c CheckStatus.c
-StochasticCrossCorrelationStatisticTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticHeterodynedCrossCorrelationStatisticTest_SOURCES = \
   StochasticHeterodynedCrossCorrelationStatisticTest.c CheckStatus.c
-StochasticHeterodynedCrossCorrelationStatisticTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticCrossCorrelationSpectrumTest_SOURCES = \
   StochasticCrossCorrelationSpectrumTest.c CheckStatus.c
-StochasticCrossCorrelationSpectrumTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 SZeroPadAndFFTTest_SOURCES = SZeroPadAndFFTTest.c CheckStatus.c
-SZeroPadAndFFTTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 CZeroPadAndFFTTest_SOURCES = CZeroPadAndFFTTest.c CheckStatus.c
-CZeroPadAndFFTTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticOptimalFilterTest_SOURCES = \
   StochasticOptimalFilterTest.c CheckStatus.c
-StochasticOptimalFilterTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticOptimalFilterNormalizationTest_SOURCES = \
   StochasticOptimalFilterNormalizationTest.c CheckStatus.c
-StochasticOptimalFilterNormalizationTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticOmegaGWTest_SOURCES = \
   StochasticOmegaGWTest.c CheckStatus.c
-StochasticOmegaGWTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 OverlapReductionFunctionTest_SOURCES = \
   OverlapReductionFunctionTest.c CheckStatus.c
-OverlapReductionFunctionTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
-StochasticInverseNoiseTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
-SimulateSBTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
-SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
-SimulatePopcornTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
-AstroOmegaTest_SOURCES = AstroOmegaTest.c
-AstroOmegaTest_LDADD = \
-  $(LALSUPPORT_LIBS) \
-  $(top_builddir)/src/liblalstochastic.la
-
-INCLUDES = -I../include
-
-if LALSUPPORT
-TESTS = $(check_PROGRAMS)
-else
-TESTS =
-endif
 
 TESTS_ENVIRONMENT = 1>/dev/null
 

@@ -60,7 +60,7 @@ lalDebugLevel
 
 NRCSID(METRICTESTC,"$Id$");
 
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( void )
 {
@@ -76,6 +76,8 @@ int main( void )
   REAL8 deltaT = 1.0/16384.0;
   UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
+
+  lalDebugLevel = 1;
 
   fullmetric = XLALCreateREAL8Vector( 45 );
 

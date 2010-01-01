@@ -133,7 +133,7 @@ LALNormalizeSkyPosition()
 NRCSID( SKYCOORDINATESTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-i system lat lon] [-o system] [-z lat lon]\n" \
@@ -199,6 +199,9 @@ main( int argc, char **argv )
   SkyPosition sky;         /* celestial coordinates */
   EarthPosition earth;     /* terrestrial coordinates */
   ConvertSkyParams params; /* additional parameters for conversion */
+
+  lalDebugLevel = 0;
+
   memset( &params, 0, sizeof(ConvertSkyParams ) );
 
   /*******************************************************************

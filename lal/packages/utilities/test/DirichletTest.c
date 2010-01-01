@@ -102,8 +102,7 @@ None.
 #include <lal/PrintVector.h>
 #include <lal/Dirichlet.h>
 
-/* INT4 lalDebugLevel = LALMSGLVL3; */
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 
 int check ( LALStatus*, INT4, const CHAR* );
 
@@ -120,6 +119,8 @@ main( void )
 
   UINT4                        length;
   length = 10;
+
+  lalDebugLevel = LALNDEBUG;
 
 
 #ifndef LAL_NDEBUG

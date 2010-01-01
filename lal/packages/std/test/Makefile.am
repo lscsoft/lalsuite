@@ -28,6 +28,7 @@ StringConvertTest_LDADD = \
 
 TESTS = \
 	LALGSLTest \
+	LALMallocTest \
 	LALVersionTest \
 	StringConvertTest
 

@@ -39,7 +39,7 @@
 #include "skygrid.h"
 #include <string.h>
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
@@ -53,7 +53,9 @@ main(int argc, char **argv)
   skygrid_t grid_plus_sq = NULL;
   skygrid_t grid_sum_sq  = NULL;
   skygrid_t grid_relfreq = NULL;
-  
+
+  lalDebugLevel = 0;
+
   status.statusPtr = NULL;
   
   /* parse command line options */
