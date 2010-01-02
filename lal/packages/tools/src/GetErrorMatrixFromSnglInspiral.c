@@ -39,6 +39,7 @@ $Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
 #include <lal/LALError.h>
 #include <lal/LALGSL.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
 #include <gsl/gsl_matrix.h>

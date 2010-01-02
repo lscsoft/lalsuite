@@ -31,7 +31,7 @@
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALConstants.h>

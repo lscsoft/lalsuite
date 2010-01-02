@@ -58,7 +58,7 @@ using error ellipsoids.
 #include    <lal/LALGSL.h>
 #include    <lal/LALError.h>
 #include    <lal/LIGOMetadataTables.h>
-#include    <lal/LIGOMetadataUtils.h>
+#include    <lal/LIGOMetadataInspiralUtils.h>
 #include    <lal/EllipsoidOverlapTools.h>
 
 #include    <gsl/gsl_errno.h>

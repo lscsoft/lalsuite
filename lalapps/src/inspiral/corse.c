@@ -25,7 +25,7 @@
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>

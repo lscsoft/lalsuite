@@ -25,7 +25,7 @@
 #include <lal/GenerateRing.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 

@@ -24,7 +24,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>

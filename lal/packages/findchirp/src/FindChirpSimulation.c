@@ -82,7 +82,7 @@ LALFree()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/Inject.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
 #include <lal/LALStdlib.h>

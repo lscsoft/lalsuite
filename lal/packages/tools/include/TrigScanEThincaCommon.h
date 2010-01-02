@@ -29,6 +29,7 @@
  */
 
 #include <lal/CoincInspiralEllipsoid.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 
 #if 0
 <lalVerbatim file="TrigScanEThincaCommonHV">

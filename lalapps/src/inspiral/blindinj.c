@@ -44,7 +44,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Units.h>
 #include <lal/Date.h>

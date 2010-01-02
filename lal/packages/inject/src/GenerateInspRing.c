@@ -39,7 +39,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Units.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateRing.h>

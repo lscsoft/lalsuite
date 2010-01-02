@@ -36,6 +36,7 @@ $Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
 
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/LALTrigScanCluster.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 
 NRCSID (LALTRIGSCANCLUSTERC,
         "$Id$");

@@ -42,7 +42,7 @@ $Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
 #include <lal/LALStdio.h>
 #include <lal/LALErrno.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
