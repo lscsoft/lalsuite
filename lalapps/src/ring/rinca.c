@@ -39,7 +39,7 @@
 #include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/SegmentsIO.h>

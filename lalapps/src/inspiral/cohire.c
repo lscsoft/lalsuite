@@ -25,7 +25,7 @@
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>

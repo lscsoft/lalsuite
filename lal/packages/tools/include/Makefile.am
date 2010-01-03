@@ -12,8 +12,6 @@ pkginclude_HEADERS = \
 	LALCalibration.h \
 	LALDetectors.h \
 	LALTrigScanCluster.h \
-	LIGOMetadataInspiralUtils.h \
-	LIGOMetadataBurstUtils.h \
 	LIGOMetadataTables.h \
 	LIGOMetadataUtils.h \
 	ResampleTimeSeries.h \

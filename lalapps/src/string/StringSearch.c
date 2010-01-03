@@ -67,7 +67,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/lalGitID.h>
 
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/LIGOMetadataUtils.h>
 
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
