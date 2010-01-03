@@ -31,7 +31,6 @@ liblalburst_la_SOURCES = \
 	HarmonicFinder.c \
 	LALSimBurst.c \
 	RefInterference.c \
-	SnglBurstUtils.c \
 	TSData.c \
 	TfrPswv.c \
 	TfrRsp.c \

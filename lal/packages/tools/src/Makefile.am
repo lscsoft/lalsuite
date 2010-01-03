@@ -29,6 +29,7 @@ libtools_la_SOURCES = \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
 	Skymap.c \
+	SnglBurstUtils.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
 	TimeSeries.c \
