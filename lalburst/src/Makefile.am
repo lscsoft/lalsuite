@@ -7,7 +7,6 @@ lalburstinclude_HEADERS = \
 	GenerateBurst.h \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
-	LIGOMetadataBurstUtils.h \
 	LALSimBurst.h \
 	TFTransform.h \
 	TSData.h \
