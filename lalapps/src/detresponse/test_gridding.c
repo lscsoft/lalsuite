@@ -31,7 +31,7 @@
 #include "util.h"
 #include <string.h>
 
-int lalDebugLevel = 7;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
@@ -43,6 +43,8 @@ main(int argc, char **argv)
   gridding_t         g;
   LIGOTimeGPS        gps;
   EphemerisData      ephem;
+
+  lalDebugLevel = 7;
 
   s.statusPtr = NULL;
   

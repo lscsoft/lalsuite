@@ -594,7 +594,7 @@ void TestOnePoint(LALStatus              *status,
 
 static REAL8 deg_to_rad(REAL8 deg);
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose_p       = 1;
 
 
@@ -609,6 +609,8 @@ int main(int argc, char *argv[])
   LALDetAMResponse expectedResponse;
   INT4             passed;
   INT4             testNumber;
+
+  lalDebugLevel = 0;
 
   if (argc == 2)
     {

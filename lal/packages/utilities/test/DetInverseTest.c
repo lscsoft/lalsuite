@@ -134,7 +134,7 @@ LALUniformDeviate()
 NRCSID( DETINVERSETESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define SIZE 3
 
 /* Usage format string. */
@@ -210,6 +210,8 @@ main( int argc, char **argv )
   UINT4 dims[2];               /* dimLength.data array */
   clock_t start = 0, stop = 0; /* start and stop times for timing */
   FILE *fp = NULL;             /* input/output file pointer */
+
+  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *

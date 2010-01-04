@@ -184,6 +184,18 @@ AC_DEFUN([LALAPPS_ENABLE_LALBURST],
   ], [ lalburst=true ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_LALPULSAR],
+[AC_ARG_ENABLE(
+  [lalpulsar],
+  AC_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalpulsar=true;;
+      no) lalpulsar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
+    esac
+  ], [ lalpulsar=true ] )
+])
+
 AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
 [AC_ARG_ENABLE(
   [lalstochastic],
