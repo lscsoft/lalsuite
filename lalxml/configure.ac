@@ -1,5 +1,5 @@
 AC_INIT([lalxml],[1.0],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
+AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,12 +41,20 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalxml])
 
+# put version/configure info in config header
+lalxml_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALXML_VERSION],["$VERSION"],[LALXML Version])
+AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALXML Configure Arguments])
+AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_DATE],["$lalxml_configure_date"],
+                   [LALXML Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -55,6 +64,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
@@ -70,7 +80,7 @@ if test "x$build_vendor" = "xapple"; then
       ;;
     10.4*|10.5*|10.6*)
       # supported version
-    ;;
+      ;;
     *)
       AC_MSG_WARN([Unknown Mac OS X version])
       ;;
@@ -81,37 +91,35 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for libxml2
 PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
 LIBS="$LIBS $LIBXML2_LIBS"
-AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR(cannot find xml2 library)])
+AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR([cannot find the xml2 library])])
+
+# check for libxml2 headers
+AC_CHECK_HEADERS([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.h header])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
-AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
+AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
+
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.3.1.1],[true],[false])
-CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
-LIBS="$LIBS $LAL_LIBS"
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
 
-# check libraries if not a top-level build
-if test "$LALSUITE_BUILD" = "true" ; then
-  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
-else
-  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
-  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
-fi
-AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
+# check for lalpulsar
+LALSUITE_CHECK_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

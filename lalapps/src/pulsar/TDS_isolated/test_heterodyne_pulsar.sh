@@ -5,9 +5,16 @@
 # the code in all its 4 modes and compare the results to standard
 # archived files 
 
-CODENAME=./lalapps_heterodyne_pulsar
+## allow 'make test' to work from builddir != srcdir
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+else
+    srcdir=.
+fi
 
-FRAMEFILE=H-CW_Injection-875206560-120.gwf
+CODENAME=${builddir}lalapps_heterodyne_pulsar
+
+FRAMEFILE=${srcdir}/H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
 DATAEND=`expr $DATASTART + 120`
 DETECTOR=H1
@@ -67,13 +74,23 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
+# check that LAL_PREFIX is set
+if [ -n "$LALPULSAR_PREFIX" ]; then
+	EEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/earth05-09.dat
+        SEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/sun05-09.dat
+elif [ -n "$LALSUITE_TOP_SRCDIR" ]; then
+        EEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/earth05-09.dat
+        SEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/sun05-09.dat
+else
+	echo Need an environment variable that points to the LALPulsar location 
+        exit 2
+fi
+
 if [ ! -f $EEPHEM ]; then
 	echo Error! Earth ephemeris file does not exist!
 	exit 2
 fi
 
-SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
 if [ ! -f $SEPHEM ]; then
 	echo Error! Sun ephemeris file does not exist!
 	exit 2
@@ -115,12 +132,12 @@ FILELIST=$FRAMEFILE
 cp $FILELIST ${LOCATION}/framedir 
 
 # use make_frame_cache to make a frame cache file
-if [ ! -f make_frame_cache ]; then
+if [ ! -f ${srcdir}/make_frame_cache ]; then
 	echo Error! make_frame_cache does not exist!
 	exit 2
 fi
 
-./make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
+${srcdir}/make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
 	echo Could not create the cache file!
 	exit 2
@@ -218,7 +235,7 @@ fi
 mv $COARSEFILE $COARSEFILE.off
 
 # set calibration files
-RESPFILE=$LOCATION/H1response.txt
+RESPFILE=${srcdir}/H1response.txt
 
 ################### FINE HETERODYNES #######################
 

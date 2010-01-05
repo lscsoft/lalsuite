@@ -549,6 +549,18 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   configs[section] = None
   images_dirs[section] = ZLdir
 
+  section = 'ifar2'
+  sections.append(section)
+  htmlAndPlot.append(section)
+  titles[section] = "IFAR and loudest event tables at CAT_2 (these include the hardware injections)."
+  tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1] + '*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  imagetags[section] = ['cumhist_combined_ifar']
+  captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
   section = 'ifar3'
   sections.append(section)
   htmlAndPlot.append(section)
@@ -1335,15 +1347,26 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   configs[section] = 'plotsnrchi'
   images_dirs[section] = images_dir
 
-  section = 'printlc'
+  section = 'injsqf'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest software injection triggers after CAT_4.."
-  tags[section] = '*'+injection.upper()+'*CAT_4_VETO_LOUDEST_SIMULATION_EVENTS_BY_COMBINED_FAR*'
-  captions[section] = 'Loudest events after Category 4 vetoes (hardware injections removed).'
+  titles[section] = "Loudest injections that are not louder than the loudest slide"
+  tags[section] = '*'+injection.upper()+'_CAT_4_VETO_QUIETEST_FOUND_COMPARED_TO_PLAYGROUND*'
+  captions[section] = 'This table shows a list of the loudest injections that are not louder than the loudest event in the playground time slides. Equivalently this is a list of the loudest injections that do not have a FAR of 0. These tables are shown after category 4 vetoes are applied.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
+
+  section = 'injscm'
+  sections.append(section)
+  htmlOnly.append(section)
+  titles[section] = "Nearby missed injections"
+  tags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
+  captions[section] = 'This table shows a list of the closest injections that were not marked as "found" by our pipeline. These tables are shown after category 4 vetoes are applied.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
 
   try:
     make_cache(images_dir, "plotinspfound")
@@ -1864,6 +1887,8 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*LOUDEST_SLIDE_EVENTS*html')
       copy_files(dataDir,webDir,'*CLOSED_BOX*html')
       copy_files(dataDir,webDir,'*SIMULATION*html')
+      copy_files(dataDir,webDir,'*CLOSEST_MISSED_INJECTIONS*html')
+      copy_files(dataDir,webDir,'*QUIETEST_FOUND_COMPARED*PLAYGROUND*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*FULL_DATA*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*CLOSED_BOX*cache')
@@ -1874,6 +1899,8 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir+'/Images',webDir+'/Images','*PLAYGROUND*ALL_DATA*')
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSED_BOX*')
       copy_files(dataDir+'/Images',webDir+'/Images','*SIMULATION*')
+      copy_files(dataDir+'/Images',webDir+'/Images','*CLOSEST_MISSED_INJECTIONS*')
+      copy_files(dataDir+'/Images',webDir+'/Images','*QUIETEST_FOUND_COMPARED*PLAYGROUND*')
       print >> sys.stdout, '... Done'
 
 
@@ -2043,62 +2070,63 @@ def html_and_plot(page, opts, cachefile_tag=None,\
       htmlFiles[ifo] = file
     else:
       print >> sys.stderr,"WARNING: file doesn't seem to match an ifo combo!"
-    if ifo not in cacheFiles:
+    if ifo not in cacheFiles.keys():
       print >> sys.stderr,"WARNING: file doesn't seem to correspond to cache file list"
 
   if opts.verbose is True:
     print "        Searching for files with this(ese) tag(s): " +str(image_tag)
 
   for ifo in fileListDict:
-    # read the image cachefile
-    this = open(cacheFiles[ifo], "r")
-    fnameList = []
-    # Lots of lists but it ensures that the order is always the same
-    fileNameList = []
-    href = None
-    #for each file contained in the cachefile
+    if ifo in htmlFiles.keys():
+      # read the image cachefile
+      this = open(cacheFiles[ifo], "r")
+      fnameList = []
+      # Lots of lists but it ensures that the order is always the same
+      fileNameList = []
+      href = None
+      #for each file contained in the cachefile
 
-    if opts.debug is True:
-      print >>sys.stdout, "        --> Copying files from " +cacheFiles[ifo]
+      if opts.debug is True:
+        print >>sys.stdout, "        --> Copying files from " +cacheFiles[ifo]
 
-    for filename in this:
-      filename = filename.replace("\n","")
-      filename = filename.replace(" ","")
-      fileNameList.append(filename)
+      for filename in this:
+        filename = filename.replace("\n","")
+        filename = filename.replace(" ","")
+        fileNameList.append(filename)
 
-    fileNameList.sort()
+      fileNameList.sort()
 
-    for filename in fileNameList:
-      # if the file is an image, we copy it in ./Images
-      # if the file is an image, we copy the file. Then, if the pattern 
-      # (in image_tag)  matches the filename, then we create am html section.
-      if filename[-4:]=='.png':
-        # we check if the pattern match the file
-        if image_tag is not None:
-          for eachPattern  in image_tag:
-            if patternFoundInFilename(filename, eachPattern) is True:
-              fnameList.append(filename.replace(".png", "_thumb.png"))
-        else:
-          fnameList.append(filename.replace(".png", "_thumb.png"))
-      elif filename[-5:] == '.html' and ('followup' not in filename):
-        href = filename.replace("/pictures", "")
-        href = href.replace("\n", "")
-        htmlFile = href
-        href = directory + '/' + href
+      for filename in fileNameList:
+        # if the file is an image, we copy it in ./Images
+        # if the file is an image, we copy the file. Then, if the pattern 
+        # (in image_tag)  matches the filename, then we create am html section.
+        if filename[-4:]=='.png':
+          # we check if the pattern match the file
+          if image_tag is not None:
+            for eachPattern  in image_tag:
+              if patternFoundInFilename(filename, eachPattern) is True:
+                fnameList.append(filename.replace(".png", "_thumb.png"))
+          else:
+            fnameList.append(filename.replace(".png", "_thumb.png"))
+        elif filename[-5:] == '.html' and ('followup' not in filename):
+          href = filename.replace("/pictures", "")
+          href = href.replace("\n", "")
+          htmlFile = href
+          href = directory + '/' + href
 
-    if href:
-      msg =" <a href=\"" + href + "\""
-      msg+=" rel=\"external\" >"
-      msg += """ <br/> --- <b>Click here (to open link in a new tab/window)</b> to get all pictures (full resolution) 
-          as well as the pylal arguments used to generate the plots</a> """
-
-      source =  cacheFiles[ifo].split('/')
-      source =  source[len(source)-1]
-      page = add_figure(page, directory, fnames=fnameList, \
-          caption=(caption+' '+msg), source=source,size=None, alt=fnameList,\
-          html = htmlFile,html_file = htmlFiles[ifo])
-      # close the cachefile
-    this.close()
+      if href:
+        msg =" <a href=\"" + href + "\""
+        msg+=" rel=\"external\" >"
+        msg += """ <br/> --- <b>Click here (to open link in a new tab/window)</b> to get all pictures (full resolution) 
+            as well as the pylal arguments used to generate the plots</a> """
+  
+        source =  cacheFiles[ifo].split('/')
+        source =  source[len(source)-1]
+        page = add_figure(page, directory, fnames=fnameList, \
+            caption=(caption+' '+msg), source=source,size=None, alt=fnameList,\
+            html = htmlFile,html_file = htmlFiles[ifo])
+        # close the cachefile
+        this.close()
 
   return page
   
@@ -2134,11 +2162,11 @@ def html_insert(page,opts, html_tag=None,\
 
   # for each cachefile we create a div figure section with all 
   # figures whose name is part of the image_tag list
+  global fig_num
   htmlfileList.sort()
   for htmlfile in htmlfileList:
     # read this file
     this = open(htmlfile, "r")
-    global fig_num
     page.add("<!-- insert a figure -->\n<div class=\"figure\">")
     this_count = 0
    # Determine the ifo
@@ -2153,6 +2181,9 @@ def html_insert(page,opts, html_tag=None,\
       page.add(line)
     # add a yellow box (depends on yourcss style though) that contains the 
     # html filename.
+    section_num = str(h2_num)+"."+str(h3_num-1)+"."+str(fig_num)
+    page.add("\t<p><b>Figure " + section_num + "</b>:  " + caption + "</p>")
+    fig_num +=1
     page.add("<pre>Source: "+ htmlfile + "\n </pre>" )
     page.div.close()
     # close the file

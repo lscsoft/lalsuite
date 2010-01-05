@@ -71,8 +71,7 @@ EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 tes
 TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testFstat_v3
 
 TESTS_ENVIRONMENT = \
-LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
-LAL_PREFIX=$(LAL_PREFIX) \
-LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat

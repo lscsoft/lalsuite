@@ -185,7 +185,6 @@ int main( int argc, char *argv[] )
 #endif
 
 /*  GalacticInspiralParamStruc galacticPar; */
-  LALGPSCompareResult        compareGPS;
 
   /* xml output data */
   CHAR                  fname[256];
@@ -615,10 +614,6 @@ int main( int argc, char *argv[] )
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
-  /* check that the start time is before the end time */
-  LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
-      &status );
-
 
   /*
    *
@@ -627,7 +622,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  while ( compareGPS == LALGPS_EARLIER )
+  while ( XLALGPSCmp( &gpsStartTime, &gpsEndTime ) < 0 )
   {
 
     /* rho, z and lGal are the galactocentric galactic axial coordinates */
@@ -805,8 +800,6 @@ int main( int argc, char *argv[] )
     
     /* increment the injection time */
     XLALGPSAdd( &gpsStartTime, meanTimeStep );
-    LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
-          &gpsEndTime ), &status );
 
     /* finally populate the flower */
     if (fLower > 0)         

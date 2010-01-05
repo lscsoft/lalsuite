@@ -30,38 +30,46 @@
 #include "util.h"
 #include <string.h>
 
-int lalDebugLevel = 7;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
 
 int
-main(int argc, char **argv)
+main(void)
 {
   static LALStatus s;
-  EphemerisData ephemerides;
+  EphemerisData *edat;
   EarthState    earth;
-  REAL8         earth_phi; /* azi. position of Earth in solar
-                              system barycenter */
   LIGOTimeGPS   gps;
   UINT4         i;
 
+  lalDebugLevel = 7;
+
   s.statusPtr = NULL;
-    
-  init_ephemeris(&s, &ephemerides);
-  
+
+  /* initalize ephemeris_data */
+  if ( (edat = InitEphemeris (NULL, "00-04")) == NULL ) {
+    XLALPrintError ("Failed to initialized '00-04' ephemeris, make sure to set LAL_DATA_PATH correctly!\n");
+    exit(1);
+  }
+
   gps.gpsSeconds = 669130273; /* vernal equinox 2001 */
-  
+  gps.gpsNanoSeconds = 0;
+
   for (i = 0; i < 185; ++i)
   {
-    gps.gpsSeconds += i * 3600*24;
-    LALBarycenterEarth(&s, &earth, &gps, &ephemerides);
+    gps.gpsSeconds += 3600*24;
+    LALBarycenterEarth(&s, &earth, &gps, edat);
     printf("%d {% e, % e, % e} {% e, % e, % e}\n",
            gps.gpsSeconds,
            earth.posNow[0], earth.posNow[1], earth.posNow[2],
            earth.velNow[0], earth.velNow[1], earth.velNow[2]);  
   }
   
-  cleanup_ephemeris(&s, &ephemerides);
+
+  XLALFree ( edat->ephemE );
+  XLALFree ( edat->ephemS );
+  XLALFree ( edat );
   
   return 0;
 }

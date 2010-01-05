@@ -1,14 +1,24 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Inject.h SimulateCoherentGW.h GeneratePPNInspiral.h \
-	GenerateTaylorCW.h GenerateSpinOrbitCW.h SkyCoordinates.h SimulateInspiral.h \
+pkginclude_HEADERS = \
+	GenerateInspRing.h \
 	GenerateInspiral.h \
-	GeneratePulsarSignal.h SkyCoordinatesLaldoc.h NRWaveInject.h \
-	InspiralInjectionParams.h GenerateInspRing.h \
-	LALSimulation.h LALSimInspiral.h
+	GeneratePPNInspiral.h \
+	Inject.h \
+	InspiralInjectionParams.h \
+	LALSimInspiral.h \
+	LALSimulation.h \
+	NRWaveInject.h \
+	SimulateCoherentGW.h \
+	SimulateInspiral.h \
+	SkyCoordinates.h \
+	SkyCoordinatesLaldoc.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+
 all-local: include-link
+
 dvi-local: .dvi-dep
+
 @INCLUDEMKFILE@
+
 @DVIMKFILE@

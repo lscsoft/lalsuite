@@ -33,7 +33,7 @@
 #include <getopt.h>
 #include <math.h>
 
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 /* SFT header structure as of 7/21/2004 */
 struct sftheader
@@ -243,7 +243,7 @@ int parse_command_line(int argc, char *argv[])
                 {0, 0, 0, 0}
         };
 
-        char *short_options = "i:o:f:b:y:hms";
+        const char *short_options = "i:o:f:b:y:hms";
         int c;
 
         while ( 1 )
@@ -576,10 +576,11 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         char comment[] = "Generated from SFT data by narrowBandExtract";
         char hertz[] = "Hz";
         char units[] = "s";
+        char name[] = "LIGO";
         int ret;
 
         /* create a new frame */
-        frame = FrameHNew( "LIGO" );
+        frame = FrameHNew( name );
         if ( ! frame )
         {
             fprintf( stderr, "Could not create frame in frame file\n" );
@@ -609,7 +610,10 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         step unit is Hertz
         the units of the series is seconds
         */
-        vect = FrVectNew1D( "SFT", FR_VECT_8C, header->nsamples, 1.0 / header->tbase, hertz, units );
+        {
+          char tmpname[] = "SFT";
+          vect = FrVectNew1D( tmpname, FR_VECT_8C, header->nsamples, 1.0 / header->tbase, hertz, units );
+        }
         if ( ! vect )
         {
             fprintf( stderr, "Could not create vector for frame file\n");
@@ -637,8 +641,10 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
         proc->data      = vect;                 
         proc->next      = frame->procData;
         frame->procData = proc;
-
-        FrStrCpy( &proc->name, "SFT" );
+        {
+          char tmpname[] = "SFT";
+          FrStrCpy( &proc->name, tmpname );
+        }
         FrStrCpy( &proc->comment, comment );
 
         /* copy the series into the vector */

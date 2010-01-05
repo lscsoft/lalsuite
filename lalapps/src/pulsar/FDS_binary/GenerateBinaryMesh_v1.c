@@ -881,14 +881,10 @@ int CheckRTBoundary(REAL8 *sma_temp,LIGOTimeGPS *tp_temp,RTparameterspace *RTspa
 
   /* this routine simply checks wether a point in RT space lies within the space boundaries */
 
-  INT4 result;
-
   if (*sma_temp<(RTspace->sma_MIN)) return 0;
   if (*sma_temp>(RTspace->sma_MAX)) return 0;
-  LALCompareGPS(&status,&result,tp_temp,&(RTspace->tperi_MIN));
-  if (result==-1) return 0;
-  LALCompareGPS(&status,&result,tp_temp,&(RTspace->tperi_MAX));
-  if (result==1) return 0;
+  if (XLALGPSCmp(tp_temp,&(RTspace->tperi_MIN)) < 0) return 0;
+  if (XLALGPSCmp(tp_temp,&(RTspace->tperi_MAX)) > 0) return 0;
 
   return 1;
 
@@ -969,7 +965,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
   }
   
   /* else if we are doing a mimatched template */
@@ -998,7 +994,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : a randomly mismatched signal has been put in the original parameter space.\n");
   
@@ -1020,7 +1016,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     
     /* change the length of the RTmesh array */
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
-    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    XLALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
     
     fprintf(stderr,"WARNING : none of the points lie in the original parameter space.\n");
     fprintf(stderr,"          This could be a single filter target but futher investigation\n");

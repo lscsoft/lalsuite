@@ -10,16 +10,16 @@ function injection_param_plots( injtype, file_list )
 %
 % Sarah Caudill, Oct 28th 2009
 
-N_files=length(file_list(:,1));
+  N_files=length(file_list);
 
 % read in the injection files
 
   % create the ringdown parameters structure by reading in the first file
-  eval(['rd_params=readMeta(''' file_list(1,:) ''',''sim_ringdown'',0,''quality,frequency,mass,spin'');'])
+  eval(['rd_params=readMeta(''' file_list{1} ''',''sim_ringdown'',0,''quality,frequency,mass,spin'');'])
 
   % read in the rest of the injection files
   for i=2:N_files
-    eval(['rd_paramsi=readMeta(''' file_list(i,:) ''',''sim_ringdown'',0,''quality,frequency,mass,spin'');'])
+    eval(['rd_paramsi=readMeta(''' file_list{i} ''',''sim_ringdown'',0,''quality,frequency,mass,spin'');'])
     rd_params.quality=[rd_params.quality;rd_paramsi.quality];
     rd_params.frequency=[rd_params.frequency;rd_paramsi.frequency];
     rd_params.mass=[rd_params.mass;rd_paramsi.mass];
@@ -63,11 +63,11 @@ N_files=length(file_list(:,1));
   if strcmp(injtype,'EOBNR')||strcmp(injtype,'PHENOM')
 
     % create the ringdown params structure and inspiral params structure by reading in the first file
-    eval(['insp_params=readMeta(''' file_list(1,:) ''',''sim_inspiral'',0,''mass1,mass2'');'])
+    eval(['insp_params=readMeta(''' file_list{1} ''',''sim_inspiral'',0,''mass1,mass2'');'])
 
     % read in the rest of the injection files
     for i=2:N_files
-      eval(['insp_paramsi=readMeta(''' file_list(i,:) ''',''sim_inspiral'',0,''mass1,mass2'');'])
+      eval(['insp_paramsi=readMeta(''' file_list{i} ''',''sim_inspiral'',0,''mass1,mass2'');'])
       insp_params.mass1=[insp_params.mass1;insp_paramsi.mass1];
       insp_params.mass2=[insp_params.mass2;insp_paramsi.mass2];
     end

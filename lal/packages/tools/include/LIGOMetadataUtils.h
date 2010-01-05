@@ -293,6 +293,29 @@ provided by the user.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+typedef enum
+{
+  no_statistic,
+  nullstat,
+  cohsnr,
+  effCohSnr,
+  snrByNullstat,
+  autoCorrCohSqByNullstat,
+  crossCorrCohSqByNullstat,
+  autoCorrNullSqByNullstat,
+  crossCorrNullSqByNullstat
+}
+MultiInspiralClusterChoice;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{MultiInspiralClusterChoice} provides choices for clustering
+a multi inspiral table.  The \texttt{cohsnr} clustering returns the trigger
+with the greatest coherent signal to noise ratio; the \texttt{nullstat} 
+clustering returns the trigger with the smallest null_statistic value. 
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagSnglInspiralBCVCalphafCut
 {
@@ -1229,14 +1252,14 @@ XLALSortMultiInspiral (
 REAL4
 XLALMultiInspiralStat(
     MultiInspiralTable         *multiInspiral,
-    SnglInspiralClusterChoice  multiStat
+    MultiInspiralClusterChoice  multiStat
     );
 
 int
 XLALClusterMultiInspiralTable (
     MultiInspiralTable         **inspiralList,
     INT8                         dtimeNS,
-    SnglInspiralClusterChoice   clusterchoice
+    MultiInspiralClusterChoice   clusterchoice
     );
 
 MultiInspiralTable *
@@ -1275,6 +1298,17 @@ XLALMultiSimInspiralTest (
     INT8                injectWindowNS
     );
 
+int
+XLALMultiInspiralIfos (
+    MultiInspiralTable  *multiInspiral,
+    char                *ifos
+    );
+
+int
+XLALMultiInspiralIfosCut(
+    MultiInspiralTable **multiHead,
+    char                *ifos
+    );
 
 /*
  *
@@ -1319,12 +1353,6 @@ XLALCompareSnglBurstByStartTime(
 
 int
 XLALCompareSnglBurstByExactPeakTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
-XLALCompareStringBurstByTime(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 );
@@ -1768,6 +1796,14 @@ XLALPlayTestCoincRingdown(
 INT4
 XLALCountCoincRingdown(
     CoincRingdownTable *head
+    );
+
+void
+LALRingdownH1H2Consistency(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincRingdown,
+    REAL4                       H2snrCutThreshold,
+    LALSegList                 *vetoSegsH2
     );
 
 

@@ -68,6 +68,9 @@ extern int LAL_ERR_RTRN(
 extern int clear_status( LALStatus * );
 extern int set_debug_level( const char *s );
 
+extern char *XLALGetVersionString( int level );
+extern int XLALOutputVersionString ( FILE *fp, int level );
+
 #define LAL_CALL( function, statusptr ) \
   ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,rcsid))
 

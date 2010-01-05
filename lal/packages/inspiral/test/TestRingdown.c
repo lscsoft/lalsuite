@@ -60,7 +60,7 @@ lalDebugLevel
 
 NRCSID(METRICTESTC,"$Id$");
 
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( int argc, char *argv[] )
 {
@@ -71,6 +71,8 @@ int main( int argc, char *argv[] )
   REAL8 deltaT = 1.0/32768.0;
   UINT4 N = 65536;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
+
+  lalDebugLevel = 1;
 
   memset( &status, 0, sizeof(LALStatus) );
   memset( &tmplt, 0, sizeof(InspiralTemplate) );

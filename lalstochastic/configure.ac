@@ -1,5 +1,5 @@
 AC_INIT([lalstochastic],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
+AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,12 +41,20 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalstochastic])
 
+# put version/configure info in config header
+lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALStochastic Configure Arguments])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_DATE],["$lalstochastic_configure_date"],
+                   [LALStochastic Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LAL_AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -55,6 +64,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
@@ -70,7 +80,7 @@ if test "x$build_vendor" = "xapple"; then
       ;;
     10.4*|10.5*|10.6*)
       # supported version
-    ;;
+      ;;
     *)
       AC_MSG_WARN([Unknown Mac OS X version])
       ;;
@@ -81,24 +91,13 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for lal
-PKG_CHECK_MODULES([LAL],[lal >= 6.3],[true],[false])
-CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
-LIBS="$LIBS $LAL_LIBS"
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-PKG_CHECK_MODULES([LALSUPPORT],[lalsupport],[true],[false])
-
-# check libraries if not a top-level build
-if test "$LALSUITE_BUILD" = "true" ; then
-  test -n "$LALSUPPORT_LIBS" && lalsupport="true"
-else
-  AC_CHECK_LIB([lal],[main],,[AC_MSG_ERROR(cannot find lal library)])
-  AC_CHECK_LIB([lalsupport],[LALOpenDataFile],[lalsupport=true],[lalsupport=false])
-fi
-AM_CONDITIONAL([LALSUPPORT],[test x$lalsupport = xtrue])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

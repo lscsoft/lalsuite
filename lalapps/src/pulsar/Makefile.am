@@ -4,23 +4,28 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
 SUBDIRS =  MakeSFTs Injections FDS_isolated FDS_griphyn hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan
 
-if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
+if LALFRAME
+# this only requires LALFrame because of usage of LALFrameL.h
+LALFRAMEPROGS = lalapps_make_sfts
 else
-FRAMEPROGS =
+LALFRAMEPROGS =
 endif
 
-bin_PROGRAMS = $(FRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
+bin_PROGRAMS = $(LALFRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
 	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
-        lalapps_ComputeWeightedMultiAMCoeffs
+        lalapps_ComputeWeightedMultiAMCoeffs lalapps_make_job_input_data lalapps_PrintDetectorState
 
-if FRAME
-lalapps_make_job_input_data_SOURCES = make_job_input_data.c
+if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
+
+## make sure VCSInfo.h is re-generated at every 'make'
+.PHONY: gitID
+gitID:
+	cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la
+BUILT_SOURCES = gitID
 
 
 lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
@@ -32,7 +37,8 @@ lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
 lalapps_ComputeWeightedMultiAMCoeffs_SOURCES = ComputeWeightedMultiAMCoeffs.c
-
+lalapps_make_job_input_data_SOURCES = make_job_input_data.c
+lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 
 EXTRA_DIST = \
 make_locked_data_list \

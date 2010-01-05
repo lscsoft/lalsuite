@@ -286,7 +286,7 @@ extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 BOOLEAN optVerbose    = OVERLAPREDUCTIONFUNCTIONTESTC_FALSE;
 REAL8 optDeltaF     = -1;
 UINT4 optLength     = 0;
@@ -363,6 +363,7 @@ int main( int argc, char *argv[] )
   REAL4 overlapVal, f;
   INT4 code;
 
+  lalDebugLevel = LALNDEBUG;
 
   /* define valid parameters */
 

@@ -373,7 +373,7 @@ void sortFreqCells2(INT8 *data, INT8 left, INT8 right);
 /* Global Variables */
 
 CandidateList *SortedC = NULL; /* need to be global to access them in compare functions for qsort */
-CellData *cell = NULL;
+CellData *global_cell = NULL;
 
 /*
 ListForSort *SortedCList = NULL;
@@ -565,9 +565,9 @@ int main(INT4 argc,CHAR *argv[])
 	    fprintf(stdout,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 
 	     /* Prepare cells. */
-	    cell = NULL;
+	    global_cell = NULL;
 	    sizecells = ADDITIONAL_MEM;
-	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
+	    LAL_CALL( PrepareCells( lalStatus, &global_cell, sizecells ), lalStatus);  
 
 	    /* Assigning four indices to each candidate event */
 	    for (icand=0;icand<CLength;icand++) 
@@ -653,12 +653,12 @@ int main(INT4 argc,CHAR *argv[])
 	    /* Initialise the first cell by the first candidate. */
 	    icell = 0;
 	    icand = 0;
-	    cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
-	    cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
-	    cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
-	    cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-	    cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand; 
-	    cell[icell].nCand = 1;
+	    global_cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+	    global_cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+	    global_cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+	    global_cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+	    global_cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand; 
+	    global_cell[icell].nCand = 1;
 	    	    
 	    /* ------------------------------------------------------------------------------*/      
 	    /* main loop over candidates  */
@@ -668,18 +668,18 @@ int main(INT4 argc,CHAR *argv[])
 		/* Skip candidate events with 2F values below the threshold of TwoFthr. */
 		if ( SortedC[SortedCListi[icand]].TwoF > PCV.TwoFthr ) 
 		  {
-		    if( SortedC[SortedCListi[icand]].iFreq  == cell[icell].iFreq  && 
-			SortedC[SortedCListi[icand]].iDelta == cell[icell].iDelta &&
-			SortedC[SortedCListi[icand]].iAlpha == cell[icell].iAlpha &&
-			SortedC[SortedCListi[icand]].iF1dot == cell[icell].iF1dot ) 
+		    if( SortedC[SortedCListi[icand]].iFreq  == global_cell[icell].iFreq  && 
+			SortedC[SortedCListi[icand]].iDelta == global_cell[icell].iDelta &&
+			SortedC[SortedCListi[icand]].iAlpha == global_cell[icell].iAlpha &&
+			SortedC[SortedCListi[icand]].iF1dot == global_cell[icell].iF1dot ) 
 		      {
 			/* This candidate is in this cell. */
-			INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
+			INT4 lastFileIDinThisCell = SortedC[global_cell[icell].CandID->data].FileID;
 			if( SortedC[SortedCListi[icand]].FileID != lastFileIDinThisCell ) 
 			  { 
 			    /* This candidate has a different file id from the candidates in this cell. */
-			    LAL_CALL( add_int8_data( lalStatus, &(cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
-			    cell[icell].nCand += 1;
+			    LAL_CALL( add_int8_data( lalStatus, &(global_cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
+			    global_cell[icell].nCand += 1;
 			  }  
 			else  
 			  { 
@@ -696,15 +696,15 @@ int main(INT4 argc,CHAR *argv[])
 			/* Re-allocate Memory for more cells */
 			if( icell >= sizecells ) {
 			  sizecells = sizecells + ADDITIONAL_MEM;
-			  LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);
+			  LAL_CALL( RePrepareCells(lalStatus, &global_cell, sizecells, icell), lalStatus);
 			}
 			
-			cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
-			cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
-			cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
-			cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-			cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand;
-			cell[icell].nCand = 1;
+			global_cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+			global_cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+			global_cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+			global_cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+			global_cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand;
+			global_cell[icell].nCand = 1;
 		
 		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
 		    
@@ -721,7 +721,7 @@ int main(INT4 argc,CHAR *argv[])
 	    cellListi = (INT8 *) LALCalloc(ncell, sizeof(INT8) );
 
 	    for(icell=0;icell<ncell;icell++) {
-	      LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
+	      LAL_CALL( get_info_of_the_cell( lalStatus, &global_cell[icell], SortedC), lalStatus);
 	      cellListi[icell] = icell;
 	    }  
 	 
@@ -729,11 +729,11 @@ int main(INT4 argc,CHAR *argv[])
 
 	    /* -----------------------------------------------------------------------------------------*/      
 	    /* Output results */
-	    LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC, selectGrid, cellListi),lalStatus );
+	    LAL_CALL( PrintResult( lalStatus, &PCV, global_cell, &ncell, SortedC, selectGrid, cellListi),lalStatus );
 	    
 	    
 	    /* clean memory for cells */
-	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, cell, sizecells), lalStatus);
+	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, global_cell, sizecells), lalStatus);
 	    LALCheckMemoryLeaks(); 
 	    
 	    selectGrid++;
@@ -3211,21 +3211,21 @@ void sortFreqCells2(INT8 *data, INT8 left, INT8 right)
 
   for (i = left + 1; i <= right; i++)
   {
-    if(cell[data[i]].iFreq < cell[data[left]].iFreq)  {
+    if(global_cell[data[i]].iFreq < global_cell[data[left]].iFreq)  {
       last++;
       t =  data[last]; 
       data[last] = data[i]; 
       data[i] = t;
     }
-    else if (cell[data[i]].iFreq == cell[data[left]].iFreq) {
-      if(cell[data[i]].nCand > cell[data[left]].nCand)  {
+    else if (global_cell[data[i]].iFreq == global_cell[data[left]].iFreq) {
+      if(global_cell[data[i]].nCand > global_cell[data[left]].nCand)  {
 	last++;
 	t =  data[last]; 
 	data[last] = data[i]; 
 	data[i] = t;
       }
-      else if (cell[data[i]].nCand == cell[data[left]].nCand) {
-	 if (cell[data[i]].significance > cell[data[left]].significance)  {
+      else if (global_cell[data[i]].nCand == global_cell[data[left]].nCand) {
+	 if (global_cell[data[i]].significance > global_cell[data[left]].significance)  {
 	   last++;
 	   t =  data[last]; 
 	   data[last] = data[i]; 

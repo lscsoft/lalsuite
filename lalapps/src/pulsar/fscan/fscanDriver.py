@@ -19,8 +19,10 @@ __version__ = '$Revision: 1.25 $'[11:-2]
 # 06/29/2009 gam; Include links to _2 plots, when making a comparisons with other fscans.
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
+# 08/25/2009 cg; added lines 643 to 652 so that a single frequency band of less than 10 Hz can be run.
 # 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
+# 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -83,9 +85,13 @@ Usage: [options]
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   -J  --psrInput             (optional) Input the name and path of tempo file used to overplot a source's freq onto specgrams
   -j  --psrEphemeris         (optional) Input the name and path of ephemeris file used to overplot a source's freq onto specgrams
+  -E  --earthFile            (optional) Input the name and path of the .dat file for the earh.  Only used if source details are given.
+  -z  --sunFile              (optional) Input the name and path of the .dat file for the Sun.  Only used if source details are given.
   
 """
   print >> sys.stdout, msg
+
+#letters left for short options, a f, n, A, K, Q, U, V, Y.
 
 ################################
 # MAIN CODE START HERE 
@@ -94,7 +100,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:hSHZCRI" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -141,6 +147,8 @@ longop = [  #cg; longopt is a list
   "run",
   "psrInput=",
   "psrEphmeris=",
+  "earthFile=",
+  "sunFile=",
   ]
 
 try:
@@ -200,6 +208,8 @@ runCondorSubmitDag = False
 freqRes = 0.2
 psrInput = None
 psrEphemeris = None
+earthFile = None
+sunFile = None
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -289,6 +299,10 @@ for o, a in opts:
     psrInput = a
   elif o in ("-j", "--psrEphmeris"):
     psrEphemeris = a
+  elif o in ("-E", "--earthFile"):
+    earthFile = a
+  elif o in ("-z", "--sunFile"):
+    sunFile = a
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -521,7 +535,7 @@ if (createSFTs):
     # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
     segmentFile = intersectedSegmentFile
   # End if intersectData
-
+    
   ###################################################
   # CHECK THE SEGMENT FILE
   #
@@ -556,7 +570,12 @@ if (createSFTs):
   # MAKE THE .dag FILE; RUN MakeSFTDAG
   #
   sftDAGFile = 'tmpSFTDAG%stmp.dag' % tagString
-  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
+  # Make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq). 
+  if (freqBand < 2):
+     sft_freqBand = 2
+  else:
+     sft_freqBand = freqBand + 1;
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
   if (makeSFTIFO != None):
@@ -692,28 +711,23 @@ if (htmlFilename != None):
   htmlFID.write('<tbody>\n')
 
 
-if (freqSubBand == 0):
-  freqSubBand = 10
+if (freqSubBand  > freqBand):
+  freqSubBand = freqBand
 
-# Write lalapps_spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
 nodeCount = 0L
 
-if (thisEndFreq == endFreq):
-  endFreq=endFreq+1
+# Next lines should not be needed because sft_freqBand goes beyond endFreq above
+#if (thisEndFreq == endFreq):
+#  endFreq=endFreq+1
 
+# Note that sft_freqBand goes beyond endFreq above, so problem that lalapps_spec_avg
+# works on [startFreq,endFreq], not [startFreq,endFreq), should now be avoided.
+# Thus, can use "while (thisEndFreq <= endFreq)" rather than "while (thisEndFreq < endFreq)".
+while (thisEndFreq <= endFreq):
 
-
-while (thisEndFreq < endFreq):
-  # Because SFTs are in the band [startFreq,endFreq) but lalapps_spec_avg works on [startFreq,endFreq]
-  # we need to avoid the last subBand requested. The user thus should request 1 Hz more than
-  # wanted and the last one Hz band will not be used.
-  #if (thisEndFreq >= endFreq):
-     # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
-     #thisEndFreq = endFreq - 1
-  
   #print >> sys.stdout,"startfreq: ",startFreq,"\n"
   #print >> sys.stdout,"endfreq: ",endFreq,"\n"
   #print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
@@ -728,11 +742,11 @@ while (thisEndFreq < endFreq):
   dagFID.write('RETRY %s 0\n' % specAvgJobName)
   #the variable names in the arglist below are the names of the variables in spec_avg.c not in this code
   if ((psrInput != None) and (sftVersion == 2)):
-     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft  --psrInput %s --psrEphemeris %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft  --psrInput %s --psrEphemeris %s --earthFile %s --sunFile %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris, earthFile, sunFile)
   elif ((psrInput == None) and (sftVersion == 2)):
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
   elif ((psrInput != None) and (sftVersion != 2)):
-     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*   --psrInput %s --psrEphemeris %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*   --psrInput %s --psrEphemeris %s --earthFile %s --sunFile %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris, earthFile, sunFile)
   else:
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
@@ -784,7 +798,7 @@ while (thisEndFreq < endFreq):
         referenceFileName = 'none'
     #argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName); # 06/29/09 gam; matlabPath has to be first argument.
     #argList = '%s %s %s %s %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
-    argList = '%s %s %s %s %d %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
+    argList = '%s %s %s %s %d %g %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
     tagStringOut = '%s_%i' % (tagString, nodeCount)  
     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))

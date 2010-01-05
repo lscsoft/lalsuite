@@ -67,7 +67,7 @@ struct tagLALVCSInfo lalLibraryVCSIdentInfo = { \
 };
 
 /* function to compare two LALVCSInfo structures */
-int XLALVCSInfoCompare(LALVCSInfo *header, LALVCSInfo *library)
+int XLALVCSInfoCompare(const LALVCSInfo *header, const LALVCSInfo *library)
 {
   /* check for header/library mismatch */
   if (strcmp(header->version, library->version) || \

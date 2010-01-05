@@ -171,7 +171,7 @@ extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel  = LALMSGLVL3; */
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 
 BOOLEAN optVerbose = STOCHASTICINVERSENOISETESTC_FALSE;
 UINT4 optLength    = 0;
@@ -231,6 +231,8 @@ int main(int argc, char *argv[])
   BOOLEAN                  result;
 
   CHARVector               *unitString = NULL;
+
+  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 
