@@ -120,6 +120,18 @@ snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
 #define rint(x) (floor((x)+0.5))
 #define ALLSKYSTR "allsky"
 
+/*
+ * utility function to wrap a time t into the interval [start,
+ * start+length). Used by thinca as well.
+ */
+static INT8 thinca_ring_wrap(INT8 t, INT8 ring_start, INT8 ring_length)
+{
+  t = (t - ring_start) % ring_length;
+  if( t < 0 )
+    t += ring_length;
+  return ring_start + t;
+}
+
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
@@ -151,7 +163,7 @@ INT4 T1file = 0;
 INT4 V1file = 0;
                                 
 /* input time-slide parameters */
-REAL8  slideStep[6]     = {0.0,0.0,0.0,0.0,0.0,0.0};
+REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration     = 0;
 CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 /* CHAR  *cohbankFileName = NULL; name of input template bank  */
@@ -161,6 +173,7 @@ UINT4  nullStatOut       = 0;    /* default is not to write frame */
 UINT4  nullStatH1H2Out       = 0;    /* default is not to write frame */
 UINT4  eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
+REAL4  cohSegLength     = 0.0625; /* This should match value (sec) used in inspiral.c */
 REAL4  nullStatRegul        = 0.1;
 UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
@@ -174,8 +187,8 @@ LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
 
 double raStep = 1.0;
 double decStep = 1.0;
-UINT4  estimParams = 1;
-UINT4  followup = 1;
+UINT4  estimParams = 0;
+UINT4  followup = 0;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -225,7 +238,6 @@ int main( int argc, char *argv[] )
   CHAR   channelNameArray[6][LALNameLength] = {"0","0","0","0","0","0"}; 
   CHAR  *ifo = NULL;
 
-  REAL4   cohSegLength     = 1.0; /* This should match hardcoded value of 0.125s in inspiral.c */
   INT4   numPoints        = 0;
   UINT4  numSegments      = 1; /* CHECK: number of segments; hardwired to 1 */
   UINT4  numBeamPoints    = 0; /* CHECK: number of sky position templates; now redundant */
@@ -245,13 +257,17 @@ int main( int argc, char *argv[] )
   INT4   j,k,l, cohtrigs, cohtriglimit;
   INT4   kmax = 0;
   UINT4  numDetectors     = 0;
-  REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
-  INT4   timeptDiff[5]    = {0,0,0,0,0};
+  REAL8  tempTime[4]      = {0.0,0.0,0.0,0.0};
+  INT4   timeptDiff[3]    = {0,0,0};
   UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
   INT4   numTriggers      = 0;
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
   UINT4  cohFileID        = 1;
+  REAL4  chisq[4]         = {1.0,1.0,1.0,1.0};
+  REAL4  chisq_dof[4]     = {1.0,1.0,1.0,1.0};
+  REAL8  snrsqArray[4]    = {1.0,1.0,1.0,1.0};
+  REAL4  eff_snr_denom_fac = 250.0; /* CHECK: Hard-wired! */
 
   REAL4 totMass = 0.0;
   REAL8 muMass = 0.0;
@@ -267,6 +283,11 @@ int main( int argc, char *argv[] )
   REAL4 x3= 0.0;
   REAL4 x4= 0.0;
   REAL4 x8= 0.0;
+  LIGOTimeGPS startCoinc = {0,0};
+  LIGOTimeGPS endCoinc = {0,0};
+  INT8 ringStartNS = 0;
+  INT8 ringLengthNS = 0;
+  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   
   SnglInspiralTable    *currentTrigger = NULL;
   SnglInspiralTable    *cohbankEventList=NULL;
@@ -323,6 +344,12 @@ int main( int argc, char *argv[] )
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
         this_proc_param = this_proc_param->next );
+
+  /* set the gps times startCoinc and endCoinc */
+  startCoinc.gpsSeconds = gpsStartTime.gpsSeconds;
+  endCoinc.gpsSeconds = gpsEndTime.gpsSeconds;
+  ringStartNS = XLALGPSToINT8NS( &startCoinc);
+  ringLengthNS = XLALGPSToINT8NS( &endCoinc ) - ringStartNS;
 
   /* Set other variables */
   numPoints = rint(sampleRate * cohSegLength);
@@ -436,6 +463,7 @@ int main( int argc, char *argv[] )
         }
       
       for ( cohtrigs = 0 ; cohtrigs < cohtriglimit ; cohtrigs++) {
+        INT8   slideNS[4] = {0,0,0,0};
         
         numDetectors = thisCoinc->numIfos;
         
@@ -454,33 +482,53 @@ int main( int argc, char *argv[] )
                 snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
                 if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
-                
+                chisq[l] = thisCoinc->snglInspiral[k]->chisq;
+                chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
+                snrsqArray[l] = pow( (REAL8) thisCoinc->snglInspiral[k]->snr,2);
                 /* Parse eventID to get the slide number */
                 triggerNumber = eventID % 100000;
                 slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
+                /* Strictly, the following must be divided by 100,000 
+                   to get slideSign = 5000 for negative slides */
                 slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
-                
+
+                if( vrbflg ) fprintf( stdout, "eventID = %Ld, slideNumber = %d, slideSign = %d, triggerNumber = %d \n", eventID, slideNumber, slideSign, triggerNumber);
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
                 snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
+
+                /* slideSign=0 is the same as a positive time slide */
+                if(slideSign != 0)
+                  {
+                    tempTime[l] = slideStep[k]*slideNumber;
+                  }
+                else
+                  {
+                    tempTime[l] -= slideStep[k]*slideNumber;
+                  }
+
+                if( vrbflg ) fprintf( stdout, "ifo number = %d, slideSign = %d, slideStep = %e, slideNumber = %d, tempTime = %e \n", l, slideSign, slideStep[k], slideNumber, tempTime[l]);
+
+                ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
+                if(slideSign != 0)
+                  {
+                    slideNS[l] = -1000000000*slideStep[ifoNumber]*slideNumber;
+                  }
+                else
+                  {
+                    slideNS[l] = 1000000000*slideStep[ifoNumber]*slideNumber;
+                  }
+                /* and slide the trigger time in nanoseconds */
+                slideNS[l] += XLALGPSToINT8NS( &thisCoinc->snglInspiral[k]->end_time );
+
+                /* wrap trigger time to be in [startTime, endTime) */
+                slideNS[l]  = thinca_ring_wrap(slideNS[l], ringStartNS, ringLengthNS);
+
+                l++;
               }
           }/* Closes loop for k; finished noting the participating ifos 
               and the eventID for this coincident trigger*/
-        
-        /* Initialize tempTime to account for time-slides (wrt H1, hence j<5)*/
-        for( j=0; j<(LAL_NUM_IFO - 1) ; j++)
-          {
-            /* slideSign=0 is the same as a positive time slide */
-            if(slideSign != 0)
-              {
-                tempTime[j] = slideStep[j]*slideNumber;
-              }
-            else
-              {
-                tempTime[j] -= slideStep[j]*slideNumber;
-              }
-          }
         
         l=0;
         if( G1file ) l++;
@@ -492,7 +540,10 @@ int main( int argc, char *argv[] )
         
         if( (INT4)numDetectors != l )
           {
-            fprintf( stderr, "You have events for %d detectors, but specified frame files for %d detectors\n",numDetectors,l);
+            /* CHECK: numDetectors can be less than the number of frame-file arguments since  
+               hipe creates them based in ifo-times. But ifos in coincs can be less than that:
+               fprintf( stderr, "You have events for %d detectors, but specified frame files for %d detectors\n",numDetectors,l);
+            */
             if( (INT4)numDetectors > l )
               {
                 fprintf( stderr, "You must specify more frame files. Exiting...\n");
@@ -683,19 +734,12 @@ int main( int argc, char *argv[] )
               */
               if ( !(cohInspCVec->cData[l]->f0 == 0.0) ) {
                 cohInspFilterParams->sigmasqVec->data[j] = cohInspCVec->cData[l]->f0;
-                /* CHECK: Temporary fix for reading chisq */
-                cohInspFilterParams->chisqVec->data[j] = cohInspCVec->cData[l]->data->data[numPoints-1].re;
-                cohInspCVec->cData[l]->data->data[numPoints-1].re = 0.0;
-                cohInspCVec->cData[l]->data->data[numPoints-1].im = 0.0;
               }
               else {
                 cohInspFilterParams->sigmasqVec->data[j] = 1.0;
-                cohInspCVec->cData[l]->data->data[numPoints-1].re = 0.0;
-                cohInspCVec->cData[l]->data->data[numPoints-1].im = 0.0;
               }                
               
               if (vrbflg)  fprintf( stdout, "sigmasq:%f\n",cohInspFilterParams->sigmasqVec->data[j]);
-	      if (vrbflg)  fprintf( stdout, "chisq:%f\n",cohInspFilterParams->chisqVec->data[j]);
               
               l++;
             }/* Closes "if( caseID[j] )" */
@@ -751,17 +795,232 @@ int main( int argc, char *argv[] )
             fprintf(stdout,"clustering events\n");
           }                    
         
+        l = 0;
         /* Before the data gets filtered, I need to make the c-data snippets commensurate */
-        for(j=0;j<(INT4)numDetectors - 1;j++)
-          {
-            timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);
-            if( vrbflg ) fprintf(stdout,"timeptDiff = %d\n",timeptDiff[j]);
+        for(k=0 ; k<LAL_NUM_IFO ; k++ ) {
+          if ( (caseID[k] == 1) && (l < numDetectors) ) {
+            /* CHECK: timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);*/
+            timeptDiff[l] = rint( (slideNS[0] - slideNS[l])*1e-9 * sampleRate);
+            /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %Ld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
+            if( vrbflg ) fprintf(stdout,"slideNS[0] = %Ld, slideNS[2nd] = %Ld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
+
+            l++;
           }
-        
+        }       
         /* Now allocate memory for a temporary storage vector */
         memset( &tempSnippet, 0, sizeof(COMPLEX8TimeSeries) );
         LAL_CALL( LALCCreateVector( &status, &(tempSnippet.data), numPoints ), &status );
         
+        /* The following switch statement accomplishes the commensuration of the time series */
+        switch( numDetectors )
+          {
+          case 2:
+            if( timeptDiff[0] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg )
+                  fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg )
+                  fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[0] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[0].re, cohInspCVec->cData[1]->data->data[0].im, cohInspCVec->cData[1]->data->data[1].re, cohInspCVec->cData[1]->data->data[1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+            break;
+          case 3:
+            if( timeptDiff[0] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[0] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+
+            if( timeptDiff[1] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[2]->data->data[j].re = 0;
+                    cohInspCVec->cData[2]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[2]->data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[1] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[2]->data->data[j].re = 0;
+                    cohInspCVec->cData[2]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[2]->data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+                if( vrbflg )fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+
+                cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+            break;
+          case 4:
+            if( timeptDiff[0] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[0] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[1]->data->data[j].re = 0;
+                    cohInspCVec->cData[1]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[0].re, cohInspCVec->cData[1]->data->data[0].im, cohInspCVec->cData[1]->data->data[1].re, cohInspCVec->cData[1]->data->data[1].im);
+                cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+
+
+            if( timeptDiff[1] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[2]->data->data[j].re = 0;
+                    cohInspCVec->cData[2]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[2]->data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[1] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[2]->data->data[j].re = 0;
+                    cohInspCVec->cData[2]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[2]->data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+
+            if( timeptDiff[2] < 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[3]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[3]->data->data[j].re = 0;
+                    cohInspCVec->cData[3]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[3]->data->data + abs(timeptDiff[2]), tempSnippet.data->data, (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].im);
+                cohInspCVec->cData[3]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[3]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else if( timeptDiff[2] > 0 )
+              {
+                memcpy( tempSnippet.data->data, cohInspCVec->cData[3]->data->data, numPoints * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                for(j=0;j<(INT4)numPoints;j++)
+                  {
+                    cohInspCVec->cData[3]->data->data[j].re = 0;
+                    cohInspCVec->cData[3]->data->data[j].im = 0;
+                  }
+                memcpy( cohInspCVec->cData[3]->data->data, tempSnippet.data->data + abs( timeptDiff[2] ), (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].im);
+
+                cohInspCVec->cData[3]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
+                cohInspCVec->cData[3]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
+              }
+            else
+              {
+                if( vrbflg ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+              }
+            break;
+          }/*end switch */
+
 	/* If cohSNR is being output, then copy epoch */
         if( cohInspFilterParams->cohSNROut ) {
 	  if (threeSiteCase) { 
@@ -796,8 +1055,8 @@ int main( int argc, char *argv[] )
 	  }
         }
         /* Now that the time series are commensurate, do the filtering... */
-        XLALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, thisScan.skyGrid, nullStatRegul);
-          
+        XLALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, thisScan.skyGrid, chisq, chisq_dof, snrsqArray, eff_snr_denom_fac, nullStatRegul);         
+ 
         /* Save event id in multi_inspiral table */
         thisEventTemp =thisEvent;
         while( thisEventTemp )
@@ -814,7 +1073,7 @@ int main( int argc, char *argv[] )
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			"SNR_%Ld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
-	      outFrameCoh = fr_add_proc_COMPLEX8TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
+	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
@@ -849,7 +1108,7 @@ int main( int argc, char *argv[] )
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
 			"NullStat_%Ld", eventID );
 	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
-	      outFrameNullStat = fr_add_proc_COMPLEX8TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
+	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
@@ -940,13 +1199,13 @@ int main( int argc, char *argv[] )
         cohInspBeamVec = NULL;
         cohInspCVec = NULL;
         
-        for(j=0;j<5;j++)
+        for(j=0;j< (numDetectors-1);j++)
           {
             tempTime[j] = 0.0;
             timeptDiff[j] = 0;
           }
-        tempTime[5] = 0.0;
-        
+        tempTime[numDetectors-1] = 0.0;       
+ 
         thisCoinc=thisCoinc->next;
         
       }/* Close loop over cohtrigs*/
@@ -1179,6 +1438,7 @@ int main( int argc, char *argv[] )
    
   /* ----- clean up ----- */
   /* Free DopplerSkyScan-stuff (grid) */
+  XLALFree(scanInit.skyRegionString);
   thisScan.state = STATE_FINISHED;
   LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
   
@@ -1277,6 +1537,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
 "  [--numCohTrigs]   numCohTrigs number of coherent snr frames per output frame-file\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
+"  --cdata-length SEC          set length of CData segments (in seconds) \n"\
 "  --null-stat-regul nullStatRegul  a regulator for computing the ratio-statistic\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
@@ -1326,6 +1587,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"v1-slide",                 required_argument, 0,                 'w'},
      {"numCohTrigs",              required_argument, 0,                 'n'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
+     {"cdata-length",             required_argument, 0,                 's'},
      {"null-stat-regul",          required_argument, 0,                 'C'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"write-events",             no_argument,       &eventsOut,         1 },
@@ -1359,7 +1621,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:C:r:u:v:",
+	   "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:s:C:r:u:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1484,6 +1746,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
            break;
 
+         case 's': /* set length of CData segment */
+           cohSegLength = atof (optarg);
+           ADD_PROCESS_PARAM( "float", "%e", cohSegLength );
+           break;
+
          case 'C': /* set null-stream regulator */
            nullStatRegul = atof (optarg);
            ADD_PROCESS_PARAM( "float", "%e", nullStatRegul );
@@ -1524,42 +1791,41 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
            /* Read in time-slide steps for all detectors */
            /* Read in time-slide step for G1 */
-         case 'g': 
-           slideStep[0] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[0] );
+         case 'g':
+           slideStep[LAL_IFO_G1] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_G1] );
            break;
 
            /* Read in time-slide step for H1 */
-         case 'W': 
-           slideStep[1] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[1]);
+         case 'W':
+           slideStep[LAL_IFO_H1] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H1]);
            break;
 
            /* Read in time-slide step for H2 */
-         case 'X': 
-           slideStep[2] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[2]);
+         case 'X':
+           slideStep[LAL_IFO_H2] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H2]);
            break;
 
            /* Read in time-slide step for L1 */
-         case 'Y': 
-           slideStep[3] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[3]);
+         case 'Y':
+           slideStep[LAL_IFO_L1] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_L1]);
            break;
 
            /* Read in time-slide step for T1 */
-         case 't': 
-           slideStep[4] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[4]);
+         case 't':
+           slideStep[LAL_IFO_T1] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_T1]);
            break;
 
            /* Read in time-slide step for V1 */
-         case 'w': 
-           slideStep[5] = (REAL8) atof(optarg);
-           ADD_PROCESS_PARAM("float", "%e", slideStep[5]);
+         case 'w':
+           slideStep[LAL_IFO_V1] = (REAL8) atof(optarg);
+           ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_V1]);
            break;
 
-           /* Read in time-slide step for V1 */
          case 'n': 
            numCohTrigs = (INT4) atol(optarg);
            ADD_PROCESS_PARAM("int", "%d", numCohTrigs );

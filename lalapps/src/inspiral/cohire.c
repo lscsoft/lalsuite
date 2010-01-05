@@ -91,6 +91,7 @@ static void print_usage(char *program)
       "\n"\
       "Cuts and Vetos:\n"\
       " [--ifo-cut]       ifo         only keep triggers from specified ifo\n"\
+      " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
       " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
@@ -107,7 +108,9 @@ static void print_usage(char *program)
       " [--sort-triggers]             time sort the inspiral triggers\n"\
       " [--cluster-time]   clust_time cluster triggers with clust_time ms window\n"\
       " [--cluster-algorithm] clust   use trigger clustering algorithm clust\n"\
-      "                               [ snrsq_over_chisq | snr ]\n"\
+      "                               [ cohsnr | effCohSnr | nullstat | snrByNullstat\n"\
+      "                               | autoCorrCohSqByNullstat | crossCorrCohSqByNullstat\n"\
+      "                               | autoCorrNullSqByNullstat| crossCorrNullSqByNullstat ]\n"\
       "\n"\
       "Injection analysis:\n"\
       " [--injection-file]   inj_file read injection parameters from inj_file\n"\
@@ -137,6 +140,7 @@ int main( int argc, char *argv[] )
   extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
+  char *ifos = NULL;
   char *ifoName = NULL;
   char *inputGlob = NULL;
   char *inputFileName = NULL;
@@ -186,6 +190,7 @@ int main( int argc, char *argv[] )
   int                   numEventsBelowRsqThresh = 0;
   int                   numEventsSurvivingVeto = 0;
   int                   numClusteredEvents = 0;
+  int                   numEventsInIfos = 0;
 
   int                   numSimEvents = 0;
   int                   numSimInData = 0;
@@ -276,6 +281,7 @@ int main( int argc, char *argv[] )
       {"cluster-algorithm",       required_argument,      0,              'C'},
       {"cluster-time",            required_argument,      0,              't'},
       {"ifo-cut",                 required_argument,      0,              'd'},
+      {"coinc-cut",               required_argument,      0,              'D'},
       {"veto-file",               required_argument,      0,              'v'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
@@ -289,7 +295,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, 
-        "c:d:g:hi:j:k:m:o:r:s:t:v:zC:DH:I:R:ST:VZ:", 
+        "c:d:D:g:hi:j:k:m:o:r:s:t:v:zC:DH:I:R:ST:VZ:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -485,24 +491,44 @@ int main( int argc, char *argv[] )
       case 'C':
         /* choose the clustering algorithm */
         {        
-          if ( ! strcmp( "snr_and_chisq", optarg ) )
+          if ( ! strcmp( "nullstat", optarg) )
           {
-            clusterchoice = snr_and_chisq;
+            clusterchoice = nullstat;
           }
-          else if ( ! strcmp( "snrsq_over_chisq", optarg) )
+          else if ( ! strcmp( "cohsnr", optarg) )
           {
-            clusterchoice = snrsq_over_chisq;
+            clusterchoice = cohsnr;
           }
-          else if ( ! strcmp( "snr", optarg) )
+          else if ( ! strcmp( "effCohSnr", optarg) )
           {
-            clusterchoice = snr;
-          }        
+            clusterchoice = effCohSnr;
+          }       
+          else if ( ! strcmp( "snrByNullstat", optarg) )
+          {
+            clusterchoice = snrByNullstat;
+          } 
+          else if ( ! strcmp( "autoCorrCohSqByNullstat", optarg) )
+          {
+            clusterchoice = autoCorrCohSqByNullstat;
+          }
+          else if ( ! strcmp( "crossCorrCohSqByNullstat", optarg) )
+          {
+            clusterchoice = autoCorrCohSqByNullstat;
+          }
+          else if ( ! strcmp( "autoCorrNullSqByNullstat", optarg) )
+          {
+            clusterchoice = autoCorrCohSqByNullstat;
+          }
+          else if ( ! strcmp( "crossCorrNullSqByNullstat", optarg) )
+          {
+            clusterchoice = crossCorrCohSqByNullstat;
+          }
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
                 "unknown clustering specified:\n "
-                "%s (must be one of: snr_and_chisq, \n"
-                "   snrsq_over_chisq or snr)\n",
+                "%s (must be one of: cohsnr, effCohSnr, nullstat, snrByNullstat, autoCorrCohSqByNullstat, \n"
+                "crossCorrCohSqByNullstat, autoCorrNullSqByNullstat, or crossCorrNullSqByNullstat)\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
@@ -546,6 +572,14 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         ifoName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( ifoName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'D':
+        /* keep only coincs found in ifos */
+        optarg_len = strlen( optarg ) + 1;
+        ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifos, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -782,10 +816,6 @@ int main( int argc, char *argv[] )
           &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
       numEvents += numFileTriggers;
       
-
-      /*CHECK: END */
-      
-      
     if (numFileTriggers < 0)
       {
         fprintf(stderr, "Error reading triggers from file %s\n",
@@ -809,7 +839,15 @@ int main( int argc, char *argv[] )
      *  keep only relevant triggers
      *
      */
-    
+   
+    if( ifos )
+    {
+      numFileTriggers = XLALMultiInspiralIfosCut( &inspiralFileList, ifos );
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d coincs from %s instruments\n", numFileTriggers, ifos );
+      numEventsInIfos += numFileTriggers;
+    }
+ 
     /* Do playground_only or exclude_play cut */
     if ( dataType != all_data )
     {
