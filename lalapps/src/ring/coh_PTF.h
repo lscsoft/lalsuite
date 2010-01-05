@@ -99,6 +99,7 @@ struct coh_PTF_params {
   int          getSpectrum;
   int          getBank;
   int          doFilter;
+  int          analyzeInjSegsOnly;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;

@@ -415,6 +415,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
                        char *ifoChannel, char *dataCache  )
 {
   int stripPad = 0;
+  int ninj;
   REAL4TimeSeries *channel = NULL;
   UINT4 j;
 
@@ -562,14 +563,42 @@ static RingDataSegments *coh_PTF_get_segments(
 {
   RingDataSegments *segments = NULL;
   COMPLEX8FrequencySeries  *response = NULL;
-  UINT4  sgmnt;
+  UINT4  sgmnt,i;
+  UINT4  segListToDo[params->numOverlapSegments];
 
   segments = LALCalloc( 1, sizeof( *segments ) );
 
-  /* TODO: trig start/end time condition */
+  if ( params->analyzeInjSegsOnly )
+  {
+    segListToDo[2] = 1;
+    for ( i = 0 ; i < params->numOverlapSegments; i++)
+      segListToDo[i] = 0;
+    SimInspiralTable        *injectList = NULL;
+    SimInspiralTable        *thisInject = NULL;
+    LIGOTimeGPS injTime;
+    REAL8 deltaTime;
+    INT4 segNumber,segLoc,ninj;
+    segLoc = 0;
+    ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+    while (injectList)
+    {
+      injTime = injectList->geocent_end_time;
+      deltaTime = injectList->geocent_end_time.gpsSeconds;
+      deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
+      deltaTime -= params->startTime.gpsSeconds;
+      deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
+      segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
+      segListToDo[segNumber] = 1;
+      thisInject = injectList;
+      injectList = injectList->next;
+      LALFree( thisInject );
+    }
+  }
+
+ /* TODO: trig start/end time condition */
 
   /* if todo list is empty then do them all */
-  if ( ! params->segmentsToDoList || ! strlen( params->segmentsToDoList ) )
+  if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
   {
     segments->numSgmnt = params->numOverlapSegments;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
@@ -584,10 +613,20 @@ static RingDataSegments *coh_PTF_get_segments(
     /* first count the number of segments to do */
     count = 0;
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-      if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-        ++count;
+      if ( params->analyzeInjSegsOnly )
+      {
+        if ( segListToDo[sgmnt] == 1)
+          ++count;
+        else
+          continue;
+      }
       else
-        continue; /* skip this segment: it is not in todo list */
+      {
+        if ( is_in_list( sgmnt, params->segmentsToDoList ) )
+          ++count;
+        else
+          continue; /* skip this segment: it is not in todo list */
+      }
 
     if ( ! count ) /* no segments to do */
       return NULL;
@@ -597,10 +636,22 @@ static RingDataSegments *coh_PTF_get_segments(
 
     count = 0;
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-      if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-        compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
+    {
+      if ( params->analyzeInjSegsOnly )
+      {
+        if ( segListToDo[sgmnt] == 1)
+          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
+      }
+      else
+      {
+        if ( is_in_list( sgmnt, params->segmentsToDoList ) )
+          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
+            invspec, response, params->segmentDuration, params->strideDuration,
+            fwdplan );
+      }
+    }
   }
   if ( params->writeSegment) /* write data segment */
   {

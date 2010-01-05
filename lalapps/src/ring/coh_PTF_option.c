@@ -59,6 +59,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
+    { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
 /*    {"h2-data",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },*/
@@ -347,6 +348,9 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   }
   sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
   sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
+
+  sanity_check( ! ((params->segmentsToDoList  != "^-$") && (params->analyzeInjSegsOnly)));
+
   return 0;
 }
 
@@ -395,6 +399,7 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "\nfiltering options:\n" );
   fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
+  fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
   fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
   fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
