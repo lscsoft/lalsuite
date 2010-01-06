@@ -125,6 +125,14 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
 
+void ComputeU1idx( LALStatus *status, const REAL8 *f_event, const REAL8 *f1dot_event, 
+                  const REAL8 *A1, const REAL8 *B1, const REAL8 *U1start, const REAL8 *U1winInv, 
+                  INT4 *U1idx );
+
+void ComputeU2idx( LALStatus *status, const REAL8 *f_event, const REAL8 *f1dot_event, 
+                  const REAL8 *A2, const REAL8 *B2, const REAL8 *U2start, const REAL8 *U2winInv,
+                  INT4 *U2idx);
+
 int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridUindex( const void *a,const void *b );
 int compareFineGridNC( const void *a,const void *b );
@@ -222,7 +230,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* GCT helper variables */
   UINT4 ic,ic2,ic3,ifine;
-  INT4 fveclength,ifreq,U1idx,U2idx,NumU1idx,NumU2idx;
+  INT4 fveclength,ifreq,U1idx,U2idx,NumU2idx;
   REAL8 myf0,myf0max,f_event,f1dot_event,deltaF;
   REAL8 fg_freq_step,fg_f1dot_step,fg_fmin,f1dotmin,fg_fband,fg_f1dotband;
   REAL8 u1win,u2win,u1winInv,u2winInv,u1fac,u2fac;
@@ -237,9 +245,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* GCT helper variables for faster calculation of u1, u2 */
   REAL8 A1, B1, A2, B2;
-  REAL8 cosAlpha, sinAlpha, cosDelta,sinDelta;
-  REAL8 CosAlphaCosDelta, SinAlphaCosDelta, PdotN, VdotN, AdotN;
-     
+       
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
 
@@ -583,10 +589,9 @@ int MAIN( int argc, char *argv[]) {
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
   /* LogPrintf(LOG_DEBUG, "GPS Reference Time = %d\n", refTimeGPS.gpsSeconds); */
-  fprintf(stderr, "%% GPS Reference Time = %d\n", refTimeGPS.gpsSeconds); 
+  fprintf(stderr, "%% GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
   
-
-
+  
   if ( uvar_sftUpsampling > 1 )
     {
       LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
@@ -984,12 +989,13 @@ int MAIN( int argc, char *argv[]) {
         /* --------------------------------------------------------------- */
       
         /* U-map configuration */
-        u1fac=1.0;
-        u2fac=1.0;
+        u1fac = 1.0; /* default */
+        u2fac = 1.0;
 
         /* Keeping track of maximum number count */
-        nc_max=0;    /* initialize */
-        TwoFmax=0.0; /* initialize */
+        nc_max = 0;    /* initialize */
+        TwoFmax = 0.0; 
+        
       
         /* ##########################################################*/
         /* ------------- MAIN LOOP over Segments --------------------*/
@@ -1018,7 +1024,7 @@ int MAIN( int argc, char *argv[]) {
           endTseg = XLALGPSGetREAL8( &endTstackGPS );
           refTime = XLALGPSGetREAL8( &thisPoint.refTime );
           
-          /* differentce in time between this segment's midpoint and Fstat reftime */
+          /* Differentce in time between this segment's midpoint and Fstat reftime */
           timeDiffSeg = midTseg - refTime;   
                 
           /* ---------------------------------------------------------------------------------------- */ 
@@ -1026,7 +1032,7 @@ int MAIN( int argc, char *argv[]) {
           SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, skyGridCounter + (REAL4)k / (REAL4)nStacks, 
                         thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
 
-          /********************* Compute Global-Correlation Constants for the COARSE grid *************/
+          /* Compute sky position associated dot products (for global-correlation coordinates) */
           
           A1 =  1.0 + ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
                       + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
@@ -1044,29 +1050,21 @@ int MAIN( int argc, char *argv[]) {
                + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
                + vel[2] * sin(thisPoint.Delta) );
           
-          /* setup the tolerance windows in the U-map */
-          u1win = u1fac * dFreqStack * LAL_TWOPI * A1;
-          u2win = u2fac * 0.5 * LAL_TWOPI * df1dot;
+          /* Setup the tolerance windows in the U-map */
+          u1win = u1fac * dFreqStack * A1;
+          u2win = u2fac * df1dot;
 
-          /* initialize */
-          u1start = 0.0;
-          u2start = 0.0;
-        
-          /* take the inverse before the hot loop */
+          /* Take the inverse before the hot loop */
           u1winInv = 1.0/u1win;
           u2winInv = 1.0/u2win;
                 
           /* ----------------------------------------------------------------- */ 
           /************************ Compute F-Statistic ************************/         
-          /*
-          LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid point and %d/%d spindown values\n",
-                      skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);                    
-          */
           
           /* Set starting frequency for Fstat calculation */
           thisPoint.fkdot[0] = fstatVector.data[k].f0; 
           
-          /* set spindown value for Fstat calculation */
+          /* Set spindown value for Fstat calculation */
           thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
           
           /* Translate frequency to segment's midpoint for later use */
@@ -1076,30 +1074,36 @@ int MAIN( int argc, char *argv[]) {
           deltaF = fstatVector.data[k].deltaF;
           myf0max = thisPoint.fkdot[0] + (fveclength - 1) * deltaF + thisPoint.fkdot[1] * timeDiffSeg;
           
-          /* this is the most costly function. We here allow for using an architecture-specific optimized
+          /* This is the most costly function. We here allow for using an architecture-specific optimized
               function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
           LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint, \
                                           stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], \
                                           stackMultiDetStates.data[k], &CFparams), &status);
           
-          /* smallest values of u1 and u2 (to be subtracted) */
-          u1start = LAL_TWOPI * (myf0 * A1 + f1dot_event * B1);
-          u2start = LAL_TWOPI * (f1dot_event * 0.5 + myf0 * 0.5 * A2 + f1dot_event * B2);
-          u2end = LAL_TWOPI * (f1dot_event * 0.5 + myf0max * 0.5 * A2 + f1dot_event * B2);
-          NumU2idx = ceil(fabs(u2start-u2end)*u2winInv); 
-          /*fprintf(stderr,"%% ******** NumU2idx: %d   u2start:%g   u2end:%g\n",NumU2idx,u2start,u2end);*/
+          /* Smallest values of u1 and u2 (to be subtracted) */
+          u1start = myf0 * A1 + f1dot_event * B1;
+          u2start = f1dot_event + myf0 * A2 + 2.0 * f1dot_event * B2;
+          u2end = f1dot_event + myf0max * A2 + 2.0 * f1dot_event * B2;
+          NumU2idx = ceil(fabs(u2start - u2end) * u2winInv); 
                   
+          /* Initialize indices */
+          U1idx = 0;
+          U2idx = 0;
+          
+          /* Loop over frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
             
             /* translate frequency from reftime to midpoint of this segment */
             f_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
-            U1idx = (INT4) ( ( (LAL_TWOPI * (f_event * A1 + f1dot_event * B1)) 
-                                        - u1start ) * u1winInv + 0.5);
-            U2idx = (INT4) ( ( (LAL_TWOPI * (0.5 * f1dot_event + 0.5 * f_event * A2 + f1dot_event * B2)) 
-                                        - u2start ) * u2winInv + 0.5);   
+            LAL_CALL( ComputeU1idx ( &status, &f_event, &f1dot_event, &A1, &B1, 
+                                    &u1start, &u1winInv, &U1idx), &status);
             
+            LAL_CALL( ComputeU2idx ( &status, &f_event, &f1dot_event, &A2, &B2, 
+                                    &u2start, &u2winInv, &U2idx), &status);
+            
+            /* Check U1 index value */
             if ( ifreq != U1idx ) {
               fprintf(stderr, "WARNING:  Incorrect Frequency-Index!\n ----> Seg: %03d  ifreq: %d   cg U1: %d  cg U2: %d \n", 
                                 k, ifreq, U1idx, U2idx);
@@ -1120,17 +1124,6 @@ int MAIN( int argc, char *argv[]) {
           qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex);          
           
           /* ---------------------------------------------------------------------------------------- */ 
-        
-          /* Pre-compute constants for global-correlation parameters */
-          cosAlpha = cos(finegrid.Alpha);
-          sinAlpha = sin(finegrid.Alpha);
-          cosDelta = cos(finegrid.Delta);
-          sinDelta = sin(finegrid.Delta);
-          CosAlphaCosDelta = cosAlpha * cosDelta;
-          SinAlphaCosDelta = sinAlpha * cosDelta;
-          PdotN = pos[0] * CosAlphaCosDelta + pos[1] * SinAlphaCosDelta + pos[2] * sinDelta;
-          VdotN = vel[0] * CosAlphaCosDelta + vel[1] * SinAlphaCosDelta + vel[2] * sinDelta;
-          AdotN = acc[0] * CosAlphaCosDelta + acc[1] * SinAlphaCosDelta + acc[2] * sinDelta;
           
           /* ---------- Compute finegrid U-map --------------- */
           for (ifine = 0; ifine < finegrid.length; ifine++) {
@@ -1140,12 +1133,13 @@ int MAIN( int argc, char *argv[]) {
            
             f1dot_tmp = finegrid.list[ifine].F1dot;
       
-            U1idx = (INT4) ( ( (LAL_TWOPI * (f_tmp * (1.0 + VdotN) + f1dot_tmp * PdotN)) 
-                                                 - u1start) * u1winInv + 0.5);
+            /* compute the global-correlation coordinate indices */
+            LAL_CALL( ComputeU1idx ( &status, &f_tmp, &f1dot_tmp, &A1, &B1, 
+                                    &u1start, &u1winInv, &U1idx), &status);
             
-            U2idx = (INT4) ( ( (LAL_TWOPI * (0.5 * f1dot_tmp + 0.5 * f_tmp * AdotN + f1dot_tmp * VdotN)) 
-                                                 - u2start) * u2winInv + 0.5);
-
+            LAL_CALL( ComputeU2idx ( &status, &f_tmp, &f1dot_tmp, &A2, &B2, 
+                                    &u2start, &u2winInv, &U2idx), &status);
+            
             finegrid.list[ifine].Uindex = U1idx * NumU2idx + U2idx;
                         
             /* map coarse-grid to appropriate fine-grid points */
@@ -1179,13 +1173,11 @@ int MAIN( int argc, char *argv[]) {
                  }
                  */
               /*}*/
-            } 
-            
-            
+            }   
                         
           } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
-          fprintf(stderr, "   --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
+          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
 
         } /* end ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
@@ -1927,6 +1919,78 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
   RETURN(status);
   
 } /* GetSegsPosVelAccEarthOrb() */
+
+
+
+
+
+/** Calculate the U1 index for a given point in parameter space */
+void ComputeU1idx( LALStatus *status, 
+                  const REAL8 *f_event, 
+                  const REAL8 *f1dot_event, 
+                  const REAL8 *A1, 
+                  const REAL8 *B1, 
+                  const REAL8 *U1start, 
+                  const REAL8 *U1winInv,
+                  INT4 *U1idx)
+{
+  
+  REAL8 freqL, f1dotL, A1L, B1L, U1startL, U1winInvL;
+  
+  INITSTATUS( status, "ComputeU1idx", rcsid );
+  ATTATCHSTATUSPTR (status);
+  
+  /* Local copies */
+  freqL = *f_event;
+  f1dotL = *f1dot_event;
+  A1L = *A1;
+  B1L = *B1;
+  U1startL = *U1start;
+  U1winInvL = *U1winInv;
+  
+  /* compute the index of global-correlation coordinate U1 */
+  *U1idx = (INT4) ((((freqL * A1L + f1dotL * B1L) - U1startL) * U1winInvL) + 0.5);
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+  
+} /* ComputeU1idx */
+
+
+/** Calculate the U2 index for a given point in parameter space */
+void ComputeU2idx( LALStatus *status, 
+                  const REAL8 *f_event, 
+                  const REAL8 *f1dot_event, 
+                  const REAL8 *A2, 
+                  const REAL8 *B2, 
+                  const REAL8 *U2start, 
+                  const REAL8 *U2winInv,
+                  INT4 *U2idx)
+{
+  
+  REAL8 freqL, f1dotL, A2L, B2L, U2startL, U2winInvL;
+  
+  INITSTATUS( status, "ComputeU2idx", rcsid );
+  ATTATCHSTATUSPTR (status);
+  
+  /* Local copies */
+  freqL = *f_event;
+  f1dotL = *f1dot_event;
+  A2L = *A2;
+  B2L = *B2;
+  U2startL = *U2start;
+  U2winInvL = *U2winInv;
+  
+  /* compute the index of global-correlation coordinate U2 */ 
+  *U2idx = (INT4) ((((f1dotL + freqL * A2L + 2.0 * f1dotL * B2L) - U2startL) * U2winInvL) + 0.5);
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+  
+} /* ComputeU2idx */
+
+
+ 
 
 
 
