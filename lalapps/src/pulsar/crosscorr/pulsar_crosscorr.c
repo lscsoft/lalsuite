@@ -831,13 +831,13 @@ int main(int argc, char *argv[]){
  	   	    Ualpha function*/
 	     if (uvar_averagePsi && uvar_averageIota) {
 		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
-						    phase1, phase2, *beamfns1, *beamfns2, 
+						    phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2, 
 						    sigmasq->data[ualphacounter]),
 			       &status);
 
 	     } else {
 		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
-						 phase1, phase2, *beamfns1, *beamfns2,
+						 phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2,
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 	     }
@@ -1260,7 +1260,7 @@ void GetBeamInfo(LALStatus *status,
   SFTListElement *sft = NULL;
   REAL8ListElement *freqtmp, *phasetmp;
   CrossCorrBeamFnListElement *beamtmp;
-  LIGOTimeGPS *epoch = NULL;
+  LIGOTimeGPS tgps;
 
   INITSTATUS (status, "GetBeamInfo", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1293,10 +1293,12 @@ void GetBeamInfo(LALStatus *status,
     AMcoef->a = XLALCreateREAL4Vector(1);
     AMcoef->b = XLALCreateREAL4Vector(1);
 
-    epoch = &(sft->sft.epoch);
+    /* get midpoint of sft */
+    tgps = sft->sft.epoch;
+    XLALGPSAdd(&tgps, tOffs);
+
     det = XLALGetSiteInfo (sft->sft.name); 
     ts->data[0] = sft->sft.epoch;
-
     /* note that this function returns the velocity at the
        mid-time of the SFTs -- should not make any difference */
 
@@ -1311,10 +1313,10 @@ void GetBeamInfo(LALStatus *status,
     thisPos.data = detState->data[0].rDetector;
 
 
-    LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, epoch, thisPoint,
+    LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, &tgps, thisPoint,
 				&thisVel);
 
-    LALGetSignalPhaseInSFT( status->statusPtr, &phase1, epoch, thisPoint,
+    LALGetSignalPhaseInSFT( status->statusPtr, &phase1, &tgps, thisPoint,
 			    &thisPos);
 
     freqtmp->val = freq1; 
