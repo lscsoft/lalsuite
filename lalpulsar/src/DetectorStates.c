@@ -81,7 +81,7 @@ LALGetDetectorStates (LALStatus *status,
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
 		      const EphemerisData *edat,		/**< ephemeris file data */
-		      REAL8 tOffset
+		      REAL8 tOffset				/**< compute detector states at timestamps SHIFTED by tOffset */
 		      )
 {
   UINT4 i, j, numSteps;

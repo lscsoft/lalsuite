@@ -59,6 +59,8 @@ extern struct gengetopt_args_info args_info;
 
 typedef REAL8Array * skygrid_t;
 
+EphemerisData * InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
+
 void init_ephemeris(LALStatus *status, EphemerisData *ephemeris_data);
 void cleanup_ephemeris(LALStatus *status, EphemerisData *ephemeris_data);
 void init_skygrid(LALStatus *status);

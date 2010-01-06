@@ -239,6 +239,7 @@ LALPNOrder order;                       /* pN order of waveform         */
 CHAR *orderName = NULL;                 /* pN order of the waveform     */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;           /* flag for filtering inj. only */
+REAL4  CDataLength      = 1;            /* set length of c-data snippet (sec) */
 
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
@@ -2660,7 +2661,7 @@ int main( int argc, char *argv[] )
 
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,
-                          tempTmplt, 0.5, numPoints / 4 ), &status );
+                          tempTmplt, CDataLength/2, numPoints / 4 ), &status );
 
                     if ( coherentInputData )
                     {
@@ -3449,6 +3450,7 @@ fprintf( a, "  --band-pass-template         Band-pass filter the time-domain ins
 fprintf( a, "  --taper-template OPT         Taper the inspiral template using option OPT\n");\
 fprintf( a, "                                 (start|end|startend) \n");\
 fprintf( a, "\n");\
+fprintf( a, "  --cdata-length               Length of c-data snippet (in seconds) \n");\
 fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
 fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
 fprintf( a, "                                 with optional MASK (bns|bcv) \n");\
@@ -3595,6 +3597,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
     {"band-pass-template",      no_argument,       0,                '}'},
     {"taper-template",          required_argument, 0,                '{'},
+    {"cdata-length",            required_argument, 0,                '|'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3631,7 +3634,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv,
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:.:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -4908,7 +4911,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-
+      case '|':
+        CDataLength = atof( optarg );
+        if ( CDataLength < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "Length of c-data snippet must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, CDataLength );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
