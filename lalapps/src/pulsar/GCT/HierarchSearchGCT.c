@@ -55,6 +55,7 @@ RCSID( "$Id$");
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #endif
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
@@ -282,6 +283,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useToplist1 = FALSE;
   BOOLEAN uvar_semiCohToplist = FALSE; /* if overall first stage candidates are to be output */
+  BOOLEAN uvar_useResamp = FALSE;
 
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA; 		
@@ -303,7 +305,6 @@ int MAIN( int argc, char *argv[]) {
 
   REAL8 uvar_refTime = 0;
   REAL8 uvar_tStack = 0;
-  INT4 uvar_method = 0; 	
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
@@ -358,7 +359,6 @@ int MAIN( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=GCT", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
@@ -378,7 +378,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2",       'g', UVAR_OPTIONAL, "Refinement of spindown in fine grid (default: use segment times)", &uvar_gamma2), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2",      'g', UVAR_OPTIONAL, "Refinement of spindown in fine grid (default: use segment times)", &uvar_gamma2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output fileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
@@ -389,7 +389,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useResamp",    0,  UVAR_OPTIONAL,  "Use resampling to compute F-statistic", &uvar_useResamp), &status);  
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -432,16 +433,10 @@ int MAIN( int argc, char *argv[]) {
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
 
   /* some basic sanity checks on user vars */
-  if ( (uvar_method != 0) ) {
-    fprintf(stderr, "Invalid method....must be 0\n");
-    return( HIERARCHICALSEARCH_EBAD );
-  }
-
   if ( uvar_nStacksMax < 1) {
-    fprintf(stderr, "Invalid number of stacks\n");
+    fprintf(stderr, "Invalid number of segments!\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
@@ -452,7 +447,6 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-
   
   /* 2F threshold for semicoherent stage */
   TwoFthreshold = 2.0 * uvar_ThrF;
@@ -708,7 +702,9 @@ int MAIN( int argc, char *argv[]) {
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
-
+  CFparams.edat = edat;
+  /*CFparams.buffer = NULL;*/
+  
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;
   semiCohPar.tsMid = midTstack;
@@ -1074,11 +1070,21 @@ int MAIN( int argc, char *argv[]) {
           deltaF = fstatVector.data[k].deltaF;
           myf0max = thisPoint.fkdot[0] + (fveclength - 1) * deltaF + thisPoint.fkdot[1] * timeDiffSeg;
           
-          /* This is the most costly function. We here allow for using an architecture-specific optimized
-              function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-          LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint, \
-                                          stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], \
-                                          stackMultiDetStates.data[k], &CFparams), &status);
+          
+          if (uvar_useResamp) {
+            
+            /* Resampling method implementation to compute the F-statistic */
+            LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint, 
+                                               stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+                                               stackMultiDetStates.data[k], &CFparams), &status);
+          }
+          else {
+
+            /* SFT method implementation to compute the F-statistic */
+            LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint,
+                                            stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
+                                            stackMultiDetStates.data[k], &CFparams), &status);
+          }
           
           /* Smallest values of u1 and u2 (to be subtracted) */
           u1start = myf0 * A1 + f1dot_event * B1;
@@ -1307,6 +1313,14 @@ int MAIN( int argc, char *argv[]) {
       LALFree(fstatVector.data[k].data);
     }
   LALFree(fstatVector.data);
+  
+  
+  /* if resampling is used then free buffer */
+  /*
+  if ( uvar_useResamp ) {
+    XLALEmptyComputeFBuffer_RS( CFparams.buffer );
+  }
+  */
   
   /* free Vel/Pos/Acc vectors and ephemeris */
   XLALDestroyREAL8VectorSequence( posStack );
