@@ -1589,4 +1589,11 @@ XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *cfb)
   cfb->multiFa_resampled = NULL;
   if (cfb->multiFb_resampled) 
     XLALDestroyMultiCOMPLEX8TimeSeries( cfb->multiFb_resampled );
-  cfb->multiFb_resampled = N
+  cfb->multiFb_resampled = NULL;
+  if (cfb) 
+    XLALFree(cfb);
+  cfb = NULL;
+
+  return; 
+
+} /* XLALEmptyComputeFBuffer_RS() */
