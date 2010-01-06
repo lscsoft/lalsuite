@@ -192,14 +192,14 @@ int ring_inject_signal(
         LALCloseLIGOLwXMLFile ( &status, &xmlfp );
  
         /* free memory */
+    
+    }
 
-        while ( injectList )
-        {
-          thisInject = injectList;
-          injectList = injectList->next;
-          LALFree( thisInject );
-        }
-        break;
+    while ( injectList )
+    {
+      thisInject = injectList;
+      injectList = injectList->next;
+      LALFree( thisInject );
     }
  
     /* free memory */
