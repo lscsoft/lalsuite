@@ -94,7 +94,6 @@ TESTS = \
 	FrequencySeriesTest \
 	LALBarycenterTest \
 	LALIndTestDetRes.sh \
-	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SequenceTest \
 	SkymapTest \

@@ -359,6 +359,9 @@ void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     phiI,
 			REAL8     phiJ,
+			REAL8 	  freqI,
+			REAL8 	  freqJ,
+			REAL8 	  deltaF,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq)
@@ -368,7 +371,8 @@ void LALCalculateAveUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateAveUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ;
+  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
+//printf("%f\n", LAL_PI*(freqI - freqJ)/deltaF);
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
   im = 0.1 * sin(-deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
@@ -395,6 +399,9 @@ void LALCalculateUalpha(LALStatus *status,
 			CrossCorrAmps amplitudes,
 			REAL8     phiI,
 			REAL8     phiJ,
+			REAL8 	  freqI,
+			REAL8 	  freqJ,
+			REAL8 	  deltaF,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq,
@@ -410,8 +417,11 @@ void LALCalculateUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ;
+  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
 
+/*printf("%f %f\n", deltaPhi, LAL_PI * (freqI - freqJ)/deltaF);*/
+
+ 
   /*if not averaging over psi, calculate F+, Fx exactly*/
   if (psi) {
     FplusI = (beamfnsI.a * cos(2.0*(*psi))) + (beamfnsI.b * sin(2.0*(*psi)));

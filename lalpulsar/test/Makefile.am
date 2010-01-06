@@ -1,5 +1,5 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
-INCLUDES = -I../include
+LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALSUPPORT
 check_PROGRAMS = \
@@ -31,169 +31,16 @@ check_PROGRAMS = \
 	TestVelocity \
 	TwoDMeshTest \
 	UniversalDopplerMetricTest
-
 ##	SFTCleanTest \
 ##	NormalizeSFTRngMedTest \
-else
-check_PROGRAMS =
-endif
-
-ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
-ExtrapolatePulsarSpinsTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-FitToPulsarTest_SOURCES = FitToPulsarTest.c
-FitToPulsarTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
-FoldAmplitudesTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-GeneralMeshTest_SOURCES = GeneralMeshTest.c
-GeneralMeshTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-GeneralMetricTest_SOURCES = GeneralMetricTest.c
-GeneralMetricTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
-GeneratePulsarSignalTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
-GetAMCoeffsTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-NewGetAMCoeffsTest_SOURCES = NewGetAMCoeffsTest.c
-NewGetAMCoeffsTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-#NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
-#NormalizeSFTRngMedTest_LDADD = \
-#	$(LALSUPPORT_LIBS) \
-#	$(top_builddir)/src/liblalpulsar.la
-
-PtoleMeshTest_SOURCES = PtoleMeshTest.c
-PtoleMeshTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-PtoleMetricTest_SOURCES = PtoleMetricTest.c
-PtoleMetricTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-PulsarCatTest_SOURCES = PulsarCatTest.c
-PulsarCatTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-ResampleTest_SOURCES = ResampleTest.c
-ResampleTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-#SFTCleanTest_SOURCES = SFTCleanTest.c
-#SFTCleanTest_LDADD = \
-#	$(LALSUPPORT_LIBS) \
-#	$(top_builddir)/src/liblalpulsar.la
-
-SFTfileIOTest_SOURCES = SFTfileIOTest.c
-SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
-SFTfileIOTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-SimulateTaylorCWTest_SOURCES = SimulateTaylorCWTest.c
-SimulateTaylorCWTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-SkyMetricTest_SOURCES = SkyMetricTest.c
-SkyMetricTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-StackMetricTest_SOURCES = StackMetricTest.c
-StackMetricTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestConstructPLUT_SOURCES = TestConstructPLUT.c
-TestConstructPLUT_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestDriveHough_SOURCES = TestDriveHough.c
-TestDriveHough_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestDriveNDHough_SOURCES = TestDriveNDHough.c
-TestDriveNDHough_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestHoughMap_SOURCES = TestHoughMap.c
-TestHoughMap_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestNDConstructPLUT_SOURCES = TestNDConstructPLUT.c
-TestNDConstructPLUT_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestNDHoughMap_SOURCES = TestNDHoughMap.c
-TestNDHoughMap_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestNDPeak2PHMD_SOURCES = TestNDPeak2PHMD.c
-TestNDPeak2PHMD_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestPeak2PHMD_SOURCES = TestPeak2PHMD.c
-TestPeak2PHMD_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestStatistics_SOURCES = TestStatistics.c
-TestStatistics_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TestVelocity_SOURCES = TestVelocity.c
-TestVelocity_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
-TwoDMeshTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c
-UniversalDopplerMetricTest_LDADD = \
-	$(LALSUPPORT_LIBS) \
-	$(top_builddir)/src/liblalpulsar.la
-
-if LALSUPPORT
 TESTS = $(check_PROGRAMS)
 else
+check_PROGRAMS =
 TESTS =
 endif
+
+SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
+TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 
@@ -265,6 +112,5 @@ pkgdata_DATA = \
 	sun09.dat  \
 	sun98.dat \
 	sun99.dat
-
 
 EXTRA_DIST = $(DATA)

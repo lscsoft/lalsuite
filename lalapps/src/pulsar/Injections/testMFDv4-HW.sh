@@ -48,12 +48,24 @@ else
     rm -f $testDIR/* || true
 fi
 
+echo "LAL_DATA_PATH=$LAL_DATA_PATH"
+
 #ephemdir=$LAL_PREFIX/share/lal
 # determine ephemdir from LAL_DATA_PATH
 SAVEIFS="$IFS"
+foundEphem=no
 IFS=:
-for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && break; done
+for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && foundEphem=yes && break; done
 IFS="$SAVEIFS"
+
+if [ "$foundEphem" = "no" ]; then
+    echo "Failed to located ephemeris files."
+    echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
+    echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
+    echo "This might indicate an incomplete LAL installation"
+    echo
+    exit 1
+fi
 
 # input parameters
 Tsft=20
