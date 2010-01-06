@@ -312,7 +312,7 @@ MultiInspiralClusterChoice;
 The \texttt{MultiInspiralClusterChoice} provides choices for clustering
 a multi inspiral table.  The \texttt{cohsnr} clustering returns the trigger
 with the greatest coherent signal to noise ratio; the \texttt{nullstat} 
-clustering returns the trigger with the smallest null_statistic value. 
+clustering returns the trigger with the smallest null-statistic value. 
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
