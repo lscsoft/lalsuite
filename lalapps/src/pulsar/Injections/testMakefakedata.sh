@@ -49,9 +49,19 @@ tol="1e-4";	## tolerance on relative difference between SFTs in comparison
 #ephemdir=$LAL_PREFIX/share/lal
 # determine ephemdir from LAL_DATA_PATH
 SAVEIFS="$IFS"
+foundEphem=no
 IFS=:
-for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && break; done
+for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && foundEphem=yes && break; done
 IFS="$SAVEIFS"
+
+if [ "$foundEphem" = "no" ]; then
+    echo "Failed to located ephemeris files."
+    echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
+    echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
+    echo "This might indicate an incomplete LAL installation"
+    echo
+    exit 1
+fi
 
 Tsft=1800
 nTsft=20

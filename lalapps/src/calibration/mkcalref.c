@@ -37,7 +37,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -142,6 +142,8 @@ int main( int argc, char *argv[] )
   int sec = 0;
   int arg, arg2;
   char fname[256];
+
+  lalDebugLevel = 0;
 
   /* parse arguments */
   if ( argc == 1 )

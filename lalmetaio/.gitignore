@@ -18,5 +18,9 @@ lalmetaio-*.tar.gz
 lalmetaio.pc
 lalmetaio.spec
 libtool
+src/LALMetaIOConfig.h
+src/LALMetaIOVCSInfo.h
+src/git_version
 src/lalmetaio-user-env.csh
 src/lalmetaio-user-env.sh
+src/stamp-h2

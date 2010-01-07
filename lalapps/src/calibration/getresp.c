@@ -8,7 +8,7 @@
 #include <lal/VectorOps.h>
 #include <lal/PrintFTSeries.h>
 
-int lalDebugLevel = 7;
+extern int lalDebugLevel;
 int main( int argc, char *argv[] )
 {
 	COMPLEX16FrequencySeries *response;
@@ -33,6 +33,8 @@ int main( int argc, char *argv[] )
 		{ 0, 0, 0, 0 }
 	};
 	char args[] = "ht:d:c:C:f:F:";
+
+	lalDebugLevel = 7;
 
 	XLALSetErrorHandler( XLALAbortErrorHandler );
 

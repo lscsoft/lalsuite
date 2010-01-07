@@ -115,7 +115,7 @@ where \verb@<typecode>@ is any of \verb@I2@, \verb@I4@, \verb@I8@,
 NRCSID( STREAMSERIESINPUTTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define INFILE "StreamSeriesInput.data"
 
 /* Usage format string. */
@@ -167,6 +167,8 @@ main(int argc, char **argv)
   const CHAR *stype = "f";     /* series type tag */
   FILE *fpIn = NULL;           /* input file pointer */
   FILE *fpOut = NULL;          /* output file pointer */
+
+  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;

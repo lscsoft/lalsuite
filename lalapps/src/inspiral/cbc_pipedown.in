@@ -704,7 +704,6 @@ for result_db in result_dbs_cache:
       printlc_node.set_input( result_db.path() )
       printlc_node.set_output( summary_filename )
       printlc_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
-      printlc_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
       printlc_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
       printlc_node.set_datatype( datatype )
 
@@ -730,6 +729,7 @@ for result_db in result_dbs_cache:
         minifup_node.set_input_xml( '.'.join([ full_filename, 'xml' ]) )
         minifup_node.set_input_xml_summary( summary_filename )
         minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+        minifup_node.set_table_name( 'loudest_events' )
   
         minifup_node.add_parent( printlc_node )
         dag.add_node( minifup_node )
@@ -769,7 +769,7 @@ for result_db in result_dbs_cache:
               'elogs',
               'injected_mass1',
               'injected_mass2',
-              'injected_distance'
+              'injected_distance',
               'sim_tag',
               'recovered_combined_far',
               'recovered_snr'])
@@ -790,7 +790,6 @@ for result_db in result_dbs_cache:
           printsims_node.set_input( result_db.path() )
           printsims_node.set_output( summary_filename )
           printsims_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
-          printsims_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
           printsims_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
           printsims_node.set_comparison_datatype( datatype )
           printsims_node.set_sim_tag( sim_tag )

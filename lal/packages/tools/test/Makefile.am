@@ -9,6 +9,7 @@ check_PROGRAMS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
+	LALBarycenterTest \
 	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SegmentsTest \
@@ -34,6 +35,11 @@ DetectorSiteTest_LDADD = \
 
 FrequencySeriesTest_SOURCES = FrequencySeriesTest.c
 FrequencySeriesTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+LALBarycenterTest_SOURCES = LALBarycenterTest.c
+LALBarycenterTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -76,23 +82,25 @@ EXTRA_DIST = \
 	ComputeCalibrationFactorsTest.c \
 	LALIndTestDetRes.sh \
 	ResampleTimeSeriesTest.c \
+	earth98.dat \
 	indTestDetResGEO.cfg \
 	indTestDetResLHO.cfg \
-	indTestDetResLLO.cfg
+	indTestDetResLLO.cfg \
+	sun98.dat
 
 TESTS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
+	LALBarycenterTest \
 	LALIndTestDetRes.sh \
-	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SequenceTest \
 	SkymapTest \
 	TimeSeriesTest \
 	UnitsTest
 
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 MOSTLYCLEANFILES = \
 	.dvi-dep \
