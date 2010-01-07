@@ -11,7 +11,7 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: lal
+Requires: lal pulsar
 Prefix: %{_prefix}
 
 %description
@@ -54,6 +54,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
+%{_prefix}/share/lalpulsar/*
 
 %files devel
 %defattr(-,root,root)

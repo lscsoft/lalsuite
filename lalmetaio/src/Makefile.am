@@ -2,6 +2,8 @@ INCLUDES = -I$(top_builddir)/include
 
 lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
+	LALMetaIOConfig.h \
+	LALMetaIOVCSInfo.h \
 	LIGOLwXMLRead.h
 
 lib_LTLIBRARIES = liblalmetaio.la
@@ -10,9 +12,22 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXMLRead.c \
 	LIGOLwXMLRingdownRead.c
 
-CLEANFILES = lalmetaio-user-env.sh lalmetaio-user-env.csh
-sysconf_DATA = lalmetaio-user-env.sh lalmetaio-user-env.csh
-BUILT_SOURCES = lalmetaio-user-env.sh lalmetaio-user-env.csh
+EXTRA_DIST = \
+	git_version \
+	LALMetaIOVCSInfo.h.in
+
+CLEANFILES = \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh
+
+sysconf_DATA = \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh
+
+BUILT_SOURCES = \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh \
+	LALMetaIOVCSInfo.h
 
 lalmetaio-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -51,5 +66,14 @@ lalmetaio-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+.vcsinfo:
+	@touch .vcsinfo
+
+LALMetaIOVCSInfo.h: LALMetaIOVCSInfo.h.in .vcsinfo git_version
+	@echo "creating LALMetaIOVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALMetaIO $$sourced $$buildd
+	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

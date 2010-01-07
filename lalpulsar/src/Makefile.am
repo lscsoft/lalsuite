@@ -23,6 +23,8 @@ lalpulsarinclude_HEADERS = \
 	LALComputeAM.h \
 	LALDemod.h \
 	LALHough.h \
+	LALPulsarConfig.h \
+	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
 	LISAspecifics.h \
 	LUT.h \
@@ -113,9 +115,18 @@ liblalpulsar_la_SOURCES = \
 
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = lalpulsar-user-env.sh lalpulsar-user-env.csh
-sysconf_DATA = lalpulsar-user-env.sh lalpulsar-user-env.csh
-BUILT_SOURCE = lalpulsar-user-env.sh lalpulsar-user-env.csh
+CLEANFILES = \
+	lalpulsar-user-env.sh \
+	lalpulsar-user-env.csh
+
+sysconf_DATA = \
+	lalpulsar-user-env.sh \
+	lalpulsar-user-env.csh
+
+BUILT_SOURCE = \
+	LALPulsarVCSInfo.h \
+	lalpulsar-user-env.sh \
+	lalpulsar-user-env.csh
 
 lalpulsar-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -154,5 +165,22 @@ lalpulsar-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+EXTRA_DIST = \
+	LALPulsarConfig.h.in \
+	LALPulsarVCSInfo.h.in \
+	git_version.in
+
+MOSTLYCLEANFILES = .vcsinfo
+
+
+.vcsinfo:
+	@touch .vcsinfo
+
+LALPulsarVCSInfo.h: LALPulsarVCSInfo.h.in .vcsinfo git_version
+	@echo "creating LALPulsarVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALPulsar $$sourced $$buildd
+	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

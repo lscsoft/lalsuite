@@ -920,8 +920,7 @@ def coire_segments_individually(segments, coire_job, dag, do_coire, do_input,
 
 ##############################################################################
 # function to set up the cohbank jobs for a network of ifos
-def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None,
-  usertag=None):  
+def coherent_bank(ifos,cb_job,dag,coinc_nodes,exttrigInjections,coinc_slide_nodes=None, usertag=None):
   """
   Create template banks from coincident trigger parameters for 
   coherent analysis.
@@ -936,6 +935,7 @@ def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None,
   ifotag = 'COHERENT_' + ifos
 
   cohbank_analyzed = []
+  inj = None
 
   for coinc_done in coinc_nodes:
     # set up cohbank
@@ -948,8 +948,15 @@ def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None,
     cohbank.set_end(coinc_done.get_chunk().end())
     if usertag is not None:
       ifousertag = ifotag + "_" + usertag
+      if coinc_done.get_inj():
+        inj = coinc_done.get_inj()
+        ifousertag = ifousertag + "_" + str(coinc_done.get_inj())
       cohbank.set_user_tag(ifousertag)
-    else: cohbank.set_user_tag(ifotag)
+    else:
+      if coinc_done.get_inj():
+        inj = coinc_done.get_inj()
+        ifotag = ifotag + "_" + str(coinc_done.get_inj())
+      cohbank.set_user_tag(ifotag)
     cohbank.set_ifos(ifos)
     cohbank.add_file_arg(coinc_done.get_dag_node().get_output())
     if opts.second_coinc: cohbank.add_parent(coinc_done.get_dag_node())
@@ -963,18 +970,18 @@ def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None,
           if not done_this_coinc:
             done_this_coinc = 1
             cohbank.add_file_arg(coinc_slide_done.get_dag_node().get_output())
-            if opts.second_coinc: 
+            if opts.second_coinc:
               cohbank.add_parent(coinc_slide_done.get_dag_node())
 
     if opts.coherent_bank: dag.add_node(cohbank)
-    cohbank_analyzed.append(AnalyzedIFOData(coinc_done.get_chunk(),cohbank))
+    cohbank_analyzed.append(AnalyzedIFOData(coinc_done.get_chunk(),cohbank,inj))
 
-  return cohbank_analyzed  
+  return cohbank_analyzed
 
 ##############################################################################
 # function to set up trigbank jobs for coherent analysis with a network of ifos
 def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
-  insp_coh_jobs,dag,calibrated,usertag=None):
+  insp_coh_jobs,dag,calibrated,exttrigInjections,usertag=None):
   """
   Perform the trigbank and third inspiral steps for the single ifo triggers
   appearing in the cohbank templates.  
@@ -989,8 +996,15 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
 
   usertag = the usertag to add to the job names
   """
- 
+
   ifotag = 'COHERENT_' + ifos
+
+  # prepare the exttrig injection filename
+  if ifo_data:
+    exttrigStart = ifo_data[0].start()
+    exttrigDuration = ifo_data[-1].end()-exttrigStart
+    injectionFileTemplate = "HL-INJECTION_%%s-%d-%d.xml" % \
+      (exttrigStart, exttrigDuration)
 
   trig_coh_chunks_analyzed = []
 
@@ -1000,66 +1014,78 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
     # loop over the master analysis chunks in the science segment
     for chunk in seg:
 
-      done_this_chunk = 0
-      # now loop over all the data that we need to filter
-      for coinc_done in cohbank_data:
+      # loop over the exttrig injections
+      for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
+        done_this_chunk = 0
 
-        # if the current chunk is in one of the segments we need to filter
-        if inspiral.overlap_test(chunk,coinc_done.get_chunk()):
+        if inj>0:
+          exttrigUserTag=usertag + "_" + str(inj)
+          injectionFile = injectionFileTemplate % exttrigUserTag
 
-          if not done_this_chunk:
-            # make sure we only filter the master chunk once
-            done_this_chunk = 1
+        # now loop over all the data that we need to filter
+        for coinc_done in cohbank_data:
 
-            # make a trigbank job for the master chunk
-            trigbank = inspiral.TrigbankNode(trig_coh_jobs)
-            if not opts.disable_dag_categories:
-              trigbank.set_category('trigbank2')
-            if not opts.disable_dag_priorities:
-              trigbank.set_priority(9)
-            trigbank.set_ifo_tag(ifotag)
-            trigbank.set_output_ifo(ifo_name)
-            trigbank.set_input_ifo(ifo_name)
-            trigbank.set_start(chunk.start())
-            trigbank.set_end(chunk.end())
-            if opts.coherent_bank: dag.add_node(trigbank)
-        
-            # make an inspiral job for the master chunk
-            insp = inspiral.InspiralNode(insp_coh_jobs)
-            if not opts.disable_dag_categories:
-              insp.set_category('inspiral3')
-            if not opts.disable_dag_priorities:
-              insp.set_priority(10)
-            insp.set_start(chunk.start())
-            insp.set_end(chunk.end())
-            insp.set_ifo(ifo_name)
-            insp.set_ifo_tag(ifotag)
-            insp.add_var_opt('write-cdata','')
-            insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-            if not opts.read_cache: 
-              insp.set_cache(seg.get_df_node().get_output())
-            else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
-            if not calibrated: insp.calibration()
-            insp.set_bank(trigbank.get_output())
-            # XXX: ensure output is added to list of output files
-            output = insp.get_output()
-            if opts.coherent_bank: insp.add_parent(trigbank)
-            if opts.coherent_bank: dag.add_node(insp)
+          # if the current chunk is in one of the segments we need to filter
+          if inspiral.overlap_test(chunk,coinc_done.get_chunk()) and \
+              (inj==0 or coinc_done.get_inj()==inj):
 
-            # store this chunk in the list of filtered data
-            trig_coh_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+            if not done_this_chunk:
+              # make sure we only filter the master chunk once
+              done_this_chunk = 1
 
-          # jobs already set up, just add the var_arg and parent to trigbank
-          trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
-          if opts.coherent_bank: 
-            trigbank.add_parent(coinc_done.get_dag_node())
+              # make a trigbank job for the master chunk
+              trigbank = inspiral.TrigbankNode(trig_coh_jobs)
+              if not opts.disable_dag_categories:
+                trigbank.set_category('trigbank2')
+              if not opts.disable_dag_priorities:
+                trigbank.set_priority(9)
+              if inj>0: trigbank.set_user_tag(exttrigUserTag)
+              trigbank.set_ifo_tag(ifotag)
+              trigbank.set_output_ifo(ifo_name)
+              trigbank.set_input_ifo(ifo_name)
+              trigbank.set_start(chunk.start())
+              trigbank.set_end(chunk.end())
+              if opts.coherent_bank: dag.add_node(trigbank)
+
+              # make an inspiral job for the master chunk
+              insp = inspiral.InspiralNode(insp_coh_jobs)
+              if not opts.disable_dag_categories:
+                insp.set_category('inspiral3')
+              if not opts.disable_dag_priorities:
+                insp.set_priority(10)
+              if inj>0:
+                insp.set_injections(injectionFile)
+                insp.set_user_tag(exttrigUserTag)
+              insp.set_start(chunk.start())
+              insp.set_end(chunk.end())
+              insp.set_ifo(ifo_name)
+              insp.set_ifo_tag(ifotag)
+              insp.add_var_opt('write-cdata','')
+              insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+              if not opts.read_cache:
+                insp.set_cache(seg.get_df_node().get_output())
+              else: insp.set_cache(cp.get('datafind',ifo_name+'-cache'))
+              if not calibrated: insp.calibration()
+              insp.set_bank(trigbank.get_output())
+              # XXX: ensure output is added to list of output files
+              output = insp.get_output()
+              if opts.coherent_bank: insp.add_parent(trigbank)
+              if opts.coherent_bank: dag.add_node(insp)
+
+              # store this chunk in the list of filtered data
+              trig_coh_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
+
+            # jobs already set up, just add the var_arg and parent to trigbank
+            trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
+            if opts.coherent_bank:
+              trigbank.add_parent(coinc_done.get_dag_node())
 
   return trig_coh_chunks_analyzed
 
 ##############################################################################
 # function to set up the cohinspiral jobs for a network of ifos
 def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
-  cohtrig_data, usertag=None):
+  cohtrig_data,exttrigInjections,usertag=None):
   """
   Do a coherent analysis
 
@@ -1072,6 +1098,10 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
   """
 
   ifotag = 'COHERENT_' + ifos
+
+  cohinsp_analyzed = []
+
+  inj = 0
 
   for cohbank_done in cohbank_data:
 
@@ -1087,10 +1117,15 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
     cohinsp.set_ifo_tag(ifos)
     if usertag is not None:
       ifousertag = ifotag + "_" + usertag
-      cohinsp.set_user_tag(ifousertag)
-    else: cohinsp.set_user_tag(ifotag)
+    else: ifousertag = ifotag
+    if cohbank_done.get_inj():
+      inj = cohbank_done.get_inj()
+      cohinsptag = ifousertag + "_" + str(cohbank_done.get_inj())
+    else: cohinsptag = ifousertag
+    #cohinsp.set_user_tag(usertag + "_" + str(cohbank_done.get_inj()))
+    cohinsp.set_user_tag(cohinsptag)
     cohinsp.add_var_opt('ifo-tag',ifos)
-    
+
     # set up trigbank and inspiral
     for ifo in ifo_list:
       if ifo in ifos:
@@ -1102,25 +1137,133 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
           frjoin.set_priority(8)
         outputName = ifo + '-INSPIRAL_' + ifotag
         if usertag: outputName += '_' + usertag
+        if cohbank_done.get_inj(): outputName += '_' +str(cohbank_done.get_inj())
         outputName += '-' + str(cohbank_done.get_chunk().start()) + \
             '-' + str(cohbank_done.get_chunk().end() - \
             cohbank_done.get_chunk().start()) + '.gwf'
         frjoin.set_output(outputName)
 
         for done in cohtrig_data[ifo]:
-          if inspiral.overlap_test(cohbank_done.get_chunk(), \
-              done.get_chunk()):
+          if inspiral.overlap_test(cohbank_done.get_chunk(),done.get_chunk()) \
+              and ( inj == 0 or (cohbank_done.get_inj() == done.get_inj())):
             frjoin.add_file_arg( done.get_dag_node().get_froutput() )
             if opts.coherent_bank: frjoin.add_parent(done.get_dag_node())
 
         cohinsp.add_var_opt( ifo + '-framefile', frjoin.get_output() )
         if opts.coherent_bank: dag.add_node(frjoin)
-        if opts.coherent_inspiral and opts.coherent_bank: 
-	  cohinsp.add_parent(frjoin)
+        if opts.coherent_inspiral and opts.coherent_bank:
+           cohinsp.add_parent(frjoin)
 
     if opts.coherent_inspiral: dag.add_node(cohinsp)
+    cohinsp_analyzed.append(AnalyzedIFOData(cohbank_done.get_chunk(),cohinsp))
 
-  return 0
+  return cohinsp_analyzed
+
+
+##############################################################################
+# function to sweep up data using cohire  
+def cohire_segments(segments, cohire_job, dag, do_cohire, do_input, ifos,
+  cohire_start, cohire_end, inj_file=None, num_slides=0, ifotag=None, 
+  usertag=None, write_input_file = False, inspinjNode=None):
+  """
+  Do a cohire to sweep up all the triggers of a specific kind
+  
+  segments  = list of thinca segments to use
+  cohire_job = cohire job to use for the analysis
+  dag       = name of the dag
+  do_cohire  = whether the cohire node generated should be added to the dag
+  do_input  = whether the files to be cohired were produced by this dag
+  ifos      = which ifos were analyzed
+  inj_file  = name of injection file
+  cluster   = whether we should add the cluster arguments
+  num_slides = the number of time slides
+  usertag   = the usertag to add to the output file name
+  write_input_file = whether to write an input file (default to glob)
+  """
+  # only write the input file if we're running the cohires
+  cohire = inspiral.CohireNode(cohire_job)
+  if not opts.disable_dag_categories:
+    cohire.set_category('cohire')
+  if not opts.disable_dag_priorities:
+    cohire.set_priority(100)
+
+  # set the options:
+  cohire.set_ifos(ifos)
+  if inj_file:
+    cohire.set_inj_file(inj_file)
+  if ifotag is not None: cohire.set_ifo_tag(ifotag)
+  if num_slides: cohire.set_slides(num_slides)
+  if usertag: cohire.set_user_tag(usertag)
+ 
+  # set the segment
+  cohire.set_start(cohire_start)
+  cohire.set_end(cohire_end)
+
+  if inspinjNode and opts.inspinj: cohire.add_parent(inspinjNode)
+
+  if write_input_file:
+    input_file = cohire.get_output().replace(".xml", ".input") 	 
+    cohire.add_input_file(input_file)
+    if do_cohire: f = open(input_file, 'w') 	 
+
+  for seg in segments:
+    # set the glob file for cohire 
+    if do_input: cohire.add_parent(seg.get_dag_node())
+
+    if seg.get_dag_node().get_output():
+      output = seg.get_dag_node().get_output()
+    else: 
+      output = seg.get_dag_node().get_output_a()
+
+    if write_input_file:
+      if do_cohire: f.write('%s\n' % output)
+    else:
+      # set up glob
+      cohire.set_glob(output)
+
+  if write_input_file:
+    if do_cohire: f.close() 	 
+  	 
+    # add the input file name to cohire 	 
+    cohire.set_input(input_file)
+    
+  cohire.finalize()
+  if do_cohire: dag.add_node(cohire)
+
+  return cohire
+
+
+##############################################################################
+# function to sweep up data using cohire 
+def cohire_segments_individually(segments,
+          cohinsp_job, dag, do_cohire, do_input,
+          ifos, inj_file=None, num_slides=0, ifotag=None, usertag=None,
+          inspinjNode=None):
+  """
+  Do a cohire to sweep up all the triggers of a specific kind
+  
+  segments  = list of cohinsp segments to use
+  cohire_job = cohire job to use for the analysis
+  dag       = name of the dag
+  do_cohire  = whether the cohire nodes should be added to the dag
+  do_input  = whether the files to be cohired were produced by this dag
+  ifos      = which ifos were analyzed
+  inj_file  = name of injection file
+  cluster   = whether we should add the cluster arguments
+  num_slides = the number of time slides
+  usertag   = the usertag to add to the output file name
+  """
+
+  cohire_analyzed = []
+  for seg in segments:
+    cohire_node = cohire_segments([seg], cohire_job, dag, do_cohire, do_input, ifos,
+        seg.get_chunk().start(), seg.get_chunk().end(), inj_file = inj_file, 
+        num_slides = num_slides, ifotag = ifotag, usertag = usertag,
+        inspinjNode=inspinjNode)
+    cohire_analyzed.append(AnalyzedIFOData(seg.get_chunk(),cohire_node))
+
+  return cohire_analyzed
+
 
 ##############################################################################
 #
@@ -1201,6 +1344,13 @@ parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
     help="run lalapps_coherentbank to make coherent bank")
 parser.add_option("-k", "--coherent-inspiral",action="store_true",
     default=False,help="run lalapps_coherent_inspiral for coherent analysis")
+parser.add_option("-q", "--cohire",action="store_true",
+    default=False, help="do cohires to sweep up coherent triggers")
+parser.add_option("-J", "--summary-coherent-inspiral-triggers",action="store_true", \
+    default=False, \
+    help="Produce summary coherent triggers from run.  This will produce "
+    "cohire files containing coherent triggers from the whole run. "
+    "Use with care, as files can become very large.")
 parser.add_option("-Y", "--summary-inspiral-triggers",action="store_true", \
     default=False, \
     help="Produce summary triggers from run.  This will produce "
@@ -1315,14 +1465,16 @@ if not opts.datafind and not opts.template_bank and \
      not opts.td_follow_inspiral and not opts.second_coinc and \
      not opts.coire_second_coinc and not opts.sire_second_coinc and \
      not opts.coherent_bank and not opts.coherent_inspiral and \
-     not opts.summary_inspiral_triggers and not opts.summary_coinc_triggers: 
+     not opts.summary_inspiral_triggers and not opts.summary_coinc_triggers and \
+     not opts.cohire and not opts.summary_coherent_inspiral_triggers: 
   print >> sys.stderr, """  No steps of the pipeline specified.
   Please specify at least one of
   --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence, 
   --coire-coincidence, --trigbank, --inspiral-veto, --sire-inspiral-veto,
   --td-follow-bank, --td-follow-inspiral, --second-coinc, 
   --coire-second-coinc, --sire-second-coinc, --coherent-bank, 
-  --coherent-inspiral, --summary-inspiral-triggers --summary-coinc-triggers"""
+  --coherent-inspiral, --summary-inspiral-triggers --summary-coinc-triggers,
+  --cohire, --summary-coherent-inspiral-triggers"""
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','V1','G1']
@@ -1661,11 +1813,21 @@ coire2_slide_summary_job = inspiral.CoireJob(cp)
 coire2_slide_summary_job.set_sub_file( basename + '.coire2_slide_summary' + \
     subsuffix )
 
+# cohire:
+cohire_job = inspiral.CohireJob(cp)
+cohire_job.set_sub_file( basename + '.cohire' + subsuffix )
+cohire_slide_job = inspiral.CohireJob(cp)
+cohire_slide_job.set_sub_file( basename + '.cohire_slide' + subsuffix )
+cohire_summary_job = inspiral.CohireJob(cp)
+cohire_summary_job.set_sub_file( basename + '.cohire_summary' + subsuffix )
+cohire_slide_summary_job = inspiral.CohireJob(cp)
+cohire_slide_summary_job.set_sub_file( basename + '.cohire_slide_summary' + \
+    subsuffix )
 
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
   sire_summary_job, coire_job,
   coire_slide_job, coire_summary_job, coire_slide_summary_job, coire2_job,
-  coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
+  coire2_slide_job, coire2_summary_job, coire2_slide_summary_job, cohire_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1737,7 +1899,8 @@ except:
 
 play_jobs = [trig_job, sire_job, sire_summary_job, 
   coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job,
-  coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
+  coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job,
+  cohire_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -1991,7 +2154,8 @@ else:
 if inj_file:
   inj_jobs = [sire_job, sire_summary_job, 
     coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job, 
-    coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
+    coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job,
+    cohire_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
@@ -2015,6 +2179,7 @@ if inj_file or doExtTrig:
     coire2_slide_job.add_ini_opts(cp,'coire-inj')
     coire2_summary_job.add_ini_opts(cp,'coire-inj')
     coire2_slide_summary_job.add_ini_opts(cp,'coire-inj')  
+    cohire_job.add_ini_opts(cp,'cohire-inj')
   except: pass
 
 ##############################################################################
@@ -2320,10 +2485,10 @@ for ifos in ifo_coincs:
 
   if num_slides:
     cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
-        coinc2_slide_nodes[ifos],usertag=usertag)
+        exttrigInjections,coinc2_slide_nodes[ifos],usertag=usertag)
   else:
     cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
-        0,usertag=usertag)
+        exttrigInjections,0,usertag=usertag)
 
   print "done"
 
@@ -2335,7 +2500,7 @@ data_opts = {}
 
 for ifos in ifo_coincs:
   analyzed_trig_coh_data[ifos] = {}
- 
+
   for ifo in ifo_list:
     if ifo in ifos:
       data_opts[ifo] = {}
@@ -2361,7 +2526,7 @@ for ifos in ifo_coincs:
       # set up inspirals:
       if cp.has_section('inspiral-coherent'):
         insp_coh_jobs[ifo].add_ini_opts(cp,'inspiral-coherent')
-      if cp.has_section(ifo.lower() + '-inspiral'): 
+      if cp.has_section(ifo.lower() + '-inspiral'):
         insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if cp.has_section(data_opts[ifo]):
         insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
@@ -2374,19 +2539,43 @@ for ifos in ifo_coincs:
 
       analyzed_trig_coh_data[ifos][ifo] = coherent_trig_inspiral(data[ifo],
           ifo,cohbank_nodes[ifos],ifos,trig_coh_jobs[ifo],insp_coh_jobs[ifo],
-          dag,calibrated,usertag)
+          dag,calibrated,exttrigInjections,usertag)
 
       print "done"
 
 ##############################################################################
 # Step 11: Do the coherent analyses:
 
+cohinsp_nodes = {}
+cohire_nodes = {}
+#CHECK: cohire_slide_nodes = {}
+
+if cp.has_section('cohire'):
+    cohire_job.add_ini_opts(cp, 'cohire')
+    #cohire_slide_job.add_ini_opts(cp, 'cohire')
+    #cohire_summary_job.add_ini_opts(cp, 'cohire')
+    #cohire_slide_summary_job.add_ini_opts(cp, 'cohire')
+
 for ifos in ifo_coincs:
   print "setting up coherent-analysis jobs on " + ifos + " data...",
   sys.stdout.flush()
  
-  coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,cohbank_nodes[ifos],
-      analyzed_trig_coh_data[ifos],usertag=usertag)
+  cohinsp_nodes[ifos] = coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,
+      cohbank_nodes[ifos],analyzed_trig_coh_data[ifos],
+      exttrigInjections,usertag=usertag)
+
+  if not doExtTrig:
+    cohire_nodes[ifos] = cohire_segments_individually(cohinsp_nodes[ifos],
+          cohinsp_jobs, dag, opts.cohire, opts.coherent_inspiral,
+          ifos, inj_file=inj_file, ifotag="COHERENT_" + ifos,
+          usertag=usertag,inspinjNode=inspinj)
+
+    if len(cohire_nodes[ifos]):
+      cohire_segments(cohire_nodes[ifos], cohire_summary_job, dag,
+             opts.summary_coherent_inspiral_triggers,
+             opts.cohire, ifos, gps_start_time, gps_end_time,
+             inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
+             usertag=usertag,write_input_file = True,inspinjNode=inspinj)
 
   print "done"
 

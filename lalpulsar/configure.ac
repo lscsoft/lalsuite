@@ -1,5 +1,5 @@
 AC_INIT([lalpulsar],[1.0],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
+AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,6 +41,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalpulsar])
 
+# put version/configure info in config header
+lalpulsar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION],["$VERSION"],[LALPulsar Version])
+AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALPulsar Configure Arguments])
+AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
+                   [LALPulsar Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
@@ -55,6 +64,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
