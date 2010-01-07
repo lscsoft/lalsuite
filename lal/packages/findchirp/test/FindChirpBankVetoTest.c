@@ -7,10 +7,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOMetadataTables.h>
-
 #include <math.h>
 
 /* TEST FUNCTION WILL (LIKELY) BREAK IF THESE PARAMETERS ARE CHANGED*/
