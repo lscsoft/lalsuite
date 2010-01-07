@@ -428,12 +428,12 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
        * therefore there is a factor of 2 difference with respect to the equations in JKS, which
        * where based on the single-sided PSD.
        */
-      fstatVector->data->data[k] = Dd_inv * (  Bd * (SQ(Faf_resampled->data[idx].re) + SQ(Faf_resampled->data[idx].im) )
-					       + Ad * ( SQ(Fbf_resampled->data[idx].re) + SQ(Fbf_resampled->data[idx].im) )
+      fstatVector->data->data[k] = Dd_inv * (  
+                   Bd * (SQ(Faf_resampled->data[idx].re) + SQ(Faf_resampled->data[idx].im))
+					       + Ad * (SQ(Fbf_resampled->data[idx].re) + SQ(Fbf_resampled->data[idx].im))
 					       - 2.0 * Cd *( Faf_resampled->data[idx].re * Fbf_resampled->data[idx].re + 
-							     Faf_resampled->data[idx].im * Fbf_resampled->data[idx].im )
+							                 Faf_resampled->data[idx].im * Fbf_resampled->data[idx].im )
 					       );
-      
     }
   } 
 
