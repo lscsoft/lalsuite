@@ -201,4 +201,3 @@ void XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *cfb);
 /* C++ protection. */
 
 #endif  /* Double-include protection. */
-

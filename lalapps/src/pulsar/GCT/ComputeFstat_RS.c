@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens
+ * Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens
+/** \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
  * \ingroup pulsarCoherent
  * \file
  * \brief
@@ -177,21 +177,18 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   /* we only ever do this once for a given dataset so we read it from the buffer if it exists */
   /* in future implementations we will pass this directly to the function instead of SFTs     */
   /* first, if there is no buffer allocate space for one */
-  if ( cfBuffer == NULL ) 
-    {
-      if ( (cfBuffer = XLALMalloc(sizeof(ComputeFBuffer_RS))) == NULL ) {
-        LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
-        ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-      }	
-    }
+  if ( cfBuffer == NULL ) {
+    if ( (cfBuffer = XLALMalloc(sizeof(ComputeFBuffer_RS))) == NULL ) {
+      LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }	
+  }
   
   /* check if there is an existing timeseries and the start time in the buffer matches the start time of the SFTs */
-  if (cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) == 0) )
-    {
-      multiTimeseries = cfBuffer->multiTimeseries;	/* use the buffered multiTimeSeries */
-    }  
+  if ( cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) == 0) ) {
+    multiTimeseries = cfBuffer->multiTimeseries;	/* use the buffered multiTimeSeries */
+  }  
   else {    /* otherwise we need to recompute the timeseries from the SFTs */
-    
     /* generate multiple coincident timeseries - one for each detector spanning start -> end */ 
     /* we need each timeseries to span the exact same amount of time and to start at the same time */
     /* because for the multi-detector Fstat we need frequency bins to be coincident */
@@ -249,9 +246,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
  
   
   
-  /* if the sky position has changed or if any of the sky position dependent quantities are not buffered */
-  /* i.e the multiDetstates, the multiAMcoefficients, the multiSSB times and the resampled multiTimeSeries Fa and Fb */
-  /* then we need to recompute these and buffer them */
+  /* if the sky position has changed or if any of the sky position dependent quantities are not buffered 
+     i.e the multiDetstates, the multiAMcoefficients, the multiSSB times and the resampled multiTimeSeries Fa and Fb, 
+     then we need to recompute these and buffer them */
   if ( cfBuffer                                                     /* if we have a buffer */
        && ( cfBuffer->Alpha == doppler->Alpha )                     /* and alpha hasn't changed */
        && ( cfBuffer->Delta == doppler->Delta )                     /* and delta hasn't changed */
@@ -326,6 +323,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 
   } /* could not reuse previously buffered quantities */
 
+  
   /* store AM coefficient integrals in local variables */
   if ( multiAMcoef ) {
     Ad = multiAMcoef->Mmunu.Ad;
@@ -450,6 +448,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   RETURN (status);
 
 } /* ComputeFStatFreqBand_RS() */
+
 
 
 /** Turn the given multiSFTvector into multiple long COMPLEX8TimeSeries, properly dealing with gaps.
@@ -1530,6 +1529,8 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
   return XLAL_SUCCESS;
 
  } /* XLALSpinDownCorrectionMultiFaFb */
+
+
 
 /* ===== Object creation/destruction functions ===== */
 

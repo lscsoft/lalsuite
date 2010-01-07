@@ -703,7 +703,6 @@ int MAIN( int argc, char *argv[]) {
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
   CFparams.edat = edat;
-  /*CFparams.buffer = NULL;*/
   
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;
@@ -1274,18 +1273,16 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
+  
 
   /*------------ free all remaining memory -----------*/
   
-  /* free memory */
   if ( uvar_printCand1 ) {
     LALFree( fnameSemiCohCand );
   }
-  
   if ( version_string ) {
     XLALFree ( version_string );
   }
-  
   if ( uvar_printFstat1 ) {
     fclose(fpFstat1);
     LALFree( fnameFstatVec1 );
