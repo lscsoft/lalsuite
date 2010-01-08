@@ -381,7 +381,6 @@ int GenRandomParams(RandomParameters *randparams)
   
   RandomParams *params=NULL;
   REAL4Vector *vector=NULL;
-  LALTimeInterval deltaT;
   REAL8 deltaTFLT;
   UINT4 i,p,k;
   REAL8 RandDeltaT; 
@@ -448,8 +447,7 @@ int GenRandomParams(RandomParameters *randparams)
   }
   if (randparams->tperi!=NULL) {
     /* find difference between min and max */
-    LALDeltaGPS(&status,&deltaT,&randparams->tperi->max,&randparams->tperi->min);
-    LALIntervalToFloat(&status,&deltaTFLT,&deltaT);
+    deltaTFLT = XLALGPSDiff(&randparams->tperi->max,&randparams->tperi->min);
    
     /* calculate random increment */
     RandDeltaT=vector->data[k]*deltaTFLT;
