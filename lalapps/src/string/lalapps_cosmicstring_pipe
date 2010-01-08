@@ -94,12 +94,11 @@ if options.injections:
   injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
 # get chunk lengths from the values in the ini file
-short_seg_lenth = cp.getint('string', 'short-segment-duration')
-pad = cp.getint('string', 'pad')
 short_segment_duration = cp.getint('string', 'short-segment-duration')
-length = cp.getint('pipeline', 'segment-length')+2*pad
+pad = cp.getint('string', 'pad')
+min_segment_length = cp.getint('pipeline', 'segment-length') # not including pad at each end
 trig_overlap = cp.getint('pipeline', 'trig-overlap')
-overlap = 2*(short_seg_lenth/4+pad)
+overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 
 # get the instruments and snr thresholds
 ifos = [s.strip() for s in cp.get('pipeline','ifos').split(",")]
@@ -168,6 +167,12 @@ for ifo in ifos:
 
   # loop over segments
   for segment_number, seg in enumerate(seglists[ifo]):
+    # clip segment to string job's requirements
+    string_seg = clip_segment(seg, pad, short_segment_duration)
+    if(abs(string_seg) - 2 * pad < min_segment_length):
+      # segment too small
+      continue
+
     # find all the data for ifo
     df = pipeline.LSCDataFindNode(df_job)
     df.set_start(seg[0])
@@ -178,26 +183,36 @@ for ifo in ifos:
     if options.datafind:
       dag.add_node(df)
 
-    # string job for this segment
-    string_seg = clip_segment(seg, pad, short_segment_duration)
+    # loop over string jobs for this segment
+    while abs(string_seg) >= min_segment_length + 2 * pad:
+      # try to use 5* min_segment_length each time (must be an odd
+      # multiple!).
+      if abs(string_seg) >= 5 * min_segment_length + 2 * pad:
+        job_seg = segments.segment(string_seg[0], string_seg[0] + 5 * min_segment_length + 2 * pad)
+      else:
+        job_seg = clip_segment(string_seg, pad, short_segment_duration)
 
-    string = cosmicstring.StringNode(string_job)
-    string.set_start(string_seg[0])
-    string.set_end(string_seg[1])
-    string.set_ifo(ifo)
-    string.set_cache(df.get_output())
-    string.add_var_opt('channel', channel)
-    string.add_var_opt('threshold', snr[ifo])
-    string.add_var_opt('trig-start-time', string_seg[0])
-    string.add_var_opt('outfile', string.get_output())
-    if options.datafind:
-      string.add_parent(df)
-    string.set_name("string_%s_%d" % (ifo, segment_number))
-    if options.injections:
-      string.add_parent(inject)
-      string.add_var_opt('injection-file', inject.get_output())
-    if options.burst_search:
-      dag.add_node(string)
+      # string job for this segment
+      string = cosmicstring.StringNode(string_job)
+      string.set_start(job_seg[0])
+      string.set_end(job_seg[1])
+      string.set_ifo(ifo)
+      string.set_cache(df.get_output())
+      string.add_var_opt('channel', channel)
+      string.add_var_opt('threshold', snr[ifo])
+      string.add_var_opt('trig-start-time', job_seg[0])
+      string.add_var_opt('outfile', string.get_output())
+      if options.datafind:
+        string.add_parent(df)
+      string.set_name("string_%s_%d_%d" % (ifo, int(job_seg[0]), int(job_seg[1])))
+      if options.injections:
+        string.add_parent(inject)
+        string.add_var_opt('injection-file', inject.get_output())
+      if options.burst_search:
+        dag.add_node(string)
+
+      # advance segment
+      string_seg = segments.segment(job_seg[1] - overlap, string_seg[1])
 
 # write out the DAG
 dag.write_sub_files()
