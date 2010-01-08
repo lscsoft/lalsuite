@@ -329,13 +329,6 @@ XLALINT8NanoSecIsPlayground (
     );
 
 void
-LALINT8NanoSecIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    INT8               *ns
-    );
-
-void
 LALGPSIsPlayground (
     LALStatus          *status,
     INT4               *playground,

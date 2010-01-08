@@ -87,37 +87,10 @@ XLALINT8NanoSecIsPlayground (
   const INT8 start = 729273613 * LAL_INT8_C(1000000000);
   const INT8 interval = 6370 * LAL_INT8_C(1000000000);
   const INT8 length = 600 * LAL_INT8_C(1000000000);
-  int playground;
 
-  if ( (ns - start) % interval < length )
-  {
-    playground = 1;
-  }
-  else
-  {
-    playground = 0;
-  }
-
-  return( playground );
+  return (ns - start) % interval < length;
 }
 
-
-/* <lalVerbatim file="PlaygroundCP"> */
-void
-LALINT8NanoSecIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    INT8               *ns
-    )
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
-
-  XLALPrintDeprecationWarning("LALINT8NanoSecIsPlayground", "XLALINT8NanoSecIsPlayground");
-  *playground = XLALINT8NanoSecIsPlayground ( *ns );
-
-  RETURN( status );
-}
 
 /* <lalVerbatim file="PlaygroundCP"> */
 void
