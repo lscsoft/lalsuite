@@ -717,9 +717,7 @@ int main( int argc, char *argv[] )
 
       while ( thisSimEvent )
       {
-        INT4 isPlayground;
-        LAL_CALL( LALGPSIsPlayground( &stat, &isPlayground, 
-              &(thisSimEvent->geocent_start_time)), &stat );
+        INT4 isPlayground = XLALINT8NanoSecIsPlayground(XLALGPSToINT8NS(&(thisSimEvent->geocent_start_time)));
 
         if ( (dataType == playground_only && isPlayground) || 
             (dataType == exclude_play && ! isPlayground) )
@@ -1047,8 +1045,7 @@ int main( int argc, char *argv[] )
       {
         numEvents++;
 
-        LAL_CALL( LALGPSIsPlayground( &stat, &isPlay, &(thisEvent->start_time) ),
-            &stat );
+        isPlay = XLALINT8NanoSecIsPlayground( XLALGPSToINT8NS( &(thisEvent->start_time) ) );
 
         if ( (dataType == all_data || 
               (dataType == playground_only && isPlay) ||

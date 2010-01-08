@@ -43,9 +43,7 @@ Determines if a given time (or segment) is playground data.
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{PlaygroundCP}
-\idx{LALINT8NanoSecIsPlayground()}
 \idx{XLALINT8NanoSecIsPlayground()}
-\idx{LALGPSIsPlayground()}
 
 \subsubsection*{Description}
 
@@ -71,7 +69,6 @@ t - 729273613 \% 6370 < 600.
 </lalLaTeX>
 #endif
 
-#include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
@@ -89,23 +86,4 @@ XLALINT8NanoSecIsPlayground (
   const INT8 length = 600 * LAL_INT8_C(1000000000);
 
   return (ns - start) % interval < length;
-}
-
-
-/* <lalVerbatim file="PlaygroundCP"> */
-void
-LALGPSIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpstime
-    )
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
-  ATTATCHSTATUSPTR( status );
-
-  *playground = XLALINT8NanoSecIsPlayground(XLALGPSToINT8NS(gpstime));
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
 }

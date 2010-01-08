@@ -328,13 +328,6 @@ XLALINT8NanoSecIsPlayground (
     INT8        ns
     );
 
-void
-LALGPSIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpstime
-    );
-
 #ifdef  __cplusplus
 }
 #endif
