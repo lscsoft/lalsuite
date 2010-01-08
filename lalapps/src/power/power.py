@@ -41,7 +41,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
-from pylal.date import LIGOTimeGPS
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from pylal import burstsearch
 
 
@@ -246,7 +246,10 @@ class BurstInjJob(pipeline.CondorDAGJob):
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
 
 		# do this many injections between flow and fhigh inclusively
-		self.injection_bands = config_parser.getint("pipeline", "injection_bands")
+		if config_parser.has_option("pipeline", "injection_bands"):
+			self.injection_bands = config_parser.getint("pipeline", "injection_bands")
+		else:
+			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
 
