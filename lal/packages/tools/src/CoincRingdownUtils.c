@@ -1985,6 +1985,7 @@ LALRingdownH1H2Consistency(
     LALStatus                  *status,
     CoincRingdownTable        **coincRingdown,
     REAL4			H1snrCutThreshold,
+    LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
     )
 /* </lalVerbatim> */
@@ -2005,6 +2006,8 @@ LALRingdownH1H2Consistency(
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
 
+/* Discard the H1 trigger if it's snr is above the threshold, */
+/*   a H2 trigger does not exist and H2 is not vetoed.*/
     if( tmpCoinc->snglRingdown[LAL_IFO_H1] && !tmpCoinc->snglRingdown[LAL_IFO_H2])
     {
       snrH1 = tmpCoinc->snglRingdown[LAL_IFO_H1]->snr;
@@ -2024,6 +2027,24 @@ LALRingdownH1H2Consistency(
         }
       }
     }
+
+/* Discard the H2 trigger if a H1 trigger does not exist and H1 was not vetoed. */
+    if( tmpCoinc->snglRingdown[LAL_IFO_H2] && !tmpCoinc->snglRingdown[LAL_IFO_H1])
+    {
+      if ( vetoSegsH1->initMagic == SEGMENTSH_INITMAGICVAL )
+      {
+        if (!XLALSegListSearch( vetoSegsH1,
+                            &(tmpCoinc->snglRingdown[LAL_IFO_H2]->start_time)))
+        {
+          discardTrigger =1;
+        }
+      }
+      else
+      {
+        discardTrigger = 1;
+      }
+    }
+
     if( discardTrigger )
     {
       XLALFreeCoincRingdown( &tmpCoinc );

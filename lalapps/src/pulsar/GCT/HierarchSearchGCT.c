@@ -209,8 +209,8 @@ int MAIN( int argc, char *argv[]) {
   /* some useful variables for each stage */
   UsefulStageVariables usefulParams;
 
-  /* LALdemod related stuff */
-  static REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
+  /* F-statistic computation related stuff */
+  REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;		   
 
@@ -246,6 +246,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 pos[3];
   REAL8 vel[3];
   REAL8 acc[3];
+  REAL8 Fstat=0.0;
   
   /* GCT helper variables for faster calculation of u1, u2 */
   REAL8 A1, B1, A2, B2;
@@ -1105,6 +1106,8 @@ int MAIN( int argc, char *argv[]) {
           /* Loop over frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
                     
+            Fstat = fstatVector.data[k].data->data[ifreq];
+
             if ( uvar_SignalOnly )
             {
               /* Correct normalization in --SignalOnly case:
@@ -1112,8 +1115,9 @@ int MAIN( int argc, char *argv[]) {
                * the single-sided PSD Sh: the SignalOnly case is characterized by
                * setting Sh->1, so we need to divide F by (0.5*Tsft)
                */
-              fstatVector.data[k].data->data[ifreq] *= 2.0 / Tsft;
-              fstatVector.data[k].data->data[ifreq] += 2;		/* compute E[2F]:= 4 + SNR^2 */
+              Fstat *= 2.0 / Tsft;
+              Fstat += 2;		/* compute E[2F]:= 4 + SNR^2 */
+              fstatVector.data[k].data->data[ifreq] = Fstat;
             }
             
             /* translate frequency from reftime to midpoint of this segment */
@@ -1136,8 +1140,8 @@ int MAIN( int argc, char *argv[]) {
               thisCgPoint.Uindex = U1idx * NumU2idx + U2idx;
             }
 
-            /* copy the 2F value and index integer number */
-            thisCgPoint.TwoF = 2.0 * fstatVector.data[k].data->data[ifreq];
+            /* copy the *2F* value and index integer number */
+            thisCgPoint.TwoF = 2.0 * Fstat;
             thisCgPoint.Index = ifreq;
             coarsegrid.list[ifreq] = thisCgPoint;
             
