@@ -144,7 +144,7 @@ double XLALTimeDelayFromEarthCenter(
 	const LIGOTimeGPS *gpstime
 )
 {/* </lalVerbatim> */
-	const double earth_center[3] = {0.0, 0.0, 0.0};
+	static const double earth_center[3] = {0.0, 0.0, 0.0};
 
 	/*
 	 * This is positive when the wavefront arrives at the detector
