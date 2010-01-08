@@ -1,8 +1,5 @@
 #!/bin/sh
 
-## take user-arguments for CFS-v2:
-extra_args="$@"
-
 ## allow 'make test' to work from builddir != srcdir
 if [ -n "${srcdir}" ]; then
     builddir="./";
@@ -32,11 +29,8 @@ if [ -z "$LAL_DATA_PATH" ]; then
 	exit 1
     fi
 fi
-##echo $LAL_DATA_PATH
 
-Ftolerance=0.05
-
-# ---------- fixed parameter of our test-signal -------------
+## ---------- fixed parameter of our test-signal -------------
 Alpha="2.0"
 Delta="-0.5"
 h0="1.0"
@@ -49,13 +43,12 @@ f1dot="-8e-10"
 skygridfile="./tmpskygridfile.dat"
 echo $Alpha" "$Delta > $skygridfile
 
-
 mfd_FreqBand="2.0"
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 noiseSqrtSh="0"
 
-# --------- Generate fake data set time stamps -------------
+## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
 echo " STEP 0: Generating fake data time-stamps file "
 echo "----------------------------------------------------------------------"
@@ -64,35 +57,30 @@ echo
 Tsft="1800"
 startTime="852443819"
 refTime="868299814"
-Tsegment="90000"           ## 25 hours                                        
+Tsegment="90000"
 Nsegments="110"
-seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) ## 2-segments-long gaps  
-
+seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) 
 tsfile="timestampsTEST.txt"
-#if [ -e "${tsfile}" ]; then
-#    echo "Found existing time-stamps file: "$tsfile
-#else
 rm -rf $tsfile
-    tmpTime=$startTime
-    ic1="1"
-    while [ "$ic1" -le "$Nsegments" ];
+tmpTime=$startTime
+ic1="1"
+while [ "$ic1" -le "$Nsegments" ];
+do
+    segs[${ic1}]=$tmpTime # save seg's beginning for later use
+    echo "Segment: "$ic1" of "$Nsegments"  "${segs[${ic1}]}
+    
+    ic2=$Tsft
+    while [ "$ic2" -le "$Tsegment" ];
     do
-	segs[${ic1}]=$tmpTime # save seg's beginning for later use
-	echo "Segment: "$ic1" of "$Nsegments"  "${segs[${ic1}]}
-
-	ic2=$Tsft
-	while [ "$ic2" -le "$Tsegment" ];
-	do
-	    echo ${tmpTime}" 0" >> $tsfile
-	    tmpTime=$(echo "scale=0; ${tmpTime} + ${Tsft}" | bc)
-	    ic2=$(echo "scale=0; ${ic2} + ${Tsft}" | bc)
-	done
-	
-	#seggap=$(echo "scale=0; ${seggap} + ${Tsft}" | bc)
-	tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | awk '{printf "%.0f",$1}')
-	ic1=$(echo "scale=0; ${ic1} + 1" | bc)
+	echo ${tmpTime}" 0" >> $tsfile
+	tmpTime=$(echo "scale=0; ${tmpTime} + ${Tsft}" | bc)
+	ic2=$(echo "scale=0; ${ic2} + ${Tsft}" | bc)
     done
-#fi
+    
+    tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | awk '{printf "%.0f",$1}')
+    ic1=$(echo "scale=0; ${ic1} + 1" | bc)
+done
+
 
 ## ------------------------------------------------------------
 
@@ -118,8 +106,7 @@ echo
 if [ ! -d "$SFTdir" ]; then
     mkdir -p $SFTdir;
 else
-   # rm -f $SFTdir/*;
-    echo ""
+   rm -f $SFTdir/*;
 fi
 
 # construct MFD cmd:
@@ -131,10 +118,10 @@ fi
 
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
-#if ! eval $cmdline; then
-#    echo "Error.. something failed when running '$mfd_code' ..."
-#    exit 1
-#fi
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
 
 echo
 echo "----------------------------------------------------------------------"
@@ -215,10 +202,9 @@ echo "#  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)"
 echo "#  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)"
 echo "----------------------------------------------------------------------"
 
-exit 0;
-
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
 fi
+
 
