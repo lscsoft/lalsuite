@@ -1,0 +1,15 @@
+/* only include this file if LALPulsar's config.h has not been included */
+
+#ifndef _LALPULSARCONFIG_H
+#define _LALPULSARCONFIG_H
+
+/* LALPulsar Version */
+#undef LALPULSAR_VERSION
+
+/* LALPulsar Configure Arguments */
+#undef LALPULSAR_CONFIGURE_ARGS
+
+/* LALPulsar Configure Date */
+#undef LALPULSAR_CONFIGURE_DATE
+
+#endif /* _LALPULSARCONFIG_H */

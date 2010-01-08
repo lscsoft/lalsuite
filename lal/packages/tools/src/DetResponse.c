@@ -238,9 +238,6 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 {				/* </lalVerbatim> */
 	/* Want to loop over the time and call LALComputeDetAMResponse() */
 	LALDetAMResponse instResponse;
-	LIGOTimeGPS gps;
-	LIGOTimeGPS tmpgps;
-	LALTimeInterval dt;
 	unsigned i;
 	char infostr[128];
 
@@ -327,14 +324,13 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 
 
 	/*
-	 * Loop to compute each element in time series; rint(3) is a std C
-	 * function that rounds floating point numbers properly.
+	 * Loop to compute each element in time series.
 	 */
-	gps = pTimeInfo->epoch;
-
-	TRY(LALFloatToInterval(status->statusPtr, &dt, &(pTimeInfo->deltaT)), status);
 
 	for(i = 0; i < pTimeInfo->nSample; ++i) {
+		LIGOTimeGPS gps = pTimeInfo->epoch;
+		XLALGPSAdd(&gps, i * pTimeInfo->deltaT);
+
 		if(lalDebugLevel >= 8) {
 			sprintf(infostr, "LALComputeDetAMResponseSeries: i = %d\n", i);
 			LALInfo(status, infostr);
@@ -345,11 +341,6 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 		pResponseSeries->pPlus->data->data[i] = instResponse.plus;
 		pResponseSeries->pCross->data->data[i] = instResponse.cross;
 		pResponseSeries->pScalar->data->data[i] = instResponse.scalar;
-
-		tmpgps = gps;
-
-		TRY(LALIncrementGPS(status->statusPtr, &gps, &tmpgps, &dt), status);
-
 	}
 
 	DETATCHSTATUSPTR(status);

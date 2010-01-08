@@ -17,6 +17,7 @@ AC_DEFUN([DO_ENABLE_LAL_GCC_FLAGS],
   if test "${cuda}" != "true"; then
     case $host_cpu-$host_os in
       *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
+      *x86_64-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
       *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
     esac
   fi

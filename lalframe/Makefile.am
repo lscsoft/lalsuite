@@ -16,6 +16,8 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalframe.pc
 
+distcleancheck_listfiles = find . -type f \! -name "LALFrameVCSInfo.h" -print
+
 # vcs-clean: more than maintainer-clean, this cleans everything not in
 # the vcs archive
 vcs-clean: maintainer-clean

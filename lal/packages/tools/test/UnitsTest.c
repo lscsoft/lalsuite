@@ -87,7 +87,7 @@ LALUnitCompare()
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = LALMSGLVL1;
+extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -123,6 +123,8 @@ int main( int argc, char *argv[] )
   CHARVector         dummy;
   CHARVector         *string;
   BOOLEAN            answer;
+
+  lalDebugLevel = LALMSGLVL1;
 
   ParseOptions( argc, argv );
 

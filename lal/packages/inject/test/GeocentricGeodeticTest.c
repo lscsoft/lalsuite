@@ -145,7 +145,7 @@ LALUniformDeviate()
 NRCSID( GEOCENTRICGEODETICTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-x xmin xmax nx] [-y ymin ymax ny]\n" \
@@ -214,6 +214,8 @@ main( int argc, char **argv )
   REAL8 ddr, ddmax = 0.0;       /* overall and maximum position error */
   static LALStatus stat;        /* status structure */
   EarthPosition earth;          /* terrestrial coordinates */
+
+  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *

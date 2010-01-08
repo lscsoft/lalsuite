@@ -2,15 +2,11 @@ lib_LTLIBRARIES = liblalsupport.la
 liblalsupport_la_SOURCES = \
 	Audio.c \
 	ConfigFile.c \
-	DopplerFullScan.c \
-	DopplerLatticeCovering.c \
-	DopplerScan.c \
 	FileIO.c \
 	LALCache.c \
 	LALInitBarycenter.c \
 	LALMath3DPlot.c \
 	LALMathNDPlot.c \
-	LALXMGRInterface.c \
 	LIGOLwXML.c \
 	LIGOLwXMLArray.c \
 	LogPrintf.c \
@@ -22,7 +18,6 @@ liblalsupport_la_SOURCES = \
 	ReadFrequencySeries.c \
 	ReadTimeSeries.c \
 	ReadNoiseSpectrum.c \
-	SFTfileIO.c \
 	SegmentsIO.c \
 	StreamSeriesInput.c \
 	StreamSeriesOutput.c \

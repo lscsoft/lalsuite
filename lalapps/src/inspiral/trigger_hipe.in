@@ -239,7 +239,8 @@ class hipe_run(object):
     allowed_stages = set(["datafind", "template-bank", "inspiral",
       "coincidence", "trigbank", "inspiral-veto", "second-coinc", 
       "sire-inspiral", "sire-inspiral-veto", "coire-coinc",
-      "coire-second-coinc"])
+      "coire-second-coinc", "coherent-bank", "coherent-inspiral", 
+      "cohire", "summary-coherent-inspiral-triggers" ])
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):

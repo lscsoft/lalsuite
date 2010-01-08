@@ -16,6 +16,8 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalxml.pc
 
+distcleancheck_listfiles = find . -type f \! -name "LALXMLVCSInfo.h" -print
+
 # vcs-clean: more than maintainer-clean, this cleans everything not in
 # the vcs archive
 vcs-clean: maintainer-clean
@@ -32,7 +34,7 @@ all-local:
 	@echo "";\
 		echo "=================================================================";\
 		echo "";\
-		echo "        LAL XMLhas now been successfully built.";\
+		echo "        LAL XML has now been successfully built.";\
 		echo "        Now run 'make install' to install LAL XML.";\
 		echo "";\
 		echo "================================================================="

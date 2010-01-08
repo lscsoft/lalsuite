@@ -232,18 +232,17 @@ extern INT4 lalDebugLevel;
 
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar);
-void TDBMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD);
-void AddIntervaltoMJD(LALStatus *status,LALTimeInterval interval,MJDTime *MJDout, MJDTime MJDin);
+void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD);
+void AddIntervaltoMJD(double interval,MJDTime *MJDout, MJDTime MJDin);
 void REAL8toMJD(LALStatus *status,MJDTime *MJD,REAL8 x);
 void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap);
-void UTCGPStoMJD(LALStatus *status,MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap);
-void TDBGPStoMJD(LALStatus *status,MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap);
+void UTCGPStoMJD(MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap);
+void TDBGPStoMJD(MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap);
 void MJDtoREAL8(LALStatus *status,REAL8 *x,MJDTime MJD);
 void deltaMJD(LALStatus *status,MJDTime *deltaMJD,MJDTime *x,MJDTime *y);
 void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads);
 void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads);
-void GPStoTDBMJD(LALStatus *status,MJDTime *TDBMJD,LIGOTimeGPS GPS);
-void MultiplyInterval(LALStatus *status,LALTimeInterval *newinterval,LALTimeInterval interval,INT4 factor);
+void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS);
 
 /*============================================================
  * FUNCTION definitions
@@ -285,7 +284,6 @@ main(int argc, char *argv[]){
   CHAR RA[256],DEC[256];
   MJDTime TrefTDBMJD;
   LIGOTimeGPS TrefSSB_TDB_GPS;
-  LALTimeInterval dtinterval;
 
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 1;
@@ -366,7 +364,7 @@ main(int argc, char *argv[]){
 
   /* use start time to define an epoch for the leap seconds */
   /* Note that epochs are defined in TDB !!! but here we only need to be rough to get a leap second value */
-  TDBMJDtoGPS(&status,&epoch,TstartUTCMJD);
+  TDBMJDtoGPS(&epoch,TstartUTCMJD);
   if (lalDebugLevel) fprintf(stdout,"STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
 
   /* deal with ephemeris files and compute leap seconds */
@@ -510,7 +508,7 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : TstartGPS = %d %d\n",TstartGPS.gpsSeconds,TstartGPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
-  UTCGPStoMJD(&status,&MJDtest,&TstartGPS,leap0);
+  UTCGPStoMJD(&MJDtest,&TstartGPS,leap0);
   deltaMJD(&status,&MJDdiff,&MJDtest,&TstartUTCMJD);
   diff = (MJDdiff.days+MJDdiff.fracdays)*86400;
   if ( fabs(diff)  > 1e-9) {
@@ -524,11 +522,11 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : TrefTDBMJD converted to MJD days = %d fracdays = %6.12f\n",TrefTDBMJD.days,TrefTDBMJD.fracdays);
 
   /* convert reference time to TDB GPS */
-  TDBMJDtoGPS(&status,&TrefSSB_TDB_GPS,TrefTDBMJD);
+  TDBMJDtoGPS(&TrefSSB_TDB_GPS,TrefTDBMJD);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TrefSSB_TDB_GPS = %d %d\n",TrefSSB_TDB_GPS.gpsSeconds,TrefSSB_TDB_GPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
-  TDBGPStoMJD(&status,&MJDtest,TrefSSB_TDB_GPS,leap0);
+  TDBGPStoMJD(&MJDtest,TrefSSB_TDB_GPS,leap0);
   deltaMJD(&status,&MJDdiff,&MJDtest,&TrefTDBMJD);
   diff = (MJDdiff.days+MJDdiff.fracdays)*86400;
   if ( fabs(diff)  > 1e-9) {
@@ -572,9 +570,8 @@ main(int argc, char *argv[]){
 
   /* define TOA seperation in the SSB */ 
   dt = uvar.DeltaTMJD*86400.0;
-  LALFloatToInterval(&status,&dtinterval,&dt);
   n = (INT4)ceil(uvar.DurationMJD/uvar.DeltaTMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TOA seperation at SSB = %d sec %d nano\n",dtinterval.seconds,dtinterval.nanoSeconds);
+  if (lalDebugLevel) fprintf(stdout,"STATUS : TOA seperation at SSB = %g sec\n",dt);
   if (lalDebugLevel) fprintf(stdout,"STATUS : number of TOAs to generate = %d\n",n);
   
   /* allocate memory for artificial SSB TOAs */
@@ -584,16 +581,15 @@ main(int argc, char *argv[]){
   /* generate artificial SSB TOAs given the phase model phi = 2*pi*(f0*(t-tref) + 0.5*fdot*(t-tref)^2) */
   for  (i=0;i<n;i++) {
 
-    LALTimeInterval dtstart;
     REAL8 dtref,fnow,cyclefrac,dtcor;
     LIGOTimeGPS tnow;
 
     /* define current interval */
-    MultiplyInterval(&status,&dtstart,dtinterval,i);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t-tstart) = %d %d\n",dtstart.seconds,dtstart.nanoSeconds);
+    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t-tstart) = %g sec\n", i * dt);
 
     /* define current t */
-    LALIncrementGPS(&status,&tnow,&TstartSSB,&dtstart);
+    tnow = TstartSSB;
+    XLALGPSAdd(&tnow, i * dt);
     if (lalDebugLevel) fprintf(stdout,"STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
 
     /* define current t-tref */
@@ -630,7 +626,6 @@ main(int argc, char *argv[]){
     
       LIGOTimeGPS TSSBtest;
       LIGOTimeGPS GPStest;
-      LALTimeInterval interval;
 
       /* convert SSB to Detector time */
       LALConvertSSB2GPS (&status,&TDET,TSSB[i],&pulsarparams); 
@@ -638,8 +633,7 @@ main(int argc, char *argv[]){
       
       /* convert back for testing conversion */
       LALConvertGPS2SSB (&status,&TSSBtest,TDET,&pulsarparams); 
-      LALDeltaGPS (&status,&interval,&TSSBtest,&TSSB[i]);
-      diff = (REAL8)interval.seconds + 1e-9*(REAL8)interval.nanoSeconds;
+      diff = XLALGPSDiff(&TSSBtest,&TSSB[i]);
       if ( fabs(diff)  > 1e-9) {
 	fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
@@ -651,13 +645,12 @@ main(int argc, char *argv[]){
 
       /* must now convert to an MJD time for TEMPO */
       /* Using UTC conversion as used by Matt in his successful comparison */
-      UTCGPStoMJD (&status,&tempTOA,&TDET,leap);
+      UTCGPStoMJD (&tempTOA,&TDET,leap);
       if (lalDebugLevel) fprintf(stdout,"STATUS : output MJD time = %d %6.12f\n",tempTOA.days,tempTOA.fracdays);
 
       /* convert back to test conversion */
       UTCMJDtoGPS (&status,&GPStest,tempTOA,leap);
-      LALDeltaGPS (&status,&interval,&TDET,&GPStest);
-      diff = (REAL8)interval.seconds + 1e-9*(REAL8)interval.nanoSeconds;
+      diff = XLALGPSDiff(&TDET,&GPStest);
       if ( fabs(diff)  > 1e-9) {
 	fprintf(stderr,"ERROR. Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
@@ -887,47 +880,30 @@ void deltaMJD(LALStatus *status,MJDTime *dMJD,MJDTime *x,MJDTime *y) {
 }
 
 /* this function adds a LALTimeInterval in sec.nanosec to an MJDTime structure */
-void AddIntervaltoMJD(LALStatus *status,LALTimeInterval interval,MJDTime *MJDout,MJDTime MJDin) {
+void AddIntervaltoMJD(double interval,MJDTime *MJDout,MJDTime MJDin) {
 
   REAL8 fracdays = 0.0;
   INT4 days = 0;
-  REAL8 temp,sfd,nfd;
-
-  INITSTATUS( status, "AddIntervaltoMJD", rcsid );
-  ATTATCHSTATUSPTR (status);
+  REAL8 temp,sfd;
 
   /* convert seconds part to fractional days */
-  sfd = (REAL8)interval.seconds/86400.0;
+  sfd = interval/86400.0;
 
   temp = MJDin.fracdays + sfd;
   fracdays = fmod(temp,1.0); 
   days = MJDin.days + (INT4)floor(temp);
  
-  /* convert nanoseconds part to fractional days */
-  nfd = (REAL8)interval.nanoSeconds/(1e9*86400.0);
-
-  temp = fracdays + nfd;
-  fracdays = fmod(temp,1.0);
-  days += (INT4)floor(temp);
-
   MJDout->days = days;
   MJDout->fracdays = fracdays;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
 }
-void GPStoTDBMJD(LALStatus *status,MJDTime *TDBMJD,LIGOTimeGPS GPS) {
+void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS) {
 
   REAL8 Tdiff, dtrel;
   REAL8 MJDtemp;
   MJDTime MJDtest;
-  LALTimeInterval interval;
   LIGOTimeGPS GPStemp;
 
-  INITSTATUS( status, "GPStoTDBMJD", rcsid );
-  ATTATCHSTATUSPTR (status);
-  
   /* straight forward conversion from GPS to MJD */
   /* we do not need the more accurate MJDtime structure */
   MJDtemp = ((REAL8)GPS.gpsSeconds + 1e-9*(REAL8)GPS.gpsNanoSeconds)/86400.0 + 44244.0;
@@ -952,35 +928,24 @@ void GPStoTDBMJD(LALStatus *status,MJDTime *TDBMJD,LIGOTimeGPS GPS) {
   /* define interval that is the magical number factor of 32.184 + 19 leap seconds to the */
   /* start of GPS time plus the TDB-TT correction and add it to the GPS input MJD */
   /* max absolute value of TDB-TT correction is < 0.184 sec */
-  interval.seconds = 51;
-  interval.nanoSeconds = (INT4)(0.184*1e9) + (INT4)(dtrel*1e9);
-
   /* add this to the input GPS time */
   /* this time is now in TDB but represented as a GPS structure */
-  LALIncrementGPS(status->statusPtr,&GPStemp,&GPS,&interval); 
+  GPStemp = GPS;
+  XLALGPSAdd(&GPStemp, 51.184 + dtrel);
 
   /* convert to an MJD structure */
   MJDtest.days = (INT4)floor((REAL8)GPStemp.gpsSeconds/86400.0) + 44244;
   MJDtest.fracdays = fmod((REAL8)GPStemp.gpsSeconds/86400.0,1.0);
-  interval.seconds = 0;
-  interval.nanoSeconds = GPStemp.gpsNanoSeconds;
-  AddIntervaltoMJD(status->statusPtr,interval,TDBMJD,MJDtest);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  AddIntervaltoMJD(GPStemp.gpsNanoSeconds / 1e9,TDBMJD,MJDtest);
 
 }
 
-void TDBMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD){
+void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
  
   REAL8 Tdiff, TDBtoTT;
   REAL8 MJDtemp;
-  LALTimeInterval interval;
   LIGOTimeGPS GPStemp;
   INT4 tempsec, tempnano;
-
-  INITSTATUS( status, "TDBMJDtoGPS", rcsid );
-  ATTATCHSTATUSPTR (status);
 
   /* convert MJD to REAL8 for calculation of the TDB-TT factor which */
   /* is small enough to allow not using the more accurate MJDtime structure */
@@ -1019,14 +984,9 @@ void TDBMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD){
   /* define interval that is the magical number factor of 32.184 + 19 leap seconds to the */
   /* start of GPS time plus the TDB-TT correction and minus it from the input MJD */
   /* max absolute value of TDB-TT correction is < 0.184 sec */
-  interval.seconds = 51;
-  interval.nanoSeconds = 184000000 + (INT4)(TDBtoTT*1e9);
- /*  printf("\tinterval nanoseconds = %d\n",interval.nanoSeconds); */
-  LALDecrementGPS(status->statusPtr,GPS,&GPStemp,&interval);
+  *GPS = GPStemp;
+  XLALGPSAdd(GPS, -(51.184 + TDBtoTT));
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
 }
 
 void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
@@ -1061,13 +1021,9 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
   
 }
 
-void UTCGPStoMJD(LALStatus *status,MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap){
+void UTCGPStoMJD(MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap){
  
   LIGOTimeGPS tempGPS;
-  LALTimeInterval interval;
-
-  INITSTATUS( status, "UTCGPStoMJD", rcsid );
-  ATTATCHSTATUSPTR (status);
 
   /* compute integer MJD days */
   MJD->days = 44244 + (INT4)floor(((REAL8)GPS->gpsSeconds + 1e-9*(REAL8)GPS->gpsNanoSeconds - (REAL8)leap)/86400.0);
@@ -1076,51 +1032,35 @@ void UTCGPStoMJD(LALStatus *status,MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap){
   tempGPS.gpsSeconds = (MJD->days-44244)*86400 + leap;
   tempGPS.gpsNanoSeconds = 0;
 
-  /* compute the difference as an interval */
-  LALDeltaGPS (status->statusPtr,&interval,GPS,&tempGPS);
-
-  /* convert the interval to fractional MJD days */
-  MJD->fracdays = ((REAL8)interval.seconds + 1e-9*(REAL8)interval.nanoSeconds)/86400.0;
+  /* compute the difference in fractional MJD days */
+  MJD->fracdays = XLALGPSDiff(GPS,&tempGPS) / 86400.0;
 
   /* printf("inside MJD = %d %6.12f\n",MJD->days,MJD->fracdays); */
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
 }
 
-void TDBGPStoMJD(LALStatus *status,MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap) {
+void TDBGPStoMJD(MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap) {
 
   MJDTime MJDrough;
-  LALTimeInterval interval;
   LIGOTimeGPS GPSguess;
-  
-  INITSTATUS( status, "TDBGPStoMJD", rcsid );
-  ATTATCHSTATUSPTR (status);
+  double diff;
   
   /* do rough conversion to MJD */
-  UTCGPStoMJD(status->statusPtr,&MJDrough,&GPS,leap);
+  UTCGPStoMJD(&MJDrough,&GPS,leap);
 
-  while (1) {
-    
+  do {
+
     /* convert rough MJD guess correctly back to GPS */
-    TDBMJDtoGPS(status->statusPtr,&GPSguess,MJDrough);
-    
-    /* compute difference */
-    LALDeltaGPS (status->statusPtr,&interval,&GPS,&GPSguess);
-    
+    TDBMJDtoGPS(&GPSguess,MJDrough);
+
     /* add difference to MJD */
-    AddIntervaltoMJD(status->statusPtr,interval,MJD,MJDrough);
-   
+    diff = XLALGPSDiff(&GPS,&GPSguess);
+    AddIntervaltoMJD(diff,MJD,MJDrough);
+
     /* update current guess */
     MJDrough = *MJD;
 
-    if ((interval.seconds==0)&&(interval.nanoSeconds<2)) { 
-      DETATCHSTATUSPTR (status);
-      RETURN (status);
-    }
-
-  }
+  } while (diff >= 2e-9);
 
 }
 
@@ -1185,23 +1125,6 @@ void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads) {
 
   snprintf(DEC,18,"%d:%02d:%02d.%07d",sign*degs,arcmins,arcsecs,fracarcsecs);
   printf("DEC = %s\n",DEC);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-}
-
-void MultiplyInterval(LALStatus *status,LALTimeInterval *newinterval,LALTimeInterval interval,INT4 factor) {
-
-  INT4 temp;
-
-  INITSTATUS( status, "MultiplyInterval", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  newinterval->seconds = interval.seconds*factor; 
-  temp = interval.nanoSeconds*factor;
-  newinterval->seconds += (INT4)floor(temp*1e-9);
-  newinterval->nanoSeconds = (INT4)fmod(temp,1e9);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

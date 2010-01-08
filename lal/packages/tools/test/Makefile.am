@@ -94,14 +94,13 @@ TESTS = \
 	FrequencySeriesTest \
 	LALBarycenterTest \
 	LALIndTestDetRes.sh \
-	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SequenceTest \
 	SkymapTest \
 	TimeSeriesTest \
 	UnitsTest
 
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 MOSTLYCLEANFILES = \
 	.dvi-dep \

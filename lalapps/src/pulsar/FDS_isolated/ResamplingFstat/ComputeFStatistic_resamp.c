@@ -227,6 +227,8 @@ REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
 REAL8 uvar_WinFrac;
 REAL8 uvar_BandFrac;
+BOOLEAN uvar_version;		/**< output version information */
+
 
 REAL8 BaryRefTime;
 
@@ -406,6 +408,12 @@ int main(int argc,char *argv[])
 
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
+
+  if ( uvar_version )
+    {
+      XLALOutputVersionString ( stdout, 0 );
+      exit(0);
+    }
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -852,6 +860,8 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	WinFrac,  0,  UVAR_OPTIONAL, "Fraction of Window to use as transition (0 -> Rectangular window , 1-> Hann Window) [Default: 0.01]");
   LALregREALUserVar(status, 	BandFrac,  0,  UVAR_OPTIONAL, "Extra Fracion of Band to use, to minimize interpolation losses (1.0 -> Use Full Band , 2.0 -> Double the Band, 3.0 -> Triple the band) [Default: 1.0]");
 
+  LALregBOOLUserVar( status,    version,	'V', UVAR_SPECIAL,  "Output version information");
+
   /* ----- more experimental/expert options ----- */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
@@ -1255,16 +1265,22 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   CHAR dateStr[512], line[512], summary[4096];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-  const CHAR *codeID = "$Id: ComputeFStatistic_resamp.c,v 1.46 2009/03/10 08:40:27 ppatel Exp $";
+  CHAR *codeID = NULL;
   CHAR *ret = NULL;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  if ( (codeID = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError ("XLALGetVersionString() failed!.\n");
+    ABORT (status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL);
+  }
+
   /* first get full commandline describing search*/
   TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-  sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
+  sprintf (summary, "%s\n%%%% %s\n", codeID, cmdline );
   LALFree ( cmdline );
+  XLALFree ( codeID );
 
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
@@ -2156,8 +2172,8 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
   else
     UserFmin_Closest = TSeries->f_het + floor((uvar_Freq-TSeries->f_het)/Vars->dF_closest+0.5)*Vars->dF_closest;
   
-  UserFmin_Diff = uvar_Freq - UserFmin_Closest;
-  TSeries->f_het += UserFmin_Diff;
+  UserFmin_Diff = UserFmin_Closest - uvar_Freq;
+  TSeries->f_het -= UserFmin_Diff;
   
   /* Store the Starting time */
   TSeries->epoch = StartTime; 

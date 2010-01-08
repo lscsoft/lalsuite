@@ -1,15 +1,33 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALStdlib.h LALConstants.h\
-        LALAtomicDatatypes.h LALDatatypes.h \
-        LALRCSID.h LALStatusMacros.h \
-	LALStdio.h LALVersion.h LALMalloc.h LALErrno.h LALError.h LALGSL.h \
-	XLALError.h XLALGSL.h \
-	LALComplex.h LALString.h StringInput.h Grid.h
+pkginclude_HEADERS = \
+	Grid.h \
+	LALAtomicDatatypes.h \
+	LALComplex.h \
+	LALConstants.h \
+	LALDatatypes.h \
+	LALErrno.h \
+	LALError.h \
+	LALGSL.h \
+	LALMalloc.h \
+	LALRCSID.h \
+	LALStatusMacros.h \
+	LALStdio.h \
+	LALStdlib.h \
+	LALString.h \
+	LALVersion.h \
+	StringInput.h \
+	XLALError.h \
+	XLALGSL.h
+
 EXTRA_DIST = LALPrimer.h
+
 EXTRA_TEXSOURCES = LALPrimer.h
+
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+
 all-local: include-link
+
 dvi-local: .dvi-dep
+
 @INCLUDEMKFILE@
 @DVIMKFILE@
