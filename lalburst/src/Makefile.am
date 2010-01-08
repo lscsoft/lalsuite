@@ -5,6 +5,8 @@ lalburstinclude_HEADERS = \
 	CLR.h \
 	EPSearch.h \
 	GenerateBurst.h \
+	LALBurstConfig.h \
+	LALBurstVCSInfo.h \
 	LALSimBurst.h \
 	TFTransform.h \
 	TSData.h \
@@ -37,9 +39,18 @@ liblalburst_la_SOURCES = \
 	TrackSearch.c \
 	check_series_macros.h
 
-CLEANFILES = lalburst-user-env.sh lalburst-user-env.csh
-sysconf_DATA = lalburst-user-env.sh lalburst-user-env.csh
-BUILT_SOURCE = lalburst-user-env.sh lalburst-user-env.csh
+CLEANFILES = \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
+
+sysconf_DATA = \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
+
+BUILT_SOURCES = \
+	LALBurstVCSInfo.h \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
 
 lalburst-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -78,5 +89,20 @@ lalburst-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+EXTRA_DIST = \
+	LALBurstVCSInfo.h.in \
+	git_version
+
+MOSTLYCLEANFILES = .vcsinfo
+
+.vcsinfo:
+	@touch .vcsinfo
+
+LALBurstVCSInfo.h: LALBurstVCSInfo.h.in .vcsinfo git_version
+	@echo "creating LALBurstVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALBurst $$sourced $$buildd
+	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

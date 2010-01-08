@@ -96,7 +96,7 @@ int verbose = 0; /* default is brief output */
 
 FILE *fp = NULL; /* set to stdin to read dates from stdin */
 
-int lalDebugLevel = 7; /* print info, warnings, and errors */
+extern int lalDebugLevel;
 
 int main( int argc, char *argv[] )
 {
@@ -105,6 +105,8 @@ int main( int argc, char *argv[] )
   time_t unix_sec;
   int gps_sec;
   int leap;
+
+  lalDebugLevel = 7; /* print info, warnings, and errors */
 
   XLALSetErrorHandler( XLALExitErrorHandler );
 

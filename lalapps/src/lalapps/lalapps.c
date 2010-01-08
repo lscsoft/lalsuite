@@ -43,7 +43,7 @@
   } while( 0 )
 
 const LALStatus blank_status;
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int vrbflg = 0;
 
 lal_errhandler_t lal_errhandler = LAL_ERR_DFLT;
@@ -121,7 +121,7 @@ int set_debug_level( const char *s )
   /* skip whitespace */
   while ( isspace( *s ) )
     ++s;
-  
+
   /* a value is set */
   if ( isdigit( *s ) )
     return lalDebugLevel = atoi( s );
@@ -162,11 +162,13 @@ int set_debug_level( const char *s )
  * The VCS version string is allocated here and must be freed by caller.
  */
 char *
-XLALGetVersionString(void)
+XLALGetVersionString( int level )
 {
   const char *fn = __func__;
   char lal_info[1024], lalapps_info[1024];
   char *ret;
+  const char delim[] = ":";
+  char *tree_status;
 
   /* check version consistency between LAL headers <> library */
   if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalLibraryVCSInfo) )
@@ -177,43 +179,64 @@ XLALGetVersionString(void)
       XLAL_ERROR_NULL (fn, XLAL_EERR );
     }
 
-  /* Get lal info */
-  snprintf( lal_info, sizeof(lal_info),
-            "%%%% LAL-Version: %s\n"
-            "%%%% LAL-Id: %s\n"
-            "%%%% LAL-Date: %s\n"
-            "%%%% LAL-Branch: %s\n"
-            "%%%% LAL-Tag: %s\n"
-            "%%%% LAL-Status: %s\n"
-            "%%%% LAL-Configure Date: %s\n"
-            "%%%% LAL-Configure Arguments: %s\n",
-            lalLibraryVCSInfo.version,
-            lalLibraryVCSInfo.vcsId,
-            lalLibraryVCSInfo.vcsDate,
-            lalLibraryVCSInfo.vcsBranch,
-            lalLibraryVCSInfo.vcsTag,
-            lalLibraryVCSInfo.vcsStatus,
-            LAL_CONFIGURE_DATE ,
-            LAL_CONFIGURE_ARGS );
+  switch(level)
+  {
+    case 0:
+      /* get lal info */
+      tree_status = strdup(lalLibraryVCSInfo.vcsStatus);
+      snprintf(lal_info, sizeof(lal_info),
+          "%%%% LAL: %s (%s %s)\n", lalLibraryVCSInfo.version, \
+          strsep(&tree_status, delim), lalLibraryVCSInfo.vcsId);
 
-  /* Add lalapps info */
-  snprintf( lalapps_info, sizeof(lalapps_info),
-            "%%%% LALApps-Version: %s\n"
-            "%%%% LALApps-Id: %s\n"
-            "%%%% LALApps-Date: %s\n"
-            "%%%% LALApps-Branch: %s\n"
-            "%%%% LALApps-Tag: %s\n"
-            "%%%% LALApps-Status: %s\n"
-            "%%%% LALApps-Configure Date: %s\n"
-            "%%%% LALApps-Configure Arguments: %s\n",
-            lalAppsVCSInfo.version,
-            lalAppsVCSInfo.vcsId,
-            lalAppsVCSInfo.vcsDate,
-            lalAppsVCSInfo.vcsBranch,
-            lalAppsVCSInfo.vcsTag,
-            lalAppsVCSInfo.vcsStatus,
-            LALAPPS_CONFIGURE_DATE ,
-            LALAPPS_CONFIGURE_ARGS );
+      /* get lalapps info */
+      tree_status = strdup(lalAppsVCSInfo.vcsStatus);
+      snprintf(lalapps_info, sizeof(lalapps_info),
+          "%%%% LALApps: %s (%s %s)", lalAppsVCSInfo.version, \
+          strsep(&tree_status, delim), lalAppsVCSInfo.vcsId);
+
+      break;
+
+    default:
+      /* get lal info */
+      snprintf( lal_info, sizeof(lal_info),
+          "%%%% LAL-Version: %s\n"
+          "%%%% LAL-Id: %s\n"
+          "%%%% LAL-Date: %s\n"
+          "%%%% LAL-Branch: %s\n"
+          "%%%% LAL-Tag: %s\n"
+          "%%%% LAL-Status: %s\n"
+          "%%%% LAL-Configure Date: %s\n"
+          "%%%% LAL-Configure Arguments: %s\n",
+          lalLibraryVCSInfo.version,
+          lalLibraryVCSInfo.vcsId,
+          lalLibraryVCSInfo.vcsDate,
+          lalLibraryVCSInfo.vcsBranch,
+          lalLibraryVCSInfo.vcsTag,
+          lalLibraryVCSInfo.vcsStatus,
+          LAL_CONFIGURE_DATE ,
+          LAL_CONFIGURE_ARGS );
+
+      /* add lalapps info */
+      snprintf( lalapps_info, sizeof(lalapps_info),
+          "%%%% LALApps-Version: %s\n"
+          "%%%% LALApps-Id: %s\n"
+          "%%%% LALApps-Date: %s\n"
+          "%%%% LALApps-Branch: %s\n"
+          "%%%% LALApps-Tag: %s\n"
+          "%%%% LALApps-Status: %s\n"
+          "%%%% LALApps-Configure Date: %s\n"
+          "%%%% LALApps-Configure Arguments: %s\n",
+          lalAppsVCSInfo.version,
+          lalAppsVCSInfo.vcsId,
+          lalAppsVCSInfo.vcsDate,
+          lalAppsVCSInfo.vcsBranch,
+          lalAppsVCSInfo.vcsTag,
+          lalAppsVCSInfo.vcsStatus,
+          LALAPPS_CONFIGURE_DATE ,
+          LALAPPS_CONFIGURE_ARGS );
+
+      break;
+  }
 
   size_t len = strlen(lal_info) + strlen(lalapps_info) + 1;
   if ( (ret = XLALMalloc ( len )) == NULL ) {
@@ -234,7 +257,7 @@ XLALGetVersionString(void)
  * Returns != XLAL_SUCCESS on error (version-mismatch or writing to fp)
  */
 int
-XLALOutputVersionString ( FILE *fp )
+XLALOutputVersionString ( FILE *fp, int level )
 {
   const char *fn = __func__;
 
@@ -244,7 +267,7 @@ XLALOutputVersionString ( FILE *fp )
     XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  if ( (VCSInfoString = XLALGetVersionString()) == NULL ) {
+  if ( (VCSInfoString = XLALGetVersionString(level)) == NULL ) {
     XLALPrintError("%s: XLALGetVersionString() failed.\n", fn);
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }

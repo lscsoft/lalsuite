@@ -89,7 +89,7 @@ static void print_usage()
 }
 
 LALStatus status;
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( int argc, char **argv )
 {

@@ -81,7 +81,7 @@ NRCSID( LALTESTDELAYC, "$Id$" );
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
 
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int main(int argc, char **argv)
 {
@@ -98,6 +98,8 @@ int main(int argc, char **argv)
   /* TwoDetsTimeAndASource dets_and_source; */
   LALPlaceAndGPS        det1_and_gps;
   /* LALPlaceAndGPS        det2_and_gps; */
+
+  lalDebugLevel = 0;
 
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);

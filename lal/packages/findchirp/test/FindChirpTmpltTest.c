@@ -34,7 +34,7 @@
 
 NRCSID (MAIN, "$Id$");
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 static
 void PrintInspiralBank (
@@ -57,6 +57,8 @@ main ( void )
   const UINT4                   numSegments = 7;
   const UINT4                   numPts = 262144;
   UINT4                         k;
+
+  lalDebugLevel = 0;
 
   /*
    *

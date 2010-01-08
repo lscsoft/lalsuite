@@ -163,7 +163,7 @@ int testLIGOTimeGPS(void)
 
     /* display serialized structure */
     printf( "----------------------------------------------------------------------\n");
-    printf( xmlString );
+    printf( "%s", xmlString );
     printf( "----------------------------------------------------------------------\n");
 
     /* ---------- parse XML string back and validate ---------- */
@@ -283,7 +283,7 @@ int testPulsarDopplerParams(void)
 
     /* display serialized structure */
     printf( "----------------------------------------------------------------------\n");
-    printf( xmlString );
+    printf( "%s", xmlString );
     printf( "----------------------------------------------------------------------\n");
 
     /* convert XML string back into VOTable document */
@@ -420,7 +420,7 @@ test_gsl_vector(void)
 
   /* ---------- display serialized structure */
   printf( "----------------------------------------------------------------------\n");
-  printf( xmlString);
+  printf( "%s", xmlString);
   printf( "----------------------------------------------------------------------\n");
 
 
@@ -538,7 +538,7 @@ test_gsl_matrix(void)
 
   /* ---------- display serialized structure */
   printf( "----------------------------------------------------------------------\n");
-  printf( xmlString);
+  printf( "%s", xmlString);
   printf( "----------------------------------------------------------------------\n");
 
 
@@ -710,7 +710,7 @@ int testTable ( void )
   /* ---------- display serialized structure */
   printf( "Serialized VOTable XML:\n");
   printf( "----------------------------------------------------------------------\n");
-  printf( (char*)xmlString);
+  printf( "%s", xmlString);
   printf( "----------------------------------------------------------------------\n");
 
 

@@ -514,7 +514,7 @@ XLAL3DRinca(
        ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt_best);
       }
     else
-      { 
+      {
        ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt_min);
        ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt_max);
        if(ds2 < ds2_min) ds2_min = ds2;
@@ -929,7 +929,7 @@ XLALPlayTestSingleRingdown(
         thisEvent = thisEvent->next;
 
         triggerTime = XLALGPSToINT8NS( &(tmpEvent->start_time) );
-        isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+        isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
         if ( ( (*dataType == playground_only)  && isPlay ) ||
             ( (*dataType == exclude_play) && ! isPlay) )

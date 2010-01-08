@@ -41,8 +41,6 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
 {
 
   /* this routine takes a location in XY space and converts it to a location in RT space */   
-  LALStatus status = empty_status;
-  LALTimeInterval interval;
   REAL8 alpha;
   REAL8 Torb;
   REAL8 Tlight;
@@ -82,13 +80,13 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
   /*printf("deltaT is %f\n",deltaT);*/
   
   if (alpha>=0.0) {
-    LALFloatToInterval(&status,&interval,&deltaT);
-    LALDecrementGPS(&status,&tperi,&tstartSSB,&interval);
+    tperi = tstartSSB;
+    XLALGPSAdd(&tperi, -deltaT);
   }
   else if (alpha<0.0) {
     deltaT=(-1.0)*deltaT;
-    LALFloatToInterval(&status,&interval,&deltaT);
-    LALIncrementGPS(&status,&tperi,&tstartSSB,&interval);
+    tperi = tstartSSB;
+    XLALGPSAdd(&tperi, deltaT);
   }
   else {
     printf("error with alpha is parameter conversion\n");
@@ -116,7 +114,6 @@ int ConvertRTperitoXY(RTPLocation *RTPloc, XYLocation *XYloc, REAL8 *alpha)
   /* this routine takes a point in RT space and converts it to XY space */
   LALStatus status = empty_status;
   DFindRootIn input;
-  LALTimeInterval deltaT;
   REAL8 deltaTorb;
   REAL8 alphatemp;
   REAL8 Xtemp;
@@ -140,8 +137,7 @@ int ConvertRTperitoXY(RTPLocation *RTPloc, XYLocation *XYloc, REAL8 *alpha)
   argp=RTPloc->argp;
 
   /* calculate difference between the times using LAL functions */
-  LALDeltaGPS(&status,&deltaT,&tstartSSB,&tperi);
-  LALIntervalToFloat(&status,&deltaTorb,&deltaT);
+  deltaTorb = XLALGPSDiff(&tstartSSB,&tperi);
 
   /* begin root finding procedure */
   input.function = OrbPhaseFunc;

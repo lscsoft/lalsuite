@@ -8,6 +8,7 @@ libutilities_la_SOURCES = \
 	Dirichlet.c \
 	Eigen.c \
 	EigenInternal.c \
+	FlatMesh.c \
 	FindRoot.c \
 	GSLSupport.c \
 	HeapSort.c \
@@ -16,11 +17,9 @@ libutilities_la_SOURCES = \
 	LALRunningMedian.c \
 	MatrixOps.c \
 	MersenneRandom.c \
-	NormalizeSFTRngMed.c \
 	ODE.c \
 	Random.c \
-	RngMedBias.c \
-	SFTClean.c
+	RngMedBias.c
 
 MAINTAINERCLEANFILES = MatrixOps.c
 MOSTLYCLEANFILES = .dvi-dep

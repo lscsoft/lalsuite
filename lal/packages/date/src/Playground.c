@@ -43,9 +43,7 @@ Determines if a given time (or segment) is playground data.
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{PlaygroundCP}
-\idx{LALINT8NanoSecIsPlayground()}
 \idx{XLALINT8NanoSecIsPlayground()}
-\idx{LALGPSIsPlayground()}
 
 \subsubsection*{Description}
 
@@ -71,7 +69,6 @@ t - 729273613 \% 6370 < 600.
 </lalLaTeX>
 #endif
 
-#include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
@@ -80,62 +77,13 @@ NRCSID( PLAYGROUNDC, "$Id$" );
 /* <lalVerbatim file="PlaygroundCP"> */
 int
 XLALINT8NanoSecIsPlayground (
-    const INT8         *ns
+    INT8         ns
     )
 /* </lalVerbatim> */
 {
   const INT8 start = 729273613 * LAL_INT8_C(1000000000);
   const INT8 interval = 6370 * LAL_INT8_C(1000000000);
   const INT8 length = 600 * LAL_INT8_C(1000000000);
-  int playground;
 
-  if ( (*ns - start) % interval < length )
-  {
-    playground = 1;
-  }
-  else
-  {
-    playground = 0;
-  }
-
-  return( playground );
-}
-
-
-/* <lalVerbatim file="PlaygroundCP"> */
-void
-LALINT8NanoSecIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    INT8               *ns
-    )
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
-
-  XLALPrintDeprecationWarning("LALINT8NanoSecIsPlayground", "XLALINT8NanoSecIsPlayground");
-  *playground = XLALINT8NanoSecIsPlayground ( ns );
-
-  RETURN( status );
-}
-
-/* <lalVerbatim file="PlaygroundCP"> */
-void
-LALGPSIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpstime
-    )
-/* </lalVerbatim> */
-{
-  INT8  ns;
-
-  INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
-  ATTATCHSTATUSPTR( status );
-
-  ns = XLALGPSToINT8NS(gpstime);
-  *playground = XLALINT8NanoSecIsPlayground(&ns);
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return (ns - start) % interval < length;
 }

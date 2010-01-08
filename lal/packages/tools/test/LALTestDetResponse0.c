@@ -688,7 +688,7 @@ void  print_source_maybe(const LALSource * source);
 void  setup_global_sources(void);
 void  crab_pulsar_test(LALStatus * status);
 
-void find_zero_gmst(LALStatus * status);
+void find_zero_gmst(void);
 
 typedef enum
   {
@@ -841,8 +841,6 @@ int main(int argc, char *argv[])
   /* REAL4Vector               diffVector; */
   LALTimeIntervalAndNSample time_info;
 
-  LALTimeInterval           interval;
-
   INT4  k;
   INT4  i, j, count;
   INT4  cnt;
@@ -889,7 +887,7 @@ int main(int argc, char *argv[])
   /* and the answer is:  GPS = 13675020:943750000 */
   if (lalDebugLevel == 69)
     {
-      find_zero_gmst(&status);
+      find_zero_gmst();
       goto conclusion;
     }
 
@@ -1301,7 +1299,7 @@ int main(int argc, char *argv[])
   utcDate.tm_min = 20;
   utcDate.tm_hour = 8;
   utcDate.tm_mday = 17;
-  utcDate.tm_mon  = LALMONTH_MAY;
+  utcDate.tm_mon  = 4;	/* may */
   utcDate.tm_year = 1994 - 1900;
   utcDate.tm_isdst = 1;
   mktime(&utcDate);
@@ -1346,7 +1344,7 @@ int main(int argc, char *argv[])
   utcDate.tm_min = 20;
   utcDate.tm_hour = 8;
   utcDate.tm_mday = 17;
-  utcDate.tm_mon  = LALMONTH_MAY;
+  utcDate.tm_mon  = 4;	/* may */
   utcDate.tm_year = 1994 - 1900;
   utcDate.tm_isdst = 1;
   mktime(&utcDate);
@@ -1620,18 +1618,12 @@ int main(int argc, char *argv[])
 
       printf("Done opening files.\n");
 
-      LALFloatToInterval(&status, &interval, &(time_info.deltaT));
-
-      printf("Time info set.\n");
-
       /* Set a GPS time that's close to 0h GMST1. Found this by trial and
        * error:
        * GPS = 13675020:943728537; gmst1 =   2.68743469376486e-10
        * Later, need to use a Science Run time period. */
       gps.gpsSeconds     =  13675020;
       gps.gpsNanoSeconds = 943728537;
-      interval.seconds               =       600;
-      interval.nanoSeconds           =         0;
 
       printf("N sample = %d\n", time_info.nSample);
 
@@ -1735,7 +1727,7 @@ int main(int argc, char *argv[])
             }
 
           /* increment observation time */
-          LALIncrementGPS(&status, &gps, &gps, &interval);
+          XLALGPSAdd(&gps, 600.0);
         }
       printf("\n");
 
@@ -2899,18 +2891,15 @@ void setup_global_sources(void)
 } /* END: setup_global_sources */
 
 
-void find_zero_gmst(LALStatus * status)
+void find_zero_gmst(void)
 {
   REAL8             gmst1;
   LIGOTimeGPS       gps;
-  LALTimeInterval   interval;
   INT4              k;
 
   gmst1 = 0.;
   gps.gpsSeconds     =  13675020;
   gps.gpsNanoSeconds = 943728500;
-  interval.seconds = 0;
-  interval.nanoSeconds =   1;
 
   printf("2*Pi = % 22.14e\n", 2. * LAL_PI);
 
@@ -2925,7 +2914,7 @@ void find_zero_gmst(LALStatus * status)
              gmst1, (gmst1-2.*(double)LAL_PI));
 
       /* increment observation time */
-      LALIncrementGPS(status, &gps, &gps, &interval);
+      XLALGPSAdd(&gps, 1e-9);
     }
   printf("AUF WIEDERSEHEN!\n");
 }

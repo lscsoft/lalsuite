@@ -146,19 +146,6 @@ cd packages/stats/src || fail "creating sources in packages/stats/src"
 ${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
 cd ../../.. || fail "creating sources in packages/stats/src"
 
-cd packages/pulsar/test || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh earth00.dat > earth00.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh sun00.dat > sun00.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh earth01.dat > earth01.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh sun01.dat > sun01.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh earth02.dat > earth02.ilwd || fail "creating sources in packages/pulsar/test"
-/bin/sh ephemtoilwd.sh sun02.dat > sun02.ilwd || fail "creating sources in packages/pulsar/test"
-cd ../../.. || fail "creating sources in packages/pulsar/test"
-
 cd packages/tools/include || fail "creating sources in packages/tools/include"
 ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
@@ -169,9 +156,18 @@ ${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
 ${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
+# FIXME: autoreconf from Ubuntu 9.10 (and probably also from recent
+# Debian versions) automatically run libtoolize with the --copy option
+# therefore over writing the supplied libtool scripts with system
+# version. This can lead to unexpected build failures therefore to work
+# round this "feature" we set the LIBTOOLIZE enviroment variable to
+# point to the the true executable which bypasses the running of
+# libtoolize, this will not effect the vast majority of users and those
+# it will effect will know how to run libtoolize, if required.
+
 # generate build system
 echo "00boot: running autoreconf"
-$AUTORECONF || fail "autoreconf"
+LIBTOOLIZE=true $AUTORECONF || fail "autoreconf"
 
 # if there is a lalapps subdirectory run 00boot within this directory too
 if test -d lalapps ; then
