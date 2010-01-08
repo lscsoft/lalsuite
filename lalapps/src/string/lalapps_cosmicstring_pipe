@@ -107,17 +107,6 @@ snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 # get the segments
 seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
 
-# create injection job
-if options.injections:
-  seg = seglists.extent_all()
-  inject = cosmicstring.InjNode(injection_job)
-  inject.set_start(int(seg[0]))
-  inject.set_end(int(seg[1]))
-  seed = int(1e6 * random.uniform(0.0,1.0))
-  inject.add_var_opt('seed',seed)
-  inject.set_name("inj")
-  dag.add_node(inject)
-
 # write out a log file for this script
 log_fh = open(basename + '.pipeline.log', 'w')
 
@@ -158,8 +147,19 @@ def clip_segment(seg, pad, short_segment_duration):
   return seg
 
 
-# loop over instruments, constructing trigger generator jobs
+# create injection job
+if options.injections:
+  seg = seglists.extent_all()
+  inject = cosmicstring.InjNode(injection_job)
+  inject.set_start(int(seg[0]))
+  inject.set_end(int(seg[1]))
+  seed = int(1e6 * random.uniform(0.0,1.0))
+  inject.add_var_opt('seed',seed)
+  inject.set_name('inj')
+  dag.add_node(inject)
 
+
+# loop over instruments, constructing trigger generator jobs
 for ifo in ifos:
   # create all the LSCdataFind jobs to run in sequence
   datatype = cp.get('input', 'type_%s' % ifo) 
@@ -179,7 +179,7 @@ for ifo in ifos:
     df.set_end(seg[1])
     df.set_observatory(ifo[0])
     df.set_type(datatype)
-    df.set_name("df_%s_%d" % (ifo, segment_number))
+    df.set_name("df_%s_%d_%d" % (ifo, int(seg[0]), int(seg[1])))
     if options.datafind:
       dag.add_node(df)
 
