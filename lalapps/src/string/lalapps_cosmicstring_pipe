@@ -101,7 +101,7 @@ trig_overlap = cp.getint('pipeline', 'trig-overlap')
 overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 
 # get the instruments and snr thresholds
-ifos = [s.strip() for s in cp.get('pipeline','ifos').split(",")]
+ifos = set(s.strip() for s in cp.get('pipeline','ifos').split(','))
 snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 
 # get the segments
