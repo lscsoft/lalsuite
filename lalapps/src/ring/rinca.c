@@ -143,7 +143,8 @@ static void print_usage(char *program)
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
       "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
-      "  [--h1-snr-cut]         snr        reject triggers below this snr\n"\
+      "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"\
+      "                                    there are no h2 triggers present\n"\
       "                                   needed when --h1-h2-consistency is given\n"\
       "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
       "  [--do-veto]         do_veto   veto cetain segments\n"\
@@ -1331,7 +1332,7 @@ if ( vrbflg)
         }
       }
       LAL_CALL( LALRingdownH1H2Consistency(&status,  &coincRingdownList,
-           h1snrCut, &vetoSegs[LAL_IFO_H2]), &status);
+           h1snrCut, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
           XLALCountCoincInspiral(coincRingdownList));
