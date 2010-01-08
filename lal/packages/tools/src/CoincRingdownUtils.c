@@ -1235,7 +1235,7 @@ XLALPlayTestCoincRingdown(
       thisEvent = thisEvent->next;
 
       triggerTime = XLALCoincRingdownTimeNS( tmpEvent );
-      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )

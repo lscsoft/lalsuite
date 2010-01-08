@@ -80,7 +80,7 @@ NRCSID( PLAYGROUNDC, "$Id$" );
 /* <lalVerbatim file="PlaygroundCP"> */
 int
 XLALINT8NanoSecIsPlayground (
-    const INT8         *ns
+    INT8         ns
     )
 /* </lalVerbatim> */
 {
@@ -89,7 +89,7 @@ XLALINT8NanoSecIsPlayground (
   const INT8 length = 600 * LAL_INT8_C(1000000000);
   int playground;
 
-  if ( (*ns - start) % interval < length )
+  if ( (ns - start) % interval < length )
   {
     playground = 1;
   }
@@ -114,7 +114,7 @@ LALINT8NanoSecIsPlayground (
   INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
 
   XLALPrintDeprecationWarning("LALINT8NanoSecIsPlayground", "XLALINT8NanoSecIsPlayground");
-  *playground = XLALINT8NanoSecIsPlayground ( ns );
+  *playground = XLALINT8NanoSecIsPlayground ( *ns );
 
   RETURN( status );
 }
@@ -128,13 +128,10 @@ LALGPSIsPlayground (
     )
 /* </lalVerbatim> */
 {
-  INT8  ns;
-
   INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
   ATTATCHSTATUSPTR( status );
 
-  ns = XLALGPSToINT8NS(gpstime);
-  *playground = XLALINT8NanoSecIsPlayground(&ns);
+  *playground = XLALINT8NanoSecIsPlayground(XLALGPSToINT8NS(gpstime));
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
