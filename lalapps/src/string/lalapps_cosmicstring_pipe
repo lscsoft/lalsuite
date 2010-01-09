@@ -25,6 +25,8 @@ from optparse import OptionParser
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
+from glue.ligolw import lsctables
+from glue.ligolw import utils
 from lalapps import cosmicstring
 
 
@@ -34,16 +36,15 @@ def parse_command_line():
     description = "FIXME"
   )
   parser.add_option("-i", "--injections", action = "store_true", help = "Add simulated bursts.")
-  parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file.")
-  parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory.")
+  parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file (required).")
+  parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory (required).")
   parser.add_option("-p", "--playground", action = "store_true", help = "Run on playground data only.")
-  parser.add_option("-d", "--datafind", action = "store_true", help = "Do datafind step.")
-  parser.add_option("-b", "--burst-search", action = "store_true", help = "Do the burst search.")
+  parser.add_option("-t", "--time-slides", metavar = "filename", help = "Load time-slide vectors from this XML file (required).")
   parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 
   options, filenames = parser.parse_args()
 
-  required_options = ["log_path", "config_file"]
+  required_options = ["log_path", "config_file", "time_slides"]
   missing_options = [option for option in required_options if getattr(options, option) is None]
   if missing_options:
   	raise ValueError, "missing required options %s" % (sorted("--%s" % option.replace("_", "-") for option in missing_options))
@@ -51,6 +52,14 @@ def parse_command_line():
   return options, filenames
 
 options, filenames = parse_command_line()
+
+# start a log file for this script
+basename = os.path.splitext(os.path.basename(options.config_file))[0]
+log_fh = open(basename + '.pipeline.log', 'w')
+print >>log_fh, "$Id$\nInvoked with arguments:"
+for name_value in options.__dict__.items():
+  print >>log_fh, "%s %s" % name_value
+print >>log_fh
 
 
 # try and make a directory to store the cache files and job logs
@@ -68,13 +77,11 @@ cp = ConfigParser.ConfigParser()
 cp.read(options.config_file)
 
 # create a log file that the Condor jobs will write to
-basename = os.path.splitext(os.path.basename(options.config_file))[0]
 tempfile.tempdir = options.log_path
 
 tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
-fh = open( logfile, "w" )
-fh.close()
+open(logfile, "w").close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
@@ -101,31 +108,12 @@ trig_overlap = cp.getint('pipeline', 'trig-overlap')
 overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 
 # get the instruments and snr thresholds
-ifos = [s.strip() for s in cp.get('pipeline','ifos').split(",")]
-snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
+ifos = set(s.strip() for s in cp.get('pipeline','ifos').split(','))
+snr = dict((ifo, cp.getfloat('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 
-# get the segments
+# get the segments and time-slide offset vectors
 seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
-
-# create injection job
-if options.injections:
-  seg = seglists.extent_all()
-  inject = cosmicstring.InjNode(injection_job)
-  inject.set_start(int(seg[0]))
-  inject.set_end(int(seg[1]))
-  seed = int(1e6 * random.uniform(0.0,1.0))
-  inject.add_var_opt('seed',seed)
-  inject.set_name("inj")
-  dag.add_node(inject)
-
-# write out a log file for this script
-log_fh = open(basename + '.pipeline.log', 'w')
-
-print >>log_fh, "$Id$\n"
-print >>log_fh, "Invoked with arguments:"
-for name, value in options.__dict__.items():
-  print >>log_fh, "%s %s" % (name, value)
-print >>log_fh
+offset_vectors = lsctables.table.get_table(utils.load_filename(options.time_slides, gz = (options.time_slides or "stdin").endswith(".gz"), verbose = options.verbose), lsctables.TimeSlideTable.tableName).as_dict()
 
 
 def clip_segment(seg, pad, short_segment_duration):
@@ -158,8 +146,19 @@ def clip_segment(seg, pad, short_segment_duration):
   return seg
 
 
-# loop over instruments, constructing trigger generator jobs
+# create injection job
+if options.injections:
+  seg = seglists.extent_all()
+  inject = cosmicstring.InjNode(injection_job)
+  inject.set_start(int(seg[0]))
+  inject.set_end(int(seg[1]))
+  seed = int(1e6 * random.uniform(0.0,1.0))
+  inject.add_var_opt('seed',seed)
+  inject.set_name('inj')
+  dag.add_node(inject)
 
+
+# loop over instruments, constructing trigger generator jobs
 for ifo in ifos:
   # create all the LSCdataFind jobs to run in sequence
   datatype = cp.get('input', 'type_%s' % ifo) 
@@ -179,9 +178,8 @@ for ifo in ifos:
     df.set_end(seg[1])
     df.set_observatory(ifo[0])
     df.set_type(datatype)
-    df.set_name("df_%s_%d" % (ifo, segment_number))
-    if options.datafind:
-      dag.add_node(df)
+    df.set_name("df_%s_%d_%d" % (ifo, int(seg[0]), int(seg[1])))
+    dag.add_node(df)
 
     # loop over string jobs for this segment
     while abs(string_seg) >= min_segment_length + 2 * pad:
@@ -199,17 +197,15 @@ for ifo in ifos:
       string.set_ifo(ifo)
       string.set_cache(df.get_output())
       string.add_var_opt('channel', channel)
-      string.add_var_opt('threshold', snr[ifo])
+      string.add_var_opt('threshold', str(snr[ifo]))
       string.add_var_opt('trig-start-time', job_seg[0])
       string.add_var_opt('outfile', string.get_output())
-      if options.datafind:
-        string.add_parent(df)
+      string.add_parent(df)
       string.set_name("string_%s_%d_%d" % (ifo, int(job_seg[0]), int(job_seg[1])))
       if options.injections:
         string.add_parent(inject)
         string.add_var_opt('injection-file', inject.get_output())
-      if options.burst_search:
-        dag.add_node(string)
+      dag.add_node(string)
 
       # advance segment
       string_seg = segments.segment(job_seg[1] - overlap, string_seg[1])
