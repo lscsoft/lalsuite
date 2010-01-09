@@ -12,13 +12,18 @@ Classes needed for the cosmic string analysis pipeline.
 """
 
 
-__author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
-__date__ = '$Date$'[7:-2]
-__version__ = '$Revision$'[11:-2]
+import os
 
 
 from glue import pipeline
 from glue import segments
+from glue.lal import CacheEntry, LIGOTimeGPS
+from lalapps import power
+
+
+__author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
+__date__ = '$Date$'[7:-2]
+__version__ = '$Revision$'[11:-2]
 
 
 #
@@ -38,26 +43,19 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specified in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,config_parser):
     """
-    cp = ConfigParser object from which options are read.
+    config_parser = ConfigParser object from which options are read.
     """
-    self.__executable = cp.get('condor','string')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-
-    for sec in ['string']:
-      self.add_ini_opts(cp,sec)
-
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
-    self.set_stdout_file('logs/string-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/string-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('string.sub')
+    pipeline.CondorDAGJob.__init__(self, power.get_universe(config_parser), power.get_executable(config_parser, "lalapps_StringSearch"))
+    pipeline.AnalysisJob.__init__(self, config_parser)
+    self.add_ini_opts(config_parser, "lalapps_StringSearch")
+    self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
+    self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
+    self.set_sub_file("lalapps_StringSearch.sub")
 
 
-class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class StringNode(pipeline.AnalysisNode):
   """
   A RingNode runs an instance of the ring code in a Condor DAG.
   """
@@ -68,16 +66,61 @@ class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
+    self.output_cache = []
+
+  def set_ifo(self, instrument):
+    """
+    Load additional options from the per-instrument section in
+    the config file.
+    """
+    if self.output_cache:
+      raise AttributeError, "cannot change attributes after computing output cache"
+    pipeline.AnalysisNode.set_ifo(self, instrument)
+    for optvalue in self.job()._AnalysisJob__cp.items("lalapps_StringSearch_%s" % instrument):
+      self.add_var_arg("--%s %s" % optvalue)
+
+  def set_user_tag(self, tag):
+    if self.output_cache:
+      raise AttributeError, "cannot change attributes after computing output cache"
+    self.__usertag = tag
+    self.add_var_opt("user-tag", self.__usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
+
+  def get_output_cache(self):
+    """
+    Returns a LAL cache of the output file name.  Calling this
+    method also induces the output name to get set, so it must
+    be at least once.
+    """
+    if not self.output_cache:
+      self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+    return self.output_cache
+
+  def get_output_files(self):
+    raise NotImplementedError
 
   def get_output(self):
     """
     Returns the file name of output from the ring code. This must be kept
     synchronized with the name of the output file in ring.c.
     """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise ValueError, "Start time, end time or ifo has not been set"
+    if self._AnalysisNode__output is None:
+      if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
+        raise ValueError, "start time, end time, ifo, or user tag has not been set"
+      seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+      self.set_output("triggers/%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
 
-    return 'triggers/%s-STRINGSEARCH-%s-%s.xml' % (self.get_ifo(), str(self.get_start()), str(self.get_end() - self.get_start()))
+    return self._AnalysisNode__output
+
+  def set_injection_file(self, file):
+    """
+    Set the name of the XML file from which to read a list of
+    software injections.
+    """
+    self.add_var_opt("injection-file", file)
+    self.add_input_file(file)
 
 
 #
@@ -140,3 +183,32 @@ def init_job_types(config_parser, job_types = ("string",)):
   # lalapps_StringSearch
   if "string" in job_types:
     stringjob = StringJob(config_parser)
+
+
+#
+# =============================================================================
+#
+#                                DAG Fragments
+#
+# =============================================================================
+#
+
+
+def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
+	node = StringNode(stringjob)
+	node.set_name("lalapps_StringSearch_%s_%s_%d_%d" % (tag, instrument, int(seg[0]), int(abs(seg))))
+	map(node.add_parent, parents)
+	# FIXME:  StringNode should not be subclassed from AnalysisNode,
+	# because that class is too hard-coded.  For example, there is no
+	# way to switch to analysing gaussian noise except to comment out
+	# this line in the code.
+	node.set_cache(framecache)
+	node.set_ifo(instrument)
+	node.set_start(seg[0])
+	node.set_end(seg[1])
+	node.set_user_tag(tag)
+	for arg, value in injargs.iteritems():
+		# this is a hack, but I can't be bothered
+		node.add_var_arg("--%s %s" % (arg, value))
+	dag.add_node(node)
+	return set([node])
