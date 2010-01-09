@@ -196,7 +196,7 @@ def match_nodes_to_caches(nodes, caches):
 			node_group.add(index[cache_entry])
 
 	# how many nodes didn't get used?
-	unused = len(nodes) - len(reduce(lambda a, b: a | b, node_gropus))
+	unused = len(nodes) - len(reduce(lambda a, b: a | b, node_groups))
 
 	# done
 	return node_groups, unused
@@ -206,6 +206,17 @@ def cache_span(cache):
 	a = min([cache_entry.segment[0] for cache_entry in cache])
 	b = max([cache_entry.segment[1] for cache_entry in cache])
 	return segments.segment(a, b)
+
+
+#
+# How to write an output cache
+#
+
+
+def write_output_cache(nodes, filename):
+	f = file(filename, "w")
+	for cache_entry, node in collect_output_caches(nodes):
+		print >>f, str(cache_entry)
 
 
 #
@@ -1242,9 +1253,9 @@ def make_datafind_stage(dag, seglists, verbose = False):
 		nodes |= new_nodes
 
 		# add a post script to check the file list
-		required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
-		for node in new_nodes:
-			node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
+		#required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
+		#for node in new_nodes:
+		#	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
 
 	return nodes
 
@@ -1353,7 +1364,7 @@ def group_coinc_parents(parents, offset_vectors, verbose = False):
 	# match parents to caches
 	if verbose:
 		print >>sys.stderr, "Matching jobs to caches ..."
-	parent_groups, unused = match_nodes_to_caches(parents, caches, verbose = verbose)
+	parent_groups, unused = match_nodes_to_caches(parents, caches)
 	if verbose and unused:
 		# there were parents that didn't match any caches.  this
 		# happens if ligolw_cafe decides their outputs aren't
