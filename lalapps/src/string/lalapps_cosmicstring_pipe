@@ -63,22 +63,18 @@ for name_value in options.__dict__.items():
 print >>log_fh
 
 
-# try and make a directory to store the cache files and job logs
-try: os.mkdir('logs')
-except: pass
-
-try: os.mkdir('cache')
-except: pass
-
-try: os.mkdir('triggers')
-except: pass
-
 # create the config parser object and read in the ini file
 config_parser = ConfigParser.ConfigParser()
 config_parser.read(options.config_file)
 
 # initialize lalapps.power module
 power.init_job_types(config_parser, job_types = ("datafind", "binj"))
+cosmicstring.init_job_types(config_parser)
+
+# try and make a directory to store the cache files and job logs
+power.make_dag_directories(config_parser)
+try: os.mkdir('triggers')
+except: pass
 
 # create a log file that the Condor jobs will write to
 tempfile.tempdir = options.log_path
@@ -110,36 +106,6 @@ seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(confi
 offset_vectors = lsctables.table.get_table(utils.load_filename(options.time_slides, gz = (options.time_slides or "stdin").endswith(".gz"), verbose = options.verbose), lsctables.TimeSlideTable.tableName).as_dict()
 
 
-def clip_segment(seg, pad, short_segment_duration):
-  # clip segment to the length required by lalapps_StringSearch.  if
-  #
-  #   duration = segment length - padding
-  #
-  # then
-  #
-  #   duration / short_segment_duration - 0.5
-  #
-  # must be an odd integer, therefore
-  #
-  #   2 * duration + short_segment_duration
-  #
-  # must be divisble by (4 * short_segment_duration)
-  duration = float(abs(seg)) - 2 * pad
-  extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
-  extra /= 2
-
-  # clip segment
-  seg = segments.segment(seg[0], seg[1] - extra)
-
-  # bounds must be integers
-  if int(seg[0]) != seg[0] or int(seg[1]) != seg[1]:
-    raise ValueError, "segment %s does not have integer boundaries" % str(seg)
-  seg = segments.segment(int(seg[0]), int(seg[1]))
-
-  # done
-  return seg
-
-
 # create injection job
 if options.injections:
   binj_fragment = power.make_binj_fragment(dag, seglists.extent_all(), config_parser.get('pipeline', 'user_tag'), 0.0)
@@ -155,7 +121,7 @@ for ifo in ifos:
   # loop over segments
   for segment_number, seg in enumerate(seglists[ifo]):
     # clip segment to string job's requirements
-    string_seg = clip_segment(seg, pad, short_segment_duration)
+    string_seg = cosmicstring.clip_segment(seg, pad, short_segment_duration)
     if(abs(string_seg) - 2 * pad < min_segment_length):
       # segment too small
       continue
@@ -175,7 +141,7 @@ for ifo in ifos:
       if abs(string_seg) >= 5 * min_segment_length + 2 * pad:
         job_seg = segments.segment(string_seg[0], string_seg[0] + 5 * min_segment_length + 2 * pad)
       else:
-        job_seg = clip_segment(string_seg, pad, short_segment_duration)
+        job_seg = cosmicstring.clip_segment(string_seg, pad, short_segment_duration)
 
       # string job for this segment
       string = cosmicstring.StringNode(string_job)
