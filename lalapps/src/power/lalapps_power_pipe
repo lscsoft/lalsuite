@@ -46,27 +46,14 @@ from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
 from pylal import ligolw_tisi
-from pylal import ligolw_cafe
 from pylal import llwapp
-from pylal.date import LIGOTimeGPS
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lalapps import power
 
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"[5:-2]
 __version__ = "$Revision$"[11:-2]
-
-
-#
-# =============================================================================
-#
-#                                 Speed Hacks
-#
-# =============================================================================
-#
-
-
-ligolw_cafe.lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
 #
@@ -155,17 +142,6 @@ def parse_config_file(options):
 #
 
 
-def remove_too_short_segments(seglistdict, timing_params):
-	"""
-	Remove segments from seglistdict that are too short to analyze.
-	"""
-	# CAUTION:  this function modifies seglistdict in place.
-	for seglist in seglistdict.values():
-		for i in xrange(len(seglist) - 1, -1, -1):
-			if not power.segment_ok(timing_params, seglist[i]):
-				del seglist[i]
-
-
 def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, full_segments = True, verbose = False):
 	if verbose:
 		print >>sys.stderr, "constructing segment list ..."
@@ -178,7 +154,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 		# the speed of the llwapp.get_coincident_segmentlistdict()
 		# function when the input segmentlists have had many data
 		# quality holes poked out of them
-		remove_too_short_segments(seglistdict, timing_params)
+		power.remove_too_short_segments(seglistdict, timing_params)
 
 		# extract the segments that are coincident under the time
 		# slides
@@ -234,47 +210,10 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 		seglistdict &= new
 
 	# remove segments that are too short
-	remove_too_short_segments(seglistdict, timing_params)
+	power.remove_too_short_segments(seglistdict, timing_params)
 
 	# done
 	return seglistdict
-
-
-#
-# =============================================================================
-#
-#                         Coincidence Post-Processing
-#
-# =============================================================================
-#
-
-
-def group_coinc_parents(parents, time_slides, verbose = False):
-	if not time_slides:
-		# no-op
-		return []
-
-	if verbose:
-		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
-
-	# use ligolw_cafe to group each output file according to how they
-	# need to be combined to perform the coincidence analysis
-	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], time_slides, verbose = verbose)[1]
-	caches = [set(bin.objects) for bin in bins]
-	segs = [bin.extent for bin in bins]
-
-	# match parents to caches
-	if verbose:
-		print >>sys.stderr, "Matching jobs to caches ..."
-	parent_groups, unused = power.match_nodes_to_caches(parents, caches, verbose = verbose)
-	if verbose and unused:
-		# there were parents that didn't match any caches.  this
-		# happens if ligolw_cafe decides their outputs aren't
-		# needed
-		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
-
-	# done
-	return zip(segs, parent_groups, caches)
 
 
 #
@@ -390,11 +329,11 @@ def make_noninjection_branch(dag, datafinds, seglistdict, time_slides, timing_pa
 	# single-instrument trigger generation
 
 
-	pwr_nodes = power.make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_power, verbose = verbose)
+	trigger_nodes = power.make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_power, verbose = verbose)
 	if enable_clustering:
 		if verbose:
 			print >>sys.stderr, "building pre-lladd bucluster jobs ..."
-		pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "PRELLADD_%s" % tag, verbose = verbose)
+		trigger_nodes = power.make_bucluster_fragment(dag, trigger_nodes, "PRELLADD_%s" % tag, verbose = verbose)
 
 
 	# coincidence analysis
@@ -406,7 +345,7 @@ def make_noninjection_branch(dag, datafinds, seglistdict, time_slides, timing_pa
 			print >>sys.stderr, "%s non-injections %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
 		tisi_cache = set([time_slides_cache_entry])
 		nodes = set()
-		for seg, parents, cache in group_coinc_parents(pwr_nodes, these_time_slides, verbose = verbose):
+		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
 			nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (tag, n), segment = seg, input_cache = cache, extra_input_cache = tisi_cache, preserve_cache = cache | tisi_cache)
 		if enable_clustering:
 			if verbose:
@@ -464,11 +403,11 @@ def make_injection_branch(dag, datafinds, seglistdict, time_slides, timing_param
 	# single-instrument trigger generation
 
 
-	pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, "INJECTIONS_%s" % tag, timing_params, psds_per_power, verbose = verbose)
+	trigger_nodes = power.make_single_instrument_stage(dag, datafinds, seglistdict, "INJECTIONS_%s" % tag, timing_params, psds_per_power, binjnodes = binjnodes, verbose = verbose)
 	if enable_clustering:
 		if verbose:
 			print >>sys.stderr, "building pre-lladd bucluster jobs ..."
-		pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_PRELLADD_%s" % tag, verbose = verbose)
+		trigger_nodes = power.make_bucluster_fragment(dag, trigger_nodes, "INJECTIONS_PRELLADD_%s" % tag, verbose = verbose)
 
 
 	# coincidence analysis.  note that this loop constructs a broken dag if
@@ -486,7 +425,7 @@ def make_injection_branch(dag, datafinds, seglistdict, time_slides, timing_param
 			print >>sys.stderr, "%s injections %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
 		tisi_cache = set([time_slides_cache_entry])
 		nodes = set()
-		for seg, parents, cache in group_coinc_parents(pwr_nodes, these_time_slides, verbose = verbose):
+		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
 			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % tag, segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = binj_cache | tisi_cache)
 		if enable_clustering:
 			if verbose:
