@@ -1005,7 +1005,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	return set([node])
 
 
-def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
+def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
 	# one injection every time-step / pi seconds
 	period = float(binjjob.get_opts()["time-step"]) / math.pi
 
@@ -1015,10 +1015,15 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
 	node.set_end(seg[1])
-	node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+	if flow is not None:
+		node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+	else:
+		node.set_name("lalapps_binj_%d" % int(start))
 	node.set_user_tag(tag)
-	node.add_macro("macroflow", flow)
-	node.add_macro("macrofhigh", fhigh)
+	if flow is not None:
+		node.add_macro("macroflow", flow)
+	if fhigh is not None:
+		node.add_macro("macrofhigh", fhigh)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
 	return set([node])
