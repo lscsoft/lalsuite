@@ -1,18 +1,34 @@
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
 """
 Classes needed for the cosmic string analysis pipeline.
 """
 
+
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
-__date__ = '$Date$'
+__date__ = '$Date$'[7:-2]
 __version__ = '$Revision$'[11:-2]
 
-import exceptions
+
 from glue import pipeline
+from glue import segments
 
 
-class StringError(exceptions.Exception):
-  def __init__(self, args=None):
-    self.args = args
+#
+# =============================================================================
+#
+#                            DAG Node and Job Class
+#
+# =============================================================================
+#
+
 
 class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -40,6 +56,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/string-$(macrochannel)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('string.sub')
 
+
 class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A RingNode runs an instance of the ring code in a Condor DAG.
@@ -58,9 +75,68 @@ class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     synchronized with the name of the output file in ring.c.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise StringError, "Start time, end time or ifo has not been set"
+      raise ValueError, "Start time, end time or ifo has not been set"
 
-    basename = 'triggers/'+self.get_ifo() + '-STRINGSEARCH'
+    return 'triggers/%s-STRINGSEARCH-%s-%s.xml' % (self.get_ifo(), str(self.get_start()), str(self.get_end() - self.get_start()))
 
-    return basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
+
+#
+# =============================================================================
+#
+#                                 Segmentation
+#
+# =============================================================================
+#
+
+
+def clip_segment(seg, pad, short_segment_duration):
+  # clip segment to the length required by lalapps_StringSearch.  if
+  #
+  #   duration = segment length - padding
+  #
+  # then
+  #
+  #   duration / short_segment_duration - 0.5
+  #
+  # must be an odd integer, therefore
+  #
+  #   2 * duration + short_segment_duration
+  #
+  # must be divisble by (4 * short_segment_duration)
+  duration = float(abs(seg)) - 2 * pad
+  extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
+  extra /= 2
+
+  # clip segment
+  seg = segments.segment(seg[0], seg[1] - extra)
+
+  # bounds must be integers
+  if int(seg[0]) != seg[0] or int(seg[1]) != seg[1]:
+    raise ValueError, "segment %s does not have integer boundaries" % str(seg)
+  seg = segments.segment(int(seg[0]), int(seg[1]))
+
+  # done
+  return seg
+
+
+#
+# =============================================================================
+#
+#                                DAG Job Types
+#
+# =============================================================================
+#
+
+
+stringjob = None
+
+
+def init_job_types(config_parser, job_types = ("string",)):
+  """
+  Construct definitions of the submit files.
+  """
+  global stringjob
+
+  # lalapps_StringSearch
+  if "string" in job_types:
+    stringjob = StringJob(config_parser)
