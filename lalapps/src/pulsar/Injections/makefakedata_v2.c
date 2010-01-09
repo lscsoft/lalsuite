@@ -366,7 +366,7 @@ int write_timeseries(int iSFT);
 int cleanup(LALStatus *);
 int freemem(LALStatus *);
 int window_data(void);
-int correct_phase(LALStatus *);
+int correct_phase(void);
 void syserror(const char *fmt, ...);
 void error(const char *fmt, ...);
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
@@ -625,7 +625,7 @@ int main(int argc,char *argv[]) {
 
 #if 1
       /* correct phase */
-      correct_phase(&status);
+      correct_phase();
 #endif
       
       /* if you want noise added in the FREQ domain only, read from files and add in */
@@ -812,26 +812,21 @@ int correct_phase(LALStatus* status, int iSFT) {
  * Yousuke 24 Mar 2004.
  *
  */
-int correct_phase(LALStatus* status) {
+int correct_phase(void) {
 
   UINT4 i;
   REAL8 cosx,sinx;
   COMPLEX8 fvec1;
-  LALTimeInterval deltaGPS;
   LIGOTimeGPS gps1,gps2;
-  REAL8 deltaT;
+  REAL8 x;
 
   gps1=timeSeries->epoch;
   gps2=cwDetector.heterodyneEpoch;
 
-  LALDeltaGPS(status,&deltaGPS,&gps1,&gps2);
+  x = XLALGPSDiff(&gps1,&gps2) * LAL_TWOPI*timeSeries->f0; 
 
-  LALIntervalToFloat(status,&deltaT,&deltaGPS);
-
-  deltaT *= LAL_TWOPI*timeSeries->f0; 
-
-  cosx=cos(deltaT);
-  sinx=sin(deltaT);
+  cosx=cos(x);
+  sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
     fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;

@@ -15,8 +15,7 @@ __version__ = '$Revision$'[11:-2]
 
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, random
-import re, string
+import sys, os
 import tempfile
 import ConfigParser
 from optparse import OptionParser
@@ -25,7 +24,10 @@ from optparse import OptionParser
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
+from glue.ligolw import lsctables
+from glue.ligolw import utils
 from lalapps import cosmicstring
+from lalapps import power
 
 
 def parse_command_line():
@@ -34,16 +36,15 @@ def parse_command_line():
     description = "FIXME"
   )
   parser.add_option("-i", "--injections", action = "store_true", help = "Add simulated bursts.")
-  parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file.")
-  parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory.")
+  parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file (required).")
+  parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory (required).")
   parser.add_option("-p", "--playground", action = "store_true", help = "Run on playground data only.")
-  parser.add_option("-d", "--datafind", action = "store_true", help = "Do datafind step.")
-  parser.add_option("-b", "--burst-search", action = "store_true", help = "Do the burst search.")
+  parser.add_option("-t", "--time-slides", metavar = "filename", help = "Load time-slide vectors from this XML file (required).")
   parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 
   options, filenames = parser.parse_args()
 
-  required_options = ["log_path", "config_file"]
+  required_options = ["log_path", "config_file", "time_slides"]
   missing_options = [option for option in required_options if getattr(options, option) is None]
   if missing_options:
   	raise ValueError, "missing required options %s" % (sorted("--%s" % option.replace("_", "-") for option in missing_options))
@@ -53,158 +54,121 @@ def parse_command_line():
 options, filenames = parse_command_line()
 
 
+# start a log file for this script
+basename = os.path.splitext(os.path.basename(options.config_file))[0]
+log_fh = open(basename + '.pipeline.log', 'w')
+print >>log_fh, "$Id$\nInvoked with arguments:"
+for name_value in options.__dict__.items():
+  print >>log_fh, "%s %s" % name_value
+print >>log_fh
+
+
+# create the config parser object and read in the ini file
+config_parser = ConfigParser.ConfigParser()
+config_parser.read(options.config_file)
+
+# initialize lalapps.power and lalapps.cosmicstring modules
+power.init_job_types(config_parser, job_types = ("datafind", "binj"))
+cosmicstring.init_job_types(config_parser, job_types = ("string",))
+
 # try and make a directory to store the cache files and job logs
-try: os.mkdir('logs')
-except: pass
-
-try: os.mkdir('cache')
-except: pass
-
+power.make_dag_directories(config_parser)
 try: os.mkdir('triggers')
 except: pass
 
-# create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
-cp.read(options.config_file)
-
 # create a log file that the Condor jobs will write to
-basename = os.path.splitext(os.path.basename(options.config_file))[0]
 tempfile.tempdir = options.log_path
-
 tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
-fh = open( logfile, "w" )
-fh.close()
+file(logfile, "w")	# create/truncate the file
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create the Condor jobs that will be used in the DAG
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
-string_job = cosmicstring.StringJob(cp)
-if options.injections: 
-  injection_job = cosmicstring.InjJob(cp)
-
-# set better submit file names than the default
-subsuffix = '.sub'
-df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-string_job.set_sub_file( basename + '.string' + subsuffix )
-if options.injections: 
-  injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
+string_job = cosmicstring.StringJob(config_parser)
+string_job.set_sub_file( basename + '.string.sub' )
 
 # get chunk lengths from the values in the ini file
-short_seg_lenth = int(cp.get('string', 'short-segment-duration'))
-pad = int(cp.get('string', 'pad'))
-length = int(cp.get('pipeline', 'segment-length'))+2*pad
-trig_overlap = int(cp.get('pipeline', 'trig-overlap'))
-overlap = 2*(short_seg_lenth/4+pad)
+short_segment_duration = config_parser.getint('lalapps_StringSearch', 'short-segment-duration')
+pad = config_parser.getint('lalapps_StringSearch', 'pad')
+min_segment_length = config_parser.getint('pipeline', 'segment-length') # not including pad at each end
+trig_overlap = config_parser.getint('pipeline', 'trig_overlap')
+overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 
-# get the instruments and snr thresholds
-ifos = [s.strip() for s in cp.get('pipeline','ifos').split(",")]
-snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
+# get the instruments
+ifos = set(s.strip() for s in config_parser.get('pipeline','ifos').split(','))
 
-# get the segments
-seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
+# get the segments and time-slide offset vectors
+seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(config_parser.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
+offset_vectors = lsctables.table.get_table(utils.load_filename(options.time_slides, gz = (options.time_slides or "stdin").endswith(".gz"), verbose = options.verbose), lsctables.TimeSlideTable.tableName).as_dict()
+
 
 # create injection job
 if options.injections:
-  seg = seglists.extent_all()
-  inject = cosmicstring.InjNode(injection_job)
-  inject.set_start(int(seg[0]))
-  inject.set_end(int(seg[1]))
-  seed = int(1e6 * random.uniform(0.0,1.0))
-  inject.add_var_opt('seed',seed)
-  inject.set_name("inj")
-  dag.add_node(inject)
+  binj_fragment = power.make_binj_fragment(dag, seglists.extent_all(), config_parser.get('pipeline', 'user_tag'), 0.0)
+else:
+  binj_fragment = set()
 
-# write out a log file for this script
-log_fh = open(basename + '.pipeline.log', 'w')
-
-print >>log_fh, "$Id$\n"
-print >>log_fh, "Invoked with arguments:"
-for name, value in options.__dict__.items():
-  print >>log_fh, "%s %s" % (name, value)
-print >>log_fh
 
 # loop over instruments, constructing trigger generator jobs
-
 for ifo in ifos:
-  # read science segs that are greater or equal to a chunk from the input file
-  data = pipeline.ScienceData()
-  data.read(cp.get('input','segments_%s' % ifo),length)
-
-  # create the chunks from the science segments
-  data.make_chunks(length,overlap+trig_overlap,options.playground,0,0)
-  #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-  data.make_chunks_from_unused(length,overlap/2+trig_overlap,options.playground,0,0,0)
-  #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
-
-  # create all the LSCdataFind jobs to run in sequence
-  datatype = cp.get('input','type_%s' % ifo) 
-  channeltype = cp.get('input','channel_%s' % ifo) 
-
   # loop over segments
-  for segment_number, seg in enumerate(data):
+  for segment_number, seg in enumerate(seglists[ifo]):
+    # clip segment to string job's requirements
+    string_seg = cosmicstring.clip_segment(seg, pad, short_segment_duration)
+    if(abs(string_seg) - 2 * pad < min_segment_length):
+      # segment too small
+      continue
 
     # find all the data for ifo
-    df = pipeline.LSCDataFindNode(df_job)
-    df.set_start(seg.start())
-    df.set_end(seg.end())
-    df.set_observatory(ifo[0])
-    df.set_type(datatype)
-    df.set_name("df_%s_%d" % (ifo, segment_number))
-    if options.datafind:
-      dag.add_node(df)
+    datafind_fragment = power.make_datafind_fragment(dag, ifo, seg)
+    # artificial parent-child relationship to force binj job to run before
+    # all datafinds.  makes dag run faster because it allows string search
+    # jobs to move onto the cluster before all the datafinds complete
+    for parent in binj_fragment:
+      for child in datafind_fragment:
+        child.add_parent(parent)
 
-    # string jobs for this segment
-    for chunk_number, chunk in enumerate(seg):
-      string = cosmicstring.StringNode(string_job)
-      string.set_start(chunk.start())
-      string.set_end(chunk.end())
-      string.set_ifo(ifo)
-      string.set_cache(df.get_output())
-      string.add_var_opt('channel',channeltype)
-      string.add_var_opt('threshold',snr[ifo])
-      string.add_var_opt('trig-start-time',chunk.trig_start())
-      string.add_var_opt('outfile',string.get_output())
-      if options.datafind:
-        string.add_parent(df)
-      string.set_name("string_%s_%d_%d" % (ifo, segment_number, chunk_number))
-      if options.injections:
-        string.add_parent(inject)
-        string.add_var_opt('injection-file',inject.get_output())
-      if options.burst_search:
-        dag.add_node(string)
+    # loop over string jobs for this segment
+    while abs(string_seg) >= min_segment_length + 2 * pad:
+      # try to use 5* min_segment_length each time (must be an odd
+      # multiple!).
+      if abs(string_seg) >= 5 * min_segment_length + 2 * pad:
+        job_seg = segments.segment(string_seg[0], string_seg[0] + 5 * min_segment_length + 2 * pad)
+      else:
+        job_seg = cosmicstring.clip_segment(string_seg, pad, short_segment_duration)
 
-  print >>log_fh, "\n===========================================\n"
-  print >>log_fh, "Parsed %d science segments for %s" % (len(data), ifo)
-  print >>log_fh, "total data = %d" % sum(len(chunk) for seg in data for chunk in seg)
-  print >>log_fh, "\n===========================================\n"
-  print >>log_fh, data
-  for seg in data:
-    print >>log_fh, seg
-    for chunk in seg:
-      print >>log_fh, chunk
-  print >>log_fh, "\n===========================================\n"
+      # string job for this segment
+      if binj_fragment:
+        string_fragment = cosmicstring.make_string_fragment(dag, datafind_fragment | binj_fragment, ifo, job_seg, config_parser.get('pipeline', 'user_tag'), [node for node in datafind_fragment][0].get_output(), injargs = {'injection-file': [cache_entry.path() for node in binj_fragment for cache_entry in node.get_output_cache()][0]})
+      else:
+        string_fragment = cosmicstring.make_string_fragment(dag, datafind_fragment | binj_fragment, ifo, job_seg, config_parser.get('pipeline', 'user_tag'), [node for node in datafind_fragment][0].get_output())
+      # dummy code to force output files to get set
+      for node in string_fragment:
+        node.get_output_cache()
+
+      # advance segment
+      string_seg = segments.segment(job_seg[1] - overlap, string_seg[1])
 
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag -maxjobs 100 ", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LSCdataFind jobs, do not forget to initialize your grid 
-proxy certificate on the condor submit machine by running the commands
+print """Created a DAG file which can be submitted by executing
+
+   condor_submit_dag %s
+
+from a condor submit machine (e.g. hydra.phys.uwm.edu)
+
+Do not forget to initialize your grid proxy certificate on the condor
+submit machine by running the commands
 
   unset X509_USER_PROXY
   grid-proxy-init -hours 177
   export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
 
-Contact the administrator of your cluster to find the hostname and port of the
-LSCdataFind server.
-"""
-
-sys.exit(0)
+Contact the administrator of your cluster to find the hostname and port of
+the LSCdataFind server.""" % dag.get_dag_file()

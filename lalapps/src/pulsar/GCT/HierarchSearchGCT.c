@@ -55,6 +55,7 @@ RCSID( "$Id$");
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #endif
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
@@ -106,6 +107,7 @@ typedef struct {
   LIGOTimeGPS maxEndTimeGPS;       /**< all sft data must be before this time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
+  BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
 } UsefulStageVariables;
 
@@ -190,6 +192,9 @@ int MAIN( int argc, char *argv[]) {
 	/* duration of each segment */
   REAL8 tStack;
 
+  /* number of segments */
+  UINT4 nStacks;
+  
   /* Total observation time */
   REAL8 tObs;
   
@@ -198,15 +203,14 @@ int MAIN( int argc, char *argv[]) {
   static MultiNoiseWeightsSequence stackMultiNoiseWeights;
   static MultiDetectorStateSeriesSequence stackMultiDetStates;
   static LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
-
+  SFTtype *firstSFT;
+  REAL8 Tsft;
+  
   /* some useful variables for each stage */
   UsefulStageVariables usefulParams;
 
-  /* number of segments */
-  UINT4 nStacks;
-  
-  /* LALdemod related stuff */
-  static REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
+  /* F-statistic computation related stuff */
+  REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;		   
 
@@ -242,6 +246,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 pos[3];
   REAL8 vel[3];
   REAL8 acc[3];
+  REAL8 Fstat=0.0;
   
   /* GCT helper variables for faster calculation of u1, u2 */
   REAL8 A1, B1, A2, B2;
@@ -282,7 +287,9 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useToplist1 = FALSE;
   BOOLEAN uvar_semiCohToplist = FALSE; /* if overall first stage candidates are to be output */
-
+  BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
+  BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
+  
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA; 		
   REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
@@ -303,7 +310,6 @@ int MAIN( int argc, char *argv[]) {
 
   REAL8 uvar_refTime = 0;
   REAL8 uvar_tStack = 0;
-  INT4 uvar_method = 0; 	
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
@@ -358,7 +364,6 @@ int MAIN( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=GCT", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
@@ -371,26 +376,28 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage segments", &uvar_nStacksMax ),&status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",       0,  UVAR_REQUIRED, "Duration of 1st stage segments (sec)", &uvar_tStack ),&status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_REQUIRED, "Duration of 1st stage segments (sec)", &uvar_tStack ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2",       'g', UVAR_OPTIONAL, "Refinement of spindown in fine grid (default: use segment times)", &uvar_gamma2), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2",      'g', UVAR_OPTIONAL, "Refinement of spindown in fine grid (default: use segment times)", &uvar_gamma2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output fileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold on significance for 1st stage (if no toplist)", &uvar_threshold1), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold (if no toplist)", &uvar_threshold1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
-
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useResamp",    0,  UVAR_OPTIONAL, "Use resampling to compute F-statistic", &uvar_useResamp), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "SignalOnly",  'S', UVAR_OPTIONAL, "Signal only flag", &uvar_SignalOnly), &status);
+  
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
@@ -432,16 +439,10 @@ int MAIN( int argc, char *argv[]) {
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
 
   /* some basic sanity checks on user vars */
-  if ( (uvar_method != 0) ) {
-    fprintf(stderr, "Invalid method....must be 0\n");
-    return( HIERARCHICALSEARCH_EBAD );
-  }
-
   if ( uvar_nStacksMax < 1) {
-    fprintf(stderr, "Invalid number of stacks\n");
+    fprintf(stderr, "Invalid number of segments!\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
@@ -452,7 +453,6 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-
   
   /* 2F threshold for semicoherent stage */
   TwoFthreshold = 2.0 * uvar_ThrF;
@@ -560,6 +560,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.maxEndTimeGPS = maxEndTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
+  usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.dopplerMax = uvar_dopplerMax;
 
   /* set reference time for pular parameters */
@@ -588,9 +589,9 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  /* LogPrintf(LOG_DEBUG, "GPS Reference Time = %d\n", refTimeGPS.gpsSeconds); */
   fprintf(stderr, "%% GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
-  
+  firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
+  Tsft = 1.0 / firstSFT->deltaF;             /* define the length of an SFT (assuming 1/Tsft resolution) */
   
   if ( uvar_sftUpsampling > 1 )
     {
@@ -708,7 +709,8 @@ int MAIN( int argc, char *argv[]) {
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
-
+  CFparams.edat = edat;
+  
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;
   semiCohPar.tsMid = midTstack;
@@ -1074,11 +1076,22 @@ int MAIN( int argc, char *argv[]) {
           deltaF = fstatVector.data[k].deltaF;
           myf0max = thisPoint.fkdot[0] + (fveclength - 1) * deltaF + thisPoint.fkdot[1] * timeDiffSeg;
           
-          /* This is the most costly function. We here allow for using an architecture-specific optimized
-              function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-          LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint, \
-                                          stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], \
-                                          stackMultiDetStates.data[k], &CFparams), &status);
+          
+          if (uvar_useResamp) {
+            
+            /* Resampling method implementation to compute the F-statistic */
+            LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint, 
+                                               stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+                                               stackMultiDetStates.data[k], &CFparams), &status);
+          }
+          else {
+
+            /* SFT method implementation to compute the F-statistic */
+            LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint,
+                                            stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
+                                            stackMultiDetStates.data[k], &CFparams), &status);
+          }
+          
           
           /* Smallest values of u1 and u2 (to be subtracted) */
           u1start = myf0 * A1 + f1dot_event * B1;
@@ -1092,6 +1105,20 @@ int MAIN( int argc, char *argv[]) {
           
           /* Loop over frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
+                    
+            Fstat = fstatVector.data[k].data->data[ifreq];
+
+            if ( uvar_SignalOnly )
+            {
+              /* Correct normalization in --SignalOnly case:
+               * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of
+               * the single-sided PSD Sh: the SignalOnly case is characterized by
+               * setting Sh->1, so we need to divide F by (0.5*Tsft)
+               */
+              Fstat *= 2.0 / Tsft;
+              Fstat += 2;		/* compute E[2F]:= 4 + SNR^2 */
+              fstatVector.data[k].data->data[ifreq] = Fstat;
+            }
             
             /* translate frequency from reftime to midpoint of this segment */
             f_event = myf0 + ifreq * deltaF;
@@ -1113,11 +1140,11 @@ int MAIN( int argc, char *argv[]) {
               thisCgPoint.Uindex = U1idx * NumU2idx + U2idx;
             }
 
-            /* copy the 2F value and index integer number */
-            thisCgPoint.TwoF = 2.0 * fstatVector.data[k].data->data[ifreq];
+            /* copy the *2F* value and index integer number */
+            thisCgPoint.TwoF = 2.0 * Fstat;
             thisCgPoint.Index = ifreq;
             coarsegrid.list[ifreq] = thisCgPoint;
-              
+            
           }
 
           /* --- Sort the coarse grid in Uindex --- */
@@ -1268,18 +1295,16 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
+  
 
   /*------------ free all remaining memory -----------*/
   
-  /* free memory */
   if ( uvar_printCand1 ) {
     LALFree( fnameSemiCohCand );
   }
-  
   if ( version_string ) {
     XLALFree ( version_string );
   }
-  
   if ( uvar_printFstat1 ) {
     fclose(fpFstat1);
     LALFree( fnameFstatVec1 );
@@ -1307,6 +1332,14 @@ int MAIN( int argc, char *argv[]) {
       LALFree(fstatVector.data[k].data);
     }
   LALFree(fstatVector.data);
+  
+  
+  /* if resampling is used then free buffer */
+  /*
+  if ( uvar_useResamp ) {
+    XLALEmptyComputeFBuffer_RS( CFparams.buffer );
+  }
+  */
   
   /* free Vel/Pos/Acc vectors and ephemeris */
   XLALDestroyREAL8VectorSequence( posStack );
@@ -1493,47 +1526,61 @@ void SetUpSFTs( LALStatus *status,
   freqmin = freqLo - doppWings - extraBins * deltaFsft; 
   freqmax = freqHi + doppWings + extraBins * deltaFsft;
       
-  /* finally memory for stack of multi sfts */
+  /* ----- finally memory for segments of multi sfts ----- */
   stackMultiSFT->length = in->nStacks;
   stackMultiSFT->data = (MultiSFTVector **)LALCalloc(1, in->nStacks * sizeof(MultiSFTVector *));
   if ( stackMultiSFT->data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   }
-    
-  stackMultiNoiseWeights->length = in->nStacks;
-  stackMultiNoiseWeights->data = (MultiNoiseWeights **)LALCalloc(1, in->nStacks * sizeof(MultiNoiseWeights *));
-  if ( stackMultiNoiseWeights->data == NULL ) {
-    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
 
   stackMultiDetStates->length = in->nStacks;
   stackMultiDetStates->data = (MultiDetectorStateSeries **)LALCalloc(1, in->nStacks * sizeof(MultiDetectorStateSeries *));
   if ( stackMultiDetStates->data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   }
+  
+  stackMultiNoiseWeights->length = in->nStacks;
+  if ( in->SignalOnly )  {
+    stackMultiNoiseWeights->data = (MultiNoiseWeights **)LALMalloc(in->nStacks * sizeof(MultiNoiseWeights *));
+    if ( stackMultiNoiseWeights->data == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }
+  }
+  else {
+    stackMultiNoiseWeights->data = (MultiNoiseWeights **)LALCalloc(1, in->nStacks * sizeof(MultiNoiseWeights *));
+    if ( stackMultiNoiseWeights->data == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }
+  }
 
-  /* loop over stacks and read sfts */  
+ 
+  /* loop over segments and read sfts */  
   for (k = 0; k < in->nStacks; k++) {
-      
-    MultiPSDVector *psd = NULL;	
     
-    /* load the sfts */
+    /* ----- load the multi-IFO SFT-vectors ----- */
     TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + k,  catalogSeq.data + k, 
-			    freqmin, freqmax ), status);
-    
-    /* normalize sfts and compute noise weights and detector state */
-    TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
-				    in->blocksRngMed ), status );
-    
-    TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k, 
-					psd, in->blocksRngMed, 0 ), status );
-    
+                           freqmin, freqmax ), status);
+
+    /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
     TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + k, 
-				      stackMultiSFT->data[k], in->edat ), status );
+                                     stackMultiSFT->data[k], in->edat ), status );
     
-    TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+    /* ----- normalize sfts and compute noise weights ----- */
+    if ( in->SignalOnly )  {
+      stackMultiNoiseWeights->data[k] = NULL;
+    }
+    else {
+      MultiPSDVector *psd = NULL;	
+      TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
+				    in->blocksRngMed ), status );
+      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k, 
+					psd, in->blocksRngMed, 0 ), status );   
+      TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+    } /* if ( in->SignalOnly )  */
     
+ 
   } /* loop over k */
+
   
   
   /* realloc if nStacks != in->nStacks */
@@ -1557,7 +1604,7 @@ void SetUpSFTs( LALStatus *status,
   for (k = 0; k < in->nStacks; k++)
     {
       if ( catalogSeq.data[k].length > 0 ) {
-	LALFree(catalogSeq.data[k].data);
+        LALFree(catalogSeq.data[k].data);
       } /* end if */
     } /* loop over stacks */
   LALFree( catalogSeq.data);  
@@ -1571,7 +1618,7 @@ void SetUpSFTs( LALStatus *status,
     {
       UINT4 X;
       for ( X=0; X < stackMultiSFT->data[k]->length; X ++ )
-	nSFTs += stackMultiSFT->data[k]->data[X]->length;
+        nSFTs += stackMultiSFT->data[k]->data[X]->length;
     } /* for k < stacks */
 #endif
 
