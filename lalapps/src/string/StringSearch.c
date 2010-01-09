@@ -1088,7 +1088,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"threshold",                 required_argument,	NULL,	't'},
     {"frame-cache",               required_argument,	NULL,	'F'},
     {"channel-name",              required_argument,	NULL,	'C'},
-    {"outfile",                   required_argument,	NULL,	'o'},
+    {"output",                    required_argument,	NULL,	'o'},
     {"gps-end-time",              required_argument,	NULL,	'E'},
     {"gps-start-time",            required_argument,	NULL,	'S'},
     {"injection-file",            required_argument,	NULL,	'i'},
@@ -1333,7 +1333,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
-      fprintf(stdout,"\t--outfile (-o)\t\tSTRING\t Name of xml output file.\n");
+      fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate filter.\n");
@@ -1352,7 +1352,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
