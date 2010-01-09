@@ -6,9 +6,9 @@ segments :
 
 dag :
 	mkdir injections
-	pushd injections && ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=0:0:0 time_slides.xml.gz && lalapps_cosmicstring_pipe --verbose --injections --config-file ../S4_StringDag.ini --log-path $(TMPDIR) --time-slides time_slides.xml.gz ; popd
+	pushd injections && ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=0:0:0 time_slides.xml.gz && lalapps_cosmicstring_pipe --verbose --injections --config-file ../S5_StringDag.ini --log-path $(TMPDIR) --time-slides time_slides.xml.gz ; popd
 	mkdir noninjections
-	pushd noninjections && ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-89.26990816987241548050:89.26990816987241548050:1.78539816339744830961 time_slides.xml.gz && lalapps_cosmicstring_pipe --verbose --config-file ../S4_StringDag.ini --log-path $(TMPDIR) --time-slides time_slides.xml.gz ; popd
+	pushd noninjections && ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-89.26990816987241548050:89.26990816987241548050:1.78539816339744830961 time_slides.xml.gz && lalapps_cosmicstring_pipe --verbose --config-file ../S5_StringDag.ini --log-path $(TMPDIR) --time-slides time_slides.xml.gz ; popd
 
 
 ligolw_cafe :
