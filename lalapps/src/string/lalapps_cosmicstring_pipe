@@ -28,6 +28,7 @@ from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import utils
 from lalapps import cosmicstring
+from lalapps import power
 
 
 def parse_command_line():
@@ -73,46 +74,39 @@ try: os.mkdir('triggers')
 except: pass
 
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
-cp.read(options.config_file)
+config_parser = ConfigParser.ConfigParser()
+config_parser.read(options.config_file)
+
+# initialize lalapps.power module
+power.init_job_types(config_parser, job_types = ("datafind", "binj"))
 
 # create a log file that the Condor jobs will write to
 tempfile.tempdir = options.log_path
-
 tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
-open(logfile, "w").close()
+file(logfile, "w")	# create/truncate the file
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create the Condor jobs that will be used in the DAG
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
-string_job = cosmicstring.StringJob(cp)
-if options.injections: 
-  injection_job = cosmicstring.InjJob(cp)
-
-# set better submit file names than the default
-subsuffix = '.sub'
-df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-string_job.set_sub_file( basename + '.string' + subsuffix )
-if options.injections: 
-  injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
+string_job = cosmicstring.StringJob(config_parser)
+string_job.set_sub_file( basename + '.string.sub' )
 
 # get chunk lengths from the values in the ini file
-short_segment_duration = cp.getint('string', 'short-segment-duration')
-pad = cp.getint('string', 'pad')
-min_segment_length = cp.getint('pipeline', 'segment-length') # not including pad at each end
-trig_overlap = cp.getint('pipeline', 'trig-overlap')
+short_segment_duration = config_parser.getint('string', 'short-segment-duration')
+pad = config_parser.getint('string', 'pad')
+min_segment_length = config_parser.getint('pipeline', 'segment-length') # not including pad at each end
+trig_overlap = config_parser.getint('pipeline', 'trig_overlap')
 overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 
 # get the instruments and snr thresholds
-ifos = set(s.strip() for s in cp.get('pipeline','ifos').split(','))
-snr = dict((ifo, cp.getfloat('pipeline','threshold_%s' % ifo)) for ifo in ifos)
+ifos = set(s.strip() for s in config_parser.get('pipeline','ifos').split(','))
+snr_threshold = dict((ifo, config_parser.getfloat('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 
 # get the segments and time-slide offset vectors
-seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
+seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(config_parser.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
 offset_vectors = lsctables.table.get_table(utils.load_filename(options.time_slides, gz = (options.time_slides or "stdin").endswith(".gz"), verbose = options.verbose), lsctables.TimeSlideTable.tableName).as_dict()
 
 
@@ -148,21 +142,15 @@ def clip_segment(seg, pad, short_segment_duration):
 
 # create injection job
 if options.injections:
-  seg = seglists.extent_all()
-  inject = cosmicstring.InjNode(injection_job)
-  inject.set_start(int(seg[0]))
-  inject.set_end(int(seg[1]))
-  seed = int(1e6 * random.uniform(0.0,1.0))
-  inject.add_var_opt('seed',seed)
-  inject.set_name('inj')
-  dag.add_node(inject)
+  binj_fragment = power.make_binj_fragment(dag, seglists.extent_all(), config_parser.get('pipeline', 'user_tag'), 0.0)
+else:
+  binj_fragment = set()
 
 
 # loop over instruments, constructing trigger generator jobs
 for ifo in ifos:
   # create all the LSCdataFind jobs to run in sequence
-  datatype = cp.get('input', 'type_%s' % ifo) 
-  channel = cp.get('input', 'channel_%s' % ifo) 
+  channel = config_parser.get('input', 'channel_%s' % ifo) 
 
   # loop over segments
   for segment_number, seg in enumerate(seglists[ifo]):
@@ -173,13 +161,7 @@ for ifo in ifos:
       continue
 
     # find all the data for ifo
-    df = pipeline.LSCDataFindNode(df_job)
-    df.set_start(seg[0])
-    df.set_end(seg[1])
-    df.set_observatory(ifo[0])
-    df.set_type(datatype)
-    df.set_name("df_%s_%d_%d" % (ifo, int(seg[0]), int(seg[1])))
-    dag.add_node(df)
+    df = power.make_datafind_fragment(dag, ifo, seg).pop()
 
     # loop over string jobs for this segment
     while abs(string_seg) >= min_segment_length + 2 * pad:
@@ -197,14 +179,16 @@ for ifo in ifos:
       string.set_ifo(ifo)
       string.set_cache(df.get_output())
       string.add_var_opt('channel', channel)
-      string.add_var_opt('threshold', str(snr[ifo]))
+      string.add_var_opt('threshold', snr_threshold[ifo])
       string.add_var_opt('trig-start-time', job_seg[0])
       string.add_var_opt('outfile', string.get_output())
       string.add_parent(df)
       string.set_name("string_%s_%d_%d" % (ifo, int(job_seg[0]), int(job_seg[1])))
-      if options.injections:
-        string.add_parent(inject)
-        string.add_var_opt('injection-file', inject.get_output())
+      if binj_fragment:
+        parent, = binj_fragment
+	cache_entry, = parent.get_output_cache()
+        string.add_parent(parent)
+        string.add_var_opt('injection-file', cache_entry.path())
       dag.add_node(string)
 
       # advance segment
