@@ -231,6 +231,7 @@ main(int argc, char *argv[])
     return 0;
   }
 
+
   if ( uvar.coordsHelp )
     {
       CHAR *helpstr;
@@ -483,7 +484,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
       XLAL_ERROR ( fn, XLAL_EFUNC );
     }
     cfg->history->cmdline = cmdline;
-
   } /* record history */
 
 
