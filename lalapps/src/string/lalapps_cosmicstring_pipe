@@ -162,6 +162,11 @@ for ifo in ifos:
 
     # find all the data for ifo
     df = power.make_datafind_fragment(dag, ifo, seg).pop()
+    # artificial parent-child relationship to force binj job to run before
+    # all datafinds.  makes dag run faster because it allows string search
+    # jobs to move onto the cluster before all the datafinds complete
+    for parent in binj_fragment:
+      df.add_parent(parent)
 
     # loop over string jobs for this segment
     while abs(string_seg) >= min_segment_length + 2 * pad:
@@ -186,7 +191,7 @@ for ifo in ifos:
       string.set_name("string_%s_%d_%d" % (ifo, int(job_seg[0]), int(job_seg[1])))
       if binj_fragment:
         parent, = binj_fragment
-	cache_entry, = parent.get_output_cache()
+        cache_entry, = parent.get_output_cache()
         string.add_parent(parent)
         string.add_var_opt('injection-file', cache_entry.path())
       dag.add_node(string)
