@@ -12,12 +12,16 @@ Classes needed for the cosmic string analysis pipeline.
 """
 
 
+import math
 import os
+import sys
 
 
+from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue.lal import CacheEntry, LIGOTimeGPS
+from pylal import llwapp
 from lalapps import power
 
 
@@ -162,6 +166,54 @@ def clip_segment(seg, pad, short_segment_duration):
   return seg
 
 
+def segment_ok(seg, min_segment_length, pad):
+  """
+  Return True if the segment seg is long enough to be analyzed by
+  lalapps_StringSearch.
+  """
+  return float(abs(seg)) - 2 * pad >= min_segment_length
+
+
+def remove_too_short_segments(seglists, min_segment_length, pad):
+  """
+  Remove segments from the segmentlistdict seglists that are too short to
+  analyze.
+
+  CAUTION:  this function modifies seglists in place.
+  """
+  for seglist in seglists.values():
+    iterutils.inplace_filter(lambda seg: segment_ok(seg, min_segment_length, pad), seglist)
+
+
+def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
+  seglists = seglists.copy()
+
+  # cull too-short single-instrument segments from the input
+  # segmentlist dictionary;  this can significantly increase
+  # the speed of the llwapp.get_coincident_segmentlistdict()
+  # function when the input segmentlists have had many data
+  # quality holes poked out of them
+  remove_too_short_segments(seglists, min_segment_length, pad)
+
+  # extract the segments that are coincident under the time
+  # slides
+  new = llwapp.get_coincident_segmentlistdict(seglists, offset_vectors)
+
+  # round to integer boundaries because lalapps_StringSearch can't accept
+  # non-integer start/stop times
+  for seglist in new.values():
+    for i in range(len(seglist)):
+      seglist[i] = segments.segment(int(math.floor(seglist[i][0])), int(math.ceil(seglist[i][1])))
+  # intersect with original segments to ensure we haven't expanded beyond
+  # original bounds
+  new &= seglists
+
+  # again remove too-short segments
+  remove_too_short_segments(new, min_segment_length, pad)
+
+  return new
+
+
 #
 # =============================================================================
 #
@@ -188,9 +240,14 @@ def init_job_types(config_parser, job_types = ("string",)):
 #
 # =============================================================================
 #
-#                                DAG Fragments
+#                          lalapps_StringSearch Jobs
 #
 # =============================================================================
+#
+
+
+#
+# one job
 #
 
 
@@ -207,8 +264,74 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 	node.set_start(seg[0])
 	node.set_end(seg[1])
 	node.set_user_tag(tag)
-	for arg, value in injargs.iteritems():
+	for arg, value in injargs.items():
 		# this is a hack, but I can't be bothered
 		node.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(node)
 	return set([node])
+
+
+#
+# one segment
+#
+
+
+def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration):
+	seglist = segments.segmentlist()
+	while abs(seg) >= min_segment_length + 2 * pad:
+		# try to use 5* min_segment_length each time (must be an odd
+		# multiple!).
+		if abs(seg) >= 5 * min_segment_length + 2 * pad:
+			seglist.append(segments.segment(seg[0], seg[0] + 5 * min_segment_length + 2 * pad))
+		else:
+			seglist.append(clip_segment(seg, pad, short_segment_duration))
+		# advance segment
+		seg = segments.segment(seglist[-1][1] - overlap, seg[1])
+	return seglist
+
+
+def make_string_segment_fragment(dag, datafindnodes, instrument, segment, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+	"""
+	Construct a DAG fragment for an entire segment, splitting the
+	segment into multiple trigger generator jobs.
+	"""
+	# only one frame cache file can be provided as input, and only one
+	# injection description file can be provided as input.
+	# the unpacking indirectly tests that the file count is correct
+	[framecache] = [node.get_output() for node in datafindnodes]
+	if binjnodes:
+		[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
+		injargs = {"injection-file": simfile}
+	else:
+		injargs = {}
+	seglist = split_segment(segment, min_segment_length, pad, overlap, short_segment_duration)
+	if verbose:
+		print >>sys.stderr, "Segment split: " + str(seglist)
+	nodes = set()
+	for seg in seglist:
+		nodes |= make_string_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = injargs)
+	return nodes
+
+
+#
+# all segments
+#
+
+
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+	nodes = set()
+	for instrument, seglist in seglistdict.items():
+		for seg in seglist:
+			if verbose:
+				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+
+			# find the datafind job this job is going to need
+			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
+			if len(dfnodes) != 1:
+				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
+
+			# trigger generator jobs
+			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = binjnodes, verbose = verbose)
+
+	# done
+	return nodes
