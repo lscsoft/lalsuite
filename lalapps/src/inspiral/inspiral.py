@@ -454,6 +454,26 @@ class ChiaJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class CohireJob(InspiralAnalysisJob):
+  """
+  A lalapps_cohire job used by the inspiral pipeline. The stdout and stderr from
+  the job are directed to the logs directory. The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'cohire'
+    sections = ['cohire']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+    # cohire currently doesn't take GPS start/end times
+    self.set_stdout_file('logs/cohire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/cohire-$(macroifo)-$(cluster)-$(process).err')
+
+
 class InspInjFindJob(InspiralAnalysisJob):
   """
   An inspinjfind job. The static options are read from the [inspinjfind]
@@ -1616,6 +1636,169 @@ class ChiaNode(InspiralAnalysisNode):
     self.add_output_file(filename)
 
     return filename
+
+
+class CohireNode(InspiralAnalysisNode):
+  """
+  A CohireNode runs an instance of the inspiral cohire code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_cohire.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__ifos  = None
+    self.__ifo_tag = None
+    self.__num_slides = None
+    self.__injection_file = None
+    self.__output_tag = None
+
+  def set_ifos(self, ifos):
+    """
+    Add the list of interferometers 
+    """
+    self.__ifos = ifos
+
+  def get_ifos(self):
+    """
+    Returns the ifos
+    """
+    return self.__ifos
+  def set_slides(self, slides):
+    """
+    Add the number of time slides
+    """
+    self.__num_slides = slides
+    self.add_var_opt('num-slides',slides)
+
+  def get_slides(self):
+    """
+    Returns the number of slides
+    """
+    return self.__num_slides
+
+  def set_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    if file:
+      self.__injection_file = file
+      self.add_var_opt('injection-file', file)
+
+  def get_inj_file(self):
+    """
+    Gets the injection file
+    """
+    return self.__injection_file
+
+  def set_start(self, start):
+    """
+    Sets GPS start time
+    """
+    self.__start = start
+
+  def get_start(self):
+    """
+    Gets GPS start time
+    """
+    return self.__start
+
+  def set_end(self, end):
+    """
+    Sets GPS end time
+    """
+    self.__end = end
+
+  def get_end(self):
+    """
+    Gets GPS end time
+    """
+    return self.__end
+
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
+
+  def set_glob(self, file_glob):
+    """
+    Sets the glob name
+    """
+    self.add_var_opt('glob',file_glob)
+
+  def set_input(self, input_file):
+    """
+    Sets the input file name
+    """
+    self.add_var_opt('input',input_file)
+
+  def set_output_tag(self):
+    fname = self.job().get_exec_name().upper()
+    if self.get_slides(): fname += "_SLIDE"
+    if self.get_inj_file():
+      fname += "_" + \
+          self.get_inj_file().split("/")[-1].split(".")[0].split("-")[1]
+      fname += "_FOUND"
+    if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
+    if self.get_user_tag(): fname += "_" + self.get_user_tag()
+    self.__output_tag = fname
+
+  def get_output_tag(self):
+    return self.__output_tag
+
+  def get_output(self):
+    """
+    get the name of the output file
+    """
+    if not self.get_ifos():
+      raise InspiralError, "ifos have not been set"
+
+    self.set_output_tag()
+    fname = self.get_ifos() + '-' + self.get_output_tag()
+
+    if (self.get_start() and not self.get_end()) or \
+           (self.get_end() and not self.get_start()):
+      raise InspiralError, "If one of start and end is set, "\
+            "both must be"
+
+    if (self.get_start()):
+      duration=self.get_end() - self.get_start()
+      fname += "-" + str(self.get_start()) + "-" + str(duration)
+
+    fname += ".xml"
+
+    return fname
+
+  def get_missed(self):
+    """
+    get the name of the missed file
+    """
+    if self.get_inj_file():
+      return self.get_output().replace("FOUND", "MISSED")
+    else:
+      return None
+
+  def finalize(self):
+    """
+    set the output options
+    """
+    output = self.get_output()
+
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
+
+    if self.get_inj_file():
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
 
 
 class InspInjFindNode( InspiralAnalysisNode ):

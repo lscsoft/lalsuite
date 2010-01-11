@@ -74,7 +74,7 @@ NRCSID( COMPUTEFSTATRSH, "$Id$" );
 /** Multi-IFO container for COMPLEX8 resampled timeseries */
 typedef struct {
   UINT4 length;		                /**< number of IFOs */
-  COMPLEX8TimeSeries **data;	        /**< array of COMPLEX8TimeSeries (pointers) */
+  COMPLEX8TimeSeries **data;	    /**< array of COMPLEX8TimeSeries (pointers) */
 } MultiCOMPLEX8TimeSeries;
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
