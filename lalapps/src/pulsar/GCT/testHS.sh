@@ -192,14 +192,16 @@ if ! tmp=`eval $cmdline`; then
 fi
 resGCT2=$(cat $outfile_gct2 | head -1 | awk '{print $6}')
 
-reldev1=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT1)/$TwoFsum" | bc)
-reldev2=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT1)/$TwoFsum" | bc)
+reldev1=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT1)/$TwoFsum" | bc | awk '{printf "%.2f",$1}')
+reldev2=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT2)/$TwoFsum" | bc | awk '{printf "%.2f",$1}')
+reldev3=$(echo "scale=2; 100.0 * ($resGCT1 - $resGCT2)/$resGCT1" | bc | awk '{printf "%.2f",$1}')
 
 echo
 echo "----------------------------------------------------------------------"
 echo "#  Predicted:      "$TwoFsum
 echo "#  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)"
 echo "#  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)"
+echo "#  GCT Resamp vs. no-Resamp:    "$reldev3"%"
 echo "----------------------------------------------------------------------"
 
 ## clean up files
