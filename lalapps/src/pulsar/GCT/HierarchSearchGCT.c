@@ -116,30 +116,23 @@ typedef struct {
 void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, 
                MultiNoiseWeightsSequence *stackMultiNoiseWeights,
                MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in );
-
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
-
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-
 void GetSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in );
-
+void TranslateFineGridSpins( LALStatus *status, UsefulStageVariables *usefulparams, FineGrid *in);
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
-
 void ComputeU1idx( LALStatus *status, const REAL8 *f_event, const REAL8 *f1dot_event, 
                   const REAL8 *A1, const REAL8 *B1, const REAL8 *U1start, const REAL8 *U1winInv, 
                   INT4 *U1idx );
-
 void ComputeU2idx( LALStatus *status, const REAL8 *f_event, const REAL8 *f1dot_event, 
                   const REAL8 *A2, const REAL8 *B2, const REAL8 *U2start, const REAL8 *U2winInv,
                   INT4 *U2idx);
-
 int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridUindex( const void *a,const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
-
 void OutputVersion( void );
 
 /* ---------- Global variables -------------------- */
@@ -182,7 +175,7 @@ int MAIN( int argc, char *argv[]) {
   LIGOTimeGPS startTstackGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS midTstackGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS endTstackGPS = empty_LIGOTimeGPS;
-  REAL8 midTseg,refTime,timeDiffSeg,startTseg,endTseg;
+  REAL8 midTseg, midTobs, timeDiffSeg, startTseg, endTseg, refTimeFstat;
   
   /* pos, vel, acc at midpoint of segments */
   REAL8VectorSequence *posStack = NULL;
@@ -233,13 +226,13 @@ int MAIN( int argc, char *argv[]) {
   REAL8 gamma2, sigmasq;  /* refinement factor and variance */
   
   /* GCT helper variables */
-  UINT4 ic,ic2,ic3,ifine;
-  INT4 fveclength,ifreq,U1idx,U2idx,NumU2idx;
-  REAL8 myf0,myf0max,f_event,f1dot_event,deltaF;
-  REAL8 fg_freq_step,fg_f1dot_step,fg_fmin,f1dotmin,fg_fband,fg_f1dotband;
-  REAL8 u1win,u2win,u1winInv,u2winInv,u1fac,u2fac;
-  REAL8 u1start,u2start,u2end;
-  REAL8 f_tmp,f1dot_tmp;
+  UINT4 ic, ic2, ic3, ifine;
+  INT4 fveclength, ifreq, U1idx, U2idx, NumU2idx;
+  REAL8 myf0, myf0max, f_event, f1dot_event, deltaF;
+  REAL8 fg_freq_step, fg_f1dot_step, fg_fmin,f1dotmin, fg_fband, fg_f1dotband;
+  REAL8 u1win, u2win, u1winInv, u2winInv, u1fac, u2fac;
+  REAL8 u1start, u2start, u2end;
+  REAL8 f_tmp, f1dot_tmp;
   REAL8 TwoFthreshold;
   REAL8 TwoFmax;
   UINT4 nc_max;
@@ -247,10 +240,9 @@ int MAIN( int argc, char *argv[]) {
   REAL8 vel[3];
   REAL8 acc[3];
   REAL8 Fstat=0.0;
-  
-  /* GCT helper variables for faster calculation of u1, u2 */
-  REAL8 A1, B1, A2, B2;
+  REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1, u2 */
        
+  
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
 
@@ -563,7 +555,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.dopplerMax = uvar_dopplerMax;
 
-  /* set reference time for pular parameters */
+  /* set reference time for pulsar parameters */
   if ( LALUserVarWasSet(&uvar_refTime)) 
     usefulParams.refTime = uvar_refTime;
   else {
@@ -589,9 +581,10 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  fprintf(stderr, "%% GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
+  fprintf(stderr, "%% GPS reference time = %d   GPS data mid time = %d\n", 
+          refTimeGPS.gpsSeconds, tMidGPS.gpsSeconds);
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
-  Tsft = 1.0 / firstSFT->deltaF;             /* define the length of an SFT (assuming 1/Tsft resolution) */
+  Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
   
   if ( uvar_sftUpsampling > 1 )
     {
@@ -635,9 +628,9 @@ int MAIN( int argc, char *argv[]) {
       midTstackGPS = midTstack->data[k];
       
       midTseg = XLALGPSGetREAL8( &midTstackGPS );
-      refTime = XLALGPSGetREAL8( &tMidGPS );
+      midTobs = XLALGPSGetREAL8( &tMidGPS );
 
-      timeDiffSeg = midTseg - refTime;  
+      timeDiffSeg = midTseg - midTobs;  
       sigmasq=sigmasq+(timeDiffSeg*timeDiffSeg);
     }
     sigmasq=sigmasq / (nStacks*tStack*tStack);
@@ -698,7 +691,7 @@ int MAIN( int argc, char *argv[]) {
   /*---------- set up F-statistic calculation stuff ---------*/
   
   /* set reference time for calculating Fstatistic */
-  thisPoint.refTime = tMidGPS;  
+  thisPoint.refTime = tMidGPS; /* midpoint of data spanned */
   
   /* binary orbit and higher spindowns not considered */
   thisPoint.orbit = NULL;
@@ -938,19 +931,20 @@ int MAIN( int argc, char *argv[]) {
         nfreqsFG = ceil(fg_fband / fg_freq_step);  /* number of points in frequency */
       
         /* fine-grid f1dot resoultion */
-        nf1dotsFG = ceil(gamma2);            /* number of spindown fine-grid  points */
+        nf1dotsFG = ceil(gamma2);        /* number of spindown fine-grid  points */
+        if ( (nf1dotsFG % 2) == 0 ) {    /* if even, add one */
+          nf1dotsFG++;
+        }
         fg_f1dot_step = df1dot / nf1dotsFG;  /* spindown fine-grid  stepsize */
     
-        /* adjust f1dotmin from upper to lower limit */
-        if (fg_f1dot_step > 0.0) {
-          f1dotmin = f1dotmin - df1dot/2.0;
-        } 
+        /* adjust f1dotmin to be centered around coarse-grid f1dot point */
+        f1dotmin = f1dotmin - fg_f1dot_step * floor(nf1dotsFG / 2.0);
 
         /* total number of fine-grid points */
         finegrid.length = nf1dotsFG * nfreqsFG;
         LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
 
-        /* reference time for finegrid: mid point of observation time */
+        /* reference time for finegrid */
         finegrid.refTime = tMidGPS;
 
         /* allocate memory for finegrid points */
@@ -1024,10 +1018,10 @@ int MAIN( int argc, char *argv[]) {
           startTseg = XLALGPSGetREAL8( &startTstackGPS );
           midTseg = XLALGPSGetREAL8( &midTstackGPS );
           endTseg = XLALGPSGetREAL8( &endTstackGPS );
-          refTime = XLALGPSGetREAL8( &thisPoint.refTime );
+          refTimeFstat = XLALGPSGetREAL8( &thisPoint.refTime );
           
           /* Differentce in time between this segment's midpoint and Fstat reftime */
-          timeDiffSeg = midTseg - refTime;   
+          timeDiffSeg = midTseg - refTimeFstat;   
                 
           /* ---------------------------------------------------------------------------------------- */ 
           
@@ -1120,7 +1114,7 @@ int MAIN( int argc, char *argv[]) {
               fstatVector.data[k].data->data[ifreq] = Fstat;
             }
             
-            /* translate frequency from reftime to midpoint of this segment */
+            /* translate frequency from midpoint of data span to midpoint of this segment */
             f_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
@@ -1155,7 +1149,7 @@ int MAIN( int argc, char *argv[]) {
           /* ---------- Compute finegrid U-map --------------- */
           for (ifine = 0; ifine < finegrid.length; ifine++) {
 
-            /* translate frequency from reftime to midpoint of this segment */
+            /* translate frequency from midpoint of data span to midpoint of this segment */
             f_tmp = finegrid.list[ifine].F + finegrid.list[ifine].F1dot * timeDiffSeg;
            
             f1dot_tmp = finegrid.list[ifine].F1dot;
@@ -1201,6 +1195,11 @@ int MAIN( int argc, char *argv[]) {
                  */
               /*}*/
             }   
+            
+            /* sort out the crap --- this should be replaced by something BETTER! */
+            if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
+              finegrid.list[ifine].sumTwoF=-1.0;
+            }   
                         
           } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
@@ -1209,13 +1208,14 @@ int MAIN( int argc, char *argv[]) {
         } /* end ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
 
-        /* sort out the crap --- this should be replaced by something BETTER! */
-        for (ifine = 0; ifine < finegrid.length; ifine++)  {
-          if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
-            finegrid.list[ifine].sumTwoF=-1.0;
-          }
-        }     
-   
+         
+        /* check if translation to reference time of pulsar spins is necessary */
+        if ( LALUserVarWasSet(&uvar_refTime) ) {
+         if  ( finegrid.refTime.gpsSeconds != usefulParams.spinRange_refTime.refTime.gpsSeconds ) {
+           LAL_CALL( TranslateFineGridSpins(&status, &usefulParams, &finegrid), &status); 
+         }
+        }
+        
         if( uvar_semiCohToplist) {
           /* this is necessary here, because GetSemiCohToplist() might set
            a checkpoint that needs some information from here */
@@ -1889,6 +1889,46 @@ void GetSemiCohToplist(LALStatus *status,
   RETURN(status); 
 
 } /* GetSemiCohToplist() */
+
+
+
+/** Translate fine-grid spin parameters to specified reference time */
+void TranslateFineGridSpins(LALStatus *status,
+                       UsefulStageVariables *usefulparams,
+                       FineGrid *in)
+{
+  
+  UINT4 k;
+  PulsarSpins fkdot;
+  
+  INITSTATUS( status, "TranslateFineGridSpins", rcsid );
+  ATTATCHSTATUSPTR (status);
+  
+  INIT_MEM(fkdot);
+  
+  ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  
+  /* go through candidates and translate spins to reference time */
+  for ( k = 0; k < in->length; k++) {
+    
+    fkdot[0] = in->list[k].F;
+    fkdot[1] = in->list[k].F1dot;
+    
+    /* propagate fkdot to reference-time  */
+    TRY ( LALExtrapolatePulsarSpins (status->statusPtr, 
+                                     fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), 
+         status );
+    
+    /* assign translated frequency value */
+    in->list[k].F = fkdot[0];
+    
+  }
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status); 
+  
+} /* TranslateFineGridSpins() */
 
 
 
