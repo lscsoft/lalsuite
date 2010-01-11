@@ -1101,7 +1101,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFOS_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -1297,7 +1297,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         thisEvent->chisq_v = r4colData;
       }
-      else if ( tableDir[j].idx == 48 )
+      else if ( tableDir[j].idx == 49 )
       {
         thisEvent->ra = r4colData;
       }
@@ -4038,7 +4038,7 @@ LALMultiInspiralTableFromLIGOLw (
       /* dereference the data stored in the table */
       if ( tableDir[j].idx == 0 )
       {
-        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFOS_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -4104,161 +4104,173 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 16 )
       {
-        thisEvent->coa_phase = r4colData;
+        thisEvent->chi = r4colData;
       }
       else if ( tableDir[j].idx == 17 )
       {
-        thisEvent->mass1 = r4colData;
+        thisEvent->kappa = r4colData;
       }
       else if ( tableDir[j].idx == 18 )
       {
-        thisEvent->mass2 = r4colData;
+        thisEvent->coa_phase = r4colData;
       }
       else if ( tableDir[j].idx == 19 )
       {
-        thisEvent->mchirp = r4colData;
+        thisEvent->mass1 = r4colData;
       }
       else if ( tableDir[j].idx == 20 )
       {
-        thisEvent->eta = r4colData;
+        thisEvent->mass2 = r4colData;
       }
       else if ( tableDir[j].idx == 21 )
       {
-        thisEvent->tau0 = r4colData;
+        thisEvent->mchirp = r4colData;
       }
       else if ( tableDir[j].idx == 22 )
       {
-        thisEvent->tau2 = r4colData;
+        thisEvent->eta = r4colData;
       }
       else if ( tableDir[j].idx == 23 )
       {
-        thisEvent->tau3 = r4colData;
+        thisEvent->tau0 = r4colData;
       }
       else if ( tableDir[j].idx == 24 )
       {
-        thisEvent->tau4 = r4colData;
+        thisEvent->tau2 = r4colData;
       }
       else if ( tableDir[j].idx == 25 )
       {
-        thisEvent->tau5 = r4colData;
+        thisEvent->tau3 = r4colData;
       }
       else if ( tableDir[j].idx == 26 )
       {
-        thisEvent->ttotal = r4colData;
+        thisEvent->tau4 = r4colData;
       }
       else if ( tableDir[j].idx == 27 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->tau5 = r4colData;
       }
       else if ( tableDir[j].idx == 28 )
       {
-        thisEvent->chisq = r4colData;
+        thisEvent->ttotal = r4colData;
       }
       else if ( tableDir[j].idx == 29 )
       {
-        thisEvent->chisq_dof = i4colData;
+        thisEvent->snr = r4colData;
       }
       else if ( tableDir[j].idx == 30 )
       {
-        thisEvent->bank_chisq = r4colData;
+        thisEvent->snr_dof = i4colData;
       }
       else if ( tableDir[j].idx == 31 )
       {
-        thisEvent->bank_chisq_dof = i4colData;
+        thisEvent->chisq = r4colData;
       }
       else if ( tableDir[j].idx == 32 )
       {
-        thisEvent->cont_chisq = r4colData;
+        thisEvent->chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 33 )
       {
-        thisEvent->cont_chisq_dof = i4colData;
+        thisEvent->bank_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 34 )
       {
-        thisEvent->sigmasq_h1 = r8colData;
+        thisEvent->bank_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 35 )
       {
-        thisEvent->sigmasq_h2 = r8colData;
+        thisEvent->cont_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 36 )
       {
-        thisEvent->sigmasq_l = r8colData;
+        thisEvent->cont_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 37 )
       {
-        thisEvent->sigmasq_g = r8colData;
+        thisEvent->sigmasq_h1 = r8colData;
       }
       else if ( tableDir[j].idx == 38 )
       {
-        thisEvent->sigmasq_t = r8colData;
+        thisEvent->sigmasq_h2 = r8colData;
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->sigmasq_v = r8colData;
+        thisEvent->sigmasq_l = r8colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
-        thisEvent->chisq_h1 = r4colData;
+        thisEvent->sigmasq_g = r8colData;
       }
       else if ( tableDir[j].idx == 41 )
       {
-        thisEvent->chisq_h2 = r4colData;
+        thisEvent->sigmasq_t = r8colData;
       }
       else if ( tableDir[j].idx == 42 )
       {
-        thisEvent->chisq_l = r4colData;
+        thisEvent->sigmasq_v = r8colData;
       }
       else if ( tableDir[j].idx == 43 )
       {
-        thisEvent->chisq_g = r4colData;
+        thisEvent->chisq_h1 = r4colData;
       }
       else if ( tableDir[j].idx == 44 )
       {
-        thisEvent->chisq_t = r4colData;
+        thisEvent->chisq_h2 = r4colData;
       }
       else if ( tableDir[j].idx == 45 )
       {
-        thisEvent->chisq_v = r4colData;
+        thisEvent->chisq_l = r4colData;
       }
       else if ( tableDir[j].idx == 46 )
       {
-        thisEvent->ra = r4colData;
+        thisEvent->chisq_g = r4colData;
       }
       else if ( tableDir[j].idx == 47 )
       {
-        thisEvent->dec = r4colData;
+        thisEvent->chisq_t = r4colData;
       }
       else if ( tableDir[j].idx == 48 )
       {
-        thisEvent->ligo_angle = r4colData;
+        thisEvent->chisq_v = r4colData;
       }
       else if ( tableDir[j].idx == 49 )
       {
-        thisEvent->ligo_angle_sig = r4colData;
+        thisEvent->ra = r4colData;
       }
       else if ( tableDir[j].idx == 50 )
       {
-        thisEvent->inclination = r4colData;
+        thisEvent->dec = r4colData;
       }
       else if ( tableDir[j].idx == 51 )
       {
-        thisEvent->polarization = r4colData;
+        thisEvent->ligo_angle = r4colData;
       }
       else if ( tableDir[j].idx == 52 )
       {
-        thisEvent->null_statistic = r4colData;
+        thisEvent->ligo_angle_sig = r4colData;
       }
       else if ( tableDir[j].idx == 53 )
       {
-        thisEvent->null_stat_h1h2 = r4colData;
+        thisEvent->inclination = r4colData;
       }
       else if ( tableDir[j].idx == 54 )
       {
-        thisEvent->null_stat_degen = r4colData;
+        thisEvent->polarization = r4colData;
       }
       else if ( tableDir[j].idx == 55 )
+      {
+        thisEvent->null_statistic = r4colData;
+      }
+      else if ( tableDir[j].idx == 56 )
+      {
+        thisEvent->null_stat_h1h2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 57 )
+      {
+        thisEvent->null_stat_degen = r4colData;
+      }
+      else if ( tableDir[j].idx == 58 )
       {
         if ( tableDir[j].pos > 0 )
         {
@@ -4279,83 +4291,83 @@ LALMultiInspiralTableFromLIGOLw (
           }
         }
       }
-      else if ( tableDir[j].idx == 56 )
+      else if ( tableDir[j].idx == 59 )
       {
         thisEvent->h1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 57 )
+      else if ( tableDir[j].idx == 60 )
       {
         thisEvent->h1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 58 )
+      else if ( tableDir[j].idx == 61 )
       {
         thisEvent->h2quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 59 )
+      else if ( tableDir[j].idx == 62 )
       {
         thisEvent->h2quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 60 )
+      else if ( tableDir[j].idx == 63 )
       {
         thisEvent->l1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 61 )
+      else if ( tableDir[j].idx == 64 )
       {
         thisEvent->l1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 62 )
+      else if ( tableDir[j].idx == 65 )
       {
         thisEvent->g1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 63 )
+      else if ( tableDir[j].idx == 66 )
       {
         thisEvent->g1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 64 )
+      else if ( tableDir[j].idx == 67 )
       {
         thisEvent->t1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 65 )
+      else if ( tableDir[j].idx == 68 )
       {
         thisEvent->t1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 66 )
+      else if ( tableDir[j].idx == 69 )
       {
         thisEvent->v1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 67 )
+      else if ( tableDir[j].idx == 70 )
       {
         thisEvent->v1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 68 )
+      else if ( tableDir[j].idx == 71 )
       {
         thisEvent->coh_snr_h1h2 = r4colData;
       }
-      else if ( tableDir[j].idx == 69 )
+      else if ( tableDir[j].idx == 72 )
       {
         thisEvent->cohSnrSqLocal = r4colData;
       }
-      else if ( tableDir[j].idx == 70 )
+      else if ( tableDir[j].idx == 73 )
       {
         thisEvent->autoCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 71 )
+      else if ( tableDir[j].idx == 74 )
       {
         thisEvent->crossCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 72 )
+      else if ( tableDir[j].idx == 75 )
       {
         thisEvent->autoCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 73 )
+      else if ( tableDir[j].idx == 76 )
       {
         thisEvent->crossCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 74 )
+      else if ( tableDir[j].idx == 77 )
       {
         thisEvent->ampMetricEigenVal1 = r8colData;
       }
-      else if ( tableDir[j].idx == 75 )
+      else if ( tableDir[j].idx == 78 )
       {
         thisEvent->ampMetricEigenVal2 = r8colData;
       }

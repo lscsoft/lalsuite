@@ -1,3 +1,9 @@
+/* calculate the mismatch between two phase models from the standard definition
+of mismatch m (from Teviet of m = 1 - <a|b>/sqrt(<a|a><b|b>)), which for two
+phases phi1 and phi2 gives m = 1 - (1/T) \int cos( phi1 - phi2 ) dt. The code
+outputs the amplitude mismatch i.e. the previous equation, and the power
+mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -114,10 +120,10 @@ int main(int argc, char *argv[]){
   BarycenterInput baryinput;
 
   REAL8Vector *phiMean=NULL;
-  REAL8 intre=0., intim=0., integral1=0.;
+  REAL8 intre=0.;
 
-  REAL8 maxmismatch = 1e-100;
-  REAL8 meanmismatch = 0.;
+  REAL8 maxampmismatch = 1e-100, maxpowmismatch = 1e-100;
+  REAL8 meanampmismatch = 0., meanpowmismatch = 0.;
 
   INT4Vector *matPos=NULL; /* position of parameters in ParamData */
   UINT4 seed=0;              /* set to get seed from clock time */
@@ -126,7 +132,7 @@ int main(int argc, char *argv[]){
 
   REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL;
   REAL8Array *chol=NULL;
-
+  
   CHAR outputfile[256];
 
   get_input_args(&inputs, argc, argv);
@@ -170,17 +176,9 @@ int main(int argc, char *argv[]){
   else if(deltaparams.posepoch == 0. && deltaparams.pepoch != 0.)
     deltaparams.posepoch = deltaparams.pepoch;
 
-  /* calculate the phase every minute for the mean values */
-  phiMean = get_phi( inputs.start, (double)inputs.deltat, npoints, params, baryinput,
-    edat);
-
-  /* calculate phase integral over time */
-  for( k=0; k<npoints-1; k++ ){
-    intre += 2.;
-    intim += 0.;
-  }
-
-  integral1 = intre*intre + intim*intim;
+  /* calculate the phase every deltat for the mean values */
+  phiMean = get_phi( inputs.start, (double)inputs.deltat, npoints, params, 
+    baryinput, edat);
 
   /* see which parameters have an associated error */
   if( params.f0Err != 0. ) count++;
@@ -254,8 +252,9 @@ int main(int argc, char *argv[]){
      standard deviation */
   for( i=0; i < N; i++ ){
     REAL8Vector *phiOffset=NULL;
-    REAL8 integral2=0.;
-
+    REAL8 prevamp = meanampmismatch;
+    REAL8 prevpow = meanpowmismatch;
+    
     /* generate new pulsars parameters from the pulsar parameter covariance */
     if( strstr(inputs.parfile2, ".par") == NULL ){
       randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
@@ -303,49 +302,60 @@ int main(int argc, char *argv[]){
         params2, baryinput, edat );
     }
 
-    /* calculate the mismatch 1 - (P(params + delta))/P(params) */
+    /* calculate the mismatch */
     intre = 0.;
-    intim = 0.;
 
+    /* perform the integral (trapezium rule) */
     for( k=0; k<npoints-1; k++ ){
       REAL8 phi1=0., phi2=0.;
       phi1 = LAL_TWOPI*fmod(phiOffset->data[k]-phiMean->data[k], 1.);
       phi2 = LAL_TWOPI*fmod(phiOffset->data[k+1]-phiMean->data[k+1], 1.);
       intre += (cos(phi2) + cos(phi1));
-      intim += (sin(phi2) + sin(phi1));
     }
 
-    integral2 = intre*intre + intim*intim;  /* square value for power */
+    intre *= inputs.deltat/2.;
 
-    /* get the mean mismatch */
-    meanmismatch += fabs(1. - integral2/integral1);
-
-    /* work out mismatch */
-    if( fabs(1. - integral2/integral1) > fabs(maxmismatch) )
-      maxmismatch = 1. - integral2/integral1;
-
+    /* get the mean mismatch in amplitude and power */
+    meanampmismatch += fabs(1. - intre/inputs.timespan);
+    meanpowmismatch += fabs(1. - (intre/inputs.timespan)
+      * (intre/inputs.timespan) );
+    
+    /* set maximum mismatch value */
+    if( (meanampmismatch - prevamp) > fabs(maxampmismatch) )
+      maxampmismatch = (meanampmismatch - prevamp);
+    
+    if( (meanpowmismatch - prevpow) > fabs(maxpowmismatch) )
+      maxpowmismatch = (meanpowmismatch - prevpow);
+      
     XLALDestroyREAL8Vector( phiOffset );
   }
 
-  meanmismatch /= (double)N;
-
+  meanpowmismatch /= (REAL8)N;
+  meanampmismatch /= (REAL8)N;
+  
   if( strstr(inputs.parfile2, ".par") == NULL ){
     sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
     fp = fopen(outputfile, "w");
 
-    fprintf(stderr, "Maximum mismatch for %d templates drawn randomly from the\
- given parameter and pulsar %s\n%le\n", N, inputs.pulsar, maxmismatch);
+    /* output values to screen */
+    fprintf(stderr, "Maximum amplitude and power mismatch for %d templates\
+ drawn randomly from the given parameter and pulsar %s\n%le\t%le\n", N,
+inputs.pulsar, maxampmismatch, maxpowmismatch);
 
-    fprintf(stderr, "Mean mismatch is %le\n", meanmismatch);
+    fprintf(stderr, "Mean amplitude and powoer mismatch is\n%le\t%le\n",
+meanampmismatch, meanpowmismatch);
 
-    fprintf(fp, "%% Maximum and mean mismatch for %d templates drawn randomly from the \
-given parameter and pulsar %s\n%lf\t%lf\n", N, inputs.pulsar, maxmismatch, meanmismatch);
+    /* print mismatch in signal power to file */
+    fprintf(fp, "%% Maximum and mean power mismatch for %d templates drawn\
+ randomly from the given parameter and pulsar %s\n%lf\t%lf\n", N, inputs.pulsar,
+maxpowmismatch, meanpowmismatch);
 
     fclose(fp);
   }
   else{
-    fprintf(stderr, "The mismatch between the two par file for pulsar %s is %le\n", 
-      inputs.pulsar, maxmismatch);
+    fprintf(stderr, "The amplitude and power mismatch between the two par files\
+ for pulsar %s is %le and %le\n", inputs.pulsar, maxampmismatch,
+      maxpowmismatch);
   }
 
   XLALFree( paramData );

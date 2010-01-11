@@ -343,7 +343,7 @@ int write_timefile(int iSFT);
 int cleanup(LALStatus *);
 int freemem(LALStatus *);
 int window_data(void);
-int correct_phase(LALStatus *);
+int correct_phase(void);
 int compute_power(void);
 int SetupSigGenParams(void);
 static void TimeToFloat(REAL8 *, LIGOTimeGPS *);
@@ -633,57 +633,6 @@ int compute_SSBtimes(LALStatus* status) {
   
 }
 
-
-
-#if 0
-/*applies correct heterodyning from one SFT to the next*/
-int correct_phase(LALStatus* status, int iSFT) {
-
-  int i;
-  REAL8 cosx,sinx,x;
-  COMPLEX8 fvec1;
-
-  x=2.0*LAL_PI*f_min*Tsft*iSFT;
-  cosx=cos(x);
-  sinx=sin(x);
-  for (i = 0; i < fvec->length; ++i){
-    fvec1=fvec->data[i];
-    fvec->data[i].re=fvec1.re*cosx+fvec1.im*sinx;
-    fvec->data[i].im=fvec1.im*cosx-fvec1.re*sinx;
-  }
-  
-  return 0;
-}
-#endif
-
-int correct_phase(LALStatus* status) {
-
-  UINT4 i;
-  REAL8 cosx,sinx;
-  COMPLEX8 fvec1;
-  LALTimeInterval deltaGPS;
-  LIGOTimeGPS gps1,gps2;
-  REAL8 deltaT;
-
-  gps1=timeSeries->epoch;
-  gps2=cwDetector.heterodyneEpoch;
-
-  LALDeltaGPS(status,&deltaGPS,&gps1,&gps2);
-
-  LALIntervalToFloat(status,&deltaT,&deltaGPS);
-
-  deltaT *= LAL_TWOPI*timeSeries->f0; 
-
-  cosx=cos(deltaT);
-  sinx=sin(deltaT);
-  for (i = 0; i < fvec->length; ++i){
-    fvec1=fvec->data[i];
-    fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;
-    fvec->data[i].im=fvec1.im*cosx+fvec1.re*sinx;
-  }
-  
-  return 0;
-}
 
 /* windows the data*/
 int window_data(void){

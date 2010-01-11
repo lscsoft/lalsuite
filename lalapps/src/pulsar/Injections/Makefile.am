@@ -41,7 +41,7 @@ lalapps_makefakedata_test_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 psinject_SOURCES = psinject.c
 
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800
-TESTS = testMakefakedata.sh testMFDv4.sh #testMFDv4-HW.sh
+TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh
 
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
