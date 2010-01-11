@@ -135,6 +135,7 @@ struct CommandLineArgsTag {
   INT4 printsnrflag;          /* flag set to 1 if user wants to print the snr */
   INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
   INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
+  char *comment;              /* for "comment" columns in some tables */
 } CommandLineArgs;
 
 typedef 
@@ -1076,40 +1077,42 @@ int ReadData(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
+  static char default_comment[] = "";
   INT4 errflg = 0;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
-    {"bw-flow",                     required_argument, NULL,           'f'},
-    {"bank-freq-start",             required_argument, NULL,           'L'}, 
-    {"bank-lowest-hifreq-cutoff",   required_argument, NULL,           'H'},
-    {"max-mismatch",                required_argument, NULL,           'M'},
-    {"threshold",                   required_argument, NULL,           't'},
-    {"frame-cache",                 required_argument, NULL,           'F'},
-    {"channel-name",                required_argument, NULL,           'C'},
-    {"outfile",                     required_argument, NULL,           'o'},
-    {"gps-end-time",                required_argument, NULL,           'E'},
-    {"gps-start-time",              required_argument, NULL,           'S'},
-    {"injection-file",              required_argument, NULL,           'i'},
-    {"short-segment-duration",      required_argument, NULL,           'd'},
-    {"settling-time",               required_argument, NULL,           'T'},
-    {"sample-rate",                 required_argument, NULL,           's'},
-    {"trig-start-time",             required_argument, NULL,           'g'},
-    {"pad",                         required_argument, NULL,           'p'},
-    {"cusp-search",                 no_argument, NULL,          'c' },
-    {"kink-search",                 no_argument, NULL,          'k' },
-    {"test-gaussian-data",          no_argument, NULL,          'n' },
-    {"test-white-spectrum",         no_argument, NULL,          'w' },
-    {"cluster-events",              required_argument, NULL,          'l' },
-    {"print-spectrum",              no_argument, NULL,          'a' },
-    {"print-fd-filter",             no_argument, NULL,          'b' },    
-    {"print-snr",                   no_argument, NULL,          'r' },        
-    {"print-td-filter",             no_argument, NULL,          'x' },        
-    {"print-data",                  no_argument, NULL,          'y' },        
-    {"print-injection",             no_argument, NULL,          'z' },        
-    {"help",                        no_argument, NULL,          'h' },
+    {"bw-flow",                   required_argument,	NULL,	'f'},
+    {"bank-freq-start",           required_argument,	NULL,	'L'},
+    {"bank-lowest-hifreq-cutoff", required_argument,	NULL,	'H'},
+    {"max-mismatch",              required_argument,	NULL,	'M'},
+    {"threshold",                 required_argument,	NULL,	't'},
+    {"frame-cache",               required_argument,	NULL,	'F'},
+    {"channel-name",              required_argument,	NULL,	'C'},
+    {"output",                    required_argument,	NULL,	'o'},
+    {"gps-end-time",              required_argument,	NULL,	'E'},
+    {"gps-start-time",            required_argument,	NULL,	'S'},
+    {"injection-file",            required_argument,	NULL,	'i'},
+    {"short-segment-duration",    required_argument,	NULL,	'd'},
+    {"settling-time",             required_argument,	NULL,	'T'},
+    {"sample-rate",               required_argument,	NULL,	's'},
+    {"trig-start-time",           required_argument,	NULL,	'g'},
+    {"pad",                       required_argument,	NULL,	'p'},
+    {"cusp-search",               no_argument,	NULL,	'c'},
+    {"kink-search",               no_argument,	NULL,	'k'},
+    {"test-gaussian-data",        no_argument,	NULL,	'n'},
+    {"test-white-spectrum",       no_argument,	NULL,	'w'},
+    {"cluster-events",            required_argument,	NULL,	'l'},
+    {"print-spectrum",            no_argument,	NULL,	'a'},
+    {"print-fd-filter",           no_argument,	NULL,	'b'},
+    {"print-snr",                 no_argument,	NULL,	'r'},
+    {"print-td-filter",           no_argument,	NULL,	'x'},
+    {"print-data",                no_argument,	NULL,	'y'},
+    {"print-injection",           no_argument,	NULL,	'z'},
+    {"user-tag",                  required_argument,	NULL,	'j'},
+    {"help",                      no_argument,	NULL,	'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwabrxyzl:f:L:M:D:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   optarg = NULL;
   /* set up xml output stuff */
@@ -1159,6 +1162,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->printfirflag=0;
   CLA->printdataflag=0;
   CLA->printinjectionflag=0;
+  CLA->comment=default_comment;
   
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1292,6 +1296,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       CLA->printfilterflag=1;
       ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
+    case 'j':
+      /* --user-tag */
+      CLA->comment = optarg;
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      break;
     case 'r':
       /* fake gaussian noise flag */
       CLA->printsnrflag=1;
@@ -1324,7 +1333,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
-      fprintf(stdout,"\t--outfile (-o)\t\tSTRING\t Name of xml output file.\n");
+      fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate filter.\n");
@@ -1343,7 +1352,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
