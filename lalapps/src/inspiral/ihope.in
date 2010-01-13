@@ -432,7 +432,6 @@ if opts.run_hardware_inj:
   inspiralutils.run_hardware_inj_part_one(cp,ifos)
   os.chdir("..")
 
-##############################################################################
 # create the list of files that will be concatenated into the ihope cache
 cachelist = []
 cachefilename = basename + '.cache'

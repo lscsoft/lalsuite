@@ -1244,7 +1244,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
 class HWinjPageNode(InspiralAnalysisNode):
   """
-  A HWinjPageNode runs an instance of a HWinjPageJob
+  A HWinjPageNode runs an instance of a HWinjPageJob 
   in a DAG.
   """
   def __init__(self, job):
