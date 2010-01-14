@@ -1202,10 +1202,11 @@ def hwinj_setup(cp,ifos,veto_categories):
     if not os.path.isfile("full_data/" + cacheFile):
       print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
       print>>sys.stderr, "does not exist! This might cause later failures."
-    
+    ifoprefix=''
     for ifo in ifos:
       cp.set('hwinjpage',ifo.lower()+'-injections','')
-    outfilename = 'hwinjections'
+      ifoprefix+=ifo
+    outfilename = ifoprefix+'_hwinjections'
     if veto:
       outfilename += '_CAT_'+str(veto)
     outfilename += '.html'
