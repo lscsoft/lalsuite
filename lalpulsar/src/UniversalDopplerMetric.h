@@ -160,9 +160,14 @@ typedef enum {
   DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
-  DOPPLERCOORD_N3X,			/**< experimental: unconstrained sky-vector n3: ecliptic-x coordinate */
-  DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
-  DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
+  DOPPLERCOORD_N3X_EQU,			/**< unconstrained sky-vector n3: equatorial-x coordinate */
+  DOPPLERCOORD_N3Y_EQU,			/**< unconstrained sky-vector n3: equatorial-y coordinate */
+  DOPPLERCOORD_N3Z_EQU,			/**< unconstrained sky-vector n3: equatorial-z coordinate */
+
+  DOPPLERCOORD_N3X_ECL,			/**< unconstrained sky-vector n3: ecliptic-x coordinate */
+  DOPPLERCOORD_N3Y_ECL,			/**< unconstrained sky-vector n3: ecliptic-y coordinate */
+  DOPPLERCOORD_N3Z_ECL,			/**< unconstrained sky-vector n3: ecliptic-z coordinate */
+
 
   DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
   DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
@@ -200,9 +205,13 @@ const CHAR *DopplerCoordinateNames[] = {
   "nEqu_x_Nat",
   "nEqu_y_Nat",
 
-  "n3_x",
-  "n3_y",
-  "n3_z",
+  "n3Equ_x",
+  "n3Equ_y",
+  "n3Equ_z",
+
+  "n3Ecl_x",
+  "n3Ecl_y",
+  "n3Ecl_z",
 
   "nu0",
   "nu1",
@@ -242,9 +251,14 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
   "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
 
+  "experimental: unconstrained sky-vector n3: equatorial-x coordinate",
+  "experimental: unconstrained sky-vector n3: equatorial-y coordinate",
+  "experimental: unconstrained sky-vector n3: equatorial-z coordinate",
+
   "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
+
 
   "'global correlation' frequency coordinate nu_0",
   "'global correlation' f1dot coordinate nu_1",
