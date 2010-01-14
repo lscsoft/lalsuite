@@ -515,7 +515,7 @@ LALCoherentInspiralFilterParamsInit (
   if( params->nullStatOut )
     {
       if ( params->threeSiteCase ) {
-        outputPtr->nullStatVec = (REAL4TimeSeries *)
+        outputPtr->nullStatVec3Sites = (REAL4TimeSeries *)
           LALCalloc( 1, sizeof(REAL4TimeSeries) );
         LALCreateVector (status->statusPtr, &(outputPtr->nullStatVec3Sites->data),
 			  params->numBeamPoints);
@@ -1738,10 +1738,18 @@ XLALCoherentInspiralFilterSegment (
 
   /* if a cohSNRVec vector has been created, check we can store data in it  */
   if ( params->cohSNROut ) {
-    ASSERT( params->cohSNRVec->data->data, status,
+    if ( params->threeSiteCase ) {
+      ASSERT( params->cohSNRVec3Sites->data->data, status,
 	    COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );
-    ASSERT( params->cohSNRVec->data, status,
+      ASSERT( params->cohSNRVec3Sites->data, status,
 	    COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );
+    }
+    else {
+      ASSERT( params->cohSNRVec->data->data, status,
+            COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );
+      ASSERT( params->cohSNRVec->data, status,
+            COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );
+    }
   }
 
   /* make sure that the input structure contains some input */
@@ -1774,11 +1782,21 @@ XLALCoherentInspiralFilterSegment (
    */
   /* if the full coherent snr / null vector is required, set it to zero */
   if ( cohSNROut ) {
-    memset( params->cohSNRVec->data->data, 0, numPoints * sizeof( REAL4 ));
+    if ( params->threeSiteCase ) { 
+      memset( params->cohSNRVec3Sites->data->data, 0, params->numBeamPoints * sizeof( REAL4 ));
+    }
+    else {
+      memset( params->cohSNRVec->data->data, 0, numPoints * sizeof( REAL4 ));
+    }
   }
 
   if ( nullStatOut ) {
-    memset( params->nullStatVec->data->data, 0, numPoints * sizeof( REAL4 ));
+    if ( params->threeSiteCase ) {
+      memset( params->nullStatVec3Sites->data->data, 0, params->numBeamPoints * sizeof( REAL4 ));
+    }
+    else {
+      memset( params->nullStatVec->data->data, 0, numPoints * sizeof( REAL4 ));
+    }
   }
 
   /*CHECK: hardwired to 6 detectors for now */
@@ -2735,9 +2753,23 @@ XLALCoherentInspiralFilterSegment (
 	      nullStatistic = 0.0;
 	      autoCorrNullSq = 0.0;
 	      ratioStatLocal = 0.0;
-	      if( cohSNROut ) params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
-	      if( nullStatOut ) params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
-	    }
+	      if( cohSNROut ) {
+                if ( !params->threeSiteCase ) {
+                  params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                }
+                else {
+                  params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
+                }
+              }
+	      if( nullStatOut ) {
+                if ( !params->threeSiteCase ) {
+                  params->nullStatVec->data->data[timePt[0]] = nullStatistic;
+                }
+                else {
+                  params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
+                }
+	      }
+            }
 	    else {
 	      if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
 		/* CHECK: For now turn-off computing degenerate statistics:
@@ -2767,19 +2799,22 @@ XLALCoherentInspiralFilterSegment (
 		  timePtTemp[detId] = detIdSlidTimePt;
 		}
 		/* Coh-stat and null-stream sky-maps */
-		if( cohSNROut )
-		  params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
-		
-		if( nullStatOut ) {
-		  if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-                      /* CHECK: For now turn-off computing degenerate statistics for now:
-		       params->nullStatVec3Sites->data->data[skyGridIdx] = (REAL4) XLALComputeDEGNullTimeSeriesCase3b(caseID,DRe,DIm,sigmasq,quadTemp); */
-		    params->nullStatVec3Sites->data->data[skyGridIdx] = -100.0;
-		  }
-		  else {
-		    params->nullStatVec3Sites->data->data[skyGridIdx] = (REAL4) XLALComputeNullTimeSeriesCase3b(caseID,fplus,fcross,sigmasq,quadTemp);
-		  }
-		}
+                if( cohSNROut ) {
+                  if ( !params->threeSiteCase ) {
+                    params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                  }
+                  else {
+                    params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
+                  }
+                }
+                if( nullStatOut ) {
+                  if ( !params->threeSiteCase ) {
+                    params->nullStatVec->data->data[timePt[0]] = nullStatistic;
+                  }
+                  else {
+                    params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
+                  }
+                }		
 	      }		
 	      /* Threshold on RatioStat here; cohSNR was set to RatioStat above */
 	      if ( cohSNR > cohSNRThresh ) {
@@ -3299,9 +3334,23 @@ XLALCoherentInspiralFilterSegment (
 	    cohSNR = 0.0;
 	    nullStatistic = 0.0;
 	    autoCorrNullSq = 0.0;
-	    ratioStatLocal = 0.0; 
-	    if( cohSNROut ) params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
-	    if( nullStatOut ) params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
+	    ratioStatLocal = 0.0;
+            if( cohSNROut ) {
+              if ( !params->threeSiteCase ) {
+                params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+              }
+              else {
+                params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
+              }
+            }
+            if( nullStatOut ) {
+              if ( !params->threeSiteCase ) {
+                params->nullStatVec->data->data[timePt[0]] = nullStatistic;
+              }
+              else {
+                params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
+              }
+            } 
 	  }
 	  else {
             if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
@@ -3333,17 +3382,22 @@ XLALCoherentInspiralFilterSegment (
 		quadTemp[detId].im=cData[detId]->data->data[detIdSlidTimePt].im;
 		timePtTemp[detId] = detIdSlidTimePt;
 	      }
-	      if( cohSNROut ) params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
-	      if( nullStatOut ) {
-                if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		  /* CHECK: For now turn-off computing degenerate statistics for now:
-		     params->nullStatVec3Sites->data->data[skyGridIdx] = (REAL4) XLALComputeDEGNullTimeSeriesCase3b(caseID,DRe,DIm,sigmasq,quadTemp); */
-		  params->nullStatVec3Sites->data->data[skyGridIdx] = -100.0;
-		}
-		else {
-		  params->nullStatVec3Sites->data->data[skyGridIdx] = (REAL4) XLALComputeNullTimeSeriesCase4a(caseID,fplus,fcross,sigmasq,quadTemp);
-		}
-	      }
+              if( cohSNROut ) {
+                if ( !params->threeSiteCase ) {
+                  params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                }
+                else {
+                  params->cohSNRVec3Sites->data->data[skyGridIdx] = cohSNR;
+                }
+              }
+              if( nullStatOut ) {
+                if ( !params->threeSiteCase ) {
+                  params->nullStatVec->data->data[timePt[0]] = nullStatistic;
+                }
+                else {
+                  params->nullStatVec3Sites->data->data[skyGridIdx] = nullStatistic;
+                }
+              }
 	    }
 	    /* Threshold on RatioStat here; cohSNR was set to RatioStat above */
 	    if ( cohSNR > cohSNRThresh ) {
