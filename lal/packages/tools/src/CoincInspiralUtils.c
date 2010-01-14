@@ -3179,7 +3179,7 @@ XLALPlayTestCoincInspiral(
       thisEvent = thisEvent->next;
 
       triggerTime = XLALCoincInspiralTimeNS( tmpEvent );
-      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )

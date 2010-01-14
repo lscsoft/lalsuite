@@ -77,38 +77,6 @@ NRCSID( TIMEDELAYH, "$Id$" );
 
 \subsection*{Structures}
 \begin{verbatim}
-TwoDetsTimeAndASource
-\end{verbatim}
-\idx[Type]{TwoDetsTimeAndASource}
-
-\noindent This structure stores two pointers to \verb+LALPlaceAndGPS+
-structures, and a pointer to a \verb+SkyPosition+ structure.  The
-fields are:
-
-\begin{description}
-\item{\verb+LALPlaceAndGPS *p_det_and_time1+} The first detector and GPS
-\item{\verb+LALPlaceAndGPS *p_det_and_time2+} The second detector and GPS
-\item{\verb+SkyPosition *p_source+} The source location (equatorial
-    co\"{o}dinates in decimal radians)
-\end{description}
-
-</lalLaTeX> */
-
-typedef struct
-tagTwoDetsTimeAndASource
-{
-  LALPlaceAndGPS *p_det_and_time1; /* the first detector and detection time */
-  LALPlaceAndGPS *p_det_and_time2; /* the second detector and detection time */
-  SkyPosition    *p_source;        /* source Equatorial location
-                                    * (lon=RA, lat=dec) in decimal
-                                    * radians */
-}
-TwoDetsTimeAndASource;
-
-
-/* <lalLaTeX>
-
-\begin{verbatim}
 DetTimeAndASource
 \end{verbatim}
 \idx[Type]{DetTimeAndASource}
@@ -157,10 +125,6 @@ XLALArrivalTimeDiff(
 	const LIGOTimeGPS *gpstime
 );
 
-void
-LALTimeDelay( LALStatus                   *status,
-              REAL8                       *p_delay,
-              const TwoDetsTimeAndASource *p_two_detectors_time_and_source );
 
 INT8
 XLALLightTravelTime ( const LALDetector *aDet,

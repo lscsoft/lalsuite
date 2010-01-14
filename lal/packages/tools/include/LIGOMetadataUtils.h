@@ -1803,6 +1803,7 @@ LALRingdownH1H2Consistency(
     LALStatus                  *status,
     CoincRingdownTable        **coincRingdown,
     REAL4                       H2snrCutThreshold,
+    LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
     );
 
