@@ -66,9 +66,11 @@ LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
+LALAPPS_ENABLE_BOINC
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
+LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_LALFRAME
 LALAPPS_ENABLE_LALMETAIO
 LALAPPS_ENABLE_LALXML
@@ -112,6 +114,11 @@ fi
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+
+# boinc requires a c++ compiler
+if test "${boinc}" = "true" ; then
+  AC_PROG_CXX
+fi
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -183,6 +190,31 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 AC_CHECK_HEADERS([getopt.h])
+
+# check for boinc
+if test "${boinc}" = "true" ; then
+  if test -n "$BOINC_PREFIX}" ; then
+    # has lal build built with boinc support
+    LALAPPS_CHECK_BOINC
+
+    # do compilation checks with c++
+    AC_LANG_PUSH([C++])
+
+    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
+    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
+
+    # check for boinc libraries
+    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
+    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
+
+    # check for boinc headers
+    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
+
+    # go back to c
+    AC_LANG_POP([C++])
+  fi
+fi
+BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -262,6 +294,44 @@ if test "${cfitsio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
+# check for pss
+if test "${pss}" = "true"; then
+  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
+  lal_pre_pss_LIBS="$LIBS"
+  LIBS="$PSS_LIBS $LIBS"
+  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([pss_set_gw],[pss],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([app_star],[pssnovas],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+fi
+
+# check for pss headers
+if test "${pss}" = "true"; then
+  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$PSS_CFLAGS $CPPFLAGS"
+  AC_CHECK_HEADERS([pss_sfdb.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_gw.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_astro.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([novas.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([PSS],[pss])
+
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
@@ -318,7 +388,9 @@ echo "
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
+                PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps

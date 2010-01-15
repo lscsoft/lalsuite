@@ -41,7 +41,7 @@ int LALFclose( FILE *stream );
 \subsection*{Description}
 
 The routines \verb+LALFopen()+ and \verb+LALFclose()+ are macro defined to be
-the same as the standard C routines \verb+fopen()+ and \verb+fclose()+.  These
+the same as the standard C routines \verb+LALFopen()+ and \verb+fclose()+.  These
 should only be used in test programs.
 
 The routine \verb+LALOpenDataFile()+ is used to open a data file for reading.
@@ -143,12 +143,6 @@ LALFILE * lalstderr( void )
 	_lalstderr.fp = (void*)stderr;
 	return &_lalstderr;
 }
-
-/* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
-#ifdef EAH_BOINC
-extern FILE* boinc_fopen(const char* path, const char* mode);
-#define fopen boinc_fopen
-#endif
 
 NRCSID (FILEIOC,"$Id$");
 
@@ -262,7 +256,7 @@ int XLALFileIsCompressed( const char *path )
 	static const char *func = "XLALFileIsCompressed";
 	FILE *fp;
 	unsigned char magic[2] = { 0, 0 };
-	if ( ! ( fp = fopen( path, "rb" ) ) )
+	if ( ! ( fp = LALFopen( path, "rb" ) ) )
 		XLAL_ERROR( func, XLAL_EIO );
 	fread( magic, sizeof(*magic), sizeof(magic)/sizeof(*magic), fp );
 	fclose( fp );
@@ -286,9 +280,9 @@ LALFILE * XLALFileOpenRead( const char *path )
 		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 	file->compression = compression;
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "rb" ) : fopen( path, "rb" );
+	file->fp = compression ? gzopen( path, "rb" ) : LALFopen( path, "rb" );
 #	else
-	file->fp = fopen( path, "rb" );
+	file->fp = LALFopen( path, "rb" );
 #	endif
 	if ( ! file->fp ) {
 		XLALFree( file );
@@ -304,13 +298,13 @@ LALFILE * XLALFileOpenAppend( const char *path, int compression )
 	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
 		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "a+" ) : fopen( path, "a+" );
+	file->fp = compression ? gzopen( path, "a+" ) : LALFopen( path, "a+" );
 #	else
 	if ( compression ) {
 		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", func );
 		compression = 0;
 	}
-	file->fp = fopen( path, "a+" );
+	file->fp = LALFopen( path, "a+" );
 #	endif
 	file->compression = compression;
 	if ( ! file->fp ) {
@@ -327,13 +321,13 @@ LALFILE * XLALFileOpenWrite( const char *path, int compression )
 	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
 		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "wb" ) : fopen( path, "wb" );
+	file->fp = compression ? gzopen( path, "wb" ) : LALFopen( path, "wb" );
 #	else
 	if ( compression ) {
 		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", func );
 		compression = 0;
 	}
-	file->fp = fopen( path, "wb" );
+	file->fp = LALFopen( path, "wb" );
 #	endif
 	file->compression = compression;
 	if ( ! file->fp ) {
