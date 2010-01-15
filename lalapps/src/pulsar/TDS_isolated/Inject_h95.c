@@ -39,7 +39,7 @@ reads in (from inputs) S2_h95_inj.txt,and pulsar parameter file
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int main(int argc, char **argv)
 {
   static LALStatus      status;  
@@ -58,6 +58,8 @@ int main(int argc, char **argv)
   LALDetAndSource 	detAndSource;
   LALDetAMResponse 	computedResponse;  
   LALGPSandAcc		pGPSandAcc;
+
+  lalDebugLevel = 0;
   
   
   

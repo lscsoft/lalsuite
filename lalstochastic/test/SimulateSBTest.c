@@ -156,7 +156,7 @@ extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 BOOLEAN optVerbose    = SIMULATESBTESTC_FALSE;
 REAL8 optDeltaT       = -1;
 UINT4 optLength       = 0;
@@ -279,6 +279,8 @@ int main( void ){
   INT4                               code;
 
   LALFrDetector                      barFrame;
+
+  lalDebugLevel = LALNDEBUG;
 
 
   /*

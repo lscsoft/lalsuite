@@ -75,11 +75,11 @@
 
 
 #include <lal/LALConfig.h>
-#include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALMathematica.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 
 #define INSTRUCTIONS 	fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
 
@@ -108,7 +108,7 @@ LALMath3DPlot( LALStatus *stat,
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
   }
 
-  if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL) {
+  if ((nb = LALFopen("Math3DNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
 

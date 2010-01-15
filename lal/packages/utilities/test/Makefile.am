@@ -10,15 +10,12 @@ check_PROGRAMS = \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
-	LALBarycenterTest \
 	LALRunningMedianTest \
 	MersenneRandomTest \
-	NormalizeSFTRngMedTest \
 	ODETest \
 	RandomTest \
 	RngMedBiasTest \
 	SCoarseGrainFrequencySeriesTest \
-	SFTCleanTest \
 	SortTest \
 	ZCoarseGrainFrequencySeriesTest
 
@@ -51,6 +48,11 @@ EigenTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
+FlatMeshTest_SOURCES = FlatMeshTest.c
+FlatMeshTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
 FindRootTest_SOURCES = FindRootTest.c
 FindRootTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
@@ -66,11 +68,6 @@ InterpolateTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-LALBarycenterTest_SOURCES = LALBarycenterTest.c
-LALBarycenterTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
 LALRunningMedianTest_SOURCES = LALRunningMedianTest.c
 LALRunningMedianTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
@@ -78,11 +75,6 @@ LALRunningMedianTest_LDADD = \
 
 MersenneRandomTest_SOURCES = MersenneRandomTest.c
 MersenneRandomTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
-NormalizeSFTRngMedTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -100,11 +92,6 @@ SCoarseGrainFrequencySeriesTest_SOURCES = \
 	CheckStatus.c \
 	SCoarseGrainFrequencySeriesTest.c
 SCoarseGrainFrequencySeriesTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-SFTCleanTest_SOURCES = SFTCleanTest.c
-SFTCleanTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -127,9 +114,7 @@ ZCoarseGrainFrequencySeriesTest_LDADD = \
 
 EXTRA_DIST = \
 	CheckStatus.c \
-	CheckStatus.h \
-	earth98.dat \
-	sun98.dat
+	CheckStatus.h
 
 TESTS = \
 	CCoarseGrainFrequencySeriesTest \
@@ -141,7 +126,6 @@ TESTS = \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
-	LALBarycenterTest \
 	LALRunningMedianTest \
 	MersenneRandomTest \
 	ODETest \

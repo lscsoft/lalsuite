@@ -195,7 +195,7 @@ NRCSID(STOCHASTICOPTIMALFILTERTESTC,
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = LALNDEBUG;
+extern int lalDebugLevel;
 /* int lalDebugLevel  = LALMSGLVL3; */
 BOOLEAN optVerbose = STOCHASTICOPTIMALFILTERTESTC_FALSE;
 BOOLEAN optHetero = STOCHASTICOPTIMALFILTERTESTC_FALSE;
@@ -269,6 +269,8 @@ int main(int argc, char *argv[])
   CHARVector               *unitString = NULL;
 
   REAL4WithUnits           lambda;
+
+  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 

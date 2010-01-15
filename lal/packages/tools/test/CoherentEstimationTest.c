@@ -26,7 +26,7 @@
 
 NRCSID( COHERENTESTIMATIONTESTC, "$Id$" );
 
-int lalDebugLevel = 3;
+extern int lalDebugLevel;
 
 int
 main(void)
@@ -52,6 +52,8 @@ main(void)
   UINT4 length = 360 * 2048;
 
   REAL8IIRFilter *filt = NULL;
+
+  lalDebugLevel = 3;
 
   /* initialize CoherentEstimation structure */
   params.preProcessed = 0; /* for pre-processing to happen */

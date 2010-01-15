@@ -228,6 +228,7 @@ tagCoherentInspiralFilterParams
   UINT4                         numSegments;
   INT4                          numPoints;
   UINT4                         numBeamPoints;
+  UINT4                         threeSiteCase;
   REAL4                         fLow;
   REAL8                         deltaT;
   REAL4                         cohSNRThresh;
@@ -252,6 +253,7 @@ tagCoherentInspiralFilterParams
   double                        raStep;
   UINT4                         estimParams;
   UINT4                         followup;
+  UINT4                         exttrig;
 }
 CoherentInspiralFilterParams;
 #if 0
@@ -447,7 +449,11 @@ XLALCoherentInspiralFilterSegment (
     MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params,
-    const SkyGrid                  *skyGridPtr,
+    const SkyGrid                         *skyGridPtr,
+    REAL4                                 chisq[4],
+    REAL4                                 chisq_dof[4],
+    REAL8                                 snrsqthinca[4],
+    REAL4                                 eff_snr_denom_fac,
     REAL4                                 nullStatRegul
     );
 

@@ -37,7 +37,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "mkcalfac"
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 static int sensemon_format;
 static int skip_first_line;
 int deltaT =0;
@@ -214,6 +214,8 @@ int main( int argc, char *argv[] )
   char achannel[256];
   char bchannel[256];
   int dt;
+
+  lalDebugLevel = 0;
 
   sensemon_format = 0;
   skip_first_line = 0;

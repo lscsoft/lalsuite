@@ -1309,7 +1309,7 @@ int main( int argc, char *argv[] )
 
     ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
-    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
+    isPlay = XLALINT8NanoSecIsPlayground( ta );
 
     if ( vrbflg )
     {

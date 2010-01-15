@@ -63,6 +63,8 @@
 
 /* more efficient toplist using heaps */
 #include "GCTtoplist.h"
+#include "ComputeFstat_RS.h"
+
 
 /******************************************************
  *   Protection against C++ name mangling
@@ -183,8 +185,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8 F;           /**< frequency */
     REAL8 F1dot;       /**< spindown */
     UINT4 Index;        /**< index */
-    INT4 U1i;          /**< U1 index */
-    INT4 U2i;          /**< U2 index */
+    INT4 Uindex;          /**< U index */
     UINT4 nc;           /**< number count */
     REAL8 sumTwoF;     /**< sum of 2F-values */
   } FineGridPoint;  
@@ -201,8 +202,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
     UINT4 Index;        /**< index */
-    INT4 U1i;          /**< U1 index */
-    INT4 U2i;          /**< U2 index */  
+    INT4 Uindex;          /**< U index */
     REAL8 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   
@@ -216,31 +216,11 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
  /* function prototypes */
 
-  void FstatVectToPeakGram (LALStatus *status,
-			    HOUGHPeakGramVector *pgV,
-			    REAL8FrequencySeriesVector *FstatVect,
-			    REAL8  thr);
-
   void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
 		 REAL8 tStack,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
-
-  extern
-  void GetHoughCandidates_threshold(LALStatus            *status,
-				    SemiCohCandidateList *out,
-				    HOUGHMapTotal        *ht,
-				    HOUGHPatchGrid       *patch,
-				    HOUGHDemodPar        *parDem,
-				    REAL8                threshold);
-
-  void GetFstatCandidates_toplist(LALStatus *status,
-				  toplist_t *list,
-				  REAL8FrequencySeries   *FstatVec,
-				  REAL8 alpha,
-				  REAL8 delta,
-				  REAL8 fdot);
 
   void GetChkPointIndex( LALStatus *status,
 			 INT4 *loopindex, 

@@ -83,7 +83,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose       = 0;
 
 static void
@@ -120,6 +120,8 @@ main( int argc, char *argv[] )
 
   FILE *fp;
   UINT4 i;
+
+  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
 
