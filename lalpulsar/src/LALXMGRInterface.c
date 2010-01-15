@@ -109,7 +109,7 @@ LALXMGROpenFile (
   ASSERT( fileName, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
-  if ( ! (*fp = fopen( fileName, "w" )) )
+  if ( ! (*fp = LALFopen( fileName, "w" )) )
   {
     ABORT( status, LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGEOPEN );
   }
