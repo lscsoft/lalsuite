@@ -2074,7 +2074,6 @@ XLALCoherentInspiralFilterSegment (
 	/*Here, the time delay looping must start */
 	/* Now calculate the distance (in meters) */
         /*CHECK: */
-        INT4 cDataBdry = 0; /* CHECK: 1792; */
 	case2b = 1;
 	for (i=0;i<3;i++) {
 	  s[i] = (REAL4) ( detectors[1].location[i] - detectors[0].location[i]);
@@ -2087,7 +2086,7 @@ XLALCoherentInspiralFilterSegment (
 	q = 0;
 	w = 0;
 
-	for(k=0+cDataBdry ; k<((INT4)numPoints - cDataBdry) ; k++)
+	for(k=0 ; k<(INT4)numPoints ; k++)
 	  {
             REAL4          snrsq1 = 0.0;
             REAL4          snrsq2 = 0.0;
@@ -2110,8 +2109,10 @@ XLALCoherentInspiralFilterSegment (
 		      pow(cData[1]->data->data[q].im,2);
 		    chisqFac2 = (1 + snrsq2/eff_snr_denom_fac)*chisq[1]/ 
 				     (2*chisq_dof[1] -2);
-		    /* CHECK: This is coherent-SNR-squared: */ 
-		    cohSNRLocal = pow(snrsq1*snrsq1/chisqFac1 + snrsq2*snrsq2/chisqFac2,0.5);
+		    /* CHECK: This is the effective-coherent-SNR-squared:
+                      cohSNRLocal = pow(snrsq1*snrsq1/chisqFac1 + snrsq2*snrsq2/chisqFac2,0.5);
+                    */
+		    cohSNRLocal = snrsq1 + snrsq2;
 		    
 		    if(cohSNRLocal > cohSNR)
 		      {
