@@ -1,13 +1,25 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
-                     StreamInput.h StreamOutput.h LALCache.h \
-                     LALInitBarycenter.h LALXMGRInterface.h \
-                     LIGOLwXML.h LIGOLwXMLHeaders.h LIGOLwXMLInspiralHeaders.h \
-		     LIGOLwXMLArray.h ReadNoiseSpectrum.h \
-		     SFTfileIO.h LogPrintf.h UserInput.h ConfigFile.h \
-		     LALMathematica.h SegmentsIO.h Audio.h NRWaveIO.h	\
-                     DopplerScan.h DopplerFullScan.h DopplerLatticeCovering.h \
-                     VeryBasicXMLOutput.h ReadFiltersFile.h
+pkginclude_HEADERS = \
+	Audio.h \
+	FileIO.h \
+	LALCache.h \
+	LALInitBarycenter.h \
+	LALMathematica.h \
+	LIGOLwXML.h \
+	LIGOLwXMLArray.h \
+	LIGOLwXMLHeaders.h \
+	LIGOLwXMLInspiralHeaders.h \
+	LogPrintf.h \
+	NRWaveIO.h \
+	PrintFTSeries.h \
+	PrintVector.h \
+	ReadFTSeries.h \
+	ReadFiltersFile.h \
+	ReadNoiseSpectrum.h \
+	SegmentsIO.h \
+	StreamInput.h \
+	StreamOutput.h \
+	UserInput.h ConfigFile.h \
+	VeryBasicXMLOutput.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

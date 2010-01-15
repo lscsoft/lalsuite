@@ -53,6 +53,65 @@ static UINT4Vector *skygrid_dims = NULL;
 
 static const size_t PathNameLength = 256;  /* this should be long enough for path names */
 
+static LALStatus empty_LALStatus;
+
+/** Load Ephemeris from ephemeris data-files, for given ephemeris year-span.
+ *  if ephemerisDir==NULL, use LAL_DATA_PATH mechanism (in LAL)
+ */
+EphemerisData *
+InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
+	       const CHAR *ephemYear	/**< which years do we need? */
+	       )
+{
+#define FNAME_LENGTH 1024
+  const CHAR *fn = __func__;
+  LALStatus status = empty_LALStatus;
+  EphemerisData *edat;
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];		/* filename of sun-ephemeris data */
+
+  if ( !ephemYear ) {
+    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", fn);
+    return NULL;
+  }
+
+  if ( ephemDir )
+    {
+      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+    }
+  else
+    {
+      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+    }
+
+  EphemEarth[FNAME_LENGTH-1] = 0;
+  EphemSun[FNAME_LENGTH-1] = 0;
+
+  /* allocate memory for ephemeris-data to be returned */
+  if ( (edat = XLALCalloc ( 1, sizeof(*edat))) == NULL ) {
+    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", fn, sizeof(*edat) );
+    return NULL;
+  }
+
+  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
+   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
+   */
+  edat->ephiles.earthEphemeris = EphemEarth;
+  edat->ephiles.sunEphemeris = EphemSun;
+
+  LALInitBarycenter(&status, edat);
+
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", fn, status.statusCode, status.statusDescription );
+    return NULL;
+  }
+
+  return edat;
+
+} /* InitEphemeris() */
+
 
 void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
 {

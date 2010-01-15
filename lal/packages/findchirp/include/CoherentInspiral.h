@@ -69,7 +69,6 @@ The coherent statistic will be defined here.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/LALInspiralBank.h>
-#include <lal/DopplerScan.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -229,6 +228,7 @@ tagCoherentInspiralFilterParams
   UINT4                         numSegments;
   INT4                          numPoints;
   UINT4                         numBeamPoints;
+  UINT4                         threeSiteCase;
   REAL4                         fLow;
   REAL8                         deltaT;
   REAL4                         cohSNRThresh;
@@ -253,6 +253,7 @@ tagCoherentInspiralFilterParams
   double                        raStep;
   UINT4                         estimParams;
   UINT4                         followup;
+  UINT4                         exttrig;
 }
 CoherentInspiralFilterParams;
 #if 0
@@ -338,6 +339,12 @@ tagCoherentInspiralFilterInput
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
+
+typedef struct tagSkyGrid {
+  REAL8 Alpha;
+  REAL8 Delta;
+  struct tagSkyGrid *next;
+} SkyGrid;
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{CoherentInspiralFilterInput}}
@@ -442,7 +449,11 @@ XLALCoherentInspiralFilterSegment (
     MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params,
-    const DopplerSkyGrid                  *skyGridPtr,
+    const SkyGrid                         *skyGridPtr,
+    REAL4                                 chisq[4],
+    REAL4                                 chisq_dof[4],
+    REAL8                                 snrsqthinca[4],
+    REAL4                                 eff_snr_denom_fac,
     REAL4                                 nullStatRegul
     );
 

@@ -39,7 +39,6 @@
 #include <lal/Date.h>
 
 #include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 
 /* flags for getopt_long */
 extern int vrbflg;
@@ -118,9 +117,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'v':
         /* version */
         fprintf(stderr, "lalapps_online_datafind:\n");
-        fprintf(stderr, "Git Id: %s\n", lalAppsVCSInfo.vcsId);
-        fprintf(stderr, "Git Tag: %s\n", lalAppsVCSInfo.vcsTag);
-        fprintf(stderr, "Status: %s\n", lalAppsVCSInfo.vcsStatus);
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 

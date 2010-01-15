@@ -1,5 +1,5 @@
 AC_INIT([lalmetaio],[1.0],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
+AM_CONFIG_HEADER([include/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -13,6 +13,7 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   src/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -39,6 +40,15 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalmetaio])
 
+# put version/configure info in config header
+lalmetaio_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALMETAIO_VERSION],["$VERSION"],[LALMetaIO Version])
+AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALMetaIO Configure Arguments])
+AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_DATE],["$lalmetaio_configure_date"],
+                   [LALMetaIO Configure Date])
+
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
@@ -53,7 +63,8 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LIBTOOL
+LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
@@ -80,19 +91,22 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
 CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
 LIBS="$LIBS $METAIO_LIBS"
-AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR(cannot find metaio library)])
+AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
+
+# check for libmetaio headers
+AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_OPT_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

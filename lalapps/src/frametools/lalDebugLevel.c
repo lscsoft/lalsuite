@@ -17,4 +17,4 @@
 *  MA  02111-1307  USA
 */
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;

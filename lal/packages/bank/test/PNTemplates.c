@@ -60,7 +60,7 @@ lalDebugLevel
 NRCSID(PNTEMPLATESC,"$Id$");
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 /*static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);*/
 void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
@@ -89,6 +89,9 @@ main(void)
   static CreateVectorSequenceIn in;
   INT4 valid;
   FILE *fpr;
+
+  lalDebugLevel = 0;
+
   fpr = fopen("PNTemplates.out", "w");
 
 /* Number of templates is nlist */

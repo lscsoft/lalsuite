@@ -1,5 +1,5 @@
 AC_INIT([lalframe],[1.0],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
+AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,6 +41,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalframe])
 
+# put version/configure info in config header
+lalframe_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALFRAME_VERSION],["$VERSION"],[LALFrame Version])
+AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALFrame Configure Arguments])
+AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_DATE],["$lalframe_configure_date"],
+                   [LALFrame Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
@@ -55,6 +64,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4],[m4])
 
 # check for supported mac os x version
@@ -89,19 +99,22 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
           [AC_MSG_RESULT]([no]))
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for frame library
 PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
 CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
 LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR(cannot find frame library)])
+AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
+
+# check for frame library headers
+AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_OPT_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

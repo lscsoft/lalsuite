@@ -75,7 +75,6 @@
 
 
 #include <lal/LALConfig.h>
-#include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALMathematica.h>
 #include <lal/LALStatusMacros.h>

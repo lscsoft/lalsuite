@@ -44,7 +44,7 @@ NRCSID( STRINGCONVERTTESTC, "$Id$" );
     gpsOutNS[istring] = ns ;                                     \
     strcpy( gpsOutRemainder[istring], remain );
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int
 main( int argc, char **argv )
@@ -59,6 +59,8 @@ main( int argc, char **argv )
   CHAR *endptr;
   INT4 istring, remlength;
   INT4 nfailures = 0;
+
+  lalDebugLevel = 0;
 
   /*------ Parse input line. ------*/
   if ( argc == 2 )

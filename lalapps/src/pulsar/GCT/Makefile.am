@@ -16,4 +16,6 @@ bin_PROGRAMS = lalapps_HierarchSearchGCT
 lalapps_HierarchSearchGCT_SOURCES = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           ../FDS_isolated/HeapToplist.c ../FDS_isolated/HeapToplist.h \
-                          ../FDS_isolated/ComputeFStatistic.h
+                          ../FDS_isolated/ComputeFStatistic.h ../FDS_isolated/Fstat_v3.c \
+			  ComputeFstat_RS.c ComputeFstat_RS.h
+

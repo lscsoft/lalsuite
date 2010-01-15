@@ -96,7 +96,6 @@
 
 
 #include <lal/LALConfig.h>
-#include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>

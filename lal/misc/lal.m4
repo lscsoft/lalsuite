@@ -17,6 +17,7 @@ AC_DEFUN([DO_ENABLE_LAL_GCC_FLAGS],
   if test "${cuda}" != "true"; then
     case $host_cpu-$host_os in
       *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
+      *x86_64-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
       *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
     esac
   fi
@@ -130,6 +131,19 @@ AC_DEFUN([LAL_WITH_CUDA],
       AC_SUBST(CUDA_CFLAGS)
     esac
   ], [ cuda=false ])
+])
+
+AC_DEFUN([LAL_ENABLE_BOINC],
+[AC_ARG_ENABLE(
+  [boinc],
+  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+  [ case "${enableval}" in
+      yes) boinc=true;;
+      no) boinc=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
+    esac
+  ], [ boinc=false ] )
+AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
 ])
 
 AC_DEFUN([LAL_ENABLE_DEBUG],

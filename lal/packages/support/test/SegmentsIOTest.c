@@ -98,7 +98,7 @@ NRCSID( SEGMENTSIOTESTC, "$Id$" );
 
 /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-int lalDebugLevel = 4;
+extern int lalDebugLevel;
 
 /*===========================================================================*/
 
@@ -113,6 +113,10 @@ int main( int argc, char *argv[] )
   LALSeg seg;
   LIGOTimeGPS segstart1 = {710000000, 123456789};
   LIGOTimeGPS segend1 =   {710000234, 555555555};
+
+  /*-- Default debug level includes info messages (4), but not
+     memory checking (16), error messages (1), or warning messages (2) --*/
+  lalDebugLevel = 4;
 
   /*------ Parse input line. ------*/
   if ( argc == 2 )
