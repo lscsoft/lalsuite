@@ -392,6 +392,10 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
         thinca.set_category('thinca')
       if not opts.disable_dag_priorities:
         thinca.set_priority(3)
+      try:
+        thinca.set_dax_collapse(cp.get('pipeline','collapse-thinca'))
+      except:
+        pass
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
