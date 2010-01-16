@@ -118,7 +118,7 @@ void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT,
                MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in );
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-void GetSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in );
+void GetSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, UsefulStageVariables *usefulparams );
 void TranslateFineGridSpins( LALStatus *status, UsefulStageVariables *usefulparams, FineGrid *in);
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
@@ -1225,7 +1225,7 @@ int MAIN( int argc, char *argv[]) {
                         uvar_Freq, uvar_FreqBand);
 	    
           LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
-          LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid), &status); 
+          LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status); 
         }
 	  
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
