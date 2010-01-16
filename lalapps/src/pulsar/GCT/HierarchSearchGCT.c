@@ -581,7 +581,7 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  fprintf(stderr, "%% GPS reference time = %d   GPS data mid time = %d\n", 
+  fprintf(stderr, "%% --- GPS reference time = %d   GPS data mid time = %d\n", 
           refTimeGPS.gpsSeconds, tMidGPS.gpsSeconds);
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
@@ -621,22 +621,23 @@ int MAIN( int argc, char *argv[]) {
     gamma2 = uvar_gamma2;
   }
   else {
+    
+    midTobs = XLALGPSGetREAL8( &tMidGPS ); /* midpoint of whole data set is tMidGPS */
     sigmasq=0.0;
     for (k = 0; k < nStacks; k++) {
-
-      /* midpoint of whole data set is: t_0 = tMidGPS */
-      midTstackGPS = midTstack->data[k];
       
+      midTstackGPS = midTstack->data[k];
       midTseg = XLALGPSGetREAL8( &midTstackGPS );
-      midTobs = XLALGPSGetREAL8( &tMidGPS );
 
       timeDiffSeg = midTseg - midTobs;  
-      sigmasq=sigmasq+(timeDiffSeg*timeDiffSeg);
+      sigmasq = sigmasq + (timeDiffSeg * timeDiffSeg);
+      
     }
-    sigmasq=sigmasq / (nStacks*tStack*tStack);
+    
+    sigmasq = sigmasq / (nStacks * tStack * tStack);
     gamma2 = sqrt(1.0 + 60 * sigmasq);
-    LogPrintf(LOG_DEBUG, "Refinement factor, gamma2 = %f\n",gamma2);
   }
+  fprintf(stderr, "%% --- Refinement factor, gamma = %f\n", gamma2);
 
  
 
@@ -1858,10 +1859,11 @@ void GetChkPointIndex( LALStatus *status,
 /** Get SemiCoh candidates toplist */
 void GetSemiCohToplist(LALStatus *status,
                        toplist_t *list,
-                       FineGrid *in)
+                       FineGrid *in,
+                       UsefulStageVariables *usefulparams)
 {
 
-  UINT4 k;
+  UINT4 k, Nstacks;
   INT4 debug;
   GCTtopOutputEntry line;
 
@@ -1870,7 +1872,10 @@ void GetSemiCohToplist(LALStatus *status,
 
   ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
  
+  Nstacks = usefulparams->nStacks;
+  
   /* go through candidates and insert into toplist if necessary */
   for ( k = 0; k < in->length; k++) {
 
@@ -1879,7 +1884,7 @@ void GetSemiCohToplist(LALStatus *status,
     line.Delta = in->Delta;
     line.F1dot = in->list[k].F1dot;
     line.nc = in->list[k].nc;
-    line.sumTwoF = in->list[k].sumTwoF;
+    line.sumTwoF = in->list[k].sumTwoF / Nstacks; /* save the average 2F value */
 
     debug = INSERT_INTO_GCTFSTAT_TOPLIST( list, line);
 
