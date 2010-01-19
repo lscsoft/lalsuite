@@ -35,7 +35,7 @@ fi
 Tolerance="0.05"
 
 ## ---------- fixed parameter of our test-signal -------------
-Alpha="2.0"
+Alpha="3.1"
 Delta="-0.5"
 h0="1.0"
 cosi="-0.3"
@@ -51,8 +51,8 @@ mfd_FreqBand="2.0"
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 gct_FreqBand="0.01"
-gct_dFreq="1.0e-6"
-gct_nCands="1"
+gct_dFreq="2.0e-6"
+gct_nCands="100"
 
 noiseSqrtSh="0"
 
@@ -66,7 +66,7 @@ Tsft="1800"
 startTime="852443819"
 refTime="862904314"
 Tsegment="90000"
-Nsegments="110"
+Nsegments="11"
 seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) 
 tsfile="timestampsTEST.txt"
 rm -rf $tsfile
@@ -154,10 +154,11 @@ for ((x=1; x <= $Nsegments; x++))
 	exit 1
     fi
     resPFS=`echo $tmp | awk '{printf "%g", $1}'`
-    TwoFsum=$(echo "scale=0; ${TwoFsum} + ${resPFS}" | bc);
+    TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
     echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
 done
-
+TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
+echo "==>   Average 2F: "$TwoFsum
 
 echo
 echo "----------------------------------------------------------------------"
@@ -224,11 +225,11 @@ else
 fi
 
 if [ `echo $reldev3" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp vs. no-Resamp:      "$reldev3"%"
+    echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3"%"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp vs. no-Resamp:      "$reldev3"%      OK." 
+    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"%      OK." 
 fi
 
 echo "----------------------------------------------------------------------"
@@ -237,5 +238,6 @@ echo "----------------------------------------------------------------------"
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
+    echo "Cleaned up."
 fi
 
