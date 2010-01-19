@@ -17,7 +17,6 @@ FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 FindChirpBankVetoTest_SOURCES = FindChirpBankVetoTest.c
 FindChirpTDTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FindChirpBCVSpinTest_SOURCES = FindChirpBCVSpinTest.c
-FindChirpBCVSpinTest_SOURCES = FindChirpBCVSpinTest.c
 LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
