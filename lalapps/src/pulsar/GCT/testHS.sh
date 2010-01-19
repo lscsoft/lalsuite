@@ -50,7 +50,7 @@ echo $Alpha" "$Delta > $skygridfile
 mfd_FreqBand="2.0"
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-gct_FreqBand="0.01"
+gct_FreqBand="0.02"
 gct_dFreq="2.0e-6"
 gct_nCands="100"
 
@@ -200,36 +200,36 @@ if ! tmp=`eval $cmdline`; then
 fi
 resGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
 
-reldev1=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
-reldev2=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT2)/(0.5 * ($TwoFsum + $resGCT2))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
-reldev3=$(echo "scale=2; 100.0 * ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
+reldev1=$(echo "scale=2; ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
+reldev2=$(echo "scale=2; ($TwoFsum - $resGCT2)/(0.5 * ($TwoFsum + $resGCT2))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
+reldev3=$(echo "scale=2; ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
 
 echo
 echo "----------------------------------------------------------------------"
 echo "==>  Predicted:      "$TwoFsum
 
-if [ `echo $reldev1" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)"
+if [ `echo $reldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)     OK."
+    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")     OK."
 fi
 
-if [ `echo $reldev2" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)"
+if [ `echo $reldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)     OK." 
+    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK." 
 fi
 
-if [ `echo $reldev3" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3"%"
+if [ `echo $reldev3" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"%      OK." 
+    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"      OK." 
 fi
 
 echo "----------------------------------------------------------------------"
