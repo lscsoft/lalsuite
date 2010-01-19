@@ -1204,7 +1204,7 @@ int MAIN( int argc, char *argv[]) {
                         
           } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
-          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
+          LogPrintf(LOG_DETAIL, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
 
         } /* end ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
@@ -1267,9 +1267,9 @@ int MAIN( int argc, char *argv[]) {
 #endif
   
 
-  LogPrintfVerbatim ( LOG_DEBUG, "... done.\n");
-
-  LogPrintf(LOG_DETAIL, "Finished analysis and now printing results and cleaning up ...");
+  LogPrintfVerbatim ( LOG_DEBUG, " ... done.\n");
+  
+  fprintf(stderr, "%% --- Finished analysis.\n");
   
   LogPrintf ( LOG_DEBUG, "Writing output ...");
 
@@ -1281,13 +1281,17 @@ int MAIN( int argc, char *argv[]) {
       return HIERARCHICALSEARCH_EFILE;
     }
     if ( uvar_printCand1 && uvar_semiCohToplist ) {
+      
       sort_gctFStat_toplist(semiCohToplist);
+      
       if ( write_gctFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0) {
         fprintf( stderr, "Error in writing toplist to file\n");
       }
+      
       if (fprintf(fpSemiCoh,"%%DONE\n") < 0) {
         fprintf(stderr, "Error writing end marker\n");
       }
+      
       fclose(fpSemiCoh);
     }
   }
@@ -1310,13 +1314,14 @@ int MAIN( int argc, char *argv[]) {
     fclose(fpFstat1);
     LALFree( fnameFstatVec1 );
   }
-  
+
   /* free first stage memory */
   for ( k = 0; k < nStacks; k++) {
     LAL_CALL( LALDestroyMultiSFTVector ( &status, stackMultiSFT.data + k), &status);
     LAL_CALL( LALDestroyMultiNoiseWeights ( &status, stackMultiNoiseWeights.data + k), &status);
     XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates.data[k] );
   }
+  
   LALFree(stackMultiSFT.data);
   LALFree(stackMultiNoiseWeights.data);
   LALFree(stackMultiDetStates.data);
@@ -1324,7 +1329,7 @@ int MAIN( int argc, char *argv[]) {
   XLALDestroyTimestampVector(startTstack);
   XLALDestroyTimestampVector(midTstack);
   XLALDestroyTimestampVector(endTstack);
-
+  
   /* free Fstat vectors  */
   for(k = 0; k < nStacks; k++)
     if (fstatVector.data[k].data) {
@@ -1349,7 +1354,7 @@ int MAIN( int argc, char *argv[]) {
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-  
+
   /* free dopplerscan stuff */
   LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
   if ( scanInit.skyRegionString )
@@ -1366,8 +1371,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
-
-  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 
   return HIERARCHICALSEARCH_ENORM;
 } /* main */
