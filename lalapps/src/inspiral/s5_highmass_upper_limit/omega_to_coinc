@@ -202,7 +202,7 @@ class Coinc(object):
 		row.ligo_angle = None
 		row.ligo_angle_sig = None
 		row.filter_id = None
-		row.false_alarm_rate = None 
+		row.false_alarm_rate = None
 		c.append(row)
 		
 	def add_to_coinc_event_map(self, coinc_event_id, event_id, table_name='sngl_burst'):
