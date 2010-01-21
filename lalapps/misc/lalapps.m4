@@ -220,6 +220,37 @@ AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
   ], [ lalstochastic=true ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_BOINC],
+[AC_ARG_ENABLE(
+  [boinc],
+  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+  [ case "${enableval}" in
+      yes) boinc=true;;
+      no) boinc=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
+    esac
+  ], [ boinc=false ] )
+AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+])
+
+AC_DEFUN([LALAPPS_CHECK_BOINC],
+[AC_MSG_CHECKING([whether LAL has been compiled with BOINC support])
+AC_TRY_RUN([
+#include <lal/LALConfig.h>
+#ifdef LAL_BOINC_ENABLED
+int main( void ) { return 0; }
+else
+int main( void ) { return 1; }
+#endif
+],
+AC_MSG_RESULT([yes])
+[boinc=true],
+AC_MSG_RESULT([no])
+[boinc=false],
+AC_MSG_RESULT([unknown])
+[boinc=false])
+])
+
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 [AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
 AC_TRY_RUN([

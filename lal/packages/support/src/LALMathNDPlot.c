@@ -100,6 +100,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
+#include <lal/LALStdio.h>
 
 #define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
 
@@ -132,7 +133,7 @@ LALMathNDPlot( LALStatus *stat,
   }
 
   /* Open a file for writing a notebook */
-  if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL) {
+  if ((nb = LALFopen("MathNDNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   }
 

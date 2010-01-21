@@ -35,14 +35,14 @@ fi
 Tolerance="0.05"
 
 ## ---------- fixed parameter of our test-signal -------------
-Alpha="2.0"
+Alpha="3.1"
 Delta="-0.5"
 h0="1.0"
 cosi="-0.3"
 psi="0.6"
 phi0="1.5"
 Freq="100.12345"
-f1dot="-8e-10"
+f1dot="-1e-9"
 
 skygridfile="./tmpskygridfile.dat"
 echo $Alpha" "$Delta > $skygridfile
@@ -50,9 +50,11 @@ echo $Alpha" "$Delta > $skygridfile
 mfd_FreqBand="2.0"
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-gct_FreqBand="0.01"
-gct_dFreq="1.0e-6"
-gct_nCands="1"
+gct_FreqBand="0.02"
+gct_F1dotBand="2.0e-10"
+gct_dFreq="2.0e-6"
+gct_dF1dot="1.0e-10"
+gct_nCands="100"
 
 noiseSqrtSh="0"
 
@@ -66,7 +68,7 @@ Tsft="1800"
 startTime="852443819"
 refTime="862904314"
 Tsegment="90000"
-Nsegments="110"
+Nsegments="11"
 seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) 
 tsfile="timestampsTEST.txt"
 rm -rf $tsfile
@@ -154,11 +156,14 @@ for ((x=1; x <= $Nsegments; x++))
 	exit 1
     fi
     resPFS=`echo $tmp | awk '{printf "%g", $1}'`
-    TwoFsum=$(echo "scale=0; ${TwoFsum} + ${resPFS}" | bc);
-    echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
+    TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
+    #echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
 done
+TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
+echo
+echo "==>   Average 2F: "$TwoFsum
 
-
+echo
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match)"
@@ -170,7 +175,7 @@ sdat=${LAL_DATA_PATH}"/sun05-09.dat"
 
 outfile_gct1="__tmp_GCT1.dat"
                                                                                            
-gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=1.22838e-10 --f1dot=$f1dot --f1dotBand=0 --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand "
+gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand "
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -179,6 +184,7 @@ if ! tmp=`eval $cmdline`; then
     exit 1
 fi
 resGCT1=$(cat $outfile_gct1 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
+freqGCT1=$(cat $outfile_gct1 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
 
 
 echo
@@ -189,7 +195,7 @@ echo
 
 outfile_gct2="__tmp_GCT2.dat"
 
-gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=1.22838e-10 --f1dot=$f1dot --f1dotBand=0 --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand "
+gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand "
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -198,37 +204,63 @@ if ! tmp=`eval $cmdline`; then
     exit 1
 fi
 resGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
+freqGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
 
-reldev1=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
-reldev2=$(echo "scale=2; 100.0 * ($TwoFsum - $resGCT2)/(0.5 * ($TwoFsum + $resGCT2))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
-reldev3=$(echo "scale=2; 100.0 * ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.2f",$1} else {printf "%.2f",$1*(-1)}}')
+
+reldev1=$(echo "scale=5; ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
+reldev2=$(echo "scale=5; ($TwoFsum - $resGCT2)/(0.5 * ($TwoFsum + $resGCT2))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
+reldev3=$(echo "scale=5; ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
+
+freqreldev1=$(echo "scale=8; (($Freq - $freqGCT1)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.6f",$1} else {printf "%.6f",$1*(-1)}}')
+freqreldev2=$(echo "scale=8; (($Freq - $freqGCT2)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.6f",$1} else {printf "%.6f",$1*(-1)}}')
+
 
 echo
 echo "----------------------------------------------------------------------"
 echo "==>  Predicted:      "$TwoFsum
 
-if [ `echo $reldev1" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)"
+# Check predicted 2F against search code output
+if [ `echo $reldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1"%)     OK."
+    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")     OK."
 fi
 
-if [ `echo $reldev2" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)"
+if [ `echo $reldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2"%)     OK." 
+    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK." 
 fi
 
-if [ `echo $reldev3" "Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp vs. no-Resamp:      "$reldev3"%"
+if [ `echo $reldev3" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp vs. no-Resamp:      "$reldev3"%      OK." 
+    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"      OK." 
+fi
+
+echo
+
+# Check relative error in frequency
+if [ `echo $freqreldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, Resamp.     Rel. dev. in frequency: "$freqreldev1
+    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
+    exit 2
+else
+    echo "==>  GCT, Resamp.     Rel. dev. in frequency: "$freqreldev1"   OK."
+fi
+
+if [ `echo $freqreldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT, no Resamp.  Rel. dev. in frequency: "$freqreldev2
+    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
+    exit 2
+else
+    echo "==>  GCT, no Resamp.  Rel. dev. in frequency: "$freqreldev2"   OK."
 fi
 
 echo "----------------------------------------------------------------------"
@@ -237,5 +269,6 @@ echo "----------------------------------------------------------------------"
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
+    echo "Cleaned up."
 fi
 
