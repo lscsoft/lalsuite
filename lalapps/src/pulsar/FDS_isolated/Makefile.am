@@ -2,7 +2,12 @@
 # $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+## make sure lalapps.la is built
+lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
+$(lalappsla):
+	cd $(top_builddir)/src/lalapps && $(MAKE)
+LDADD = $(lalappsla)
 
 SUBDIRS = ResamplingFstat
 
@@ -10,7 +15,6 @@ SUBDIRS = ResamplingFstat
 .PHONY: gitID
 gitID:
 	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
@@ -20,8 +24,9 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC
 
-EXTRA_PROGRAMS = lalapps_CFSv3
 check_PROGRAMS = testFstat_v3
+
+EXTRA_PROGRAMS = lalapps_CFSv3 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -53,7 +58,23 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h
+ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h
+lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
+
+## optimized ComputeFStatistic_v2 targets
+
+# compilation of SSE targets requires a valid CPU architecture being set in AM_CFLAGS
+# (e.g. configure with CFLAGS=-march=pentium-m),
+lalapps_ComputeFStatistic_v2_sse_SOURCES = $(ComputeFStatisticV2Sources)
+lalapps_ComputeFStatistic_v2_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
+lalapps_ComputeFStatistic_v2_sse2_SOURCES = $(ComputeFStatisticV2Sources)
+lalapps_ComputeFStatistic_v2_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
+
+# compilation of CUDA target requires cuda header and library directories included in
+# CPPFLAGS and LDFLAGS respectively (until LAL/LALAapps have a proper CUDA detection in configure)
+lalapps_ComputeFStatistic_v2_cuda_SOURCES = $(ComputeFStatisticV2Sources) OptimizedCFS/ComputeFstatREAL4CUDA.c OptimizedCFS/FStatCUDA.cu
+lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
+lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
@@ -65,13 +86,19 @@ lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 
 testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
+
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2GPU.sh
 
 
-TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testFstat_v3
+TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testFstat_v3 testCFSv2GPU.sh
 
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
+
+# how to compile CUDA files (.cu)
+NVCC ?= nvcc
+.cu.o:
+	$(NVCC) $(CPPFLAGS) -c $< -o $@

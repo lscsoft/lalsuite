@@ -113,9 +113,8 @@
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
 
-
-
-#include"HierarchicalSearch.h"
+#include "OptimizedCFS/ComputeFstatREAL4.h"
+#include "HierarchicalSearch.h"
 
 
 /* This need to go here after HierarchicalSearch.h is included;
@@ -132,18 +131,36 @@ RCSID( "$Id$");
    and will be set in boinc_extras.h if EAH_BOINC is set
  */
 #ifdef EAH_BOINC
-#include "hs_boinc_extras.h"
-#else
+#include "EinsteinAtHome/hs_boinc_extras.h"
+#else /* EAH_BOINC */
+/* checkpointing */
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
-#define REARRANGE_SFT_DATA
-#define MAIN  main
-#define FOPEN fopen
-#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+/* BOINC */
+#define MAIN main
+#endif /* EAH_BOINC */
+
+/* These might have been set differently in hs_boinc_extras.h or ComputeFStatREAL4.h */
+#ifndef COMPUTEFSTATHOUGHMAP
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
+#endif
+#ifndef COMPUTEFSTATFREQBAND
+#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#endif
+#ifndef GPUREADY_DEFAULT
+#define GPUREADY_DEFAULT 0
+#endif
+#ifndef REARRANGE_SFT_DATA
+#define REARRANGE_SFT_DATA
+#endif
+#ifndef INITIALIZE_COPROCESSOR_DEVICE
+#define INITIALIZE_COPROCESSOR_DEVICE
+#endif
+#ifndef UNINITIALIZE_COPROCESSOR_DEVICE
+#define UNINITIALIZE_COPROCESSOR_DEVICE
 #endif
 
 extern int lalDebugLevel;
@@ -417,7 +434,11 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
-
+  CHAR *version_string;
+#ifndef GPUREADY_DEFAULT
+#define GPUREADY_DEFAULT 0
+#endif
+  BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
   global_status = &status;
 
 
@@ -501,7 +522,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
-
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
@@ -526,7 +547,6 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   /* assemble version string */
-  CHAR *version_string;
   {
     CHAR *id1, *id2;
     id1 = XLALClearLinebreaks ( lalGitID );
@@ -946,6 +966,8 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
 
+  INITIALIZE_COPROCESSOR_DEVICE
+
 #ifdef OUTPUT_TIMING
     clock0 = time(NULL);
 #endif 
@@ -955,7 +977,7 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-
+      ComputeFBufferREAL4V cfvBuffer;
 
       /* if (skyGridCounter == 25965) { */
 
@@ -1065,10 +1087,11 @@ int MAIN( int argc, char *argv[]) {
 	  } 
 	} /* loop over stacks */
 
-	REARRANGE_SFT_DATA;
+	REARRANGE_SFT_DATA
 
       } /* fstat memory allocation block */
       
+      cfvBuffer = empty_ComputeFBufferREAL4V;
       
 	/* loop over fdot values
 	   -- spindown range and resolutionhas been set earlier */
@@ -1084,21 +1107,42 @@ int MAIN( int argc, char *argv[]) {
 	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
-	  for ( k = 0; k < nStacks; k++) {
-	    
-	    /* set spindown value for Fstat calculation */
-	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
-	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
-	    
-	    /* this is the most costly function. We here allow for using an architecture-specific optimized
-	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
-					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
-					     stackMultiDetStates.data[k], &CFparams), &status);
-	  }
-	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
-	  
+          if ( !uvar_GPUready )
+            {
+              for ( k = 0; k < nStacks; k++)
+                {
+                  /* set spindown value for Fstat calculation */
+                  thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+                  thisPoint.fkdot[0] = fstatVector.data[k].f0;
+                  /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+                  /* this is the most costly function. We here allow for using an architecture-specific optimized
+                     function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+                  LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
+                                                   stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+                                                   stackMultiDetStates.data[k], &CFparams), &status);
+                } /* for k < nStacks */
+            }
+          else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
+            {
+              /* set spindown value for Fstat calculation */
+              thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+              thisPoint.fkdot[0] = fstatVector.data[0].f0;
+              /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+              /* this is the most costly function. We here allow for using an architecture-specific optimized
+               * function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+              if ( XLALComputeFStatFreqBandVector ( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights,
+                                                    &stackMultiDetStates, CFparams.Dterms, &cfvBuffer) != XLAL_SUCCESS )
+                {
+                  LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBandVector() failed with errno = %d\n", xlalErrno );
+                  return XLAL_EFUNC;
+                }
+
+            } /* if GPUready */
+
+          LogPrintfVerbatim(LOG_DETAIL, "done\n");
+
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
@@ -1176,6 +1220,7 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
+      XLALEmptyComputeFBufferREAL4V ( &cfvBuffer );
 
       /* continue forward till the end if uvar_skyPointIndex is set
 	 ---This probably doesn't make sense when checkpointing is turned on */
@@ -1213,6 +1258,7 @@ int MAIN( int argc, char *argv[]) {
   }
 #endif
   
+  UNINITIALIZE_COPROCESSOR_DEVICE
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
