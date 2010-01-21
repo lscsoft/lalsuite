@@ -201,7 +201,7 @@ XLALMultiInspiralStat(
   }
   else if ( multiStat == nullstat )
   {
-    /* CHECK: Invert it since clustering chooses the trigger with the 
+    /* CHECK: Invert it since clustering chooses the trigger with the
        MINIMUM null-stat value; add 0.001 to keep statValue from blowing up*/
     statValue = 1.0 / (multiInspiral->null_statistic + 1.0e-6);
   }

@@ -1116,7 +1116,7 @@ XLALInitBankVetoData(
     FindChirpBankVetoData *bvdata
     );
 
-void 
+void
 XLALDestroyBankVetoData (
     FindChirpBankVetoData *bvdata
     );
