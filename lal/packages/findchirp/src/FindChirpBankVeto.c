@@ -63,11 +63,13 @@ static int compareTemplateByMass (const void * a, const void * b);
 static int compareTemplateByEta (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead);
 static InspiralTemplate *
-XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
-static InspiralTemplate *
-XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
-static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
+InspiralTemplate *
+XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
+InspiralTemplate *
+XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
+InspiralTemplate *
+XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 
 /* A convenience function to compute the time between two frequencies */
 static double 
@@ -315,7 +317,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
     /* PSD bucket frequency used for chirp time offset */
     double fBucket = 150.0;   
-
+    UNUSED(deltaT);
  
     /* FIXME this should be a command line argument */
      /*200 points of autocorrelation function stored */
@@ -338,13 +340,11 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 	
 	for (row = 0; row < subBankSize; row++ )
 	{
-	    bankVetoData->timeshift->data[row] = 0;
-
-	    /*(REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
-						     bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
-						     fBucket,
-						     bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal, 
-						     7) );*/
+	    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
+						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
+						   fBucket,
+						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal, 
+						   7) );
 	
 	}		
     }
@@ -593,7 +593,8 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
   }
 
 
-static InspiralTemplate *
+
+InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   {
   InspiralTemplate **bankArray = NULL;
@@ -620,7 +621,7 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   return bankFirst;
 }
 
-static InspiralTemplate *
+InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   {
   InspiralTemplate **bankArray = NULL;
@@ -647,7 +648,7 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   return bankFirst;
 }
 
-static InspiralTemplate *
+InspiralTemplate *
 XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
   {
   InspiralTemplate **bankArray = NULL;
