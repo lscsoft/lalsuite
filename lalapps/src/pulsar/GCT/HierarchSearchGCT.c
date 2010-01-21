@@ -914,7 +914,6 @@ int MAIN( int argc, char *argv[]) {
         }
 
         /* Initialize first coarsegrid point */
-        thisCgPoint.Index=0;
         thisCgPoint.Uindex=0;
         thisCgPoint.TwoF=0.0;
       
@@ -962,7 +961,6 @@ int MAIN( int argc, char *argv[]) {
         /* initialize first finegrid point */
         thisFgPoint.F=0.0;
         thisFgPoint.F1dot=0.0;
-        thisFgPoint.Index=0;
         thisFgPoint.Uindex=0;
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
@@ -975,7 +973,6 @@ int MAIN( int argc, char *argv[]) {
           for(ic3=0;ic3<nf1dotsFG;ic3++) {
               thisFgPoint.F     = f_tmp;
               thisFgPoint.F1dot = f1dot_tmp;
-              thisFgPoint.Index = ic;
               finegrid.list[ic] = thisFgPoint;
               f1dot_tmp = f1dot_tmp + fg_f1dot_step;
               ic++;
@@ -1122,8 +1119,10 @@ int MAIN( int argc, char *argv[]) {
             LAL_CALL( ComputeU1idx ( &status, &f_event, &f1dot_event, &A1, &B1, 
                                     &u1start, &u1winInv, &U1idx), &status);
             
+            /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation. 
             LAL_CALL( ComputeU2idx ( &status, &f_event, &f1dot_event, &A2, &B2, 
                                     &u2start, &u2winInv, &U2idx), &status);
+            */
             
             /* Check U1 index value */
             if ( ifreq != U1idx ) {
@@ -1132,12 +1131,13 @@ int MAIN( int argc, char *argv[]) {
               return(HIERARCHICALSEARCH_ECG);
             }
             else {
-              thisCgPoint.Uindex = U1idx * NumU2idx + U2idx;
+              /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation.
+                 thisCgPoint.Uindex = U1idx * NumU2idx + U2idx; */
+              thisCgPoint.Uindex = U1idx;
             }
 
             /* copy the *2F* value and index integer number */
             thisCgPoint.TwoF = 2.0 * Fstat;
-            thisCgPoint.Index = ifreq;
             coarsegrid.list[ifreq] = thisCgPoint;
             
           }
@@ -1158,11 +1158,15 @@ int MAIN( int argc, char *argv[]) {
             /* compute the global-correlation coordinate indices */
             LAL_CALL( ComputeU1idx ( &status, &f_tmp, &f1dot_tmp, &A1, &B1, 
                                     &u1start, &u1winInv, &U1idx), &status);
-            
+            /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation. 
             LAL_CALL( ComputeU2idx ( &status, &f_tmp, &f1dot_tmp, &A2, &B2, 
                                     &u2start, &u2winInv, &U2idx), &status);
+            */
             
+            /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation. 
             finegrid.list[ifine].Uindex = U1idx * NumU2idx + U2idx;
+            */
+            finegrid.list[ifine].Uindex = U1idx;
                         
             /* map coarse-grid to appropriate fine-grid points */
             
@@ -1186,14 +1190,6 @@ int MAIN( int argc, char *argv[]) {
                   TwoFmax = finegrid.list[ifine].sumTwoF;
                 }
                 
-                /* Select special template in fine grid */
-                /*
-                 if(finegrid.list[ifine].Index == 5206950 ) {
-                 nc_max = finegrid.list[ifine].nc;
-                 TwoFmax = finegrid.list[ifine].sumTwoF;
-                 TwoFtemp = coarsegrid.list[finegrid.list[ifine].U1i].TwoF;
-                 }
-                 */
               /*}*/
             }   
             
@@ -1202,11 +1198,11 @@ int MAIN( int argc, char *argv[]) {
               finegrid.list[ifine].sumTwoF=-1.0;
             }   
                         
-          } /* for (ifine = 0; ifine < finegrid.length; ifine++) { */
+          } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
           LogPrintf(LOG_DETAIL, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
 
-        } /* end ------------- MAIN LOOP over Segments --------------------*/
+        } /* end: ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
 
          
