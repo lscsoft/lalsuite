@@ -402,10 +402,8 @@ int main( int argc, char *argv[])
 		if(!strcmp(IFOnames[i],"V1")||!strcmp(IFOnames[i],"VIRGO")) {
 			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexVIRGODIFF];
 			if(!NINJA) sprintf((ChannelNames[i]),"V1:h_16384Hz");
-			else {
-				if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
-				else sprintf((ChannelNames[i]),"V1:STRAIN");
-			}
+			else sprintf((ChannelNames[i]),"V1:STRAIN");
+			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			continue;}
 		if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
 			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexGEO600DIFF];

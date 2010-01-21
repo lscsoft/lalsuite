@@ -151,8 +151,8 @@ LALInspiralWave(
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->approximant < NumApproximants, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((int)params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
-   ASSERT(params->order <= 8, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+   ASSERT((UINT4)params->order < (UINT4)LAL_PNORDER_NUM_ORDER, 
+            status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
    switch (params->approximant)
    {
@@ -271,8 +271,8 @@ LALInspiralWaveTemplates(
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->approximant < NumApproximants, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((UINT4)params->order < (UINT4)LAL_PNORDER_NUM_ORDER, 
+               status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
    switch (params->approximant)
    {
