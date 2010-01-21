@@ -16,8 +16,8 @@
 /* THESE PARAMETERS CAN TAKE ANY VALUE */
 #define SUBBANKSIZE 15
 #define TEMPLATE_LENGTH 1024
-#define DELTAT 0.25 
-#define DYNRANGE 2.0 
+#define DELTAT 0.25
+#define DYNRANGE 2.0
 
 static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength);
 static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
@@ -25,11 +25,11 @@ static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial);
 static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift, REAL4 deltaT);
 static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFileName);
 
-/* 
+/*
  * This program is intended to check the computation of the cross-correlation
  * matrix in XLALBankVetoCCMat.  The program generates time domain delta functions
- * and computes the CC matrix for these templates using XLALBankVetoCCMat.  
- * The program then inspects the output to make sure that it agrees with the 
+ * and computes the CC matrix for these templates using XLALBankVetoCCMat.
+ * The program then inspects the output to make sure that it agrees with the
  * expected result.  Any matrix that fails the test is printed to file.  The program
  * exits with exit value equal to the number of matrices that failed the test.
  *
@@ -37,11 +37,11 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
  * contact: sprivite@ligo.caltech.edu
  * date: 11/20/2009
  *
- */ 
+ */
 int main(int argc, char *argv[])
 {
     /* Input params to XLALBankVetoCCMat */
-    FindChirpBankVetoData *bankVetoData = 
+    FindChirpBankVetoData *bankVetoData =
       (FindChirpBankVetoData *) calloc(1,sizeof(FindChirpBankVetoData));
     REAL4Vector *ampVec = XLALCreateREAL4Vector(TEMPLATE_LENGTH);
     REAL4 dynRange = DYNRANGE;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     int exit_status = 0;
 
     /* verbosity level (warning: this program can be very verbose) */
-    int verbose = ( (argc == 2) && (strcmp(argv[1],"dump") == 0) 
+    int verbose = ( (argc == 2) && (strcmp(argv[1],"dump") == 0)
 		    ? 1
 		    : 0 );
 
@@ -69,9 +69,9 @@ int main(int argc, char *argv[])
     /* Create mock templates which are orthogonal */
     makeDeltaFunctionTemplates(bankVetoData,subBankSize,templateLength,deltaF);
 
-    /* 
-     * Make repeated calls to XLALBankVetoCCMat with time shifts 
-     * in some of the templates. 
+    /*
+     * Make repeated calls to XLALBankVetoCCMat with time shifts
+     * in some of the templates.
      */
     for (trial = 0; trial < trial_max; trial++)
     {
@@ -114,7 +114,7 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
 
     /* initiate ccmat */
     bankVetoData->ccMat = XLALCreateCOMPLEX8Vector(subBankSize*subBankSize);
-    
+
     /* initiate normMat */
     bankVetoData->normMat = XLALCreateREAL4Vector(subBankSize);
 
@@ -139,7 +139,7 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
 
 
 /*
- * This function fills the bankVetoData templates with the frequency domain 
+ * This function fills the bankVetoData templates with the frequency domain
  * representation of time domain delta functions.  These function are orthogonal
  * and remain orthogonal under an integral number of deltaT time shifts.  The
  * cross-correlation matrix that results from this template bank and time shifts
@@ -152,14 +152,14 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
     REAL4 phase;
 
     bankVetoData->length = subBankSize;
-    bankVetoData->fcInputArray = 
+    bankVetoData->fcInputArray =
       (FindChirpFilterInput **) calloc(subBankSize,sizeof(FindChirpFilterInput *));
 
     for ( templateIndex = 0; templateIndex < subBankSize; templateIndex++)
     {
-	bankVetoData->fcInputArray[templateIndex] = 
+	bankVetoData->fcInputArray[templateIndex] =
 	  (FindChirpFilterInput *) calloc(1,sizeof(FindChirpFilterInput));
-	bankVetoData->fcInputArray[templateIndex]->fcTmplt = 
+	bankVetoData->fcInputArray[templateIndex]->fcTmplt =
 	  (FindChirpTemplate *) calloc(1,sizeof(FindChirpTemplate));
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->data =
 	  XLALCreateCOMPLEX8Vector(templateLength);
@@ -171,9 +171,9 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
 	      cos(phase);
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
 	      sin(phase);
-	}       
-	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal = 
-	  (REAL4) (deltaF*templateLength-FLOW);	
+	}
+	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal =
+	  (REAL4) (deltaF*templateLength-FLOW);
     }
 
     return;
@@ -195,14 +195,14 @@ static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
 
     UINT4 shiftAmount = floor(trial/timeshift->length) + 1;
     UINT4 whoToShift = trial % timeshift->length;
-      
+
     /* Choose a time shift for each template */
     for ( templateIndex = 0; templateIndex < timeshift->length; templateIndex++)
     {
-	thisShift = ( (templateIndex == whoToShift )  
+	thisShift = ( (templateIndex == whoToShift )
 		      ? shiftAmount
 		      : 0 );
-	    
+
 	timeshift->data[templateIndex] = ((REAL4)thisShift)*deltaT;
     }
     return;
@@ -231,7 +231,7 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
 	    expectedValue = (REAL4) ( ( (INT4)( (timeshift->data[row]-timeshift->data[col])/deltaT ) == (col - row) )
 				      ? 1.0
 				      : 0.0 );
-	                                              
+
 	    /* real part will be 1 or 0 */
 	    if ( fabs(expectedValue - ccMat->data[row*timeshift->length+col].re) > tolerance)
 		return 1;
@@ -239,7 +239,7 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
 	    /* imaginary part should always be zero */
 	    if ( fabs( ccMat->data[row*timeshift->length+col].im) > tolerance)
 	      return 1;
-	   
+
 	}
     }
     return 0;

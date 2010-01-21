@@ -78,10 +78,10 @@ LALDestroyVector()
 NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");
 
 
-double 
-XLALFindChirpChirpTime (double m1, 
-			double m2, 
-			double fLower, 
+double
+XLALFindChirpChirpTime (double m1,
+			double m2,
+			double fLower,
 			int order)
 {
 
@@ -108,7 +108,7 @@ XLALFindChirpChirpTime (double m1,
       c4T = 3058673.0 / 508032.0 + eta * (5429.0 / 504.0 + eta * 617.0 / 72.0);
       c3T = -32.0 * LAL_PI / 5.0;
       c2T = 743.0 / 252.0 + eta * 11.0 / 3.0;
-      c0T = 5.0 * m * LAL_MTSUN_SI / (256.0 * eta);	
+      c0T = 5.0 * m * LAL_MTSUN_SI / (256.0 * eta);
       break;
     default:
       fprintf (stderr, "ERROR!!!\n");
@@ -124,14 +124,14 @@ XLALFindChirpChirpTime (double m1,
     x6T = x3T * x3T;
     x7T = x3T * x4T;
     x8T = x4T * x4T;
-    
+
     /* Computes the chirp time as tC = t(v_low)    */
     /* tC = t(v_low) - t(v_upper) would be more    */
     /* correct, but the difference is negligble.   */
-    
+
     /* This formula works for any PN order, because */
     /* higher order coeffs will be set to zero.     */
-    
+
     return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * log (xT)) * x6T + c7T * x7T) / x8T;
 }
 
@@ -174,7 +174,7 @@ LALFindChirpSPTemplate (
   const REAL4 s4 =  0.00761;
   const REAL4 c2 = -0.49670;
   const REAL4 c4 =  0.03705;
-  
+
 
   INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
   ATTATCHSTATUSPTR( status );
