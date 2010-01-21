@@ -167,6 +167,7 @@ LALFindChirpSPTemplate (
 
   /* pn constants */
   REAL4 c0, c10, c15, c20, c25, c25Log, c30, c30Log, c35, c40P;
+  REAL4 x;
 
   /* chebychev coefficents for expansion of sin and cos */
   const REAL4 s2 = -0.16605;
@@ -174,10 +175,6 @@ LALFindChirpSPTemplate (
   const REAL4 c2 = -0.49670;
   const REAL4 c4 =  0.03705;
   
-  /* variables used to compute chirp time */
-  REAL4 c0T, c2T, c3T, c4T, c5T, c6T, c6LogT, c7T;
-  REAL4 x, xT, x2T, x3T, x4T, x5T, x6T, x7T, x8T;
-
 
   INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
   ATTATCHSTATUSPTR( status );
