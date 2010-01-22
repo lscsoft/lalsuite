@@ -194,12 +194,13 @@ AC_CHECK_HEADERS([getopt.h])
 # check for boinc
 if test "${boinc}" = "true" ; then
   if test -n "$BOINC_PREFIX}" ; then
-    # has lal build built with boinc support
-    LALAPPS_CHECK_BOINC
-
     # do compilation checks with c++
     AC_LANG_PUSH([C++])
 
+    # has lal build built with boinc support
+    LALAPPS_CHECK_BOINC
+
+    # point to boinc headers and libraries
     CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
     LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
 
