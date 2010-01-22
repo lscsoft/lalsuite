@@ -520,7 +520,7 @@ XLALFindChirpPTFWaveform(
   gsl_odeiv_step* solver_step
     = gsl_odeiv_step_alloc( solver_type, num_evolution_variables );
   gsl_odeiv_control* solver_control
-    = gsl_odeiv_control_standard_new( 1.0e-5, 1.0e-5, 1.0, 1.0 );
+    = gsl_odeiv_control_standard_new( 1.0e-2, 1.0e-2, 1.0, 1.0 );
   gsl_odeiv_evolve* solver_evolve
     = gsl_odeiv_evolve_alloc( num_evolution_variables );
   gsl_odeiv_system solver_system;
@@ -828,14 +828,9 @@ Distance is given in Mpc.*/
   ppnParams->dfdt = deltaT/256.;
   ppnParams->fStart = 30.;
   ppnParams->fStop = PTFtemplate->fFinal;
+  XLALDestroyVector( PTFphi );
+  XLALDestroyVector( PTFomega_2_3 );
+  XLALDestroyVectorSequence( PTFe1 );
+  XLALDestroyVectorSequence( PTFe2 );
   
-  for ( i=0; i<N; i++)
-  {
-    e1x = PTFe1->data[i];
-    e2x = PTFe2->data[i];
-    e1y = PTFe1->data[i + N];
-    e2y = PTFe2->data[i + N];
-    e1z = PTFe1->data[i + 2*N];
-    e2z = PTFe2->data[i + 2*N];
-  }
 }
