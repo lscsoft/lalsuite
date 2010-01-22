@@ -401,7 +401,7 @@ int main ( int argc, char *argv[] )
   
 
   /* compute the number of templates per output file */
-  numPerFile = ( numTmplts + 1 )/ numOutBanks;
+  numPerFile = floor( ( numTmplts - 0.5 )/ numOutBanks + 1 );
   thisTmplt = inputBank.snglInspiralTable;
   if ( vrbflg ) fprintf( stdout, "writing around %d templates per file\n", 
       numPerFile );
