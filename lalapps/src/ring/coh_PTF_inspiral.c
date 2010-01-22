@@ -57,6 +57,7 @@ cohPTFNormalize(
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
+    REAL8Array                 *PTFN,
     COMPLEX8VectorSequence     *PTFqVec,
     COMPLEX8FrequencySeries    *sgmnt,
     COMPLEX8FFTPlan            *invPlan,
@@ -114,7 +115,10 @@ static void coh_PTF_cleanup(
     FindChirpTmpltParams    *fcTmpltParams,
     FindChirpInitParams     *fcInitParams,
     REAL8Array              *PTFM[LAL_NUM_IFO],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO]
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross
     );
 
 int main( int argc, char **argv )
@@ -272,6 +276,7 @@ int main( int argc, char **argv )
          detectors[ifoNumber]->response,params->rightAscension,
          params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
     }
+    LALFree(detectors[ifoNumber]);
   }
 
   /* Create the relevant structures that will be needed */
@@ -348,7 +353,7 @@ int main( int argc, char **argv )
                   5 * numPoints * sizeof(COMPLEX8) );
 
           /* And calculate A^I B^I and M^IJ */
-          cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+          cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],NULL,
               PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
               spinTemplate);
 
@@ -386,7 +391,7 @@ int main( int argc, char **argv )
 
   coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFqVec);
+      fcInitParams,PTFM,PTFqVec,Fplus,Fcross,timeOffsets);
   LALCheckMemoryLeaks();
   return 0;
 }
@@ -454,7 +459,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
       write_REAL4TimeSeries( channel );
 
     /* Function to put injections overhead */
-    snprintf( channel->name, LALNameLength * sizeof(CHAR), "ZENITH" );
+    /*snprintf( channel->name, LALNameLength * sizeof(CHAR), "ZENITH" );*/
 
     /* inject signals */
     if ( params->injectFile )
@@ -997,7 +1002,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   REAL4 count;
   FILE *outfile;
-  REAL8        *det         = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
@@ -1080,7 +1084,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   /* Here we compute the eigenvalues and eigenvectors of B2 */
   gsl_eigen_symmv (Binv2,eigenvals,eigenvecs,matTemp);
 
-  for (i = 0; i < vecLengthTwo; i++ )
+  /*for (i = 0; i < vecLengthTwo; i++ )
   {
     for (j = 0; j < vecLengthTwo; j++ )
     {
@@ -1089,14 +1093,14 @@ void cohPTFmodBasesUnconstrainedStatistic(
     fprintf(stdout,"\n");
   }
 
-  fprintf(stdout,"\n \n");
+  fprintf(stdout,"\n \n");*/
 
-  for (i = 0; i < vecLengthTwo; i++ )
+  /*for (i = 0; i < vecLengthTwo; i++ )
   {
     fprintf(stdout,"%f ",gsl_vector_get(eigenvals,i));
   }
 
-  fprintf(stdout,"\n \n");
+  fprintf(stdout,"\n \n");*/
 
   /* This loop takes the time offset in seconds and converts to time offset
   * in data points */
@@ -1165,7 +1169,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
     /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
-    if (cohSNR->data->data[i-numPoints/4] > 27.00 )
+    if (cohSNR->data->data[i-numPoints/4] > params->threshold )
     {
       /* IF louder than threshold calculate maximized quantities */
       v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
@@ -1182,20 +1186,16 @@ void cohPTFmodBasesUnconstrainedStatistic(
       if ( spinTemplate == 1 )
       {
         dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
-        dCee = 1.04707590;
-        fprintf(stdout,"%f %f %f \n",max_eigen,v1_dot_u1,v1_dot_u2);
       }
       else
         dCee = 0;
       dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
       dAlpha = pow(dAlpha,0.5);
       dBeta = dCee*dAlpha;
-      fprintf(stdout,"dAlpha %f dBeta %f \n",dAlpha,dBeta);
       for ( j = 0 ; j < vecLengthTwo ; j++ )
       {
         pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
         pValues[j]->data->data[i - numPoints/4] = 0;
-        fprintf(stdout,"Rot v1: %f  v2: %f  u1:%e u2:%e P %e\n",v1[j],v2[j],u1[j],u2[j],pValsTemp[j]);
       } 
       recSNR = 0;
       for ( j = 0 ; j < vecLengthTwo ; j++ )
@@ -1252,7 +1252,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
         {
           recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
         }
-        fprintf(stdout,"true  v1:%f v2:%f P %f\n",v1[j],v2[j],pValues[j]->data->data[i-numPoints/4]);
         
       }
 
@@ -1402,7 +1401,10 @@ static void coh_PTF_cleanup(
     FindChirpTmpltParams    *fcTmpltParams,
     FindChirpInitParams     *fcInitParams,
     REAL8Array              *PTFM[LAL_NUM_IFO],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO]
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO],
+    REAL8                   *timeOffsets,
+    REAL8                   *Fplus,
+    REAL8                   *Fcross
     )
 {
   UINT4 ifoNumber;
@@ -1492,7 +1494,12 @@ static void coh_PTF_cleanup(
   }
   if ( fcInitParams )
     LALFree( fcInitParams );
-
+  if ( timeOffsets )
+    LALFree( timeOffsets );
+  if ( Fplus )
+    LALFree( Fplus );
+  if ( Fcross )
+    LALFree( Fcross );
 }
 
   

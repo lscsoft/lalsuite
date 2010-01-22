@@ -189,15 +189,15 @@ cohPTFTemplate (
   }
 
   /* This block outputs a file containing all 5 Q time series (and time) */
-  /* Need to make a option to print this if required
-  FILE *outfile;
+  /* Need to make a option to print this if required*/
+  /*FILE *outfile;
   outfile = fopen("Q_timeseries.dat","w");
   for ( i = 0; i < N; ++i)
   {
     fprintf (outfile,"%f %f %f %f %f %f \n",params->deltaT*i,Q[0].data[i],Q[1].data[i],Q[2].data[i],Q[3].data[i],Q[4].data[i]);
   }
-  fclose(outfile);
-  */
+  fclose(outfile);*/
+  
 
   /* Fourier transform the Q's into the Qtilde's */
   for ( i = 0; i < 5; ++i )
@@ -209,14 +209,14 @@ cohPTFTemplate (
   /* This block outputs a file containing all 5 Q frequency series (and time) */
   /* It prints only the magnitude of the frequency */
   /* Need to make a option to print this if required and use deltaF not T*/
-/*  FILE *outfile;
-  outfile = fopen("Q_freqseries.dat","w");
+  /*FILE *outfile2;
+  outfile2 = fopen("Q_freqseries.dat","w");
   for ( i = 0; i < N/2 + 1; ++i)
   {
-    fprintf (outfile,"%f %f %f %f %f %f %f %f %f %f %f\n",1./(N*params->deltaT)*i,Qtilde[0].data[i].re,Qtilde[0].data[i].im,Qtilde[1].data[i].re,Qtilde[1].data[i].im,Qtilde[2].data[i].re,Qtilde[2].data[i].im,Qtilde[3].data[i].re,Qtilde[3].data[i].im,Qtilde[4].data[i].re,Qtilde[4].data[i].im);
+    fprintf (outfile2,"%f %f %f %f %f %f %f %f %f %f %f\n",1./(N*params->deltaT)*i,Qtilde[0].data[i].re,Qtilde[0].data[i].im,Qtilde[1].data[i].re,Qtilde[1].data[i].im,Qtilde[2].data[i].re,Qtilde[2].data[i].im,Qtilde[3].data[i].re,Qtilde[3].data[i].im,Qtilde[4].data[i].re,Qtilde[4].data[i].im);
   }
-  fclose(outfile);
-*/
+  fclose(outfile2);*/
+
 
   /* XXX set this to be the correct values XXX */
   fcTmplt->tmplt.tC = InspTmplt->tC; /* length of template in seconds */
@@ -231,6 +231,7 @@ cohPTFNormalize(
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
+    REAL8Array                 *PTFN,
     COMPLEX8VectorSequence     *PTFqVec,
     COMPLEX8FrequencySeries    *sgmnt,
     COMPLEX8FFTPlan            *invPlan,
@@ -335,6 +336,29 @@ cohPTFNormalize(
       PTFM->data[5 * j + i] = PTFM->data[5 * i + j];
     }
   }
+  
+  if (PTFN)
+  {
+    /* Compute N_ij */
+    for( i = 0; i < vecLength; ++i )
+    {
+      for ( j = 0; j < i + 1; ++j )
+      {
+        for ( k = kmin; k < kmax ; ++k )
+        {
+          PTFN->data[5 * i + j] += (PTFQtilde[k + i * len].re *
+                              PTFQtilde[k + j * len].im -
+                              PTFQtilde[k + i * len].im *
+                              PTFQtilde[k + j * len].re )
+                              * invspec->data->data[k] ;
+        }
+        PTFN->data[5 * i + j] *= 4.0 * deltaF ;
+        /* Use the anti-symmetry of M */
+        PTFN->data[5 * j + i] = -PTFN->data[5 * i + j];
+      }
+    }
+  }
+
 
   /* A routine to print out the M^IJ information */
  
