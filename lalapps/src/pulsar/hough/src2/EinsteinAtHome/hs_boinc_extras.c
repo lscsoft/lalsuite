@@ -31,7 +31,9 @@
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
 #include "boinc_api.h"
 #include "diagnostics.h"
+#ifdef HAVE_BOINC_ZIP
 #include "boinc_zip.h"
+#endif
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -434,8 +436,9 @@ static int is_zipped ( const char *fname /**< name of the file to check for bein
     return -1;
   }
   if ( 4 != fread ( file_header, sizeof(char), 4, fp ) ) {
-    LogPrintf (LOG_CRITICAL, "Failed to read first 4 bytes from '%s'.\n", fname);
-    return -1;
+    LogPrintf (LOG_DEBUG, "Failed to read first 4 bytes from '%s'.\n", fname);
+    fclose(fp);
+    return 0;
   }
   fclose(fp);
 
@@ -486,13 +489,17 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
       /* try to resolve it (again) */
       if (boinc_resolve_filename(buf,resfilename,size))
 	LogPrintf (LOG_NORMAL, "WARNING: Couldn't boinc_resolve '%s' though should be a softlink\n", buf);
-	
+
+#ifndef HAVE_BOINC_ZIP
+      LogPrintf (LOG_CRITICAL, "ERROR: would unzip '%s' if had boinc_zip\n", resfilename);
+      return(-1);
+#else
       /* unzip */
       if (boinc_zip(UNZIP_IT,resfilename,".") ) {
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
 	return(-1);
       }
-
+      
       /* delete the link to avoid later confusion */
       if(boinc_delete_file(buf)) {
 	LogPrintf (LOG_CRITICAL, "WARNING: Couldn't delete link '%s'\n", buf);
@@ -501,6 +508,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
       /* the new resolved filename is the unzipped file */
       strncpy(resfilename,filename,size);
       return(0);
+#endif
     }
 
     zipped = is_zipped (filename);
@@ -509,8 +517,12 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
       LogPrintf (LOG_DEBUG, "ERROR: Couldn't open '%s'\n", filename);
       return(-1);
 
-    } else if (zipped) { 
+    } else if (zipped) {
 
+#ifndef HAVE_BOINC_ZIP
+      LogPrintf (LOG_CRITICAL, "ERROR: would unzip '%s' if had boinc_zip\n", filename);
+      return(-1);
+#else
       /** unzip in-place: rename file to file.zip, then unzip it */
       LogPrintf (LOG_NORMAL, "WARNING: Unzipping '%s' in-place\n", filename);
       strncpy(resfilename,filename,size);
@@ -523,6 +535,8 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
 	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
 	return(-1);
       }
+#endif
+
     }
 
     /* copy the filename into resfile as if boinc_resove() had succeeded */
@@ -537,6 +551,10 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
   if (zipped <= 0)
     return(zipped);
 
+#ifndef HAVE_BOINC_ZIP
+  LogPrintf (LOG_CRITICAL, "ERROR: would unzip '%s' if had boinc_zip\n", resfilename);
+  return(-1);
+#else
   /** rename the local link so we can unzip to that name */
   strncpy(buf,filename,sizeof(buf));
   strncat(buf,LINKED_EXT,sizeof(buf));
@@ -559,6 +577,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
   /* the new resolved filename is the unzipped file */
   strncpy(resfilename,filename,size);
   return(0);
+#endif
 }
 
 
@@ -1005,6 +1024,7 @@ static void worker (void) {
   /* HANDLE OUTPUT FILES
    */
 
+#ifdef HAVE_BOINC_ZIP
   /* we'll still try to zip and send back what's left from an output file for diagnostics */
   /* in case of an error before any output was written the result will contain the link file */
   {
@@ -1028,6 +1048,7 @@ static void worker (void) {
 	res = zipped;
     }
   }
+#endif
 
   /* finally set (fl)ops count if given */
   if (estimated_flops >= 0)
