@@ -474,6 +474,9 @@ elif (createScatterPlot and (canList.__len__() >=1)):
         del candidateObject
     
     #SECTION APPLY ABITRARY THRESHOLDS
+    #Adjust logic to do expThres or percentileCut together!!!
+    #Use to local defs to clean up this branch in script!
+    # A def for -T and a def for -K
 elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding on all entries in canList
     for entry in canList:
