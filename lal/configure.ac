@@ -324,8 +324,11 @@ if test "${boinc}" = "true" ; then
     # do compilation checks with c++
     AC_LANG_PUSH([C++])
 
-    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
-    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
+    # set boinc flags
+    BOINC_CFLAGS="-I$BOINC_PREFIX/include"
+    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc -lboinc_api"
+    CPPFLAGS="$CPPFLAGS $BOINC_CFLAGS"
+    LIBS="$LIBS $BOINC_LIBS"
 
     # check for boinc libraries
     AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
@@ -348,6 +351,8 @@ if test "${fftw3}" = "true"; then
 fi
 if test "${boinc}" = "true"; then
   AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using boinc library])
+  AC_SUBST(BOINC_CFLAGS)
+  AC_SUBST(BOINC_LIBS)
 fi
 
 # record the libraries needed for linking lal
