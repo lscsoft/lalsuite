@@ -269,6 +269,7 @@ LALSignalToSFTs (LALStatus *status,
   REAL8 Band, f0, deltaF, dt;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
+  REAL4Vector *timeStretchCopy = NULL;
   LIGOTimeGPS tStart;			/* start time of input time-series */
   LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
   LIGOTimeGPS tmpTime;
@@ -370,6 +371,12 @@ LALSignalToSFTs (LALStatus *status,
 
   tPrev = tStart;	/* initialize */
   totalIndex = 0;	/* start from first timestep by default */
+  
+  /* Assign memory to timeStretchCopy */
+  if ( (timeStretchCopy = XLALCreateREAL4Vector(numTimesteps)) == NULL ) {
+     XLALPrintError ("LALSignalToSFTs(): failed to XLALCreateREAL4Vector(%d).\n", numTimesteps);
+     ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
+  }
 
   /* main loop: apply FFT the requested time-stretches */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)
@@ -386,6 +393,7 @@ LALSignalToSFTs (LALStatus *status,
 
       timeStretch.length = numTimesteps;
       timeStretch.data = signalvec->data->data + totalIndex; /* point to the right sample-bin */
+      memcpy(timeStretchCopy->data, timeStretch.data, numTimesteps*sizeof(*timeStretch.data));
 
       /* fill the header of the i'th output SFT */
       realDelay = (REAL4)(relIndexShift * signalvec->deltaT);  /* avoid rounding-errors*/
@@ -422,13 +430,13 @@ LALSignalToSFTs (LALStatus *status,
       /* Now window the current time series stretch, if necessary */
       if ( params->window ) {
 	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
-	  for( idatabin = 0; idatabin < timeStretch.length; idatabin++ ) {
-	      timeStretch.data[idatabin] *= A * params->window->data->data[idatabin];
+	  for( idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ ) {
+	      timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
 	  }
       }
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
-      if (XLALREAL4ForwardFFT(thisSFT->data, &timeStretch, pfwd) != 0)
+      if (XLALREAL4ForwardFFT(thisSFT->data, timeStretchCopy, pfwd) != 0)
       {
         LALDestroySFTVector(status->statusPtr, &sftvect);
         ABORTXLAL(status);
@@ -482,6 +490,7 @@ LALSignalToSFTs (LALStatus *status,
 
   /* free stuff */
   XLALDestroyREAL4FFTPlan(pfwd);
+  XLALDestroyREAL4Vector(timeStretchCopy);
 
   /* did we get timestamps or did we make them? */
   if (params->timestamps == NULL)
