@@ -131,23 +131,26 @@ AC_PROG_LN_S
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
-  AC_CHECK_PROGS([CONDOR_VERSION],[condor_version],[false])
-  if test "x$CONDOR_VERSION" != "xfalse"; then
-    AC_MSG_CHECKING([Condor version])
-    CONDOR_VERS=`$CONDOR_VERSION | grep CondorVersion | awk '{print $2}'`
-    AC_MSG_RESULT([$CONDOR_VERS])
-  fi
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
   if test "x$CONDOR_COMPILE" = "xfalse"; then
     AC_MSG_ERROR([condor_compile not found])
   fi
+
+  # does condor_compile suffer from condorbug 19343
+  AC_MSG_CHECKING([if condor_compile suffers from bug 19343])
+  if $CONDOR_COMPILE $CC -print-prog-name=ld 1>/dev/null 2>/dev/null; then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    LD=/usr/bin/ld
+  fi
+
+  # enable condor compile
   CC="$CONDOR_COMPILE $CC"
   AM_LDFLAGS="$AM_LDFLAGS -all-static"
   AC_DISABLE_SHARED
   AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
-  # FIXME condor_compile should correctly identify the linker
-  LD="/usr/bin/ld"
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
