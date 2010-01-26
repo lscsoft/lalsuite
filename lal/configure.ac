@@ -326,7 +326,7 @@ if test "${boinc}" = "true" ; then
 
     # set boinc flags
     BOINC_CFLAGS="-I$BOINC_PREFIX/include"
-    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc -lboinc_api"
+    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc_api -lboinc"
     CPPFLAGS="$CPPFLAGS $BOINC_CFLAGS"
     LIBS="$LIBS $BOINC_LIBS"
 
