@@ -239,7 +239,7 @@ AC_TRY_RUN([
 #include <lal/LALConfig.h>
 #ifdef LAL_BOINC_ENABLED
 int main( void ) { return 0; }
-else
+#else
 int main( void ) { return 1; }
 #endif
 ],
