@@ -1,0 +1,96 @@
+#!/usr/bin/python
+
+import sys
+import numpy
+import copy
+from pylal import spawaveform
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw import ilwd
+from glue.ligolw import types
+
+#x is chi or the mass weight total spin of the system
+#x1 is chi1 or the spin of mass 1
+#x2 is chi2 or the spin of mass 2
+
+
+def find_upper_limit_on_chi(delta, x1_max=0.85,  x2_min=-0.85):
+	x_max = 0
+	x_max=((1.0+delta)/2) * (x1_max)+((1.0-delta)/2)*x2_min
+	return x_max
+
+def find_lower_limit_on_chi(delta, x1_min=-0.85,  x2_max=0.85):
+	x_min = 0
+	x_min=((1.0+delta)/2)*(x1_min)+((1.0-delta)/2)*x2_max
+	return x_min
+
+
+def calculate_delta(mass1,mass2):
+	#mass1 and mass2 should come from the single_table
+	delta= (mass1-mass2)/(mass1+mass2)
+	return delta
+
+def calculate_x2(delta,x,x1):
+	x2=2.0*x/(1-delta)-(1+delta)/(1-delta)*x1
+	return x2
+
+#def add_spin_row(row, x, x1, x2:)
+	#this function should add the spin params to the row for a corresponding template
+		
+
+
+x_vector=numpy.linspace(-0.85, 0.85, 15)
+#mass_pairs=[(1.0,1.0), (15.0,20.0), (50.0, 80.0), (75.0,90.0)]
+
+
+#in_xml=utils.load_filename(sys.arg[1])
+#single_table=lsctables.table.get_table(in_xml,'sngl_inspiral')
+
+#read masses from single_table
+#calculate delta
+#find the limits on chi for the delta
+#calculate x2 for each x in x_vector
+#add spin to the row
+
+xml_file=sys.argv[1]
+#x2_vector=[]
+#x1_vector=numpy.linspace(-0.85,0.85,15)
+
+spin_vectors=[]
+mass_and_spin=[]
+chi_vector=[]
+ffinal=[]
+
+print 'loading' + xml_file
+template_bank_file=utils.load_filename(xml_file, gz=xml_file.endswith(".gz"))
+single_inspiral_table=lsctables.table.get_table(template_bank_file, "sngl_inspiral")
+
+output='IMRSA-TMPLATEBANK' + xml_file
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)	
+xmldoc.childNodes[0].appendChild(sngl_inspiral_table)
+
+for row in single_inspiral_table:
+	delta=calculate_delta(row.mass1,row.mass2)
+	x_max=find_upper_limit_on_chi(delta)
+	x_min=find_lower_limit_on_chi(delta)
+	print x_min, x_max
+	for i,x in enumerate(x_vector):
+		row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,x)
+		#print row.mass1,row.mass2,x_min,x_max,x
+		if not (x >= x_min and x <= x_max):
+			#print 'chi limits outside bounds for given masse', x, x_min, x_max 
+			pass
+		else:
+			#x2_vector.append(calculate_x2(delta, x, x1_vector[i]))
+			#spin_vectors.append((x_vector[i], x1_vector[i], x2_vector[i]))
+			#mass_and_spin.append((mass1,mass2,x_vector[i], x1_vector[i],x2_vector[i]))
+			chi_vector.append(x)
+			sngl_inspiral_table.append(copy.deepcopy(row))
+			row.chi=x
+
+utils.write_filename(xmldoc, output, verbose = True, gz = (output or "stdout").endswith(".gz"))
+
