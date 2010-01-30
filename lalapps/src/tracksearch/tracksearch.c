@@ -224,10 +224,11 @@ void LALappsTrackSearchPrepareData( REAL4TimeSeries  *dataSet,
 				    TSSearchParams    params)
 /* Add option NULL or with data called REAL4TimeSeries injectSet */
 {
+
   LALStatus           status;
   memset(&status, 0, sizeof(status));
 
-  if (params.verbosity >= printFiles)
+  if (params.verbosity >= verbose)
     {
       print_lalUnit(dataSet->sampleUnits,"Pre_DataCondEntireInputDataSet_Units.diag");
       print_real4tseries(dataSet,"Pre_DataCondEntireInputDataSet.diag");
@@ -263,7 +264,6 @@ void LALappsTrackSearchPrepareData( REAL4TimeSeries  *dataSet,
   /* 
    *End calibration conditional 
    */
-
   if ((params.highPass > 0)||(params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
@@ -2441,7 +2441,7 @@ LALappsDoTimeSeriesAnalysis(TSSearchParams      params,
    * Wed-Oct-24-2007:200710241539 
    * Edit function to fill buffered segments
    */
-  if (params.verbosity >= verbose)
+  if (params.verbosity >= quiet)
     {
       fprintf(stdout,"Preparing the data for filling segments.\n");
       fflush(stdout);
@@ -3696,7 +3696,6 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
   const LIGOTimeGPS         gps_zero = LIGOTIMEGPSZERO;
   LALStatus                 status;
   memset(&status, 0, sizeof(status));
-
   if (params.verbosity >= verbose )
     {
       fprintf(stdout,"Estimating PSD for whitening\n");
@@ -3794,8 +3793,8 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
    * we will make the least correlated PSD estimate possible.  So 
    * numSegs for PSD estimate <= numSegs to analyze
    */
-/*   stride=params.SegLengthPoints; */
-/*   segCount=1+(dataSet->data->length - params.SegLengthPoints)/stride; */
+  /*   stride=params.SegLengthPoints; */
+  /*   segCount=1+(dataSet->data->length - params.SegLengthPoints)/stride; */
 
   switch (params.avgSpecMethod)
     {
@@ -3836,7 +3835,7 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
 	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
 	   <
 	   floor(segmentLength*0.005))
-	&&
+	  &&
 	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
 	   >
 	   0)
@@ -3910,7 +3909,7 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
       break;
 
     default:
-	fprintf(stderr,"Method requested to estimate PSD is not allowed.\n");
+      fprintf(stderr,"Method requested to estimate PSD is not allowed.\n");
       exit(TRACKSEARCHC_EVAL);
     }
 
@@ -3986,95 +3985,95 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
 	  XLALDestroyCHARVector(dataLabel);
 	}
       tmpSignalPtr=NULL;
-
-      for (i=0;i<dataSegments->length;i++)
+    }
+  for (i=0;i<dataSegments->length;i++)
+    {
+      tmpSignalPtr = (dataSegments->dataSeg[i]);
+      /*
+       * FFT segment
+       */
+      errcode = XLALREAL4ForwardFFT(signalFFT->data,
+				    tmpSignalPtr->data,
+				    forwardPlan);
+      if (errcode !=0)
 	{
-	  tmpSignalPtr = (dataSegments->dataSeg[i]);
-	  /*
-	   * FFT segment
-	   */
-	  errcode = XLALREAL4ForwardFFT(signalFFT->data,
-					tmpSignalPtr->data,
-					forwardPlan);
-	  if (errcode !=0)
-	    {
-	      fprintf(stderr,"Error trying to fft input!\n");
-	      exit(errcode);
-	    }
-	  /*
-	   * Whiten
-	   */
-	  if (params.verbosity >= printFiles)
-	    {
-	      dataLabel=XLALCreateCHARVector(128);
-	      sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
-	      print_complex8fseries(signalFFT,dataLabel->data);
-	      XLALDestroyCHARVector(dataLabel);
-	    }
-	  if (params.verbosity >= verbose)
-	    {
-	      fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
-	      fflush(stdout);
-	    }
-	  LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(&status,
-							       signalFFT,
-							       averagePSD,
-							       params.whiten),
-		   &status);
-	  if (params.verbosity >= printFiles)
-	    {
-	      dataLabel=XLALCreateCHARVector(128);
-	      sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
-	      print_complex8fseries(signalFFT,dataLabel->data);
-	      XLALDestroyCHARVector(dataLabel);
-	    }
-		
-	    
-	  /*
-	   * Reverse FFT
-	   */
-	  errcode=XLALREAL4ReverseFFT(tmpSignalPtr->data,
-				      signalFFT->data,
-				      reversePlan);
-	  if (errcode != 0)
-	    {
-	      fprintf(stderr,"Error trying to inverse fft input!\n");
-	      exit(errcode);
-	    }
-
-	  /* 
-	   * Normalize the IFFT by 1/n factor
-	   * See lsd-5 p259 10.1 for explaination
-	   */
-	  for (j=0;j<tmpSignalPtr->data->length;j++)
-	    tmpSignalPtr->data->data[j]= 
-	      tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
+	  fprintf(stderr,"Error trying to fft input!\n");
+	  exit(errcode);
 	}
       /*
-       * Reset the tmp frequency series units
+       * Whiten
        */
-      signalFFT->sampleUnits=originalFrequecyUnits;
-      tmpSignalPtr=NULL;
-      
+      if (params.verbosity >= printFiles)
+	{
+	  dataLabel=XLALCreateCHARVector(128);
+	  sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
+	  print_complex8fseries(signalFFT,dataLabel->data);
+	  XLALDestroyCHARVector(dataLabel);
+	}
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
+	  fflush(stdout);
+	}
+      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(&status,
+							   signalFFT,
+							   averagePSD,
+							   params.whiten),
+	       &status);
+      if (params.verbosity >= printFiles)
+	{
+	  dataLabel=XLALCreateCHARVector(128);
+	  sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
+	  print_complex8fseries(signalFFT,dataLabel->data);
+	  XLALDestroyCHARVector(dataLabel);
+	}
+		
+	    
       /*
-       * Free temporary Frequency Series
+       * Reverse FFT
        */
-      if (signalFFT)
-	XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
+      errcode=XLALREAL4ReverseFFT(tmpSignalPtr->data,
+				  signalFFT->data,
+				  reversePlan);
+      if (errcode != 0)
+	{
+	  fprintf(stderr,"Error trying to inverse fft input!\n");
+	  exit(errcode);
+	}
 
-      if (windowPSD)
-	XLALDestroyREAL4Window(windowPSD);
-
-      if (averagePSD)
-	XLALDestroyREAL4FrequencySeries(averagePSD);
-
-      if (forwardPlan)
-	XLALDestroyREAL4FFTPlan(forwardPlan);
-
-      if (reversePlan)
-	XLALDestroyREAL4FFTPlan(reversePlan);
-
+      /* 
+       * Normalize the IFFT by 1/n factor
+       * See lsd-5 p259 10.1 for explaination
+       */
+      for (j=0;j<tmpSignalPtr->data->length;j++)
+	tmpSignalPtr->data->data[j]= 
+	  tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
     }
+  /*
+   * Reset the tmp frequency series units
+   */
+  signalFFT->sampleUnits=originalFrequecyUnits;
+  tmpSignalPtr=NULL;
+      
+  /*
+   * Free temporary Frequency Series
+   */
+  if (signalFFT)
+    XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
+
+  if (windowPSD)
+    XLALDestroyREAL4Window(windowPSD);
+
+  if (averagePSD)
+    XLALDestroyREAL4FrequencySeries(averagePSD);
+
+  if (forwardPlan)
+    XLALDestroyREAL4FFTPlan(forwardPlan);
+
+  if (reversePlan)
+    XLALDestroyREAL4FFTPlan(reversePlan);
+
+    
   if (params.verbosity >= printFiles)
     {
       tmpSignalPtr=NULL;
