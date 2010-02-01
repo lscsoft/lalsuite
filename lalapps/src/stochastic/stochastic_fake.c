@@ -115,7 +115,7 @@ CHAR *outputFileName = NULL;
 /* helper functions */
 
 /* display usage information */
-static void display_usage()
+static void display_usage(void)
 {
   fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
   fprintf(stdout, " --help                   print this message\n");
