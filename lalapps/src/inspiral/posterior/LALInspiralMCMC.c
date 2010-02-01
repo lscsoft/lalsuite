@@ -1093,7 +1093,7 @@ void XLALMCMCJumpSingle(
  /* Pick dimension to change */
  i=(UINT4)floor(step*(REAL4)dim);
  step=XLALNormalDeviate(inputMCMC->randParams);
- step*=gsl_matrix_get(covMat,i,i);
+ step*=sqrt(gsl_matrix_get(covMat,i,i));
  for(paraHead=parameter->param;i>0;paraHead=paraHead->next,i--);
  paraHead->value+=step;
 }
