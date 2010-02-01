@@ -2,7 +2,7 @@
  * sgwb.c - SGWB Standalone Analysis Pipeline
  *        - Main Stochastic Search Functions
  *
- * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2002-2006,2010 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  *
  * This program is free software; you can redistribute it and/or modify
@@ -868,10 +868,10 @@ StochasticTable *stochastic_search(LALStatus *status,
     }
 
     /* populate columns */
-    snprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifo_one);
-    snprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifo_two);
-    snprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channel_one);
-    snprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channel_two);
+    snprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, "%s", ifo_one);
+    snprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, "%s", ifo_two);
+    snprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, "%s", channel_one);
+    snprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, "%s", channel_two);
     thisStoch->start_time.gpsSeconds = analysis_epoch.gpsSeconds;
     thisStoch->start_time.gpsNanoSeconds = analysis_epoch.gpsNanoSeconds;
     thisStoch->duration.gpsSeconds = segment_duration;
