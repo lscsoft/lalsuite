@@ -362,9 +362,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that min frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMin != myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMin != round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMin = myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMin = round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
         }
         ADD_PROCESS_PARAM("float", "%e", fMin);
@@ -382,9 +382,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that the max frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMax != myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMax != round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMax = myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMax = round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
         }
         ADD_PROCESS_PARAM("float", "%e", fMax);

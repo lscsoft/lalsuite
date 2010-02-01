@@ -2,7 +2,7 @@
  * misc.c - SGWB Standalone Analysis Pipeline
  *        - Miscellaneous Functions
  *
- * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2002-2006,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,12 +26,6 @@
 
 NRCSID(DATAINPUTC, "$Id$");
 RCSID("$Id$");
-
-/* can't use round() as its not C89 */
-double myround(double x)
-{
-  return(x < 0 ? ceil(x - 0.5): floor(x + 0.5));
-}
 
 /* cut a time series between given start and end times */
 REAL4TimeSeries *cut_time_series(REAL4TimeSeries *input,
