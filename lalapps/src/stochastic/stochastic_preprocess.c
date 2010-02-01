@@ -1199,7 +1199,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* write into frames */
     if (verbose_flag)
      fprintf(stdout, "write cross correlation product into frame\n"); 
-    LALFrWriteREAL4FrequencySeries( &status, &h1StarH2, &frCC12,0);
+    LALFrWriteCOMPLEX8FrequencySeries( &status, &h1StarH2, &frCC12,0);
 
    /* increment epoch */
   gpsMidSegTime.gpsSeconds=gpsMidSegTime.gpsSeconds+segmentDuration;  
