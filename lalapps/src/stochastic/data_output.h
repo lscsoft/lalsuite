@@ -2,7 +2,7 @@
  * data_output.h - SGWB Standalone Analysis Pipeline
  *               - Data Output Function Prototypes
  *
- * Copyright (C) 2002-2006,2009 Adam Mercer
+ * Copyright (C) 2002-2006,2009-2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,11 +32,10 @@
 #include <math.h>
 #include <getopt.h>
 
-#include <FrameL.h>
-
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/FrameStream.h>
+#include <lal/LALFrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LIGOLwXML.h>
