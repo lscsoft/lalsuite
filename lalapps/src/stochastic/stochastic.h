@@ -30,8 +30,7 @@
 #define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
 	  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
     calloc(1, sizeof(ProcessParamsTable)); \
-  snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-			      PROGRAM_NAME); \
+  snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name); \
   snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 			      long_options[option_index].name); \
   snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \

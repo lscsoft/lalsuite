@@ -32,8 +32,8 @@
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
-/* cvs info */
-#define PROGRAM_NAME "stochastic_fake"
+/* program info */
+const CHAR* prog_name="lalapps_stochastic_fake";
 
 /* flags for getopt_long */
 int middle_segment_flag;
@@ -117,7 +117,7 @@ CHAR *outputFileName = NULL;
 /* display usage information */
 static void display_usage(void)
 {
-  fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
+  fprintf(stdout, "Usage: %s [options]\n", prog_name);
   fprintf(stdout, " --help                   print this message\n");
   fprintf(stdout, " --version                display version\n");
   fprintf(stdout, " --verbose                verbose mode\n");
@@ -252,8 +252,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                           calloc(1, sizeof(ProcessParamsTable));
-        snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-            PROGRAM_NAME);
+        snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name);
         snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
         snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
         snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
@@ -709,7 +708,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+  XLALPopulateProcessTable(proctable.processTable, prog_name, \
       LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
@@ -881,7 +880,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       fMin, fMax, fRef);
 
   /* save out xml table */
-  save_xml_file(&status, PROGRAM_NAME, outputPath, baseName, \
+  save_xml_file(&status, prog_name, outputPath, baseName, \
       stochHead, proctable, procparams, this_proc_param, comment);
 
   /* cleanup */
