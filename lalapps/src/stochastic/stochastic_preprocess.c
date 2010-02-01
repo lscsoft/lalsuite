@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
