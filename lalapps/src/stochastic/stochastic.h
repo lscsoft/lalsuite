@@ -1,7 +1,7 @@
 /*
  * stochastic.h - SGWB Standalone Analysis Pipeline
  *
- * Copyright (C) 2002-2006,2009 Adam Mercer
+ * Copyright (C) 2002-2006,2009,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 #ifndef STOCHASTIC_H
 #define STOCHASTIC_H
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 /* xml process param table helper */
 #define ADD_PROCESS_PARAM(pptype, format, ppvalue) \

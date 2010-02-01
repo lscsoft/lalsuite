@@ -1,7 +1,7 @@
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
- * Copyright (C) 2002-2006,2009 Adam Mercer
+ * Copyright (C) 2002-2006,2009,2010 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,10 +33,6 @@ RCSID("$Id$");
 
 /* cvs info */
 #define PROGRAM_NAME "stochastic"
-#define CVS_ID "$Id$"
-#define CVS_REVISION "$Revision$"
-#define CVS_DATE "$Date$"
-#define CVS_SOURCE "$Source$"
 
 /* flags for getopt_long */
 int middle_segment_flag;
@@ -257,8 +253,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'b':
         /* display version info and exit */
-        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
-        fprintf(stdout, lalappsGitID);
+        fprintf(stdout, "Standalone SGWB Search Engine\n");
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 
@@ -1032,16 +1028,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
