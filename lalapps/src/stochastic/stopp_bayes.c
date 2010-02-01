@@ -3,12 +3,12 @@
  *               - Bayesian Post Processing
  *
  * Copyright (C) 2004-2006,2009 Adam Mercer
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -70,7 +70,7 @@ static double stopp_erfcinv(double y)
    * based on dierfc() by Takuya OOURA:
    *
    * http://momonga.t.u-tokyo.ac.jp/~ooura/gamerf.html
-   * 
+   *
    * Copyright(C) 1996 Takuya OOURA (email: ooura@mmm.t.u-tokyo.ac.jp).
    * You may use, copy, modify this code for any purpose and
    * without fee. You may distribute this ORIGINAL package.
@@ -178,7 +178,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   while (1)
   {
     /* getopt arguments */
-    static struct option long_options[] = 
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},

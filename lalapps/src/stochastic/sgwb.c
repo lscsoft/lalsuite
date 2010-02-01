@@ -1,15 +1,15 @@
 /*
  * sgwb.c - SGWB Standalone Analysis Pipeline
  *        - Main Stochastic Search Functions
- * 
+ *
  * Copyright (C) 2002-2006 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -638,7 +638,7 @@ StochasticTable *stochastic_search(LALStatus *status,
 
   /* loop over intervals */
   for (j = 0; j < num_intervals; j++)
-  {	
+  {
     /* initialize average PSDs */
     for (i = 0; i < filter_length; i++)
     {
@@ -774,7 +774,7 @@ StochasticTable *stochastic_search(LALStatus *status,
       snprintf(debug_filename, FILENAME_MAX, "opt_filter-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALSPrintFrequencySeries(opt_filter, debug_filename);
-    }          
+    }
 
     if (vrbflg)
     {
@@ -817,7 +817,7 @@ StochasticTable *stochastic_search(LALStatus *status,
       snprintf(debug_filename, FILENAME_MAX, "zero_pad_2-%d.dat", \
           analysis_epoch.gpsSeconds);
       LALCPrintFrequencySeries(zero_pad_two, debug_filename);
-    }    
+    }
 
     if (vrbflg)
       fprintf(stdout, "Calculating cross correlation spectrum...\n");
