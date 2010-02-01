@@ -75,7 +75,7 @@ html_template = """
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="0" onclick="switchViewIframe()" checked>Science<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="1" onclick="switchViewIframe()">Cat 1<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="2" onclick="switchViewIframe()">Cats 1 and 2<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="3" onclick="switchViewIframe()">Cats 1,2 and 3<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="4" onclick="switchViewIframe()">Cats 1,2 and 4<br>
   </form>
 
   <p>Cluster level:
@@ -228,12 +228,12 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
         roots.append(veto_job)
 
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
-        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 3, 'UNCLUSTERED', start_time, end_time, local = True)
+        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 4, 'UNCLUSTERED', start_time, end_time, local = True)
 
         for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
             root     = veto_job.add_sub_job('make_caches',   config, ifo, category, cluster, start_time, end_time)
             csv_jobs = [root.add_sub_job('make_csv',         config, ifo, 0, cluster, start_time, end_time)]
-            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,3]]
+            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,4]]
  
             for job in csv_jobs:
                 job.add_sub_job('plot_rate_vs_time',        config, ifo, job.level, cluster, start_time, end_time)
@@ -372,7 +372,7 @@ def m1_m2_to_mtotal_eta(m1, m2):
     return mtotal, eta
 
 def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
                          '100MILLISEC_CLUSTERED':'100 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
@@ -385,7 +385,7 @@ def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
 
 
 def make_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
                          '100MILLISEC_CLUSTERED':'100 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
