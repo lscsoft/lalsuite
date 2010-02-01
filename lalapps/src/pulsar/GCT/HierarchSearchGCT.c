@@ -242,7 +242,6 @@ int MAIN( int argc, char *argv[]) {
   REAL8 Fstat=0.0;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1, u2 */
        
-  
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
 
@@ -1147,6 +1146,7 @@ int MAIN( int argc, char *argv[]) {
           
           /* ---------------------------------------------------------------------------------------- */ 
           
+          
           /* ---------- Compute finegrid U-map --------------- */
           for (ifine = 0; ifine < finegrid.length; ifine++) {
 
@@ -1176,7 +1176,7 @@ int MAIN( int argc, char *argv[]) {
                 
                 /* Add the 2F value to the 2F sum */
                 finegrid.list[ifine].sumTwoF = finegrid.list[ifine].sumTwoF + coarsegrid.list[finegrid.list[ifine].Uindex].TwoF;
-                
+                            
                 /* Increase the number count */
                 if (coarsegrid.list[finegrid.list[ifine].Uindex].TwoF >= TwoFthreshold) { 
                   finegrid.list[ifine].nc++;
@@ -1201,11 +1201,11 @@ int MAIN( int argc, char *argv[]) {
           } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
           
           LogPrintf(LOG_DETAIL, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
-
+          
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
-
          
+        
         /* check if translation to reference time of pulsar spins is necessary */
         if ( LALUserVarWasSet(&uvar_refTime) ) {
          if  ( finegrid.refTime.gpsSeconds != usefulParams.spinRange_refTime.refTime.gpsSeconds ) {
