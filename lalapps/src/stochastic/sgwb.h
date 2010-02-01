@@ -2,7 +2,7 @@
  * sgwb.h - SGWB Standalone Analysis Pipeline
  *        - Main Stochastic Search Function Prototypes
  *
- * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2002-2006,2010 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,8 +32,6 @@
 #include <sys/stat.h>
 #include <math.h>
 #include <getopt.h>
-
-#include <FrameL.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>

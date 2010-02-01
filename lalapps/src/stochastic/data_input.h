@@ -2,7 +2,7 @@
  * data_input.h - SGWB Standalone Analysis Pipeline
  *              - Data Input Function Prototypes
  *
- * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2002-2006,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <math.h>
-
-#include <FrameL.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
