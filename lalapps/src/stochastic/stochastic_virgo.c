@@ -219,7 +219,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4Vector *dataLeft1,*dataLeft2,*dataRight1,*dataRight2,*buffer1,*buffer2;
   REAL4Vector *sinus1,*sinus2,*cosinus1,*cosinus2;
   REAL4FrequencySeries MComegaGW;
-  INT4 MCLength,MCLength1,MCLength2;
+  INT4 MCLength,MCLength1=0,MCLength2=0;
   INT4 MCfreqLength;
   REAL8 MCdeltaF,MCdeltaT1,MCdeltaT2 ;
 
