@@ -2,7 +2,7 @@
  * stopp.c - SGWB Standalone Analysis Pipeline
  *         - Post Processing
  *
- * Copyright (C) 2004-2006,2009 Adam Mercer
+ * Copyright (C) 2004-2006,2009,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
- *
- * $Id$
  */
 
 #include <math.h>
@@ -32,10 +30,9 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/lalGitID.h>
 
 #include <lalapps.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 /* verbose flag */
 extern int vrbflg;
@@ -45,7 +42,6 @@ RCSID("$Id$");
 
 /* cvs info */
 #define PROGRAM_NAME "stopp"
-#define CVS_ID "$Id$"
 
 #define USAGE \
   "Usage: " PROGRAM_NAME " [options] [xml files]\n"\
@@ -145,8 +141,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* display version info and exit */
-        fprintf(stdout, "Stochastic Post Processing\n" CVS_ID "\n");
-        fprintf(stdout, lalappsGitID);
+        fprintf(stdout, "Stochastic Post Processing\n");
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 
