@@ -329,7 +329,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               startTime);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%ld", startTime);
+        ADD_PROCESS_PARAM("int", "%"LAL_INT4_FORMAT, startTime);
         break;
 
       case 'h':
@@ -351,7 +351,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               endTime);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%ld", endTime);
+        ADD_PROCESS_PARAM("int", "%"LAL_INT4_FORMAT, endTime);
         break;
 
       case 'i':
