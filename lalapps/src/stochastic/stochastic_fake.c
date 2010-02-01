@@ -721,14 +721,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set fake ifos */
   ifoOne = (CHAR*)calloc(3, sizeof(CHAR));
   ifoTwo = (CHAR*)calloc(3, sizeof(CHAR));
-  ifoOne = "G1";
-  ifoTwo = "G1";
+  strncpy(ifoOne, "G1", sizeof(ifoOne));
+  strncpy(ifoTwo, "G1", sizeof(ifoTwo));
 
   /* set fake channels */
   channelOne = (CHAR*)calloc(3, sizeof(CHAR));
   channelTwo = (CHAR*)calloc(3, sizeof(CHAR));
-  channelOne = "G1";
-  channelTwo = "G1";
+  strncpy(channelOne, "G1", sizeof(channelOne));
+  strncpy(channelTwo, "G1", sizeof(channelTwo));
 
   /* initialise gps time structures */
   endTime = startTime + totalDuration;
