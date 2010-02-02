@@ -372,7 +372,7 @@ def m1_m2_to_mtotal_eta(m1, m2):
     return mtotal, eta
 
 def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 4"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
                          '100MILLISEC_CLUSTERED':'100 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
@@ -914,7 +914,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
     out.close()
 
     for ifo in ['H1','L1','V1']:
-        for cat in [0,1,2,3]:
+        for cat in [0,1,2,4]:
             for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
 
