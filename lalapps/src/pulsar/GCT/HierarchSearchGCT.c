@@ -237,12 +237,12 @@ int MAIN( int argc, char *argv[]) {
   REAL8 TwoFthreshold, sumTwoF_tmp, TwoF_tmp;
   REAL8 TwoFmax;
   UINT4 nc_max;
+  REAL8 Fstat=0.0;
+  REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
   REAL8 vel[3];
   REAL8 acc[3];
-  REAL8 Fstat=0.0;
-  REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1, u2 */
-       
+  
   /* fstat candidate structure */
   toplist_t *semiCohToplist=NULL;
 
@@ -581,7 +581,7 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  fprintf(stderr, "%% --- GPS reference time = %d   GPS data mid time = %d\n", 
+  fprintf(stderr, "%% --- GPS reference time = %d ,  GPS data mid time = %d\n", 
           refTimeGPS.gpsSeconds, tMidGPS.gpsSeconds);
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
@@ -1143,15 +1143,13 @@ int MAIN( int argc, char *argv[]) {
           
           /* ---------------------------------------------------------------------------------------- */ 
           
-          
           /* ---------- Compute finegrid U-map --------------- */
           for (ifine = 0; ifine < finegrid.length; ifine++) {
 
             /* translate frequency from midpoint of data span to midpoint of this segment */
-            f_tmp = finegrid.list[ifine].F + finegrid.list[ifine].F1dot * timeDiffSeg;
-           
-            f1dot_tmp = finegrid.list[ifine].F1dot;
-      
+	    f1dot_tmp = finegrid.list[ifine].F1dot;
+            f_tmp = finegrid.list[ifine].F + f1dot_tmp * timeDiffSeg;
+                 
             /* compute the global-correlation coordinate indices */
             ComputeU1idx ( &f_tmp, &f1dot_tmp, &A1, &B1, &u1start, &u1winInv, &U1idx);
             
@@ -1183,11 +1181,11 @@ int MAIN( int argc, char *argv[]) {
                 
 #ifdef DIAGNOSISMODE
                 /* Find strongest candidate (maximum 2F sum and number count) */
-                if(finegrid.list[ifine].nc > nc_max) {
+                if (finegrid.list[ifine].nc > nc_max) {
                   nc_max = finegrid.list[ifine].nc;
                 }
-                if(finegrid.list[ifine].sumTwoF > TwoFmax) {
-                  TwoFmax = finegrid.list[ifine].sumTwoF;
+                if (sumTwoF_tmp > TwoFmax) {
+                  TwoFmax = sumTwoF_tmp;
                 }
 #endif  
               /*}*/
