@@ -25,7 +25,7 @@ LALDiscoverInspiralEvents.c\
 LALEstimateEffectiveDistance.c\
 LALEvaluateInspiralChisqTest.c\
 LALTruncateInvSpectrum.c
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

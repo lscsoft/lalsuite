@@ -140,6 +140,14 @@ LALFindChirpSPData (
 </lalLaTeX>
 #endif
 
+double
+XLALFindChirpChirpTime (double m1,
+			double m2,
+			double fLower,
+			int order);
+
+
+
 void
 LALFindChirpSPTemplate (
     LALStatus                  *status,

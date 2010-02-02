@@ -228,6 +228,7 @@ tagCoherentInspiralFilterParams
   UINT4                         numSegments;
   INT4                          numPoints;
   UINT4                         numBeamPoints;
+  UINT4                         threeSiteCase;
   REAL4                         fLow;
   REAL8                         deltaT;
   REAL4                         cohSNRThresh;
@@ -252,6 +253,7 @@ tagCoherentInspiralFilterParams
   double                        raStep;
   UINT4                         estimParams;
   UINT4                         followup;
+  UINT4                         exttrig;
 }
 CoherentInspiralFilterParams;
 #if 0

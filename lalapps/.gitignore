@@ -105,6 +105,7 @@ src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
+src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
 src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
@@ -207,6 +208,7 @@ src/pulsar/lalapps_ComputeWeightedMultiAMCoeffs
 src/pulsar/lalapps_FreqAverager
 src/pulsar/lalapps_FreqAverager_v2
 src/pulsar/lalapps_GetSFTVelocities
+src/pulsar/lalapps_PrintDetectorState
 src/pulsar/lalapps_create_solar_system_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts

@@ -1,7 +1,7 @@
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
- * Copyright (C) 2002-2006,2009 Adam Mercer
+ * Copyright (C) 2002-2006,2009,2010 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,12 +31,8 @@
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
-/* cvs info */
-#define PROGRAM_NAME "stochastic"
-#define CVS_ID "$Id$"
-#define CVS_REVISION "$Revision$"
-#define CVS_DATE "$Date$"
-#define CVS_SOURCE "$Source$"
+/* program info */
+const CHAR* prog_name="lalapps_stochastic";
 
 /* flags for getopt_long */
 int middle_segment_flag;
@@ -113,9 +109,9 @@ CHAR *outputPath = NULL;
 /* helper functions */
 
 /* display usage information */
-static void display_usage()
+static void display_usage(void)
 {
-  fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
+  fprintf(stdout, "Usage: %s [options]\n", prog_name);
   fprintf(stdout, " --help                        print this message\n");
   fprintf(stdout, " --version                     display version\n");
   fprintf(stdout, " --verbose                     verbose mode\n");
@@ -257,8 +253,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'b':
         /* display version info and exit */
-        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
-        fprintf(stdout, lalappsGitID);
+        fprintf(stdout, "Standalone SGWB Search Engine\n");
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 
@@ -277,8 +273,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
                           calloc(1, sizeof(ProcessParamsTable));
-        snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-            PROGRAM_NAME);
+        snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name);
         snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
         snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
         snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
@@ -333,7 +328,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               startTime);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%ld", startTime);
+        ADD_PROCESS_PARAM("int", "%"LAL_INT4_FORMAT, startTime);
         break;
 
       case 'h':
@@ -355,7 +350,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               endTime);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%ld", endTime);
+        ADD_PROCESS_PARAM("int", "%"LAL_INT4_FORMAT, endTime);
         break;
 
       case 'i':
@@ -411,9 +406,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that min frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMin != myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMin != round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMin = myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMin = round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
         }
         ADD_PROCESS_PARAM("float", "%e", fMin);
@@ -431,9 +426,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that the max frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMax != myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMax != round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMax = myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMax = round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
         }
         ADD_PROCESS_PARAM("float", "%e", fMax);
@@ -1032,16 +1027,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, prog_name, \
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
@@ -1172,7 +1159,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       fMin, fMax, fRef);
 
   /* save out xml table */
-  save_xml_file(&status, PROGRAM_NAME, outputPath, baseName, \
+  save_xml_file(&status, prog_name, outputPath, baseName, \
       stochHead, proctable, procparams, this_proc_param, comment);
 
   /* cleanup */
@@ -1186,9 +1173,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   while(stochHead)
   {
     thisStoch = stochHead;
-		stochHead = stochHead->next;
-		LALFree(thisStoch);
-	}
+    stochHead = stochHead->next;
+    LALFree(thisStoch);
+  }
 
   /* free calloc'd memory */
   if (strcmp(frameCacheOne, frameCacheTwo))

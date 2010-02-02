@@ -2,11 +2,11 @@
 #
 # $Id$
 #
-check_PROGRAMS  = FindChirpBCVSpinTest FindChirpTDTest #FindChirpACTDTest
+check_PROGRAMS  = FindChirpBCVSpinTest FindChirpTDTest FindChirpBankVetoTest #FindChirpACTDTest
 #CoherentInspiralInputTest
 TESTS           = NoTest.sh
 
-EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c FindChirpBCVSpinTest.c
+EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c FindChirpBCVSpinTest.c FindChirpBankVetoTest.c
 
 EXTRA_TEXSOURCES = NoTest.sh
 
@@ -14,6 +14,7 @@ EXTRA_TEXSOURCES = NoTest.sh
 #FindChirpTmpltTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 #CoherentInspiralInputTest_SOURCES = CoherentInspiralInputTest.c
 FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
+FindChirpBankVetoTest_SOURCES = FindChirpBankVetoTest.c
 FindChirpTDTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FindChirpBCVSpinTest_SOURCES = FindChirpBCVSpinTest.c
 LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la

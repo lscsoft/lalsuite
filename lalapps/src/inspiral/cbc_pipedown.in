@@ -290,8 +290,8 @@ for tag in user_tags:
   # determine whether or not this was an injection run by checking if there
   # is an injection file for this tag
 
-  file_sieve = '_'.join([ r'INJECTIONS_[0-9][0-9][0-9][0-9]', tag.split('_CAT')[0] ])
-  inj_file = inj_cache.sieve( description = file_sieve, exact_match = True )
+  file_sieve = '_'.join([ r'INJECTIONS_[0-9]{1,}', tag.split('_CAT')[0] ]) + r'$'
+  inj_file = [ entry for entry in inj_cache if re.match(file_sieve, entry.description) is not None ]
   if len(inj_file) == 0:
     simulation = False
   elif len(inj_file) == 1:
