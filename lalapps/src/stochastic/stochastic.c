@@ -1173,9 +1173,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   while(stochHead)
   {
     thisStoch = stochHead;
-		stochHead = stochHead->next;
-		LALFree(thisStoch);
-	}
+    stochHead = stochHead->next;
+    LALFree(thisStoch);
+  }
 
   /* free calloc'd memory */
   if (strcmp(frameCacheOne, frameCacheTwo))
