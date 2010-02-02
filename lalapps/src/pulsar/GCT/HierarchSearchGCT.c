@@ -37,7 +37,8 @@
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
-#define OUTPUT_TIMING 1.0
+#define OUTPUT_TIMING 1
+/*#define DIAGNOSISMODE 0*/
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -229,11 +230,11 @@ int MAIN( int argc, char *argv[]) {
   UINT4 ic, ic2, ic3, ifine;
   INT4 fveclength, ifreq, U1idx, U2idx, NumU2idx;
   REAL8 myf0, myf0max, f_event, f1dot_event, deltaF;
-  REAL8 fg_freq_step, fg_f1dot_step, fg_fmin,f1dotmin, fg_fband, fg_f1dotband;
+  REAL8 fg_freq_step, fg_f1dot_step, fg_fmin,f1dotmin, fg_fband;
   REAL8 u1win, u2win, u1winInv, u2winInv, u1fac, u2fac;
   REAL8 u1start, u2start, u2end;
   REAL8 f_tmp, f1dot_tmp;
-  REAL8 TwoFthreshold;
+  REAL8 TwoFthreshold, sumTwoF_tmp, TwoF_tmp;
   REAL8 TwoFmax;
   UINT4 nc_max;
   REAL8 pos[3];
@@ -913,15 +914,14 @@ int MAIN( int argc, char *argv[]) {
         }
 
         /* Initialize first coarsegrid point */
-        thisCgPoint.Uindex=0;
-        thisCgPoint.TwoF=0.0;
+        thisCgPoint.Uindex = 0;
+        thisCgPoint.TwoF = 0.0;
 
         /* ------------- Set up fine grid --------------------------------------*/
         /* fine-grid borders */
         fg_fmin = usefulParams.spinRange_midTime.fkdot[0];
         fg_fband = usefulParams.spinRange_midTime.fkdotBand[0];
         f1dotmin = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-        fg_f1dotband = usefulParams.spinRange_midTime.fkdotBand[1];
 
         /* fine-grid freq resoultion */
         fg_freq_step = dFreqStack;
@@ -1112,8 +1112,8 @@ int MAIN( int argc, char *argv[]) {
             f_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
-            LAL_CALL( ComputeU1idx ( &f_event, &f1dot_event, &A1, &B1, 
-                                    &u1start, &u1winInv, &U1idx), &status);
+            ComputeU1idx ( &f_event, &f1dot_event, &A1, &B1, 
+                                    &u1start, &u1winInv, &U1idx);
             
             /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation. 
             LAL_CALL( ComputeU2idx ( &status, &f_event, &f1dot_event, &A2, &B2, 
@@ -1153,8 +1153,8 @@ int MAIN( int argc, char *argv[]) {
             f1dot_tmp = finegrid.list[ifine].F1dot;
       
             /* compute the global-correlation coordinate indices */
-            LAL_CALL( ComputeU1idx ( &f_tmp, &f1dot_tmp, &A1, &B1, 
-                                    &u1start, &u1winInv, &U1idx), &status);
+            ComputeU1idx ( &f_tmp, &f1dot_tmp, &A1, &B1, &u1start, &u1winInv, &U1idx);
+            
             /* Holger: current code structure of loops (processing fdot by fdot) needs only U1 calculation. 
             LAL_CALL( ComputeU2idx ( &status, &f_tmp, &f1dot_tmp, &A2, &B2, 
                                     &u2start, &u2winInv, &U2idx), &status);
@@ -1171,14 +1171,17 @@ int MAIN( int argc, char *argv[]) {
               
               /*if (finegrid.list[ifine].Uindex == coarsegrid.list[finegrid.list[ifine].Uindex].Uindex) {*/
                 
-                /* Add the 2F value to the 2F sum */
-                finegrid.list[ifine].sumTwoF = finegrid.list[ifine].sumTwoF + coarsegrid.list[finegrid.list[ifine].Uindex].TwoF;
-                            
-                /* Increase the number count */
-                if (coarsegrid.list[finegrid.list[ifine].Uindex].TwoF >= TwoFthreshold) { 
-                  finegrid.list[ifine].nc++;
-                }
+              /* Add the 2F value to the 2F sum */
+              TwoF_tmp = coarsegrid.list[U1idx].TwoF;
+              sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
+              finegrid.list[ifine].sumTwoF = sumTwoF_tmp;                            
+              
+              /* Increase the number count */
+              if (TwoF_tmp >= TwoFthreshold) { 
+                finegrid.list[ifine].nc++;
+              }
                 
+#ifdef DIAGNOSISMODE
                 /* Find strongest candidate (maximum 2F sum and number count) */
                 if(finegrid.list[ifine].nc > nc_max) {
                   nc_max = finegrid.list[ifine].nc;
@@ -1186,19 +1189,24 @@ int MAIN( int argc, char *argv[]) {
                 if(finegrid.list[ifine].sumTwoF > TwoFmax) {
                   TwoFmax = finegrid.list[ifine].sumTwoF;
                 }
-                
+#endif  
               /*}*/
-            }   
+              }   
             
-            /* sort out the crap --- this should be replaced by something BETTER! */
+            /* sort out the crap --- this should be replaced by something BETTER!? */
+            /*
             if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
               finegrid.list[ifine].sumTwoF=-1.0;
             }   
-                        
+            */
+            
           } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
+ 
+#ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
           LogPrintf(LOG_DETAIL, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
-          
+#endif
+
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
         /* ############################################################### */
          
