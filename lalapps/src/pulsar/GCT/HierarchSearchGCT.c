@@ -231,7 +231,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 fveclength, ifreq, U1idx, U2idx, NumU2idx;
   REAL8 myf0, myf0max, f_event, f1dot_event, deltaF;
   REAL8 fg_freq_step, fg_f1dot_step, fg_fmin,f1dotmin, fg_fband;
-  REAL8 u1win, u2win, u1winInv, u2winInv, u1fac, u2fac;
+  REAL8 u1win, u2win, u1winInv, u2winInv;
   REAL8 u1start, u2start, u2end;
   REAL8 f_tmp, f1dot_tmp;
   REAL8 TwoFthreshold, sumTwoF_tmp, TwoF_tmp;
