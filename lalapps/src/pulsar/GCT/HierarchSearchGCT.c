@@ -37,7 +37,7 @@
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
-/* #define OUTPUT_TIMING 1 */
+#define OUTPUT_TIMING 1 
 /* #define DIAGNOSISMODE 0 */
 
 #define TRUE (1==1)
@@ -841,18 +841,14 @@ int MAIN( int argc, char *argv[]) {
       
       {  /********Allocate fstat vector memory *****************/
 	
-        /* extra bins for F-Statistic due to spin-down */
-        REAL8 freqHighest;
+        /* calculate number of bins for Fstat overhead due to spin-down */
+        semiCohPar.extraBinsFstat = (UINT4)( (0.25 * tObs * df1dot)/dFreqStack + 1e-6) + 1;;
 	
-        /* calculate number of bins for fstat overhead */
-        freqHighest = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
-        semiCohPar.extraBinsFstat = 1; /*ceil(gamma2);*/
-	
-        /* allocate fstat memory */
+        /* calculate total number of bins for Fstat */
         binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
         binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
 	
-        /* loop over segments */
+        /* loop over segments for memory allocation */
         for (k = 0; k < nStacks; k++) { 
                   
           /* watch out: the epoch here is not the reference time for f0! */
