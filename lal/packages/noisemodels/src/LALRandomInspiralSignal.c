@@ -173,7 +173,7 @@ LALAddVectors
 #include <lal/Random.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
-#include <SkyCoordinates.h>
+#include <lal/SkyCoordinates.h>
 
 #define random() rand()
 #define srandom( seed ) srand( seed )
