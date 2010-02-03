@@ -34,6 +34,7 @@
 #include <lal/DetResponse.h>
 #include <lal/Date.h>
 #include <lal/SFTfileIO.h>
+#include <lal/DopplerScan.h>
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -54,7 +55,6 @@ candidate *gaussCandidates3[10000];
 candidate *gaussCandidates4[10000];
 candidate *exactCandidates1[10000];
 candidate *exactCandidates2[10000];
-//signalParamsStruct *params;
 inputParamsStruct *inputParams;
 REAL4FFTPlan *secondFFTplan;
 
@@ -88,29 +88,16 @@ int main(int argc, char *argv[])
    fprintf(LOG,"Starting TwoSpect analysis...\n");
    fprintf(stderr,"Starting TwoSpect analysis...\n");
    
-   //params = new_params();
    inputParams = new_inputParams();
    
-   /* if (args_info.A_given) params->amplitude = args_info.A_arg;
-   else params->amplitude = 0.015;
-   if (args_info.f0_given) params->f0 = args_info.f0_arg;
-   else params->f0 = 1000;
-   if (args_info.P_given) params->period0 = args_info.P_arg;
-   else params->period0 = 16*3600;
-   if (args_info.df_given) params->moddepth0 = args_info.df_arg;
-   else params->moddepth0 = 0.01; */
    if (args_info.Tobs_given) inputParams->Tobs = args_info.Tobs_arg;
    else inputParams->Tobs = 168*3600;
-   //if (args_info.fs_given) params->samplerate = 1/args_info.fs_arg;
-   //else params->samplerate = 0.05;
    if (args_info.fmin_given) inputParams->fmin = args_info.fmin_arg;
    else inputParams->fmin = 99.99;
    if (args_info.fspan_given) inputParams->fspan = args_info.fspan_arg;
    else inputParams->fspan = 0.02;
    if (args_info.cols_given) cols = args_info.cols_arg;
    else cols = 20;
-   //if (args_info.P0_given) params->P0 = args_info.P0_arg;
-   //else params->P0 = 0.1;
    if (args_info.t0_given) inputParams->searchstarttime = args_info.t0_arg;
    else inputParams->searchstarttime = 900000000.0;
    if (args_info.ra_given) inputParams->ra = args_info.ra_arg;
@@ -121,14 +108,12 @@ int main(int argc, char *argv[])
    //Defaults given or option passed
    inputParams->Tcoh = args_info.Tcoh_arg;
    ihsfarthresh = args_info.ihsfar_arg;
-   //params->Pslope = args_info.Pslope_arg;
-   //params->Pquad = args_info.Pquad_arg;
    inputParams->blksize = args_info.blksize_arg;
-   //params->varySFTs = args_info.varySFTs_arg;
    earth_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
    sun_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
    sprintf(earth_ephemeris,"%s/earth05-09.dat",args_info.ephemDir_arg);
    sprintf(sun_ephemeris,"%s/sun05-09.dat",args_info.ephemDir_arg);
+   inputParams->dopplerMultiplier = args_info.dopplerMultiplier_arg;
    
    //Blocksize should be an odd number
    if (inputParams->blksize % 2 != 1) inputParams->blksize += 1;
@@ -163,44 +148,15 @@ int main(int argc, char *argv[])
       params->SFTexistlist = sftexistlist;
    } */
    
-   //Set input parameters this is almost the same as the fake data parameters
-   //inputParams->fmin = params->fmin;
-   //inputParams->fspan = params->fspan;
-   //inputParams->Tobs = params->Tobs;
-   //inputParams->Tcoh = params->Tcoh;
-   //inputParams->samplerate = params->samplerate;
-   //inputParams->searchstarttime = params->searchstarttime;
-   //inputParams->ra = params->ra;
-   //inputParams->dec = params->dec;
-   //inputParams->blksize = params->blksize;
-   //inputParams->SFTexistlist = sftexistlist;
-   inputParams->dopplerMultiplier = args_info.dopplerMultiplier_arg;
-   
-   //fprintf(LOG,"Amplitude = %f\n",params->amplitude);
-   //fprintf(LOG,"f0 = %f Hz\n",params->f0);
-   //fprintf(LOG,"Period = %f sec\n",params->period0);
-   //fprintf(LOG,"Mod. depth = %f Hz\n",params->moddepth0);
    fprintf(LOG,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(LOG,"Tcoh = %f sec\n",inputParams->Tcoh);
-   //fprintf(LOG,"dt = %f sec\n",params->samplerate);
    fprintf(LOG,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(LOG,"fspan = %f Hz\n",inputParams->fspan);
-   //fprintf(LOG,"Freq. independent noise spectral density = %f\n",params->P0);
-   //fprintf(LOG,"Noise spectral density slope coefficient = %f\n",params->Pslope);
-   //fprintf(LOG,"Noise spectral density quadratic coefficient = %f\n",params->Pquad);
    fprintf(LOG,"Running median blocksize = %d\n",inputParams->blksize);
-   //fprintf(stderr,"Amplitude = %f\n",params->amplitude);
-   //fprintf(stderr,"f0 = %f Hz\n",params->f0);
-   //fprintf(stderr,"Period = %f sec\n",params->period0);
-   //fprintf(stderr,"Mod. depth = %f Hz\n",params->moddepth0);
    fprintf(stderr,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(stderr,"Tcoh = %f sec\n",inputParams->Tcoh);
-   //fprintf(stderr,"dt = %f sec\n",params->samplerate);
    fprintf(stderr,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(stderr,"fspan = %f Hz\n",inputParams->fspan);
-   //fprintf(stderr,"Freq. independent noise spectral density = %f\n",params->P0);
-   //fprintf(stderr,"Noise spectral density slope coefficient = %f\n",params->Pslope);
-   //fprintf(stderr,"Noise spectral density quadratic coefficient = %f\n",params->Pquad);
    fprintf(stderr,"Running median blocksize = %d\n",inputParams->blksize);
    
    //Allocate memory for ffdata structure
@@ -212,7 +168,6 @@ int main(int argc, char *argv[])
    //Create fake data
    fprintf(LOG,"Input SFT data... ");
    fprintf(stderr,"Input SFT data... ");
-   //makeFakeBinarySig(ffdata, params);
    makeFakeBinarySigFF(ffdata, inputParams);
    fprintf(LOG,"done\n");
    fprintf(stderr,"done\n");
@@ -950,7 +905,6 @@ int main(int argc, char *argv[])
    free_ihsMaxima(ihsmaxima);
    free_ihsfarStruct(ihsfarstruct);
    //XLALDestroyINT4Vector(sftexistlist);
-   //free_params(params);
    free_inputParams(inputParams);
    XLALDestroyREAL4Vector(aveNoise);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
@@ -1019,26 +973,6 @@ int main(int argc, char *argv[])
 /*** End of main() ***/
 
 
-//////////////////////////////////////////////////////////////
-// Allocate memory for signal parameters struct  -- done
-/* signalParamsStruct * new_params(void)
-{
-   
-   signalParamsStruct *param = (signalParamsStruct*)XLALMalloc(sizeof(signalParamsStruct));
-   
-   return param;
-   
-} */
-
-
-//////////////////////////////////////////////////////////////
-// Free signal parameters struct memory  -- done
-/* void free_params(signalParamsStruct *param)
-{
-
-   XLALFree((signalParamsStruct*)param);
-
-} */
 
 
 inputParamsStruct * new_inputParams(void)

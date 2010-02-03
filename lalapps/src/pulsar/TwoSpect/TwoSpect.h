@@ -34,28 +34,6 @@ typedef struct
    REAL4Vector *antweights;   //Antenna pattern weights (F**2)
 } ffdataStruct;
 
-/* typedef struct 
-{
-   REAL4 amplitude;     //Amplitude of signal
-   REAL4 f0;            //Frequency of signal
-   REAL4 period0;       //Period of signal
-   REAL4 moddepth0;     //Modulation depth of signal
-   REAL8 Tobs;          //Observation time
-   REAL4 Tcoh;          //Coherence time
-   REAL4 samplerate;    //Sampling rate
-   REAL4 fmin;          //Minimum frequency
-   REAL4 fspan;         //Frequency spanned
-   REAL4 P0;            //Frequency independent noise spectral density
-   REAL4 Pslope;
-   REAL4 Pquad;
-   REAL8 searchstarttime;
-   REAL4 ra;
-   REAL4 dec;
-   INT4 blksize;
-   INT4Vector *SFTexistlist;
-   INT4 varySFTs;
-} signalParamsStruct; */
-
 typedef struct
 {
    REAL4 fmin;
@@ -79,9 +57,6 @@ typedef struct
    INT4Vector *freqoftopbins;
 } topbinsStruct;
 
-
-//signalParamsStruct * new_params(void);
-//void free_params(signalParamsStruct *params);
 
 inputParamsStruct * new_inputParams(void);
 void free_inputParams(inputParamsStruct *input);
