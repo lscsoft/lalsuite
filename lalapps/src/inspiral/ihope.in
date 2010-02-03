@@ -835,7 +835,7 @@ pegasus-plan \
 """ % (os.getcwd(), os.getcwd(), dag.get_dax_file(),
   opts.log_path, opts.gps_start_time, opts.gps_end_time )
 peg_fh.close()
-os.chmod("pegasus-plan.sh",0755)
+os.chmod("pegasus_submit_dax",0755)
 
 pegprop_fh = open("pegasus.properties", "w")
 print >> pegprop_fh, """\
