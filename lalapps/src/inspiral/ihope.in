@@ -850,7 +850,8 @@ pegasus.transfer.force=true
 pegasus.transfer.links=true
 pegasus.transfer.refiner=Bundle
 
-pegasus.condor.retry=3
+pegasus.dagman.retry=3
+pegasus.dagman.maxpre=1
 pegasus.condor.arguments.quote=true
 
 pegasus.selector.site=RoundRobin
