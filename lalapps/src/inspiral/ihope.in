@@ -831,7 +831,7 @@ pegasus-plan \
   -Dpegasus.properties=%s/pegasus.properties \
   -Dpegasus.catalog.site.file=%s/site-local.xml \
   --dax %s --dir %s/%s-%s \
-  --relative-dir . -s local --nocleanup -f -o local
+  --relative-dir . -s local --nocleanup -f
 """ % (os.getcwd(), os.getcwd(), dag.get_dax_file(),
   opts.log_path, opts.gps_start_time, opts.gps_end_time )
 peg_fh.close()
