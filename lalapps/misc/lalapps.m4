@@ -249,6 +249,9 @@ AC_DEFUN([LALAPPS_ENABLE_LALXML],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
     esac
   ], [ lalxml=false ] )
+if test "$lalpulsar" = "false"; then
+  lalxml=false
+fi
 ])
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
