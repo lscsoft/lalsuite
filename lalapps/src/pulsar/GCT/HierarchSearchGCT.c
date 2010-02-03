@@ -1,5 +1,5 @@
 /*  
- *  Copyright (C) 2009 Holger Pletsch.
+ *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.c by
  *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk.
@@ -37,8 +37,8 @@
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
-#define OUTPUT_TIMING 1
-/*#define DIAGNOSISMODE 0*/
+#define OUTPUT_TIMING 1 
+/* #define DIAGNOSISMODE 0 */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -231,7 +231,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 fveclength, ifreq, U1idx, U2idx, NumU2idx;
   REAL8 myf0, myf0max, f_event, f1dot_event, deltaF;
   REAL8 fg_freq_step, fg_f1dot_step, fg_fmin,f1dotmin, fg_fband;
-  REAL8 u1win, u2win, u1winInv, u2winInv, u1fac, u2fac;
+  REAL8 u1win, u2win, u1winInv, u2winInv;
   REAL8 u1start, u2start, u2end;
   REAL8 f_tmp, f1dot_tmp;
   REAL8 TwoFthreshold, sumTwoF_tmp, TwoF_tmp;
@@ -778,7 +778,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* ----- start main calculations by going over coarse grid points --------*/
  
-  /* ########## loop over SKY coarse-grid points ########## */
+  /* ################## loop over SKY coarse-grid points ################## */
   skyGridCounter = 0;
 
   XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
@@ -841,18 +841,14 @@ int MAIN( int argc, char *argv[]) {
       
       {  /********Allocate fstat vector memory *****************/
 	
-        /* extra bins for F-Statistic due to spin-down */
-        REAL8 freqHighest;
+        /* calculate number of bins for Fstat overhead due to spin-down */
+        semiCohPar.extraBinsFstat = (UINT4)( (0.25 * tObs * df1dot)/dFreqStack + 1e-6) + 1;;
 	
-        /* calculate number of bins for fstat overhead */
-        freqHighest = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
-        semiCohPar.extraBinsFstat = 1; /*ceil(gamma2);*/
-	
-        /* allocate fstat memory */
+        /* calculate total number of bins for Fstat */
         binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
         binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
 	
-        /* loop over segments */
+        /* loop over segments for memory allocation */
         for (k = 0; k < nStacks; k++) { 
                   
           /* watch out: the epoch here is not the reference time for f0! */
@@ -892,13 +888,15 @@ int MAIN( int argc, char *argv[]) {
         } /* loop over segments */
       } /* fstat memory allocation block */
 
+    
 
-      /* ########## loop over F-Statistic calculation on coarse-grid f1dot values ########## */
+      /* ################## loop over coarse-grid F1DOT values ################## */
       for (ifdot = 0; ifdot < nf1dot; ifdot++) { 
 
         LogPrintfVerbatim(LOG_DEBUG, "\n%% --- Sky point: %d / %d   Spin-down: %d / %d\n", 
                         skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot );
-      
+
+        /* show progress */
         fprintf(stderr, "%% --- Progress, coarse-grid sky point: %d / %d  and spin-down: %d / %d\n", 
                 skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot ); 
         
@@ -941,7 +939,7 @@ int MAIN( int argc, char *argv[]) {
         finegrid.length = nf1dotsFG * nfreqsFG;
         LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
 
-        /* reference time for finegrid */
+        /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
 
         /* allocate memory for finegrid points */
@@ -955,13 +953,14 @@ int MAIN( int argc, char *argv[]) {
         finegrid.Alpha = thisPoint.Alpha;
         finegrid.Delta = thisPoint.Delta;
 
-        /* initialize first finegrid point */
+        /* initialize first finegrid point 
         thisFgPoint.F=0.0;
         thisFgPoint.F1dot=0.0;
         thisFgPoint.Uindex=0;
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
-
+        */
+        
         /* initialize the entire finegrid */
         ic=0;
         f_tmp = fg_fmin;
@@ -978,10 +977,6 @@ int MAIN( int argc, char *argv[]) {
         }
 
         /* --------------------------------------------------------------- */
-      
-        /* U-map configuration */
-        u1fac = 1.0; /* default */
-        u2fac = 1.0;
 
         /* Keeping track of maximum number count */
         nc_max = 0;    /* initialize */
@@ -1024,7 +1019,6 @@ int MAIN( int argc, char *argv[]) {
                         thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
 
           /* Compute sky position associated dot products (for global-correlation coordinates) */
-          
           A1 =  1.0 + ( vel[0] * cos(thisPoint.Alpha) * cos(thisPoint.Delta) \
                       + vel[1] * sin(thisPoint.Alpha) * cos(thisPoint.Delta) \
                       + vel[2] * sin(thisPoint.Delta) );
@@ -1042,8 +1036,8 @@ int MAIN( int argc, char *argv[]) {
                + vel[2] * sin(thisPoint.Delta) );
           
           /* Setup the tolerance windows in the U-map */
-          u1win = u1fac * dFreqStack * A1;
-          u2win = u2fac * df1dot;
+          u1win = dFreqStack * A1;
+          u2win = df1dot;
 
           /* Take the inverse before the hot loop */
           u1winInv = 1.0/u1win;
@@ -1108,7 +1102,7 @@ int MAIN( int argc, char *argv[]) {
               fstatVector.data[k].data->data[ifreq] = Fstat;
             }
             
-            /* translate frequency from midpoint of data span to midpoint of this segment */
+            /* go to next frequency coarse-grid point */
             f_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
