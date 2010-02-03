@@ -1106,7 +1106,7 @@ int MAIN( int argc, char *argv[]) {
               fstatVector.data[k].data->data[ifreq] = Fstat;
             }
             
-            /* translate frequency from midpoint of data span to midpoint of this segment */
+            /* go to next frequency coarse-grid point */
             f_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
