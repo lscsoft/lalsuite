@@ -953,7 +953,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         for optionText in optionTextList:
             oldVal=None
             if cp.has_option('candidatethreshold',optionText):
-                newVal=oldVal=cp.get('candidatethreshold',optionText)
+                oldVal=cp.get('candidatethreshold',optionText)
+                newVal=str(oldVal)
                 #New shell escape for latest condor 7.2.4
                 if newVal.__contains__('"'):
                     newVal=str(newVal).replace('"','""')
