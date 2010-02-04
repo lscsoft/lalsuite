@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -27,42 +27,42 @@ Libraries:
         lalsupport
         lalframe
         lalmetaio
-	lalxml
+        lalxml
 EOF
     exit $1
 }
 
 if test $# -eq 0; then
-        usage 1 1>&2
+  usage 1 1>&2
 fi
 
 while test $# -gt 0; do
-    case "$1" in
+  case "$1" in
     -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
     *) optarg= ;;
-    esac
+  esac
 
-    case "$1" in
+  case "$1" in
     --prefix=*)
-	prefix=$optarg
+        prefix=$optarg
         if test $exec_prefix_set = no ; then
           exec_prefix=$optarg
         fi
-	;;
+        ;;
     --prefix)
-	echo $prefix
-	;;
+        echo $prefix
+        ;;
     --exec-prefix=*)
         exec_prefix=$optarg
         exec_prefix_set=yes
         ;;
     --exec-prefix)
-	echo $exec_prefix
-	;;
+        echo $exec_prefix
+        ;;
     --version)
-	echo @VERSION@
-	exit 0
-	;;
+        echo @VERSION@
+        exit 0
+        ;;
     --cflags)
         echo_cflags=yes
         ;;
@@ -112,14 +112,14 @@ while test $# -gt 0; do
         fi
         ;;
     --help)
-	usage 0
-	;;
+        usage 0
+        ;;
     *)
-	usage 1 1>&2
-	exit 1
-	;;
-    esac
-    shift
+        usage 1 1>&2
+        exit 1
+        ;;
+  esac
+  shift
 done
 
 if test "$echo_prefix" = "yes"; then
