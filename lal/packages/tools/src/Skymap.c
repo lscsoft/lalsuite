@@ -27,7 +27,6 @@
 #include <lal/LALMalloc.h>
 #include <lal/XLALError.h>
 #include <lal/DetResponse.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Skymap.h>
 
 // Convenience functions for tiny stack vectors and matrices

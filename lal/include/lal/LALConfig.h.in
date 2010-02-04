@@ -62,6 +62,9 @@
 /* Define if using MetaIo library */
 #undef LAL_METAIO_ENABLED
 
+/* Define if using boinc library */
+#undef LAL_BOINC_ENABLED
+
 /* Define if using qthread library */
 #undef LAL_QTHREAD
 

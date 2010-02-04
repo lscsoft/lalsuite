@@ -421,7 +421,7 @@ void LALCalculateUalpha(LALStatus *status,
 
 /*printf("%f %f\n", deltaPhi, LAL_PI * (freqI - freqJ)/deltaF);*/
 
- 
+
   /*if not averaging over psi, calculate F+, Fx exactly*/
   if (psi) {
     FplusI = (beamfnsI.a * cos(2.0*(*psi))) + (beamfnsI.b * sin(2.0*(*psi)));

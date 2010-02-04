@@ -44,7 +44,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_statistics.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConfig.h>

@@ -78,7 +78,6 @@ InclDistribution;
 #include <lal/SeqFactories.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
 

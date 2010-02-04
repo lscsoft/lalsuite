@@ -42,6 +42,7 @@ AC_CONFIG_FILES([\
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
+  src/pulsar/TwoSpect/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
@@ -73,10 +74,10 @@ LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_LALFRAME
 LALAPPS_ENABLE_LALMETAIO
-LALAPPS_ENABLE_LALXML
 LALAPPS_ENABLE_LALBURST
 LALAPPS_ENABLE_LALPULSAR
 LALAPPS_ENABLE_LALSTOCHASTIC
+LALAPPS_ENABLE_LALXML
 LALAPPS_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
@@ -131,23 +132,26 @@ AC_PROG_LN_S
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
-  AC_CHECK_PROGS([CONDOR_VERSION],[condor_version],[false])
-  if test "x$CONDOR_VERSION" != "xfalse"; then
-    AC_MSG_CHECKING([Condor version])
-    CONDOR_VERS=`$CONDOR_VERSION | grep CondorVersion | awk '{print $2}'`
-    AC_MSG_RESULT([$CONDOR_VERS])
-  fi
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
   if test "x$CONDOR_COMPILE" = "xfalse"; then
     AC_MSG_ERROR([condor_compile not found])
   fi
+
+  # does condor_compile suffer from condorbug 19343
+  AC_MSG_CHECKING([if condor_compile suffers from bug 19343])
+  if $CONDOR_COMPILE $CC -print-prog-name=ld 1>/dev/null 2>/dev/null; then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    LD=/usr/bin/ld
+  fi
+
+  # enable condor compile
   CC="$CONDOR_COMPILE $CC"
   AM_LDFLAGS="$AM_LDFLAGS -all-static"
   AC_DISABLE_SHARED
   AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
-  # FIXME condor_compile should correctly identify the linker
-  LD="/usr/bin/ld"
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
@@ -194,12 +198,13 @@ AC_CHECK_HEADERS([getopt.h])
 # check for boinc
 if test "${boinc}" = "true" ; then
   if test -n "$BOINC_PREFIX}" ; then
-    # has lal build built with boinc support
-    LALAPPS_CHECK_BOINC
-
     # do compilation checks with c++
     AC_LANG_PUSH([C++])
 
+    # has lal build built with boinc support
+    LALAPPS_CHECK_BOINC
+
+    # point to boinc headers and libraries
     CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
     LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
 

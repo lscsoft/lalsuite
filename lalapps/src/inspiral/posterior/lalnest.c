@@ -402,10 +402,8 @@ int main( int argc, char *argv[])
 		if(!strcmp(IFOnames[i],"V1")||!strcmp(IFOnames[i],"VIRGO")) {
 			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexVIRGODIFF];
 			if(!NINJA) sprintf((ChannelNames[i]),"V1:h_16384Hz");
-			else {
-				if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
-				else sprintf((ChannelNames[i]),"V1:STRAIN");
-			}
+			else sprintf((ChannelNames[i]),"V1:STRAIN");
+			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			continue;}
 		if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
 			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexGEO600DIFF];
@@ -617,6 +615,7 @@ int main( int argc, char *argv[])
 				fprintf(stdout,"Offset injection by %lf s\n",((REAL8) i+1)*offset);
 			}
 			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOnames[i],&(segmentStart),0.0,inputMCMC.deltaT,&lalADCCountUnit,(size_t)seglen);
+			for (j=0;j<injWave->data->length;j++) injWave->data->data[j]=0.0;
 			/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
 			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&segmentStart,0.0,inputMCMC.deltaF,(const LALUnit *)&strainPerCount,seglen);
 			for(j=0;j<resp->data->length;j++) {resp->data->data[j].re=(REAL4)1.0; resp->data->data[j].im=0.0;}
