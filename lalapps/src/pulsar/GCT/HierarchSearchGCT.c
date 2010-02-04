@@ -38,7 +38,7 @@ RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
-/* #define DIAGNOSISMODE 0 */
+ #define DIAGNOSISMODE 0 
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -956,10 +956,9 @@ int MAIN( int argc, char *argv[]) {
         /* initialize first finegrid point 
         thisFgPoint.F=0.0;
         thisFgPoint.F1dot=0.0;
-        thisFgPoint.Uindex=0;
+        thisFgPoint.Uindex=0; */
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
-        */
         
         /* initialize the entire finegrid */
         ic=0;
@@ -1069,7 +1068,7 @@ int MAIN( int argc, char *argv[]) {
           }
           else {
 
-            /* SFT method implementation to compute the F-statistic */
+            /* LALDemod method implementation to compute the F-statistic */
             LAL_CALL( COMPUTEFSTATFREQBAND ( &status, &fstatVector.data[k], &thisPoint,
                                             stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
                                             stackMultiDetStates.data[k], &CFparams), &status);
