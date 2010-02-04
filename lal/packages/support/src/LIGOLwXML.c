@@ -772,12 +772,12 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->h2quad.im,
               tablePtr.multiInspiralTable->l1quad.re,
               tablePtr.multiInspiralTable->l1quad.im,
-              tablePtr.multiInspiralTable->v1quad.re,
-              tablePtr.multiInspiralTable->v1quad.im,
               tablePtr.multiInspiralTable->g1quad.re,
               tablePtr.multiInspiralTable->g1quad.im,
               tablePtr.multiInspiralTable->t1quad.re,
               tablePtr.multiInspiralTable->t1quad.im,
+              tablePtr.multiInspiralTable->v1quad.re,
+              tablePtr.multiInspiralTable->v1quad.im,
 	      tablePtr.multiInspiralTable->coh_snr_h1h2,
 	      tablePtr.multiInspiralTable->cohSnrSqLocal,
 	      tablePtr.multiInspiralTable->autoCorrCohSq,
@@ -1296,6 +1296,8 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	fputs("\t\t<Column Name=\"sngl_burst:amplitude\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:snr\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:chisq\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_burst:chisq_dof\" Type=\"real_8\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
@@ -1304,7 +1306,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	/* rows */
 
 	for(; sngl_burst; sngl_burst = sngl_burst->next) {
-		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_burst:event_id:%ld\"",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.16g,%.16g,\"sngl_burst:event_id:%ld\"",
 			row_head,
 			sngl_burst->process_id,
 			sngl_burst->ifo,
@@ -1320,6 +1322,8 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 			sngl_burst->amplitude,
 			sngl_burst->snr,
 			sngl_burst->confidence,
+			sngl_burst->chisq,
+			sngl_burst->chisq_dof,
 			sngl_burst->event_id
 		) < 0)
 			XLAL_ERROR(func, XLAL_EFUNC);
@@ -1335,6 +1339,160 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 
 	return 0;
 }
+
+int XLALWriteLIGOLwXMLSnglInspiralTable(
+	LIGOLwXMLStream *xml,
+	const SnglInspiralTable *sngl_inspiral
+)
+{
+	static const char func[] = "XLALWriteLIGOLwXMLSnglInspiralTable";
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(func, XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	fputs("\t<Table Name=\"sngl_inspiral:table\">\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiral:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:ifo\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:search\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:channel\" Type=\"lstring\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time_gmst\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:impulse_time\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:impulse_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:template_duration\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_duration\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:amplitude\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:eff_distance\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:coa_phase\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:mass1\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:mass2\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:mchirp\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:mtotal\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:eta\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:kappa\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:chi\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau0\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau2\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau3\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau4\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau5\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:ttotal\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:psi0\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:psi3\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha1\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha2\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha3\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha4\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha5\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha6\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:beta\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:f_final\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:snr\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof\" Type=\"int_4s\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma0\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma1\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma2\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma3\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma4\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma5\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma6\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma7\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma8\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma9\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	fputs("\t\t<Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
+		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
+			   row_head,
+			   sngl_inspiral->ifo,
+			   sngl_inspiral->search,
+			   sngl_inspiral->channel,
+			   sngl_inspiral->end_time.gpsSeconds,
+			   sngl_inspiral->end_time.gpsNanoSeconds,
+			   sngl_inspiral->end_time_gmst,
+			   sngl_inspiral->impulse_time.gpsSeconds,
+			   sngl_inspiral->impulse_time.gpsNanoSeconds,
+			   sngl_inspiral->template_duration,
+			   sngl_inspiral->event_duration,
+			   sngl_inspiral->amplitude,
+			   sngl_inspiral->eff_distance,
+			   sngl_inspiral->coa_phase,
+			   sngl_inspiral->mass1,
+			   sngl_inspiral->mass2,
+			   sngl_inspiral->mchirp,
+			   sngl_inspiral->mtotal,
+			   sngl_inspiral->eta,
+			   sngl_inspiral->kappa,
+			   sngl_inspiral->chi,
+			   sngl_inspiral->tau0,
+			   sngl_inspiral->tau2,
+			   sngl_inspiral->tau3,
+			   sngl_inspiral->tau4,
+			   sngl_inspiral->tau5,
+			   sngl_inspiral->ttotal,
+			   sngl_inspiral->psi0,
+			   sngl_inspiral->psi3,
+			   sngl_inspiral->alpha,
+			   sngl_inspiral->alpha1,
+			   sngl_inspiral->alpha2,
+			   sngl_inspiral->alpha3,
+			   sngl_inspiral->alpha4,
+			   sngl_inspiral->alpha5,
+			   sngl_inspiral->alpha6,
+			   sngl_inspiral->beta,
+			   sngl_inspiral->f_final,
+			   sngl_inspiral->snr,
+			   sngl_inspiral->chisq,
+			   sngl_inspiral->chisq_dof,
+			   sngl_inspiral->bank_chisq,
+			   sngl_inspiral->bank_chisq_dof,
+			   sngl_inspiral->cont_chisq,
+			   sngl_inspiral->cont_chisq_dof,
+			   sngl_inspiral->sigmasq,
+			   sngl_inspiral->rsqveto_duration,
+			   sngl_inspiral->Gamma[0],
+			   sngl_inspiral->Gamma[1],
+			   sngl_inspiral->Gamma[2],
+			   sngl_inspiral->Gamma[3],
+			   sngl_inspiral->Gamma[4],
+			   sngl_inspiral->Gamma[5],
+			   sngl_inspiral->Gamma[6],
+			   sngl_inspiral->Gamma[7],
+			   sngl_inspiral->Gamma[8],
+			   sngl_inspiral->Gamma[9]  )  < 0)
+			XLAL_ERROR(func, XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+	if(fputs("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/* done */
+	return 0;
+}
+
+
 
 
 /**

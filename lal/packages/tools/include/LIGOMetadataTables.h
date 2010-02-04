@@ -364,8 +364,8 @@ tagSnglBurst
 	REAL4 amplitude;
 	REAL4 snr;
 	REAL4 confidence;
-	/* FIXME:  remove string_cluster_t from the structure */
-	REAL4 string_cluster_t;
+	REAL8 chisq;
+	REAL8 chisq_dof;
 	long process_id;
 	long event_id;
 }
@@ -579,8 +579,8 @@ tagMultiInspiralTable
   COMPLEX8      h2quad;
   COMPLEX8      l1quad;
   COMPLEX8      g1quad;
-  COMPLEX8      v1quad;
   COMPLEX8      t1quad;
+  COMPLEX8      v1quad;
   REAL4         coh_snr_h1h2;
   REAL4         cohSnrSqLocal;
   REAL4         autoCorrCohSq;

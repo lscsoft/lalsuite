@@ -554,7 +554,7 @@ eval(['title(''' veto_type ' ' inj_type ': Found doubles, frequency vs Livingsto
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
-eval(['saveas(gcf,''' veto_type '_' inj_type 'F_dL.png'')'])
+eval(['saveas(gcf,''' veto_type '_' inj_type '_F_dL.png'')'])
 
 
 %%%%%%%%%%%%%%%%%%%%%%% EFFICIENCY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

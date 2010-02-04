@@ -454,6 +454,26 @@ class ChiaJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class CohireJob(InspiralAnalysisJob):
+  """
+  A lalapps_cohire job used by the inspiral pipeline. The stdout and stderr from
+  the job are directed to the logs directory. The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'cohire'
+    sections = ['cohire']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+    # cohire currently doesn't take GPS start/end times
+    self.set_stdout_file('logs/cohire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/cohire-$(macroifo)-$(cluster)-$(process).err')
+
+
 class InspInjFindJob(InspiralAnalysisJob):
   """
   An inspinjfind job. The static options are read from the [inspinjfind]
@@ -1618,6 +1638,169 @@ class ChiaNode(InspiralAnalysisNode):
     return filename
 
 
+class CohireNode(InspiralAnalysisNode):
+  """
+  A CohireNode runs an instance of the inspiral cohire code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_cohire.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__ifos  = None
+    self.__ifo_tag = None
+    self.__num_slides = None
+    self.__injection_file = None
+    self.__output_tag = None
+
+  def set_ifos(self, ifos):
+    """
+    Add the list of interferometers 
+    """
+    self.__ifos = ifos
+
+  def get_ifos(self):
+    """
+    Returns the ifos
+    """
+    return self.__ifos
+  def set_slides(self, slides):
+    """
+    Add the number of time slides
+    """
+    self.__num_slides = slides
+    self.add_var_opt('num-slides',slides)
+
+  def get_slides(self):
+    """
+    Returns the number of slides
+    """
+    return self.__num_slides
+
+  def set_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    if file:
+      self.__injection_file = file
+      self.add_var_opt('injection-file', file)
+
+  def get_inj_file(self):
+    """
+    Gets the injection file
+    """
+    return self.__injection_file
+
+  def set_start(self, start):
+    """
+    Sets GPS start time
+    """
+    self.__start = start
+
+  def get_start(self):
+    """
+    Gets GPS start time
+    """
+    return self.__start
+
+  def set_end(self, end):
+    """
+    Sets GPS end time
+    """
+    self.__end = end
+
+  def get_end(self):
+    """
+    Gets GPS end time
+    """
+    return self.__end
+
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
+
+  def set_glob(self, file_glob):
+    """
+    Sets the glob name
+    """
+    self.add_var_opt('glob',file_glob)
+
+  def set_input(self, input_file):
+    """
+    Sets the input file name
+    """
+    self.add_var_opt('input',input_file)
+
+  def set_output_tag(self):
+    fname = self.job().get_exec_name().upper()
+    if self.get_slides(): fname += "_SLIDE"
+    if self.get_inj_file():
+      fname += "_" + \
+          self.get_inj_file().split("/")[-1].split(".")[0].split("-")[1]
+      fname += "_FOUND"
+    if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
+    if self.get_user_tag(): fname += "_" + self.get_user_tag()
+    self.__output_tag = fname
+
+  def get_output_tag(self):
+    return self.__output_tag
+
+  def get_output(self):
+    """
+    get the name of the output file
+    """
+    if not self.get_ifos():
+      raise InspiralError, "ifos have not been set"
+
+    self.set_output_tag()
+    fname = self.get_ifos() + '-' + self.get_output_tag()
+
+    if (self.get_start() and not self.get_end()) or \
+           (self.get_end() and not self.get_start()):
+      raise InspiralError, "If one of start and end is set, "\
+            "both must be"
+
+    if (self.get_start()):
+      duration=self.get_end() - self.get_start()
+      fname += "-" + str(self.get_start()) + "-" + str(duration)
+
+    fname += ".xml"
+
+    return fname
+
+  def get_missed(self):
+    """
+    get the name of the missed file
+    """
+    if self.get_inj_file():
+      return self.get_output().replace("FOUND", "MISSED")
+    else:
+      return None
+
+  def finalize(self):
+    """
+    set the output options
+    """
+    output = self.get_output()
+
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
+
+    if self.get_inj_file():
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
+
+
 class InspInjFindNode( InspiralAnalysisNode ):
   """
   An InspInjFindNode runs an instance of the InspInjJob in a
@@ -2019,6 +2202,12 @@ class MiniFollowupsJob(InspiralPlottingJob):
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
+  def set_time_slides(self):
+    """
+    Turns on the --time-slides argument.
+    """
+    self.add_opt('time-slides', None)
+
 
 class MiniFollowupsNode(InspiralPlottingNode):
   """
@@ -2036,6 +2225,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml = None
     self.__input_xml_summary = None
     self.__output_html_table = None
+    self.__table_name = None
 
   def set_cache_file(self, cache_file):
     """
@@ -2127,6 +2317,19 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the output_html_table that's set.
     """
     return self.__output_html_table
+
+  def set_table_name(self, table_name):
+    """
+    Sets the table-name argument.
+    """
+    self.add_var_opt( 'table-name', table_name )
+    self.__table_name = table_name
+
+  def get_table_name(self):
+    """
+    Return the table_name that's set.
+    """
+    return self.__table_name
 
 
 #############################################################################
@@ -2295,10 +2498,12 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__extract_to_xml = None
+    self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
     self.__sim_type = None
     self.__output_format = None
+    self.__columns = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2312,6 +2517,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_extract_to_database(self, database_filename):
+    """
+    Sets the extract-to-database option.
+    """
+    self.add_var_opt('extract-to-database', database_filename)
+    self.__extract_to_database = database_filename
+
+  def get_extract_to_database(self):
+    """
+    Gets database-filename if extract-to-database is set.
+    """
+    return self.__extract_to_database
 
   def set_exclude_coincs(self, exclude_coincs):
     """
@@ -2365,6 +2583,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets the output-format option.
     """
     return self.__output_format
+
+  def set_columns(self, columns):
+    """
+    Sets the columns option.
+    """
+    self.add_var_opt('columns', columns)
+    self.__columns = columns
+
+  def get_columns(self):
+    """
+    Gets the columns option.
+    """
+    return self.__columns
 
 
 class PrintLCNode(LigolwCBCPrintNode):
@@ -2427,23 +2658,6 @@ class PrintMissedNode(LigolwCBCPrintNode):
     @job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
-    self.__instrument_time = None
-
-  def set_instrument_time(self, instruments):
-    """
-    Sets instrument-time options. If instruments
-    is a set, will convert to a sorted string.
-    """
-    if isinstance(instruments, set) or isinstance(instruments, frozenset):
-      intruments = ','.join(sorted(instruments))
-    self.add_var_opt('instrument-time', instruments)
-    self.__instrument_time = instruments
-
-  def get_instrument_time(self):
-    """
-    Gets instrument-time.
-    """
-    return self.__instrument_time
 
 
 class PlotSlidesJob(pipeline.SqliteJob):

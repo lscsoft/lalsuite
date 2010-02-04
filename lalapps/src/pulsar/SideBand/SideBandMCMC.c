@@ -615,7 +615,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
   REAL4Vector *vector = NULL;          /* stores vector of random parameters */
   INT4 i;                              /* general loop index */
   REAL8 temp;                          /* temporary time used for setting tp */
-  LALGPSCompareResult compareGPS;
+  int compareGPS;
 
   INITSTATUS( status, "InitialiseLambda", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -631,7 +631,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
   /* initialise the parameters */
   lambda->f0 = ranges.f0min + (REAL8)vector->data[0]*(ranges.f0max - ranges.f0min);
   lambda->a = ranges.amin + (REAL8)vector->data[1]*(ranges.amax - ranges.amin);
-  LALCompareGPS(status->statusPtr,&compareGPS,&(ranges.tpmin),&(ranges.tpmax));
+  compareGPS = XLALGPSCmp(&(ranges.tpmin),&(ranges.tpmax));
   if (compareGPS!=0) {
     temp = ranges.tpmin.gpsSeconds+1e-9*ranges.tpmin.gpsNanoSeconds + 
       (REAL8)vector->data[2]*(ranges.tpmax.gpsSeconds+1e-9*ranges.tpmax.gpsNanoSeconds 
@@ -674,8 +674,8 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
   REAL8 y,newy;
   INT4 i;
   REAL8 f0jump,ajump,ejump,xjump,yjump,h0jump,psijump,cosijump,phi0jump,periodjump;
-  LALGPSCompareResult compare1,compare2,compare3;
-  LALTimeInterval delta1;
+  int compare1,compare2,compare3;
+  double delta1;
 
   INITSTATUS( status, "MakeJump", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -797,7 +797,7 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
 
   /* wrap time of periapse around range */
   /* make comparisons between boundary values */
-  LALCompareGPS(status->statusPtr,&compare3,&(ranges.tpmin),&(ranges.tpmax));
+  compare3 = XLALGPSCmp(&(ranges.tpmin),&(ranges.tpmax));
 
   /* if boundary values not equal to each other */
   if (compare3!=0) {
@@ -805,28 +805,30 @@ MakeJump(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCVector *newlamb
     while (tpflag) {
 
       /* make comparisons between new tp and boundary values */
-      LALCompareGPS(status->statusPtr,&compare1,&(newlambda->tp),&(ranges.tpmin));
-      LALCompareGPS(status->statusPtr,&compare2,&(newlambda->tp),&(ranges.tpmax));
+      compare1 = XLALGPSCmp(&(newlambda->tp),&(ranges.tpmin));
+      compare2 = XLALGPSCmp(&(newlambda->tp),&(ranges.tpmax));
 
       /* if new tp is less than min boundary */
       if (compare1==-1) {
 	/* printf("newlambda->tp = %d %d tpmin = %d %d tpmax = %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds,ranges.tpmin.gpsSeconds,ranges.tpmin.gpsNanoSeconds,ranges.tpmax.gpsSeconds,ranges.tpmax.gpsNanoSeconds);
 	   printf(" new tp < min\n"); */
 	/* find difference between new tp and min boundary */
-	LALDeltaGPS(status->statusPtr,&delta1,&(ranges.tpmin),&(newlambda->tp));
+        delta1 = XLALGPSDiff(&(ranges.tpmin),&(newlambda->tp));
 	/* printf("interval = %d %d\n",delta1.seconds,delta1.nanoSeconds); */
 	/* minus interval from max boundary (max boundary must be one orbital period from min boundary) */
-	LALDecrementGPS(status->statusPtr,&(newlambda->tp),&(ranges.tpmax),&delta1);
+        newlambda->tp = ranges.tpmax;
+        XLALGPSAdd(&(newlambda->tp), -delta1);
 	/* printf("changed newlambda->tp to %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds); */
       }
       else if (compare2==1) {
 	/* printf("newlambda->tp = %d %d tpmin = %d %d tpmax = %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds,ranges.tpmin.gpsSeconds,ranges.tpmin.gpsNanoSeconds,ranges.tpmax.gpsSeconds,ranges.tpmax.gpsNanoSeconds);
 	   printf(" new tp > max\n"); */
 	/* find difference between new tp and max boundary */
-	LALDeltaGPS(status->statusPtr,&delta1,&(newlambda->tp),&(ranges.tpmax));
+        delta1 = XLALGPSDiff(&(newlambda->tp),&(ranges.tpmax));
 	/* printf("interval = %d %d\n",delta1.seconds,delta1.nanoSeconds); */
 	/* add interval to the min boundary (max boundary must be one orbital period from min boundary) */
-	LALIncrementGPS(status->statusPtr,&(newlambda->tp),&(ranges.tpmin),&delta1);
+        newlambda->tp = ranges.tpmin;
+	XLALGPSAdd(&(newlambda->tp), delta1);
 	/* printf("changed newlambda->tp to %d %d\n",newlambda->tp.gpsSeconds,newlambda->tp.gpsNanoSeconds); */
       }
       else tpflag = 0;
@@ -992,13 +994,13 @@ void
 PriorRanges(LALStatus *status,SideBandMCMCVector lambda,SideBandMCMCRanges ranges, INT4 *out)
 {
 
-  LALGPSCompareResult compare1, compare2;
+  int compare1, compare2;
 
   INITSTATUS( status, "PriorRanges", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  LALCompareGPS(status->statusPtr,&compare1,&(lambda.tp),&(ranges.tpmin));
-  LALCompareGPS(status->statusPtr,&compare2,&(lambda.tp),&(ranges.tpmax));
+  compare1 = XLALGPSCmp(&(lambda.tp),&(ranges.tpmin));
+  compare2 = XLALGPSCmp(&(lambda.tp),&(ranges.tpmax));
 
 
   *out = 0;

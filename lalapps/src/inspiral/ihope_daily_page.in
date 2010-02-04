@@ -75,15 +75,14 @@ html_template = """
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="0" onclick="switchViewIframe()" checked>Science<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="1" onclick="switchViewIframe()">Cat 1<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="2" onclick="switchViewIframe()">Cats 1 and 2<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="3" onclick="switchViewIframe()">Cats 1,2 and 3<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="4" onclick="switchViewIframe()">Cats 1,2 and 4<br>
   </form>
 
   <p>Cluster level:
   <form id="whichCluster">
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="UNCLUSTERED" onclick="switchViewIframe()" checked>Raw triggers<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="TS_CLUSTERED" onclick="switchViewIframe()">TrigScan clustering<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="TSSI_CLUSTERED" onclick="switchViewIframe()">TrigScan &amp; 16 sec<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window clustering<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="100MILLISEC_CLUSTERED" onclick="switchViewIframe()">100 msec window<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="16SEC_CLUSTERED" onclick="switchViewIframe()">16 sec window<br>
   </form>
 
   <p>Contents:
@@ -229,12 +228,12 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
         roots.append(veto_job)
 
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
-        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 3, 'UNCLUSTERED', start_time, end_time, local = True)
+        veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 4, 'UNCLUSTERED', start_time, end_time, local = True)
 
-        for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
+        for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
             root     = veto_job.add_sub_job('make_caches',   config, ifo, category, cluster, start_time, end_time)
             csv_jobs = [root.add_sub_job('make_csv',         config, ifo, 0, cluster, start_time, end_time)]
-            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,3]]
+            csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,4]]
  
             for job in csv_jobs:
                 job.add_sub_job('plot_rate_vs_time',        config, ifo, job.level, cluster, start_time, end_time)
@@ -256,7 +255,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
 
                 job.add_sub_job('make_hwinj_page',          config, ifo, job.level, cluster, start_time, end_time, local = True)
 
-                if cluster == 'TSSI_CLUSTERED':
+                if cluster == '16SEC_CLUSTERED':
                     dbjob = job.add_sub_job('make_database',    config, ifo, job.level, cluster, start_time, end_time)
                     dbjob.add_sub_job('make_glitch_page',       config, ifo, job.level, cluster, start_time, end_time, local = True)
                 else:
@@ -373,10 +372,10 @@ def m1_m2_to_mtotal_eta(m1, m2):
     return mtotal, eta
 
 def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         'TS_CLUSTERED':'TrigScan clustered',
-                         'TSSI_CLUSTERED':'TrigScan & 16 sec window'}
+                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '16SEC_CLUSTERED':'16 sec window'}
 
 
     if desc:
@@ -386,10 +385,10 @@ def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
 
 
 def make_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         'TS_CLUSTERED':'TrigScan clustered',
-                         'TSSI_CLUSTERED':'TrigScan & 16 sec window'}
+                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '16SEC_CLUSTERED':'16 sec window'}
 
 
     tstring =  os.popen('tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
@@ -826,13 +825,13 @@ def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_t
 
     print >>out, '<body>'
 
-    if cluster != 'TSSI_CLUSTERED':
-        print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
+    if cluster != '16SEC_CLUSTERED':
+        print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with a 16-second window</H3>"
     else:
         tmpfile = '%s/%s-%d_glitchout.html' % (config['tmp_dir'], ifo, veto_level)
     
         cmd  = '%s ' % config['ligolw_cbc_glitch_page']
-        cmd += '--trigger-db %s-%d-INSPIRAL_TSSI_CLUSTERED.sqlite '  % (ifo, veto_level)
+        cmd += '--trigger-db %s-%d-INSPIRAL_16SEC_CLUSTERED.sqlite '  % (ifo, veto_level)
         cmd += '--segments %s '     % os.environ['S6_SEGMENT_SERVER']
         cmd += '--html-file %s ' % tmpfile
         cmd += '--ifo %s ' % ifo
@@ -872,7 +871,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     anydata = True
 
-    if cluster != 'TSSI_CLUSTERED':
+    if cluster != '16SEC_CLUSTERED':
         out = open('%s/%s_CAT%d_%s_Hwinj.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
         print >>out, '<html>'
         print >>out, '<head>'
@@ -880,7 +879,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
         print >>out, '</head>'
 
         print >>out, '<body>'
-        print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with both TrigScan and 16-second window</H3>"
+        print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with a 16-second window</H3>"
         print >>out, '</body>'
         print >>out, '</html>'
         out.close()
@@ -891,7 +890,7 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
         cmd += '-x %s ' % config['hwinj_file']
         cmd += '-s %s ' % os.environ['S6_SEGMENT_SERVER']
         cmd += '-o %s/%s_CAT%d_%s_Hwinj.html ' % (config['out_dir'], ifo, veto_level, cluster)
-        cmd += ' '.join(sorted(glob.glob('%s-INSPIRAL_TSSI_CLUSTERED-*xml' % ifo)))
+        cmd += ' '.join(sorted(glob.glob('%s-INSPIRAL_16SEC_CLUSTERED-*xml' % ifo)))
 
         os.system(cmd)
 
@@ -915,8 +914,8 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
     out.close()
 
     for ifo in ['H1','L1','V1']:
-        for cat in [0,1,2,3]:
-            for cluster in ['UNCLUSTERED','TS_CLUSTERED','TSSI_CLUSTERED']:
+        for cat in [0,1,2,4]:
+            for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
 
                 out = open('%s/%s_CAT%d_%s_Summary.html' % (config['out_dir'], ifo, cat, cluster), 'w')
@@ -1280,7 +1279,7 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
     total_count = float(total_count)
     gaussian = None
 
-    if len(bins) > 31 and cluster != 'TSSI_CLUSTERED':
+    if len(bins) > 31 and cluster != '16SEC_CLUSTERED':
         slope    = -0.5  # 1.0 - pylab.sqrt(2)
         offset   = float(bins[30]) / pylab.exp(slope * 30.0)
         gaussian = [offset * pylab.exp(slope * x) for x in range(len(bins))] 
@@ -1519,7 +1518,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
 
         pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
 
-    pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=50)
+    pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=100)
 
 
     tau0s = [d[2] for d in data]
@@ -1561,16 +1560,19 @@ def plot_rate_vs_time_all(config, ifo, veto_level, cluster, start_time, end_time
 
         foo = {'H1':'red', 'L1':'green', 'V1':'magenta'}
         pylab.scatter(times, counts, color=foo[ifo], edgecolor='none', alpha=0.8)
-        pylab.yscale('log')
 
     pylab.xlim(0, 24)
-    min_y = cluster.find('TSSI') > -1 and 1e-2 or 1
+
+    if maxcount > 10:
+        pylab.yscale('log')
+
+    min_y = cluster.find('16SEC') > -1 and 1e-2 or 1
     pylab.ylim(min_y, maxcount * 1.1)
     pylab.xticks(range(0,26,2))
 
 
     pylab.grid()
-    pylab.title('Rate vs. Time, all IFOs, TrigScan, Cat 1')
+    pylab.title('Rate vs. Time, 100 msec cluster, Cat 1')
     pylab.xlabel(make_time_label(start_time))
     pylab.ylabel('Rate (Hz)')
     pylab.savefig('%s_%d_%s_rate_vs_time_all.png' % (ifo, veto_level, cluster))

@@ -16,8 +16,6 @@ SUBDIRS = \
 	bank \
 	ring \
 	findchirp \
-	pulsar \
-	houghpulsar \
 	support
 
 include-links:

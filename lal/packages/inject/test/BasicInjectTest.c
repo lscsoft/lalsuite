@@ -189,7 +189,7 @@ LALNormalDeviates()
 NRCSID( BASICINJECTTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 #define EPOCH (0)
 #define DIST  (0.00002*LAL_MRSUN_SI )
 #define M1    (1.4)
@@ -303,6 +303,7 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   INT2TimeSeries output;       /* detector ACD output */
 
+  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *

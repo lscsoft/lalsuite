@@ -185,18 +185,62 @@ XLALSortMultiInspiral (
 REAL4
 XLALMultiInspiralStat(
     MultiInspiralTable         *multiInspiral,
-    SnglInspiralClusterChoice  multiStat
+    MultiInspiralClusterChoice  multiStat
     )
 {
   REAL4 statValue = 0;
 
-  if ( multiStat == snr )
+  if ( multiStat == cohsnr )
   {
     statValue = multiInspiral->snr;
   }
-  else if ( multiStat == snrsq_over_chisq )
+  else if ( multiStat == effCohSnr )
   {
-    statValue = multiInspiral->snr * multiInspiral->snr / multiInspiral->chisq;
+    /* CHECK: Replace tau5 with a proper column for storing effCohSnr*/
+    statValue = multiInspiral->tau5;
+  }
+  else if ( multiStat == nullstat )
+  {
+    /* CHECK: Invert it since clustering chooses the trigger with the
+       MINIMUM null-stat value; add 0.001 to keep statValue from blowing up*/
+    statValue = 1.0 / (multiInspiral->null_statistic + 1.0e-6);
+  }
+  else if ( multiStat == snrByNullstat )
+  {
+    REAL4 tmp_cohsnr = multiInspiral->snr;
+    REAL4 tmp_nullstat = multiInspiral->null_statistic;
+    if ( tmp_nullstat > 0.0 )
+    {
+      statValue = tmp_cohsnr / tmp_nullstat;
+    }
+    else
+    {
+      statValue = 1.0e6 * tmp_cohsnr;
+    }
+  }
+  else if ( multiStat == autoCorrCohSqByNullstat )
+  {
+    REAL4 tmp_cohsnr = multiInspiral->autoCorrCohSq;
+    REAL4 tmp_nullstat = multiInspiral->null_statistic;
+    statValue = tmp_cohsnr / tmp_nullstat;
+  }
+  else if ( multiStat == crossCorrCohSqByNullstat  )
+  {
+    REAL4 tmp_cohsnr = multiInspiral->crossCorrCohSq;
+    REAL4 tmp_nullstat = multiInspiral->null_statistic;
+    statValue = tmp_cohsnr / tmp_nullstat;
+  }
+  else if ( multiStat == autoCorrNullSqByNullstat )
+  {
+    REAL4 tmp_cohsnr = multiInspiral->autoCorrNullSq;
+    REAL4 tmp_nullstat = multiInspiral->null_statistic;
+    statValue = tmp_cohsnr / tmp_nullstat;
+  }
+  else if ( multiStat == crossCorrNullSqByNullstat )
+  {
+    REAL4 tmp_cohsnr = multiInspiral->crossCorrNullSq;
+    REAL4 tmp_nullstat = multiInspiral->null_statistic;
+    statValue = tmp_cohsnr / tmp_nullstat;
   }
   else
   {
@@ -211,7 +255,7 @@ int
 XLALClusterMultiInspiralTable (
     MultiInspiralTable         **inspiralList,
     INT8                         dtimeNS,
-    SnglInspiralClusterChoice   clusterchoice
+    MultiInspiralClusterChoice   clusterchoice
     )
 /* </lalVerbatim> */
 {
@@ -416,7 +460,7 @@ XLALPlayTestMultiInspiral(
       thisEvent = thisEvent->next;
 
       triggerTime = XLALGPSToINT8NS( &(tmpEvent->end_time) );
-      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )
@@ -752,4 +796,72 @@ XLALMultiSimInspiralTest (
   }
   XLALPrintInfo( "\n" );
   return( numSimFound );
+}
+
+/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+int
+XLALMultiInspiralIfos (
+    MultiInspiralTable  *multiInspiral,
+    char                *ifos
+    )
+/* </lalVerbatim> */
+{
+  int                   ifosMatch  = 0;
+
+  if ( !multiInspiral )
+  {
+    return ( 0 );
+  }
+
+  /* check that the multi inspiral trigger is of the correct type */
+  if ( strcmp(multiInspiral->ifos, ifos) == 0 )
+  {
+    ifosMatch = 1;
+  }
+  return( ifosMatch );
+}
+
+/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+int
+XLALMultiInspiralIfosCut(
+    MultiInspiralTable **multiHead,
+    char                *ifos
+    )
+/* </lalVerbatim> */
+{
+  MultiInspiralTable    *prevTrig = NULL;
+  MultiInspiralTable    *thisTrig = NULL;
+  int                    numTrig = 0;
+
+  thisTrig = *multiHead;
+  *multiHead = NULL;
+
+  while ( thisTrig )
+  {
+    MultiInspiralTable *tmpTrig = thisTrig;
+    thisTrig = thisTrig->next;
+
+    if ( XLALMultiInspiralIfos( tmpTrig, ifos ) )
+    {
+      /* ifos match so keep tmpTrig */
+      if ( ! *multiHead  )
+      {
+        *multiHead = tmpTrig;
+      }
+      else
+      {
+        prevTrig->next = tmpTrig;
+      }
+      tmpTrig->next = NULL;
+      prevTrig = tmpTrig;
+      ++numTrig;
+    }
+    else
+    {
+      /* discard tmpCoinc */
+      XLALFreeMultiInspiral( &tmpTrig );
+    }
+  }
+
+  return( numTrig );
 }

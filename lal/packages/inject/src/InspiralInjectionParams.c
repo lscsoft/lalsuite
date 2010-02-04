@@ -34,7 +34,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -594,7 +593,7 @@ COMPLEX8FrequencySeries *generateActuation(
     fNorm = k * resp->deltaF / pendF;
     denom->data[k].re = ( 1 - fNorm * fNorm );
     denom->data[k].im = - fNorm / pendQ;
-    num->data[k].re = 1.0 * ETMcal;
+    num->data[k].re = -1.0 * ETMcal;
     num->data[k].im = 0.0;
   }
 

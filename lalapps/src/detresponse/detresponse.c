@@ -39,21 +39,22 @@
 #include "skygrid.h"
 #include <string.h>
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbosity_level = 0;
 struct gengetopt_args_info args_info;
-
 
 int
 main(int argc, char **argv)
 {
   static LALStatus          status;
-  EphemerisData             ephemeris_data;
+  EphemerisData             *ephemeris_data;
   skygrid_t grid_cros_sq = NULL;
   skygrid_t grid_plus_sq = NULL;
   skygrid_t grid_sum_sq  = NULL;
   skygrid_t grid_relfreq = NULL;
-  
+
+  lalDebugLevel = 0;
+
   status.statusPtr = NULL;
   
   /* parse command line options */
@@ -75,7 +76,10 @@ main(int argc, char **argv)
   if(lalDebugLevel!=0)printf("lalDebugLevel = %d\n", lalDebugLevel);
     
   /* initalize ephemeris_data */
-  init_ephemeris(&status, &ephemeris_data);
+  if ( (ephemeris_data = InitEphemeris (NULL, "03-06")) == NULL ) {
+    XLALPrintError ("Failed to initialized '03-06' ephemeris, make sure to set LAL_DATA_PATH correctly!\n");
+    exit(1);
+  }
 
   /* initialize skygrid_t stuff - must be after cmdline is parsed */
   init_skygrid(&status);
@@ -101,7 +105,7 @@ main(int argc, char **argv)
   if (args_info.single_source_given)
     generate_timeseries_response(&status);
   else if (args_info.whole_sky_given)
-    compute_skygrid(&status, &ephemeris_data, grid_cros_sq,
+    compute_skygrid(&status, ephemeris_data, grid_cros_sq,
                     grid_plus_sq, grid_sum_sq, grid_relfreq);
     
   
@@ -114,8 +118,11 @@ main(int argc, char **argv)
   free_skygrid(&status, &grid_relfreq);
   
   cleanup_skygrid(&status);
-    
-  cleanup_ephemeris(&status, &ephemeris_data);
+
+  XLALFree ( ephemeris_data->ephemE );
+  XLALFree ( ephemeris_data->ephemS );
+  XLALFree ( ephemeris_data );
+
   
   LALCheckMemoryLeaks();
 

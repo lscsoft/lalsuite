@@ -191,6 +191,11 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	const SnglBurst *
 );
 
+int XLALWriteLIGOLwXMLSnglInspiralTable(
+	LIGOLwXMLStream *xml,
+	const SnglInspiralTable *sngl_inspiral
+);
+
 int XLALWriteLIGOLwXMLSimBurstTable(
 	LIGOLwXMLStream *,
 	const SimBurst *

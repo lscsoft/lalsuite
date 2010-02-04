@@ -79,6 +79,7 @@ int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
+int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
 
@@ -141,6 +142,10 @@ static void print_usage(char *program)
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
+      "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
+      "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"\
+      "                                    there are no h2 triggers present\n"\
+      "                                   needed when --h1-h2-consistency is given\n"\
       "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
       "  [--do-veto]         do_veto   veto cetain segments\n"\
       "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"\
@@ -228,6 +233,8 @@ int main( int argc, char *argv[] )
   INT4                  i;
   INT8                  maximizationInterval = 0;
 
+  REAL4                 h1snrCut = 0;
+
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
@@ -245,6 +252,7 @@ int main( int argc, char *argv[] )
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
+    {"h1-h2-consistency",   no_argument,   &h1h2Consistency,          1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
     {"complete-coincs",     no_argument,   &completeCoincs,           1 },
     {"h1-slide",            required_argument, 0,                    'c'},
@@ -279,6 +287,7 @@ int main( int argc, char *argv[] )
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
     {"high-mass",           required_argument, 0,                    '&'},
+    {"h1-snr-cut",          required_argument, 0,                    '*'},
     {"h1-veto-file",        required_argument, 0,                    '('},
     {"h2-veto-file",        required_argument, 0,                    ')'},
     {"l1-veto-file",        required_argument, 0,                    '}'},
@@ -696,6 +705,12 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "int", "%lld",  maximizationInterval );
         break;
 
+      case '*':
+        /* snr cut */
+        h1snrCut = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       case '(':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
@@ -911,6 +926,26 @@ if ( vrbflg)
     snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  /* store the h1h2 consistency option */ 
+  if ( h1h2Consistency )
+  {
+    if ( !( h1snrCut > 0 ) )
+    {
+      fprintf( stderr,"The --h1-snr-cut option must be specified and \n"
+               "greater than zero when --h1-h2-consistency is given\n" );
+      exit( 1 );
+    }
+     
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+   snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--h1-h2-consistency" );
+   snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+   snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+ }
+
   /* store the veto option */ 
   if ( doVeto )
   {
@@ -1020,7 +1055,7 @@ if ( vrbflg)
    
    /*    we initialise the veto segment list needed either by the h1h2 
         consistency check or the veto option itself. */
-   if ( doVeto )
+   if ( h1h2Consistency || doVeto )
    {
      for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
      {
@@ -1278,6 +1313,31 @@ if ( vrbflg)
       LAL_CALL( LALRemoveRepeatedRingdownCoincs( &status, &coincRingdownList ),
            &status );
     }
+
+    /* perform the h1h2-consistency check */
+    if ( h1h2Consistency && haveTrig[LAL_IFO_H1] && haveTrig[LAL_IFO_H2] )
+    {
+      if(vrbflg) 
+      {
+        if (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2])
+        {
+          fprintf(stdout, 
+              "Using h1-h2-consistency with veto segment list %s and %s\n", 
+              vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
+        }
+        else
+        { 
+          fprintf(stdout, 
+              "Using h1-h2-consistency without veto segment list. NOT RECOMMENDED\n");
+        }
+      }
+      LAL_CALL( LALRingdownH1H2Consistency(&status,  &coincRingdownList,
+           h1snrCut, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+      if ( vrbflg ) fprintf( stdout, 
+          "%d remaining coincident triggers after h1-h2-consisteny .\n", 
+          XLALCountCoincInspiral(coincRingdownList));
+   }
+
 
     /* no time-slide */
     if ( !slideNum )

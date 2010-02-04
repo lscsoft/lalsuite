@@ -42,7 +42,6 @@ $Id$
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GenerateRing.h>
@@ -1235,7 +1234,7 @@ XLALPlayTestCoincRingdown(
       thisEvent = thisEvent->next;
 
       triggerTime = XLALCoincRingdownTimeNS( tmpEvent );
-      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )
@@ -1978,4 +1977,95 @@ XLALSortCoincRingdown (
   return( eventHead );
 
 }
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALRingdownH1H2Consistency(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincRingdown,
+    REAL4			H1snrCutThreshold,
+    LALSegList                 *vetoSegsH1,
+    LALSegList                 *vetoSegsH2
+    )
+/* </lalVerbatim> */
+{
+  CoincRingdownTable   *thisCoinc = NULL;
+  CoincRingdownTable   *prevCoinc = NULL;
+  CoincRingdownTable   *coincHead = NULL;
+  REAL4 snrH1;
+  INITSTATUS( status, "LALRingdownH1H2Consistency", COINCRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  thisCoinc = *coincRingdown;
+  coincHead = NULL;
+
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    CoincRingdownTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+/* Discard the H1 trigger if it's snr is above the threshold, */
+/*   a H2 trigger does not exist and H2 is not vetoed.*/
+    if( tmpCoinc->snglRingdown[LAL_IFO_H1] && !tmpCoinc->snglRingdown[LAL_IFO_H2])
+    {
+      snrH1 = tmpCoinc->snglRingdown[LAL_IFO_H1]->snr;
+      if( snrH1 > H1snrCutThreshold )
+      {
+        if ( vetoSegsH2->initMagic == SEGMENTSH_INITMAGICVAL )
+	{
+	  if (!XLALSegListSearch( vetoSegsH2,
+			      &(tmpCoinc->snglRingdown[LAL_IFO_H1]->start_time)))
+          {
+            discardTrigger =1;
+          }
+        }
+        else
+        {
+          discardTrigger = 1;
+        }
+      }
+    }
+
+/* Discard the H2 trigger if a H1 trigger does not exist and H1 was not vetoed. */
+    if( tmpCoinc->snglRingdown[LAL_IFO_H2] && !tmpCoinc->snglRingdown[LAL_IFO_H1])
+    {
+      if ( vetoSegsH1->initMagic == SEGMENTSH_INITMAGICVAL )
+      {
+        if (!XLALSegListSearch( vetoSegsH1,
+                            &(tmpCoinc->snglRingdown[LAL_IFO_H2]->start_time)))
+        {
+          discardTrigger =1;
+        }
+      }
+      else
+      {
+        discardTrigger = 1;
+      }
+    }
+
+    if( discardTrigger )
+    {
+      XLALFreeCoincRingdown( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincRingdown = coincHead;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
 

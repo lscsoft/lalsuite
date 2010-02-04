@@ -58,7 +58,7 @@ lalDebugLevel
 
 NRCSID(METRICTESTC,"$Id$");
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 static void
 GetInspiralMoments (
@@ -90,6 +90,8 @@ main(void)
   InspiralMomentsEtc moments;
   REAL8 mismatch;
   FILE *fpr;
+
+  lalDebugLevel = 0;
 
   fpr = fopen("MetricTest.out", "w");
 

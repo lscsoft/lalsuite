@@ -42,10 +42,9 @@ psinject_SOURCES = psinject.c
 
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800
 TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh
-TESTS_ENVIRONMENT = \
-LAL_TOP_SRCDIR=$(LAL_TOP_SRCDIR) \
-LAL_PREFIX=$(LAL_PREFIX) \
-LAL_DATA_PATH=.:$${LAL_TOP_SRCDIR:+"$${LAL_TOP_SRCDIR}/packages/pulsar/test"}:$${LAL_PREFIX:+"$${LAL_PREFIX}/share/lal"}
 
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.$${LALPULSAR_PREFIX:+":$${LALPULSAR_PREFIX}/share/lalpulsar"}$${LALSUITE_TOP_SRCDIR:+":$${LALSUITE_TOP_SRCDIR}/lalpulsar/test"}
 
 CLEANFILES =

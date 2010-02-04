@@ -34,7 +34,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
@@ -80,7 +79,7 @@ XLALPlayTestSimRingdown(
       thisEvent = thisEvent->next;
 
       triggerTime = XLALGPSToINT8NS( &(tmpEvent->geocent_start_time) );
-      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )

@@ -125,15 +125,10 @@ int PeriapseShift(LIGOTimeGPS Tpold, LIGOTimeGPS *Tp,LIGOTimeGPS Tstart, REAL8 P
 int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIGOTimeGPS *TpOUT, REAL8 Period,INT4 NORB)
 {
 
-  static LALStatus status;
   REAL8 shift;
-  REAL8 twoPeriod;
-  LALGPSCompareResult compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
-  LALGPSCompareResult compone,comptwo,compthree,compfour;
-  LALTimeInterval interval;
+  int compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
+  int compone,comptwo,compthree,compfour;
   LIGOTimeGPS tempone,temptwo,tempthree,tempfour;
-  LALTimeInterval intervalone,intervaltwo;
-  REAL8 halfperiod;
   LIGOTimeGPS tempOUT;
 
   /*printf("In PeriapseShiftBack now\n");
@@ -184,58 +179,54 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
  
   /* check whether the input Tp has been shifted out of range of 1 period before the start time */
   
-  /* calculate iterval equal to plus one period */
-  LALFloatToInterval(&status,&interval,&Period);
-
-  /* calculate interval equal to plus two periods */
-  twoPeriod=2.0*Period;
-  LALFloatToInterval(&status,&intervaltwo,&twoPeriod);
-  
   /* minus a single period from the start time */
-  LALDecrementGPS(&status,&tempone,&Tpstart,&interval);
+  tempone = Tpstart;
+  XLALGPSAdd(&tempone, -Period);
   
   /* add a single period to the start time */
-  LALIncrementGPS(&status,&temptwo,&Tpstart,&interval);
+  temptwo = Tpstart;
+  XLALGPSAdd(&temptwo, Period);
   
   /* add two periods from to the start time */
-  LALDecrementGPS(&status,&tempthree,&Tpstart,&intervaltwo);
+  tempthree = Tpstart;
+  XLALGPSAdd(&tempthree, -2.0 * Period);
   
   /* compare the input time to the start time */
-  LALCompareGPS(&status,&compSHIFT,&Tpstart,&TpIN);
+  compSHIFT = XLALGPSCmp(&Tpstart,&TpIN);
   /*printf("start : input -> %d\n",compSHIFT);*/
 
   /* compare the input time to the start-period */
-  LALCompareGPS(&status,&compSHIFTone,&tempone,&TpIN);
+  compSHIFTone = XLALGPSCmp(&tempone,&TpIN);
   /*printf("start-period : input -> %d\n",compSHIFTone);*/
 
   /* compare the input time to the start+period */
-  LALCompareGPS(&status,&compSHIFTtwo,&temptwo,&TpIN);
+  compSHIFTtwo = XLALGPSCmp(&temptwo,&TpIN);
   /*printf("start+period : input -> %d\n",compSHIFTtwo);*/
 
   /* compare the input time to the start-2*period */
-  LALCompareGPS(&status,&compSHIFTthree,&tempthree,&TpIN);
+  compSHIFTthree = XLALGPSCmp(&tempthree,&TpIN);
   /*printf("start-2period : input -> %d\n",compSHIFTthree);*/
 
   /* if input time is after the start time by less than one orbit */
-  if ((compSHIFT==LALGPS_EARLIER)&&(compSHIFTtwo==LALGPS_LATER)) {
+  if ((compSHIFT < 0)&&(compSHIFTtwo > 0)) {
     printf("input time is after the start time and less than starttime+period -> NORB=NORB+1\n");
     NORB=NORB+1;
   }
 
   /* if input time is before the start time by more than one orbit */
-  else if ((compSHIFTone==LALGPS_LATER)&&(compSHIFTthree==LALGPS_EARLIER)) {
+  else if ((compSHIFTone > 0)&&(compSHIFTthree < 0)) {
     printf("input time is before the start time-period and after the starttime-2period -> NORB=NORB-1\n");
     NORB=NORB-1;
   }
 
   /* if input time is after the start time by more than one orbit */
-  else if (compSHIFTtwo==LALGPS_EARLIER) {
+  else if (compSHIFTtwo < 0) {
     fprintf(stderr,"ERROR in PeripaseShiftBack : input time is after the start time by more than one orbital period !!!\n");
     exit(1);
   }
 
   /* if input time is before the start time by more than two orbits */
-  else if (compSHIFTthree==LALGPS_LATER) {
+  else if (compSHIFTthree > 0) {
     fprintf(stderr,"ERROR in PeripaseShiftBack : input time is before the start time by more than two orbital periods !!!\n");
     exit(1);
   }
@@ -243,15 +234,15 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
   /* if NORB is positive */
   if (NORB>=0) {
     shift=(REAL8)(NORB)*Period;
-    LALFloatToInterval(&status,&interval,&shift);
-    LALDecrementGPS(&status,TpOUT,&TpIN,&interval);
+    *TpOUT = TpIN;
+    XLALGPSAdd(TpOUT, -shift);
     /*printf("in shift back : NORB = %d returning %d %d\n",NORB,TpOUT->gpsSeconds,TpOUT->gpsNanoSeconds);*/
   }
   /* if NORB is negative */
   else if (NORB<0) {
     shift=(-1.0)*(REAL8)(NORB)*Period;
-    LALFloatToInterval(&status,&interval,&shift);
-    LALIncrementGPS(&status,TpOUT,&TpIN,&interval);
+    *TpOUT = TpIN;
+    XLALGPSAdd(TpOUT, shift);
     /*printf("in shift back : NORB = %d returning %d %d\n",NORB,TpOUT->gpsSeconds,TpOUT->gpsNanoSeconds);*/
   } 
   else {
@@ -261,41 +252,39 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
 
   /* test if TpOUT is with +/- 1/2 period from Tp0 */
   
-  /* calculate iterval equal to plus half period */
-  halfperiod=Period/2.0;
-  LALFloatToInterval(&status,&intervalone,&halfperiod);
-  LALFloatToInterval(&status,&intervaltwo,&Period);
-
   /* make Tp0 +/- half period */
-  LALDecrementGPS(&status,&tempone,&Tp0,&intervalone);
-  LALIncrementGPS(&status,&temptwo,&Tp0,&intervalone);
-  LALDecrementGPS(&status,&tempthree,&Tp0,&intervaltwo);
-  LALIncrementGPS(&status,&tempfour,&Tp0,&intervaltwo);
+  tempone = temptwo = tempthree = tempfour = Tp0;
+  XLALGPSAdd(&tempone, -Period / 2);
+  XLALGPSAdd(&temptwo, +Period / 2);
+  XLALGPSAdd(&tempthree, -Period);
+  XLALGPSAdd(&tempfour, +Period);
 
   /* test if in the right range */
-  LALCompareGPS(&status,&compone,TpOUT,&tempone);
-  LALCompareGPS(&status,&comptwo,TpOUT,&temptwo);
-  LALCompareGPS(&status,&compthree,TpOUT,&tempthree);
-  LALCompareGPS(&status,&compfour,TpOUT,&tempfour);
+  compone = XLALGPSCmp(TpOUT,&tempone);
+  comptwo = XLALGPSCmp(TpOUT,&temptwo);
+  compthree = XLALGPSCmp(TpOUT,&tempthree);
+  compfour = XLALGPSCmp(TpOUT,&tempfour);
 
-  if ((compone==LALGPS_LATER)&&(comptwo==LALGPS_EARLIER)) return 0;
-  else if ((compone==LALGPS_EARLIER)&&(compthree==LALGPS_LATER)) {
+  if ((compone > 0)&&(comptwo < 0)) return 0;
+  else if ((compone < 0)&&(compthree > 0)) {
     tempOUT.gpsSeconds=TpOUT->gpsSeconds;
     tempOUT.gpsNanoSeconds=TpOUT->gpsNanoSeconds;
-    LALIncrementGPS(&status,TpOUT,&tempOUT,&intervaltwo);
+    *TpOUT = tempOUT;
+    XLALGPSAdd(TpOUT, Period);
     return 0;
   }
-  else if ((comptwo==LALGPS_LATER)&&(compfour==LALGPS_EARLIER)) {
+  else if ((comptwo > 0)&&(compfour < 0)) {
     tempOUT.gpsSeconds=TpOUT->gpsSeconds;
     tempOUT.gpsNanoSeconds=TpOUT->gpsNanoSeconds;
-    LALDecrementGPS(&status,TpOUT,&tempOUT,&intervaltwo);
+    *TpOUT = tempOUT;
+    XLALGPSAdd(TpOUT, -Period);
     return 0;
   }
-  else if (compthree==LALGPS_EARLIER) {
+  else if (compthree < 0) {
     printf("ERROR : output Tp is earlier than Tp0 by more than a period !!!\n");
     exit(1);
   }
-  else if (compfour==LALGPS_LATER) {
+  else if (compfour > 0) {
     printf("ERROR : output Tp is later than Tp0 by more than a period !!!\n");
     exit(1);
   }

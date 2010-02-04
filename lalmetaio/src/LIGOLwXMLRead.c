@@ -191,10 +191,16 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	}
 
 	/*
-	 * find table (parse error is interpreted as table is missing)
+	 * find table.  note:  parse errors are interpreted as "table is
+	 * missing".  metaio provides no other mechanism for testing for
+	 * the presence of a table.
 	 */
 
 	has_table = !MetaioOpenTableOnly(&env, table_name);
+	/* FIXME:  when we can rely on newer versions of libmetaio use this
+	 * function instead of what follows */
+	/*MetaioClearErrno(&env);*/
+	env.mierrno = 0;
 
 	/*
 	 * close
@@ -570,14 +576,11 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -606,7 +609,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -621,7 +623,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
@@ -635,7 +636,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
@@ -655,7 +655,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -663,8 +662,6 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
-                MetaioAbort(&env);
-                MetaioClose(&env);
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -707,6 +704,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		int amplitude;
 		int snr;
 		int confidence;
+		int chisq;
+		int chisq_dof;
 		int event_id;
 	} column_pos;
 
@@ -716,7 +715,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "sngl_burst")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -739,6 +738,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_4, 1);
 	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", METAIO_TYPE_REAL_4, 1);
 	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
+	column_pos.chisq = XLALLIGOLwFindColumn(&env, "chisq", METAIO_TYPE_REAL_8, 1);
+	column_pos.chisq_dof = XLALLIGOLwFindColumn(&env, "chisq_dof", METAIO_TYPE_REAL_8, 1);
 	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
@@ -785,6 +786,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_4;
 		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
+		row->chisq = env.ligo_lw.table.elt[column_pos.chisq].data.real_8;
+		row->chisq_dof = env.ligo_lw.table.elt[column_pos.chisq_dof].data.real_8;
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
@@ -1098,7 +1101,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFOS_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -1294,7 +1297,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         thisEvent->chisq_v = r4colData;
       }
-      else if ( tableDir[j].idx == 48 )
+      else if ( tableDir[j].idx == 49 )
       {
         thisEvent->ra = r4colData;
       }
@@ -4035,7 +4038,7 @@ LALMultiInspiralTableFromLIGOLw (
       /* dereference the data stored in the table */
       if ( tableDir[j].idx == 0 )
       {
-        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFOS_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -4101,161 +4104,173 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 16 )
       {
-        thisEvent->coa_phase = r4colData;
+        thisEvent->chi = r4colData;
       }
       else if ( tableDir[j].idx == 17 )
       {
-        thisEvent->mass1 = r4colData;
+        thisEvent->kappa = r4colData;
       }
       else if ( tableDir[j].idx == 18 )
       {
-        thisEvent->mass2 = r4colData;
+        thisEvent->coa_phase = r4colData;
       }
       else if ( tableDir[j].idx == 19 )
       {
-        thisEvent->mchirp = r4colData;
+        thisEvent->mass1 = r4colData;
       }
       else if ( tableDir[j].idx == 20 )
       {
-        thisEvent->eta = r4colData;
+        thisEvent->mass2 = r4colData;
       }
       else if ( tableDir[j].idx == 21 )
       {
-        thisEvent->tau0 = r4colData;
+        thisEvent->mchirp = r4colData;
       }
       else if ( tableDir[j].idx == 22 )
       {
-        thisEvent->tau2 = r4colData;
+        thisEvent->eta = r4colData;
       }
       else if ( tableDir[j].idx == 23 )
       {
-        thisEvent->tau3 = r4colData;
+        thisEvent->tau0 = r4colData;
       }
       else if ( tableDir[j].idx == 24 )
       {
-        thisEvent->tau4 = r4colData;
+        thisEvent->tau2 = r4colData;
       }
       else if ( tableDir[j].idx == 25 )
       {
-        thisEvent->tau5 = r4colData;
+        thisEvent->tau3 = r4colData;
       }
       else if ( tableDir[j].idx == 26 )
       {
-        thisEvent->ttotal = r4colData;
+        thisEvent->tau4 = r4colData;
       }
       else if ( tableDir[j].idx == 27 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->tau5 = r4colData;
       }
       else if ( tableDir[j].idx == 28 )
       {
-        thisEvent->chisq = r4colData;
+        thisEvent->ttotal = r4colData;
       }
       else if ( tableDir[j].idx == 29 )
       {
-        thisEvent->chisq_dof = i4colData;
+        thisEvent->snr = r4colData;
       }
       else if ( tableDir[j].idx == 30 )
       {
-        thisEvent->bank_chisq = r4colData;
+        thisEvent->snr_dof = i4colData;
       }
       else if ( tableDir[j].idx == 31 )
       {
-        thisEvent->bank_chisq_dof = i4colData;
+        thisEvent->chisq = r4colData;
       }
       else if ( tableDir[j].idx == 32 )
       {
-        thisEvent->cont_chisq = r4colData;
+        thisEvent->chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 33 )
       {
-        thisEvent->cont_chisq_dof = i4colData;
+        thisEvent->bank_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 34 )
       {
-        thisEvent->sigmasq_h1 = r8colData;
+        thisEvent->bank_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 35 )
       {
-        thisEvent->sigmasq_h2 = r8colData;
+        thisEvent->cont_chisq = r4colData;
       }
       else if ( tableDir[j].idx == 36 )
       {
-        thisEvent->sigmasq_l = r8colData;
+        thisEvent->cont_chisq_dof = i4colData;
       }
       else if ( tableDir[j].idx == 37 )
       {
-        thisEvent->sigmasq_g = r8colData;
+        thisEvent->sigmasq_h1 = r8colData;
       }
       else if ( tableDir[j].idx == 38 )
       {
-        thisEvent->sigmasq_t = r8colData;
+        thisEvent->sigmasq_h2 = r8colData;
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->sigmasq_v = r8colData;
+        thisEvent->sigmasq_l = r8colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
-        thisEvent->chisq_h1 = r4colData;
+        thisEvent->sigmasq_g = r8colData;
       }
       else if ( tableDir[j].idx == 41 )
       {
-        thisEvent->chisq_h2 = r4colData;
+        thisEvent->sigmasq_t = r8colData;
       }
       else if ( tableDir[j].idx == 42 )
       {
-        thisEvent->chisq_l = r4colData;
+        thisEvent->sigmasq_v = r8colData;
       }
       else if ( tableDir[j].idx == 43 )
       {
-        thisEvent->chisq_g = r4colData;
+        thisEvent->chisq_h1 = r4colData;
       }
       else if ( tableDir[j].idx == 44 )
       {
-        thisEvent->chisq_t = r4colData;
+        thisEvent->chisq_h2 = r4colData;
       }
       else if ( tableDir[j].idx == 45 )
       {
-        thisEvent->chisq_v = r4colData;
+        thisEvent->chisq_l = r4colData;
       }
       else if ( tableDir[j].idx == 46 )
       {
-        thisEvent->ra = r4colData;
+        thisEvent->chisq_g = r4colData;
       }
       else if ( tableDir[j].idx == 47 )
       {
-        thisEvent->dec = r4colData;
+        thisEvent->chisq_t = r4colData;
       }
       else if ( tableDir[j].idx == 48 )
       {
-        thisEvent->ligo_angle = r4colData;
+        thisEvent->chisq_v = r4colData;
       }
       else if ( tableDir[j].idx == 49 )
       {
-        thisEvent->ligo_angle_sig = r4colData;
+        thisEvent->ra = r4colData;
       }
       else if ( tableDir[j].idx == 50 )
       {
-        thisEvent->inclination = r4colData;
+        thisEvent->dec = r4colData;
       }
       else if ( tableDir[j].idx == 51 )
       {
-        thisEvent->polarization = r4colData;
+        thisEvent->ligo_angle = r4colData;
       }
       else if ( tableDir[j].idx == 52 )
       {
-        thisEvent->null_statistic = r4colData;
+        thisEvent->ligo_angle_sig = r4colData;
       }
       else if ( tableDir[j].idx == 53 )
       {
-        thisEvent->null_stat_h1h2 = r4colData;
+        thisEvent->inclination = r4colData;
       }
       else if ( tableDir[j].idx == 54 )
       {
-        thisEvent->null_stat_degen = r4colData;
+        thisEvent->polarization = r4colData;
       }
       else if ( tableDir[j].idx == 55 )
+      {
+        thisEvent->null_statistic = r4colData;
+      }
+      else if ( tableDir[j].idx == 56 )
+      {
+        thisEvent->null_stat_h1h2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 57 )
+      {
+        thisEvent->null_stat_degen = r4colData;
+      }
+      else if ( tableDir[j].idx == 58 )
       {
         if ( tableDir[j].pos > 0 )
         {
@@ -4276,83 +4291,83 @@ LALMultiInspiralTableFromLIGOLw (
           }
         }
       }
-      else if ( tableDir[j].idx == 56 )
+      else if ( tableDir[j].idx == 59 )
       {
         thisEvent->h1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 57 )
+      else if ( tableDir[j].idx == 60 )
       {
         thisEvent->h1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 58 )
+      else if ( tableDir[j].idx == 61 )
       {
         thisEvent->h2quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 59 )
+      else if ( tableDir[j].idx == 62 )
       {
         thisEvent->h2quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 60 )
+      else if ( tableDir[j].idx == 63 )
       {
         thisEvent->l1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 61 )
+      else if ( tableDir[j].idx == 64 )
       {
         thisEvent->l1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 62 )
+      else if ( tableDir[j].idx == 65 )
       {
         thisEvent->g1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 63 )
+      else if ( tableDir[j].idx == 66 )
       {
         thisEvent->g1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 64 )
+      else if ( tableDir[j].idx == 67 )
       {
         thisEvent->t1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 65 )
+      else if ( tableDir[j].idx == 68 )
       {
         thisEvent->t1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 66 )
+      else if ( tableDir[j].idx == 69 )
       {
         thisEvent->v1quad.re = r4colData;
       }
-      else if ( tableDir[j].idx == 67 )
+      else if ( tableDir[j].idx == 70 )
       {
         thisEvent->v1quad.im = r4colData;
       }
-      else if ( tableDir[j].idx == 68 )
+      else if ( tableDir[j].idx == 71 )
       {
         thisEvent->coh_snr_h1h2 = r4colData;
       }
-      else if ( tableDir[j].idx == 69 )
+      else if ( tableDir[j].idx == 72 )
       {
         thisEvent->cohSnrSqLocal = r4colData;
       }
-      else if ( tableDir[j].idx == 70 )
+      else if ( tableDir[j].idx == 73 )
       {
         thisEvent->autoCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 71 )
+      else if ( tableDir[j].idx == 74 )
       {
         thisEvent->crossCorrCohSq = r4colData;
       }
-      else if ( tableDir[j].idx == 72 )
+      else if ( tableDir[j].idx == 75 )
       {
         thisEvent->autoCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 73 )
+      else if ( tableDir[j].idx == 76 )
       {
         thisEvent->crossCorrNullSq = r4colData;
       }
-      else if ( tableDir[j].idx == 74 )
+      else if ( tableDir[j].idx == 77 )
       {
         thisEvent->ampMetricEigenVal1 = r8colData;
       }
-      else if ( tableDir[j].idx == 75 )
+      else if ( tableDir[j].idx == 78 )
       {
         thisEvent->ampMetricEigenVal2 = r8colData;
       }

@@ -292,7 +292,7 @@ LALFindChirpClusterEvents (
             if ( bankVetoData->length > 1 )
             {
               bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
-                             thisEvent->end_time.gpsSeconds, &bvDOF);
+					     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
             }
 
             ccChisq = XLALComputeFullChisq(bankVetoData,input,params,q,
@@ -342,7 +342,7 @@ LALFindChirpClusterEvents (
     if ( bankVetoData->length > 1 )
     {
       bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
-                             thisEvent->end_time.gpsSeconds, &bvDOF);
+				     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
     }
 
     ccChisq = XLALComputeFullChisq(bankVetoData, input,params,q,

@@ -1,13 +1,18 @@
-function scatter_plots( veto_level, coinctype, ifo1, ifo2, bgfile1, bgfile2, injtype, nonbgtype, nonbgfile1, nonbgfile2 )
+function scatter_plots( veto_level, coinctype, ifotime, ifo1, ifo2, bgfile1, bgfile2, injtype, nonbgtype, nonbgfile1, nonbgfile2 )
 
 %
 % NULL = scatter_plots ( veto_level, coinctype, ifo1, ifo2, bgfile1, bgfile2, injtype,  nonbgtype, nonbgfile1, nonbgfile2 )
 %
 % coinctype = 'trip', 'doub'
+% This is the type of coincidence.
 %
-% veto_level = 'NOVETO','CAT2','CAT23'
+% ifotime = 'trip', 'doub'
+% This is how many ifos were operating.
 %
-% ifo1='H1','H2','L1'
+% veto_level = 'CAT2','CAT23','CAT234'
+%
+% ifo1, ifo2 = 'H1','H2','L1'
+% These are the two snrs that will be plotted.
 %
 % bgfile1 and bgfile2 should always be background.mat files. They will be plotted
 % first. bgfile1 will be plotted on the x-axis and bgfile2 will be plotted on
@@ -47,9 +52,15 @@ function scatter_plots( veto_level, coinctype, ifo1, ifo2, bgfile1, bgfile2, inj
     set(gca,'FontSize',14);
     eval(['plot_title=title(''' veto_level ' ' injtype ': ' ifo2 ' SNR versus ' ifo1 ' SNR'');'])
     set(plot_title,'FontSize',14,'FontWeight','b');
-    eval(['leg=legend(''Background ' coinctype ''',''Injections ' coinctype ''',0);'])
+    eval(['leg=legend(''Background ' coinctype ' coincidence in ' ifotime ' time'',''Injections ' coinctype ' coincidence in ' ifotime ' time'',0);'])
     set(leg,'FontSize',14);
-    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' coinctype '_' nonbgtype '_snrscatterplot.png'')'])
+    if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_H1H2L1_H1H2L1_' nonbgtype '_snrscatterplot.png'')'])
+    elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_H1H2L1_' nonbgtype '_snrscatterplot.png'')'])
+    else
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_' nonbgtype '_snrscatterplot.png'')'])
+    end
     close;
 
   %======== Timeslides and Playground or Foreground Plots ========%
@@ -70,13 +81,19 @@ function scatter_plots( veto_level, coinctype, ifo1, ifo2, bgfile1, bgfile2, inj
     eval(['plot_title=title(''' veto_level ': ' ifo2 ' SNR versus ' ifo1 ' SNR'');'])
     set(plot_title,'FontSize',14,'FontWeight','b');
     if(strcmp(nonbgtype,'pg'))
-      eval(['leg=legend(''Background ' coinctype ''',''Playground ' coinctype ''',0);'])
+      eval(['leg=legend(''Background ' coinctype ' coincidence in ' ifotime ' time'',''Playground ' coinctype ' coincidence in ' ifotime ' time'',0);'])
     elseif(strcmp(nonbgtype,'fg'))
-      eval(['leg=legend(''Background ' coinctype ''',''Zero-lag ' coinctype ''',0);'])
+      eval(['leg=legend(''Background ' coinctype ' coincidence in ' ifotime ' time'',''Zero-lag ' coinctype ' coincidence in ' ifotime ' time'',0);'])
     else
-      eval(['leg=legend(''Background ' coinctype ''',''' nonbgtype ' ' coinctype ''',0);'])
+      eval(['leg=legend(''Background ' coinctype ' coincidence in ' ifotime ' time'',''' nonbgtype ' ' coinctype ' coincidence in ' ifotime ' time'',0);'])
     end
     set(leg,'FontSize',14);
-    eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' coinctype '_' nonbgtype '_snrscatterplot.png'')'])
+    if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_H1H2L1_H1H2L1_' nonbgtype '_snrscatterplot.png'')'])
+    elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_H1H2L1_' nonbgtype '_snrscatterplot.png'')'])
+    else
+      eval(['saveas(gcf,''' veto_level '_' injtype '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_' nonbgtype '_snrscatterplot.png'')'])
+    end
     close;
   end

@@ -85,7 +85,7 @@ NRCSID( LALCORRELATIONTESTC, "$Id$" );
 static INT4 readData(InputCorrelation **in, CorrelationParams **p, OutputCorrelation **should);
 static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should);
 
-int lalDebugLevel = LALMSGLVL3;
+extern int lalDebugLevel;
 const CHAR fileName[] = "data.txt";
 
 int main( void )
@@ -98,6 +98,8 @@ int main( void )
   CorrelationParams       *params=NULL;
   INT4 io;
   INT4 comparison;
+
+  lalDebugLevel = LALMSGLVL3;
 
   printf("\n\n---- Test of LALCorrelation -----\n\n");
 

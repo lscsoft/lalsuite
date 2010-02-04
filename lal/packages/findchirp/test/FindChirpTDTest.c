@@ -36,7 +36,7 @@ NRCSID (FINDCHIRPTDTESTC,"$Id$");
     fprintf( stderr, "LAL Routine failed near line %d\n", __LINE__ ), 1 ) )
 
 LALStatus status;
-int lalDebugLevel = 1;
+extern int lalDebugLevel;
 
 int main( void )
 {
@@ -66,6 +66,7 @@ int main( void )
   /* this is required for TDFilter(); it is created by TDInit() */
   FindChirpDataParams  *tdDataParams  = NULL;
 
+  lalDebugLevel = 1;
 
   /* set initialization parameters */
   initParams.numSegments    = numSegments;

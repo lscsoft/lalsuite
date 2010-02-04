@@ -1,9 +1,9 @@
-function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, nonbgdetstat )
+function plotcumhist( veto_level, coinctype, ifotime, ifo1, ifo2, bgdetstat, nonbgtype, nonbgdetstat )
 
 %
-% null = plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgdetstat )
+% null = plotcumhist( veto_level, coinctype, ifotime, ifo1, ifo2, bgdetstat, nonbgdetstat )
 %
-% veto_level = 'NOVETO','CAT2','CAT23'
+% veto_level = 'CAT2','CAT23','CAT234'
 %
 % coinctype = 'trip', 'doub'
 %
@@ -38,6 +38,10 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
   for i=1:length(rho)
     Nnonbg(i)=length(nonbgdetstat(nonbgdetstat>rho(i)));
   end
+  %scaling playground histogram to full data
+  if(strcmp(nonbgtype,'pg'))
+    Nnonbg(i)=length(nonbgdetstat(nonbgdetstat>rho(i))).*6370./600;
+  end
 
   for i=1:length(Nnonbg)
     if Nnonbg(i)==0;
@@ -56,6 +60,11 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
   % error bars
   errp=Nbg+sqrt(Nbg);
   errm=Nbg-sqrt(Nbg);
+  % scaling playground errorbars to full data error bars
+  if(strcmp(nonbgtype,'pg'))
+    errp=Nbg+sqrt(Nbg).*6370./600;
+    errm=Nbg-sqrt(Nbg).*6370./600;
+  end
 
   for i=1:length(errm)
     if errm(i)<=0;
@@ -89,10 +98,11 @@ function plotcumhist( veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, n
   axis([0 1 1e-3 1e3]);
   axis autox
  
-  if(strcmp(ifo1,'trip'))
-    eval(['saveas(gcf,''' veto_level '_H1H2L1_' coinctype '_bg' nonbgtype '_Ndetstat.png'')'])
-    close;
+  if(strcmp(coinctype,'trip') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_H1H2L1_H1H2L1_bg' nonbgtype '_Ndetstat.png'')'])
+  elseif(strcmp(coinctype,'doub') && strcmp(ifotime,'trip'))
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_H1H2L1_bg' nonbgtype '_Ndetstat.png'')'])
   else
-    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' coinctype '_bg' nonbgtype '_Ndetstat.png'')'])
-    close;
+    eval(['saveas(gcf,''' veto_level '_' ifo1 '' ifo2 '_' ifo1 '' ifo2 '_bg' nonbgtype '_Ndetstat.png'')'])
   end
+  close;
