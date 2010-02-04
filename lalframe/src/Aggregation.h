@@ -39,6 +39,9 @@ extern "C" {
 
 /* frame metadata */
 #define LAL_ONLINE_FRAME_DURATION 16
+#define LAL_AGGREGATION_TYPE_MAX 17
+#define LAL_AGGREGATION_IFO_MAX 3
+#define LAL_AGGREGATION_CHANNEL_MAX 65
 
 /* data quality */
 #define LAL_DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */

@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -6,10 +6,6 @@ exec_prefix_set=no
 
 my_lal_libs="-L@libdir@ -llal @GSL_LIBS@ @FFTW3_LIBS@"
 my_lal_cflags="-I@includedir@ @GSL_CFLAGS@ @FFTW3_CFLAGS@"
-test "@MPI_TRUE@" = "#" && lal_mpi_enabled="no" || lal_mpi_enabled="yes"
-test "@FRAME_TRUE@" = "#" && lal_frame_enabled="no" || lal_frame_enabled="yes"
-test "@METAIO_TRUE@" = "#" && lal_metaio_enabled="no" || lal_metaio_enabled="yes"
-test "@XML_TRUE@" = "#" && lal_xml_enabled="no" || lal_xml_enabled="yes"
 usage()
 {
     cat <<EOF
@@ -20,66 +16,49 @@ Options:
         [--version]
         [--libs]
         [--cflags]
-        [--mpi-enabled]
-        [--frame-enabled]
 Libraries:
         lal
         lalsupport
-        lalframe
-        lalmetaio
-	lalxml
 EOF
     exit $1
 }
 
 if test $# -eq 0; then
-        usage 1 1>&2
+  usage 1 1>&2
 fi
 
 while test $# -gt 0; do
-    case "$1" in
+  case "$1" in
     -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
     *) optarg= ;;
-    esac
+  esac
 
-    case "$1" in
+  case "$1" in
     --prefix=*)
-	prefix=$optarg
+        prefix=$optarg
         if test $exec_prefix_set = no ; then
           exec_prefix=$optarg
         fi
-	;;
+        ;;
     --prefix)
-	echo $prefix
-	;;
+        echo $prefix
+        ;;
     --exec-prefix=*)
         exec_prefix=$optarg
         exec_prefix_set=yes
         ;;
     --exec-prefix)
-	echo $exec_prefix
-	;;
+        echo $exec_prefix
+        ;;
     --version)
-	echo @VERSION@
-	exit 0
-	;;
+        echo @VERSION@
+        exit 0
+        ;;
     --cflags)
         echo_cflags=yes
         ;;
     --libs)
         echo_libs=yes
-        ;;
-    --mpi-enabled)
-        echo $lal_mpi_enabled
-        ;;
-    --frame-enabled)
-        echo $lal_frame_enabled
-        ;;
-    --metaio-enabled)
-        echo $lal_metaio_enabled
-        ;;
-    --xml-enabled)
-        echo $lal_xml_enabled
         ;;
     lal)
         lib_lal=yes
@@ -87,39 +66,15 @@ while test $# -gt 0; do
     lalsupport)
         lib_lalsupport=yes
         ;;
-    lalframe)
-        if test "$lal_frame_enabled" = "yes" ; then
-          lib_lalframe=yes
-        else
-          echo "LAL was not compiled with frame support!" 1>&2
-          exit 1
-        fi
-        ;;
-    lalmetaio)
-        if test "$lal_metaio_enabled" = "yes" ; then
-          lib_lalmetaio=yes
-        else
-          echo "LAL was not compiled with metaio support!" 1>&2
-          exit 1
-        fi
-        ;;
-    lalxml)
-        if test "$lal_xml_enabled" = "yes" ; then
-          lib_lalxml=yes
-        else
-          echo "LAL was not compiled with xml support!" 1>&2
-          exit 1
-        fi
-        ;;
     --help)
-	usage 0
-	;;
+        usage 0
+        ;;
     *)
-	usage 1 1>&2
-	exit 1
-	;;
-    esac
-    shift
+        usage 1 1>&2
+        exit 1
+        ;;
+  esac
+  shift
 done
 
 if test "$echo_prefix" = "yes"; then
@@ -130,25 +85,9 @@ if test "$echo_exec_prefix" = "yes"; then
   echo $exec_prefix
 fi
 
-
 if test "$lib_lalsupport" = "yes"; then
   my_lal_libs="-L@libdir@ -llalsupport @LALSUPPORT_LIBADD@ $my_lal_libs"
   my_lal_cflags="$my_lal_cflags"
-fi
-
-if test "$lib_lalframe" = "yes"; then
-  my_lal_libs="-L@libdir@ -llalframe @FRAME_LIBS@ $my_lal_libs"
-  my_lal_cflags="@FRAME_CFLAGS@ $my_lal_cflags"
-fi
-
-if test "$lib_lalmetaio" = "yes"; then
-  my_lal_libs="-L@libdir@ -llalmetaio @METAIO_LIBS@ $my_lal_libs"
-  my_lal_cflags="@METAIO_CFLAGS@ $my_lal_cflags"
-fi
-
-if test "$lib_lalxml" = "yes"; then
-  my_lal_libs="-L@libdir@ -llalxml @XML_LIBS@ $my_lal_libs"
-  my_lal_cflags="@XML_CFLAGS@ $my_lal_cflags"
 fi
 
 if test "$echo_libs" = "yes"; then

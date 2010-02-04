@@ -7,5 +7,5 @@ Name: LALXML
 Description: LAL XML Library Support
 Version: @VERSION@
 Requires: lal libxml-2.0
-Libs: -L${libdir} -llalxml
-Cflags: -I${includedir}
+Libs: -L${libdir} -llalxml @LIBXML2_LIBS@ @GSL_LIBS@
+Cflags: -I${includedir} @LIBXML2_CFLAGS@ @GSL_CFLAGS@
