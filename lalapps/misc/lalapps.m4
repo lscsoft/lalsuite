@@ -213,6 +213,23 @@ AC_DEFUN([LALAPPS_ENABLE_LALBURST],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-burst) ;;
     esac
   ], [ lalburst=true ] )
+if test "$lalmetaio" = "false"; then
+  lalburst=false
+fi])
+
+AC_DEFUN([LALAPPS_ENABLE_LALINSPIRAL],
+[AC_ARG_ENABLE(
+  [lalinspiral],
+  AC_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalinspiral=true;;
+      no) lalinspiral=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-inspiral) ;;
+    esac
+  ], [ lalinspiral=true ] )
+if test "$lalmetaio" = "false"; then
+  lalinspiral=false
+fi
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_LALPULSAR],
@@ -237,6 +254,9 @@ AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-stochastic) ;;
     esac
   ], [ lalstochastic=true ] )
+if test "$lalmetaio" = "false"; then
+  lalstochastic=false
+fi
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_LALXML],

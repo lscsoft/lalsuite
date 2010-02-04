@@ -9,8 +9,6 @@ lalapps_frinfo_SOURCES = info.c
 lalapps_frread_SOURCES = read.c
 lalapps_frextr_SOURCES = extr.c
 lalapps_frjoin_SOURCES = join.c
-else
-FRAMEPROGRAMS =
 endif
 
 if LALFRAME
@@ -21,23 +19,17 @@ LALFRAMEPROGRAMS = \
 lalapps_animate_SOURCES = animate.c
 lalapps_calfacs_SOURCES = calfacs.c
 lalapps_computespec_SOURCES = computespec.c
-else
-LALFRAMEPROGRAMS =
 endif
 
 if LALFRAME
 if LALMETAIO
 if LALBURST
+if LALINSPIRAL
 LALFRAMEMETAIOBURSTPROGRAMS = lalapps_frview
 lalapps_frview_SOURCES = view.c
-else
-LALFRAMEMETAIOBURSTPROGRAMS =
 endif
-else
-LALFRAMEMETAIOBURSTPROGRAMS =
 endif
-else
-LALFRAMEMETAIOBURSTPROGRAMS =
+endif
 endif
 
 bin_PROGRAMS = \

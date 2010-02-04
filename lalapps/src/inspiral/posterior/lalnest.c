@@ -13,7 +13,7 @@
 #include <lal/Units.h>
 #include "LALInspiralMCMC.h"
 #include "LALInspiralMCMCUser.h"
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Random.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>

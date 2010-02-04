@@ -34,7 +34,7 @@ include
 #include <sys/stat.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>

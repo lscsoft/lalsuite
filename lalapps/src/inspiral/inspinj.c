@@ -35,8 +35,8 @@
 #include <lalapps.h>
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>

@@ -40,7 +40,7 @@
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/CoincInspiralEllipsoid.h>
 #include <lal/Segments.h>

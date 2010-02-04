@@ -4,13 +4,21 @@ lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
 	LALMetaIOConfig.h \
 	LALMetaIOVCSInfo.h \
-	LIGOLwXMLRead.h
+	LIGOLwXML.h \
+	LIGOLwXMLArray.h \
+	LIGOLwXMLHeaders.h \
+	LIGOLwXMLInspiralHeaders.h \
+	LIGOLwXMLRead.h \
+	LIGOMetadataTables.h \
+	LIGOMetadataUtils.h
 
 lib_LTLIBRARIES = liblalmetaio.la
 liblalmetaio_la_SOURCES = \
 	CreateMetaTableDir.c \
+	LIGOLwXML.c \
+	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
-	LIGOLwXMLRingdownRead.c
+	LIGOMetadataUtils.c
 
 EXTRA_DIST = \
 	git_version \

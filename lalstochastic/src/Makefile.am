@@ -5,6 +5,7 @@ lalstochasticinclude_HEADERS = \
 	AstroOmega.h \
 	LALStochasticConfig.h \
 	LALStochasticVCSInfo.h \
+	LIGOLwXMLStochasticRead.h \
 	SimulatePopcorn.h \
 	SimulateSB.h \
 	StochasticCrossCorrelation.h \
@@ -13,6 +14,7 @@ lalstochasticinclude_HEADERS = \
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \
 	AstroOmega.c \
+	LIGOLwXMLStochasticRead.c \
 	OverlapReductionFunction.c \
 	SimulatePopcorn.c \
 	SimulateSB.c \
