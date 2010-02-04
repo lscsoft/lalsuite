@@ -243,7 +243,6 @@ esac
 
 # initialise lalsupport libs
 LALSUPPORT_LIBADD=""
-lal_save_LIBS="$LIBS"
 
 # system library checks
 AC_CHECK_LIB([m],[sin])
@@ -351,10 +350,7 @@ if test "${boinc}" = "true"; then
 fi
 
 # record the libraries needed for linking lal
-LALLIBADD="$LIBS"
-LIBS="$lal_save_LIBS"
-AC_SUBST(LALLIBADD)
-LAL_LIBADD="$LIBS $LALLIBADD"
+LAL_LIBADD="$LIBS"
 AC_SUBST(LAL_LIBADD)
 AC_SUBST(LALSUPPORT_LIBADD)
 
