@@ -37,7 +37,7 @@
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
-#define OUTPUT_TIMING 1 
+/* #define OUTPUT_TIMING 1 */
 /* #define DIAGNOSISMODE 0 */
 
 #define TRUE (1==1)
@@ -842,7 +842,7 @@ int MAIN( int argc, char *argv[]) {
       {  /********Allocate fstat vector memory *****************/
 	
         /* calculate number of bins for Fstat overhead due to spin-down */
-        semiCohPar.extraBinsFstat = (UINT4)( (0.25 * tObs * df1dot)/dFreqStack + 1e-6) + 1;;
+        semiCohPar.extraBinsFstat = (UINT4)( (0.25 * tObs * df1dot)/dFreqStack + 1e-6) + 1;
 	
         /* calculate total number of bins for Fstat */
         binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
