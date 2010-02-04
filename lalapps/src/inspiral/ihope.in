@@ -244,6 +244,11 @@ logfile = tempfile.mktemp(prefix=logname)
 fh = open( logfile, "w" )
 fh.close()
 
+# create a local execute directory for the pipeline
+tmp_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
+  basename, opts.gps_start_time, 
+  int(opts.gps_end_time) - int(opts.gps_start_time)) )
+
 ##############################################################################
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
@@ -334,7 +339,7 @@ if opts.run_datafind or opts.run_tmpltbank:
   print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
       opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
-      dax=opts.dax)
+      dax=opts.dax, local_exec_dir=tmp_exec_dir)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
@@ -356,7 +361,7 @@ if opts.complete_cache:
       print "Running inspiral hipe for playground run"
       hipePlayNode = inspiralutils.hipe_setup(playDir, cp, ifos, \
            opts.log_path, playOnly = True, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipePlayNode.get_output_files():
         cachelist.append(playDir + "/" + cacheFile)
       dag.add_node(hipePlayNode)
@@ -383,7 +388,7 @@ if opts.complete_cache:
       print "Running inspiral hipe for analysis run"
       hipeAnalysisNode = inspiralutils.hipe_setup(fullDir, cp, ifos, \
           opts.log_path,dax=opts.dax, \
-          tmpltbankCache = tmpltbank_cache)
+          tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipeAnalysisNode.get_output_files():
         cachelist.append(fullDir + "/" + cacheFile)
       dag.add_node(hipeAnalysisNode)
@@ -411,7 +416,7 @@ if opts.complete_cache:
       if opts.run_search:
         hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
              opts.log_path, injSeed, dax=opts.dax, \
-             tmpltbankCache = tmpltbank_cache)
+             tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeInjNode[injDir].get_output_files():
           cachelist.append(injDir + "/" + cacheFile)
         dag.add_node(hipeInjNode[injDir])
@@ -442,7 +447,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         tmpltbankCache = tmpltbank_cache)
+         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -454,7 +459,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
         opts.log_path, dax=opts.dax, \
-        tmpltbankCache = tmpltbank_cache)
+        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
@@ -468,7 +473,7 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -493,7 +498,7 @@ if opts.complete_cache:
         print "Running inspiral hipe for play with vetoes"
         hipePlayVetoNode[category] = inspiralutils.hipe_setup(playDir, cp, \
             ifos, opts.log_path, playOnly = True, vetoCat = category, \
-            vetoFiles = dqVetoes, dax=opts.dax )
+            vetoFiles = dqVetoes, dax=opts.dax, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append(playDir + "/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
@@ -523,7 +528,8 @@ if opts.complete_cache:
       if opts.run_data_quality:
         print "Running inspiral hipe for full data with vetoes"
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup(fullDir, \
-            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, dax = opts.dax)
+            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, \
+            dax = opts.dax, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append(fullDir + "/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -557,7 +563,7 @@ if opts.complete_cache:
           hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(injDir, \
               cp, ifos, opts.log_path, \
               injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
-              dax=opts.dax )
+              dax=opts.dax, local_exec_dir=tmp_exec_dir )
           for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[category][injDir])
@@ -599,7 +605,7 @@ if opts.reverse_analysis:
 
         hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground_reverse", cp, \
             ifos, opts.log_path, playOnly = True, vetoCat = category, \
-            vetoFiles = dqVetoes)
+            vetoFiles = dqVetoes, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append("playground-reverse/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
@@ -612,7 +618,8 @@ if opts.reverse_analysis:
       if opts.run_full_data:
         print "Running inspiral hipe for full data with vetoes for reverse analysis"
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("full_data_reverse", \
-            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes)
+            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, \
+            local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append("full_data_reverse/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -628,7 +635,8 @@ if opts.reverse_analysis:
           if category == 2: hipeInjVetoNode[injDir] = {}
           hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
               cp, ifos, opts.log_path, \
-              injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes)
+              injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
+              local_exec_dir=tmp_exec_dir)
           for cacheFile in hipeInjVetoNode[injDir][category].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[injDir][category])
@@ -826,9 +834,6 @@ except:
 ##############################################################################
 # Write the files needed to invoke pegasus
 peg_fh = open("pegasus_submit_dax", "w")
-local_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
-  basename, opts.gps_start_time, 
-  int(opts.gps_end_time) - int(opts.gps_start_time)) )
 print >> peg_fh, """\
 #!/bin/bash
 pegasus-plan \
@@ -836,10 +841,10 @@ pegasus-plan \
   -Dpegasus.catalog.site.file=%s/site-local.xml \
   --dax %s --dir %s \
   --relative-dir . -s local --nocleanup -f --submit
-""" % (os.getcwd(), os.getcwd(), dag.get_dax_file(), local_exec_dir )
+""" % (os.getcwd(), os.getcwd(), dag.get_dax_file(), tmp_exec_dir )
 peg_fh.close()
 os.chmod("pegasus_submit_dax",0755)
-os.chmod(local_exec_dir, 0755)
+os.chmod(tmp_exec_dir, 0755)
 
 pegprop_fh = open("pegasus.properties", "w")
 print >> pegprop_fh, """\

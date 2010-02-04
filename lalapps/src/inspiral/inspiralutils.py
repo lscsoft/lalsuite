@@ -510,7 +510,7 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    dax = False, tmpltbankCache = None):
+    dax = False, tmpltbankCache = None, local_exec_dir = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -736,10 +736,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
       'segment_files.cache', '../segments/*txt' )))
     hipeJob.set_pegasus_exec_dir(os.path.join(
-      logPath, '/'.join(os.getcwd().split('/')[-2:])))
+      local_exec_dir, '/'.join(os.getcwd().split('/')[-2:])))
   else:
     hipeJob.set_pegasus_exec_dir(os.path.join(
-      logPath, '/'.join(os.getcwd().split('/')[-2:]), usertag))
+      local_exec_dir, '/'.join(os.getcwd().split('/')[-2:]), usertag))
     hipeNode.set_user_tag(usertag)
 
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
