@@ -950,8 +950,8 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.add_condor_cmd('initialdir',self.initialDir)
         #Setp escaping possible quotes in threshold string!
         optionTextList=[str('expression-threshold'),str('percentile-cut')]
+        oldValList=list()#(list of tuple pairs(opt,val))
         for optionText in optionTextList:
-            oldVal=None
             if cp.has_option('candidatethreshold',optionText):
                 oldVal=cp.get('candidatethreshold',optionText)
                 newVal=str(oldVal)
@@ -959,10 +959,14 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 if newVal.__contains__('"'):
                     newVal=str(newVal).replace('"','""')
                 cp.set('candidatethreshold',optionText,newVal)
-            for sec in ['candidatethreshold']:
-                    self.add_ini_opts(cp,sec)
+                oldValList.append((optionText,oldVal))
+        for sec in ['candidatethreshold']:
+            self.add_ini_opts(cp,sec)
+        #Replace double quotes escape in CP object back to
+        #friend format "opt" instead of ""opt""
+        for myOpt,oldVal in oldValList:
             if oldVal != None:
-                cp.set('candidatethreshold',optionText,oldVal)
+                cp.set('candidatethreshold',myOpt,oldVal)
    #End __init__ method
 #End tracksearchThresholdJob class
 
