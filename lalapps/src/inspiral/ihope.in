@@ -263,6 +263,7 @@ if cp.has_option("ifo-details","analyze-all"):
   print >> sys.stderr, "all five IFOs. Do not use the analyze-all option."
   sys.exit(1)
 
+ifos.sort()
 
 print "Setting up an analysis for " + str(ifos) + " from " + \
     str(opts.gps_start_time) + " to "  + str(opts.gps_end_time)
@@ -825,17 +826,20 @@ except:
 ##############################################################################
 # Write the files needed to invoke pegasus
 peg_fh = open("pegasus_submit_dax", "w")
+local_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
+  basename, opts.gps_start_time, 
+  int(opts.gps_end_time) - int(opts.gps_start_time)) )
 print >> peg_fh, """\
 #!/bin/bash
 pegasus-plan \
   -Dpegasus.properties=%s/pegasus.properties \
   -Dpegasus.catalog.site.file=%s/site-local.xml \
-  --dax %s --dir %s/%s-%s \
+  --dax %s --dir %s \
   --relative-dir . -s local --nocleanup -f --submit
-""" % (os.getcwd(), os.getcwd(), dag.get_dax_file(),
-  opts.log_path, opts.gps_start_time, opts.gps_end_time )
+""" % (os.getcwd(), os.getcwd(), dag.get_dax_file(), local_exec_dir )
 peg_fh.close()
 os.chmod("pegasus_submit_dax",0755)
+os.chmod(local_exec_dir, 0755)
 
 pegprop_fh = open("pegasus.properties", "w")
 print >> pegprop_fh, """\
@@ -849,6 +853,7 @@ pegasus.gridstart.kickstart.stat=false
 pegasus.transfer.force=true
 pegasus.transfer.links=true
 pegasus.transfer.refiner=Bundle
+pegasus.transfer.symlink.impl=Symlink
 
 pegasus.dagman.retry=3
 pegasus.dagman.maxpre=1
