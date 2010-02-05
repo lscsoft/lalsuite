@@ -38,7 +38,7 @@ RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
- #define DIAGNOSISMODE 0 
+/* #define DIAGNOSISMODE 0 */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -1087,7 +1087,8 @@ int MAIN( int argc, char *argv[]) {
           /* Loop over coarse-grid frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
                     
-            Fstat = fstatVector.data[k].data->data[ifreq];
+            /* Get the F-statistic value */
+            Fstat = fstatVector.data[k].data->data[ifreq]; /* Recall here it's *F*, not yet 2F */
 
             if ( uvar_SignalOnly )
             {
@@ -1097,7 +1098,7 @@ int MAIN( int argc, char *argv[]) {
                * setting Sh->1, so we need to divide F by (0.5*Tsft)
                */
               Fstat *= 2.0 / Tsft;
-              Fstat += 2;		/* compute E[2F]:= 4 + SNR^2 */
+              Fstat += 2;		/* HERE it's *F*, but recall E[2F]:= 4 + SNR^2, so just add 2 here. */
               fstatVector.data[k].data->data[ifreq] = Fstat;
             }
             
@@ -1125,8 +1126,10 @@ int MAIN( int argc, char *argv[]) {
               thisCgPoint.Uindex = U1idx;
             }
 
-            /* copy the *2F* value and index integer number */
+            /* ============ Copy the *2F* value ============ */
             thisCgPoint.TwoF = 2.0 * Fstat;
+            
+            /* Add this point to the coarse grid */
             coarsegrid.list[ifreq] = thisCgPoint;
             
           }
@@ -1140,7 +1143,7 @@ int MAIN( int argc, char *argv[]) {
           for (ifine = 0; ifine < finegrid.length; ifine++) {
 
             /* translate frequency from midpoint of data span to midpoint of this segment */
-	    f1dot_tmp = finegrid.list[ifine].F1dot;
+            f1dot_tmp = finegrid.list[ifine].F1dot;
             f_tmp = finegrid.list[ifine].F + f1dot_tmp * timeDiffSeg;
                  
             /* compute the global-correlation coordinate indices */
@@ -1160,7 +1163,7 @@ int MAIN( int argc, char *argv[]) {
             
             if ( (U1idx >= 0) && (U1idx < fveclength) ) { /* consider only relevant frequency values */
               
-              /*if (finegrid.list[ifine].Uindex == coarsegrid.list[finegrid.list[ifine].Uindex].Uindex) {*/
+              /*if (U1idx == coarsegrid.list[U1idx].Uindex) {*/
                 
               /* Add the 2F value to the 2F sum */
               TwoF_tmp = coarsegrid.list[U1idx].TwoF;
@@ -1173,29 +1176,23 @@ int MAIN( int argc, char *argv[]) {
               }
                 
 #ifdef DIAGNOSISMODE
-                /* Find strongest candidate (maximum 2F sum and number count) */
-                if (finegrid.list[ifine].nc > nc_max) {
-                  nc_max = finegrid.list[ifine].nc;
-                }
-                if (sumTwoF_tmp > TwoFmax) {
-                  TwoFmax = sumTwoF_tmp;
-                }
+              /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
+              if (finegrid.list[ifine].nc > nc_max) {
+                nc_max = finegrid.list[ifine].nc;
+              }
+              if (sumTwoF_tmp > TwoFmax) {
+                TwoFmax = sumTwoF_tmp;
+              }
 #endif  
-              /*}*/
-              }   
-            
-            /* sort out the crap --- this should be replaced by something BETTER!? */
-            /*
-            if ((finegrid.list[ifine].sumTwoF > 1.0e20) || (finegrid.list[ifine].sumTwoF < 0.0)) {
-              finegrid.list[ifine].sumTwoF=-1.0;
-            }   
-            */
+              
+              /*}*/  /*if (U1idx == coarsegrid.list[U1idx].Uindex) {*/
+              
+            }  /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
             
           } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
  
 #ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
-          LogPrintf(LOG_DETAIL, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
 #endif
 
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
