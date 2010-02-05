@@ -7,5 +7,5 @@ Name: LALInspiral
 Description: LAL Inspiral Library Support
 Version: @VERSION@
 Requires: lal lalmetaio
-Libs: -L${libdir} -llalinspiral @GSL_LIBS@
-Cflags: -I${includedir} @GSL_CFLAGS@
+Libs: -L${libdir} -llalinspiral @GSL_LIBS@ @METAIO_LIBS@
+Cflags: -I${includedir} @GSL_CFLAGS@ @METAIO_CFLAGS@
