@@ -836,14 +836,78 @@ except:
 ##############################################################################
 # Write the files needed to invoke pegasus
 peg_fh = open("pegasus_submit_dax", "w")
-print >> peg_fh, """\
-#!/bin/bash
-pegasus-plan \
-  -Dpegasus.properties=%s/pegasus.properties \
-  -Dpegasus.catalog.site.file=%s/site-local.xml \
-  --dax %s --dir %s \
-  --relative-dir . -s local --nocleanup -f --submit
-""" % (os.getcwd(), os.getcwd(), dag.get_dax_file(), tmp_exec_dir )
+
+print >> peg_fh, """#!/bin/bash
+
+TMP_EXEC_DIR=%s
+IHOPE_RUN_DIR=%s
+UEBER_CONCRETE_DAG=%s
+
+usage()
+{
+  echo "Usage: pegasus_submit_dag [-f] [-h]"
+  echo
+  echo "  -f, --force           Force re-plan and resubmit of DAX"
+  echo "  -h, --help            Print this message"
+  echo
+}
+
+if [ $# -gt 1 ] ; then
+  usage
+  exit 1
+fi
+
+if [ $# -eq 1 ] ; then
+ if [ $1 = "-h" ] || [ $1 = "--help" ] ; then
+   usage
+   exit 0
+ fi
+
+ if [ $1 = "-f" ] || [ $1 = "--force" ] ; then 
+   echo "WARNING: removing any existing workflow files!"
+   pegasus-remove ${TMP_EXEC_DIR}/.
+   echo "Sleeping for 60 seconds to give running DAGs chance to exit..."
+   sleep 60
+   rm -rf ${TMP_EXEC_DIR}
+   mkdir ${TMP_EXEC_DIR}
+   chmod 755 ${TMP_EXEC_DIR}
+ fi
+fi
+
+if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.lock ] ; then
+  echo
+  echo "ERROR: A dagman lock file already exists which may indicate that your"
+  echo "workflow is already running. Please check the status of your DAX with"
+  echo
+  echo "    pegasus-status ${TMP_EXEC_DIR}/."
+  echo
+  echo "If necessary, you can remove the workflow with"
+  echo
+  echo "    pegasus-remove ${TMP_EXEC_DIR}/."
+  echo
+  echo "You can also run"
+  echo
+  echo "    pegasus_submit_dax -f"
+  echo
+  echo "to force the workflow to re-run. This will remove any existing"
+  echo "workflow log and error files. If these need to be preserved,"
+  echo "you must back them up first before running with -f."
+  echo
+  exit 1
+fi
+
+if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
+  pegasus-run -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
+else
+  pegasus-plan -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties \\
+               -Dpegasus.catalog.site.file=${IHOPE_RUN_DIR}/site-local.xml \\
+               --dax %s \\
+               --dir ${TMP_EXEC_DIR} \\
+               --relative-dir . -s local --nocleanup -f --submit
+fi
+""" % ( tmp_exec_dir, os.getcwd(), 
+        dag.get_dax_file().replace('.dax','') + '-0.dag', 
+        dag.get_dax_file() )
 peg_fh.close()
 os.chmod("pegasus_submit_dax",0755)
 
@@ -880,14 +944,21 @@ dag.write_dag()
 print 
 print "  Created a DAG file which can be submitted by executing"
 print "\n    cd " + analysisDirectory
-print "    condor_submit_dag " + dag.get_dag_file()
-print """\n  from a condor submit machine
-  Before submitting the dag, you must execute
+print "\n  and then either "
+print "\n    condor_submit_dag " + dag.get_dag_file()
+print """
+  or 
+
+    ./pegasus_submit_dax
+
+  from a condor submit machine.
+
+  Before submitting the DAG, you must execute
 
     export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 
-  If you are running LSCdataFind jobs, do not forget to initialize your grid
-  proxy certificate on the condor submit machine by running the commands
+  If you are running ligo_data_find jobs, do not forget to initialize your
+  grid proxy certificate on the condor submit machine by running the commands
   
     unset X509_USER_PROXY
     grid-proxy-init -hours 72
