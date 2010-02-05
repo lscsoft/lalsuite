@@ -750,7 +750,11 @@ def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
         return
  
     # Open the database at the previous level
-    connection = setup_memory_db(config, ifo, veto_level-1, cluster)
+    if veto_level == 4:
+        connection = setup_memory_db(config, ifo, 2, cluster)
+    else:
+        connection = setup_memory_db(config, ifo, veto_level-1, cluster)
+
     cursor     = connection.cursor()
 
     # and the veto information at this level
