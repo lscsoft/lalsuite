@@ -730,16 +730,16 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
     'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
+  # tell pegasus where ihope wants us to run the jobs
+  hipeJob.set_pegasus_exec_dir(os.path.join(
+    local_exec_dir, '/'.join(os.getcwd().split('/')[-1:])))
+
   if hipeDir == "datafind":
     # grab the segment files managed by hipe and put them in the df cache
     # since it is inherited by all the other sub-workflows
     hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
       'segment_files.cache', '../segments/*txt' )))
-    hipeJob.set_pegasus_exec_dir(os.path.join(
-      local_exec_dir, '/'.join(os.getcwd().split('/')[-2:])))
   else:
-    hipeJob.set_pegasus_exec_dir(os.path.join(
-      local_exec_dir, '/'.join(os.getcwd().split('/')[-2:]), usertag))
     hipeNode.set_user_tag(usertag)
 
   hipeNode.add_output_file( hipe_cache(ifos, usertag, \
@@ -822,7 +822,6 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotcp.set("pipeline","inj-suffix",injectionSuffix)
   plotcp.set("pipeline","found-suffix",injectionSuffix)
   plotcp.set("pipeline","missed-suffix",injectionSuffix)
-  plotcp.set("pipeline","bank-suffix",bankSuffix)
   plotcp.set("pipeline","trigbank-suffix",bankSuffix)
   plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
   plotcp.set("pipeline","trig-suffix",zerolagSuffix)
