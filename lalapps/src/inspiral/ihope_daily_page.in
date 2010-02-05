@@ -554,13 +554,14 @@ def make_csv(config, ifo, category, cluster, start, end):
     vetoed_times = segmentlist([])
 
     for c in range(1,category+1):
-        f = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c))
-        t = pickle.load(f)
-        f.close()
+        if os.exists('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c)):
+            f = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c))
+            t = pickle.load(f)
+            f.close()
 
-        seglists        = [segmentlist([segment(x[0],x[1]) for x in y[1]]) for y in t]
-        vetoed_segments = reduce(operator.or_, seglists).coalesce()
-        vetoed_times   |= vetoed_segments
+            seglists        = [segmentlist([segment(x[0],x[1]) for x in y[1]]) for y in t]
+            vetoed_segments = reduce(operator.or_, seglists).coalesce()
+            vetoed_times   |= vetoed_segments
 
     # Filter triggers
     infile  = open('%s/%s-0-INSPIRAL_%s.csv'  % (config['tmp_dir'], ifo, cluster))
@@ -1516,7 +1517,9 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     for r in ranges:
         subset = [d for d in data if d[1] >= r[0] and d[1] < r[1]]
 
-        pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
+
+        if subset:
+            pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
 
     pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=100)
 
