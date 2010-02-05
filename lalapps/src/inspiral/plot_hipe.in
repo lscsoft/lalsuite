@@ -444,7 +444,8 @@ if opts.plotnumtemplates:
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates_' + subsuffix)
   pattern_dict = determine_sieve_patterns(cp, this_section, "", input_user_tag)
   for opt, val in pattern_dict.iteritems():
-    if opt=="bank-pattern": val = val.replace("_*_","_")
+    print >> sys.stderr, opt, val
+    if opt=="bank-pattern": val = "TMPLTBANK"
     plotnumtemplates_jobs.add_opt(opt, val)
   
 
