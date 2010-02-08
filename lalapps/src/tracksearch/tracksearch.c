@@ -228,7 +228,7 @@ void LALappsTrackSearchPrepareData( REAL4TimeSeries  *dataSet,
   LALStatus           status;
   memset(&status, 0, sizeof(status));
 
-  if (params.verbosity >= verbose)
+  if (params.verbosity > verbose)
     {
       print_lalUnit(dataSet->sampleUnits,"Pre_DataCondEntireInputDataSet_Units.diag");
       print_real4tseries(dataSet,"Pre_DataCondEntireInputDataSet.diag");
