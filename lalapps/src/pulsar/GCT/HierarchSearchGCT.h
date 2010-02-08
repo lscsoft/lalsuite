@@ -186,7 +186,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8 F1dot;       /**< spindown */
     INT4 Uindex;          /**< U index */
     UINT4 nc;           /**< number count */
-    REAL8 sumTwoF;     /**< sum of 2F-values */
+    REAL4 sumTwoF;     /**< sum of 2F-values */
   } FineGridPoint;  
 
   /** structure for storing fine-grid points */
@@ -201,7 +201,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
     INT4 Uindex;          /**< U index */
-    REAL8 TwoF;       /**< 2F-value */
+    REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   
   /** structure for storing coarse-grid points */

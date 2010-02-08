@@ -44,7 +44,6 @@ $Id$
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>

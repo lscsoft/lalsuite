@@ -2,13 +2,13 @@
  * stopp_bayes.c - SGWB Standalone Analysis Pipeline
  *               - Bayesian Post Processing
  *
- * Copyright (C) 2004-2006,2009 Adam Mercer
- * 
+ * Copyright (C) 2004-2006,2009,2010 Adam Mercer
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -18,8 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
- *
- * $Id$
  */
 
 #include <math.h>
@@ -32,12 +30,11 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/lalGitID.h>
 
 #include <gsl/gsl_sf_erf.h>
 
 #include <lalapps.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 /* verbose flag */
 extern int vrbflg;
@@ -47,7 +44,6 @@ RCSID("$Id$");
 
 /* cvs info */
 #define PROGRAM_NAME "stopp_bayes"
-#define CVS_ID "$Id$"
 
 #define USAGE \
   "Usage: " PROGRAM_NAME " [options] [xml files]\n"\
@@ -70,7 +66,7 @@ static double stopp_erfcinv(double y)
    * based on dierfc() by Takuya OOURA:
    *
    * http://momonga.t.u-tokyo.ac.jp/~ooura/gamerf.html
-   * 
+   *
    * Copyright(C) 1996 Takuya OOURA (email: ooura@mmm.t.u-tokyo.ac.jp).
    * You may use, copy, modify this code for any purpose and
    * without fee. You may distribute this ORIGINAL package.
@@ -178,7 +174,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   while (1)
   {
     /* getopt arguments */
-    static struct option long_options[] = 
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
@@ -231,8 +227,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* display version info and exit */
-        fprintf(stdout, "Stochastic Post Processing: Bayesian\n" CVS_ID "\n");
-        fprintf(stdout, lalappsGitID);
+        fprintf(stdout, "Stochastic Post Processing: Bayesian\n");
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 

@@ -105,6 +105,7 @@ src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
+src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
 src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
@@ -182,6 +183,7 @@ src/pulsar/SideBand/lalapps_SideBandMCMC
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
+src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti

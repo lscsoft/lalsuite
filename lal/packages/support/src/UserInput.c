@@ -1065,7 +1065,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 } /* LALUserVarGetLog() */
 
 
-
+#if 0
 /** Return user log as a process-params table
  *
  * \param[out] **procPar the output ProcessParamsTable
@@ -1123,7 +1123,7 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
   RETURN (status);
 
 } /* LALUserVarGetProcParamsTable() */
-
+#endif
 
 
 /* Return the type of the given UserVariable as a string.

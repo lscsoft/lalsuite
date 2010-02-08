@@ -19,12 +19,6 @@ STOPP_BAYES_SRCS = stopp_bayes.c
 OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
                    olapredfcn_args.c olapredfcn_bars.c
 
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
 ## frame and stochastic library dependant programs
 if FRAME
 if LALFRAME
