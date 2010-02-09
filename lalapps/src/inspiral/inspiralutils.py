@@ -724,7 +724,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipeDax = iniBase + usertag + ".dax"  
 
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
-  hipeNode = pipeline.CondorDAGNode(hipeJob)
+  hipeNode = pipeline.CondorDAGManNode(hipeJob)
 
   # sweep up the .input files hipe generates
   hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
@@ -914,7 +914,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   # make hipe job/node
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
-  plotNode = pipeline.CondorDAGNode(plotJob)
+  plotNode = pipeline.CondorDAGManNode(plotJob)
   plotNode.set_user_tag(usertag)
 
   # return to the original directory
@@ -982,7 +982,7 @@ def pipedownSetup(dag,config,logPath,pipedownDir,\
   # make pipedown job/node
   pipeDag = iniFile.rstrip("ini") + "dag"
   pipeJob = pipeline.CondorDAGManJob(pipeDag, pipedownDir)
-  pipeNode = pipeline.CondorDAGNode(pipeJob)
+  pipeNode = pipeline.CondorDAGManNode(pipeJob)
   dag.add_node(pipeNode)
   if parentNodes: 
     for thisDag in parentNodes:
@@ -1211,7 +1211,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
 
   # add job to dag
   followupJob = pipeline.CondorDAGManJob(followupDag, followupDir)
-  followupNode = pipeline.CondorDAGNode(followupJob)
+  followupNode = pipeline.CondorDAGManNode(followupJob)
 
 
   # write the pre-script to run lalapps_followup_pipe at the appropriate time
