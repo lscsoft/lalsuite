@@ -7,5 +7,5 @@ Name: LALBurst
 Description: LAL Burst Library Support
 Version: @VERSION@
 Requires: lal
-Libs: -L${libdir} -llalburst
-Cflags: -I${includedir}
+Libs: -L${libdir} -llalburst @GSL_LIBS@
+Cflags: -I${includedir} @GSL_CFLAGS@

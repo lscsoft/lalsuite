@@ -23,7 +23,7 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/bank/src/libbank.la \
 	$(top_builddir)/packages/ring/src/libring.la \
 	$(top_builddir)/packages/findchirp/src/libfindchirp.la
-liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
+liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
