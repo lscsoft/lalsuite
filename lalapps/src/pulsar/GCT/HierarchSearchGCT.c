@@ -126,12 +126,10 @@ void TranslateFineGridSpins( LALStatus *status, UsefulStageVariables *usefulpara
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
-void ComputeU1idx(const REAL8 *f_event, const REAL8 *f1dot_event, 
-                  const REAL8 *A1, const REAL8 *B1, const REAL8 *U1start, const REAL8 *U1winInv, 
-                  INT4 *U1idx );
-void ComputeU2idx( LALStatus *status, const REAL8 *f_event, const REAL8 *f1dot_event, 
-                  const REAL8 *A2, const REAL8 *B2, const REAL8 *U2start, const REAL8 *U2winInv,
-                  INT4 *U2idx);
+void ComputeU1idx( const REAL8 *f_event, const REAL8 *f1dot_event, const REAL8 *A1, 
+                  const REAL8 *B1, const REAL8 *U1start, const REAL8 *U1winInv, INT4 *U1idx );
+void ComputeU2idx( const REAL8 *f_event, const REAL8 *f1dot_event, const REAL8 *A2, 
+                  const REAL8 *B2, const REAL8 *U2start, const REAL8 *U2winInv, INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridUindex( const void *a,const void *b );
 int compareFineGridNC( const void *a,const void *b );
@@ -163,9 +161,9 @@ int MAIN( int argc, char *argv[]) {
   EphemerisData *edat = NULL;
 
   /* GPS timestamp vectors */
-  LIGOTimeGPSVector *midTstack=NULL; 
-  LIGOTimeGPSVector *startTstack=NULL; 
-  LIGOTimeGPSVector *endTstack=NULL;  
+  LIGOTimeGPSVector *midTstack = NULL; 
+  LIGOTimeGPSVector *startTstack = NULL; 
+  LIGOTimeGPSVector *endTstack = NULL;  
   
   /* General GPS times */
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
@@ -187,7 +185,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 tStack;
 
   /* number of segments */
-  UINT4 nStacks=1;
+  UINT4 nStacks;
   
   /* Total observation time */
   REAL8 tObs;
@@ -295,7 +293,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_ThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1 = MISMATCH; /* metric mismatch for first stage coarse grid */
 
-  REAL8 uvar_threshold1 = 0.0;
+  REAL8 uvar_threshold1 = 0;
   REAL8 uvar_minStartTime1 = 0;
   REAL8 uvar_maxEndTime1 = LAL_INT4_MAX;
   REAL8 uvar_dopplerMax = 1.05e-4;
@@ -767,7 +765,7 @@ int MAIN( int argc, char *argv[]) {
   scanInit.numSkyPartitions = uvar_numSkyPartitions;
   scanInit.partitionIndex = uvar_partitionIndex;
 
-  scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0];
+  scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
 
   /* initialize skygrid  */  
   LogPrintf(LOG_DETAIL, "Setting up coarse sky grid...");
@@ -2056,8 +2054,7 @@ void ComputeU1idx( const REAL8 *f_event,
 
 
 /** Calculate the U2 index for a given point in parameter space */
-void ComputeU2idx( LALStatus *status, 
-                  const REAL8 *f_event, 
+void ComputeU2idx( const REAL8 *f_event, 
                   const REAL8 *f1dot_event, 
                   const REAL8 *A2, 
                   const REAL8 *B2, 
@@ -2067,9 +2064,6 @@ void ComputeU2idx( LALStatus *status,
 {
   
   REAL8 freqL, f1dotL, A2L, B2L, U2startL, U2winInvL;
-  
-  INITSTATUS( status, "ComputeU2idx", rcsid );
-  ATTATCHSTATUSPTR (status);
   
   /* Local copies */
   freqL = *f_event;
@@ -2082,8 +2076,7 @@ void ComputeU2idx( LALStatus *status,
   /* compute the index of global-correlation coordinate U2 */ 
   *U2idx = (INT4) ((((f1dotL + freqL * A2L + 2.0 * f1dotL * B2L) - U2startL) * U2winInvL) + 0.5);
   
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
+  return;
   
 } /* ComputeU2idx */
 
