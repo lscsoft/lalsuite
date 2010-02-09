@@ -43,7 +43,7 @@ h0="1.0"
 cosi="-0.3"
 psi="0.6"
 phi0="1.5"
-Freq="100.12345"
+Freq="100.123450"
 f1dot="-1e-9"
 
 AlphaSearch=$Alpha
@@ -74,7 +74,7 @@ Tsft="1800"
 startTime="852443819"
 refTime="862999869"
 Tsegment="90000"
-Nsegments="131"
+Nsegments="14"
 seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) 
 tsfile="timestampsTEST.txt"
 rm -rf $tsfile
