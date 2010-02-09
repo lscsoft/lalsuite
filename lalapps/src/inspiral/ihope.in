@@ -904,6 +904,8 @@ else
                --dax %s \\
                --dir ${TMP_EXEC_DIR} \\
                --relative-dir . -s local --nocleanup -f --submit
+
+  ln -sf ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.dagman.out ${UEBER_CONCRETE_DAG}.dagman.out
 fi
 """ % ( tmp_exec_dir, os.getcwd(), 
         dag.get_dax_file().replace('.dax','') + '-0.dag', 
