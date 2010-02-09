@@ -38,7 +38,7 @@ RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
-/* #define DIAGNOSISMODE 0 */
+/* #define DIAGNOSISMODE 1 */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -565,7 +565,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* for 1st stage: read sfts, calculate detector states */  
   /*LogPrintf (LOG_DEBUG, "Reading SFTs and setting up segments ... ");*/
-  fprintf(stderr,"%% --- Reading input data...");
+  fprintf(stderr,"%% --- Reading input data ...");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   /*LogPrintfVerbatim (LOG_DEBUG, "done\n");*/
   fprintf(stderr," done.\n");  
@@ -926,8 +926,8 @@ int MAIN( int argc, char *argv[]) {
         nfreqsFG = ceil(fg_fband / fg_freq_step);  /* number of points in frequency */
       
         /* fine-grid f1dot resoultion */
-        nf1dotsFG = ceil(gamma2);        /* number of spindown fine-grid  points */
-        if ( (nf1dotsFG % 2) == 0 ) {    /* if even, add one */
+        nf1dotsFG = ceil(gamma2);        /* number of spindown fine-grid points */
+        if ( (nf1dotsFG % 2) == 0 ) {    /* if even, add one (to refine symmetrically) */
           nf1dotsFG++;
         }
         fg_f1dot_step = df1dot / nf1dotsFG;  /* spindown fine-grid  stepsize */
@@ -1082,7 +1082,7 @@ int MAIN( int argc, char *argv[]) {
                   
           /* Initialize indices */
           U1idx = 0;
-          U2idx = 0;
+          U2idx = 0; 
           
           /* Loop over coarse-grid frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
@@ -1196,9 +1196,9 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
+        
         /* ############################################################### */
          
-        
         /* check if translation to reference time of pulsar spins is necessary */
         if ( LALUserVarWasSet(&uvar_refTime) ) {
          if  ( finegrid.refTime.gpsSeconds != usefulParams.spinRange_refTime.refTime.gpsSeconds ) {
@@ -1622,6 +1622,8 @@ void SetUpSFTs( LALStatus *status,
 
 
 
+
+
 /** \brief Breaks up input sft catalog into specified number of stacks
 
     Loops over elements of the catalog, assigns a bin index and
@@ -1760,6 +1762,9 @@ void PrintCatalogInfo( LALStatus  *status,
 
 
 
+
+
+
 /** Print some stack info from sft catalog sequence*/
 void PrintStackInfo( LALStatus  *status,
 		     const SFTCatalogSequence *catalogSeq, 
@@ -1790,6 +1795,10 @@ void PrintStackInfo( LALStatus  *status,
   RETURN(status);
 
 }
+
+
+
+
 
 
 /** Read checkpointing file 
@@ -1847,6 +1856,9 @@ void GetChkPointIndex( LALStatus *status,
 
 
 
+
+
+
 /** Get SemiCoh candidates toplist */
 void GetSemiCohToplist(LALStatus *status,
                        toplist_t *list,
@@ -1885,6 +1897,11 @@ void GetSemiCohToplist(LALStatus *status,
   RETURN(status); 
 
 } /* GetSemiCohToplist() */
+
+
+
+
+
 
 
 
@@ -2007,6 +2024,7 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 
+
 /** Calculate the U1 index for a given point in parameter space */
 void ComputeU1idx( const REAL8 *f_event, 
                   const REAL8 *f1dot_event, 
@@ -2033,6 +2051,9 @@ void ComputeU1idx( const REAL8 *f_event,
   return;
   
 } /* ComputeU1idx */
+
+
+
 
 
 /** Calculate the U2 index for a given point in parameter space */
@@ -2086,6 +2107,9 @@ int compareCoarseGridUindex(const void *a,const void *b) {
     return(0);
 }
 
+
+
+
 /** Comparison function for sorting the fine grid in u1 and u2*/
 int compareFineGridUindex(const void *a,const void *b) {
   FineGridPoint a1, b1;
@@ -2099,6 +2123,10 @@ int compareFineGridUindex(const void *a,const void *b) {
   else       
     return(0);
 }
+
+
+
+
 
 /** Comparison function for sorting the fine grid in number count */
 int compareFineGridNC(const void *a,const void *b) {
@@ -2114,6 +2142,10 @@ int compareFineGridNC(const void *a,const void *b) {
     return(0);
 }
 
+
+
+
+
 /** Comparison function for sorting the fine grid in summed 2F */
 int compareFineGridsumTwoF(const void *a,const void *b) {
   FineGridPoint a1, b1;
@@ -2127,6 +2159,10 @@ int compareFineGridsumTwoF(const void *a,const void *b) {
   else     
     return(0);
 }
+
+
+
+
 
 /** Simply output version information to stdout */
 void OutputVersion ( void )
