@@ -696,8 +696,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* binary orbit and higher spindowns not considered */
   thisPoint.orbit = NULL;
-  thisPoint.fkdot[2] = 0.0;
-  thisPoint.fkdot[3] = 0.0;
+  INIT_MEM ( thisPoint.fkdot );
 
   /* some compute F-Stat params */
   CFparams.Dterms = uvar_Dterms;
@@ -955,8 +954,8 @@ int MAIN( int argc, char *argv[]) {
 
         /* initialize first finegrid point 
         thisFgPoint.F=0.0;
-        thisFgPoint.F1dot=0.0;
-        thisFgPoint.Uindex=0; */
+        thisFgPoint.F1dot=0.0; */
+        thisFgPoint.Uindex=0; 
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
         
