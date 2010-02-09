@@ -511,7 +511,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ephemDir = uvar->ephemDir;
     else
       ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear, startTime ), status);
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
