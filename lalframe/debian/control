@@ -2,7 +2,7 @@ Source: lalframe
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, zlib1g-dev, libframe-dev (>= 8.0), lal-dev (>= 6.4), pkg-config, python
+Build-Depends: debhelper (>= 5), m4, zlib1g-dev, libframe-dev (>= 8.0), lal-dev (>= 6.4), pkg-config, python
 Standards-Version: 3.7.2
 
 Package: lalframe
