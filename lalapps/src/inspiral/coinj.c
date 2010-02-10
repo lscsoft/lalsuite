@@ -333,7 +333,13 @@ int main(int argc, char *argv[])
       XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
       /* Output the actuation time series */
-      sprintf(outfilename,"HWINJ_%i_%s_%i_%s.out",inj_num,injtype,inj_epoch.gpsSeconds,det_name);
+      /*sprintf(outfilename,"HWINJ_%i_%s_%i_%s.out",inj_num,injtype,inj_epoch.gpsSeconds,det_name);*/
+      char massBin[5];
+      if(this_injection.mass1<2.0 && this_injection.mass2<2.0) sprintf(massBin,"BNS");
+      else if(this_injection.mass1<2.0 || this_injection.mass2<2.0) sprintf(massBin,"NSBH");
+      else sprintf(massBin,"BBH");
+
+      sprintf(outfilename,"%i_CBC_%s_%i_%s_%s.txt",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
       outfile=fopen(outfilename,"w");
       fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
       for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);

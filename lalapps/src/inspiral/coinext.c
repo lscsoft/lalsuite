@@ -23,11 +23,12 @@ include
 *******************************/
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 #include <getopt.h>
 #include <time.h>
+#include <math.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

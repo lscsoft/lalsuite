@@ -29,7 +29,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
-#include <lal/LIGOMetadataTables.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
 #include <lal/FrameCache.h>
@@ -74,29 +73,29 @@ CHAR *XLALAggregationFrameType(CHAR *ifo)
   static const char *func = "XLALAggregationFrameType";
 
   /* declare variables */
-  static CHAR type[LIGOMETA_TYPE_MAX];
+  static CHAR type[LAL_AGGREGATION_TYPE_MAX];
 
   /* check arguments */
   if (!ifo)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine type */
-  if (strncmp(ifo, "G1", LIGOMETA_IFO_MAX) == 0)
+  if (strncmp(ifo, "G1", LAL_AGGREGATION_IFO_MAX) == 0)
   {
     /* FIXME geo - currently undefined */
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
-  else if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  else if (strncmp(ifo, "V1", LAL_AGGREGATION_IFO_MAX) == 0)
   {
     /* virgo */
-    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_HREC", ifo);
+    snprintf(type, LAL_AGGREGATION_TYPE_MAX, "%s_DMT_HREC", ifo);
   }
-  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  else if ((strncmp(ifo, "H1", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LAL_AGGREGATION_IFO_MAX) == 0))
   {
     /* ligo */
-    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_C00_L2", ifo);
+    snprintf(type, LAL_AGGREGATION_TYPE_MAX, "%s_DMT_C00_L2", ifo);
   }
   else
   {
@@ -501,7 +500,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   /* declare variables */
   FrStream *stream;
   REAL8TimeSeries *series;
-  CHAR channel[LIGOMETA_CHANNEL_MAX];
+  CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
   LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
@@ -553,18 +552,18 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   }
 
   /* get channel name */
-  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  if (strncmp(ifo, "V1", LAL_AGGREGATION_IFO_MAX) == 0)
   {
     /* virgo */
-    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    snprintf(channel, LAL_AGGREGATION_CHANNEL_MAX, "%s:%s", ifo, \
       LAL_ONLINE_VIRGO_STRAIN_CHANNEL);
   }
-  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  else if ((strncmp(ifo, "H1", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LAL_AGGREGATION_IFO_MAX) == 0))
   {
     /* ligo */
-    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    snprintf(channel, LAL_AGGREGATION_CHANNEL_MAX, "%s:%s", ifo, \
       LAL_ONLINE_STRAIN_CHANNEL);
   }
   else
@@ -600,7 +599,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   /* declare variables */
   FrStream *stream;
   INT4TimeSeries *series;
-  CHAR channel[LIGOMETA_CHANNEL_MAX];
+  CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
   LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
@@ -652,18 +651,18 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   }
 
     /* get channel name */
-  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  if (strncmp(ifo, "V1", LAL_AGGREGATION_IFO_MAX) == 0)
   {
     /* virgo */
-    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    snprintf(channel, LAL_AGGREGATION_CHANNEL_MAX, "%s:%s", ifo, \
       LAL_ONLINE_VIRGO_DQ_VECTOR);
   }
-  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  else if ((strncmp(ifo, "H1", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LAL_AGGREGATION_IFO_MAX) == 0))
   {
     /* ligo */
-    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    snprintf(channel, LAL_AGGREGATION_CHANNEL_MAX, "%s:%s", ifo, \
       LAL_ONLINE_DQ_VECTOR);
   }
   else
@@ -699,7 +698,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   FrStream *stream;
   REAL4TimeSeries *state;
   INT4TimeSeries *series;
-  CHAR channel[LIGOMETA_CHANNEL_MAX];
+  CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
   UINT4 i;
   LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
@@ -752,12 +751,12 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   }
 
   /* get channel name */
-  if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
-      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  if ((strncmp(ifo, "H1", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LAL_AGGREGATION_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LAL_AGGREGATION_IFO_MAX) == 0))
   {
     /* ligo */
-    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    snprintf(channel, LAL_AGGREGATION_CHANNEL_MAX, "%s:%s", ifo, \
       LAL_ONLINE_STATE_VECTOR);
   }
   else

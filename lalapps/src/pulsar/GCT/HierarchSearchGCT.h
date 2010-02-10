@@ -150,9 +150,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8VectorSequence *pos;  /**< Earth orbital position for each segment */
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
     REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
-    REAL8 fdot;                /**< spindown value of demodulation point */
-    UINT4 gamma2;               /**< refinement factor in spindown */ 
-    REAL8 dfdot;               /**< resolution in residual spindowns */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
     REAL8  threshold;          /**< Threshold for candidate selection */
@@ -182,31 +179,31 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
   /** one fine-grid point */
   typedef struct tagFineGridPoint {
-    REAL8 F;           /**< frequency */
-    REAL8 F1dot;       /**< spindown */
-    INT4 Uindex;          /**< U index */
+    REAL8 Freq;         /**< frequency */
+    REAL8 F1dot;        /**< spindown */
+    INT4 Uindex;        /**< U index */
     UINT4 nc;           /**< number count */
-    REAL4 sumTwoF;     /**< sum of 2F-values */
+    REAL4 sumTwoF;      /**< sum of 2F-values */
   } FineGridPoint;  
 
   /** structure for storing fine-grid points */
   typedef struct tagFineGrid {
-    REAL8 Alpha;       /**< right ascension */
-    REAL8 Delta;       /**< declination */
-    LIGOTimeGPS refTime;       /**< reference time for candidates */
-    UINT4 length;               /**< maximum allowed length of vectors */
+    REAL8 Alpha;            /**< right ascension */
+    REAL8 Delta;            /**< declination */
+    LIGOTimeGPS refTime;    /**< reference time for candidates */
+    UINT4 length;           /**< maximum allowed length of vectors */
     FineGridPoint *list;    /**> list of finegrid points */
   } FineGrid;
   
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
-    INT4 Uindex;          /**< U index */
+    INT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
-    UINT4 length;               /**< maximum allowed length of vectors */
+    UINT4 length;             /**< maximum allowed length of vectors */
     CoarseGridPoint *list;    /**> list of finegrid points */
   } CoarseGrid;
   

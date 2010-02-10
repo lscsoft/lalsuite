@@ -358,7 +358,7 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
-
+#if 0
   /* now the process params table */
   LAL_CALL( LALUserVarGetProcParamsTable ( &status, &this_proc_param, PROGRAM_NAME), &status);
   procparams.processParamsTable = this_proc_param;
@@ -371,6 +371,7 @@ int main( INT4 argc, CHAR *argv[] )
                                       process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
+#endif
 
 
   /* and finally the simInspiralTable itself */
