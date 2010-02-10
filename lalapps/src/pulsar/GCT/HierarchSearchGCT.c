@@ -1478,7 +1478,7 @@ void SetUpSFTs( LALStatus *status,
     XLALGPSSetREAL8( &tMidGPS, tMid8 );
   }
 
-  if ( in->refTime > 0)  {
+  if ( in->refTime > 0 )  {
     REAL8 refTime = in->refTime;
     XLALGPSSetREAL8(&refTimeGPS, refTime);
   }
