@@ -1,6 +1,7 @@
 #!/bin/sh
 
-RESAMP="0"
+RESAMP="1"
+#NOCLEANUP="1"
 
 ## allow 'make test' to work from builddir != srcdir
 if [ -n "${srcdir}" ]; then
@@ -171,8 +172,8 @@ echo
 echo "==>   Average 2F: "$TwoFsum
 
 
-edat=${LAL_DATA_PATH}"/earth05-09.dat"
-sdat=${LAL_DATA_PATH}"/sun05-09.dat"
+edat="earth05-09.dat"
+sdat="sun05-09.dat"
 
 echo
 echo
@@ -264,11 +265,10 @@ else
 fi
 fi
 
-echo
-echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT1  
-
 # Check relative error in frequency
 if [ -z "$RESAMP" ]; then
+echo
+echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT1
 if [ `echo $freqreldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT, Resamp.     Rel. dev. in frequency: "$freqreldev1
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
