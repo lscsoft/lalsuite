@@ -35,9 +35,6 @@ else
 	CFLAGS += -O2
 endif
 
-configure:
-	sh ./00boot
-
 config.status: configure
 	dh_testdir
 
