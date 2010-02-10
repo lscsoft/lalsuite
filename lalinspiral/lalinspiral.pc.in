@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALInspiral
 Description: LAL Inspiral Library Support
 Version: @VERSION@
-Requires: lal lalmetaio
-Libs: -L${libdir} -llalinspiral @GSL_LIBS@ @METAIO_LIBS@
-Cflags: -I${includedir} @GSL_CFLAGS@ @METAIO_CFLAGS@
+Requires: gsl lal libmetaio lalmetaio
+Libs: -L${libdir} -llalinspiral
+Cflags: -I${includedir}
