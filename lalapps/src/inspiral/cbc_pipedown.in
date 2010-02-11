@@ -1,14 +1,5 @@
 #!/usr/bin/env @PYTHONPROG@
 
-usage = \
-"""
-Program to construct post-processing dag.
-"""
-
-__author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
-
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, re
@@ -22,8 +13,18 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 from glue import lal
 from glue import iterutils
+from glue.ligolw import ligolw
 from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process
+from glue import git_version
 import inspiral
+
+__prog__ = 'cbc_pipedown'
+__author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
+
+description = \
+"Program to construct post-processing dag."
 
 ##############################################################################
 # Function Definitions
@@ -64,7 +65,11 @@ def get_veto_segments_name( veto_cat_num, cumulative = True ):
 
 ##############################################################################
 # parse command-line arguments
-parser = OptionParser( version = "", usage = usage )
+parser = OptionParser( 
+  version = git_version.verbose_msg,
+  usage   = "%prog [options]",
+  description = description
+  )
 
 parser.add_option( "", "--ihope-cache", action = "store", type = "string",
   default = None,
@@ -111,6 +116,12 @@ if not options.config_file:
   raise ValueError, "A config-file is required."
 if not options.log_path:
   raise ValueError, "A log-path is required."
+
+##############################################################################
+# Create log file
+logdoc = ligolw.Document()
+logdoc.appendChild(ligolw.LIGO_LW())
+proc_id = process.register_to_xmldoc(logdoc, __prog__, options.__dict__, version = git_version.id)
 
 ##############################################################################
 # parse the ini file and initialize
@@ -962,7 +973,12 @@ dag.add_maxjobs_category('minifollowups', 15)
 dag.write_sub_files()
 dag.write_dag()
 
+# write process end time to log file and write log file
+process.set_process_end_time(proc_id)
+utils.write_filename(logdoc, basename+'.log.xml', xsl_file = "ligolw.xsl")
+
 print "Finished!"
 print "Now run:\n\tcondor_submit_dag %s" % os.path.basename(dag.get_dag_file())
+
 sys.exit(0)
 
