@@ -106,6 +106,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_ihope_daily_page \
+              lalapps_flag_triggers lalapps_check_flag \
               lalapps_check_hipe_times lalapps_ihope \
               lalapps_followup0_pipe lalapps_plot_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
@@ -165,6 +166,12 @@ lalapps_inspiral_online_pipe: $(srcdir)/inspiral_online_pipe.in python_config.se
 lalapps_ihope_daily_page: $(srcdir)/ihope_daily_page.in python_config.sed
 	sed -f python_config.sed $(srcdir)/ihope_daily_page.in > lalapps_ihope_daily_page
 	chmod +x lalapps_ihope_daily_page
+lalapps_flag_triggers: $(srcdir)/flag_triggers.in python_config.sed
+	sed -f python_config.sed $(srcdir)/flag_triggers.in > lalapps_flag_triggers
+	chmod +x lalapps_flag_triggers
+lalapps_check_flag: $(srcdir)/check_flag.in python_config.sed
+	sed -f python_config.sed $(srcdir)/check_flag.in > lalapps_check_flag
+	chmod +x lalapps_check_flag
 lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
 	chmod +x lalapps_inspiral_online_pipe_inject
