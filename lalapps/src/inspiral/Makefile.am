@@ -198,7 +198,8 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup0_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup0_page.in cbc_pipedown.in ihope_daily_page.in $(DATA)
+	     followup0_page.in cbc_pipedown.in ihope_daily_page.in \
+	     check_flag.in flag_triggers.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
