@@ -15,7 +15,7 @@ Description: LSC Algorithm Library Pulsar
 
 Package: lalpulsar-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9), lal-dev (>= 6.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, lalpulsar (= ${binary:Version}), libgsl0-dev (>= 1.9), lal-dev (>= 6.4)
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
