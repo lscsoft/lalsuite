@@ -705,15 +705,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       os.symlink("../datafind/cache", "cache")
     except: pass
 
-  # symlink in the template banks, and add them to the inspiral hipe cache
+  # symlink in the template banks needed by the inspiral jobs
   if tmpltbankCache:
     symlinkedCache = symlink_tmpltbank(tmpltbankCache, hipeDir)
-
-    inspiral_hipe_file = open(hipe_cache(ifos, usertag, \
-        hipecp.getint("input", "gps-start-time"), \
-        hipecp.getint("input", "gps-end-time")), "a")
-    symlinkedCache.tofile(inspiral_hipe_file)
-    inspiral_hipe_file.close()
 
   iniBase = iniFile.rstrip("ini")
   if hipeDir == "datafind":
@@ -739,12 +733,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     # since it is inherited by all the other sub-workflows
     hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
       'segment_files.cache', '../segments/*txt' )))
+    hipeNode.add_output_file( hipe_cache(ifos, None, \
+        hipecp.getint("input", "gps-start-time"), \
+        hipecp.getint("input", "gps-end-time")) )
   else:
     hipeNode.set_user_tag(usertag)
-
-  hipeNode.add_output_file( hipe_cache(ifos, usertag, \
-      hipecp.getint("input", "gps-start-time"), \
-      hipecp.getint("input", "gps-end-time")) )
+    hipeNode.add_output_file( hipe_cache(ifos, usertag, \
+        hipecp.getint("input", "gps-start-time"), \
+        hipecp.getint("input", "gps-end-time")) )
 
   # return to the original directory
   os.chdir("..")

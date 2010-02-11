@@ -336,19 +336,23 @@ for ifo in ifos:
 os.chdir("..")
 
 ##############################################################################
+# create the list of files that will be concatenated into the ihope cache
+cachelist = []
+cachefilename = basename + '.cache'
+
+##############################################################################
 # Run lalapps_inspiral_hipe for datafind and template bank generation
 if opts.run_datafind or opts.run_tmpltbank:
   print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
       opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
       dax=opts.dax, local_exec_dir=tmp_exec_dir)
+  for cacheFile in hipeDfNode.get_output_files():
+      cachelist.append("datafind/" + cacheFile)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
 # Set up the directories for each run and run lalapps_inspiral_hipe
-
-cachelist = []
-cachefilename = basename + '.cache'
 
 if opts.complete_cache:
   # We need to get the names of the template bank files that are generated in
