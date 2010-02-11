@@ -15,7 +15,7 @@ Description: LSC Algorithm Library
 
 Package: lal-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}), libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev
 Description: Files and documentation needed for compiling programs that use LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL library
