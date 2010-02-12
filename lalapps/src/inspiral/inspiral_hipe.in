@@ -392,6 +392,10 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
         thinca.set_category('thinca')
       if not opts.disable_dag_priorities:
         thinca.set_priority(3)
+      try:
+        thinca.set_dax_collapse(cp.get('pipeline','collapse-thinca'))
+      except:
+        pass
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
@@ -774,6 +778,7 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
+      sire.add_input_file(output)
       if do_sire: f.write('%s\n' % output)
     else:
       # set up glob
@@ -873,6 +878,7 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
+      coire.add_input_file(output)
       if do_coire: f.write('%s\n' % output)
     else:
       # set up glob
@@ -1605,9 +1611,11 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile, opts.dax)
 if usertag:
-  dag.set_dag_file(basename + '.' + usertag )
+  dag.set_dag_file(basename + '.' + usertag)
+  dag.set_dax_file(basename + '.' + usertag)
 else:
-  dag.set_dag_file(basename )
+  dag.set_dag_file(basename)
+  dag.set_dax_file(basename)
 
 # set better submit file names than the default
 if usertag:
@@ -1638,7 +1646,20 @@ else:
 
 
 # datafind:
-df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
+frame_types = []
+try:
+  lsync_file = cp.get('pipeline','lsync-cache-file')
+  try: frame_types.append(cp.get('input','ligo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','virgo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','geo-type'))
+  except: pass
+  frame_types = [t for t in frame_types if t]
+except:
+  lsync_file = None
+df_job = pipeline.LSCDataFindJob(
+  'cache','logs',cp,opts.dax,lsync_file,'|'.join(frame_types))
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
@@ -2629,10 +2650,6 @@ if cp.has_option("pipeline", "retry-jobs"):
 # Step 14: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
-if opts.dax:
-  pass
-  #print "writing rls cache" 
-  dag.write_pegasus_rls_cache(cp.get('ldgsubmitdax','gsiftp'),cp.get('ldgsubmitdax','pool'))
 
 if opts.write_script:
   dag.write_script()

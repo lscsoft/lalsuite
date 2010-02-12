@@ -23,7 +23,7 @@ class InspiralError(exceptions.Exception):
 #############################################################################
 
 
-class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   An inspiral analysis job captures some of the common features of the specific
   inspiral jobs that appear below.  Spcecifically, the universe and exec_name
@@ -496,7 +496,7 @@ class InspInjFindJob(InspiralAnalysisJob):
 #############################################################################
 
 
-class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
   """
   An InspiralNode runs an instance of the inspiral code in a Condor DAG.
   """
@@ -507,26 +507,11 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     opts = job.get_opts()
-    
+
     if ("pad-data" in opts) and int(opts['pad-data']):
-      self.__pad_data = int(opts['pad-data'])
-    else:
-      self.__pad_data = None
+      self.set_pad_data(int(opts['pad-data']))
 
     self.__zip_output = ("write-compress" in opts)
-
-  def set_pad_data(self, pad):
-    """
-    Set the pad data value for this node 
-    """
-    self.__pad_data = pad
-    self.add_var_opt('pad-data', pad)
-
-  def get_pad_data(self):
-    """
-    Returns the injection file
-    """
-    return self.__pad_data
 
   def set_zip_output(self,zip):
     """
@@ -600,9 +585,9 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     set the data_start_time and data_end_time
     """
     if self.get_pad_data():
-      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
+      self.set_data_start(self.get_start() - \
           self.get_pad_data())
-      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
+      self.set_data_end(self.get_end() + \
           self.get_pad_data())
 
 #############################################################################
