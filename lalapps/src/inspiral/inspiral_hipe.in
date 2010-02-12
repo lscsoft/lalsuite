@@ -392,10 +392,8 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
         thinca.set_category('thinca')
       if not opts.disable_dag_priorities:
         thinca.set_priority(3)
-      try:
+      if cp.has_option('pipeline', 'collapse-thinca'):
         thinca.set_dax_collapse(cp.get('pipeline','collapse-thinca'))
-      except:
-        pass
       if inj>0: thinca.set_user_tag(exttrigUserTag)
       thinca.set_start(seg.start())
       thinca.set_end(seg.end())
@@ -747,6 +745,8 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
     sire.set_category('sire')
   if not opts.disable_dag_priorities:
     sire.set_priority(100)
+  if cp.has_option('pipeline', 'collapse-sire'):
+    sire.set_dax_collapse(cp.get('pipeline','collapse-sire'))
 
   # set the options:
   sire.set_ifo(ifo)
@@ -848,6 +848,8 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
     coire.set_category('coire')
   if not opts.disable_dag_priorities:
     coire.set_priority(100)
+  if cp.has_option('pipeline', 'collapse-coire'):
+    coire.set_dax_collapse(cp.get('pipeline','collapse-coire'))
 
   # set the options:
   coire.set_ifos(ifos)
