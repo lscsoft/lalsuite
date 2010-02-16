@@ -29,9 +29,10 @@ NVCC ?= nvcc
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 
-EXTRA_PROGRAMS = lalapps_HierarchicalSearch_v2 lalapps_HierarchicalSearchGC \
+EXTRA_PROGRAMS = lalapps_HierarchicalSearchGC \
 		 lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
-		 eah_HierarchicalSearch eah_HierarchicalSearch_sse eah_HierarchicalSearch_sse2 eah_HierarchicalSearch_cuda		 
+		 eah_HierarchicalSearch eah_HierarchicalSearch_sse eah_HierarchicalSearch_sse2 eah_HierarchicalSearch_cuda
+#lalapps_HierarchicalSearch_v2
 
 FDSsrc = ../../FDS_isolated
 
@@ -45,10 +46,10 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
 
-lalapps_HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
-			  $(FDSsrc)/FstatToplist.c $(FDSsrc)/FstatToplist.h \
-			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-			  $(FDSsrc)/ComputeFStatistic.h
+#lalapps_HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
+#			  $(FDSsrc)/FstatToplist.c $(FDSsrc)/FstatToplist.h \
+#			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
+#			  $(FDSsrc)/ComputeFStatistic.h
 
 lalapps_HierarchicalSearchGC_SOURCES = HierarchicalSearchGC.c HierarchicalSearchGC.h \
 			  StackSlideFstat.c StackSlideFstat.h \
