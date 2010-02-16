@@ -9,7 +9,7 @@ $(lalappsla):
 	cd $(top_builddir)/src/lalapps && $(MAKE)
 LDADD = $(lalappsla)
 
-SUBDIRS = ResamplingFstat
+SUBDIRS = OptimizedCFS ResamplingFstat
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID
