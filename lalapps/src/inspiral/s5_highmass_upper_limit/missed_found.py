@@ -1,85 +1,160 @@
-#!/usr/bin/python
-import scipy
-from scipy import interpolate
-import numpy
-import pylab
-
+import sys
 try:
         import sqlite3
 except ImportError:
         # pre 2.5.x
         from pysqlite2 import dbapi2 as sqlite3
-from math import *
-import sys
-import glob
-import copy
-from optparse import OptionParser
 
+from optparse import OptionParser
 from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
+from glue.ligolw import table
+from glue import segmentsUtils
+
 from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
 from pylal import SimInspiralUtils
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+
+from pylal import git_version
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
-def get_far_threshold_and_segments(zerofname, instruments, live_time_program, veto_seg_name="vetoes", verbose = True):
-  """
-  return the false alarm rate of the most rare zero-lag coinc, and a
-  dictionary of the thinca segments indexed by instrument.
-  """
-  # open database
-  working_filename = dbtables.get_connection_filename(zerofname, verbose = verbose)
-  connection = sqlite3.connect(working_filename)
-  dbtables.DBTable_set_connection(connection)
+class Summary(object):
+	def __init__(self, opts, flist):
+		self.segments = segments.segmentlistdict()
+		self.non_inj_fnames = []
+		self.inj_fnames = []
+		self.found = {}
+		self.missed = {}
+		self.opts = opts
+		self.veto_segments = segments.segmentlistdict()
+		self.zero_lag_segments = {}
+		self.instruments = []
+		self.livetime = {}
+		self.multi_burst_table = None
+		self.coinc_inspiral_table = None
 
-  # extract false alarm rate threshold
-  query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE ( coinc_event.instruments = "' + instruments + '" AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0) );'
-  print "\n", query
-  far, = connection.cursor().execute(query).fetchone()
+		for f in flist:
+			if opts.verbose: print >> sys.stderr, "Gathering stats from: %s...." % (f,)
+			working_filename = dbtables.get_connection_filename(f, tmp_path=opts.tmp_space, verbose = opts.verbose)
+			connection = sqlite3.connect(working_filename)
+			dbtables.DBTable_set_connection(connection)
+			xmldoc = dbtables.get_xml(connection)
 
-  # extract segments.
-  seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
+			# look for a sim table
+			try:
+				sim_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SimInspiralTable.tableName)
+				self.inj_fnames.append(f)
+				sim = True
+			except ValueError:
+				self.non_inj_fnames.append(f)
+				sim = False
 
-  # done
-  connection.close()
-  dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
-  dbtables.DBTable_set_connection(None)
+			# FIGURE OUT IF IT IS A BURST OR INSPIRAL RUN
+			try:
+				self.multi_burst_table = table.get_table(xmldoc, dbtables.lsctables.MultiBurstTable.tableName)
+			except ValueError:
+				self.multi_burst_table = None
+			try:
+				self.coinc_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.CoincInspiralTable.tableName)
+			except ValueError:
+				self.coinc_inspiral_table = None
+			if self.multi_burst_table and self.coinc_inspiral_table:
+				print >>sys.stderr, "both burst and inspiral tables found.  Aborting"
+				raise ValueError
 
-  return far, seglists
+			if not sim:
+				self.get_instruments(connection)
+				self.segments += self.get_segments(connection,xmldoc)
+				#FIXME, don't assume veto segments are the same in every file!
+				self.veto_segments = self.get_veto_segments(connection)
 
-def get_injections(injfnames, zero_lag_segments, ifos="*", FAR=1000.0, verbose = True):
-  """
-  The LV stat uses simulations above threshold, not some IFAR of the loudest event, so the default should be "inf"
-  """
-  def injection_was_made(geocent_end_time, geocent_end_time_ns, zero_lag_segments = zero_lag_segments):
-    """
-    return True if injection was made in the given segmentlist
-    """
-    return lsctables.LIGOTimeGPS(geocent_end_time, geocent_end_time_ns) in zero_lag_segments
+			dbtables.discard_connection_filename(f, working_filename, verbose = opts.verbose)
+			dbtables.DBTable_set_connection(None)
 
-  found = []
-  missed = []
-  print >>sys.stderr, ""
-  for cnt, f in enumerate(injfnames):
-    print >>sys.stderr, "getting injections: " + ifos + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
-    working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
-    connection = sqlite3.connect(working_filename)
-    connection.create_function("injection_was_made", 2, injection_was_made)
+		# remove redundant instruments
+		self.instruments = list(set(self.instruments))
+		# FIXME Do these have to be done by instruments?
+		self.segments -= self.veto_segments
 
-    make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName)._row_from_cols
+		# segments and livetime by instruments
+		for i in self.instruments:
+			self.zero_lag_segments[i] = self.segments.intersection(i) - self.segments.union(set(self.segments.keys()) - i)
+			self.livetime[i] = float(abs(self.zero_lag_segments[i]))
 
-    # FIXME may not be done correctly if injections are done in timeslides
-    # FIXME may not be done correctly if injections aren't logarithmic in d
-    # do we really want d^3 waiting?
-    # FIXME do we really want injections independent of their FAR
+	def get_segments(self, connection,xmldoc):
+		if self.coinc_inspiral_table:
+			segments = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = self.opts.live_time_program)
+		if self.multi_burst_table:
+			#FIXME CWB case of rings not handled
+			segments = llwapp.segmentlistdict_fromsearchsummary(xmldoc, self.opts.live_time_program).coalesce()
+		return segments
 
-    for values in connection.cursor().execute("""
+	def get_veto_segments(self, connection):
+		if self.coinc_inspiral_table:
+			if self.opts.veto_segments_name is not None: return db_thinca_rings.get_veto_segments(connection, opts.self.veto_segments_name)
+		# FIXME BURST CASE VETOS NOT HANDLED
+		else: return segments.segmentlistdict()
+
+	def get_instruments(self, connection):
+		for i in connection.cursor().execute('SELECT DISTINCT(instruments) FROM coinc_event'):
+			if i[0]: self.instruments.append(frozenset(lsctables.instrument_set_from_ifos(i[0])))
+
+	def get_injections(self, instruments, FAR=float("inf")):
+		injfnames = self.inj_fnames
+		zero_lag_segments = self.zero_lag_segments[instruments]
+		verbose = self.opts.verbose
+		found = []
+		missed = []
+		print >>sys.stderr, ""
+		for cnt, f in enumerate(injfnames):
+			print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+			working_filename = dbtables.get_connection_filename(f, tmp_path = opts.tmp_space, verbose = verbose)
+			connection = sqlite3.connect(working_filename)
+			dbtables.DBTable_set_connection(connection)
+			xmldoc = dbtables.get_xml(connection)
+			# DON'T BOTHER CONTINUING IF THE INSTRUMENTS OF INTEREST ARE NOT HERE
+			instruments_in_this_file = []
+			for i in connection.cursor().execute('SELECT DISTINCT(instruments) FROM coinc_event'):
+				if i[0]: instruments_in_this_file.append(frozenset(lsctables.instrument_set_from_ifos(i[0])))
+			if instruments not in instruments_in_this_file:
+				connection.close()
+				dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
+				dbtables.DBTable_set_connection(None)
+				continue
+
+			# WORK OUT CORRECT SEGMENTS FOR THIS FILE WHERE WE SHOULD SEE INJECTIONS
+			segments = self.get_segments(connection, xmldoc)
+			segments -= self.veto_segments
+			#print thincasegments
+			zero_lag_segments  = segments.intersection(instruments) - segments.union(set(segments.keys()) - instruments)
+			###############
+
+			# DEFINE THE INJECTION WAS MADE FUNCTION
+			def injection_was_made(geocent_end_time, geocent_end_time_ns, zero_lag_segments = zero_lag_segments):
+				"""
+				return True if injection was made in the given segmentlist
+				"""
+				return lsctables.LIGOTimeGPS(geocent_end_time, geocent_end_time_ns) in zero_lag_segments
+
+			connection.create_function("injection_was_made", 2, injection_was_made)
+			make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName).row_from_cols
+
+			# INSPIRAL
+			if self.coinc_inspiral_table:
+				for values in connection.cursor().execute("""
 SELECT
   sim_inspiral.*,
   -- true if injection matched a coinc below the false alarm rate threshold
@@ -98,138 +173,95 @@ SELECT
     WHERE
       mapa.table_name == "sim_inspiral"
       AND mapa.event_id == sim_inspiral.simulation_id
-      AND coinc_inspiral.false_alarm_rate < ?
-      --AND glob(?, coinc_inspiral.ifos)
+      AND coinc_inspiral.combined_far < ?
   )
 FROM
   sim_inspiral
 WHERE
   -- only interested in injections that were injected
   injection_was_made(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
-  ORDER BY sim_inspiral.eff_dist_h
-    """, (FAR,)):
-      sim = make_sim_inspiral(values)
-      if values[-1]:
-        found.append(sim)
-      else:
-        missed.append(sim)
+				""", (FAR,)):
+					sim = make_sim_inspiral(values)
+					if values[-1]:
+						found.append(sim)
+					else:
+						missed.append(sim)
 
-    # done
-    connection.close()
-    dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
-    dbtables.DBTable_set_connection(None)
+			# BURSTS
+			if self.multi_burst_table:
+				for values in connection.cursor().execute("""
+SELECT
+  sim_inspiral.*,
+  -- true if injection matched a coinc below the false alarm rate threshold
+  EXISTS (
+    SELECT
+      *
+    FROM
+      coinc_event_map AS mapa
+      JOIN coinc_event_map AS mapb ON (
+        mapa.coinc_event_id == mapb.coinc_event_id
+      )
+      JOIN multi_burst ON (
+        mapb.table_name == "coinc_event"
+        AND mapb.event_id == multi_burst.coinc_event_id
+      )
+    WHERE
+      mapa.table_name == "sim_inspiral"
+      AND mapa.event_id == sim_inspiral.simulation_id
+      AND multi_burst.false_alarm_rate < ?
+  )
+FROM
+  sim_inspiral
+WHERE
+  -- only interested in injections that were injected
+  injection_was_made(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
+				""", (FAR,)):
+					sim = make_sim_inspiral(values)
+					if values[-1]:
+						found.append(sim)
+					else:
+						missed.append(sim)
+			# done
+			dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
+			dbtables.DBTable_set_connection(None)
 
-  print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
-  return found, missed
+			print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
+		return found, missed
 
-
-def get_on_instruments(zerofname, verbose=True):
-  # open database
-  working_filename = dbtables.get_connection_filename(zerofname, verbose = verbose)
-  connection = sqlite3.connect(working_filename)
-  dbtables.DBTable_set_connection(connection)
-
-  # extract false alarm rate threshold
-  # FIXME This may not be robust if triggers are missing from a given category, for
-  # example no triples in zero lag or time slides.
-  query = 'SELECT distinct(instruments) FROM coinc_event'
-  inst_list = []
-  for i in connection.cursor().execute(query): inst_list.append(i)
-
-  # done
-  connection.close()
-  dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
-  dbtables.DBTable_set_connection(None)
-  return inst_list
-
-def get_ifos(zerofname, verbose=True):
-  # open database
-  working_filename = dbtables.get_connection_filename(zerofname, verbose = verbose)
-  connection = sqlite3.connect(working_filename)
-  dbtables.DBTable_set_connection(connection)
-
-  # extract false alarm rate threshold
-  # FIXME This may not be robust if triggers are missing from a given category, for
-  # example no triples in zero lag or time slides.
-  query = 'SELECT distinct(ifos) FROM coinc_inspiral'
-  ifo_list = []
-  for i in connection.cursor().execute(query): ifo_list.append(i)
-
-  # done
-  connection.close()
-  dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
-  dbtables.DBTable_set_connection(None)
-  return ifo_list
-
-def get_vetoes(fname, veto_segments_name = "vetoes", verbose=True):
-  working_filename = dbtables.get_connection_filename(fname, verbose = verbose)
-  connection = sqlite3.connect(working_filename)
-  dbtables.DBTable_set_connection(connection)
-  veto_segments = db_thinca_rings.get_veto_segments(connection, veto_segments_name)
-  connection.close()
-  dbtables.discard_connection_filename(fname, working_filename, verbose = verbose)
-  dbtables.DBTable_set_connection(None)
-  return veto_segments
-
-###############################################################################
-################### MAIN PROGRAM ##############################################
-###############################################################################
-# This program assigns lvstats to coinc table databases
-#
-# ./lvstat.py FULL_DATA.sqlite INJ1.sqlite INJ2.sqlite .....
+	def set_instruments_to_calculate(self):
+		if not self.opts.instruments: return self.instruments
+		if self.opts.instruments in self.instruments:
+			return frozenset(lsctables.instrument_set_from_ifos(i[0]))
+		else:
+			print >> sys.stderr, "Instruments %s do not exist in DB, nothing will be calculated" % (str(frozenset(lsctables.instrument_set_from_ifos(i[0]))),)
+		return []
 
 
-# FIXME this assumes that the first argument is the zero lag / time slide database
-zerofname = sys.argv[1]
-# FIXME this assumes that subsequent files are injections
-injfnames = sys.argv[2:]
-vetosegs = get_vetoes(zerofname)
-# FIXME  get the on instruments in the zero lag files,
-# this assumes that the instruments are same for injection runs
-# they probably should be
+def parse_command_line():
+	parser = OptionParser(version = "%prog CVS $Id$", usage = "%prog [options] [file ...]", description = "%prog computes mass/mass upperlimit")
+	parser.add_option("--instruments", metavar = "name[,name,...]", help = "Set the list of instruments.  Required.  Example \"H1,H2,L1\"")
+	parser.add_option("--live-time-program", default = "thinca", metavar = "name", help = "Set the name of the program whose rings will be extracted from the search_summary table.  Default = \"thinca\".")
+	parser.add_option("--far", help = "FAR to use for injection finding instead of loudest event")
+	parser.add_option("--veto-segments-name", default = "vetoes", help = "Set the name of the veto segments to use from the XML document.")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
 
-pylab.figure(1)
-#FAR, segs = get_far_threshold_and_segments(zerofname, on_ifos[0], "thinca")
-#segs -= vetosegs
-#zero_lag_segments = segs.intersection(instruments) - segs.union(set(segs.keys()) - instruments)
-#f, m = get_injections(sys.argv[2:], zero_lag_segments, trigger_ifos[0])
+	opts, filenames = parser.parse_args()
 
-for on_ifos in get_on_instruments(sys.argv[1]):
-  pylab.figure(1)
-  #get the correct segment lists and remove vetos
-  instruments = lsctables.instrument_set_from_ifos(on_ifos[0])
-  FAR, segs = get_far_threshold_and_segments(zerofname, on_ifos[0], "thinca")
-  segs -= vetosegs
-  print on_ifos[0]
-  zero_lag_segments = segs.intersection(instruments) - segs.union(set(segs.keys()) - instruments)
-  #f, m = get_injections(sys.argv[2:], zero_lag_segments)
-  #FIXME okay, really we need the decisive effective distance, this is right for the current search,
-  # but will be wrong when including virgo...
-  #pylab.semilogy([s.mass1+s.mass2 for s in m], [max([s.eff_dist_h, s.eff_dist_l]) for s in m], '.', color=[0,0,0])
-  pylab.hold(1)
-  legend = []
-  for trigger_ifos in get_ifos(sys.argv[1]):
-    #get the ifos that participate in coincidence
-    key = (on_ifos[0], trigger_ifos[0])
-    f, tmp = get_injections(sys.argv[2:], zero_lag_segments, trigger_ifos[0])
-    #pylab.semilogy([s.mass1+s.mass2 for s in f], [max([s.eff_dist_h, s.eff_dist_l]) for s in f], '.')
-    #pylab.semilogy([s.mchirp for s in f], [max([s.eff_dist_h, s.eff_dist_l]) for s in f], '.')
-    #legend.append(trigger_ifos[0])
-    #pylab.semilogy([s.mass1+s.mass2 for s in m], [s.eff_dist_h for s in m], '.k')
-    #pylab.hold(1)
-  f, m = get_injections(sys.argv[2:], zero_lag_segments)
-  #FIXME okay, really we need the decisive effective distance, this is right for the current search,
-  # but will be wrong when including virgo...
-  #pylab.semilogy([s.mass1+s.mass2 for s in m], [max([s.eff_dist_h, s.eff_dist_l]) for s in m], '.', color=[0,0,0])
-  pylab.semilogy([s.mchirp for s in m], [max([s.eff_dist_h, s.eff_dist_l]) for s in m], '.', color=[0,0,0])
-  #pylab.semilogy([s.h_end_time for s in m], [max([s.eff_dist_h, s.eff_dist_l]) for s in m], '.', color=[0.5,0.5,0.5])
+	if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
+	if not filenames:
+		print >>sys.stderr, "must specify at least one database file"
+		sys.exit(1)
+	return opts, filenames
 
-  legend.append('Missed')
-  pylab.hold(0)
-  pylab.legend(legend)
-  pylab.xlabel('chirp mass')
-  pylab.ylabel('max(Hanford effective distance, Livingston effective distance)')
-  pylab.savefig(on_ifos[0].replace(",","") + "found_missed.png")
-  pylab.clf()
+opts, filenames = parse_command_line()
 
-  #print [s.h_end_time + s.h_end_time_ns/10**9 for s in m], [min([s.eff_dist_h, s.eff_dist_l]) for s in m]
+summ = Summary(opts, filenames)
+
+for instruments in summ.set_instruments_to_calculate():
+	found, missed = summ.get_injections(instruments)
+	pylab.semilogy([f.mchirp for f in found], [f.eff_dist_l for f in found],'.')
+	pylab.semilogy([m.mchirp for m in missed], [m.eff_dist_l for m in missed],'k.')
+	pylab.savefig('test.png')
+
+

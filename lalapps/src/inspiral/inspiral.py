@@ -360,6 +360,55 @@ class ThincaToCoincJob(InspiralAnalysisJob):
     """
     self.add_opt('simulation', None)
 
+class HWinjPageJob(InspiralAnalysisJob):
+  """
+  A HWinjPageJob, runs the hardware injection page script on the
+  output of the pipeline
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'hwinjscript'
+    sections = ['hwinjpage']
+    extension = 'html'
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+#    self.add_condor_cmd('getenv', 'True')
+    self.__gps_start_time = None
+    self.__gps_end_time = None
+    # overwrite standard log file names
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+
+  def set_experiment_start_time(self, experiment_start_time):
+    """
+    Sets the experiment-start-time option. This is a required option.
+    @experiment_start_time: gps start time of the experiment the thinca_to_coinc
+    job is in.
+    """
+    self.add_opt('gps-start-time', experiment_start_time)
+    self.__gps_start_time = experiment_start_time
+
+  def set_experiment_end_time(self, experiment_end_time):
+    """
+    Sets the experiment-end-time option. This is a required option.
+    @experiment_end_time: gps end time of the experiment the thinca_to_coinc
+    job is in.
+    """
+    self.add_opt('gps-end-time', experiment_end_time)
+    self.__gps_end_time = experiment_end_time
+
+  def get_experiment_start_time(self, experiment_start_time):
+    """
+    Returns the value of the experiment-start-time option.
+    """
+    return self.__gps_start_time
+
+  def get_experiment_end_time(self, experiment_end_time):
+    """
+    Returns the value of the experiment-end-time option.
+    """
+    return self.__gps_start_time
 
 class SireJob(InspiralAnalysisJob):
   """
@@ -1076,7 +1125,6 @@ class ThincaNode(InspiralAnalysisNode):
     self.add_output_file(filename)
     return filename
 
-
 class ThincaToCoincNode(InspiralAnalysisNode):
   """
   A ThincaToCoincNode runs an instance of a ThincaToCoincJob 
@@ -1193,6 +1241,42 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     Returns the time_slide_file.
     """
     return self.__time_slide_file
+
+class HWinjPageNode(InspiralAnalysisNode):
+  """
+  A HWinjPageNode runs an instance of a HWinjPageJob
+  in a DAG.
+  """
+  def __init__(self, job):
+    """
+    @job: A HWinjPageJob.
+    """
+    InspiralAnalysisNode.__init__(self, job)
+    self.__input_cache = None
+    self.__cache_string = None
+    self.__outfile=None
+
+  def set_input_cache(self, input_cache_name):
+    """
+    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
+    to read.
+    """
+    self.add_file_opt('cache-file',input_cache_name)
+    self.__input_cache = input_cache_name
+
+  def set_cache_string(self,cache_string):
+    """
+    @cache_string: pattern to match files within cache
+    """
+    self.add_file_opt('cache-pattern',cache_string)
+    self.__cache_string=cache_string
+
+  def set_output_file(self,outfile_name):
+    """
+    @outfile_name: Name of hw injection page
+    """
+    self.add_file_opt('outfile',outfile_name)
+    self.__outfile=outfile_name
 
 
 class SireNode(InspiralAnalysisNode):

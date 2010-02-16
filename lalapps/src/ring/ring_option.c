@@ -540,7 +540,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
 
   fprintf( stderr, "\nsimulated injection options:\n" );
-  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [ringdown, imr, imr_ringdown, EOBNR] \n \t and must be accompanied by the appropriate injection file\n" );
+  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [RINGDOWN, EOBNR, PHENOM, IMR, IMR_RINGDOWN] \n \t and must be accompanied by the appropriate injection file\n" );
   fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n \t \t should a sim_ringdown table for 'ringdown' injections \n \t \t and a sim_inspiral table for the other types\n" );
   fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
 
