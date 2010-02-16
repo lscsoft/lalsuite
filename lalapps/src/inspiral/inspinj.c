@@ -2283,7 +2283,7 @@ int main( int argc, char *argv[] )
     /* populate the sim_ringdown table */ 
    if ( writeSimRing )
    {
-       memcpy( simRingTable->waveform, waveform,
+       memcpy( simRingTable->waveform, "Ringdown",
           sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;

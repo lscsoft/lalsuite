@@ -63,6 +63,14 @@ void sleep(unsigned int s) {
 
 
 /*
+  provides index() as a function for linking LAL with win_lib.o
+*/ 
+char *index(const char *s, int c) {
+  return strchr((char*)s,c);
+}
+
+
+/*
   provides finite() as a function for linking LAL with win_lib.o
 */ 
 int finite(double x) {
