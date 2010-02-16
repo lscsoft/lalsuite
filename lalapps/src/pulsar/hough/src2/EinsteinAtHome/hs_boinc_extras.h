@@ -29,7 +29,7 @@
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
-#include "HoughFStatToplist.h"
+#include "../HoughFStatToplist.h"
 
 #define HSBOINCEXTRASHRCSID "$Id$"
 
@@ -38,34 +38,8 @@
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
-/* use a local copy of ComputeFStatFreqBand() and related functions for E@H-specific optimizations */
-#ifndef EAH_OPTIMIZATION
-#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
-#define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
-#else
-#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
-
-#include "HierarchicalSearch.h"
-
-extern void
-LocalComputeFStatFreqBand ( LALStatus *status, 
-                            REAL8FrequencySeries *FstatVector,
-                            const PulsarDopplerParams *doppler,
-                            const MultiSFTVector *multiSFTs, 
-                            const MultiNoiseWeights *multiWeights,
-                            const MultiDetectorStateSeries *multiDetStates,
-                            const ComputeFParams *params);
-extern void
-LocalComputeFstatHoughMap ( LALStatus *status,
-			    SemiCohCandidateList  *out,   /* output candidates */
-			    HOUGHPeakGramVector *pgV, /* peakgram vector */
-			    SemiCoherentParams *params);
-#endif
-
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
-#define REARRANGE_SFT_DATA
 
 #ifndef HS_CHECKPOINTING
 #define HS_CHECKPOINTING 1
@@ -94,7 +68,23 @@ LocalComputeFstatHoughMap ( LALStatus *status,
 extern "C" {
 #endif
 
-extern int global_cpu_type;
+/* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+extern void
+LocalComputeFstatHoughMap ( LALStatus *status,
+			    SemiCohCandidateList  *out,   /* output candidates */
+			    HOUGHPeakGramVector *pgV, /* peakgram vector */
+			    SemiCoherentParams *params);
 
 extern LALStatus *global_status;
 
