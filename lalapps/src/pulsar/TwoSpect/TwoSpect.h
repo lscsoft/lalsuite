@@ -24,38 +24,8 @@
 #include <lal/DetResponse.h>
 #include <lal/AVFactories.h>
 #include <gsl/gsl_rng.h>
-
-typedef struct
-{
-   REAL4Vector *f;         //First PSD frequencies
-   REAL4Vector *fpr;       //Second PSD frequencies
-   REAL4Vector *ffdata;    //Doubly Fourier transformed data
-   REAL4Vector *backgrnd;  //Noise background
-   REAL4Vector *antweights;   //Antenna pattern weights (F**2)
-} ffdataStruct;
-
-typedef struct
-{
-   REAL4 fmin;
-   REAL4 fspan;
-   REAL8 Tobs;
-   REAL4 Tcoh;
-   //REAL4 samplerate;
-   REAL8 searchstarttime;
-   REAL4 ra;
-   REAL4 dec;
-   REAL4 dopplerMultiplier;
-   INT4 blksize;
-   INT4 maxbinshift;
-   //INT4Vector *SFTexistlist;
-   LALDetector *det;
-} inputParamsStruct;
-
-typedef struct
-{
-   INT4Vector *topbins;
-   INT4Vector *freqoftopbins;
-} topbinsStruct;
+#include "TwoSpectTypes.h"
+#include "templates.h"
 
 
 inputParamsStruct * new_inputParams(void);
@@ -63,11 +33,11 @@ void free_inputParams(inputParamsStruct *input);
 
 ffdataStruct * new_ffdata(inputParamsStruct *param, INT4 mode);
 void free_ffdata(ffdataStruct *data);
-void makeFakeBinarySigFF(ffdataStruct *ffdata, inputParamsStruct *input);
+//void makeFakeBinarySigFF(ffdataStruct *ffdata, inputParamsStruct *input);
 
-topbinsStruct * new_topbinsStruct(INT4 number);
-void free_topbinsStruct(topbinsStruct *topbinsstruct);
-void topbins(topbinsStruct *out, ffdataStruct *in, INT4 number);
+//topbinsStruct * new_topbinsStruct(INT4 number);
+//void free_topbinsStruct(topbinsStruct *topbinsstruct);
+//void topbins(topbinsStruct *out, ffdataStruct *in, INT4 number);
 
 REAL4Vector * gaussRandNumVector(REAL4 sigma, UINT4 length, gsl_rng *ptrToGenerator);
 REAL4Vector * expRandNumVector(REAL4 mu, UINT4 length, gsl_rng *ptrToGenerator);
@@ -79,7 +49,8 @@ REAL4Vector * tfRngMeans(REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 
 //REAL4Vector * makeFakeBinarySigTF(signalParamsStruct *in);
 REAL4Vector * makeSecondFFT(REAL4Vector *tfdata, inputParamsStruct *params);
 
-REAL4 calculateR(REAL4Vector *ffdata, REAL4Vector *template, topbinsStruct *topbinsstruct, REAL4Vector *noise);
+//REAL4 calculateR(REAL4Vector *ffdata, REAL4Vector *template, topbinsStruct *topbinsstruct, REAL4Vector *noise);
+REAL4 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise);
 REAL4 gaussRandNum(REAL4 sigma, gsl_rng *ptrToGenerator);
 REAL4 expRandNum(REAL4 mu, gsl_rng *ptrToGenerator);
 REAL4 maxModDepth(REAL4 period, REAL4 cohtime);

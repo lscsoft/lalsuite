@@ -35,5 +35,7 @@ INT4Vector * CompBinShifts(REAL4 freq, REAL4Vector *velocities, REAL4 Tcoh, REAL
 REAL4Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det);
 REAL4Vector * CompAntennaVelocity(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat);
 
+REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat);
+
 #endif
 

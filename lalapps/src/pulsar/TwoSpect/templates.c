@@ -48,16 +48,14 @@ void free_farStruct(farStruct *farstruct)
 
 //////////////////////////////////////////////////////////////
 // Estimate the FAR of the R statistic from the weights
-void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise)
+//void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise)
+void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise)
 {
    
    INT4 ii, jj;
    
    REAL4 sumofsqweights = 0;
-   for (ii=0; ii<topbinsstruct->topbins->length; ii++) {
-      sumofsqweights += (weights->data[ topbinsstruct->topbins->data[ii] ]*
-         weights->data[ topbinsstruct->topbins->data[ii] ]);
-   }
+   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumofsqweights += (templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]);
    REAL4 sumofsqweightsinv = 1.0/sumofsqweights;
    
    INT4 trials = 10000;    //Number of trials to determine FAR value
@@ -65,14 +63,16 @@ void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstr
    
    //RandomParams *param = XLALCreateRandomParams(0);
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
    
    for (ii=0; ii<trials; ii++) {
       //Create noise value and R value
       REAL4 R = 0.0;
-      for (jj=0; jj<topbinsstruct->topbins->length; jj++) {
-         REAL4 noise = expRandNum(ffplanenoise->data[ topbinsstruct->freqoftopbins->data[jj] ], rng);
-         R += ((noise-ffplanenoise->data[ topbinsstruct->freqoftopbins->data[jj] ])*
-            weights->data[ topbinsstruct->topbins->data[jj] ]);
+      for (jj=0; jj<(INT4)templatestruct->firstfftfrequenciesofpixels->length; jj++) {
+         REAL4 noise = expRandNum(ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ], rng);
+         R += (noise - ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])*templatestruct->templatedata->data[jj];
       }
       Rs->data[ii] = R*sumofsqweightsinv;
    }
@@ -80,7 +80,7 @@ void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstr
    REAL4 sigma = calcStddev(Rs);
    
    //Find the maximums and get to the FAR
-   REAL4 max;
+   REAL4 max = 0.0;
    INT4 maxloc;
    for (ii=0; ii<(INT4)roundf(thresh*trials)+1; ii++) {
       max = 0.0;
@@ -106,27 +106,54 @@ void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstr
 }
 
 
+templateStruct * new_templateStruct(INT4 length)
+{
+   
+   templateStruct *templatestruct = XLALMalloc(sizeof(templateStruct));
+   
+   templatestruct->templatedata = XLALCreateREAL4Vector((UINT4)length);
+   templatestruct->pixellocations = XLALCreateINT4Vector((UINT4)length);
+   templatestruct->firstfftfrequenciesofpixels = XLALCreateINT4Vector((UINT4)length);
+   
+   return templatestruct;
+   
+}
+
+
+void free_templateStruct(templateStruct *nameoftemplate)
+{
+   
+   XLALDestroyREAL4Vector(nameoftemplate->templatedata);
+   XLALDestroyINT4Vector(nameoftemplate->pixellocations);
+   XLALDestroyINT4Vector(nameoftemplate->firstfftfrequenciesofpixels);
+   
+   XLALFree((templateStruct*)nameoftemplate);
+   
+}
+
+
 
 
 //////////////////////////////////////////////////////////////
-// Make an estimated template based on FFT of train of Gaussians  -- done
-void makeTemplateGaussians(ffdataStruct *out, candidate *in)
+// Make an estimated template based on FFT of train of Gaussians
+//void makeTemplateGaussians(ffdataStruct *out, candidate *in)
+void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params)
 {
 
    INT4 ii, jj, numfbins, numffts, N;
    
-   numfbins = (INT4)(roundf(in->fspan*in->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(2*(in->Tobs/in->Tcoh)-1);     //Number of FFTs
-   N = (INT4)floor(in->Tobs/in->period);     //Number of Gaussians
+   numfbins = (INT4)(roundf(params->fspan*params->Tcoh)+1);   //Number of frequency bins
+   numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
+   N = (INT4)floor(params->Tobs/in->period);     //Number of Gaussians
    
    REAL4 periodf = 1.0/in->period;
    
    //Set up frequencies and determine separation in time of peaks for each frequency
    REAL4Vector *phi_actual = XLALCreateREAL4Vector((UINT4)numfbins);
-   for (ii=0; ii<phi_actual->length; ii++) {
-      out->f->data[ii] = in->fmin + ii/in->Tcoh;
-      if ( fabs(out->f->data[ii]-in->fsig)/in->moddepth <= 1 ) {
-         phi_actual->data[ii] = 0.5*in->period - asin(fabs(out->f->data[ii]-in->fsig)/
+   for (ii=0; ii<(INT4)phi_actual->length; ii++) {
+      //out->f->data[ii] = in->fmin + ii/in->Tcoh;
+      if ( fabs(params->fmin + ii/params->Tcoh - in->fsig)/in->moddepth <= 1 ) {
+         phi_actual->data[ii] = 0.5*in->period - asin(fabs(params->fmin + ii/params->Tcoh - in->fsig)/
             in->moddepth)*LAL_1_PI*in->period;
       } else {
          phi_actual->data[ii] = 0.0;
@@ -134,21 +161,23 @@ void makeTemplateGaussians(ffdataStruct *out, candidate *in)
    }
    
    //Create second FFT frequencies
-   for (ii=0; ii<out->fpr->length; ii++) out->fpr->data[ii] = ii/in->Tobs;
+   REAL4Vector *fpr = XLALCreateREAL4Vector((UINT4)floor(numffts*0.5)+1);
+   for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = ii/params->Tobs;
+   
    //Need to add a small number to first frequency or else get a divide by zero problem
    //out->fpr->data[0] = 1e-9;
    
    //Scale used for "spillover" into bins outside of phi_actual
-   REAL4 k = in->moddepth*in->Tcoh;    //amplitude of modulation in units of bins
-   REAL4Vector *scale = XLALCreateREAL4Vector(out->f->length);      //the scaling factor
-   INT4 m0 = (INT4)roundf(in->fsig*in->Tcoh) - (INT4)roundf(in->fmin*in->Tcoh) + 1;   //central frequency bin
+   REAL4 k = in->moddepth*params->Tcoh;    //amplitude of modulation in units of bins
+   REAL4Vector *scale = XLALCreateREAL4Vector((UINT4)numfbins);      //the scaling factor
+   INT4 m0 = (INT4)roundf(in->fsig*params->Tcoh) - (INT4)roundf(params->fmin*params->Tcoh) + 1;   //central frequency bin
    //printf("Round sig bin = %d, rounded min bin = %d\n",(INT4)floor(in->fsig*in->Tcoh+0.5),
    //   (INT4)floor(in->fmin*in->Tcoh+0.5));
    //printf("Warning: adding 1 bin to move center bin of template!\n");
    //TODO: figure out why an extra bin needs to be added to move the signal
-   INT4 mextent = (INT4)fabs(floor(in->moddepth*in->Tcoh));   //Bins filled by modulation
+   INT4 mextent = (INT4)fabs(floor(in->moddepth*params->Tcoh));   //Bins filled by modulation
    REAL4 overage = (k-mextent)-1;
-   for (ii=0; ii<scale->length; ii++) {
+   for (ii=0; ii<(INT4)scale->length; ii++) {
       if (mextent != 0) {
          if (ii < m0-mextent-2 || ii > m0+mextent+2) {
             scale->data[ii] = 0;
@@ -174,22 +203,22 @@ void makeTemplateGaussians(ffdataStruct *out, candidate *in)
    
    //Make sigmas for each frequency
    REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)numfbins);
-   REAL4Vector *wvals = XLALCreateREAL4Vector((UINT4)floor(2*in->period/in->Tcoh));
+   REAL4Vector *wvals = XLALCreateREAL4Vector((UINT4)floor(2*in->period/params->Tcoh));
    REAL4Vector *allsigmas = XLALCreateREAL4Vector((UINT4)(wvals->length * numfbins));
-   for (ii=0; ii<wvals->length; ii++) {         //t = (ii+1)*in->Tcoh*0.5
-      REAL4 sigbin = (in->moddepth*cos(LAL_TWOPI*periodf*((ii+1)*in->Tcoh*0.5))+in->fsig)*in->Tcoh;
-      REAL4 sigbinvelocity = fabs(-in->moddepth*sin(LAL_TWOPI*periodf*((ii+1)*in->Tcoh*0.5))*
-         in->Tcoh*0.5*in->Tcoh*LAL_TWOPI*periodf);
-      REAL4 sigma = 0.5*in->Tcoh*((383.85*LAL_1_PI)*(0.5*6.1e-3)/((sigbinvelocity+0.1769)*
+   for (ii=0; ii<(INT4)wvals->length; ii++) {         //t = (ii+1)*in->Tcoh*0.5
+      REAL4 sigbin = (in->moddepth*cos(LAL_TWOPI*periodf*((ii+1)*params->Tcoh*0.5))+in->fsig)*params->Tcoh;
+      REAL4 sigbinvelocity = fabs(-in->moddepth*sin(LAL_TWOPI*periodf*((ii+1)*params->Tcoh*0.5))*
+         params->Tcoh*0.5*params->Tcoh*LAL_TWOPI*periodf);
+      REAL4 sigma = 0.5*params->Tcoh*((383.85*LAL_1_PI)*(0.5*6.1e-3)/((sigbinvelocity+0.1769)*
          (sigbinvelocity+0.1769)+(0.5*6.1e-3)*(0.5*6.1e-3))+0.3736);   //Derived fit from simulation
       for (jj=0; jj<numfbins; jj++) {
          allsigmas->data[ii*numfbins + jj] = sincxoverxsqminusone(sigbin-
-            (INT4)roundf(in->fmin*in->Tcoh+jj))*sincxoverxsqminusone(sigbin-
-            (INT4)roundf(in->fmin*in->Tcoh+jj))*sigma;
+            (INT4)roundf(params->fmin*params->Tcoh+jj))*sincxoverxsqminusone(sigbin-
+            (INT4)roundf(params->fmin*params->Tcoh+jj))*sigma;
       }
    }
    for (ii=0; ii<numfbins; ii++) {
-      for (jj=0; jj<wvals->length; jj++) {
+      for (jj=0; jj<(INT4)wvals->length; jj++) {
          wvals->data[jj] = allsigmas->data[ii + jj*numfbins]*allsigmas->data[ii + jj*numfbins];
       }
       sigmas->data[ii] = sqrt(calcMean(wvals));
@@ -197,27 +226,21 @@ void makeTemplateGaussians(ffdataStruct *out, candidate *in)
    
    //Create template
    REAL4 sum = 0;
-   for (ii=0; ii<out->f->length; ii++) {
+   REAL4Vector *fulltemplate = XLALCreateREAL4Vector((UINT4)(numfbins*fpr->length));
+   for (ii=0; ii<numfbins; ii++) {
       REAL4 s = sigmas->data[ii];
       REAL4 scale1 = 1.0/(1.0+exp(-phi_actual->data[ii]*phi_actual->data[ii]*0.5/(s*s)));
-      for (jj=0; jj<out->fpr->length; jj++) {
+      for (jj=0; jj<(INT4)fpr->length; jj++) {
       
          if (scale->data[ii] == 0) {
-            out->ffdata->data[ii*out->fpr->length + jj] = 0;
+            fulltemplate->data[ii*fpr->length + jj] = 0;
          } else {
             if (jj==0) {
-               out->ffdata->data[ii*out->fpr->length + jj] = scale->data[ii]*scale1*
-                  4.0*LAL_TWOPI*s*s*N*N;
-            } else if (fabs(cos(in->period*LAL_TWOPI*out->fpr->data[jj])-1.0)<1e-6) {
-               out->ffdata->data[ii*out->fpr->length + jj] = scale->data[ii]*scale1*
-                  2.0*LAL_TWOPI*s*s*exp(-s*s*LAL_TWOPI*LAL_TWOPI*out->fpr->data[jj]*
-                  out->fpr->data[jj])*(cos(phi_actual->data[ii]*LAL_TWOPI*out->fpr->data[jj])+1.0)*N*N;
+               fulltemplate->data[ii*fpr->length + jj] = scale->data[ii] * scale1 * 4.0 * LAL_TWOPI * s * s * N * N;
+            } else if (fabs(cos(in->period*LAL_TWOPI*fpr->data[jj])-1.0)<1e-6) {
+               fulltemplate->data[ii*fpr->length + jj] = scale->data[ii] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(phi_actual->data[ii] * LAL_TWOPI * fpr->data[jj]) + 1.0) * N * N;
             } else {
-               out->ffdata->data[ii*out->fpr->length + jj] = scale->data[ii]*scale1*
-                  2.0*LAL_TWOPI*s*s*exp(-s*s*LAL_TWOPI*LAL_TWOPI*out->fpr->data[jj]*
-                  out->fpr->data[jj])*(cos(N*in->period*LAL_TWOPI*out->fpr->data[jj])-1.0)*
-                  (cos(phi_actual->data[ii]*LAL_TWOPI*out->fpr->data[jj])+1.0)/
-                  (cos(in->period*LAL_TWOPI*out->fpr->data[jj])-1.0);
+               fulltemplate->data[ii*fpr->length + jj] = scale->data[ii]  *scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(N * in->period * LAL_TWOPI * fpr->data[jj]) - 1.0) * (cos(phi_actual->data[ii] * LAL_TWOPI * fpr->data[jj]) + 1.0) / (cos(in->period * LAL_TWOPI * fpr->data[jj]) - 1.0);
             }
          
             /* out->ffdata->data[ii*out->fpr->length + jj] = scale->data[ii]*scale1*LAL_TWOPI*s*s;
@@ -241,18 +264,42 @@ void makeTemplateGaussians(ffdataStruct *out, candidate *in)
             REAL4 absval2 = gsl_complex_abs2(val);
             out->ffdata->data[ii*out->fpr->length + jj] *= absval2; */
             
-            if (out->ffdata->data[ii*out->fpr->length + jj] <= 1e-6) out->ffdata->data[ii*out->fpr->length + jj] = 0.0;
+            if (fulltemplate->data[ii*fpr->length + jj] <= 1e-6) fulltemplate->data[ii*fpr->length + jj] = 0.0;
          }
          
-         sum += out->ffdata->data[ii*out->fpr->length + jj];
+         sum += fulltemplate->data[ii*fpr->length + jj];
       }
    }
    
    //Normalize
-   for (ii=0; ii<out->f->length; ii++) {
-      for (jj=0; jj<out->fpr->length; jj++) out->ffdata->data[ii*out->fpr->length + jj] /= sum;
-   }
+   for (ii=0; ii<(INT4)fulltemplate->length; ii++) fulltemplate->data[ii] /= sum;
+   /* for (ii=0; ii<numfbins; ii++) {
+      for (jj=0; jj<fpr->length; jj++) fulltemplate->data[ii*fpr->length + jj] /= sum;
+   } */
    
+   //Find the largest bins
+   //Loop over the length of the weights to be used
+   for (ii=0; ii<(INT4)out->templatedata->length; ii++) {
+      
+      //Loop over the full template to find the largest weights
+      REAL4 largest = 0.0;
+      INT4 locoflargest = 0;
+      for (jj=0; jj<(INT4)fulltemplate->length; jj++) {
+         if (fulltemplate->data[jj] > largest) {
+            largest = fulltemplate->data[jj];
+            locoflargest = jj;
+         }
+      }
+      
+      //Select those weights to be used in order of largest to smallest
+      out->templatedata->data[ii] = largest;
+      out->pixellocations->data[ii] = locoflargest;
+      out->firstfftfrequenciesofpixels->data[ii] = (INT4)(floor(locoflargest/fpr->length));
+      
+      //set the biggest values to 0.0
+      fulltemplate->data[locoflargest] = 0.0;
+      
+   }
    
    //Destroy variables
    XLALDestroyREAL4Vector(phi_actual);
@@ -260,44 +307,46 @@ void makeTemplateGaussians(ffdataStruct *out, candidate *in)
    XLALDestroyREAL4Vector(sigmas);
    XLALDestroyREAL4Vector(allsigmas);
    XLALDestroyREAL4Vector(wvals);
+   XLALDestroyREAL4Vector(fulltemplate);
+   XLALDestroyREAL4Vector(fpr);
 
 }
 
 
 //////////////////////////////////////////////////////////////
 // Make an template based on FFT of sinc squared functions  -- done
-void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan)
+//void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan)
+void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan)
 {
    
    INT4 ii, jj, numfbins, numffts;
    
-   numfbins = (INT4)(roundf(in->fspan*in->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(2*(in->Tobs/in->Tcoh)-1);     //Number of FFTs
+   numfbins = (INT4)(roundf(params->fspan*params->Tcoh)+1);   //Number of frequency bins
+   numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
    
    REAL4Vector *psd1 = XLALCreateREAL4Vector((UINT4)(numfbins*numffts));
    INT4Vector *freqbins = XLALCreateINT4Vector((UINT4)numfbins);
    
    REAL4 periodf = 1.0/in->period;
-   REAL4 B = in->moddepth*in->Tcoh;
+   REAL4 B = in->moddepth*params->Tcoh;
    
    //Create first FFT frequencies
-   for (ii=0; ii<out->f->length; ii++) out->f->data[ii] = in->fmin + ii/in->Tcoh;
+   //for (ii=0; ii<out->f->length; ii++) out->f->data[ii] = in->fmin + ii/in->Tcoh;
    
    //Create second FFT frequencies
-   for (ii=0; ii<out->fpr->length; ii++) out->fpr->data[ii] = ii/in->Tobs;
+   //for (ii=0; ii<out->fpr->length; ii++) out->fpr->data[ii] = ii/in->Tobs;
    
    //Bin numbers of the frequencies
-   for (ii=0; ii<numfbins; ii++) freqbins->data[ii] = (INT4)roundf(in->fmin*in->Tcoh) + ii;
+   for (ii=0; ii<numfbins; ii++) freqbins->data[ii] = (INT4)roundf(params->fmin*params->Tcoh) + ii;
    
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
    for (ii=0; ii<numffts; ii++) {
-      REAL4 t = 0.5*in->Tcoh*ii;
-      REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + in->fsig*in->Tcoh;
+      REAL4 t = 0.5*params->Tcoh*ii;
+      REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + in->fsig*params->Tcoh;
       for (jj=0; jj<numfbins; jj++) {
          //Create windowed PSD values
-         if ( fabsf(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*in->Tcoh*
-            sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
+         if ( fabsf(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
          else psd1->data[ii*numfbins + jj] = 0.0;
       }
    }
@@ -309,13 +358,14 @@ void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan)
    REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
    REAL4 sum = 0.0;
    INT4 doSecondFFT;
+   REAL4Vector *fulltemplate = XLALCreateREAL4Vector((UINT4)(numffts*numfbins));
    //First loop over frequencies
    for (ii=0; ii<numfbins; ii++) {
       //Set doSecondFFT check flag to 0. Value becomes 1 if at least one element in frequency row is non-zero
       doSecondFFT = 0;
    
       //Next, loop over times
-      for (jj=0; jj<x->length; jj++) {
+      for (jj=0; jj<(INT4)x->length; jj++) {
          //Pick the right frequency bin for each FFT
          x->data[jj] = psd1->data[ii+jj*numfbins];
          
@@ -326,42 +376,62 @@ void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan)
          x->data[jj] *= win->data->data[jj];
       }
       
-      
-      
       //Make the FFT
       INT4 check = 0;
       if (doSecondFFT==1) check = XLALREAL4PowerSpectrum(psd,x,plan);
-      if (check != 0) {
-         printf("Something wrong with second PSD...\n");
-         //fprintf(LOG,"Something wrong with second PSD...\n");
-      }
+      if (check != 0) printf("Something wrong with second PSD...\n");
       
       //Scale the data points by 1/N and window factor and (1/fs)
       //Order of vector is by second frequency then first frequency
       if (doSecondFFT==1) {
-         for (jj=0; jj<psd->length; jj++) {
-            out->ffdata->data[psd->length*ii + jj] = psd->data[jj]*winFactor/x->length*0.5*in->Tcoh;
-            sum += out->ffdata->data[psd->length*ii + jj];
+         for (jj=0; jj<(INT4)psd->length; jj++) {
+            fulltemplate->data[psd->length*ii + jj] = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
+            sum += fulltemplate->data[psd->length*ii + jj];
          }
       } else {
-         for (jj=0; jj<psd->length; jj++) {
-            out->ffdata->data[psd->length*ii + jj] = 0.0;
+         for (jj=0; jj<(INT4)psd->length; jj++) {
+            fulltemplate->data[psd->length*ii + jj] = 0.0;
          }
       }
       
    }
    
    //Normalize
-   for (ii=0; ii<out->f->length; ii++) {
+   for (ii=0; ii<(INT4)fulltemplate->length; ii++) fulltemplate->data[ii] /= sum;
+   /* for (ii=0; ii<out->f->length; ii++) {
       for (jj=0; jj<out->fpr->length; jj++) out->ffdata->data[ii*out->fpr->length + jj] /= sum;
-   }
+   } */
    
+   //Find the largest bins
+   //Loop over the length of the weights to be used
+   for (ii=0; ii<(INT4)out->templatedata->length; ii++) {
+      
+      //Loop over the full template to find the largest weights
+      REAL4 largest = 0.0;
+      INT4 locoflargest = 0;
+      for (jj=0; jj<(INT4)fulltemplate->length; jj++) {
+         if (fulltemplate->data[jj] > largest) {
+            largest = fulltemplate->data[jj];
+            locoflargest = jj;
+         }
+      }
+      
+      //Select those weights to be used in order of largest to smallest
+      out->templatedata->data[ii] = largest;
+      out->pixellocations->data[ii] = locoflargest;
+      out->firstfftfrequenciesofpixels->data[ii] = (INT4)(floor(locoflargest/psd->length));
+      
+      //set the biggest values to 0.0
+      fulltemplate->data[locoflargest] = 0.0;
+      
+   }
    
    XLALDestroyREAL4Vector(psd1);
    XLALDestroyINT4Vector(freqbins);
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);
+   XLALDestroyREAL4Vector(fulltemplate);
    
 }
 
