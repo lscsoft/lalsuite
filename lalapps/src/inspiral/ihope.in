@@ -20,6 +20,11 @@ import ConfigParser
 import optparse
 import tempfile
 import urllib
+import time
+import calendar
+import shutil
+import M2Crypto
+
 sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
@@ -192,6 +197,89 @@ if opts.gps_end_time < opts.gps_start_time:
   sys.exit(1)
 
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
+
+##############################################################################
+# check the user has a valid grid proxy
+
+def check_grid_proxy(path):
+  try:
+    proxy = M2Crypto.X509.load_cert(path)
+  except Exception, e:
+    msg = "Unable to load proxy from path %s : %s" % (path, e)
+    raise RuntimeError, msg
+
+  try:
+    proxy.get_ext("proxyCertInfo")
+  except LookupError:
+    msg = "Proxy %s is not RFC compliant" % path
+    raise RuntimeError, msg
+
+  try:
+    expireASN1 = proxy.get_not_after().__str__()
+    expireGMT  = time.strptime(expireASN1, "%b %d %H:%M:%S %Y %Z")
+    expireUTC  = calendar.timegm(expireGMT)
+    now = int(time.time())
+  except Exception, e:
+    msg = "could not determine time left on proxy: %s" % e
+    raise RuntimeError, msg
+
+  return expireUTC - now
+
+time_needed = 3600 * 6
+tmp_proxy_time_left = proxy_time_left = 0
+my_uid = os.getuid()
+proxy_path = "/tmp/x509up_u%d" % my_uid 
+
+try:
+  # check to see how much time is left on the environment's proxy
+  if os.environ.has_key('X509_USER_PROXY'):
+    tmp_proxy_path = os.environ['X509_USER_PROXY']
+    if os.access(tmp_proxy_path, os.R_OK):
+      try:
+        tmp_proxy_time_left = check_grid_proxy(tmp_proxy_path)
+      except:
+        tmp_proxy_time_left = 0
+
+  # check to see how much time there is left on the proxy in /tmp
+  if os.access(proxy_path, os.R_OK):
+    try:
+      proxy_time_left = check_grid_proxy(proxy_path)
+    except:
+      proxy_time_left = 0
+
+  # use the one with the most time left
+  if tmp_proxy_time_left > 0 and tmp_proxy_time_left > proxy_time_left:
+    shutil.copy(tmp_proxy_path,proxy_path)
+
+  # check that the proxy is valid and that enough time remains
+  time_left = check_grid_proxy(proxy_path)
+  if time_left < 0:
+    raise RuntimeError, "Proxy has expired."
+  elif time_left < time_needed:
+    msg = "Not enough time left on grid proxy (%d seconds)." % time_left
+    raise RuntimeError, msg
+  else:
+    os.environ['X509_USER_PROXY'] = proxy_path
+
+except:
+  print >> sys.stderr, """
+Error: Could not find a valid grid proxy. Please run 
+
+   unset X509_USER_PROXY
+   grid-proxy-init -rfc -hours 72
+
+to generate a new grid proxy certificate.
+
+You may need to log out and do this on your home machine if your .globus
+directory is not present on the machine where you are running ihope.
+
+You can check the status of your grid proxy by running
+
+  grid-proxy-info
+
+At least %d seconds must be left before your proxy expires to run ihope.
+""" % time_needed
+  raise
 
 ##############################################################################
 # set up the analysis directory
@@ -918,6 +1006,9 @@ if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.lock ] ; then
   exit 1
 fi
 
+export X509_USER_PROXY=/tmp/x509up_u`id -u`
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
   pegasus-run -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
 else
@@ -966,35 +1057,15 @@ dag.write_sub_files()
 dag.write_dag()
 
 print 
-print "  Created a DAG file which can be submitted by executing"
+print "Created a workflow file which can be submitted by executing"
 print "\n    cd " + analysisDirectory
-print "\n  and then either "
-print "\n    condor_submit_dag " + dag.get_dag_file()
 print """
-  or 
+and then
 
     ./pegasus_submit_dax
 
-  from a condor submit machine.
-
-  Before submitting the DAG, you must execute
-
-    export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
-
-  If you are running ligo_data_find jobs, do not forget to initialize your
-  grid proxy certificate on the condor submit machine by running the commands
-  
-    unset X509_USER_PROXY
-    grid-proxy-init -hours 72
-  
-  Enter your pass phrase when prompted. The proxy will be valid for 72 hours.
-  If you expect the LSCdataFind jobs to take longer to complete, increase the
-  time specified in the -hours option to grid-proxy-init. You can check that
-  the grid proxy has been sucessfully created by executing the command:
-  
-    grid-cert-info -all -file /tmp/x509up_u`id -u`
-  
-  This will also give the expiry time of the proxy."""
+from a condor submit machine.
+"""
 
 ##############################################################################
 # write out a log file for this script
