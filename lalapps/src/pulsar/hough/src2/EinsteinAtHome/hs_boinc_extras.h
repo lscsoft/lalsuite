@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 /* BOINC includes */
-#include "filesys.h"
+#include "boinc/filesys.h"
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>

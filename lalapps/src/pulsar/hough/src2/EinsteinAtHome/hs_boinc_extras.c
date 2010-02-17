@@ -29,10 +29,10 @@
 /** INCLUDES **/
 
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
-#include "boinc_api.h"
-#include "diagnostics.h"
+#include "boinc/boinc_api.h"
+#include "boinc/diagnostics.h"
 #ifdef HAVE_BOINC_ZIP
-#include "boinc_zip.h"
+#include "boinc/boinc_zip.h"
 #endif
 
 /* our own win_lib includes patches for chdir() and sleep() */
