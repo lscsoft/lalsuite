@@ -1555,8 +1555,6 @@ int main(int argc, char *argv[])
      *
      */
     for (bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next) {
-        fprintf(stdout, "m1 = %f, m2 = %f\n", bankCurrent->mass1, bankCurrent->mass2);
-
         /* Set up filter input */
         LAL_CALL(LALCreateFindChirpInput(&status, &fcFilterInput, fcInitParams), &status);
 
