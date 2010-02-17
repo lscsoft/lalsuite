@@ -753,7 +753,10 @@ if opts.plotinspiralrange:
   plotinspiralrange_jobs["FIRST"] = inspiral.PlotInspiralrangeJob(cp)
   plotinspiralrange_jobs["FIRST"].set_sub_file( basename + '.plotinspiralrange_' + subsuffix)
   for opt, val in pattern_dict.iteritems():
-    if opt=="bank-pattern": val = "TMPLTBANK"
+    if opt=="bank-pattern":
+      val = "TMPLTBANK"
+    else:
+      val = val.replace("_*_","_")
     plotinspiralrange_jobs["FIRST"].add_opt(opt, val)
   all_jobs.extend(plotinspiralrange_jobs.values())
 

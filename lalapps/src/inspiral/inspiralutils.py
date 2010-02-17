@@ -747,6 +747,15 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGManNode(hipeJob)
 
+  # add the maxjob categories to the dagman node class
+  # FIXME pegasus should handle this in the dax schema itself
+  for cp_opt in config.options('condor-max-jobs'):
+    hipeNode.add_maxjobs_category(cp_opt,config.getint('condor-max-jobs',cp_opt))
+
+  # collapse the short running jobs in the veto sub-dags
+  if vetoCat:
+    hipeNode.set_cluster_jobs('horizontal')
+
   # sweep up the .input files hipe generates
   hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
     'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
