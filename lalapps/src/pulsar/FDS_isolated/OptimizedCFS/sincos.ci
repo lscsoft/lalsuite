@@ -122,7 +122,7 @@ static void local_sin_cos_2PI_LUT_init (void)
 static INT4 sincosI, sincosN;
 
 /* A REAL8 variable that allows to read its higher bits as an INT4 */
-union {
+static union {
   REAL8 asreal;
   struct {
 #ifdef __BIG_ENDIAN__
