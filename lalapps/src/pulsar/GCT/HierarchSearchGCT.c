@@ -1911,7 +1911,7 @@ void PrintFstatVec (LALStatus *status,
   
   INIT_MEM(fkdot);
   
-  fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
+  fprintf(fp, "%% Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
   
   alpha = thisPoint->Alpha;
   delta = thisPoint->Delta;
@@ -1928,7 +1928,8 @@ void PrintFstatVec (LALStatus *status,
     /* propagate fkdot back to reference-time  */
     TRY ( LALExtrapolatePulsarSpins (status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
     
-    fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot[0], alpha, delta, fkdot[1], 2*in->data->data[k]);
+    fprintf(fp, "%d %.13g %.7g %.7g %.5g %.6g\n", 
+            stackIndex, fkdot[0], alpha, delta, fkdot[1], 2*in->data->data[k]);
   }
   
   fprintf(fp, "\n");
