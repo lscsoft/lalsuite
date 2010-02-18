@@ -921,8 +921,8 @@ if opts.run_plots:
 if opts.run_hardware_inj:
   if opts.run_full_data:
     HWinjNodes = inspiralutils.hwinj_setup(cp,ifos,veto_categories)
-for node in HWinjNodes:
-  dag.add_node(node)
+    for node in HWinjNodes:
+    	dag.add_node(node)
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
