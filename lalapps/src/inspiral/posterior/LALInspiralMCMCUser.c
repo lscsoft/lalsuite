@@ -736,7 +736,6 @@ in the frequency domain */
 #pragma omp parallel shared(det_resp,chisqarray,lowBin,highBin,TimeFromGC,TimeShiftToGC,deltaF,inputMCMC,model,Nmodel) private(idx)
 {
 	#pragma omp for schedule(static)
-	{
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
@@ -751,7 +750,7 @@ in the frequency domain */
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 			chisqarray[idx]=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 	}
-	}	
+	
 }
 
 /* Gaussian version */
