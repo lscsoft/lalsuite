@@ -57,6 +57,8 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
+#include <omp.h>
+#include <stdlib.h>
 
 #define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
@@ -635,6 +637,7 @@ in the frequency domain */
 	LALInspiralParameterCalc(&status,&template);
 	LALInspiralRestrictedAmplitude(&status,&template);
 	Nmodel = (inputMCMC->stilde[0]->data->length-1)*2; /* *2 for real/imag packing format */
+	REAL8 *chisqarray=calloc(Nmodel,sizeof(REAL8));
 
 	if(model==NULL)	LALCreateVector(&status,&model,Nmodel); /* Allocate storage for the waveform */
 
@@ -728,7 +731,12 @@ in the frequency domain */
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+
 		
+#pragma omp parallel shared(det_resp,chisqarray,lowBin,highBin,TimeFromGC,TimeShiftToGC,deltaF,inputMCMC,model,Nmodel) private(idx)
+{
+	#pragma omp for schedule(static)
+	{
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
@@ -741,19 +749,26 @@ in the frequency domain */
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
-
+			chisqarray[idx]=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+	}
+	}	
+}
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+			for(idx=lowBin;idx<=highBin;idx++)
+			chisq+=chisqarray[idx];
 
+	
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
 			#endif
-		}
+		
+
+
 		#if DEBUGMODEL !=0
 			fclose(modelout);
 		#endif
@@ -766,6 +781,7 @@ that LAL uses. Please check this whenever any change is made */
 		/*chisq+=(Nmodel-lowBin)*log(2);*/ /* student-t version */
 
 		/*chisq+=(REAL8)( 0.5 * (inputMCMC->invspec[det_i]->data->length-lowBin) * log(2.0*LAL_PI));*/
+		free(chisqarray);
 		logL-=chisq;
 	}
 
