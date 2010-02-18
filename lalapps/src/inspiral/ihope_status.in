@@ -143,31 +143,23 @@ def get_status(filename, totals, debug=False):
 print 'Parsing ' + options.dag_file + '...'
 sleep(1.5)
 
-# Need path path for sub dags
-if '/' in options.dag_file:
-  path = options.dag_file[:( options.dag_file.rindex( '/' ) + 1 )]
-else:
-  path = ''
-
 # Look for sub dags
 dagFile = open(options.dag_file, 'r')
 filenames = []
 lines = dagFile.readlines()
 for line in lines:
-  if "JOB" in line:
+  if "SUBDAG" in line:
     strs = line.split()
     if "DIR" in strs:
       fname = strs[-1] + "/"
     for string in strs:
-      if "dag" in string:
-        fname += string.strip(".condor.sub")
-        filenames.append(fname)
+      if ".dag" in string:
+        filenames.append(string)
 dagFile.close()
 
 if len(filenames)==0:
   print 'No dag files found in ' + options.dag_file
   print 'Assuming that ' + options.dag_file + ' is the dag file you want to parse'
-  filenames.append( options.dag_file[len(path):] )
   sub_dags = 0
 else:
   sub_dags = len( filenames )
@@ -175,7 +167,7 @@ else:
 done_dags = 0  
 
 for file in filenames:
-  print path + file
+  print file
 print 'Parsing the dag files for status...\n'
 ### we found some dag files hopefully
 
@@ -184,7 +176,7 @@ totals = [0,0,0,0,0,0,0,0]
 
 #parse all the dags one by one
 for i in xrange(0,len(filenames), 1):
-  filename = path + filenames[i]
+  filename = filenames[i]
 
   print '-------------------------------------------------------------------------'
   # How many jobs are completed/failed ?
