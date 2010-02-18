@@ -1,6 +1,6 @@
 #!/bin/sh
 
-RESAMP="1"
+NORESAMP="1"
 #NOCLEANUP="1"
 
 ## allow 'make test' to work from builddir != srcdir
@@ -188,7 +188,7 @@ gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType=3 --tStack
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
-if [ -z "$RESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 if ! tmp=`eval $cmdline`; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
@@ -221,7 +221,7 @@ fi
 resGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
 freqGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
 
-if [ -z "$RESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 reldev1=$(echo "scale=5; ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
 freqreldev1=$(echo "scale=8; (($Freq - $freqGCT1)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.6f",$1} else {printf "%.6f",$1*(-1)}}')
 reldev3=$(echo "scale=5; ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
@@ -237,7 +237,7 @@ echo "==>  Predicted:      "$TwoFsum
 
 # Check predicted 2F against search code output
 
-if [ -z "$RESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 if [ `echo $reldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
@@ -255,7 +255,7 @@ else
     echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK." 
 fi
 
-if [ -z "$RESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 if [ `echo $reldev3" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
     echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
@@ -266,7 +266,7 @@ fi
 fi
 
 # Check relative error in frequency
-if [ -z "$RESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 echo
 echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT1
 if [ `echo $freqreldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then

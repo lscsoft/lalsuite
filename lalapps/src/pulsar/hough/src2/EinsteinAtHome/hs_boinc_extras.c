@@ -981,6 +981,7 @@ static void worker (void) {
 
   if((fp = boinc_fopen(resultfile,"r"))) {
     fclose(fp);
+    LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
     resultfile_present = 1;
   }
 
