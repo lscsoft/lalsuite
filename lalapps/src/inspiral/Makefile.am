@@ -118,7 +118,7 @@ endif
 
 dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass
 
-python_config.sed:
+python_config.sed: Makefile
 	-rm -f python_config.sed
 	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
