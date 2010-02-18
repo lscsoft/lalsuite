@@ -7,5 +7,5 @@ Name: LALPulsar
 Description: LAL Pulsar Library
 Version: @VERSION@
 Requires: lal
-Libs: -L${libdir} -llalpulsar
-Cflags: -I${includedir}
+Libs: -L${libdir} -llalpulsar @GSL_LIBS@
+Cflags: -I${includedir} @GSL_CFLAGS@

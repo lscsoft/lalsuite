@@ -41,6 +41,16 @@ function[ds2_out] = ds2_ifo1_ifo2(trig_type, ifo1, ifo2, file1, file2)
 coincs1 = load(file1);
 coincs2 = load(file2);
 
+% Pre-allocate memory
+
+ds2_out = zeros(length(coincs1.t));
+dt_new = zeros(length(coincs1.t));
+dt_min = zeros(length(coincs1.t));
+dt_max = zeros(length(coincs1.t));
+ds2_min = zeros(length(coincs1.t));
+dt_best = zeros(length(coincs1.t));
+ds2 = zeros(length(coincs1.t));
+
 light_time = 1.001285e-2;
 
 % Check files contain triggers, to add to unhelpful error messages from MatLab
@@ -66,7 +76,7 @@ if (strcmp(ifo1,'H1') && strcmp(ifo2,'H2'))  || (strcmp(ifo1,'H2') && strcmp(ifo
 
     for i = 1:length(coincs1.t)
 
-        ds2_out(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i),dt(i));
+        ds2_out(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i),dt(i));
         dt_new(i) = dt(i);
     
     end
@@ -77,19 +87,19 @@ else
 for i = 1:length(coincs1.t)
     dt_min(i) = dt(i) - 1.00*light_time;
     dt_max(i) = dt(i) + 1.00*light_time;
-    ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i),dt(i));
+    ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i),dt(i));
 
     % Otherwise, solve for dt that minimises ds2
 
-    dt_best(i) = time_min(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i));
+    dt_best(i) = time_min(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i));
 
     % Check that this is a valid time
     if dt_best(i) < dt_max(i) && dt_best(i) > dt_min(i)
-        ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i),dt_best(i));
+        ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i),dt_best(i));
         dt_new(i) = dt_best(i);
     else
-        ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i),dt_min(i));
-        ds2(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.Q(i),coincs2.Q(i),dt_max(i));
+        ds2_min(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i),dt_min(i));
+        ds2(i) = metric3d(coincs1.f(i),coincs2.f(i),coincs1.q(i),coincs2.q(i),dt_max(i));
         if ds2(i) < ds2_min(i);
             ds2_min(i) = ds2(i);
             dt_new(i) = dt_max(i);

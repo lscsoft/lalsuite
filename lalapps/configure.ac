@@ -22,6 +22,7 @@ AC_CONFIG_FILES([\
   src/string/Makefile \
   src/pulsar/Makefile \
   src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/FDS_griphyn/Makefile \
@@ -42,6 +43,7 @@ AC_CONFIG_FILES([\
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
+  src/pulsar/TwoSpect/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
@@ -73,10 +75,10 @@ LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_LALFRAME
 LALAPPS_ENABLE_LALMETAIO
-LALAPPS_ENABLE_LALXML
 LALAPPS_ENABLE_LALBURST
 LALAPPS_ENABLE_LALPULSAR
 LALAPPS_ENABLE_LALSTOCHASTIC
+LALAPPS_ENABLE_LALXML
 LALAPPS_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])

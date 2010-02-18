@@ -1,0 +1,81 @@
+#!/usr/bin/env @PYTHONPROG@
+
+
+"""
+check_flag.in - test a DQ flag against a set of daily ihope triggers 
+                for eficiency and deadtime
+
+$Id $
+
+This small utility reads in a file with a csv list of veto times, and information
+from a daily ihope run, and determines the efficiency and deadtime of the given
+veto.  In typical usage the veto times will come from a DQ flag, prepared with
+a call like
+
+  ligolw_segment_query --database --query-segments --include-segments flag_of_interest  \
+    --gps-start-time ... --gps-end-time ... | \
+  ligolw_print -t segment -c start_time -c end_time > vetoed.txt
+
+although there might also be interest in trying manually-created veto times.
+
+Usage: lalapps_checK-flag daily_ihope_dir ifo veto_category clustering
+
+where veto_category is 0 (science), 1, 2, or 4 and clustering is UNCLUSTERED
+100MILLISEC_CLUSTERED or 16SEC_CLUSTERED
+
+"""
+
+import sys
+from glue.segments import segment, segmentlist
+
+
+veto_file, dir, ifo, cat, cluster = sys.argv[1:]
+
+lines        = [l.strip().split(',') for l in open(veto_file)]
+vetoed_times = segmentlist([segment(int(x[0]) - 1, int(x[1]) + 1) for x in lines]).coalesce()
+
+
+# Filter triggers
+infile   = open('%s/%s-%s-INSPIRAL_%s.csv'  % (dir, ifo, cat, cluster))
+incount  = 0
+outcount = 0
+
+highest_snr  = 0
+highest_time = 0
+
+for l in infile:
+    incount += 1
+    trigger  = l.split(',')
+
+    end_time = int(trigger[0])
+
+    if end_time not in vetoed_times:
+        outcount += 1
+        snr       = float(trigger[3])
+
+        if snr > highest_snr:
+            highest_snr  = snr
+            highest_time = trigger[0] + '.' + trigger[1]
+
+infile.close()
+
+
+# filter search summary
+infile  = open('%s/%s-0-SUMMARY_%s.csv'  % (dir, ifo, cluster))
+lines   = [l.strip().split(',') for l in infile.readlines()]
+summary = segmentlist([segment(int(l[0]), int(l[1])) for l in lines]).coalesce()
+
+new_summary = summary - vetoed_times
+
+
+print abs(summary)
+print abs(new_summary)
+
+efficiency  = (float(incount) - float(outcount)) / float(incount) * 100.0
+deadtime    = float(abs(summary) - abs(new_summary))  / float(abs(summary))
+
+print "Efficiency: %.2f" % efficiency
+print "Deadtime: %.2f" % deadtime
+print "Ratio: %.2f" % (efficiency / deadtime)
+print "Loudest remaining trigger at %s with snr %.2f" % (highest_time, highest_snr)
+
