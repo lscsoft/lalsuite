@@ -29,10 +29,10 @@
 /** INCLUDES **/
 
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
-#include "boinc_api.h"
-#include "diagnostics.h"
+#include "boinc/boinc_api.h"
+#include "boinc/diagnostics.h"
 #ifdef HAVE_BOINC_ZIP
-#include "boinc_zip.h"
+#include "boinc/boinc_zip.h"
 #endif
 
 /* our own win_lib includes patches for chdir() and sleep() */
@@ -62,7 +62,7 @@
 #include "hs_boinc_options.h"
 
 /* for Linux extended backtrace */
-#if defined(__GLIBC__) && defined(__i386__)
+#if defined(__GLIBC__) && defined(__i386__) && defined(EXT_STACKTRACE)
 #include "erp_execinfo_plus.h"
 #endif
 
@@ -338,7 +338,7 @@ static void sighandler(int sig)
   fprintf(stderr,   "Obtained %zd stack frames for this thread.\n", nostackframes);
   fprintf(stderr,   "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
   /* overwrite sigaction with caller's address */
-#ifdef __i386__
+#if defined(__i386__) && defined(EXT_STACKTRACE)
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
   backtrace_symbols_fd_plus(stackframes, nostackframes, fileno(stderr));
 #else /* __i386__ */

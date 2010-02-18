@@ -20,7 +20,7 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
-#include "boinc_api.h"
+#include "boinc/boinc_api.h"
 
 #define HS_BOINC_OPTIONS_H_RCSID "$Id$"
 

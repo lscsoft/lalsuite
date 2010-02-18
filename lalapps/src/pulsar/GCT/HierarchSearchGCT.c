@@ -49,10 +49,10 @@ RCSID( "$Id$");
  */
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define INSERT_INTO_GCTFSTAT_TOPLIST insert_into_gctFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
 #define MAIN  main
@@ -1882,7 +1882,7 @@ void GetSemiCohToplist(LALStatus *status,
     line.nc = in->list[k].nc;
     line.sumTwoF = in->list[k].sumTwoF / Nstacks; /* save the average 2F value */
 
-    debug = INSERT_INTO_GCTFSTAT_TOPLIST( list, line);
+    debug = insert_into_gctFStat_toplist( list, line);
 
   }
   

@@ -183,7 +183,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   fdot = params->fdot;
   tsMid = params->tsMid;
   refTimeGPS = params->refTime;  
-  TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
+  refTime = XLALGPSGetREAL8(&refTimeGPS);
 
   /* set patch size */
   /* this is supposed to be the "educated guess" 
@@ -199,8 +199,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   
   for (k=0; k<nStacks; k++) {
     REAL8 tMidStack;
-
-    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
+    tMidStack = XLALGPSGetREAL8(tsMid->data + k);
     timeDiffV->data[k] = tMidStack - refTime;
   }
 

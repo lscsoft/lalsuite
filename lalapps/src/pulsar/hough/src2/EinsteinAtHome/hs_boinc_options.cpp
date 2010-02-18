@@ -31,8 +31,7 @@ using namespace std;
 */
 
 #include "hs_boinc_options.h"
-#include "boinc_api.h"
-#include "util.h" /* for BOINC's dtime() */
+#include "boinc/util.h" /* for BOINC's dtime() */
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
