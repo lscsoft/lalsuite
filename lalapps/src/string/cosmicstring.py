@@ -158,7 +158,7 @@ def clip_segment(seg, pad, short_segment_duration):
   seg = segments.segment(seg[0], seg[1] - extra)
 
   # bounds must be integers
-  if int(seg[0]) != seg[0] or int(seg[1]) != seg[1]:
+  if (int(seg[0]) - seg[0]) / seg[0] > 1e-15 or (int(seg[1]) - seg[1]) / seg[1] > 1e-15:
     raise ValueError, "segment %s does not have integer boundaries" % str(seg)
   seg = segments.segment(int(seg[0]), int(seg[1]))
 
@@ -201,6 +201,7 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 
   # round to integer boundaries because lalapps_StringSearch can't accept
   # non-integer start/stop times
+  # FIXME:  fix that in lalapps_StringSearch
   for seglist in new.values():
     for i in range(len(seglist)):
       seglist[i] = segments.segment(int(math.floor(seglist[i][0])), int(math.ceil(seglist[i][1])))
@@ -211,6 +212,7 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
   # again remove too-short segments
   remove_too_short_segments(new, min_segment_length, pad)
 
+  # done
   return new
 
 
