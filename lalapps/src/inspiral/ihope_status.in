@@ -155,6 +155,14 @@ for line in lines:
     for string in strs:
       if ".dag" in string:
         filenames.append(string)
+  if "pegasus-plan" in line:
+    strs = line.split()
+    for string in strs:
+      if ".dax" in string:
+        string = string.replace('/dax/','/')
+        string = string.replace('.dax','-0.dag')
+        filenames.append(string)
+
 dagFile.close()
 
 if len(filenames)==0:
@@ -166,8 +174,6 @@ else:
   print 'Found', str( sub_dags ), 'subdags'
 done_dags = 0  
 
-for file in filenames:
-  print file
 print 'Parsing the dag files for status...\n'
 ### we found some dag files hopefully
 

@@ -1006,11 +1006,17 @@ if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.lock ] ; then
   exit 1
 fi
 
-export X509_USER_PROXY=/tmp/x509up_u`id -u`
+ID=`id -u`
+
+if [ -n "$X509_USER_PROXY" ] && [ ! -e /tmp/x509up_u"$ID" ] ; then
+   cp $X509_USER_PROXY /tmp/x509up_u${ID}
+fi
+
+export X509_USER_PROXY=/tmp/x509up_u${ID}
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
-  pegasus-run -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
+  pegasus-run -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.
 else
   pegasus-plan -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties \\
                -Dpegasus.catalog.site.file=${IHOPE_RUN_DIR}/site-local.xml \\
