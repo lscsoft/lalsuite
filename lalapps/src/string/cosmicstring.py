@@ -186,7 +186,11 @@ def remove_too_short_segments(seglists, min_segment_length, pad):
 
 
 def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
+  # don't modify original
   seglists = seglists.copy()
+
+  # ignore offset vectors referencing instruments we don't have
+  offset_vectors = [offset_vector for offset_vector in offset_vectors if set(offset_vector.keys()).issubset(set(seglists.keys()))]
 
   # cull too-short single-instrument segments from the input
   # segmentlist dictionary;  this can significantly increase
