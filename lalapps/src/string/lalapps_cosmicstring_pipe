@@ -237,14 +237,14 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		if verbose:
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
-		#
-		# ligolw_binjfind
-		#
+	#
+	# ligolw_binjfind
+	#
 
-		if do_injections:
-			if verbose:
-				print >>sys.stderr, "building binjfind jobs ..."
-			coinc_nodes = power.make_binjfind_fragment(dag, coinc_nodes, tag, verbose = verbose)
+	if do_injections:
+		if verbose:
+			print >>sys.stderr, "building binjfind jobs ..."
+		coinc_nodes = power.make_binjfind_fragment(dag, coinc_nodes, tag, verbose = verbose)
 
 	#
 	# ligolw_sqlite
