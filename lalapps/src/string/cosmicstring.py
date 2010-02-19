@@ -158,7 +158,7 @@ def clip_segment(seg, pad, short_segment_duration):
   seg = segments.segment(seg[0], seg[1] - extra)
 
   # bounds must be integers
-  if (int(seg[0]) - seg[0]) / seg[0] > 1e-15 or (int(seg[1]) - seg[1]) / seg[1] > 1e-15:
+  if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
     raise ValueError, "segment %s does not have integer boundaries" % str(seg)
   seg = segments.segment(int(seg[0]), int(seg[1]))
 
