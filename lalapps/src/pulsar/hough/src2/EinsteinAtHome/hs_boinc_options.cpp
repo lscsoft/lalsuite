@@ -31,7 +31,7 @@ using namespace std;
 */
 
 #include "hs_boinc_options.h"
-#include "boinc/util.h" /* for BOINC's dtime() */
+#include <boinc/util.h> /* for BOINC's dtime() */
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
@@ -42,7 +42,7 @@ APP_INIT_DATA eah_app_init_data;
 t_progress boincv6_progress;
 
 #ifdef BOINC_APIV6
-#include "graphics2.h"
+#include <boinc/graphics2.h>
 
 char*shmem = NULL;
 
