@@ -159,8 +159,7 @@ background_seglists = segments.segmentlistdict()
 for filename in [options.time_slides]:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
-	#background_seglists |= cosmicstring.compute_segment_lists(seglists, background_time_slides[cache_entry], min_segment_length, pad, verbose = options.verbose)
-	background_seglists |= seglists
+	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #
