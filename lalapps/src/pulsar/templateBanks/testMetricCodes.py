@@ -348,7 +348,7 @@ if debug: print "FstatMetric_v2 output: g_ij = \n%s" % str(gF2_ij)
 relerr12 = compare_metrics ( gF1_ij, gF2_ij )
 print "relerr 1-2 = %e" % relerr12
 
-tolF = 0.10
+tolF = 0.15
 if ( relerr12 > tolF ):
     print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %e!\n" % tolF );
     sys.exit(1)

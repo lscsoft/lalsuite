@@ -27,12 +27,19 @@ NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
-bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
+bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearchGC \
 		 lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
 		 eah_HierarchicalSearch eah_HierarchicalSearch_sse eah_HierarchicalSearch_sse2 eah_HierarchicalSearch_cuda
 #lalapps_HierarchicalSearch_v2
+
+# lalapps_HierarchicalSearch doesn't condor compile
+if CONDOR_ENABLED
+EXTRA_PROGRAMS += lalapps_HierarchicalSearch
+else
+bin_PROGRAMS += lalapps_HierarchicalSearch
+endif
 
 FDSsrc = ../../FDS_isolated
 
