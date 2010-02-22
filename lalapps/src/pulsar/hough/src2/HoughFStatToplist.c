@@ -29,12 +29,13 @@
 #include <lal/LogPrintf.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "filesys.h"
+#include "boinc/filesys.h"
 #define fopen boinc_fopen
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
    eah_rename (in win_lib.h) */
+extern int eah_rename(const char* oldf, const char* newf);
 #define rename eah_rename
 #else  // _WIN32
 #define rename boinc_rename
@@ -48,6 +49,7 @@ RCSID("$Id$");
 
 /* Windows specifics */
 #ifdef _WIN32
+#include <io.h>
 
 /* errno */
 extern int errno;

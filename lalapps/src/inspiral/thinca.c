@@ -1902,16 +1902,14 @@ int main( int argc, char *argv[] )
     
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) 
     {
-      /* FIXME:  this code is executed even if there are no veto segments
-       * (!?), so this function call fails.  It failed in the old code,
-       * too, but there was no error checking so the code would keep
-       * running.  Someone else will have to figure out how to untangle
-       * this, for now I turn off error checking here too and clear the
-       * error flag (this reproduces the old behaviour, but clearly
-       * something else should be done) */
-      if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
-                                 &slideTimes[ifoNumber] ) < 0 )
-        /*exit(1)*/ XLALClearErrno();
+      /* If the veto segment list wasn't initialized, then don't try to slide 
+       * it.  The rest of the code, except possibly the H1H2 consistency test,
+       * does not try to use vetoSegs if it wasn't loaded / initialized. */
+      if ( vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+      {
+        XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+            &slideTimes[ifoNumber] );
+      }
     }
 
     /* don't analyze zero-lag if numSlides>0 */

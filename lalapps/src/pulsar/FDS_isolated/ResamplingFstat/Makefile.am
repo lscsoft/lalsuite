@@ -2,7 +2,13 @@
 # $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+## make sure lalapps.la is built
+lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
+$(lalappsla):
+	cd $(top_builddir)/src/lalapps && $(MAKE)
+LDADD = $(lalappsla)
+
 
 ## make sure VCSInfo.h is re-generated at every 'make'
 .PHONY: gitID

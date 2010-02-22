@@ -22,6 +22,7 @@ AC_CONFIG_FILES([\
   src/string/Makefile \
   src/pulsar/Makefile \
   src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/FDS_griphyn/Makefile \
@@ -154,6 +155,8 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
+AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
+
 
 # further program checks
 LT_INIT

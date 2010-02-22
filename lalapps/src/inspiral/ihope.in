@@ -20,6 +20,11 @@ import ConfigParser
 import optparse
 import tempfile
 import urllib
+import time
+import calendar
+import shutil
+import M2Crypto
+
 sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
@@ -149,6 +154,9 @@ parser.add_option("-U", "--skip-followup",action="store_false",\
 parser.add_option("-H", "--skip-pipedown",action="store_false",\
     default=True, dest="run_pipedown",  help="skip running pipedown")
 
+parser.add_option("-W","--skip-hardware-injections",action="store_false",\
+    default=True,dest="run_hardware_inj", help="Skip the hardware injection script")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
@@ -191,6 +199,89 @@ if opts.gps_end_time < opts.gps_start_time:
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
 
 ##############################################################################
+# check the user has a valid grid proxy
+
+def check_grid_proxy(path):
+  try:
+    proxy = M2Crypto.X509.load_cert(path)
+  except Exception, e:
+    msg = "Unable to load proxy from path %s : %s" % (path, e)
+    raise RuntimeError, msg
+
+  try:
+    proxy.get_ext("proxyCertInfo")
+  except LookupError:
+    msg = "Proxy %s is not RFC compliant" % path
+    raise RuntimeError, msg
+
+  try:
+    expireASN1 = proxy.get_not_after().__str__()
+    expireGMT  = time.strptime(expireASN1, "%b %d %H:%M:%S %Y %Z")
+    expireUTC  = calendar.timegm(expireGMT)
+    now = int(time.time())
+  except Exception, e:
+    msg = "could not determine time left on proxy: %s" % e
+    raise RuntimeError, msg
+
+  return expireUTC - now
+
+time_needed = 3600 * 6
+tmp_proxy_time_left = proxy_time_left = 0
+my_uid = os.getuid()
+proxy_path = "/tmp/x509up_u%d" % my_uid 
+
+try:
+  # check to see how much time is left on the environment's proxy
+  if os.environ.has_key('X509_USER_PROXY'):
+    tmp_proxy_path = os.environ['X509_USER_PROXY']
+    if os.access(tmp_proxy_path, os.R_OK):
+      try:
+        tmp_proxy_time_left = check_grid_proxy(tmp_proxy_path)
+      except:
+        tmp_proxy_time_left = 0
+
+  # check to see how much time there is left on the proxy in /tmp
+  if os.access(proxy_path, os.R_OK):
+    try:
+      proxy_time_left = check_grid_proxy(proxy_path)
+    except:
+      proxy_time_left = 0
+
+  # use the one with the most time left
+  if tmp_proxy_time_left > 0 and tmp_proxy_time_left > proxy_time_left:
+    shutil.copy(tmp_proxy_path,proxy_path)
+
+  # check that the proxy is valid and that enough time remains
+  time_left = check_grid_proxy(proxy_path)
+  if time_left < 0:
+    raise RuntimeError, "Proxy has expired."
+  elif time_left < time_needed:
+    msg = "Not enough time left on grid proxy (%d seconds)." % time_left
+    raise RuntimeError, msg
+  else:
+    os.environ['X509_USER_PROXY'] = proxy_path
+
+except:
+  print >> sys.stderr, """
+Error: Could not find a valid grid proxy. Please run 
+
+   unset X509_USER_PROXY
+   grid-proxy-init -rfc -hours 72
+
+to generate a new grid proxy certificate.
+
+You may need to log out and do this on your home machine if your .globus
+directory is not present on the machine where you are running ihope.
+
+You can check the status of your grid proxy by running
+
+  grid-proxy-info
+
+At least %d seconds must be left before your proxy expires to run ihope.
+""" % time_needed
+  raise
+
+##############################################################################
 # set up the analysis directory
 analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
 inspiralutils.mkdir(analysisDirectory)
@@ -222,19 +313,12 @@ if opts.run_pipedown:
 ##############################################################################
 # create a directory called executables and copy them over
 inspiralutils.mkdir("executables")
-inspiralutils.mkdir("executables32")
 os.chdir("../")
 for (job, executable) in cp.items("condor"):
   if job != "universe":
-    if job[-2:] != "32":
-      shutil.copy( executable, analysisDirectory + "/executables" )
-      executable = "../executables/" + executable.split("/")[-1]
-      cp.set("condor", job, executable)
-    else:
-      shutil.copy( executable, analysisDirectory + "/executables32" )
-      executable = "../executables32/" + executable.split("/")[-1]
-      cp.set("condor", job, executable)
-
+    shutil.copy( executable, analysisDirectory + "/executables" )
+    executable = "../executables/" + executable.split("/")[-1]
+    cp.set("condor", job, executable)
 
 os.chdir(analysisDirectory)
 
@@ -242,6 +326,10 @@ os.chdir(analysisDirectory)
 # create a log file that the Condor jobs will write to
 basename = opts.config_file.rstrip(".ini")
 logname = basename + '.dag.log.'
+try:
+  os.mkdir(opts.log_path)
+except:
+  pass
 tempfile.tempdir = opts.log_path
 logfile = tempfile.mktemp(prefix=logname)
 fh = open( logfile, "w" )
@@ -251,6 +339,7 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
+dag.set_dax_file(basename)
 
 ##############################################################################
 # Set up the IFOs and get the appropriate segments
@@ -265,11 +354,19 @@ if cp.has_option("ifo-details","analyze-all"):
   print >> sys.stderr, "all five IFOs. Do not use the analyze-all option."
   sys.exit(1)
 
+ifos.sort()
 
 print "Setting up an analysis for " + str(ifos) + " from " + \
     str(opts.gps_start_time) + " to "  + str(opts.gps_end_time)
 print
 sys.stdout.flush()
+
+##############################################################################
+# create a local execute directory for the pipeline
+tmp_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
+  basename, opts.gps_start_time, 
+  int(opts.gps_end_time) - int(opts.gps_start_time)) )
+os.chmod(tmp_exec_dir, 0755)
 
 ##############################################################################
 # Determine the segments to analyze
@@ -329,25 +426,36 @@ for ifo in ifos:
 
 os.chdir("..")
 
+if opts.run_hardware_inj:
+  inspiralutils.mkdir("hardware_inj")
+  os.chdir("hardware_inj")
+  inspiralutils.run_hardware_inj_part_one(cp,ifos)
+  os.chdir("..")
+
+##############################################################################
+# create the list of files that will be concatenated into the ihope cache
+cachelist = []
+cachefilename = basename + '.cache'
+
 ##############################################################################
 # Run lalapps_inspiral_hipe for datafind and template bank generation
 if opts.run_datafind or opts.run_tmpltbank:
   print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
-      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank)
+      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
+      dax=opts.dax, local_exec_dir=tmp_exec_dir)
+  for cacheFile in hipeDfNode.get_output_files():
+      cachelist.append("datafind/" + cacheFile)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
 # Set up the directories for each run and run lalapps_inspiral_hipe
 
-cachelist = []
-cachefilename = basename + '.cache'
-
 if opts.complete_cache:
   # We need to get the names of the template bank files that are generated in
   # the datafind step, so we can link them into all the search directories
   datafind_cache_filename = "datafind/" + inspiralutils.hipe_cache(ifos, \
-      "DATAFIND", opts.gps_start_time, opts.gps_end_time)
+      None, opts.gps_start_time, opts.gps_end_time)
   tmpltbank_cache = inspiralutils.tmpltbank_cache(datafind_cache_filename)
 
   if opts.run_playground:
@@ -356,7 +464,7 @@ if opts.complete_cache:
       print "Running inspiral hipe for playground run"
       hipePlayNode = inspiralutils.hipe_setup(playDir, cp, ifos, \
            opts.log_path, playOnly = True, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipePlayNode.get_output_files():
         cachelist.append(playDir + "/" + cacheFile)
       dag.add_node(hipePlayNode)
@@ -383,7 +491,7 @@ if opts.complete_cache:
       print "Running inspiral hipe for analysis run"
       hipeAnalysisNode = inspiralutils.hipe_setup(fullDir, cp, ifos, \
           opts.log_path,dax=opts.dax, \
-          tmpltbankCache = tmpltbank_cache)
+          tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipeAnalysisNode.get_output_files():
         cachelist.append(fullDir + "/" + cacheFile)
       dag.add_node(hipeAnalysisNode)
@@ -411,7 +519,7 @@ if opts.complete_cache:
       if opts.run_search:
         hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
              opts.log_path, injSeed, dax=opts.dax, \
-             tmpltbankCache = tmpltbank_cache)
+             tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeInjNode[injDir].get_output_files():
           cachelist.append(injDir + "/" + cacheFile)
         dag.add_node(hipeInjNode[injDir])
@@ -442,7 +550,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         tmpltbankCache = tmpltbank_cache)
+         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -454,7 +562,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
         opts.log_path, dax=opts.dax, \
-        tmpltbankCache = tmpltbank_cache)
+        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
@@ -468,7 +576,7 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -493,7 +601,7 @@ if opts.complete_cache:
         print "Running inspiral hipe for play with vetoes"
         hipePlayVetoNode[category] = inspiralutils.hipe_setup(playDir, cp, \
             ifos, opts.log_path, playOnly = True, vetoCat = category, \
-            vetoFiles = dqVetoes, dax=opts.dax )
+            vetoFiles = dqVetoes, dax=opts.dax, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append(playDir + "/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
@@ -523,7 +631,8 @@ if opts.complete_cache:
       if opts.run_data_quality:
         print "Running inspiral hipe for full data with vetoes"
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup(fullDir, \
-            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, dax = opts.dax)
+            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, \
+            dax = opts.dax, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append(fullDir + "/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -557,7 +666,7 @@ if opts.complete_cache:
           hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(injDir, \
               cp, ifos, opts.log_path, \
               injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
-              dax=opts.dax )
+              dax=opts.dax, local_exec_dir=tmp_exec_dir )
           for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[category][injDir])
@@ -599,7 +708,7 @@ if opts.reverse_analysis:
 
         hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground_reverse", cp, \
             ifos, opts.log_path, playOnly = True, vetoCat = category, \
-            vetoFiles = dqVetoes)
+            vetoFiles = dqVetoes, local_exec_dir=tmp_exec_dir)
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append("playground-reverse/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
@@ -612,7 +721,8 @@ if opts.reverse_analysis:
       if opts.run_full_data:
         print "Running inspiral hipe for full data with vetoes for reverse analysis"
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("full_data_reverse", \
-            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes)
+            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, \
+            local_exec_dir=tmp_exec_dir)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append("full_data_reverse/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -628,7 +738,8 @@ if opts.reverse_analysis:
           if category == 2: hipeInjVetoNode[injDir] = {}
           hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
               cp, ifos, opts.log_path, \
-              injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes)
+              injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
+              local_exec_dir=tmp_exec_dir)
           for cacheFile in hipeInjVetoNode[injDir][category].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[injDir][category])
@@ -805,6 +916,15 @@ if opts.run_plots:
     dag.add_maxjobs_category('plotting',2)
 
 ##############################################################################
+# Set up jobs for HW injection page
+
+if opts.run_hardware_inj:
+  if opts.run_full_data:
+    HWinjNodes = inspiralutils.hwinj_setup(cp,ifos,veto_categories)
+    for node in HWinjNodes:
+    	dag.add_node(node)
+
+##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
 if opts.run_followup:
   followupNode = inspiralutils.followup_setup("followup", cp, opts, "full_data")
@@ -824,33 +944,185 @@ except:
   pass
 
 ##############################################################################
+# Write the files needed to invoke pegasus
+peg_fh = open("pegasus_submit_dax", "w")
+
+print >> peg_fh, """#!/bin/bash
+
+TMP_EXEC_DIR=%s
+IHOPE_RUN_DIR=%s
+UEBER_CONCRETE_DAG=%s
+
+usage()
+{
+  echo "Usage: pegasus_submit_dag [-f] [-h]"
+  echo
+  echo "  -f, --force           Force re-plan and resubmit of DAX"
+  echo "  -h, --help            Print this message"
+  echo
+}
+
+if [ $# -gt 1 ] ; then
+  usage
+  exit 1
+fi
+
+if [ $# -eq 1 ] ; then
+ if [ $1 = "-h" ] || [ $1 = "--help" ] ; then
+   usage
+   exit 0
+ fi
+
+ if [ $1 = "-f" ] || [ $1 = "--force" ] ; then 
+   echo "WARNING: removing any existing workflow files!"
+   pegasus-remove ${TMP_EXEC_DIR}/.
+   echo "Sleeping for 60 seconds to give running DAGs chance to exit..."
+   sleep 60
+   rm -rf ${TMP_EXEC_DIR}
+   mkdir ${TMP_EXEC_DIR}
+   chmod 755 ${TMP_EXEC_DIR}
+ else
+   usage
+   exit 1
+ fi
+fi
+
+if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.lock ] ; then
+  echo
+  echo "ERROR: A dagman lock file already exists which may indicate that your"
+  echo "workflow is already running. Please check the status of your DAX with"
+  echo
+  echo "    pegasus-status ${TMP_EXEC_DIR}/."
+  echo
+  echo "If necessary, you can remove the workflow with"
+  echo
+  echo "    pegasus-remove ${TMP_EXEC_DIR}/."
+  echo
+  echo "You can also run"
+  echo
+  echo "    pegasus_submit_dax -f"
+  echo
+  echo "to force the workflow to re-run. This will remove any existing"
+  echo "workflow log and error files. If these need to be preserved,"
+  echo "you must back them up first before running with -f."
+  echo
+  exit 1
+fi
+
+ID=`id -u`
+
+if [ -n "$X509_USER_PROXY" ] && [ ! -e /tmp/x509up_u"$ID" ] ; then
+   cp $X509_USER_PROXY /tmp/x509up_u${ID}
+fi
+
+export X509_USER_PROXY=/tmp/x509up_u${ID}
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
+  pegasus-run -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.
+else
+  pegasus-plan -Dpegasus.properties=${IHOPE_RUN_DIR}/pegasus.properties \\
+               -Dpegasus.catalog.site.file=${IHOPE_RUN_DIR}/site-local.xml \\
+               --dax %s \\
+               --dir ${TMP_EXEC_DIR} \\
+               --relative-dir . -s local --nocleanup -f --submit
+
+  ln -sf ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.dagman.out ${UEBER_CONCRETE_DAG}.dagman.out
+fi
+""" % ( tmp_exec_dir, os.getcwd(), 
+        dag.get_dax_file().replace('.dax','') + '-0.dag', 
+        dag.get_dax_file() )
+peg_fh.close()
+os.chmod("pegasus_submit_dax",0755)
+
+###############################################################################
+# write a shell script that can return the basedir and uber-concrete-dag
+
+basedir_fh = open("pegasus_basedir", "w")
+
+print >> basedir_fh, """#!/bin/bash
+
+TMP_EXEC_DIR=%s
+UEBER_CONCRETE_DAG=%s
+
+usage()
+{
+  echo "Usage: pegasus_basedir [-d]"
+  echo
+  echo "Prints the name of the Pegasus basedir where the condor files can be found"
+  echo
+  echo "  -d, --dag             Append the name of the concrete DAG to the basedir"
+  echo "  -h, --help            Print this message"
+  echo
+}
+
+if [ $# -gt 1 ] ; then
+  usage
+  exit 1
+fi
+
+
+if [ $# -eq 1 ] ; then
+ if [ $1 = "-h" ] || [ $1 = "--help" ] ; then
+   usage
+   exit 0
+ fi
+
+ if [ $1 = "-d" ] || [ $1 = "--dag" ] ; then
+   echo ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}
+   exit 0
+ else
+   usage
+   exit 1
+ fi
+fi
+
+echo ${TMP_EXEC_DIR}
+exit 0
+""" % ( tmp_exec_dir, dag.get_dax_file().replace('.dax','') + '-0.dag' )
+basedir_fh.close()
+os.chmod("pegasus_basedir",0755)
+
+pegprop_fh = open("pegasus.properties", "w")
+print >> pegprop_fh, """\
+###############################################################################
+# pegasus properties file generated by ihope
+pegasus.catalog.replica=SimpleFile
+pegasus.catalog.site=XML3
+
+pegasus.gridstart.kickstart.stat=false
+
+pegasus.transfer.force=true
+pegasus.transfer.links=true
+pegasus.transfer.refiner=Bundle
+pegasus.transfer.symlink.impl=Symlink
+
+pegasus.dagman.retry=3
+pegasus.dagman.maxpre=1
+pegasus.condor.arguments.quote=true
+
+pegasus.selector.site=RoundRobin
+pegasus.selector.replica=Default
+
+pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
+"""
+pegprop_fh.close()
+
+##############################################################################
 # Write the dag and sub files
 dag.write_sub_files()
 dag.write_dag()
 
 print 
-print "  Created a DAG file which can be submitted by executing"
+print "Created a workflow file which can be submitted by executing"
 print "\n    cd " + analysisDirectory
-print "    condor_submit_dag " + dag.get_dag_file()
-print """\n  from a condor submit machine
-  Before submitting the dag, you must execute
+print """
+and then
 
-    export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+    ./pegasus_submit_dax
 
-  If you are running LSCdataFind jobs, do not forget to initialize your grid
-  proxy certificate on the condor submit machine by running the commands
-  
-    unset X509_USER_PROXY
-    grid-proxy-init -hours 72
-  
-  Enter your pass phrase when prompted. The proxy will be valid for 72 hours.
-  If you expect the LSCdataFind jobs to take longer to complete, increase the
-  time specified in the -hours option to grid-proxy-init. You can check that
-  the grid proxy has been sucessfully created by executing the command:
-  
-    grid-cert-info -all -file /tmp/x509up_u`id -u`
-  
-  This will also give the expiry time of the proxy."""
+from a condor submit machine.
+"""
 
 ##############################################################################
 # write out a log file for this script

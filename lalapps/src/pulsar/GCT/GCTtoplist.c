@@ -29,7 +29,7 @@
 #include <lal/LogPrintf.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "filesys.h"
+#include "boinc/filesys.h"
 #define fopen boinc_fopen
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
