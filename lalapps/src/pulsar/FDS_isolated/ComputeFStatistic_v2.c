@@ -133,6 +133,7 @@ typedef struct
   FstatCandidate *center;		/**< pointer to middle candidate in window */
 } scanlineWindow_t;
 
+
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
@@ -255,6 +256,13 @@ typedef struct {
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
+
+  BOOLEAN transientBstat;	/**< compute transient B-statistic marginalization or not */
+  INT4 transientMinStartTime;	/**< earliest GPS start-time for transient window marginalization */
+  INT4 transientMaxStartTime;	/**< latest GPS start-time for transient window marginalization */
+  REAL8 transientMinTauDays;	/**< smallest transient window length for marginalization in days */
+  REAL8 transientMaxTauDays;	/**< largest transient window length for marginalization in days */
+
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -294,6 +302,7 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 /* ---------- Fstat-atoms related functions ----------*/
 int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
+REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, INT4 t0, INT4 t1, REAL8 tauMinDays, REAL8 tauMaxDays );
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
@@ -647,7 +656,25 @@ int main(int argc,char *argv[])
 	  Fstat.multiFstatAtoms = NULL;
 
 	  fclose (fpFstatAtoms);
+
 	} /* if outputFstatAtoms */
+
+      if ( uvar.transientBstat )
+        {
+          REAL8 Btransient;
+
+          Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms,
+                                                   uvar.transientMinStartTime,
+                                                   uvar.transientMaxStartTime,
+                                                   uvar.transientMinTauDays,
+                                                   uvar.transientMaxTauDays );
+          if ( xlalErrno != 0 ) {
+            XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
+            return -1;
+          }
+
+        }
+
 
     } /* while more Doppler positions to scan */
 
@@ -933,7 +960,15 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
 
+
+  LALregBOOLUserStruct(status, transientBstat,	 0,  UVAR_OPTIONAL, "Compute transient B-statistic marginalization or not");
+  LALregINTUserStruct (status, transientMinStartTime,  0, UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization");
+  LALregINTUserStruct (status, transientMaxStartTime,  0, UVAR_OPTIONAL, "Latest GPS start-time for transient window marginalization");
+  LALregREALUserStruct(status, transientMinTauDays,    0, UVAR_OPTIONAL, "Smallest transient window length for marginalization in days");
+  LALregREALUserStruct(status, transientMaxTauDays,    0, UVAR_OPTIONAL, "Largest transient window length for marginalization in days");
+
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -2079,3 +2114,33 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 
   return ret;
 } /* PulsarDopplerParams2String() */
+
+
+/** Function to compute marginalized B-statistic over start-time and duration
+ * of transient CW signal.
+ *
+ */
+REAL8
+XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
+                            INT4 t0,					/**< [in] earliest start time */
+                            INT4 t1,					/**< [in] latest start-time */
+                            REAL8 tauMinDays,				/**< [in] smallest duration-window tau */
+                            REAL8 tauMaxDays				/**< [in] longest duration-window tau */
+                            )
+{
+  const char *fn = __func__;
+  REAL8 B = 0;
+
+  /* check input argument consistency */
+  if ( t0 < 0 ) {
+    XLALPrintError ("%s: invalid input argument '%d' < 0, must be positive.\n", fn, t0 );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+  }
+
+
+  /* for -loops */
+
+
+  return B;
+
+} /* XLALComputeTransientBstat() */
