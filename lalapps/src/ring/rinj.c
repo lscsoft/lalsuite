@@ -58,9 +58,8 @@
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/Ring.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -232,16 +231,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
