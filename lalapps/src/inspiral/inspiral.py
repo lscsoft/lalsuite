@@ -1268,14 +1268,14 @@ class HWinjPageNode(InspiralAnalysisNode):
     """
     @cache_string: pattern to match files within cache
     """
-    self.add_file_opt('cache-pattern',cache_string)
+    self.add_var_opt('cache-pattern',cache_string)
     self.__cache_string=cache_string
 
   def set_output_file(self,outfile_name):
     """
     @outfile_name: Name of hw injection page
     """
-    self.add_file_opt('outfile',outfile_name)
+    self.add_var_opt('outfile',outfile_name)
     self.__outfile=outfile_name
 
 
