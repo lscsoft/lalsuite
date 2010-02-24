@@ -34,10 +34,9 @@ def calculate_symmetric_mass_ratio(m1,m2):
 
 def parse_command_line():
         parser = OptionParser()
-        parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written.  Default is \".\".")
+        parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written. Default is \".\".")
         parser.add_option("--max-symmetric-mass-ratio", metavar = "value", type = "float", default = 0.084, help = "Set the maximum allowed symmetric mass ratio.  Default = 0.084.")
         parser.add_option("-N", "--chi-n", metavar = "int", help = "Number of chi's in chi vector, must be odd to include zero.")
-	parser.add_option("-c", "--comment", metavar = "string", default=" ", help = "Comment you would like to add to process tables")
         parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
         options, filenames = parser.parse_args()
 
@@ -46,117 +45,37 @@ def parse_command_line():
 
         return options, filenames
 
-
-def add_cbc_metadata(xmldoc, process, seg):
-        #
-        # add entry to search_summary table
-        #
-
-        try:
-                tbl = lsctables.table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
-        except ValueError:
-                tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SearchSummaryTable))
-        search_summary = tbl.RowType()
-        search_summary.process_id = process.process_id
-        search_summary.shared_object = None # FIXME
-        search_summary.lalwrapper_cvs_tag = None # FIXME
-        search_summary.lal_cvs_tag = None # FIXME
-        search_summary.comment = process.comment
-        search_summary.set_ifos(process.get_ifos())
-        search_summary.set_in(seg) # FIXME
-        search_summary.set_out(seg) # FIXME
-        search_summary.nevents = None # FIXME
-        search_summary.nnodes = 1
-        tbl.append(search_summary)
-
-        #
-        # add entry to filter table
-        #
-
-        try:
-                tbl = lsctables.table.get_table(xmldoc, lsctables.FilterTable.tableName)
-        except ValueError:
-                tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.FilterTable))
-        tbl.sync_next_id()
-        row = tbl.RowType()
-        row.process_id = process.process_id
-        row.program = process.program
-        row.start_time = int(seg[0])
-        row.filter_name = None # FIXME
-        row.filter_id = tbl.get_next_id()
-        row.param_set = None # FIXME
-        row.comment = process.comment
-        tbl.append(row)
-
-        #
-        # add entries to search_summvars table
-        #
-
-        try:
-                tbl = lsctables.table.get_table(xmldoc, lsctables.SearchSummVarsTable.tableName)
-        except ValueError:
-                tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SearchSummVarsTable))
-        tbl.sync_next_id()
-        # FIXME
-
-        #
-        # add entries to summ_value table
-        #
-
-        try:
-                tbl = lsctables.table.get_table(xmldoc, lsctables.SummValueTable.tableName)
-        except ValueError:
-                tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SummValueTable))
-        tbl.sync_next_id()
-        # FIXME
-
-        #
-        # done
-        #
-
-        return search_summary
-
 options, filenames = parse_command_line()
 options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--max-symmetric-mass-ratio","int",options.max_symmetric_mass_ratio)]
 
 x_vector=numpy.linspace(-0.85, 0.85, options.chi_n)
 
-xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
-sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+for file in filenames:
+	xmldoc=utils.load_filename(file, gz=file.endswith(".gz"), verbose = options.verbose)
+	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
+	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+	
+	for row in process_params_table:
+        	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':
+                	row.value='IMRPhenomB'
+	
+	sngl_inspiral_table[:]=filter(lambda row: row.eta>=options.max_symmetric_mass_ratio, sngl_inspiral_table)
+	
+	new_rows = []
+	for row in sngl_inspiral_table:
+        	delta=calculate_delta(row.mass1,row.mass2)
+        	x_max=find_upper_limit_on_chi(delta)
+        	x_min=find_lower_limit_on_chi(delta)
+        	for x in x_vector:
+                	row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,x)
+                	if x_min <= x <= x_max:
+                        	new_rows.append(copy.deepcopy(row))
+                        	row.chi=x
+	sngl_inspiral_table[:] = new_rows
 
-for row in process_params_table:
-        if row.process_id in tmpltbank_process_ids and row.param=='--approximant':
-                row.value='IMRPhenomB'
-
-sngl_inspiral_table[:]=filter(lambda row: row.eta>=options.max_symmetric_mass_ratio, sngl_inspiral_table)
-
-new_rows = []
-for row in sngl_inspiral_table:
-        delta=calculate_delta(row.mass1,row.mass2)
-        x_max=find_upper_limit_on_chi(delta)
-        x_min=find_lower_limit_on_chi(delta)
-        #print x_min, x_max
-        for x in x_vector:
-                row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,x)
-                if x_min <= x <= x_max:
-                        new_rows.append(copy.deepcopy(row))
-                        row.chi=x
-sngl_inspiral_table[:] = new_rows
-
-#current_process_id=process_params_table[len(process_params_table)-1].process_id+1 #FIXME: Needs to check what the last id was and add one to it
-#print current_process_id
-
-process = ligolw_process.append_process(xmldoc, program = "prepareBank4IMRSA", comment = options.comment, ifos = set(detectors))
-ligolw_process.append_process_params(xmldoc, process, process_params)
-search_summary = add_cbc_metadata(xmldoc, process, options.seg)
-
-
-process_row=ligolw_process.append_process(xmldoc,'prepareBank4IMRSA','None','None',"%s" %("1999/11/11 11:11:11"),'populates f_final with IMRffinal and limits eta to above 0.084',0,current_process_id,'None','None')#FIXME: Import git version fix timestamp
-ligolw_process.append_process_params(xmldoc,process_row,options_params)
-
-output=options.output_path + '/IMRSA-TMPLATEBANK-' + filenames[0] #assumes one filename given
-print output
-utils.write_filename(xmldoc, output, gz = (output or "stdout").endswith(".gz"), verbose = options.verbose)
+	process = ligolw_process.append_process(xmldoc, program = "prepareBank4IMRSA", comment = "prepare the template bank so it acts like an IMRSA bank", ifos = None)
+	ligolw_process.append_process_params(xmldoc, process, options_params)	
+	output=options.output_path + '/IMRSA-TMPLATEBANK-' + os.path.basename(file) 
+	utils.write_filename(xmldoc, output, gz = (output or "stdout").endswith(".gz"), verbose = options.verbose)
 
