@@ -1,4 +1,4 @@
-#!? usr/bin/python
+#! /usr/bin/python
 
 import os
 import sys
@@ -35,33 +35,32 @@ def parse_command_line():
 options, filenames = parse_command_line()
 options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--n","int",options.n),("--sort-by","string",options.sort_by)]
 
-xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
-sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
 
-if options.sort_by=='mchirp':
-        sngl_inspiral_table.sort(lambda a, b: cmp(a.mchirp, b.mchirp))
-elif options.sort_by=='ffinal':
-        sngl_inspiral_table.sort(lambda a, b: cmp(a.f_final, b.f_final))
-else:
-        raise ValueError, "internal error"
+for file in filenames:
+	xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
+	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
+	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
 
-sngl_inspiral_table_split = lsctables.table.new_from_template(sngl_inspiral_table)
-sngl_inspiral_table.parentNode.replaceChild(sngl_inspiral_table_split, sngl_inspiral_table)
-print len(sngl_inspiral_table)
+	if options.sort_by=='mchirp':
+        	sngl_inspiral_table.sort(lambda a, b: cmp(a.mchirp, b.mchirp))
+	elif options.sort_by=='ffinal':
+        	sngl_inspiral_table.sort(lambda a, b: cmp(a.f_final, b.f_final))
+	else:
+        	raise ValueError, "internal error"
 
-current_process_id=process_params_table[len(process_params_table)-1].process_id +1
+	sngl_inspiral_table_split = lsctables.table.new_from_template(sngl_inspiral_table)
+	sngl_inspiral_table.parentNode.replaceChild(sngl_inspiral_table_split, sngl_inspiral_table)
 
-process_row=ligolw_process.append_process(xmldoc,'bank_splitter','None','None',"%s" %("1999/11/11 11:11:11"),'sorts template bank by mchirp or ffinal and splits into smaller bankfiles',0,current_process_id,
-'None','None')#FIXME: Import git version fix timestamp
-ligolw_process.append_process_params(xmldoc,process_row,options_params)
-
-output='IMRSA-TMPLATEBANK-' + filenames[0] #assumes one filename given
+	process = ligolw_process.append_process(xmldoc, program = "bank_splitter", comment = "split bank into smaller banks after sorting", ifos = None)
+	ligolw_process.append_process_params(xmldoc, process, options_params)	
 
 
-for first_row in range(0, len(sngl_inspiral_table), options.n):
-        sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:first_row + options.n]
-        output_split = os.path.join(options.output_path, "%d-%s" % (first_row/options.n + 1, output))
-        utils.write_filename(xmldoc, output_split, gz = (output_split or "stdout").endswith(".gz"), verbose = options.verbose)
+	output='IMRSA-TMPLATEBANK-' + os.path.basename(file)
+
+
+	for first_row in range(0, len(sngl_inspiral_table), options.n):
+        	sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:first_row + options.n]
+        	output_split = os.path.join(options.output_path, "%d-%s" % (first_row/options.n + 1, output))
+        	utils.write_filename(xmldoc, output_split, gz = (output_split or "stdout").endswith(".gz"), verbose = options.verbose)
 
