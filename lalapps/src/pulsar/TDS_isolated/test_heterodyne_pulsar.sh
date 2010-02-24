@@ -74,7 +74,7 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-# check that LAL_PREFIX is set
+# check that LALPULSAR_PREFIX is set
 if [ -n "$LALPULSAR_PREFIX" ]; then
 	EEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/earth05-09.dat
         SEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/sun05-09.dat
