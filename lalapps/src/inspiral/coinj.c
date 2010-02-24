@@ -82,19 +82,19 @@ typedef struct actuationparameters
 
 typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
 
-double chirpDist(SimInspiralTable *inj, char *ifo);
-double chirpDist(SimInspiralTable *inj, char *ifo){
+double chirpDist(SimInspiralTable *inj, char ifo);
+double chirpDist(SimInspiralTable *inj, char ifo){
   /* eff_dist(IFO)*(2.8*0.25^(3/5)/mchirp)^(5/6) */
   double eff_dist=0.0;
-  if(!ifo ||!inj) {printf("Null pointer passed to chirpDist!\n"); exit(1);}
-  switch (ifo[0])
+  if(!inj) {printf("Null pointer passed to chirpDist!\n"); exit(1);}
+  switch (ifo)
   {
 	case 'H': {eff_dist=inj->eff_dist_h; break;}
 	case 'L': {eff_dist=inj->eff_dist_l; break;}
 	case 'G': {eff_dist=inj->eff_dist_g; break;}
 	case 'T': {eff_dist=inj->eff_dist_t; break;}
 	case 'V': {eff_dist=inj->eff_dist_v; break;}
-        default: {printf("ERROR: Unknown IFO code %s\n",ifo);}
+        default: {printf("ERROR: Unknown IFO code %c\n",ifo);}
   }
   return( eff_dist*pow(1.218/inj->mchirp , (5./6.)));
 }
