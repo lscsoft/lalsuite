@@ -22,28 +22,9 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include "TwoSpectTypes.h"
 #include "TwoSpect.h"
-
-typedef struct
-{
-   REAL4Vector *maxima;
-   INT4Vector *locations;
-   INT4 columns;
-} ihsMaximaStruct;
-
-typedef struct
-{
-   REAL4 ihs;
-   INT4 loc;
-} ihsVals;
-
-typedef struct
-{
-   REAL4Vector *ihsfar;
-   REAL4Vector *ihsdistMean;
-   REAL4Vector *ihsdistSigma;
-} ihsfarStruct;
-
+#include "candidates.h"
 
 ihsMaximaStruct *new_ihsMaxima(ffdataStruct *ffdata, INT4 columns);
 void free_ihsMaxima(ihsMaximaStruct *data);
@@ -56,6 +37,8 @@ void incHarmSum(ihsVals *out, REAL4Vector *in);
 ihsfarStruct * new_ihsfarStruct(INT4 columns);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
 void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 threshold);
+
+void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, REAL4Vector *aveFFnoise, inputParamsStruct *inputParams, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4 ra, REAL4 dec);
 
 REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols);
 
