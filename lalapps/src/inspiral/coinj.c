@@ -461,6 +461,7 @@ int main(int argc, char *argv[])
 	{
 		if(this_max<chirpDist(injTable,ifostr[cidx])) this_max=chirpDist(injTable,ifostr[cidx]);
 	}
+	if(this_max>max_chirp_dist){
 	injTable->distance*=0.95*(max_chirp_dist/this_max);
 	injTable->eff_dist_h*=0.95*max_chirp_dist/this_max;
 	injTable->eff_dist_l*=0.95*max_chirp_dist/this_max;
@@ -469,6 +470,7 @@ int main(int argc, char *argv[])
 	injTable->eff_dist_g*=0.95*max_chirp_dist/this_max;
 	rewriteXML=1; repeatLoop=1;
 	fprintf(stderr,"MCD: Multiplying distance by %lf to get from %lf to target\n",0.95*max_chirp_dist/this_max,this_max);
+    	}
     }
     if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
 
