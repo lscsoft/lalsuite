@@ -34,6 +34,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -390,51 +391,59 @@ SimInspiralTable* XLALRandomInspiralSpins(
     zmin = spin1Mag * ( cosinc * kappa - sininc * sintheta );
     zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
 
-    /* spin1z */
-    inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
-
     /* spin1x and spin1y */
     if (!aligned) {
+      /* spin1z */
+      inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
       inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
       inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
           (inj->spin1x * inj->spin1x)) , 0.5);
     }
     else { /* aligned */
+      inj->spin1z = copysign(spin1Mag,XLALUniformDeviate( randParams ) - 0.5);
       inj->spin1x = 0;
       inj->spin1y = 0;
     }
   }
   else
   {
-    /* spin1z */
-    inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
-    /* phi1 */
-    r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
-    phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
-    if (! aligned) {
+    if (!aligned) {
+      /* spin1z */
+      inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
+      /* phi1 */
+      r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
+      phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
       inj->spin1x = r1 * cos(phi1);
       inj->spin1y = r1 * sin(phi1);
     }
     else { /* aligned */
+      inj->spin1z = copysign(spin1Mag, (XLALUniformDeviate( randParams ) - 0.5));
       inj->spin1x = 0;
       inj->spin1y = 0;
     }
   }
-
+  fprintf(stderr, "aligned is %d", aligned);
   /* spin2Mag */
   spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *
     (spin2Max - spin2Min);
 
   /* spin2z */
-  inj->spin2z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin2Mag);
-  r2 = pow( ((spin2Mag * spin2Mag) - (inj->spin2z * inj->spin2z)) ,
+  if (!aligned) {
+    inj->spin2z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin2Mag);
+    r2 = pow( ((spin2Mag * spin2Mag) - (inj->spin2z * inj->spin2z)) ,
       0.5);
+    }
+  else { 
+    inj->spin2z = copysign(spin2Mag, XLALUniformDeviate( randParams ) - 0.5);
+    }
+  
+
 
   /* phi2 */
   phi2 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
 
   /* spin2x and spin2y */
-  if (! aligned) {
+  if (!aligned) {
     inj->spin2x = r2 * cos(phi2);
     inj->spin2y = r2 * sin(phi2);
   }
