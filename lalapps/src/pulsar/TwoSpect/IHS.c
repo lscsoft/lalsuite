@@ -135,10 +135,14 @@ void incHarmSum(ihsVals *out, REAL4Vector *vector)
       if (ii % 3 == 0) kk++;
       if (ii % 4 == 0) ll++;
       if (ii % 5 == 0) mm++;
-      s1->data[ii] = 0.5*vector->data[jj];
+      /*s1->data[ii] = 0.5*vector->data[jj];
       s2->data[ii] = vector->data[kk]/3.0;
       s3->data[ii] = 0.25*vector->data[ll];
-      s4->data[ii] = 0.2*vector->data[mm];
+      s4->data[ii] = 0.2*vector->data[mm];*/
+      s1->data[ii] = vector->data[jj];
+      s2->data[ii] = vector->data[kk];
+      s3->data[ii] = vector->data[ll];
+      s4->data[ii] = vector->data[mm];
    }
    
    //Sum up the stretched spectra with the original
@@ -209,7 +213,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
    
    length = ffdata->fpr->length;
    
-   INT4 trials = 10000;    //Number of trials to determine FAR value
+   INT4 trials = (INT4)10000*roundf(0.01/threshold);    //Number of trials to determine FAR value
    trials += columns;
    REAL4Vector *ihss = XLALCreateREAL4Vector((UINT4)trials);
    
@@ -221,19 +225,23 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
    
    ihsVals *ihsvals = new_ihsVals();
    
+   noise = XLALCreateREAL4Vector((UINT4)length);
+   
    //Determine IHS values for the number of trials
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise
-      noise = expRandNumVector(1.0, (UINT4)length, rng);
+      for (jj=0; jj<length; jj++) noise->data[jj] = expRandNum(1.0, rng);
+      //noise = expRandNumVector(1.0, (UINT4)length, rng);
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
       ihss->data[ii] = ihsvals->ihs;
       
       //Reset noise vector
-      XLALDestroyREAL4Vector(noise);
-      noise = NULL;      
+      //XLALDestroyREAL4Vector(noise);
+      //noise = NULL;      
    }
+   XLALDestroyREAL4Vector(noise);
    
    //Calculate the IHS sum values for the IHS trials
    REAL4Vector *ihssumvals = ihsSums(ihss, columns);
@@ -430,8 +438,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
          REAL4 rmsNoise = calcRms(noiseinrange);
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
-         if (ihsmaxima->maxima->data[ii*ihsmaxima->locations->length + jj] > 
-            ihsfarstruct->ihsfar->data[ii]*meanNoise) {
+         if (ihsmaxima->maxima->data[ii*ihsmaxima->locations->length + jj] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {
          
             //Load temporary vectors for determining the FOM
             for (kk=0; kk<=ii; kk++) {
@@ -454,10 +461,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                //Create vector to hold ffdata with second frequency >5/Tobs to make sure
                //candidates have >5 periods in the observation time
                for (kk=0; kk<(INT4)ffdata_temp->f->length; kk++) {
-                  for (ll=5; ll<(INT4)ffdata->fpr->length; ll++) {
-                     ffdata_temp->ffdata->data[kk*(ffdata->fpr->length-5) + (ll-5)] = 
-                        ffdata->ffdata->data[kk*ffdata->fpr->length + ll];
-                  }
+                  for (ll=5; ll<(INT4)ffdata->fpr->length; ll++) ffdata_temp->ffdata->data[kk*(ffdata->fpr->length-5) + (ll-5)] = ffdata->ffdata->data[kk*ffdata->fpr->length + ll];
                }
             
                //Run the IHS maxima algorithm again, so we need memory allocated
@@ -477,15 +481,13 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                B = 0.5*ii/inputParams->Tcoh;
                
                //If the location is not zero, then let's load it as a candidate!
-               if (loc!=0.0) {
+               if (loc!=0.0 && inputParams->Tobs/loc>=2.0*3600.0) {
                   per0 = inputParams->Tobs/loc;
                   
                   REAL4 ihs_sum = ihsmaxima->maxima->data[ii*ihsmaxima->locations->length + jj];
                   //REAL4 ihsSnr = ihs_sum/sqrt(ii+1)/ihsStd;
-                  REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*
-                     ihsfarstruct->ihsdistSigma->data[ii]);
+                  REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
                   candlist[(*numofcandidates)] = new_candidate();
-                  //loadCandidateData(candlist[numofcandidates], fsig, per0, B, inputParams->Tobs, inputParams->Tcoh, inputParams->fmin, inputParams->fspan, ihs_sum, ihsSnr);
                   loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, ra, dec, ihs_sum, ihsSnr);
                   (*numofcandidates)++;
                }

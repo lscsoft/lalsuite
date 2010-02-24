@@ -35,21 +35,18 @@ ffdataStruct * new_ffdata(inputParamsStruct *param, INT4 mode);
 void free_ffdata(ffdataStruct *data);
 //void makeFakeBinarySigFF(ffdataStruct *ffdata, inputParamsStruct *input);
 
-//topbinsStruct * new_topbinsStruct(INT4 number);
-//void free_topbinsStruct(topbinsStruct *topbinsstruct);
-//void topbins(topbinsStruct *out, ffdataStruct *in, INT4 number);
 
 REAL4Vector * gaussRandNumVector(REAL4 sigma, UINT4 length, gsl_rng *ptrToGenerator);
 REAL4Vector * expRandNumVector(REAL4 mu, UINT4 length, gsl_rng *ptrToGenerator);
 REAL4Vector * readInSFTs(inputParamsStruct *input);
 REAL4Vector * slideTFdata(inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
+REAL4Vector * slideBackgroundData(inputParamsStruct *input, REAL4Vector *background, INT4Vector *binshifts);
 REAL4Vector * ffPlaneNoise(inputParamsStruct *param, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights);
 REAL4Vector * tfWeightMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *params);
 REAL4Vector * tfRngMeans(REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
 //REAL4Vector * makeFakeBinarySigTF(signalParamsStruct *in);
 REAL4Vector * makeSecondFFT(REAL4Vector *tfdata, inputParamsStruct *params);
 
-//REAL4 calculateR(REAL4Vector *ffdata, REAL4Vector *template, topbinsStruct *topbinsstruct, REAL4Vector *noise);
 REAL4 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise);
 REAL4 gaussRandNum(REAL4 sigma, gsl_rng *ptrToGenerator);
 REAL4 expRandNum(REAL4 mu, gsl_rng *ptrToGenerator);

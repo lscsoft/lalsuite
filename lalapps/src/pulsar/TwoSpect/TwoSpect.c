@@ -68,7 +68,7 @@ CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL;
 int main(int argc, char *argv[])
 {
 
-   INT4 ii, jj, kk, ll, cols, numofcandidates, numofcandidates2;
+   INT4 ii, jj, kk, ll, cols, numofcandidates, numofcandidates2, numofcandidatesadded;
    REAL4 ihsfarthresh;
    LALStatus status;
    status.statusPtr = NULL;
@@ -102,10 +102,6 @@ int main(int argc, char *argv[])
    else cols = 20;
    if (args_info.t0_given) inputParams->searchstarttime = args_info.t0_arg;
    else inputParams->searchstarttime = 900000000.0;
-   //if (args_info.ra_given) inputParams->ra = args_info.ra_arg;
-   //else inputParams->ra = 0.0;
-   //if (args_info.dec_given) inputParams->dec = args_info.dec_arg;
-   //else inputParams->dec = 0.0;
    
    //Defaults given or option passed
    inputParams->Tcoh = args_info.Tcoh_arg;
@@ -200,13 +196,20 @@ int main(int argc, char *argv[])
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
    //to search!
-   REAL4Vector *background = tfRngMeans(tfdata, numffts, numfbins, inputParams->blksize);
+   fprintf(LOG,"Assessing background... ");
+   fprintf(stderr,"Assessing background... ");
+   REAL4Vector *background = tfRngMeans(tfdata, numffts, numfbins + 2*inputParams->maxbinshift, inputParams->blksize);
+   fprintf(LOG,"done\n");
+   fprintf(stderr,"done\n");
    
-   numofcandidates = 0;
-   numofcandidates2 = 0;
+   numofcandidates = numofcandidates2 = numofcandidatesadded = 0;
    
    //Search over the sky
    while (scan.state != STATE_FINISHED) {
+      fprintf(LOG,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
+      fprintf(stderr,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
+      
+      numofcandidates = numofcandidates2 = 0;
       
       //Determine detector velocity w.r.t. a sky location for each SFT
       REAL4Vector *detectorVelocities = CompAntennaVelocity((REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det, edat);
@@ -220,7 +223,7 @@ int main(int argc, char *argv[])
       
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL4Vector *initialTFdata = slideTFdata(inputParams, tfdata, binshifts);
-      REAL4Vector *backgroundslide = slideTFdata(inputParams, background, binshifts);
+      REAL4Vector *backgroundslide = slideBackgroundData(inputParams, background, binshifts);
       memcpy(ffdata->backgrnd->data, backgroundslide->data, backgroundslide->length*sizeof(*backgroundslide->data));
       
       //Need to reduce the original TF data so the weighted TF data can be calculated
@@ -262,7 +265,7 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Starting Gaussian template search...\n");
       fprintf(stderr,"Starting Gaussian template search...\n");
       for (ii=0; ii<numofcandidates; ii++) {
-         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-2/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh)) {
+         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-2/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
             
             //Allocate memory for template
             templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -292,7 +295,7 @@ int main(int argc, char *argv[])
                loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, Rfirst, (Rfirst-farval->distMean)/farval->distSigma);
                numofcandidates2++;
             } else {
-               if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh)) {
+               if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
                   ihsCandidates[ii]->period *= 0.5;
                   template = new_templateStruct(inputParams->templatelength);
                   makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
@@ -305,7 +308,7 @@ int main(int argc, char *argv[])
                   template = NULL;
                   ihsCandidates[ii]->period *= 2.0;
                }
-               if (ihsCandidates[ii]->period*2.0/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh)) {
+               if (ihsCandidates[ii]->period*2.0/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*2.0/3.0 >= 2.0*3600.0) {
                   ihsCandidates[ii]->period *= 2.0/3.0;
                   template = new_templateStruct(inputParams->templatelength);
                   makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
@@ -318,7 +321,7 @@ int main(int argc, char *argv[])
                   template = NULL;
                   ihsCandidates[ii]->period *= 1.5;
                }
-               if (ihsCandidates[ii]->period*0.75 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh)) {
+               if (ihsCandidates[ii]->period*0.75 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.75 >= 2.0*3600.0) {
                   ihsCandidates[ii]->period *= 0.75;
                   template = new_templateStruct(inputParams->templatelength);
                   makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
@@ -375,9 +378,8 @@ int main(int argc, char *argv[])
             
             if (R > farval->far) {
                for (jj=0; jj<10; jj++) {
-                  //REAL4 periodfact = (jj*2+1)*ihsCandidates[ii]->period/(jj+1)*0.5;
-                  REAL4 periodfact = ihsCandidates[ii]->period/(powf(2,jj+1));
-                  if ( (ihsCandidates[ii]->period - periodfact) > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh)) {
+                  REAL4 periodfact = (jj*2+1)*ihsCandidates[ii]->period/(jj+1)*0.5;
+                  if ( (ihsCandidates[ii]->period - periodfact) > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period-periodfact>2.0*3600.0) {
                      ihsCandidates[ii]->period -= periodfact;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
@@ -404,6 +406,65 @@ int main(int argc, char *argv[])
                      template = NULL;
                      ihsCandidates[ii]->period -= (jj+1)*periodfact;
                   }
+                  
+                  /* REAL4 periodfact = ihsCandidates[ii]->period/(powf(2,jj+1));
+                  INT4 numiterations = floorf((ihsCandidates[ii]->period-minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh))/periodfact);
+                  if (numiterations > 10) numiterations = 10;
+                  for (kk=0; kk<numiterations; kk++) {
+                     ihsCandidates[ii]->period -= kk*periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     if (R > Rtemp) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        Rtemp = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period += kk*periodfact;
+                  }
+                  numiterations = floorf((inputParams->Tobs*0.2 - ihsCandidates[ii]->period)/periodfact);
+                  if (numiterations > 10) numiterations = 10;
+                  for (kk=0; kk<numiterations; kk++) {
+                     ihsCandidates[ii]->period += kk*periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     if (R > Rtemp) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        Rtemp = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period -= kk*periodfact;
+                  } */
+                  
+                  /* if ( (ihsCandidates[ii]->period - periodfact) > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh)) {
+                     ihsCandidates[ii]->period -= periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     if (R > Rtemp) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        Rtemp = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period += periodfact;
+                  }
+                  if ( inputParams->Tobs/(ihsCandidates[ii]->period + periodfact) > 5) {
+                     ihsCandidates[ii]->period += periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     if (R > Rtemp) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        Rtemp = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period -= periodfact;
+                  } */
                }
                R = Rtemp;
                
@@ -430,6 +491,16 @@ int main(int argc, char *argv[])
       fprintf(stderr,"Initial stage done with candidates = %d\n",numofcandidates);
 ////////End of the Gaussian template search
 
+      //Destroy IHS candidates
+      for (ii=0; ii<10000; ii++) {
+         if (ihsCandidates[ii]!=NULL) {
+            free_candidate(ihsCandidates[ii]);
+            ihsCandidates[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
+
 ////////Start clustering!
       fprintf(LOG,"Starting to cluster...\n");
       fprintf(stderr,"Starting to cluster...\n");
@@ -442,6 +513,16 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Clustering done with candidates = %d\n",numofcandidates);
       fprintf(stderr,"Clustering done with candidates = %d\n",numofcandidates);
 ////////End clustering
+
+      //Destroy first set of Gaussian template candidates
+      for (ii=0; ii<10000; ii++) {
+         if (gaussCandidates1[ii]!=NULL) {
+            free_candidate(gaussCandidates1[ii]);
+            gaussCandidates1[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
 
 ////////Start detailed Gaussian template search!
       fprintf(LOG,"Starting detailed search using Gaussian train templates... ");
@@ -476,9 +557,8 @@ int main(int argc, char *argv[])
          trialp = XLALCreateREAL4Vector(nump);
          
          //Now search over the parameter space. Frequency, then modulation depth, then period
-         REAL4 bestSNR = 0;
-         REAL4 bestf, bestp, bestdf, bestR;
-         bestf = bestp = bestdf = bestR = 0.0;
+         REAL4 bestf, bestp, bestdf, bestR, bestSNR;
+         bestf = bestp = bestdf = bestR = bestSNR = 0.0;
          for (jj=0; jj<(INT4)trialf->length; jj++) {
             for (kk=0; kk<(INT4)trialb->length; kk++) {
                
@@ -507,7 +587,7 @@ int main(int argc, char *argv[])
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 ) {
+                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);
@@ -548,6 +628,16 @@ int main(int argc, char *argv[])
       fprintf(stderr,"done\n");
 ////////End detailed Gaussian template search
 
+      //Destroy 2nd round of Gaussian template candidates
+      for (ii=0; ii<10000; ii++) {
+         if (gaussCandidates2[ii]!=NULL) {
+            free_candidate(gaussCandidates2[ii]);
+            gaussCandidates2[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
+
 ////////Start clustering!
       fprintf(LOG,"Starting the second round of clustering...\n");
       fprintf(stderr,"Starting the second round of clustering...\n");
@@ -561,6 +651,16 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Clustering done with candidates = %d\n",numofcandidates);
       fprintf(stderr,"Clustering done with candidates = %d\n",numofcandidates);
 ////////End clustering
+
+      //Destroy 3rd set of Gaussian template candidates
+      for (ii=0; ii<10000; ii++) {
+         if (gaussCandidates3[ii]!=NULL) {
+            free_candidate(gaussCandidates3[ii]);
+            gaussCandidates3[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
 
 ////////Initial check using "exact" template
       fprintf(LOG,"Starting exact template search...\n");
@@ -588,6 +688,16 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Number of candidates confirmed with exact templates = %d\n",numofcandidates);
       fprintf(stderr,"Number of candidates confirmed with exact templates = %d\n",numofcandidates);
 ////////Done with initial check
+
+      //Destroy 4th set of Gaussian template candidates
+      for (ii=0; ii<10000; ii++) {
+         if (gaussCandidates4[ii]!=NULL) {
+            free_candidate(gaussCandidates4[ii]);
+            gaussCandidates4[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
 
 ////////Start detailed "exact" template search!
       fprintf(LOG,"Starting detailed search with exact templates...\n");
@@ -641,7 +751,7 @@ int main(int argc, char *argv[])
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 ) {
+                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);
@@ -667,8 +777,8 @@ int main(int argc, char *argv[])
             }
          }
          
-         exactCandidates2[numofcandidates2] = new_candidate();
-         loadCandidateData(exactCandidates2[numofcandidates2], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR);
+         exactCandidates2[numofcandidates2+numofcandidatesadded] = new_candidate();
+         loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR);
          numofcandidates2++;
          
          XLALDestroyREAL4Vector(trialf);
@@ -681,7 +791,19 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Exact step is done with the number of candidates = %d\n",numofcandidates2);
       fprintf(stderr,"Exact step is done with the number of candidates = %d\n",numofcandidates2);
 ////////End of detailed search
+
+      //Destroy first round of exact template candidates
+      for (ii=0; ii<10000; ii++) {
+         if (exactCandidates1[ii]!=NULL) {
+            free_candidate(exactCandidates1[ii]);
+            exactCandidates1[ii] = NULL;
+         } else {
+            ii = 9999;
+         }
+      }
       
+      //Add number of new candidates to the total number of candidates added
+      numofcandidatesadded += numofcandidates2;
       
       //Destroy stuff
       XLALDestroyREAL4Vector(detectorVelocities);
@@ -700,17 +822,13 @@ int main(int argc, char *argv[])
       
    }
    
-   if (numofcandidates2!=0) {
+   if (numofcandidatesadded!=0) {
       fprintf(LOG,"\n**Report of candidates:**\n");
       fprintf(stderr,"\n**Report of candidates:**\n");
       
-      for (ii=0; ii<numofcandidates2; ii++) {
-         fprintf(LOG,"fsig = %f, period = %f, df = %f, R = %f, SNR = %f\n",
-            exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, 
-            exactCandidates2[ii]->stat, exactCandidates2[ii]->snr);
-         fprintf(stderr,"fsig = %f, period = %f, df = %f, R = %f, SNR = %f\n",
-            exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, 
-            exactCandidates2[ii]->stat, exactCandidates2[ii]->snr);
+      for (ii=0; ii<numofcandidatesadded; ii++) {
+         fprintf(LOG,"fsig = %f, period = %f, df = %f, RA = %f, DEC = %f, R = %f, SNR = %f\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->snr);
+         fprintf(stderr,"fsig = %f, period = %f, df = %f, RA = %f, DEC = %f, R = %f, SNR = %f\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->snr);
       }
    }
    
@@ -771,7 +889,7 @@ int main(int argc, char *argv[])
       }
    }
    
-   for (ii=0; ii<numofcandidates2; ii++) {
+   for (ii=0; ii<numofcandidatesadded; ii++) {
       free_candidate(exactCandidates2[ii]);
       exactCandidates2[ii] = NULL;
    }
@@ -951,6 +1069,8 @@ REAL4Vector * readInSFTs(inputParamsStruct *input)
    LALDestroySFTCatalog(&status, &catalog);
    XLALDestroySFTVector(sfts);
    
+   fprintf(stderr,"TF before weighting, mean subtraction = %g\n",calcMean(tfdata));
+   
    return tfdata;
 
 }
@@ -976,207 +1096,24 @@ REAL4Vector * slideTFdata(inputParamsStruct *input, REAL4Vector *tfdata, INT4Vec
 }
 
 
-
 //////////////////////////////////////////////////////////////
-// Load in SFTs from Makefakedata  -- should make this just a general loading data into FF vector
-/* void makeFakeBinarySigFF(ffdataStruct *ffdata, inputParamsStruct *input, REAL4Vector *detVelocity)
+// Slide SFT background TF data  -- done
+REAL4Vector * slideBackgroundData(inputParamsStruct *input, REAL4Vector *background, INT4Vector *binshifts)
 {
    
    INT4 ii, jj;
-   
    INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
    INT4 numfbins = (INT4)(roundf(input->fspan*input->Tcoh)+1);
-   REAL4 tempfspan = input->fspan + (input->blksize-1)/input->Tcoh;
-   INT4 tempnumfbins = (INT4)(roundf(tempfspan*input->Tcoh)+1);
    
-   LALDetector det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
-   
-   //Do ephemeris setup
-   EphemerisData *edat = new_Ephemeris(earth_ephemeris, sun_ephemeris);
-   
-   //Calculate detector velocity and bin shifts w.r.t. a sky location for the SFTs
-   REAL4Vector *detVelocity = CompAntennaVelocity(input->ra, input->dec, input->searchstarttime, input->Tcoh, input->Tobs, det, edat);
-   INT4Vector *binshifts = CompBinShifts(input->fmin+input->fspan*0.5, detVelocity, input->Tcoh, input->dopplerMultiplier);
-   
-   //Maximum detector velocity during observation time
-   INT4 maxShift = 0;
-   for (ii=0; ii<binshifts->length; ii++) if (abs(binshifts->data[ii]) > maxShift) maxShift = abs(binshifts->data[ii]);
-   input->maxbinshift = maxShift;
-   
-   //Compute antenna pattern weights
-   REAL4Vector *antenna = CompAntennaPatternWeights(input->ra, input->dec, input->searchstarttime, input->Tcoh, input->Tobs, det);
-   memcpy(ffdata->antweights->data, antenna->data, antenna->length*sizeof(*antenna->data));
-   //Setting all weights of antenna pattern to 1 -- Remove this before running for real!
-   //for (ii=0; ii<antptrnweights->length; ii++) ffdata->antweights->data[ii] = 1.0;
-   
-   //Create initial SFTs (TF data has more frequency bins because of need to calculate running means)
-   REAL4Vector *inSFTs = readInSFTs(input);
-   //REAL4Vector *initialTFdata = makeFakeBinarySigTF(in);
-   
-   //Slide SFTs here
-   REAL4Vector *initialTFdata = slideTFdata(input, inSFTs, binshifts);
-   REAL4 meanval = calcMean(initialTFdata);
-   REAL4 sigval = calcStddev(initialTFdata);
-   fprintf(stderr,"Mean value = %g, standard deviation %g\n",meanval,sigval);
-   
-   //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
-   //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
-   //to search!
-   REAL4Vector *background = tfRngMeans(initialTFdata, numffts, numfbins, input->blksize);
-   memcpy(ffdata->backgrnd->data, background->data, background->length*sizeof(*background->data));
-   
-   //This is necessary for the output of data to an ASCII file. Go ahead and remove later
-   //char s[20000];
-   //snprintf(s, 20000, "output/aftersliding.dat");
-   //DATOUT = fopen(s,"w");
-   //can be removed
-   
-   //Need to reduce the original TF data so the weighted TF data can be calculated
-   REAL4Vector *usableTFdata = XLALCreateREAL4Vector(ffdata->backgrnd->length);
+   REAL4Vector *outtfdata = XLALCreateREAL4Vector((UINT4)(numffts*numfbins));
    for (ii=0; ii<numffts; ii++) {
-      for (jj=0; jj<numfbins; jj++) {
-         usableTFdata->data[ii*numfbins + jj] = initialTFdata->data[ii*tempnumfbins + jj + (INT4)roundf((input->blksize-1)*0.5)];
-         //fprintf(DATOUT,"%g\n",usableTFdata->data[ii*numfbins + jj]);   //remove this
-      }
+      for (jj=0; jj<numfbins; jj++) outtfdata->data[ii*numfbins + jj] = background->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
    }
-   //fclose(DATOUT);   //remove this
-   meanval = calcMean(ffdata->backgrnd);
-   sigval = calcStddev(ffdata->backgrnd);
-   fprintf(stderr,"Mean value = %g, standard deviation %g\n",meanval,sigval);
    
-   //Compute the weighted TF data
-   REAL4Vector *weightedTFdata = tfWeightMeanSubtract(usableTFdata, ffdata->backgrnd, ffdata->antweights, input);
+   return outtfdata;
    
-   //Do the second FFT
-   REAL4Vector *secFFTdata = makeSecondFFT(weightedTFdata, input);
-   memcpy(ffdata->ffdata->data, secFFTdata->data, secFFTdata->length*sizeof(*secFFTdata->data));
-   //for(ii=0; ii<secFFTdata->length; ii++) fprintf(DATOUT,"%g\n",secFFTdata->data[ii]); //remove this
-   //fclose(DATOUT); //remove this
-   
-   //Make the first FFT frequencies
-   for (ii=0; ii<ffdata->f->length; ii++) ffdata->f->data[ii] = input->fmin + ii/input->Tcoh;
-   
-   //Make the second FFT frequencies
-   for (ii=0; ii<ffdata->fpr->length; ii++) ffdata->fpr->data[ii] = ii/input->Tobs;
-   
-   XLALDestroyREAL4Vector(inSFTs);
-   XLALDestroyREAL4Vector(antenna);
-   XLALDestroyREAL4Vector(initialTFdata);
-   XLALDestroyREAL4Vector(background);
-   XLALDestroyREAL4Vector(usableTFdata);
-   XLALDestroyREAL4Vector(weightedTFdata);
-   XLALDestroyREAL4Vector(secFFTdata);
-   free_Ephemeris(edat);
-   
-} */
+}
 
-
-//////////////////////////////////////////////////////////////
-// Create fake TF data  -- done
-/* REAL4Vector * makeFakeBinarySigTF(signalParamsStruct *in)
-{
-   
-   INT4 numffts, numfbins, tempnumfbins, ii, jj, block;
-   REAL4 A, f0, period0, B, Tobs, dT, dt, fmin, fspan, noiseA, periodf, tempfmin, tempfspan;
-   
-   A = in->amplitude;         //Amplitude of signal
-   f0 = in->f0;               //Frequency of signal
-   period0 = in->period0;     //Period of signal
-   B = in->moddepth0;         //Modulation depth of signal
-   Tobs = in->Tobs;           //Observation time
-   dT = in->Tcoh;             //Coherence time
-   dt = in->samplerate;       //Sampling rate
-   fmin = in->fmin;           //Minimum frequency
-   fspan = in->fspan;         //Frequency span
-   noiseA = sqrt(in->P0*0.5/dt);
-   periodf = 1.0/period0;
-   block = in->blksize;
-   
-   numffts = (INT4)floor(2*(Tobs/dT)-1);    //Number of FFTs
-   numfbins = (INT4)(roundf(fspan*dT)+1);    //Number of frequency bins
-   tempfmin = fmin - roundf((block-1)*0.5)/dT;
-   tempfspan = fspan + (block-1)/dT;
-   tempnumfbins = (INT4)(roundf(tempfspan*dT)+1);
-   printf("Number of FFTs = %d, number of frequency bins = %d\n",numffts,numfbins);
-   fprintf(LOG,"Number of FFTs = %d, number of frequency bins = %d\n",numffts,numfbins);
-   
-   REAL4Vector *tfdata = XLALCreateREAL4Vector((UINT4)(tempnumfbins*numffts));
-   
-   //Create time series
-   REAL4Vector *t = XLALCreateREAL4Vector((UINT4)floor(dT/dt)+1);
-   for (ii=0; ii<t->length; ii++) t->data[ii] = ii*dt;
-   
-   //Create Hann window
-   REAL4Window *win = XLALCreateHannREAL4Window(t->length);
-   REAL4 winFactor = 8.0/3.0;
-   
-   //Create FFT plan
-   REAL4FFTPlan *plan = XLALCreateForwardREAL4FFTPlan(t->length, 0 );
-   
-   //Initialize GSL random number generator
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
-   
-   //Calculate noise across band
-   REAL4Vector *Pvals = XLALCreateREAL4Vector((UINT4)(numfbins + block-1));
-   INT4 flag = 0;
-   for (ii=0; ii<Pvals->length; ii++) {
-      Pvals->data[ii] = in->P0*(1.0 + in->Pslope*(fmin+(ii-(INT4)roundf((block-1)*0.5))/dT - 
-         (fmin+0.5*fspan))/fspan + in->Pquad*((fmin+(ii-(INT4)roundf((block-1)*0.5))/dT - 
-         (fmin+0.5*fspan))/fspan)*((fmin+(ii-(INT4)roundf((block-1)*0.5))/dT - (fmin+0.5*fspan))/fspan));
-      if (Pvals->data[ii] < 0.0 && flag!=1) flag = 1; 
-   }
-   if (flag==1) {
-      printf("Noise spectrum values cannot be calculated for values less than zero!!!!\n");
-   }
-   
-   //Create values in the time series, compute PSD
-   REAL4Vector *x = XLALCreateREAL4Vector(t->length);
-   REAL4 windowAndMatlabFactor = winFactor/x->length*dt;
-   REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(t->length/2)+1);
-   for (ii=0; ii<numffts; ii++) {
-      if (params->SFTexistlist->data[ii] > 0) {
-         
-         //Time series for each PSD, including noise, and window
-         for (jj=0; jj<t->length; jj++) x->data[jj] = (A*sin(LAL_TWOPI*(f0 + 
-            B*sin(LAL_TWOPI*periodf*(t->data[jj] + ii*0.5*dT)))*t->data[jj]))*win->data->data[jj];
-      
-         //Do the PSD
-         INT4 check = XLALREAL4PowerSpectrum(psd,x,plan);
-         if (check != 0) {
-            printf("Something wrong with PSD...\n");
-            fprintf(LOG,"Something wrong with PSD...\n");
-         }
-         
-         REAL4 noisecoeff = 1.0;
-         if (in->varySFTs==1) noisecoeff *= (fabsf(gaussRandNum(0.2, rng) + 2.0)*0.5);
-         
-         //Scale PSD by window factor, 1/N, and 1/fs to give same results as Matlab and add noise
-         for (jj=0; jj<tempnumfbins; jj++) {
-            REAL4 noise = 0.0;
-            if (Pvals->data[jj]*noisecoeff > 0.0) noise = expRandNum(Pvals->data[jj]*noisecoeff, rng);
-            tfdata->data[ii*tempnumfbins + jj] = psd->data[jj+(INT4)roundf(tempfmin*dT)]*windowAndMatlabFactor + noise;
-         }
-      } else {
-         for (jj=0; jj<tempnumfbins; jj++) tfdata->data[ii*tempnumfbins + jj] = 0.0;
-      }
-      
-   }
-   
-   XLALDestroyREAL4Vector(t);
-   XLALDestroyREAL4Vector(x);
-   XLALDestroyREAL4Window(win);
-   XLALDestroyREAL4FFTPlan(plan);
-   XLALDestroyREAL4Vector(psd);
-   XLALDestroyREAL4Vector(Pvals);
-   gsl_rng_free(rng);
-   
-   
-   return tfdata;
-   
-} */
 
 
 //////////////////////////////////////////////////////////////
@@ -1207,7 +1144,6 @@ REAL4Vector * tfRngMeans(REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 
       LALSRunningMedian2(&status, mediansout, inpsd, block);
       //Now make the output medians into means by multiplying by 1/bias
       for (jj=0; jj<(INT4)mediansout->length; jj++) rngMeans->data[ii*numfbins + jj] = mediansout->data[jj]*invbias;
-      //for (jj=0; jj<mediansout->length; jj++) fprintf(stderr,"%g\n",rngMeans->data[ii*numfbins + jj]);
    }
    
    XLALDestroyREAL4Sequence(inpsd);
@@ -1236,15 +1172,17 @@ REAL4Vector * tfWeightMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time
       REAL4 sumofweights = 0.0;
       for (jj=0; jj<numffts; jj++) {
-         if (rngMeans->data[ii+jj*numfbins] != 0.0) sumofweights += (antPatternWeights->data[jj]*antPatternWeights->data[jj])/(rngMeans->data[ii+jj*numfbins]*rngMeans->data[ii+jj*numfbins]);
+         if (rngMeans->data[jj*numfbins + ii] != 0.0) sumofweights += (antPatternWeights->data[jj]*antPatternWeights->data[jj])/(rngMeans->data[jj*numfbins+ii]*rngMeans->data[jj*numfbins+ii]);
       }
       REAL4 invsumofweights = 1.0/sumofweights;
       
       //Now do mean subtraction, noise weighting, antenna pattern weighting
       for (jj=0; jj<numffts; jj++) {
-         if (rngMeans->data[ii+jj*numfbins] != 0.0) out->data[ii+jj*numfbins] = invsumofweights*antPatternWeights->data[jj]*(tfdata->data[ii+jj*numfbins]/rngMeans->data[ii+jj*numfbins] - 1.0)/rngMeans->data[ii+jj*numfbins];
+         if (rngMeans->data[jj*numfbins+ii] != 0.0) out->data[jj*numfbins+ii] = invsumofweights*antPatternWeights->data[jj]*(tfdata->data[jj*numfbins+ii]/rngMeans->data[jj*numfbins+ii] - 1.0)/rngMeans->data[jj*numfbins+ii];
       }
    }
+   
+   fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(out));
    
    return out;
 
@@ -1266,14 +1204,14 @@ REAL4Vector * makeSecondFFT(REAL4Vector *tfdata, inputParamsStruct *params)
    
    //Do the second FFT
    REAL4Vector *x = XLALCreateREAL4Vector((UINT4)numffts);
-   printf("length of 2nd PSD TS = %d\n",numffts);
-   fprintf(LOG,"length of 2nd PSD TS = %d\n",numffts);
+   //printf("length of 2nd PSD TS = %d\n",numffts);
+   //fprintf(LOG,"length of 2nd PSD TS = %d\n",numffts);
    REAL4Window *win = XLALCreateHannREAL4Window(x->length);
    REAL4 winFactor = 8.0/3.0;
    REAL4FFTPlan *plan = XLALCreateForwardREAL4FFTPlan(x->length, 0 );
    REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
-   printf("length of 2nd PSD = %d\n",psd->length);
-   fprintf(LOG,"length of 2nd PSD = %d\n",psd->length);
+   //printf("length of 2nd PSD = %d\n",psd->length);
+   //fprintf(LOG,"length of 2nd PSD = %d\n",psd->length);
    //First loop over frequencies
    for (ii=0; ii<numfbins; ii++) {
    
