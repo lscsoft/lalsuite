@@ -51,6 +51,7 @@
 [--maxSNR snrhigh --minSNR snrlow                     Adjust injections to have combined SNR between snrlow and snrhigh in the H1H2L1V1 network]\n\
 [--SNR snr      adjust distance to get precisely this snr]\n\
 [--GPSstart A --GPSend B     Only generate waveforms for injection between GPS seconds A and B (int)]\n\
+[--max-chirp-dist DIST	     Set the maximum chirp distance in H, L or V to DIST]\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
 
@@ -80,6 +81,23 @@ typedef struct actuationparameters
 } ActuationParametersType;
 
 typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
+
+double chirpDist(SimInspiralTable *inj, char *ifo);
+double chirpDist(SimInspiralTable *inj, char *ifo){
+  /* eff_dist(IFO)*(2.8*0.25^(3/5)/mchirp)^(5/6) */
+  double eff_dist=0.0;
+  if(!ifo ||!inj) {printf("Null pointer passed to chirpDist!\n"); exit(1);}
+  switch (ifo[0])
+  {
+	case 'H': {eff_dist=inj->eff_dist_h; break;}
+	case 'L': {eff_dist=inj->eff_dist_l; break;}
+	case 'G': {eff_dist=inj->eff_dist_g; break;}
+	case 'T': {eff_dist=inj->eff_dist_t; break;}
+	case 'V': {eff_dist=inj->eff_dist_v; break;}
+        default: {printf("ERROR: Unknown IFO code %s\n",ifo);}
+  }
+  return( eff_dist*pow(1.218/inj->mchirp , (5./6.)));
+}
 
 int main(int argc, char *argv[])
 {
@@ -114,6 +132,7 @@ int main(int argc, char *argv[])
   SimInspiralTable *headTable=NULL;
   MetadataTable MDT;
   REAL4TimeSeries *TimeSeries;
+  double max_chirp_dist=0.0;
 
   REAL4TimeSeries *actuationTimeSeries;
   COMPLEX8FrequencySeries *resp;
@@ -153,6 +172,7 @@ int main(int argc, char *argv[])
       {"SNR",required_argument,0,6},
       {"GPSstart",required_argument,0,4},
       {"GPSend",required_argument,0,5},
+      {"max-chirp-dist",required_argument,0,'d'},
       {0,0,0,0}
     };
 
@@ -193,7 +213,7 @@ int main(int argc, char *argv[])
   while(1)
     {
       int option_idx=0;
-      c=getopt_long_only(argc,argv,"hFi:",long_options,&option_idx);
+      c=getopt_long_only(argc,argv,"hFi:d:",long_options,&option_idx);
       if(c==-1) break;
       switch(c)
         {
@@ -229,7 +249,11 @@ int main(int argc, char *argv[])
           targetSNR=atof(optarg);
           fprintf(stderr,"Target SNR = %lf\n",targetSNR);
           break;
-        }
+        case 'd':
+	  max_chirp_dist=atof(optarg);
+          fprintf(stderr,"Using maximum chirp distance of %lf\n",max_chirp_dist);
+	  break;
+	}
     }
 
   if(minSNR!=0 && maxSNR!=0 && (maxSNR<minSNR)){
@@ -429,6 +453,22 @@ int main(int argc, char *argv[])
           repeatLoop=1;
           fprintf(stderr,"Multiplying by %lf to get from %lf to target\n",1.01*(NetworkSNR/maxSNR),NetworkSNR);}
       }
+    }
+    if(max_chirp_dist!=0.0){
+	double this_max=0.0;
+	char ifostr[]="HLV";
+	for(int cidx=0;cidx<3;cidx++)
+	{
+		if(this_max<chirpDist(injTable,ifostr[cidx])) this_max=chirpDist(injTable,ifostr[cidx]);
+	}
+	injTable->distance*=0.95*(max_chirp_dist/this_max);
+	injTable->eff_dist_h*=0.95*max_chirp_dist/this_max;
+	injTable->eff_dist_l*=0.95*max_chirp_dist/this_max;
+	injTable->eff_dist_v*=0.95*max_chirp_dist/this_max;
+	injTable->eff_dist_t*=0.95*max_chirp_dist/this_max;
+	injTable->eff_dist_g*=0.95*max_chirp_dist/this_max;
+	rewriteXML=1; repeatLoop=1;
+	fprintf(stderr,"MCD: Multiplying distance by %lf to get from %lf to target\n",0.95*max_chirp_dist/this_max,this_max);
     }
     if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
 
