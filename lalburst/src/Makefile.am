@@ -30,6 +30,7 @@ liblalburst_la_SOURCES = \
 	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \
+	LALBurstVCSInfo.c \
 	LALSimBurst.c \
 	LIGOLwXMLBurstRead.c \
 	RefInterference.c \

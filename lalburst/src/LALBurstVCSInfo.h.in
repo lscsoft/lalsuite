@@ -49,16 +49,7 @@ extern "C" {
 #define LALBURST_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalBurstVCSInfo = { \
-  LALBURST_VERSION, \
-  LALBURST_VCS_ID, \
-  LALBURST_VCS_DATE, \
-  LALBURST_VCS_BRANCH, \
-  LALBURST_VCS_TAG, \
-  LALBURST_VCS_AUTHOR, \
-  LALBURST_VCS_COMMITTER, \
-  LALBURST_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalBurstVCSInfo;
 
 #ifdef __cplusplus
 }
