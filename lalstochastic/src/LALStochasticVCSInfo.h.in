@@ -40,13 +40,13 @@ extern "C" {
 #define LALSTOCHASTIC_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALSTOCHASTIC_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALSTOCHASTIC_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_ID "$" "LALStochasticId: @ID@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_DATE "$" "LALStochasticDate: @DATE@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_BRANCH "$" "LALStochasticBranch: @BRANCH@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_TAG "$" "LALStochasticTag: @TAG@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_AUTHOR "$" "LALStochasticAuthor: @AUTHOR@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_COMMITTER "$" "LALStochasticCommitter: @COMMITTER@ " "$"
+#define LALSTOCHASTIC_VCS_IDENT_STATUS "$" "LALStochasticStatus: @STATUS@ " "$"
 
 /* vcs information structure */
 extern struct tagLALVCSInfo lalStochasticVCSInfo;
