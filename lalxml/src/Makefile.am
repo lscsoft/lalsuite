@@ -11,6 +11,7 @@ lalxmlinclude_HEADERS = \
 lib_LTLIBRARIES = liblalxml.la
 liblalxml_la_SOURCES = \
 	LALXML.c \
+	LALXMLVCSInfo.c \
 	LALXMLVOTableCommon.c \
 	LALXMLVOTableSerializers.c
 liblalxml_la_LDFLAGS = -version-info $(LIBVERSION)
