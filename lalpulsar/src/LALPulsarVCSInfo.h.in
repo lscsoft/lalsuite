@@ -49,16 +49,7 @@ extern "C" {
 #define LALPULSAR_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalPulsarVCSInfo = { \
-  LALPULSAR_VERSION, \
-  LALPULSAR_VCS_ID, \
-  LALPULSAR_VCS_DATE, \
-  LALPULSAR_VCS_BRANCH, \
-  LALPULSAR_VCS_TAG, \
-  LALPULSAR_VCS_AUTHOR, \
-  LALPULSAR_VCS_COMMITTER, \
-  LALPULSAR_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalPulsarVCSInfo;
 
 #ifdef __cplusplus
 }

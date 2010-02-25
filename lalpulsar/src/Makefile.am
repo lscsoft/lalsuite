@@ -80,6 +80,7 @@ liblalpulsar_la_SOURCES = \
 	LALComputeAM.c \
 	LALDemod.c \
 	LALDemodFAST.c \
+	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
