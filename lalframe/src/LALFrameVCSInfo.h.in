@@ -40,13 +40,13 @@ extern "C" {
 #define LALFRAME_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALFRAME_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALFRAME_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALFRAME_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALFRAME_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALFRAME_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALFRAME_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALFRAME_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALFRAME_VCS_IDENT_ID "$" "LALFrameId: @ID@ " "$"
+#define LALFRAME_VCS_IDENT_DATE "$" "LALFrameDate: @DATE@ " "$"
+#define LALFRAME_VCS_IDENT_BRANCH "$" "LALFrameBranch: @BRANCH@ " "$"
+#define LALFRAME_VCS_IDENT_TAG "$" "LALFrameTag: @TAG@ " "$"
+#define LALFRAME_VCS_IDENT_AUTHOR "$" "LALFrameAuthor: @AUTHOR@ " "$"
+#define LALFRAME_VCS_IDENT_COMMITTER "$" "LALFrameCommitter: @COMMITTER@ " "$"
+#define LALFRAME_VCS_IDENT_STATUS "$" "LALFrameStatus: @STATUS@ " "$"
 
 /* vcs information structure */
 extern struct tagLALVCSInfo lalFrameVCSInfo;
