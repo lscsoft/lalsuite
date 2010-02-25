@@ -40,13 +40,13 @@ extern "C" {
 #define LALPULSAR_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALPULSAR_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALPULSAR_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALPULSAR_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALPULSAR_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALPULSAR_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALPULSAR_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALPULSAR_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALPULSAR_VCS_IDENT_ID "$" "LALPulsarId: @ID@ " "$"
+#define LALPULSAR_VCS_IDENT_DATE "$" "LALPulsarDate: @DATE@ " "$"
+#define LALPULSAR_VCS_IDENT_BRANCH "$" "LALPulsarBranch: @BRANCH@ " "$"
+#define LALPULSAR_VCS_IDENT_TAG "$" "LALPulsarTag: @TAG@ " "$"
+#define LALPULSAR_VCS_IDENT_AUTHOR "$" "LALPulsarAuthor: @AUTHOR@ " "$"
+#define LALPULSAR_VCS_IDENT_COMMITTER "$" "LALPulsarCommitter: @COMMITTER@ " "$"
+#define LALPULSAR_VCS_IDENT_STATUS "$" "LALPulsarStatus: @STATUS@ " "$"
 
 /* vcs information structure */
 extern struct tagLALVCSInfo lalPulsarVCSInfo;
