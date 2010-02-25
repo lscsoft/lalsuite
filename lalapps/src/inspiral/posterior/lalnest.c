@@ -263,11 +263,14 @@ void initialise(int argc, char *argv[]){
 			Nlive=atoi(optarg);
 			break;
 		case 'I':
-			if(nifo==0) {IFOnames=malloc(sizeof(char *)); ChannelNames=malloc(sizeof(char *));}
-			else	{IFOnames=realloc(IFOnames,(nifo+1)*sizeof(CHAR *)); ChannelNames=realloc(ChannelNames,(nChannel+1)*sizeof(char *));}
+			if(nifo==0) {IFOnames=malloc(sizeof(char **)); ChannelNames=malloc(sizeof(char **));}
+			else	{IFOnames=realloc(IFOnames,(nifo+1)*sizeof(CHAR **)); ChannelNames=realloc(ChannelNames,(nChannel+1)*sizeof(char **));}
 			IFOnames[nifo]=malloc(strlen(optarg)+1);
+            printf("strlen(optarg)=%i, optarg=%s\n",strlen(optarg),optarg);
 			ChannelNames[nifo]=malloc(MAXSTR+1);
-			strcpy(IFOnames[nifo++],optarg);
+			/*strcpy(IFOnames[nifo],optarg);*/
+            sprintf(IFOnames[nifo],"%s",optarg);
+            nifo=nifo+1;
 			break;
 		case 'o':
 			strcpy(outfile,optarg);
@@ -517,7 +520,7 @@ int main( int argc, char *argv[])
 			if(!strcmp(CacheFileNames[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}
 			if(!strcmp(CacheFileNames[i],"LALGEO")) {PSD = &LALGEOPsd; scalefactor=1E-46;}
 			if(!strcmp(CacheFileNames[i],"LALEGO")) {PSD = &LALEGOPsd; scalefactor=1.0;}
-			if(!strcmp(CacheFileNames[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 10E-49;}
+			if(!strcmp(CacheFileNames[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
 			if(!strcmp(CacheFileNames[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
 			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",CacheFileNames[i]); exit(-1);}
 			inputMCMC.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&datastart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);

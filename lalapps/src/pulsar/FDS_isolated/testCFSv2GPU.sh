@@ -139,9 +139,9 @@ echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
 echo "----- CFS_v2_orig: "
-cat $outfile_orig | sed -e"/^%.*/{d}"
+cat $outfile_orig | grep -v "%%"
 echo "----- CFS_v2_test: "
-cat $outfile_test | sed -e"/^%.*/{d}"
+cat $outfile_test | grep -v "%%"
 
 echo
 cmdline="$cmp_code -1 ./$outfile_orig -2 ./$outfile_test --clusterFiles=0 --Ftolerance=$Ftolerance"
