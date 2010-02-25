@@ -49,16 +49,7 @@ extern "C" {
 #define LALMETAIO_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalMetaIOVCSInfo = { \
-  LALMETAIO_VERSION, \
-  LALMETAIO_VCS_ID, \
-  LALMETAIO_VCS_DATE, \
-  LALMETAIO_VCS_BRANCH, \
-  LALMETAIO_VCS_TAG, \
-  LALMETAIO_VCS_AUTHOR, \
-  LALMETAIO_VCS_COMMITTER, \
-  LALMETAIO_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalMetaIOVCSInfo;
 
 #ifdef __cplusplus
 }
