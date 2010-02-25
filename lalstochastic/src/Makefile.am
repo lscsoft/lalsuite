@@ -14,6 +14,7 @@ lalstochasticinclude_HEADERS = \
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \
 	AstroOmega.c \
+	LALStochasticVCSInfo.c \
 	LIGOLwXMLStochasticRead.c \
 	OverlapReductionFunction.c \
 	SimulatePopcorn.c \
