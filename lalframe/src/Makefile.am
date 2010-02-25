@@ -21,7 +21,8 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	FrameStreamDef.h \
-	LALFrameIO.c
+	LALFrameIO.c \
+	LALFrameVCSInfo.c
 
 CLEANFILES = \
 	lalframe-user-env.sh \
