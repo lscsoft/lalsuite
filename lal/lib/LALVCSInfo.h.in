@@ -71,9 +71,16 @@ typedef struct tagLALVCSInfo
 
 /* header and library vcs information structures */
 extern struct tagLALVCSInfo lalLibraryVCSInfo;
-static const struct tagLALVCSInfo lalHeaderVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
-  LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
-  LAL_VCS_COMMITTER, LAL_VCS_STATUS};
+static const struct tagLALVCSInfo lalHeaderVCSInfo = { \
+  LAL_VERSION, \
+  LAL_VCS_ID, \
+  LAL_VCS_DATE, \
+  LAL_VCS_BRANCH, \
+  LAL_VCS_TAG, \
+  LAL_VCS_AUTHOR, \
+  LAL_VCS_COMMITTER, \
+  LAL_VCS_STATUS \
+};
 
 /*
  * function prototypes
