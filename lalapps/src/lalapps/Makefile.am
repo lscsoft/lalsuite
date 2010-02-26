@@ -19,6 +19,7 @@ liblalapps_la_SOURCES = \
 	getopt.c \
 	getopt1.c \
 	getopt.h \
+	LALAppsVCSInfo.c \
 	LALAppsVCSInfo.h \
 	$(FRAMESRCS) \
 	$(LALMETAIOSRCS)
