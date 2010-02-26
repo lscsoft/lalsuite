@@ -282,9 +282,9 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn_c = cos(delta) * cos(alpha) * r_c->data[0]/LAL_C_SI
-    + cos(delta) * sin(alpha) * r_c->data[1]/LAL_C_SI
-    + sin(delta) * r_c->data[2]/LAL_C_SI;
+  rDotn_c = cos(delta) * cos(alpha) * r_c->data[0]
+    + cos(delta) * sin(alpha) * r_c->data[1]
+    + sin(delta) * r_c->data[2];
 
 
   /* now calculate the phase of the SFT */
