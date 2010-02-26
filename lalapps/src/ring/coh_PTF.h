@@ -100,6 +100,7 @@ struct coh_PTF_params {
   int          getBank;
   int          doFilter;
   int          analyzeInjSegsOnly;
+  int          doNullStream;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
