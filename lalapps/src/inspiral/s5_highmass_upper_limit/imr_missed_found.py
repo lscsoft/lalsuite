@@ -27,8 +27,7 @@ matplotlib.use('Agg')
 import pylab
 
 from pylal import git_version
-__author__ = "Chad Hanna <channa@ligo.caltech.edu>"
-__author__ = "Satya Mohapatra <satya@physics.umass.edu>"
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>, Satya Mohapatra <satya@physics.umass.edu>"
 __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
