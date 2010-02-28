@@ -91,7 +91,9 @@ struct ring_params {
   int          writeInvSpectrum;
   int          writeSegment;
   int          writeFilterOutput;
+  int          outCompress;
 };
+
 
 typedef struct tagRingDataSegments
 {

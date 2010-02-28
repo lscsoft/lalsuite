@@ -58,6 +58,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
+    { "write-compress",     no_argument, &localparams.outCompress, 1 },
     { "help",                    no_argument,       0, 'h' },
     { "version",                 no_argument,       0, 'V' },
     { "gps-start-time",          required_argument, 0, 'a' },
@@ -100,7 +101,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:Vw:W:";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V:w:W";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -289,7 +290,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
   return 0;
 }
 
-
 /* sets default values for parameters */
 static int ring_default_params( struct ring_params *params )
 {
@@ -354,7 +354,6 @@ int ring_params_sanity_check( struct ring_params *params )
     params->getSpectrum = 0;
     params->doFilter    = 0;
   }
-
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData || params->getResponse) );
@@ -457,24 +456,45 @@ int ring_params_sanity_check( struct ring_params *params )
     /* output file name */
     if ( ! strlen( params->outputFile ) )
     {
-      if ( strlen( params->userTag ) && strlen( params->ifoTag ) )
+      if ( strlen( params->userTag ) && strlen( params->ifoTag ) && params->outCompress )
       {
         snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s_%s-%d-%d.xml", params->ifoName, 
+          "%s-RING_%s_%s-%d-%d.xml.gz", params->ifoName, 
           params->ifoTag, params->userTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
-      else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) )
+      else if ( strlen( params->userTag ) && strlen( params->ifoTag )  && !params->outCompress )
       {
         snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s-%d-%d.xml", params->ifoName, 
+          "%s-RING_%s_%s-%d-%d.xml", params->ifoName,
+          params->ifoTag, params->userTag, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+      else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) && params->outCompress )
+      {
+        snprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s-%d-%d.xml.gz", params->ifoName, 
           params->userTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
-      else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) )
+      else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) && !params->outCompress  )
       {
         snprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING_%s-%d-%d.xml", params->ifoName, 
+          "%s-RING_%s-%d-%d.xml", params->ifoName,
+          params->userTag, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+      else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) && params->outCompress )
+      {
+        snprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s-%d-%d.xml.gz", params->ifoName, 
+          params->ifoTag, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+      else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) && !params->outCompress )
+      {
+        snprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s-%d-%d.xml", params->ifoName,
           params->ifoTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
       }
@@ -590,6 +610,6 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
   fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
   fprintf( stderr, "--write-filter-output      write filtered data segments\n" );
-
+  fprintf( stderr, "--write-compress           write a compressed xml file\n");
   return 0;
 }

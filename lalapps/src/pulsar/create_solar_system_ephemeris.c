@@ -189,22 +189,19 @@ int main(int argc, char **argv){
 
   /* get input parameters */
   get_input_args(&inputs, argc, argv);
-  
+
   if(test){
     if(verbose)
       fprintf(stderr, "Performing test against the existing ephemeris.\n");
 
-    /* get the path to LAL from the environment variables */
-    if((lalpath = getenv("LAL_PREFIX")) == NULL){
-      if((lalpath = getenv("LAL_LOCATION")) == NULL){
-        fprintf(stderr, "No LAL location environment variable set. Cannot\
- perform test!\n");
-      }
+    /* get the path to LALPULSAR from the environment variables */
+    if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+      fprintf(stderr, "LALPULSAR_PREFIX environment variable not set. Cannot perform test!\n");
       return TESTFAIL;
     }
 
     /* set the name of one of the earth ephemeris files in LAL */
-    sprintf(earthEphem, "%s/share/lal/earth98.dat", lalpath);
+    sprintf(earthEphem, "%s/share/lalpulsar/earth98.dat", lalpath);
 
     /* get JPL ephemeris files - only try if TEMPO2 is installed and the TEMPO2
        environment variable is set */
