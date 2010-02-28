@@ -21,13 +21,13 @@ from pylal import SimInspiralUtils
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 
 from pylal import spawaveform
-
+import math
 import matplotlib
 matplotlib.use('Agg')
 import pylab
 
 from pylal import git_version
-__author__ = "Chad Hanna <channa@ligo.caltech.edu>"
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>, Satya Mohapatra <satya@physics.umass.edu>"
 __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
@@ -260,79 +260,146 @@ opts, filenames = parse_command_line()
 
 summ = Summary(opts, filenames)
 
+#final spin
+def finalspin(m1, m2, s1z, s2z):
+    G = 6.67259e-11     	#Gravitational constant
+    c = 2.99792458e8    	#Speed of light
+    M_sun = 1.98892e30  	#Solar mass
+    Mpc = 3.0856775807e22	#Megaparsec (in meters)
+    s4 = -0.129
+    s5 = -0.384
+    t0 = -2.686
+    t2 = -3.454
+    t3 = 2.353
+    s1x = 0
+    s1y = 0
+    s2x = 0
+    s2y = 0
+    M = m1 + m2
+    q = m2/m1
+    eta = m1*m2/(m1+m2)**2
+    a1 = math.sqrt(s1x**2 + s1y**2 + s1z**2)
+    a2 = math.sqrt(s2x**2 + s2y**2 + s2z**2)
+    if (a1 != 0) and (a2 != 0): cosa = (s1x*s2x + s1y*s2y + s1z*s2z)/(a1*a2)
+    else:cosa = 0
+    if a1 != 0: cosb = s1z/a1
+    else: cosb = 0
+    if a2 != 0: cosc = s2z/a2
+    else: cosc = 0
+    l = (s4/(1+q**2)**2 * (a1**2 + (a2**2)*(q**4) + 2*a1*a2*(q**2)*cosa) + (s5*eta + t0 + 2)/(1+q**2) * (a1*cosb + a2*(q**2)*cosc) + 2*math.sqrt(3.) + t2*eta + t3*(eta**2))
+    afin = 1/(1+q)**2 * math.sqrt(a1**2 + (a2**2)*(q**4) + 2*a1*a2*(q**2)*cosa + 2*(a1*cosb + a2*(q**2)*cosc)*l*q + (l**2)*(q**2))
+    return afin
 
+
+#Missed-Found plots
 fignum = 0
-fignum = fignum + 1
-pylab.figure(fignum)
-
 for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mchirp for f in found], [f.eff_dist_l for f in found],'.')
-	pylab.semilogy([m.mchirp for m in missed], [m.eff_dist_l for m in missed],'k.')
-	pylab.savefig('L1effdist_chirpmass.png')
+    found, missed = summ.get_injections(instruments)
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mchirp for f in found], [f.eff_dist_l for f in found],'.')
+    pylab.semilogy([m.mchirp for m in missed], [m.eff_dist_l for m in missed],'k.')
+    pylab.xlabel('Chirp Mass ($M_\odot$)')
+    pylab.ylabel('Effective Distance (Mpc): L1')
+    pylab.title('Missed-Found:L1 Effective Distance vs Chirp Mass')
+    pylab.savefig('L1effdist_chirpmass.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mass1+f.mass2 for f in found], [f.eff_dist_l for f in found],'.')
-	pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.eff_dist_l for m in missed],'k.')
-	pylab.savefig('L1effdist_mass.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mass1+f.mass2 for f in found], [f.eff_dist_l for f in found],'.')
+    pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.eff_dist_l for m in missed],'k.')
+    pylab.xlabel('Total Mass ($M_\odot$)')
+    pylab.ylabel('Effective Distance (Mpc): L1')
+    pylab.title('Missed-Found:L1 Effective Distance vs Total Mass')
+    pylab.savefig('L1effdist_mass.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_l for f in found],'.')
-	pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_l for m in missed],'k.')
-	pylab.savefig('L1effdist_massweightedspin.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_l for f in found],'.')
+    pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_l for m in missed],'k.')
+    pylab.xlabel('Mass Weighted Spin')
+    pylab.ylabel('Effective Distance (Mpc): L1')
+    pylab.title('Missed-Found:L1 Effective Distance vs Mass Weighted Spin')
+    pylab.savefig('L1effdist_massweightedspin.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mchirp for f in found], [f.eff_dist_h for f in found],'.')
-	pylab.semilogy([m.mchirp for m in missed], [m.eff_dist_h for m in missed],'k.')
-	pylab.savefig('H1effdist_chirpmass.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_l for f in found],'.')
+    pylab.semilogy([finalspin(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_l for m in missed],'k.')
+    pylab.xlabel('Final Spin')
+    pylab.ylabel('Effective Distance (Mpc): L1')
+    pylab.title('Missed-Found:L1 Effective Distance vs Final Spin')
+    pylab.savefig('L1effdist_finalspin.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mass1+f.mass2 for f in found], [f.eff_dist_h for f in found],'.')
-	pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.eff_dist_h for m in missed],'k.')
-	pylab.savefig('H1effdist_mass.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mchirp for f in found], [f.eff_dist_h for f in found],'.')
+    pylab.semilogy([m.mchirp for m in missed], [m.eff_dist_h for m in missed],'k.')
+    pylab.xlabel('ChirpMass ($M_\odot$)')
+    pylab.ylabel('Effective Distance (Mpc): H1')
+    pylab.title('Missed-Found:H1 Effective Distance vs Chirp Mass')
+    pylab.savefig('H1effdist_chirpmass.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_h for f in found],'.')
-	pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_h for m in missed],'k.')
-	pylab.savefig('H1effdist_massweightedspin.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mass1+f.mass2 for f in found], [f.eff_dist_h for f in found],'.')
+    pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.eff_dist_h for m in missed],'k.')
+    pylab.xlabel('Total Mass ($M_\odot$)')
+    pylab.ylabel('Effective Distance (Mpc): H1')
+    pylab.title('Missed-Found:H1 Effective Distance vs Total Mass')    
+    pylab.savefig('H1effdist_mass.png')
 
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_h for f in found],'.')
+    pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_h for m in missed],'k.')
+    pylab.xlabel('Mass Weighted Spin')
+    pylab.ylabel('Effective Distance (Mpc): H1')
+    pylab.title('Missed-Found:H1 Effective Distance vs Mass Weighted Spin')
+    pylab.savefig('H1effdist_massweightedspin.png')
 
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mchirp for f in found], [f.distance for f in found],'.')
-	pylab.semilogy([m.mchirp for m in missed], [m.distance for m in missed],'k.')
-	pylab.savefig('dist_chirpmass.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.eff_dist_h for f in found],'.')
+    pylab.semilogy([finalspin(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.eff_dist_h for m in missed],'k.')
+    pylab.xlabel('Final Spin')
+    pylab.ylabel('Effective Distance (Mpc): H1')
+    pylab.title('Missed-Found:H1 Effective Distance vs Final Spin')
+    pylab.savefig('H1effdist_finalspin.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([f.mass1+f.mass2 for f in found], [f.distance for f in found],'.')
-	pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.distance for m in missed],'k.')
-	pylab.savefig('dist_mass.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mchirp for f in found], [f.distance for f in found],'.')
+    pylab.semilogy([m.mchirp for m in missed], [m.distance for m in missed],'k.')
+    pylab.xlabel('ChirpMass ($M_\odot$)')
+    pylab.ylabel('Distance (Mpc)')
+    pylab.title('Missed-Found:Distance vs Chirp Mass')
+    pylab.savefig('dist_chirpmass.png')
 
-fignum = fignum + 1
-pylab.figure(fignum)
-for instruments in summ.set_instruments_to_calculate():
-	found, missed = summ.get_injections(instruments)
-	pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.distance for f in found],'.')
-	pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.distance for m in missed],'k.')
-	pylab.savefig('dist_massweightedspin.png')
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([f.mass1+f.mass2 for f in found], [f.distance for f in found],'.')
+    pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.distance for m in missed],'k.')
+    pylab.xlabel('Total Mass ($M_\odot$)')
+    pylab.ylabel('Distance (Mpc)')
+    pylab.title('Missed-Found:Distance vs Total Mass')
+    pylab.savefig('dist_mass.png')
 
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.distance for f in found],'.')
+    pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.distance for m in missed],'k.')
+    pylab.xlabel('Mass Weighted Spin')
+    pylab.ylabel('Distance (Mpc)')
+    pylab.title('Missed-Found: Distance vs Mass Weighted Spin')
+    pylab.savefig('dist_massweightedspin.png')
 
+    fignum = fignum + 1
+    pylab.figure(fignum)
+    pylab.semilogy([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.distance for f in found],'.')
+    pylab.semilogy([finalspin(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.distance for m in missed],'k.')
+    pylab.xlabel('Final Spin')
+    pylab.ylabel('Distance (Mpc)')
+    pylab.title('Missed-Found: Distance vs Final Spin')
+    pylab.savefig('dist_finalspin.png')
 

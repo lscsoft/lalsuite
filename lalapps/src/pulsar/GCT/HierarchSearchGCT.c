@@ -69,7 +69,9 @@ RCSID( "$Id$");
 #define FDOT            0.0	  /**< Default value of first spindown */
 #define DFDOT           0.0	  /**< Default range of first spindown parameter */
 #define SKYREGION       "allsky" /**< default sky region to search over -- just a single point*/
-#define DTERMS          16     	/**< Default number of dirichlet kernel terms for calculating Fstat */
+#define DTERMS          16    /**< Default number of dirichlet kernel terms for calculating Fstat */
+
+/**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH        0.3 	  /**< Default for metric grid maximal mismatch value */
 #define DALPHA          0.001 	/**< Default resolution for isotropic or flat grids */
 #define DDELTA          0.001 	/**< Default resolution for isotropic or flat grids */
@@ -123,7 +125,7 @@ void PrintFstatVec( LALStatus *status, REAL4FrequencySeries *in, FILE *fp, Pulsa
                    LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-void GetSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, UsefulStageVariables *usefulparams );
+void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, UsefulStageVariables *usefulparams );
 void TranslateFineGridSpins( LALStatus *status, UsefulStageVariables *usefulparams, FineGrid *in);
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
@@ -231,8 +233,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_tmp, f1dot_tmp;
-  REAL8 TwoFthreshold, sumTwoF_tmp, TwoF_tmp;
-  REAL8 TwoFmax;
+  REAL4 TwoFthreshold, sumTwoF_tmp, TwoF_tmp, TwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
   REAL8 Fstat;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
@@ -852,14 +853,14 @@ int MAIN( int argc, char *argv[]) {
           if (fstatVector.data[k].data == NULL) {
             fstatVector.data[k].data = (REAL4Sequence *)LALCalloc( 1, sizeof(REAL4Sequence));
             if ( fstatVector.data[k].data == NULL) {
-              fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+              fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
               return(HIERARCHICALSEARCH_EMEM);
             }
 
             fstatVector.data[k].data->length = binsFstat1;
             fstatVector.data[k].data->data = (REAL4 *)LALCalloc( 1, binsFstat1 * sizeof(REAL4));
             if ( fstatVector.data[k].data->data == NULL) {
-              fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+              fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
               return(HIERARCHICALSEARCH_EMEM);
             }
 
@@ -867,14 +868,14 @@ int MAIN( int argc, char *argv[]) {
           else {
             fstatVector.data[k].data = (REAL4Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL4Sequence));
             if ( fstatVector.data[k].data == NULL) {
-              fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+              fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
               return(HIERARCHICALSEARCH_EMEM);
             }
 
             fstatVector.data[k].data->length = binsFstat1;
             fstatVector.data[k].data->data = (REAL4 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL4));
             if ( fstatVector.data[k].data->data == NULL) {
-              fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+              fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
               return(HIERARCHICALSEARCH_EMEM);
             }
           } 
@@ -885,9 +886,6 @@ int MAIN( int argc, char *argv[]) {
 
       /* ################## loop over coarse-grid F1DOT values ################## */
       for (ifdot = 0; ifdot < nf1dot; ifdot++) { 
-
-        LogPrintfVerbatim(LOG_DEBUG, "\n%% --- Sky point: %d / %d   Spin-down: %d / %d\n", 
-                        skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot );
 
         /* show progress */
         fprintf(stderr, "%% --- Progress, coarse-grid sky point: %d / %d  and spin-down: %d / %d\n", 
@@ -900,7 +898,7 @@ int MAIN( int argc, char *argv[]) {
         /* allocate memory for coarsegrid */
         coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
         if ( coarsegrid.list == NULL) {
-          fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+          fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
           return(HIERARCHICALSEARCH_EMEM);
         }
 
@@ -938,7 +936,7 @@ int MAIN( int argc, char *argv[]) {
         /* allocate memory for finegrid points */
         finegrid.list = (FineGridPoint *)LALRealloc( finegrid.list, finegrid.length * sizeof(FineGridPoint));
         if ( finegrid.list == NULL) {
-          fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+          fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
           return(HIERARCHICALSEARCH_EMEM);
         }
       
@@ -1102,7 +1100,7 @@ int MAIN( int argc, char *argv[]) {
             
             /* Check U1 index value */
             if ( ifreq != U1idx ) {
-              fprintf(stderr, "WARNING:  Incorrect Frequency-Index!\n ----> Seg: %03d  ifreq: %d   cg U1: %d \n", 
+              fprintf(stderr, "ERROR:  Incorrect Frequency-Index!\n ----> Seg: %03d  ifreq: %d   cg U1: %d \n", 
                                 k, ifreq, U1idx);
               return(HIERARCHICALSEARCH_ECG);
             }
@@ -1117,7 +1115,8 @@ int MAIN( int argc, char *argv[]) {
             
             /* Add this point to the coarse grid */
             coarsegrid.list[ifreq] = thisCgPoint;
-          }
+            
+          } /* END: Loop over coarse-grid frequency bins (ifreq) */
           
 #ifdef DIAGNOSISMODE
           /* print fstat vector if required -- mostly for debugging */
@@ -1161,7 +1160,7 @@ int MAIN( int argc, char *argv[]) {
               finegrid.list[ifine].sumTwoF = sumTwoF_tmp;                            
               
               /* Increase the number count */
-              if (TwoF_tmp >= TwoFthreshold) { 
+              if (TwoF_tmp > TwoFthreshold) { 
                 finegrid.list[ifine].nc++;
               }
                 
@@ -1178,7 +1177,11 @@ int MAIN( int argc, char *argv[]) {
               /*}*/  /*if (U1idx == coarsegrid.list[U1idx].Uindex) {*/
               
             }  /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
-            
+            else {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+              return(HIERARCHICALSEARCH_ECG);
+            }
+
           } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
  
 #ifdef DIAGNOSISMODE
@@ -1196,19 +1199,18 @@ int MAIN( int argc, char *argv[]) {
          }
         }
         
-        if( uvar_semiCohToplist) {
-          /* this is necessary here, because GetSemiCohToplist() might set
+        if( uvar_semiCohToplist ) {
+          /* this is necessary here, because UpdateSemiCohToplist() might set
            a checkpoint that needs some information from here */
-          SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
-                        skyGridCounter,thisScan.numSkyGridPoints, \
-                        uvar_Freq, uvar_FreqBand);
-	    
-          LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
-          LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status); 
+          LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
+          LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status); 
         }
 	  
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
        
+    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
+                  skyGridCounter,thisScan.numSkyGridPoints, \
+                  uvar_Freq, uvar_FreqBand);
       
       /* continue forward till the end if uvar_skyPointIndex is set
          ---This probably doesn't make sense when checkpointing is turned on */
@@ -1850,7 +1852,7 @@ void GetChkPointIndex( LALStatus *status,
 
 
 /** Get SemiCoh candidates toplist */
-void GetSemiCohToplist(LALStatus *status,
+void UpdateSemiCohToplist(LALStatus *status,
                        toplist_t *list,
                        FineGrid *in,
                        UsefulStageVariables *usefulparams)
@@ -1860,7 +1862,7 @@ void GetSemiCohToplist(LALStatus *status,
   INT4 debug;
   GCTtopOutputEntry line;
 
-  INITSTATUS( status, "GetSemiCohToplist", rcsid );
+  INITSTATUS( status, "UpdateSemiCohToplist", rcsid );
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
@@ -1886,7 +1888,7 @@ void GetSemiCohToplist(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status); 
 
-} /* GetSemiCohToplist() */
+} /* UpdateSemiCohToplist() */
 
 
 
@@ -2066,6 +2068,7 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 /** Calculate the U1 index for a given point in parameter space */
+inline
 void ComputeU1idx( REAL8 freq_event, 
                   REAL8 f1dot_event, 
                   REAL8 A1, 
@@ -2087,6 +2090,7 @@ void ComputeU1idx( REAL8 freq_event,
 
 
 /** Calculate the U2 index for a given point in parameter space */
+inline
 void ComputeU2idx( REAL8 freq_event, 
                   REAL8 f1dot_event, 
                   REAL8 A2, 

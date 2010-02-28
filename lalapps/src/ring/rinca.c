@@ -199,7 +199,7 @@ int main( int argc, char *argv[] )
   UINT4  numTriples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
-  UINT4 outCompress = 0;
+  INT4 outCompress = 0;
   UINT4  slideH1H2Together = 0;
 
   LALDetector          aDet;
@@ -1530,7 +1530,7 @@ cleanexit:
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  if ( userTag && ifoTag && outCompress)
+  else if ( userTag && ifoTag && outCompress)
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s_%s-%d-%d.xml.gz",   
         ifos, ifoTag, userTag, startCoincidence,
