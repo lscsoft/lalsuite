@@ -433,8 +433,8 @@ int main( int argc, char *argv[])
 		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
 		else {injTable->f_lower = inputMCMC.fLow;
 		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
-//		InjParams.deltaT=1.0/SampleRate;
-//		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
+		InjParams.deltaT=1.0/SampleRate;
+		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
 //		memset(&InjectGW,0,sizeof(CoherentGW));
 		fprintf(stderr,"Injected event %i:\tMass1: %lf\tMass2: %lf\n\tDistance: %lf Mpc\teta: %lf\n",event,injTable->mass1,injTable->mass2,injTable->distance,injTable->eta);
 		/*		memcpy(&(InjParams.epoch),&(injTable->geocent_end_time),sizeof(LIGOTimeGPS)); */
@@ -455,7 +455,8 @@ int main( int argc, char *argv[])
 //		insptemplate.fLower = inputMCMC.fLow;
 //		insptemplate.massChoice = totalMassAndEta;
 //		LALInspiralParameterCalc(&status,&insptemplate);
-		/*		InjParams.tc = insptemplate.tC;*/
+		/*InjParams.tc = insptemplate.tC;*/
+//		fprintf(stderr,"GenerateInspiral chirp time=%lf, ParameterCalc chirp time = %lf\n",InjParams.tc,insptemplate.tC);
 		/*****************************************************************************************************/
 		
 //		injstart = injTable->geocent_end_time;
@@ -589,6 +590,8 @@ int main( int argc, char *argv[])
 			/* Chop out the data segment and store it in the input structure */
 			inputMCMC.segment[i]=(REAL8TimeSeries *)XLALCutREAL8TimeSeries(RawData,TrigSegStart,seglen);
 			
+			memcpy(&(inputMCMC.invspec[i]->epoch),&(inputMCMC.segment[i]->epoch),sizeof(LIGOTimeGPS));
+	
 			if(DEBUG) fprintf(stderr,"Data segment %d in %s from %f to %f, including padding\n",i,IFOnames[i],((float)TrigSegStart)/((float)SampleRate),((float)(TrigSegStart+seglen))/((float)SampleRate) );
 			
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&(inputMCMC.segment[i]->epoch),0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
@@ -619,7 +622,7 @@ int main( int argc, char *argv[])
 			}
 			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOnames[i],&(segmentStart),0.0,inputMCMC.deltaT,&lalADCCountUnit,(size_t)seglen);
 			for (j=0;j<injWave->data->length;j++) injWave->data->data[j]=0.0;
-			/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
+//			LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
 			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&segmentStart,0.0,inputMCMC.deltaF,(const LALUnit *)&strainPerCount,seglen);
 			for(j=0;j<resp->data->length;j++) {resp->data->data[j].re=(REAL4)1.0; resp->data->data[j].im=0.0;}
 			SimInspiralTable this_injection;
@@ -975,7 +978,8 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
 	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
+	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);*/
+	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
 	
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
