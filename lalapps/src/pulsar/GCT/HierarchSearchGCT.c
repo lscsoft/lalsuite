@@ -135,7 +135,6 @@ void ComputeU1idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A1, REAL8 B1, REAL
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv, 
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
-int compareFineGridUindex( const void *a,const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
 void OutputVersion( void );
@@ -947,7 +946,6 @@ int MAIN( int argc, char *argv[]) {
         /* initialize first finegrid point 
         thisFgPoint.Freq=0.0;
         thisFgPoint.F1dot=0.0; */
-        thisFgPoint.Uindex=0; 
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
         
@@ -1146,7 +1144,8 @@ int MAIN( int argc, char *argv[]) {
             /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation. 
             finegrid.list[ifine].Uindex = U1idx * NumU2idx + U2idx;
             */
-            finegrid.list[ifine].Uindex = U1idx;
+            /* For ONE-SPINDOWN search not needed */
+            /* finegrid.list[ifine].Uindex = U1idx; */
                         
             /* map coarse-grid to appropriate fine-grid points */
             
@@ -2127,21 +2126,6 @@ int compareCoarseGridUindex(const void *a,const void *b) {
 }
 
 
-
-
-/** Comparison function for sorting the fine grid in u1 and u2*/
-int compareFineGridUindex(const void *a,const void *b) {
-  FineGridPoint a1, b1;
-  a1 = *((const FineGridPoint *)a);
-  b1 = *((const FineGridPoint *)b);
-  
-  if( a1.Uindex < b1.Uindex )
-    return(-1);
-  else if( a1.Uindex > b1.Uindex)
-    return(1);
-  else       
-    return(0);
-}
 
 
 
