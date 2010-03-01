@@ -151,6 +151,10 @@ XLALFindChirpCreateSubBanks(
 
   /* create an array of subbank sizes with the minimum size */
   bankSizes = (UINT4 *) LALCalloc( numSubBanks, sizeof(UINT4) );
+  for ( i = 0; i < numSubBanks; ++i )
+  {
+	bankSizes[i] = subBankSize;
+  }
 
   /* disperse the remainder through the subbanks */
   subBankRemainder = bankSize % subBankSize;
