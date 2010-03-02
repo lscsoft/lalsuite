@@ -186,7 +186,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	# injection job
 	#
 
-	if options.injections:
+	if do_injections:
 		binjnodes = power.make_binj_fragment(dag, seglists.extent_all(), tag, 0.0)
 	else:
 		binjnodes = set()
@@ -223,7 +223,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		nodes = set()
 		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
 			preserve_cache = binj_cache | tisi_cache
-			if not options.injections:
+			if not do_injections:
 				preserve_cache |= cache
 			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = preserve_cache)
 

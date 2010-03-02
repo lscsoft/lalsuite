@@ -126,7 +126,6 @@ void PrintFstatVec( LALStatus *status, REAL4FrequencySeries *in, FILE *fp, Pulsa
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
 void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, UsefulStageVariables *usefulparams );
-void TranslateFineGridSpins( LALStatus *status, UsefulStageVariables *usefulparams, FineGrid *in);
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
@@ -135,7 +134,6 @@ void ComputeU1idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A1, REAL8 B1, REAL
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv, 
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
-int compareFineGridUindex( const void *a,const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
 void OutputVersion( void );
@@ -227,7 +225,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 gammaRefine, sigmasq;  /* refinement factor and variance */
   
   /* GCT helper variables */
-  UINT4 ic, ic2, ic3, ifine;
+  UINT4 ic, ic2, ic3, ifine, ifreq_fg, if1dot_fg;
   INT4 fveclength, ifreq, U1idx;
   REAL8 myf0, freq_event, f1dot_event, deltaF;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
@@ -916,6 +914,11 @@ int MAIN( int argc, char *argv[]) {
         dfreq_fg = dFreqStack;
         nfreqs_fg = ceil(freqband_fg / dfreq_fg);  /* number of points in frequency */
       
+        /* copy frequency setup parameters to fine-grid struct */
+        finegrid.freqmin_fg = freqmin_fg;
+        finegrid.dfreq_fg = dfreq_fg;
+        finegrid.freqlength = nfreqs_fg ;
+        
         /* fine-grid f1dot resolution */
         nf1dots_fg = ceil(gammaRefine);        /* number of spindown fine-grid points */
         if ( (nf1dots_fg % 2) == 0 ) {    /* if even, add one (to refine symmetrically) */
@@ -926,6 +929,11 @@ int MAIN( int argc, char *argv[]) {
         /* adjust f1dotmin_fg, so that f1dot finegrid is centered around coarse-grid f1dot point */
         f1dotmin_fg = (usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot) - df1dot_fg * floor(nf1dots_fg / 2.0);
 
+        /* copy 1st spindown setup parameters to fine-grid struct */
+        finegrid.f1dotmin_fg = f1dotmin_fg;
+        finegrid.df1dot_fg = df1dot_fg;
+        finegrid.f1dotlength = nf1dots_fg;
+        
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
         LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
@@ -941,13 +949,10 @@ int MAIN( int argc, char *argv[]) {
         }
       
         /* copy sky coarse-grid point to finegrid, because sky is not refined */
-        finegrid.Alpha = thisPoint.Alpha;
-        finegrid.Delta = thisPoint.Delta;
+        finegrid.alpha = thisPoint.Alpha;
+        finegrid.delta = thisPoint.Delta;
 
-        /* initialize first finegrid point 
-        thisFgPoint.Freq=0.0;
-        thisFgPoint.F1dot=0.0; */
-        thisFgPoint.Uindex=0; 
+        /* initialize finegrid point */
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
         
@@ -957,14 +962,12 @@ int MAIN( int argc, char *argv[]) {
           freq_tmp = freqmin_fg + ic2 * dfreq_fg;
           for( ic3 = 0; ic3 < nf1dots_fg; ic3++ ) {
               f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;
-              thisFgPoint.Freq  = freq_tmp;
-              thisFgPoint.F1dot = f1dot_tmp;
               finegrid.list[ic] = thisFgPoint;
               ic++;
           }
         }
 
-        /* Keeping track of maximum number count */
+        /* Keeping track of maximum number count in DIAGNOSE mode */
         nc_max = 0;    /* initialize */
         TwoFmax = 0.0; 
         
@@ -1129,60 +1132,58 @@ int MAIN( int argc, char *argv[]) {
           /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
           /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
           
-          /* ---------- Compute finegrid U-map --------------- */
-          for (ifine = 0; ifine < finegrid.length; ifine++) {
+          /* ---------- Walk through fine grid and map to coarse grid --------------- */
+          ifine = 0;
+          
+          for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) {
+            
+            /* get the 1st spindown of this fine-grid point */
+            f1dot_tmp = finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg;
+            
+            for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
 
-            /* translate frequency from midpoint of data span to midpoint of this segment */
-            f1dot_tmp = finegrid.list[ifine].F1dot;
-            freq_tmp = finegrid.list[ifine].Freq + f1dot_tmp * timeDiffSeg;
-                 
-            /* compute the global-correlation coordinate indices */
-            ComputeU1idx ( freq_tmp, f1dot_tmp, A1, B1, u1start, u1winInv, &U1idx);
+              /* get the frequency of this fine-grid point at mid point of segment */
+              freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
             
-            /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation. 
-            ComputeU2idx ( freq_tmp, f1dot_tmp, A2, B2, u2start, u2winInv, &U2idx);
-            */
-            
-            /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation. 
-            finegrid.list[ifine].Uindex = U1idx * NumU2idx + U2idx;
-            */
-            finegrid.list[ifine].Uindex = U1idx;
-                        
-            /* map coarse-grid to appropriate fine-grid points */
-            
-            if ( (U1idx >= 0) && (U1idx < fveclength) ) { /* consider only relevant frequency values */
+              /* compute the global-correlation coordinate indices */
+              ComputeU1idx ( freq_tmp, f1dot_tmp, A1, B1, u1start, u1winInv, &U1idx);
               
-              /*if (U1idx == coarsegrid.list[U1idx].Uindex) {*/
+              /* consider only relevant frequency values (do not step outside coarse grid) */
+              if ( (U1idx >= 0) && (U1idx < fveclength) ) { 
                 
-              /* Add the 2F value to the 2F sum */
-              TwoF_tmp = coarsegrid.list[U1idx].TwoF;
-              sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
-              finegrid.list[ifine].sumTwoF = sumTwoF_tmp;                            
-              
-              /* Increase the number count */
-              if (TwoF_tmp > TwoFthreshold) { 
-                finegrid.list[ifine].nc++;
-              }
+                /* Add the 2F value to the 2F sum */
+                TwoF_tmp = coarsegrid.list[U1idx].TwoF;
+                sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
+                finegrid.list[ifine].sumTwoF = sumTwoF_tmp;                            
+                
+                /* Increase the number count */
+                if (TwoF_tmp > TwoFthreshold) { 
+                  finegrid.list[ifine].nc++;
+                }
                 
 #ifdef DIAGNOSISMODE
-              /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
-              if (finegrid.list[ifine].nc > nc_max) {
-                nc_max = finegrid.list[ifine].nc;
-              }
-              if (sumTwoF_tmp > TwoFmax) {
-                TwoFmax = sumTwoF_tmp;
-              }
+                /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
+                if (finegrid.list[ifine].nc > nc_max) {
+                  nc_max = finegrid.list[ifine].nc;
+                }
+                if (sumTwoF_tmp > TwoFmax) {
+                  TwoFmax = sumTwoF_tmp;
+                }
 #endif  
+                                
+              }  
+              else {
+                fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+                return(HIERARCHICALSEARCH_ECG);
+              } /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
               
-              /*}*/  /*if (U1idx == coarsegrid.list[U1idx].Uindex) {*/
-              
-            }  /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
-            else {
-              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
-              return(HIERARCHICALSEARCH_ECG);
-            }
-
-          } /* end: for (ifine = 0; ifine < finegrid.length; ifine++) { */
+              ifine++;
+          
+            } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
+          
+          } /* for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) { */
+          
+          
  
 #ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
@@ -1191,14 +1192,7 @@ int MAIN( int argc, char *argv[]) {
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
         
         /* ############################################################### */
-         
-        /* check if translation to reference time of pulsar spins is necessary */
-        if ( LALUserVarWasSet(&uvar_refTime) ) {
-         if  ( finegrid.refTime.gpsSeconds != usefulParams.spinRange_refTime.refTime.gpsSeconds ) {
-           LAL_CALL( TranslateFineGridSpins(&status, &usefulParams, &finegrid), &status); 
-         }
-        }
-        
+                 
         if( uvar_semiCohToplist ) {
           /* this is necessary here, because UpdateSemiCohToplist() might set
            a checkpoint that needs some information from here */
@@ -1208,7 +1202,7 @@ int MAIN( int argc, char *argv[]) {
 	  
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
        
-    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
+      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
                   skyGridCounter,thisScan.numSkyGridPoints, \
                   uvar_Freq, uvar_FreqBand);
       
@@ -1858,10 +1852,15 @@ void UpdateSemiCohToplist(LALStatus *status,
                        UsefulStageVariables *usefulparams)
 {
 
-  UINT4 k, Nstacks;
+  BOOLEAN translateSpins = FALSE;
+  PulsarSpins fkdot;
+  REAL8 freq_tmp, f1dot_tmp;
+  UINT4 ifine, if1dot_fg, ifreq_fg, Nsegments;
   INT4 debug;
   GCTtopOutputEntry line;
 
+  INIT_MEM(fkdot);
+  
   INITSTATUS( status, "UpdateSemiCohToplist", rcsid );
   ATTATCHSTATUSPTR (status);
 
@@ -1869,20 +1868,45 @@ void UpdateSemiCohToplist(LALStatus *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
  
-  Nstacks = usefulparams->nStacks;
+  Nsegments = usefulparams->nStacks;
   
-  /* go through candidates and insert into toplist if necessary */
-  for ( k = 0; k < in->length; k++) {
+  /* check if translation to reference time of fine-grid is necessary */
+  if  ( in->refTime.gpsSeconds != usefulparams->spinRange_refTime.refTime.gpsSeconds ) {
+    translateSpins = TRUE;
+  }
+  
+  /* ---------- Walk through fine-grid and insert candidates into toplist--------------- */
+  ifine = 0;
+  for( if1dot_fg = 0; if1dot_fg < in->f1dotlength; if1dot_fg++ ) {
+    
+    f1dot_tmp = in->f1dotmin_fg + if1dot_fg * in->df1dot_fg;
+    
+    for( ifreq_fg = 0; ifreq_fg < in->freqlength; ifreq_fg++ ) {
+    
+      freq_tmp = in->freqmin_fg + ifreq_fg * in->dfreq_fg;
+      
+      if ( translateSpins ) {
+        fkdot[0] = freq_tmp;
+        fkdot[1] = f1dot_tmp;
+      
+        /* propagate fkdot to reference-time  */
+        TRY ( LALExtrapolatePulsarSpins (status->statusPtr, 
+              fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), status );
 
-    line.Freq = in->list[k].Freq;
-    line.Alpha = in->Alpha;
-    line.Delta = in->Delta;
-    line.F1dot = in->list[k].F1dot;
-    line.nc = in->list[k].nc;
-    line.sumTwoF = in->list[k].sumTwoF / Nstacks; /* save the average 2F value */
-
-    debug = insert_into_gctFStat_toplist( list, line);
-
+        freq_tmp = fkdot[0];
+      }
+      
+      line.Freq = freq_tmp;
+      line.Alpha = in->alpha;
+      line.Delta = in->delta;
+      line.F1dot = f1dot_tmp;
+      line.nc = in->list[ifine].nc;
+      line.sumTwoF = in->list[ifine].sumTwoF / Nsegments; /* save the average 2F value */
+      
+      debug = insert_into_gctFStat_toplist( list, line);
+      
+      ifine++;
+    }
   }
   
   DETATCHSTATUSPTR (status);
@@ -1947,43 +1971,7 @@ void PrintFstatVec (LALStatus *status,
 
 
 
-/** Translate fine-grid spin parameters to specified reference time */
-void TranslateFineGridSpins(LALStatus *status,
-                       UsefulStageVariables *usefulparams,
-                       FineGrid *in)
-{
-  
-  UINT4 k;
-  PulsarSpins fkdot;
-  
-  INITSTATUS( status, "TranslateFineGridSpins", rcsid );
-  ATTATCHSTATUSPTR (status);
-  
-  INIT_MEM(fkdot);
-  
-  ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  
-  /* go through candidates and translate spins to reference time */
-  for ( k = 0; k < in->length; k++) {
-    
-    fkdot[0] = in->list[k].Freq;
-    fkdot[1] = in->list[k].F1dot;
-    
-    /* propagate fkdot to reference-time  */
-    TRY ( LALExtrapolatePulsarSpins (status->statusPtr, 
-                                     fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), 
-         status );
-    
-    /* assign translated frequency value */
-    in->list[k].Freq = fkdot[0];
-    
-  }
-  
-  DETATCHSTATUSPTR (status);
-  RETURN(status); 
-  
-} /* TranslateFineGridSpins() */
+
 
 
 
@@ -2127,21 +2115,6 @@ int compareCoarseGridUindex(const void *a,const void *b) {
 }
 
 
-
-
-/** Comparison function for sorting the fine grid in u1 and u2*/
-int compareFineGridUindex(const void *a,const void *b) {
-  FineGridPoint a1, b1;
-  a1 = *((const FineGridPoint *)a);
-  b1 = *((const FineGridPoint *)b);
-  
-  if( a1.Uindex < b1.Uindex )
-    return(-1);
-  else if( a1.Uindex > b1.Uindex)
-    return(1);
-  else       
-    return(0);
-}
 
 
 

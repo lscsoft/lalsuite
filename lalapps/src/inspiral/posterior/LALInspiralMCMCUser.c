@@ -614,7 +614,11 @@ in the frequency domain */
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
-	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	if(XLALMCMCCheckParameter(parameter,"distMpc"))
+		template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	else if(XLALMCMCCheckParameter(parameter,"logdist"))
+		template.distance=exp(XLALMCMCGetParameter(parameter,"logdist"));
+
 	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
