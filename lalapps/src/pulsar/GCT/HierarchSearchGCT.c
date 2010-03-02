@@ -129,8 +129,7 @@ void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, Use
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
-void ComputeU1idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A1, REAL8 B1, REAL8 U1start, REAL8 U1winInv, 
-                  INT4 *U1idx );
+inline UINT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv, 
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -226,14 +225,13 @@ int MAIN( int argc, char *argv[]) {
   
   /* GCT helper variables */
   UINT4 ic, ic2, ic3, ifine, ifreq_fg, if1dot_fg;
-  INT4 fveclength, ifreq, U1idx;
-  REAL8 myf0, freq_event, f1dot_event, deltaF;
+  UINT4 fveclength, ifreq, U1idx;
+  REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_tmp, f1dot_tmp;
-  REAL4 TwoFthreshold, sumTwoF_tmp, TwoF_tmp, TwoFmax; /* REAL4 precision of Fstat values */
+  REAL4 Fstat, TwoFthreshold, sumTwoF_tmp, TwoF_tmp, TwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
-  REAL8 Fstat;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
   REAL8 vel[3];
@@ -956,14 +954,14 @@ int MAIN( int argc, char *argv[]) {
         thisFgPoint.nc=0;
         thisFgPoint.sumTwoF=0.0;
         
-        /* initialize the entire finegrid */
+        /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
         ic = 0;
-        for( ic2 = 0; ic2 < nfreqs_fg; ic2++ ) {
-          freq_tmp = freqmin_fg + ic2 * dfreq_fg;
-          for( ic3 = 0; ic3 < nf1dots_fg; ic3++ ) {
-              f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;
-              finegrid.list[ic] = thisFgPoint;
-              ic++;
+        for( ic3 = 0; ic3 < nf1dots_fg; ic3++ ) {
+          f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;
+          for( ic2 = 0; ic2 < nfreqs_fg; ic2++ ) {
+            freq_tmp = freqmin_fg + ic2 * dfreq_fg;
+            finegrid.list[ic] = thisFgPoint;
+            ic++;
           }
         }
 
@@ -1072,6 +1070,7 @@ int MAIN( int argc, char *argv[]) {
           U2idx = 0; 
           */       
           
+          f1dot_eventB1 = f1dot_event * B1;
           
           /* Loop over coarse-grid frequency bins */
           for (ifreq = 0; ifreq < fveclength; ifreq++) {
@@ -1095,7 +1094,7 @@ int MAIN( int argc, char *argv[]) {
             freq_event = myf0 + ifreq * deltaF;
               
             /* compute the global-correlation coordinate indices */
-            ComputeU1idx ( freq_event, f1dot_event, A1, B1, u1start, u1winInv, &U1idx);
+            U1idx = ComputeU1idx ( freq_event, f1dot_eventB1, A1, u1start, u1winInv );
             
             /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation. 
             ComputeU2idx ( freq_event, f1dot_event, A2, B2, u2start, u2winInv, &U2idx);
@@ -1140,16 +1139,18 @@ int MAIN( int argc, char *argv[]) {
             /* get the 1st spindown of this fine-grid point */
             f1dot_tmp = finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg;
             
+            f1dot_eventB1 = f1dot_tmp * B1;
+            
             for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
 
               /* get the frequency of this fine-grid point at mid point of segment */
               freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
             
               /* compute the global-correlation coordinate indices */
-              ComputeU1idx ( freq_tmp, f1dot_tmp, A1, B1, u1start, u1winInv, &U1idx);
+              U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
               
               /* consider only relevant frequency values (do not step outside coarse grid) */
-              if ( (U1idx >= 0) && (U1idx < fveclength) ) { 
+              if ( (unsigned) (U1idx) < (fveclength) ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
                 
                 /* Add the 2F value to the 2F sum */
                 TwoF_tmp = coarsegrid.list[U1idx].TwoF;
@@ -1184,7 +1185,6 @@ int MAIN( int argc, char *argv[]) {
           } /* for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) { */
           
           
- 
 #ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
 #endif
@@ -1845,6 +1845,7 @@ void GetChkPointIndex( LALStatus *status,
 
 
 
+
 /** Get SemiCoh candidates toplist */
 void UpdateSemiCohToplist(LALStatus *status,
                        toplist_t *list,
@@ -1885,11 +1886,10 @@ void UpdateSemiCohToplist(LALStatus *status,
     
       freq_tmp = in->freqmin_fg + ifreq_fg * in->dfreq_fg;
       
-      if ( translateSpins ) {
+      if ( translateSpins ) { /* propagate fkdot to reference-time  */
         fkdot[0] = freq_tmp;
         fkdot[1] = f1dot_tmp;
-      
-        /* propagate fkdot to reference-time  */
+              
         TRY ( LALExtrapolatePulsarSpins (status->statusPtr, 
               fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), status );
 
@@ -1913,6 +1913,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   RETURN(status); 
 
 } /* UpdateSemiCohToplist() */
+
 
 
 
@@ -2055,21 +2056,21 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 
-/** Calculate the U1 index for a given point in parameter space */
-inline
-void ComputeU1idx( REAL8 freq_event, 
-                  REAL8 f1dot_event, 
-                  REAL8 A1, 
-                  REAL8 B1, 
-                  REAL8 U1start, 
-                  REAL8 U1winInv,
-                  INT4 *U1idx)
-{
-  
-  /* compute the index of global-correlation coordinate U1, Eq. (1) */
-  *U1idx = (INT4) ((((freq_event * A1 + f1dot_event * B1) - U1start) * U1winInv) + 0.5);
 
-  return;
+/** Calculate the U1 index for a given point in parameter space */
+inline UINT4 ComputeU1idx( REAL8 freq_event, 
+                          REAL8 f1dot_eventB1, 
+                          REAL8 A1, 
+                          REAL8 U1start, 
+                          REAL8 U1winInv)
+{
+  REAL8 utmp;
+  /* compute the index of global-correlation coordinate U1, Eq. (1) */
+  /*return (INT4) ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);*/
+
+  utmp = ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
+  
+  return ( (UINT4) utmp );
   
 } /* ComputeU1idx */
 
@@ -2078,7 +2079,6 @@ void ComputeU1idx( REAL8 freq_event,
 
 
 /** Calculate the U2 index for a given point in parameter space */
-inline
 void ComputeU2idx( REAL8 freq_event, 
                   REAL8 f1dot_event, 
                   REAL8 A2, 
