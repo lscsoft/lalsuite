@@ -181,7 +181,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   typedef struct tagFineGridPoint {
     REAL8 Freq;         /**< frequency */
     REAL8 F1dot;        /**< spindown */
-    INT4 Uindex;        /**< U index */
+    /* For ONE-SPINDOWN search not needed */
+    /* INT4 Uindex;*/        /**< U index */
     UINT4 nc;           /**< number count */
     REAL4 sumTwoF;      /**< sum of 2F-values */
   } FineGridPoint;  

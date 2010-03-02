@@ -112,7 +112,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
 	      lalapps_generate_upper_limits lalapps_followup0_page \
-	      lalapps_cbc_pipedown
+	      lalapps_cbc_pipedown lalapps_glitch_probe
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
@@ -172,6 +172,9 @@ lalapps_flag_triggers: $(srcdir)/flag_triggers.in python_config.sed
 lalapps_check_flag: $(srcdir)/check_flag.in python_config.sed
 	sed -f python_config.sed $(srcdir)/check_flag.in > lalapps_check_flag
 	chmod +x lalapps_check_flag
+lalapps_glitch_probe: $(srcdir)/glitch_probe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/glitch_probe.in > lalapps_glitch_probe
+	chmod +x lalapps_glitch_probe
 lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
 	chmod +x lalapps_inspiral_online_pipe_inject
@@ -199,7 +202,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     followup0_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
 	     followup0_page.in cbc_pipedown.in ihope_daily_page.in \
-	     check_flag.in flag_triggers.in $(DATA)
+	     check_flag.in flag_triggers.in glitch_probe.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

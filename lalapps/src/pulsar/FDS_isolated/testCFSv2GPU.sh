@@ -20,13 +20,13 @@ SFTdir="./testSFTs"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LAL_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    if [ -n "$LALPULSAR_PREFIX" ]; then
+	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
     else
 	echo
-	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
-	echo "This might indicate an incomplete LAL installation"
+	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+	echo "This might indicate an incomplete LAL+LALPULSAR installation"
 	echo
 	exit 1
     fi
@@ -139,9 +139,9 @@ echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
 echo "----- CFS_v2_orig: "
-cat $outfile_orig | sed -e"/^%.*/{d}"
+cat $outfile_orig | grep -v "%%"
 echo "----- CFS_v2_test: "
-cat $outfile_test | sed -e"/^%.*/{d}"
+cat $outfile_test | grep -v "%%"
 
 echo
 cmdline="$cmp_code -1 ./$outfile_orig -2 ./$outfile_test --clusterFiles=0 --Ftolerance=$Ftolerance"

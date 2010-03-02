@@ -97,10 +97,10 @@ testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2GPU.sh
 
 
-TESTS = testFStat.sh testPredictFStat.sh testFstat_v3 # testCFSv2GPU.sh
+TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
 
 if !CONDOR_ENABLED
-TESTS += testCFSv2.sh testGridv2.sh
+TESTS += testCFSv2.sh testGridv2.sh ## testCFSv2GPU.sh
 endif
 
 

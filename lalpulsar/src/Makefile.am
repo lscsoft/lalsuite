@@ -123,7 +123,7 @@ sysconf_DATA = \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
 
-BUILT_SOURCE = \
+BUILT_SOURCES = \
 	LALPulsarVCSInfo.h \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh

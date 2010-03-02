@@ -133,13 +133,11 @@ XLALFindChirpCreateSubBanks(
   InspiralTemplate     *thisTmplt = NULL;
   InspiralTemplate     *nextTmplt = NULL;
 
-  numSubBanks = bankSize / subBankSize;
-  subBankRemainder = bankSize % subBankSize;
-
   /* if there are no templates return NULL */
   if ( ! bankSize )
     return NULL;
 
+  numSubBanks = bankSize / subBankSize;
   if ( ! numSubBanks )
   {
     /* the bank is smaller than the subbank size, so return the entire */
@@ -151,22 +149,11 @@ XLALFindChirpCreateSubBanks(
     return subBankHead;
   }
 
-  /* determine whether all subBanks are the same size */
-  *maxSubBankSize = subBankSize;
-  if ( subBankRemainder )
-  {
-    *maxSubBankSize = subBankSize + 1;
-  }
-
   /* create an array of subbank sizes with the minimum size */
   bankSizes = (UINT4 *) LALCalloc( numSubBanks, sizeof(UINT4) );
 
-  for ( i = 0; i < numSubBanks; ++i )
-  {
-    bankSizes[i] = subBankSize;
-  }
-
   /* disperse the remainder through the subbanks */
+  subBankRemainder = bankSize % subBankSize;
   while( subBankRemainder )
   {
     for ( i = 0; i < numSubBanks; ++i )
@@ -178,6 +165,16 @@ XLALFindChirpCreateSubBanks(
       ++bankSizes[i];
       --subBankRemainder;
     }
+  }
+
+  /* find the largest subbank */
+  *maxSubBankSize = 0;
+  for ( i = 0; i < numSubBanks; i++)
+  {
+      if ( *maxSubBankSize < bankSizes[i] )
+      {
+	  *maxSubBankSize = bankSizes[i];
+      }
   }
 
   /* allocate storage for the subbanks */
