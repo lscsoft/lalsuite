@@ -200,7 +200,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
   
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
-    INT4 Uindex;      /**< U index */
+    UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   
