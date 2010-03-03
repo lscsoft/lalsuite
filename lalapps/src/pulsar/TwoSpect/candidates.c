@@ -131,6 +131,8 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
    numcandoutlist = 0;
    for (ii=0; ii<numofcandidates; ii++) {
       
+      if (in[ii]->period==0.0) exit(-1);
+      
       //Make note of first candidate available
       locs->data[0] = ii;
       loc = 1;
