@@ -637,7 +637,6 @@ in the frequency domain */
 	LALInspiralParameterCalc(&status,&template);
 	LALInspiralRestrictedAmplitude(&status,&template);
 	Nmodel = (inputMCMC->stilde[0]->data->length-1)*2; /* *2 for real/imag packing format */
-	REAL8 *chisqarray=calloc(Nmodel,sizeof(REAL8));
 
 	if(model==NULL)	LALCreateVector(&status,&model,Nmodel); /* Allocate storage for the waveform */
 
@@ -731,34 +730,30 @@ in the frequency domain */
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
-
+		REAL8 hc,hs;
 		
-#pragma omp parallel shared(det_resp,chisqarray,lowBin,highBin,TimeFromGC,TimeShiftToGC,deltaF,inputMCMC,model,Nmodel) private(idx)
+#pragma omp parallel shared(lowBin,highBin,chisq,det_i,det_resp,TimeFromGC,TimeShiftToGC,deltaF,inputMCMC,model,Nmodel) private(idx,time_sin,time_cos,resp_r,resp_i,real,imag,hc,hs) default(none)
 {
-	#pragma omp for schedule(static)
-		for(idx=lowBin;idx<=highBin;idx++){
+	#pragma omp for schedule(static) reduction(+:chisq)
+		for(idx=lowBin;idx<highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
 /* Version derived 19/08/08 */
-			REAL8 hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
-			REAL8 hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
+			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
+			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
-			chisqarray[idx]=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-	}
-	
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+		}
 }
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			for(idx=lowBin;idx<=highBin;idx++)
-			chisq+=chisqarray[idx];
-
 	
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
@@ -780,7 +775,6 @@ that LAL uses. Please check this whenever any change is made */
 		/*chisq+=(Nmodel-lowBin)*log(2);*/ /* student-t version */
 
 		/*chisq+=(REAL8)( 0.5 * (inputMCMC->invspec[det_i]->data->length-lowBin) * log(2.0*LAL_PI));*/
-		free(chisqarray);
 		logL-=chisq;
 	}
 
