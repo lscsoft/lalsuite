@@ -2064,16 +2064,11 @@ inline UINT4 ComputeU1idx( REAL8 freq_event,
                           REAL8 U1start, 
                           REAL8 U1winInv)
 {
-  REAL8 utmp;
+  
   /* compute the index of global-correlation coordinate U1, Eq. (1) */
-  /*return (INT4) ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);*/
-
-  utmp = ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
+  return (INT4) ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
   
-  return ( (UINT4) utmp );
-  
-} /* ComputeU1idx */
-
+} 
 
 
 
@@ -2093,7 +2088,7 @@ void ComputeU2idx( REAL8 freq_event,
   
   return;
   
-} /* ComputeU2idx */
+} 
 
 
  
