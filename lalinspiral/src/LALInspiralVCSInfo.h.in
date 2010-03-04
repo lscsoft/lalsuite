@@ -40,13 +40,13 @@ extern "C" {
 #define LALINSPIRAL_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALINSPIRAL_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALINSPIRAL_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALINSPIRAL_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALINSPIRAL_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALINSPIRAL_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALINSPIRAL_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALINSPIRAL_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALINSPIRAL_VCS_IDENT_ID "$" "LALInspiralId: @ID@ " "$"
+#define LALINSPIRAL_VCS_IDENT_DATE "$" "LALInspiralDate: @DATE@ " "$"
+#define LALINSPIRAL_VCS_IDENT_BRANCH "$" "LALInspralBranch: @BRANCH@ " "$"
+#define LALINSPIRAL_VCS_IDENT_TAG "$" "LALInspiralTag: @TAG@ " "$"
+#define LALINSPIRAL_VCS_IDENT_AUTHOR "$" "LALInspiralAuthor: @AUTHOR@ " "$"
+#define LALINSPIRAL_VCS_IDENT_COMMITTER "$" "LALInspiralCommitter: @COMMITTER@ " "$"
+#define LALINSPIRAL_VCS_IDENT_STATUS "$" "LALInspiralStatus: @STATUS@ " "$"
 
 /* vcs information structure */
 extern struct tagLALVCSInfo lalInspiralVCSInfo;
