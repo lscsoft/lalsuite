@@ -23,8 +23,6 @@
  *
  * Author: Robinson, C. A. K.
  *
- * Revision: $Id: LIGOMetadataUtils.h,v 1.156 2008/08/29 11:20:58 sfairhur Exp $
- *
  *-----------------------------------------------------------------------
  */
 
@@ -33,7 +31,6 @@
 #if 0
 <lalVerbatim file="TrigScanEThincaCommonHV">
 Author: Robinson, C. A. K.
-$Id: LIGOMetadataUtils.h,v 1.156 2008/08/29 11:20:58 sfairhur Exp $
 </lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{TrigScanEThincaCommon.h}}
@@ -59,7 +56,7 @@ linked lists used in TrigScan and E-thinca.
 extern "C" {
 #endif
 
-NRCSID( TRIGSCANETHINCACOMMONH, "$Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $" );
+NRCSID( TRIGSCANETHINCACOMMONH, "$Id$" );
 
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,

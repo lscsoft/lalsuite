@@ -23,14 +23,11 @@
  *
  * Author: Craig Robinson
  *
- * $Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
- *
  *---------------------------------------------------------------------------*/
 
 #if 0
 <lalVerbatim file="CoincInspiralEllipsoidCV">
 Author: Craig Robinson
-$Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
 </lalVerbatim>
 #endif
 
@@ -52,7 +49,7 @@ $Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( COINCINSPIRALELLIPSOIDC, "$Id: CoincInspiralEllipsoid.c,v 1.19 2007/06/08 14:41:57 bema Exp $" );
+NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
 
 #if 0
 <lalLaTeX>

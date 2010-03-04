@@ -23,14 +23,11 @@
  *
  * Author: Craig Robinson
  *
- * $Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
- *
  *---------------------------------------------------------------------------*/
 
 #if 0
 <lalVerbatim file="GetErrorMatrixFromSnglInspiralCV">
 Author: Craig Robinson
-$Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
 </lalVerbatim>
 #endif
 
@@ -45,7 +42,7 @@ $Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
 
-NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $" );
+NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
 
 #if 0
 <lalLaTeX>
