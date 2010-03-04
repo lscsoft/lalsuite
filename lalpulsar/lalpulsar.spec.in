@@ -4,30 +4,31 @@
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
-Summary: LSC Algorithm SFT Library
+Summary: LSC Algorithm Pulsar Library
 License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: lal pulsar
+BuildRequires: python
+Requires: gsl lal
 Prefix: %{_prefix}
 
 %description
-The LSC Algorithm SFT Library for gravitational wave data analysis.
+The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
-that use the LAL SFt library.
+that use the LAL Pulsar library.
 
 %package devel
-Summary: Files and documentation needed for compiling programs that use LAL SFT
+Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: lal-devel
+Requires: gsl-devel lal-devel
 %description devel
-The LSC Algorithm SFT Library for gravitational wave data analysis.
+The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
-SFT library.
+Pulsar library.
 
 %prep
 %setup -q

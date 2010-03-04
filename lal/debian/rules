@@ -29,9 +29,6 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 endif
 
 
-configure:
-	sh ./00boot
-	
 config.status : configure
 	dh_testdir
 #	LDFLAGS="-Wl,-z,defs"

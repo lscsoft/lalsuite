@@ -50,7 +50,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>

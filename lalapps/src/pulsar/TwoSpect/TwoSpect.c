@@ -48,17 +48,11 @@
 
 
 //Global variables
-candidate *ihsCandidates[10000];
-candidate *gaussCandidates1[10000];
-candidate *gaussCandidates2[10000];
-candidate *gaussCandidates3[10000];
-candidate *gaussCandidates4[10000];
-candidate *exactCandidates1[10000];
-candidate *exactCandidates2[10000];
+candidate *ihsCandidates[10000], *gaussCandidates1[10000], *gaussCandidates2[10000], *gaussCandidates3[10000], *gaussCandidates4[10000], *exactCandidates1[10000], *exactCandidates2[10000];
 inputParamsStruct *inputParams;
 REAL4FFTPlan *secondFFTplan;
 
-FILE *LOG;//, *CAND1, *CAND2;//, *DATOUT;
+FILE *LOG;
 
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL;
 
@@ -69,7 +63,7 @@ int main(int argc, char *argv[])
 {
 
    INT4 ii, jj, kk, ll, cols, numofcandidates, numofcandidates2, numofcandidatesadded;
-   REAL4 ihsfarthresh;
+   REAL4 ihsfarthresh, templatefarthresh;
    LALStatus status;
    status.statusPtr = NULL;
    char s[20000];
@@ -95,9 +89,9 @@ int main(int argc, char *argv[])
    if (args_info.Tobs_given) inputParams->Tobs = args_info.Tobs_arg;
    else inputParams->Tobs = 168*3600;
    if (args_info.fmin_given) inputParams->fmin = args_info.fmin_arg;
-   else inputParams->fmin = 99.99;
+   else inputParams->fmin = 99.5;
    if (args_info.fspan_given) inputParams->fspan = args_info.fspan_arg;
-   else inputParams->fspan = 0.02;
+   else inputParams->fspan = 1.0;
    if (args_info.cols_given) cols = args_info.cols_arg;
    else cols = 20;
    if (args_info.t0_given) inputParams->searchstarttime = args_info.t0_arg;
@@ -106,6 +100,7 @@ int main(int argc, char *argv[])
    //Defaults given or option passed
    inputParams->Tcoh = args_info.Tcoh_arg;
    ihsfarthresh = args_info.ihsfar_arg;
+   templatefarthresh = args_info.tmplfar_arg;
    inputParams->blksize = args_info.blksize_arg;
    earth_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
    sun_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
@@ -265,7 +260,7 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Starting Gaussian template search...\n");
       fprintf(stderr,"Starting Gaussian template search...\n");
       for (ii=0; ii<numofcandidates; ii++) {
-         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-2/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
+         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-5/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
             
             //Allocate memory for template
             templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -275,7 +270,7 @@ int main(int argc, char *argv[])
             
             //Estimate the FAR for these bin weights
             farval = new_farStruct();
-            estimateFAR(farval, template, 0.01, aveNoise);
+            estimateFAR(farval, template, templatefarthresh, aveNoise);
             
             //Caclulate R
             REAL4 R = calculateR(ffdata->ffdata, template, aveNoise);
@@ -489,6 +484,12 @@ int main(int argc, char *argv[])
       numofcandidates2 = 0;
       fprintf(LOG,"Initial stage done with candidates = %d\n",numofcandidates);
       fprintf(stderr,"Initial stage done with candidates = %d\n",numofcandidates);
+      
+      ii = 0;
+      while (gaussCandidates1[ii]!=NULL) {
+         fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n",ii,gaussCandidates1[ii]->fsig,gaussCandidates1[ii]->period,gaussCandidates1[ii]->moddepth);
+         ii++;
+      }
 ////////End of the Gaussian template search
 
       //Destroy IHS candidates
@@ -512,6 +513,12 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG,"Clustering done with candidates = %d\n",numofcandidates);
       fprintf(stderr,"Clustering done with candidates = %d\n",numofcandidates);
+      
+      ii = 0;
+      while (gaussCandidates2[ii]!=NULL) {
+         fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n",ii,gaussCandidates2[ii]->fsig,gaussCandidates2[ii]->period,gaussCandidates2[ii]->moddepth);
+         ii++;
+      }
 ////////End clustering
 
       //Destroy first set of Gaussian template candidates
@@ -527,8 +534,8 @@ int main(int argc, char *argv[])
 ////////Start detailed Gaussian template search!
       fprintf(LOG,"Starting detailed search using Gaussian train templates... ");
       fprintf(stderr,"Starting detailed search using Gaussian train templates... ");
-      REAL4 quadparam = 2.4e-3;
-      REAL4 linparam = 4.1e-3;
+      //REAL4 quadparam = 2.4e-3;
+      //REAL4 linparam = 4.1e-3;
       for (ii=0; ii<numofcandidates; ii++) {
       
          REAL4Vector *trialf, *trialb, *trialp;
@@ -568,10 +575,15 @@ int main(int argc, char *argv[])
                //20% mismatch parameter
                trialp->data[2] = gaussCandidates2[ii]->period;
                for (ll=0; ll<2; ll++) {
-                  REAL4 nnp = (quadparam*(trialp->data[2+ll]/3600)*(trialp->data[2+ll]/3600)+linparam*(trialp->data[2+ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600.0;
+                  REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
+                  REAL4 nnp = trialp->data[2+ll]*trialp->data[2+ll]*(1+trialp->data[2+ll]/tcohfactor/inputParams->Tobs)/tcohfactor/inputParams->Tobs*sqrt(3.6e-3/trialb->data[kk]);
+                  trialp->data[2+(ll+1)] = trialp->data[2+ll] + nnp;
+                  nnp = trialp->data[2-ll]*trialp->data[2-ll]*(1+trialp->data[2-ll]/tcohfactor/inputParams->Tobs)/tcohfactor/inputParams->Tobs*sqrt(3.6e-3/trialb->data[kk]);
+                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp;
+                  /* REAL4 nnp = (quadparam*(trialp->data[2+ll]/3600)*(trialp->data[2+ll]/3600)+linparam*(trialp->data[2+ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600.0;
                   trialp->data[2+ll+1] = trialp->data[2+ll] + nnp;
                   nnp = (quadparam*(trialp->data[2-ll]/3600)*(trialp->data[2-ll]/3600)+linparam*(trialp->data[2-ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600;
-                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp;
+                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp; */
                }
                
                //Take the mean period and compute a template/FAR pair.
@@ -581,13 +593,13 @@ int main(int argc, char *argv[])
                templateStruct *template = new_templateStruct(inputParams->templatelength);
                makeTemplateGaussians(template, cand, inputParams);
                farval = new_farStruct();
-               estimateFAR(farval, template, 0.01, aveNoise);
+               estimateFAR(farval, template, templatefarthresh, aveNoise);
                free_candidate(cand);
                cand = NULL;
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
+                  if ( trialf->data[jj]-trialb->data[kk]-5/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);
@@ -613,9 +625,11 @@ int main(int argc, char *argv[])
             }
          }
          
-         gaussCandidates3[numofcandidates2] = new_candidate();
-         loadCandidateData(gaussCandidates3[numofcandidates2], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR);
-         numofcandidates2++;
+         if (bestf!=0.0) {
+            gaussCandidates3[numofcandidates2] = new_candidate();
+            loadCandidateData(gaussCandidates3[numofcandidates2], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR);
+            numofcandidates2++;
+         }
          
          XLALDestroyREAL4Vector(trialf);
          XLALDestroyREAL4Vector(trialb);
@@ -626,6 +640,12 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG,"done\n");
       fprintf(stderr,"done\n");
+      
+      ii = 0;
+      while (gaussCandidates3[ii]!=NULL) {
+         fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n",ii,gaussCandidates3[ii]->fsig,gaussCandidates3[ii]->period,gaussCandidates3[ii]->moddepth);
+         ii++;
+      }
 ////////End detailed Gaussian template search
 
       //Destroy 2nd round of Gaussian template candidates
@@ -650,6 +670,12 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG,"Clustering done with candidates = %d\n",numofcandidates);
       fprintf(stderr,"Clustering done with candidates = %d\n",numofcandidates);
+      
+      ii = 0;
+      while (gaussCandidates4[ii]!=NULL) {
+         fprintf(stderr,"Candidate %d: f0=%g, P=%g, df=%g\n",ii,gaussCandidates4[ii]->fsig,gaussCandidates4[ii]->period,gaussCandidates4[ii]->moddepth);
+         ii++;
+      }
 ////////End clustering
 
       //Destroy 3rd set of Gaussian template candidates
@@ -669,7 +695,7 @@ int main(int argc, char *argv[])
          templateStruct *template = new_templateStruct(inputParams->templatelength);
          makeTemplate(template, gaussCandidates4[ii], inputParams, secondFFTplan);
          farval = new_farStruct();
-         estimateFAR(farval, template, 0.01, aveNoise);
+         estimateFAR(farval, template, templatefarthresh, aveNoise);
          REAL4 R = calculateR(ffdata->ffdata, template, aveNoise);
          REAL4 SNR = (R - farval->distMean)/farval->distSigma;
          if (R > farval->far) {
@@ -733,10 +759,15 @@ int main(int argc, char *argv[])
             for (kk=0; kk<(INT4)trialb->length; kk++) {
                trialp->data[2] = exactCandidates1[ii]->period;
                for (ll=0; ll<2; ll++) {
-                  REAL4 nnp = (quadparam*(trialp->data[2+ll]/3600)*(trialp->data[2+ll]/3600)+linparam*(trialp->data[2+ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600;
+                  REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
+                  REAL4 nnp = trialp->data[2+ll]*trialp->data[2+ll]*(1+trialp->data[2+ll]/tcohfactor/inputParams->Tobs)/tcohfactor/inputParams->Tobs*sqrt(3.6e-3/trialb->data[kk]);
+                  trialp->data[2+(ll+1)] = trialp->data[2+ll] + nnp;
+                  nnp = trialp->data[2-ll]*trialp->data[2-ll]*(1+trialp->data[2-ll]/tcohfactor/inputParams->Tobs)/tcohfactor/inputParams->Tobs*sqrt(3.6e-3/trialb->data[kk]);
+                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp;
+                  /* REAL4 nnp = (quadparam*(trialp->data[2+ll]/3600)*(trialp->data[2+ll]/3600)+linparam*(trialp->data[2+ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600;
                   trialp->data[2+ll+1] = trialp->data[2+ll] + nnp;
                   nnp = (quadparam*(trialp->data[2-ll]/3600)*(trialp->data[2-ll]/3600)+linparam*(trialp->data[2-ll]/3600))*sqrt(3e-3/trialb->data[kk])/powf(2.0,(inputParams->Tobs-7.0*24.0*3600.0)/(7.0*24.0*3600.0))*3600;
-                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp;
+                  trialp->data[2-(ll+1)] = trialp->data[2-ll] - nnp; */
                }
                
                REAL4 tempP = calcMean(trialp);
@@ -745,13 +776,13 @@ int main(int argc, char *argv[])
                templateStruct *template = new_templateStruct(inputParams->templatelength);
                makeTemplate(template, cand, inputParams, secondFFTplan);
                farval = new_farStruct();
-               estimateFAR(farval, template, 0.01, aveNoise);
+               estimateFAR(farval, template, templatefarthresh, aveNoise);
                free_candidate(cand);
                cand = NULL;
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-2/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+2/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
+                  if ( trialf->data[jj]-trialb->data[kk]-5/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);
@@ -1056,7 +1087,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input)
       if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*0.5*input->Tcoh+input->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = (REAL4)(2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im)); //TODO: check this for consistancy
+            tfdata->data[ii*sftlength + jj] = (REAL4)((sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im)); //TODO: check this for consistancy
          }
       } else {
          for (jj=0; jj<sftlength; jj++) {

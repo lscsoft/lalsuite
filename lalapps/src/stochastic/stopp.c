@@ -28,7 +28,7 @@
 
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLStochasticRead.h>
 #include <lal/LIGOMetadataTables.h>
 
 #include <lalapps.h>

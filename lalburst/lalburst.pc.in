@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALBurst
 Description: LAL Burst Library Support
 Version: @VERSION@
-Requires: lal
-Libs: -L${libdir} -llalburst @GSL_LIBS@
-Cflags: -I${includedir} @GSL_CFLAGS@
+Requires: gsl lal libmetaio lalmetaio
+Libs: -L${libdir} -llalburst
+Cflags: -I${includedir}

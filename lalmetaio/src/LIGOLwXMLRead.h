@@ -56,8 +56,6 @@ metadata database tables.
 #include <metaio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
-#include <lal/LALInspiral.h>
-#include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
@@ -160,6 +158,21 @@ LALCreateMetaTableDir(
 #endif
 
 int
+XLALLIGOLwFindColumn(
+    struct MetaioParseEnvironment *env,
+    const char *name,
+    enum METAIO_Type type,
+    int required
+);
+
+long long XLALLIGOLwParseIlwdChar(
+    const struct MetaioParseEnvironment *env,
+    int column_number,
+    const char *ilwd_char_table_name,
+    const char *ilwd_char_column_name
+);
+
+int
 XLALLIGOLwHasTable(
     const char *filename,
     const char *table_name
@@ -175,137 +188,12 @@ XLALProcessParamsTableFromLIGOLw (
     const char *filename
 );
 
-SnglBurst *
-XLALSnglBurstTableFromLIGOLw(
-    const char *filename
-);
-
-SimBurst *
-XLALSimBurstTableFromLIGOLw (
-    const char *filename,
-    const LIGOTimeGPS *start,
-    const LIGOTimeGPS *end
-);
-
-
-MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
-int
-LALSnglInspiralTableFromLIGOLw (
-    SnglInspiralTable **eventHead,
-    CHAR               *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
 /* these functions need to be lalified, but they are in support... */
-
-int
-InspiralTmpltBankFromLIGOLw (
-    InspiralTemplate   **bankHead,
-    const CHAR         *fileName,
-    INT4                startTmplt,
-    INT4                stopTmplt
-    );
-
-int
-SimInspiralTableFromLIGOLw (
-    SimInspiralTable   **simHead,
-    const CHAR          *fileName,
-    INT4                 startTime,
-    INT4                 endTime
-    );
 
 SearchSummaryTable *
 XLALSearchSummaryTableFromLIGOLw (
     const CHAR          *fileName
     );
-
-int
-SummValueTableFromLIGOLw (
-    SummValueTable **sumHead,
-    CHAR           *fileName
-    );
-
-int
-LALStochasticTableFromLIGOLw (
-    StochasticTable **stochHead,
-		CHAR             *fileName
-		);
-
-int
-LALStochSummTableFromLIGOLw (
-    StochSummTable **stochSummHead,
-    CHAR *fileName);
-
-int
-LALExtTriggerTableFromLIGOLw (
-    ExtTriggerTable   **eventHead,
-    CHAR               *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
-int
-XLALReadSummValueFile (
-    SummValueTable **summValueList,
-    CHAR                  *fileName
-    );
-int
-XLALReadInspiralTriggerFile (
-    SnglInspiralTable    **inspiralEventList,
-    SnglInspiralTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
-    );
-
-void
-XLALCleanSummValueTable (
-    SummValueTable **summValueList
-    );
-
-#if 0
-<lalLaTeX>
-\newpage\input{LIGOLwXMLRingdownReadC}
-</lalLaTeX>
-#endif
-
-SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
-SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
-    CHAR               *fileName,
-    INT4                startTime,
-    INT4                stopTime
-    );
-
-INT4 XLALReadRingdownTriggerFile (
-    SnglRingdownTable    **ringdownEventList,
-    SnglRingdownTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
-    );
-
-int
-LALMultiInspiralTableFromLIGOLw (
-    MultiInspiralTable **eventHead,
-    CHAR                *fileName
-    );
-
-int
-XLALReadMultiInspiralTriggerFile (
-    MultiInspiralTable    **inspiralEventList,
-    MultiInspiralTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
-    );
-
 
 #ifdef  __cplusplus
 }

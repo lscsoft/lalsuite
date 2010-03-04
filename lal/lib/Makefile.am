@@ -18,11 +18,7 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/tdfilter/src/libtdfilter.la \
 	$(top_builddir)/packages/window/src/libwindow.la \
 	$(top_builddir)/packages/fft/src/libfft.la \
-	$(top_builddir)/packages/inspiral/src/libinspiral.la \
-	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la \
-	$(top_builddir)/packages/bank/src/libbank.la \
-	$(top_builddir)/packages/ring/src/libring.la \
-	$(top_builddir)/packages/findchirp/src/libfindchirp.la
+	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c

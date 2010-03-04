@@ -63,9 +63,9 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>

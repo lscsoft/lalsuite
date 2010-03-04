@@ -11,7 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: python gsl fftw3 libmetaio
+BuildRequires: python
+Requires: gsl fftw3 libmetaio
 Prefix: %{_prefix}
 
 %description

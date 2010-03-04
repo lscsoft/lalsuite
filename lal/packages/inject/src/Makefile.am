@@ -2,21 +2,10 @@ noinst_LTLIBRARIES = libinject.la
 libinject_la_SOURCES = \
 	CelestialCoordinates.c \
 	CelestialCoordinatesLaldoc.c \
-	GenerateInspRing.c \
-	GenerateInspiral.c \
-	GenerateInspiralSmooth.c  \
-	GeneratePPNAmpCorInspiral.c \
-	GeneratePPNInspiral.c \
-	GetInspiralParams.c \
 	InjectTimeSeries.c \
 	InjectVector.c \
-	InspiralInjectionParams.c \
-	LALSimInspiral.c \
-	LALSimInspiralPNMode.c \
 	LALSimulation.c \
-	NRWaveInject.c \
 	SimulateCoherentGW.c \
-	SimulateInspiral.c \
 	SkyCoordinates.c \
 	TerrestrialCoordinates.c \
 	check_series_macros.h

@@ -3,9 +3,6 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 noinst_LTLIBRARIES = libtools.la
 libtools_la_SOURCES = \
 	CoherentEstimation.c \
-	CoincInspiralEllipsoid.c \
-	CoincInspiralUtils.c \
-	CoincRingdownUtils.c \
 	ComputeCalibrationFactors.c \
 	ComputeDataQualityVector.c \
 	ComputeStrain.c \
@@ -16,24 +13,13 @@ libtools_la_SOURCES = \
 	EllipsoidOverlapTools.c \
 	FlatLatticeTiling.c \
 	FrequencySeries.c \
-	GetErrorMatrixFromSnglInspiral.c \
 	LALBarycenter.c \
 	LALCalibration.c \
-	LALTrigScanCluster.c \
-	LIGOMetadataUtils.c \
-	MultiInspiralUtils.c \
-	NDTemplateBank.c \
 	ResampleTimeSeries.c \
 	Segments.c \
 	Sequence.c \
-	SimInspiralUtils.c \
-	SimRingdownUtils.c \
 	Skymap.c \
-	SnglBurstUtils.c \
-	SnglInspiralUtils.c \
-	SnglRingdownUtils.c \
 	TimeSeries.c \
-	TrigScanEThincaCommon.c \
 	UnitCompare.c \
 	UnitDefs.c \
 	UnitMultiply.c \

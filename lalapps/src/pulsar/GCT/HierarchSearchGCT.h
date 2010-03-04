@@ -179,26 +179,28 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
   /** one fine-grid point */
   typedef struct tagFineGridPoint {
-    REAL8 Freq;         /**< frequency */
-    REAL8 F1dot;        /**< spindown */
-    /* For ONE-SPINDOWN search not needed */
-    /* INT4 Uindex;*/        /**< U index */
     UINT4 nc;           /**< number count */
     REAL4 sumTwoF;      /**< sum of 2F-values */
   } FineGridPoint;  
 
   /** structure for storing fine-grid points */
   typedef struct tagFineGrid {
-    REAL8 Alpha;            /**< right ascension */
-    REAL8 Delta;            /**< declination */
+    REAL8 freqmin_fg;       /**< fine-grid start in frequency */
+    REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
+    REAL8 dfreq_fg;         /**< fine-grid spacing in frequency */
+    REAL8 df1dot_fg;        /**< fine-grid spacing in 1st spindown */
+    REAL8 alpha;            /**< right ascension */
+    REAL8 delta;            /**< declination */
     LIGOTimeGPS refTime;    /**< reference time for candidates */
     UINT4 length;           /**< maximum allowed length of vectors */
+    UINT4 freqlength;       /**< number of fine-grid points in frequency */
+    UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
     FineGridPoint *list;    /**> list of finegrid points */
   } FineGrid;
   
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
-    INT4 Uindex;      /**< U index */
+    UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   

@@ -44,6 +44,7 @@ BUILT_SOURCES = gitID
 
 if LALFRAME
 if LALMETAIO
+if LALINSPIRAL
 LALFRAME_LALMETAIO_PROGS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
                lalapps_inspinj lalapps_injcut lalapps_splitbank \
@@ -88,12 +89,15 @@ lalapps_skymap_SOURCES		= $(SKYMAPSRC)
 lalapps_coinj_SOURCES		= $(COINJSRC)
 endif
 endif
+endif
 
 if LALFRAME
 if LALMETAIO
 if LALPULSAR
+if LALINSPIRAL
 LALPULSAR_PROGS = lalapps_coherent_inspiral
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
+endif
 endif
 endif
 endif

@@ -158,10 +158,6 @@ LALSSInjectTimeSeries( LALStatus       *,
 		       REAL4TimeSeries *output,
 		       REAL4TimeSeries *signalvec );
 
-/* <lalLaTeX>
-\newpage\input{BasicInjectTestC}
-</lalLaTeX> */
-
 #ifdef  __cplusplus
 #pragma {
 }

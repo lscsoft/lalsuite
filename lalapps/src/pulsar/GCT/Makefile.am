@@ -16,7 +16,7 @@ gitID:
 BUILT_SOURCES = gitID
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
-EXTRA_PROGRAMS = eah_HierarchSearchGCT eah_HierarchSearchGCT_sse eah_HierarchSearchGCT_sse2
+EXTRA_PROGRAMS = eah_HierarchSearchGCT eah_HierarchSearchGCT_release
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(OPTsrc)/LocalComputeFstat.c
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
@@ -30,10 +30,12 @@ lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
 eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
 
-eah_HierarchSearchGCT_sse_SOURCES = $(HSGCTSources) $(EAHSources)
-eah_HierarchSearchGCT_sse_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchSearchGCT_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
+# link the 'release' version with a static libstdc++
+# this possibly only works on some systems, so keep this in optional targets
+eah_HierarchSearchGCT_release_SOURCES = $(HSGCTSources) $(EAHSources)
+eah_HierarchSearchGCT_release_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
+eah_HierarchSearchGCT_release_LDFLAGS = -L. $(AM_LDFLAGS)
+eah_HierarchSearchGCT_release_DEPENDENCIES = libstdc++.a
 
-eah_HierarchSearchGCT_sse2_SOURCES = $(HSGCTSources) $(EAHSources)
-eah_HierarchSearchGCT_sse2_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchSearchGCT_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
+libstdc++.a:
+	cp -f `$(CXX) -print-file-name=libstdc++.a` .

@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: LALMetaIo
+Name: LALMetaIO
 Description: LAL MetaIO Library Support
 Version: @VERSION@
 Requires: lal libmetaio
-Libs: -L${libdir} -llalmetaio @METAIO_LIBS@
-Cflags: -I${includedir} @METAIO_CFLAGS@
+Libs: -L${libdir} -llalmetaio
+Cflags: -I${includedir}

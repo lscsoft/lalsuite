@@ -28,7 +28,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
