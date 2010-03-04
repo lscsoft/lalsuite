@@ -52,7 +52,7 @@ AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_DATE],["$lalinspiral_configure_date"],
                    [LALInspiral Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
