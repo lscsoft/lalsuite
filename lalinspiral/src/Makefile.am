@@ -151,6 +151,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralTofV.c \
 	LALInspiralTofVIntegrand.c \
 	LALInspiralUpdateParams.c \
+	LALInspiralVCSInfo.c \
 	LALInspiralValidParams.c \
 	LALInspiralValidTemplate.c \
 	LALInspiralVelocity.c \

@@ -49,16 +49,7 @@ extern "C" {
 #define LALINSPIRAL_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalInspiralVCSInfo = { \
-  LALINSPIRAL_VERSION, \
-  LALINSPIRAL_VCS_ID, \
-  LALINSPIRAL_VCS_DATE, \
-  LALINSPIRAL_VCS_BRANCH, \
-  LALINSPIRAL_VCS_TAG, \
-  LALINSPIRAL_VCS_AUTHOR, \
-  LALINSPIRAL_VCS_COMMITTER, \
-  LALINSPIRAL_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalInspiralVCSInfo;
 
 #ifdef __cplusplus
 }
