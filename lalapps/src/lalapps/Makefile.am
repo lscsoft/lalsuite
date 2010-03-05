@@ -4,8 +4,12 @@ FRAMESRCS = \
 	series.h \
 	lalappsfrutils.c \
 	lalappsfrutils.h
-else
-FRAMESRCS =
+endif
+
+if LALMETAIO
+LALMETAIOSRCS = \
+	processtable.c \
+	processtable.h
 endif
 
 noinst_LTLIBRARIES = liblalapps.la
@@ -15,10 +19,9 @@ liblalapps_la_SOURCES = \
 	getopt.c \
 	getopt1.c \
 	getopt.h \
-	processtable.c \
-	processtable.h \
 	LALAppsVCSInfo.h \
-	$(FRAMESRCS)
+	$(FRAMESRCS) \
+	$(LALMETAIOSRCS)
 
 bin_PROGRAMS = \
 	lalapps_version \
@@ -54,6 +57,8 @@ EXTRA_DIST = \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
 	git_version \
+	processtable.c \
+	processtable.h \
 	LALAppsVCSInfo.h.in
 
 BUILT_SOURCES = LALAppsVCSInfo.h
