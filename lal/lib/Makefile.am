@@ -33,8 +33,7 @@ lal_version_LDADD = liblal.la
 
 MOSTLYCLEANFILES = \
 	.vcsinfo \
-	LALBuildDate.c \
-	git_info.sed
+	LALBuildDate.c
 
 TESTS = lal-version
 
