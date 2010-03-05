@@ -29,13 +29,14 @@ lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
 eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-
-# link the 'release' version with a static libstdc++
-# this possibly only works on some systems, so keep this in optional targets
-eah_HierarchSearchGCT_release_SOURCES = $(HSGCTSources) $(EAHSources)
-eah_HierarchSearchGCT_release_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchSearchGCT_release_LDFLAGS = -L. $(AM_LDFLAGS)
-eah_HierarchSearchGCT_release_DEPENDENCIES = libstdc++.a
+# this shouldn't harm - it just prefers libraries in the build directory over e.g. system ones
+eah_HierarchSearchGCT_LDFLAGS = -L. $(AM_LDFLAGS)
+# RELEASE_DEPS contains additional dependencies of the E@H build
+# items in there should have rules listed below to create them
+# the idea is to increase compatibility of E@H applications by linking these libs statically
+eah_HierarchSearchGCT_DEPENDENCIES = $(RELEASE_DEPS)
 
 libstdc++.a:
-	cp -f `$(CXX) -print-file-name=libstdc++.a` .
+	cp -f `$(CC) -print-file-name=$@` $@
+libz.a:
+	cp -f `$(CC) -print-file-name=$@` $@
