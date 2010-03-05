@@ -16,6 +16,7 @@ def parse_command_line():
         parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written.  Default is \".\".")
         parser.add_option("-n", "--n", metavar = "count", type = "int", help = "Set the number of templates per output file (required).")
         parser.add_option("-s", "--sort-by", metavar = "{mchirp|ffinal}", help = "Select the template sort order (required).")
+	parser.add_option("-F", "--add-f-final", action = "store_true", help = "Select whether to add f_final to the bank.")
         parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
         options, filenames = parser.parse_args()
 
@@ -33,7 +34,7 @@ def parse_command_line():
         return options, filenames
 
 options, filenames = parse_command_line()
-options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--n","int",options.n),("--sort-by","string",options.sort_by)]
+options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--n","int",options.n),("--sort-by","string",options.sort_by),("--add-f-final","string",options.add_f_final)]
 
 
 for file in filenames:
@@ -41,6 +42,17 @@ for file in filenames:
 	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
 	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+
+	if options.add_f_final:
+		for row in process_params_table:
+                	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':
+				approximant=row.value
+		for row in sngl_inspiral_table:
+			if approximant=='IMRPhenomB':
+				row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,row.chi)
+			else:
+				row.f_final=spawaveform.ffinal(row.mass1,row.mass2,'schwarz_isco')	
+				
 
 	if options.sort_by=='mchirp':
         	sngl_inspiral_table.sort(lambda a, b: cmp(a.mchirp, b.mchirp))
