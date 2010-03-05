@@ -74,7 +74,7 @@ for file in filenames:
 	ligolw_process.append_process_params(xmldoc, process, options_params)	
 
 
-	output='IMRSA-TMPLATEBANK-' + os.path.basename(file)
+	output='split_bank-' + os.path.basename(file)
 
 
 	for first_row in range(0, len(sngl_inspiral_table), options.n):
