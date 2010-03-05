@@ -25,29 +25,27 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
 
-BUILT_SOURCES = LALVCSInfo.h
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALVCSInfo.h
 
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
 
-MOSTLYCLEANFILES = \
-	.vcsinfo \
-	LALBuildDate.c
+MOSTLYCLEANFILES = LALBuildDate.c
 
 TESTS = lal-version
 
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 
-.vcsinfo:
-	@touch .vcsinfo
+LALVCSInfo.h: ._vcsinfo
 
-LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 	./git_version --sed LAL $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 all-local: include-link
 include-link: LALVCSInfo.h

@@ -24,6 +24,7 @@ sysconf_DATA = \
 	lalxml-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALXMLVCSInfo.h \
 	lalxml-user-env.sh \
 	lalxml-user-env.csh
@@ -71,15 +72,11 @@ EXTRA_DIST = \
 	LALXMLVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALXMLVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALXMLVCSInfo.h: LALXMLVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALXMLVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALXML $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

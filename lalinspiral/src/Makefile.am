@@ -202,6 +202,7 @@ sysconf_DATA = \
 	lalinspiral-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALInspiralVCSInfo.h \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
@@ -249,15 +250,11 @@ EXTRA_DIST = \
 	LALInspiralVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALInspiralVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALInspiralVCSInfo.h: LALInspiralVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALInspiralVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALInspiral $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

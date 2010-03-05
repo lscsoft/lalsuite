@@ -61,18 +61,15 @@ EXTRA_DIST = \
 	processtable.h \
 	LALAppsVCSInfo.h.in
 
-BUILT_SOURCES = LALAppsVCSInfo.h
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALAppsVCSInfo.h
 
-MOSTLYCLEANFILES = .vcsinfo
+LALAppsVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALAppsVCSInfo.h: LALAppsVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALAppsVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALApps $$sourced $$buildd
-	@-rm -f .vcsinfo
-
 
 TESTS = lalapps_version

@@ -33,9 +33,10 @@ sysconf_DATA = \
 	lalmetaio-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
+	LALMetaIOVCSInfo.h \
 	lalmetaio-user-env.sh \
-	lalmetaio-user-env.csh \
-	LALMetaIOVCSInfo.h
+	lalmetaio-user-env.csh
 
 lalmetaio-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -75,13 +76,11 @@ lalmetaio-user-env.csh: Makefile
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
 
-.vcsinfo:
-	@touch .vcsinfo
+LALMetaIOVCSInfo.h: ._vcsinfo
 
-LALMetaIOVCSInfo.h: LALMetaIOVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALMetaIOVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALMetaIO $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

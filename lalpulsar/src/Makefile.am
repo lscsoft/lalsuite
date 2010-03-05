@@ -124,6 +124,7 @@ sysconf_DATA = \
 	lalpulsar-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALPulsarVCSInfo.h \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
@@ -171,16 +172,11 @@ EXTRA_DIST = \
 	LALPulsarVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALPulsarVCSInfo.h: ._vcsinfo
 
-
-.vcsinfo:
-	@touch .vcsinfo
-
-LALPulsarVCSInfo.h: LALPulsarVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALPulsarVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALPulsar $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

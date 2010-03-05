@@ -36,6 +36,7 @@ sysconf_DATA = \
 	lalstochastic-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALStochasticVCSInfo.h \
 	lalstochastic-user-env.sh \
 	lalstochastic-user-env.csh
@@ -83,15 +84,11 @@ EXTRA_DIST = \
 	LALStochasticVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALStochasticVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALStochasticVCSInfo.h: LALStochasticVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALStochasticVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALStochastic $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

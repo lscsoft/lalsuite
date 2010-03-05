@@ -52,6 +52,7 @@ sysconf_DATA = \
 	lalburst-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALBurstVCSInfo.h \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
@@ -98,15 +99,11 @@ EXTRA_DIST = \
 	LALBurstVCSInfo.h.in \
 	git_version
 
-MOSTLYCLEANFILES = .vcsinfo
+LALBurstVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALBurstVCSInfo.h: LALBurstVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALBurstVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALBurst $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@
