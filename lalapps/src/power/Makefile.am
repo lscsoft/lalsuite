@@ -3,12 +3,17 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 if LALFRAME
 if LALMETAIO
 if LALBURST
-bin_PROGRAMS = lalapps_power lalapps_binj
-lalapps_power_SOURCES = power.c
+BURSTPROGS = lalapps_binj
 lalapps_binj_SOURCES = binj.c
+if LALINSPIRAL
+INSPPROGS = lalapps_power
+lalapps_power_SOURCES = power.c
 endif
 endif
 endif
+endif
+
+bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)
 
 noinst_PROGRAMS = sense_compare
 sense_compare_SOURCES = sense_compare.c

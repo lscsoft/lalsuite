@@ -88,6 +88,7 @@ LALDestroyRealFFTPlan
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/LALNoiseModelsInspiral.h>
 #include <lalapps.h>
 
 

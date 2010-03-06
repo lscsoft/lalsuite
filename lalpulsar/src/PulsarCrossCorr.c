@@ -372,7 +372,7 @@ void LALCalculateAveUalpha(LALStatus *status,
   deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
-  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
+  im = - 0.1 * sin(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
@@ -427,14 +427,12 @@ void LALCalculateUalpha(LALStatus *status,
     FcrossJ = (beamfnsJ.b * cos(2.0 * (*psi))) - (beamfnsJ.a * sin(2.0 * (*psi)));;
 
     /*calculate G_IJ*/
-    re = 0.25 * ( (cos(deltaPhi)*
-		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq)) )
-		-(sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
+    re = 0.25 * ( (cos(deltaPhi)* (FplusI*FplusJ * amplitudes.Aplussq + FcrossI*FcrossJ * amplitudes.Acrosssq) )
+		- (sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
 
 
-    im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
-	          - (sin(deltaPhi) *
-		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
+    im = 0.25 * ( -(cos(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
+	          - (sin(deltaPhi) * (FplusI*FplusJ*amplitudes.Aplussq + FcrossI*FcrossJ * amplitudes.Acrosssq)) );
 
   /*calculate estimators*/
   gplus->re = 0.25*cos(deltaPhi)*FplusI*FplusJ;

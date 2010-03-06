@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -72,31 +72,11 @@ AC_CONFIG_FILES([ \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
-  packages/inspiral/Makefile \
-  packages/inspiral/doc/Makefile \
-  packages/inspiral/include/Makefile \
-  packages/inspiral/src/Makefile \
-  packages/inspiral/test/Makefile \
   packages/noisemodels/Makefile \
   packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile \
-  packages/bank/Makefile \
-  packages/bank/doc/Makefile \
-  packages/bank/include/Makefile \
-  packages/bank/src/Makefile \
-  packages/bank/test/Makefile \
-  packages/ring/Makefile \
-  packages/ring/doc/Makefile \
-  packages/ring/include/Makefile \
-  packages/ring/src/Makefile \
-  packages/ring/test/Makefile \
-  packages/findchirp/Makefile \
-  packages/findchirp/doc/Makefile \
-  packages/findchirp/include/Makefile \
-  packages/findchirp/src/Makefile \
-  packages/findchirp/test/Makefile \
   packages/support/Makefile \
   packages/support/doc/Makefile \
   packages/support/include/Makefile \

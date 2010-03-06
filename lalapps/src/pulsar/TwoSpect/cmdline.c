@@ -39,13 +39,14 @@ const char *gengetopt_args_info_help[] = {
   "      --P=DOUBLE                Period of binary orbit of fake signal",
   "      --df=DOUBLE               Modulation depth of the signal due to the \n                                  binary orbit",
   "      --Tobs=DOUBLE             Total observation time",
-  "      --Tcoh=DOUBLE             SFT coherence time  (default=`1000')",
+  "      --Tcoh=DOUBLE             SFT coherence time  (default=`1800')",
   "      --t0=DOUBLE               Start time of the search in GPS seconds",
   "      --fs=DOUBLE               Sampling frequency of time series",
   "      --fmin=DOUBLE             Minimum frequency of band",
   "      --fspan=DOUBLE            Frequency span of band",
   "      --cols=INT                Maximum column width to search",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
+  "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
   "      --outdirectory=STRING     Output directory",
   "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lal/share/lal')",
@@ -114,6 +115,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->fspan_given = 0 ;
   args_info->cols_given = 0 ;
   args_info->ihsfar_given = 0 ;
+  args_info->tmplfar_given = 0 ;
   args_info->blksize_given = 0 ;
   args_info->outdirectory_given = 0 ;
   args_info->ephemDir_given = 0 ;
@@ -130,7 +132,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->P_orig = NULL;
   args_info->df_orig = NULL;
   args_info->Tobs_orig = NULL;
-  args_info->Tcoh_arg = 1000;
+  args_info->Tcoh_arg = 1800;
   args_info->Tcoh_orig = NULL;
   args_info->t0_orig = NULL;
   args_info->fs_orig = NULL;
@@ -139,6 +141,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->cols_orig = NULL;
   args_info->ihsfar_arg = 0.01;
   args_info->ihsfar_orig = NULL;
+  args_info->tmplfar_arg = 0.01;
+  args_info->tmplfar_orig = NULL;
   args_info->blksize_arg = 1001;
   args_info->blksize_orig = NULL;
   args_info->outdirectory_arg = NULL;
@@ -171,11 +175,12 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->fspan_help = gengetopt_args_info_help[11] ;
   args_info->cols_help = gengetopt_args_info_help[12] ;
   args_info->ihsfar_help = gengetopt_args_info_help[13] ;
-  args_info->blksize_help = gengetopt_args_info_help[14] ;
-  args_info->outdirectory_help = gengetopt_args_info_help[15] ;
-  args_info->ephemDir_help = gengetopt_args_info_help[16] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_help[17] ;
-  args_info->templateLength_help = gengetopt_args_info_help[18] ;
+  args_info->tmplfar_help = gengetopt_args_info_help[14] ;
+  args_info->blksize_help = gengetopt_args_info_help[15] ;
+  args_info->outdirectory_help = gengetopt_args_info_help[16] ;
+  args_info->ephemDir_help = gengetopt_args_info_help[17] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_help[18] ;
+  args_info->templateLength_help = gengetopt_args_info_help[19] ;
   
 }
 
@@ -268,6 +273,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->fspan_orig));
   free_string_field (&(args_info->cols_orig));
   free_string_field (&(args_info->ihsfar_orig));
+  free_string_field (&(args_info->tmplfar_orig));
   free_string_field (&(args_info->blksize_orig));
   free_string_field (&(args_info->outdirectory_arg));
   free_string_field (&(args_info->outdirectory_orig));
@@ -333,6 +339,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "cols", args_info->cols_orig, 0);
   if (args_info->ihsfar_given)
     write_into_file(outfile, "ihsfar", args_info->ihsfar_orig, 0);
+  if (args_info->tmplfar_given)
+    write_into_file(outfile, "tmplfar", args_info->tmplfar_orig, 0);
   if (args_info->blksize_given)
     write_into_file(outfile, "blksize", args_info->blksize_orig, 0);
   if (args_info->outdirectory_given)
@@ -611,6 +619,7 @@ cmdline_parser_internal (
         { "fspan",	1, NULL, 0 },
         { "cols",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
+        { "tmplfar",	1, NULL, 0 },
         { "blksize",	1, NULL, 0 },
         { "outdirectory",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
@@ -714,7 +723,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->Tcoh_arg), 
                  &(args_info->Tcoh_orig), &(args_info->Tcoh_given),
-                &(local_args_info.Tcoh_given), optarg, 0, "1000", ARG_DOUBLE,
+                &(local_args_info.Tcoh_given), optarg, 0, "1800", ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "Tcoh", '-',
                 additional_error))
@@ -801,6 +810,20 @@ cmdline_parser_internal (
                 &(local_args_info.ihsfar_given), optarg, 0, "0.01", ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "ihsfar", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Template FAR threshold.  */
+          else if (strcmp (long_options[option_index].name, "tmplfar") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->tmplfar_arg), 
+                 &(args_info->tmplfar_orig), &(args_info->tmplfar_given),
+                &(local_args_info.tmplfar_given), optarg, 0, "0.01", ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "tmplfar", '-',
                 additional_error))
               goto failure;
           

@@ -31,8 +31,7 @@ bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearchGC \
 		 lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
-		 eah_HierarchicalSearch eah_HierarchicalSearch_sse eah_HierarchicalSearch_sse2 eah_HierarchicalSearch_cuda
-#lalapps_HierarchicalSearch_v2
+		 eah_HierarchicalSearch eah_HierarchicalSearch_release eah_HierarchicalSearch_cuda
 
 # lalapps_HierarchicalSearch doesn't condor compile
 if CONDOR_ENABLED
@@ -52,11 +51,6 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/SFTbin.h ../src/SFTbin.c \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
-
-#lalapps_HierarchicalSearch_v2_SOURCES = HierarchicalSearch_v2.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
-#			  $(FDSsrc)/FstatToplist.c $(FDSsrc)/FstatToplist.h \
-#			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-#			  $(FDSsrc)/ComputeFStatistic.h
 
 lalapps_HierarchicalSearchGC_SOURCES = HierarchicalSearchGC.c HierarchicalSearchGC.h \
 			  StackSlideFstat.c StackSlideFstat.h \
@@ -94,16 +88,19 @@ lalapps_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) -lcudart
 
 # Einstein@home targets
-eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
-eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-
-eah_HierarchicalSearch_sse_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
-eah_HierarchicalSearch_sse_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchicalSearch_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
-
-eah_HierarchicalSearch_sse2_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
-eah_HierarchicalSearch_sse2_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchicalSearch_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
-
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
 eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA -DEAH_BOINC -DHS_OPTIMIZATION
+
+eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
+eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
+# this shouldn't harm - it just prefers libraries in the build directory over e.g. system ones
+eah_HierarchicalSearch_LDFLAGS = -L. $(AM_LDFLAGS)
+# RELEASE_DEPS contains additional dependencies of the E@H build
+# items in there should have rules listed below to create them
+# the idea is to increase compatibility of E@H applications by linking these libs statically
+eah_HierarchicalSearch_DEPENDENCIES = $(RELEASE_DEPS)
+
+libstdc++.a:
+	cp -f `$(CC) -print-file-name=$@` $@
+libz.a:
+	cp -f `$(CC) -print-file-name=$@` $@

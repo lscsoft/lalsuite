@@ -7,10 +7,7 @@ liblalsupport_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALMath3DPlot.c \
 	LALMathNDPlot.c \
-	LIGOLwXML.c \
-	LIGOLwXMLArray.c \
 	LogPrintf.c \
-	NRWaveIO.c \
 	PrintFrequencySeries.c \
 	PrintTimeSeries.c \
 	PrintVector.c \

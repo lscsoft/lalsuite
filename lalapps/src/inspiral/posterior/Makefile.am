@@ -8,7 +8,7 @@ SUBDIRS = SPINspiral
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
+if LALINSPIRAL
 if LALFRAME
 
 if LALMETAIO
@@ -18,7 +18,7 @@ endif
 
 frame_progs = lalapps_followupMcmc
 lalapps_followupMcmc_SOURCES = followupMcmc.c
-
+endif
 endif
 
 bin_PROGRAMS = $(metaio_progs) $(frame_progs)

@@ -5,6 +5,7 @@ lalstochasticinclude_HEADERS = \
 	AstroOmega.h \
 	LALStochasticConfig.h \
 	LALStochasticVCSInfo.h \
+	LIGOLwXMLStochasticRead.h \
 	SimulatePopcorn.h \
 	SimulateSB.h \
 	StochasticCrossCorrelation.h \
@@ -13,6 +14,8 @@ lalstochasticinclude_HEADERS = \
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \
 	AstroOmega.c \
+	LALStochasticVCSInfo.c \
+	LIGOLwXMLStochasticRead.c \
 	OverlapReductionFunction.c \
 	SimulatePopcorn.c \
 	SimulateSB.c \
@@ -34,6 +37,7 @@ sysconf_DATA = \
 	lalstochastic-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALStochasticVCSInfo.h \
 	lalstochastic-user-env.sh \
 	lalstochastic-user-env.csh
@@ -81,15 +85,11 @@ EXTRA_DIST = \
 	LALStochasticVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALStochasticVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALStochasticVCSInfo.h: LALStochasticVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALStochasticVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALStochastic $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

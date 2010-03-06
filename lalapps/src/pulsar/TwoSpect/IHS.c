@@ -119,42 +119,21 @@ void incHarmSum(ihsVals *out, REAL4Vector *vector)
    INT4 ii, jj, kk, ll, mm, loc;
    REAL4 ihs;
    
-   REAL4Vector *s1 = XLALCreateREAL4Vector(vector->length);
-   REAL4Vector *s2 = XLALCreateREAL4Vector(vector->length);
-   REAL4Vector *s3 = XLALCreateREAL4Vector(vector->length);
-   REAL4Vector *s4 = XLALCreateREAL4Vector(vector->length);
-   REAL4Vector *sum = XLALCreateREAL4Vector(vector->length);
-   
    //Load the stretched spectra
    jj = -1;
    kk = -1;
    ll = -1;
    mm = -1;
+   ihs = 0.0;
+   loc = 0;
    for (ii=0; ii<(INT4)vector->length; ii++) {
       if (ii % 2 == 0) jj++;
       if (ii % 3 == 0) kk++;
       if (ii % 4 == 0) ll++;
       if (ii % 5 == 0) mm++;
-      /*s1->data[ii] = 0.5*vector->data[jj];
-      s2->data[ii] = vector->data[kk]/3.0;
-      s3->data[ii] = 0.25*vector->data[ll];
-      s4->data[ii] = 0.2*vector->data[mm];*/
-      s1->data[ii] = vector->data[jj];
-      s2->data[ii] = vector->data[kk];
-      s3->data[ii] = vector->data[ll];
-      s4->data[ii] = vector->data[mm];
-   }
-   
-   //Sum up the stretched spectra with the original
-   for (ii=0; ii<(INT4)vector->length; ii++) sum->data[ii] = vector->data[ii] + s1->data[ii] + 
-      s2->data[ii] + s3->data[ii] + s4->data[ii];
-   
-   //Find the maximum value and the location
-   ihs = sum->data[0];
-   loc = 0;
-   for (ii=1; ii<(INT4)sum->length; ii++) {
-      if (sum->data[ii] > ihs) {
-         ihs = sum->data[ii];
+      REAL4 sum = vector->data[ii] + 0.5*vector->data[jj] + vector->data[kk]/3.0 + 0.25*vector->data[ll] + 0.2*vector->data[mm];
+      if (sum > ihs && ii > 3) {
+         ihs = sum;
          loc = ii;
       }
    }
@@ -162,13 +141,6 @@ void incHarmSum(ihsVals *out, REAL4Vector *vector)
    //Load the outputs into the structure
    out->ihs = ihs;
    out->loc = loc;
-   
-   //Destroy variables
-   XLALDestroyREAL4Vector(s1);
-   XLALDestroyREAL4Vector(s2);
-   XLALDestroyREAL4Vector(s3);
-   XLALDestroyREAL4Vector(s4);
-   XLALDestroyREAL4Vector(sum);
 
 }
 
@@ -225,21 +197,16 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
    
    ihsVals *ihsvals = new_ihsVals();
    
-   noise = XLALCreateREAL4Vector((UINT4)length);
-   
    //Determine IHS values for the number of trials
+   noise = XLALCreateREAL4Vector((UINT4)length);
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise
       for (jj=0; jj<length; jj++) noise->data[jj] = expRandNum(1.0, rng);
-      //noise = expRandNumVector(1.0, (UINT4)length, rng);
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
       ihss->data[ii] = ihsvals->ihs;
       
-      //Reset noise vector
-      //XLALDestroyREAL4Vector(noise);
-      //noise = NULL;      
    }
    XLALDestroyREAL4Vector(noise);
    
@@ -321,17 +288,6 @@ REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols)
          locInMaximaVector++;
       }
    }
-   
-   //Loop over number of columns to be added up
-   /*for (ii=1; ii<cols; ii++) {
-      //Loop over values of IHS
-      for (jj=0; jj<ihss->length-ii; jj++) {
-         //Sum up IHS values
-         for (kk=0; kk<=ii; kk++) {
-            maxima->data[ii*ihss->length + jj] += ihss->data[jj + kk];
-         }
-      }
-   } */
    
    return maxima;
 

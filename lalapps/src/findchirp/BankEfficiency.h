@@ -24,7 +24,7 @@
 #include <gsl/gsl_matrix.h>
 #include <lalapps.h>
 
-#include <lal/LALNoiseModels.h>
+#include <lal/LALNoiseModelsInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
@@ -41,7 +41,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>

@@ -41,12 +41,16 @@
 #include <lal/LALBurstVCSInfo.h>
 #endif
 
-#ifdef HAVE_LIBLALSTOCHASTIC
-#include <lal/LALStochasticVCSInfo.h>
+#ifdef HAVE_LIBLALINSPIRAL
+#include <lal/LALInspiralVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
 #include <lal/LALPulsarVCSInfo.h>
+#endif
+
+#ifdef HAVE_LIBLALSTOCHASTIC
+#include <lal/LALStochasticVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALXML
@@ -201,11 +205,14 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALBURST
   char lalburst_info[1024];
 #endif
-#ifdef HAVE_LIBLALSTOCHASTIC
-  char lalstochastic_info[1024];
+#ifdef HAVE_LIBLALINSPIRAL
+  char lalinspiral_info[1024];
 #endif
 #ifdef HAVE_LIBLALPULSAR
   char lalpulsar_info[1024];
+#endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  char lalstochastic_info[1024];
 #endif
 #ifdef HAVE_LIBLALXML
   char lalxml_info[1024];
@@ -257,12 +264,12 @@ XLALGetVersionString( int level )
           strsep(&tree_status, delim), lalBurstVCSInfo.vcsId);
 #endif
 
-#ifdef HAVE_LIBLALSTOCHASTIC
-      /* get lalstochastic info */
-      tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
-      snprintf(lalstochastic_info, sizeof(lalstochastic_info),
-          "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
-          strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
+#ifdef HAVE_LIBLALINSPIRAL
+      /* get lalinspiral info */
+      tree_status = strdup(lalInspiralVCSInfo.vcsStatus);
+      snprintf(lalinspiral_info, sizeof(lalinspiral_info),
+          "%%%% LALInspiral: %s (%s %s)\n", lalInspiralVCSInfo.version, \
+          strsep(&tree_status, delim), lalInspiralVCSInfo.vcsId);
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
@@ -271,6 +278,14 @@ XLALGetVersionString( int level )
       snprintf(lalpulsar_info, sizeof(lalpulsar_info),
           "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
           strsep(&tree_status, delim), lalPulsarVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALSTOCHASTIC
+      /* get lalstochastic info */
+      tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
+      snprintf(lalstochastic_info, sizeof(lalstochastic_info),
+          "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
+          strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
 #endif
 
 #ifdef HAVE_LIBLALXML
@@ -372,25 +387,25 @@ XLALGetVersionString( int level )
           LALBURST_CONFIGURE_ARGS );
 #endif
 
-#ifdef HAVE_LIBLALSTOCHASTIC
-      /* get lalstochastic info */
-      snprintf( lalstochastic_info, sizeof(lalstochastic_info),
-          "%%%% LALStochastic-Version: %s\n"
-          "%%%% LALStochastic-Id: %s\n"
-          "%%%% LALStochastic-Date: %s\n"
-          "%%%% LALStochastic-Branch: %s\n"
-          "%%%% LALStochastic-Tag: %s\n"
-          "%%%% LALStochastic-Status: %s\n"
-          "%%%% LALStochastic-Configure Date: %s\n"
-          "%%%% LALStochastic-Configure Arguments: %s\n",
-          lalStochasticVCSInfo.version,
-          lalStochasticVCSInfo.vcsId,
-          lalStochasticVCSInfo.vcsDate,
-          lalStochasticVCSInfo.vcsBranch,
-          lalStochasticVCSInfo.vcsTag,
-          lalStochasticVCSInfo.vcsStatus,
-          LALSTOCHASTIC_CONFIGURE_DATE ,
-          LALSTOCHASTIC_CONFIGURE_ARGS );
+#ifdef HAVE_LIBLALINSIRAL
+      /* get lalinspiral info */
+      snprintf( lalinspiral_info, sizeof(lalinspiral_info),
+          "%%%% LALInspiral-Version: %s\n"
+          "%%%% LALInspiral-Id: %s\n"
+          "%%%% LALInspiral-Date: %s\n"
+          "%%%% LALInspiral-Branch: %s\n"
+          "%%%% LALInspiral-Tag: %s\n"
+          "%%%% LALInspiral-Status: %s\n"
+          "%%%% LALInspiral-Configure Date: %s\n"
+          "%%%% LALInspiral-Configure Arguments: %s\n",
+          lalInspiralVCSInfo.version,
+          lalInspiralVCSInfo.vcsId,
+          lalInspiralVCSInfo.vcsDate,
+          lalInspiralVCSInfo.vcsBranch,
+          lalInspiralVCSInfo.vcsTag,
+          lalInspiralVCSInfo.vcsStatus,
+          LALINSPIRAL_CONFIGURE_DATE ,
+          LALINSPIRAL_CONFIGURE_ARGS );
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
@@ -412,6 +427,27 @@ XLALGetVersionString( int level )
           lalPulsarVCSInfo.vcsStatus,
           LALPULSAR_CONFIGURE_DATE ,
           LALPULSAR_CONFIGURE_ARGS );
+#endif
+
+#ifdef HAVE_LIBLALSTOCHASTIC
+      /* get lalstochastic info */
+      snprintf( lalstochastic_info, sizeof(lalstochastic_info),
+          "%%%% LALStochastic-Version: %s\n"
+          "%%%% LALStochastic-Id: %s\n"
+          "%%%% LALStochastic-Date: %s\n"
+          "%%%% LALStochastic-Branch: %s\n"
+          "%%%% LALStochastic-Tag: %s\n"
+          "%%%% LALStochastic-Status: %s\n"
+          "%%%% LALStochastic-Configure Date: %s\n"
+          "%%%% LALStochastic-Configure Arguments: %s\n",
+          lalStochasticVCSInfo.version,
+          lalStochasticVCSInfo.vcsId,
+          lalStochasticVCSInfo.vcsDate,
+          lalStochasticVCSInfo.vcsBranch,
+          lalStochasticVCSInfo.vcsTag,
+          lalStochasticVCSInfo.vcsStatus,
+          LALSTOCHASTIC_CONFIGURE_DATE ,
+          LALSTOCHASTIC_CONFIGURE_ARGS );
 #endif
 
 #ifdef HAVE_LIBLALXML
@@ -467,11 +503,14 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALBURST
   len += strlen(lalburst_info);
 #endif
-#ifdef HAVE_LIBLALSTOCHASTIC
-  len += strlen(lalstochastic_info);
+#ifdef HAVE_LIBLALINSPIRAL
+  len += strlen(lalinspiral_info);
 #endif
 #ifdef HAVE_LIBLALPULSAR
   len += strlen(lalpulsar_info);
+#endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  len += strlen(lalstochastic_info);
 #endif
 #ifdef HAVE_LIBLALXML
   len += strlen(lalxml_info);
@@ -491,11 +530,14 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALBURST
   strcat ( ret, lalburst_info );
 #endif
-#ifdef HAVE_LIBLALSTOCHASTIC
-  strcat ( ret, lalstochastic_info );
+#ifdef HAVE_LIBLALINSPIRAL
+  strcat ( ret, lalinspiral_info );
 #endif
 #ifdef HAVE_LIBLALPULSAR
   strcat ( ret, lalpulsar_info );
+#endif
+#ifdef HAVE_LIBLALSTOCHASTIC
+  strcat ( ret, lalstochastic_info );
 #endif
 #ifdef HAVE_LIBLALXML
   strcat ( ret, lalxml_info );

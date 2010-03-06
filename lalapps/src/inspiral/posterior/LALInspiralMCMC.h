@@ -467,6 +467,12 @@ void XLALMCMCRotateSky(
 	LALMCMCParameter *parameter
 	);
 
+void XLALMCMCJumpSingle(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter,
+  gsl_matrix       *covMat
+);
+
 int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
 
 INT4 XLALMCMCCheckParameter(

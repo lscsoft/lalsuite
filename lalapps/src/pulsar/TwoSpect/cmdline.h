@@ -58,7 +58,7 @@ struct gengetopt_args_info
   double Tobs_arg;	/**< @brief Total observation time.  */
   char * Tobs_orig;	/**< @brief Total observation time original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time help description.  */
-  double Tcoh_arg;	/**< @brief SFT coherence time (default='1000').  */
+  double Tcoh_arg;	/**< @brief SFT coherence time (default='1800').  */
   char * Tcoh_orig;	/**< @brief SFT coherence time original value given at command line.  */
   const char *Tcoh_help; /**< @brief SFT coherence time help description.  */
   double t0_arg;	/**< @brief Start time of the search in GPS seconds.  */
@@ -79,6 +79,9 @@ struct gengetopt_args_info
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
+  double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
+  char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
+  const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
   int blksize_arg;	/**< @brief Blocksize for running median of 1st FFT band (default='1001').  */
   char * blksize_orig;	/**< @brief Blocksize for running median of 1st FFT band original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median of 1st FFT band help description.  */
@@ -109,6 +112,7 @@ struct gengetopt_args_info
   unsigned int fspan_given ;	/**< @brief Whether fspan was given.  */
   unsigned int cols_given ;	/**< @brief Whether cols was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
+  unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */

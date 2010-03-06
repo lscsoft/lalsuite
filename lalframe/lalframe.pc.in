@@ -7,5 +7,5 @@ Name: LALFrame
 Description: LAL Frame Library Support
 Version: @VERSION@
 Requires: lal libframe
-Libs: -L${libdir} -llalframe @LIBFRAME_LIBS@
-Cflags: -I${includedir} @LIBFRAME_CFLAGS@
+Libs: -L${libdir} -llalframe
+Cflags: -I${includedir}

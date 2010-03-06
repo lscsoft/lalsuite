@@ -8,6 +8,8 @@ lalburstinclude_HEADERS = \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
 	LALSimBurst.h \
+	LIGOLwXMLBurstRead.h \
+	LIGOMetadataBurstUtils.h \
 	TFTransform.h \
 	TSData.h \
 	TSSearch.h \
@@ -28,8 +30,11 @@ liblalburst_la_SOURCES = \
 	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \
+	LALBurstVCSInfo.c \
 	LALSimBurst.c \
+	LIGOLwXMLBurstRead.c \
 	RefInterference.c \
+	SnglBurstUtils.c \
 	TSData.c \
 	TfrPswv.c \
 	TfrRsp.c \
@@ -48,6 +53,7 @@ sysconf_DATA = \
 	lalburst-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALBurstVCSInfo.h \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
@@ -94,15 +100,11 @@ EXTRA_DIST = \
 	LALBurstVCSInfo.h.in \
 	git_version
 
-MOSTLYCLEANFILES = .vcsinfo
+LALBurstVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALBurstVCSInfo.h: LALBurstVCSInfo.h.in .vcsinfo git_version
+._vcsinfo:
 	@echo "creating LALBurstVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALBurst $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

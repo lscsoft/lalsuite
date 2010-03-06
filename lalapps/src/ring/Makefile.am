@@ -3,23 +3,34 @@
 if FRAME
 if LALFRAME
 if LALMETAIO
-RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread lalapps_rinca \
-           lalapps_coincringread lalapps_collatesim
-else
-RINGPROG =
+if LALINSPIRAL
+RINGPROG = \
+	lalapps_ring \
+	lalapps_rinj \
+	lalapps_ringread \
+	lalapps_rinca \
+	lalapps_coincringread \
+	lalapps_collatesim
 endif
-else
-RINGPROG =
 endif
-else
-RINGPROG =
 endif
-bin_PROGRAMS = $(RINGPROG) \
-	       lalapps_qnmode lalapps_qnmode_table lalapps_spheroidal_harmonic \
-	       lalapps_ringdown_amplitude lalapps_ringdown_waveform
+endif
+
+if LALINSPIRAL
+INSPPROG = \
+	lalapps_qnmode \
+	lalapps_qnmode_table \
+	lalapps_spheroidal_harmonic \
+	lalapps_ringdown_amplitude \
+	lalapps_ringdown_waveform
+endif
+
+bin_PROGRAMS = $(RINGPROG) $(INSPPROG)
+
 if FRAME
 if LALFRAME
 if LALMETAIO
+if LALINSPIRAL
 lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
          errutil.c errutil.h \
          gpstime.c gpstime.h \
@@ -36,11 +47,14 @@ lalapps_collatesim_SOURCES = collatesim.c
 endif
 endif
 endif
+endif
+if LALINSPIRAL
 lalapps_qnmode_SOURCES = qnmode.c
 lalapps_qnmode_table_SOURCES = qnmode_table.c
 lalapps_spheroidal_harmonic_SOURCES = spheroidal_harmonic.c
 lalapps_ringdown_amplitude_SOURCES = ringdown_amplitude.c
 lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
+endif
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID

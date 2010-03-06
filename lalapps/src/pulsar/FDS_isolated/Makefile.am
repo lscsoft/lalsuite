@@ -100,7 +100,7 @@ EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 tes
 TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
 
 if !CONDOR_ENABLED
-TESTS += testCFSv2.sh testGridv2.sh testCFSv2GPU.sh
+TESTS += testCFSv2.sh testGridv2.sh ## testCFSv2GPU.sh
 endif
 
 

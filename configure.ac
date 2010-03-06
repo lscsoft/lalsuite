@@ -28,6 +28,9 @@ export LALMETAIO_LIBS LALMETAIO_CFLAGS
 LALBURST_LIBS="${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
 LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
 export LALBURST_LIBS LALBURST_CFLAGS
+LALINSPIRAL_LIBS="${lalsuite_top_builddir}/lalinspiral/src/liblalinspiral.la"
+LALINSPIRAL_CFLAGS="-I${lalsuite_top_builddir}/lalinspiral/include"
+export LALINSPIRAL_LIBS LALINSPIRAL_CFLAGS
 LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
 LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
 export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
@@ -42,6 +45,7 @@ AC_CONFIG_SUBDIRS([lal])
 AC_CONFIG_SUBDIRS([lalframe])
 AC_CONFIG_SUBDIRS([lalmetaio])
 AC_CONFIG_SUBDIRS([lalburst])
+AC_CONFIG_SUBDIRS([lalinspiral])
 AC_CONFIG_SUBDIRS([lalstochastic])
 AC_CONFIG_SUBDIRS([lalpulsar])
 AC_CONFIG_SUBDIRS([lalxml])

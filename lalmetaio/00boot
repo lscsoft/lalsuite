@@ -12,8 +12,6 @@ Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                        print this message"
 helpmsg="$helpmsg
-  --with-m4=M4                  use GNU-m4 program M4 [m4]"
-helpmsg="$helpmsg
   --with-autoreconf=AUTORECONF  use autoreconf program AUTORECONF [autoreconf]"
 helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"

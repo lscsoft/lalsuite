@@ -29,7 +29,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/FindChirp.h>
 #include <lal/Units.h>
@@ -454,21 +454,26 @@ int main(int argc, char *argv[])
           fprintf(stderr,"Multiplying by %lf to get from %lf to target\n",1.01*(NetworkSNR/maxSNR),NetworkSNR);}
       }
     }
-    if(max_chirp_dist!=0.0){
+    if(max_chirp_dist!=0.0 && (maxSNR==0 || (maxSNR!=0 && (maxSNR>NetworkSNR) ) )  ){
 	double this_max=0.0;
+	double second_max=0.0;
 	char ifostr[]="HLV";
 	for(int cidx=0;cidx<3;cidx++)
 	{
 		if(this_max<chirpDist(injTable,ifostr[cidx])) this_max=chirpDist(injTable,ifostr[cidx]);
 	}
-	injTable->distance*=0.95*(max_chirp_dist/this_max);
-	injTable->eff_dist_h*=0.95*max_chirp_dist/this_max;
-	injTable->eff_dist_l*=0.95*max_chirp_dist/this_max;
-	injTable->eff_dist_v*=0.95*max_chirp_dist/this_max;
-	injTable->eff_dist_t*=0.95*max_chirp_dist/this_max;
-	injTable->eff_dist_g*=0.95*max_chirp_dist/this_max;
+	for(int cidx=0;cidx<3;cidx++)
+		if(second_max<chirpDist(injTable,ifostr[cidx]) && chirpDist(injTable,ifostr[cidx])<this_max) second_max=chirpDist(injTable,ifostr[cidx]);
+	if(second_max>max_chirp_dist){
+	injTable->distance*=0.95*(max_chirp_dist/second_max);
+	injTable->eff_dist_h*=0.95*max_chirp_dist/second_max;
+	injTable->eff_dist_l*=0.95*max_chirp_dist/second_max;
+	injTable->eff_dist_v*=0.95*max_chirp_dist/second_max;
+	injTable->eff_dist_t*=0.95*max_chirp_dist/second_max;
+	injTable->eff_dist_g*=0.95*max_chirp_dist/second_max;
 	rewriteXML=1; repeatLoop=1;
-	fprintf(stderr,"MCD: Multiplying distance by %lf to get from %lf to target\n",0.95*max_chirp_dist/this_max,this_max);
+	fprintf(stderr,"MCD: Multiplying distance by %lf to get from %lf to target\n",0.95*max_chirp_dist/second_max,second_max);
+    	}
     }
     if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
 

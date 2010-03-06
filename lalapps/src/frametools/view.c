@@ -43,9 +43,11 @@
 #include <lal/Units.h>
 #include <lal/LALCalibration.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/FindChirp.h>
 #include <lal/GenerateBurst.h>
 

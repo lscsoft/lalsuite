@@ -40,25 +40,16 @@ extern "C" {
 #define LALMETAIO_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALMETAIO_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALMETAIO_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALMETAIO_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALMETAIO_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALMETAIO_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALMETAIO_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALMETAIO_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALMETAIO_VCS_IDENT_ID "$" "LALMetaIOId: @ID@ " "$"
+#define LALMETAIO_VCS_IDENT_DATE "$" "LALMetaIODate: @DATE@ " "$"
+#define LALMETAIO_VCS_IDENT_BRANCH "$" "LALMetaIOBranch: @BRANCH@ " "$"
+#define LALMETAIO_VCS_IDENT_TAG "$" "LALMetaIOTag: @TAG@ " "$"
+#define LALMETAIO_VCS_IDENT_AUTHOR "$" "LALMetaIOAuthor: @AUTHOR@ " "$"
+#define LALMETAIO_VCS_IDENT_COMMITTER "$" "LALMetaIOCommitter: @COMMITTER@ " "$"
+#define LALMETAIO_VCS_IDENT_STATUS "$" "LALMetaIOStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalMetaIOVCSInfo = { \
-  LALMETAIO_VERSION, \
-  LALMETAIO_VCS_ID, \
-  LALMETAIO_VCS_DATE, \
-  LALMETAIO_VCS_BRANCH, \
-  LALMETAIO_VCS_TAG, \
-  LALMETAIO_VCS_AUTHOR, \
-  LALMETAIO_VCS_COMMITTER, \
-  LALMETAIO_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalMetaIOVCSInfo;
 
 #ifdef __cplusplus
 }

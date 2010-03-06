@@ -23,14 +23,15 @@ import os
 import sys
 import pickle
 
-ifo    = sys.argv[1]
-thresh = float(sys.argv[2])
-dirs   = sys.argv[3:]
+ifo      = sys.argv[1]
+category = int(sys.argv[2])
+thresh   = float(sys.argv[3])
+dirs     = sys.argv[4:]
 
 all_triggers = []
 
 for d in dirs:
-    trigger_file  = '%s/%s-4-INSPIRAL_16SEC_CLUSTERED.csv' % (d,ifo)
+    trigger_file  = '%s/%s-%d-INSPIRAL_16SEC_CLUSTERED.csv' % (d,ifo,category)
     triggers      = [x.strip().split(',') for x in open(trigger_file)]
     all_triggers += [(x[0], float(x[3])) for x in triggers if float(x[3]) > thresh]
 

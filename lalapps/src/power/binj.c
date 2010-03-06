@@ -50,6 +50,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>

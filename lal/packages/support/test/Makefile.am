@@ -4,7 +4,6 @@ check_PROGRAMS = \
 	ConfigFileTest \
 	LALMath3DPlotTest \
 	LALMathNDPlotTest \
-	NRWaveIOTest \
 	PrintFTSeriesTest \
 	PrintVectorTest \
 	ReadFTSeriesTest \
@@ -33,11 +32,6 @@ LALMath3DPlotTest_LDADD = \
 
 LALMathNDPlotTest_SOURCES = LALMathNDPlotTest.c
 LALMathNDPlotTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-NRWaveIOTest_SOURCES = NRWaveIOTest.c
-NRWaveIOTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 

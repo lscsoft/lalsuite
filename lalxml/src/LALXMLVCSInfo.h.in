@@ -40,25 +40,16 @@ extern "C" {
 #define LALXML_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALXML_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALXML_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALXML_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALXML_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALXML_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALXML_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALXML_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALXML_VCS_IDENT_ID "$" "LALXMLId: @ID@ " "$"
+#define LALXML_VCS_IDENT_DATE "$" "LALXMLDate: @DATE@ " "$"
+#define LALXML_VCS_IDENT_BRANCH "$" "LALXMLBranch: @BRANCH@ " "$"
+#define LALXML_VCS_IDENT_TAG "$" "LALXMLTag: @TAG@ " "$"
+#define LALXML_VCS_IDENT_AUTHOR "$" "LALXMLAuthor: @AUTHOR@ " "$"
+#define LALXML_VCS_IDENT_COMMITTER "$" "LALXMLCommitter: @COMMITTER@ " "$"
+#define LALXML_VCS_IDENT_STATUS "$" "LALXMLStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalXMLVCSInfo = { \
-  LALXML_VERSION, \
-  LALXML_VCS_ID, \
-  LALXML_VCS_DATE, \
-  LALXML_VCS_BRANCH, \
-  LALXML_VCS_TAG, \
-  LALXML_VCS_AUTHOR, \
-  LALXML_VCS_COMMITTER, \
-  LALXML_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalXMLVCSInfo;
 
 #ifdef __cplusplus
 }

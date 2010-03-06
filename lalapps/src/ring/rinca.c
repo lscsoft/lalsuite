@@ -38,8 +38,8 @@
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOLwXMLRingdownRead.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/SegmentsIO.h>
@@ -101,6 +101,7 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
+      "  [--write-compress]            write a compressed xml file\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
@@ -198,6 +199,7 @@ int main( int argc, char *argv[] )
   UINT4  numTriples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
+  INT4 outCompress = 0;
   UINT4  slideH1H2Together = 0;
 
   LALDetector          aDet;
@@ -255,6 +257,7 @@ int main( int argc, char *argv[] )
     {"h1-h2-consistency",   no_argument,   &h1h2Consistency,          1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
     {"complete-coincs",     no_argument,   &completeCoincs,           1 },
+    {"write-compress",      no_argument,   &outCompress,              1 },
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
     {"l1-slide",            required_argument, 0,                    'e'},
@@ -913,6 +916,17 @@ if ( vrbflg)
         "%s", comment );
   }
 
+  if ( outCompress )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--write-compress" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
 
   /* store the check-times in the process_params table */
   if ( checkTimes )
@@ -1493,7 +1507,7 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag && ifoTag)
+  if ( userTag && ifoTag && !outCompress)
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
@@ -1502,18 +1516,48 @@ cleanexit:
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
-  else if ( ifoTag )
+  else if  ( !userTag && ifoTag && !outCompress ) 
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  else if ( userTag )
+  else if ( userTag && !ifoTag && !outCompress )
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml", 
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && ifoTag && outCompress)
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s_%s-%d-%d.xml.gz",   
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s_%s-%d-%d.xml.gz",   
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+  }
+  else if  ( !userTag && ifoTag && outCompress ) 
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && !ifoTag && outCompress )
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && !ifoTag && outCompress )
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE-%d-%d.xml.gz",
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else

@@ -39,7 +39,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>

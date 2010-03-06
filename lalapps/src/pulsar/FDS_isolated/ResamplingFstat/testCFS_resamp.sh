@@ -163,11 +163,11 @@ echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
 echo "----- CFS v1: "
-cat $outfile_v1 | sed -e"/^%.*/{d}"
+cat $outfile_v1 | grep -v "%%"
 echo "----- CFS resamp WITH noise-weights: "
-cat $outfile_resampNWon | sed -e"/^%.*/{d}"
+cat $outfile_resampNWon | grep -v "%%"
 echo "----- CFS resamp WITHOUT noise-weights: "
-cat $outfile_resampNWoff | sed -e"/^%.*/{d}"
+cat $outfile_resampNWoff | grep -v "%%"
 
 
 echo
