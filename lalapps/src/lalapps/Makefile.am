@@ -68,7 +68,7 @@ BUILT_SOURCES = \
 
 LALAppsVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALAppsVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALApps $$sourced $$buildd

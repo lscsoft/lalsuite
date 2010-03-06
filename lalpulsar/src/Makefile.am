@@ -175,7 +175,7 @@ EXTRA_DIST = \
 
 LALPulsarVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALPulsarVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALPulsar $$sourced $$buildd

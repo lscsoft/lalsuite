@@ -102,7 +102,7 @@ EXTRA_DIST = \
 
 LALBurstVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALBurstVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALBurst $$sourced $$buildd

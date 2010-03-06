@@ -87,7 +87,7 @@ EXTRA_DIST = \
 
 LALStochasticVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALStochasticVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALStochastic $$sourced $$buildd

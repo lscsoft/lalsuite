@@ -42,7 +42,7 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 
 LALVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 	./git_version --sed LAL $$sourced $$buildd

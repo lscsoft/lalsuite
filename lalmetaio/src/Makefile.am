@@ -79,7 +79,7 @@ lalmetaio-user-env.csh: Makefile
 
 LALMetaIOVCSInfo.h: ._vcsinfo
 
-._vcsinfo:
+._vcsinfo: git_version
 	@echo "creating LALMetaIOVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALMetaIO $$sourced $$buildd
