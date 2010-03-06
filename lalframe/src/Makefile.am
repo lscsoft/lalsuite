@@ -81,6 +81,7 @@ EXTRA_DIST = \
 	FrameSeries.m4 \
 	FrameSeriesRead.m4 \
 	FrameSeriesWrite.m4 \
+	LALFrameConfig.h.in \
 	LALFrameVCSInfo.h.in
 
 MAINTAINERCLEANFILES = FrameSeries.c

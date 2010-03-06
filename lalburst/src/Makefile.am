@@ -97,6 +97,7 @@ lalburst-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
+	LALBurstConfig.h.in \
 	LALBurstVCSInfo.h.in \
 	git_version
 

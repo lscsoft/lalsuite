@@ -23,6 +23,7 @@ liblalmetaio_la_SOURCES = \
 
 EXTRA_DIST = \
 	git_version \
+	LALMetaIOConfig.h.in \
 	LALMetaIOVCSInfo.h.in
 
 CLEANFILES = \
