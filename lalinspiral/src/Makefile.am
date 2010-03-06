@@ -253,7 +253,7 @@ EXTRA_DIST = \
 
 LALInspiralVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version
+._vcsinfo: git_version LALInspiralConfig.h
 	@echo "creating LALInspiralVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALInspiral $$sourced $$buildd

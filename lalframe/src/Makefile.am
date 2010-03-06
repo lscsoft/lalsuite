@@ -91,7 +91,7 @@ FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 
 LALFrameVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version
+._vcsinfo: git_version LALFrameConfig.h
 	@echo "creating LALFrameVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALFrame $$sourced $$buildd

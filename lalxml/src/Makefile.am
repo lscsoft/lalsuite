@@ -75,7 +75,7 @@ EXTRA_DIST = \
 
 LALXMLVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version
+._vcsinfo: git_version LALXMLConfig.h
 	@echo "creating LALXMLVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALXML $$sourced $$buildd
