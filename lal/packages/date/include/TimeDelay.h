@@ -73,36 +73,6 @@ NRCSID( TIMEDELAYH, "$Id$" );
 #define TIMEDELAYH_MSGENUL "Unexpected null pointer in arguments"
 /* </lalErrTable> */
 
-/* <lalLaTeX>
-
-\subsection*{Structures}
-\begin{verbatim}
-DetTimeAndASource
-\end{verbatim}
-\idx[Type]{DetTimeAndASource}
-
-\noindent This structure stores one pointer to a \verb+LALPlaceAndGPS+
-structure, and a pointer to a \verb+SkyPosition+ structure.  The
-fields are:
-
-\begin{description}
-\item{\verb+LALPlaceAndGPS *p_det_and_time+} The detector and GPS
-\item{\verb+SkyPosition *p_source+}  The source location (equatorial
-    co\"{o}dinates in decimal radians)
-\end{description}
-
-</lalLaTeX> */
-
-typedef struct
-tagDetTimeAndASource
-{
-  LALPlaceAndGPS *p_det_and_time; /* detector and detection time */
-  SkyPosition    *p_source;       /* source Equatorial location
-                                   * (lon=RA, lat=dec) in decimal
-                                   * radians */
-}
-DetTimeAndASource;
-
 
 /* <lalLaTeX>
 \vfill{\footnotesize\input{TimeDelayHV}}
@@ -139,11 +109,6 @@ XLALTimeDelayFromEarthCenter(
 	double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 );
-
-void
-LALTimeDelayFromEarthCenter( LALStatus               *status,
-                             REAL8                   *p_delay,
-                             const DetTimeAndASource *p_det_time_and_source );
 
 #ifdef __cplusplus
 }

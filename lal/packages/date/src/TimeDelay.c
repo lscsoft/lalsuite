@@ -42,9 +42,8 @@ detectors.
 
 \subsubsection*{Description}
 
-The function LALTimeDelayFromEarthCenter() Computes difference in arrival time
-of the same signal at detector and at center of Earth-fixed frame.  Equivalent
-to LALTimeDelay() with detector 1 set to the geocenter.
+The function XLALTimeDelayFromEarthCenter() Computes difference in arrival
+time of the same signal at detector and at center of Earth-fixed frame.
 
 The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
@@ -152,29 +151,6 @@ double XLALTimeDelayFromEarthCenter(
 	 */
 
 	return XLALArrivalTimeDiff(detector_earthfixed_xyz_metres, earth_center, source_right_ascension_radians, source_declination_radians, gpstime);
-}
-
-
-/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
-void LALTimeDelayFromEarthCenter(
-	LALStatus *stat,
-	REAL8 *p_time_diff,
-	const DetTimeAndASource *p_det_time_and_source
-)
-{/* </lalVerbatim> */
-	INITSTATUS(stat, "LALTimeDelayFromEarthCenter", TIMEDELAYC);
-	ATTATCHSTATUSPTR(stat);
-	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-
-	XLALPrintDeprecationWarning("LALTimeDelayFromEarthCenter", "XLALTimeDelayFromEarthCenter");
-
-	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_det_and_time->p_gps);
-
-	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
-
-	DETATCHSTATUSPTR(stat);
-	RETURN(stat);
 }
 
 
