@@ -167,13 +167,17 @@ def generate_git_version_info():
   # refresh index
   retcode = subprocess.call('git update-index -q --refresh', shell=True)
 
-  # determine tree status
-  status_cmd = 'git diff-index --quiet HEAD'
-  status_output = run_external_command(status_cmd, honour_ret_code=False)[0]
+  # check working copy for changes
+  status_output = subprocess.call('git diff-files --quiet', shell=True)
   if status_output != 0:
-    git_status = 'UNCLEAN: Some modifications not committed'
+    git_status = 'UNCLEAN: Modified working tree'
   else:
-    git_status = 'CLEAN: All modifications committed'
+    # check index for changes
+    status_output = subprocess.call('git diff-index --cached --quiet HEAD', shell=True)
+    if status_output != 0:
+      git_status = 'UNCLEAN: Modified index'
+    else:
+      git_status = 'CLEAN: All modifications committed'
 
   # determine version strings
   info.id = git_id
