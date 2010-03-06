@@ -164,6 +164,9 @@ def generate_git_version_info():
   git_committer_email = run_external_command(committer_email_cmd)[1].strip()
   git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
 
+  # refresh index
+  retcode = subprocess.call('git update-index -q --refresh', shell=True)
+
   # determine tree status
   status_cmd = 'git diff-index --quiet HEAD'
   status_output = run_external_command(status_cmd, honour_ret_code=False)[0]
