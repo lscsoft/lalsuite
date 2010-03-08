@@ -90,8 +90,6 @@ AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
 ])
-AH_TEMPLATE([LAL_SIZEOF_DOUBLE],[The number of bytes in a double.])
-AH_TEMPLATE([LAL_SIZEOF_FLOAT],[The number of bytes in a float.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])
@@ -345,8 +343,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF([float],[4])
-LAL_CHECK_SIZEOF([double],[8])
 
 # checks for library functions
 AC_CHECK_FUNCS([getopt])
