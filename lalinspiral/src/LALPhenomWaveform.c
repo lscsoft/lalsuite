@@ -77,7 +77,7 @@ static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
 				       REAL8           cutFreq,
 				       REAL8           deltaT);
 
-NRCSID (LALPHENOMWAVEFORMC, "$Id: LALPhenomWaveform.c,v 1.13 2009/04/01 00:54:59 ajith Exp $");
+NRCSID (LALPHENOMWAVEFORMC, "$Id$");
 
 
 /*********************************************************************/

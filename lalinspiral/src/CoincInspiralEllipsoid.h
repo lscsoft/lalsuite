@@ -23,15 +23,12 @@
  *
  * Author: Robinson, C. A.
  *
- * Revision: $Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $
- *
  *-----------------------------------------------------------------------
  */
 
 #if 0
 <lalVerbatim file="CoincInspiralEllipsoidHV">
 Author: Robinson, C. A.
-$Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $
 </lalVerbatim>
 
 <lalLaTeX>
@@ -73,7 +70,7 @@ using error ellipsoids.
 extern "C" {
 #endif
 
-NRCSID( COINCINSPIRALELLIPSOIDH, "$Id: CoincInspiralEllipsoid.h,v 1.7 2007/06/08 14:41:56 bema Exp $" );
+NRCSID( COINCINSPIRALELLIPSOIDH, "$Id$" );
 
 /* <lalVerbatim> */
 typedef struct tagTriggerErrorList

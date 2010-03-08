@@ -35,18 +35,6 @@
 /* The number of bytes in a float.  */
 #undef LAL_SIZEOF_FLOAT
 
-/* The number of bytes in a int.  */
-#undef LAL_SIZEOF_INT
-
-/* The number of bytes in a long.  */
-#undef LAL_SIZEOF_LONG
-
-/* The number of bytes in a long long.  */
-#undef LAL_SIZEOF_LONG_LONG
-
-/* The number of bytes in a short.  */
-#undef LAL_SIZEOF_SHORT
-
 /* Suppress debugging code */
 #undef LAL_NDEBUG
 
@@ -58,9 +46,6 @@
 
 /* Define if using fftw3 library */
 #undef LAL_FFTW3_ENABLED
-
-/* Define if using MetaIo library */
-#undef LAL_METAIO_ENABLED
 
 /* Define if using boinc library */
 #undef LAL_BOINC_ENABLED

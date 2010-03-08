@@ -217,9 +217,11 @@ void initialise(int argc, char *argv[]){
 			break;
 		case 'm':
 			manual_mass_low=atof(optarg);
+			printf("setting m_low=%e\n",manual_mass_low);
 			break;
 		case 'g':
 			manual_mass_high=atof(optarg);
+			printf("setting m_high=%e\n",manual_mass_high);
 			break;
 		case 't':
 			timewindow=atof(optarg);

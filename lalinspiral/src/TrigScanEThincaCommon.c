@@ -23,21 +23,18 @@
  *
  * Author: Robinson, C. A. K.
  *
- * Revision: $Id: SnglInspiralUtils.c,v 1.74 2007/08/09 17:21:34 dkeppel Exp $
- *
  *-----------------------------------------------------------------------
  */
 
 #if 0
 <lalVerbatim file="TrigScanEThincaCommonCV">
 Author: Robinson, C. A. K.
-$Id: SnglInspiralUtils.c,v 1.74 2007/08/09 17:21:34 dkeppel Exp $
 </lalVerbatim>
 #endif
 
 #include <lal/TrigScanEThincaCommon.h>
 
-NRCSID( TRIGSCANETHINCACOMMONC, "$Id: SnglInspiralUtils.c,v 1.74 2007/08/09 17:21:34 dkeppel Exp $" );
+NRCSID( TRIGSCANETHINCACOMMONC, "$Id$" );
 
 #if 0
 <lalLaTeX>

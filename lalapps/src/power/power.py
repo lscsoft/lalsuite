@@ -811,7 +811,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	"""
 	global datafindjob, rmjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, burca2job, sqlitejob, burcatailorjob
 
-	# LSCdataFind
+	# ligo_data_find
 	if "datafind" in job_types:
 		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
 
@@ -970,7 +970,7 @@ datafind_pad = 512
 
 def make_datafind_fragment(dag, instrument, seg):
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
+	node.set_name("ligo_data_find-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
 	# FIXME: argh, I need the node to know what instrument it's for,
@@ -1218,7 +1218,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 #
 # =============================================================================
 #
-#                              LSCdataFind Stage
+#                             ligo_data_find Stage
 #
 # =============================================================================
 #
@@ -1226,13 +1226,13 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 
 def make_datafind_stage(dag, seglists, verbose = False):
 	if verbose:
-		print >>sys.stderr, "building LSCdataFind jobs ..."
+		print >>sys.stderr, "building ligo_data_find jobs ..."
 
 	#
 	# Fill gaps smaller than the padding added to each datafind job.
 	# Filling in the gaps ensures that exactly 1 datafind job is
 	# suitable for each lalapps_power job, and also hugely reduces the
-	# number of LSCdataFind nodes in the DAG.
+	# number of ligo_data_find nodes in the DAG.
 	#
 
 	filled = seglists.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)

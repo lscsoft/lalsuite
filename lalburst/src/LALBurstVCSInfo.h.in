@@ -40,25 +40,16 @@ extern "C" {
 #define LALBURST_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALBURST_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALBURST_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALBURST_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALBURST_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALBURST_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALBURST_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALBURST_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALBURST_VCS_IDENT_ID "$" "LALBurstId: @ID@ " "$"
+#define LALBURST_VCS_IDENT_DATE "$" "LALBurstDate: @DATE@ " "$"
+#define LALBURST_VCS_IDENT_BRANCH "$" "LALBurstBranch: @BRANCH@ " "$"
+#define LALBURST_VCS_IDENT_TAG "$" "LALBurstTag: @TAG@ " "$"
+#define LALBURST_VCS_IDENT_AUTHOR "$" "LALBurstAuthor: @AUTHOR@ " "$"
+#define LALBURST_VCS_IDENT_COMMITTER "$" "LALBurstCommitter: @COMMITTER@ " "$"
+#define LALBURST_VCS_IDENT_STATUS "$" "LALBurstStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalBurstVCSInfo = { \
-  LALBURST_VERSION, \
-  LALBURST_VCS_ID, \
-  LALBURST_VCS_DATE, \
-  LALBURST_VCS_BRANCH, \
-  LALBURST_VCS_TAG, \
-  LALBURST_VCS_AUTHOR, \
-  LALBURST_VCS_COMMITTER, \
-  LALBURST_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalBurstVCSInfo;
 
 #ifdef __cplusplus
 }

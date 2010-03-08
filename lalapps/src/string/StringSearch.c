@@ -100,6 +100,7 @@ extern int optind, opterr, optopt;
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
 
+/* FIXME:  should be "lalapps_StringSearch" to match the executable */
 #define PROGRAM_NAME "StringSearch"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"

@@ -31,7 +31,7 @@ bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearchGC \
 		 lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
-		 eah_HierarchicalSearch eah_HierarchicalSearch_release eah_HierarchicalSearch_cuda
+		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda
 
 # lalapps_HierarchicalSearch doesn't condor compile
 if CONDOR_ENABLED
@@ -88,18 +88,19 @@ lalapps_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) -lcudart
 
 # Einstein@home targets
-eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
-eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
 eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA -DEAH_BOINC -DHS_OPTIMIZATION
 
-# link the 'release' version with a static libstdc++
-# this possibly only works on some systems, so keep this in optional targets
-eah_HierarchicalSearch_release_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
-eah_HierarchicalSearch_release_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
-eah_HierarchicalSearch_release_LDFLAGS = $(AM_LDFLAGS) -L.
-eah_HierarchicalSearch_release_DEPENDENCIES = libstdc++.a
+eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
+eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
+# this shouldn't harm - it just prefers libraries in the build directory over e.g. system ones
+eah_HierarchicalSearch_LDFLAGS = -L. $(AM_LDFLAGS)
+# RELEASE_DEPS contains additional dependencies of the E@H build
+# items in there should have rules listed below to create them
+# the idea is to increase compatibility of E@H applications by linking these libs statically
+eah_HierarchicalSearch_DEPENDENCIES = $(RELEASE_DEPS)
 
 libstdc++.a:
-	cp -f `$(CXX) -print-file-name=libstdc++.a` .
+	cp -f `$(CC) -print-file-name=$@` $@
+libz.a:
+	cp -f `$(CC) -print-file-name=$@` $@

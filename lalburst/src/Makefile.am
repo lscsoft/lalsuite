@@ -30,6 +30,7 @@ liblalburst_la_SOURCES = \
 	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \
+	LALBurstVCSInfo.c \
 	LALSimBurst.c \
 	LIGOLwXMLBurstRead.c \
 	RefInterference.c \
@@ -52,6 +53,7 @@ sysconf_DATA = \
 	lalburst-user-env.csh
 
 BUILT_SOURCES = \
+	._vcsinfo \
 	LALBurstVCSInfo.h \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
@@ -95,18 +97,15 @@ lalburst-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
+	LALBurstConfig.h.in \
 	LALBurstVCSInfo.h.in \
 	git_version
 
-MOSTLYCLEANFILES = .vcsinfo
+LALBurstVCSInfo.h: ._vcsinfo
 
-.vcsinfo:
-	@touch .vcsinfo
-
-LALBurstVCSInfo.h: LALBurstVCSInfo.h.in .vcsinfo git_version
+._vcsinfo: git_version LALBurstConfig.h
 	@echo "creating LALBurstVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALBurst $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@
