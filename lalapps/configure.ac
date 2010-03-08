@@ -69,6 +69,7 @@ LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_BOINC
+LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
@@ -385,6 +386,13 @@ if test "$GCC" = yes; then
   if test "x$MACOSX_VERSION" != "x"; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
+fi
+
+# add -all-static to AM_LDFLAGS for --enable-static-binaries
+if test "${static_binaries}" = "true"; then
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
 fi
 
 # restore all static to ldflags

@@ -125,6 +125,25 @@ AC_MSG_RESULT([unknown])
 [boinc=false])
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES],
+[AC_ARG_ENABLE(
+  [static_binaries],
+  AC_HELP_STRING([--enable-static-binaries],[build static binaries [default=no]]),
+  [ case "${enableval}" in
+      yes) static_binaries=true;;
+      no)  static_binaries=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-static-binaries) ;;
+    esac
+  ], [ static_binaries=false ] )
+if test "$condor" = "true"; then
+  static_binaries=false
+fi
+if test "$boinc" = "true"; then
+  static_binaries=false
+fi
+])
+
+
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
 [AC_ARG_ENABLE(
   [frame],
