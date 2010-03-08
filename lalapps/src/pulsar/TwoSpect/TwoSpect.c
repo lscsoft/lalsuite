@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
    LALDetector det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
    inputParams->det = &det;
    EphemerisData *edat = new_Ephemeris(earth_ephemeris, sun_ephemeris);
-   REAL4 detectorDeltaVmax = CompDetectorDeltaVmax(inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det, edat);
+   REAL4 detectorDeltaVmax = 9.93e-5;   //Average earth speed in units of c
    
    //Initialize the sky-grid
    scanInit.dAlpha = (REAL8)0.5/(inputParams->fmin * inputParams->Tcoh * detectorDeltaVmax);
@@ -224,9 +224,7 @@ int main(int argc, char *argv[])
       //Need to reduce the original TF data so the weighted TF data can be calculated
       REAL4Vector *usableTFdata = XLALCreateREAL4Vector(ffdata->backgrnd->length);
       for (ii=0; ii<numffts; ii++) {
-         for (jj=0; jj<numfbins; jj++) {
-            usableTFdata->data[ii*numfbins + jj] = initialTFdata->data[ii*tempnumfbins + jj + (INT4)roundf((inputParams->blksize-1)*0.5)];
-         }
+         for (jj=0; jj<numfbins; jj++) usableTFdata->data[ii*numfbins + jj] = initialTFdata->data[ii*tempnumfbins + jj + (INT4)roundf((inputParams->blksize-1)*0.5)];
       }
       
       //Compute the weighted TF data
@@ -246,8 +244,8 @@ int main(int argc, char *argv[])
       runIHS(ihsmaxima, ffdata, cols);
       
       //Find any IHS candidates
-      fprintf(LOG,"Checking IHS values for candidates... ");
-      fprintf(stderr,"Checking IHS values for candidates... ");
+      fprintf(LOG,"Checking IHS values for candidates...\n");
+      fprintf(stderr,"Checking IHS values for candidates...\n");
       findIHScandidates(ihsCandidates, &numofcandidates, ihsfarstruct, aveNoise, inputParams, ffdata, ihsmaxima, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta);
       fprintf(LOG,"done\n");
       fprintf(stderr,"done\n");
@@ -260,7 +258,7 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Starting Gaussian template search...\n");
       fprintf(stderr,"Starting Gaussian template search...\n");
       for (ii=0; ii<numofcandidates; ii++) {
-         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-5/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
+         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-6/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
             
             //Allocate memory for template
             templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -599,7 +597,7 @@ int main(int argc, char *argv[])
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-5/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
+                  if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);
@@ -782,7 +780,7 @@ int main(int argc, char *argv[])
                free_templateStruct(template);
                template = NULL;
                for (ll=0; ll<(INT4)trialp->length; ll++) {
-                  if ( trialf->data[jj]-trialb->data[kk]-5/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+5/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
+                  if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0);
                      template = new_templateStruct(inputParams->templatelength);

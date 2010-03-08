@@ -79,29 +79,34 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, R
    REAL4 mean = calcMean(Rs);
    REAL4 sigma = calcStddev(Rs);
    
-   //Find the maximums and get to the FAR
-   REAL4 max = 0.0;
-   INT4 maxloc;
-   for (ii=0; ii<(INT4)roundf(thresh*trials)+1; ii++) {
-      max = 0.0;
-      maxloc = 0;
-      for (jj=0; jj<trials; jj++) {
-         if (Rs->data[jj] > max) {
-            max = Rs->data[jj];
-            maxloc = jj;
-         }
-      }
-      Rs->data[maxloc] = 0.0;
+   //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
+   REAL4Vector *topRvals = XLALCreateREAL4Vector((UINT4)roundf(thresh*trials)+1);
+   topRvals->data[0] = Rs->data[0];
+   for (ii=1; ii<(INT4)topRvals->length; ii++) {
+      INT4 insertionpoint = ii;
+      while (insertionpoint > 0 && Rs->data[ii] > topRvals->data[insertionpoint-1]) insertionpoint--;
+      
+      for (jj=topRvals->length-1; jj>insertionpoint; jj--) topRvals->data[jj] = topRvals->data[jj-1];
+      topRvals->data[insertionpoint] = Rs->data[ii];
    }
+   for (ii=topRvals->length; ii<trials; ii++) {
+      if (Rs->data[ii] > topRvals->data[topRvals->length - 1]) {
+         INT4 insertionpoint = topRvals->length - 1;
+         while (insertionpoint > 0 && Rs->data[ii] > topRvals->data[insertionpoint-1]) insertionpoint--;
+         
+         for (jj=topRvals->length-1; jj>insertionpoint; jj--) topRvals->data[jj] = topRvals->data[jj-1];
+         topRvals->data[insertionpoint] = Rs->data[ii];
+      }
+   }
+   
+   out->far = topRvals->data[topRvals->length - 1];
+   out->distMean = mean;
+   out->distSigma = sigma;
    
    //Destroy
    XLALDestroyREAL4Vector(Rs);
+   XLALDestroyREAL4Vector(topRvals);
    gsl_rng_free(rng);
-   
-   
-   out->far = max;
-   out->distMean = mean;
-   out->distSigma = sigma;
 
 }
 
@@ -202,7 +207,9 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
       if (scale->data[ii] != 0.0 && fnumstart == -1) fnumstart = ii;
       if (scale->data[ii] == 0.0 && fnumstart != -1 && fnumend==-1) fnumend = ii-1;
    }
-   if (fnumend==-1) exit(-1);
+   if (fnumend==-1) {
+      exit(-1);
+   }
    
    //Make sigmas for each frequency
    REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1));
