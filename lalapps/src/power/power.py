@@ -255,7 +255,7 @@ class RMNode(pipeline.CondorDAGNode):
 		return set()
 
 
-class BurstInjJob(pipeline.CondorDAGJob):
+class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_binj job used by the power pipeline. The static options
 	are read from the [lalapps_binj] section in the ini file. The
@@ -268,6 +268,7 @@ class BurstInjJob(pipeline.CondorDAGJob):
 		config_parser = ConfigParser object
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
+		pipeline.AnalysisJob.__init__(self, config_parser)
 
 		# do this many injections between flow and fhigh inclusively
 		if config_parser.has_option("pipeline", "injection_bands"):
@@ -276,15 +277,15 @@ class BurstInjJob(pipeline.CondorDAGJob):
 			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
-
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 
-class BurstInjNode(pipeline.CondorDAGNode):
+class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
 		pipeline.CondorDAGNode.__init__(self, job)
+		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
 
@@ -315,27 +316,25 @@ class BurstInjNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		"""
-		Returns a LAL cache of the output file names.  This must be
-		kept synchronized with the name of the output file in
-		binj.c.  Note in particular the calculation of the "start"
-		and "duration" parts of the name.
+		Returns a LAL cache of the output file name.  Calling this
+		method also induces the output name to get set, so it must
+		be at least once.
 		"""
 		if not self.output_cache:
-			if not self.get_start() or not self.get_end():
-				raise ValueError, "start time or end time has not been set"
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			if self.__usertag:
-				filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
-			else:
-				filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-			self.output_cache = [CacheEntry("H1+H2+L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+			# FIXME:  instruments hardcoded to "everything"
+			self.output_cache = [CacheEntry(u"H1+H2+G1+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
 
 	def get_output(self):
-		raise NotImplementedError
+		if self._AnalysisNode__output is None:
+			if None in (self.get_start(), self.get_end(), self.__usertag):
+				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			self.set_output("H1+H2+G1+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start())))
+		return self._AnalysisNode__output
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):

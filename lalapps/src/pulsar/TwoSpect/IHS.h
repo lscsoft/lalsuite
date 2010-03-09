@@ -42,8 +42,8 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
 
 REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols);
 
-REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect);
-REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect);
+REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect, REAL4Vector *sigma);
+REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect, REAL4Vector *sigma);
 
 
 #endif

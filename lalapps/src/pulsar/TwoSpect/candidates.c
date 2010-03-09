@@ -183,7 +183,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
       INT4 subsetlocset = 0;
       loc2 = 0;
       for (jj=subsetloc; jj<loc; jj++) {
-         if ( usedcandidate->data[locs->data[jj]] == 0 && fabs(params->Tobs/in[locs->data[jj]]->period - params->Tobs/in[locs->data[subsetloc]]->period) <= 0.5 ) {
+         if ( usedcandidate->data[locs->data[jj]] == 0 && fabs(params->Tobs/in[locs->data[jj]]->period - params->Tobs/in[locs->data[subsetloc]]->period) <= 1.0 ) {
             locs2->data[loc2] = locs->data[jj];
             loc2++;
          } else if (usedcandidate->data[locs->data[jj]] == 0 && subsetlocset == 0) {

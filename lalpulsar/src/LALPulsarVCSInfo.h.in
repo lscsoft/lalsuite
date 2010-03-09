@@ -22,8 +22,6 @@
 #ifndef _LALPULSARVCSINFO_H
 #define _LALPULSARVCSINFO_H
 
-#include <lal/LALPulsarConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus

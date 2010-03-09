@@ -29,12 +29,6 @@
 /* LAL Install Prefix */
 #undef LAL_PREFIX
 
-/* The number of bytes in a double.  */
-#undef LAL_SIZEOF_DOUBLE
-
-/* The number of bytes in a float.  */
-#undef LAL_SIZEOF_FLOAT
-
 /* Suppress debugging code */
 #undef LAL_NDEBUG
 

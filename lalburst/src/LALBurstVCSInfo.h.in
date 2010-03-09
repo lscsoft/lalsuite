@@ -22,8 +22,6 @@
 #ifndef _LALBURSTVCSINFO_H
 #define _LALBURSTVCSINFO_H
 
-#include <lal/LALBurstConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus

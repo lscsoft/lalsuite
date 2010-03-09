@@ -30,30 +30,37 @@
 #include <LALAppsVCSInfo.h>
 
 #ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameConfig.h>
 #include <lal/LALFrameVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
+#include <lal/LALMetaIOConfig.h>
 #include <lal/LALMetaIOVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALBURST
+#include <lal/LALBurstConfig.h>
 #include <lal/LALBurstVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
+#include <lal/LALInspiralConfig.h>
 #include <lal/LALInspiralVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
+#include <lal/LALPulsarConfig.h>
 #include <lal/LALPulsarVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
+#include <lal/LALStochasticConfig.h>
 #include <lal/LALStochasticVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALXML
+#include <lal/LALXMLConfig.h>
 #include <lal/LALXMLVCSInfo.h>
 #endif
 

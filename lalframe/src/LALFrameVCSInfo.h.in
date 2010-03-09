@@ -22,8 +22,6 @@
 #ifndef _LALFRAMEVCSINFO_H
 #define _LALFRAMEVCSINFO_H
 
-#include <lal/LALFrameConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus
