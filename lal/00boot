@@ -24,6 +24,11 @@ helpmsg="$helpmsg
   --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
 helpmsg="$helpmsg
   --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
+helpmsg="$helpmsg
+  --only-build-sources          only build sources, not build system"
+
+# default options
+only_build_sources="false"
 
 # process args
 verbose="false"
@@ -41,6 +46,7 @@ while test $# -gt 0 ; do
     -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
     -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
     -with-autoconf=* | --with-autoconf=* ) AUTOCONF="$optarg";;
+    -only-build-sources | --only-build-sources ) only_build_sources="true";;
     *) echo "unrecognized option $option"; exit 1;;
   esac
   shift
@@ -154,6 +160,10 @@ ${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
 ${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
+
+# don't build the build system if --only-build-sources option is specified
+if test "$only_build_sources" = "false"; then
+
 # FIXME: autoreconf from Ubuntu 9.10 (and probably also from recent
 # Debian versions) automatically run libtoolize with the --copy option
 # therefore over writing the supplied libtool scripts with system
@@ -189,3 +199,5 @@ echo "
         Otherwise consult the file README.install
 
 ================================================================="
+
+fi
