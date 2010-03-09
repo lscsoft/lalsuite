@@ -397,7 +397,7 @@ fi
 
 # restore all static to ldflags
 if test "${allstatic}" = "true" ; then
-  LDFLAGS="-all-static $LDFLAGS"
+  LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
 AC_OUTPUT
