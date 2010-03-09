@@ -22,8 +22,6 @@
 #ifndef _LALXMLVCSINFO_H
 #define _LALXMLVCSINFO_H
 
-#include <lal/LALXMLConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus

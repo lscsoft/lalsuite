@@ -22,8 +22,6 @@
 #ifndef _LALSTOCHASTICVCSINFO_H
 #define _LALSTOCHASTICVCSINFO_H
 
-#include <lal/LALStochasticConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus

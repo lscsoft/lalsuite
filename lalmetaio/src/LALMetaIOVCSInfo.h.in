@@ -22,8 +22,6 @@
 #ifndef _LALMETAIOVCSINFO_H
 #define _LALMETAIOVCSINFO_H
 
-#include <lal/LALMetaIOConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus

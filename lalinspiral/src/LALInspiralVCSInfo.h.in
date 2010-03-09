@@ -22,8 +22,6 @@
 #ifndef _LALINSPIRALVCSINFO_H
 #define _LALINSPIRALVCSINFO_H
 
-#include <lal/LALInspiralConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus
