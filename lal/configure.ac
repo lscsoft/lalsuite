@@ -287,7 +287,7 @@ else
   else
     AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
   fi
-  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
+  AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
 
 # check for fft headers
