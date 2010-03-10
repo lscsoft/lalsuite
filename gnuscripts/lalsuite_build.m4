@@ -1,3 +1,7 @@
+# lalsuite_build.m4 - top level build macros
+#
+# serial 1
+
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
 eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLED"`"
