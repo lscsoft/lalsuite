@@ -135,7 +135,7 @@ AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
 # check for pthreads
 lal_pthread_available="yes"
-ACX_PTHREAD(,[lal_pthread_available="no"])
+AX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
     LIBS="$PTHREAD_LIBS $LIBS"
