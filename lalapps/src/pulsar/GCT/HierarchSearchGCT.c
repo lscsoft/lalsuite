@@ -230,7 +230,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_tmp, f1dot_tmp;
-  REAL4 Fstat, TwoFthreshold, sumTwoF_tmp, TwoF_tmp, TwoFmax; /* REAL4 precision of Fstat values */
+  REAL4 Fstat, TwoFthreshold, sumTwoF_tmp, TwoF_tmp, sumTwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
@@ -967,7 +967,7 @@ int MAIN( int argc, char *argv[]) {
 
         /* Keeping track of maximum number count in DIAGNOSE mode */
         nc_max = 0;    /* initialize */
-        TwoFmax = 0.0; 
+        sumTwoFmax = 0.0; 
         
       
         /* ##########################################################*/
@@ -1167,8 +1167,8 @@ int MAIN( int argc, char *argv[]) {
                 if (finegrid.list[ifine].nc > nc_max) {
                   nc_max = finegrid.list[ifine].nc;
                 }
-                if (sumTwoF_tmp > TwoFmax) {
-                  TwoFmax = sumTwoF_tmp;
+                if (sumTwoF_tmp > sumTwoFmax) {
+                  sumTwoFmax = sumTwoF_tmp;
                 }
 #endif  
                                 
@@ -1186,7 +1186,7 @@ int MAIN( int argc, char *argv[]) {
           
           
 #ifdef DIAGNOSISMODE
-          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  sumTwoFmax: %f \n", k, nc_max, TwoFmax); 
+          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/nStacks); 
 #endif
 
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
