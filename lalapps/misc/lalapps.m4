@@ -1,4 +1,6 @@
-dnl lalapps.m4
+# lalapps.m4 - lalapps specific autoconf macros
+#
+# serial 1
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
