@@ -92,11 +92,8 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 
 /* ordering function for sorting the list */
 static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
-  if      (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
-    return -1;
-  else if (((const GCTtopOutputEntry*)a)->nc  > ((const GCTtopOutputEntry*)b)->nc)
-    return 1;
-  else if (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
+  
+  if (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->Freq  > ((const GCTtopOutputEntry*)b)->Freq)
     return 1;
@@ -118,10 +115,15 @@ static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
 
 /* ordering function defining the toplist */
 static int gctFStat_smaller(const void*a, const void*b) {
-  if     (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
-    return(1);
-  else if(((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
-    return(-1);
+  
+  if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->nc  > ((const GCTtopOutputEntry*)b)->nc)
+    return -1;
   else
     return(gctFStat_toplist_qsort_function(a,b));
 }

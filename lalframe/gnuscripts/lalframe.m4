@@ -1,4 +1,6 @@
-dnl lalxml.m4
+# lalframe.m4 - lalframe specific macros
+#
+# serial 1
 
 AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],

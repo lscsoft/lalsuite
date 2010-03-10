@@ -21,8 +21,6 @@ helpmsg="$helpmsg
   --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
 helpmsg="$helpmsg
   --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
-helpmsg="$helpmsg
-  --include-deps                pass option --include-deps to automake [no]"
 
 # process args
 while test $# -gt 0 ; do
