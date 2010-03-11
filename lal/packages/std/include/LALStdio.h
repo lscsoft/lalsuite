@@ -59,7 +59,7 @@ extern "C" {
 NRCSID( LALSTDIOH, "$Id$" );
 
 #if LAL_BOINC_ENABLED
-#include <boinc/filesys.h>
+  extern FILE* boinc_fopen(const char* path, const char* mode);
 #define LALFopen boinc_fopen
 #else
 #define LALFopen fopen
