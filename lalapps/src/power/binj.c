@@ -54,13 +54,11 @@
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-#include <lal/lalGitID.h>
-
 
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -926,16 +924,9 @@ int main(int argc, char *argv[])
 
 
 	process_table_head = XLALCreateProcessTableRow();
-	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-	{
-		if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-			exit(1);
-	}
-	else
-	{
-		if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
-			exit(1);
-	}
+	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+		exit(1);
+
 	XLALGPSTimeNow(&process_table_head->start_time);
 	snprintf(process_table_head->ifos, sizeof(process_table_head->ifos), "H1,H2,L1");
 
