@@ -18,7 +18,7 @@ BUILT_SOURCES = gitID
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 EXTRA_PROGRAMS = eah_HierarchSearchGCT
 
-EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(OPTsrc)/LocalComputeFstat.c
+EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \

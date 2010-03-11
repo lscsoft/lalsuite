@@ -68,7 +68,7 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
 HSLocalSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c
-EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp
+EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp EinsteinAtHome/win_lib.cpp
 
 ## optimized HierarchicalSearch targets
 
