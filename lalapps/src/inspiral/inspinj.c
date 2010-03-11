@@ -42,9 +42,8 @@
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
 #include <processtable.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <lal/Ring.h>
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 
@@ -983,19 +982,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -1650,11 +1638,8 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
-            "The CBC group \n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+        fprintf( stdout, "LIGO/LSC inspiral injection engine\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 

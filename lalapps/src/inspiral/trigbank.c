@@ -41,10 +41,9 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -188,19 +187,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -419,10 +407,8 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "Inspiral Triggered Bank Generator\n" 
-            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n");
-        fprintf( stdout, lalappsGitID );
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
