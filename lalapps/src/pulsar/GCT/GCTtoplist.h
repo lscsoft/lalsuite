@@ -57,15 +57,6 @@ extern int insert_into_gctFStat_toplist(toplist_t*list, GCTtopOutputEntry line);
 extern int write_gctFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 
-/** reads a (created!) toplist from an open filepointer
-   sets the checksum if non-NULL
-   reads maximum maxbytes, all that is there if maxbytes is 0
-   returns the number of bytes read,
-    0 if we found a %DONE marker at the end,
-   -1 if the file contained a syntax error,
-   -2 if given an improper toplist */
-extern int read_gctFStat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
-
 /** sorts the toplist with an internal sorting function,
    used before finally writing it */
 extern void sort_gctFStat_toplist(toplist_t*list);
@@ -74,25 +65,6 @@ extern void sort_gctFStat_toplist(toplist_t*list);
 
 
 /** File IO */
-
-/** writes an HoughFStatOutputEntry line to an open filepointer.
-   Returns the number of chars written, -1 if in error
-   Updates checksum if given (i.e. not NULL) */
-extern int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry line, FILE*fp, UINT4*checksum);
-
-/** writes the given toplitst to a temporary file, then renames the
-   temporary file to filename. The name of the temporary file is
-   derived from the filename by appending ".tmp". Returns the number
-   of chars written or -1 if the temp file could not be opened. */
-extern int atomic_write_gctFStat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
-
-
-/** meant for the final writing of the toplist
-   - reduces toplist precision
-   - sorts the toplist
-   - finally calls atomic_write_houghFStat_toplist_to_file() */
-extern int final_write_gctFStat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
-
 
 /** new, simpler checkpointing for HierarchicalSearch */
 

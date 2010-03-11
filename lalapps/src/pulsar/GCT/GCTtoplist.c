@@ -157,142 +157,6 @@ void sort_gctFStat_toplist(toplist_t*l) {
   qsort_toplist(l,gctFStat_toplist_qsort_function);
 }
 
-/* reads a (created!) toplist from an open filepointer
-   returns the number of bytes read,
-    0 if we found a %DONE marker at the end,
-   -1 if the file contained a syntax error,
-   -2 if given an improper toplist */
-int read_gctFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
-  CHAR line[256];       /* buffer for reading a line */
-  UINT4 items, lines;   /* number of items read from a line, linecounter */
-  UINT4 len, chars = 0; /* length of a line, total characters read from the file */
-  UINT4 i;              /* loop counter */
-  CHAR lastchar;        /* last character of a line read, should be newline */
-  GCTtopOutputEntry gctFStatLine;
-  REAL8 epsilon=1e-5;
-
-  /* basic check that the list argument is valid */
-  if(!l)
-    return -2;
-
-  /* make sure the line buffer is terminated correctly */
-  line[sizeof(line)-1]='\0';
-
-  /* init the checksum if given */
-  if(checksum)
-    *checksum = 0;
-
-  /* set maxbytes to maximum if zero */
-  if (maxbytes == 0)
-    maxbytes--;
-
-  lines=1;
-  while(fgets(line,sizeof(line)-1, fp)) {
-
-    if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) {
-      LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n");
-      return(0);
-    }
-
-    len = strlen(line);
-    chars += len;
-
-    if (len==0) {
-      LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines);
-      return -1;
-    }
-    else if (line[len-1] != '\n') {
-      LogPrintf (LOG_CRITICAL,
-		 "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
-		 lines,sizeof(line)-1, line);
-      return -1;
-    }
-
-    items = sscanf (line,
-		    "%" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_UINT4_FORMAT 
-		    " %" LAL_REAL8_FORMAT "%c",
-		    &gctFStatLine.Freq,
-		    &gctFStatLine.Alpha,
-		    &gctFStatLine.Delta,
-		    &gctFStatLine.F1dot,
-		    &gctFStatLine.nc,
-		    &gctFStatLine.sumTwoF,
-		    &lastchar);
-
-    /* check the values scanned */
-    if (
-            items != 7 ||
-
-            !finite(gctFStatLine.Freq)        ||
-            !finite(gctFStatLine.F1dot)       ||
-            !finite(gctFStatLine.Alpha)       ||
-            !finite(gctFStatLine.Delta)       ||
-	    !finite(gctFStatLine.nc)          ||
-            !finite(gctFStatLine.sumTwoF)     ||
-
-            gctFStatLine.Freq  < 0.0                    ||
-            gctFStatLine.Alpha <         0.0 - epsilon  ||
-            gctFStatLine.Alpha >   LAL_TWOPI + epsilon  ||
-            gctFStatLine.Delta < -0.5*LAL_PI - epsilon  ||
-            gctFStatLine.Delta >  0.5*LAL_PI + epsilon  ||
-
-            lastchar != '\n'
-	) {
-      LogPrintf (LOG_CRITICAL,
-                       "Line %d has invalid values.\n"
-                       "First %d chars are:\n"
-                       "%s\n"
-                       "All fields should be finite\n"
-                       "1st field should be positive.\n"
-                       "2nd field should lie between 0 and %1.15f.\n"
-		 "3rd field should lie between %1.15f and %1.15f.\n",
-		 lines, sizeof(line)-1, line,
-		 (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
-      return -1;
-    }
-
-    if (checksum)
-      for(i=0;i<len;i++)
-	*checksum += line[i];
-
-    insert_into_toplist(l, &gctFStatLine);
-    lines++;
-
-    /* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered HoughFStat stream                         
-     * gets written to the File at program termination.                                                               
-     * This does not seem to happen on Mac though, most likely due to different                                       
-     * exit()-calls used (_exit() vs exit() etc.....)                                                                 
-     *                                                                                                                
-     * The bottom-line is: the File-contents CAN legally extend beyond maxbytes,                                      
-     * which is why we'll ensure here that we don't actually read more than                                           
-     * maxbytes.                                                                                                      
-     */
-    if ( chars == maxbytes )
-      {
-	LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from HoughFStat-file, that's enough.\n",
-		   chars);
-	break;
-      }
-    /* however, if we've read more than maxbytes, something is gone wrong */
-    if ( chars > maxbytes )
-      {
-	LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from HoughFStat-file ... corrupted.\n",
-		   chars, maxbytes );
-	return -1;
-      }
-
-  } /* while (fgets() ) */
-
-  return chars;
-
-} /* read_gctFStat_toplist_from_fp() */
-
-
-
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
@@ -382,17 +246,8 @@ int write_gctFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 }
 
 
-/* writes the given toplitst to a temporary file, then renames the temporary file to filename.
-   The name of the temporary file is derived from the filename by appending ".tmp". Returns the
-   number of chars written or -1 if the temp file could not be opened.
-   This just calls _atomic_write_gctFStat_toplist_to_file() telling it not to write a %DONE marker*/
-int atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  return(_atomic_write_gctFStat_toplist_to_file(l, filename, checksum, 0));
-}
-
-
-/* function that does the actual work of _atomic_write_gctFStat_toplist_to_file(),
-   appending a %DONE marker if specified (not when called from _atomic_write_gctFStat_toplist_to_file().
+/* function that does the actual work of atomic_write_gctFStat_toplist_to_file(),
+   appending a %DONE marker if specified (not when called from atomic_write_gctFStat_toplist_to_file().
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
   char* tempname;
@@ -455,17 +310,6 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
 
   free(tempname);
   return length;
-}
-
-
-/* meant for the final writing of the toplist
-   - reduces toplist precision
-   - sorts the toplist
-   - then calls atomic_write_gctFStat_toplist_to_file() */
-int final_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  reduce_gctFStat_toplist_precision(l);
-  sort_gctFStat_toplist(l);
-  return(atomic_write_gctFStat_toplist_to_file(l,filename,checksum));
 }
 
 
