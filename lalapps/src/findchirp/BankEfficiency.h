@@ -45,10 +45,8 @@
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 
-
+#include <LALAppsVCSInfo.h>
 
 /* Here, I defined my own xml table outside the lal strcuture although
    it can be put  into the liXmlHeader files I guess. I dont want to
