@@ -82,3 +82,6 @@ lalapps_stochastic_bayes: $(srcdir)/stochastic_bayes.in python_config.sed
 	sed -f python_config.sed $(srcdir)/stochastic_bayes.in > \
 		lalapps_stochastic_bayes
 	chmod +x lalapps_stochastic_bayes
+
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
