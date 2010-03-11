@@ -373,7 +373,10 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	m2 = mc2mass2(mc,eta);
 	/* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
 	parameter->logPrior+=-(5.0/6.0)*logmc;
-
+	if(XLALMCMCCheckParameter(parameter,"logdist"))
+		parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
+	else
+		parameter->logPrior+=2.0*XLALMCMCGetParameter(parameter,"distMpc");
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
@@ -519,7 +522,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		
 		
 		
@@ -732,9 +735,6 @@ in the frequency domain */
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
 		REAL8 hc,hs;
 		
-#pragma omp parallel shared(lowBin,highBin,chisq,det_i,det_resp,TimeFromGC,TimeShiftToGC,deltaF,inputMCMC,model,Nmodel) private(idx,time_sin,time_cos,resp_r,resp_i,real,imag,hc,hs) default(none)
-{
-	#pragma omp for schedule(static) reduction(+:chisq)
 		for(idx=lowBin;idx<highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
@@ -749,7 +749,6 @@ in the frequency domain */
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 		}
-}
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
@@ -921,7 +920,7 @@ in the frequency domain */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
