@@ -51,9 +51,9 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
-#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",toplist,tpl_count,1);
+#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) if (!read_hfs_checkpoint("checkpoint.cpt", toplist, &count)) count=0;
+#define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
+#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter,1);
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
