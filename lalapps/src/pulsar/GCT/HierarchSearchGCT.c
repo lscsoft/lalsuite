@@ -51,10 +51,9 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
-#define SET_CHECKPOINT
+#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",toplist,tpl_count,1);
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
@@ -62,9 +61,9 @@ RCSID( "$Id$");
 #endif
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
-#define SUNEPHEMERIS 		"sun05-09.dat"
-#define BLOCKSRNGMED 		101 	/**< Default running median window size */
-#define FSTART 			    100.0	/**< Default Start search frequency */
+#define SUNEPHEMERIS 	"sun05-09.dat"
+#define BLOCKSRNGMED 	101 	/**< Default running median window size */
+#define FSTART 		100.0	/**< Default Start search frequency */
 #define FBAND           0.01  /**< Default search band */
 #define FDOT            0.0	  /**< Default value of first spindown */
 #define DFDOT           0.0	  /**< Default range of first spindown parameter */
@@ -79,7 +78,7 @@ RCSID( "$Id$");
 #define NCAND1          10 	/**< Default number of candidates to be followed up from first stage */
 #define FNAMEOUT        "./HS_GCT.out"  /**< Default output file basename */
 #ifndef LAL_INT4_MAX
-#define LAL_INT4_MAX 		2147483647
+#define LAL_INT4_MAX 	2147483647
 #endif
 
 #define BLOCKSIZE_REALLOC 50
@@ -1241,31 +1240,7 @@ int MAIN( int argc, char *argv[]) {
   
   LogPrintf ( LOG_DEBUG, "Writing output ...");
 
-#if (!HS_CHECKPOINTING)
-  /* print candidates */  
-  {
-    if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) {
-      LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
-      return HIERARCHICALSEARCH_EFILE;
-    }
-    if ( uvar_printCand1 && uvar_semiCohToplist ) {
-      
-      sort_gctFStat_toplist(semiCohToplist);
-      
-      if ( write_gctFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0) {
-        fprintf( stderr, "Error in writing toplist to file\n");
-      }
-      
-      if (fprintf(fpSemiCoh,"%%DONE\n") < 0) {
-        fprintf(stderr, "Error writing end marker\n");
-      }
-      
-      fclose(fpSemiCoh);
-    }
-  }
-#else
-  write_and_close_checkpointed_file();
-#endif
+  write_hfs_oputput(uvar_fnameout, semiCohToplist);
 
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
   
