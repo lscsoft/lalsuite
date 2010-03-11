@@ -112,9 +112,9 @@ INT4 main (INT4 argc, CHAR *argv[])
    
    /* output file name */
    CHAR fileName1[LALNameLength], fileName2[LALNameLength];
-   LALSnprintf(fileName1, LALNameLength,"catalog_%d.dat",job);
+   snprintf(fileName1, LALNameLength,"catalog_%d.dat",job);
    pfout1 = fopen(fileName1,"w");
-   LALSnprintf(fileName2, LALNameLength,"serie_%d.dat",job);
+   snprintf(fileName2, LALNameLength,"serie_%d.dat",job);
    pfout2 = fopen(fileName2,"w");
    
    /* initialize status pointer */
