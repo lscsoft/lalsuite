@@ -40,7 +40,7 @@
 FrameH *fr_add_proc_REAL4TimeSeries (
     FrameH                     *frame,
     REAL4TimeSeries            *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -72,7 +72,7 @@ FrameH *fr_add_proc_REAL4TimeSeries (
 FrameH *fr_add_proc_REAL8TimeSeries (
     FrameH                     *frame,
     REAL8TimeSeries            *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -105,7 +105,7 @@ FrameH *fr_add_proc_REAL8TimeSeries (
 FrameH *fr_add_proc_REAL4FrequencySeries (
     FrameH                     *frame,
     REAL4FrequencySeries       *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -130,7 +130,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
 FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     FrameH                        *frame,
     COMPLEX8FrequencySeries       *chan,
-    const char                    *unit,
+    char                          *unit,
     const char                    *suffix
     )
 {
@@ -155,7 +155,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
 FrameH *fr_add_proc_COMPLEX8TimeSeries (
     FrameH                        *frame,
     COMPLEX8TimeSeries            *chan,
-    const char                    *unit,
+    char                          *unit,
     const char                    *suffix
     )
 {
@@ -183,7 +183,7 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
 FrameH *fr_add_proc_REAL8FrequencySeries (
     FrameH                     *frame,
     REAL8FrequencySeries       *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -195,7 +195,7 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   struct FrVect     *vect;
   struct FrProcData *proc;
   size_t i;
-  const char *channel = fdata.name;
+  char *channel = fdata.name;
 
   snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
