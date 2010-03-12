@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: lalappsfrutils.h
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -51,32 +51,32 @@
 
 #include "series.h"
 
-FrameH *fr_add_proc_REAL4TimeSeries ( 
-    FrameH          *frame, 
+FrameH *fr_add_proc_REAL4TimeSeries (
+    FrameH          *frame,
     REAL4TimeSeries *chan,
     const char      *unit,
     const char      *suffix
     );
-FrameH *fr_add_proc_REAL8TimeSeries ( 
-    FrameH          *frame, 
+FrameH *fr_add_proc_REAL8TimeSeries (
+    FrameH          *frame,
     REAL8TimeSeries *chan,
     const char      *unit,
     const char      *suffix
     );
-FrameH *fr_add_proc_REAL4FrequencySeries ( 
-    FrameH               *frame, 
+FrameH *fr_add_proc_REAL4FrequencySeries (
+    FrameH               *frame,
     REAL4FrequencySeries *chan,
     const char           *unit,
     const char           *suffix
     );
-FrameH *fr_add_proc_REAL8FrequencySeries ( 
-    FrameH               *frame, 
+FrameH *fr_add_proc_REAL8FrequencySeries (
+    FrameH               *frame,
     REAL8FrequencySeries *chan,
     const char           *unit,
     const char           *suffix
     );
-FrameH *fr_add_proc_COMPLEX8FrequencySeries ( 
-    FrameH                  *frame, 
+FrameH *fr_add_proc_COMPLEX8FrequencySeries (
+    FrameH                  *frame,
     COMPLEX8FrequencySeries *chan,
     const char              *unit,
     const char              *suffix
