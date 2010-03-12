@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 NORESAMP="1"
 #NOCLEANUP="1"
