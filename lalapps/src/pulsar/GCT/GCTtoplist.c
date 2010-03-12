@@ -29,8 +29,6 @@
 #include <lal/LogPrintf.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "boinc/filesys.h"
-#define fopen boinc_fopen
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
@@ -265,7 +263,7 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
   strncpy(tempname,filename,s);
   strncat(tempname,TEMP_EXT,s);
 
-  fpnew=fopen(tempname, "wb");
+  fpnew=LALFopen(tempname, "wb");
   if(!fpnew) {
     LogPrintf (LOG_CRITICAL, "Failed to open temp gctFStat file \"%s\" for writing: %d: %s\n",
 	       tempname,errno,strerror(errno));
@@ -367,7 +365,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     checksum += *(((char*)&counter) + len);
 
   /* open tempfile */
-  fp=fopen(tmpfilename,"wb");
+  fp=LALFopen(tmpfilename,"wb");
   if(!fp) {
     LOGIOERROR("Couldn't open",tmpfilename);
     return(-1);
@@ -451,7 +449,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   *counter = 0;
 
   /* try to open file */
-  fp = fopen(filename, "rb");
+  fp = LALFopen(filename, "rb");
   if(!fp) {
     if(errno == ENOENT) {
       LogPrintf(LOG_NORMAL,"INFO: No checkpoint %s found - starting from scratch\n", filename);
