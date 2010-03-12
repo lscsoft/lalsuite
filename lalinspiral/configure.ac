@@ -1,6 +1,6 @@
 AC_INIT([lalinspiral],[1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInspiralConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
