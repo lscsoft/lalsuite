@@ -73,7 +73,9 @@ int finite(double);
 
 #endif /* WIN32 */
 
-
+#ifdef DEBUG_SORTING
+static FILE*debugfp = NULL;
+#endif
 
 /* define min macro if not already defined */
 #ifndef min
@@ -87,11 +89,19 @@ int finite(double);
 static void reduce_gctFStat_toplist_precision(toplist_t *l);
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen);
+static int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum);
 
 /* ordering function for sorting the list */
-static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
-  
-  if (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
+static int gctFStat_result_order(const void *a, const void *b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->Freq,  ((const GCTtopOutputEntry*)b)->Freq,
+	    ((const GCTtopOutputEntry*)a)->Alpha, ((const GCTtopOutputEntry*)b)->Alpha,
+	    ((const GCTtopOutputEntry*)a)->Delta, ((const GCTtopOutputEntry*)b)->Delta,
+	    ((const GCTtopOutputEntry*)a)->F1dot, ((const GCTtopOutputEntry*)b)->F1dot);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->Freq  > ((const GCTtopOutputEntry*)b)->Freq)
     return 1;
@@ -113,22 +123,43 @@ static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
 
 /* ordering function defining the toplist */
 static int gctFStat_smaller(const void*a, const void*b) {
-  
-  if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
     return 1;
   else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->nc  > ((const GCTtopOutputEntry*)b)->nc)
+  else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
     return -1;
   else
-    return(gctFStat_toplist_qsort_function(a,b));
+    return(gctFStat_result_order(a,b));
+}
+
+/* functions for qsort based on the above ordering functions */
+static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
+  void const* const* pa = (void const* const*)a;
+  void const* const* pb = (void const* const*)b;
+  return(gctFStat_smaller(*pb,*pa));
+}
+static int gctFStat_final_qsort(const void*a, const void*b) {
+  void const* const* pa = (void const* const*)a;
+  void const* const* pb = (void const* const*)b;
+  return(gctFStat_result_order(*pa,*pb));
 }
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
 int create_gctFStat_toplist(toplist_t**tl, UINT8 length) {
+#ifdef DEBUG_SORTING
+  if(!debugfp)
+    debugfp=fopen("debug_sort","w");
+#endif
   return(create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller));
 }
 
@@ -152,7 +183,7 @@ int insert_into_gctFStat_toplist(toplist_t*tl, GCTtopOutputEntry elem) {
 
 /* (q)sort the toplist according to the sorting function. */
 void sort_gctFStat_toplist(toplist_t*l) {
-  qsort_toplist(l,gctFStat_toplist_qsort_function);
+  qsort(l->heap,l->elems,sizeof(char*),gctFStat_final_qsort);
 }
 
 /* Prints a Toplist line to a string buffer.
@@ -179,7 +210,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 /* writes an GCTtopOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum) {
+static int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum) {
   char linebuf[256];
   UINT4 i;
 
@@ -537,7 +568,16 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* restore Heap structure by sorting */
   for(len = 0; len < tl->elems; len++)
     tl->heap[len] = tl->data + len * tl->size;
-  qsort_toplist_r(tl,gctFStat_smaller);
+
+#ifdef DEBUG_SORTING
+  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_read_from_checkpoint", NULL, 0);
+#endif
+
+  qsort(tl->heap,tl->elems,sizeof(char*),gctFStat_restore_heap_qsort);
+
+#ifdef DEBUG_SORTING
+  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_sorted_from_checkpoint", NULL, 0);
+#endif
 
   /* all went well */
   LogPrintf(LOG_DEBUG,"Successfully read checkpoint\n");
@@ -545,12 +585,40 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   return(0);
 }
 
+#ifdef DEBUG_SORTING
+static void dump_heap_order(const toplist_t*tl, const char*name) {
+  unsigned int i;
+  FILE*fp;
+  if((fp=fopen(name,"w"))) {
+    for(i = 0; i < tl->elems; i++) {
+      fprintf(fp,"%u\n",(unsigned int)((tl->heap[i] - tl->data) / sizeof(GCTtopOutputEntry)));
+    }
+    fclose(fp);
+  }
+}
+
+static void sort_gctFStat_toplist_debug(toplist_t*l) {
+  if(!debugfp)
+    debugfp=fopen("debug_sort","w");
+  sort_gctFStat_toplist(l);
+  if(debugfp) {
+    fclose(debugfp);
+    debugfp=NULL;
+  }
+}
+#endif
 
 int write_hfs_oputput(const char*filename, toplist_t*tl) {
   /* reduce the precision of the calculated values before doing the sort to
      the precision we will write the result with. This should ensure a sorting
      order that looks right to the validator, too */
   reduce_gctFStat_toplist_precision(tl);
+#ifdef DEBUG_SORTING
+  dump_heap_order(tl,"heap_before.dump");
+  sort_gctFStat_toplist_debug(tl);
+  dump_heap_order(tl,"heap_after.dump");
+#else
   sort_gctFStat_toplist(tl);
+#endif
   return(_atomic_write_gctFStat_toplist_to_file(tl, filename, NULL, 1));
 }
