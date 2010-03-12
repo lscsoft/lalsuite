@@ -15,7 +15,11 @@ fi
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFStat"
-gct_code="${builddir}lalapps_HierarchSearchGCT"
+if test $# -eq 0 ; then
+    gct_code="${builddir}lalapps_HierarchSearchGCT"
+else
+    gct_code="$@"
+fi
 
 SFTdir="./TestSFTs"
 
@@ -296,4 +300,3 @@ if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
     echo "Cleaned up."
 fi
-
