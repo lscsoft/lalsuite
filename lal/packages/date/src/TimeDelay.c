@@ -74,7 +74,6 @@ a GMST which gives us the orientation of the Earth.
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALError.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>

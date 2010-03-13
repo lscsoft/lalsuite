@@ -67,13 +67,6 @@ NRCSID( TIMEDELAYH, "$Id$" );
 
 </lalLaTeX> */
 
-/* <lalErrTable> */
-#define TIMEDELAYH_ENUL 1
-
-#define TIMEDELAYH_MSGENUL "Unexpected null pointer in arguments"
-/* </lalErrTable> */
-
-
 /* <lalLaTeX>
 \vfill{\footnotesize\input{TimeDelayHV}}
 </lalLaTeX> */
