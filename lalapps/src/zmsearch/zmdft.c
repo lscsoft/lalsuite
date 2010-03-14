@@ -477,7 +477,7 @@ int zmnormalise(
   int index,toshift;
   float sumfinal, rho_max_min;
   float rhosq;
-  FILE *fpcorr;
+  FILE *fpcorr=NULL;
 
   if ( n > NMAX || n1 > N1MAX )
   {
