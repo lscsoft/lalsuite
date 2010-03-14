@@ -156,7 +156,7 @@ int main( int argc, char *argv[] )
 
 static int parseargs( int argc, char **argv )
 {
-  struct option long_options[] = 
+  struct option long_options[] =
   {
     { "help", no_argument, 0, 'h' },
     { "cache", required_argument, 0, 'c' },

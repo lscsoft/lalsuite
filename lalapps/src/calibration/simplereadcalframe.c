@@ -99,7 +99,7 @@ int main( int argc, char *argv[] )
     usage( 1 );
   /* put appropriate detector prefixes into channel names */
   if ( 0 == strcmp( detector, "L1" )
-      || 0 == strcmp( detector, "H1" ) 
+      || 0 == strcmp( detector, "H1" )
       || 0 == strcmp( detector, "H2" ) )
   {
     memcpy( oloopgain, detector, 2 );
@@ -122,13 +122,13 @@ int main( int argc, char *argv[] )
     fail( "could not find static data %s for epoch %d in file %s\n",
         oloopgain, gpstime, filename );
   print_reference( sdata );
-  
+
   /* write out cavity gain */
   if ( ! ( sdata = FrameFindStatData( frame, detector, cavgain, gpstime ) ) )
     fail( "could not find static data %s for epoch %d in file %s\n",
         cavgain, gpstime, filename );
   print_reference( sdata );
-  
+
   /* write out response */
   if ( ! ( sdata = FrameFindStatData( frame, detector, response, gpstime ) ) )
     fail( "could not find static data %s for epoch %d in file %s\n",

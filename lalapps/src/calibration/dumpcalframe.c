@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "usage: %s file1 [file2 ...]\n", argv[0] );
     return 1;
   }
-  
+
   for ( arg = 1; arg < argc; ++arg )
   {
     FrFile *frfile = FrFileINew( argv[arg] );

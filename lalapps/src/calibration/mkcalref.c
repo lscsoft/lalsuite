@@ -58,10 +58,10 @@ int read_freq_series( struct series *ser, const char *fname )
   n = 0;
 
   printf("filename: %s\n", fname);
-  
+
   ser->dom = Trans;
   ser->type = FR_VECT_8C;
-  
+
   /* count lines */
   while ( get_next_line( line, sizeof( line ), fp ) )
       ++n;
@@ -107,7 +107,7 @@ int read_freq_series( struct series *ser, const char *fname )
       ser->data[2*n+1] = 1;
     }
     else
-    {      
+    {
       ser->data[2*n]   = a * cos( b );
       ser->data[2*n+1] = a * sin( b );
     }
@@ -221,9 +221,9 @@ int main( int argc, char *argv[] )
       USAGE( argv[0] );
     }
     else if (strstr( argv[arg], "-VER" ) )
-      { 
+      {
 	/* print version information and exit */
-        fprintf( stdout, "mkcalref\n" 
+        fprintf( stdout, "mkcalref\n"
             "CVS Version: " CVS_ID_STRING "\n"
 		 "CVS Tag: " CVS_NAME_STRING "\n" );
 	exit(0);
@@ -294,7 +294,7 @@ int main( int argc, char *argv[] )
       {
         fprintf( stderr, "Error: could not write file %s\n", Cilwd );
         return 1;
-      }      
+      }
 #endif
       if ( !channel ) {
 	fprintf( stderr, "Error: No channel name specified \n" );
@@ -302,7 +302,7 @@ int main( int argc, char *argv[] )
       }
       if ( ! frfile )
       {
-        
+
         int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
         sprintf( fname, "%c-%s_CAL_REF_%s_%s_%s-%d-%d.gwf", *ifo, ifo, channel, run, ver,
             R.tbeg.gpsSeconds, dt );
@@ -320,9 +320,9 @@ int main( int argc, char *argv[] )
       /* information output */
       for ( arg2 = 0; arg2 < argc; ++arg2 ) {
 	printf( "%s ", argv[arg2] );
-      } 
+      }
       printf( "\nVersion used: %s\n", CVS_ID_STRING);
-      printf( "Output filename: %s\n", fname); 
+      printf( "Output filename: %s\n", fname);
     }
   }
 

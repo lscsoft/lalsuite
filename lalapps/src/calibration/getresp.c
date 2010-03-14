@@ -81,32 +81,32 @@ int main( int argc, char *argv[] )
 				fmax = atof(optarg);
 				break;
 			case '?':
-				fprintf(stderr, "unknown error while parsing options\n"); 
+				fprintf(stderr, "unknown error while parsing options\n");
 				exit(1);
 			default:
-				fprintf(stderr, "unknown error while parsing options\n"); 
+				fprintf(stderr, "unknown error while parsing options\n");
 				exit(1);
 		}
 	}
 	if ( optind < argc ) {
-		fprintf(stderr, "extraneous command line arguments:\n"); 
+		fprintf(stderr, "extraneous command line arguments:\n");
 		while ( optind < argc )
-			fprintf(stderr, "%s\n", argv[optind++]); 
+			fprintf(stderr, "%s\n", argv[optind++]);
 		exit(1);
 	}
 
 
 	/* check that required values have been set */
 	if ( ! epoch.gpsSeconds ) {
-		fprintf(stderr, "use --gps-start-time to calibration epoch\n"); 
+		fprintf(stderr, "use --gps-start-time to calibration epoch\n");
 		exit(1);
 	}
 	if ( ! channel ) {
-		fprintf(stderr, "use --channel-name to specify readout channel\n"); 
+		fprintf(stderr, "use --channel-name to specify readout channel\n");
 		exit(1);
 	}
 	if ( ! calfile ) {
-		fprintf(stderr, "use --calibration-file to specify calibration frame file name\n"); 
+		fprintf(stderr, "use --calibration-file to specify calibration frame file name\n");
 		exit(1);
 	}
 

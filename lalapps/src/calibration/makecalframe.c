@@ -332,7 +332,7 @@ int main( int argc, char *argv[] )
 #if 0
       vect = FrVectNew1D( factorStatusName, FR_VECT_4S, factorStatus->data->length, factorStatus->deltaT, seconds, dimensionless );
       vect->startX[0] = 0.0;
-      memcpy( vect->data, factorStatus->data->data, factorStatus->data->length * sizeof( *factorStatus->data->data ) ); 
+      memcpy( vect->data, factorStatus->data->data, factorStatus->data->length * sizeof( *factorStatus->data->data ) );
       proc = FrProcDataNewV( frame, vect );
       proc->timeOffset = 0;
       proc->type       = 1;

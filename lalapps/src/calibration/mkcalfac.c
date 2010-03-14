@@ -64,7 +64,7 @@ int read_time_series( struct series *aser, struct series *abser,
   FILE *fp;
   float a,b,ab;
   int t, tmp_t1;
- 
+
   aser->dom = Time;
   aser->type = FR_VECT_8C;
   abser->dom = Time;
@@ -97,7 +97,7 @@ int read_time_series( struct series *aser, struct series *abser,
     if ( ( (tmp_t1 - t0) % dt ) == 0 )
     {
       t1 = tmp_t1;
-    } 
+    }
 
   }
   rewind( fp );
@@ -120,8 +120,8 @@ int read_time_series( struct series *aser, struct series *abser,
 
   while ( get_next_line( line, sizeof( line ), fp ) )
   {
-    
-    
+
+
     if ( sensemon_format )
     {
       /* sensemon format is: Time Range Line Alpha Beta */
@@ -138,7 +138,7 @@ int read_time_series( struct series *aser, struct series *abser,
       }
 
     }
-    
+
     if ( (t - t0) % deltaT )
     {
       fprintf( stderr, "warning: skipping line\n\t%s\n", line );
@@ -174,18 +174,18 @@ void usage ( char *s )
   fprintf( stdout, "  --sensemon-format     read the text file in sensemon format\n" );
   fprintf( stdout, "  --skip-first-line     skip the first line of the file\n" );
   fprintf( stdout, "\nFactor File:\n" );
-  fprintf( stdout, 
-      "The last argument must be a calibration factor file. This must be an ASCII\n" 
-      "file in the format:\n" 
-      "\n" 
-      "GPStime         alpha*beta      alpha           beta\n" 
-      "\n" 
-      "If the option --sensemon-format is given, the ASCII file must be in the\n" 
-      "format:\n" 
+  fprintf( stdout,
+      "The last argument must be a calibration factor file. This must be an ASCII\n"
+      "file in the format:\n"
       "\n"
-      "GPStime         range           LineAmp         alpha           beta\n" 
-      "\n" 
-      "Any comment lines must begin with %% or #.\n" ); 
+      "GPStime         alpha*beta      alpha           beta\n"
+      "\n"
+      "If the option --sensemon-format is given, the ASCII file must be in the\n"
+      "format:\n"
+      "\n"
+      "GPStime         range           LineAmp         alpha           beta\n"
+      "\n"
+      "Any comment lines must begin with %% or #.\n" );
   return;
 }
 
@@ -231,7 +231,7 @@ int main( int argc, char *argv[] )
     if ( strstr( argv[arg], "--run" ) )
     {
       run = argv[++arg];
-    } 
+    }
     else if ( strstr( argv[arg], "--channel" ) )
     {
       channel = argv[++arg];
@@ -269,7 +269,7 @@ int main( int argc, char *argv[] )
       skip_first_line = 1;
     }
     else if (strstr( argv[arg], "-V" ) )
-      { 
+      {
 	/* print version information and exit */
         fprintf( stdout, "CVS Version: " CVS_ID_STRING "\n"
 		 "CVS Tag: " CVS_NAME_STRING "\n" );
@@ -284,7 +284,7 @@ int main( int argc, char *argv[] )
       }
       if ( done )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "Error: only one calibration can be generated at a time\n" );
         exit( 1 );
       }
@@ -306,8 +306,8 @@ int main( int argc, char *argv[] )
       }
       if ( size )
       {
-        if ( size != a.size || step != a.step 
-            || tbeg.gpsSeconds != a.tbeg.gpsSeconds || 
+        if ( size != a.size || step != a.step
+            || tbeg.gpsSeconds != a.tbeg.gpsSeconds ||
             tbeg.gpsNanoSeconds != a.tbeg.gpsNanoSeconds )
         {
           fprintf( stderr, "Error: data domain mismatch\n" );
@@ -328,9 +328,9 @@ int main( int argc, char *argv[] )
       if ( ! frfile )
       {
         dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-%s_CAL_FAC_%s_%s_%s_%s-%d-%d.gwf", 
-		 *ifo, ifo, channel, 
-		 run, ver, timeSpace, 
+        sprintf( fname, "%c-%s_CAL_FAC_%s_%s_%s_%s-%d-%d.gwf",
+		 *ifo, ifo, channel,
+		 run, ver, timeSpace,
 		 a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
@@ -338,10 +338,10 @@ int main( int argc, char *argv[] )
       /* set the correct channel names */
       if (strstr(run, "S5")) {
 	sprintf( achannel,  A_CHANNEL "_%s", channel );
-	sprintf( bchannel, AB_CHANNEL "_%s", channel ); 
+	sprintf( bchannel, AB_CHANNEL "_%s", channel );
       } else {
 	sprintf( achannel,  A_CHANNEL  );
-	sprintf( bchannel, AB_CHANNEL  ); 
+	sprintf( bchannel, AB_CHANNEL  );
       }
 
 
