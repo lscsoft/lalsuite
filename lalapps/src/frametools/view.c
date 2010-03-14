@@ -572,7 +572,7 @@ REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTim
 	seglen = segdur / series->deltaT;
 	stride = seglen / 2;
 
-	
+
 	spectrum = XLALCreateREAL4FrequencySeries( "spectrum", epoch, 0.0, 1.0/segdur, &lalDimensionlessUnit, seglen/2 + 1 );
 	if ( intype != IMPULSE_INPUT ) {
 		REAL4FFTPlan *plan;

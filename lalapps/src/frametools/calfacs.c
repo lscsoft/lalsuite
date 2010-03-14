@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
     highpassParam.nMax = 4;
     highpassParam.f1 = -1.0;
     highpassParam.a1 = -1.0;
-    
+
     /*******************************************************************
     * PARSE ARGUMENTS (arg stores the current position)               *
     *******************************************************************/
@@ -153,7 +153,7 @@ int main( int argc, char *argv[] )
         LALPrintError( USAGE, *argv );
         return 0;
     }
-    
+
     while ( inarg < argc ) {
         /* Parse output file option. */
         if ( !strcmp( argv[inarg], "--help" ) ) {
@@ -260,11 +260,11 @@ int main( int argc, char *argv[] )
     LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream);
     dt=series.deltaT;
 
-    while ( !(status.statusCode) && 
+    while ( !(status.statusCode) &&
             (series.epoch.gpsSeconds < epoch.gpsSeconds + (INT4)(numSeconds))){
 
         /* filter it if the highpass parameters were set */
-        if (highpass){ 
+        if (highpass){
             LALButterworthREAL4TimeSeries(&status, &series, &highpassParam);
         }
 
@@ -276,7 +276,7 @@ int main( int argc, char *argv[] )
 
         fprintf(stdout,"%i %i %e %e %e\n", epoch.gpsSeconds, (INT4)(numSeconds),
                 oreal, oimag, sqrt(oreal*oreal + oimag*oimag));
-        
+
         /* get the data */
         LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream);
     }
@@ -284,9 +284,9 @@ int main( int argc, char *argv[] )
     /* close the frame stream */
     LALFrClose( &status, &stream );
 
-    /* 
-    * output the sound file 
-    * sprintf(fname, "%s", channelIn.name); 
+    /*
+    * output the sound file
+    * sprintf(fname, "%s", channelIn.name);
     * LALTimeSeriesToSound( &status, tSeries, fname, 1);
      */
 

@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
     return 1;
   }
 
-  FrLibIni( NULL, stderr, 0 );  
+  FrLibIni( NULL, stderr, 0 );
 
   while ( --argc > 0 )
   {

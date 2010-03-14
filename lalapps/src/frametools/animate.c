@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
     highpassParam.nMax = 4;
     highpassParam.f1 = -1.0;
     highpassParam.a1 = -1.0;
-    
+
     /*******************************************************************
     * PARSE ARGUMENTS (arg stores the current position)               *
     *******************************************************************/
@@ -152,7 +152,7 @@ int main( int argc, char *argv[] )
         LALPrintError( USAGE, *argv );
         return 0;
     }
-    
+
     while ( inarg < argc ) {
         /* Parse output file option. */
         if ( !strcmp( argv[inarg], "--help" ) ) {
@@ -249,11 +249,11 @@ int main( int argc, char *argv[] )
     /* get the data */
     LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream);
 
-    while ( !(status.statusCode) && 
+    while ( !(status.statusCode) &&
             (series.epoch.gpsSeconds < epoch.gpsSeconds + (INT4)(numSeconds))){
 
         /* filter it if the highpass parameters were set */
-        if (highpass){ 
+        if (highpass){
             LALButterworthREAL4TimeSeries(&status, &series, &highpassParam);
         }
 
@@ -269,8 +269,8 @@ int main( int argc, char *argv[] )
 
         /* put out information for the graphing program */
         graphout(0, 0+numPoints * series.deltaT, series.epoch.gpsSeconds,
-                (status.statusCode == FRAMESTREAMH_EDONE || 
-                 (series.epoch.gpsSeconds + (INT4)(numPoints*series.deltaT) 
+                (status.statusCode == FRAMESTREAMH_EDONE ||
+                 (series.epoch.gpsSeconds + (INT4)(numPoints*series.deltaT)
                   >= epoch.gpsSeconds + (INT4)(numSeconds)) ));
 
         /* get the data */
@@ -280,9 +280,9 @@ int main( int argc, char *argv[] )
     /* close the frame stream */
     LALFrClose( &status, &stream );
 
-    /* 
-    * output the sound file 
-    * sprintf(fname, "%s", channelIn.name); 
+    /*
+    * output the sound file
+    * sprintf(fname, "%s", channelIn.name);
     * LALTimeSeriesToSound( &status, tSeries, fname, 1);
      */
 
