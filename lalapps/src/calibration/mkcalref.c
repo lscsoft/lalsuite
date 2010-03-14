@@ -39,7 +39,7 @@ RCSID( "$Id$" );
 
 extern int lalDebugLevel;
 
-char *get_next_line( char *line, size_t size, FILE *fp )
+static char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
   do
@@ -48,7 +48,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
   return s;
 }
 
-int read_freq_series( struct series *ser, const char *fname )
+static int read_freq_series( struct series *ser, const char *fname )
 {
   float a, b;
   char line[256];
