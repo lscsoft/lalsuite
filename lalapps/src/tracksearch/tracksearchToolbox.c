@@ -806,10 +806,6 @@ LALappsTSALoadCacheFile(
     for (i=0;i<(*mapCache)->numMapFilenames;i++)
       {
 	fscanf(inputFilePtr,"%s\n",(*mapCache)->filename[i]->data);
-	LALappsTSassert((inputFilePtr != EOF),
-			TRACKSEARCHTOOLBOXC_EALLOC,
-			TRACKSEARCHTOOLBOXC_EMSGALLOC);
-		
 	/*
 	 * Ignore blank lines
 	 */
