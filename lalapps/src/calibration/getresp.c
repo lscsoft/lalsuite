@@ -20,7 +20,7 @@ int main( int argc, char *argv[] )
 	LIGOTimeGPS epoch = {0, 0};
 	REAL8 duration = 0.0;
 	REAL8 deltaF = 0.0;
-	REAL8 fmax = 0.0;
+	REAL8 f_max = 0.0;
 	char *program = argv[0];
 	struct option long_options[] = {
 		{ "help",                    no_argument, 0, 'h' },
@@ -60,7 +60,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "--channel-name=chan        readout channel (e.g., \"H1:LSC-DARM_ERR\") [required]\n" );
 				fprintf( stderr, "--calibration-file=fname   calibration frame file name [required]\n" );
 				fprintf( stderr, "--frequency-step=df        frequency resolution (Hz) of response [optional]\n" );
-				fprintf( stderr, "--maximum-frequency=fmax   maximum frequency (Hz) of response [optional]\n" );
+				fprintf( stderr, "--maximum-frequency=f_max   maximum frequency (Hz) of response [optional]\n" );
 				exit(0);
 			case 't':
 				epoch.gpsSeconds = atol(optarg);
@@ -78,7 +78,7 @@ int main( int argc, char *argv[] )
 				deltaF = atof(optarg);
 				break;
 			case 'F':
-				fmax = atof(optarg);
+				f_max = atof(optarg);
 				break;
 			case '?':
 				fprintf(stderr, "unknown error while parsing options\n");
@@ -118,8 +118,8 @@ int main( int argc, char *argv[] )
 	}
 
 	deltaF   = deltaF > 0.0 ? deltaF : caldata->responseReference->deltaF;
-	fmax     = fmax > 0.0 ? fmax : caldata->responseReference->deltaF * caldata->responseReference->data->length;
-	response = XLALCreateCOMPLEX16Response( &epoch, duration, deltaF, (UINT4)floor(fmax/deltaF + 0.5), caldata );
+	f_max     = f_max > 0.0 ? f_max : caldata->responseReference->deltaF * caldata->responseReference->data->length;
+	response = XLALCreateCOMPLEX16Response( &epoch, duration, deltaF, (UINT4)floor(f_max/deltaF + 0.5), caldata );
 
 	responseabs = XLALCreateREAL8FrequencySeries( "response_abs", &response->epoch, response->f0, response->deltaF, &response->sampleUnits, response->data->length );
 	responsearg = XLALCreateREAL8FrequencySeries( "response_arg", &response->epoch, response->f0, response->deltaF, &lalDimensionlessUnit, response->data->length );
