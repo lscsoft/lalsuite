@@ -125,7 +125,7 @@ float zminproduct(int num, float *re, float *im, float *amp, REAL4FrequencySerie
 
 /* ZM waveform parameters */
 FrChanIn   channelIn;               /* channnel information                  */
-INT4       numPoints      = 32768;    /* number of samples from frames: 0.25s */
+UINT4      numPoints      = 32768;    /* number of samples from frames: 0.25s */
 INT4       sampleRate     = 16384;   /* sample rate in Hz                    */
 CHAR      *dirname        = NULL;    /* name of directory with frame file    */
 CHAR      *outFile        = NULL;    /* name of ascii outfile                */
@@ -142,14 +142,14 @@ int main(int argc, char **argv)
   static LALStatus      status;
   FrStream             *stream        = NULL;
   FILE *fp;
-  int i, j;
-  int n, m;
+  unsigned int i, j;
+  unsigned int n, m;
   char filename[30], outputfile[30];
   float **Amp;
   float *amp[200];
   float *eamplitude[200];
   float minimal_match=0.0;
-  int numWaves=0;
+  unsigned int numWaves=0;
 
   /* data storage */
   REAL4TimeSeries            series;
