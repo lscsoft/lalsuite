@@ -139,7 +139,7 @@ FILE *fpcc;
 
 int main(int argc, char **argv)
 {
-  static LALStatus      stat;
+  static LALStatus      status;
   FrStream             *stream        = NULL;
   FILE *fp;
   int i, j;
@@ -325,7 +325,7 @@ int main(int argc, char **argv)
 
   /* create and initialize the time series vector */
   series.data = NULL;
-  LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
+  LAL_CALL( LALCreateVector( &status, &series.data, numPoints), &status);
   memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
   series.epoch.gpsSeconds     = 0;
   series.epoch.gpsNanoSeconds = 0;
@@ -334,13 +334,13 @@ int main(int argc, char **argv)
   series.sampleUnits = lalADCCountUnit;
 
   /* get the frame stream */
-  LAL_CALL( LALFrOpen( &stat, &stream, dirname, "zm-waveforms.gwf" ), &stat);
+  LAL_CALL( LALFrOpen( &status, &stream, dirname, "zm-waveforms.gwf" ), &status);
 
   /* initialize everything */
   strcpy(series.name,"SIM_WAVE_0" );
   channelIn.name = series.name;
   channelIn.type = LAL_PROC_CHAN;
-  LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream), &status);
   series.epoch.gpsSeconds     = 0;
   series.epoch.gpsNanoSeconds = 0;
 
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   for(i=0;i<numWaves;i++){
 
     /* make sure we're at the start of the frame file */
-    LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
+    LAL_CALL( LALFrSeek(&status, &(series.epoch), stream), &status);
 
     /* which waveform are we going to select? */
     snprintf(filename,30,"SIM_WAVE_%d",i);
@@ -359,8 +359,7 @@ int main(int argc, char **argv)
       fprintf(stdout,"Reading in wave %d\n",i);
 
     /* get the data */
-    LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), 
-        &stat);
+    LAL_CALL( LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream), &status);
 
     /* put the data into the array that we have for it */
     for(j=0;j<series.data->length;j++){
@@ -380,10 +379,9 @@ int main(int argc, char **argv)
   spectrum.deltaF = (REAL4)(sampleRate) / (REAL4)(numPoints);
   spectrum.data = NULL;
 
-  LAL_CALL( LALCreateVector( &stat, &(spectrum.data), numPoints/2+1 ), 
-      &stat );
+  LAL_CALL( LALCreateVector( &status, &(spectrum.data), numPoints/2+1 ), &status );
 
-  LAL_CALL( LALReadNoiseSpectrum( &stat, &spectrum, "noise-initial_ligo.dat"), &stat);
+  LAL_CALL( LALReadNoiseSpectrum( &status, &spectrum, "noise-initial_ligo.dat"), &status);
 
     /* normalize the spectrum to avoid numerical errors */
     for(j=0;j<=numPoints/2;j++){
@@ -422,7 +420,7 @@ int main(int argc, char **argv)
         &series, "strain", outputfile );
 
   }
-  LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
+  LAL_CALL( LALSDestroyVector( &status, &(series.data) ), &status);
 
   /****************************************************************
    * Write out the frame file containing all the different channels
@@ -842,7 +840,7 @@ int zmnormalise(
 
 void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim)
 {
-  static LALStatus stat;
+  static LALStatus status;
   int i;
 
   RealFFTPlan *pfwd = NULL;   /* FFTW uses a plan to assess best FFT method*/    
@@ -850,13 +848,13 @@ void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim)
   COMPLEX8Vector *Hvec = NULL;     /* see package "std" code and */
 
 
-  LALCreateForwardRealFFTPlan( &stat, &pfwd, n1, 0);
+  LALCreateForwardRealFFTPlan( &status, &pfwd, n1, 0);
 
   /* Create an S (float) vector of length "n" to hold time data */
-  LALSCreateVector( &stat, &hvec, n1 );
+  LALSCreateVector( &status, &hvec, n1 );
 
   /* Create C (complex) vector of length n/2+1 to hold FFT */
-  LALCCreateVector( &stat, &Hvec, n1/2 + 1 );
+  LALCCreateVector( &status, &Hvec, n1/2 + 1 );
 
 
   for(i=0;i<n1;i++){
@@ -864,7 +862,7 @@ void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim)
   }
 
   /* do a forward FFT */  
-  LALForwardRealFFT( &stat, Hvec, hvec, pfwd );
+  LALForwardRealFFT( &status, Hvec, hvec, pfwd );
 
   for ( i=0 ; i<=n1/2; i++){
     REAL4 re1=Hvec->data[i].re;
@@ -874,10 +872,10 @@ void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim)
   }
 
 
-  LALDestroyRealFFTPlan( &stat, &pfwd );
+  LALDestroyRealFFTPlan( &status, &pfwd );
 
-  LALSDestroyVector( &stat, &hvec );
-  LALCDestroyVector( &stat, &Hvec );
+  LALSDestroyVector( &status, &hvec );
+  LALCDestroyVector( &status, &Hvec );
 
 
   return ;
@@ -888,7 +886,7 @@ void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim)
 void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
 {
 
-  static LALStatus stat;
+  static LALStatus status;
   int i;
   float *productre,*productim;
 
@@ -901,13 +899,13 @@ void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
 
 
   /* Create an FFTW plan for reverse REAL FFT */
-  LAL_CALL( LALCreateReverseRealFFTPlan( &stat, &prev, num, 0), &stat);
+  LAL_CALL( LALCreateReverseRealFFTPlan( &status, &prev, num, 0), &status);
 
   /* Create an S (float) vectors of length "num" to hold time data */
-  LAL_CALL( LALSCreateVector( &stat, &hvec, num ), &stat);
+  LAL_CALL( LALSCreateVector( &status, &hvec, num ), &status);
 
   /* Create C (complex) vectors of length num/2+1 to hold FFT */
-  LAL_CALL( LALCCreateVector( &stat, &Hvec, num/2+1 ), &stat);
+  LAL_CALL( LALCCreateVector( &status, &Hvec, num/2+1 ), &status);
 
 
   productre =(float*) malloc((num/2+1)*sizeof(float));
@@ -927,17 +925,17 @@ void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
   }
   Hvec->data[num/2].im=Hvec->data[0].im=0.0;
 
-  LAL_CALL( LALReverseRealFFT(&stat, hvec, Hvec, prev), &stat);
+  LAL_CALL( LALReverseRealFFT(&status, hvec, Hvec, prev), &status);
 
   for(i=0;i<num;i++){
     corr[i]=2.0*hvec->data[i];
   }
 
-  LAL_CALL( LALDestroyRealFFTPlan( &stat, &prev ), &stat);
+  LAL_CALL( LALDestroyRealFFTPlan( &status, &prev ), &status);
 
   /* get rid of the vectors */
-  LAL_CALL( LALSDestroyVector( &stat, &hvec ), &stat);
-  LAL_CALL( LALCDestroyVector( &stat, &Hvec ), &stat);
+  LAL_CALL( LALSDestroyVector( &status, &hvec ), &status);
+  LAL_CALL( LALCDestroyVector( &status, &Hvec ), &status);
 
   free(productre);
   free(productim);
@@ -955,7 +953,7 @@ float zminproduct(
     )
 {
 
-  static LALStatus stat;
+  static LALStatus status;
   int i;
   float *reA,*imA;
   float sum;
@@ -968,15 +966,15 @@ float zminproduct(
 
 
   /* Create an FFTW plan for forward REAL FFT */
-  LALCreateForwardRealFFTPlan( &stat, &pfwd, num, 0);
+  LALCreateForwardRealFFTPlan( &status, &pfwd, num, 0);
 
 
   /* Create an S (float) vestor of length "n" to hold time data */
-  LALSCreateVector( &stat, &hvec, num );
+  LALSCreateVector( &status, &hvec, num );
 
 
   /* Create C (complex) vector of length n/2+1 to hold FFT */
-  LALCCreateVector( &stat, &Hvec, num/2 + 1 );
+  LALCCreateVector( &status, &Hvec, num/2 + 1 );
 
 
   for(i=0;i<num;i++){
@@ -984,7 +982,7 @@ float zminproduct(
   }
 
   /* do a forward FFT */
-  LALForwardRealFFT( &stat, Hvec, hvec, pfwd );
+  LALForwardRealFFT( &status, Hvec, hvec, pfwd );
 
   reA=malloc((num/2+1)*sizeof(float));
   imA=malloc((num/2+1)*sizeof(float));
@@ -1005,12 +1003,12 @@ float zminproduct(
   }
 
 
-  LALDestroyRealFFTPlan( &stat, &pfwd );
+  LALDestroyRealFFTPlan( &status, &pfwd );
 
 
   /* get rid of the vectors */
-  LALSDestroyVector( &stat, &hvec );
-  LALCDestroyVector( &stat, &Hvec );
+  LALSDestroyVector( &status, &hvec );
+  LALCDestroyVector( &status, &Hvec );
 
   free(reA);
   free(imA);
