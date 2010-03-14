@@ -479,7 +479,7 @@ int zmnormalise(
   float *ampshift, *o_re, *o_im;
   float *oamp, *oamp_re, *oamp_im;
   float *dum1, *dum2, *dum3;
-  int index,toshift;
+  int lal_index,toshift;
   float sumfinal, rho_max_min;
   float rhosq;
   FILE *fpcorr=NULL;
@@ -659,19 +659,19 @@ int zmnormalise(
      * Step 6c:  find most orthogonal vector
      ***************************************************************/
     rho_max_min=rho_max[i];
-    index=i;
+    lal_index=i;
     toshift=shift[i];
     for(k=i+1;k<n;k++){
       if(rho_max_min>=rho_max[k]){
         rho_max_min=rho_max[k];
-        index=k;
+        lal_index=k;
         toshift=shift[k];
       }
     }
 
     if ( verbose ){
     	fprintf(stdout,"zmnumber=%d index=%d toshift=%d minRhoMax=%f\n",
-            zmnumber[index], index, toshift,sqrt(rho_max_min));
+            zmnumber[lal_index], lal_index, toshift,sqrt(rho_max_min));
     }
 
 
@@ -692,7 +692,7 @@ int zmnormalise(
     ampshift=(float*)malloc(n1*sizeof(float));	
     if(toshift<=n1/2){
       for(j=toshift;j<n1;j++){
-        ampshift[j]=ampdum[index][j-toshift];
+        ampshift[j]=ampdum[lal_index][j-toshift];
       }
       for(j=0;j<toshift;j++){
         ampshift[j]=0;
@@ -701,7 +701,7 @@ int zmnormalise(
     else if(toshift>n1/2){
       toshift=n1-toshift;
       for(j=0;j<(n1-toshift);j++){
-        ampshift[j]=ampdum[index][j+toshift];
+        ampshift[j]=ampdum[lal_index][j+toshift];
       }
       for(j=(n1-toshift);j<n1;j++){
         ampshift[j]=0;
@@ -784,20 +784,20 @@ int zmnormalise(
      *****************************************************************/
     {
       int zmdum = zmnumber[i];
-      zmnumber[i] = zmnumber[index];
-      zmnumber[index] = zmdum;
+      zmnumber[i] = zmnumber[lal_index];
+      zmnumber[lal_index] = zmdum;
     }
     dum1=redum[i];
-    redum[i]=redum[index];
-    redum[index]=dum1;
+    redum[i]=redum[lal_index];
+    redum[lal_index]=dum1;
     dum2=imdum[i];
-    imdum[i]=imdum[index];
-    imdum[index]=dum2;
+    imdum[i]=imdum[lal_index];
+    imdum[lal_index]=dum2;
     dum3=ampdum[i];				  
-    ampdum[i]=ampdum[index];
-    ampdum[index]=dum3;
+    ampdum[i]=ampdum[lal_index];
+    ampdum[lal_index]=dum3;
 
-    fprintf(fpcc, "comp = [",zmnumber[index]);
+    fprintf(fpcc, "comp = [",zmnumber[lal_index]);
     for(k=0;k<=i;k++){
       o_re=e_real[k];
       o_im=e_imagin[k];
