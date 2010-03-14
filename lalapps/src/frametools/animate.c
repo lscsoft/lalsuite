@@ -65,7 +65,7 @@ int main( void )
 #else
 
 /* This routine is pipes output into the xmgr graphing program */
-void graphout(float x1,float x2,int thistime, int last) {
+static void graphout(float x1,float x2,int thistime, int last) {
    static int count=0;
    printf("&\n");                            /* end of set marker             */
    /* first time we draw the plot */
