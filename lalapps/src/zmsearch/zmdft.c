@@ -85,7 +85,7 @@ do if (lalDebugLevel & LALERROR )      \
       PLAYC, statement ? statement :"", (msg) ); \
 }while(0)
 
-float **matrix(long nrow, long ncol)
+static float **matrix(long nrow, long ncol)
 /* allocate a float matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
         long i;
@@ -111,7 +111,7 @@ float **matrix(long nrow, long ncol)
         return m;
 }
 
-void free_matrix(float **m)
+static void free_matrix(float **m)
 {
   free(m[0]);
   free(m);
