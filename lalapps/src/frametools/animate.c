@@ -123,7 +123,7 @@ int main( int argc, char *argv[] )
     static LALStatus  status;
     FrStream         *stream = NULL;
     FrChanIn          channelIn;
-    REAL4             time, numSeconds=0;
+    REAL4             itime, numSeconds=0;
     INT4              i, numPoints=4096, inarg = 1;
     CHAR             *dirname;
     REAL4TimeSeries   series;
@@ -259,12 +259,12 @@ int main( int argc, char *argv[] )
 
         /* print out the contents */
         for (i=0 ; i<32 ; i++ ){
-            time= i * series.deltaT;
-            printf("%e\t%e\n", time,0.0);
+            itime= i * series.deltaT;
+            printf("%e\t%e\n", itime,0.0);
         }
         for (i=32 ; i<numPoints ; i++) {
-            time= i * series.deltaT;
-            printf("%e\t%e\n", time, series.data->data[i]);
+            itime= i * series.deltaT;
+            printf("%e\t%e\n", itime, series.data->data[i]);
         }
 
         /* put out information for the graphing program */
