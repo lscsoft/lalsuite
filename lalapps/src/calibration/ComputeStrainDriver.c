@@ -253,6 +253,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
+  char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
 
   char *cnames[] = { alphaName, gammaName, alphaimName, gammaimName, dqName };
 
@@ -355,7 +356,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, hostnameanduser);
 
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
-  FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
+  FrHistoryAdd( frame, freqInfo);
 
   /* String containing the filter file cvs info (first line in filter file) */
   FrHistoryAdd( frame, InputData.filter_vc_info);
