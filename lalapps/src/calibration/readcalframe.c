@@ -49,7 +49,7 @@ static int write_REAL4TimeSeries( REAL4TimeSeries *series );
 static int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
 
 const char *program;
-void err_exit( const char *fmt, ... )
+static void err_exit( const char *fmt, ... )
 {
   va_list ap;
   fprintf( stderr, "%s error: ", program );

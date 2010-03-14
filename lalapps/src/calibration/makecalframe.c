@@ -42,7 +42,7 @@ int isnan( double );
 #define OPEN_ENDED_DELTA_T (OPEN_ENDED_DURATION/NUM_OPEN_ENDED_POINTS)
 
 const char *program;
-void err_exit( const char *fmt, ... )
+static void err_exit( const char *fmt, ... )
 {
   va_list ap;
   fprintf( stderr, "%s error: ", program );
