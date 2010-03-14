@@ -740,6 +740,7 @@ int main(int argc, char **argv)
   /*************************************************************
    * Build the frames from the interpolated and padded waveforms
    ************************************************************/
+  CHAR channel[] = "strain";
   for(i=0;i<nfiles;i++){
     snprintf(outputfile,30,"plus_%s_%0d",options.infileindex,i);
 
@@ -749,7 +750,7 @@ int main(int argc, char **argv)
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &zmseries, "strain", outputfile );
+        &zmseries, channel, outputfile );
   }
 
   for(i=0;i<nfiles;i++){
@@ -761,7 +762,7 @@ int main(int argc, char **argv)
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &zmseries, "strain", outputfile );
+        &zmseries, channel, outputfile );
   }
 
   free_matrix(t_pad);
