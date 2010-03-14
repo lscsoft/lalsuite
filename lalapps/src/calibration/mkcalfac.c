@@ -295,9 +295,9 @@ int main( int argc, char *argv[] )
 
       /* get a and ab data and metadata */
       a.name  = aname;
-      a.unit  = "none";
+      strncpy(a.unit, "none", sizeof(a.unit));
       ab.name = abname;
-      ab.unit = "none";
+      strncpy(ab.unit, "none", sizeof(ab.unit));
       code = read_time_series( &a, &ab, argv[arg] );
       if ( ! code )
       {
