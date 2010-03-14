@@ -245,9 +245,9 @@ int main( int argc, char *argv[] )
       }
       /* get R and C data and metadata */
       R.name = Rname;
-      R.unit = "strain/ct";
+      strncpy(R.unit, "strain/ct", sizeof(R.unit));
       C.name = Cname;
-      C.unit = "ct/strain";
+      strncpy(C.unit, "ct/strain", sizeof(C.unit));
       R.tbeg.gpsSeconds = C.tbeg.gpsSeconds = sec;
       R.tbeg.gpsNanoSeconds = C.tbeg.gpsNanoSeconds = 0;
       code = read_freq_series( &R, argv[arg] );
