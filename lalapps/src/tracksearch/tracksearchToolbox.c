@@ -686,7 +686,7 @@ LALappsTSASortCache(LALStatus   *status,
 {
   TSAMap      *tempMap=NULL;
   UINT4        i=0;
-  UINT4        index=0;
+  UINT4        lal_index=0;
   UINT4        STOP=0;
   REAL8        tmpTime=0;
   CHARVector  *tmpFilename=NULL;
@@ -723,28 +723,28 @@ LALappsTSASortCache(LALStatus   *status,
   while (STOP < inputCache->numMapFilenames-1)
     {
       STOP=0;
-      while (index < inputCache->numMapFilenames-1)
+      while (lal_index < inputCache->numMapFilenames-1)
 	{
-	  if (inputCache->mapStartTime[index] >
-	      inputCache->mapStartTime[index+1])
+	  if (inputCache->mapStartTime[lal_index] >
+	      inputCache->mapStartTime[lal_index+1])
 	    {
 	      /*
 	       * Swap the entries
 	       */
-	      tmpTime=inputCache->mapStartTime[index];
-	      strcpy(tmpFilename->data,inputCache->filename[index]->data);
-	      inputCache->mapStartTime[index]=inputCache->mapStartTime[index+1];
-	      strcpy(inputCache->filename[index]->data,
-		     inputCache->filename[index+1]->data);
-	      inputCache->mapStartTime[index+1]=tmpTime;
-	      strcpy(inputCache->filename[index+1]->data,
+	      tmpTime=inputCache->mapStartTime[lal_index];
+	      strcpy(tmpFilename->data,inputCache->filename[lal_index]->data);
+	      inputCache->mapStartTime[lal_index]=inputCache->mapStartTime[lal_index+1];
+	      strcpy(inputCache->filename[lal_index]->data,
+		     inputCache->filename[lal_index+1]->data);
+	      inputCache->mapStartTime[lal_index+1]=tmpTime;
+	      strcpy(inputCache->filename[lal_index+1]->data,
 		     tmpFilename->data);
 	    }
 	  else
 	    STOP++;
-	  index++;
+	  lal_index++;
 	}
-      index=0;
+      lal_index=0;
     }
   XLALDestroyCHARVector(tmpFilename);
 
