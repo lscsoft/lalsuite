@@ -3446,6 +3446,8 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(
   REAL4TimeSeries  *tmpSegmentPtr=NULL;
   CHARVector       *dataLabel=NULL;
 
+  dataSet = NULL;
+
   for (j=0;j<dataSegments->length;j++)
     {
       if (params.verbosity > quiet)
