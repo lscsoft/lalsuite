@@ -111,11 +111,13 @@ static float **matrix(long nrow, long ncol)
         return m;
 }
 
+#if 0
 static void free_matrix(float **m)
 {
   free(m[0]);
   free(m);
 }
+#endif
 
 
 int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4FrequencySeries *spectrum);
