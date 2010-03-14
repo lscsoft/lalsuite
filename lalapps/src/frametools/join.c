@@ -124,7 +124,7 @@ static struct options parse_command_line(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	static const char history[] = "Created by " PACKAGE "-" VERSION ".";
+	char history[] = "Created by " PACKAGE "-" VERSION ".";
 	FILE *devnull;
 	struct options options;
 	int i;
