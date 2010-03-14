@@ -691,6 +691,8 @@ LALappsTSASortCache(LALStatus   *status,
   REAL8        tmpTime=0;
   CHARVector  *tmpFilename=NULL;
 
+  ignoreMissingFiles = 0;
+
   /*
    * Value of -1 in mapStartTime means file IO problem
    */
