@@ -3785,7 +3785,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 {
   UINT4                    planLength=0;
   REAL4TimeSeries          *tmpSignalPtr=NULL;
-  LALWindowParams           windowParamsPSD;
   LALUnit                   originalFrequecyUnits;
   AverageSpectrumParams     avgPSDParams;
   REAL8                     smoothingAveragePSDBias=0;
@@ -3802,7 +3801,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   UINT4                     i=0;
   UINT4                     halfBlock=0;
   UINT4                     j=0;
-  REAL4                     meanValue=0;
   UINT4                     stride=0;
   INT4                      segCount=0;
   INT4                      originalDataLength=0;
