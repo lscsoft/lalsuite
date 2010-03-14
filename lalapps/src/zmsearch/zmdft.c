@@ -382,7 +382,8 @@ int main(int argc, char **argv)
 
   LAL_CALL( LALCreateVector( &status, &(spectrum.data), numPoints/2+1 ), &status );
 
-  LAL_CALL( LALReadNoiseSpectrum( &status, &spectrum, "noise-initial_ligo.dat"), &status);
+  CHAR spectrumFileName[] = "noise-initial_ligo.dat";
+  LAL_CALL( LALReadNoiseSpectrum( &status, &spectrum, spectrumFileName), &status);
 
     /* normalize the spectrum to avoid numerical errors */
     for(j=0;j<=numPoints/2;j++){
@@ -410,6 +411,7 @@ int main(int argc, char **argv)
   /*************************************************************
    * Build the frames from the interpolated waveforms
    ************************************************************/
+  CHAR channel[] = "strain";
   for(i=0;i<m;i++){
     snprintf(outputfile,30,"ZMBASIS_%0d",i);
 
@@ -418,7 +420,7 @@ int main(int argc, char **argv)
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &series, "strain", outputfile );
+        &series, channel, outputfile );
 
   }
   LAL_CALL( LALSDestroyVector( &status, &(series.data) ), &status);
@@ -426,7 +428,8 @@ int main(int argc, char **argv)
   /****************************************************************
    * Write out the frame file containing all the different channels
    ****************************************************************/
-  frOutFile = FrFileONew( "zm-basis.gwf", 0 );
+  CHAR fileName[] = "zm-basis.gwf";
+  frOutFile = FrFileONew( fileName, 0 );
   FrameWrite( outFrame, frOutFile );
   FrFileOEnd( frOutFile );
 
