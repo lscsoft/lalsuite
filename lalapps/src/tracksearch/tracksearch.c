@@ -3804,7 +3804,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   UINT4                     stride=0;
   INT4                      segCount=0;
   INT4                      originalDataLength=0;
-  INT4                      segmentLength=0;
+  UINT4                     segmentLength=0;
   int                       errcode=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
