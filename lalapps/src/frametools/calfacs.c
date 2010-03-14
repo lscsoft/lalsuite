@@ -65,6 +65,7 @@ int main( void )
 }
 #else
 
+#if 0
 /* This routine is pipes output into the xmgr graphing program */
 void graphout(float x1,float x2,int thistime, int last) {
    static int count=0;
@@ -116,8 +117,7 @@ void graphout(float x1,float x2,int thistime, int last) {
    }
    return;
 }
-
-
+#endif
 
 int main( int argc, char *argv[] )
 {
