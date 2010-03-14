@@ -24,7 +24,6 @@
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <FrameL.h>
 
 #include <lalapps.h>
 #include <series.h>
@@ -42,6 +41,7 @@
 #include <lal/Units.h>
 #include <lal/FrameStream.h>
 #include <lal/ReadNoiseSpectrum.h>
+#include <lal/LALFrameL.h>
 
 RCSID("$Id$");
 

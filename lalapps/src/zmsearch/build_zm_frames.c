@@ -19,8 +19,7 @@
 
 #include<stdio.h>
 #include<math.h>
-#include<stdarg.h> 
-#include <FrameL.h>
+#include<stdarg.h>
 
 #include <lalapps.h>
 #include <series.h>
@@ -35,6 +34,7 @@
 #include <lal/LALConstants.h>
 #include <lal/RealFFT.h>
 #include <lal/Interpolate.h>
+#include <lal/LALFrameL.h>
 
 RCSID( "$Id$" );
 
