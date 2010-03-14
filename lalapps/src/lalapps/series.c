@@ -21,9 +21,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <lal/LALFrameL.h>
-
+#include <FrameL.h>
 #include "series.h"
 
 double epoch_diff( const LIGOTimeGPS *t2, const LIGOTimeGPS *t1 )

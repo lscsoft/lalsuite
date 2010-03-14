@@ -1,11 +1,9 @@
 if FRAME
-if LALFRAME
 FRAMESRCS = \
 	series.c \
 	series.h \
 	lalappsfrutils.c \
 	lalappsfrutils.h
-endif
 endif
 
 if LALMETAIO
