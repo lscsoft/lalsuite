@@ -178,7 +178,6 @@ static FrChanIn chanin_derr;
 static FrChanIn chanin_hoft;
 REAL4Vector *derrwin=NULL,*hoftwin=NULL;
 
-LALWindowParams winparams;
 FILE *fpout=NULL;
 FILE *fpoutbin=NULL;
 COMPLEX16Vector *ffthtData = NULL;
@@ -281,6 +280,8 @@ int main(int argc,char *argv[])
 
 int Initialise(struct CommandLineArgsTag CLA)
 {
+  LALWindowParams winparams;
+
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
   TESTSTATUS( &status );
@@ -488,9 +489,9 @@ static FrChanIn chanin_exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
-
 LALWindowParams winparams;
+
+REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
 
 INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
