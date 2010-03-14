@@ -1,24 +1,20 @@
-if FRAME
-FRAMEPROGRAMS = \
+if LALFRAME
+LALFRAMEPROGRAMS = \
+	lalapps_animate \
+	lalapps_calfacs \
+	lalapps_computespec \
 	lalapps_frinfo \
 	lalapps_frread \
 	lalapps_frextr \
 	lalapps_frjoin
+lalapps_animate_SOURCES = animate.c
+lalapps_calfacs_SOURCES = calfacs.c
+lalapps_computespec_SOURCES = computespec.c
 #lalapps_stripAdc_SOURCES = stripAdc.c lalDebugLevel.c
 lalapps_frinfo_SOURCES = info.c
 lalapps_frread_SOURCES = read.c
 lalapps_frextr_SOURCES = extr.c
 lalapps_frjoin_SOURCES = join.c
-endif
-
-if LALFRAME
-LALFRAMEPROGRAMS = \
-	lalapps_animate \
-	lalapps_calfacs \
-	lalapps_computespec
-lalapps_animate_SOURCES = animate.c
-lalapps_calfacs_SOURCES = calfacs.c
-lalapps_computespec_SOURCES = computespec.c
 endif
 
 if LALFRAME
@@ -33,7 +29,6 @@ endif
 endif
 
 bin_PROGRAMS = \
-	$(FRAMEPROGRAMS) \
 	$(LALFRAMEPROGRAMS) \
 	$(LALFRAMEMETAIOBURSTPROGRAMS)
 

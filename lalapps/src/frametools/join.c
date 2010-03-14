@@ -22,7 +22,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 
 struct options {

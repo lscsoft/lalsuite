@@ -19,7 +19,7 @@
 
 #include <config.h>
 #include <stdio.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 const char *typestr( int type );
 const char *typestr( int type )

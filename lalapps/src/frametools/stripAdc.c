@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 #define TRUE             1
 #define NCHAR           31

@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <FrameL.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -34,6 +33,7 @@
 #include <lal/LALMoment.h>
 #include <lal/Units.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/LALFrameL.h>
 
 #define TRUE       1
 #define FALSE      0
