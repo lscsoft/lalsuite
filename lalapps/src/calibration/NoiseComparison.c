@@ -195,6 +195,7 @@ REAL8 gamma_fac[MAXFACTORS];
 REAL8 frequencies[MAXFREQUENCIES]; /* frequency array */
 INT4 Nfrequencies;  /* number of frequencies */
 
+#if 0
 static void printmemuse(void)
 {
    pid_t mypid=getpid();
@@ -204,6 +205,7 @@ static void printmemuse(void)
    system(commandline);
    fflush(NULL);
 }
+#endif
 
 /***************************************************************************/
 
