@@ -123,11 +123,11 @@ int main( int argc, char *argv[] )
     static LALStatus  status;
     FrStream         *stream = NULL;
     FrChanIn          channelIn;
-    REAL4             time, numSeconds;
+    REAL4             time, numSeconds=0;
     INT4              i, numPoints=4096, inarg = 1;
     CHAR             *dirname;
     REAL4TimeSeries   series;
-    LIGOTimeGPS       epoch;
+    LIGOTimeGPS       epoch = {0,0};
     BOOLEAN           epochSet = FALSE;
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
