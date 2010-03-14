@@ -116,7 +116,7 @@ int main (int argc, char *argv[])
   /* 
    * Parse incoming search arguments initialize variables 
    */
-  LALappsTrackSearchInitialize(&status,
+  LALappsTrackSearchInitialize(
 			       argc,
 			       argv,
 			       params,
@@ -281,7 +281,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_ButterworthFiltered_TimeDomain.diag");
-      LALappsTrackSearchBandPassing(status,dataSet,params);
+      LALappsTrackSearchBandPassing(dataSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_ButterworthFiltered_TimeDomain.diag");
     }
@@ -305,7 +305,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_SoftwareInjectDataSet.diag");
-      LALappsTrackSearchPerformInjection(status,dataSet,injectSet,params);
+      LALappsTrackSearchPerformInjection(dataSet,injectSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
@@ -333,7 +333,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	    }
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
-	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
+	  LALappsTracksearchRemoveHarmonics(dataSet,params);
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
 	  /*
@@ -367,7 +367,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	    fprintf(stdout,
 		    "Preparing to remove %i lines from individual data segments.\n",
 		    params.numLinesToRemove);
-	  LALappsTracksearchRemoveHarmonicsFromSegments(status,
+	  LALappsTracksearchRemoveHarmonicsFromSegments(
 							dataSet,
 							dataSegments,
 							params);
@@ -426,7 +426,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
  * Setup params structure by parsing the command line
  */
 void LALappsTrackSearchInitialize(
-				  LALStatus          *status,
 				  int                 argc,
 				  char               *argv[], 
 				  TSSearchParams     *params,
@@ -1515,7 +1514,7 @@ void LALappsGetFrameData(LALStatus*          status,
 
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  /* Copy REAL8 data into new REAL4 Structure */
-	  LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
+	  LALappsCreateR4FromR8TimeSeries(&tmpData,convertibleREAL8Data);
 	  if (tmpREAL8Data)
 	    XLALDestroyREAL8TimeSeries(tmpREAL8Data);
 	  if (convertibleREAL8Data)
@@ -1778,7 +1777,7 @@ void LALappsGetFrameData(LALStatus*          status,
 /*
  * Routine to allow use of acsii input rather than frames
  */
-void LALappsGetAsciiData(LALStatus*          status,
+void LALappsGetAsciiData(
 			 TSSearchParams*     params,
 			 REAL4TimeSeries*    DataIn,
 			 CHARVector*         dirname
@@ -1994,11 +1993,11 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
-  LALappsDetermineFilename(status,
+  LALappsDetermineFilename(
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
-  LALappsWriteSearchResults(status,
+  LALappsWriteSearchResults(
 			    outputCandidateFilename->data,
 			    outputCurvesThreshold);
 
@@ -2335,7 +2334,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
   if (params.verbosity >= printFiles)
-    LALappsTSAWritePGM(status,tmpTSA,NULL); 
+    LALappsTSAWritePGM(tmpTSA,NULL);
   tfmap=tmpTSA->imageRep;
   XLALFree(tmpTSA);
 
@@ -2399,7 +2398,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        *		     mapBuilder,
        *		     binaryFilename);
        */
-      LALappsTSAWriteMapFile(status,
+      LALappsTSAWriteMapFile(
 			     mapBuilder,
 			     NULL);
       if (binaryFilename)
@@ -2501,7 +2500,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
     }
   else
     {
-      LALappsGetAsciiData(status,&params,dataset,dirpath);
+      LALappsGetAsciiData(&params,dataset,dirpath);
     }
   /*
    * If injections were requested load them up!  We return a NULL time
@@ -2643,7 +2642,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
 
   strcpy(mapFilenameVec->data,params.injectMapCache);
 
-  LALappsTSALoadCacheFile(status,
+  LALappsTSALoadCacheFile(
 			  mapFilenameVec,
 			  &mapCache);
 
@@ -2681,8 +2680,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
   /*
    * Free map cache structure
    */
-  LALappsTSADestroyCache(status,
-			 &mapCache);
+  LALappsTSADestroyCache(&mapCache);
 }
 /*
  * End LALappsDoTSAMapAnalysis
@@ -2741,7 +2739,7 @@ LALappsWriteCurveList(LALStatus            *status,
   /* Output Breve file */
   breveName=XLALCreateCHARVector(maxFilenameLength);
   sprintf(breveName->data,"%s.breve",filename);
-  LALappsWriteBreveResults(status,
+  LALappsWriteBreveResults(
 			   breveName->data,
 			   outCurve);
   if (breveName)
@@ -2751,7 +2749,7 @@ LALappsWriteCurveList(LALStatus            *status,
   totalName=XLALCreateCHARVector(maxFilenameLength);
 
   sprintf(totalName->data,"%s.full",filename);
-  LALappsWriteSearchResults(status,
+  LALappsWriteSearchResults(
 			    totalName->data,
 			    outCurve);
   if (totalName)
@@ -2762,7 +2760,7 @@ LALappsWriteCurveList(LALStatus            *status,
     {
       configName=XLALCreateCHARVector(maxFilenameLength);
       sprintf(configName->data,"%s.config",filename);
-      LALappsWriteSearchConfig(status->statusPtr,
+      LALappsWriteSearchConfig(
 			       configName->data,
 			       *params);
     }     
@@ -2776,7 +2774,7 @@ LALappsWriteCurveList(LALStatus            *status,
  */
 
 void
-LALappsWriteSearchConfig(LALStatus          *status,
+LALappsWriteSearchConfig(
 			 const CHAR*         myFilename,
 			 TSSearchParams      myParams)
 {
@@ -2897,7 +2895,7 @@ LALappsWriteSearchConfig(LALStatus          *status,
  */
 
 void
-LALappsWriteSearchResults(LALStatus      *status,
+LALappsWriteSearchResults(
 			  const CHAR*     myFilename,
 			  TrackSearchOut  outCurve)
 {
@@ -2942,7 +2940,7 @@ LALappsWriteSearchResults(LALStatus      *status,
  */
 
 void
-LALappsWriteBreveResults(LALStatus      *status,
+LALappsWriteBreveResults(
 			 const CHAR*     myFilename,
 			 TrackSearchOut  outCurve)
 {
@@ -3374,7 +3372,7 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
 /*
  * Butterworth Band passing
  */
-void LALappsTrackSearchBandPassing( LALStatus           *status,
+void LALappsTrackSearchBandPassing(
 				    REAL4TimeSeries     *dataSet,
 				    TSSearchParams       params)
 {
@@ -3438,7 +3436,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 /* 
  * Variation that removes harmonics from individual data segments
  */ 
-void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
+void LALappsTracksearchRemoveHarmonicsFromSegments(
 						   REAL4TimeSeries *dataSet,
 						   TSSegmentVector *dataSegments,
 						   TSSearchParams   params)
@@ -3462,7 +3460,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
       sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i_Units.diag",j);
       if (params.verbosity >= printFiles)
 	print_lalUnit(tmpSegmentPtr->sampleUnits,dataLabel->data);
-      LALappsTracksearchRemoveHarmonics(status,tmpSegmentPtr,params);
+      LALappsTracksearchRemoveHarmonics(tmpSegmentPtr,params);
       sprintf(dataLabel->data,"Post_LineRemovalTimeDomainDataSeg_%i.diag",j);
       if (params.verbosity >= printFiles)
 	print_real4tseries(tmpSegmentPtr,dataLabel->data);
@@ -3480,7 +3478,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
 /*
  * Removing harmonic lines from data
  */
-void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
+void LALappsTracksearchRemoveHarmonics(
 				        REAL4TimeSeries       *dataSet,
 				        TSSearchParams         params)
 {
@@ -3748,7 +3746,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 /*
  * Perform software injections if data is available
  */
-void LALappsTrackSearchPerformInjection(LALStatus        *status,
+void LALappsTrackSearchPerformInjection(
 					REAL4TimeSeries  *dataSet,
 					REAL4TimeSeries  *injectSet,
 					TSSearchParams     params)

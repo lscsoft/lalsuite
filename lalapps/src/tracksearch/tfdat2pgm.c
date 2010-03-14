@@ -132,7 +132,7 @@ int main (int argc, char *argv[])
   /*
    * Write the corresponding files
    */
-  LALappsTSAWritePGM(&status,
+  LALappsTSAWritePGM(
 		     map,
 		     NULL);
   /*
