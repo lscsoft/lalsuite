@@ -128,7 +128,7 @@ int main( int argc, char *argv[] )
     INT4              i, numPoints=4096, inarg = 1;
     CHAR             *dirname;
     REAL4TimeSeries   series;
-    LIGOTimeGPS       epoch;
+    LIGOTimeGPS       epoch = {0,0};
     BOOLEAN           epochSet = FALSE;
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
