@@ -1215,7 +1215,8 @@ void LALappsGetFrameData(LALStatus*          status,
   PassBandParamStruc    bandPassParams;
   UINT4                 loadPoints=0;
   UINT4                 i=0;
-  UINT4                 extraResampleTime=1; /*Seconds of extra data
+  /*
+  UINT4                 extraResampleTime=1; Seconds of extra data
 					       to always load on each
 					       end of segment prior to
 					       resampling!*/
