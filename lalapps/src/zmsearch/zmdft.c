@@ -141,9 +141,8 @@ int main(int argc, char **argv)
 {
   static LALStatus      status;
   FrStream             *stream        = NULL;
-  FILE *fp;
   unsigned int i, j;
-  unsigned int n, m;
+  unsigned int m;
   char filename[30], outputfile[30];
   float **Amp;
   float *amp[200];
@@ -460,7 +459,7 @@ int zmnormalise(
     REAL4FrequencySeries *spectrum
     )
 {
-  int i,j,p,l,k,m;
+  int i,j,l,k,m;
   float *ampfft=NULL, *ampfftre=NULL, *ampfftim=NULL;
   float sum1, sum_ii;
   float **ampre, **ampim;
