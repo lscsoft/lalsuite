@@ -255,7 +255,7 @@ static int readWarren(const char* fname,  float **lal_time,  float **amplitude, 
 
 static void build_interpolate ( float **h, float **t, float **h_intpolat, float **t_intpolat, float dt, int l, int *N, int nfiles ){
 
-  static LALStatus stat;
+  static LALStatus status;
 
   float      t_target[5];
   float      h_target[5];
@@ -315,8 +315,8 @@ static void build_interpolate ( float **h, float **t, float **h_intpolat, float 
 
       target = t_intpolat[i][j];
 
-      LAL_CALL( LALSPolynomialInterpolation( &stat, &intout, target, &intpar ), 
-          &stat);
+      LAL_CALL( LALSPolynomialInterpolation( &status, &intout, target, &intpar ), 
+          &status);
       h_intpolat[i][j]=intout.y;
     }
   }
@@ -500,7 +500,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 
 int main(int argc, char **argv)
 {
-  static LALStatus stat;                                                      
+  static LALStatus status;
 
   struct options_t options;       /* command line */
 
@@ -729,7 +729,7 @@ int main(int argc, char **argv)
   }
 
   /* create the required vector to store the waveform */
-  LALSCreateVector( &stat, &(zmseries.data), lframe );
+  LALSCreateVector( &status, &(zmseries.data), lframe );
   zmseries.deltaT = dt;
   if ( options.verbose)
     printf("deltaT = %e\n",zmseries.deltaT);
