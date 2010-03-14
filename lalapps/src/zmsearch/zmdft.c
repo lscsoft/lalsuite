@@ -797,7 +797,7 @@ int zmnormalise(
     ampdum[i]=ampdum[lal_index];
     ampdum[lal_index]=dum3;
 
-    fprintf(fpcc, "comp = [",zmnumber[lal_index]);
+    fprintf(fpcc, "comp = [%d",zmnumber[lal_index]);
     for(k=0;k<=i;k++){
       o_re=e_real[k];
       o_im=e_imagin[k];
