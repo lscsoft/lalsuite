@@ -22,7 +22,7 @@ int isnan(double value);
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 #include <series.h>
 
 RCSID( "$Id$" );

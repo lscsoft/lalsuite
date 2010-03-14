@@ -65,8 +65,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/LALFrameL.h>
 
-#include <FrameL.h>
 #include <series.h>
 
 

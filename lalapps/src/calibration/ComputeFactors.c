@@ -60,8 +60,8 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
+#include <lal/LALFrameL.h>
 
-#include <FrameL.h>
 #include <series.h>
 
 extern char *optarg;

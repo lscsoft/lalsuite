@@ -31,7 +31,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 
 char * generate_filename( FrStatData *sData );

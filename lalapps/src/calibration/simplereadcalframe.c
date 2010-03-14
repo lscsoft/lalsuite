@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 char *program;
 void print_reference( FrStatData *sdata );
