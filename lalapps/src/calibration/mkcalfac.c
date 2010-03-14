@@ -44,7 +44,7 @@ int deltaT =0;
 const char *run = NULL;
 const char *channel = NULL;
 
-char *get_next_line( char *line, size_t size, FILE *fp )
+static char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
   do
@@ -53,7 +53,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
   return s;
 }
 
-int read_time_series( struct series *aser, struct series *abser,
+static int read_time_series( struct series *aser, struct series *abser,
     const char *fname )
 {
   char line[256];
@@ -161,7 +161,7 @@ int read_time_series( struct series *aser, struct series *abser,
 
 #define CALURL "http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html"
 
-void usage ( char *s )
+static void usage ( char *s )
 {
   fprintf( stdout, "Usage: %s [options] [factorfile]\n", s );
   fprintf( stdout, "\nOptions:\n" );
