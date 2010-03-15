@@ -544,10 +544,9 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	p++;
       }
 
-      peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pmax );
+      peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
       duration = GV.ht_proc->deltaT * ( pend - pstart );
-
-      starttime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pstart );
+      starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* Now copy stuff into event */
       strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
@@ -555,8 +554,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
       
       /* give trigger a 1 sample fuzz on either side */
-      starttime -= GV.ht_proc->deltaT *1e9;
-      duration += 2*GV.ht_proc->deltaT;
+      starttime -= round( 1e9 * GV.ht_proc->deltaT );
+      duration += 2 * GV.ht_proc->deltaT;
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;

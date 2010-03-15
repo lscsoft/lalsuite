@@ -770,8 +770,6 @@ int MAIN( int argc, char *argv[]) {
 
   
   /* ----- start main calculations by going over coarse grid points --------*/
- 
-  /* ################## loop over SKY coarse-grid points ################## */
   skyGridCounter = 0;
 
   XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
@@ -792,13 +790,11 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
-  LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan.numSkyGridPoints);
-
 #ifdef OUTPUT_TIMING
     clock0 = time(NULL);
 #endif 
 
-
+ /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED) 
   {
     
@@ -884,12 +880,12 @@ int MAIN( int argc, char *argv[]) {
       for (ifdot = 0; ifdot < nf1dot; ifdot++) { 
 
         /* show progress */
-        fprintf(stderr, "%% --- Progress, coarse-grid sky point: %d / %d  and spin-down: %d / %d\n", 
+        fprintf(stderr, "%% --- Progress, sky: %d / %d  and f1dot: %d / %d\n", 
                 skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot ); 
         
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
-        LogPrintf(LOG_DEBUG, "Coarse-grid points in frequency per segment = %d\n",coarsegrid.length);
+        LogPrintf(LOG_DEBUG, "CG points = %d\n",coarsegrid.length);
      
         /* allocate memory for coarsegrid */
         coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
@@ -934,7 +930,7 @@ int MAIN( int argc, char *argv[]) {
         
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintf(LOG_DEBUG, "Total number of finegrid points = %ld\n",finegrid.length);
+        LogPrintf(LOG_DEBUG, "FG points = %ld\n",finegrid.length);
 
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
@@ -1240,10 +1236,7 @@ int MAIN( int argc, char *argv[]) {
     fclose ( timing_fp );
   }
 #endif
-  
-
-  LogPrintfVerbatim ( LOG_DEBUG, " ... done.\n");
-  
+   
   fprintf(stderr, "%% --- Finished analysis.\n");
   
   LogPrintf ( LOG_DEBUG, "Writing output ...");
