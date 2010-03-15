@@ -2845,7 +2845,7 @@ class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_namee + '-$(cluster)-$(process).err')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
     self.set_sub_file(exec_name + '.sub')
 
 class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
@@ -2864,6 +2864,7 @@ class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     self.testingstr = "testing"
     self.zerolagstr = "zerolag"
     self.databases = None
+    self.final = 0
 
   def set_number(self, number):
     """
@@ -2905,6 +2906,9 @@ class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     """
     finalize the mvsc_get_doubles node
     """
+    if self.final:
+      return
+    self.final = 1
     self.add_var_opt("instruments", self.instruments)
     self.add_var_opt("trainingstr", self.trainingstr)
     self.add_var_opt("testingstr", self.testingstr)
@@ -2914,14 +2918,16 @@ class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     ifos = self.instruments.strip().split(',')
     ifos.sort()
     self.out_file_group = {}
-    for i in range(number):
+    for i in range(self.number):
       trainingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.trainingstr) + '.pat'
       testingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '.pat'
       infoname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '_info.pat'
+      sprname = trainingname.replace('_training.pat', '.spr')
       self.out_file_group[i] = ((trainingname), (testingname))
       self.add_output_file(trainingname)
       self.add_output_file(testingname)
       self.add_output_file(infoname)
+      self.add_output_file(sprname)
     self.zerolag_file = [''.join(ifos) + '_' + str(self.zerolagstr) + '.pat']
     self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '.pat')
     self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '_info.pat')
@@ -2942,7 +2948,7 @@ class MvscTrainForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_namee + '-$(cluster)-$(process).err')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
     self.set_sub_file(exec_name + '.sub')
 
 class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
@@ -2955,18 +2961,22 @@ class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     """
     pipeline.CondorDAGNode.__init__(self, job)
     pipeline.AnalysisNode.__init__(self)
+    self.final = 0
 
   def add_training_file(self, trainingfile):
-  """
-  trainingfile: take a single file to train with
-  """
-  self.trainingfile = trainingfile
-  self.add_input_file(self.trainingfile)
+    """
+    trainingfile: take a single file to train with
+    """
+    self.trainingfile = trainingfile
+    self.add_input_file(self.trainingfile)
 
   def finalize(self):
     """
     finalize the mvsc_train_forest node
     """
+    if self.final:
+      return
+    self.final = 1
     self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
     self.add_file_arg("-a 4 -n 100 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
     self.add_output_file(self.trainedforest)
@@ -2975,7 +2985,7 @@ class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   a mvsc_use_forest job
   """
-    def __init__(self, cp, dax = False):
+  def __init__(self, cp, dax = False):
     """
     cp: ConfigParser object from which options are read.
     """
@@ -2987,7 +2997,7 @@ class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_namee + '-$(cluster)-$(process).err')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
     self.set_sub_file(exec_name + '.sub')
 
 class MvscUseForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
@@ -3000,6 +3010,7 @@ class MvscUseForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.final = 0
 
   def set_trained_file(self, trainedforest):
     """
@@ -3019,11 +3030,14 @@ class MvscUseForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     """
     finalize the MvscUseForestNode
     """
+    if self.final:
+      return
+    self.final = 1
     self.ranked_file = self.file_to_rank.replace('.pat','.dat')
-    self.add_file_arg("-A -a 1 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
+    self.add_file_arg("-A -a 4 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
     self.add_output_file(self.ranked_file)
 
-class MvscUpdateSqlJob(pipeline.CondorDAGJob):
+class MvscUpdateSqlJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   A mvsc_update_sql job
   """
@@ -3039,10 +3053,10 @@ class MvscUpdateSqlJob(pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_namee + '-$(cluster)-$(process).err')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
     self.set_sub_file(exec_name + '.sub')
 
-class MvscUpdateSqlNode(pipeline.CondorDAGNode):
+class MvscUpdateSqlNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
   """
   node for MvscUpdateSqlJobs
   """
