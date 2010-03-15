@@ -808,11 +808,9 @@ int main( int argc, char *argv[] )
     this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
         this_inj->quality, this_inj->distance, this_inj->epsilon );
       
-    /* calculate hrss */
-    this_inj->hrss = this_inj->amplitude * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
-      pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
-          ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5);
-      
+    /* calculate hrss : at geocenter plus = 2 and cross = 0 */
+    this_inj->hrss = XLALBlackHoleHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
+
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
     
@@ -838,12 +836,8 @@ int main( int argc, char *argv[] )
         scross*scross*resp.cross*resp.cross );
 
     /* compute hrss at LHO */ 
-    this_inj->hrss_h = this_inj->amplitude * pow ( ( 
-          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
-          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
-          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-        /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
-      
+    this_inj->hrss_h = XLALBlackHoleHRSS( this->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+
     /* llo */
     placeAndGPS.p_detector = &llo;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
@@ -860,11 +854,7 @@ int main( int argc, char *argv[] )
         + scross*scross*resp.cross*resp.cross );
     
     /* compute hrss at LLO */
-    this_inj->hrss_l = this_inj->amplitude * pow ( (
-          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
-          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
-          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-          /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
+    this_inj->hrss_l = XLALBlackHoleHRSS( this->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
         
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
