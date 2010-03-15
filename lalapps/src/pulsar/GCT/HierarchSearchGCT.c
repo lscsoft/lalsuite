@@ -790,8 +790,6 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
-  LogPrintf(LOG_DEBUG, "Total CG skypoints = %d.\n", thisScan.numSkyGridPoints);
-
 #ifdef OUTPUT_TIMING
     clock0 = time(NULL);
 #endif 
