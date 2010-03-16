@@ -613,9 +613,9 @@ static void worker (void) {
 
   int resultfile_present = 0;
 
-#ifdef _WIN32
   resultfile[0] = '\0';
 
+#ifdef _MSC_VER
   /* point the Windows Runtime Debugger to the Symbol Store on einstein */
   diagnostics_set_symstore("http://einstein.phys.uwm.edu/symstore");
 #endif
@@ -1214,7 +1214,7 @@ int main(int argc, char**argv) {
 
 #if HAVE_EXCHNDL
   ExchndlSetup();
-#elif _WIN32
+#elif defined(_WIN32)
   signal(SIGTERM, sighandler);
   if ( !skipsighandler ) {
     signal(SIGINT, sighandler);
@@ -1276,7 +1276,7 @@ int main(int argc, char**argv) {
 /* CHECKPOINTING FUNCTIONS */
 
 /** log an I/O error, i.e. source code line no., ferror, errno and strerror, and doserrno on Windows, too */
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define LOGIOERROR(mess,filename) \
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
 	      mess,filename,__LINE__,_doserrno,ferror(fp),errno,strerror(errno))
