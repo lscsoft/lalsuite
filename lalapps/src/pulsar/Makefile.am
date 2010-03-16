@@ -64,8 +64,6 @@ S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt
 
-
-
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common

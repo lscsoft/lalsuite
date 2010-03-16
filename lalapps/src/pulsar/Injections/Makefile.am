@@ -4,13 +4,7 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-## make sure lalapps.la is always up2date first
-lalapps-lib:
-	cd $(top_builddir)/src/lalapps && $(MAKE)
-.PHONY: lalapps-lib
-
-bin_PROGRAMS = lalapps-lib \
-	lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
+bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
 EXTRA_PROGRAMS = psinject eah_Makefakedata_v4
@@ -38,3 +32,8 @@ TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LAL_DATA_PATH=.$${LALPULSAR_PREFIX:+":$${LALPULSAR_PREFIX}/share/lalpulsar"}$${LALSUITE_TOP_SRCDIR:+":$${LALSUITE_TOP_SRCDIR}/lalpulsar/test"}
+
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
