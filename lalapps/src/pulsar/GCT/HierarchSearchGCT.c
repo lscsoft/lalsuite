@@ -129,7 +129,7 @@ void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, Use
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg, 
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg, 
                               UsefulStageVariables *usefulparams );
-inline UINT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
+static inline UINT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv, 
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -2051,7 +2051,7 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 /** Calculate the U1 index for a given point in parameter space */
-inline UINT4 ComputeU1idx( REAL8 freq_event, 
+static inline UINT4 ComputeU1idx( REAL8 freq_event, 
                           REAL8 f1dot_eventB1, 
                           REAL8 A1, 
                           REAL8 U1start, 
