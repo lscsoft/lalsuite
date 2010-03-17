@@ -123,7 +123,8 @@ void incHarmSum(ihsVals *out, REAL4Vector *vector)
    ihs = 0.0;
    loc = 0;
    for (ii=0; ii<(INT4)vector->length; ii++) {
-      REAL4 sum = vector->data[ii] + 0.5*vector->data[(INT4)floorf(ii*0.5)] + vector->data[(INT4)floorf(ii/3)]/3.0 + 0.25*vector->data[(INT4)floorf(ii*0.25)] + 0.2*vector->data[(INT4)floorf(ii*0.2)] ;
+      //REAL4 sum = vector->data[ii] + 0.5*vector->data[(INT4)floorf(ii*0.5)] + vector->data[(INT4)floorf(ii/3)]/3.0 + 0.25*vector->data[(INT4)floorf(ii*0.25)] + 0.2*vector->data[(INT4)floorf(ii*0.2)];
+      REAL4 sum = vector->data[ii] + vector->data[(INT4)floorf(ii*0.5)] + vector->data[(INT4)floorf(ii/3)] + vector->data[(INT4)floorf(ii*0.25)] + vector->data[(INT4)floorf(ii*0.2)];
       if (ii > 5 && sum > ihs) {
          ihs = sum;
          loc = ii;
@@ -176,7 +177,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
    
    length = ffdata->fpr->length;
    
-   INT4 trials = (INT4)10000*roundf(0.01/threshold);    //Number of trials to determine FAR value
+   INT4 trials = (INT4)roundf(10000*0.01/threshold);    //Number of trials to determine FAR value
    trials += columns;
    REAL4Vector *ihss = XLALCreateREAL4Vector((UINT4)trials);
    
@@ -247,9 +248,6 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
       XLALDestroyREAL4Vector(tempihsvals);
       tempihsvals = NULL;
    }
-   
-   for (ii=0; ii<out->ihsfar->length; ii++) fprintf(stderr,"%g\n",out->ihsfar->data[ii]);
-   
    
    //Destroy variables
    XLALDestroyREAL4Vector(ihssumvals);
@@ -422,7 +420,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
                REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
                candlist[(*numofcandidates)] = new_candidate();
-               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, ra, dec, ihs_sum, ihsSnr);
+               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, ra, dec, ihs_sum, ihsSnr, 0.0);
                (*numofcandidates)++;
             }
          }

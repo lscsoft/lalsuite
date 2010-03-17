@@ -40,7 +40,9 @@ farStruct * new_farStruct(void)
 // Destroy farStruct struct  -- done
 void free_farStruct(farStruct *farstruct)
 {
-
+   
+   XLALDestroyREAL4Vector(farstruct->topRvalues);
+   
    XLALFree((farStruct*)farstruct);
 
 }
@@ -49,7 +51,7 @@ void free_farStruct(farStruct *farstruct)
 //////////////////////////////////////////////////////////////
 // Estimate the FAR of the R statistic from the weights
 //void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise)
-void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise)
+void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise)
 {
    
    INT4 ii, jj;
@@ -58,7 +60,7 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, R
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumofsqweights += (templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]);
    REAL4 sumofsqweightsinv = 1.0/sumofsqweights;
    
-   INT4 trials = 10000*(INT4)roundf(0.01/thresh);    //Number of trials to determine FAR value
+   //INT4 trials = (INT4)roundf(100000*0.01/thresh);    //Number of trials to determine FAR value
    REAL4Vector *Rs = XLALCreateREAL4Vector((UINT4)trials);
    
    //RandomParams *param = XLALCreateRandomParams(0);
@@ -80,32 +82,31 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, R
    REAL4 sigma = calcStddev(Rs);
    
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
-   REAL4Vector *topRvals = XLALCreateREAL4Vector((UINT4)roundf(thresh*trials)+1);
-   topRvals->data[0] = Rs->data[0];
-   for (ii=1; ii<(INT4)topRvals->length; ii++) {
+   out->topRvalues = XLALCreateREAL4Vector((UINT4)roundf(thresh*trials)+1);
+   out->topRvalues->data[0] = Rs->data[0];
+   for (ii=1; ii<(INT4)out->topRvalues->length; ii++) {
       INT4 insertionpoint = ii;
-      while (insertionpoint > 0 && Rs->data[ii] > topRvals->data[insertionpoint-1]) insertionpoint--;
+      while (insertionpoint > 0 && Rs->data[ii] > out->topRvalues->data[insertionpoint-1]) insertionpoint--;
       
-      for (jj=topRvals->length-1; jj>insertionpoint; jj--) topRvals->data[jj] = topRvals->data[jj-1];
-      topRvals->data[insertionpoint] = Rs->data[ii];
+      for (jj=out->topRvalues->length-1; jj>insertionpoint; jj--) out->topRvalues->data[jj] = out->topRvalues->data[jj-1];
+      out->topRvalues->data[insertionpoint] = Rs->data[ii];
    }
-   for (ii=topRvals->length; ii<trials; ii++) {
-      if (Rs->data[ii] > topRvals->data[topRvals->length - 1]) {
-         INT4 insertionpoint = topRvals->length - 1;
-         while (insertionpoint > 0 && Rs->data[ii] > topRvals->data[insertionpoint-1]) insertionpoint--;
+   for (ii=out->topRvalues->length; ii<trials; ii++) {
+      if (Rs->data[ii] > out->topRvalues->data[out->topRvalues->length - 1]) {
+         INT4 insertionpoint = out->topRvalues->length - 1;
+         while (insertionpoint > 0 && Rs->data[ii] > out->topRvalues->data[insertionpoint-1]) insertionpoint--;
          
-         for (jj=topRvals->length-1; jj>insertionpoint; jj--) topRvals->data[jj] = topRvals->data[jj-1];
-         topRvals->data[insertionpoint] = Rs->data[ii];
+         for (jj=out->topRvalues->length-1; jj>insertionpoint; jj--) out->topRvalues->data[jj] = out->topRvalues->data[jj-1];
+         out->topRvalues->data[insertionpoint] = Rs->data[ii];
       }
    }
    
-   out->far = topRvals->data[topRvals->length - 1];
+   out->far = out->topRvalues->data[out->topRvalues->length - 1];
    out->distMean = mean;
    out->distSigma = sigma;
    
    //Destroy
    XLALDestroyREAL4Vector(Rs);
-   XLALDestroyREAL4Vector(topRvals);
    gsl_rng_free(rng);
 
 }
