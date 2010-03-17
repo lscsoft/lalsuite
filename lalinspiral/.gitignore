@@ -24,3 +24,10 @@ src/git_version
 src/lalinspiral-user-env.csh
 src/lalinspiral-user-env.sh
 src/stamp-h2
+test/BasicInjectTest
+test/GeneratePPNAmpCorInspiralTest
+test/GeneratePPNInspiralTest
+test/InjectionInterfaceTest
+test/RandomInspiralSignalTest
+test/RandomInspiralSignalTest.out
+test/injection.dat
