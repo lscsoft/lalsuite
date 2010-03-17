@@ -1,3 +1,4 @@
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
@@ -5,8 +6,6 @@ LDADD = \
 check_PROGRAMS = \
 	GeocentricGeodeticTest \
 	SkyCoordinatesTest
-
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS = \
 	GeocentricGeodeticTest \
