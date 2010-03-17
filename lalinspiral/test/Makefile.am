@@ -28,9 +28,6 @@ check_PROGRAMS = \
 	RandomInspiralSignalTest \
 	SpaceCovering
 TESTS = $(check_PROGRAMS)
-else
-check_PROGRAMS =
-TESTS =
 endif
 
 # non-building test
@@ -47,14 +44,12 @@ endif
 # TestRingdown
 
 # failing test
+# LALHybridTest
 # NRWaveIOTest
 
 # requires lalstochastic
 # CoherentInspiralFilterTest
 # CoherentInspiralInputTest
-
-# requires lalframe
-# LALHybridTest
 
 EXTRA_DIST = \
 	NRWaveIOTest.cfg \
