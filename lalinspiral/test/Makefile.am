@@ -15,6 +15,8 @@ TESTS =
 endif
 
 EXTRA_DIST = \
+	NRWaveIOTest.cfg \
+	NRWaveIOTest.data \
 	RandomInspiralSignalTest.par \
 	injection.xml
 
