@@ -44,6 +44,7 @@ test/GetOrientationEllipse
 test/InjectionInterfaceTest
 test/InspiralBCVSpinBankTest
 test/InspiralSpinBankTest
+test/LALHybridTest
 test/LALInspiralSpinningBHBinariesTest
 test/LALInspiralTest
 test/LALSTPNWaveformTest
