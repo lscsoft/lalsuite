@@ -3,13 +3,18 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
 
 if LALSUPPORT
 check_PROGRAMS = \
+	BCVTemplates \
+	BCVTemplatesFlatMesh \
 	BasicInjectTest \
 	CoarseTest \
+	CoarseTest2 \
 	FindChirpBCVSpinTest \
 	FindChirpBankVetoTest \
 	FindChirpTDTest \
+	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
 	GeneratePPNInspiralTest \
+	GetOrientationEllipse \
 	InjectionInterfaceTest \
 	InspiralBCVSpinBankTest \
 	InspiralSpinBankTest \
@@ -17,7 +22,11 @@ check_PROGRAMS = \
 	LALInspiralTest \
 	LALSTPNWaveformTest \
 	MetricTest \
-	RandomInspiralSignalTest
+	MetricTestBCV \
+	MetricTestPTF \
+	PNTemplates \
+	RandomInspiralSignalTest \
+	SpaceCovering
 TESTS = $(check_PROGRAMS)
 else
 check_PROGRAMS =
@@ -25,6 +34,8 @@ TESTS =
 endif
 
 # non-building test
+# BCVSpinTemplates
+# ChirpSpace
 # FilterTest
 # FindChirpACTDTest
 # FindChirpBCVTest
@@ -33,6 +44,7 @@ endif
 # InspiralSpinBankwNDTemplateBankTest
 # NRWaveInjectTest
 # RingTest
+# TestRingdown
 
 # failing test
 # NRWaveIOTest
