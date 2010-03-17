@@ -2634,13 +2634,17 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 FstatAtoms *
 XLALCreateFstatAtoms ( UINT4 num )
 {
-  const CHAR *fn = "XLALCreateFstatAtoms()";
+  const CHAR *fn = __func__;
   FstatAtoms *ret;
 
-  if ( (ret = LALMalloc ( sizeof(*ret))) == NULL )
+  if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
     goto failed;
 
   ret->length = num;
+
+  if ( num == 0 )	/* allow num=0: return just 'head' with NULL arrays */
+    return ret;
+
   if ( (ret->timestamps = LALMalloc ( num * sizeof( *ret->timestamps) ) ) == NULL )
     goto failed;
   if ( (ret->a_alpha = LALMalloc ( num * sizeof( *ret->a_alpha) )) == NULL )
