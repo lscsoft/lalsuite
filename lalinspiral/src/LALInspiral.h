@@ -508,6 +508,8 @@ tagInspiralTemplate
   LALSpinInteraction	spinInteraction;
 
   InputAxis axisChoice;
+  UINT4 fixedStep;
+  UINT4 inspiralOnly;
 
   struct tagInspiralTemplate *next;
   struct tagInspiralTemplate *fine;
@@ -1142,37 +1144,21 @@ void LALSTPNWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-/* Phenomenological Spin Taylor with RingDown*/
+/* Phen-Spin waveform functions*/
 
 
 
 
 
-void LALPSpinInspiralRDderivatives(
+void LALSpinInspiralDerivatives(
                          REAL8Vector *values,
                          REAL8Vector *dvalues,
                          void *mparams );
 
-
-
-void LALPSpinInspiralRDForInjection(
-                           LALStatus        *status,
-                           CoherentGW       *waveform,
-                           InspiralTemplate *params,
-                           PPNParamStruc  *ppnParams);
-
-void LALPSpinInspiralRDEngine (
-                LALStatus        *status,
-                REAL4Vector      *signalvec1,
-                REAL4Vector      *signalvec2,
-                REAL4Vector      *a,
-                REAL4Vector      *ff,
-                REAL8Vector      *phi,
-                REAL4Vector      *shift,
-                UINT4            *countback,
-                InspiralTemplate *params,
-                InspiralInit     *paramsInit
-                );
+void LALPSpinInspiralRD(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
 
 void LALPSpinInspiralRDTemplates (
     LALStatus        *status,
@@ -1181,16 +1167,28 @@ void LALPSpinInspiralRDTemplates (
     InspiralTemplate *params
    );
 
-void LALPSpinInspiralRD(
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
 void LALPSpinInspiralRDFreqDom (
 				LALStatus        *status,
 				REAL4Vector      *signalvec,
 				InspiralTemplate *params);
 
+void LALPSpinInspiralRDForInjection(
+                           LALStatus        *status,
+                           CoherentGW       *waveform,
+                           InspiralTemplate *params,
+                           PPNParamStruc  *ppnParams);
+
+void LALPSpinInspiralRDEngine (
+				LALStatus        *status,
+				REAL8Vector      *signalvec1,
+				REAL8Vector      *signalvec2,
+				REAL8Vector      *h,
+				REAL8Vector      *f,
+				REAL8Vector      *phi,
+				UINT4            *countback,
+				InspiralTemplate *params,
+				InspiralInit     *paramsInit
+				);
 
 /* Phenomenological waveform generation functions */
 
@@ -1613,17 +1611,17 @@ INT4 XLALInspiralAttachRingdownWave (
 
 
 INT4 XLALPSpinInspiralRingdownWave (
-       REAL4Vector             *rdwave,
+       REAL8Vector             *rdwave,
        InspiralTemplate        *params,
-       REAL4Vector             *inspwave,
+       REAL8Vector             *inspwave,
        COMPLEX8Vector          *modefreqs,
        UINT4                   nmodes
        );
 
-INT4 XLALPSpinGenerateWaveDerivative (
-       REAL4Vector             *dwave,
-       REAL4Vector             *wave,
-       InspiralTemplate        *params
+INT4 XLALGenerateWaveDerivative (
+	REAL8Vector		*dwave,
+	REAL8Vector	        *wave,
+	REAL8                    dt
        );
 
 INT4 XLALPSpinGenerateQNMFreq (
@@ -1645,7 +1643,7 @@ INT4 XLALPSpinFinalMassSpin(
        );
 
 INT4 XLALPSpinInspiralAttachRingdownWave (
-       REAL4Vector       *signalvec,
+       REAL8Vector       *signalvec,
        InspiralTemplate  *params,
        UINT4             *attpos,
        UINT4             nmodes,
