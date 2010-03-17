@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer, Riccardo Sturani
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -48,8 +48,7 @@ $Id$
 
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
-waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor) or the
+waveform generated either by the \texttt{inspiral} package (EOB, EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRd) or the
 \texttt{inject} package	(GeneratePPN).	It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
 
@@ -92,7 +91,7 @@ inspiral package.
 
 \subsubsection*{Notes}
 Inject only time-domain waveforms for the time being such as GeneratePPN,
-TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , Spintaylor..
+  TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
 \subsubsection*{Uses}
 \begin{verbatim}
 None.
@@ -207,8 +206,8 @@ LALGenerateInspiral(
     CHECKSTATUSPTR(status);
   }
 
-  /* If no waveform has been generated. (AmpCorPPN fills waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN )
+  /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximan != PhenSpinTaylorRD )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
@@ -372,6 +371,10 @@ LALGetApproximantFromString(
   {
     *approximant = EOB;
   }
+  else if ( strstr(thisEvent) "PhenSpinTaylorRd" ) )
+  {
+    *approximant = PhenSpinTaylorRD;
+  }
   else if ( strstr(thisEvent, "SpinTaylor" ) )
   {
     *approximant = SpinTaylor;
@@ -495,8 +498,8 @@ LALGenerateInspiralPopulateInspiral(
 
   /* distance in Mpc */
   inspiralParams->startTime	  =  0.0;
-  inspiralParams->startPhase	  =  thisEvent->coa_phase;
-  inspiralParams->startPhase      = 0.0;
+  //inspiralParams->startPhase	  =  thisEvent->coa_phase;
+  inspiralParams->startPhase      =  thisEvent->phi0;
 
   inspiralParams->OmegaS = GENERATEINSPIRAL_OMEGAS;/* EOB 3PN contribution */
   inspiralParams->Theta	 = GENERATEINSPIRAL_THETA; /* EOB 3PN contribution */
