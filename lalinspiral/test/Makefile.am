@@ -6,6 +6,7 @@ check_PROGRAMS = \
 	BasicInjectTest \
 	GeneratePPNInspiralTest \
 	GeneratePPNAmpCorInspiralTest \
+	InjectionInterfaceTest \
 	RandomInspiralSignalTest
 TESTS = $(check_PROGRAMS)
 else
@@ -13,8 +14,12 @@ check_PROGRAMS =
 TESTS =
 endif
 
-EXTRA_DIST = RandomInspiralSignalTest.par
+EXTRA_DIST = \
+	RandomInspiralSignalTest.par \
+	injection.xml
 
-CLEANFILES = *.out
+CLEANFILES = \
+	*.out \
+	*.dat
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null

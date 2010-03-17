@@ -23,9 +23,7 @@ TESTS_ENVIRONMENT = 1>/dev/null
 EXTRA_DIST = \
 	CheckStatus.c \
 	CheckStatus.h \
-	InjectionInterfaceTest.c \
-	InjectTest.c \
-	injection.xml
+	InjectTest.c
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
