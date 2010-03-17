@@ -6,10 +6,6 @@ check_PROGRAMS = \
 	GeocentricGeodeticTest \
 	SkyCoordinatesTest
 
-SkyCoordinatesTest_SOURCES = SkyCoordinatesTest.c
-
-GeocentricGeodeticTest_SOURCES = GeocentricGeodeticTest.c
-
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS = \
