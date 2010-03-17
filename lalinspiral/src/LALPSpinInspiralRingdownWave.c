@@ -19,21 +19,21 @@
 */
 
 
-/**** <lalVerbatim file="LALSpinInspiralRingdownWaveCV">
+/**** <lalVerbatim file="LALPSpinInspiralRingdownWaveCV">
  * $Id$
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * \subsection{Module \texttt{LALSpinInspiralRingdownWave.c}}
+ * \subsection{Module \texttt{LALPSpinInspiralRingdownWave.c}}
  * 
  * Module to compute the ring-down waveform as linear combination
  * of quasi-normal-modes decaying waveforms, which can be attached to
- * the hybrid spin Taylor waveform.
+ * the phenomenological spin Taylor waveform.
  * 
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
- * \input{XLALXLALSpinInspiralRingdownWaveCP}
- * \idx{XLALXLALSpinInspiralRingdownWave()}
+ * \input{XLALXLALPSpinInspiralRingdownWaveCP}
+ * \idx{XLALXLALPSpinInspiralRingdownWave()}
  * \begin{itemize}
  * \item \texttt{rdwave,} Output, the ring-down waveform
  * \item \texttt{params,} Input, the parameters where ring-down waveforms are computed
@@ -42,16 +42,16 @@
  * \item \texttt{nmodes,} Input, the number of quasi-normal-modes to be combined.
  * \end{itemize}
  *
- * \input{XLALSpinGenerateWaveDerivativeCP}
- * \idx{XLALSpinGenerateWaveDerivative()}
+ * \input{XLALPSpinGenerateWaveDerivativeCP}
+ * \idx{XLALPSpinGenerateWaveDerivative()}
  * \begin{itemize}
  * \item \texttt{dwave,} Output, time derivative of the input waveform
  * \item \texttt{wave,} Input, waveform to be differentiated in time
  * \item \texttt{params,} Input, the parameters of the input waveform.
  * \end{itemize}
  * 
- * \input{XLALSpinGenerateQNMFreqCP}
- * \idx{XLALSpinGenerateQNMFreq()}
+ * \input{XLALPSpinGenerateQNMFreqCP}
+ * \idx{XLALPSpinGenerateQNMFreq()}
  * \begin{itemize}
  * \item \texttt{ptfwave,} Output, the frequencies of the quasi-normal-modes
  * \item \texttt{params,} Input, the parameters of the binary system
@@ -60,8 +60,8 @@
  * \item \texttt{nmodes,} Input, the number of overtones considered.
  * \end{itemize}
  *
- * \input{XLALSpinFinalMassSpinCP}
- * \idx{XLALSpinFinalMassSpin()}
+ * \input{XLALPSpinFinalMassSpinCP}
+ * \idx{XLALPSpinFinalMassSpin()}
  * \begin{itemize}
  * \item \texttt{finalMass,} Output, the mass of the final Kerr black hole
  * \item \texttt{finalSpin,}  Input, the spin of the final Kerr balck hole
@@ -82,7 +82,7 @@
  * 
  * \subsubsection*{Notes}
  *
- * \vfill{\footnotesize\input{LALSpinInspiralRingdownWaveCV}}
+ * \vfill{\footnotesize\input{LALPSpinInspiralRingdownWaveCV}}
  *
  **** </lalLaTeX> */
 
@@ -98,7 +98,7 @@
 #include <gsl/gsl_spline.h>
 
 /* <lalVerbatim file="XLALInspiralRingdownWaveCP">  */
-INT4 XLALSpinInspiralRingdownWave (
+INT4 XLALPSpinInspiralRingdownWave (
 	REAL4Vector		*rdwave,
 	InspiralTemplate	*params,
 	REAL4Vector	        *allinspwave,
@@ -108,7 +108,7 @@ INT4 XLALSpinInspiralRingdownWave (
 /* </lalVerbatim> */
 {
 
-  static const char *func = "XLALSpinInspiralRingdownWave";
+  static const char *func = "XLALPSpinInspiralRingdownWave";
 
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -261,17 +261,17 @@ INT4 XLALSpinInspiralRingdownWave (
   
   XLALDestroyREAL8Vector(modeamps);
   return errcode;
-} /*End of XLALSpinInspiralRingdownWave */
+} /*End of XLALPSpinInspiralRingdownWave */
 
-/* <lalVerbatim file="XLALSpinGenerateWaveDerivative">  */
-INT4 XLALSpinGenerateWaveDerivative (
+/* <lalVerbatim file="XLALPSpinGenerateWaveDerivative">  */
+INT4 XLALPSpinGenerateWaveDerivative (
 	REAL4Vector		*dwave,
 	REAL4Vector	        *wave,
 	InspiralTemplate	*params
 	)
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSpinGenerateWaveDerivative";
+  static const char *func = "XLALPSpinGenerateWaveDerivative";
 
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -358,8 +358,8 @@ INT4 XLALSpinGenerateWaveDerivative (
   return errcode;
 }
 
-/* <lalVerbatim file="XLALSpinGenerateQNMFreqCP">  */
-INT4 XLALSpinGenerateQNMFreq(
+/* <lalVerbatim file="XLALPSpinGenerateQNMFreqCP">  */
+INT4 XLALPSpinGenerateQNMFreq(
 	COMPLEX8Vector		*modefreqs,
 	InspiralTemplate	*params,
 	REAL8                   energy,
@@ -370,10 +370,11 @@ INT4 XLALSpinGenerateQNMFreq(
 	REAL8                   LNhy,
 	REAL8                   LNhz
 	)
+
 /* </lalVerbatim> */
 {
 
-  static const char *func = "XLALSpinFinalMassSpin";
+  static const char *func = "XLALPSpinGenerateQNMFreq";
   
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -400,7 +401,7 @@ INT4 XLALSpinGenerateQNMFreq(
   totalMass = params->totalMass;
 
   /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-  errcode = XLALSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, LNhx, LNhy, LNhz);
+  errcode = XLALPSpinFinalMassSpin(&finalMass, &finalSpin, params, energy, LNhx, LNhy, LNhz);
   if ( errcode != XLAL_SUCCESS )
   {
     XLAL_ERROR( func , XLAL_EFUNC );
@@ -409,7 +410,7 @@ INT4 XLALSpinGenerateQNMFreq(
   /* QNM frequencies from the fitting given in PRD73, 064030 */
   /* Other modes than l=2, m=\pm 2, 0 should be added*/
 
-  if (l!=2) fprintf(stderr,"*** LALSpinInspiralRingdownWave ERROR: RingDown modes for l=%d unavailable\n",l);
+  if (l!=2) fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: RingDown modes for l=%d unavailable\n",l);
   else {
     if (m==2) {
       for (i = 0; i < nmodes; i++)
@@ -464,7 +465,7 @@ INT4 XLALSpinGenerateQNMFreq(
 	      }
 	    }
 	    else {
-	      fprintf(stderr,"*** LALSpinInspiralRingdownWave ERROR: Ringdown modes for l=%d m=%d not availbale\n",l,m);
+	      fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Ringdown modes for l=%d m=%d not availbale\n",l,m);
 	      XLAL_ERROR( func , XLAL_EDOM );
 	    }
 	  }
@@ -476,8 +477,8 @@ INT4 XLALSpinGenerateQNMFreq(
   return errcode;
 }
 
-/* <lalVerbatim file="XLALSpinFinalMassSpinCP">  */
-INT4 XLALSpinFinalMassSpin(
+/* <lalVerbatim file="XLALPSpinFinalMassSpinCP">  */
+INT4 XLALPSpinFinalMassSpin(
 	REAL8		 *finalMass,
 	REAL8		 *finalSpin,
 	InspiralTemplate *params,
@@ -489,7 +490,7 @@ INT4 XLALSpinFinalMassSpin(
 /* </lalVerbatim> */
 {
 
-  static const char *func = "XLALSpinFinalMassSpin";
+  static const char *func = "XLALPSpinFinalMassSpin";
 
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
@@ -533,7 +534,7 @@ INT4 XLALSpinFinalMassSpin(
   /* Estimate final mass by adding the negative binding energy to the rest mass*/
   *finalMass = 1. + energy;
   if (*finalMass < 0.) {
-    fprintf(stderr,"*** LALSpinInspiralRingdownWave ERROR: Estimated final mass <0 : %12.6f\n ",*finalMass);
+    fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Estimated final mass <0 : %12.6f\n ",*finalMass);
     fprintf(stderr,"***                                    Final mass set to initial mass\n");
     XLAL_ERROR( func, XLAL_ERANGE);
     *finalMass = 1.;
@@ -541,7 +542,7 @@ INT4 XLALSpinFinalMassSpin(
 
   *finalSpin = sqrt( a12 + 2.*ll*qq*a12l + ll*ll*qq*qq)/(1.+qq)/(1.+qq);
   if ((*finalSpin > 1.)||(*finalSpin < 0.)) {
-    fprintf(stderr,"*** LALSpinInspiralRingdownWave ERROR: Estimated final Spin >1 : %11.3e\n ",*finalSpin);
+    fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Estimated final Spin >1 : %11.3e\n ",*finalSpin);
     fprintf(stderr,"***                                    Final Spin set to 0\n");
     *finalSpin = 0.;
     XLAL_ERROR( func, XLAL_ERANGE);
@@ -554,8 +555,8 @@ INT4 XLALSpinFinalMassSpin(
   return errcode;
 }
 
-/* <lalVerbatim file="XLALSpinInspiralAttachRingdownWaveCP">  */
-INT4 XLALSpinInspiralAttachRingdownWave (
+/* <lalVerbatim file="XLALPSpinInspiralAttachRingdownWaveCP">  */
+INT4 XLALPSpinInspiralAttachRingdownWave (
       REAL4Vector 	*sigl,
       InspiralTemplate 	*params,
       REAL8              energy,
@@ -593,7 +594,7 @@ INT4 XLALSpinInspiralAttachRingdownWave (
       {
         XLAL_ERROR( func, XLAL_ENOMEM );
       }
-      errcode = XLALSpinGenerateQNMFreq( modefreqs, params, energy, l, m, nmodes, LNhx, LNhy, LNhz);
+      errcode = XLALPSpinGenerateQNMFreq( modefreqs, params, energy, l, m, nmodes, LNhx, LNhy, LNhz);
       if ( errcode != XLAL_SUCCESS )
       {
         XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -654,8 +655,8 @@ INT4 XLALSpinInspiralAttachRingdownWave (
 	allinspwave->data[k+nmodes] = inspwave2->data[Npatch-1];
 
 	if ((nmodes>1)&&(k+1<nmodes)) {
-	  errcode = XLALSpinGenerateWaveDerivative( dinspwave1, inspwave1, params );
-	  errcode2 = XLALSpinGenerateWaveDerivative( dinspwave2, inspwave2, params );
+	  errcode = XLALPSpinGenerateWaveDerivative( dinspwave1, inspwave1, params );
+	  errcode2 = XLALPSpinGenerateWaveDerivative( dinspwave2, inspwave2, params );
 	  if ( (errcode != XLAL_SUCCESS) || (errcode2 != XLAL_SUCCESS) )
 	    {
 	      XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -676,7 +677,7 @@ INT4 XLALSpinInspiralAttachRingdownWave (
 
       /* Generate ring-down waveforms */
 
-      errcode = XLALSpinInspiralRingdownWave( rdwave, params, allinspwave, modefreqs, nmodes );
+      errcode = XLALPSpinInspiralRingdownWave( rdwave, params, allinspwave, modefreqs, nmodes );
 
       if ( errcode != XLAL_SUCCESS )
       {

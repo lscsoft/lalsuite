@@ -138,6 +138,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
 	LALInspiralRingdownWave.c \
+	LALPSpinInspiralRingdownWave.c \
 	LALInspiralSetParams.c \
 	LALInspiralSetSearchLimits.c \
 	LALInspiralSetup.c \
@@ -173,6 +174,7 @@ liblalinspiral_la_SOURCES = \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
 	LALSTPNWaveform.c \
+	LALPSpinInspiralRD.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALTrigScanCluster.c \

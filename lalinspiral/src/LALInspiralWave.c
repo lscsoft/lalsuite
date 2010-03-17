@@ -216,7 +216,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case PhenSpinTaylorRD:
-           LALPSpinInspiralRDWaveform(status->statusPtr, signalvec, params);
+           LALPSpinInspiralRD(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
@@ -318,7 +318,7 @@ LALInspiralWaveTemplates(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-           LALPSpinInspiralRDTemplates(status->statusPtr, signalvec, params);
+	   LALPSpinInspiralRDTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
@@ -397,7 +397,7 @@ LALInspiralWaveForInjection(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-           LALPSpinInspiralRDInjection(status->statusPtr, signalvec, params);
+    	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:

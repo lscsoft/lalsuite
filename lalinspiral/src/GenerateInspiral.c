@@ -207,7 +207,7 @@ LALGenerateInspiral(
   }
 
   /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN && approximan != PhenSpinTaylorRD )
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
@@ -371,7 +371,7 @@ LALGetApproximantFromString(
   {
     *approximant = EOB;
   }
-  else if ( strstr(thisEvent) "PhenSpinTaylorRd" ) )
+  else if ( strstr(thisEvent, "PhenSpinTaylorRD" ) )
   {
     *approximant = PhenSpinTaylorRD;
   }

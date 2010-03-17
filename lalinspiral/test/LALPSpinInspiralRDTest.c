@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 *  
 * Compile with 
-* gcc `pkg-config --cflags lal lalsupport lalinspiral` LALSpinInspiralRDTest.c `pkg-config --libs lal lalsupport lalinspiral` -o LALSpinInspiralRDTest.out
+* gcc `pkg-config --cflags lal lalsupport lalinspiral` LALPSpinInspiralRDTest.c `pkg-config --libs lal lalsupport lalinspiral` -o LALPSpinInspiralRDTest.out
 *
 */
 
@@ -91,7 +91,7 @@ int main() {
     injParams.mass1 = 10.;
     injParams.mass2 = 10.;
 
-    snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"HSpinTaylorRDthreePointFivePN");
+    snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
     /* this is given in Mpc */
     injParams.distance = 1.;
@@ -129,7 +129,7 @@ int main() {
     LALGenerateInspiral( &mystatus, &thewaveform, &injParams, &ppnParams );
     if ( mystatus.statusCode )
     {
-      fprintf( stderr, "LALSpinInspiralRDTest: error generating waveform %d\n",mystatus.statusCode );
+      fprintf( stderr, "LALPSpinInspiralRDTest: error generating waveform %d\n",mystatus.statusCode );
       fprintf(stderr,"*** Test: h defined %s %11.3e\n",thewaveform.h->name,thewaveform.h->data->data[0]);
       exit( 1 );
     }

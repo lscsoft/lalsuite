@@ -1271,10 +1271,6 @@ void LALSTPNWaveform(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-int XLALInspiralGetApproximantString( CHAR        *output,
-				      UINT4       length,
-				      Approximant approx,
-
 /* Phenomenological Spin Taylor with RingDown*/
 
 /*  <lalLaTeX>
@@ -1736,11 +1732,6 @@ INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector  	 *signalvec2,
         InspiralTemplate *params);
 
-int XLALInspiralGetApproximantString( CHAR        *output,
-                                      UINT4       length,
-                                      Approximant approx,
-                                      LALPNOrder  order
-                                    );
  
 INT4 XLALPSpinInspiralRingdownWave (
        REAL4Vector             *rdwave,
@@ -1756,20 +1747,26 @@ INT4 XLALPSpinGenerateWaveDerivative (
        InspiralTemplate        *params
        );
 
-INT4 XLALPSpinGenerateQNMFreq(
+INT4 XLALPSpinGenerateQNMFreq (
        COMPLEX8Vector          *modefreqs,
        InspiralTemplate        *params,
        REAL8                   energy,
        UINT4                   l,
        INT4                    m,
-       UINT4                   nmodes
+       UINT4                   nmodes,
+       REAL8                   LNhx,
+       REAL8                   LNhy,
+       REAL8                   LNhz
        );
 
 INT4 XLALPSpinFinalMassSpin(
        REAL8                   *finalMass,
        REAL8                   *finalSpin,
        InspiralTemplate        *params,
-       REAL8                   energy
+       REAL8                   energy,
+       REAL8                   LNhx,
+       REAL8                   LNhy,
+       REAL8                   LNhz
        );
 
 INT4 XLALPSpinInspiralAttachRingdownWave (
@@ -1779,8 +1776,17 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
        UINT4             *attpos,
        UINT4             nmodes,
        UINT4             l,
-       INT4              m
+       INT4              m,
+       REAL8             LNhx,
+       REAL8             LNhy,
+       REAL8             LNhz
 );
+
+int XLALInspiralGetApproximantString( CHAR        *output,
+                                      UINT4       length,
+                                      Approximant approx,
+                                      LALPNOrder  order
+                                    );
 
 int XLALBandPassInspiralTemplate(
         REAL4Sequence  *sequence,

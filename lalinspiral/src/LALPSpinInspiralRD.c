@@ -373,13 +373,15 @@ LALPSpinInspiralRD (
 
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
    /* Call the engine function */
-   LALSpinInspiralRDEngine(status->statusPtr, signalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   LALPSpinInspiralRDEngine(status->statusPtr, signalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 
+
+NRCSID (LALPSPININSPIRALRDTEMPLATESMC,"$Id$");
 
 /*  <lalVerbatim file="LALPSpinInspiralRDTemplatesCP"> */
 void
@@ -429,7 +431,7 @@ LALPSpinInspiralRDTemplates (
    memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
-   LALSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
 
    RETURN(status);
 }
@@ -439,7 +441,7 @@ NRCSID (LALPSPININSPIRALRDINJECTIONC,"$Id$");
 
 /*  <lalVerbatim file="LALPSpinInspiralRDInjectionCP"> */
 void
-LALSpinInspiralRDForInjection (
+LALPSpinInspiralRDForInjection (
 			     LALStatus        *status,
 			     CoherentGW       *waveform,
 			     InspiralTemplate *params,
@@ -505,7 +507,7 @@ LALSpinInspiralRDForInjection (
 
   /* Call the engine function */
   //params->fCutoff     = ppnParams->fStop;
-  LALSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
+  LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
   {
@@ -621,7 +623,7 @@ LALSpinInspiralRDForInjection (
  */
 
 /*  <lalVerbatim file="LALSpinInspiralRDForInjectionCP"> */
-void LALSpinInspiralRDEngine (
+void LALPSpinInspiralRDEngine (
                 LALStatus        *status,			      
                 REAL4Vector      *signalvec1,
                 REAL4Vector      *signalvec2,
@@ -1051,7 +1053,7 @@ void LALSpinInspiralRDEngine (
   values.data[9] = S2y;
   values.data[10]= S2z;
 
-  in4.function 	= LALSpinInspiralRDderivatives;
+  in4.function 	= LALPSpinInspiralRDderivatives;
   in4.y 	= &values;
   in4.dydx 	= &dvalues;
   in4.h 	= dt/m;
@@ -1117,7 +1119,7 @@ void LALSpinInspiralRDEngine (
 
   alpha=atan2(LNhy,LNhx);
 
-  LALSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
+  LALPSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
 
   /*Initialization of support variables*/
   cialphadot=0.;
@@ -1144,7 +1146,7 @@ void LALSpinInspiralRDEngine (
   /* Get QNM frequencies */
   modefreqs = XLALCreateCOMPLEX8Vector( nmodes );
 
-  xlalStatus22 = XLALSpinGenerateQNMFreq( modefreqs, params, energy, 2, 2, nmodes, LNhx, LNhy, LNhz);
+  xlalStatus22 = XLALPSpinGenerateQNMFreq( modefreqs, params, energy, 2, 2, nmodes, LNhx, LNhy, LNhz);
   if ( xlalStatus22 != XLAL_SUCCESS )
     {
       XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -1253,7 +1255,7 @@ void LALSpinInspiralRDEngine (
     
     dLNhzold=dLNhz;
 
-    LALSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
+    LALPSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
 
     dLNhx=dvalues.data[2];
     dLNhy=dvalues.data[3];
@@ -1377,7 +1379,7 @@ void LALSpinInspiralRDEngine (
   /* Get QNM frequencies */
   modefreqs = XLALCreateCOMPLEX8Vector( nmodes );
 
-  xlalStatus22 = XLALSpinGenerateQNMFreq( modefreqs, params, energy, 2, 2, nmodes, LNhx, LNhy, LNhz );
+  xlalStatus22 = XLALPSpinGenerateQNMFreq( modefreqs, params, energy, 2, 2, nmodes, LNhx, LNhy, LNhz );
   if ( xlalStatus22 != XLAL_SUCCESS )
     {
       XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -1483,16 +1485,15 @@ void LALSpinInspiralRDEngine (
   UINT4 ll=2;
   INT4 mm=0;
 
-  if (params->approximant == HSpinTaylorRD)
     {
       apcount=count;
-      xlalStatus20 = XLALSpinInspiralAttachRingdownWave( h20 , params , energy, &apcount, nmodes , ll , mm , LNhx, LNhy, LNhz );
+      xlalStatus20 = XLALPSpinInspiralAttachRingdownWave( h20 , params , energy, &apcount, nmodes , ll , mm , LNhx, LNhy, LNhz );
       if (xlalStatus20 != XLAL_SUCCESS )	XLALDestroyREAL4Vector( h20 );
       for (i=2*apcount;i<2*length;i++) h20->data[i]=0.;
       *countback= apcount;
       apcount= count;
 
-      xlalStatus22 = XLALSpinInspiralAttachRingdownWave( h22 , params , energy, &apcount, nmodes , 2 , 2 , LNhx, LNhy, LNhz);
+      xlalStatus22 = XLALPSpinInspiralAttachRingdownWave( h22 , params , energy, &apcount, nmodes , 2 , 2 , LNhx, LNhy, LNhz);
 
       if (xlalStatus22 != XLAL_SUCCESS ) XLALDestroyREAL4Vector( h22 );      
       if ( apcount > (*countback) ) *countback= apcount;
