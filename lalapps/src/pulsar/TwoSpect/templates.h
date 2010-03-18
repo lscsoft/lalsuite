@@ -31,7 +31,7 @@
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
 //void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise);
-void estimateFAR(farStruct *out, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise);
+void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise);
 
 templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);

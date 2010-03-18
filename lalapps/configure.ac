@@ -25,7 +25,6 @@ AC_CONFIG_FILES([\
   src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
@@ -37,7 +36,6 @@ AC_CONFIG_FILES([\
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
-  src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \

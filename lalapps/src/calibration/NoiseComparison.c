@@ -65,8 +65,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/LALFrameL.h>
 
-#include <FrameL.h>
 #include <series.h>
 
 
@@ -81,7 +81,7 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-COMPLEX8 tmpa, tmpb, tmpc; 
+COMPLEX8 tmpa, tmpb, tmpc;
 REAL4 tmpx, tmpy;
 
 #define cdiv( a, b ) \
@@ -119,21 +119,21 @@ RCSID( "NoiseComparison $Id$");
 struct CommandLineArgsTag {
   char *freqfile;          /* File with frequencies */
   REAL8 fcal;              /* Calibration line frequency */
-  REAL8 b;                 /* band */    
+  REAL8 b;                 /* band */
   REAL8 t;                 /* Time interval to compute the FFT */
   char *hoftFrCacheFile;   /* Frame cache file for h(t) */
   char *derrFrCacheFile;   /* Frame cache file for DARM_ERR */
-  char *derr_chan;         /* DARM_ERR channel name */ 
-  char *exc_chan;          /* DARM_ERR channel name */ 
-  char *darm_chan;         /* DARM_ERR channel name */ 
-  char *asq_chan;          /* DARM_ERR channel name */ 
+  char *derr_chan;         /* DARM_ERR channel name */
+  char *exc_chan;          /* DARM_ERR channel name */
+  char *darm_chan;         /* DARM_ERR channel name */
+  char *asq_chan;          /* DARM_ERR channel name */
   char *hoft_chan;         /* h(t) channel name */
   char *noisefile;         /* output file for the noise */
   char *noisefilebin;      /* output file for the individual bins */
   char *OLGFile;           /* open loop gain file */
   char *SensingFile;       /* sensing function file */
   INT4 GPSStart;           /* Start and end GPS times of the segment to be compared*/
-  INT4 GPSEnd;         
+  INT4 GPSEnd;
   REAL8 G0Re;              /* Real part of open loop gain at cal line freq.*/
   REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
   REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
@@ -178,7 +178,6 @@ static FrChanIn chanin_derr;
 static FrChanIn chanin_hoft;
 REAL4Vector *derrwin=NULL,*hoftwin=NULL;
 
-LALWindowParams winparams;
 FILE *fpout=NULL;
 FILE *fpoutbin=NULL;
 COMPLEX16Vector *ffthtData = NULL;
@@ -195,7 +194,8 @@ REAL8 gamma_fac[MAXFACTORS];
 REAL8 frequencies[MAXFREQUENCIES]; /* frequency array */
 INT4 Nfrequencies;  /* number of frequencies */
 
-static void printmemuse(void) 
+#if 0
+static void printmemuse(void)
 {
    pid_t mypid=getpid();
    char commandline[256];
@@ -204,6 +204,7 @@ static void printmemuse(void)
    system(commandline);
    fflush(NULL);
 }
+#endif
 
 /***************************************************************************/
 
@@ -217,7 +218,7 @@ int GetFactors(struct CommandLineArgsTag CLA);
 /* */
 int ReadCalFiles(struct CommandLineArgsTag CLA);
 /* */
-int ComputeNoise(struct CommandLineArgsTag CLA, int i);   
+int ComputeNoise(struct CommandLineArgsTag CLA, int i);
 /* */
 int Finalise(void);
 
@@ -225,17 +226,17 @@ int Finalise(void);
 
 int main(int argc,char *argv[])
 {
-  int i, N; 
-   
+  int i, N;
+
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: -4\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: -4\n");
+     printmemuse();
    #endif
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: -3\n"); 
+     fprintf(stdout,"Made it to: -3\n");
      printmemuse();
    #endif
 
@@ -245,7 +246,7 @@ int main(int argc,char *argv[])
 
   N = duration / CommandLineArgs.t ;
 
-  if (N > MAXFACTORS-1 ) 
+  if (N > MAXFACTORS-1 )
     {
       fprintf(stderr,"Too many subsegments in segment, exiting.\n");
       return 10;
@@ -257,7 +258,7 @@ int main(int argc,char *argv[])
   if(GetFactors(CommandLineArgs)) return 4;
 
   if(Initialise(CommandLineArgs)) return 3;
-  
+
   for(i=0;i<N;i++)
     {
       gpsepoch.gpsSeconds=CommandLineArgs.GPSStart+i*CommandLineArgs.t;
@@ -265,9 +266,9 @@ int main(int argc,char *argv[])
 
       if(ComputeNoise(CommandLineArgs,i)) return 5;
     }
-  
+
   if(Finalise()) return 6;
- 
+
   return 0;
 }
 
@@ -279,6 +280,8 @@ int main(int argc,char *argv[])
 
 int Initialise(struct CommandLineArgsTag CLA)
 {
+  LALWindowParams winparams;
+
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
   TESTSTATUS( &status );
@@ -328,8 +331,8 @@ int Initialise(struct CommandLineArgsTag CLA)
   if (CLA.decimate == 1)
     {
      #ifdef DEBUG
-      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5)); 
-       printmemuse();  
+      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
+       printmemuse();
      #endif
 
     /* Create Window vectors */
@@ -337,10 +340,10 @@ int Initialise(struct CommandLineArgsTag CLA)
     TESTSTATUS( &status );
 
     winparams.type=Hann;
-   
+
      #ifdef DEBUG
-      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5)); 
-       printmemuse();  
+      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
+       printmemuse();
      #endif
 
     /* make window  */
@@ -351,27 +354,27 @@ int Initialise(struct CommandLineArgsTag CLA)
   else
     {
      #ifdef DEBUG
-      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT) +0.5)); 
-       printmemuse();  
+      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT) +0.5));
+       printmemuse();
      #endif
 
-    
+
     /* Create Window vectors */
     LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT) +0.5));
     TESTSTATUS( &status );
 
      #ifdef DEBUG
-      fprintf(stdout,"Made it to -1a\n"); 
-       printmemuse();  
+      fprintf(stdout,"Made it to -1a\n");
+       printmemuse();
      #endif
 
 
     winparams.type=Hann;
-   
+
     /* make window  */
     #ifdef DEBUG
-      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT) +0.5)); 
-       printmemuse();  
+      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT) +0.5));
+       printmemuse();
      #endif
 
     winparams.length=(INT4)(CLA.t/(derr.deltaT) +0.5);
@@ -379,23 +382,23 @@ int Initialise(struct CommandLineArgsTag CLA)
     TESTSTATUS( &status );
 
      #ifdef DEBUG
-      fprintf(stdout,"Made it to -1b\n"); 
-       printmemuse();  
+      fprintf(stdout,"Made it to -1b\n");
+       printmemuse();
      #endif
 
     }
 
   /* Open output file */
   fpout=fopen(CLA.noisefile,"w");
-  if (fpout==NULL) 
+  if (fpout==NULL)
     {
       fprintf(stderr,"Could not open %s!\n",CLA.noisefile);
       return 1;
     }
   /*   setvbuf( fpout, NULL, _IONBF, 0 );  */
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: 0\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: 0\n");
+     printmemuse();
    #endif
    /* Open individual bin output file */
    fpoutbin=fopen(CLA.noisefilebin,"w");
@@ -413,58 +416,58 @@ int Initialise(struct CommandLineArgsTag CLA)
     {
     LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/DECIMATE, 0 );
     TESTSTATUS( &status );
-   
+
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 1\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 1\n");
+       printmemuse();
      #endif
     LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/DECIMATE, 0 );
     TESTSTATUS( &status );
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 2\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 2\n");
+       printmemuse();
      #endif
     LALZCreateVector( &status, &ffthtData, (hoft.data->length/DECIMATE) / 2 + 1 );
-    TESTSTATUS( &status );  
-   
+    TESTSTATUS( &status );
+
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 3\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 3\n");
+       printmemuse();
      #endif
     LALCCreateVector( &status, &fftderrData, (hoft.data->length/DECIMATE) / 2 + 1 );
-    TESTSTATUS( &status );  
+    TESTSTATUS( &status );
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 4\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 4\n");
+       printmemuse();
      #endif
      }
   else
     {
     LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length, 0 );
     TESTSTATUS( &status );
-   
+
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 1\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 1\n");
+       printmemuse();
      #endif
     LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length, 0 );
     TESTSTATUS( &status );
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 2\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 2\n");
+       printmemuse();
      #endif
     LALZCreateVector( &status, &ffthtData, (hoft.data->length) / 2 + 1 );
-    TESTSTATUS( &status );  
-   
+    TESTSTATUS( &status );
+
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 3\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 3\n");
+       printmemuse();
      #endif
     LALCCreateVector( &status, &fftderrData, (hoft.data->length) / 2 + 1 );
-    TESTSTATUS( &status );  
+    TESTSTATUS( &status );
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 4\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 4\n");
+       printmemuse();
      #endif
      }
   return 0;
@@ -486,9 +489,9 @@ static FrChanIn chanin_exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
-
 LALWindowParams winparams;
+
+REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
 
 INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
@@ -509,7 +512,7 @@ FrStream *framestream=NULL;
   chanin_exc.type  = ADCDataChannel;
 
   chanin_darm.name = CLA.darm_chan;
-  chanin_exc.name  = CLA.exc_chan; 
+  chanin_exc.name  = CLA.exc_chan;
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
   LALFrSeek(&status,&localgpsepoch,framestream);
@@ -540,7 +543,7 @@ FrStream *framestream=NULL;
 
 
   winparams.type=Hann;
-   
+
   /* windows for time domain channels */
   /* darm */
   winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
@@ -579,7 +582,7 @@ FrStream *framestream=NULL;
 	{
 	  exc.data->data[k] *= 2.0*excwin->data[k];
 	}
-      
+
       /* set params to call LALComputeCalibrationFactors */
       params.darmCtrl = &darm;
       params.asQ = &darm;
@@ -591,7 +594,7 @@ FrStream *framestream=NULL;
       params.digital.im = CLA.D0Im;
       params.whitener.re = CLA.W0Re;
       params.whitener.im = CLA.W0Im;
-	  
+
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
@@ -612,9 +615,9 @@ FrStream *framestream=NULL;
 	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
 	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
 
-      gtime += CLA.t;	
+      gtime += CLA.t;
       localgpsepoch.gpsSeconds = (INT4)gtime;
-      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);      
+      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);
     }
 
   LALDestroyVector(&status,&darm.data);
@@ -629,7 +632,7 @@ FrStream *framestream=NULL;
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
-  
+
   return 0;
 }
 
@@ -668,24 +671,24 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 
   if ( derr.epoch.gpsSeconds !=  gpsepoch.gpsSeconds || hoft.epoch.gpsSeconds !=  gpsepoch.gpsSeconds)
     {
-      fprintf(stderr,"GPS start time of darm err data (%d) or h(t) data (%d) does not agree with requested start time (%d). Exiting.\n", 
+      fprintf(stderr,"GPS start time of darm err data (%d) or h(t) data (%d) does not agree with requested start time (%d). Exiting.\n",
 	      derr.epoch.gpsSeconds, hoft.epoch.gpsSeconds, gpsepoch.gpsSeconds);
       return 1;
     }
-   
+
     #ifdef DEBUG
-     fprintf(stdout,"Made it to: 5\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: 5\n");
+     printmemuse();
     #endif
 
   if (CLA.decimate == 1)
     {
       XLALResampleREAL4TimeSeries( &derr, derr.deltaT*DECIMATE);
       TESTSTATUS( &status );
-   
+
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 6\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 6\n");
+       printmemuse();
      #endif
 
       XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*DECIMATE);
@@ -693,8 +696,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
     }
 
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: 7\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: 7\n");
+     printmemuse();
    #endif
 
   /* Window the data */
@@ -708,30 +711,30 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
     }
 
   #ifdef DEBUG
-  for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++) 
-    { 
-      fprintf(stdout,"%e\n",hoft.data->data[k]); 
-    } 
+  for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++)
+    {
+      fprintf(stdout,"%e\n",hoft.data->data[k]);
+    }
   #endif
 
   /* FFT the data */
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
 
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: 8\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: 8\n");
+     printmemuse();
    #endif
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
    #ifdef DEBUG
-     fprintf(stdout,"Made it to: 9\n"); 
-     printmemuse();  
+     fprintf(stdout,"Made it to: 9\n");
+     printmemuse();
    #endif
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
   fprintf(fpoutbin, "%d \n", gpsepoch.gpsSeconds);
 
-  for (j=0; j < Nfrequencies; j++)  
+  for (j=0; j < Nfrequencies; j++)
     {
       /* Compute the noise */
       mean_Sh_derr = 0.0;
@@ -739,7 +742,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       {
 	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
 	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
-	
+
 	for (k=0; k<nsamples; k++)
 	  {
 	    REAL4 dr= fftderrData->data[k+firstbin].re;
@@ -750,39 +753,39 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    REAL4 hr= ffthtData->data[k+firstbin].re;
 	    REAL4 hi= ffthtData->data[k+firstbin].im;
 	    REAL8 hpsq;
-	    	    
+
 	    /* Compute Response */
 	    C.re=gamma_fac[n]*Sensing[j].re[k];
 	    C.im=gamma_fac[n]*Sensing[j].im[k];
-	    
+
 	    H.re=1.0+gamma_fac[n]*OLG[j].re[k];
 	    H.im=gamma_fac[n]*OLG[j].im[k];
 	    R=cdiv(H,C);
-	    
+
 	    /* Apply response to DARM_ERR */
 	    caldr=dr*R.re-di*R.im;
 	    caldi=di*R.re+dr*R.im;
-      
+
 	    dpsq=pow(caldr,2.0)+pow(caldi,2);
 	    hpsq=pow(hr,2.0)+pow(hi,2);
-	    
+
 	    mean_Sh_derr += dpsq/nsamples;
 	    mean_Sh_hoft += hpsq/nsamples;
-	   
+
 	    if(k==0)
 	      {
- 	        fprintf(fpoutbin,"%e %e %e %e \n",hr*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),hi*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),caldr*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length),caldi*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length)); 
+ 	        fprintf(fpoutbin,"%e %e %e %e \n",hr*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),hi*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),caldr*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length),caldi*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length));
               }
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
-	
-	
+
+
       }
       fprintf(fpout, "%e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr));
-      
+
     }
-  
+
   fprintf(fpout, "\n");
 
   if (CLA.decimate == 1)
@@ -790,13 +793,13 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
     /* resize the time series back to original length */
     XLALResizeREAL8TimeSeries(&hoft, 0,hoft.data->length*DECIMATE);
     hoft.deltaT= hoft.deltaT/DECIMATE;
-   
+
     XLALResizeREAL4TimeSeries(&derr, 0,derr.data->length*DECIMATE);
     derr.deltaT= derr.deltaT/DECIMATE;
 
      #ifdef DEBUG
-       fprintf(stdout,"Made it to: 10\n"); 
-       printmemuse();  
+       fprintf(stdout,"Made it to: 10\n");
+       printmemuse();
      #endif
      }
 
@@ -818,7 +821,7 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
  /* ------ Open and read Frequency File ------ */
  i=0;
  fpR=fopen(CLA.freqfile,"r");
- if (fpR==NULL) 
+ if (fpR==NULL)
    {
      fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.freqfile);
      return 1;
@@ -837,13 +840,13 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
    }
  Nfrequencies=i;
  /* -- close OLG file -- */
- fclose(fpR);     
+ fclose(fpR);
 
 
  /* ------ Open and read OLG File ------ */
  i=0;
  fpR=fopen(CLA.OLGFile,"r");
- if (fpR==NULL) 
+ if (fpR==NULL)
    {
      fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.OLGFile);
      return 1;
@@ -863,7 +866,7 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
      i++;
    }
  /* -- close OLG file -- */
- fclose(fpR);     
+ fclose(fpR);
 
 
  /* for each frequency in the ferquency file: */
@@ -871,14 +874,14 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
    {
      /* compute a response appropriate for the frequency spacing of our data */
      i=0;
-     for (j=0; j < nsamples;j++)               
+     for (j=0; j < nsamples;j++)
        {
 	 REAL4 a,b;
-	 
+
 	 f = frequencies[k]  + j/CLA.t;
 
-	 while (i < MAXLINESRS-1 && f > OLG0.Frequency[i]) i++; 
-	 
+	 while (i < MAXLINESRS-1 && f > OLG0.Frequency[i]) i++;
+
 	 if(i == MAXLINESRS-1 && f > OLG0.Frequency[i])
 	   {
 	     fprintf(stderr,"No calibration info for frequency %f!\n",f);
@@ -898,24 +901,24 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 
 	 /* If the frequencies are closely spaced this may create dangerous floating point errors */
 	 df=OLG0.Frequency[i]-OLG0.Frequency[i-1];
-	 
+
 	 a=(f-OLG0.Frequency[i-1])/df;
 	 if (a>1.0) a=1.0;
 	 b=1.0-a;
-	 
+
 	 OLG[k].Frequency[j]=f;
 	 OLG[k].Magnitude[j]=a*OLG0.Magnitude[i]+b*OLG0.Magnitude[i-1];
 	 OLG[k].Phase[j]=a*OLG0.Phase[i]+b*OLG0.Phase[i-1];
-	 
+
 	 OLG[k].re[j]=a*OLG0.re[i]+b*OLG0.re[i-1];
-	 OLG[k].im[j]=a*OLG0.im[i]+b*OLG0.im[i-1];      
+	 OLG[k].im[j]=a*OLG0.im[i]+b*OLG0.im[i-1];
        }
    }
 
  /* ------ Open and read Sensing File ------ */
  i=0;
  fpR=fopen(CLA.SensingFile,"r");
- if (fpR==NULL) 
+ if (fpR==NULL)
    {
      fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.SensingFile);
      return 1;
@@ -935,7 +938,7 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
      i++;
    }
  /* -- close Sensing file -- */
- fclose(fpR);     
+ fclose(fpR);
 
 
  /* for each frequency in the ferquency file: */
@@ -943,14 +946,14 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
    {
      /* compute a response appropriate for the frequency spacing of our data */
      i=0;
-     for (j=0; j < nsamples;j++)               
+     for (j=0; j < nsamples;j++)
        {
 	 REAL4 a,b;
-	 
+
 	 f = frequencies[k]  + j/CLA.t;
-	 
-	 while (i < MAXLINESRS-1 && f > Sensing0.Frequency[i]) i++; 
-	 
+
+	 while (i < MAXLINESRS-1 && f > Sensing0.Frequency[i]) i++;
+
 	 if(i == MAXLINESRS-1 && f > Sensing0.Frequency[i])
 	   {
 	     fprintf(stderr,"No calibration info for frequency %f!\n",f);
@@ -980,7 +983,7 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 	 Sensing[k].Phase[j]=a*Sensing0.Phase[i]+b*Sensing0.Phase[i-1];
 
 	 Sensing[k].re[j]=a*Sensing0.re[i]+b*Sensing0.re[i-1];
-	 Sensing[k].im[j]=a*Sensing0.im[i]+b*Sensing0.im[i-1];      
+	 Sensing[k].im[j]=a*Sensing0.im[i]+b*Sensing0.im[i-1];
        }
    }
 
@@ -993,82 +996,82 @@ int Finalise(void)
 {
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 12\n"); 
-   printmemuse(); 
-   #endif 
+   fprintf(stdout,"Made it to: 12\n");
+   printmemuse();
+   #endif
 
   LALDDestroyVector(&status,&hoft.data);
   TESTSTATUS( &status );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 11\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 11\n");
+   printmemuse();
+   #endif
 
   LALDestroyVector(&status,&derr.data);
   TESTSTATUS( &status );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 13\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 13\n");
+   printmemuse();
+   #endif
 
   LALDestroyVector(&status,&derrwin);
   TESTSTATUS( &status );
 
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 14\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 14\n");
+   printmemuse();
+   #endif
 
   LALZDestroyVector( &status, &ffthtData);
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 15\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 15\n");
+   printmemuse();
+   #endif
 
   LALCDestroyVector( &status, &fftderrData);
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 16\n"); 
-   printmemuse(); 
-   #endif  
+   fprintf(stdout,"Made it to: 16\n");
+   printmemuse();
+   #endif
 
   LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 17\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 17\n");
+   printmemuse();
+   #endif
 
   LALDestroyREAL4FFTPlan( &status, &fftPlan );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 18\n"); 
-   printmemuse(); 
-   #endif  
+   fprintf(stdout,"Made it to: 18\n");
+   printmemuse();
+   #endif
 
   LALFrClose(&status,&derrframestream);
   TESTSTATUS( &status );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 19\n"); 
-   printmemuse(); 
-   #endif  
+   fprintf(stdout,"Made it to: 19\n");
+   printmemuse();
+   #endif
 
   LALFrClose(&status,&hoftframestream);
   TESTSTATUS( &status );
 
    #ifdef DEBUG
-   fprintf(stdout,"Made it to: 20\n"); 
-   printmemuse();  
-   #endif 
+   fprintf(stdout,"Made it to: 20\n");
+   printmemuse();
+   #endif
 
   fclose(fpout);
   fclose(fpoutbin);
-  
+
   LALCheckMemoryLeaks();
 
   return 0;
@@ -1076,7 +1079,7 @@ int Finalise(void)
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
 
   INT4 errflg=0;
@@ -1108,7 +1111,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"gamma-fudge-factor",   required_argument, NULL,           'y'},
     {"no-factors",           no_argument, NULL,                 'z'},
     {"output-phase",         no_argument, NULL,                 'Q'},
-    {"decimate",             required_argument, NULL,           'D'},    
+    {"decimate",             required_argument, NULL,           'D'},
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
@@ -1160,7 +1163,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"Revision: %s\n", CVS_REVISION );
       fprintf(stdout,"Source: %s\n", CVS_SOURCE);
       fprintf(stdout,"Date: %s\n", CVS_DATE);
-      exit(0);      
+      exit(0);
       break;
     case 'a':
       CLA->freqfile=optarg;
@@ -1176,27 +1179,27 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'e':
       CLA->derrFrCacheFile=optarg;
-      break;    
+      break;
     case 'f':
       /* name of darm channel */
       CLA->derr_chan=optarg;
-      break;    
+      break;
     case 'g':
       /* name of darm channel */
       CLA->darm_chan=optarg;
-      break;    
+      break;
     case 'i':
       /* name of darm channel */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'j':
       /* name of darm channel */
       CLA->asq_chan=optarg;
-      break;    
+      break;
     case 'k':
       /* name of darm err channel */
       CLA->hoft_chan=optarg;
-      break;    
+      break;
     case 'l':
       /* GPS start */
       CLA->GPSStart=atoi(optarg);
@@ -1291,7 +1294,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tno-factors (-z)\tFLAG\t Set factors to 1.\n");
       fprintf(stdout,"\toutput-phase (-Q)\tFLAG\t Outputs real and imaginary parts of each frequency bin (careful! will make big files!).\n");
       fprintf(stdout,"\tdecimate (-D)\tFLAG\t Decimates the data by a factor of 4.\n");
-      fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
+      fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");
       exit(0);
       break;
     default:
@@ -1308,33 +1311,33 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frequency file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
 
   if(CLA->b == 0.0)
     {
       fprintf(stderr,"No frequency band specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
 
   if(CLA->t == 0.0)
     {
       fprintf(stderr,"No integration time specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
   if(CLA->GPSStart == 0.0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
   if(CLA->GPSEnd == 0.0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }     
+    }
   if(CLA->hoftFrCacheFile==NULL)
     {
       fprintf(stderr,"No h(t) frame cache file specified.\n");
@@ -1426,7 +1429,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }
- 
+
 
   /* Some sanity checks */
   if (CLA->b < 1/CLA->t)

@@ -43,18 +43,6 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  double A_arg;	/**< @brief Amplitude of fake signal.  */
-  char * A_orig;	/**< @brief Amplitude of fake signal original value given at command line.  */
-  const char *A_help; /**< @brief Amplitude of fake signal help description.  */
-  double f0_arg;	/**< @brief Frequency of fake signal.  */
-  char * f0_orig;	/**< @brief Frequency of fake signal original value given at command line.  */
-  const char *f0_help; /**< @brief Frequency of fake signal help description.  */
-  double P_arg;	/**< @brief Period of binary orbit of fake signal.  */
-  char * P_orig;	/**< @brief Period of binary orbit of fake signal original value given at command line.  */
-  const char *P_help; /**< @brief Period of binary orbit of fake signal help description.  */
-  double df_arg;	/**< @brief Modulation depth of the signal due to the binary orbit.  */
-  char * df_orig;	/**< @brief Modulation depth of the signal due to the binary orbit original value given at command line.  */
-  const char *df_help; /**< @brief Modulation depth of the signal due to the binary orbit help description.  */
   double Tobs_arg;	/**< @brief Total observation time.  */
   char * Tobs_orig;	/**< @brief Total observation time original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time help description.  */
@@ -64,9 +52,6 @@ struct gengetopt_args_info
   double t0_arg;	/**< @brief Start time of the search in GPS seconds.  */
   char * t0_orig;	/**< @brief Start time of the search in GPS seconds original value given at command line.  */
   const char *t0_help; /**< @brief Start time of the search in GPS seconds help description.  */
-  double fs_arg;	/**< @brief Sampling frequency of time series.  */
-  char * fs_orig;	/**< @brief Sampling frequency of time series original value given at command line.  */
-  const char *fs_help; /**< @brief Sampling frequency of time series help description.  */
   double fmin_arg;	/**< @brief Minimum frequency of band.  */
   char * fmin_orig;	/**< @brief Minimum frequency of band original value given at command line.  */
   const char *fmin_help; /**< @brief Minimum frequency of band help description.  */
@@ -97,17 +82,15 @@ struct gengetopt_args_info
   int templateLength_arg;	/**< @brief Number of pixels to use in the template (default='50').  */
   char * templateLength_orig;	/**< @brief Number of pixels to use in the template original value given at command line.  */
   const char *templateLength_help; /**< @brief Number of pixels to use in the template help description.  */
+  char * skyRegion_arg;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky (default='allsky').  */
+  char * skyRegion_orig;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky original value given at command line.  */
+  const char *skyRegion_help; /**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
-  unsigned int A_given ;	/**< @brief Whether A was given.  */
-  unsigned int f0_given ;	/**< @brief Whether f0 was given.  */
-  unsigned int P_given ;	/**< @brief Whether P was given.  */
-  unsigned int df_given ;	/**< @brief Whether df was given.  */
   unsigned int Tobs_given ;	/**< @brief Whether Tobs was given.  */
   unsigned int Tcoh_given ;	/**< @brief Whether Tcoh was given.  */
   unsigned int t0_given ;	/**< @brief Whether t0 was given.  */
-  unsigned int fs_given ;	/**< @brief Whether fs was given.  */
   unsigned int fmin_given ;	/**< @brief Whether fmin was given.  */
   unsigned int fspan_given ;	/**< @brief Whether fspan was given.  */
   unsigned int cols_given ;	/**< @brief Whether cols was given.  */
@@ -118,6 +101,7 @@ struct gengetopt_args_info
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
+  unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
 
 } ;
 

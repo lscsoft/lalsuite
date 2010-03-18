@@ -55,12 +55,9 @@ typedef struct
    REAL4 moddepth;
    REAL4 ra;
    REAL4 dec;
-   //REAL4 Tobs;
-   //REAL4 Tcoh;
-   //REAL4 fmin;
-   //REAL4 fspan;
    REAL4 stat;
    REAL4 snr;
+   REAL4 prob;
 } candidate;
 
 typedef struct
@@ -88,6 +85,7 @@ typedef struct
    REAL4 far;
    REAL4 distMean;
    REAL4 distSigma;
+   REAL4Vector *topRvalues;
 } farStruct;
 
 typedef struct

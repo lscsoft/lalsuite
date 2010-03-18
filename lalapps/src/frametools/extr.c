@@ -19,7 +19,7 @@
 
 #include <config.h>
 #include <stdio.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 int main( int argc, char *argv[] )
 {
@@ -72,7 +72,7 @@ int main( int argc, char *argv[] )
       if ( ! FrAdcDataCopy( adc, frameout ) )
         return fputs( "allocation error!\n", stderr ), 1;
     }
-    FrameWrite( frameout, frfileout );    
+    FrameWrite( frameout, frfileout );
     FrameFree( frameout );
     FrameFree( framein );
   }
