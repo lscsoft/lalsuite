@@ -28,6 +28,7 @@ check_PROGRAMS = \
 	RandomInspiralSignalTest \
 	SpaceCovering
 TESTS = $(check_PROGRAMS)
+FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
 
 # non-building test
