@@ -129,11 +129,13 @@ int main(int argc, char *argv[])
    }
    
    //Parameters for the sky-grid
+   CHAR *sky = (CHAR*)XLALMalloc(strlen(args_info.skyRegion_arg));
+   sprintf(sky,"%s",args_info.skyRegion_arg);
    DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
    PulsarDopplerParams dopplerpos;
    scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
-   scanInit.skyRegionString = "allsky";      //Default value for all-sky search
+   scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
    scanInit.Freq = (REAL8)args_info.fmin_arg;  
    
@@ -173,6 +175,7 @@ int main(int argc, char *argv[])
    XLALNextDopplerSkyPos(&dopplerpos, &scan); //Start at first location
    
    //Find the FAR of IHS sum
+   fprintf(stderr,"Determining IHS FAR values\n");
    ihsfarStruct *ihsfarstruct = new_ihsfarStruct(cols);
    genIhsFar(ihsfarstruct, ffdata, cols, ihsfarthresh);
    fprintf(LOG,"Maximum column width to be searched = %d, at threshold = %f\n",cols,ihsfarthresh);
@@ -823,7 +826,7 @@ int main(int argc, char *argv[])
          templateStruct *template = new_templateStruct(inputParams->templatelength);
          makeTemplate(template, exactCandidates2[numofcandidates2+numofcandidatesadded], inputParams, secondFFTplan);
          farval = new_farStruct();
-         estimateFAR(farval, template, (INT4)roundf(100000*.01/templatefarthresh), templatefarthresh, aveNoise);
+         estimateFAR(farval, template, (INT4)roundf(1000000*.01/templatefarthresh), templatefarthresh, aveNoise);
          
          //Determine log-likelihood
          REAL4 prob = 1.0;
@@ -831,7 +834,7 @@ int main(int argc, char *argv[])
          if (bestR > farval->far) {
             while (locinlist > 0 && bestR > farval->topRvalues->data[locinlist-1]) locinlist--;
          }
-         prob = log10((locinlist+1)/(0.01/templatefarthresh*100000));
+         prob = log10((locinlist+1)/(0.01/templatefarthresh*1000000));
          
          //Load the likelihood value
          loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, prob);

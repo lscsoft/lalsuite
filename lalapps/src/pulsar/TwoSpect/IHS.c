@@ -207,13 +207,17 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
    
    //Now determine distribution values and FAR for the different IHS sum values for each set of columns
    REAL4Vector *tempihsvals = NULL, *topihsvals = NULL;
-   for (ii=0; ii<columns; ii++) {
+   INT4 numToRemove = 0;
+   for (ii=1; ii<=columns; ii++) {
+      
+      if (ii>2) numToRemove += ii-1;
       
       //Temporary vector to hold the trial values of IHS column sums
-      tempihsvals = XLALCreateREAL4Vector((UINT4)(trials-ii));
+      tempihsvals = XLALCreateREAL4Vector((UINT4)(trials-(ii-1)));
       for (jj=0; jj<(INT4)tempihsvals->length; jj++) {
-         if (ii==0) tempihsvals->data[jj] = ihssumvals->data[jj];
-         else tempihsvals->data[jj] = ihssumvals->data[ii*trials-(ii-1)+jj];
+         tempihsvals->data[jj] = ihssumvals->data[(ii-1)*trials + jj - numToRemove];
+         //if (ii==0) tempihsvals->data[jj] = ihssumvals->data[jj];
+         //else tempihsvals->data[jj] = ihssumvals->data[ii*trials-(ii-1)+jj];
       }
       
       //Mean and sigma of the various trials
@@ -271,6 +275,7 @@ REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols)
    UINT4 numToRemove = 0;
    for (ii=2; ii<=cols; ii++) numToRemove += (UINT4)(ii-1);
    
+   
    //Initialize maxima vector
    REAL4Vector *maxima = XLALCreateREAL4Vector((UINT4)(ihss->length * cols)-numToRemove);
    
@@ -281,8 +286,10 @@ REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols)
    //We can just use the previous sum and the next value of the single column
    locInMaximaVector = ihss->length;
    for (ii=1; ii<cols; ii++) {
-      startPosition = locInMaximaVector-((INT4)ihss->length-(ii-1));
+      //startPosition is the start number of the previous width to be summed with the individual IHS value
+      startPosition = locInMaximaVector - (INT4)ihss->length + (ii-1); 
       for (jj=0; jj<(INT4)ihss->length-ii; jj++) {
+         //maxima->data[ii+jj] is the single column IHS values needed to be added to the total sum
          maxima->data[locInMaximaVector] = maxima->data[startPosition+jj] + maxima->data[ii+jj];
          locInMaximaVector++;
       }
