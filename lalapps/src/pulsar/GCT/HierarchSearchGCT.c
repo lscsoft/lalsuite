@@ -667,8 +667,9 @@ int MAIN( int argc, char *argv[]) {
 	    usefulParams.spinRange_endTime.fkdot[1] + usefulParams.spinRange_endTime.fkdotBand[1]);
 
   /* print debug info about stacks */
-  LogPrintf(LOG_DETAIL, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, dFreq = %eHz, Tobs = %.0fsec\n", 
-	    nStacks, tStack, dFreqStack, tObs);
+  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs\n", 
+	    nStacks, tStack, tObs);
+	
   for (k = 0; k < nStacks; k++) {
 
     LogPrintf(LOG_DETAIL, "Segment %d ", k+1);
@@ -828,7 +829,7 @@ int MAIN( int argc, char *argv[]) {
 	
         /* calculate number of bins for Fstat overhead due to residual spin-down */
         semiCohPar.extraBinsFstat = (UINT4)( (0.25 * tObs * df1dot)/dFreqStack + 1e-6) + 1;
-	
+								
         /* calculate total number of bins for Fstat */
         binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
         binsFstat1 = binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
@@ -879,12 +880,11 @@ int MAIN( int argc, char *argv[]) {
       for (ifdot = 0; ifdot < nf1dot; ifdot++) { 
 
         /* show progress */
-        fprintf(stderr, "%% --- Progress, sky: %d / %d  and f1dot: %d / %d\n", 
+        fprintf(stderr, "%% --- CG sky: %d / %d, f1dot: %d / %d\n", 
                 skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot ); 
         
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
-        LogPrintf(LOG_DEBUG, "CG points = %d\n",coarsegrid.length);
      
         /* allocate memory for coarsegrid */
         coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
@@ -929,7 +929,7 @@ int MAIN( int argc, char *argv[]) {
         
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintf(LOG_DEBUG, "FG points = %ld\n",finegrid.length);
+        LogPrintf(LOG_DEBUG, "CG:%d, FG:%ld\n",coarsegrid.length,finegrid.length);
 
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
@@ -1128,7 +1128,7 @@ int MAIN( int argc, char *argv[]) {
           
           /* ---------- Walk through fine grid and map to coarse grid --------------- */
           ifine = 0;
-          
+				
           for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) {
             
             /* get the 1st spindown of this fine-grid point */
@@ -1140,12 +1140,12 @@ int MAIN( int argc, char *argv[]) {
 
               /* get the frequency of this fine-grid point at mid point of segment */
               freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
-            
+									
               /* compute the global-correlation coordinate indices */
               U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
               
               /* consider only relevant frequency values (do not step outside coarse grid) */
-              if ( (unsigned) (U1idx) < (fveclength) ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
+              if ( U1idx < fveclength ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
                 
                 /* Add the 2F value to the 2F sum */
                 TwoF_tmp = coarsegrid.list[U1idx].TwoF;
@@ -1173,6 +1173,18 @@ int MAIN( int argc, char *argv[]) {
                 return(HIERARCHICALSEARCH_ECG);
               } /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
               
+						
+							/* -------------- Single-trial check ------------- */
+							/*
+							if ( ifine == 850642 && (k+1) == nStacks ) {
+								fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n", 
+												k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
+												finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
+												finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
+												);
+							}
+							*/
+							
               ifine++;
           
             } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
@@ -1181,7 +1193,7 @@ int MAIN( int argc, char *argv[]) {
           
           
 #ifdef DIAGNOSISMODE
-          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/nStacks); 
+          fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1)); 
 #endif
 
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
@@ -1869,7 +1881,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.Delta = in->delta;
       line.F1dot = f1dot_tmp;
       line.nc = in->list[ifine].nc;
-      line.sumTwoF = in->list[ifine].sumTwoF / Nsegments; /* save the average 2F value */
+      line.sumTwoF = (in->list[ifine].sumTwoF) / Nsegments; /* save the average 2F value */
       
       debug = insert_into_gctFStat_toplist( list, line);
       
@@ -2032,12 +2044,8 @@ static inline UINT4 ComputeU1idx( REAL8 freq_event,
                           REAL8 U1start, 
                           REAL8 U1winInv)
 {
-  REAL4 utmp;
-  
 	/* compute the index of global-correlation coordinate U1, Eq. (1) */
-  utmp = ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
-  
-  return ( (UINT4) utmp );
+  return ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
   
 } /* ComputeU1idx */
 
