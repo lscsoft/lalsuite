@@ -293,7 +293,6 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_ThrF = FSTATTHRESHOLD; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1 = MISMATCH; /* metric mismatch for first stage coarse grid */
 
-  REAL8 uvar_threshold1 = 0;
   REAL8 uvar_minStartTime1 = 0;
   REAL8 uvar_maxEndTime1 = LAL_INT4_MAX;
   REAL8 uvar_dopplerMax = 1.05e-4;
@@ -377,7 +376,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold (if no toplist)", &uvar_threshold1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
@@ -399,18 +397,14 @@ int MAIN( int argc, char *argv[]) {
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-  /* exit if help was required */
-  if (uvar_help)
-    return(0); 
-
-  /* set log-level */
+	/* set log-level */
 #ifdef EAH_LOGLEVEL
   LogSetLevel ( EAH_LOGLEVEL );
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
-  
-  /* assemble version string */
+	
+	/* assemble version string */
   CHAR *version_string;
   {
     CHAR *id1, *id2;
@@ -426,7 +420,12 @@ int MAIN( int argc, char *argv[]) {
     XLALFree ( id2 );
   }
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", version_string );
+	
+  /* exit if help was required */
+  if (uvar_help)
+    return(0); 
 
+	
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {
     fprintf(stderr, "Invalid number of segments!\n");
