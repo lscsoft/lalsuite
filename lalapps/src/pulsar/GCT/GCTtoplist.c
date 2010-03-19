@@ -399,6 +399,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   fp=LALFopen(tmpfilename,"wb");
   if(!fp) {
     LOGIOERROR("Couldn't open",tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
@@ -409,6 +410,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -419,6 +421,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -429,6 +432,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -439,6 +443,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -448,25 +453,28 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
       LOGIOERROR("Couldn't sync", tmpfilename);
       sync_fail_counter++;
       if (sync_fail_counter >= SYNC_FAIL_LIMIT)
-	LogPrintf(LOG_NORMAL,"WARNING: syncing disabled\n");
-    } else {
-      sync_fail_counter = 0;
+        LogPrintf(LOG_NORMAL,"WARNING: syncing disabled\n");
+      } else {
+        sync_fail_counter = 0;
     }
   }
 
   /* close tempfile */
   if(fclose(fp)) {
     LOGIOERROR("Couldn't close", tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
   /* rename to filename */
   if(rename(tmpfilename,filename)) {
     LOGIOERROR("Couldn't rename\n", tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
   /* all went well */
+  LALFree(tmpfilename);
   return(0);
 }
 
