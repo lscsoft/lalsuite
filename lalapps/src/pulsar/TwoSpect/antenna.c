@@ -38,6 +38,8 @@ EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris)
 void free_Ephemeris(EphemerisData *ephemdata)
 {
    
+   XLALFree((CHAR*)ephemdata->ephiles.earthEphemeris);
+   XLALFree((CHAR*)ephemdata->ephiles.sunEphemeris);
    XLALFree((EphemerisData*)ephemdata);
    
 }
