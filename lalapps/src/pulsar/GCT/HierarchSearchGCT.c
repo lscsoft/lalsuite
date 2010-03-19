@@ -320,7 +320,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
-
+  INT4 uvar_SortToplist = 0;
+  
   global_status = &status;
 
 
@@ -393,6 +394,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -445,9 +447,14 @@ int MAIN( int argc, char *argv[]) {
   /* 2F threshold for semicoherent stage */
   TwoFthreshold = 2.0 * uvar_ThrF;
     
+  if ( (uvar_SortToplist != 0) && (uvar_SortToplist != 1) ) {
+    fprintf(stderr, "Invalid value specified for toplist sorting\n");
+    return( HIERARCHICALSEARCH_EBAD );
+  }
+  
   /* create toplist -- semiCohToplist has the same structure 
      as a fstat candidate, so treat it as a fstat candidate */
-  create_gctFStat_toplist(&semiCohToplist, uvar_nCand1);
+  create_gctFStat_toplist(&semiCohToplist, uvar_nCand1, uvar_SortToplist);
 
   /* write the log file */
   if ( uvar_log ) 
@@ -562,7 +569,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* for 1st stage: read sfts, calculate detector states */  
   /*LogPrintf (LOG_DEBUG, "Reading SFTs and setting up segments ... ");*/
-  fprintf(stderr,"%% --- Reading input data ...");
+  LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   /*LogPrintfVerbatim (LOG_DEBUG, "done\n");*/
   fprintf(stderr," done.\n");  
@@ -1232,7 +1239,7 @@ int MAIN( int argc, char *argv[]) {
   }
 #endif
    
-  fprintf(stderr, "%% --- Finished analysis.\n");
+  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
   
   LogPrintf ( LOG_DEBUG, "Writing output ...");
 

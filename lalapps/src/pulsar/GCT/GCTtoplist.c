@@ -121,7 +121,7 @@ static int gctFStat_result_order(const void *a, const void *b) {
     return 0;
 }
 
-/* ordering function defining the toplist */
+/* ordering function defining the toplist: SORT BY sumTwoF */
 static int gctFStat_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
@@ -141,6 +141,28 @@ static int gctFStat_smaller(const void*a, const void*b) {
     return(gctFStat_result_order(a,b));
 }
 
+
+/* ordering function defining the toplist: SORT BY Numbercount */
+static int gctNC_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return -1;
+  else
+    return(gctFStat_result_order(a,b));
+}
+
+
 /* functions for qsort based on the above ordering functions */
 static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
   void const* const* pa = (void const* const*)a;
@@ -155,12 +177,19 @@ static int gctFStat_final_qsort(const void*a, const void*b) {
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-int create_gctFStat_toplist(toplist_t**tl, UINT8 length) {
+int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
 #ifdef DEBUG_SORTING
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
 #endif
-  return(create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller));
+
+  if (whatToSortBy==1) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
+  }
+  else {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
+  }
+  
 }
 
 /* frees the space occupied by the toplist */

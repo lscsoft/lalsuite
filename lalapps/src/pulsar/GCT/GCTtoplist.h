@@ -38,7 +38,7 @@ typedef struct {
 
 /** creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-extern int create_gctFStat_toplist(toplist_t**list, UINT8 length);
+extern int create_gctFStat_toplist(toplist_t**list, UINT8 length, UINT4 whatToSortBy);
 
 /** frees the space occupied by the toplist */
 extern void free_gctFStat_toplist(toplist_t**list);
