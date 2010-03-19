@@ -1,5 +1,5 @@
 /*  
- *  Copyright (C) 2009 Holger Pletsch.
+ *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.h by
  *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk.
@@ -151,28 +151,9 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
     REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
-    BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
     REAL8  threshold;          /**< Threshold for candidate selection */
     UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
   } SemiCoherentParams;
-
-/** one semicoherent candidate */
-  typedef struct tagSemiCohCandidate {
-    REAL8 freq;        /**< frequency */
-    REAL8 alpha;       /**< right ascension */
-    REAL8 delta;       /**< declination */
-    REAL8 f1dot;       /**< spindown */
-    REAL8 sumTwoF;     /**< sum of 2F-values */
-    UINT4 nc;          /**< number count */
-  } SemiCohCandidate;
-  
-  /** structure for storing candidates produced by the semicoherent search */
-  typedef struct tagSemiCohCandidateList {
-    LIGOTimeGPS refTime;       /**< reference time for candidates */
-    INT4 length;               /**< maximum allowed length of vectors */
-    INT4 nCandidates;          /**< number of candidates -- must be less than length */
-    SemiCohCandidate *list;    /**> list of candidates */
-  } SemiCohCandidateList;
 
 
   /* ------------------------------------------------------------------------- */

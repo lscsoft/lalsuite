@@ -30,7 +30,7 @@ typedef struct {
   REAL8 F1dot;/**< spindown value f1dot = df/dt */
   REAL8 Alpha; /**< skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;/**< skyposition: latitude */
-  REAL8 sumTwoF;  /**< sum of 2F-values */
+  REAL4 sumTwoF;  /**< sum of 2F-values */
   UINT4 nc;       /**< number count */
 } GCTtopOutputEntry;
 

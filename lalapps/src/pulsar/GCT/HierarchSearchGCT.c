@@ -206,7 +206,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* Semicoherent variables */
   static SemiCoherentParams semiCohPar;
-  static SemiCohCandidateList semiCohCandList;
   
   /* coarse grid */
   CoarseGrid coarsegrid;
@@ -264,7 +263,6 @@ int MAIN( int argc, char *argv[]) {
   /* output candidate files and file pointers */
   CHAR *fnameSemiCohCand=NULL;
   CHAR *fnameFstatVec1=NULL;
-  FILE *fpSemiCoh=NULL;
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
@@ -278,7 +276,6 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_printCand1 = FALSE; 	/* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
-  BOOLEAN uvar_useToplist1 = FALSE;
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
@@ -398,7 +395,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -701,7 +697,6 @@ int MAIN( int argc, char *argv[]) {
   
   /*---------- set up stuff for semi-coherent part ---------*/
   /* set up some semiCoherent parameters */
-  semiCohPar.useToplist = uvar_useToplist1;
   semiCohPar.tsMid = midTstack;
   semiCohPar.refTime = tMidGPS;
 
@@ -718,16 +713,6 @@ int MAIN( int argc, char *argv[]) {
   semiCohPar.vel = velStack;
   semiCohPar.acc = accStack;
   semiCohPar.outBaseName = uvar_fnameout;
-
-  /* allocate memory for semicoherent candidates */
-  semiCohCandList.length = uvar_nCand1;
-  semiCohCandList.refTime = tMidGPS;
-  semiCohCandList.nCandidates = 0; /* initialization */
-  semiCohCandList.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList.length * sizeof(SemiCohCandidate));
-  if ( semiCohCandList.list == NULL) {
-    fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-    return(HIERARCHICALSEARCH_EMEM);
-  }
 
   /* allocate some fstat memory */
   fstatVector.length = nStacks; /* for EACH segment generate a fstat-vector */
@@ -1319,8 +1304,7 @@ int MAIN( int argc, char *argv[]) {
   LALFree(finegrid.list);
   LALFree(coarsegrid.list);
  
-  /* free candidates */
-  LALFree(semiCohCandList.list);
+  /* free candidate toplist */
   free_gctFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
