@@ -186,7 +186,7 @@ echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match)"
 echo "----------------------------------------------------------------------"
 echo
 
-if [ -z "checkpoint.cpt" ]; then
+if [ -e "checkpoint.cpt" ]; then
     rm checkpoint.cpt # delete checkpoint to start correctly
 fi
 
@@ -196,7 +196,7 @@ gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType1=3 --tStac
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
-if [ -e "$NORESAMP" ]; then
+if [ -z "$NORESAMP" ]; then
 if ! tmp=`eval $cmdline`; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
