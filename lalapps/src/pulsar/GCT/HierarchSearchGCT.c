@@ -1165,16 +1165,16 @@ int MAIN( int argc, char *argv[]) {
               } /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
               
 						
-							/* -------------- Single-trial check ------------- */
-							/*
-							if ( ifine == 850642 && (k+1) == nStacks ) {
-								fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n", 
-												k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
-												finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
-												finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
-												);
-							}
-							*/
+	      /* -------------- Single-trial check ------------- */
+	      /*
+		if ( ifine == 850642 && (k+1) == nStacks ) {
+		fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n",
+		k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
+		finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
+		finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
+		);
+		}
+	      */
 							
               ifine++;
           
