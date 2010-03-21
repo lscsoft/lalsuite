@@ -792,8 +792,8 @@ int MAIN( int argc, char *argv[]) {
     SkyPosition skypos;
 
     SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-		    skyGridCounter,thisScan.numSkyGridPoints,
-		    uvar_Freq, uvar_FreqBand);
+		  skyGridCounter,thisScan.numSkyGridPoints,
+		  uvar_Freq, uvar_FreqBand);
 
       
     /*------------- calculate F-Statistic for each segment --------------*/
@@ -982,9 +982,6 @@ int MAIN( int argc, char *argv[]) {
           timeDiffSeg = XLALGPSDiff( &midTstackGPS, &thisPoint.refTime ); 
                 
           /* ---------------------------------------------------------------------------------------- */ 
-          
-          SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, skyGridCounter + (REAL4)k / (REAL4)nStacks, 
-                        thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
 
           /* Compute sky position associated dot products 
              (for global-correlation coordinates, from Eq. (1) in PRL) */
@@ -1197,13 +1194,13 @@ int MAIN( int argc, char *argv[]) {
           LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
           LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status); 
         }
-	  
+
+	SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+		      skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
+		      thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
+
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
        
-      SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
-                  skyGridCounter,thisScan.numSkyGridPoints, \
-                  uvar_Freq, uvar_FreqBand);
-      
       /* continue forward till the end if uvar_skyPointIndex is set
          ---This probably doesn't make sense when checkpointing is turned on */
       if ( LALUserVarWasSet(&uvar_skyPointIndex) ) {
@@ -1217,8 +1214,8 @@ int MAIN( int argc, char *argv[]) {
   
         /* this is necessary here, because the checkpoint needs some information from here */
         SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
-                    skyGridCounter,thisScan.numSkyGridPoints, \
-                    uvar_Freq, uvar_FreqBand);
+		      skyGridCounter,thisScan.numSkyGridPoints, \
+		      uvar_Freq, uvar_FreqBand);
   
         SET_CHECKPOINT;
   
