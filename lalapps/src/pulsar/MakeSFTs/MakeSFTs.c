@@ -193,9 +193,11 @@ int WindowData(struct CommandLineArgsTag CLA);
 int WindowDataTukey2(struct CommandLineArgsTag CLA);
 int WindowDataHann(struct CommandLineArgsTag CLA);
 
+#ifdef PSS_ENABLED
 /* Time Domain Cleaning with PSS functions */
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
 int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency);
+#endif
 
 /* create an SFT */
 int CreateSFT(struct CommandLineArgsTag CLA);
@@ -436,6 +438,7 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 #endif
 
 
+#ifdef PSS_ENABLED
 /* debug function */
 int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
   UINT4 i;
@@ -450,6 +453,7 @@ int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
   }
   return 0;
 }
+#endif
 
 
 /************************************* MAIN PROGRAM *************************************/
