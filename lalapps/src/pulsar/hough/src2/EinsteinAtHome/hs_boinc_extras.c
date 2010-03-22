@@ -396,6 +396,7 @@ void show_progress(REAL8 rac,   /**< right ascension */
   if(toplist->elems > 0) {
     /* take the last (rightmost) leaf of the heap tree - might not be the
        "best" candidate, but for the graphics it should be good enough */
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
     HoughFStatOutputEntry *line = (HoughFStatOutputEntry*)(toplist->heap[toplist->elems - 1]);
 
     boincv6_progress.cand_frequency  = line->Freq;
@@ -403,6 +404,13 @@ void show_progress(REAL8 rac,   /**< right ascension */
     boincv6_progress.cand_rac        = line->Alpha;
     boincv6_progress.cand_dec        = line->Delta;
     boincv6_progress.cand_hough_sign = line->HoughFStat;
+#else
+    boincv6_progress.cand_frequency  = 0.0;
+    boincv6_progress.cand_spindown   = 0.0;
+    boincv6_progress.cand_rac        = 0.0;
+    boincv6_progress.cand_dec        = 0.0;
+    boincv6_progress.cand_hough_sign = 0.0;
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
     boincv6_progress.frequency       = freq;
     boincv6_progress.bandwidth       = fband;
   } else {
