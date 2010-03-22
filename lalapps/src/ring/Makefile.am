@@ -8,7 +8,8 @@ RINGPROG = \
 	lalapps_ringread \
 	lalapps_rinca \
 	lalapps_coincringread \
-	lalapps_collatesim
+	lalapps_collatesim \
+        lalapps_coh_PTF_inspiral
 endif
 endif
 endif
@@ -49,6 +50,12 @@ lalapps_ring_SOURCES = \
 	spectrm.h \
 	segment.c \
 	segment.h
+lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c ring_output.c \
+         errutil.c errutil.h \
+         gpstime.c gpstime.h \
+         getdata.c getdata.h \
+         spectrm.c spectrm.h \
+         segment.c segment.h
 lalapps_rinj_SOURCES = rinj.c
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
