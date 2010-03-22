@@ -18,11 +18,13 @@
 */
 
 #include <math.h>
-#include <gsl/gsl_complex.h>
-#include <gsl/gsl_complex_math.h>
+
+#include <gsl/gsl_sf_trig.h>
+
 #include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/Window.h>
+
 #include "templates.h"
 
 //////////////////////////////////////////////////////////////
@@ -390,7 +392,19 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
 
 
 
-
+//////////////////////////////////////////////////////////////
+// Calculates y = sin(pi*x)/(pi*x)/(x^2-1)
+REAL4 sincxoverxsqminusone(REAL4 x)
+{
+   
+   REAL4 val;
+   
+   if (x==1.0 || x==-1.0) val = -0.5;
+   else val = gsl_sf_sinc(x)/(x*x-1);
+   
+   return val;
+   
+}
 
 
 

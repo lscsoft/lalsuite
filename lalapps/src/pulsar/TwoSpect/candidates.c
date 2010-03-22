@@ -194,7 +194,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                if (mindf > in[locs2->data[kk]]->moddepth || mindf == 0.0) mindf = in[locs2->data[kk]]->moddepth;
                if (maxdf < in[locs2->data[kk]]->moddepth) maxdf = in[locs2->data[kk]]->moddepth;
                
-               if (loc2==1) {
+               if (loc2==1 && aveperiod/weight >= params->Pmin && aveperiod/weight <= params->Pmax) {
                   bestSNR = in[locs2->data[kk]]->snr;
                   bestmoddepth = in[locs2->data[kk]]->moddepth;
                   bestR = in[locs2->data[kk]]->stat;
@@ -205,7 +205,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             avefsig = avefsig/weight;
             aveperiod = aveperiod/weight;
             
-            if (loc2 > 1) {
+            if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
                for (kk=0; kk<numofmoddepths; kk++) {
                   
@@ -232,9 +232,12 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                }
             }
             
-            out[numcandoutlist] = new_candidate();
-            loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, 0.0);
-            numcandoutlist++;
+            if (bestSNR != 0.0) {
+               out[numcandoutlist] = new_candidate();
+               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, 0.0);
+               numcandoutlist++;
+            }
+            
             loc2 = 0;
          }
       }

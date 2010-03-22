@@ -52,8 +52,6 @@ REAL4 gaussRandNum(REAL4 sigma, gsl_rng *ptrToGenerator);
 REAL4 expRandNum(REAL4 mu, gsl_rng *ptrToGenerator);
 REAL4 maxModDepth(REAL4 period, REAL4 cohtime);
 REAL4 minPeriod(REAL4 moddepth, REAL4 cohtime);
-REAL4 sincxoverxsqminusone(REAL4 overage);
-REAL4 sinc(REAL4 x);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);

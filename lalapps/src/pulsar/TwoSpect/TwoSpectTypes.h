@@ -39,8 +39,10 @@ typedef struct
    REAL8 Tobs;
    REAL4 Tcoh;
    REAL8 searchstarttime;
-   REAL4 ra;
-   REAL4 dec;
+   REAL4 Pmin;
+   REAL4 Pmax;
+   REAL4 dfmin;
+   REAL4 dfmax;
    REAL4 dopplerMultiplier;
    INT4 blksize;
    INT4 maxbinshift;

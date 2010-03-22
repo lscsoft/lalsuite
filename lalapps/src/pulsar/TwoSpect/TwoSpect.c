@@ -54,7 +54,7 @@ REAL4FFTPlan *secondFFTplan;
 
 FILE *LOG, *TFDATA, *FFDATA;
 
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL;
+CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 
 
 
@@ -62,7 +62,7 @@ CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL;
 int main(int argc, char *argv[])
 {
 
-   INT4 ii, jj, kk, ll, cols, numofcandidates, numofcandidates2, numofcandidatesadded;
+   INT4 ii, jj, kk, ll, numofcandidates, numofcandidates2, numofcandidatesadded;
    REAL4 ihsfarthresh, templatefarthresh;
    LALStatus status;
    status.statusPtr = NULL;
@@ -90,34 +90,43 @@ int main(int argc, char *argv[])
    
    inputParams = new_inputParams();
    
+    //Defaults given or option passed
+   inputParams->Tcoh = args_info.Tcoh_arg;
+   inputParams->Pmin = args_info.Pmin_arg;
+   ihsfarthresh = args_info.ihsfar_arg;
+   templatefarthresh = args_info.tmplfar_arg;
+   inputParams->blksize = args_info.blksize_arg;
+   earth_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
+   sun_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
+   sft_dir = (CHAR*)XLALMalloc(strlen(args_info.sftDir_arg)+20);
+   sprintf(earth_ephemeris,"%s/earth05-09.dat",args_info.ephemDir_arg);
+   sprintf(sun_ephemeris,"%s/sun05-09.dat",args_info.ephemDir_arg);
+   sprintf(sft_dir,"%s/*.sft",args_info.sftDir_arg);
+   inputParams->dopplerMultiplier = args_info.dopplerMultiplier_arg;
+   inputParams->templatelength = args_info.templateLength_arg;
+   
    if (args_info.Tobs_given) inputParams->Tobs = args_info.Tobs_arg;
    else inputParams->Tobs = 3*168*3600;
    if (args_info.fmin_given) inputParams->fmin = args_info.fmin_arg;
    else inputParams->fmin = 99.9;
    if (args_info.fspan_given) inputParams->fspan = args_info.fspan_arg;
    else inputParams->fspan = 0.2;
-   if (args_info.cols_given) cols = args_info.cols_arg;
-   else cols = 20;
+   //if (args_info.cols_given) cols = args_info.cols_arg;
+   //else cols = 20;
    if (args_info.t0_given) inputParams->searchstarttime = args_info.t0_arg;
    else inputParams->searchstarttime = 900000000.0;
-   
-   //Defaults given or option passed
-   inputParams->Tcoh = args_info.Tcoh_arg;
-   ihsfarthresh = args_info.ihsfar_arg;
-   templatefarthresh = args_info.tmplfar_arg;
-   inputParams->blksize = args_info.blksize_arg;
-   earth_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
-   sun_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
-   sprintf(earth_ephemeris,"%s/earth05-09.dat",args_info.ephemDir_arg);
-   sprintf(sun_ephemeris,"%s/sun05-09.dat",args_info.ephemDir_arg);
-   inputParams->dopplerMultiplier = args_info.dopplerMultiplier_arg;
-   inputParams->templatelength = args_info.templateLength_arg;
+   if (args_info.Pmax_given) inputParams->Pmax = args_info.Pmax_arg;
+   else inputParams->Pmax = 0.2*inputParams->Tobs;
+   if (args_info.dfmin_given) inputParams->dfmin = args_info.dfmin_arg;
+   else inputParams->dfmin = 0.5/inputParams->Tcoh;
+   if (args_info.dfmax_given) inputParams->dfmax = args_info.dfmax_arg;
+   else inputParams->dfmax = maxModDepth(inputParams->Pmax,inputParams->Tcoh);
    
    //Blocksize should be an odd number
    if (inputParams->blksize % 2 != 1) inputParams->blksize += 1;
    
    //Adjust maximum columns, if necessary
-   if (cols > 2.0*maxModDepth(inputParams->Tobs*0.2, inputParams->Tcoh)*inputParams->Tcoh) {
+   /*if (cols > 2.0*maxModDepth(inputParams->Tobs*0.2, inputParams->Tcoh)*inputParams->Tcoh) {
       cols = (INT4)floorf(2.0*maxModDepth(inputParams->Tobs*0.2, inputParams->Tcoh)*inputParams->Tcoh);
       fprintf(LOG,"WARNING! Adjusting number of columns due to maximum modulation depth allowed\n");
       fprintf(stderr,"WARNING! Adjusting number of columns due to maximum modulation depth allowed\n");
@@ -126,6 +135,26 @@ int main(int argc, char *argv[])
       cols = (INT4)roundf(inputParams->fspan*inputParams->Tcoh)+1;
       fprintf(LOG,"WARNING! Adjusting number of columns due to frequency span of band\n");
       fprintf(stderr,"WARNING! Adjusting number of columns due to frequency span of band\n");
+   }*/
+   if (inputParams->dfmax > maxModDepth(inputParams->Pmax,inputParams->Tcoh)) {
+      inputParams->dfmax = 0.5/inputParams->Tcoh*floorf(2.0*maxModDepth(inputParams->Pmax,inputParams->Tcoh)*inputParams->Tcoh);
+      fprintf(LOG,"WARNING! Adjusting input maximum modulation depth due to maximum modulation depth allowed\n");
+      fprintf(stderr,"WARNING! Adjusting input maximum modulation depth due to maximum modulation depth allowed\n");
+   }
+   if (2.0*inputParams->dfmax+6.0/inputParams->Tcoh > inputParams->fspan) {
+      inputParams->dfmax = floorf(0.5*(inputParams->fspan - 6.0/inputParams->Tcoh));
+      fprintf(LOG,"WARNING! Adjusting input maximum modulation depth due to frequency span of band\n");
+      fprintf(stderr,"WARNING! Adjusting input maximum modulation depth due to frequency span of band\n");
+   }
+   if (inputParams->Pmin < 2.0*3600) {
+      inputParams->Pmin = 2.0*3600;
+      fprintf(LOG,"WARNING! Adjusting input minimum period to 2 hours!\n");
+      fprintf(stderr,"WARNING! Adjusting input minimum period to 2 hours!\n");
+   }
+   if (inputParams->Pmax > 0.2*inputParams->Tobs) {
+      inputParams->Pmax = 0.2*inputParams->Tobs;
+      fprintf(LOG,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
+      fprintf(stderr,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
    }
    
    //Parameters for the sky-grid
@@ -139,16 +168,38 @@ int main(int argc, char *argv[])
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
    scanInit.Freq = (REAL8)args_info.fmin_arg;  
    
+   //Detector velocity during SFTs
+   LALDetector det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
+   inputParams->det = &det;
+   EphemerisData *edat = new_Ephemeris(earth_ephemeris, sun_ephemeris);
+   REAL4 detectorVmax = 9.93e-5;   //Average orbital earth speed in units of c
+   
+   //Initialize the sky-grid
+   scanInit.dAlpha = (REAL8)0.5/(inputParams->fmin * inputParams->Tcoh * detectorVmax);
+   scanInit.dDelta = scanInit.dAlpha;
+   InitDopplerSkyScan(&status, &scan, &scanInit);
+   XLALNextDopplerSkyPos(&dopplerpos, &scan); //Start at first location
+   
    fprintf(LOG,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(LOG,"Tcoh = %f sec\n",inputParams->Tcoh);
    fprintf(LOG,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(LOG,"fspan = %f Hz\n",inputParams->fspan);
+   fprintf(LOG,"Pmin = %f s\n",inputParams->Pmin);
+   fprintf(LOG,"Pmax = %f s\n",inputParams->Pmax);
+   fprintf(LOG,"dfmin = %f Hz\n",inputParams->dfmin);
+   fprintf(LOG,"dfmax = %f Hz\n",inputParams->dfmax);
    fprintf(LOG,"Running median blocksize = %d\n",inputParams->blksize);
+   fprintf(LOG,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    fprintf(stderr,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(stderr,"Tcoh = %f sec\n",inputParams->Tcoh);
    fprintf(stderr,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(stderr,"fspan = %f Hz\n",inputParams->fspan);
+   fprintf(stderr,"Pmin = %f s\n",inputParams->Pmin);
+   fprintf(stderr,"Pmax = %f s\n",inputParams->Pmax);
+   fprintf(stderr,"dfmin = %f Hz\n",inputParams->dfmin);
+   fprintf(stderr,"dfmax = %f Hz\n",inputParams->dfmax);
    fprintf(stderr,"Running median blocksize = %d\n",inputParams->blksize);
+   fprintf(stderr,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    
    //Basic units
    INT4 numffts = (INT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1);
@@ -162,24 +213,17 @@ int main(int argc, char *argv[])
    //Second fft plan, only need to make this once for all the exact templates
    secondFFTplan = XLALCreateForwardREAL4FFTPlan((UINT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1), 0);
    
-   //Detector velocity during SFTs
-   LALDetector det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
-   inputParams->det = &det;
-   EphemerisData *edat = new_Ephemeris(earth_ephemeris, sun_ephemeris);
-   REAL4 detectorVmax = 9.93e-5;   //Average earth speed in units of c
-   
-   //Initialize the sky-grid
-   scanInit.dAlpha = (REAL8)0.5/(inputParams->fmin * inputParams->Tcoh * detectorVmax);
-   scanInit.dDelta = scanInit.dAlpha;
-   InitDopplerSkyScan(&status, &scan, &scanInit);
-   XLALNextDopplerSkyPos(&dopplerpos, &scan); //Start at first location
+   //Maximum number of IHS values to sum = twice the maximum modulation depth
+   //Minimum number of IHS values to sum = twice the minimum modulation depth
+   INT4 maxcols = (INT4)floorf(2.0*inputParams->dfmax*inputParams->Tcoh);
+   //INT4 mincols = (INT4)2.0*inputParams->dfmin*inputParams->Tcoh;
    
    //Find the FAR of IHS sum
    fprintf(stderr,"Determining IHS FAR values\n");
-   ihsfarStruct *ihsfarstruct = new_ihsfarStruct(cols);
-   genIhsFar(ihsfarstruct, ffdata, cols, ihsfarthresh);
-   fprintf(LOG,"Maximum column width to be searched = %d, at threshold = %f\n",cols,ihsfarthresh);
-   fprintf(stderr,"Maximum column width to be searched = %d, at threshold = %f\n",cols,ihsfarthresh);
+   ihsfarStruct *ihsfarstruct = new_ihsfarStruct(maxcols);
+   genIhsFar(ihsfarstruct, ffdata, maxcols, ihsfarthresh);
+   fprintf(LOG,"Maximum column width to be searched = %d\n",maxcols);
+   fprintf(stderr,"Maximum column width to be searched = %d\n",maxcols);
    //IHS FOM FAR (allows a relative offset of +/- 1 bin between maximum values
    REAL4 ihsfomfar = 6.0;
    fprintf(LOG,"IHS FOM FAR = %f\n",ihsfomfar);
@@ -250,10 +294,10 @@ int main(int argc, char *argv[])
       fprintf(stderr,"Std dev. expected noise = %g\n",calcStddev(aveNoise));
       
 ////////Start of the IHS step!
-      ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, cols);
+      ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, maxcols);
       
       //Run the IHS algorithm on the data
-      runIHS(ihsmaxima, ffdata, cols);
+      runIHS(ihsmaxima, ffdata, maxcols);
       
       //Find any IHS candidates
       fprintf(LOG,"Checking IHS values for candidates...\n");
@@ -270,14 +314,16 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Starting Gaussian template search...\n");
       fprintf(stderr,"Starting Gaussian template search...\n");
       for (ii=0; ii<numofcandidates; ii++) {
-         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-6/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
+         
+         //Now assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum specified and less than or equal to the maximum specified, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
+         if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-6/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth >= inputParams->dfmin && ihsCandidates[ii]->moddepth <= inputParams->dfmax && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
             
-            /* TFDATA = fopen(t,"w");
+            TFDATA = fopen(t,"w");
             FFDATA = fopen(u,"w");
             for (jj=0; jj<(INT4)weightedTFdata->length; jj++) fprintf(TFDATA,"%g\n",weightedTFdata->data[jj]);
             for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
             fclose(TFDATA);
-            fclose(FFDATA); */
+            fclose(FFDATA);
             
             //Allocate memory for template
             templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -305,139 +351,194 @@ int main(int argc, char *argv[])
                gaussCandidates1[numofcandidates2] = new_candidate();
                loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, Rfirst, (Rfirst-farval->distMean)/farval->distSigma, 0.0);
                numofcandidates2++;
-            } else {
-               if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 0.5;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 2.0;
-               }
-               if (ihsCandidates[ii]->period/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period/3.0 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period /= 3.0;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 3.0;
-               }
-               if (ihsCandidates[ii]->period*0.25 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.25 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 0.25;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 4.0;
-               }
-               if (ihsCandidates[ii]->period*0.2 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.2 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 0.2;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 5.0;
-               }
-               /* if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 0.5;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 2.0;
-               }
-               if (ihsCandidates[ii]->period*2.0/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*2.0/3.0 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 2.0/3.0;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 1.5;
-               }
-               if (ihsCandidates[ii]->period*0.75 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.75 >= 2.0*3600.0) {
-                  ihsCandidates[ii]->period *= 0.75;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period /= 0.75;
-               }
-               if (inputParams->Tobs/ihsCandidates[ii]->period*0.75 > 5) {
-                  ihsCandidates[ii]->period *= 4.0/3.0;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 0.75;
-               }
-               if (inputParams->Tobs/ihsCandidates[ii]->period/1.5 > 5) {
-                  ihsCandidates[ii]->period *= 1.5;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period /= 1.5;
-               }
-               if (inputParams->Tobs/ihsCandidates[ii]->period*0.5 > 5) {
-                  ihsCandidates[ii]->period *= 2.0;
-                  template = new_templateStruct(inputParams->templatelength);
-                  makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-                  R = calculateR(ffdata->ffdata, template, aveNoise);
-                  if (R > Rtemp) {
-                     bestPeriod = ihsCandidates[ii]->period;
-                     Rtemp = R;
-                  }
-                  free_templateStruct(template);
-                  template = NULL;
-                  ihsCandidates[ii]->period *= 0.5;
-               } */
-               R = Rtemp;
             }
+            
+            //Check for smaller periods (=higher second FFT frequencies)
+            if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 0.5;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 2.0;
+            }
+            if (ihsCandidates[ii]->period/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period/3.0 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period /= 3.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 3.0;
+            }
+            if (ihsCandidates[ii]->period*0.25 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.25 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 0.25;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 4.0;
+            }
+            if (ihsCandidates[ii]->period*0.2 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.2 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 0.2;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 5.0;
+            }
+            //Check for larger periods (=lower second FFT frequencies)
+            if (ihsCandidates[ii]->period*2.0 < 0.2*inputParams->Tobs) {
+               ihsCandidates[ii]->period *= 2.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 0.5;
+            }
+            if (ihsCandidates[ii]->period*3.0 < 0.2*inputParams->Tobs) {
+               ihsCandidates[ii]->period *= 3.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period /= 3.0;
+            }
+            if (ihsCandidates[ii]->period*4.0 < 0.2*inputParams->Tobs) {
+               ihsCandidates[ii]->period *= 4.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 0.25;
+            }
+            if (ihsCandidates[ii]->period*5.0 < 0.2*inputParams->Tobs) {
+               ihsCandidates[ii]->period *= 5.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 0.2;
+            }
+            /* if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 0.5;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 2.0;
+            }
+            if (ihsCandidates[ii]->period*2.0/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*2.0/3.0 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 2.0/3.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 1.5;
+            }
+            if (ihsCandidates[ii]->period*0.75 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.75 >= 2.0*3600.0) {
+               ihsCandidates[ii]->period *= 0.75;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period /= 0.75;
+            }
+            if (inputParams->Tobs/ihsCandidates[ii]->period*0.75 > 5) {
+               ihsCandidates[ii]->period *= 4.0/3.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 0.75;
+            }
+            if (inputParams->Tobs/ihsCandidates[ii]->period/1.5 > 5) {
+               ihsCandidates[ii]->period *= 1.5;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period /= 1.5;
+            }
+            if (inputParams->Tobs/ihsCandidates[ii]->period*0.5 > 5) {
+               ihsCandidates[ii]->period *= 2.0;
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               R = calculateR(ffdata->ffdata, template, aveNoise);
+               if (R > Rtemp) {
+                  bestPeriod = ihsCandidates[ii]->period;
+                  Rtemp = R;
+               }
+               free_templateStruct(template);
+               template = NULL;
+               ihsCandidates[ii]->period *= 0.5;
+            } */
+            R = Rtemp;
+            
             
             if (R > farval->far) {
                ihsCandidates[ii]->period = bestPeriod;
@@ -460,7 +561,8 @@ int main(int argc, char *argv[])
                   }
                   /* periodfact = ihsCandidates[ii]->period*0.5;
                   if ( inputParams->Tobs/(ihsCandidates[ii]->period + (jj+1)*periodfact) > 5) { */
-                  if ( inputParams->Tobs/(ihsCandidates[ii]->period + periodfact) > 5) {
+                  if ( (ihsCandidates[ii]->period + periodfact) < 0.2*inputParams->Tobs ) {
+                  //if ( inputParams->Tobs/(ihsCandidates[ii]->period + periodfact) > 5) {
                      ihsCandidates[ii]->period += periodfact;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
@@ -515,7 +617,7 @@ int main(int argc, char *argv[])
          }
       }
 
-////////Start clustering!
+////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
       fprintf(LOG,"Starting to cluster...\n");
       fprintf(stderr,"Starting to cluster...\n");
       clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, numofcandidates, 0);
@@ -551,7 +653,7 @@ int main(int argc, char *argv[])
       //REAL4 linparam = 4.1e-3;
       REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
       for (ii=0; ii<numofcandidates; ii++) {
-      
+         
          REAL4Vector *trialf, *trialb, *trialp;
          REAL4 minf, maxf, minb, maxb;
          UINT4 numf, numb, nump;
@@ -905,7 +1007,8 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
    //XLALFree((CHAR*)earth_ephemeris);
-   //XLALFree((CHAR*)sun_ephemeris);
+   //XLALFree((CHAR*)sun_ephemeris);'
+   XLALFree((CHAR*)sft_dir);
    free_Ephemeris(edat);
    cmdline_parser_free(&args_info);
    for (ii=0; ii<10000; ii++) {
@@ -1098,11 +1201,11 @@ REAL4Vector * readInSFTs(inputParamsStruct *input)
    status.statusPtr = NULL;
    SFTCatalog *catalog = NULL;
    SFTConstraints *constraints = NULL;
-   const CHAR *filenames = "*.sft";
+   //const CHAR *filenames = "*.sft";
    SFTVector *sfts = NULL;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, filenames, constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir, constraints);
    if (status.statusCode != 0) exit(-1);
    
    //Determine band size (remember to get extra bins because of the running median and the bin shifts due to detector velocity)
@@ -1440,35 +1543,6 @@ REAL4 minPeriod(REAL4 moddepth, REAL4 cohtime)
 
 }
 
-
-//////////////////////////////////////////////////////////////
-// Calculates y = sin(pi*x)/(pi*x)/(x^2-1)
-REAL4 sincxoverxsqminusone(REAL4 x)
-{
-   
-   REAL4 val;
-   
-   if (x==1.0 || x==-1.0) val = -0.5;
-   else val = sinc(x)/(x*x-1);
-   
-   return val;
-   
-}
-
-
-//////////////////////////////////////////////////////////////
-// Calculates y = sin(pi*x)/(pi*x)
-REAL4 sinc(REAL4 x)
-{
-
-   REAL4 val;
-   
-   if (x==0.0) val = 1.0;
-   else val = sin(LAL_PI*x)/(LAL_PI*x);
-   
-   return val;
-
-}
 
 
 
