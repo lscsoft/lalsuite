@@ -410,7 +410,7 @@ void show_progress(REAL8 rac,   /**< right ascension */
     boincv6_progress.cand_rac        = 0.0;
     boincv6_progress.cand_dec        = 0.0;
     boincv6_progress.cand_hough_sign = 0.0;
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
+#endif /* used for Hough HierarchicalSearch, not GCT */
     boincv6_progress.frequency       = freq;
     boincv6_progress.bandwidth       = fband;
   } else {
