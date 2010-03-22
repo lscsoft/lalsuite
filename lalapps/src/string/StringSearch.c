@@ -1407,7 +1407,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
-  if(!(CLA->ChannelName == 'V' || CLA->ChannelName == 'H' || CLA->ChannelName == 'L'))
+  if(!(CLA->ChannelName[0] == 'V' || CLA->ChannelName[0] == 'H' || CLA->ChannelName[0] == 'L'))
     {
       fprintf(stderr,"The channel name is  not well specified\n");
       fprintf(stderr,"It should start with H1, H2, L1 or V1\n");
