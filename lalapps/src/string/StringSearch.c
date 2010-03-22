@@ -255,6 +255,7 @@ int main(int argc,char *argv[])
   highpassParams.a1   = -1;
   highpassParams.f2   = CommandLineArgs.flow;
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
+  printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
   printf("ReadData()\n");
