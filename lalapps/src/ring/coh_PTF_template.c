@@ -276,7 +276,7 @@ cohPTFNormalize(
   f_min     = 40;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-/*  fFinal    = 400;*/
+/*  fFinal    = 200;*/
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -419,6 +419,21 @@ cohPTFNormalize(
     fprintf (outfile,"%f %f %f \n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im);
   }
   fclose(outfile);*/
+
+  /*outfile = fopen("A_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
+  }
+  fclose(outfile);
+
+  outfile = fopen("B_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
+  }
+  fclose(outfile);*/
+
   
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }

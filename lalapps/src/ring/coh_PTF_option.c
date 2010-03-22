@@ -61,6 +61,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
     { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1},
     { "do-null-stream"     ,no_argument, &localparams.doNullStream,1},
+    { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
 /*    {"h2-data",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },*/

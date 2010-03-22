@@ -101,6 +101,7 @@ struct coh_PTF_params {
   int          doFilter;
   int          analyzeInjSegsOnly;
   int          doNullStream;
+  int          doTraceSNR;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
