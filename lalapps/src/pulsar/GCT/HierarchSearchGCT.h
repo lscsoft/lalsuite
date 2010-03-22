@@ -21,8 +21,8 @@
  * 
  */
 
-#ifndef _HIERARCHSEARCHGCT  /* Double-include protection. */
-#define _HIERARCHSEARCHGCT
+#ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
+#define _HIERARCHSEARCHGCTH
 
 /* standard includes */
 #include <unistd.h>
