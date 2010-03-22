@@ -221,8 +221,8 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
       }
       
       //Mean and sigma of the various trials
-      out->ihsdistMean->data[ii] = calcMean(tempihsvals);
-      out->ihsdistSigma->data[ii] = calcStddev(tempihsvals);
+      out->ihsdistMean->data[ii-1] = calcMean(tempihsvals);
+      out->ihsdistSigma->data[ii-1] = calcStddev(tempihsvals);
       
       //Launch insertion sort method to find the threshold value
       topihsvals = XLALCreateREAL4Vector((UINT4)roundf((trials-ii)*threshold)+1);
@@ -244,7 +244,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 thre
             topihsvals->data[insertionpoint] = tempihsvals->data[jj];
          }
       }
-      out->ihsfar->data[ii] = topihsvals->data[topihsvals->length-1];
+      out->ihsfar->data[ii-1] = topihsvals->data[topihsvals->length-1];
       XLALDestroyREAL4Vector(topihsvals);
       topihsvals = NULL;
       

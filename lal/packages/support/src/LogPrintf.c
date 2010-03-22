@@ -378,7 +378,7 @@ XLALClearLinebreaks ( const char *str )
   strcpy ( ret, str );
 
   tmp = ret;
-  while ( (tmp = index ( tmp, '\n' ) ) )
+  while ( (tmp = strchr ( tmp, '\n' ) ) )
     {
       *tmp = ' ';
       tmp ++;

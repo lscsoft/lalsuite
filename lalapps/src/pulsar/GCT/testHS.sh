@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 NORESAMP="1"
 #NOCLEANUP="1"
@@ -15,7 +15,11 @@ fi
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFStat"
-gct_code="${builddir}lalapps_HierarchSearchGCT"
+if test $# -eq 0 ; then
+    gct_code="${builddir}lalapps_HierarchSearchGCT"
+else
+    gct_code="$@"
+fi
 
 SFTdir="./TestSFTs"
 
@@ -182,6 +186,10 @@ echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match)"
 echo "----------------------------------------------------------------------"
 echo
 
+if [ -e "checkpoint.cpt" ]; then
+    rm checkpoint.cpt # delete checkpoint to start correctly
+fi
+
 outfile_gct1="__tmp_GCT1.dat"
                                                                                            
 gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
@@ -208,9 +216,13 @@ echo " STEP 4: run HierarchSearchGCT without Resampling (perfect match)"
 echo "----------------------------------------------------------------------"
 echo
 
+if [ -e "checkpoint.cpt" ]; then
+    rm checkpoint.cpt # delete checkpoint to start correctly
+fi
+
 outfile_gct2="__tmp_GCT2.dat"
 
-gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime -d1"
+gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -293,7 +305,6 @@ echo "----------------------------------------------------------------------"
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
+    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2 checkpoint.cpt
     echo "Cleaned up."
 fi
-

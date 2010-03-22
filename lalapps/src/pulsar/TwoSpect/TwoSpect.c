@@ -232,7 +232,6 @@ int main(int argc, char *argv[])
       
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL4Vector *initialTFdata = slideTFdata(inputParams, usableTFdata, binshifts);
-      //REAL4Vector *backgroundslide = slideBackgroundData(inputParams, background, binshifts);
       REAL4Vector *backgroundslide = slideTFdata(inputParams, background, binshifts);
       memcpy(ffdata->backgrnd->data, backgroundslide->data, backgroundslide->length*sizeof(*backgroundslide->data));
       
@@ -252,7 +251,7 @@ int main(int argc, char *argv[])
       
 ////////Start of the IHS step!
       ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, cols);
-   
+      
       //Run the IHS algorithm on the data
       runIHS(ihsmaxima, ffdata, cols);
       
@@ -905,8 +904,9 @@ int main(int argc, char *argv[])
    free_ihsfarStruct(ihsfarstruct);
    free_inputParams(inputParams);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
-   XLALFree((CHAR*)earth_ephemeris);
-   XLALFree((CHAR*)sun_ephemeris);
+   //XLALFree((CHAR*)earth_ephemeris);
+   //XLALFree((CHAR*)sun_ephemeris);
+   free_Ephemeris(edat);
    cmdline_parser_free(&args_info);
    for (ii=0; ii<10000; ii++) {
       if (ihsCandidates[ii]!=NULL) {
@@ -1124,7 +1124,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input)
       if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*0.5*input->Tcoh+input->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = (REAL4)((sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im)); //TODO: check this for consistancy
+            tfdata->data[ii*sftlength + jj] = (REAL4)(2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im)); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(z)^2 to recover 1.
          }
       } else {
          for (jj=0; jj<sftlength; jj++) {
@@ -1478,9 +1478,9 @@ REAL4 calcMean(REAL4Vector *vector)
 {
 
    INT4 ii;
-   REAL4 meanval = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) meanval += vector->data[ii];
-   meanval = meanval / vector->length;
+   REAL4 total = 0;
+   for (ii=0; ii<(INT4)vector->length; ii++) total += vector->data[ii];
+   REAL4 meanval = total / vector->length;
    
    return meanval;
 
@@ -1494,9 +1494,9 @@ REAL4 calcStddev(REAL4Vector *vector)
 
    INT4 ii;
    REAL4 meanval = calcMean(vector);
-   REAL4 stddev = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) stddev += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
-   stddev = sqrt( stddev / (vector->length - 1) );
+   REAL4 values = 0;
+   for (ii=0; ii<(INT4)vector->length; ii++) values += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
+   REAL4 stddev = sqrt( values / (vector->length - 1) );
    
    return stddev;
 

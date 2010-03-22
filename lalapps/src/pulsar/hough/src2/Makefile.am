@@ -68,7 +68,7 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
 HSLocalSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c
-EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp
+EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp EinsteinAtHome/win_lib.cpp
 
 ## optimized HierarchicalSearch targets
 
@@ -99,8 +99,11 @@ eah_HierarchicalSearch_LDFLAGS = -L. $(AM_LDFLAGS)
 # items in there should have rules listed below to create them
 # the idea is to increase compatibility of E@H applications by linking these libs statically
 eah_HierarchicalSearch_DEPENDENCIES = $(RELEASE_DEPS)
+eah_HierarchicalSearch_LDADD = $(LDADD) $(RELEASE_LDADD)
 
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 libz.a:
 	cp -f `$(CC) -print-file-name=$@` $@
+exchndl.o: EinsteinAtHome/exchndl.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

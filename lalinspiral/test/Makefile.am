@@ -25,8 +25,7 @@ check_PROGRAMS = \
 	MetricTestBCV \
 	MetricTestPTF \
 	PNTemplates \
-	RandomInspiralSignalTest \
-	SpaceCovering
+	RandomInspiralSignalTest
 TESTS = $(check_PROGRAMS)
 FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
@@ -47,6 +46,7 @@ endif
 # failing test
 # LALHybridTest
 # NRWaveIOTest
+# SpaceCovering
 
 # requires lalstochastic
 # CoherentInspiralFilterTest

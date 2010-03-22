@@ -145,7 +145,7 @@ LALCoherentEstimation ( LALStatus          *stat,
 				 &tmpR8 ) , stat );
 
       /* set first 1/16 s to zero to avoid transient */
-      bzero(in->data[i].data->data, sizeof(REAL4) * (UINT4)ceil(0.0635 / in->data[i].deltaT));
+      memset(in->data[i].data->data, 0, sizeof(REAL4) * (UINT4)ceil(0.0635 / in->data[i].deltaT));
 
     }
 
@@ -161,7 +161,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   memcpy(&(output->sampleUnits), &(in->data[0].sampleUnits), sizeof(LALUnit));
 
   /* make sure output is zero */
-  bzero(output->data->data, output->data->length * sizeof(REAL4));
+  memset(output->data->data, 0, output->data->length * sizeof(REAL4));
 
 
 
