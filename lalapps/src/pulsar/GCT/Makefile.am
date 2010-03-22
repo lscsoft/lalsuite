@@ -28,7 +28,7 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
-eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
+eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
 # this shouldn't harm - it just prefers libraries in the build directory over e.g. system ones
 eah_HierarchSearchGCT_LDFLAGS = -L. $(AM_LDFLAGS)
 # RELEASE_DEPS contains additional dependencies of the E@H build
