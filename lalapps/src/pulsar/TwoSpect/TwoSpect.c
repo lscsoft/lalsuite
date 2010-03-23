@@ -156,6 +156,20 @@ int main(int argc, char *argv[])
       fprintf(LOG,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
       fprintf(stderr,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
    }
+   if (inputParams->Pmax < inputParams->Pmin) {
+      REAL4 tempP = inputParams->Pmax;
+      inputParams->Pmax = inputParams->Pmin;
+      inputParams->Pmin = tempP;
+      fprintf(LOG,"WARNING! Maximum period is smaller than minimum period... switching the two\n");
+      fprintf(stderr,"WARNING! Maximum period is smaller than minimum period... switching the two\n");
+   }
+   if (inputParams->dfmax < inputParams->dfmin) {
+      REAL4 tempdf = inputParams->dfmax;
+      inputParams->dfmax = inputParams->dfmin;
+      inputParams->dfmin = tempdf;
+      fprintf(LOG,"WARNING! Maximum modulation depth is smaller than minimum modulation depth... switching the two\n");
+      fprintf(stderr,"WARNING! Maximum modulation depth is smaller than minimum modulation depth... switching the two\n");
+   }
    
    //Parameters for the sky-grid
    CHAR *sky = (CHAR*)XLALMalloc(strlen(args_info.skyRegion_arg));
@@ -215,7 +229,7 @@ int main(int argc, char *argv[])
    
    //Maximum number of IHS values to sum = twice the maximum modulation depth
    //Minimum number of IHS values to sum = twice the minimum modulation depth
-   INT4 maxcols = (INT4)floorf(2.0*inputParams->dfmax*inputParams->Tcoh);
+   INT4 maxcols = (INT4)floorf(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
    //INT4 mincols = (INT4)2.0*inputParams->dfmin*inputParams->Tcoh;
    
    //Find the FAR of IHS sum

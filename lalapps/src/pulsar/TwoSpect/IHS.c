@@ -380,10 +380,12 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL4 ihsfomfar = 6.0;
    
    INT4 mincols = (INT4)floorf(2.0*inputParams->dfmin*inputParams->Tcoh)+1;
+   INT4 removedbins = 0;
+   for (ii=2; ii<=mincols-1; ii++) removedbins += ii-1;
    
    REAL4Vector *ihss, *noiseinrange, *ihsexpect, *ihsstddev;
    INT4Vector *locs;
-   checkbin = (INT4)ffdata->f->length;
+   checkbin = (INT4)ffdata->f->length*(mincols-1) - removedbins;  //Starting position in the ihsmaxima vector
    //Check the IHS values against the FAR, checking for >1 column widths
    for (ii=mincols-1; ii<(INT4)ihsfarstruct->ihsfar->length; ii++) {
       ihss = XLALCreateREAL4Vector((UINT4)(ii+1));
