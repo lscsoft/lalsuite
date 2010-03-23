@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <math.h>
 #include "XLALPSSInterface.h"
 #include "lal/XLALError.h"
 #include "lal/Units.h"
@@ -10,9 +11,9 @@
 /* variables in PSS that aren't exported in the headers */
 extern FILE*LOG_INFO;
 
-static char* captionString = "count";
+static const char* captionString = "count";
 
-FILE* XLALPSSOpenLog(char*name) {
+FILE* XLALPSSOpenLog(const char*name) {
   if (strcmp(name, "-") == 0)
     LOG_INFO = stderr;
   else
@@ -118,9 +119,11 @@ PSSHeaderParams* XLALPSSInitializeHeaderParams(PSSHeaderParams* headerParams, RE
     headerParams.nfft = 0;
   */
   headerParams->tsamplu = deltaT;
+
+  return(headerParams);
 }
 
-PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UINT4 numToPrint) {
+PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, const char*name, UINT4 numToPrint) {
   UINT4 i,n,len;
   FILE*fp;
   LIGOTimeGPS gpsepoch;
@@ -166,7 +169,7 @@ PSSTimeseries *XLALPrintPSSTimeseriesToFile(PSSTimeseries *tsPSS, char*name, UIN
   return tsPSS;
 }
 
-REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, UINT4 numToPrint, BOOLEAN scaleToREAL4) {
+REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, const char*name, UINT4 numToPrint, BOOLEAN scaleToREAL4) {
   UINT4 i,n,len;
   FILE*fp;
   char unit[LALNameLength];
@@ -215,7 +218,7 @@ REAL8TimeSeries *XLALPrintREAL8TimeSeriesToFile(REAL8TimeSeries *ts, char*name, 
   return ts;
 }
 
-REAL4TimeSeries *XLALPrintREAL4TimeSeriesToFile(REAL4TimeSeries *ts, char*name, UINT4 numToPrint) {
+REAL4TimeSeries *XLALPrintREAL4TimeSeriesToFile(REAL4TimeSeries *ts, const char*name, UINT4 numToPrint) {
   UINT4 i,n,len;
   FILE*fp;
   char unit[LALNameLength];

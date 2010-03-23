@@ -28,7 +28,7 @@ extern PSSHeaderParams* XLALPSSInitializeHeaderParams(PSSHeaderParams* headerPar
 /* open and close a log file */
 /* the PSS functions definitely need a working file pointer they can log to */
 /* XLALPSSOpenLog("-") logs to stderr */
-extern FILE* XLALPSSOpenLog(char*name);
+extern FILE* XLALPSSOpenLog(const const char*name);
 extern void XLALPSSCloseLog(void);
 
 /* LAL <-> PSS timeseries conversion functions */
@@ -62,20 +62,20 @@ REAL4TimeSeries
 extern PSSTimeseries
 *XLALPrintPSSTimeseriesToFile
 (PSSTimeseries *tsPSS,
- char*name,
+ const char*name,
  UINT4 numToPrint);
 
 extern REAL8TimeSeries
 *XLALPrintREAL8TimeSeriesToFile
 (REAL8TimeSeries *ts,
- char*name,
+ const char*name,
  UINT4 numToPrint,
  BOOLEAN scaleToREAL4);
 
 extern REAL4TimeSeries
 *XLALPrintREAL4TimeSeriesToFile
 (REAL4TimeSeries *ts,
- char*name,
+ const char*name,
  UINT4 numToPrint);
 
 /* functions for time domain cleaning */
