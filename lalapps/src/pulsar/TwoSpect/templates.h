@@ -40,7 +40,7 @@ void free_templateStruct(templateStruct *nameoftemplate);
 void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params);
 void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan);
 
-
+REAL4 sincxoverxsqminusone(REAL4 overage);
 
 #endif
 

@@ -58,9 +58,18 @@ struct gengetopt_args_info
   double fspan_arg;	/**< @brief Frequency span of band.  */
   char * fspan_orig;	/**< @brief Frequency span of band original value given at command line.  */
   const char *fspan_help; /**< @brief Frequency span of band help description.  */
-  int cols_arg;	/**< @brief Maximum column width to search.  */
-  char * cols_orig;	/**< @brief Maximum column width to search original value given at command line.  */
-  const char *cols_help; /**< @brief Maximum column width to search help description.  */
+  double Pmin_arg;	/**< @brief Minimum period to be searched (default='7200.0').  */
+  char * Pmin_orig;	/**< @brief Minimum period to be searched original value given at command line.  */
+  const char *Pmin_help; /**< @brief Minimum period to be searched help description.  */
+  double Pmax_arg;	/**< @brief Maximum period to be searched.  */
+  char * Pmax_orig;	/**< @brief Maximum period to be searched original value given at command line.  */
+  const char *Pmax_help; /**< @brief Maximum period to be searched help description.  */
+  double dfmin_arg;	/**< @brief Minimum modulation depth to search.  */
+  char * dfmin_orig;	/**< @brief Minimum modulation depth to search original value given at command line.  */
+  const char *dfmin_help; /**< @brief Minimum modulation depth to search help description.  */
+  double dfmax_arg;	/**< @brief Maximum modulation depth to search.  */
+  char * dfmax_orig;	/**< @brief Maximum modulation depth to search original value given at command line.  */
+  const char *dfmax_help; /**< @brief Maximum modulation depth to search help description.  */
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
@@ -73,6 +82,9 @@ struct gengetopt_args_info
   char * outdirectory_arg;	/**< @brief Output directory.  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
   char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lal/share/lal').  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
@@ -93,11 +105,15 @@ struct gengetopt_args_info
   unsigned int t0_given ;	/**< @brief Whether t0 was given.  */
   unsigned int fmin_given ;	/**< @brief Whether fmin was given.  */
   unsigned int fspan_given ;	/**< @brief Whether fspan was given.  */
-  unsigned int cols_given ;	/**< @brief Whether cols was given.  */
+  unsigned int Pmin_given ;	/**< @brief Whether Pmin was given.  */
+  unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */
+  unsigned int dfmin_given ;	/**< @brief Whether dfmin was given.  */
+  unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
+  unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
