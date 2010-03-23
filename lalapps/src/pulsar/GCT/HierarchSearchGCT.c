@@ -568,12 +568,9 @@ int MAIN( int argc, char *argv[]) {
   }
   
   /* for 1st stage: read sfts, calculate detector states */  
-  /*LogPrintf (LOG_DEBUG, "Reading SFTs and setting up segments ... ");*/
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
-  /*LogPrintfVerbatim (LOG_DEBUG, "done\n");*/
   fprintf(stderr," done.\n");  
-
 
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
@@ -1216,9 +1213,11 @@ int MAIN( int argc, char *argv[]) {
         SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
 		      skyGridCounter,thisScan.numSkyGridPoints, \
 		      uvar_Freq, uvar_FreqBand);
-  
+
+#ifdef EAH_BOINC 
         SET_CHECKPOINT;
-  
+#endif  
+
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }
 
