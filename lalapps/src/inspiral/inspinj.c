@@ -2305,10 +2305,10 @@ int main( int argc, char *argv[] )
        simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
        simRingTable->eff_dist_h = simTable->eff_dist_h; 
        simRingTable->eff_dist_l = simTable->eff_dist_l; 
-       simRingTable->hrss = XLALBlackHoleHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
+       simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
        // need hplus & hcross in each detector to populate these
-       simRingTable->hrss_h = XLALBlackHoleHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
-       simRingTable->hrss_l = XLALBlackHoleHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
     }
 
     /* increment current time, avoiding roundoff error;

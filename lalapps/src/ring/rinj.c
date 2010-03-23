@@ -809,7 +809,7 @@ int main( int argc, char *argv[] )
         this_inj->quality, this_inj->distance, this_inj->epsilon );
       
     /* calculate hrss : at geocenter plus = 2 and cross = 0 */
-    this_inj->hrss = XLALBlackHoleHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
+    this_inj->hrss = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
 
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
@@ -836,7 +836,7 @@ int main( int argc, char *argv[] )
         scross*scross*resp.cross*resp.cross );
 
     /* compute hrss at LHO */ 
-    this_inj->hrss_h = XLALBlackHoleHRSS( this->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+    this_inj->hrss_h = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
 
     /* llo */
     placeAndGPS.p_detector = &llo;
@@ -854,7 +854,7 @@ int main( int argc, char *argv[] )
         + scross*scross*resp.cross*resp.cross );
     
     /* compute hrss at LLO */
-    this_inj->hrss_l = XLALBlackHoleHRSS( this->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+    this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
         
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
