@@ -89,6 +89,8 @@ char* HSBOINCEXTRASCRCSID = "$Id$";
 
 #define DEBUG_COMMAND_LINE_MANGLING 1
 
+typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
+
 /** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
     and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
@@ -175,6 +177,10 @@ static REAL4 get_nan(void);
 #include "graphics_dlls.h"
 #include "delayload_dlls.h"
 static int try_load_dlls(const char*, const char*);
+#endif
+
+#ifdef __GNUC__
+void run_gdb(gdb_cmd command);
 #endif
 
 void ReportStatus(LALStatus *status);
@@ -971,7 +977,7 @@ static void worker (void) {
     DebugBreak();
 #elif defined(__GNUC__)
   if (breakpoint)
-    attach_gdb();
+    run_gdb(gdb_dump_core);
 #endif
 
   enable_floating_point_exceptions();
@@ -1024,10 +1030,14 @@ static void worker (void) {
     if(output_help) {
       printf("Additional options the BOINC version understands:\n");
       printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
-      printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
-      printf("      --CrashFPU         -       if present drain the FPU stack to test FPE\n");
-      printf("      --TestNaN          -       if present raise a NaN to test FPE\n");
-      printf("      --TestSQRT         -       if present try to calculate sqrt(-1) to test FPE\n");
+#ifdef _MSC_VER
+      printf("      --BreakPoint       -       fire up the Windows Runtime Debugger at internal breakpoint\n");
+#elif defined(__GNUC__)
+      printf("      --BreakPoint       -       attach gdb to dump a corefile, then continue\n");
+#endif
+      printf("      --CrashFPU         -       drain the FPU stack to test FPE\n");
+      printf("      --TestNaN          -       raise a NaN to test FPE\n");
+      printf("      --TestSQRT         -       try to calculate sqrt(-1) to test FPE\n");
       boinc_finish(0);
     }
   }
@@ -1079,6 +1089,7 @@ static void worker (void) {
 
 int main(int argc, char**argv) {
   FILE* fp_debug;
+  char* name_debug;
   int skipsighandler = 0;
 
   /* init BOINC diagnostics */
@@ -1169,14 +1180,25 @@ int main(int argc, char**argv) {
     } /* DDD DEBUGGING */
 
   /* see if user has created a DEBUG_GDB_FNAME file: turn on debuggin using 'gdb' */
-  if ((fp_debug=fopen("../../" DEBUG_GDB_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_GDB_FNAME, "r")) ) 
+  /* record the debugging filename found in name_debug to use it as a command-file for gdb*/
+  name_debug="../../" DEBUG_GDB_FNAME;
+  if ((fp_debug=fopen(name_debug, "r"))) {
+    fclose(fp_debug);
+  } else {
+    name_debug="." DEBUG_GDB_FNAME;
+    if ((fp_debug=fopen(name_debug, "r"))) {
+      fclose(fp_debug);
+    } else {
+      name_debug=NULL;
+    }
+  }
+  if(name_debug)
     {
       char commandstring[256];
       char resolved_name[MAXFILENAMELENGTH];
       char *ptr;
       pid_t process_id=getpid();
       
-      fclose(fp_debug);
       LogPrintf ( LOG_NORMAL, "Found '%s' file, trying debugging with 'gdb'\n", DEBUG_GDB_FNAME);
       
       /* see if the path is absolute or has slashes.  If it has
@@ -1192,7 +1214,9 @@ int main(int argc, char**argv) {
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler = 1;
-	snprintf(commandstring,sizeof(commandstring),"gdb %s %d &", resolved_name ,process_id);
+	snprintf(commandstring,sizeof(commandstring),
+		 "gdb -n -x %s %s %d >&2&",
+		 name_debug, resolved_name, process_id);
 	system(commandstring);
 	sleep(20);
       }
@@ -1406,12 +1430,22 @@ void write_and_close_checkpointed_file (void) {
 
 /* Experimental and / or debugging stuff */
 
-/** attach gdb to the running process; for debugging. */
-void attach_gdb() {
+/** attach gdb to the running process and do something; for debugging. */
+void run_gdb(gdb_cmd command) {
 #ifdef __GLIBC__
+  fprintf(stderr,"attaching gdb...\n");
   char cmd[256];
   pid_t pid=getpid();
-  snprintf(cmd, sizeof(cmd), "gdb -batch -pid %d -ex gcore --args %s", pid, global_argv[0]); 
+  switch (command) {
+  case gdb_attach:
+    /* FIXME: that should write a stackdump when somthing (signal) happens, not right away */
+    snprintf(cmd, sizeof(cmd), "echo bt | gdb -batch %s %d -ex cont >&2", global_argv[0], pid);
+    break;
+  case gdb_dump_core:
+    snprintf(cmd, sizeof(cmd), "echo y | gdb -batch %s %d -ex gcore -ex quit >&2", global_argv[0], pid);
+    break;
+  }
+  fprintf(stderr,"executing '%s'\n",cmd);
   system(cmd);
   sleep(20);
 #endif
