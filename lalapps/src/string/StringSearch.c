@@ -400,7 +400,7 @@ int AddInjections(struct CommandLineArgsTag CLA){
   /* new injection code is double precision, so we need to create a
    * buffer to put the injections in and then quantize to single precision
    * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, GV.ht_proc->data->length);
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, (UINT4)GV.ht_proc->data->length);
   memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc -> for printing
