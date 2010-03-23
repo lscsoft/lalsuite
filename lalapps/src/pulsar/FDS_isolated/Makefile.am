@@ -113,7 +113,7 @@ TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
-CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
+CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat fake.cpp
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc
