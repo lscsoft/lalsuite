@@ -26,7 +26,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 
 check_PROGRAMS = testFstat_v3
 
-EXTRA_PROGRAMS = lalapps_CFSv3 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
+EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
+		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
 
 # CFSv2 doesn't compile with Condor
 if CONDOR_ENABLED
@@ -84,6 +85,10 @@ lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
+# force linking in C++ mode for E@H
+eah_PredictFStat_SOURCES = PredictFStat.c fake.cpp
+fake.cpp: Makefile
+	echo '//' >$@
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 

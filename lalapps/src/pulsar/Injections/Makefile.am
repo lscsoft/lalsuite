@@ -14,10 +14,15 @@ BUILT_SOURCES = gitID
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
 		lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
-EXTRA_PROGRAMS = psinject
+EXTRA_PROGRAMS = psinject eah_Makefakedata_v4
 
 lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
 lalapps_Makefakedata_v4_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+# force linking in C++ mode for E@H
+eah_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h fake.cpp
+eah_Makefakedata_v4_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+fake.cpp: Makefile
+	echo '//' >$@
 
 lalapps_makefakedata_v2_SOURCES =  makefakedata_v2.c sft_extra.c sft_extra.h
 lalapps_makefakedata_v2_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
