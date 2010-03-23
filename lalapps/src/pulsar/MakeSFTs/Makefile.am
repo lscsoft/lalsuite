@@ -1,3 +1,4 @@
+
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
@@ -12,14 +13,31 @@ BUILT_SOURCES = gitID
 
 if FRAME
 frameprogs = lalapps_MakeSFTs
+frameexprogs = lalapps_MakeCleanSFTs
 else
 frameprogs =
+frameexprogs =
 endif
 
-bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+## PSS requires FrameLib anyway
+if PSS
+pss_progs =
+pss_src = XLALPSSInterface.c
+else
+pss_progs =
+pssinterface =
+endif
+
+bin_PROGRAMS = $(frameprogs) $(pss_progs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
-lalapps_MakeSFTs_SOURCES = MakeSFTs.c
+lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
+lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
+endif
+
+if PSS
+lalapps_MakeSFTs_CPPFLAGS = -DPSS_ENABLED $(AM_CPPFLAGS)
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c

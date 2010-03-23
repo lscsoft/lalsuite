@@ -3,7 +3,8 @@
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
+*  the Free Software Foundation; either 
+version 2 of the License, or
 *  (at your option) any later version.
 *
 *  This program is distributed in the hope that it will be useful,
@@ -23,7 +24,8 @@
 /* Purpose: generate SFTs                                                        */
 /* Origin: first written by Xavier Siemens, UWM - May 2005,                      */
 /*         based on make_sfts.c by Bruce Allen                                   */
-/* $Id$                     */
+/* $Id: MakeSFTs.c,v 1.16 2007/06/27 01:46:48 gmendell Exp $                     */
+/* Time domain cleaning procedure routines: Paola Leaci                          */
 /*********************************************************************************/
 
 /* REVISIONS: */
@@ -88,10 +90,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 
-#ifdef PSS_ENABLED
-#include <XLALPSSInterface.h>
-#endif
-
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -107,6 +105,24 @@ extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
+
+/* This repeatedly tries to re-open a file.  This is useful on a
+   cluster because automount may fail or time out.  This allows a
+   number of tries with a bit of rest in between.
+*/
+FILE* tryopen(char *name, char *mode){
+  int count=0;
+  FILE *fp;
+  
+  while (!(fp=fopen(name, mode))){
+    fprintf(stderr,"Unable to open file %s in mode %s.  Will retry...\n", name, mode);
+    if (count++<10)
+      sleep(10);
+    else
+      exit(3);
+  }
+  return fp;
+}
 
 /***************************************************************************/
 
@@ -127,8 +143,9 @@ struct CommandLineArgsTag {
   char *IFO;               /* 01/14/07 gam */
   char *SFTpath;           /* path to SFT file location */
   char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
-  INT4 PSSCleaning;	   /* 1=YES and 0=NO*/
-  REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
+  INT4 TDcleaningProc;	   /*1=YES and 0=NO*/
+  REAL8 fc;                /*Cut frequency for the bilateral highpass filter. It has to be used only if TDcleaningProc is YES.*/
+  REAL8 cr;                /*Critical ratio threshold. It has to be used only if TDcleaningProc is YES.*/
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
@@ -144,12 +161,41 @@ struct headertag {
   INT4  nsamples;
 } header;
 
+typedef struct BilHP{
+  REAL8 fcut;
+  REAL8 crt;
+} BilHP;
+
+typedef struct tagParamOfEvent{
+  REAL4 tau;       /*Memory time of the autoregressive average*/   
+  REAL4 deadtime;  /*Dead-time in seconds*/
+  REAL4 factor;    /*e.g. 10: when re-evaluate mean and std*/
+  INT4 iflev;      /*0=no events; 1=begin; 2=event; 3=end of the event*/
+  REAL4 *xamed;    /*AUTOREGRESSIVE MEAN*/
+  REAL4 *xastd;    /*AUTOREGRESSIVE STANDARD DEVIATION*/
+  REAL4 *med;    /*AUTOREGRESSIVE MEAN*/
+  REAL4 *std; 
+  REAL4 xw;
+  REAL4 qw;
+  REAL8 w_norm;   /*Normalization factor for mean and std*/
+  REAL4 edge;     /*Seconds around (before and after) the event have to be excluded*/
+  int total;     /* Samples, due to all events, have been cleaned*/
+  int *begin;     /*Sample numbers of the beginning of each event*/
+  int *duration;  /*Event duration in number of samples*/
+  int *imax;      /*Index at which each event has the maximum*/
+  REAL4 *crmax;   /*Critical ratio of the maximum of the event*/
+  REAL4 *ener;    /*Event energy (sum of the squared amplitudes)*/
+  int number;     /*Number of events*/
+  INT2 ar;        /*Algorithm for the autoregressive evaluation; it has to be = 1 */
+ } ParamOfEvent;
+
+
 
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
-REAL8 FMIN = 48.0; /* default start frequency */
-REAL8 DF = 2000.0; /* default band */
+REAL8 FMIN = 48.0; /* default start frequency; 0.0056 */
+REAL8 DF = 2000.0; /* 2000.0 default band; 16383.9944 */
 
 static LALStatus status;
 INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
@@ -158,6 +204,17 @@ FrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;
+
+REAL8TimeSeries dataDoubleFirstHP;
+REAL4TimeSeries dataSingleFirstHP;
+REAL8TimeSeries dataDoubleHP;
+
+REAL8TimeSeries databil2;
+
+REAL4TimeSeries dataSingleHP;
+REAL8TimeSeries dataDoubleClean;
+REAL4TimeSeries dataSingleClean;
+
 INT2TimeSeries dataINT2;
 INT4TimeSeries dataINT4;
 INT8TimeSeries dataINT8;
@@ -193,11 +250,42 @@ int WindowData(struct CommandLineArgsTag CLA);
 int WindowDataTukey2(struct CommandLineArgsTag CLA);
 int WindowDataHann(struct CommandLineArgsTag CLA);
 
-#ifdef PSS_ENABLED
-/* Time Domain Cleaning with PSS functions */
-int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency);
-#endif
+/*-----------------------------------------------------------*/
+/* Useful functions for the time domain cleaning procedure */
+/*-----------------------------------------------------------*/
+
+/* Time Domain Cleaning Procedure*/
+int TDCleaning(struct CommandLineArgsTag CLA);
+
+/*Initialization of the event paramaters*/
+int EventParamInit(long len, ParamOfEvent *even_param);
+
+/*BILATERAL HIGHPASS FILTER: the SINGLE-PRECISION data are highpassed in the time domain.*/
+int BilHighpass_dataSingle( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthighpass, REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams );
+
+/*BILATERAL HIGHPASS FILTER: the DOUBLE-PRECISION data are highpassed in the time domain.*/
+int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthighpass, REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams );
+
+/*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in SINGLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
+int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param );
+
+/*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in DOUBLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
+int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, ParamOfEvent *even_param );
+
+/*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. DATA IN SINGLE-PRECISION*/
+int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams );
+
+/*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. DATA IN DOUBLE-PRECISION*/
+int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams );
+
+/*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN SINGLE-PRECISION*/
+int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);
+
+/*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN DOUBLE-PRECISION*/
+/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams);*/
+int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHPbil2, ParamOfEvent *even_param, BilHP *myparams);
+/*-----------------------------------------------------------*/
+
 
 /* create an SFT */
 int CreateSFT(struct CommandLineArgsTag CLA);
@@ -209,36 +297,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA);
 /* Frees the memory */
 int FreeMem(struct CommandLineArgsTag CLA);
 
-/* prototypes */
-FILE* tryopen(char *name, const char *mode);
-void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc);
-void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits);
-void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime);
-void mvFilenames(CHAR *filename1, CHAR *filename2);
 
-
-/* -------------------- function definitions -------------------- */
-
-
-/* This repeatedly tries to re-open a file.  This is useful on a
-   cluster because automount may fail or time out.  This allows a
-   number of tries with a bit of rest in between.
-*/
-FILE* tryopen(char *name, const char *mode){
-  int count=0;
-  FILE *fp;
-  
-  while (!(fp=fopen(name, mode))){
-    fprintf(stderr,"Unable to open file %s in mode %s.  Will retry...\n", name, mode);
-    if (count++<10)
-      sleep(10);
-    else
-      exit(3);
-  }
-  return fp;
-}
-
-
+/*****************************************paola********/
 /* 12/27/05 gam; function to create sftDescField for output directory or filename. */
 void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc) {
        strcpy(sftDescField,numSFTs);
@@ -437,25 +497,6 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 }
 #endif
 
-
-#ifdef PSS_ENABLED
-/* debug function */
-int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
-  UINT4 i;
-  FILE*fp=fopen(name,"w");
-  if(!fp) {
-    fprintf(stderr,"Could not open file '%s' for writing\n",name);
-    return -1;
-  } else {
-    for(i=0;i<length;i++)
-      fprintf(fp,"%23.16e\n",array[i]);
-    fclose(fp);
-  }
-  return 0;
-}
-#endif
-
-
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -507,6 +548,7 @@ int main(int argc,char *argv[])
       /* High-pass data with Butterworth filter */
       if(HighPass(CommandLineArgs)) return 4;
 
+
       /* Window data; 12/28/05 gam; add options */
       if (CommandLineArgs.windowOption==1) {
          if(WindowData(CommandLineArgs)) return 5; /* CommandLineArgs.windowOption==1 is the default */
@@ -518,28 +560,30 @@ int main(int argc,char *argv[])
         /* Continue with no windowing; parsing of command line args makes sure options are one of the above or 0 for now windowing. */
       }
 
-#ifdef PSS_ENABLED
-      /* Time Domain cleaning procedure */
-      if (CommandLineArgs.PSSCleaning)
-	if(PSSTDCleaningDouble(CommandLineArgs))
-	  return 9;
-#endif
+    
+     /* Time Domain cleaning procedure */
+      if (CommandLineArgs.TDcleaningProc==1) {   
+         if(TDCleaning(CommandLineArgs)) return 6;   
+      } else {
+        /* Continue without cleaning. */
+      }      
 
+  
       /* create an SFT */
-      if(CreateSFT(CommandLineArgs)) return 6;
+      if(CreateSFT(CommandLineArgs)) return 7;
 
       /* write out sft */
       if (CommandLineArgs.sftVersion==2) {
-        if(WriteVersion2SFT(CommandLineArgs)) return 7;
+        if(WriteVersion2SFT(CommandLineArgs)) return 8;
       } else {
-        if(WriteSFT(CommandLineArgs)) return 7;  /* default is to output version 1 SFTs */
+        if(WriteSFT(CommandLineArgs)) return 8;  /* default is to output version 1 SFTs */
       }
 
       gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + (INT4)((1.0 - CommandLineArgs.overlapFraction)*((REAL8)CommandLineArgs.T));
       gpsepoch.gpsNanoSeconds = 0;
     }
 
-  if(FreeMem(CommandLineArgs)) return 8;
+  if(FreeMem(CommandLineArgs)) return 9;
 
   #if TRACKMEMUSE
         printf("Memory use after freeing all allocated memory:\n"); printmemuse();
@@ -574,16 +618,17 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"misc-desc",            optional_argument, NULL,          'X'},
     {"frame-struct-type",    optional_argument, NULL,          'u'},
     {"ifo",                  optional_argument, NULL,          'i'},
+    {"TD-cleaning-proc",     optional_argument, NULL,          'a'},
+    {"cut-frequency",        optional_argument, NULL,          'b'},
+    {"crit-ratio-thrs",      optional_argument, NULL,          'r'},
     {"window-type",          optional_argument, NULL,          'w'},
     {"overlap-fraction",     optional_argument, NULL,          'P'},
-    {"td-cleaning-freq",     optional_argument, NULL,          'b'},
-    {"td-cleaning",          no_argument,       NULL,          'a'},
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:ab:";
+  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:a:b:r:X:u:w:P:p:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -599,14 +644,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->SFTpath=NULL;
   CLA->miscDesc=NULL;   /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
+  CLA->TDcleaningProc=0;  /*Time Domain cleaning procedure. It is zero by default.*/
+  CLA->fc=0;              /*Cut frequency for the bilateral highpass filter. It has to be used only if TDcleaningProc is YES.*/
+  CLA->cr=0;             /*Critical ratio threshold. It has to be used only if TDcleaningProc is YES.*/
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
-  CLA->useSingle = 0;        /* 11/19/05 gam; default is to use double precision, not single. */
+  CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
-  CLA->PSSCleaning = 0;	     /* 1=YES and 0=NO*/
-  CLA->PSSCleanHPf = 0.0;    /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
 
   strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
@@ -690,6 +736,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'u':
       CLA->frameStructType=optarg; /* 01/10/07 gam */
       break;
+    case 'a':
+      /* Time domain cleaning procedure; the default is 0.*/
+      CLA->TDcleaningProc=atoi(optarg);
+      break;
+    case 'b':
+      /*Cut frequency for the bilateral highpass filter. It has to be used only if TDcleaningProc is YES.*/
+      CLA->fc=atof(optarg);
+      break;
+   case 'r':
+      /*Critical ratio threshold. It has to be used only if TDcleaningProc is YES.*/
+      CLA->cr=atof(optarg);
+      break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
       CLA->windowOption=atoi(optarg);
@@ -706,12 +764,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'p':
       CLA->SFTpath=optarg;       
-      break;
-    case 'a':
-      CLA->PSSCleaning = 1;
-      break;
-    case 'b':
-      CLA->PSSCleanHPf = atof(optarg);
       break;
     case 'h':
       /* print usage/help message */
@@ -731,13 +783,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) Make directories for output SFTs based on this many digits of the GPS time.\n");
       fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n");
       fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) Misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
+      fprintf(stdout,"\tTD-cleaning-proc (-a)\tINT\t (optional) Time Domain cleaning procedure; 1=YES and 0=NO; the default is 0.\n");
+      fprintf(stdout,"\tcut-frequency (-b)\tFLOAT\t (optional) Cut frequency in Hz for the bilateral highpass filter. It has to be used only if TDcleaningProc=1.\n");
+      fprintf(stdout,"\tcrit-ratio-thrs (-r)\tFLOAT\t (optional) Critical ratio threshold. It has to be used only if TDcleaningProc=1.\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
       fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
-      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines");
-      fprintf(stdout,"\ttd-cleaning-freq (-b) \tFLOAT\t(optional) Cut frequency for the bilateral highpass filter for time-domain cleaning");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
       break;
@@ -753,7 +806,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->HPf < 0 )
     {
       fprintf(stderr,"No high pass filtering frequency specified.\n"); 
-      fprintf(stderr,"If you don't want to high pass filter set the frequency to 0.\n");
+      fprintf(stderr,"If you don't want to use the high pass filter set the frequency to 0.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
@@ -793,6 +846,21 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
+
+  if( (CLA->TDcleaningProc < 0) || (CLA->TDcleaningProc > 1) )
+    {
+      fprintf(stderr,"Illegal specification of TDcleaningProc.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+
+ if( (CLA->TDcleaningProc == 0) && ((CLA->fc < 0) || (CLA->fc > 0) || (CLA->cr < 0) || (CLA->cr > 0)) ) 
+   {
+      fprintf(stderr,"You did NOT specify that you need the cleaning procedure.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+   }
+
   if( (CLA->sftVersion < 1) || (CLA->sftVersion > 2) )
     {
       fprintf(stderr,"Illegal sft-version given.\n");
@@ -829,27 +897,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }      
-  if(CLA->PSSCleaning)
-#ifdef PSS_ENABLED
-    {
-      if(CLA->useSingle)
-	{
-	  fprintf(stderr,"Time-domain cleaning is currently only implemented for double-precision data.\n");
-	  return 1;
-	}    
-      if(CLA->PSSCleanHPf == 0.0)
-	{
-	  fprintf(stderr,"A cutoff frequency must be specified for time-domain cleaning.\n");
-	  return 1;
-	}
-    }
-#else
-    {
-      fprintf(stderr,"Time-domain cleaning has been disabled.\n");
-      fprintf(stderr,"Configure for PSS linking to enable it.\n");
-      return 1;
-    }      
-#endif
 
   return errflg;
 }
@@ -923,11 +970,24 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
       dataDouble.deltaT=dataSingle.deltaT;
     }
-
+/*paola*/
   /*  11/19/05 gam; will keep dataDouble or dataSingle in memory at all times, depending on whether using single or double precision */
   if(CLA.useSingle) {
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
+
+      if (CommandLineArgs.TDcleaningProc==1) {  
+  
+      LALCreateVector(&status,&dataSingleFirstHP.data,(UINT4)((CLA.T/dataSingle.deltaT +0.5)+1));
+      TESTSTATUS( &status );
+
+      LALCreateVector(&status,&dataSingleHP.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
+   
+      LALCreateVector(&status,&dataSingleClean.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
+      }     
+
 
       #if TRACKMEMUSE
          printf("Memory use after creating dataSingle and before calling LALCreateForwardRealFFTPlan.\n"); printmemuse();
@@ -941,8 +1001,27 @@ int AllocateData(struct CommandLineArgsTag CLA)
       #endif
 
   } else {  
+
+   
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
+
+      if (CommandLineArgs.TDcleaningProc==1) {  
+  
+      LALDCreateVector(&status,&dataDoubleFirstHP.data,(UINT4)((CLA.T/dataDouble.deltaT +0.5)+1));
+      TESTSTATUS( &status );
+
+      LALDCreateVector(&status,&dataDoubleHP.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
+   
+ 
+      LALDCreateVector(&status,&databil2.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5 + 20.0/dataDouble.deltaT));
+      TESTSTATUS( &status );
+
+
+      LALDCreateVector(&status,&dataDoubleClean.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
+      }
 
       #if TRACKMEMUSE
          printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
@@ -954,6 +1033,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
       #if TRACKMEMUSE
             printf("Memory use after creating dataDouble and after calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
       #endif
+    
   }
 
   return 0;
@@ -965,10 +1045,14 @@ int ReadData(struct CommandLineArgsTag CLA)
 {
   static FrChanIn chanin;
   INT4 k;
+  INT4 i;/*mydatatest*/
+  INT4 itest=0;
   chanin.name  = CLA.ChannelName;
   LALFrSeek(&status,&gpsepoch,framestream);
   TESTSTATUS( &status );
 
+  FILE *outputtest;
+ 
   /* 11/19/05 gam */
   if(CLA.useSingle) {
     
@@ -1166,6 +1250,15 @@ int ReadData(struct CommandLineArgsTag CLA)
       LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
       TESTSTATUS( &status );
 
+
+    if(itest==1){
+             outputtest=fopen("datadoubleOR.dat","w");
+             for(i=0; i< (int)dataDouble.data->length; i++)fprintf(outputtest,"%23.16e\n",dataDouble.data->data[i]);
+             fclose(outputtest);
+       }
+/*mydatatest!HERE!*/
+
+
       #if TRACKMEMUSE
         printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
       #endif
@@ -1188,6 +1281,7 @@ int ReadData(struct CommandLineArgsTag CLA)
 
          LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
          TESTSTATUS( &status );
+
 
          #if TRACKMEMUSE
            printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
@@ -1345,10 +1439,13 @@ int ReadData(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 int HighPass(struct CommandLineArgsTag CLA)
 {
-  PassBandParamStruc filterpar;
-  char tmpname[] = "Butterworth High Pass";
+  INT4 itest=1;
+  INT4 i;
+  FILE *out;
 
-  filterpar.name  = tmpname;
+  PassBandParamStruc filterpar;
+
+  filterpar.name  = "Butterworth High Pass";
   filterpar.nMax  = 10;
   filterpar.f2    = CLA.HPf;
   filterpar.a2    = 0.5;
@@ -1381,6 +1478,15 @@ int HighPass(struct CommandLineArgsTag CLA)
         /* High pass the time series */
         LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
         TESTSTATUS( &status );
+   
+        
+    if(itest==1){
+             out=fopen("dataDligoHP.dat","w");
+             for(i=0; i< (int)dataDouble.data->length; i++)fprintf(out,"%23.16e\n",dataDouble.data->data[i]);
+             fclose(out);
+       }
+
+
 
         #if TRACKMEMUSE
           printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
@@ -1394,6 +1500,8 @@ int HighPass(struct CommandLineArgsTag CLA)
 
   return 0;
 }
+
+
 /*******************************************************************************/
 
 /*******************************************************************************/
@@ -1401,6 +1509,10 @@ int WindowData(struct CommandLineArgsTag CLA)
 {
   REAL8 r = 0.001;
   INT4 k, N, kl, kh;
+
+  int testpao=1;
+  FILE *OUTpao;
+  
   /* This implementation of a Tukey window is describes 
      in the Matlab tukey window documentation */
 
@@ -1435,7 +1547,14 @@ int WindowData(struct CommandLineArgsTag CLA)
     }
     #if PRINTEXAMPLEDATA
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
-    #endif    
+    #endif  
+
+   if(testpao=1){
+     OUTpao=fopen("windowT.dat","w");
+     for(k =0; k < N; k++)fprintf(OUTpao,"%23.16e\n",dataDouble.data->data[k]);
+     fclose(OUTpao);
+   }
+  
   }
 
   return 0;
@@ -1493,7 +1612,9 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
 /* Hann window based on Matlab, but with C indexing: w[k] = 0.5*( 1 - cos(2*pi*k/(N-1)) ) k = 0, 1, 2,...N-1 */
 int WindowDataHann(struct CommandLineArgsTag CLA)
 {
+
   INT4 k;
+  REAL8 suwin2 = 0;
   REAL8 win,N,Nm1;
   REAL8 real8TwoPi = 2.0*((REAL8)(LAL_PI));
 
@@ -1512,23 +1633,962 @@ int WindowDataHann(struct CommandLineArgsTag CLA)
         Nm1 = N - 1;
         for (k=0; k<N; k++) {
           win=0.5*( 1.0 - cos(real8TwoPi*((REAL8)(k))/Nm1) );
+          suwin2=suwin2+win*win;
           dataDouble.data->data[k] *= win;
         }  
+
+
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after windowing data in WindowDataHann:\n"); printExampleDataDouble();
         #endif  
+
+
+   printf("suwin2 %23.26e \n",suwin2);
+
   }
 
   return 0;
 }
+
+
+/*******************************************************************************/
+/*----------FUNCTIONS for the TIME DOMAIN CLEANING PROCEDURE---------------*/
+/*******************************************************************************/
+/*********************************************/
+/*Initialization of the event paramaters*/
+/*********************************************/
+int EventParamInit(long len, ParamOfEvent *even_param)
+{ 
+  int i;
+  long lent; 
+  lent=len;
+  /*EVEN_PARAM *even_param; Parameters to check for events and clean the data*/
+  /*even_param=(EVEN_PARAM *)calloc(1,sizeof(EVEN_PARAM)); */
+  even_param->tau=20.0;       /*memory time of the autoregressive average; */   
+  if(lent <= 131072) even_param->tau=10.0; 
+  even_param->deadtime=0.1;  /*Dead time in seconds*/
+  even_param->factor=1.0;    /*e.g. 10: when re-evaluate mean and std*/
+  even_param->iflev=0;       /*0=no events; 1=begin; 2=event; 3=end of the event*/
+  even_param->med=(REAL4*)malloc(lent*sizeof(REAL4));       /*Autoregressive mean*/
+  even_param->std=(REAL4*)malloc(lent*sizeof(REAL4));   
+  /*even_param->xamed=(REAL4*)malloc(lent*sizeof(REAL4));       Autoregressive mean*/
+ /* even_param->xastd=(REAL4*)malloc(lent*sizeof(REAL4));      Autoregressive std*/
+  even_param->xw=0.;
+  even_param->qw=0.;
+  even_param->w_norm=1.;
+  even_param->edge=0.00061035;  /*Right value: 0.00061035; 0.15 s Seconds around (before and after) the event have to be excluded"*/
+  even_param->total=0;    /*Samples, due to all events, have been cleaned*/
+  even_param->number=0;   /*Number of events*/
+  even_param->ar=1;       /*Algorithm for the autoregressive evaluation; it has to be = 1*/
+  even_param->begin=malloc((size_t) len*sizeof(int)); /*The dimension is the number of events, less than len, but here len is used, just for simplicity*/
+  even_param->duration=malloc((size_t) len*sizeof(long)); 
+  even_param->imax=malloc((size_t) len*sizeof(long));
+  even_param->crmax=malloc((size_t) len*sizeof(REAL4));
+  even_param->ener=malloc((size_t) len*sizeof(REAL4));
+  for(i=0;i<lent;i++){
+   /* even_param->xamed[i]=0.;
+    even_param->xastd[i]=0.;*/
+    even_param->med[i]=0.;
+    even_param->std[i]=0.;
+    even_param->begin[i]=-1;
+    even_param->duration[i]=0;
+    even_param->imax[i]=0;
+    even_param->crmax[i]=0;
+    even_param->ener[i]=0;
+  }
+  return 0;
+}
+
+
+/*********************************************/
+/*Initialization of the event paramaters for the 'fake' highpass series*/
+/*********************************************/
+int Evenbil2(ParamOfEvent *even_param, REAL8TimeSeries *series )
+{ 
+  int i;
+  long newlen; 
+  newlen=ceil(even_param->tau/series->deltaT)+series->data->length;
+  even_param->xamed=(REAL4*)malloc(newlen*sizeof(REAL4));      
+  even_param->xastd=(REAL4*)malloc(newlen*sizeof(REAL4));    
+  for(i=0;i<(int)(newlen);i++){
+  even_param->xamed[i]=0.;
+  even_param->xastd[i]=0.;
+  }
+  
+  return 0;
+}
+
+/******************************************************************************************************************************************/
+/*BILATERAL HIGHPASS FILTER: the SINGLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
+/******************************************************************************************************************************************/
+int BilHighpass_dataSingle( REAL4TimeSeries *seriesHP, REAL4TimeSeries *firsthighpass, REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+{
+
+        INT4 i,k,len;
+	REAL4 w,w1,b0,b1,a1;
+        int itest;
+	       
+        FILE *OUTtest;
+        itest=0;
+ 
+        seriesHP->data->length=series->data->length;   
+	seriesHP->deltaT=series->deltaT; 
+	w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
+	w1=(1+w)/2;
+	b0=w1;
+	b1=-w1;
+	a1=-w;
+        firsthighpass->data->data[0]=b0*series->data->data[0]; 
+	for(i=1;i<series->data->length;i++){
+	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
+	}
+        len=(series->data->length)-1;
+	seriesHP->data->data[len]=b0*firsthighpass->data->data[len]; 
+        for(i=len-1;i>=0;i--){
+	  seriesHP->data->data[i]=b0*firsthighpass->data->data[i]+b1*firsthighpass->data->data[i+1]-a1*seriesHP->data->data[i+1];
+	}
+      
+        if(itest==1){
+         OUTtest=fopen("testhp_singleprec.dat","w");
+         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%i %23.16e %23.16e\n",k,seriesHP->data->data[k],series->data->data[k]);
+         fclose(OUTtest);
+
+       }
+
+	return i;
+
+}
+
+/********************************************************************************************************************************************/
+/*BILATERAL HIGHPASS FILTER: the DOUBLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
+/********************************************************************************************************************************************/
+/*int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthighpass, REAL8TimeSeries *series, BilHP *myparams )*/
+int BilHighpass_dataDouble( REAL8TimeSeries *seriesHP, REAL8TimeSeries *firsthighpass, REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+{
+
+        INT4 i,k,len;
+	REAL4 w,w1,b0,b1,a1;
+        int itest;
+        
+       /* REAL8 r;
+        INT8 ts;
+        r=60.0;
+        ts=ceil(r/series->deltaT);*/
+
+        FILE *OUTtest;
+        itest=0;
+	 
+        seriesHP->data->length=series->data->length;
+       /* seriesHP->data->length=series->data->length;*/
+	seriesHP->deltaT=series->deltaT; 
+	w=exp(-2*LAL_PI*(myparams->fcut)*(series->deltaT));
+	w1=(1+w)/2;
+	b0=w1;
+	b1=-w1;
+	a1=-w;
+
+        printf("SerieLength = %i\n",series->data->length);
+        firsthighpass->data->data[0]=b0*series->data->data[0]; 
+	for(i=1;i<series->data->length;i++){
+	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
+	}
+        len=(series->data->length)-1;
+	seriesHP->data->data[len]=b0*firsthighpass->data->data[len]; 
+        for(i=len-1;i>=0;i--){
+	  seriesHP->data->data[i]=b0*firsthighpass->data->data[i]+b1*firsthighpass->data->data[i+1]-a1*seriesHP->data->data[i+1];
+	}
+
+            
+      /* firsthighpass->data->data[ts]=b0*series->data->data[ts]; 
+	for(i=ts;i<(series->data->length-ts);i++){
+	   firsthighpass->data->data[i]=b0*series->data->data[i]+b1*series->data->data[i-1]-a1*firsthighpass->data->data[i-1];        
+	}
+        len=(series->data->length-ts)-1;
+	seriesHP->data->data[len]=b0*firsthighpass->data->data[len]; 
+        for(i=len-1;i>=ts;i--){
+	  seriesHP->data->data[i]=b0*firsthighpass->data->data[i]+b1*firsthighpass->data->data[i+1]-a1*seriesHP->data->data[i+1];
+	}*/
+
+      
+       if(itest==1){
+         OUTtest=fopen("testhp.dat","w");
+         for(k=0;k<series->data->length;k++)fprintf(OUTtest,"%23.16e\n",seriesHP->data->data[k]);
+         fclose(OUTtest);
+
+       }
+       return i;
+
+}
+
+/********************************************************************************************************************************************/
+/*BILATERAL PAOLA HIGHPASS FILTER: the DOUBLE-PRECISION data are highpassed in the time domain. It's useful to look for high frequency spikes!*/
+/********************************************************************************************************************************************/
+int Bil2( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param )
+{
+
+        INT4 i,k;
+        /*INT4 j;*/
+	int itest;
+              
+        INT8 ts;
+        ts=ceil(even_param->tau/seriesHP->deltaT);
+
+        FILE *OUTtest;
+        itest=1;
+	 
+        seriesHPbil2->data->length=(seriesHP->data->length+ts);
+ 	seriesHPbil2->deltaT=seriesHP->deltaT; 
+
+
+          for(i=0;i<(int)ts;i++){
+          seriesHPbil2->data->data[i]=seriesHP->data->data[i];
+          } 
+          for(i=ts;i<(int)(seriesHP->data->length+ts);i++){
+           /* for(j=0;i<(int)(seriesHP->data->length);j++)seriesHPbil2->data->data[j]=seriesHP->data->data[j];*/
+           seriesHPbil2->data->data[i]=seriesHP->data->data[i-ts];
+            
+          } 
+          
+        printf("SerieLengthBil2 = %i\n",seriesHPbil2->data->length);
+
+      
+       if(itest==1){
+         OUTtest=fopen("testhp.dat","w");
+         for(k=0;k<(seriesHP->data->length+ts);k++)fprintf(OUTtest,"%23.16e \n",seriesHPbil2->data->data[k]);
+         fclose(OUTtest);
+
+       }
+       return i;
+
+}
+
+
+
+
+
+/**********************************************************************************************************************************************/
+/*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in SINGLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
+/**********************************************************************************************************************************************/
+int MedStd_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param )
+{
+  INT4  i,i_eval;
+  REAL8 w_even;
+  REAL4 ad,qd; /*abs of the datum and its square*/
+  REAL4 s=0.;
+  REAL4 ss=0.;  /*mean and average, without normalization, every i_eval samples*/
+  REAL8 itaust;
+  REAL8 norm=1.0;
+  REAL8 asd_appo;
+
+  if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT);  /*change the memory time, if too long*/
+  itaust=(REAL8) 1.0/(series->deltaT/even_param->tau);
+  w_even=exp(-1.0/itaust);
+  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor); /*even_param->factor indicates that the computation of mean and std has to be re-evaluated after i_eval samples */
+  if(i_eval<1)i_eval=1;
+  even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
+
+  for(i=0; i<(int) series->data->length;i++){
+    ad=fabs(series->data->data[i]); 
+    qd=ad*ad;
+    
+    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
+    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
+    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
+    if(i%i_eval==0 && i!=0){ 
+      s=even_param->xw;
+      ss=even_param->qw;      
+    } 
+    if(even_param->w_norm !=0) {
+      if(even_param->ar==1)norm=1.0/even_param->w_norm;
+    }
+      even_param->xamed[i]=s*norm;
+      asd_appo=fabs(ss*norm-s*s*norm*norm);
+      if(asd_appo !=0)even_param->xastd[i]=(REAL4) sqrt(asd_appo);
+      else
+	even_param->xastd[i]=0.0;
+  }
+  
+  for(i=0; i<i_eval;i++){
+     even_param->xamed[i]=even_param->xamed[i_eval];
+     even_param->xastd[i]=even_param->xastd[i_eval];
+   }
+   
+  /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
+    for(i=i_eval+1; i< (INT4) series->data->length;i++){
+      if(i%i_eval!=0){
+	even_param->xamed[i]=even_param->xamed[i-1];
+	even_param->xastd[i]=even_param->xastd[i-1];
+      }
+    }
+
+  return i;
+
+}
+
+/**********************************************************************************************************************************************/
+/*COMPUTATION OF MEAN AND STANDARD DEVIATION for data in DOUBLE-PRECISION: the calculations are made by means of an autoregressive procedure*/
+/**********************************************************************************************************************************************/
+/*int MedStd_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param )*/
+int MedStd_dataDouble( REAL8TimeSeries *seriesHPbil2, REAL8TimeSeries *series, ParamOfEvent *even_param )
+{
+
+  INT8 ts;
+  int  i,i_eval;
+  REAL8 w_even;
+  /*REAL8 mean_e,se,sum_e,std_e,diff,mean,su,std,sum;*/
+  REAL8 ad,qd; /*abs of the datum and its square*/
+  REAL4 s=0.;
+  REAL4 ss=0.;  /*mean and average, without normalization, every i_eval samples*/
+  REAL8 itaust;
+  REAL8 norm=1.0;
+  REAL8 asd_appo;
+  
+  /*int itest1=1;
+  int itest2=1;
+  FILE *OUTtest1;
+  FILE *OUTtest2;
+  FILE *OUTtest4;*/
+  seriesHPbil2->data->length=(series->data->length+ts);/*I can delete this line because I never use explicitly seriesHPbil2->data->length in this function.*/
+  seriesHPbil2->deltaT=series->deltaT; 
+
+
+ /* if(series->data->length*series->deltaT < even_param->tau)even_param->tau=(REAL4) (1.0*series->data->length*series->deltaT); */ /*change the memory time, if too long*/
+  itaust=(REAL8) 1.0/(series->deltaT/even_param->tau);
+  w_even=exp(-1.0/itaust);
+  i_eval= (int) ((even_param->tau/series->deltaT)/even_param->factor);/*even_param->factor indicates that the computation of mean and std has to be re-evaluated every i_eval samples */
+  if(i_eval<1)i_eval=1;
+  even_param->ar=1;  /*The algorithm for the autoregressive evaluation is set.*/
+
+
+  ts=ceil(even_param->tau/series->deltaT);
+  /*secstep=series->data->length-ts-1;
+  su=0;
+  for(i=0; i<=(ts-1); i++){
+  su+=series->data->data[i];
+  }
+ mean=su/ts;
+  mean=ts;
+
+  sum=0;
+  for(i=0; i<=(ts-1); i++){
+  diff=series->data->data[i]-mean;
+  sum+=diff*diff;
+  }
+  std=sqrt(sum/series->data->length);
+
+  for(i=0; i<=(ts-1); i++){
+  even_param->xamed[i]=even_param->xamed[ts+1];
+  even_param->xastd[i]=std;
+  }*/
+   for(i=0; i<(int)(series->data->length+ts);i++){
+  /* for(i=0; i<(int) series->data->length;i++){*/
+  /* ad=fabs(series->data->data[i]); */
+    ad=seriesHPbil2->data->data[i];
+   /* printf("ad %23.16e\n",ad);*/
+    qd=ad*ad;
+   /* printf("qd %23.16e\n",qd);*/
+    if(even_param->ar==1)even_param->xw=(1.0-w_even)*ad+w_even*even_param->xw;
+    if(even_param->ar==1)even_param->qw=(1.0-w_even)*qd+w_even*even_param->qw;
+    if(even_param->ar==1)even_param->w_norm=(1.0-w_even)+w_even*even_param->w_norm; 
+    if(i%i_eval==0 && i!=0){ 
+      s=even_param->xw;
+      ss=even_param->qw;      
+    } 
+      if(even_param->w_norm !=0) {
+      if(even_param->ar==1)norm=1.0/even_param->w_norm;
+    }
+      even_param->xamed[i]=s*norm;
+      asd_appo=fabs(ss*norm-s*s*norm*norm);
+      if(asd_appo !=0)even_param->xastd[i]=(REAL8) sqrt(asd_appo);
+      else
+	even_param->xastd[i]=0.0;
+     /*printf("xamed xastd   %e %e  \n",even_param->xamed[i],even_param->xastd[i]);*/
+  }
+  
+     /* for(i=ts; i<i_eval;i++){*/
+      for(i=0; i<i_eval;i++){
+     even_param->xamed[i]=even_param->xamed[i_eval];
+     even_param->xastd[i]=even_param->xastd[i_eval];
+      /* if(itest1==1){
+         OUTtest1=fopen("testsn1.dat","w");
+         fprintf(OUTtest1,"%i %23.16e %23.16e\n",i,even_param->xamed[i],even_param->xastd[i]);
+         fclose(OUTtest1);
+       }*/
+   }
+   
+  /*Fill the empty values, with the previous ones (that is, the last evaluated)*/
+    for(i=i_eval+1; i<(int) (series->data->length+ts);i++){
+    /*for(i=i_eval+1; i< (int) series->data->length;i++){*/
+      if(i%i_eval!=0){
+	even_param->xamed[i]=even_param->xamed[i-1];
+	even_param->xastd[i]=even_param->xastd[i-1];
+    
+     /* if(itest2==1){
+         OUTtest2=fopen("testsn2.dat","w");
+         fprintf(OUTtest2,"%i %23.16e %23.16e\n",i,even_param->xamed[i],even_param->xastd[i]);
+         fclose(OUTtest2);
+       }*/
+
+      }
+    }   
+
+   
+  /* OUTtest2=fopen("testsn2.dat","w");*/
+   for(i=ts; i<(int)(series->data->length+ts);i++){
+   even_param->med[i-ts]=even_param->xamed[i];
+   even_param->std[i-ts]=even_param->xastd[i];
+  /* fprintf(OUTtest2,"%23.16e %23.16e\n",even_param->med[i-ts],even_param->std[i-ts]);*/
+   } 
+
+ /* OUTtest4=fopen("compl.dat","w");
+  for(i=0; i<(int)(series->data->length+ts);i++){
+  fprintf(OUTtest4,"%23.16e %23.16e \n",even_param->med[i],even_param->std[i]);
+  }
+  fclose(OUTtest4);*/
+
+   /* fclose(OUTtest2);*/
+   
+  /* OUTtest1=fopen("testsn1.dat","w");
+   for(i=0; i<(int)(series->data->length);i++){
+   fprintf(OUTtest1,"%23.16e %23.16e\n",even_param->med[i],even_param->std[i]);
+   }
+   fclose(OUTtest1);*/
+
+         /* seriesHPbil2->data->length=series->data->length;*/
+         /* for(i=ts;i<(int)(series->data->length+ts);i++){
+          series->data->data[i-ts]=seriesHPbil2->data->data[i];
+          } */
+
+
+
+ /* se=0;
+  for(i=(int)(series->data->length-ts); i<(int) series->data->length; i++){
+  se+=series->data->data[i];
+  }
+  mean_e=se/ts;
+
+  sum_e=0;
+  for(i=(int)(series->data->length-ts); i<(int) series->data->length; i++){
+  diff=series->data->data[i]-mean_e;
+  sum_e+=diff*diff;
+  }
+  std_e=sqrt(sum_e/series->data->length);
+
+  for(i=(int)(series->data->length-ts); i<(int) series->data->length; i++){
+  even_param->xamed[i]=mean_e;
+  even_param->xastd[i]=std_e;
+  }*/
+
+  return i;
+
+}
+
+/**************************************************************************************************************************/
+/*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. It uses the mean and the 
+standard deviation computed in an autoregressive way and it registers the event characteristics. DATA IN SINGLE-PRECISION*/
+/**************************************************************************************************************************/
+int EventSearch_dataSingle( REAL4TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+{
+  INT4 i,j;
+  REAL4 ad,rd;
+  REAL4 xmax;
+  INT8 time_below; /*Number of samples below*/
+  INT8 samples_deadtime;
+  REAL4 appo;
+  appo=even_param->deadtime/series->deltaT;
+  samples_deadtime=lroundf(appo);
+
+  for(i=0;i<(int) series->data->length;i++){
+    even_param->begin[i]=-1;
+    even_param->duration[i]=0;
+    even_param->imax[i]=0; 
+    even_param->crmax[i]=0;
+    even_param->ener[i]=0;
+  }
+  even_param->iflev=0;
+  time_below=0.;
+  j=-1;
+  
+  for(i=0; i<(int) series->data->length;i++){
+       ad=fabs(series->data->data[i]);
+       rd=(ad-even_param->xamed[i])/(even_param->xastd[i]+1e-25);
+         if((even_param->iflev==0)&&(rd>=myparams->crt) && (ad !=0)){  
+	   j+=1;
+	   even_param->iflev=1;
+	   even_param->begin[j]=i;
+	   even_param->duration[j]=1;
+	   even_param->ener[j]+=ad*ad;
+	   even_param->imax[j]=i;
+	   even_param->crmax[j]=rd;
+	   xmax=ad;
+	   time_below=0;
+         }
+	 if((even_param->iflev==2)&&(rd>=myparams->crt)){
+	   time_below=0;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+	   if(ad>=xmax)even_param->imax[j]=i;
+	   if(ad>=xmax)even_param->crmax[j]=rd;
+	   if(ad>=xmax)xmax=ad;
+	 }
+	 if((even_param->iflev==2)&&(rd<myparams->crt)){
+	   time_below+=1.;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+	 }
+	 if(time_below==samples_deadtime){
+	   even_param->iflev=3;
+	   time_below=0.;
+	 } 
+	 if(time_below>samples_deadtime){
+	   even_param->duration[j]-=1;
+	   even_param->iflev=3;
+	   time_below=0.;
+	 }
+	 if(even_param->iflev==1)even_param->iflev=2;
+	 if(even_param->iflev==3){
+	   even_param->duration[j]-=(INT4) samples_deadtime; 
+	    if(even_param->duration[j]<=0) even_param->duration[j]=1;    
+	    even_param->iflev=0;
+	 }
+  }
+  even_param->number=j+1;  /*Total number of events found (j starts from 0)*/
+  return i;
+}
+
+/**************************************************************************************************************************/
+/*EVENT-HUNTING: this function looks for events with a critical ratio above a 'fixed' threshold. It uses the mean and the 
+standard deviation computed in an autoregressive way and it registers the event characteristics. DATA IN DOUBLE-PRECISION*/
+/**************************************************************************************************************************/
+int EventSearch_dataDouble( REAL8TimeSeries *series, ParamOfEvent *even_param, BilHP *myparams )
+{
+
+ /* REAL8 r = 60.0;
+  INT8 ts, secstep;*/
+
+  INT4 i,j,i_start;
+  REAL8 ad,rd,rdend,rdst;
+  REAL8 xmax;
+  long int time_below; /*Number of samples below*/
+  long int samples_deadtime;
+  REAL8 appo; /*REAL8 appo;*/
+  appo=even_param->deadtime/series->deltaT;
+  samples_deadtime=floor(appo+0.5); /*lround(appo);*/
+
+ printf("deadtime, cr_th, fcut,samples_deadtime, deltaT, SerieLength = %f %f %f %ld %23.16e %i\n",even_param->deadtime,myparams->crt,myparams->fcut,samples_deadtime,series->deltaT,series->data->length);
+
+ 
+ /* ts=ceil(r/series->deltaT);
+  secstep=series->data->length-ts-1;*/
+
+  /*int itest=1;
+  FILE *OUTtest;*/
+  FILE *energy;
+  FILE *ALLEVENT; 
+  FILE *EVENDATone;
+  FILE *EVENDATtwo;
+  FILE *EVENDATthree;
+  FILE *EVENDATfour;
+
+ /*float numfl=1;
+ double numdou=0.000215;
+ float trial;
+ double trial2;
+ long int sd,sdf;
+ trial=numfl/numdou;
+ trial2=numfl/numdou;
+ sdf=lroundf(trial);
+ sd=floor(trial2+0.5); 
+ printf("sdf sd: %ld %ld\n",sdf,sd);*/
+energy=fopen("energy.dat","w");
+    for(i=0;i<(int) series->data->length;i++){
+    /*for(i=ts;i<(int) (series->data->length-ts);i++){*/
+    even_param->begin[i]=-1;
+    even_param->duration[i]=0;
+    even_param->imax[i]=0; 
+    even_param->crmax[i]=0;
+    even_param->ener[i]=0;
+  }
+  even_param->iflev=0;
+  time_below=0.;
+  
+  
+
+ALLEVENT=fopen("AllEvents.dat","w");
+  j=-1;
+EVENDATone=fopen("ARmean.dat","w");
+EVENDATtwo=fopen("ARstd.dat","w");
+EVENDATthree=fopen("NOAbsHp.dat","w");
+EVENDATfour=fopen("CR.dat","w");
+/*for(i=15730;i<=15743;i++)printf("(ad,abs(ser(i)) %i %23.16e \n",i,fabs(series->data->data[i]));*/
+
+  /*fprintf(EVENDAT,"%s %s %s %s %s %s\n","%", "i", "ad", "xamed", "xastd", "rd");*/
+  /*for(i=ts; i<(int) (series->data->length-ts);i++){*/
+  
+  for(i=0; i<(int) series->data->length;i++){
+     /* ad=fabs(series->data->data[i]);*/
+      ad=series->data->data[i];
+      /*printf("ad %23.16e\n",ad);*/
+      /*printf("cr %f\n",myparams->crt);*/
+       rd=fabs((ad-even_param->med[i])/(even_param->std[i]+1e-25));
+       /*if((rd>3.0))printf("rd %f\n",rd);*/
+       /*printf("rd %23.16e\n",rd);*/
+       /*if(even_param->xastd[i]<1e-20)printf("xastd %23.16e\n",even_param->xastd[i]);*/
+       /*printf("i ad,xamed,xastd,rd %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd); */
+       
+        
+    /*  fprintf(EVENDAT,"%i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+
+
+ fprintf(EVENDATone,"%23.16e \n",even_param->med[i]);
+ fprintf(EVENDATtwo,"%23.16e \n",even_param->std[i]);
+ fprintf(EVENDATthree,"%23.16e \n",series->data->data[i]);
+ fprintf(EVENDATfour,"%23.16e \n",rd);
+
+
+/*if(i==0)printf("(i=0) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==1)printf("(i=1) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26184400)printf("(i=26184400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26214399)printf("(i=26204399) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);
+if(i==26214400)printf("(i=26214400) %i %23.16e %23.16e %23.16e %23.16e\n",i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+         if((even_param->iflev==0) && (rd>=myparams->crt) && (ad !=0)){  
+	   j+=1;
+	   even_param->iflev=1;
+          /* if(j==0) */       
+        /* printf("Beginning of an event (j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e\n",j,i,ad,even_param->xamed[i],even_param->xastd[i],rd);*/
+          /* if(j==100) printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
+         /* printf("Beginning of an event (j,i,ad,rd) %i %i %23.16e %23.16e\n",j,i,ad,rd);*/
+         /*part*/
+         /* printf("(j,i,med,std,rd) %i %i %23.16e %23.16e %23.16e \n",j,i,even_param->xamed[i],even_param->xastd[i],rd);*/
+          /* printf("(START:j,i,ad,med,std,rd) %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rd);*/
+	   even_param->begin[j]=i;
+	   even_param->duration[j]=1;
+	   even_param->ener[j]+=ad*ad;
+ /*if(j==74)printf("(1st) %23.16e %23.16e %23.16e %23.16e\n",even_param->ener[j],ad*ad,xmax,xmax*xmax);*/
+   
+/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series NOT including the samples in the deadtime!*/
+	   even_param->imax[j]=i;
+	   even_param->crmax[j]=rd;
+	   xmax=ad;
+fprintf(energy,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",even_param->ener[j],ad,even_param->crmax[j],even_param->med[j],even_param->std[j]);
+/*fprintf(energy,"%23.16e \n",xmax);*/
+        /*  if(j==0) printf("j, xmax %i %23.16e\n",j,xmax);
+          if(j==3) printf("j, xmax %i %23.16e\n",j,xmax);
+          if(j==289) printf("j, xmax %i %23.16e\n",j,xmax); */
+           time_below=0;
+         }
+	 if((even_param->iflev==2)&&(rd>=myparams->crt)){
+	   time_below=0;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+/*if(j==74)printf("(2nd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
+	   if(ad>=xmax)even_param->imax[j]=i;
+	   if(ad>=xmax)even_param->crmax[j]=rd;
+	   if(ad>=xmax)xmax=ad;
+          /* printf("(j,xmax,med,std,rd) %d %23.16e %23.16e %23.16e %23.16e\n",j,xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
+	 }
+	 if((even_param->iflev==2)&&(rd<myparams->crt)){
+	   time_below+=1.;
+	   even_param->duration[j]+=1;
+	   even_param->ener[j]+=ad*ad;
+  /*  if(j==74)printf("(3rd) %23.16e %23.16e %23.16e \n",even_param->ener[j],ad*ad,xmax);*/
+
+        
+	 }
+	 if(time_below==samples_deadtime){
+           even_param->iflev=3;
+	   time_below=0.;
+	 } 
+	 if(time_below>samples_deadtime){
+	   even_param->duration[j]-=1;
+	   even_param->iflev=3;
+           /*puts("PAY ATTENTION: time_below is greater than samples_deadtime !!");*/
+      	   time_below=0.;
+          
+	 }
+	 if(even_param->iflev==1)even_param->iflev=2;
+         if(even_param->iflev==3){
+           even_param->duration[j]-=(int) samples_deadtime; 
+	    if(even_param->duration[j]<=0) even_param->duration[j]=1;    
+          /*if(j==0)*/ 
+       /*  printf("End of an event (j,i,dur,ad,med,std,rd) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i,even_param->duration[j],xmax,even_param->xamed[i],even_param->xastd[i],rd);*/
+  
+        /*EventNumber, Beg, Dur(samples), End, Dur(seconds), xmax, rd, mean, std;*/
+        
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,xmax,ad,fabs(series->data->data[i]),fabs(series->data->data[i_start]));*/
+/*ad close to 'part' is = fabs(series->data->data[i_start]); while ad here is = fabs(series->data->data[i] because i here means the final event; i close to 'part' means the beginning and here the beginning of an event is i_start.)*/
+
+/* rdend=(fabs(series->data->data[i])-even_param->xamed[i])/(even_param->xastd[i]+1e-25);*/
+i_start=i-samples_deadtime-even_param->duration[j]+1;
+rdend=(xmax-even_param->med[i])/(even_param->std[i]+1e-25);
+rdst=(fabs(series->data->data[i_start])-even_param->med[i_start])/(even_param->std[i_start]+1e-25);
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,rd,rdst,rdend,fabs(series->data->data[i_start]),fabs(series->data->data[i]));*/
+/*rd here is = rdend; rdst here is = to rd in 'part'*/
+/*i_start here is = i in 'part'*/
+
+/*printf("%i %i %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,even_param->xamed[i_start],even_param->xastd[i_start],even_param->xamed[i],even_param->xastd[i],rd);*/
+/*Med and Std are = at the begin and the end of an event, but rd is different because ad is different!*/
+
+/*printf("(END) %i %i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,fabs(series->data->data[i]),even_param->xamed[i],even_param->xastd[i],rdend);
+printf("%i %i %23.16e %23.16e %23.16e %23.16e \n",j,i_start,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst);*/
+/*xamed[i_start] and xastd[i_start] are = to xamed[i] and xastd[i] close to 'part', respectively.*/
+
+
+
+      /* printf("%i %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),rdst,even_param->xamed[i_start],even_param->xastd[i_start],fabs(series->data->data[i]),rdend,even_param->xamed[i],even_param->xastd[i]);*/
+
+/*for(i_start=15730;i_start<=15743;i_start++)printf("(abs(series(i_start),abs(series(i)) %i %i %23.16e %23.16e \n",i_start,i,fabs(series->data->data[i_start]),fabs(series->data->data[i]));*/
+
+/*printf("%i %23.16e %23.16e\n",i,xmax,fabs(series->data->data[i])); */
+
+/* fprintf(ALLEVENT,"%i %23.16e %i %i %i %f %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->ener[j],i_start,i,even_param->duration[j],even_param->duration[j]*series->deltaT,fabs(series->data->data[i_start]),even_param->xamed[i_start],even_param->xastd[i_start],rdst,xmax,even_param->xamed[i],even_param->xastd[i],rdend);*/
+ 
+ 
+
+	    even_param->iflev=0;
+
+fprintf(ALLEVENT,"%i %i %i %i %23.16e %23.16e %23.16e %23.16e %23.16e %23.16e \n",j,even_param->begin[j],even_param->duration[j],even_param->imax[j],even_param->crmax[j],even_param->med[j],even_param->std[j],even_param->ener[j],ad*ad,xmax);
+/*even_param->ener[j] here is the sum of the square amplitudes of the highpassed series including the samples in the deadtime!*/
+
+	 }
+
+  
+     /*  if(itest==1){ 
+         OUTtest=fopen("testsn.dat","w");
+         fprintf(OUTtest,"%i %i %i %f\n",j,i,even_param->duration[j],xmax);
+         fclose(OUTtest);
+       }*/
+  }
+  fclose(EVENDATone);  
+fclose(EVENDATtwo); 
+fclose(EVENDATthree); 
+fclose(EVENDATfour); 
+  even_param->number=j+1;  /*Total number of events found (j starts from 0)*/
+fclose(ALLEVENT);
+fclose(energy);
+  return i;
+}
+
+/*******************************************************************************************************************************************/
+/*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN SINGLE-PRECISION*/
+/*******************************************************************************************************************************************/
+int EventRemoval_dataSingle(REAL4TimeSeries *seriesCL, REAL4TimeSeries *series, REAL4TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)
+{
+        INT4 i,k;
+	INT4 lwind;
+	INT4 index1,index2,index3,index4;
+	INT4 imax;
+
+        i=MedStd_dataSingle(seriesHP,even_param);
+        i=EventSearch_dataSingle(seriesHP,even_param,myparams);
+
+        seriesCL->data->length=series->data->length; 
+	seriesCL->deltaT=series->deltaT;
+      
+       for(i=0;i<series->data->length;i++)seriesCL->data->data[i]=series->data->data[i]; /*copy in seriesCL the data of the original time series*/
+       lwind=ceil(((REAL8) even_param->edge/series->deltaT));
+
+     for(i=0; i<even_param->number; i++){
+	  if(even_param->begin[i]!=-1){
+	    imax=even_param->imax[i];
+
+	    index1=even_param->begin[i]-lwind;
+	    index2=even_param->begin[i]+even_param->duration[i]+lwind;
+	    index3=even_param->begin[i];
+	    index4=even_param->begin[i]+even_param->duration[i];
+	    if(index1<=0)index1=0;
+	    if(index2>=series->data->length)index2=series->data->length;
+	  
+  	    for(k=index3; k<index4; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]; /*In the event*/
+	    /*At the edges:*/
+	    for(k=index1; k<index3; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(k-1.0*index1)/lwind; 
+	    for(k=index4; k<index2; k++)seriesCL->data->data[k]-=seriesHP->data->data[k]*(1.0*index2-k)/lwind;
+	  }
+	   
+      }
+      
+
+      return i;
+
+}
+
+/*******************************************************************************************************************************************/
+/*ELIMINATION OF HIGH FREQUENCY SPIKES: this function identifies and removes large events from the highpassed time series. DATA IN DOUBLE-PRECISION*/
+/*******************************************************************************************************************************************/
+int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, REAL8TimeSeries *seriesHPbil2, ParamOfEvent *even_param, BilHP *myparams)
+/*int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, REAL8TimeSeries *seriesHP, ParamOfEvent *even_param, BilHP *myparams)*/
+{
+        INT4 i,kk;
+	INT4 lwind;
+        INT4 index1,index2,index3,index4;
+	INT4 imax;
+        REAL8 su,su2,su3,cl;
+        REAL8 st1,st2,st3,hp,wr,diffs;
+        
+        int itest=1;
+        FILE *outputtest;
+        FILE *EnergyInfo;
+        FILE *EventInfo;
+        FILE *TM;
+                
+        cl=0; 
+        hp=0;
+        wr=0;
+         
+    
+/*
+REAL4 en;
+
+for(i=0;i<(int) series->data->length;i++){
+      en[i]=0;
+  }*/
+
+       /* i=MedStd_dataDouble(seriesHP,even_param);*/
+        i=MedStd_dataDouble(seriesHPbil2,seriesHP,even_param); 
+        i=EventSearch_dataDouble(seriesHP,even_param,myparams);
+
+        seriesCL->data->length=series->data->length; 
+	seriesCL->deltaT=series->deltaT;
+    for(i=0;i<series->data->length;i++)seriesCL->data->data[i]=series->data->data[i]; /*copy in seriesCL the data of  of the original time series*/
+       lwind=ceil(((REAL8) even_param->edge/series->deltaT));
+ EventInfo=fopen("even_info.dat","w");
+ EnergyInfo=fopen("energyInfo.dat","w");
+ TM=fopen("mixT.dat","w");
+
+     for(i=0; i<even_param->number; i++){
+	  if(even_param->begin[i]!=-1){
+	    imax=even_param->imax[i];
+
+
+ /* printf("***One event:(i, begin, dur) %d %d %d\n",i,even_param->begin[i],even_param->duration[i]);
+   printf("duration in s,MaxAmpOrig MaxAmpHPseries %f %23.16e %23.16e\n",even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax]);*/
+
+
+	    index1=even_param->begin[i]-lwind;
+	    index2=even_param->begin[i]+even_param->duration[i]+lwind;
+	    index3=even_param->begin[i];
+	    index4=even_param->begin[i]+even_param->duration[i];
+	    if(index1<=0)index1=0;
+	    if(index2>=series->data->length)index2=series->data->length;
+	  
+  	    for(kk=index3; kk<index4; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]; /*In the event*/
+	    /*At the edges:*/
+	    for(kk=index1; kk<index3; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]*(kk-1.0*index1)/lwind; 
+	    for(kk=index4; kk<index2; kk++)seriesCL->data->data[kk]-=seriesHP->data->data[kk]*(1.0*index2-kk)/lwind;
+           
+            fprintf(EventInfo,"%23.16e %23.16e %23.16e %i %23.16e %23.16e\n",even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->crmax[i],even_param->ener[i]);
+          
+             su=0;
+            for(kk=index3; kk<index4; kk++){
+            su+=(seriesHP->data->data[kk])*(seriesHP->data->data[kk]);
+            }
+            st1=0;
+            for(kk=index3; kk<index4; kk++)st1+=2*(seriesHP->data->data[kk])*(series->data->data[kk]);
+             
+           su2=0;
+           for(kk=index1; kk<index3; kk++)su2+=(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind)*(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind);
+           st2=0;
+           for(kk=index1; kk<index3; kk++)st2+=2*(seriesHP->data->data[kk]*(kk-1.0*index1)/lwind)*(series->data->data[kk]); 
+          
+           su3=0;
+           for(kk=index4; kk<index2; kk++)su3+=(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind)*(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind);
+           st3=0;
+           for(kk=index4; kk<index2; kk++)st3+=2*(seriesHP->data->data[kk]*(1.0*index2-kk)/lwind)*(series->data->data[kk]);
+           
+           
+          /* printf("%i %23.16e %23.16e %23.16e\n",kk,su,su2,su3); */
+           fprintf(EnergyInfo,"%i %23.16e %23.16e %23.16e \n",i,su,su2,su3); 
+           /* printf("%i %23.16e %23.16e %23.16e\n",kk,st1,st2,st3);*/
+           fprintf(TM,"%i %23.16e %23.16e %23.16e\n",i,st1,st2,st3); 
+        
+
+
+         /* printf("%i %23.16e %23.16e %23.16e %i %23.16e %23.16e\n",i,even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->crmax[i],even_param->ener[i]);*/
+           /* printf("%i %23.16e %23.16e %23.16e %i %23.16e %23.16e\n",i,even_param->duration[i]*series->deltaT,series->data->data[imax],seriesHP->data->data[imax],even_param->duration[i],even_param->xamed[i],even_param->xastd[i]);*/
+
+	  }
+	 
+
+        /* if(itest==1){*/
+           /*Let's write the first event!*/
+           /* if(i==1)outputtest=fopen("testCL.dat","w");
+            if(index1>=5){ 
+            if(i==1)for(kk=index1-5;kk<index2;kk++)fprintf(outputtest,"%i %23.16e %23.16e %23.16e\n",kk,seriesCL->data->data[kk],series->data->data[kk],seriesHP->data->data[kk]);
+            }
+            if(i==1)fclose(outputtest);
+         }*/
+
+                    
+     }
+fclose(EventInfo);
+fclose(EnergyInfo);
+fclose(TM);
+
+ /* printf("sum,um,sm %23.16e %23.16e %23.16e \n",sum,sm,um);
+  printf("st1,st2,st3 %23.16e %23.16e %23.16e \n",st1,st2,st3);
+  diffd=st1+st2+st3-(sum+sm+um);
+  printf("diffd %23.16e\n", diffd);*/
+    if(itest==1){
+             outputtest=fopen("CleanedTS.dat","w");
+             for(i=0;i<series->data->length;i++)fprintf(outputtest,"%23.16e\n",seriesCL->data->data[i]);
+             fclose(outputtest);           
+          
+       }
+
+ for(i=0;i<series->data->length;i++){
+    hp+=seriesHP->data->data[i]*seriesHP->data->data[i];
+    cl+=seriesCL->data->data[i]*seriesCL->data->data[i];
+    wr+=series->data->data[i]*series->data->data[i];
+   
+    }
+  diffs=wr-cl;
+  printf("diffs %23.16e\n", diffs);
+ printf("sumHP2 sumcl2 sumw2 %23.16e %23.16e %23.16e\n",hp,cl,wr);
+      return i;
+
+}
+
+/*******************************************************************************/
+int TDCleaning(struct CommandLineArgsTag CLA)
+{       
+  INT4 j, k;
+  ParamOfEvent *even_param;
+  even_param=(ParamOfEvent *)calloc(1,sizeof(ParamOfEvent)); 
+ 
+
+  BilHP bilparam;
+
+  bilparam.fcut    = CLA.fc;
+  bilparam.crt     = CLA.cr;
+  
+     
+       EventParamInit(dataDouble.data->length, even_param);
+       j=BilHighpass_dataDouble( &dataDoubleHP, &dataDoubleFirstHP, &dataDouble, even_param, &bilparam );
+       Evenbil2(even_param, &dataDouble );
+       j=Bil2( &databil2, &dataDoubleHP, even_param);
+       j=EventRemoval_dataDouble( &dataDoubleClean, &dataDouble, &dataDoubleHP, &databil2, even_param, &bilparam);
+        dataDouble.data->length=dataDoubleClean.data->length;   
+	dataDouble.deltaT=dataDoubleClean.deltaT;
+
+       for (k = 0; k < (int)dataDoubleClean.data->length; k++) {
+          dataDouble.data->data[k] = dataDoubleClean.data->data[k];
+       }
+
+     
+
+  return 0;
+}
+
+
 /*******************************************************************************/
 
 /*******************************************************************************/
 int CreateSFT(struct CommandLineArgsTag CLA)
 {
-
+  /*INT4 i;*/
   /* 11/19/05 gam */
   if(CLA.useSingle) {
+   
       #if TRACKMEMUSE
         printf("Memory use before creating output vector fftDataSingle and calling LALForwardRealFFT:\n"); printmemuse();
       #endif
@@ -1548,7 +2608,9 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary value of fftDataSingle from CreateSFT:\n"); printExampleFFTData(CLA);
       #endif      
+  
   } else {
+
       #if TRACKMEMUSE
         printf("Memory use before creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
       #endif
@@ -1557,7 +2619,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
       TESTSTATUS( &status );  
 
-      /* compute sft */
+      /* compute sft. You'll find it in RealFFT.c */
       XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble );
 
       #if TRACKMEMUSE
@@ -1567,174 +2629,11 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary value of fftDataDouble from CreateSFT:\n"); printExampleFFTData(CLA);
       #endif      
+ 
   }
       return 0;
 }
 /*******************************************************************************/
-
-/* time-domain cleaning routines */
-
-#ifdef PSS_ENABLED
-
-/**
-  returns
-  -1 if out of memory
-  -2 if some computation failes
-  -3 if input parameters are invalid
-   0 otherwise (all went well)
-*/
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
-  UINT4 samples;                /**< number of samples in the timeseries */
-  PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
-  PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
-  PSSTimeseries *cleanedTS;     /**< originalTS after cleaning */
-  PSSEventParams *eventParams;  /**< keeps track of the "events" */
-  PSSHeaderParams headerParams; /**< dummy, we don't actually use this to write SFTs */
-  int retval = 0;               /**< return value of the function */
-  int debug = 0;
-
-  fprintf(stderr,"[DEBUG] PSSTDCleaningREAL8 called\n");
-
-  /* input sanity checks */
-  if( !(LALTS) || !(LALTS->data) )
-    return -3;
-
-  /* number of samples in the original timeseries */
-  samples = LALTS->data->length;
-
-  /* reset errno before calling XLAL functions */
-  xlalErrno = 0;
-
-  /* open a log file, currently necessary for PSS */
-  XLALPSSOpenLog("-");
-
-  /* creation / memory allocation */
-  /* there can't be more events than there are samples,
-     so we prepare for as many events as we have samples */
-  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSEventParams call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeNothing;
-  }
-  if( (originalTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeEventParams;
-  }
-  if( (highpassTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeOriginalTS;
-  }
-  if( (cleanedTS = XLALCreatePSSTimeseries(samples)) == NULL) {
-    fprintf(stderr,"XLALCreatePSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -1;
-    goto PSSTDCleaningREAL8FreeHighpassTS;
-  }
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after alloc): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  XLALPSSInitializeHeaderParams(&headerParams, LALTS->deltaT);
-
-  /* the actual cleaning */
-  if( XLALConvertREAL8TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {
-    fprintf(stderr,"XLALConvertREAL8TimeseriesToPSSTimeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if(debug)
-    XLALPrintREAL8TimeSeriesToFile(LALTS,"LALts.dat",50,-1);
-  if(debug)
-    XLALPrintPSSTimeseriesToFile(originalTS,"originalTS.dat",0);
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
-    fprintf(stderr,"XLALPSSHighpassData call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if(debug)
-    XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
-
-  if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS) == NULL) {
-    fprintf(stderr,"XLALIdentifyPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
-    fprintf(stderr,"XLALSubstractPSSCleaningEvents call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if(debug)
-    XLALPrintPSSTimeseriesToFile(cleanedTS,"cleanedTS.dat",0);
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (before convert): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if( XLALConvertPSSTimeseriesToREAL8Timeseries(LALTS, cleanedTS) == NULL) {
-    fprintf(stderr,"XLALConvertPSSTimeseriesToREAL8Timeseries call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
-  }
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after PSS): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  /* debug: write out autoregressive mean and std */
-  if(debug)
-    PrintREAL4ArrayToFile( "PSS_ARmed.dat", eventParams->xamed, dataDouble.data->length );
-  if(debug)
-    PrintREAL4ArrayToFile( "PSS_ARstd.dat", eventParams->xastd, dataDouble.data->length );
-
-  /* cleanup & return */
- PSSTDCleaningREAL8FreeAll:
-  XLALDestroyPSSTimeseries(cleanedTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeHighpassTS:
-  XLALDestroyPSSTimeseries(highpassTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeOriginalTS:
-  XLALDestroyPSSTimeseries(originalTS);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSTimeseries done.\n");
- PSSTDCleaningREAL8FreeEventParams:
-  XLALDestroyPSSEventParams(eventParams);
-  fprintf(stderr, "[DEBUG] XLALDestroyPSSEventParams done.\n");
- PSSTDCleaningREAL8FreeNothing:
-  XLALPSSCloseLog();
-  fprintf(stderr, "[DEBUG] XLALPSSCloseLog done.\n");
-
-  if (xlalErrno)
-    fprintf(stderr,"PSSTDCleaningREAL8 (after free()): unhandled XLAL Error %s,%d\n",__FILE__,__LINE__);
-
-  if (retval)
-    fprintf(stderr,"PSSTDCleaningREAL8 nonzero retval %d\n", retval);
-
-  return retval;
-}
-
-
-int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf));
-}
-
-#endif /* PSS_ENABLED */
-
 
 /*******************************************************************************/
 int WriteSFT(struct CommandLineArgsTag CLA)
@@ -1896,7 +2795,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   REAL4 singleDeltaT = 0.0; /* 01/05/06 gam */
   REAL8 doubleDeltaT = 0.0; /* 01/05/06 gam */
 
-  /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
+  REAL8 sureim;
+   /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
   numSFTs[0] = '1';
   numSFTs[1] = '\0'; /* null terminate */
   strncpy( site, CLA.ChannelName, 1 );
@@ -1970,11 +2870,15 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     #endif
   } else {
     doubleDeltaT = ((REAL8)dataDouble.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
+  
+    sureim=0;
     for (k=0; k<nBins; k++)
     {
       oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
       oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+      sureim+=(oneSFT->data->data[k].re)*(oneSFT->data->data[k].re)+(oneSFT->data->data[k].im)*(oneSFT->data->data[k].im); 
+      
       #if CHECKFORINFINITEANDNANS
         if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
@@ -1982,6 +2886,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
         }
       #endif
     }
+    printf("re2+im2Sum %23.26e \n",sureim); 
+   
     #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
     #endif
@@ -2020,15 +2926,50 @@ int FreeMem(struct CommandLineArgsTag CLA)
 
   /* 11/19/05 gam */
   if(CLA.useSingle) {
+
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
+
+    if (CommandLineArgs.TDcleaningProc==1) {  
+    
+    LALDestroyVector(&status,&dataSingleFirstHP.data);
+    TESTSTATUS( &status );
+
+    LALDestroyVector(&status,&dataSingleHP.data);
+    TESTSTATUS( &status ); 
+
+    LALDestroyVector(&status,&dataSingleClean.data);
+    TESTSTATUS( &status );
+    }
+
+
     LALDestroyRealFFTPlan( &status, &fftPlanSingle );
     TESTSTATUS( &status );
+     
   } else {
+
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
+
+    if (CommandLineArgs.TDcleaningProc==1) {  
+    
+    LALDDestroyVector(&status,&dataDoubleFirstHP.data);
+    TESTSTATUS( &status );
+
+    LALDDestroyVector(&status,&dataDoubleHP.data);
+    TESTSTATUS( &status ); 
+
+
+    LALDDestroyVector(&status,&databil2.data);
+    TESTSTATUS( &status ); 
+
+    LALDDestroyVector(&status,&dataDoubleClean.data);
+    TESTSTATUS( &status );
+    }
+    
     LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
-    TESTSTATUS( &status );    
+    TESTSTATUS( &status );
+    
   }
 
   LALCheckMemoryLeaks();
