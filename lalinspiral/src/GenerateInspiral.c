@@ -185,6 +185,7 @@ LALGenerateInspiral(
   }
   else
   {
+
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
 
@@ -204,6 +205,7 @@ LALGenerateInspiral(
        template normalisation. */
     thisEvent->f_final = inspiralParams.fFinal;
     CHECKSTATUSPTR(status);
+
   }
 
   /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
@@ -454,6 +456,7 @@ LALGenerateInspiralPopulatePPN(
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );
   }
+
   ppnParams->fStopIn  = -1.0 /
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
 
@@ -498,8 +501,8 @@ LALGenerateInspiralPopulateInspiral(
 
   /* distance in Mpc */
   inspiralParams->startTime	  =  0.0;
-  //inspiralParams->startPhase	  =  thisEvent->coa_phase;
-  inspiralParams->startPhase      =  thisEvent->phi0;
+  inspiralParams->startPhase	  =  thisEvent->coa_phase;
+  inspiralParams->startPhase      = 0.0;
 
   inspiralParams->OmegaS = GENERATEINSPIRAL_OMEGAS;/* EOB 3PN contribution */
   inspiralParams->Theta	 = GENERATEINSPIRAL_THETA; /* EOB 3PN contribution */
