@@ -30,6 +30,7 @@
 #include "errutil.h"
 #include "gpstime.h"
 #include "injsgnl.h"
+#include "processtable.h"
 
 RCSID( "$Id$" );
 
@@ -64,7 +65,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
-/*    {"h2-data",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },*/
+    {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
     {"l1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_L1]),   1 },
 /*    {"t1-data",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },*/
     {"v1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_V1]),   1 },
@@ -75,6 +76,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "gps-end-time",            required_argument, 0, 'b' },
     { "h1-channel-name",            required_argument, 0, 'c' },
     { "h1-frame-cache",             required_argument, 0, 'D' },
+    { "h2-channel-name",            required_argument, 0, 'x' },
+    { "h2-frame-cache",             required_argument, 0, 'X' },
     { "l1-channel-name",            required_argument, 0, 'y' },
     { "l1-frame-cache",             required_argument, 0, 'Y' },
     { "v1-channel-name",            required_argument, 0, 'z' },
@@ -87,6 +90,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "trig-time-window",        required_argument, 0, 'J' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
+    { "non-spin-snr2-threshold", required_argument, 0, 'l' },
+    { "spin-snr2-threshold",     required_argument, 0, 'L' },
+    { "spin-bank",               required_argument, 0, 'm' },
+    { "non-spin-bank",           required_argument, 0, 'M' },
     { "only-segment-numbers",    required_argument, 0, 'n' },
     { "only-template-numbers",   required_argument, 0, 'N' },
     { "output-file",             required_argument, 0, 'o' },
@@ -104,7 +111,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:h:i:k:K:n:N:o:O:r:R:s:S:T:u:U:V:w:W:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:T:u:U:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -157,6 +164,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'Z': /* v1 frame-cache */
         localparams.dataCache[LAL_IFO_V1] = optarg;
         break;
+      case 'x': /* h2 channel-name */
+        localparams.channel[LAL_IFO_H2] = optarg;
+        break;
+      case 'X': /* h2 frame-cache */
+        localparams.dataCache[LAL_IFO_H2] = optarg;
+        break;
       case 'd': /* debug-level */
         set_debug_level( optarg );
         break;
@@ -190,6 +203,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'K': /* ifo-tag */
         strncpy( localparams.ifoTag, optarg, sizeof( localparams.ifoTag ) - 1 );
         break;
+      case 'l':
+        localparams.nonspinSNR2threshold = atof(optarg);
+        break;
+      case 'L':
+        localparams.spinSNR2threshold = atof(optarg);
+        break;
+      case 'm': /* spin bank */
+        localparams.spinBank = optarg;
+        break;
+      case 'M': /* non spin bank */
+        localparams.noSpinBank = optarg;
+        break;
       case 'n': /* only-segment-numbers */
         localparams.segmentsToDoList = optarg;
         break;
@@ -200,7 +225,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
         break;
       case 'O': /* bank-file */
-        strncpy( localparams.bankFile, optarg, sizeof( localparams.bankFile ) - 1 );
+        localparams.bankFile = optarg;
         break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
@@ -277,7 +302,7 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   params->getData     = 1;
   params->getSpectrum = 1;
   params->doFilter    = 1;
-  
+
   return 0;
 }
 
@@ -355,6 +380,34 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
 
   return 0;
 }
+
+/* Sanity check for coh_PTF_inspiral specific */
+int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
+{
+  sanity_check( params->threshold );
+  sanity_check( params->timeWindow );
+  sanity_check( params->outputFile );
+  if ( params->bankFile )
+  {
+    fprintf(stderr,"Please use --spin-bank and/or --non-spin-bank with this ");
+    fprintf(stderr,"code and not --bank-file.\n");
+    sanity_check(! params->bankFile );
+  }
+  sanity_check(params->spinBank || params->noSpinBank);
+  return 0;
+}
+
+/* Sanity check for coh_PTF_spin_checker specific */
+int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params )
+{
+  sanity_check( params->spinSNR2threshold > 0 );
+  sanity_check( params->nonspinSNR2threshold > 0 );
+  sanity_check( params->spinBank );
+  sanity_check( params->noSpinBank);
+
+  return 0;
+}
+
 
 /* prints a help message */
 static int coh_PTF_usage( const char *program )

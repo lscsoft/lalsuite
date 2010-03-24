@@ -240,6 +240,19 @@ class PTFInspiralJob(InspiralAnalysisJob):
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
+class PTFSpinCheckerJob(InspiralAnalysisJob):
+  """
+  A coh_PTF spin checker job
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'coh_PTF_spin_checker'
+    sections = ['coh_PTF_spin_checker']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
 class TrigbankJob(InspiralAnalysisJob):
   """
   A lalapps_trigbank job used by the inspiral pipeline. The static
@@ -884,8 +897,12 @@ class PTFInspiralNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
 
-  def set_bank(self,bank):
-    self.add_var_opt('bank-file', bank)
+  def set_spin_bank(self,bank):
+    self.add_var_opt('spin-bank', bank)
+    self.add_input_file(bank)
+
+  def set_no_spin_bank(self,bank):
+    self.add_var_opt('non-spin-bank',bank)
     self.add_input_file(bank)
 
   def set_output(self):
@@ -904,6 +921,27 @@ class PTFInspiralNode(InspiralAnalysisNode):
     Returns the injection file
     """
     return self.__injections
+
+class PTFSpinCheckerNode(InspiralAnalysisNode):
+  """
+  An InspiralNode runs an instance of the inspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__injections = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+
+  def set_spin_output(self,spinBank):
+    self.add_var_opt('spin-bank',spinBank)
+
+  def set_nospin_output(self,noSpinBank):
+    self.add_var_opt('non-spin-bank',noSpinBank)
 
 class TrigbankNode(InspiralAnalysisNode):
   """

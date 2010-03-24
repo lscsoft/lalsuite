@@ -170,6 +170,71 @@ int cohPTF_output_events_xml(
   return 0;
 }
 
+/* routine to output template bank as LIGOLw XML file */
+int cohPTF_output_tmpltbank(
+    char               *outputFile,
+    SnglInspiralTable  *tmplts,
+    ProcessParamsTable *processParamsTable,
+    struct coh_PTF_params *params
+    )
+{
+  LALStatus status = blank_status;
+  MetadataTable   process;
+  MetadataTable   processParams;
+  MetadataTable   searchSummary;
+  MetadataTable   templateBank;
+  LIGOLwXMLStream results;
+
+  verbose( "output template bank to LIGOLw XML file %s\n", outputFile );
+
+  memset( &process, 0, sizeof( process ) );
+  memset( &processParams, 0, sizeof( processParams ) );
+  memset( &searchSummary, 0, sizeof( searchSummary ) );
+  memset( &templateBank, 0, sizeof( templateBank ) );
+  memset( &results, 0, sizeof( results ) );
+
+  /* create process table and search summary tables */
+  process.processTable = ring_create_process_table( params );
+  processParams.processParamsTable = processParamsTable;
+  searchSummary.searchSummaryTable = ring_create_search_summary( params );
+  templateBank.snglInspiralTable = tmplts;
+
+  /* open results xml file */
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outputFile ), &status );
+
+  /* output the process table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, process, process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+  /* output process params table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, processParams, process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+  /* output search summary table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchSummary, search_summary_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+  /* output the events */
+  if ( templateBank.snglInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank,sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+  }
+
+  /* close the xml file */
+  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &results ), &status );
+
+  LALFree( searchSummary.searchSummaryTable );
+  LALFree( process.processTable );
+
+  return 0;
+}
+
+
 
 /* routine to create process table */
 ProcessTable *ring_create_process_table( struct coh_PTF_params *params )
@@ -180,16 +245,9 @@ ProcessTable *ring_create_process_table( struct coh_PTF_params *params )
   processTable = LALCalloc( 1, sizeof( *processTable ) );
 
   /* call lalapps routine to populate the process table */
-  if (strcmp(params->cvsRevision, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(processTable, params->programName,
-        params->cvsRevision, params->cvsSource, params->cvsDate, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(processTable, params->programName,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+
+  XLALPopulateProcessTable(processTable, params->programName,
+      LALAPPS_VCS_IDENT_ID,LALAPPS_VCS_IDENT_STATUS,LALAPPS_VCS_IDENT_DATE,0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
   strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );

@@ -25,6 +25,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
@@ -35,17 +36,16 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/DetectorSite.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeSeries.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/Ring.h>
+#include <LALAppsVCSInfo.h>
 
 
 enum { write_frame, write_ascii };
@@ -80,13 +80,17 @@ struct coh_PTF_params {
   REAL4        invSpecLen;
   REAL4        threshold;
   REAL4        timeWindow;
+  REAL4        spinSNR2threshold;
+  REAL4        nonspinSNR2threshold;
   REAL4        rightAscension;
   REAL4        declination;
-  char         bankFile[256];
+  const char  *bankFile;
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
   UINT4        numEvents;
   char         outputFile[256];
+  const char  *spinBank;
+  const char  *noSpinBank;
   char         userTag[256];
   char         ifoTag[256];
   /* flags */
@@ -120,6 +124,8 @@ RingDataSegments;
 /* routines in ring_option */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv );
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params );
+int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params );
+int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params );
 
 /* routines in ring_output */
 ProcessParamsTable * create_process_params( int argc, char **argv,
@@ -137,3 +143,9 @@ int cohPTF_output_events_xml(
     struct coh_PTF_params *params
     );
 
+int cohPTF_output_tmpltbank(
+    char               *outputFile,
+    SnglInspiralTable   *tmplts,
+    ProcessParamsTable *processParamsTable,
+    struct coh_PTF_params *params
+    );
