@@ -672,7 +672,7 @@ def write_datainfo(page,opts):
     keys = []
     data = {}
     keys.append(key)
-    data[key] = ['Ifo','Live time(days)','Duty cycle']
+    data[key] = ['Ifo','Live time(days)','Duty cycle (percent)']
     if i != 1:
       liveTimes[i] = {}
     for ifo in get_ifos():
