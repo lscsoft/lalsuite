@@ -185,7 +185,6 @@ LALGenerateInspiral(
   }
   else
   {
-
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
 
