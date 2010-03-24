@@ -86,9 +86,7 @@ lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 # force linking in C++ mode for E@H
-eah_PredictFStat_SOURCES = PredictFStat.c fake.cpp
-fake.cpp: Makefile
-	echo '//' >$@
+eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
@@ -113,7 +111,7 @@ TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
-CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat fake.cpp
+CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc
