@@ -26,8 +26,8 @@
 /****  <lalLaTeX>
  *
  * \subsection{Module \texttt{LALPSpinInspiralRD.c},
- * \texttt{LALSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}} 
- * \label{ss:LALSpinInspiralRD.c}
+ * \texttt{LALPSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}} 
+ * \label{ss:LALPSpinInspiralRD.c}
  *
  * Module to generate generic spinning binaries waveforms complete with ring-down 
  * 
@@ -41,7 +41,7 @@
  * \end{itemize}
  *
  * \input{LALPSpinInspiralRDTemplatesCP}
- * \index{\verb&LALPSpinInspiralRDTemplates()&}
+ * \idx{\verb&LALPSpinInspiralRDTemplates()&}
  * \begin{itemize}
  * \item {\tt signalvec1:} Output containing the $+$ inspiral waveform.
  * \item {\tt signalvec2:} Output containing the $\times$ inspiral waveform.
@@ -49,7 +49,7 @@
  * \end{itemize}
  *
  * \input{LALPSpinInspiralRDInjectionCP}
- * \index{\verb&LALPSpinInspiralRDInjection()&}
+ * \idx{\verb&LALPSpinInspiralRDInjection()&}
  * \begin{itemize}
  * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
@@ -81,7 +81,7 @@
  *
  * \subsubsection*{Notes}
  * 
- * \vfill{\footnotesize\input{LALSpinInspiralRDCV}}
+ * \vfill{\footnotesize\input{LALPSpinInspiralRDCV}}
  * 
  **** </lalLaTeX>  */
 
@@ -91,7 +91,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
 
-NRCSID (LALSPININSPIRALRDMC, "$Id$");
+NRCSID (LALPSPININSPIRALRDMC, "$Id$");
 
 
 /*
@@ -135,7 +135,7 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 epnspin25S1dotLNh;
   REAL8 epnspin25S2dotLNh;
 
-} LALSpinInspiralRDparams;
+} LALPSpinInspiralRDparams;
 
 /* 
  *
@@ -160,7 +160,7 @@ void LALPSpinInspiralRDderivatives(REAL8Vector *values, REAL8Vector *dvalues, vo
   REAL8 S1S2,S1S1,S2S2;         ///< Scalar products
   REAL8 energy;
   
-  LALSpinInspiralRDparams *params = (LALSpinInspiralRDparams*)mparams;
+  LALPSpinInspiralRDparams *params = (LALPSpinInspiralRDparams*)mparams;
 
   REAL8 v, v2, v3, v4, v5, v6, v7, v11;                                        ///< support variables
   REAL8 tmpx,tmpy,tmpz,cross1x,cross1y,cross1z,cross2x,cross2y,cross2z,LNhxy;  ///< support variables
@@ -346,7 +346,7 @@ LALPSpinInspiralRD (
 
    UINT4 count;
    InspiralInit paramsInit;
-   INITSTATUS(status, "LALPSpinInspiralRD", LALSPININSPIRALRDMC);
+   INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDMC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec,  status,
@@ -618,7 +618,7 @@ LALPSpinInspiralRDForInjection (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-} /* End LALSpinInspiralRDForInjection */
+} /* End LALPSpinInspiralRDForInjection */
 
 /*
  *
@@ -626,7 +626,7 @@ LALPSpinInspiralRDForInjection (
  *
  */
 
-/*  <lalVerbatim file="LALSpinInspiralRDForInjectionCP"> */
+/*  <lalVerbatim file="LALPSpinInspiralRDForInjectionCP"> */
 void LALPSpinInspiralRDEngine (
                 LALStatus        *status,			      
                 REAL4Vector      *signalvec1,
@@ -644,7 +644,7 @@ void LALPSpinInspiralRDEngine (
 {
 
   /* declare model parameters*/
-  LALSpinInspiralRDparams SIRDparameters;
+  LALPSpinInspiralRDparams PSIRDparameters;
   
   /* declare code parameters and variables*/
   INT4		nn = 11+1;              ///< number of dynamical variables, the extra one is the energy
@@ -713,7 +713,7 @@ void LALPSpinInspiralRDEngine (
   REAL8 enold;
   REAL8 v2old;
 
-  LALSpinInspiralRDparams *mparams;
+  LALPSpinInspiralRDparams *mparams;
 
   CHAR message[256];
 
@@ -744,7 +744,7 @@ void LALPSpinInspiralRDEngine (
 
   INT4 count0;
 
-  INITSTATUS(status, "LALSpinInspiralRD", LALSPININSPIRALRDMC);
+  INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDMC);
   ATTATCHSTATUSPTR(status);
   
   /* set parameters from InspiralTemplate structure*/
@@ -762,7 +762,7 @@ void LALPSpinInspiralRDEngine (
     }
   ak   = paramsInit->ak;
   
-  mparams = &SIRDparameters;
+  mparams = &PSIRDparameters;
 
   /* set units*/
   m = params->totalMass * LAL_MTSUN_SI;
@@ -1012,10 +1012,10 @@ void LALPSpinInspiralRDEngine (
     mparams->S2dot25 	       = 0.5625 + 1.25*mparams->eta - mparams->eta*mparams->eta/24. - mparams->dm*(-0.5625+0.625*mparams->eta);
     break;
   case     LAL_PNORDER_PSEUDO_FOUR:
-    fprintf(stderr,"*** SIRD: ERROR spin Taylor approximant not available at p4PN order for SpinTaylor approximant\n");
+    fprintf(stderr,"*** PSIRD: ERROR spin Taylor approximant not available at p4PN order for SpinTaylor approximant\n");
     break;
   case     LAL_PNORDER_NUM_ORDER:
-    fprintf(stderr,"*** SIRD: ERROR NUM_ORDER not a valid PN order\n");
+    fprintf(stderr,"*** PSIRD: ERROR NUM_ORDER not a valid PN order\n");
   }
 
   /* setup initial conditions for dynamical variables*/
@@ -1413,7 +1413,7 @@ void LALPSpinInspiralRDEngine (
      
   }
 
-  else fprintf(stderr,"** SIRD: No phen part added\n");
+  else fprintf(stderr,"** PSIRD: No phen part added\n");
 
   /* Smoothing the matching with the ring down*/
   count0=count;
@@ -1537,8 +1537,8 @@ void LALPSpinInspiralRDEngine (
    z1  = - MultSphHarm2P2.im - MultSphHarm2M2.im;
    z2  = - MultSphHarm2P2.re + MultSphHarm2M2.re;
    
-   //fprintf(stderr," ** SIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
-   //fprintf(stderr," ** SIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);
+   //fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
+   //fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
    for ( i = 0; i < length; i++)
@@ -1570,8 +1570,8 @@ void LALPSpinInspiralRDEngine (
    z1  = - MultSphHarm2P1.im - MultSphHarm2M1.im;
    z2  = - MultSphHarm2P1.re + MultSphHarm2M1.re;
 
-   //fprintf(stderr," ** SIRD WARNING ** : Sph.Harm. Re2p1=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
-   //fprintf(stderr," ** SIRD WARNING ** : Sph.Harm. Im2p1=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);
+   //fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p1=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
+   //fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p1=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);
 
    for ( i = 0; i < length; i++)
    {
@@ -1592,7 +1592,7 @@ void LALPSpinInspiralRDEngine (
    y_1 = 2.*MultSphHarm20.re;
    z1  = -2.*MultSphHarm2P1.im;
 
-   //fprintf(stderr," ** SIRD WARNING ** : Sph.Harm. Re20=%11.3e  Im20=%11.3e\n",y_1/2.,z1/2.);
+   //fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re20=%11.3e  Im20=%11.3e\n",y_1/2.,z1/2.);
 
    for ( i = 0; i < length; i++)
    {
