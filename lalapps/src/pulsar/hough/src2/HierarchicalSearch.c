@@ -429,7 +429,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
-  CHAR *version_string;
+
 #ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
 #endif

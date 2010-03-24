@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
   MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
   UINT4 X;
 
-  lalDebugLevel = LALERROR;	/* by default output only error-messages */
+  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
 
   if ( uvar.version )
     {
-      if ( XLALOutputVersionString(stdout) != XLAL_SUCCESS ) {
-        XLALPrintError("XLALOutputVersionString() failed.\n");
+      if ( XLALOutputVersionString(stdout, lalDebugLevel) != XLAL_SUCCESS ) {
+        XLALPrintError("XLALOutputVersionString(0) failed.\n");
         exit(1);
       }
       exit(0);

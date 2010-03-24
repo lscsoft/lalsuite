@@ -239,7 +239,7 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-      if ( XLALOutputVersionString(stdout) != XLAL_SUCCESS ) {
+      if ( XLALOutputVersionString(stdout,0) != XLAL_SUCCESS ) {
         XLALPrintError("XLALOutputVersionString() failed!\n");
         exit(1);
       }

@@ -6,7 +6,7 @@ OPTsrc = $(top_srcdir)/src/pulsar/FDS_isolated/OptimizedCFS
 EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc) -I$(top_srcdir)/misc
+INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT

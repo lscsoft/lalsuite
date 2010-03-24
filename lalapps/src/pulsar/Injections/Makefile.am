@@ -13,7 +13,6 @@ lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
 
 # force linking in C++ mode for E@H
 eah_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h ../hough/src2/EinsteinAtHome/win_lib.cpp
-eah_Makefakedata_v4_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 lalapps_makefakedata_v2_SOURCES =  makefakedata_v2.c sft_extra.c sft_extra.h
 
