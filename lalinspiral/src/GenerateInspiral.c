@@ -204,7 +204,6 @@ LALGenerateInspiral(
        template normalisation. */
     thisEvent->f_final = inspiralParams.fFinal;
     CHECKSTATUSPTR(status);
-
   }
 
   /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
@@ -455,7 +454,6 @@ LALGenerateInspiralPopulatePPN(
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );
   }
-
   ppnParams->fStopIn  = -1.0 /
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
 
