@@ -88,8 +88,8 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 10.;
-    injParams.mass2 = 10.;
+    injParams.mass1 = 1.4;
+    injParams.mass2 = 1.4*5.;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
@@ -106,19 +106,18 @@ int main() {
     fprintf(stdout,"**** Test:  %11.4e < om < %11.4e\n",omi,omf);
     fprintf(stdout,"**** Test:  %11.4e < f  < %11.4e\n",fi,ff);
 
-    injParams.theta0 = 0.;
-    injParams.phi0   = 0.1;
+    /* Polar angles of the source arrival direction*/
+    injParams.inclination  = 0.;
+    injParams.theta0       = 0.;
+    injParams.phi0         = 0.;
 
-    injParams.inclination = 0.0;
-    injParams.polarization   = 0.0;
-
-    injParams.spin1x = 0.68;
+    injParams.spin1x = 0.;
     injParams.spin1y = 0.;
-    injParams.spin1z = -0.68;
+    injParams.spin1z = 0.;
 
-    injParams.spin2x = 0.68;
+    injParams.spin2x = 0.;
     injParams.spin2y = 0.;
-    injParams.spin2z = -0.68;
+    injParams.spin2z = 0.9;
 
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
