@@ -43,6 +43,9 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
+  char * config_arg;	/**< @brief Configuration file in gengetopt format for passing parameters.  */
+  char * config_orig;	/**< @brief Configuration file in gengetopt format for passing parameters original value given at command line.  */
+  const char *config_help; /**< @brief Configuration file in gengetopt format for passing parameters help description.  */
   double Tobs_arg;	/**< @brief Total observation time.  */
   char * Tobs_orig;	/**< @brief Total observation time original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time help description.  */
@@ -100,6 +103,7 @@ struct gengetopt_args_info
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
+  unsigned int config_given ;	/**< @brief Whether config was given.  */
   unsigned int Tobs_given ;	/**< @brief Whether Tobs was given.  */
   unsigned int Tcoh_given ;	/**< @brief Whether Tcoh was given.  */
   unsigned int t0_given ;	/**< @brief Whether t0 was given.  */
@@ -229,6 +233,31 @@ void cmdline_parser_init (struct gengetopt_args_info *args_info);
  * @param args_info the structure to deallocate
  */
 void cmdline_parser_free (struct gengetopt_args_info *args_info);
+
+/**
+ * The config file parser (deprecated version)
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param override whether to override possibly already present options
+ * @param initialize whether to initialize the option structure my_args_info
+ * @param check_required whether to check that all required options were provided
+ * @return 0 if everything went fine, NON 0 if an error took place
+ * @deprecated use cmdline_parser_config_file() instead
+ */
+int cmdline_parser_configfile (const char *filename,
+  struct gengetopt_args_info *args_info,
+  int override, int initialize, int check_required);
+
+/**
+ * The config file parser
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param params additional parameters for the parser
+ * @return 0 if everything went fine, NON 0 if an error took place
+ */
+int cmdline_parser_config_file (const char *filename,
+  struct gengetopt_args_info *args_info,
+  struct cmdline_parser_params *params);
 
 /**
  * The string parser (interprets the passed string as a command line)

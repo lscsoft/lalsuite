@@ -69,7 +69,12 @@ int main(int argc, char *argv[])
    char s[20000], t[20000], u[20000];
 
    struct gengetopt_args_info args_info;
+   struct cmdline_parser_params *configparams;
+   configparams = cmdline_parser_params_create();
    if ( cmdline_parser(argc, argv, &args_info) ) exit(-1);
+   if ( args_info.config_given ) {
+      if ( cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) exit(-1);
+   }
    
    //Create directory
    if (args_info.outdirectory_given) {
@@ -85,8 +90,6 @@ int main(int argc, char *argv[])
    }
    
    LOG = fopen(s,"w");
-   fprintf(LOG,"Starting TwoSpect analysis...\n");
-   fprintf(stderr,"Starting TwoSpect analysis...\n");
    
    inputParams = new_inputParams();
    
@@ -111,8 +114,6 @@ int main(int argc, char *argv[])
    else inputParams->fmin = 99.9;
    if (args_info.fspan_given) inputParams->fspan = args_info.fspan_arg;
    else inputParams->fspan = 0.2;
-   //if (args_info.cols_given) cols = args_info.cols_arg;
-   //else cols = 20;
    if (args_info.t0_given) inputParams->searchstarttime = args_info.t0_arg;
    else inputParams->searchstarttime = 900000000.0;
    if (args_info.Pmax_given) inputParams->Pmax = args_info.Pmax_arg;
@@ -125,17 +126,7 @@ int main(int argc, char *argv[])
    //Blocksize should be an odd number
    if (inputParams->blksize % 2 != 1) inputParams->blksize += 1;
    
-   //Adjust maximum columns, if necessary
-   /*if (cols > 2.0*maxModDepth(inputParams->Tobs*0.2, inputParams->Tcoh)*inputParams->Tcoh) {
-      cols = (INT4)floorf(2.0*maxModDepth(inputParams->Tobs*0.2, inputParams->Tcoh)*inputParams->Tcoh);
-      fprintf(LOG,"WARNING! Adjusting number of columns due to maximum modulation depth allowed\n");
-      fprintf(stderr,"WARNING! Adjusting number of columns due to maximum modulation depth allowed\n");
-   }
-   if (cols > (INT4)roundf(inputParams->fspan*inputParams->Tcoh)+1) {
-      cols = (INT4)roundf(inputParams->fspan*inputParams->Tcoh)+1;
-      fprintf(LOG,"WARNING! Adjusting number of columns due to frequency span of band\n");
-      fprintf(stderr,"WARNING! Adjusting number of columns due to frequency span of band\n");
-   }*/
+   //Adjust parameter space search values, if necessary
    if (inputParams->dfmax > maxModDepth(inputParams->Pmax,inputParams->Tcoh)) {
       inputParams->dfmax = 0.5/inputParams->Tcoh*floorf(2.0*maxModDepth(inputParams->Pmax,inputParams->Tcoh)*inputParams->Tcoh);
       fprintf(LOG,"WARNING! Adjusting input maximum modulation depth due to maximum modulation depth allowed\n");
@@ -155,6 +146,11 @@ int main(int argc, char *argv[])
       inputParams->Pmax = 0.2*inputParams->Tobs;
       fprintf(LOG,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
       fprintf(stderr,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
+   }
+   if (inputParams->dfmin < 0.5/inputParams->Tcoh) {
+      inputParams->dfmin = 0.5/inputParams->Tcoh;
+      fprintf(LOG,"WARNING! Adjusting input minimum modulation depth to 1/2 a frequency bin!\n");
+      fprintf(stderr,"WARNING! Adjusting input minimum modulation depth to 1/2 a frequency bin!\n");
    }
    if (inputParams->Pmax < inputParams->Pmin) {
       REAL4 tempP = inputParams->Pmax;
@@ -202,6 +198,7 @@ int main(int argc, char *argv[])
    fprintf(LOG,"Pmax = %f s\n",inputParams->Pmax);
    fprintf(LOG,"dfmin = %f Hz\n",inputParams->dfmin);
    fprintf(LOG,"dfmax = %f Hz\n",inputParams->dfmax);
+   fprintf(LOG,"Sky region = %s\n",sky);
    fprintf(LOG,"Running median blocksize = %d\n",inputParams->blksize);
    fprintf(LOG,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    fprintf(stderr,"Tobs = %f sec\n",inputParams->Tobs);
@@ -212,6 +209,7 @@ int main(int argc, char *argv[])
    fprintf(stderr,"Pmax = %f s\n",inputParams->Pmax);
    fprintf(stderr,"dfmin = %f Hz\n",inputParams->dfmin);
    fprintf(stderr,"dfmax = %f Hz\n",inputParams->dfmax);
+   fprintf(stderr,"Sky region = %s\n",sky);
    fprintf(stderr,"Running median blocksize = %d\n",inputParams->blksize);
    fprintf(stderr,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    
@@ -270,6 +268,9 @@ int main(int argc, char *argv[])
    //At this point the TF plane and the running median calculation are the same size=numffts*(numfbins + 2*maxbinshift)
    
    numofcandidates = numofcandidates2 = numofcandidatesadded = 0;
+   
+   fprintf(LOG,"Starting TwoSpect analysis...\n");
+   fprintf(stderr,"Starting TwoSpect analysis...\n");
    
    //Search over the sky
    while (scan.state != STATE_FINISHED) {
@@ -332,12 +333,12 @@ int main(int argc, char *argv[])
          //Now assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum specified and less than or equal to the maximum specified, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
          if (ihsCandidates[ii]->fsig-ihsCandidates[ii]->moddepth-6/inputParams->Tcoh > inputParams->fmin && ihsCandidates[ii]->fsig+ihsCandidates[ii]->moddepth+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates[ii]->moddepth >= inputParams->dfmin && ihsCandidates[ii]->moddepth <= inputParams->dfmax && ihsCandidates[ii]->moddepth < maxModDepth(ihsCandidates[ii]->period,inputParams->Tcoh) && ihsCandidates[ii]->period >= 2.0*3600.0) {
             
-            TFDATA = fopen(t,"w");
+            /* TFDATA = fopen(t,"w");
             FFDATA = fopen(u,"w");
             for (jj=0; jj<(INT4)weightedTFdata->length; jj++) fprintf(TFDATA,"%g\n",weightedTFdata->data[jj]);
             for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
             fclose(TFDATA);
-            fclose(FFDATA);
+            fclose(FFDATA); */
             
             //Allocate memory for template
             templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -1021,10 +1022,11 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
    //XLALFree((CHAR*)earth_ephemeris);
-   //XLALFree((CHAR*)sun_ephemeris);'
+   //XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sft_dir);
    free_Ephemeris(edat);
    cmdline_parser_free(&args_info);
+   XLALFree(configparams);
    for (ii=0; ii<10000; ii++) {
       if (ihsCandidates[ii]!=NULL) {
          free_candidate(ihsCandidates[ii]);
