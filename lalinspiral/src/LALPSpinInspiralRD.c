@@ -457,6 +457,8 @@ LALPSpinInspiralRDForInjection (
   REAL4Vector *alpha=NULL;/* pointer to generated phase data */
 
   InspiralInit paramsInit;
+  UINT4 nbins;
+
 
   INITSTATUS(status, "LALPSpinInspiralRDInjection", LALPSPININSPIRALRDINJECTIONC);
   ATTATCHSTATUSPTR(status);
@@ -485,25 +487,27 @@ LALPSpinInspiralRDForInjection (
       RETURN (status);
     }
 
+  nbins=2*paramsInit.nbins;
+
   /* Now we can allocate memory and vector for coherentGW structure*/
-  ff   = XLALCreateREAL4Vector(   paramsInit.nbins);
-  //LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
+  ff   = XLALCreateREAL4Vector(   nbins);
+  //LALSCreateVector(status->statusPtr, &ff, nbins);
   //CHECKSTATUSPTR(status);
-  hh   = XLALCreateREAL4Vector( 2*paramsInit.nbins);
-  //LALSCreateVector(status->statusPtr, &hh, 2*paramsInit.nbins);
+  hh   = XLALCreateREAL4Vector( 2*nbins);
+  //LALSCreateVector(status->statusPtr, &hh, 2*nbins);
   //CHECKSTATUSPTR(status);
-  phi = XLALCreateREAL8Vector(  paramsInit.nbins);
-  //LALDCreateVector(status->statusPtr, &phi, paramsInit.nbins);
+  phi = XLALCreateREAL8Vector(  nbins);
+  //LALDCreateVector(status->statusPtr, &phi, nbins);
   //CHECKSTATUSPTR(status);
-  alpha = XLALCreateREAL4Vector( paramsInit.nbins);
-  //LALSCreateVector(status->statusPtr, &alpha, paramsInit.nbins);
+  alpha = XLALCreateREAL4Vector( nbins);
+  //LALSCreateVector(status->statusPtr, &alpha, nbins);
   //CHECKSTATUSPTR(status);
 
   /* By default the waveform is empty */
-  memset(ff->data, 0, paramsInit.nbins * sizeof(REAL4));
-  memset(hh->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
-  memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
-  memset(alpha->data, 0, paramsInit.nbins * sizeof(REAL4));
+  memset(ff->data, 0, nbins * sizeof(REAL4));
+  memset(hh->data, 0, 2 * nbins * sizeof(REAL4));
+  memset(phi->data, 0, nbins * sizeof(REAL8));
+  memset(alpha->data, 0, nbins * sizeof(REAL4));
 
   /* Call the engine function */
   //params->fCutoff     = ppnParams->fStop;
@@ -587,10 +591,10 @@ LALPSpinInspiralRDForInjection (
   waveform->position = ppnParams->position;
   waveform->psi = ppnParams->psi;
 
-  snprintf( waveform->h->name,     LALNameLength, "SpinInspiralRD amplitudes" );
-  snprintf( waveform->f->name,     LALNameLength, "SpinInspiralRD frequency" );
-  snprintf( waveform->phi->name,   LALNameLength, "SpinInspiralRD phase" );
-  snprintf( waveform->shift->name, LALNameLength, "SpinInspiralRD alpha" );
+  snprintf( waveform->h->name,     LALNameLength, "PSpinInspiralRD amplitudes" );
+  snprintf( waveform->f->name,     LALNameLength, "PSpinInspiralRD frequency" );
+  snprintf( waveform->phi->name,   LALNameLength, "PSpinInspiralRD phase" );
+  snprintf( waveform->shift->name, LALNameLength, "PSpinInspiralRD alpha" );
 
     /* --- fill some output ---*/
   ppnParams->tc     = (double)(count-1) / params->tSampling ;
@@ -648,8 +652,8 @@ void LALPSpinInspiralRDEngine (
   UINT4		maxlength;              ///< maximum signal vector length
   UINT4 	length;                 ///< signal vector length
   UINT4		i,j,k,l;                ///< counters          
-  UINT4         subsampling=2;          ///< multiplies the rate           
-  UINT4         pad=1;
+  UINT4         subsampling=1;          ///< multiplies the rate           
+  //  UINT4         pad=1;
 
   rk4In 	in4;                    ///< used to setup the Runge-Kutta integration
   rk4GSLIntegrator *integrator;
@@ -676,8 +680,8 @@ void LALPSpinInspiralRDEngine (
   REAL8 ry[3][3],rz[3][3];
   REAL8 thetaJ,phiJ;
 
-  REAL8 ci,si,c2i,s2i,c2i2,s2i2,c3i,s3i,c4i,c4i2,s4i,s4i2,r1pe4i4,i1pe4i4,r1me4i4,i1me4i4;
-  REAL8 amp22,amp20,aph22r,aph22i;
+  REAL8 ci,si,s2i,c2i2,s2i2,c4i2,s4i2;
+  REAL8 amp22,amp20;
   /* Useful variables to define GW multipolar modes*/
 
   REAL4Vector  *h22, *h21, *h20, *sig1, *sig2, *hap, *fap, *shift22;
@@ -731,9 +735,9 @@ void LALPSpinInspiralRDEngine (
   REAL4           x1, x2;
   REAL8           y_1, y_2, z1, z2;   ///< spherical harmonics needed to compute (h+,hx) from hlm
 
-  REAL4 inc, coa_phase;
+  REAL4 inc, phiangle;
 
-  const REAL4 facRD=0.8;
+  const REAL4 fracRD=0.8;
 
   /* switch to keep track of matching of the linear frequency growth phase*/
   INT4 rett=1;
@@ -777,10 +781,8 @@ void LALPSpinInspiralRDEngine (
     length *= 2;
   */
 
-
   /* set initial values of dynamical variables*/
-  initPhi = params->startPhase;
-  //fprintf(stdout,"phi0=%11.3e\n",initPhi);
+  initPhi = params->inclination;
   initomega = params->fLower * unitHz;
   initv = pow( initomega, oneby3 );
 
@@ -852,9 +854,6 @@ void LALPSpinInspiralRDEngine (
     initS1[j] /= (params->totalMass * params->totalMass);
     initS2[j] /= (params->totalMass * params->totalMass);
   }
-  
-  params->orbitTheta0=acos(initLNh[2]);
-  params->orbitPhi0=atan2(initLNh[1],initLNh[0]);
   
   /* In the convention of arXiv:0810.5336 we have 
      iota_0=InspiralTemplate.orbitTheta0
@@ -1155,7 +1154,7 @@ void LALPSpinInspiralRDEngine (
   omegaRD=modefreqs->data[0].re * unitHz / LAL_PI / 2.;    
   /* If Nyquist freq. <  220 QNM freq., do not attach RD */
   /* Note that we cancelled a factor of 2 occuring on both sides */
-  if ( params->tSampling < facRD * modefreqs->data[0].re / LAL_PI ) {
+  if ( params->tSampling < fracRD * modefreqs->data[0].re / LAL_PI ) {
     XLALDestroyCOMPLEX8Vector( modefreqs ); 
     fprintf(stderr, "Estimated ringdown freq larger than Nyquist freq. "
 	    "Increase sample rate or consider using SpinTaylor approximant.\n" );
@@ -1192,44 +1191,30 @@ void LALPSpinInspiralRDEngine (
     Psi = Phi - 2. * omega * log(omega);
     
     amp22 = -2.0 * params->mu * v2 * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
-    amp20 = amp22 * (sqrt(3./2.)/2.);
+
+    amp20 = amp22 * sqrt(3/2.);
 
     ci=(LNhz);
     s2i=1.-ci*ci;
+    si=sqrt(s2i);
     c2i2 = (1. + ci)/2.;
-    s2i2 = (1. -ci)/2.;
+    s2i2 = (1. - ci)/2.;
     c4i2 = c2i2*c2i2;
     s4i2=s2i2*s2i2;
-    si=sqrt(1.-ci*ci);
-    c2i=2.*ci*ci-1.;
-    s2i=2.*ci*si;
-    c3i=ci*c2i-si*s2i;
-    s3i=ci*s2i+si*c2i;
-    c4i=c2i*c2i-s2i*s2i;
-    s4i=2.*s2i*c2i;
 
-    r1pe4i4 = 1. + 4.*ci + 6.*c2i + 4.*c3i + c4i;
-    i1pe4i4 = 1. + 4.*si + 6.*s2i + 4.*s3i + s4i;
-    r1me4i4 = 1. - 4.*ci + 6.*c2i - 4.*c3i + c4i;
-    i1me4i4 = i1pe4i4;
+    h22->data[2*count] = (REAL4)(amp22 * ( cos(2.*(Psi-alpha))*c4i2 + cos(2.*(Psi+alpha)) *s4i2 ) );
+    h22->data[2*count+1] = (REAL4)(amp22 * (sin(2.*(Psi-alpha))*c4i2 - sin(2.*(Psi+alpha)) * s4i2 ) );
 
-    aph22r = amp22 * ( c4i2 + s4i2*cos(4.*Psi) );
-    aph22i = amp22 * ( s4i2*sin(4.*Psi) );
+    h21->data[2*count] = (REAL4) (amp22 * si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) );
+    h21->data[2*count+1] = (REAL4)(-amp22 * si * ( cos(2.*Psi-alpha)*s2i2 + cos(2.*Psi+alpha)*c2i2 ) );
 
-    h22->data[2*count] = (REAL4)(aph22r * cos(2.*(Psi+alpha)) + aph22i * sin(2.*(Psi+alpha)));
-    h22->data[2*count+1] = (REAL4)(aph22i * cos(2.*(Psi+alpha)) - aph22r * sin(2.*(Psi+alpha)));
-
-    h21->data[2*count] = (REAL4)( 0. * cos(Psi+alpha) + 0. * sin(Psi+alpha));
-    h21->data[2*count+1] = (REAL4)( 0. * cos(Psi+alpha) - 0. * sin(Psi+alpha));
-
-    h20->data[2*count] = amp20 * ( 2.*s2i ) * cos( 2.* Psi);
-    h20->data[2*count+1] = amp20 * ( 0. );
+    h20->data[2*count] = (REAL4)(amp20 * s2i * cos( 2.* Psi));
+    h20->data[2*count+1] = 0.;
         
     fap->data[count] =  (REAL4)( omega - ci*alphadot );
     phap->data[count] =  (REAL8)( Psi );
     
-    shift22->data[count] = (LNhz);
-    //shift22->data[count] = 2. * ( Psi + alpha );
+    shift22->data[count] = alpha;
 
     in4.x = t/m;
     LALRungeKutta4(status->statusPtr, &newvalues, integrator, (void*)mparams);
@@ -1354,9 +1339,9 @@ void LALPSpinInspiralRDEngine (
     omega=omegaold;
     energy=enold;
   }
-  else if ( omega > omegamatch)  fprintf(stdout, "** LALSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
+  else if ( omega > omegamatch)  fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
   else if ( energy > enold) {
-    fprintf(stderr, "** SpinInspiralRD ** STOP: energy increases %11.3e > %11.3e\n",energy,enold);
+    fprintf(stderr, "** LALPSpinInspiralRD ** STOP: energy increases %11.3e > %11.3e\n",energy,enold);
     omega=omegaold;
     energy=enold;
     rett=0;
@@ -1407,26 +1392,24 @@ void LALPSpinInspiralRDEngine (
       v2old=v2;
       v2=pow(omega,2./3.);
       amp22*=v2/v2old;
+
+      h22->data[2*count] = (REAL4)(amp22 * ( cos(2.*(Psi-alpha))*c4i2 + cos(2.*(Psi+alpha)) *s4i2 ) );
+      h22->data[2*count+1] = (REAL4)(amp22 * (sin(2.*(Psi-alpha))*c4i2 - sin(2.*(Psi+alpha)) * s4i2 ) );
+
+      h21->data[2*count] = (REAL4) (amp22 * si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) );
+      h21->data[2*count+1] = (REAL4)(-amp22 * si * ( cos(2.*Psi-alpha)*s2i2 + cos(2.*Psi+alpha)*c2i2 ) );
       
-      aph22r = amp22 * ( c4i2 + s4i2*cos(4.*Psi) );
-      aph22i = amp22 * ( s4i2*sin(4.*Psi) );
-      
-      h22->data[2*count] = (REAL4)(aph22r * cos(2.*(Psi+alpha)) + aph22i * sin(2.*(Psi+alpha)));
-      h22->data[2*count+1] = (REAL4)(aph22i * cos(2.*(Psi+alpha)) - aph22r * sin(2.*(Psi+alpha)));
-      
-      h20->data[2*count] = amp20 * ( 2.*s2i ) * cos( 2.* Psi);
-      h20->data[2*count+1] = amp20 * ( 0. );
-      
+      h20->data[2*count] = (REAL4)(amp20 * s2i * cos( 2.* Psi));
+      h20->data[2*count+1] = 0.;
+            
       phap->data[count] =  (REAL8)( Psi );
       
-      shift22->data[count] = 0.;
-      //shift22->data[count] = 2. * ( Psi + alpha );
+      shift22->data[count] = alpha;
       
       count++;
-      t+=dt;
-    
+      t+=dt;    
   
-    } while ((omega < omegaRD)&&( t < trac));
+    } while ((omega < fracRD*omegaRD)&&( t < trac));
      
   }
 
@@ -1449,26 +1432,26 @@ void LALPSpinInspiralRDEngine (
       
     v2old=v2;
     v2=pow(omega,2./3.);
-    amp22/=sqrt(v2/v2old);
-      
-    aph22r = amp22 * ( c4i2 + s4i2*cos(4.*Psi) );
-    aph22i = amp22 * ( s4i2*sin(4.*Psi) );
-      
-    h22->data[2*count] = (REAL4)(aph22r * cos(2.*(Psi+alpha)) + aph22i * sin(2.*(Psi+alpha)));
-    h22->data[2*count+1] = (REAL4)(aph22i * cos(2.*(Psi+alpha)) - aph22r * sin(2.*(Psi+alpha)));
+    amp22*=sqrt(v2old/v2);
+           
+    h22->data[2*count] = (REAL4)(amp22 * ( cos(2.*(Psi-alpha))*c4i2 + cos(2.*(Psi+alpha)) *s4i2 ) );
+    h22->data[2*count+1] = (REAL4)(amp22 * (sin(2.*(Psi-alpha))*c4i2 - sin(2.*(Psi+alpha)) * s4i2 ) );
     
-    h20->data[2*count] = amp20 * ( 2.*s2i ) * cos( 2.* Psi);
-    h20->data[2*count+1] = amp20 * ( 0. );
+    h21->data[2*count] = (REAL4) (amp22 * si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) );
+    h21->data[2*count+1] = (REAL4)(-amp22 * si * ( cos(2.*Psi-alpha)*s2i2 + cos(2.*Psi+alpha)*c2i2 ) );
+    
+    h20->data[2*count] = (REAL4)(amp20 * s2i * cos( 2.* Psi));
+    h20->data[2*count+1] = 0.;
     
     phap->data[count] =  (REAL8)( Psi );
-    
-    shift22->data[count] = 2. * ( Psi + alpha );
+        
+    shift22->data[count] = alpha;
     
     count++;
     t+=dt;
 
-  } while ((omega < facRD*omegaRD) && (omegaold < omega) );
-  
+  } while ((omega < fracRD*omegaRD) && (omegaold < omega) );
+
   if (omegaold>omega) count--;
   *countback=count;
 
@@ -1482,54 +1465,53 @@ void LALPSpinInspiralRDEngine (
    * the approximant is SpinTayloRD
    -------------------------------------------------------------*/
 
-  UINT4 ll=2;
-  INT4 mm=0;
+  //fprintf(stderr,"** LALPSpinInspiralRD: count prima attachRD %d\n",*countback);
 
-    {
-      apcount=count;
-      xlalStatus20 = XLALPSpinInspiralAttachRingdownWave( h20 , params , energy, &apcount, nmodes , ll , mm , LNhx, LNhy, LNhz );
-      if (xlalStatus20 != XLAL_SUCCESS )	XLALDestroyREAL4Vector( h20 );
-      for (i=2*apcount;i<2*length;i++) h20->data[i]=0.;
-      *countback= apcount;
-      apcount= count;
-
-      xlalStatus22 = XLALPSpinInspiralAttachRingdownWave( h22 , params , energy, &apcount, nmodes , 2 , 2 , LNhx, LNhy, LNhz);
-
-      if (xlalStatus22 != XLAL_SUCCESS ) XLALDestroyREAL4Vector( h22 );      
-      if ( apcount > (*countback) ) *countback= apcount;
-      
-      if ((xlalStatus22!= XLAL_SUCCESS) && (xlalStatus20!=XLAL_SUCCESS)) {
-	XLALDestroyREAL4Vector( fap );
-	XLALDestroyREAL8Vector( phap );
-	ABORTXLAL( status );
-      }
-      for (i=2*apcount;i<2*length;i++) h22->data[i]=0.;
-      
-    }
-
-  while (pad<(*countback)) pad*=2;
-  
-  for (i=(*countback);i<pad;i++) {
-    h22->data[2*i]=0.;
-    h22->data[2*i+1]=0.;
-    h20->data[2*i]=0.;
-    h20->data[2*i+1]=0.;
+  apcount=count;
+  xlalStatus20 = XLALPSpinInspiralAttachRingdownWave( h20 , params , energy, &apcount, nmodes , 2 , 0 , LNhx, LNhy, LNhz );
+  if (xlalStatus20 != XLAL_SUCCESS )	XLALDestroyREAL4Vector( h20 );
+  else {
+    for (i=2*apcount;i<2*length;i++) h20->data[i]=0.;
+    *countback= apcount;
   }
-  *countback=pad;
+
+  apcount= count;
+  xlalStatus21 = XLALPSpinInspiralAttachRingdownWave( h21 , params , energy, &apcount, nmodes , 2 , 1 , LNhx, LNhy, LNhz );
+  if (xlalStatus21 != XLAL_SUCCESS )	XLALDestroyREAL4Vector( h21 );
+  else {
+    for (i=2*apcount;i<2*length;i++) h21->data[i]=0.;
+    if (apcount > *countback) *countback = apcount;
+  }
+
+  apcount= count;
+  xlalStatus22 = XLALPSpinInspiralAttachRingdownWave( h22 , params , energy, &apcount, nmodes , 2 , 2 , LNhx, LNhy, LNhz);
+  if (xlalStatus22 != XLAL_SUCCESS ) XLALDestroyREAL4Vector( h22 );
+  else {
+    for (i=2*apcount;i<2*length;i++) h22->data[i]=0.;
+    if ( apcount > *countback ) *countback= apcount;
+  }
+
+  //fprintf(stderr,"** LALPSpinInsiralRD: countback dopo attacco=%d\n",*countback);
   
+  if ((xlalStatus22!= XLAL_SUCCESS) && (xlalStatus20!=XLAL_SUCCESS)) {
+    XLALDestroyREAL4Vector( fap );
+    XLALDestroyREAL8Vector( phap );
+    XLALDestroyREAL4Vector( shift22 );
+    ABORTXLAL( status );
+  }
+
   /*-------------------------------------------------------------------
    * Compute the spherical harmonics required for constructing (h+,hx).
-   * We are going to choose coa_phase to be zero.
    -------------------------------------------------------------------*/
-  
-  inc = params->inclination;
-  coa_phase = 0.;
+
+  inc = params->orbitTheta0;
+  phiangle = params->orbitPhi0;
 
   /* -----------------------------------------------------------------
    * Attaching the (2,2), (2,1) and (2,0) Spherical Harmonic
    *----------------------------------------*/
 
-   xlalStatus22 = XLALSphHarm( &MultSphHarm2P2, 2, 2, inc , coa_phase );
+   xlalStatus22 = XLALSphHarm( &MultSphHarm2P2, 2, 2, inc , phiangle );
    if (xlalStatus22 != XLAL_SUCCESS )
    {
      XLALDestroyREAL4Vector( h22 );
@@ -1539,7 +1521,7 @@ void LALPSpinInspiralRDEngine (
      ABORTXLAL( status );
    }
 
-   xlalStatus22 = XLALSphHarm( &MultSphHarm2M2, 2, -2, inc, coa_phase );
+   xlalStatus22 = XLALSphHarm( &MultSphHarm2M2, 2, -2, inc, phiangle );
 
    if (xlalStatus22 != XLAL_SUCCESS )
    {
@@ -1569,14 +1551,14 @@ void LALPSpinInspiralRDEngine (
      sig2->data[i] = (x1 * z1)  + (x2 * z2);
    }
 
-   xlalStatus21 = XLALSphHarm( &MultSphHarm2P1, 2, 1, inc , coa_phase );
+   xlalStatus21 = XLALSphHarm( &MultSphHarm2P1, 2, 1, inc , phiangle );
    if (xlalStatus21 != XLAL_SUCCESS )
      {
        XLALDestroyREAL4Vector( h21 );
        ABORTXLAL( status );
      }
    
-   xlalStatus21 = XLALSphHarm( &MultSphHarm2M1, 2, -1, inc , coa_phase );
+   xlalStatus21 = XLALSphHarm( &MultSphHarm2M1, 2, -1, inc , phiangle );
    if (xlalStatus21 != XLAL_SUCCESS )
      {
        XLALDestroyREAL4Vector( h21 );
@@ -1596,11 +1578,11 @@ void LALPSpinInspiralRDEngine (
      x1 = h21->data[2*i];
      x2 = h21->data[2*i+1];
      // Uncomment this to add the 21 mode
-     /*sig1->data[i]+ = (x1 * y_1) + (x2 * y_2);
-       sig2->data[i]+ = (x1 * z1)  + (x2 * z2);*/
+     sig1->data[i]+= (x1 * y_1) + (x2 * y_2);
+     sig2->data[i]+= (x1 * z1)  + (x2 * z2);
    }
 
-   xlalStatus20 = XLALSphHarm( &MultSphHarm20, 2, 0, inc , coa_phase );
+   xlalStatus20 = XLALSphHarm( &MultSphHarm20, 2, 0, inc , phiangle );
    if (xlalStatus20 != XLAL_SUCCESS )
      {
        XLALDestroyREAL4Vector( h20 );
@@ -1645,14 +1627,15 @@ void LALPSpinInspiralRDEngine (
    if (shift)      memcpy(shift->data      , shift22->data, length * (sizeof(REAL4)));
 
    /* Clean up */
+   XLALDestroyREAL4Vector ( h22 );
    XLALDestroyREAL4Vector ( shift22 );
-   XLALDestroyREAL4Vector ( hap );
    XLALDestroyREAL4Vector ( fap );
    XLALDestroyREAL8Vector ( phap );
    XLALDestroyREAL4Vector ( sig1 );
    XLALDestroyREAL4Vector ( sig2 );
-   XLALDestroyREAL4Vector ( h22 );
    XLALDestroyREAL4Vector ( h20 );
+   XLALDestroyREAL4Vector ( h21 );
+   XLALDestroyREAL4Vector ( hap );
    
    DETATCHSTATUSPTR(status);
    RETURN(status);
