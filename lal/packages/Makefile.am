@@ -11,13 +11,7 @@ SUBDIRS = \
 	tdfilter \
 	window \
 	fft \
-	inspiral \
 	noisemodels \
-	bank \
-	ring \
-	findchirp \
-	pulsar \
-	houghpulsar \
 	support
 
 include-links:

@@ -41,13 +41,26 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
-from pylal.date import LIGOTimeGPS
+from pylal import ligolw_cafe
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from pylal import burstsearch
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"[7:-2]
 __version__ = "$Revision$"[11:-2]
+
+
+#
+# =============================================================================
+#
+#                                 Speed Hacks
+#
+# =============================================================================
+#
+
+
+ligolw_cafe.lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
 #
@@ -183,7 +196,7 @@ def match_nodes_to_caches(nodes, caches):
 			node_group.add(index[cache_entry])
 
 	# how many nodes didn't get used?
-	unused = len(nodes) - len(reduce(lambda a, b: a | b, node_gropus))
+	unused = len(nodes) - len(reduce(lambda a, b: a | b, node_groups))
 
 	# done
 	return node_groups, unused
@@ -193,6 +206,17 @@ def cache_span(cache):
 	a = min([cache_entry.segment[0] for cache_entry in cache])
 	b = max([cache_entry.segment[1] for cache_entry in cache])
 	return segments.segment(a, b)
+
+
+#
+# How to write an output cache
+#
+
+
+def write_output_cache(nodes, filename):
+	f = file(filename, "w")
+	for cache_entry, node in collect_output_caches(nodes):
+		print >>f, str(cache_entry)
 
 
 #
@@ -231,7 +255,7 @@ class RMNode(pipeline.CondorDAGNode):
 		return set()
 
 
-class BurstInjJob(pipeline.CondorDAGJob):
+class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_binj job used by the power pipeline. The static options
 	are read from the [lalapps_binj] section in the ini file. The
@@ -244,20 +268,24 @@ class BurstInjJob(pipeline.CondorDAGJob):
 		config_parser = ConfigParser object
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
+		pipeline.AnalysisJob.__init__(self, config_parser)
 
 		# do this many injections between flow and fhigh inclusively
-		self.injection_bands = config_parser.getint("pipeline", "injection_bands")
+		if config_parser.has_option("pipeline", "injection_bands"):
+			self.injection_bands = config_parser.getint("pipeline", "injection_bands")
+		else:
+			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
-
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 
-class BurstInjNode(pipeline.CondorDAGNode):
+class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
 		pipeline.CondorDAGNode.__init__(self, job)
+		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
 
@@ -288,27 +316,25 @@ class BurstInjNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		"""
-		Returns a LAL cache of the output file names.  This must be
-		kept synchronized with the name of the output file in
-		binj.c.  Note in particular the calculation of the "start"
-		and "duration" parts of the name.
+		Returns a LAL cache of the output file name.  Calling this
+		method also induces the output name to get set, so it must
+		be at least once.
 		"""
 		if not self.output_cache:
-			if not self.get_start() or not self.get_end():
-				raise ValueError, "start time or end time has not been set"
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			if self.__usertag:
-				filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
-			else:
-				filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-			self.output_cache = [CacheEntry("H1+H2+L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+			# FIXME:  instruments hardcoded to "everything"
+			self.output_cache = [CacheEntry(u"H1+H2+G1+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
 
 	def get_output(self):
-		raise NotImplementedError
+		if self._AnalysisNode__output is None:
+			if None in (self.get_start(), self.get_end(), self.__usertag):
+				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			self.set_output("H1+H2+G1+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start())))
+		return self._AnalysisNode__output
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -784,7 +810,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	"""
 	global datafindjob, rmjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, burca2job, sqlitejob, burcatailorjob
 
-	# LSCdataFind
+	# ligo_data_find
 	if "datafind" in job_types:
 		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
 
@@ -919,6 +945,16 @@ def segment_ok(timing_params, segment):
 	return psds_from_job_length(timing_params, float(abs(segment))) >= 1.0
 
 
+def remove_too_short_segments(seglistdict, timing_params):
+	"""
+	Remove segments from seglistdict that are too short to analyze.
+
+	CAUTION:  this function modifies seglistdict in place.
+	"""
+	for seglist in seglistdict.values():
+		iterutils.inplace_filter(lambda seg: segment_ok(timing_params, seg), seglist)
+
+
 #
 # =============================================================================
 #
@@ -933,7 +969,7 @@ datafind_pad = 512
 
 def make_datafind_fragment(dag, instrument, seg):
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
+	node.set_name("ligo_data_find-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
 	# FIXME: argh, I need the node to know what instrument it's for,
@@ -1002,7 +1038,7 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	return set([node])
 
 
-def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
+def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
 	# one injection every time-step / pi seconds
 	period = float(binjjob.get_opts()["time-step"]) / math.pi
 
@@ -1012,10 +1048,15 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
 	node.set_end(seg[1])
-	node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+	if flow is not None:
+		node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+	else:
+		node.set_name("lalapps_binj_%d" % int(start))
 	node.set_user_tag(tag)
-	node.add_macro("macroflow", flow)
-	node.add_macro("macrofhigh", fhigh)
+	if flow is not None:
+		node.add_macro("macroflow", flow)
+	if fhigh is not None:
+		node.add_macro("macrofhigh", fhigh)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
 	return set([node])
@@ -1176,7 +1217,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 #
 # =============================================================================
 #
-#                              LSCdataFind Stage
+#                             ligo_data_find Stage
 #
 # =============================================================================
 #
@@ -1184,13 +1225,13 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 
 def make_datafind_stage(dag, seglists, verbose = False):
 	if verbose:
-		print >>sys.stderr, "building LSCdataFind jobs ..."
+		print >>sys.stderr, "building ligo_data_find jobs ..."
 
 	#
 	# Fill gaps smaller than the padding added to each datafind job.
 	# Filling in the gaps ensures that exactly 1 datafind job is
 	# suitable for each lalapps_power job, and also hugely reduces the
-	# number of LSCdataFind nodes in the DAG.
+	# number of ligo_data_find nodes in the DAG.
 	#
 
 	filled = seglists.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)
@@ -1211,9 +1252,9 @@ def make_datafind_stage(dag, seglists, verbose = False):
 		nodes |= new_nodes
 
 		# add a post script to check the file list
-		required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
-		for node in new_nodes:
-			node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
+		#required_segs_string = ",".join(segmentsUtils.to_range_strings(seglists[instrument] & segments.segmentlist([seg])))
+		#for node in new_nodes:
+		#	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
 
 	return nodes
 
@@ -1238,57 +1279,6 @@ def make_multibinj_fragment(dag, seg, tag):
 #
 # =============================================================================
 #
-#            Analyze One Segment Using Multiple lalapps_power Jobs
-#
-# =============================================================================
-#
-
-
-#
-# Without injections
-#
-
-
-def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, timing_params, psds_per_job, verbose = False):
-	"""
-	Construct a DAG fragment for an entire segment, splitting the
-	segment into multiple power jobs.
-	"""
-	# only one frame cache file can be provided as input
-	# the unpacking indirectly tests that the file count is correct
-	[framecache] = [node.get_output() for node in datafindnodes]
-	seglist = split_segment(timing_params, segment, psds_per_job)
-	if verbose:
-		print >>sys.stderr, "Segment split: " + str(seglist)
-	nodes = set()
-	for seg in seglist:
-		nodes |= make_power_fragment(dag, datafindnodes, instrument, seg, tag, framecache)
-	return nodes
-
-
-#
-# With injections
-#
-
-
-def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, segment, tag, timing_params, psds_per_job, verbose = False):
-	# only one frame cache file can be provided as input, and only one
-	# injection description file can be provided as input
-	# the unpacking indirectly tests that the file count is correct
-	[framecache] = [node.get_output() for node in datafindnodes]
-	[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
-	seglist = split_segment(timing_params, segment, psds_per_job)
-	if verbose:
-		print >>sys.stderr, "Injections split: " + str(seglist)
-	nodes = set()
-	for seg in seglist:
-		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"injection-file": simfile})
-	return nodes
-
-
-#
-# =============================================================================
-#
 #        Analyze All Segments in a segmentlistdict Using lalapps_power
 #
 # =============================================================================
@@ -1296,51 +1286,89 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, s
 
 
 #
-# Without injections
+# one segment
 #
 
 
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_job, verbose = False):
+def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, timing_params, psds_per_job, binjnodes = set(), verbose = False):
+	"""
+	Construct a DAG fragment for an entire segment, splitting the
+	segment into multiple trigger generator jobs.
+	"""
+	# only one frame cache file can be provided as input, and only one
+	# injection description file can be provided as input
+	# the unpacking indirectly tests that the file count is correct
+	[framecache] = [node.get_output() for node in datafindnodes]
+	if binjnodes:
+		[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
+		injargs = {"injection-file": simfile}
+	else:
+		injargs = {}
+	seglist = split_segment(timing_params, segment, psds_per_job)
+	if verbose:
+		print >>sys.stderr, "Segment split: " + str(seglist)
+	nodes = set()
+	for seg in seglist:
+		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = injargs)
+	return nodes
+
+
+#
+# all segments
+#
+
+
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_job, binjnodes = set(), verbose = False):
 	nodes = []
 	for instrument, seglist in seglistdict.iteritems():
 		for seg in seglist:
 			if verbose:
 				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
 
-			# find the datafind job this power job is going to
-			# need
+			# find the datafind job this job is going to need
 			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
 			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
+				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
 
-			# power jobs
-			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, timing_params, psds_per_job, verbose = verbose)
+			# trigger generator jobs
+			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, timing_params, psds_per_job, binjnodes = binjnodes, verbose = verbose)
 
 	# done
 	return nodes
 
 
 #
-# With injections
+# =============================================================================
+#
+#                         Coincidence Post-Processing
+#
+# =============================================================================
 #
 
 
-def make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, tag, timing_params, psds_per_job, verbose = False):
-	nodes = []
-	for instrument, seglist in seglistdict.iteritems():
-		for seg in seglist:
-			if verbose:
-				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+def group_coinc_parents(parents, offset_vectors, verbose = False):
+	if not offset_vectors:
+		# no-op
+		return []
 
-			# find the datafind job this power job is going to
-			# need
-			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
-			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for power job at %s in %s" % (str(seg), instrument)
+	if verbose:
+		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
 
-			# power jobs
-			nodes += make_injection_segment_fragment(dag, dfnodes, binjnodes, instrument, seg, tag, timing_params, psds_per_job, verbose = verbose)
+	# use ligolw_cafe to group each output file according to how they
+	# need to be combined to perform the coincidence analysis
+	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, verbose = verbose)[1]
+	caches = [set(bin.objects) for bin in bins]
+	segs = [bin.extent for bin in bins]
+
+	# match parents to caches
+	if verbose:
+		print >>sys.stderr, "Matching jobs to caches ..."
+	parent_groups, unused = match_nodes_to_caches(parents, caches)
+	if verbose and unused:
+		# there were parents that didn't match any caches.  this
+		# happens if ligolw_cafe decides their outputs aren't
+		# needed
+		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
 
 	# done
-	return nodes
-
+	return zip(segs, parent_groups, caches)

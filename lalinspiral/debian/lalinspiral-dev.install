@@ -1,0 +1,7 @@
+#opt/lscsoft/lalinspiral/bin/lal-config
+opt/lscsoft/lalinspiral/include/lal*
+opt/lscsoft/lalinspiral/lib/*a
+opt/lscsoft/lalinspiral/lib/pkgconfig
+#opt/lscsoft/lalinspiral/share/man/man1/lal-config.1*
+#opt/lscsoft/lalinspiral/share/man/man3/lal.3*
+#opt/lscsoft/lalinspiral/share/lal

@@ -54,7 +54,6 @@ a frequency series.
 
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
-#include <lal/TwoDMesh.h>
 
 #ifdef  __cplusplus
 extern "C" {

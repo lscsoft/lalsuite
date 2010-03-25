@@ -215,7 +215,7 @@ int main( int argc, char *argv[] )
   if(configFile == NULL){
     fprintf( stderr, "Error Opening ConfigFile\n" );
     usage( program );
-    return 0;
+    return 1;
   }
 
   LALCHARCreateVector(&status, &lineString, lineSize);

@@ -27,7 +27,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/LIGOMetadataTables.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 #include <lal/PrintFTSeries.h>
@@ -240,7 +239,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     XLAL_ERROR(func, XLAL_EINVAL);
   }
   /* check for correct value */
-  if (strncmp(type, "H1_DMT_C00_L2", LIGOMETA_TYPE_MAX) != 0)
+  if (strncmp(type, "H1_DMT_C00_L2", LAL_AGGREGATION_TYPE_MAX) != 0)
   {
     static const char *func = "XLALAggregationFrameType";
     XLAL_ERROR(func, XLAL_ENAME);

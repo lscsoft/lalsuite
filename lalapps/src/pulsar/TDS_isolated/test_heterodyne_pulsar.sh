@@ -74,12 +74,15 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-# check that LAL_PREFIX is set
-if [ -n "$LAL_PREFIX" ]; then
-	EEPHEM=$LAL_PREFIX/share/lal/earth05-09.dat
-        SEPHEM=$LAL_PREFIX/share/lal/sun05-09.dat
+# check that LALPULSAR_PREFIX is set
+if [ -n "$LALPULSAR_PREFIX" ]; then
+	EEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/earth05-09.dat
+        SEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/sun05-09.dat
+elif [ -n "$LALSUITE_TOP_SRCDIR" ]; then
+        EEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/earth05-09.dat
+        SEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/sun05-09.dat
 else
-	echo Need to set environment variable LAL_PREFIX
+	echo Need an environment variable that points to the LALPulsar location 
         exit 2
 fi
 

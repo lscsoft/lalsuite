@@ -73,7 +73,6 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include <time.h>
 
 #include <lal/LALRCSID.h>
@@ -93,11 +92,6 @@ extern "C"
 
 NRCSID (DATEH, "$Id$");
 
-/* <lalLaTeX>
-\subsection*{Error conditions}
-</lalLaTeX> */
-
-/* <lalErrTable> */
 #define DATEH_ENULLINPUT       1
 #define DATEH_ENULLOUTPUT      2
 #define DATEH_EDATETOOEARLY    3
@@ -121,7 +115,6 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEACCPARAMOUTOFRANGE "Accuracy parameter out of range: must be one of LALLEAPSECunderscoreSTRICT or LALLEAPSECunderscoreLOOSE"
 #define DATEH_MSGEDECRTIMETOOLARGE "Decrement amount too large: GPS time cannot be decremented to before the start of the GPS epoch."
 
-/* </lalErrTable> */
 
 /** The UNIX time of the GPS origin epoch.
  *
@@ -260,85 +253,11 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 
 /* <lalLaTeX>
 
-
 \subsection*{Structures}
 
 
-</lalLaTeX> */
-
-/* <lalLaTeX>
-
 \vfill{\footnotesize\input{DateHV}}
 
-</lalLaTeX> */
-
-/* <lalLaTeX>
-\subsubsection*{Enumeration \texttt{LALMonth}}
-\idx[Type]{LALMonth}
-
-This enumerated type is used to define mnemonic symbols for the
-\texttt{LALUnixDate} month field (\texttt{tm\_mon}). The allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+LALMONTH_JAN+ & January \\
-  \verb+LALMONTH_FEB+ & February \\
-  \verb+LALMONTH_MAR+ & March \\
-  \verb+LALMONTH_APR+ & April \\
-  \verb+LALMONTH_MAY+ & May \\
-  \verb+LALMONTH_JUN+ & June \\
-  \verb+LALMONTH_JUL+ & July \\
-  \verb+LALMONTH_AUG+ & August \\
-  \verb+LALMONTH_SEP+ & September \\
-  \verb+LALMONTH_OCT+ & October \\
-  \verb+LALMONTH_NOV+ & November \\
-  \verb+LALMONTH_DEC+ & December
-\end{tabular}
-\bigskip
-
-</lalLaTeX> */
-
-typedef enum
-{
-  LALMONTH_JAN =  0,
-  LALMONTH_FEB =  1,
-  LALMONTH_MAR =  2,
-  LALMONTH_APR =  3,
-  LALMONTH_MAY =  4,
-  LALMONTH_JUN =  5,
-  LALMONTH_JUL =  6,
-  LALMONTH_AUG =  7,
-  LALMONTH_SEP =  8,
-  LALMONTH_OCT =  9,
-  LALMONTH_NOV = 10,
-  LALMONTH_DEC = 11
-} LALMonth;
-
-
-/* <lalLaTeX>
-\subsubsection*{Enumeration \texttt{LALGPSCompareResult}}
-\idx[Type]{LALGPSCompareResult}
-
-This enumerated type is used as the output type for
-\texttt{LALCompareGPS()}.  The allowed values are:
-
-\medskip\noindent
-\begin{tabular}{ll}
-  \verb+LALGPS_EARLIER+ & GPS1 < GPS2 \\
-  \verb+LALGPS_EQUAL+ & GPS1 = GPS2 \\
-  \verb+LALGPS_LATER+ & GPS1 > GPS2
-\end{tabular}
-\bigskip
-</lalLaTeX> */
-typedef enum
-{
-  LALGPS_EARLIER = -1,
-  LALGPS_EQUAL   =  0,
-  LALGPS_LATER   =  1
-} LALGPSCompareResult;
-
-
-/* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALUnixDate}}
 \idx[Type]{LALUnixDate}
@@ -355,35 +274,6 @@ in the man page for \texttt{ctime(3)}.  We shall
 typedef struct
 tm
 LALUnixDate;
-
-
-/* <lalLaTeX>
-
-
-\subsubsection{Structure \texttt{LALTimeInterval}}
-\idx[Type]{LALTimeInterval}
-
-This structure is used for storing intervals of \texttt{LIGOTimeGPS}
-and \texttt{LIGOTimeUnix} times.  The fields are:
-
-\begin{description}
-\item{\texttt{INT4 seconds}} Integral part of the time interval
-\item{\texttt{INT4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
-  fractional part, in nanoseconds)
-\end{description}
-
-</lalLaTeX> */
-
-/*
- * This time object is for time intervals, i.e. no reference epoch implied
- */
-typedef struct
-tagLALTimeInterval
-{
-    INT4 seconds;
-    INT4 nanoSeconds;
-}
-LALTimeInterval;
 
 
 /* <lalLaTeX>
@@ -424,54 +314,6 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
 
-/* The following 2 functions are from S.J. Berukoff, included at his request */
-/* <lalLaTeX>
-\newpage\input{GPStoFloatC}
-</lalLaTeX> */
-void LALFloatToInterval(LALStatus *status,
-                        LALTimeInterval *pInterval,
-                        const REAL8 *pDeltaT);
-
-void LALIntervalToFloat(LALStatus *status,
-                        REAL8 *pDeltaT,
-                        const LALTimeInterval *pInterval);
-
-
-/* This next function is to facilitate writing loops that increment time
- * by a time interval */
-/* <lalLaTeX>
-\newpage\input{IncrementGPSC}
-</lalLaTeX> */
-void
-LALIncrementGPS (LALStatus             *status,
-                 LIGOTimeGPS           *pIncrementedGPS,
-                 const LIGOTimeGPS     *pInitialGPS,
-                 const LALTimeInterval *pDeltaT);
-
-void
-LALDecrementGPS (LALStatus             *status,
-                 LIGOTimeGPS           *pDecrementedGPS,
-                 const LIGOTimeGPS     *pInitialGPS,
-                 const LALTimeInterval *pDeltaT);
-
-
-/* This function takes the difference between two GPS times, GPS1 - GPS2 */
-void
-LALDeltaGPS (LALStatus         *status,
-             LALTimeInterval   *pDeltaGPS, /* output: GPS1 - GPS2*/
-             const LIGOTimeGPS *pGPS1, /* input: GPS1 */
-             const LIGOTimeGPS *pGPS2); /* input: GPS2 */
-
-/* This function compares GPS1 to GPS2; returns 0 if GPS1 == GPS2,
- returns -1 if GPS1 < GPS2, +1 if GPS1 > GPS2 */
-void
-LALCompareGPS (LALStatus *status,
-               LALGPSCompareResult *pResult, /* output: -1 => GPS1 < GPS2
-                                                         0 => GPS1 = GPS2
-                                                         1 => GPS1 > GPS2 */
-               const LIGOTimeGPS *pGPS1, /* input: GPS1 */
-               const LIGOTimeGPS *pGPS2); /* input: GPS2 */
-
 /* This function returns the current GPS time according to the system clock */
 LIGOTimeGPS *
 XLALGPSTimeNow (
@@ -483,21 +325,7 @@ XLALGPSTimeNow (
 </lalLaTeX> */
 int
 XLALINT8NanoSecIsPlayground (
-    const INT8         *ns
-    );
-
-void
-LALINT8NanoSecIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    INT8               *ns
-    );
-
-void
-LALGPSIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpstime
+    INT8        ns
     );
 
 #ifdef  __cplusplus

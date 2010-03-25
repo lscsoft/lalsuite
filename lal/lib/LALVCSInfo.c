@@ -54,18 +54,6 @@ struct tagLALVCSInfo lalLibraryVCSInfo = { \
   LAL_VCS_STATUS \
 };
 
-/* library vcs information structure - identable */
-struct tagLALVCSInfo lalLibraryVCSIdentInfo = { \
-  LAL_VERSION, \
-  LAL_VCS_IDENT_ID, \
-  LAL_VCS_IDENT_DATE, \
-  LAL_VCS_IDENT_BRANCH, \
-  LAL_VCS_IDENT_TAG, \
-  LAL_VCS_IDENT_AUTHOR, \
-  LAL_VCS_IDENT_COMMITTER, \
-  LAL_VCS_IDENT_STATUS \
-};
-
 /* function to compare two LALVCSInfo structures */
 int XLALVCSInfoCompare(const LALVCSInfo *header, const LALVCSInfo *library)
 {

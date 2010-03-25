@@ -52,7 +52,7 @@
 NRCSID (TFRSPTESTC,"$Id$");
 
 
-int lalDebugLevel=2;
+extern int lalDebugLevel;
 
 int main(void)
 {
@@ -70,6 +70,7 @@ int main(void)
   INT4 column;
   INT4 row;
 
+  lalDebugLevel = 2;
 
   /*--------------------------------------------------------------------*/
 

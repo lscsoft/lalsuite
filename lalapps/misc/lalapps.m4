@@ -1,4 +1,6 @@
-dnl lalapps.m4
+# lalapps.m4 - lalapps specific autoconf macros
+#
+# serial 3
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -94,6 +96,55 @@ AC_DEFUN([LALAPPS_ENABLE_CONDOR],
   ], [ condor=false ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_BOINC],
+[AC_ARG_ENABLE(
+  [boinc],
+  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+  [ case "${enableval}" in
+      yes) boinc=true;;
+      no) boinc=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
+    esac
+  ], [ boinc=false ] )
+AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+])
+
+AC_DEFUN([LALAPPS_CHECK_BOINC],
+[AC_MSG_CHECKING([whether LAL has been compiled with BOINC support])
+AC_TRY_RUN([
+#include <lal/LALConfig.h>
+#ifdef LAL_BOINC_ENABLED
+int main( void ) { return 0; }
+#else
+int main( void ) { return 1; }
+#endif
+],
+AC_MSG_RESULT([yes])
+[boinc=true],
+AC_MSG_RESULT([no])
+[boinc=false],
+AC_MSG_RESULT([unknown])
+[boinc=false])
+])
+
+AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES],
+[AC_ARG_ENABLE(
+  [static_binaries],
+  AC_HELP_STRING([--enable-static-binaries],[build static binaries [default=no]]),
+  [ case "${enableval}" in
+      yes) static_binaries=true;;
+      no)  static_binaries=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-static-binaries) ;;
+    esac
+  ], [ static_binaries=false ] )
+if test "$condor" = "true"; then
+  static_binaries=false
+fi
+if test "$boinc" = "true"; then
+  static_binaries=false
+fi
+])
+
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
 [AC_ARG_ENABLE(
   [frame],
@@ -118,18 +169,6 @@ AC_DEFUN([LALAPPS_ENABLE_METAIO],
   ], [ metaio=true ] )
 ])
 
-AC_DEFUN([LALAPPS_ENABLE_XML],
-[AC_ARG_ENABLE(
-  [xml],
-  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
-  [ case "${enableval}" in
-      yes) xml=true;;
-      no)  xml=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
-    esac
-  ], [ xml=false ] )
-])
-
 AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
 [AC_ARG_ENABLE(
   [cfitsio],
@@ -142,14 +181,16 @@ AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
   ], [ cfitsio=false ] )
 ])
 
-AC_DEFUN([LALAPPS_DISABLE_FRAME],
-[echo "**************************************************************"
- echo "*                                                            *"
- echo "* Frame support will be DISABLED:                            *"
- echo "* LALApps is being configured with --disable-frame settings. *"
- echo "*                                                            *"
- echo "**************************************************************"
- frame=false
+AC_DEFUN([LALAPPS_ENABLE_PSS],
+[AC_ARG_ENABLE(
+  [pss],
+  AC_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
+  [ case "${enableval}" in
+      yes) pss=true;;
+      no) pss=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
+    esac
+  ], [pss=false])
 ])
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],

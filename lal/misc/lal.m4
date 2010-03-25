@@ -1,4 +1,6 @@
-dnl lal.m4
+# lal.m4 - lal specific macros
+#
+# serial 1
 
 AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -17,6 +19,7 @@ AC_DEFUN([DO_ENABLE_LAL_GCC_FLAGS],
   if test "${cuda}" != "true"; then
     case $host_cpu-$host_os in
       *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
+      *x86_64-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
       *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
     esac
   fi
@@ -130,6 +133,19 @@ AC_DEFUN([LAL_WITH_CUDA],
       AC_SUBST(CUDA_CFLAGS)
     esac
   ], [ cuda=false ])
+])
+
+AC_DEFUN([LAL_ENABLE_BOINC],
+[AC_ARG_ENABLE(
+  [boinc],
+  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+  [ case "${enableval}" in
+      yes) boinc=true;;
+      no) boinc=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
+    esac
+  ], [ boinc=false ] )
+AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
 ])
 
 AC_DEFUN([LAL_ENABLE_DEBUG],
@@ -252,30 +268,4 @@ int main(void)
   return 0;
 }
   ], [AC_MSG_RESULT(yes)], [AC_MSG_ERROR(could not find required version of GSL)], [echo $ac_n "cross compiling; assumed OK... $ac_c"])
-])
-
-dnl This is AC_CHECK_SIZEOF but prepends LAL.
-
-AC_DEFUN([LAL_CHECK_SIZEOF],
-[changequote(<<, >>)dnl
-dnl The name to #define.
-define(<<LAL_TYPE_NAME>>, translit(lal_sizeof_$1, [a-z *], [A-Z_P]))dnl
-dnl The cache variable name.
-define(<<LAL_CV_NAME>>, translit(lal_cv_sizeof_$1, [ *], [_p]))dnl
-changequote([, ])dnl
-AC_MSG_CHECKING([size of $1])
-AC_CACHE_VAL(LAL_CV_NAME,
-[AC_TRY_RUN([#include <stdio.h>
-main()
-{
-  FILE *f=fopen("conftestval", "w");
-  if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof($1));
-  exit(0);
-}], LAL_CV_NAME=`cat conftestval`, LAL_CV_NAME=0, ifelse([$2], , , LAL_CV_NAME=$2))
-])dnl
-AC_MSG_RESULT([$LAL_CV_NAME])
-AC_DEFINE_UNQUOTED(LAL_TYPE_NAME, $LAL_CV_NAME)
-undefine([LAL_TYPE_NAME])dnl
-undefine([LAL_CV_NAME])dnl
 ])

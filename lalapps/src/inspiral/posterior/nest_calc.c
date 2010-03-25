@@ -172,11 +172,6 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	else MCMCinput->funcInit(temp,(void *)MCMCinput->inspiralTable);
 	
 	/* Likelihood of the noise model */
-	XLALMCMCSetParameter(temp,"distMpc",DBL_MAX);
-	MCMCinput->funcPrior(MCMCinput,temp);
-	MCMCinput->funcLikelihood(MCMCinput,temp);
-/*	logZnoise = temp->logLikelihood; */
-/* Calculate this from the tables instead of calling logL with dist = DBL_MAX */
 	logZnoise=0.0;
 	for (j=0;j<MCMCinput->numberDataStreams;j++){
 		int lowBin=(int)MCMCinput->fLow/MCMCinput->deltaF;
@@ -356,13 +351,15 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 				/* if(gsl_rng_uniform(RNG)<0.1) XLALMCMC1PNMasseta(MCMCInput,temp); */
 			}
 			else  XLALMCMCDifferentialEvolution(MCMCInput,temp);
-			/* Evaluate MH ratio */
 		}
-		else if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
-		/*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
-		else XLALMCMCJump(MCMCInput,temp,covM);
-		
-		
+		else 
+		{
+			if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
+			/*else {	if(jump_select<0.3) XLALMCMCJumpSingle(MCMCInput,temp,covM);*/
+			else XLALMCMCJump(MCMCInput,temp,covM);
+			/*}*/
+		}
+		/* Evoluate the MH ratio */		
 		MCMCInput->funcPrior(MCMCInput,temp);
 		if(temp->logPrior!=-DBL_MAX && ( (temp->logPrior - sample->logPrior) > log(gsl_rng_uniform(RNG)) )) {
 			/* this would be accepted based on the priors, we can now confirm that its likelihood is above the limit

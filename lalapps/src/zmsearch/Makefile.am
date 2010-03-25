@@ -20,3 +20,6 @@ bin_PROGRAMS = $(LALPROGRAMS)
 EXTRA_DIST = $(ZMDFTSRCS) $(ZMCOMPARESRCS) $(BUILDZMSRCS)
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

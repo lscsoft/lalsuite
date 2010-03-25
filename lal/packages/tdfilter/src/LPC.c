@@ -84,7 +84,7 @@ Train a FIR filter aout of order p on the data x.
   rv.data = r;
 
   memcpy(r,x->data,x->length * sizeof(REAL4));
-  bzero(r + x->length, (npad - x->length) * sizeof(REAL4));
+  memset(r + x->length, 0, (npad - x->length) * sizeof(REAL4));
 
   if (XLALREAL4ForwardFFT(Hvec, &rv, pfwd) != 0)
     ABORTXLAL(status);
@@ -237,7 +237,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
       }
     }
 
-    bzero(a->data,(m+1)*sizeof(REAL4));
+    memset(a->data,0,(m+1)*sizeof(REAL4));
     a->data[0]=1.0;
 
     for(j=1;j<=m;j++) {

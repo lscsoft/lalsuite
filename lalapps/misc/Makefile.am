@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	compile \
 	config.guess \
 	config.sub \
 	depcomp \
@@ -8,10 +9,15 @@ EXTRA_DIST = \
 	lalsuite_c99.m4 \
 	libtool.m4 \
 	ltmain.sh \
+	ltoptions.m4 \
+	ltsugar.m4 \
+	ltversion.m4 \
+	lt~obsolete.m4 \
 	missing \
 	mkinstalldirs \
 	pkg.m4 \
-	py-compile
+	py-compile \
+	vcsID.common
 
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh

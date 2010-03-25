@@ -1,6 +1,6 @@
-AC_INIT([lalstochastic],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_INIT([lalstochastic],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
+AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,6 +41,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalstochastic])
 
+# put version/configure info in config header
+lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALStochastic Configure Arguments])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_DATE],["$lalstochastic_configure_date"],
+                   [LALStochastic Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
@@ -55,6 +64,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
@@ -81,13 +91,21 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
+
+# metaio
+PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
+CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+LIBS="$LIBS $METAIO_LIBS"
+AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
+
+# check for libmetaio headers
+AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
-
-# check for lalsupport, needed for test suite
-LALSUITE_CHECK_OPT_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

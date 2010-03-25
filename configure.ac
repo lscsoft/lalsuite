@@ -9,38 +9,97 @@ AC_CONFIG_FILES([
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
+LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALMETAIO
+LALSUITE_ENABLE_LALBURST
+LALSUITE_ENABLE_LALINSPIRAL
+LALSUITE_ENABLE_LALSTOCHASTIC
+LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALXML
+
 lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 LALSUITE_BUILD="true"
+LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
 LAL_LIBS="${lalsuite_top_builddir}/lal/lib/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
-LAL_TOP_SRCDIR="${lalsuite_top_srcdir}/lal"
-export LALSUITE_BUILD LAL_LIBS LAL_CFLAGS LAL_TOP_SRCDIR
+export LALSUITE_BUILD LALSUITE_TOP_SRCDIR LAL_LIBS LAL_CFLAGS
 LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
-LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
-LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
-export LALFRAME_LIBS LALFRAME_CFLAGS
-LALMETAIO_LIBS="${lalsuite_top_builddir}/lalmetaio/src/liblalmetaio.la"
-LALMETAIO_CFLAGS="-I${lalsuite_top_builddir}/lalmetaio/include"
-export LALMETAIO_LIBS LALMETAIO_CFLAGS
-LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
-LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
-export LALXML_LIBS LALXML_CFLAGS
-LALBURST_LIBS="${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
-LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
-export LALBURST_LIBS LALBURST_CFLAGS
-LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
-LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
-export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
+
+if test "$lalframe" = "true"; then
+  LALFRAME_LIBS="${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
+  LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
+  export LALFRAME_LIBS LALFRAME_CFLAGS
+fi
+
+if test "$lalmetaio" = "true"; then
+  LALMETAIO_LIBS="${lalsuite_top_builddir}/lalmetaio/src/liblalmetaio.la"
+  LALMETAIO_CFLAGS="-I${lalsuite_top_builddir}/lalmetaio/include"
+  export LALMETAIO_LIBS LALMETAIO_CFLAGS
+fi
+
+if test "$lalburst" = "true"; then
+  LALBURST_LIBS="${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
+  LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
+  export LALBURST_LIBS LALBURST_CFLAGS
+fi
+
+if test "$lalinspiral" = "true"; then
+  LALINSPIRAL_LIBS="${lalsuite_top_builddir}/lalinspiral/src/liblalinspiral.la"
+  LALINSPIRAL_CFLAGS="-I${lalsuite_top_builddir}/lalinspiral/include"
+  export LALINSPIRAL_LIBS LALINSPIRAL_CFLAGS
+fi
+
+if test "$lalstochastic" = "true"; then
+  LALSTOCHASTIC_LIBS="${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
+  LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
+  export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
+fi
+
+if test "$lalpulsar" = "true"; then
+  LALPULSAR_LIBS="${lalsuite_top_builddir}/lalpulsar/src/liblalpulsar.la"
+  LALPULSAR_CFLAGS="-I${lalsuite_top_builddir}/lalpulsar/include"
+  export LALPULSAR_LIBS LALPULSAR_CFLAGS
+fi
+
+if test "$lalxml" = "true"; then
+  LALXML_LIBS="${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
+  LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
+  export LALXML_LIBS LALXML_CFLAGS
+fi
 
 AC_CONFIG_SUBDIRS([lal])
-AC_CONFIG_SUBDIRS([lalframe])
-AC_CONFIG_SUBDIRS([lalmetaio])
-AC_CONFIG_SUBDIRS([lalxml])
-AC_CONFIG_SUBDIRS([lalburst])
-AC_CONFIG_SUBDIRS([lalstochastic])
+
+if test "$lalframe" = "true"; then
+  AC_CONFIG_SUBDIRS([lalframe])
+fi
+
+if test "$lalmetaio" = "true"; then
+  AC_CONFIG_SUBDIRS([lalmetaio])
+fi
+
+if test "$lalburst" = "true"; then
+  AC_CONFIG_SUBDIRS([lalburst])
+fi
+
+if test "$lalinspiral" = "true"; then
+  AC_CONFIG_SUBDIRS([lalinspiral])
+fi
+
+if test "$lalstochastic" = "true"; then
+  AC_CONFIG_SUBDIRS([lalstochastic])
+fi
+
+if test "$lalpulsar" = "true"; then
+  AC_CONFIG_SUBDIRS([lalpulsar])
+fi
+
+if test "$lalxml" = "true"; then
+  AC_CONFIG_SUBDIRS([lalxml])
+fi
+
 AC_CONFIG_SUBDIRS([lalapps])
 
 AC_OUTPUT

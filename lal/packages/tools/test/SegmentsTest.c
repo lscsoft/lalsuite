@@ -82,9 +82,7 @@ NRCSID( SEGMENTSTESTC, "$Id$" );
     "*FAIL* functional check for %s: %s\n", testname, reason ); nfailures++;
 
 
-/*-- Default debug level includes info messages (4), but not
-     memory checking (16), error messages (1), or warning messages (2) --*/
-int lalDebugLevel = 4;
+extern int lalDebugLevel;
 
 int main( int argc, char *argv[] )
 {
@@ -193,6 +191,10 @@ int main( int argc, char *argv[] )
 		        {{794285012,0}, 7},
 		        {{794285012,5}, 7},
 		        {{794285015,0}, 0} };
+
+  /*-- Default debug level includes info messages (4), but not
+     memory checking (16), error messages (1), or warning messages (2) --*/
+  lalDebugLevel = 4;
 
   /*------ Parse input line. ------*/
   if ( argc == 2 )

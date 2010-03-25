@@ -330,7 +330,7 @@ LALCheckMemoryLeaks()
 NRCSID( INJECTTESTC, "$Id$" );
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 #define MSGLEN 1024  /* Max. length of warning/info messages */
 #define FMAX (1.0e9) /* Max. frequency we will ever use (Hz) */
@@ -475,6 +475,8 @@ main(int argc, char **argv)
   UINT4 lineno;                    /* current line number */
   UINT4 seriesno;                  /* number of time series written */
   FILE *fp;                        /* generic file pointer */
+
+  lalDebugLevel = 0;
 
   /*******************************************************************
    *                                                                 *

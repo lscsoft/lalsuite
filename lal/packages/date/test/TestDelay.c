@@ -81,7 +81,7 @@ NRCSID( LALTESTDELAYC, "$Id$" );
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
 
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
 int main(int argc, char **argv)
 {
@@ -94,10 +94,11 @@ int main(int argc, char **argv)
   SkyPosition      source;
   REAL8            delay;
   REAL8            difference;
-  DetTimeAndASource     det1_and_source;
   /* TwoDetsTimeAndASource dets_and_source; */
   LALPlaceAndGPS        det1_and_gps;
   /* LALPlaceAndGPS        det2_and_gps; */
+
+  lalDebugLevel = 0;
 
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
@@ -191,20 +192,14 @@ int main(int argc, char **argv)
   det1_and_gps.p_detector = &detector1;
   det1_and_gps.p_gps      = &gps;
 
-  det1_and_source.p_det_and_time = &det1_and_gps;
-  det1_and_source.p_source       = &source;
-
-  LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
-  if (stat.statusCode && lalDebugLevel > 0)
+  delay = XLALTimeDelayFromEarthCenter(detector1.location, source.longitude, source.latitude, &gps);
+  if (XLAL_IS_REAL8_FAIL_NAN(delay))
     {
       fprintf(stderr,
-              "TestDelay: LALTimeDelayFromEarthCenter() failed, line %i, %s\n",
+              "TestDelay: XLALTimeDelayFromEarthCenter() failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&stat);
-      return stat.statusCode;
+      return 1;
     }
-  if (lalDebugLevel > 2)
-    REPORTSTATUS(&stat);
 
   /*
    * Expect delay to be roughly c/R, where c=speed of light,

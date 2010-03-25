@@ -3,7 +3,7 @@ stochastic.py - SGWB Standalone Analysis Pipeline
               - Pipeline DAG Driver Script Classes
 
 Copyright (C) 2004-2006 Adam Mercer
- 
+
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
 Free Software Foundation; either version 2 of the License, or (at your
@@ -41,8 +41,8 @@ class StochasticError(exceptions.Exception):
 
 class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_stochastic job used by the stochastic pipeline. The static 
-  options are read from the section [stochastic] in the ini file.  The 
+  A lalapps_stochastic job used by the stochastic pipeline. The static
+  options are read from the section [stochastic] in the ini file.  The
   stdout and stderr from the job are directed to the logs directory.
   The path to the executable and the universe is determined from the ini
   file.
@@ -325,14 +325,14 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__server = None
     self.__output = None
     self.__job = job
-   
+
   def __set_output(self):
     """
     Private method to set the file to write the cache to. Automaticaly set
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end and self.__observatory:
-      self.__output = self.__job.get_cache_dir() + '/' + self.__observatory + '-'  
+      self.__output = self.__job.get_cache_dir() + '/' + self.__observatory + '-'
       self.__output += str(self.__start) + '-' + str(self.__end) + '.cache'
       self.add_output_file(self.__output)
 
@@ -356,8 +356,8 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_observatory(self,obs):
     """
-    Set the IFO to retrieve data for. Since the data from both Hanford 
-    interferometers is stored in the same frame file, this takes the first 
+    Set the IFO to retrieve data for. Since the data from both Hanford
+    interferometers is stored in the same frame file, this takes the first
     letter of the IFO (e.g. L or H) and passes it to the --observatory option
     of LSCdataFind.
     @param obs: IFO to obtain data for.

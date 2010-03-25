@@ -23,7 +23,7 @@ class InspiralError(exceptions.Exception):
 #############################################################################
 
 
-class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   An inspiral analysis job captures some of the common features of the specific
   inspiral jobs that appear below.  Spcecifically, the universe and exec_name
@@ -360,6 +360,55 @@ class ThincaToCoincJob(InspiralAnalysisJob):
     """
     self.add_opt('simulation', None)
 
+class HWinjPageJob(InspiralAnalysisJob):
+  """
+  A HWinjPageJob, runs the hardware injection page script on the
+  output of the pipeline
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'hwinjscript'
+    sections = ['hwinjpage']
+    extension = 'html'
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+#    self.add_condor_cmd('getenv', 'True')
+    self.__gps_start_time = None
+    self.__gps_end_time = None
+    # overwrite standard log file names
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+
+  def set_experiment_start_time(self, experiment_start_time):
+    """
+    Sets the experiment-start-time option. This is a required option.
+    @experiment_start_time: gps start time of the experiment the thinca_to_coinc
+    job is in.
+    """
+    self.add_opt('gps-start-time', experiment_start_time)
+    self.__gps_start_time = experiment_start_time
+
+  def set_experiment_end_time(self, experiment_end_time):
+    """
+    Sets the experiment-end-time option. This is a required option.
+    @experiment_end_time: gps end time of the experiment the thinca_to_coinc
+    job is in.
+    """
+    self.add_opt('gps-end-time', experiment_end_time)
+    self.__gps_end_time = experiment_end_time
+
+  def get_experiment_start_time(self, experiment_start_time):
+    """
+    Returns the value of the experiment-start-time option.
+    """
+    return self.__gps_start_time
+
+  def get_experiment_end_time(self, experiment_end_time):
+    """
+    Returns the value of the experiment-end-time option.
+    """
+    return self.__gps_start_time
 
 class SireJob(InspiralAnalysisJob):
   """
@@ -454,6 +503,26 @@ class ChiaJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class CohireJob(InspiralAnalysisJob):
+  """
+  A lalapps_cohire job used by the inspiral pipeline. The stdout and stderr from
+  the job are directed to the logs directory. The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'cohire'
+    sections = ['cohire']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+    # cohire currently doesn't take GPS start/end times
+    self.set_stdout_file('logs/cohire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/cohire-$(macroifo)-$(cluster)-$(process).err')
+
+
 class InspInjFindJob(InspiralAnalysisJob):
   """
   An inspinjfind job. The static options are read from the [inspinjfind]
@@ -476,7 +545,7 @@ class InspInjFindJob(InspiralAnalysisJob):
 #############################################################################
 
 
-class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
   """
   An InspiralNode runs an instance of the inspiral code in a Condor DAG.
   """
@@ -487,26 +556,11 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     opts = job.get_opts()
-    
+
     if ("pad-data" in opts) and int(opts['pad-data']):
-      self.__pad_data = int(opts['pad-data'])
-    else:
-      self.__pad_data = None
+      self.set_pad_data(int(opts['pad-data']))
 
     self.__zip_output = ("write-compress" in opts)
-
-  def set_pad_data(self, pad):
-    """
-    Set the pad data value for this node 
-    """
-    self.__pad_data = pad
-    self.add_var_opt('pad-data', pad)
-
-  def get_pad_data(self):
-    """
-    Returns the injection file
-    """
-    return self.__pad_data
 
   def set_zip_output(self,zip):
     """
@@ -580,9 +634,9 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     set the data_start_time and data_end_time
     """
     if self.get_pad_data():
-      pipeline.AnalysisNode.set_data_start(self,self.get_start() - \
+      self.set_data_start(self.get_start() - \
           self.get_pad_data())
-      pipeline.AnalysisNode.set_data_end(self,self.get_end() + \
+      self.set_data_end(self.get_end() + \
           self.get_pad_data())
 
 #############################################################################
@@ -1071,7 +1125,6 @@ class ThincaNode(InspiralAnalysisNode):
     self.add_output_file(filename)
     return filename
 
-
 class ThincaToCoincNode(InspiralAnalysisNode):
   """
   A ThincaToCoincNode runs an instance of a ThincaToCoincJob 
@@ -1188,6 +1241,42 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     Returns the time_slide_file.
     """
     return self.__time_slide_file
+
+class HWinjPageNode(InspiralAnalysisNode):
+  """
+  A HWinjPageNode runs an instance of a HWinjPageJob 
+  in a DAG.
+  """
+  def __init__(self, job):
+    """
+    @job: A HWinjPageJob.
+    """
+    InspiralAnalysisNode.__init__(self, job)
+    self.__input_cache = None
+    self.__cache_string = None
+    self.__outfile=None
+
+  def set_input_cache(self, input_cache_name):
+    """
+    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
+    to read.
+    """
+    self.add_file_opt('cache-file',input_cache_name)
+    self.__input_cache = input_cache_name
+
+  def set_cache_string(self,cache_string):
+    """
+    @cache_string: pattern to match files within cache
+    """
+    self.add_var_opt('cache-pattern',cache_string)
+    self.__cache_string=cache_string
+
+  def set_output_file(self,outfile_name):
+    """
+    @outfile_name: Name of hw injection page
+    """
+    self.add_var_opt('outfile',outfile_name)
+    self.__outfile=outfile_name
 
 
 class SireNode(InspiralAnalysisNode):
@@ -1618,6 +1707,169 @@ class ChiaNode(InspiralAnalysisNode):
     return filename
 
 
+class CohireNode(InspiralAnalysisNode):
+  """
+  A CohireNode runs an instance of the inspiral cohire code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_cohire.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__ifos  = None
+    self.__ifo_tag = None
+    self.__num_slides = None
+    self.__injection_file = None
+    self.__output_tag = None
+
+  def set_ifos(self, ifos):
+    """
+    Add the list of interferometers 
+    """
+    self.__ifos = ifos
+
+  def get_ifos(self):
+    """
+    Returns the ifos
+    """
+    return self.__ifos
+  def set_slides(self, slides):
+    """
+    Add the number of time slides
+    """
+    self.__num_slides = slides
+    self.add_var_opt('num-slides',slides)
+
+  def get_slides(self):
+    """
+    Returns the number of slides
+    """
+    return self.__num_slides
+
+  def set_inj_file(self, file):
+    """
+    Sets the injection file
+    """
+    if file:
+      self.__injection_file = file
+      self.add_var_opt('injection-file', file)
+
+  def get_inj_file(self):
+    """
+    Gets the injection file
+    """
+    return self.__injection_file
+
+  def set_start(self, start):
+    """
+    Sets GPS start time
+    """
+    self.__start = start
+
+  def get_start(self):
+    """
+    Gets GPS start time
+    """
+    return self.__start
+
+  def set_end(self, end):
+    """
+    Sets GPS end time
+    """
+    self.__end = end
+
+  def get_end(self):
+    """
+    Gets GPS end time
+    """
+    return self.__end
+
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    """
+    self.__ifo_tag = ifo_tag
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
+
+  def set_glob(self, file_glob):
+    """
+    Sets the glob name
+    """
+    self.add_var_opt('glob',file_glob)
+
+  def set_input(self, input_file):
+    """
+    Sets the input file name
+    """
+    self.add_var_opt('input',input_file)
+
+  def set_output_tag(self):
+    fname = self.job().get_exec_name().upper()
+    if self.get_slides(): fname += "_SLIDE"
+    if self.get_inj_file():
+      fname += "_" + \
+          self.get_inj_file().split("/")[-1].split(".")[0].split("-")[1]
+      fname += "_FOUND"
+    if self.get_ifo_tag(): fname += "_" + self.get_ifo_tag()
+    if self.get_user_tag(): fname += "_" + self.get_user_tag()
+    self.__output_tag = fname
+
+  def get_output_tag(self):
+    return self.__output_tag
+
+  def get_output(self):
+    """
+    get the name of the output file
+    """
+    if not self.get_ifos():
+      raise InspiralError, "ifos have not been set"
+
+    self.set_output_tag()
+    fname = self.get_ifos() + '-' + self.get_output_tag()
+
+    if (self.get_start() and not self.get_end()) or \
+           (self.get_end() and not self.get_start()):
+      raise InspiralError, "If one of start and end is set, "\
+            "both must be"
+
+    if (self.get_start()):
+      duration=self.get_end() - self.get_start()
+      fname += "-" + str(self.get_start()) + "-" + str(duration)
+
+    fname += ".xml"
+
+    return fname
+
+  def get_missed(self):
+    """
+    get the name of the missed file
+    """
+    if self.get_inj_file():
+      return self.get_output().replace("FOUND", "MISSED")
+    else:
+      return None
+
+  def finalize(self):
+    """
+    set the output options
+    """
+    output = self.get_output()
+
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
+
+    if self.get_inj_file():
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
+
+
 class InspInjFindNode( InspiralAnalysisNode ):
   """
   An InspInjFindNode runs an instance of the InspInjJob in a
@@ -2019,6 +2271,12 @@ class MiniFollowupsJob(InspiralPlottingJob):
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
+  def set_time_slides(self):
+    """
+    Turns on the --time-slides argument.
+    """
+    self.add_opt('time-slides', None)
+
 
 class MiniFollowupsNode(InspiralPlottingNode):
   """
@@ -2036,6 +2294,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
     self.__input_xml = None
     self.__input_xml_summary = None
     self.__output_html_table = None
+    self.__table_name = None
 
   def set_cache_file(self, cache_file):
     """
@@ -2127,6 +2386,19 @@ class MiniFollowupsNode(InspiralPlottingNode):
     Return the output_html_table that's set.
     """
     return self.__output_html_table
+
+  def set_table_name(self, table_name):
+    """
+    Sets the table-name argument.
+    """
+    self.add_var_opt( 'table-name', table_name )
+    self.__table_name = table_name
+
+  def get_table_name(self):
+    """
+    Return the table_name that's set.
+    """
+    return self.__table_name
 
 
 #############################################################################
@@ -2295,10 +2567,12 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__extract_to_xml = None
+    self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
     self.__sim_type = None
     self.__output_format = None
+    self.__columns = None
 
   def set_extract_to_xml(self, xml_filename):
     """
@@ -2312,6 +2586,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets xml-filename if extract-to-xml is set.
     """
     return self.__extract_to_xml
+
+  def set_extract_to_database(self, database_filename):
+    """
+    Sets the extract-to-database option.
+    """
+    self.add_var_opt('extract-to-database', database_filename)
+    self.__extract_to_database = database_filename
+
+  def get_extract_to_database(self):
+    """
+    Gets database-filename if extract-to-database is set.
+    """
+    return self.__extract_to_database
 
   def set_exclude_coincs(self, exclude_coincs):
     """
@@ -2365,6 +2652,19 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     Gets the output-format option.
     """
     return self.__output_format
+
+  def set_columns(self, columns):
+    """
+    Sets the columns option.
+    """
+    self.add_var_opt('columns', columns)
+    self.__columns = columns
+
+  def get_columns(self):
+    """
+    Gets the columns option.
+    """
+    return self.__columns
 
 
 class PrintLCNode(LigolwCBCPrintNode):
@@ -2427,23 +2727,6 @@ class PrintMissedNode(LigolwCBCPrintNode):
     @job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
-    self.__instrument_time = None
-
-  def set_instrument_time(self, instruments):
-    """
-    Sets instrument-time options. If instruments
-    is a set, will convert to a sorted string.
-    """
-    if isinstance(instruments, set) or isinstance(instruments, frozenset):
-      intruments = ','.join(sorted(instruments))
-    self.add_var_opt('instrument-time', instruments)
-    self.__instrument_time = instruments
-
-  def get_instrument_time(self):
-    """
-    Gets instrument-time.
-    """
-    return self.__instrument_time
 
 
 class PlotSlidesJob(pipeline.SqliteJob):
@@ -2544,6 +2827,245 @@ class PlotIfarNode(pipeline.SqliteNode):
     Gets datatype.
     """
     return self.__datatype
+
+#############################################################################
+class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+  """
+  A mvsc_get_doubles job
+  """
+  def __init__(self, cp, dax = False):
+    """
+    cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_get_doubles"
+    universe = "vanilla"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
+  """
+  node for mvsc_get_doubles jobs
+  """
+  def __init__(self, job):
+    """
+    job: instance of MvscGetDoublesJob
+    """
+    pipeline.CondorDAGNode.__init__(self, job)
+    pipeline.AnalysisNode.__init__(self)
+    self.number = 10
+    self.instruments = None
+    self.trainingstr = "training"
+    self.testingstr = "testing"
+    self.zerolagstr = "zerolag"
+    self.databases = None
+    self.final = 0
+
+  def set_number(self, number):
+    """
+    number: number of round robins to perform
+    """
+    self.number = number
+
+  def set_instruments(self, instruments):
+    """
+    instruments: comma deliminated string of intruments to analyze
+    """
+    self.instruments = instruments
+
+  def set_trainingstr(self, trainingstr):
+    """
+    trainingstr: string to use in naming training files
+    """
+    self.trainingstr = trainingstr
+
+  def set_testingstr(self, testingstr):
+    """
+    testingstr: string to use in naming testing files
+    """
+    self.testingstr = testingstr
+
+  def set_zerolagstr(self, zerolagstr):
+    """
+    zerolagstr: string to use in naming zerolag files
+    """
+    self.zerolagstr = zerolagstr
+
+  def set_databases(self, databases):
+    """
+    databases: list of databases to work on
+    """
+    self.databases = databases
+
+  def finalize(self):
+    """
+    finalize the mvsc_get_doubles node
+    """
+    if self.final:
+      return
+    self.final = 1
+    self.add_var_opt("instruments", self.instruments)
+    self.add_var_opt("trainingstr", self.trainingstr)
+    self.add_var_opt("testingstr", self.testingstr)
+    self.add_var_opt("zerolagstr", self.zerolagstr)
+    for database in self.databases:
+      self.add_file_arg(database)
+    ifos = self.instruments.strip().split(',')
+    ifos.sort()
+    self.out_file_group = {}
+    for i in range(self.number):
+      trainingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.trainingstr) + '.pat'
+      testingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '.pat'
+      infoname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '_info.pat'
+      sprname = trainingname.replace('_training.pat', '.spr')
+      self.out_file_group[i] = ((trainingname), (testingname))
+      self.add_output_file(trainingname)
+      self.add_output_file(testingname)
+      self.add_output_file(infoname)
+      self.add_output_file(sprname)
+    self.zerolag_file = [''.join(ifos) + '_' + str(self.zerolagstr) + '.pat']
+    self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '.pat')
+    self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '_info.pat')
+
+class MvscTrainForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+  """
+  A mvsc_train_forest job
+  """
+  def __init__(self, cp, dax = False):
+    """
+    cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_train_forest"
+    universe = "vanilla"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
+  """
+  node for MvscTrainForestJobs
+  """
+  def __init__(self, job):
+    """
+    job: instance of MvscTrainForestJob
+    """
+    pipeline.CondorDAGNode.__init__(self, job)
+    pipeline.AnalysisNode.__init__(self)
+    self.final = 0
+
+  def add_training_file(self, trainingfile):
+    """
+    trainingfile: take a single file to train with
+    """
+    self.trainingfile = trainingfile
+    self.add_input_file(self.trainingfile)
+
+  def finalize(self):
+    """
+    finalize the mvsc_train_forest node
+    """
+    if self.final:
+      return
+    self.final = 1
+    self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
+    self.add_file_arg("-a 4 -n 100 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
+    self.add_output_file(self.trainedforest)
+
+class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+  """
+  a mvsc_use_forest job
+  """
+  def __init__(self, cp, dax = False):
+    """
+    cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_use_forest"
+    universe = "vanilla"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MvscUseForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
+  """
+  node for MvscUseForestJobs
+  """
+  def __init__(self, job):
+    """
+    job: instance of MvscUseForestJob
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.final = 0
+
+  def set_trained_file(self, trainedforest):
+    """
+    trainedforest: the trained forest file
+    """
+    self.trainedforest = trainedforest
+    self.add_input_file(trainedforest)
+
+  def set_file_to_rank(self, file_to_rank):
+    """
+    file_to_rank: the file to rank using the trained forest file
+    """
+    self.file_to_rank = file_to_rank
+    self.add_input_file(file_to_rank)
+
+  def finalize(self):
+    """
+    finalize the MvscUseForestNode
+    """
+    if self.final:
+      return
+    self.final = 1
+    self.ranked_file = self.file_to_rank.replace('.pat','.dat')
+    self.add_file_arg("-A -a 4 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
+    self.add_output_file(self.ranked_file)
+
+class MvscUpdateSqlJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+  """
+  A mvsc_update_sql job
+  """
+  def __init__(self, cp, dax = False):
+    """
+    cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_update_sql"
+    universe = "vanilla"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MvscUpdateSqlNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
+  """
+  node for MvscUpdateSqlJobs
+  """
+  def __init__(self, job):
+    """
+    job: instance of MvscUpdateSqlJob
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
 
 ##############################################################################
 # some functions to make life easier later

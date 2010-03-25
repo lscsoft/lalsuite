@@ -22,7 +22,7 @@ int isnan(double value);
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 #include "series.h"
 
 RCSID( "$Id$" );
@@ -37,9 +37,9 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 
-char *get_next_line( char *line, size_t size, FILE *fp )
+static char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
   do
@@ -48,7 +48,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
   return s;
 }
 
-int read_freq_series( struct series *ser, const char *fname )
+static int read_freq_series( struct series *ser, const char *fname )
 {
   float a, b;
   char line[256];
@@ -58,10 +58,10 @@ int read_freq_series( struct series *ser, const char *fname )
   n = 0;
 
   printf("filename: %s\n", fname);
-  
+
   ser->dom = Trans;
   ser->type = FR_VECT_8C;
-  
+
   /* count lines */
   while ( get_next_line( line, sizeof( line ), fp ) )
       ++n;
@@ -107,7 +107,7 @@ int read_freq_series( struct series *ser, const char *fname )
       ser->data[2*n+1] = 1;
     }
     else
-    {      
+    {
       ser->data[2*n]   = a * cos( b );
       ser->data[2*n+1] = a * sin( b );
     }
@@ -142,6 +142,8 @@ int main( int argc, char *argv[] )
   int sec = 0;
   int arg, arg2;
   char fname[256];
+
+  lalDebugLevel = 0;
 
   /* parse arguments */
   if ( argc == 1 )
@@ -219,9 +221,9 @@ int main( int argc, char *argv[] )
       USAGE( argv[0] );
     }
     else if (strstr( argv[arg], "-VER" ) )
-      { 
+      {
 	/* print version information and exit */
-        fprintf( stdout, "mkcalref\n" 
+        fprintf( stdout, "mkcalref\n"
             "CVS Version: " CVS_ID_STRING "\n"
 		 "CVS Tag: " CVS_NAME_STRING "\n" );
 	exit(0);
@@ -243,9 +245,9 @@ int main( int argc, char *argv[] )
       }
       /* get R and C data and metadata */
       R.name = Rname;
-      R.unit = "strain/ct";
+      strncpy(R.unit, "strain/ct", sizeof(R.unit));
       C.name = Cname;
-      C.unit = "ct/strain";
+      strncpy(C.unit, "ct/strain", sizeof(C.unit));
       R.tbeg.gpsSeconds = C.tbeg.gpsSeconds = sec;
       R.tbeg.gpsNanoSeconds = C.tbeg.gpsNanoSeconds = 0;
       code = read_freq_series( &R, argv[arg] );
@@ -292,7 +294,7 @@ int main( int argc, char *argv[] )
       {
         fprintf( stderr, "Error: could not write file %s\n", Cilwd );
         return 1;
-      }      
+      }
 #endif
       if ( !channel ) {
 	fprintf( stderr, "Error: No channel name specified \n" );
@@ -300,7 +302,7 @@ int main( int argc, char *argv[] )
       }
       if ( ! frfile )
       {
-        
+
         int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
         sprintf( fname, "%c-%s_CAL_REF_%s_%s_%s-%d-%d.gwf", *ifo, ifo, channel, run, ver,
             R.tbeg.gpsSeconds, dt );
@@ -318,9 +320,9 @@ int main( int argc, char *argv[] )
       /* information output */
       for ( arg2 = 0; arg2 < argc; ++arg2 ) {
 	printf( "%s ", argv[arg2] );
-      } 
+      }
       printf( "\nVersion used: %s\n", CVS_ID_STRING);
-      printf( "Output filename: %s\n", fname); 
+      printf( "Output filename: %s\n", fname);
     }
   }
 

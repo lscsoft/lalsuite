@@ -134,7 +134,7 @@ static void SDensity (REAL8 *dEgw, REAL8 nu)
   return;
   }
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int main ()
  {
   static LALStatus status;
@@ -143,6 +143,8 @@ int main ()
   AstroOmegaSourceParams sourcep;
   AstroOmegaCosmoParams cosmop;
   REAL8 omegaz, nu, test;
+
+  lalDebugLevel = 0;
 
   //define here the model parameters
   //cosmological parameters

@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <FrameL.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -35,6 +34,7 @@
 #include <lal/RealFFT.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/FrameCache.h>
+#include <lal/LALFrameL.h>
 
 #define TRUE       1
 #define FALSE      0
@@ -73,12 +73,12 @@ int main( int argc, char *argv[] )
     static LALStatus  status;
     FrStream         *stream = NULL;
     FrChanIn          channelIn;
-    REAL4             lowfreq, highfreq, norm;
-    REAL4Vector      *spectrum = NULL; 
+    REAL4             lowfreq, highfreq=0, norm;
+    REAL4Vector      *spectrum = NULL;
     INT4              i, j, numPoints=4096, inarg = 1, points = 0, navg = 0, nmax;
     CHAR             *dirname;
     REAL4TimeSeries   series;
-    LIGOTimeGPS       epoch;
+    LIGOTimeGPS       epoch = {0,0};
     BOOLEAN           epochSet = FALSE;
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
@@ -95,7 +95,7 @@ int main( int argc, char *argv[] )
     highpassParam.nMax = 4;
     highpassParam.f1 = -1.0;
     highpassParam.a1 = -1.0;
-    
+
     /*******************************************************************
     * PARSE ARGUMENTS (arg stores the current position)               *
     *******************************************************************/
@@ -104,7 +104,7 @@ int main( int argc, char *argv[] )
         LALPrintError( USAGE, *argv );
         return 0;
     }
-    
+
     while ( inarg < argc ) {
         /* Parse output file option. */
         if ( !strcmp( argv[inarg], "--help" ) ) {
@@ -207,21 +207,21 @@ int main( int argc, char *argv[] )
     /* allocate time series */
     points = (numPoints/2)*(navg+1);
     LALCreateVector( &status, &series.data, points);
-    LALSCreateVector( &status, &spectrum, numPoints/2 + 1 ); 
+    LALSCreateVector( &status, &spectrum, numPoints/2 + 1 );
 
     /* get the data */
     LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream);
 
     {
         RealFFTPlan *pfwd = NULL;   /* FFTW uses a plan to assess best FFT method */
-        REAL4Vector hvec;       
+        REAL4Vector hvec;
         COMPLEX8Vector *Hvec = NULL;
 
         /* Create an FFTW plan for forward REAL FFT */
         LALCreateForwardRealFFTPlan( &status, &pfwd, numPoints, 0);
 
         /* Create C (complex) vector of length n/2+1 to hold FFT */
-        LALCCreateVector( &status, &Hvec, numPoints/2 + 1 ); 
+        LALCCreateVector( &status, &Hvec, numPoints/2 + 1 );
 
         /* initialize everything */
         for (i=0 ; i<numPoints/2+1 ;i++){
@@ -231,7 +231,7 @@ int main( int argc, char *argv[] )
         hvec.data = series.data->data;
 
         /* filter it if the highpass parameters were set */
-        if (highpass){ 
+        if (highpass){
             fprintf(stderr,"Doing higpass\n");
             LALButterworthREAL4TimeSeries(&status, &series, &highpassParam);
         }
@@ -239,7 +239,7 @@ int main( int argc, char *argv[] )
         /* compute the average spectrum */
         for (i=0 ;  i<navg ; i++){
             REAL4 re, im;
-            
+
             /* do a forward FFT and print results to file dft.dat */
             LALForwardRealFFT( &status, Hvec, &hvec, pfwd );
 
@@ -250,7 +250,7 @@ int main( int argc, char *argv[] )
             }
         }
         /* Get rid of the FFT plans */
-        LALDestroyRealFFTPlan( &status, &pfwd ); 
+        LALDestroyRealFFTPlan( &status, &pfwd );
 
         /* get rid of the vectors */
         LALCDestroyVector( &status, &Hvec );
@@ -265,7 +265,7 @@ int main( int argc, char *argv[] )
     /* close the frame stream */
     LALFrClose( &status, &stream );
 
-    /* print out the spectrum */ 
+    /* print out the spectrum */
     if (highpass) {
         nmax=(INT4)(highfreq*((REAL4)numPoints*series.deltaT));
     }

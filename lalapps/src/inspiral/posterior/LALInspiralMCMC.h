@@ -276,6 +276,7 @@ tagLALMCMCInput
   SimInspiralTable			*injectionTable;
   REAL8FFTPlan *fwdplan;
   REAL8FFTPlan *revplan;
+  REAL4FFTPlan *likelihoodPlan;
   REAL8Window *window; /* Window for FFTing the data */
   LIGOTimeGPS epoch;
   REAL4   fLow;
@@ -336,8 +337,8 @@ tagLALMCMCInput
   UINT4 burninMaxNumber;  /* maximum number of trials */
 
 	/* Parameter for nested sampling */
-	UINT4 Nlive;
-	LALMCMCParameter **Live;
+  UINT4 Nlive;
+  LALMCMCParameter **Live;
 
 }  LALMCMCInput;
 /* </lalVerbatim>  */
@@ -465,6 +466,12 @@ void XLALMCMCRotateSky(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
 	);
+
+void XLALMCMCJumpSingle(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter,
+  gsl_matrix       *covMat
+);
 
 int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
 

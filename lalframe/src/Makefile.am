@@ -7,8 +7,10 @@ lalframeinclude_HEADERS = \
 	FrameCalibration.h \
 	FrameData.h \
 	FrameStream.h \
+	LALFrameConfig.h \
 	LALFrameIO.h \
-	LALFrameL.h
+	LALFrameL.h \
+	LALFrameVCSInfo.h
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
@@ -19,11 +21,22 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	FrameStreamDef.h \
-	LALFrameIO.c
+	LALFrameIO.c \
+	LALFrameVCSInfo.c
 
-CLEANFILES = lalframe-user-env.sh lalframe-user-env.csh
-sysconf_DATA = lalframe-user-env.sh lalframe-user-env.csh
-BUILT_SOURCE = lalframe-user-env.sh lalframe-user-env.csh
+CLEANFILES = \
+	lalframe-user-env.sh \
+	lalframe-user-env.csh
+
+sysconf_DATA = \
+	lalframe-user-env.sh \
+	lalframe-user-env.csh
+
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALFrameVCSInfo.h \
+	lalframe-user-env.sh \
+	lalframe-user-env.csh
 
 lalframe-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -64,13 +77,23 @@ lalframe-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
+	git_version \
 	FrameSeries.m4 \
 	FrameSeriesRead.m4 \
-	FrameSeriesWrite.m4
+	FrameSeriesWrite.m4 \
+	LALFrameConfig.h.in \
+	LALFrameVCSInfo.h.in
 
 MAINTAINERCLEANFILES = FrameSeries.c
 
 FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 	cd $(srcdir) && m4 FrameSeries.m4 > FrameSeries.c
+
+LALFrameVCSInfo.h: ._vcsinfo
+
+._vcsinfo: git_version LALFrameConfig.h
+	@echo "creating LALFrameVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALFrame $$sourced $$buildd
 
 @LAL_HEADER_LINK@

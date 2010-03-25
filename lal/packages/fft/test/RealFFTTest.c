@@ -91,7 +91,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 0;
+extern int lalDebugLevel;
 int verbose       = 0;
 UINT4 m_ = 1; /* number of random trials */
 UINT4 n_ = 0; /* size of each transform  */
@@ -147,6 +147,8 @@ int main( int argc, char *argv[] )
   UINT4 s = 0;
 
   FILE *fp;
+
+  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
   m = m_;

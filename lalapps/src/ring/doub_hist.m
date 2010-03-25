@@ -1,9 +1,11 @@
-function doub_hist( veto_level, coinctype, ifo1, ifo2, ifo1bgfile, ifo2bgfile, nonbgtype, ifo1nonbgfile, ifo2nonbgfile )
+function doub_hist( veto_level, coinctype, ifotime, ifo1, ifo2, ifo1bgfile, ifo2bgfile, nonbgtype, ifo1nonbgfile, ifo2nonbgfile )
 
 %
-% veto_level = 'NOVETO','CAT2','CAT23'
+% veto_level = 'CAT2','CAT23', 'CAT234'
 %
 % coinctype = 'doub', 'trip'
+%
+% ifotime = 'doub', 'trip'
 %
 % ifo1, ifo2 = 'H1', 'H2', 'L1'
 %
@@ -22,7 +24,7 @@ function doub_hist( veto_level, coinctype, ifo1, ifo2, ifo1bgfile, ifo2bgfile, n
   eval(['ifo2nonbg=load(''' ifo2nonbgfile ''');'])
 
   % call function which counts the number of events per timeslide and zero lag and makes a histogram
-  eval(['plothist(veto_level, coinctype, ifo1, ifo2, ''' ifo1bgfile ''', nonbgtype, ''' ifo1nonbgfile ''');'])
+  eval(['plothist(veto_level, coinctype, ifotime, ifo1, ifo2, ''' ifo1bgfile ''', nonbgtype, ''' ifo1nonbgfile ''');'])
 
   % calculate the ranking for background based on triple det stat
   bgdetstat = min(2.*ifo1bg.snr + 2.2, (min(2.*ifo2bg.snr + 2.2, ifo1bg.snr + ifo2bg.snr)));
@@ -31,7 +33,7 @@ function doub_hist( veto_level, coinctype, ifo1, ifo2, ifo1bgfile, ifo2bgfile, n
   nonbgdetstat = min(2.*ifo1nonbg.snr + 2.2, (min(2.*ifo2nonbg.snr + 2.2, ifo1nonbg.snr + ifo2nonbg.snr)));
 
   % call another function that plots cumulative hist
-  plotcumhist(veto_level, coinctype, ifo1, ifo2, bgdetstat, nonbgtype, nonbgdetstat);
+  plotcumhist(veto_level, coinctype, ifotime, ifo1, ifo2, bgdetstat, nonbgtype, nonbgdetstat);
 
   % call another function that plots DT vs F plots for timeslides
-  eval(['background_param_plots(veto_level, coinctype, ifo1, ifo2,'''  ifo1bgfile ''',''' ifo2bgfile ''');'])
+  eval(['background_param_plots(veto_level, coinctype, ifotime, ifo1, ifo2,'''  ifo1bgfile ''',''' ifo2bgfile ''');'])

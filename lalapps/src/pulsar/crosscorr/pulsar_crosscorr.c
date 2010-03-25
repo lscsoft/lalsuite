@@ -136,7 +136,7 @@ int main(int argc, char *argv[]){
   /*estimator arrays */
   COMPLEX16Vector *gplus = NULL, *gcross = NULL;
   static REAL8Vector *aplussq1, *aplussq2, *acrossq1, *acrossq2;
-  REAL8Vector *galphasq;
+  REAL8Vector *galphasq, *galphare, *galphaim;
   INT4 i;
 
   CrossCorrAmps amplitudes;
@@ -474,7 +474,7 @@ int main(int argc, char *argv[]){
   } else {
     amplitudes.Aplussq = SQUARE((1.0 + uvar_cosi*uvar_cosi)/2.0);
     amplitudes.Acrosssq = SQUARE(uvar_cosi);
-    amplitudes.AplusAcross = (uvar_cosi/2) + (CUBE(uvar_cosi)/2);
+    amplitudes.AplusAcross = (uvar_cosi/2.0) + (CUBE(uvar_cosi)/2.0);
   }
 
   /* polarisation angle */
@@ -492,7 +492,6 @@ int main(int argc, char *argv[]){
   } else {
     nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
   }
-
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   rho->length = nParams;
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
@@ -522,6 +521,13 @@ int main(int argc, char *argv[]){
   galphasq->length = nParams;
   galphasq->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
+  galphare = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  galphare->length = nParams;
+  galphare->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
+
+  galphaim = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  galphaim->length = nParams;
+  galphaim->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
   /*initialise detector choice*/
   detChoice = uvar_detChoice;
@@ -818,7 +824,6 @@ int main(int argc, char *argv[]){
 	     gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
 
 
-
  	     LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),
 		  	    &status);
@@ -831,13 +836,13 @@ int main(int argc, char *argv[]){
  	   	    Ualpha function*/
 	     if (uvar_averagePsi && uvar_averageIota) {
 		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
-						    phase1, phase2, *beamfns1, *beamfns2, 
+						    phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2, 
 						    sigmasq->data[ualphacounter]),
 			       &status);
 
 	     } else {
 		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
-						 phase1, phase2, *beamfns1, *beamfns2,
+						 phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2,
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 	     }
@@ -856,6 +861,7 @@ int main(int argc, char *argv[]){
 			&status);
 
 	     rho->data[counter] += tmpstat;
+
 	     /* calculate standard deviation of rho (Eq 4.6) */
 	     LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
@@ -864,9 +870,10 @@ int main(int argc, char *argv[]){
 
 /*
 for (i=0; i < (INT4)ualpha->length; i++) {
-printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].re, yalpha->data[i].im);
+printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualpha->data[i].im);
 }
 */
+
 
 	     if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
 	 	   LAL_CALL( LALCalculateEstimators( &status, &tmpstat, &tmpstat2, &tmpstat3, &tmpstat4, yalpha, gplus, gcross, sigmasq), &status);
@@ -879,6 +886,10 @@ printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 		    	
 		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
+
+		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
+		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
+
 		  }
 		   
 	     }
@@ -889,6 +900,9 @@ printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 
  		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
+		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
+		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
+
                   }
 	  }
           counter++;
@@ -954,11 +968,11 @@ printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].
 		q1_current, q2_current, n_current, rho->data[counter]);
 	
 		if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
-		   fprintf(estimator, "%1.5f %e %e %e \n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter])), galphasq->data[counter]); 
+		   fprintf(estimator, "%1.5f %e %e %g %g %g\n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter])), galphasq->data[counter], galphare->data[counter], galphaim->data[counter]); 
 		}
 
 		if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
-		   fprintf(estimator, "%1.5f %g \n", f_current, galphasq->data[counter]);
+		   fprintf(estimator, "%1.5f %g %g %g\n", f_current, galphasq->data[counter], galphare->data[counter], galphaim->data[counter]);
 		}
 
 	        counter++;
@@ -1024,6 +1038,8 @@ printf("%f %f %f %f\n", ualpha->data[i].re, ualpha->data[i].im, yalpha->data[i].
       XLALDestroyREAL8Vector(acrossq1);
       XLALDestroyREAL8Vector(acrossq2);
    XLALDestroyREAL8Vector(galphasq);
+  XLALDestroyREAL8Vector(galphare);
+  XLALDestroyREAL8Vector(galphaim);
 
   if (!uvar_averagePsi) {
     LALFree(psi);
@@ -1260,7 +1276,7 @@ void GetBeamInfo(LALStatus *status,
   SFTListElement *sft = NULL;
   REAL8ListElement *freqtmp, *phasetmp;
   CrossCorrBeamFnListElement *beamtmp;
-  LIGOTimeGPS *epoch = NULL;
+  LIGOTimeGPS tgps;
 
   INITSTATUS (status, "GetBeamInfo", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1293,10 +1309,12 @@ void GetBeamInfo(LALStatus *status,
     AMcoef->a = XLALCreateREAL4Vector(1);
     AMcoef->b = XLALCreateREAL4Vector(1);
 
-    epoch = &(sft->sft.epoch);
+    /* get midpoint of sft */
+    tgps = sft->sft.epoch;
+    XLALGPSAdd(&tgps, tOffs);
+
     det = XLALGetSiteInfo (sft->sft.name); 
     ts->data[0] = sft->sft.epoch;
-
     /* note that this function returns the velocity at the
        mid-time of the SFTs -- should not make any difference */
 
@@ -1306,15 +1324,14 @@ void GetBeamInfo(LALStatus *status,
     detState->detector = *det;
 
     LALNewGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
-		     
     thisVel.data = detState->data[0].vDetector;
     thisPos.data = detState->data[0].rDetector;
 
 
-    LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, epoch, thisPoint,
+    LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, &tgps, thisPoint,
 				&thisVel);
 
-    LALGetSignalPhaseInSFT( status->statusPtr, &phase1, epoch, thisPoint,
+    LALGetSignalPhaseInSFT( status->statusPtr, &phase1, &tgps, thisPoint,
 			    &thisPos);
 
     freqtmp->val = freq1; 
@@ -1324,7 +1341,6 @@ void GetBeamInfo(LALStatus *status,
 
       beamtmp->beamfn.a = (AMcoef->a->data[0]);
       beamtmp->beamfn.b = (AMcoef->b->data[0]);
-    
 		
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);

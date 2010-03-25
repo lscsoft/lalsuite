@@ -12,8 +12,6 @@ Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                        print this message"
 helpmsg="$helpmsg
-  --with-m4=M4                  use GNU-m4 program M4 [m4]"
-helpmsg="$helpmsg
   --with-autoreconf=AUTORECONF  use autoreconf program AUTORECONF [autoreconf]"
 helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
@@ -23,8 +21,6 @@ helpmsg="$helpmsg
   --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
 helpmsg="$helpmsg
   --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
-helpmsg="$helpmsg
-  --include-deps                pass option --include-deps to automake [no]"
 
 # process args
 while test $# -gt 0 ; do
@@ -81,9 +77,18 @@ printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEAD
 printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
 printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
+# FIXME: autoreconf from Ubuntu 9.10 (and probably also from recent
+# Debian versions) automatically run libtoolize with the --copy option
+# therefore over writing the supplied libtool scripts with system
+# version. This can lead to unexpected build failures therefore to work
+# round this "feature" we set the LIBTOOLIZE enviroment variable to
+# point to the the true executable which bypasses the running of
+# libtoolize, this will not effect the vast majority of users and those
+# it will effect will know how to run libtoolize, if required.
+
 # generate build system
 echo "00boot: running autoreconf"
-$AUTORECONF || fail "autoreconf"
+LIBTOOLIZE=true $AUTORECONF || fail "autoreconf"
 
 # report success
 echo "00boot: success"

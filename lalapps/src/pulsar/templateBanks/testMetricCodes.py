@@ -37,12 +37,12 @@ debug = False
 
 ## ----- test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if not "LAL_DATA_PATH" in os.environ.keys():
-    if "LAL_PREFIX" in os.environ.keys():
-        os.environ["LAL_DATA_PATH"] = ( ".:%s/share/lal" % os.environ["LAL_PREFIX"] )
+    if "LALPULSAR_PREFIX" in os.environ.keys():
+        os.environ["LAL_DATA_PATH"] = ( ".:%s/share/lalpulsar" % os.environ["LALPULSAR_PREFIX"] )
     else:
-        print "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
-        print "to your ephemeris-directory (e.g. /usr/local/share/lal)"
-        print "This might indicate an incomplete LAL installation"
+        print "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
+        print "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+        print "This might indicate an incomplete LAL+LALPULSAR installation"
         sys.exit(1)
 
 ## ----- allow 'make test' to work from builddir != srcdir
@@ -348,7 +348,7 @@ if debug: print "FstatMetric_v2 output: g_ij = \n%s" % str(gF2_ij)
 relerr12 = compare_metrics ( gF1_ij, gF2_ij )
 print "relerr 1-2 = %e" % relerr12
 
-tolF = 0.10
+tolF = 0.15
 if ( relerr12 > tolF ):
     print ("\nRelative difference 'maxrel' in matrix-components exceeded tolerance %e!\n" % tolF );
     sys.exit(1)

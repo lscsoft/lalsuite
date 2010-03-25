@@ -23,17 +23,18 @@ include
 *******************************/
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 #include <getopt.h>
 #include <time.h>
+#include <math.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>

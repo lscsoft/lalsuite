@@ -30,7 +30,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/LIGOMetadataTables.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 #include <lal/PrintFTSeries.h>
@@ -39,7 +38,6 @@
 #include <lal/Date.h>
 
 #include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 
 /* flags for getopt_long */
 extern int vrbflg;
@@ -118,9 +116,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'v':
         /* version */
         fprintf(stderr, "lalapps_online_datafind:\n");
-        fprintf(stderr, "Git Id: %s\n", lalAppsVCSInfo.vcsId);
-        fprintf(stderr, "Git Tag: %s\n", lalAppsVCSInfo.vcsTag);
-        fprintf(stderr, "Status: %s\n", lalAppsVCSInfo.vcsStatus);
+        XLALOutputVersionString(stderr,0);
         exit(0);
         break;
 
@@ -311,7 +307,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (ifo == NULL)
   {
     /* allocate memory for ifo */
-    ifo = (CHAR *)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+    ifo = (CHAR *)calloc(LAL_AGGREGATION_IFO_MAX, sizeof(CHAR));
 
     /* get ifo from frame_type */
     strncpy(ifo, frame_type, 2);

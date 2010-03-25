@@ -97,8 +97,8 @@ struct CommandLineArgsTag {
   REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
   char *FrCacheFile;       /* Frame cache file */
   char *SegmentsFile;      /* Text file with the segments */
-  char *exc_chan;          /* excitation channel name */    
-  char *darm_chan;         /* darm channel name */ 
+  char *exc_chan;          /* excitation channel name */
+  char *darm_chan;         /* darm channel name */
   char *asq_chan;          /* asq channel name */
   char *alphafile;          /* asq channel name */
 } CommandLineArgs;
@@ -107,10 +107,10 @@ typedef
 struct SegmentListTag {
   INT4 gpsstart;          /* GPS Seconds of start of segment group */
   INT4 gpsend;            /* number of segments starting at tgps */
-  INT4 seglength;         /* length of segment in seconds */       
+  INT4 seglength;         /* length of segment in seconds */
 } SegmentList;
 
-typedef 
+typedef
 struct GlobalVariablesTag {
 COMPLEX16 Rf0,Cf0,Af0;              /* Response, sensing and actuation function values at the frequency of the calibration line */
 SegmentList SL[MAXLINESEGS];        /* Structure containing science segement info */
@@ -143,7 +143,7 @@ GlobalVariables GV;   /* A bunch of stuff is stored in here; mainly to protect i
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 
 /* Reads time segment, cache, response,sensing and actuation files */
-int ReadFiles(struct CommandLineArgsTag CLA);             
+int ReadFiles(struct CommandLineArgsTag CLA);
 
 /* Create the filters from the filters.h file */
 int MakeFilters(void);
@@ -151,9 +151,9 @@ int MakeFilters(void);
 /* Create the filters from the filters.h file */
 int DeleteFilterHistories(void);
 
-/* Produces a table of calibration factors for a science segment; 
+/* Produces a table of calibration factors for a science segment;
 the factors are calculated every interval To*/
-int GetFactors(struct CommandLineArgsTag CLA);   
+int GetFactors(struct CommandLineArgsTag CLA);
 
 /* Allocates space for data time series AS_Q and DARM_CTRL */
 int AllocateData(struct CommandLineArgsTag CLA, int DT);
@@ -162,13 +162,13 @@ int AllocateData(struct CommandLineArgsTag CLA, int DT);
 int ReadDTsecondsofData(struct CommandLineArgsTag CLA, int DT);
 
 /* Multiplies each sample of AS_Q by 1/alpha */
-int hROverAlpha(int i);                                        
+int hROverAlpha(int i);
 
 /* Multiplies each sample of AS_Q by beta */
 int hCTimesBeta(int i);
 
 /* Upsamples AS_QR storing result in upAS_Q by putting SR-1 zeros between samples in AS_Q */
-int UpsamplehR(int up_factor);   
+int UpsamplehR(int up_factor);
 
 /* Low passes upsampled AS_Q doing all the sludge accouting */
 int LowPasshR(int j);
@@ -177,7 +177,7 @@ int LowPasshR(int j);
 int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge);
 
 /* Downsamples calibrated AS_Q storing result in hr by taking 1 sample out of USR in upsampled series */
-int DownsamplehR(void);   
+int DownsamplehR(void);
 
 /* High passes AS_Q data doing all the sludge accouting */
 int HighPass1(int j);
@@ -186,17 +186,17 @@ int HighPass1(int j);
 int HighPass2(int j);
 
 /* Frees the memory */
-int DeAllocateData(void);                                        
+int DeAllocateData(void);
 
 /* Frees the memory */
-int FreeMem(void);                                        
+int FreeMem(void);
 
 
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
 {
-int i,j,DT,p; 
+int i,j,DT,p;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadFiles(CommandLineArgs)) return 3;
@@ -238,14 +238,14 @@ int i,j,DT,p;
 
       if(GetFactors(CommandLineArgs)) return 5;
 
-      for(j=0; j <= GV.duration/T; j++) 
+      for(j=0; j <= GV.duration/T; j++)
 	{
 
 	  /* Normally we read in and filter T seconds of data */
 	  DT=T;
 	  /* But the very last bit may be a different length (< T seconds) */
 	  if(j == GV.duration/T) DT=GV.duration-(GV.duration/T)*T;
-	  /* If by chance the duration is a multiple of T seconds then the 
+	  /* If by chance the duration is a multiple of T seconds then the
 	     last chunk is zero seconds long and we should exit */
 	  if( DT == 0) break;
 
@@ -260,7 +260,7 @@ int i,j,DT,p;
 	  /* hipass AS_Q with Butterworth filter */
 	  if(HighPass1(j)) return 4;
 
-	  /* Copy AS_Q into residual and control signal time series */  
+	  /* Copy AS_Q into residual and control signal time series */
 	  for (p=0; p<(int)GV.hR.data->length; p++) {
 	    GV.hR.data->data[p]=GV.AS_Q.data->data[p];
 	  }
@@ -269,7 +269,7 @@ int i,j,DT,p;
 	  }
 
 	  /* delta test */
-	  
+
 /* 	  for (p=0; p<(int)GV.hR.data->length; p++) { */
 /* 	    GV.hR.data->data[p]=0.0; */
 /* 	  } */
@@ -284,7 +284,7 @@ int i,j,DT,p;
 /* 	    } */
 
 	  /******** COMPUTE RESIDUAL STRAIN **********/
-	  
+
 	  /* multiply hR by 1/alpha(t) */
 	  if (hROverAlpha(i)) return 4;
 
@@ -304,13 +304,13 @@ int i,j,DT,p;
 	  /******** COMPUTE CONTROL STRAIN **********/
 
 	  /* multiply hC by beta(t) */
-	  if (hCTimesBeta(i)) return 4; 
+	  if (hCTimesBeta(i)) return 4;
 
           /* Filter hC through servo to get DARM_CTRL */
 	  for(p=NGfilt-1;p>=0;p--){
 	    if (FilterSeries(&GV.G[p],&GV.hC, SLUDGEFACTOR)) return 5;
 	  }
-	  /* Adjust to account for servo gain */ 
+	  /* Adjust to account for servo gain */
 	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hC.data->data[p]= ServoGain*GV.hC.data->data[p];
  	  }
@@ -327,7 +327,7 @@ int i,j,DT,p;
 	  for(p=NAXfilt-1;p>=0;p--){
 	    if (FilterSeries(&GV.AX[p],&GV.hCx,SLUDGEFACTOR)) return 5;
 	  }
-	  /* Adjust to account for digital gain on x-arm*/ 
+	  /* Adjust to account for digital gain on x-arm*/
 	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hCx.data->data[p] *= AXGain;
  	  }
@@ -336,7 +336,7 @@ int i,j,DT,p;
 	  for(p=NAYfilt-1;p>=0;p--){
 	    if (FilterSeries(&GV.AY[p],&GV.hCy,SLUDGEFACTOR)) return 5;
 	  }
-	  /* Adjust to account for digital gain on y-arm*/ 
+	  /* Adjust to account for digital gain on y-arm*/
 	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hCy.data->data[p] *= AYGain;
  	  }
@@ -346,10 +346,10 @@ int i,j,DT,p;
 	    GV.hC.data->data[p]=(GV.hCx.data->data[p]+GV.hCy.data->data[p])/2;
 	  }
 
- 	  /* filter through analog part of actuation */ 
+ 	  /* filter through analog part of actuation */
 	  if (FilterSeries(&GV.AA,&GV.hC,SLUDGEFACTOR)) return 5;
 
-	  /* filter through Dewhitener AND ANTI-DEWHITENER in actuation */ 
+	  /* filter through Dewhitener AND ANTI-DEWHITENER in actuation */
 	  for(p=NADWfilt-1;p>=0;p--){
 	    if (FilterSeries(&GV.ADW[p],&GV.hC,SLUDGEFACTOR)) return 5;
 	  }
@@ -367,7 +367,7 @@ int i,j,DT,p;
 	  /* WRITE A FRAME */
 	  strncpy( GV.h.name, CHANNEL, sizeof( GV.h.name ) );
 	  GV.h.epoch.gpsSeconds=GV.gpsepoch.gpsSeconds;
-	  
+
 	  {
 	    char filename[256];
 /* 	    char nodenumber[16]; */
@@ -378,7 +378,7 @@ int i,j,DT,p;
 
 	    {
 	      FrOutPar opar = { filename, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
- 
+
 	      LALFrWriteREAL8TimeSeries( &status, &GV.h, &opar );
 	      TESTSTATUS( &status );
 
@@ -388,7 +388,7 @@ int i,j,DT,p;
 	  }
 
 
-	  
+
 	  GV.gpsepoch.gpsSeconds += DT;
 
 	  if (DeAllocateData()) return 4;
@@ -397,7 +397,7 @@ int i,j,DT,p;
       /* Delete filter histories */
       if (DeleteFilterHistories()) return 4;
     }
-  
+
   if(FreeMem()) return 8;
 
   return 0;
@@ -487,13 +487,13 @@ int LowPasshR(int j)
   TESTSTATUS( &status );
 
   /* If this chunk of size T is not the first within a science segment copy half of slugde to start of hR */
-  if(j>0){  
-    for (n=0; n<USR*SLUDGEFACTOR/2;n++) { 
-      GV.uphR.data->data[n]=GV.lopasssludge.data->data[n]; 
-    }  
-  }  
+  if(j>0){
+    for (n=0; n<USR*SLUDGEFACTOR/2;n++) {
+      GV.uphR.data->data[n]=GV.lopasssludge.data->data[n];
+    }
+  }
   /* copy sludge at the end of AS_Q to hipasssludge */
-  for (n=0; n<USR*SLUDGEFACTOR;n++) { 
+  for (n=0; n<USR*SLUDGEFACTOR;n++) {
     GV.lopasssludge.data->data[n]=GV.uphR.data->data[n+GV.uphR.data->length-USR*SLUDGEFACTOR];
   }
 
@@ -516,16 +516,16 @@ int HighPass1(int j)
 
   /* High pass AS_Q signal */
   LALButterworthREAL8TimeSeries(&status,&GV.AS_Q,&filterpar);
-  TESTSTATUS( &status );  
+  TESTSTATUS( &status );
 
   /* If this chunk of size T is not the first within a science segment copy half of slugde to start of AS_Q */
-  if(j>0){  
-    for (n=0; n<SLUDGEFACTOR/2;n++) { 
-      GV.AS_Q.data->data[n]=GV.hipasssludge.data->data[n]; 
-    }  
-  }  
+  if(j>0){
+    for (n=0; n<SLUDGEFACTOR/2;n++) {
+      GV.AS_Q.data->data[n]=GV.hipasssludge.data->data[n];
+    }
+  }
   /* copy sludge at the end of residual signal to hipasssludge */
-  for (n=0; n<SLUDGEFACTOR;n++) { 
+  for (n=0; n<SLUDGEFACTOR;n++) {
     GV.hipasssludge.data->data[n]=GV.AS_Q.data->data[n+GV.AS_Q.data->length-SLUDGEFACTOR];
   }
 
@@ -548,31 +548,31 @@ int HighPass2(int j)
 
   /* High pass residual signal */
   LALButterworthREAL8TimeSeries(&status,&GV.hR,&filterpar);
-  TESTSTATUS( &status );  
+  TESTSTATUS( &status );
 
   /* If this chunk of size T is not the first within a science segment copy half of slugde to start of AS_Q */
-  if(j>0){  
-    for (n=0; n<SLUDGEFACTOR/2;n++) { 
-      GV.hR.data->data[n]=GV.hipasssludgeR.data->data[n]; 
-    }  
-  }  
+  if(j>0){
+    for (n=0; n<SLUDGEFACTOR/2;n++) {
+      GV.hR.data->data[n]=GV.hipasssludgeR.data->data[n];
+    }
+  }
   /* copy sludge at the end of residual signal to hipasssludge */
-  for (n=0; n<SLUDGEFACTOR;n++) { 
+  for (n=0; n<SLUDGEFACTOR;n++) {
     GV.hipasssludgeR.data->data[n]=GV.hR.data->data[n+GV.hR.data->length-SLUDGEFACTOR];
   }
 
   /* High pass control signal */
   LALButterworthREAL8TimeSeries(&status,&GV.hC,&filterpar);
-  TESTSTATUS( &status );  
+  TESTSTATUS( &status );
 
   /* If this chunk of size T is not the first within a science segment copy half of slugde to start of AS_Q */
-  if(j>0){  
-    for (n=0; n<SLUDGEFACTOR/2;n++) { 
-      GV.hC.data->data[n]=GV.hipasssludgeC.data->data[n]; 
-    }  
-  }  
+  if(j>0){
+    for (n=0; n<SLUDGEFACTOR/2;n++) {
+      GV.hC.data->data[n]=GV.hipasssludgeC.data->data[n];
+    }
+  }
   /* copy sludge at the end of residual signal to hipasssludge */
-  for (n=0; n<SLUDGEFACTOR;n++) { 
+  for (n=0; n<SLUDGEFACTOR;n++) {
     GV.hipasssludgeC.data->data[n]=GV.hC.data->data[n+GV.hC.data->length-SLUDGEFACTOR];
   }
 
@@ -598,10 +598,10 @@ int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge)
 {
   int n,r;
   REAL8 yn,xn,xsum,ysum;
-  MyIIRFilter H;  
+  MyIIRFilter H;
 
 
-  /* It's very important here to only filter up to the end of T: Do not filter sludge yet! 
+  /* It's very important here to only filter up to the end of T: Do not filter sludge yet!
    History gets messed up */
 
   for (n=0; n<(int)TSeries->data->length-sludge;n++) {
@@ -610,16 +610,16 @@ int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge)
     ysum=0.0;
 
     xn=TSeries->data->data[n];
-    
+
     for(r=0;r<F->xOrder-1;r++){
       xsum += F->xhist[r]*F->b[r+1];
     }
     xsum=xsum+xn*F->b[0];
-    
+
     for(r=0;r<F->yOrder-1;r++){
       ysum -= F->yhist[r]*F->a[r+1];
     }
-    
+
     yn=xsum+ysum;
 
     TSeries->data->data[n]=yn;
@@ -637,22 +637,22 @@ int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge)
 
   /* Filter sludge here; we filter it with a separate filter H so history of F does not get messed up */
   H=*F;
-  for (n=TSeries->data->length-sludge; n<(int)TSeries->data->length;n++) 
+  for (n=TSeries->data->length-sludge; n<(int)TSeries->data->length;n++)
     {
       xsum=0.0;
       ysum=0.0;
 
       xn=TSeries->data->data[n];
-    
+
       for(r=0;r<H.xOrder-1;r++){
 	xsum += H.xhist[r]*H.b[r+1];
       }
       xsum=xsum+xn*H.b[0];
-      
+
       for(r=0;r<H.yOrder-1;r++){
 	ysum -= H.yhist[r]*H.a[r+1];
       }
-    
+
       yn=xsum+ysum;
 
       TSeries->data->data[n]=yn;
@@ -706,7 +706,7 @@ int hROverAlpha(int i)
   for (n = 0; n < (int)GV.hR.data->length; n++) {
 
     InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
-    
+
     GV.hR.data->data[n] /= InterpolatedAlpha;
     time=time+GV.hR.deltaT;
 
@@ -735,7 +735,7 @@ int hCTimesBeta(int i)
   for (n = 0; n < (int)GV.hC.data->length; n++) {
 
     InterpolatedBeta=gsl_spline_eval(spline_beta,time,acc_beta);
-    
+
     GV.hC.data->data[n] *= InterpolatedBeta;
     time=time+GV.hC.deltaT;
   }
@@ -767,7 +767,7 @@ int ReadDTsecondsofData(struct CommandLineArgsTag CLA, int DT)
   LALFrGetREAL4TimeSeries(&status,&lAS_Q,&chanin_asq,framestream);
   TESTSTATUS( &status );
 
-  /* Store AS_Q as double */  
+  /* Store AS_Q as double */
   for (p=0; p<(int)GV.AS_Q.data->length; p++) {
     GV.AS_Q.data->data[p]=lAS_Q.data->data[p];
   }
@@ -830,7 +830,7 @@ int AllocateData(struct CommandLineArgsTag CLA, int DT)
 int MakeFilters(void)
 {
   int l,n;
- 
+
   GV.Cinv.yOrder=CinvRecursOrder;
   GV.Cinv.xOrder=CinvDirectOrder;
 
@@ -843,7 +843,7 @@ int MakeFilters(void)
   for(n=0;n<NGfilt;n++){
     GV.G[n].yOrder=G_Dord;
     GV.G[n].xOrder=G_Rord;
-    
+
     /* Fill coefficient vectors with coefficients from filters.h */
     for(l=0;l<GV.G[n].xOrder;l++) GV.G[n].b[l]=G_D[n][l];
     for(l=0;l<GV.G[n].yOrder;l++) GV.G[n].a[l]=G_R[n][l];
@@ -863,7 +863,7 @@ int MakeFilters(void)
   for(n=0;n<NADWfilt;n++){
     GV.ADW[n].yOrder=A_DW_Ord;
     GV.ADW[n].xOrder=A_DW_Ord;
-    
+
     /* Fill coefficient vectors with coefficients from filters.h */
     for(l=0;l<GV.ADW[n].xOrder;l++) GV.ADW[n].b[l]=A_DW_D[n][l];
     for(l=0;l<GV.ADW[n].yOrder;l++) GV.ADW[n].a[l]=A_DW_R[n][l];
@@ -871,11 +871,11 @@ int MakeFilters(void)
     for(l=0;l<GV.ADW[n].xOrder-1;l++) GV.ADW[n].xhist[l]=0.0;
   }
 
-    
+
   for(n=0;n<NAXfilt;n++){
     GV.AX[n].yOrder=A_digital_Rord;
     GV.AX[n].xOrder=A_digital_Dord;
-    
+
     /* Fill coefficient vectors with coefficients from filters.h */
     for(l=0;l<GV.AX[n].xOrder;l++) GV.AX[n].b[l]=AX_D[n][l];
     for(l=0;l<GV.AX[n].yOrder;l++) GV.AX[n].a[l]=AX_R[n][l];
@@ -886,7 +886,7 @@ int MakeFilters(void)
   for(n=0;n<NAYfilt;n++){
     GV.AY[n].yOrder=A_digital_Rord;
     GV.AY[n].xOrder=A_digital_Dord;
-    
+
     /* Fill coefficient vectors with coefficients from filters.h */
     for(l=0;l<GV.AY[n].xOrder;l++) GV.AY[n].b[l]=AY_D[n][l];
     for(l=0;l<GV.AY[n].yOrder;l++) GV.AY[n].a[l]=AY_R[n][l];
@@ -921,7 +921,7 @@ LALWindowParams winparams;
 
 INT4 k,m,outflag=0;
 LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate the calibration factors */
- 
+
 FILE *fpAlpha=NULL;
 
   chanin_asq.type  = ADCDataChannel;
@@ -930,7 +930,7 @@ FILE *fpAlpha=NULL;
 
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
-  chanin_exc.name  = CLA.exc_chan; 
+  chanin_exc.name  = CLA.exc_chan;
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
 
@@ -966,13 +966,13 @@ FILE *fpAlpha=NULL;
   TESTSTATUS( &status );
 
   winparams.type=Hann;
-   
+
   /* windows for time domain channels */
   /* asq */
   winparams.length=(INT4)(To/asq.deltaT +0.5);
   LALWindow(&status,asqwin,&winparams);
   TESTSTATUS( &status );
-  
+
   /* darm */
   winparams.length=(INT4)(To/darm.deltaT +0.5);
   LALWindow(&status,darmwin,&winparams);
@@ -987,7 +987,7 @@ FILE *fpAlpha=NULL;
   if(CLA.alphafile != NULL)
     {
       fpAlpha=fopen(CLA.alphafile,"w");
-      if (fpAlpha==NULL) 
+      if (fpAlpha==NULL)
 	{
 	  fprintf(stderr,"Could not open %s!\n",CLA.alphafile);
 	  return 1;
@@ -1047,21 +1047,21 @@ FILE *fpAlpha=NULL;
       TESTSTATUS( &status );
 
       GV.alpha[m]= factors.alpha.re;
-      
-      if( GV.alpha[m] < 0.3 ) 
+
+      if( GV.alpha[m] < 0.3 )
 	{
 	 fprintf(stderr,"There were invalid values of alpha at %d!\n",localgpsepoch.gpsSeconds);
 	 GV.alpha[m]=1.0;
 	 if (m>0) GV.alpha[m]=GV.alpha[m-1];
 	}
 
-      if( GV.alpha[m] > 2.0 ) 
+      if( GV.alpha[m] > 2.0 )
 	{
 	 fprintf(stderr,"There were invalid values of alpha at %d!\n",localgpsepoch.gpsSeconds);
 	 GV.alpha[m]=1.0;
 	 if (m>0) GV.alpha[m]=GV.alpha[m-1];
 	}
-      
+
       GV.beta[m]= factors.beta.re;
 
       GV.ta_interp[m]=m*To;
@@ -1117,7 +1117,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
  /* ------ Open and read Segment file ------ */
  i=0;
  fpSeg=fopen(CLA.SegmentsFile,"r");
- if (fpSeg==NULL) 
+ if (fpSeg==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.SegmentsFile);
      return 1;
@@ -1135,7 +1135,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      i++;
    }
  GV.numsegs=i;
- fclose(fpSeg);     
+ fclose(fpSeg);
  /* -- close Sensing file -- */
 
 
@@ -1144,11 +1144,11 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
   optarg = NULL;
-  
+
   /* Initialize default values */
   CLA->f=0.0;
   CLA->G0Re=0.0;
@@ -1196,19 +1196,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'E':
       /* name of excitation channel */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'A':
       /* name of as_q channel */
       CLA->asq_chan=optarg;
-      break;    
+      break;
     case 'D':
       /* name of darm channel */
       CLA->darm_chan=optarg;
-      break;    
+      break;
     case 'b':
       /* name of darm channel */
       CLA->alphafile=optarg;
-      break;    
+      break;
    case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -b. They are:\n");
@@ -1237,61 +1237,61 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No calibration line frequency specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->SegmentsFile == NULL)
     {
       fprintf(stderr,"No segments file specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->G0Re == 0.0 )
     {
       fprintf(stderr,"No real part of open loop gain specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->G0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of open loop gain specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->D0Re == 0.0 )
     {
       fprintf(stderr,"No real part of digital filter specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
   if(CLA->D0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of digital filter specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
-    }      
+    }
 
   return errflg;
 }
@@ -1314,7 +1314,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
- 
+
   return 0;
 }
 

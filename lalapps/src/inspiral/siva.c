@@ -31,7 +31,8 @@
 #include <lal/SegmentsIO.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lalapps.h>
 
 RCSID("$Id$");

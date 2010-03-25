@@ -8,3 +8,11 @@ header-links:
 			$(LN_S) $$sourcedir/$$file $$targetdir; \
 		fi; \
 	done
+	@for file in LALXMLConfig.h LALXMLVCSInfo.h ; do \
+		d=`pwd`; \
+			targetdir=`cd $(top_builddir)/include/lal && pwd`; \
+			if test ! -r $$targetdir/$$file ; then \
+				rm -f $$targetdir/$$file; \
+				$(LN_S) $$d/$$file $$targetdir; \
+			fi; \
+	done

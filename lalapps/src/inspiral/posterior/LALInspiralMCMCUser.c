@@ -48,6 +48,12 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/Units.h>
+#include <lal/TimeSeries.h>
+#include <lal/VectorOps.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/SeqFactories.h>
 
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
@@ -56,12 +62,16 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0
+#if DEBUGMODEL
+FILE *modelout=NULL;
+#endif
 gsl_rng *RNG;
 double timewindow;
 REAL4Vector *model;
 REAL4Vector *Tmodel;
 REAL8Sequence **topdown_sum;
 REAL8 *normalisations;
+const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 /*NRCSID (LALINSPIRALMCMCUSERC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); */
 
@@ -324,13 +334,14 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   eta=XLALMCMCGetParameter(parameter,"eta");
   m1 = mc2mass1(mc,eta);
   m2 = mc2mass2(mc,eta);
+	parameter->logPrior+=-(5.0/6.0)*log(mc);
 
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
+  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; 
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
   return parameter->logPrior;
 }
@@ -360,7 +371,10 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	m2 = mc2mass2(mc,eta);
 	/* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
 	parameter->logPrior+=-(5.0/6.0)*logmc;
-
+	if(XLALMCMCCheckParameter(parameter,"logdist"))
+		parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
+	else
+		parameter->logPrior+=2.0*XLALMCMCGetParameter(parameter,"distMpc");
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
@@ -370,6 +384,202 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
 	if(m1+m2>MAX_MTOT) parameter->logPrior=-DBL_MAX;
 	return parameter->logPrior;
+}
+
+REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter){
+	/* Calculate the likelihood for an amplitude-corrected waveform */
+	/* This template is generated in the time domain */
+	REAL8 logL=0.0,chisq=0.0;
+	REAL8 mc,eta,end_time,resp_r,resp_i,real,imag,ci;
+	UINT4 det_i=0,idx=0;
+	UINT4 i=0;
+	DetectorResponse det;
+	static LALStatus status;
+	CoherentGW coherent_gw;
+	PPNParamStruc PPNparams;
+	LALDetAMResponse det_resp;
+	REAL4TimeSeries *h_p_t,*h_c_t=NULL;
+	COMPLEX8FrequencySeries *H_p_t=NULL, *H_c_t=NULL;
+	size_t NFD = 0;
+	memset(&PPNparams,0,sizeof(PPNparams));
+	memset(&coherent_gw,0,sizeof(CoherentGW));
+	memset(&status,0,sizeof(LALStatus));
+	memset(&det,0,sizeof(DetectorResponse));
+	/* Populate the structures */
+	if(XLALMCMCCheckParameter(parameter,"logM")) mc=exp(XLALMCMCGetParameter(parameter,"logM"));
+	else mc=XLALMCMCGetParameter(parameter,"mchirp");
+	eta=XLALMCMCGetParameter(parameter,"eta");
+	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"long");
+	PPNparams.position.latitude=XLALMCMCGetParameter(parameter,"lat");
+	PPNparams.position.system=COORDINATESYSTEM_EQUATORIAL;
+	PPNparams.psi=XLALMCMCGetParameter(parameter,"psi");
+	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
+	PPNparams.mTot=mc2mt(mc,eta);
+	PPNparams.eta=eta;
+	PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
+	PPNparams.inc=XLALMCMCGetParameter(parameter,"iota");
+	PPNparams.phi=XLALMCMCGetParameter(parameter,"phi");
+	PPNparams.fStartIn=inputMCMC->fLow;
+	PPNparams.fStopIn=0.5/inputMCMC->deltaT;
+	PPNparams.deltaT=inputMCMC->deltaT;
+	ci=cos(PPNparams.inc);
+	/* Call LALGeneratePPNAmpCorInspiral */
+	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
+	if(status.statusCode)
+	{
+		REPORTSTATUS(&status);
+		chisq=DBL_MAX;
+		goto noWaveform;
+	}
+		
+	/* Set the epoch so that the t_c is correct */
+	end_time = XLALMCMCGetParameter(parameter,"time");
+
+	REAL8 adj_epoch = end_time-PPNparams.tc;
+	if(coherent_gw.h) XLALGPSSetREAL8(&(coherent_gw.h->epoch),adj_epoch);
+	if(coherent_gw.a) XLALGPSSetREAL8(&(coherent_gw.a->epoch),adj_epoch);
+
+	/* Inject h+ and hx into time domain signal of correct length */
+	UINT4 NtimeDomain=inputMCMC->segment[det_i]?inputMCMC->segment[det_i]->data->length:2*(inputMCMC->stilde[det_i]->data->length-1);
+	h_p_t = XLALCreateREAL4TimeSeries("hplus",&inputMCMC->epoch,
+										   inputMCMC->fLow,inputMCMC->deltaT,
+										   &lalADCCountUnit,NtimeDomain);
+	h_c_t = XLALCreateREAL4TimeSeries("hcross",&inputMCMC->epoch,
+										 inputMCMC->fLow,inputMCMC->deltaT,
+										 &lalADCCountUnit,NtimeDomain);
+	/* Separate the + and x parts */
+	for(i=0;i< (NtimeDomain<coherent_gw.h->data->length?NtimeDomain:coherent_gw.h->data->length) ;i++){
+		h_p_t->data->data[i]=coherent_gw.h->data->data[2*i];
+		h_c_t->data->data[i]=coherent_gw.h->data->data[2*i + 1];
+	}
+	for(;i<NtimeDomain;i++){
+		h_p_t->data->data[i]=0.0;
+		h_c_t->data->data[i]=0.0;
+	}
+	
+	/* Get H+ and Hx in the Freq Domain */
+	NFD=inputMCMC->stilde[det_i]->data->length;
+	H_p_t = XLALCreateCOMPLEX8FrequencySeries("Hplus",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
+	H_c_t = XLALCreateCOMPLEX8FrequencySeries("Hcross",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
+
+	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,
+																	  NtimeDomain,
+																	  FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
+	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
+	LALTimeFreqRealFFT(&status,H_c_t,h_c_t,inputMCMC->likelihoodPlan); 
+	
+#if DEBUGMODEL !=0
+	char tmodelname[100];
+	sprintf(tmodelname,"tmodel_plus_%i.dat",det_i);
+	modelout = fopen(tmodelname,"w");
+	for(i=0;i<h_p_t->data->length;i++){
+		fprintf(modelout,"%g %g\n",h_p_t->data->data[i],h_c_t->data->data[i]);
+	}
+	fclose(modelout);
+#endif
+	XLALDestroyREAL4TimeSeries(h_p_t);
+	XLALDestroyREAL4TimeSeries(h_c_t);
+
+	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
+	LALSource source; /* The position and polarisation of the binary */
+	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
+	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
+	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+	source.orientation = XLALMCMCGetParameter(parameter,"psi");
+	
+	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
+	det_gps.p_gps=&(inputMCMC->epoch);
+	DetTimeAndASource DTAAS; /* This holds the source and the detector */
+	DTAAS.p_source = &(source.equatorialCoords);
+	DTAAS.p_det_and_time=&det_gps;
+	/* This also holds the source and the detector, LAL has two different structs for this! */
+	LALDetAndSource det_source;
+	det_source.pSource=&source;
+	
+	REAL8 TimeShiftToGC=XLALMCMCGetParameter(parameter,"time");
+	
+	TimeShiftToGC-=inputMCMC->epoch.gpsSeconds + 1.e-9*inputMCMC->epoch.gpsNanoSeconds;
+	TimeShiftToGC-=PPNparams.tc;
+	
+	
+	/* For each IFO */
+	for(det_i=0;det_i<inputMCMC->numberDataStreams;det_i++){
+		REAL8 TimeFromGC;
+		/* Set up the detector */
+		det.site=inputMCMC->detector[det_i];
+		/* Simulate the response */
+#if DEBUGMODEL !=0
+		char modelname[100];
+		sprintf(modelname,"model_%i.dat",det_i);
+		modelout = fopen(modelname,"w");
+#endif		
+	
+		det_gps.p_detector = (inputMCMC->detector[det_i]); /* Select detector */
+		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
+		/* Compute detector amplitude response */
+		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
+		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
+		det_resp.plus*=0.5*(1.0+ci*ci);
+		det_resp.cross*=-ci;
+		
+		
+		
+		chisq=0.0;
+		/* Calculate the logL */
+		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
+		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
+		UINT4 highBin = (UINT4)(PPNparams.fStop *(3./2.) / inputMCMC->stilde[det_i]->deltaF); /* Factor 3/2 for AmpCor 3rd harmonic */
+		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)
+		   highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
+		for(idx=lowBin;idx<=highBin;idx++){
+			REAL8 ang = 2.0*LAL_PI*(TimeFromGC+TimeShiftToGC)*inputMCMC->stilde[det_i]->deltaF*idx;
+			/* Calculate rotated parts of the plus and cross */
+			REAL4 plus_re,plus_im,cross_re,cross_im;
+			plus_re = H_p_t->data->data[idx].re*cos(ang)+H_p_t->data->data[idx].im*sin(ang);
+			plus_im = H_p_t->data->data[idx].im*cos(ang)+H_p_t->data->data[idx].re*sin(ang);
+			cross_re = H_c_t->data->data[idx].re*cos(ang)+H_c_t->data->data[idx].im*sin(ang);
+			cross_im = H_c_t->data->data[idx].im*cos(ang)+H_c_t->data->data[idx].re*sin(ang);
+			
+			/* Compute total real and imaginary responses */
+			resp_r = (REAL8)(plus_re*det_resp.plus+cross_re*det_resp.cross);
+			resp_i = (REAL8)(plus_im*det_resp.plus+cross_im*det_resp.cross);
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/*/deltaF*/;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/*/deltaF*/;
+			
+			/* Gaussian version */
+			/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
+			 that LAL uses. Please check this whenever any change is made */
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+			
+			/* Student-t version */
+			/*			chisq+=log(real*real+imag*imag); */
+#if DEBUGMODEL !=0
+			fprintf(modelout,"%lf %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",idx*deltaF,resp_r,resp_i,H_p_t->data->data[idx].re,H_p_t->data->data[idx].im,H_c_t->data->data[idx].re,H_c_t->data->data[idx].im);
+#endif
+		}
+#if DEBUGMODEL !=0
+		fclose(modelout);
+#endif
+		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
+		else if(highBin<=lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
+		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
+		
+		logL-=chisq;
+		
+		/* Destroy the response series */
+		if(coherent_gw.f) XLALDestroyREAL4TimeSeries(coherent_gw.f);
+		if(coherent_gw.phi) XLALDestroyREAL8TimeSeries(coherent_gw.phi);
+		if(coherent_gw.shift) XLALDestroyREAL4TimeSeries(coherent_gw.shift);
+		if(coherent_gw.h) {XLALDestroyREAL4VectorSequence(coherent_gw.h->data); LALFree(coherent_gw.h);}
+		if(coherent_gw.a) {XLALDestroyREAL4VectorSequence(coherent_gw.a->data); LALFree(coherent_gw.a);}
+		XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
+		XLALDestroyCOMPLEX8FrequencySeries(H_c_t);
+	}
+noWaveform:
+	/* return logL */
+	parameter->logLikelihood=logL;
+	return(logL);
+
 }
 
 REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
@@ -392,7 +602,6 @@ in the frequency domain */
 	REAL8 chisq=0.0;
 	REAL8 real,imag,f,t;
 	TofVIn TofVparams;
-	FILE *modelout;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
 	REAL8 ChirpISCOLength;
@@ -408,7 +617,11 @@ in the frequency domain */
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
-	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	if(XLALMCMCCheckParameter(parameter,"distMpc"))
+		template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	else if(XLALMCMCCheckParameter(parameter,"logdist"))
+		template.distance=exp(XLALMCMCGetParameter(parameter,"logdist"));
+
 	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
@@ -512,38 +725,41 @@ in the frequency domain */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		REAL8 hc,hs;
 		
-		for(idx=lowBin;idx<=highBin;idx++){
+		for(idx=lowBin;idx<highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
 /* Version derived 19/08/08 */
-			REAL8 hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
-			REAL8 hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
+			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
+			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
-
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+		}
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-
+	
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
 			#endif
-		}
+		
+
+
 		#if DEBUGMODEL !=0
 			fclose(modelout);
 		#endif
@@ -702,7 +918,7 @@ in the frequency domain */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);

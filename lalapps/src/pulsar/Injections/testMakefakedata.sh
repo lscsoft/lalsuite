@@ -14,13 +14,13 @@ newcodeDEFAULT="${builddir}lalapps_Makefakedata_v4"
 compCode="${builddir}lalapps_compareSFTs"
 
 if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LAL_PREFIX" ]; then
-	LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    if [ -n "$LALPULSAR_PREFIX" ]; then
+	LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
     else
 	echo
-	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
-	echo "This might indicate an incomplete LAL installation"
+	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+	echo "This might indicate an incomplete LAL+LALPULSAR installation"
 	echo
 	exit 1
     fi
@@ -46,12 +46,22 @@ fi
 tol="1e-4";	## tolerance on relative difference between SFTs in comparison
 # input parameters
 ## FIXED
-#ephemdir=$LAL_PREFIX/share/lal
+#ephemdir=$LALPULSAR_PREFIX/share/lalpulsar
 # determine ephemdir from LAL_DATA_PATH
 SAVEIFS="$IFS"
+foundEphem=no
 IFS=:
-for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && break; done
+for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && foundEphem=yes && break; done
 IFS="$SAVEIFS"
+
+if [ "$foundEphem" = "no" ]; then
+    echo "Failed to located ephemeris files."
+    echo "Need environment-variable LAL_DATA_PATH to be set"
+    echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
+fi
 
 Tsft=1800
 nTsft=20

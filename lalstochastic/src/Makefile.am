@@ -3,6 +3,9 @@ INCLUDES = -I$(top_builddir)/include
 lalstochasticincludedir = $(includedir)/lal
 lalstochasticinclude_HEADERS = \
 	AstroOmega.h \
+	LALStochasticConfig.h \
+	LALStochasticVCSInfo.h \
+	LIGOLwXMLStochasticRead.h \
 	SimulatePopcorn.h \
 	SimulateSB.h \
 	StochasticCrossCorrelation.h \
@@ -11,6 +14,8 @@ lalstochasticinclude_HEADERS = \
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \
 	AstroOmega.c \
+	LALStochasticVCSInfo.c \
+	LIGOLwXMLStochasticRead.c \
 	OverlapReductionFunction.c \
 	SimulatePopcorn.c \
 	SimulateSB.c \
@@ -23,9 +28,19 @@ liblalstochastic_la_SOURCES = \
 	ZeroPadAndFFT.c
 liblalstochastic_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = lalstochastic-user-env.sh lalstochastic-user-env.csh
-sysconf_DATA = lalstochastic-user-env.sh lalstochastic-user-env.csh
-BUILT_SOURCE = lalstochastic-user-env.sh lalstochastic-user-env.csh
+CLEANFILES = \
+	lalstochastic-user-env.sh \
+	lalstochastic-user-env.csh
+
+sysconf_DATA = \
+	lalstochastic-user-env.sh \
+	lalstochastic-user-env.csh
+
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALStochasticVCSInfo.h \
+	lalstochastic-user-env.sh \
+	lalstochastic-user-env.csh
 
 lalstochastic-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -64,5 +79,17 @@ lalstochastic-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+EXTRA_DIST = \
+	LALStochasticConfig.h.in \
+	LALStochasticVCSInfo.h.in \
+	git_version.in
+
+LALStochasticVCSInfo.h: ._vcsinfo
+
+._vcsinfo: git_version LALStochasticConfig.h
+	@echo "creating LALStochasticVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALStochastic $$sourced $$buildd
 
 @LAL_HEADER_LINK@

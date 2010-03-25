@@ -835,8 +835,9 @@ INT4 XLALMCMCDifferentialEvolution(
 	same=1;
 	while(paraHead)
 	{
-		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value) same=0;
-		paraHead->value+=paraB->value-paraA->value;
+		paraHead->value+=paraB->value;
+		paraHead->value-=paraA->value;
+		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value && paraA->value!=paraB->value) same=0;
 		paraB=paraB->next; paraA=paraA->next;
 		paraHead=paraHead->next;
 	}
@@ -1075,6 +1076,28 @@ int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	return(0);
 }
 
+/* ******************************************
+ XLALMCMCJumpSingle
+********************************************/
+void XLALMCMCJumpSingle(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter,
+  gsl_matrix       *covMat
+)
+{
+ LALMCMCParam *paraHead=NULL;
+ INT4 dim,i;
+ REAL4 step;
+
+ dim=parameter->dimension;
+ step=XLALUniformDeviate(inputMCMC->randParams);
+ /* Pick dimension to change */
+ i=(UINT4)floor(step*(REAL4)dim);
+ step=XLALNormalDeviate(inputMCMC->randParams);
+ step*=sqrt(gsl_matrix_get(covMat,i,i));
+ for(paraHead=parameter->param;i>0;paraHead=paraHead->next,i--);
+ paraHead->value+=step;
+}
 
 /* ******************************************
   XLALMCMCJump

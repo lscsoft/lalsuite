@@ -45,12 +45,6 @@ from pylal import grbsummary
 from pylal import dqutils
 from lalapps import inspiralutils
 
-# For Python 2.3 compatibility
-try:
-  set
-except NameError:
-  from sets import Set as set
-  
 ##############################################################################
 # define a few utility functions that make this job easier
 
@@ -245,7 +239,8 @@ class hipe_run(object):
     allowed_stages = set(["datafind", "template-bank", "inspiral",
       "coincidence", "trigbank", "inspiral-veto", "second-coinc", 
       "sire-inspiral", "sire-inspiral-veto", "coire-coinc",
-      "coire-second-coinc"])
+      "coire-second-coinc", "coherent-bank", "coherent-inspiral", 
+      "cohire", "summary-coherent-inspiral-triggers" ])
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):

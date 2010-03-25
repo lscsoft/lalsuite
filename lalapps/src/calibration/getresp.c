@@ -8,7 +8,7 @@
 #include <lal/VectorOps.h>
 #include <lal/PrintFTSeries.h>
 
-int lalDebugLevel = 7;
+extern int lalDebugLevel;
 int main( int argc, char *argv[] )
 {
 	COMPLEX16FrequencySeries *response;
@@ -20,7 +20,7 @@ int main( int argc, char *argv[] )
 	LIGOTimeGPS epoch = {0, 0};
 	REAL8 duration = 0.0;
 	REAL8 deltaF = 0.0;
-	REAL8 fmax = 0.0;
+	REAL8 f_max = 0.0;
 	char *program = argv[0];
 	struct option long_options[] = {
 		{ "help",                    no_argument, 0, 'h' },
@@ -33,6 +33,8 @@ int main( int argc, char *argv[] )
 		{ 0, 0, 0, 0 }
 	};
 	char args[] = "ht:d:c:C:f:F:";
+
+	lalDebugLevel = 7;
 
 	XLALSetErrorHandler( XLALAbortErrorHandler );
 
@@ -58,7 +60,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "--channel-name=chan        readout channel (e.g., \"H1:LSC-DARM_ERR\") [required]\n" );
 				fprintf( stderr, "--calibration-file=fname   calibration frame file name [required]\n" );
 				fprintf( stderr, "--frequency-step=df        frequency resolution (Hz) of response [optional]\n" );
-				fprintf( stderr, "--maximum-frequency=fmax   maximum frequency (Hz) of response [optional]\n" );
+				fprintf( stderr, "--maximum-frequency=f_max   maximum frequency (Hz) of response [optional]\n" );
 				exit(0);
 			case 't':
 				epoch.gpsSeconds = atol(optarg);
@@ -76,35 +78,35 @@ int main( int argc, char *argv[] )
 				deltaF = atof(optarg);
 				break;
 			case 'F':
-				fmax = atof(optarg);
+				f_max = atof(optarg);
 				break;
 			case '?':
-				fprintf(stderr, "unknown error while parsing options\n"); 
+				fprintf(stderr, "unknown error while parsing options\n");
 				exit(1);
 			default:
-				fprintf(stderr, "unknown error while parsing options\n"); 
+				fprintf(stderr, "unknown error while parsing options\n");
 				exit(1);
 		}
 	}
 	if ( optind < argc ) {
-		fprintf(stderr, "extraneous command line arguments:\n"); 
+		fprintf(stderr, "extraneous command line arguments:\n");
 		while ( optind < argc )
-			fprintf(stderr, "%s\n", argv[optind++]); 
+			fprintf(stderr, "%s\n", argv[optind++]);
 		exit(1);
 	}
 
 
 	/* check that required values have been set */
 	if ( ! epoch.gpsSeconds ) {
-		fprintf(stderr, "use --gps-start-time to calibration epoch\n"); 
+		fprintf(stderr, "use --gps-start-time to calibration epoch\n");
 		exit(1);
 	}
 	if ( ! channel ) {
-		fprintf(stderr, "use --channel-name to specify readout channel\n"); 
+		fprintf(stderr, "use --channel-name to specify readout channel\n");
 		exit(1);
 	}
 	if ( ! calfile ) {
-		fprintf(stderr, "use --calibration-file to specify calibration frame file name\n"); 
+		fprintf(stderr, "use --calibration-file to specify calibration frame file name\n");
 		exit(1);
 	}
 
@@ -116,8 +118,8 @@ int main( int argc, char *argv[] )
 	}
 
 	deltaF   = deltaF > 0.0 ? deltaF : caldata->responseReference->deltaF;
-	fmax     = fmax > 0.0 ? fmax : caldata->responseReference->deltaF * caldata->responseReference->data->length;
-	response = XLALCreateCOMPLEX16Response( &epoch, duration, deltaF, (UINT4)floor(fmax/deltaF + 0.5), caldata );
+	f_max     = f_max > 0.0 ? f_max : caldata->responseReference->deltaF * caldata->responseReference->data->length;
+	response = XLALCreateCOMPLEX16Response( &epoch, duration, deltaF, (UINT4)floor(f_max/deltaF + 0.5), caldata );
 
 	responseabs = XLALCreateREAL8FrequencySeries( "response_abs", &response->epoch, response->f0, response->deltaF, &response->sampleUnits, response->data->length );
 	responsearg = XLALCreateREAL8FrequencySeries( "response_arg", &response->epoch, response->f0, response->deltaF, &lalDimensionlessUnit, response->data->length );

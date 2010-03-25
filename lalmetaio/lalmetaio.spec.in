@@ -11,7 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: lal libmetaio
+BuildRequires: python
+Requires: libmetaio lal
 Prefix: %{_prefix}
 
 %description
@@ -23,7 +24,7 @@ that use the LAL MetaIO library.
 Summary: Files and documentation needed for compiling programs that use LAL MetaIO
 Group: LAL
 Requires: %{name} = %{version}
-Requires: lal-devel lalmetaio-dev
+Requires: libmetaio-devel lal-devel
 %description devel
 The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL MetaIO

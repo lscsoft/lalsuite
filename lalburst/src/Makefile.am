@@ -5,7 +5,11 @@ lalburstinclude_HEADERS = \
 	CLR.h \
 	EPSearch.h \
 	GenerateBurst.h \
+	LALBurstConfig.h \
+	LALBurstVCSInfo.h \
 	LALSimBurst.h \
+	LIGOLwXMLBurstRead.h \
+	LIGOMetadataBurstUtils.h \
 	TFTransform.h \
 	TSData.h \
 	TSSearch.h \
@@ -26,8 +30,11 @@ liblalburst_la_SOURCES = \
 	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \
+	LALBurstVCSInfo.c \
 	LALSimBurst.c \
+	LIGOLwXMLBurstRead.c \
 	RefInterference.c \
+	SnglBurstUtils.c \
 	TSData.c \
 	TfrPswv.c \
 	TfrRsp.c \
@@ -37,9 +44,19 @@ liblalburst_la_SOURCES = \
 	TrackSearch.c \
 	check_series_macros.h
 
-CLEANFILES = lalburst-user-env.sh lalburst-user-env.csh
-sysconf_DATA = lalburst-user-env.sh lalburst-user-env.csh
-BUILT_SOURCE = lalburst-user-env.sh lalburst-user-env.csh
+CLEANFILES = \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
+
+sysconf_DATA = \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
+
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALBurstVCSInfo.h \
+	lalburst-user-env.sh \
+	lalburst-user-env.csh
 
 lalburst-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -78,5 +95,17 @@ lalburst-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+EXTRA_DIST = \
+	LALBurstConfig.h.in \
+	LALBurstVCSInfo.h.in \
+	git_version
+
+LALBurstVCSInfo.h: ._vcsinfo
+
+._vcsinfo: git_version LALBurstConfig.h
+	@echo "creating LALBurstVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALBurst $$sourced $$buildd
 
 @LAL_HEADER_LINK@

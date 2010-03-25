@@ -2,17 +2,43 @@ INCLUDES = -I$(top_builddir)/include
 
 lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
-	LIGOLwXMLRead.h
+	LALMetaIOConfig.h \
+	LALMetaIOVCSInfo.h \
+	LIGOLwXML.h \
+	LIGOLwXMLArray.h \
+	LIGOLwXMLHeaders.h \
+	LIGOLwXMLInspiralHeaders.h \
+	LIGOLwXMLRead.h \
+	LIGOMetadataTables.h \
+	LIGOMetadataUtils.h
 
 lib_LTLIBRARIES = liblalmetaio.la
 liblalmetaio_la_SOURCES = \
 	CreateMetaTableDir.c \
+	LALMetaIOVCSInfo.c \
+	LIGOLwXML.c \
+	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
-	LIGOLwXMLRingdownRead.c
+	LIGOMetadataUtils.c
 
-CLEANFILES = lalmetaio-user-env.sh lalmetaio-user-env.csh
-sysconf_DATA = lalmetaio-user-env.sh lalmetaio-user-env.csh
-BUILT_SOURCE = lalmetaio-user-env.sh lalmetaio-user-env.csh
+EXTRA_DIST = \
+	git_version \
+	LALMetaIOConfig.h.in \
+	LALMetaIOVCSInfo.h.in
+
+CLEANFILES = \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh
+
+sysconf_DATA = \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh
+
+BUILT_SOURCES = \
+	._vcsinfo \
+	LALMetaIOVCSInfo.h \
+	lalmetaio-user-env.sh \
+	lalmetaio-user-env.csh
 
 lalmetaio-user-env.sh: Makefile
 	@echo "creating $@" ;\
@@ -51,5 +77,12 @@ lalmetaio-user-env.csh: Makefile
 	echo "else" >>$@ ;\
 	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
 	echo "endif" >>$@
+
+LALMetaIOVCSInfo.h: ._vcsinfo
+
+._vcsinfo: git_version LALMetaIOConfig.h
+	@echo "creating LALMetaIOVCSInfo.h"
+	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
+		./git_version --sed LALMetaIO $$sourced $$buildd
 
 @LAL_HEADER_LINK@

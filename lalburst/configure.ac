@@ -1,6 +1,6 @@
 AC_INIT([lalburst],[1.0],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
+AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
+AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -40,6 +41,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalburst])
 
+# put version/configure info in config header
+lalburst_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+AC_DEFINE_UNQUOTED([LALBURST_VERSION],["$VERSION"],[LALBurst Version])
+AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_ARGS],["$ac_configure_args"],
+                   [LALBurst Configure Arguments])
+AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
+                   [LALBurst Configure Date])
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
@@ -54,7 +63,8 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LIBTOOL
+LT_INIT
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
 # check for supported mac os x version
 if test "x$build_vendor" = "xapple"; then
@@ -81,20 +91,31 @@ fi
 AC_HEADER_STDC
 
 # check for required libraries
-AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([cannot find the math library])])
+AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
-AC_CHECK_LIB([gslcblas],[main])
-AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR(could not find GSL library)])
+AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
+AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
+
+# check for gsl headers
+AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
+
+# metaio
+PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
+CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+LIBS="$LIBS $METAIO_LIBS"
+AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
+
+# check for libmetaio headers
+AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion])
-
-# check for lalsupport, needed for test suite
-LALSUITE_CHECK_OPT_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
