@@ -763,20 +763,22 @@ int MAIN( int argc, char *argv[]) {
 
   /* "spool forward" if we found a checkpoint */
   {
-    UINT4 count = 0;
+    UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;  
     
     GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
         
-    f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
-    skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
-    fprintf (stderr, "%% --- Total:%d/%d sky:%d/%d f1dot:%d/%d\n", 
-               count+1, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
+    if (count) {
+      f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
+      skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
+    }
+    fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n", 
+               count, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
     
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
     
-    if ( (count > 0) && (count+1) == thisScan.numSkyGridPoints*nf1dot )
+    if ( count == thisScan.numSkyGridPoints*nf1dot )
       thisScan.state = STATE_FINISHED;
     
   }
@@ -876,7 +878,9 @@ int MAIN( int argc, char *argv[]) {
 
 
       /* ################## loop over coarse-grid F1DOT values ################## */
-      for (ifdot = 0; ifdot < nf1dot; ifdot++) {
+      ifdot = 0;  
+    
+      while ( ifdot < nf1dot ) {
  
         /* if checkpoint read, spool forward */
         if (f1dotGridCounter > 0) {
@@ -1176,16 +1180,16 @@ int MAIN( int argc, char *argv[]) {
               } /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
 
 
-	      /* -------------- Single-trial check ------------- */
-	      /*
-         if ( ifine == 850642 && (k+1) == nStacks ) {
-         fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n",
-         k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
-         finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
-         finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
-         );
-         }
-	      */
+              /* -------------- Single-trial check ------------- */
+              /*
+               if ( ifine == 850642 && (k+1) == nStacks ) {
+               fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n",
+               k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
+               finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
+               finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
+               );
+               }
+               */
 
               ifine++;
 
@@ -1209,6 +1213,10 @@ int MAIN( int argc, char *argv[]) {
           LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, &usefulParams), &status);
         }
 
+        ifdot++;  /* Increment ifdot counter BEFORE SET_CHECKPOINT */
+        
+        fprintf(stderr," %d\n",skyGridCounter*nf1dot+ifdot);
+        
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
                       thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
