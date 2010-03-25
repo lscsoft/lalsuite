@@ -7,6 +7,14 @@ You can use it to retrieve data from any of the tens of thousands of channels
 provided by the LHO and LLO sites.
 
 
+-----
+To do
+-----
+
+ - Add method for getting timestamp
+ - Store host name and port in connection object so that it can be reported back to user
+
+
 ------------
 Dependencies
 ------------
