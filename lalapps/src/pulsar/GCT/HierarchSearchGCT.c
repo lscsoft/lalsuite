@@ -49,7 +49,7 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)
+#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) if(read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0
 #define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1)
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
@@ -630,7 +630,6 @@ int MAIN( int argc, char *argv[]) {
     sigmasq = sigmasq / (nStacks * tStack * tStack);
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
   }
-  fprintf(stderr, "%% --- Refinement factor, gammaRefine = %f\n", gammaRefine);
 
 
 
@@ -665,8 +664,8 @@ int MAIN( int argc, char *argv[]) {
 	    usefulParams.spinRange_endTime.fkdot[1] + usefulParams.spinRange_endTime.fkdotBand[1]);
 
   /* print debug info about stacks */
-  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs\n",
-	    nStacks, tStack, tObs);
+  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs, gammaRefine = %f\n",  
+          nStacks, tStack, tObs, gammaRefine);
 
   for (k = 0; k < nStacks; k++) {
 
@@ -771,13 +770,13 @@ int MAIN( int argc, char *argv[]) {
         
     f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
     skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
-    LogPrintf (LOG_DEBUG, "Total:%d/%d sky:%d/%d f1dot:%d/%d\n", 
+    fprintf (stderr, "%% --- Total:%d/%d sky:%d/%d f1dot:%d/%d\n", 
                count+1, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
     
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
     
-    if ( (count+1) == thisScan.numSkyGridPoints*nf1dot )
+    if ( (count > 0) && (count+1) == thisScan.numSkyGridPoints*nf1dot )
       thisScan.state = STATE_FINISHED;
     
   }
@@ -886,8 +885,8 @@ int MAIN( int argc, char *argv[]) {
         }
         
         /* show progress */
-        fprintf(stderr, "sky:%d/%d, f1dot:%d/%d\n",
-                skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot );
+        fprintf(stderr, "sky:%d f1dot:%d\n",
+                skyGridCounter+1, ifdot+1 );
 
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
