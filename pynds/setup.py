@@ -18,7 +18,7 @@ setup(
     author='Leo Singer',
     author_email='leo.singer@ligo.org',
     description='NDS1/NDS2 client',
-    version='1.0',
+    version='0.1',
     packages=['nds'],
     ext_modules=[
         Extension('nds_ext', ['nds_ext.cpp'],
