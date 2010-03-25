@@ -49,7 +49,7 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT if(read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0
+#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)
 #define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1)
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
@@ -767,7 +767,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0;
     UINT4 skycount = 0;  
     
-    GET_CHECKPOINT;
+    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
         
     f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
     skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
