@@ -49,8 +49,8 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT if (!read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0;
-#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1);
+#define GET_CHECKPOINT if(read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0
+#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1)
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
 #define FOPEN fopen
@@ -766,13 +766,20 @@ int MAIN( int argc, char *argv[]) {
   {
     UINT4 count = 0;
     UINT4 skycount = 0;  
+    
     GET_CHECKPOINT;
+        
     f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
     skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
-    LogPrintf (LOG_DEBUG, "%% --- Cpt:%d/%d sky:%d/%d f1dot:%d/%d\n", 
-               count, thisScan.numSkyGridPoints*nf1dot, skycount, thisScan.numSkyGridPoints, f1dotGridCounter, nf1dot);
+    LogPrintf (LOG_DEBUG, "Total:%d/%d sky:%d/%d f1dot:%d/%d\n", 
+               count+1, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
+    
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
+    
+    if ( (count+1) == thisScan.numSkyGridPoints*nf1dot )
+      thisScan.state = STATE_FINISHED;
+    
   }
 
   /* spool forward if uvar_skyPointIndex is set
@@ -1206,11 +1213,8 @@ int MAIN( int argc, char *argv[]) {
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
                       thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
-
-/*#ifdef EAH_BOINC*/
-        fprintf(stderr,"%d\n",skyGridCounter*nf1dot+ifdot);
+        
         SET_CHECKPOINT;
-/*#endif*/
         
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -1314,9 +1318,13 @@ int MAIN( int argc, char *argv[]) {
     LALFree ( scanInit.skyRegionString );
 
   /* free fine grid and coarse grid */
-  LALFree(finegrid.list);
-  LALFree(coarsegrid.list);
-
+  if (finegrid.list) {
+    LALFree(finegrid.list);
+  }
+  if (coarsegrid.list) {
+    LALFree(coarsegrid.list);
+  }
+  
   /* free candidate toplist */
   free_gctFStat_toplist(&semiCohToplist);
 
