@@ -617,7 +617,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
 #endif
 
   /* all went well */
-  LogPrintf(LOG_DEBUG,"Successfully read checkpoint\n");
+  LogPrintf(LOG_DEBUG,"Successfully read checkpoint:%d\n", *counter);
 
   return(0);
 }

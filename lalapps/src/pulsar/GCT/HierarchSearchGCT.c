@@ -49,9 +49,9 @@ RCSID( "$Id$");
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) if (!read_hfs_checkpoint("checkpoint.cpt", toplist, &count)) count=0;
+#define GET_CHECKPOINT if (!read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0;
+#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1);
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
-#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter,1);
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
@@ -153,6 +153,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 j;
   UINT4 k;
   UINT4 skyGridCounter; /* coarse sky position counter */
+  UINT4 f1dotGridCounter; /* coarse f1dot position counter */
 
   /* ephemeris */
   EphemerisData *edat = NULL;
@@ -757,14 +758,20 @@ int MAIN( int argc, char *argv[]) {
 
   /* ----- start main calculations by going over coarse grid points --------*/
   skyGridCounter = 0;
-
+  f1dotGridCounter = 0;  
+  
   XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
 
   /* "spool forward" if we found a checkpoint */
   {
     UINT4 count = 0;
-    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
-    for(skyGridCounter = 0; skyGridCounter < count; skyGridCounter++)
+    UINT4 skycount = 0;  
+    GET_CHECKPOINT;
+    f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
+    skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
+    LogPrintf (LOG_DEBUG, "%% --- Cpt:%d/%d sky:%d/%d f1dot:%d/%d\n", 
+               count, thisScan.numSkyGridPoints*nf1dot, skycount, thisScan.numSkyGridPoints, f1dotGridCounter, nf1dot);
+    for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
@@ -864,7 +871,13 @@ int MAIN( int argc, char *argv[]) {
 
       /* ################## loop over coarse-grid F1DOT values ################## */
       for (ifdot = 0; ifdot < nf1dot; ifdot++) {
-
+ 
+        /* if checkpoint read, spool forward */
+        if (f1dotGridCounter > 0) {
+          ifdot = f1dotGridCounter;
+          f1dotGridCounter = 0;
+        }
+        
         /* show progress */
         fprintf(stderr, "sky:%d/%d, f1dot:%d/%d\n",
                 skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot );
@@ -1194,6 +1207,11 @@ int MAIN( int argc, char *argv[]) {
                       skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
                       thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
 
+/*#ifdef EAH_BOINC*/
+        fprintf(stderr,"%d\n",skyGridCounter*nf1dot+ifdot);
+        SET_CHECKPOINT;
+/*#endif*/
+        
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
       /* continue forward till the end if uvar_skyPointIndex is set
@@ -1212,9 +1230,6 @@ int MAIN( int argc, char *argv[]) {
 		      skyGridCounter,thisScan.numSkyGridPoints, \
 		      uvar_Freq, uvar_FreqBand);
 
-#ifdef EAH_BOINC
-        SET_CHECKPOINT;
-#endif
 
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }
