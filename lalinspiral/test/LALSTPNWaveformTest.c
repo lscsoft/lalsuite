@@ -54,7 +54,7 @@ If outputfile is not given it is \texttt{wave1.dat} in the current directory.
 
 NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
-int main() {
+int main(void) {
     static LALStatus    mystatus;
 
     CoherentGW      thewaveform;

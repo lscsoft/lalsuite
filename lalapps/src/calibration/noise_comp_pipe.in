@@ -14,7 +14,7 @@ __version__ = '$Revision$'[11:-2]
 
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, shutil 
+import sys, os, shutil
 import optparse
 from optparse import *
 import getopt, re, string
@@ -131,7 +131,7 @@ qscan_job = strain.qscanJob(cp)
 # submit files
 df_job.set_sub_file( opts.basename + '.datafind'+ subsuffix )
 noise_job.set_sub_file( opts.basename + '.noisecomp' + subsuffix )
-  
+
 # get the pad and chunk lengths from the values in the ini file
 length = int(cp.get('pipeline', 'segment-length'))
 
@@ -140,7 +140,7 @@ ifo = cp.get('pipeline','ifo')
 datatype_hoft = cp.get('input','type-hoft')
 datatype_derr = cp.get('input','type-derr')
 
-# read in data that is specific to calibration epochs	
+# read in data that is specific to calibration epochs
 epochs = strain.EpochData(cp,opts)
 
 epoch_cnt = 0;
@@ -186,9 +186,9 @@ for epoch in epochs.epoch_segs():
     if df1cache: found,missed = df1cache.checkfilesexist("ignore")
     else: missed = True
   else: missed = True
-      
+
   if opts.data_find and missed and opts.write_dax: df1.add_parent(mkdir_node)
-  if prev_df1 and opts.data_find and missed: 
+  if prev_df1 and opts.data_find and missed:
     df1.add_parent(prev_df1)
   if opts.data_find and missed: dag.add_node(df1)
   prev_df1 = df1
@@ -201,7 +201,7 @@ for epoch in epochs.epoch_segs():
   df2.set_type(datatype_derr)
   df2.set_name("df2_"+ifo+"_"+str(epoch_cnt))
   #df2.add_var_opt("no-proxy"," ")
-  #df2.add_output_file(df2.get_output_cache()) 
+  #df2.add_output_file(df2.get_output_cache())
   # see if the cache files laying around are still okay
   if opts.check_datafind_jobs:
     try: df2cache = lal.Cache.fromfile(open(df2.get_output(),'r'))
@@ -210,7 +210,7 @@ for epoch in epochs.epoch_segs():
     else: missed = True
   else: missed = True
   if opts.data_find and missed and opts.write_dax: df2.add_parent(mkdir_node)
-  if prev_df2 and opts.data_find and missed: 
+  if prev_df2 and opts.data_find and missed:
     df2.add_parent(prev_df2)
   if opts.data_find and missed: dag.add_node(df2)
   prev_df2 = df2
@@ -229,8 +229,8 @@ for epoch in epochs.epoch_segs():
         continue
       #make the directory where the data's going to go
       gps_str=str(chunk.start())
-      
-      #Noise job for first ifo  
+
+      #Noise job for first ifo
       noise1 = strain.NoiseNode(noise_job)
       noise1.set_start(chunk.start())
       noise1.set_end(chunk.end())
@@ -278,7 +278,7 @@ if not opts.cat_noise_jobs:
 
   # write out a log file for this script
   log_fh = open(opts.basename + '.pipeline.log', 'w')
-  
+
   log_fh.write( "$Id$" + "\n\n" )
   log_fh.write( "Invoked with arguments:\n" )
 
@@ -308,19 +308,19 @@ if not opts.cat_noise_jobs:
   print "\nCreated a DAG file which can be submitted by executing"
   print "\n   condor_submit_dag", dag.get_dag_file()
   print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-  If you are running LSCdataFind jobs, do not forget to initialize your grid 
+  If you are running LSCdataFind jobs, do not forget to initialize your grid
   proxy certificate on the condor submit machine by running the commands
-  
+
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
-  Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+  Enter your pass phrase when promted. The proxy will be valid for 72 hours.
   If you expect the LSCdataFind jobs to take longer to complete, increase the
-  time specified in the -hours option to grid-proxy-init. You can check that 
+  time specified in the -hours option to grid-proxy-init. You can check that
   the grid proxy has been sucessfully created by executing the command:
 
   grid-cert-info -all -file /tmp/x509up_u`id -u`
-  
+
   This will also give the expiry time of the proxy. You should also make sure
   that the environment variable LSC_DATAFIND_SERVER is set the hostname and
   optional port of server to query. For example on the UWM medusa cluster this

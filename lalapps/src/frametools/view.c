@@ -96,7 +96,7 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *calfile );
 int resample( REAL4TimeSeries *series, REAL8 srate );
 int filter( REAL4TimeSeries *series, REAL8 minfreq, REAL8 maxfreq );
-int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 fmin );
+int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min );
 REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTimeGPS *epoch, const char *calibfile, int intype );
 int output_psd( const char *outfile, REAL4FrequencySeries *series );
 int output( const char *outfile, int outtype, REAL4TimeSeries *series );
@@ -523,7 +523,7 @@ int filter( REAL4TimeSeries *series, REAL8 minfreq, REAL8 maxfreq )
 	return 0;
 }
 
-int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 fmin )
+int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 {
 	COMPLEX8FrequencySeries *response;
 	COMPLEX8FrequencySeries *fseries;
@@ -546,11 +546,11 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 fmin )
 	dynrange_ = 1e20;
 	response = getresp( calfile, tseries->name, &tseries->epoch, deltaF, tseries->data->length, dynrange_ );
 
-	if ( fmin < 30.0 ) {
+	if ( f_min < 30.0 ) {
 		fprintf( stderr, "warning: setting minimum frequency to 30 Hz for calibration\n" );
-		fmin = 30.0;
+		f_min = 30.0;
 	}
-	kmin = fmin / fseries->deltaF;
+	kmin = f_min / fseries->deltaF;
 	for ( k = 0; k < kmin; ++k )
 		fseries->data->data[k] = czerof;
 	for ( k = kmin; k < fseries->data->length; ++k )
@@ -572,7 +572,7 @@ REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTim
 	seglen = segdur / series->deltaT;
 	stride = seglen / 2;
 
-	
+
 	spectrum = XLALCreateREAL4FrequencySeries( "spectrum", epoch, 0.0, 1.0/segdur, &lalDimensionlessUnit, seglen/2 + 1 );
 	if ( intype != IMPULSE_INPUT ) {
 		REAL4FFTPlan *plan;

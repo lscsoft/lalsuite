@@ -46,9 +46,6 @@
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lalapps.h>
 
 /* local includes */
@@ -162,6 +159,7 @@ int main(int argc,char *argv[])
   REAL8 rho2;	/* SNR^2 */
 
   UserInput_t uvar = empty_UserInput;
+  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -179,10 +177,15 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
+
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
   if ( uvar.version ) {
-    printf ( "%s\n", lalGitID );
-    printf ( "%s\n", lalappsGitID );
-    return 0;
+    printf ("%s\n", VCSInfoString );
+    exit(0);
   }
 
   /* Initialize code-setup */
@@ -210,7 +213,6 @@ int main(int argc,char *argv[])
     {
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
-      CHAR *id1, *id2;
 
       if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
@@ -223,10 +225,8 @@ int main(int argc,char *argv[])
 
       fprintf(fpFstat, "%%%% cmdline: %s\n", logstr );
       LALFree ( logstr );
-      id1 = XLALClearLinebreaks ( lalGitID );
-      id2 = XLALClearLinebreaks ( lalappsGitID );
-      fprintf ( fpFstat, "%%%% %s\n%%%%%s\n", id1, id2 );
-      LALFree ( id1 ); LALFree ( id2 );
+
+      fprintf ( fpFstat, "%s\n", VCSInfoString );
 
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
@@ -252,6 +252,7 @@ int main(int argc,char *argv[])
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
   LALFree ( GV.dataSummary );
+  XLALFree ( VCSInfoString );
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();

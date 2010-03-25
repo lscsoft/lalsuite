@@ -255,6 +255,7 @@ int main(int argc,char *argv[])
   highpassParams.a1   = -1;
   highpassParams.f2   = CommandLineArgs.flow;
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
+  printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
   printf("ReadData()\n");
@@ -400,7 +401,7 @@ int AddInjections(struct CommandLineArgsTag CLA){
   /* new injection code is double precision, so we need to create a
    * buffer to put the injections in and then quantize to single precision
    * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, GV.ht_proc->data->length);
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, (UINT4)GV.ht_proc->data->length);
   memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc -> for printing
@@ -1088,7 +1089,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"max-mismatch",              required_argument,	NULL,	'M'},
     {"threshold",                 required_argument,	NULL,	't'},
     {"frame-cache",               required_argument,	NULL,	'F'},
-    {"channel-name",              required_argument,	NULL,	'C'},
+    {"channel",                   required_argument,	NULL,	'C'},
     {"output",                    required_argument,	NULL,	'o'},
     {"gps-end-time",              required_argument,	NULL,	'E'},
     {"gps-start-time",            required_argument,	NULL,	'S'},
@@ -1332,7 +1333,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--bank-freq-start (-L)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
+      fprintf(stdout,"\t--channel (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
       fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
@@ -1353,7 +1354,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1404,6 +1405,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n",argv[0]);
+      return 1;
+    }      
+  if(!(CLA->ChannelName[0] == 'V' || CLA->ChannelName[0] == 'H' || CLA->ChannelName[0] == 'L'))
+    {
+      fprintf(stderr,"The channel name is  not well specified\n");
+      fprintf(stderr,"It should start with H1, H2, L1 or V1\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      

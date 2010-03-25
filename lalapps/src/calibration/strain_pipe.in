@@ -14,7 +14,7 @@ __version__ = '$Revision$'[11:-2]
 
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, shutil 
+import sys, os, shutil
 import getopt, re, string
 import tempfile
 import ConfigParser
@@ -110,7 +110,7 @@ if not log_path:
 
 if (not GPSStart or not GPSEnd) and not segment_filename:
   print >> sys.stderr, "No GPS start time and end times or segment filename specified."
-  print >> sys.stderr, "Either GPS start time and end times, or a segment filename must be specified."  
+  print >> sys.stderr, "Either GPS start time and end times, or a segment filename must be specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -159,7 +159,7 @@ strain_job = strain.StrainJob(cp)
 subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 strain_job.set_sub_file( basename + '.strain' + subsuffix )
-  
+
 # if runnign on-line make segments filename
 if running_online:
   segment_file=open('strain_segment.txt',mode='w')
@@ -183,7 +183,7 @@ data.make_short_chunks_from_unused(0,2*overlap,0,0,0)
 
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
-datatype = cp.get('input','type') 
+datatype = cp.get('input','type')
 base_data_dirL1 = cp.get('pipeline','data-dirL1')
 base_data_dirL2 = cp.get('pipeline','data-dirL2')
 frametype = cp.get('strain','frame-type')
@@ -198,7 +198,7 @@ cachecheck_file=open('cache_check.txt',mode='w')
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
 segment_no = -1
-for seg in data: 
+for seg in data:
   segment_no = segment_no + 1
   # find all the data for first ifo
   df = pipeline.LSCDataFindNode(df_job)
@@ -212,7 +212,7 @@ for seg in data:
   " --gps-end-time "+str(seg.end())+" "+df.get_output()
   print >> cachecheck_file, command
 
-  if prev_df: 
+  if prev_df:
     df.add_parent(prev_df)
   dag.add_node(df)
   prev_df = df
@@ -233,8 +233,8 @@ for seg in data:
     except OSError, err:
       import errno
       #print "Warning:", err
-  
-    #Strain job for first ifo  
+
+    #Strain job for first ifo
     strain1 = strain.StrainNode(strain_job)
     strain1.set_start(chunk.start())
     strain1.set_end(chunk.end())
@@ -258,7 +258,7 @@ dag.write_dag()
 
 # write out a log file for this script
 log_fh = open(basename + '.pipeline.log', 'w')
-  
+
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:
@@ -278,7 +278,7 @@ for seg in data:
   for chunk in seg:
     print >> log_fh, chunk, 'length', int(chunk.end())-int(chunk.start())
     endgps=chunk.end()
-    
+
 if running_online:
   print >> sys.stdout, seg.start()+overlap,int(chunk.end())-overlap
 
@@ -287,19 +287,19 @@ if not running_online:
   print "\nCreated a DAG file which can be submitted by executing"
   print "\n   condor_submit_dag", dag.get_dag_file()
   print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-  If you are running LSCdataFind jobs, do not forget to initialize your grid 
+  If you are running LSCdataFind jobs, do not forget to initialize your grid
   proxy certificate on the condor submit machine by running the commands
-  
+
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
-  Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+  Enter your pass phrase when promted. The proxy will be valid for 72 hours.
   If you expect the LSCdataFind jobs to take longer to complete, increase the
-  time specified in the -hours option to grid-proxy-init. You can check that 
+  time specified in the -hours option to grid-proxy-init. You can check that
   the grid proxy has been sucessfully created by executing the command:
 
   grid-cert-info -all -file /tmp/x509up_u`id -u`
-  
+
   This will also give the expiry time of the proxy. You should also make sure
   that the environment variable LSC_DATAFIND_SERVER is set the hostname and
   optional port of server to query. For example on the UWM medusa cluster this

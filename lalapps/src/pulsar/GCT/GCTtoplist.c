@@ -29,8 +29,6 @@
 #include <lal/LogPrintf.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "boinc/filesys.h"
-#define fopen boinc_fopen
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
@@ -75,7 +73,9 @@ int finite(double);
 
 #endif /* WIN32 */
 
-
+#ifdef DEBUG_SORTING
+static FILE*debugfp = NULL;
+#endif
 
 /* define min macro if not already defined */
 #ifndef min
@@ -89,11 +89,19 @@ int finite(double);
 static void reduce_gctFStat_toplist_precision(toplist_t *l);
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen);
+static int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum);
 
 /* ordering function for sorting the list */
-static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
-  
-  if (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
+static int gctFStat_result_order(const void *a, const void *b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->Freq,  ((const GCTtopOutputEntry*)b)->Freq,
+	    ((const GCTtopOutputEntry*)a)->Alpha, ((const GCTtopOutputEntry*)b)->Alpha,
+	    ((const GCTtopOutputEntry*)a)->Delta, ((const GCTtopOutputEntry*)b)->Delta,
+	    ((const GCTtopOutputEntry*)a)->F1dot, ((const GCTtopOutputEntry*)b)->F1dot);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->Freq  < ((const GCTtopOutputEntry*)b)->Freq)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->Freq  > ((const GCTtopOutputEntry*)b)->Freq)
     return 1;
@@ -113,25 +121,75 @@ static int gctFStat_toplist_qsort_function(const void *a, const void *b) {
     return 0;
 }
 
-/* ordering function defining the toplist */
+/* ordering function defining the toplist: SORT BY sumTwoF */
 static int gctFStat_smaller(const void*a, const void*b) {
-  
-  if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
     return 1;
   else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->nc  > ((const GCTtopOutputEntry*)b)->nc)
+  else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
     return -1;
   else
-    return(gctFStat_toplist_qsort_function(a,b));
+    return(gctFStat_result_order(a,b));
+}
+
+
+/* ordering function defining the toplist: SORT BY Numbercount */
+static int gctNC_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return -1;
+  else
+    return(gctFStat_result_order(a,b));
+}
+
+
+/* functions for qsort based on the above ordering functions */
+static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
+  void const* const* pa = (void const* const*)a;
+  void const* const* pb = (void const* const*)b;
+  return(gctFStat_smaller(*pb,*pa));
+}
+static int gctFStat_final_qsort(const void*a, const void*b) {
+  void const* const* pa = (void const* const*)a;
+  void const* const* pb = (void const* const*)b;
+  return(gctFStat_result_order(*pa,*pb));
 }
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-int create_gctFStat_toplist(toplist_t**tl, UINT8 length) {
-  return(create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller));
+int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
+#ifdef DEBUG_SORTING
+  if(!debugfp)
+    debugfp=fopen("debug_sort","w");
+#endif
+
+  if (whatToSortBy==1) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
+  }
+  else {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
+  }
+  
 }
 
 /* frees the space occupied by the toplist */
@@ -154,144 +212,8 @@ int insert_into_gctFStat_toplist(toplist_t*tl, GCTtopOutputEntry elem) {
 
 /* (q)sort the toplist according to the sorting function. */
 void sort_gctFStat_toplist(toplist_t*l) {
-  qsort_toplist(l,gctFStat_toplist_qsort_function);
+  qsort(l->heap,l->elems,sizeof(char*),gctFStat_final_qsort);
 }
-
-/* reads a (created!) toplist from an open filepointer
-   returns the number of bytes read,
-    0 if we found a %DONE marker at the end,
-   -1 if the file contained a syntax error,
-   -2 if given an improper toplist */
-int read_gctFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
-  CHAR line[256];       /* buffer for reading a line */
-  UINT4 items, lines;   /* number of items read from a line, linecounter */
-  UINT4 len, chars = 0; /* length of a line, total characters read from the file */
-  UINT4 i;              /* loop counter */
-  CHAR lastchar;        /* last character of a line read, should be newline */
-  GCTtopOutputEntry gctFStatLine;
-  REAL8 epsilon=1e-5;
-
-  /* basic check that the list argument is valid */
-  if(!l)
-    return -2;
-
-  /* make sure the line buffer is terminated correctly */
-  line[sizeof(line)-1]='\0';
-
-  /* init the checksum if given */
-  if(checksum)
-    *checksum = 0;
-
-  /* set maxbytes to maximum if zero */
-  if (maxbytes == 0)
-    maxbytes--;
-
-  lines=1;
-  while(fgets(line,sizeof(line)-1, fp)) {
-
-    if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) {
-      LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n");
-      return(0);
-    }
-
-    len = strlen(line);
-    chars += len;
-
-    if (len==0) {
-      LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines);
-      return -1;
-    }
-    else if (line[len-1] != '\n') {
-      LogPrintf (LOG_CRITICAL,
-		 "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
-		 lines,sizeof(line)-1, line);
-      return -1;
-    }
-
-    items = sscanf (line,
-		    "%" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_REAL8_FORMAT
-		    " %" LAL_UINT4_FORMAT 
-		    " %" LAL_REAL8_FORMAT "%c",
-		    &gctFStatLine.Freq,
-		    &gctFStatLine.Alpha,
-		    &gctFStatLine.Delta,
-		    &gctFStatLine.F1dot,
-		    &gctFStatLine.nc,
-		    &gctFStatLine.sumTwoF,
-		    &lastchar);
-
-    /* check the values scanned */
-    if (
-            items != 7 ||
-
-            !finite(gctFStatLine.Freq)        ||
-            !finite(gctFStatLine.F1dot)       ||
-            !finite(gctFStatLine.Alpha)       ||
-            !finite(gctFStatLine.Delta)       ||
-	    !finite(gctFStatLine.nc)          ||
-            !finite(gctFStatLine.sumTwoF)     ||
-
-            gctFStatLine.Freq  < 0.0                    ||
-            gctFStatLine.Alpha <         0.0 - epsilon  ||
-            gctFStatLine.Alpha >   LAL_TWOPI + epsilon  ||
-            gctFStatLine.Delta < -0.5*LAL_PI - epsilon  ||
-            gctFStatLine.Delta >  0.5*LAL_PI + epsilon  ||
-
-            lastchar != '\n'
-	) {
-      LogPrintf (LOG_CRITICAL,
-                       "Line %d has invalid values.\n"
-                       "First %d chars are:\n"
-                       "%s\n"
-                       "All fields should be finite\n"
-                       "1st field should be positive.\n"
-                       "2nd field should lie between 0 and %1.15f.\n"
-		 "3rd field should lie between %1.15f and %1.15f.\n",
-		 lines, sizeof(line)-1, line,
-		 (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
-      return -1;
-    }
-
-    if (checksum)
-      for(i=0;i<len;i++)
-	*checksum += line[i];
-
-    insert_into_toplist(l, &gctFStatLine);
-    lines++;
-
-    /* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered HoughFStat stream                         
-     * gets written to the File at program termination.                                                               
-     * This does not seem to happen on Mac though, most likely due to different                                       
-     * exit()-calls used (_exit() vs exit() etc.....)                                                                 
-     *                                                                                                                
-     * The bottom-line is: the File-contents CAN legally extend beyond maxbytes,                                      
-     * which is why we'll ensure here that we don't actually read more than                                           
-     * maxbytes.                                                                                                      
-     */
-    if ( chars == maxbytes )
-      {
-	LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from HoughFStat-file, that's enough.\n",
-		   chars);
-	break;
-      }
-    /* however, if we've read more than maxbytes, something is gone wrong */
-    if ( chars > maxbytes )
-      {
-	LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from HoughFStat-file ... corrupted.\n",
-		   chars, maxbytes );
-	return -1;
-      }
-
-  } /* while (fgets() ) */
-
-  return chars;
-
-} /* read_gctFStat_toplist_from_fp() */
-
-
 
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
@@ -317,7 +239,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 /* writes an GCTtopOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum) {
+static int write_gctFStat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum) {
   char linebuf[256];
   UINT4 i;
 
@@ -382,17 +304,8 @@ int write_gctFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 }
 
 
-/* writes the given toplitst to a temporary file, then renames the temporary file to filename.
-   The name of the temporary file is derived from the filename by appending ".tmp". Returns the
-   number of chars written or -1 if the temp file could not be opened.
-   This just calls _atomic_write_gctFStat_toplist_to_file() telling it not to write a %DONE marker*/
-int atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  return(_atomic_write_gctFStat_toplist_to_file(l, filename, checksum, 0));
-}
-
-
-/* function that does the actual work of _atomic_write_gctFStat_toplist_to_file(),
-   appending a %DONE marker if specified (not when called from _atomic_write_gctFStat_toplist_to_file().
+/* function that does the actual work of atomic_write_gctFStat_toplist_to_file(),
+   appending a %DONE marker if specified (not when called from atomic_write_gctFStat_toplist_to_file().
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
   char* tempname;
@@ -410,7 +323,7 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
   strncpy(tempname,filename,s);
   strncat(tempname,TEMP_EXT,s);
 
-  fpnew=fopen(tempname, "wb");
+  fpnew=LALFopen(tempname, "wb");
   if(!fpnew) {
     LogPrintf (LOG_CRITICAL, "Failed to open temp gctFStat file \"%s\" for writing: %d: %s\n",
 	       tempname,errno,strerror(errno));
@@ -455,17 +368,6 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
 
   free(tempname);
   return length;
-}
-
-
-/* meant for the final writing of the toplist
-   - reduces toplist precision
-   - sorts the toplist
-   - then calls atomic_write_gctFStat_toplist_to_file() */
-int final_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  reduce_gctFStat_toplist_precision(l);
-  sort_gctFStat_toplist(l);
-  return(atomic_write_gctFStat_toplist_to_file(l,filename,checksum));
 }
 
 
@@ -523,9 +425,10 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     checksum += *(((char*)&counter) + len);
 
   /* open tempfile */
-  fp=fopen(tmpfilename,"wb");
+  fp=LALFopen(tmpfilename,"wb");
   if(!fp) {
     LOGIOERROR("Couldn't open",tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
@@ -536,6 +439,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -546,6 +450,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -556,6 +461,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -566,6 +472,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
     return(-1);
   }
 
@@ -575,25 +482,28 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
       LOGIOERROR("Couldn't sync", tmpfilename);
       sync_fail_counter++;
       if (sync_fail_counter >= SYNC_FAIL_LIMIT)
-	LogPrintf(LOG_NORMAL,"WARNING: syncing disabled\n");
-    } else {
-      sync_fail_counter = 0;
+        LogPrintf(LOG_NORMAL,"WARNING: syncing disabled\n");
+      } else {
+        sync_fail_counter = 0;
     }
   }
 
   /* close tempfile */
   if(fclose(fp)) {
     LOGIOERROR("Couldn't close", tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
   /* rename to filename */
   if(rename(tmpfilename,filename)) {
     LOGIOERROR("Couldn't rename\n", tmpfilename);
+    LALFree(tmpfilename);
     return(-1);
   }
 
   /* all went well */
+  LALFree(tmpfilename);
   return(0);
 }
 
@@ -607,7 +517,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   *counter = 0;
 
   /* try to open file */
-  fp = fopen(filename, "rb");
+  fp = LALFopen(filename, "rb");
   if(!fp) {
     if(errno == ENOENT) {
       LogPrintf(LOG_NORMAL,"INFO: No checkpoint %s found - starting from scratch\n", filename);
@@ -695,20 +605,57 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* restore Heap structure by sorting */
   for(len = 0; len < tl->elems; len++)
     tl->heap[len] = tl->data + len * tl->size;
-  qsort_toplist_r(tl,gctFStat_smaller);
+
+#ifdef DEBUG_SORTING
+  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_read_from_checkpoint", NULL, 0);
+#endif
+
+  qsort(tl->heap,tl->elems,sizeof(char*),gctFStat_restore_heap_qsort);
+
+#ifdef DEBUG_SORTING
+  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_sorted_from_checkpoint", NULL, 0);
+#endif
 
   /* all went well */
-  LogPrintf(LOG_DEBUG,"Successfully read checkpoint\n");
+  LogPrintf(LOG_DEBUG,"Successfully read checkpoint:%d\n", *counter);
 
   return(0);
 }
 
+#ifdef DEBUG_SORTING
+static void dump_heap_order(const toplist_t*tl, const char*name) {
+  unsigned int i;
+  FILE*fp;
+  if((fp=fopen(name,"w"))) {
+    for(i = 0; i < tl->elems; i++) {
+      fprintf(fp,"%u\n",(unsigned int)((tl->heap[i] - tl->data) / sizeof(GCTtopOutputEntry)));
+    }
+    fclose(fp);
+  }
+}
+
+static void sort_gctFStat_toplist_debug(toplist_t*l) {
+  if(!debugfp)
+    debugfp=fopen("debug_sort","w");
+  sort_gctFStat_toplist(l);
+  if(debugfp) {
+    fclose(debugfp);
+    debugfp=NULL;
+  }
+}
+#endif
 
 int write_hfs_oputput(const char*filename, toplist_t*tl) {
   /* reduce the precision of the calculated values before doing the sort to
      the precision we will write the result with. This should ensure a sorting
      order that looks right to the validator, too */
   reduce_gctFStat_toplist_precision(tl);
+#ifdef DEBUG_SORTING
+  dump_heap_order(tl,"heap_before.dump");
+  sort_gctFStat_toplist_debug(tl);
+  dump_heap_order(tl,"heap_after.dump");
+#else
   sort_gctFStat_toplist(tl);
+#endif
   return(_atomic_write_gctFStat_toplist_to_file(tl, filename, NULL, 1));
 }

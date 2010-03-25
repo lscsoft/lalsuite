@@ -63,9 +63,6 @@
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
@@ -212,6 +209,7 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< various derived configuration settings */
   UINT4 i;
+  CHAR *version_string;
 
   /* signal + data vectors */
   gsl_matrix *Amp_i = NULL;		/**< numDraws signal amplitude-params {h0Nat, cosi, psi, phi0} */
@@ -247,9 +245,13 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     return 0;
 
+  if ( (version_string = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
   if ( uvar.version ) {
-    printf ( "%s\n", lalGitID );
-    printf ( "%s\n", lalappsGitID );
+    printf ( "%s\n", version_string );
     return 0;
   }
 
@@ -344,7 +346,6 @@ int main(int argc,char *argv[])
     {
       FILE *fpStat = NULL;
       CHAR *logstr = NULL;
-      CHAR *id1, *id2;
 
       if ( (fpStat = fopen (uvar.outputStats, "wb")) == NULL)
 	{
@@ -357,10 +358,7 @@ int main(int argc,char *argv[])
 
       fprintf(fpStat, "%%%% cmdline: %s\n", logstr );
       LALFree ( logstr );
-      id1 = XLALClearLinebreaks ( lalGitID );
-      id2 = XLALClearLinebreaks ( lalappsGitID );
-      fprintf ( fpStat, "%%%% %s\n%%%%%s\n", id1, id2 );
-      LALFree ( id1 ); LALFree ( id2 );
+      fprintf ( fpStat, "%s\n", version_string );
 
       /* append 'dataSummary' */
       fprintf (fpStat, "%%%% h0Nat        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat        Bhat\n");
@@ -390,6 +388,7 @@ int main(int argc,char *argv[])
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALFree ( version_string );
 
   gsl_matrix_free ( GV.M_mu_nu );
   gsl_matrix_free ( s_mu_i );

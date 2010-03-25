@@ -1611,6 +1611,7 @@ int main(int argc, char *argv[])
         for (i = 0; i < fcSegVec->length; ++i) {
             INT8 fcSegStartTimeNS;
             INT8 fcSegEndTimeNS;
+            INT8 chunkOffset = 64000000000;   /* 64 seconds in nanoseconds */
 
             fcSegStartTimeNS = XLALGPSToINT8NS(&(fcSegVec->data[i].data->epoch));
             fcSegEndTimeNS   = fcSegStartTimeNS +
@@ -1629,7 +1630,7 @@ int main(int argc, char *argv[])
 
                     trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                    if (trigEndTimeNS >= fcSegStartTimeNS && trigEndTimeNS < fcSegEndTimeNS)
+                    if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
                     {
                         analyseTag = 1;
                         if (vrbflg)
@@ -1773,7 +1774,8 @@ int main(int argc, char *argv[])
 
                         trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                        if (trigEndTimeNS >= fcSegStartTimeNS && trigEndTimeNS < fcSegEndTimeNS) {
+                        if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                        {
                             INT4                       timeIndex;
 
                             timeIndex = 1 + (INT4) ((trigEndTimeNS - fcSegStartTimeNS) / (1e9 * deltaT));

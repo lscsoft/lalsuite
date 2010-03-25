@@ -39,8 +39,10 @@ typedef struct
    REAL8 Tobs;
    REAL4 Tcoh;
    REAL8 searchstarttime;
-   REAL4 ra;
-   REAL4 dec;
+   REAL4 Pmin;
+   REAL4 Pmax;
+   REAL4 dfmin;
+   REAL4 dfmax;
    REAL4 dopplerMultiplier;
    INT4 blksize;
    INT4 maxbinshift;
@@ -55,12 +57,9 @@ typedef struct
    REAL4 moddepth;
    REAL4 ra;
    REAL4 dec;
-   //REAL4 Tobs;
-   //REAL4 Tcoh;
-   //REAL4 fmin;
-   //REAL4 fspan;
    REAL4 stat;
    REAL4 snr;
+   REAL4 prob;
 } candidate;
 
 typedef struct
@@ -88,6 +87,7 @@ typedef struct
    REAL4 far;
    REAL4 distMean;
    REAL4 distSigma;
+   REAL4Vector *topRvalues;
 } farStruct;
 
 typedef struct
