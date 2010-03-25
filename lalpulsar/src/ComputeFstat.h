@@ -157,11 +157,30 @@ typedef struct {
   CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 } MultiCmplxAMCoeffs;
 
+
+/** contains of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
+typedef struct {
+  UINT4 length;			/**< number of SFTs, ie 'atoms' */
+  LIGOTimeGPS *timestamps;	/**< SFT timestamps t_i */
+  REAL8 *a_alpha;		/**< antenna-pattern factor a^X(t_i) */
+  REAL8 *b_alpha;		/**< antenna-pattern factor b^X(t_i) */
+  COMPLEX8 *Fa_alpha;		/**< Fa^X(t_i) */
+  COMPLEX8 *Fb_alpha;		/**< Fb^X(t_i) */
+} FstatAtoms;
+
+/** multi-detector version of FstatAtoms type */
+typedef struct {
+  UINT4 length;			/**< number of detectors */
+  FstatAtoms **data;		/**< array of FstatAtom (pointers), one for each detector X */
+} MultiFstatAtoms;
+
+
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct {
-  REAL8 F;		/**< F-statistic value */
-  COMPLEX16 Fa;		/**< complex amplitude Fa */
-  COMPLEX16 Fb;		/**< complex amplitude Fb */
+  REAL8 F;				/**< F-statistic value */
+  COMPLEX16 Fa;				/**< complex amplitude Fa */
+  COMPLEX16 Fb;				/**< complex amplitude Fb */
+  MultiFstatAtoms *multiFstatAtoms;	/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
 
 /** The precision in calculating the barycentric transformation */
@@ -183,6 +202,7 @@ typedef struct {
   BOOLEAN bufferedRAA;	/**< approximate RAA by assuming constant response over (small) frequency band */
   ComputeFBuffer_RS *buffer; /**< buffer for storing pre-resampled timeseries (used for resampling implementation) */
   EphemerisData *edat;   /**< ephemeris data for re-computing multidetector states */
+  BOOLEAN returnAtoms;	/**< whether or not to return the 'FstatAtoms' used to compute the F-statistic */
 } ComputeFParams;
 
 
@@ -326,6 +346,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  const CmplxAntennaPatternMatrix *Mmunu
 				  );
 
+FstatAtoms * XLALCreateFstatAtoms ( UINT4 num );
+
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
@@ -333,6 +355,8 @@ void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
 
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
+void XLALDestroyFstatAtoms ( FstatAtoms *atoms );
+void XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiAtoms );
 
 /* helpers */
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);

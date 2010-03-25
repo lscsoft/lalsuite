@@ -2285,6 +2285,8 @@ int main( int argc, char *argv[] )
    {
        memcpy( simRingTable->waveform, "Ringdown",
           sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+       memcpy( simRingTable->coordinates, "EQUATORIAL",
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;
        simRingTable->l_start_time = simTable->l_end_time;
@@ -2299,13 +2301,14 @@ int main( int argc, char *argv[] )
        simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
        simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
        simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
-       simRingTable->epsilon = 0; 
-       simRingTable->amplitude = 0; 
+       simRingTable->epsilon = 0.01; 
+       simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
        simRingTable->eff_dist_h = simTable->eff_dist_h; 
        simRingTable->eff_dist_l = simTable->eff_dist_l; 
-       simRingTable->hrss = 0;
-       simRingTable->hrss_h = 0;
-       simRingTable->hrss_l = 0;
+       simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
+       // need hplus & hcross in each detector to populate these
+       simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
     }
 
     /* increment current time, avoiding roundoff error;
