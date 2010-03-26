@@ -22,8 +22,7 @@ setup(
     ext_modules=[
         Extension('nds_ext', ['nds_ext.cpp'],
             **pkgconfig('nds2-client',
-                library_dirs=['/opt/local/lib'],
-                include_dirs=['/opt/local/include']+[numpy.get_include()],
+                include_dirs=[numpy.get_include()],
                 libraries=['boost_python']
             )
         )
