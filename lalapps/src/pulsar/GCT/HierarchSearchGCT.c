@@ -1141,15 +1141,19 @@ int MAIN( int argc, char *argv[]) {
             f1dot_tmp = finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg;
 
             f1dot_eventB1 = f1dot_tmp * B1;
+            
+            ifreq_fg = 0;
+            
+            /* get the frequency of this fine-grid point at mid point of segment */
+            freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
+            
+            /* compute the global-correlation coordinate indices */
+            U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
 
-            for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
+            for( ifreq_fg = 1; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
 
-              /* get the frequency of this fine-grid point at mid point of segment */
-              freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
-
-              /* compute the global-correlation coordinate indices */
-              U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
-
+              U1idx++;
+              
               /* consider only relevant frequency values (do not step outside coarse grid) */
               if ( U1idx < fveclength ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
 
