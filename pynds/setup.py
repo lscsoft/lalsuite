@@ -24,7 +24,7 @@ setup(
             **pkgconfig('nds2-client',
                 library_dirs=['/opt/local/lib'],
                 include_dirs=['/opt/local/include']+[numpy.get_include()],
-                libraries=['boost_python-mt']
+                libraries=['boost_python']
             )
         )
     ]

@@ -278,7 +278,7 @@ BOOST_PYTHON_MODULE(nds_ext)
         .value("minute_trend", cMTrend)
         .value("testpoint", cTestPoint);
     
-    enum_<nds_version>("nds_version", "NDS protocol version")
+    enum_<nds_version>("nds_version")
         .value("v1", nds_v1)
         .value("v2", nds_v2);
     
