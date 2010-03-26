@@ -12,9 +12,34 @@ To do
 -----
 
  - Merge the two implimentations
+ - Create binary distributions
  - Move into the official nds repository
- - Add method for getting timestamp
- - Store host name and port in connection object so that it can be reported back to user
+ - Get feedback on iterator mechanism (seek)
+ - Find out if call to daq_recv_next can be pulled out of daq_request_data
+ - Find out what end-of-stream indicator is for NDS1 and for NDS2
+
+
+----------
+Change Log
+----------
+
+2010-03-26 Incremented to release 0.2.
+           
+           * Added daq.seek(start, stop, stride) command that returns an 
+             iterator so that blocks of data can be read in a for loop.
+             
+             Example::
+               
+               for data in block.seek(start, stop, stride):
+                  plot(data)
+           
+           * Added `host' and `port' attributes to nds.daq.
+           
+           * Added demos.
+           
+           * Added `timestamp' property to nds.daq.
+           
+2010-03-25 Created version 0.1.
 
 
 ------------
