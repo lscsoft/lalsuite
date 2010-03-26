@@ -166,10 +166,12 @@ for ((x=1; x <= $Nsegments; x++))
 	echo "Error.. something failed when running '$pfs_code' ..."
 	exit 1
     fi
-    resPFS=`echo $tmp | awk '{printf "%g", $1}'`
+    echo $tmp
+    resPFS=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
+    #resPFS=`echo $tmp | awk '{printf "%g", $1}'`
     TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
     #echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
-    echo
+    
 done
 TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
 echo
