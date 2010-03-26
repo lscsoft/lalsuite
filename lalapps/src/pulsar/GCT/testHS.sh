@@ -156,22 +156,21 @@ for ((x=1; x <= $Nsegments; x++))
     
     startGPS=${segs[${x}]}
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
-    echo "Segment: "$x"  "$startGPS" "$endGPS
+    #echo "Segment: "$x"  "$startGPS" "$endGPS
     # construct pfs cmd
     pfs_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTdir/*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
 
     cmdline="$pfs_code $pfs_CL"
-    echo $cmdline
+    echo "  "$cmdline
     if ! tmp=`eval $cmdline`; then
 	echo "Error.. something failed when running '$pfs_code' ..."
 	exit 1
     fi
-    echo $tmp
     resPFS=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
     #resPFS=`echo $tmp | awk '{printf "%g", $1}'`
     TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
-    #echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
-    
+    echo "Segment: "$x"   2F: "$resPFS
+    echo
 done
 TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
 echo
