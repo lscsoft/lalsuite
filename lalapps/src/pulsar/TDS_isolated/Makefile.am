@@ -1,4 +1,4 @@
-# Makefile for TDS_isolated 
+# Makefile for TDS_isolated
 # $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
@@ -22,3 +22,6 @@ TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LALSUITE_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

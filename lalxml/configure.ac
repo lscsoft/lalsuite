@@ -1,6 +1,6 @@
 AC_INIT([lalxml],[1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -113,10 +113,10 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
 
 # check for lalpulsar
 LALSUITE_CHECK_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])

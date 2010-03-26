@@ -58,9 +58,8 @@
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/Ring.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -232,16 +231,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -817,11 +808,9 @@ int main( int argc, char *argv[] )
     this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
         this_inj->quality, this_inj->distance, this_inj->epsilon );
       
-    /* calculate hrss */
-    this_inj->hrss = this_inj->amplitude * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
-      pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
-          ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5);
-      
+    /* calculate hrss : at geocenter plus = 2 and cross = 0 */
+    this_inj->hrss = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
+
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
     
@@ -847,12 +836,8 @@ int main( int argc, char *argv[] )
         scross*scross*resp.cross*resp.cross );
 
     /* compute hrss at LHO */ 
-    this_inj->hrss_h = this_inj->amplitude * pow ( ( 
-          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
-          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
-          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-        /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
-      
+    this_inj->hrss_h = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+
     /* llo */
     placeAndGPS.p_detector = &llo;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
@@ -869,11 +854,7 @@ int main( int argc, char *argv[] )
         + scross*scross*resp.cross*resp.cross );
     
     /* compute hrss at LLO */
-    this_inj->hrss_l = this_inj->amplitude * pow ( (
-          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
-          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
-          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-          /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
+    this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
         
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);

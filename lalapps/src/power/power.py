@@ -255,7 +255,7 @@ class RMNode(pipeline.CondorDAGNode):
 		return set()
 
 
-class BurstInjJob(pipeline.CondorDAGJob):
+class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_binj job used by the power pipeline. The static options
 	are read from the [lalapps_binj] section in the ini file. The
@@ -268,6 +268,7 @@ class BurstInjJob(pipeline.CondorDAGJob):
 		config_parser = ConfigParser object
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
+		pipeline.AnalysisJob.__init__(self, config_parser)
 
 		# do this many injections between flow and fhigh inclusively
 		if config_parser.has_option("pipeline", "injection_bands"):
@@ -276,15 +277,15 @@ class BurstInjJob(pipeline.CondorDAGJob):
 			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
-
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 
-class BurstInjNode(pipeline.CondorDAGNode):
+class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
 		pipeline.CondorDAGNode.__init__(self, job)
+		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
 
@@ -315,27 +316,25 @@ class BurstInjNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		"""
-		Returns a LAL cache of the output file names.  This must be
-		kept synchronized with the name of the output file in
-		binj.c.  Note in particular the calculation of the "start"
-		and "duration" parts of the name.
+		Returns a LAL cache of the output file name.  Calling this
+		method also induces the output name to get set, so it must
+		be at least once.
 		"""
 		if not self.output_cache:
-			if not self.get_start() or not self.get_end():
-				raise ValueError, "start time or end time has not been set"
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			if self.__usertag:
-				filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
-			else:
-				filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-			self.output_cache = [CacheEntry("H1+H2+L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+			# FIXME:  instruments hardcoded to "everything"
+			self.output_cache = [CacheEntry(u"H1+H2+G1+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
 		raise NotImplementedError
 
 	def get_output(self):
-		raise NotImplementedError
+		if self._AnalysisNode__output is None:
+			if None in (self.get_start(), self.get_end(), self.__usertag):
+				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			self.set_output("H1+H2+G1+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start())))
+		return self._AnalysisNode__output
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -811,7 +810,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	"""
 	global datafindjob, rmjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob, burca2job, sqlitejob, burcatailorjob
 
-	# LSCdataFind
+	# ligo_data_find
 	if "datafind" in job_types:
 		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
 
@@ -970,7 +969,7 @@ datafind_pad = 512
 
 def make_datafind_fragment(dag, instrument, seg):
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
+	node.set_name("ligo_data_find-%s-%d-%d" % (instrument, int(seg[0]), int(abs(seg))))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
 	# FIXME: argh, I need the node to know what instrument it's for,
@@ -1218,7 +1217,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 #
 # =============================================================================
 #
-#                              LSCdataFind Stage
+#                             ligo_data_find Stage
 #
 # =============================================================================
 #
@@ -1226,13 +1225,13 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 
 def make_datafind_stage(dag, seglists, verbose = False):
 	if verbose:
-		print >>sys.stderr, "building LSCdataFind jobs ..."
+		print >>sys.stderr, "building ligo_data_find jobs ..."
 
 	#
 	# Fill gaps smaller than the padding added to each datafind job.
 	# Filling in the gaps ensures that exactly 1 datafind job is
 	# suitable for each lalapps_power job, and also hugely reduces the
-	# number of LSCdataFind nodes in the DAG.
+	# number of ligo_data_find nodes in the DAG.
 	#
 
 	filled = seglists.copy().protract(datafind_pad / 2).contract(datafind_pad / 2)

@@ -80,6 +80,7 @@ liblalpulsar_la_SOURCES = \
 	LALComputeAM.c \
 	LALDemod.c \
 	LALDemodFAST.c \
+	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
@@ -123,7 +124,8 @@ sysconf_DATA = \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
 
-BUILT_SOURCE = \
+BUILT_SOURCES = \
+	._vcsinfo \
 	LALPulsarVCSInfo.h \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
@@ -171,16 +173,11 @@ EXTRA_DIST = \
 	LALPulsarVCSInfo.h.in \
 	git_version.in
 
-MOSTLYCLEANFILES = .vcsinfo
+LALPulsarVCSInfo.h: ._vcsinfo
 
-
-.vcsinfo:
-	@touch .vcsinfo
-
-LALPulsarVCSInfo.h: LALPulsarVCSInfo.h.in .vcsinfo git_version
+._vcsinfo: git_version LALPulsarConfig.h
 	@echo "creating LALPulsarVCSInfo.h"
 	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
 		./git_version --sed LALPulsar $$sourced $$buildd
-	@-rm -f .vcsinfo
 
 @LAL_HEADER_LINK@

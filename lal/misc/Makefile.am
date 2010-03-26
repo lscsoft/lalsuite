@@ -1,5 +1,5 @@
 EXTRA_DIST = \
-	acx_pthread.m4 \
+	ax_pthread.m4 \
 	config.guess \
 	config.sub \
 	depcomp \

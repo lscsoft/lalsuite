@@ -11,7 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: lal spec
+BuildRequires: python
+Requires: libmetaio lal lalmetaio
 Prefix: %{_prefix}
 
 %description
@@ -23,7 +24,7 @@ that use the LAL Stochastic library.
 Summary: Files and documentation needed for compiling programs that use LAL Stochastic
 Group: LAL
 Requires: %{name} = %{version}
-Requires: lal-devel
+Requires: libmetaio-devel lal-devel lalmetaio-devel
 %description devel
 The LSC Algorithm Stochastic Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL

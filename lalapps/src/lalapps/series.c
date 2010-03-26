@@ -21,7 +21,9 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <FrameL.h>
+
+#include <lal/LALFrameL.h>
+
 #include "series.h"
 
 double epoch_diff( const LIGOTimeGPS *t2, const LIGOTimeGPS *t1 )
@@ -101,7 +103,7 @@ int write_ilwd( const char *fname, const struct series *ser )
     fprintf( fp, "<real_8 name='start_freq' units='hz'>0</real_8>\n" );
     fprintf( fp, "<real_8 name='stop_freq' units='hz'>%e</real_8>\n",
         ( ser->size - 1 ) * ser->step );
-    fprintf( fp, "<real_8 name='freq:step_size' units='hz'>%e</real_8>\n", 
+    fprintf( fp, "<real_8 name='freq:step_size' units='hz'>%e</real_8>\n",
         ser->step );
   }
   if ( ser->type == FR_VECT_8C )
@@ -169,7 +171,7 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   proc->type = IS_TIME( ser->dom ) ? 1 : 2;
   proc->subType = IS_TRANS( ser->dom ) ? 6 : 3;
 #endif
-  proc->fShift     = ser->f0; 
+  proc->fShift     = ser->f0;
   proc->data       = vect;
   proc->next       = frame->procData;
   frame->procData  = proc;

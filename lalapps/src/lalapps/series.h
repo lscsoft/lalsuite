@@ -36,14 +36,14 @@ typedef enum { Time, Freq, Trans } domain;
 
 struct series
 {
-  const char *name;
+  char *name;
   LIGOTimeGPS tbeg;
   LIGOTimeGPS tend;
   domain      dom;
   int         type;
   double      step;
   float       f0;
-  const char *unit;
+  char *unit;
   size_t      size;
   float      *data;
   double     *ddata;

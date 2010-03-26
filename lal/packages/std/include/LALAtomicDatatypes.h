@@ -243,19 +243,8 @@ typedef uint64_t UINT8;
 #define LAL_UINT8_C UINT64_C
 
 /* Real types */
-#if LAL_SIZEOF_FLOAT == 4
-  typedef float REAL4;
-#else
-  typedef float REAL4;
-# error "ERROR: NO 4 BYTE REAL FOUND"
-#endif
-
-#if LAL_SIZEOF_DOUBLE == 8
-  typedef double REAL8;
-#else
-  typedef double REAL8;
-# error "ERROR: NO 8 BYTE REAL FOUND"
-#endif
+typedef float REAL4;
+typedef double REAL8;
 
 /* <lalLaTeX>
 

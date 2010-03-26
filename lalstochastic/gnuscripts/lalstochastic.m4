@@ -1,4 +1,6 @@
-dnl lalstochastic.m4
+# lalstochastic.m4 - lalstochastic specific autoconf macros
+#
+# serial 1
 
 AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],

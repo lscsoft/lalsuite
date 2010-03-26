@@ -18,7 +18,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))

@@ -1,6 +1,6 @@
-AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([src/config.h.in])
+AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([\
@@ -22,9 +22,9 @@ AC_CONFIG_FILES([\
   src/string/Makefile \
   src/pulsar/Makefile \
   src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
@@ -36,7 +36,6 @@ AC_CONFIG_FILES([\
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
-  src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
@@ -66,19 +65,22 @@ LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
+LALAPPS_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_BOINC
+LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
-LALAPPS_ENABLE_LALFRAME
-LALAPPS_ENABLE_LALMETAIO
-LALAPPS_ENABLE_LALBURST
-LALAPPS_ENABLE_LALPULSAR
-LALAPPS_ENABLE_LALSTOCHASTIC
-LALAPPS_ENABLE_LALXML
-LALAPPS_ENABLE_NIGHTLY
+
+LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALMETAIO
+LALSUITE_ENABLE_LALBURST
+LALSUITE_ENABLE_LALINSPIRAL
+LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALSTOCHASTIC
+LALSUITE_ENABLE_LALXML
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
@@ -154,6 +156,8 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
+AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
+
 
 # further program checks
 LT_INIT
@@ -337,15 +341,26 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
+# use c++ mode for build build
+if test "${boinc}" = "true" ; then
+   AC_LANG_PUSH([C++])
+fi
+
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+
+# back to c mode
+if test "${boinc}" = "true" ; then
+   AC_LANG_POP([C++])
+fi
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
@@ -372,9 +387,16 @@ if test "$GCC" = yes; then
   fi
 fi
 
+# add -all-static to AM_LDFLAGS for --enable-static-binaries
+if test "${static_binaries}" = "true"; then
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
+fi
+
 # restore all static to ldflags
 if test "${allstatic}" = "true" ; then
-  LDFLAGS="-all-static $LDFLAGS"
+  LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
 AC_OUTPUT
@@ -389,6 +411,7 @@ echo "
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
                 LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
+                LAL Inspiral library support is $LALINSPIRAL_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL

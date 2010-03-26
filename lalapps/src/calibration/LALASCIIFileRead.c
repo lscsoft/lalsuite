@@ -196,7 +196,7 @@ int XLALASCIIFileCountRows( const char *fname )
         XLAL_ERROR( func, XLAL_EBADLEN );
       }
       /* check to see if this line is a comment line */
-      if ( line[0] == '#' || line[0] == '%' ) 
+      if ( line[0] == '#' || line[0] == '%' )
         continue; /* ignore these */
       ++nrow;
     }
@@ -245,7 +245,7 @@ REAL8VectorSequence * XLALASCIIFileReadColumns( INT4 ncol, const char *fname )
     XLALDestroyREAL8VectorSequence( data );
     XLAL_ERROR_NULL( func, XLAL_EIO );
   }
-  
+
   nline = 0;
   row = 0;
   while ( row < nrow )

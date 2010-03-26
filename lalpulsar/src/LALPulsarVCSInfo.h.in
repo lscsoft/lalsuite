@@ -22,8 +22,6 @@
 #ifndef _LALPULSARVCSINFO_H
 #define _LALPULSARVCSINFO_H
 
-#include <lal/LALPulsarConfig.h>
-
 #include <lal/LALVCSInfo.h>
 
 #ifdef __cplusplus
@@ -40,25 +38,16 @@ extern "C" {
 #define LALPULSAR_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALPULSAR_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALPULSAR_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALPULSAR_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALPULSAR_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALPULSAR_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALPULSAR_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALPULSAR_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALPULSAR_VCS_IDENT_ID "$" "LALPulsarId: @ID@ " "$"
+#define LALPULSAR_VCS_IDENT_DATE "$" "LALPulsarDate: @DATE@ " "$"
+#define LALPULSAR_VCS_IDENT_BRANCH "$" "LALPulsarBranch: @BRANCH@ " "$"
+#define LALPULSAR_VCS_IDENT_TAG "$" "LALPulsarTag: @TAG@ " "$"
+#define LALPULSAR_VCS_IDENT_AUTHOR "$" "LALPulsarAuthor: @AUTHOR@ " "$"
+#define LALPULSAR_VCS_IDENT_COMMITTER "$" "LALPulsarCommitter: @COMMITTER@ " "$"
+#define LALPULSAR_VCS_IDENT_STATUS "$" "LALPulsarStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalPulsarVCSInfo = { \
-  LALPULSAR_VERSION, \
-  LALPULSAR_VCS_ID, \
-  LALPULSAR_VCS_DATE, \
-  LALPULSAR_VCS_BRANCH, \
-  LALPULSAR_VCS_TAG, \
-  LALPULSAR_VCS_AUTHOR, \
-  LALPULSAR_VCS_COMMITTER, \
-  LALPULSAR_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalPulsarVCSInfo;
 
 #ifdef __cplusplus
 }

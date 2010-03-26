@@ -4,12 +4,7 @@ pkginclude_HEADERS = \
 	LALCache.h \
 	LALInitBarycenter.h \
 	LALMathematica.h \
-	LIGOLwXML.h \
-	LIGOLwXMLArray.h \
-	LIGOLwXMLHeaders.h \
-	LIGOLwXMLInspiralHeaders.h \
 	LogPrintf.h \
-	NRWaveIO.h \
 	PrintFTSeries.h \
 	PrintVector.h \
 	ReadFTSeries.h \

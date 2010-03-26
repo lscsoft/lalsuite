@@ -74,7 +74,7 @@ class StrainJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file('logs/strain-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/strain-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('strain.sub')
-    
+
 class NoiseJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_StringSearch job used by the string pipeline. The static options
@@ -102,7 +102,7 @@ class NoiseJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('noisecomp.sub')
 
 class EpochData(object):
-  """ 
+  """
   Holds calibration data epochs
   """
   def __init__(self,cp,opts):
@@ -110,7 +110,7 @@ class EpochData(object):
     self.epoch_data = []
     for line in self.file:
       if line.strip()[0] != '#':
-        self.epoch_data.append(line.split())  
+        self.epoch_data.append(line.split())
     self.epoch_data.sort()
 
   def epoch_segs(self):
@@ -118,7 +118,7 @@ class EpochData(object):
     for line in self.epoch_data:
       tmpList.append(tuple(map(int,(line[0:4]))))
     return tmpList
-     
+
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of datafind in a Condor DAG.
@@ -133,14 +133,14 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__end = 0
     self.__instrument = None
     self.__output = None
-   
+
   def __set_output(self):
     """
     Private method to set the file to write the cache to. Automaticaly set
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end and self.__instrument:
-      self.__output = 'cache/' + self.__instrument + '-' + str(self.__start) 
+      self.__output = 'cache/' + self.__instrument + '-' + str(self.__start)
       self.__output = self.__output + '-' + str(self.__end) + '.cache'
 
   def set_start(self,time):
@@ -163,8 +163,8 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_ifo(self,ifo):
     """
-    Set the IFO to retrieve data for. Since the data from both Hanford 
-    interferometers is stored in the same frame file, this takes the first 
+    Set the IFO to retrieve data for. Since the data from both Hanford
+    interferometers is stored in the same frame file, this takes the first
     letter of the IFO (e.g. L or H) and passes it to the --instrument option
     of LSCdataFind.
     ifo = IFO to obtain data for.
@@ -235,7 +235,7 @@ class NoiseNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 def open_noise_cat_file(dir):
   outfilename = dir + '/' + dir + '.cat'
   try:  outfile = open(outfilename,'w')
-  except: 
+  except:
     sys.stderr.write('Could not open '+outfilename+' for writing')
     sys.exit(1)
   return outfile
@@ -243,23 +243,23 @@ def open_noise_cat_file(dir):
 def cat_noise_jobs(file,node):
   out = node.get_output_files()
   tmpfile = open(out[0],'r')
-  tmpstr = ''.join( tmpfile.readlines() ) 
+  tmpstr = ''.join( tmpfile.readlines() )
   try:  file.write(tmpstr)
   except: pass
   return
 
 def bin(binVec,histVec,number):
-  if number < binVec[0]: 
+  if number < binVec[0]:
     histVec[0] += 1
     return
-  if number > binVec[-1]: 
+  if number > binVec[-1]:
     histVec[-1] += 1
     return
   histVec[int(ceil(number/(binVec[-2]-binVec[-1])))+int(len(binVec)/2-1)] += 1
   #for i in range(1,len(binVec)):
     #if number > binVec[i-1] and number < binVec[i]:
       #histVec[i] += 1
-  
+
 def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   flist = []
   for file in filelist:
@@ -269,7 +269,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   freqfile = cp.get('noisecomp','freq-file')
   for line in open(freqfile,'r').readlines():
     freq.append(float(line.strip()))
-  
+
   hfr1 = {}
   hfi1 = {}
   htr1 = {}
@@ -300,7 +300,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     amp[f] = 0.0
     amphf[f] = 0.0
   freqcnt = 0;
-  
+
   print "\tfirst pass through systematics files..."
   for file in flist:
     try: input = open(file,'r')
@@ -309,11 +309,11 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       continue
     for line in input.readlines():
       tmp = line.split()
-      if len(tmp) == 1: 
+      if len(tmp) == 1:
         Nt += 1
         continue
-      
-      ampt = float(tmp[0])**2 + float(tmp[1])**2  
+
+      ampt = float(tmp[0])**2 + float(tmp[1])**2
       ampf = float(tmp[2])**2 + float(tmp[3])**2
       N[freq[freqcnt]] += 1.0
       amp[freq[freqcnt]] += ampt/2.0 + ampf/2.0
@@ -334,7 +334,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
 
 
       freqcnt += 1
-      if freqcnt >= len(freq): freqcnt = 0 
+      if freqcnt >= len(freq): freqcnt = 0
     #if N[freq[freqcnt]] > 100: break
   #Actually make it the mean
   for f in freq:
@@ -342,7 +342,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     htr1[f] /= N[f]
     hti1[f] /= N[f]
     hfr1[f] /= N[f]
-    hfi1[f] /= N[f]  
+    hfi1[f] /= N[f]
     #Ai[f] = (htifr[f]-htrfi[f])/N[f]
     #Ar[f] = (htrfr[f]+htifi[f])/N[f]
     Ai[f] = (htifr[f]-htrfi[f])/(amp[f])
@@ -394,7 +394,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     N[f] = 0.0
 
   freqcnt = 0;
- 
+
   print "\tsecond pass through systematics files..."
   #Compute the moments of the distribution
   for file in flist:
@@ -420,14 +420,14 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       xr2[freq[freqcnt]] += xr*xr
       xi2[freq[freqcnt]] += xi*xi
       xr3[freq[freqcnt]] += xr*xr*xr
-      xi3[freq[freqcnt]] += xi*xi*xi      
+      xi3[freq[freqcnt]] += xi*xi*xi
       xr4[freq[freqcnt]] += xr*xr*xr*xr
       xi4[freq[freqcnt]] += xi*xi*xi*xi
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0
     #if N[freq[freqcnt]] > 100: break
 
-  
+
   #Put them in units of the noise amplitude
   for f in freq:
     xr1[f] /= N[f]*amp[f]
@@ -448,7 +448,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   fl.write("#freq \t xr \t xi \t xr^2 \t xi^2 \t xr^3 \t xi^3 \t xr^4 \t xi^4 \n")
   for f in freq:
     fl.write(str(f) + '\t' + str(xr1[f]) + '\t' + str(xi1[f]) + '\t' + str(xr2[f]) + '\t' + str(xi2[f]) + '\t' + str(xr3[f]) + '\t' + str(xi3[f]) + '\t' + str(xr4[f]) + '\t' + str(xi4[f]) + '\n')
-  
+
   rootN = []
   rootNdeg = []
   vals = N.values()
@@ -456,7 +456,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   for f in vals:
     rootN.append(1/sqrt(f))
     rootNdeg.append(180/sqrt(f)/3.14159)
-  
+
   fl.close()
   # Plot the results
   print "\tplotting..."
@@ -513,7 +513,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
   #close()
-  
+
  # Plot the residual moments
   x2figname = "sys_x2_"+epoch[1]+"-"+epoch[2]+".png"
   #figure(1)
@@ -593,7 +593,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   page.write('<h3>Raw distribution of residual noise</h3><hr><br>\n')
   for f in freq:
     #time.sleep(10)
-    print "plotting "+str(f) 
+    print "plotting "+str(f)
     figname = "n_hist_"+str(f)+'_'+epoch[1]+"-"+epoch[2]+".png"
     #figure(1)
     plot(binVec,realHistVecs[f])
@@ -632,7 +632,7 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
     except:
       pass
   del(filelist[0:ix])
-  
+
   input = open(filelist[0],'r')
   start = input.readlines()[0].split()[0]
   input.close()
@@ -647,7 +647,7 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
   #STOP = 0;
   for file in filelist:
     try: input = open(file,'r')
-    except: 
+    except:
       print "WARNING: file " + file + " doesn't exist"
       continue
     #if STOP > 100: break
@@ -663,20 +663,20 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
         specList = []
         timeFreqTuple = []
       specCol = []
-      for ix in range(0,len(freq)):        
+      for ix in range(0,len(freq)):
         #PREVIOUS VERSION HAD 12 COLUMNS!
         #timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+2*ix])/float(tmp[2+2*ix]) ))
         timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+2*ix])/float(tmp[2+2*ix]) ))
         specCol.append(float(tmp[1+2*ix])/float(tmp[2+2*ix]))
       specList.append(specCol)
-    input.close() 
+    input.close()
   fignames.sort(reverse=True)
   if opts.plot: write_spec_web_page(dir,ifo,cp,epoch,freq,fignames)
   if opts.veto_list: write_veto_list(ifo,epoch,vetolist,cp)
 
 def make_veto_list(tftuple,cp):
   thresh = float(cp.get("veto","threshold"))
-  veto = []  
+  veto = []
   tftuple.sort(key=operator.itemgetter(2))
   for tf in tftuple:
     if tf[2] < 1.0-thresh:
@@ -781,7 +781,7 @@ def plot_noise_spec(specList,cp,dir,dag,qjob,qfile,tftuple):
   clf()
   #close()
   return figname,qscanTime
-  
+
 def write_qscan_conf(epoch,cp):
   duration = cp.get('noisecomp','time')
   qdur = pow(2,ceil(log(float(duration),2)))
@@ -895,7 +895,7 @@ class qscanNode(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_arg(repr(time))
     if max(OUTLIER) < 0.10:
-      # just look at darm and h(t) for puny outliers. 
+      # just look at darm and h(t) for puny outliers.
       self.add_file_arg(qfile)
     else:
       print ".....found 10% outlier running full qscan\n"
@@ -935,4 +935,4 @@ class MkdirNode(CondorDAGNode):
       try: os.mkdir(file)
       except: pass
 
- 
+

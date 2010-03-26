@@ -49,7 +49,7 @@ static int write_REAL4TimeSeries( REAL4TimeSeries *series );
 static int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
 
 const char *program;
-void err_exit( const char *fmt, ... )
+static void err_exit( const char *fmt, ... )
 {
   va_list ap;
   fprintf( stderr, "%s error: ", program );
@@ -156,7 +156,7 @@ int main( int argc, char *argv[] )
 
 static int parseargs( int argc, char **argv )
 {
-  struct option long_options[] = 
+  struct option long_options[] =
   {
     { "help", no_argument, 0, 'h' },
     { "cache", required_argument, 0, 'c' },

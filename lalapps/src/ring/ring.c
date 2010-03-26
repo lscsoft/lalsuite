@@ -24,7 +24,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
@@ -345,14 +345,13 @@ static REAL4FrequencySeries *ring_get_invspec(
     /* compute raw average spectrum; store spectrum in invspec for now */
     invspec = compute_average_spectrum( channel, params->segmentDuration,
         params->strideDuration, fwdplan, params->whiteSpectrum );
+    if ( params->writeSpectrum ) /* write raw spectrum */
+      write_REAL4FrequencySeries( invspec );
 
     /* invert spectrum */
     invert_spectrum( invspec, params->sampleRate, params->strideDuration,
         params->truncateDuration, params->lowCutoffFrequency, fwdplan,
         revplan );
-    if ( params->writeSpectrum ) /* write raw spectrum */
-            write_REAL4FrequencySeries( invspec );
-    
 
     /* calibrate spectrum if necessary */
     if ( response )

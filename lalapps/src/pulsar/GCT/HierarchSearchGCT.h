@@ -1,5 +1,5 @@
 /*  
- *  Copyright (C) 2009 Holger Pletsch.
+ *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.h by
  *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk.
@@ -21,8 +21,8 @@
  * 
  */
 
-#ifndef _HIERARCHSEARCHGCT  /* Double-include protection. */
-#define _HIERARCHSEARCHGCT
+#ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
+#define _HIERARCHSEARCHGCTH
 
 /* standard includes */
 #include <unistd.h>
@@ -150,63 +150,44 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     REAL8VectorSequence *pos;  /**< Earth orbital position for each segment */
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
     REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
-    REAL8 fdot;                /**< spindown value of demodulation point */
-    UINT4 gamma2;               /**< refinement factor in spindown */ 
-    REAL8 dfdot;               /**< resolution in residual spindowns */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
-    BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
     REAL8  threshold;          /**< Threshold for candidate selection */
     UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
   } SemiCoherentParams;
-
-/** one semicoherent candidate */
-  typedef struct tagSemiCohCandidate {
-    REAL8 freq;        /**< frequency */
-    REAL8 alpha;       /**< right ascension */
-    REAL8 delta;       /**< declination */
-    REAL8 f1dot;       /**< spindown */
-    REAL8 sumTwoF;     /**< sum of 2F-values */
-    UINT4 nc;          /**< number count */
-  } SemiCohCandidate;
-  
-  /** structure for storing candidates produced by the semicoherent search */
-  typedef struct tagSemiCohCandidateList {
-    LIGOTimeGPS refTime;       /**< reference time for candidates */
-    INT4 length;               /**< maximum allowed length of vectors */
-    INT4 nCandidates;          /**< number of candidates -- must be less than length */
-    SemiCohCandidate *list;    /**> list of candidates */
-  } SemiCohCandidateList;
 
 
   /* ------------------------------------------------------------------------- */
 
   /** one fine-grid point */
   typedef struct tagFineGridPoint {
-    REAL8 F;           /**< frequency */
-    REAL8 F1dot;       /**< spindown */
-    INT4 Uindex;          /**< U index */
     UINT4 nc;           /**< number count */
-    REAL4 sumTwoF;     /**< sum of 2F-values */
+    REAL4 sumTwoF;      /**< sum of 2F-values */
   } FineGridPoint;  
 
   /** structure for storing fine-grid points */
   typedef struct tagFineGrid {
-    REAL8 Alpha;       /**< right ascension */
-    REAL8 Delta;       /**< declination */
-    LIGOTimeGPS refTime;       /**< reference time for candidates */
-    UINT4 length;               /**< maximum allowed length of vectors */
+    REAL8 freqmin_fg;       /**< fine-grid start in frequency */
+    REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
+    REAL8 dfreq_fg;         /**< fine-grid spacing in frequency */
+    REAL8 df1dot_fg;        /**< fine-grid spacing in 1st spindown */
+    REAL8 alpha;            /**< right ascension */
+    REAL8 delta;            /**< declination */
+    LIGOTimeGPS refTime;    /**< reference time for candidates */
+    UINT4 length;           /**< maximum allowed length of vectors */
+    UINT4 freqlength;       /**< number of fine-grid points in frequency */
+    UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
     FineGridPoint *list;    /**> list of finegrid points */
   } FineGrid;
   
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
-    INT4 Uindex;          /**< U index */
+    UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
   
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
-    UINT4 length;               /**< maximum allowed length of vectors */
+    UINT4 length;             /**< maximum allowed length of vectors */
     CoarseGridPoint *list;    /**> list of finegrid points */
   } CoarseGrid;
   

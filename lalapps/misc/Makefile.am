@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	compile \
 	config.guess \
 	config.sub \
 	depcomp \
@@ -15,7 +16,8 @@ EXTRA_DIST = \
 	missing \
 	mkinstalldirs \
 	pkg.m4 \
-	py-compile
+	py-compile \
+	vcsID.common
 
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh

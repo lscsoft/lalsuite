@@ -116,7 +116,8 @@ int main (int argc, char *argv[])
   /* 
    * Parse incoming search arguments initialize variables 
    */
-  LALappsTrackSearchInitialize(argc,
+  LALappsTrackSearchInitialize(
+			       argc,
 			       argv,
 			       params,
 			       injectParams,
@@ -359,7 +360,8 @@ void LALappsTrackSearchPrepareData( REAL4TimeSeries  *dataSet,
 	    fprintf(stdout,
 		    "Preparing to remove %i lines from individual data segments.\n",
 		    params.numLinesToRemove);
-	  LALappsTracksearchRemoveHarmonicsFromSegments(dataSet,
+	  LALappsTracksearchRemoveHarmonicsFromSegments(
+							dataSet,
 							dataSegments,
 							params);
 	}
@@ -1255,6 +1257,21 @@ void LALappsGetFrameData(TSSearchParams*     params,
   FrStream             *stream = NULL;
   FrCache              *frameCache = NULL;
   FrChanIn              channelIn;
+  REAL4TimeSeries      *tmpData=NULL;
+  REAL8TimeSeries      *convertibleREAL8Data=NULL;
+  REAL8TimeSeries      *tmpREAL8Data=NULL;
+  INT2TimeSeries       *convertibleINT2Data=NULL;
+  INT2TimeSeries       *tmpINT2Data=NULL;
+  INT4TimeSeries       *convertibleINT4Data=NULL;
+  INT4TimeSeries       *tmpINT4Data=NULL;
+  PassBandParamStruc    bandPassParams;
+  UINT4                 loadPoints=0;
+  UINT4                 i=0;
+  /*
+  UINT4                 extraResampleTime=1; Seconds of extra data
+					       to always load on each
+					       end of segment prior to
+					       resampling!*/
   LALTYPECODE           dataTypeCode=0;
   LIGOTimeGPS           bufferedDataStartGPS;
   REAL8                 bufferedDataStart=0;
@@ -1614,7 +1631,8 @@ void LALappsGetFrameData(TSSearchParams*     params,
 /*
  * Routine to allow use of acsii input rather than frames
  */
-void LALappsGetAsciiData(TSSearchParams*     params,
+void LALappsGetAsciiData(
+			 TSSearchParams*     params,
 			 REAL4TimeSeries*    DataIn,
 			 CHARVector*         dirname
 			 )
@@ -1843,7 +1861,11 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
-  LALappsWriteSearchResults(&status,
+  LALappsDetermineFilename(
+			   tsMarkers,
+			   &outputCandidateFilename,
+			   ".candidates");
+  LALappsWriteSearchResults(
 			    outputCandidateFilename->data,
 			    outputCurvesThreshold);
 
@@ -2194,7 +2216,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
   memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
   if (params.verbosity >= printFiles)
-    LALappsTSAWritePGM(&status,tmpTSA,NULL); 
+    LALappsTSAWritePGM(tmpTSA,NULL);
   tfmap=tmpTSA->imageRep;
   XLALFree(tmpTSA);
   if ((params.verbosity > quiet) && (params.colsToClip > 0))
@@ -2257,7 +2279,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 	      mapMarkerParams.mapStartGPS.gpsNanoSeconds,
 	      mapMarkerParams.mapStopGPS.gpsSeconds,
 	      mapMarkerParams.mapStopGPS.gpsNanoSeconds);
-      LALappsTSAWriteMapFile(&status,
+      LALappsTSAWriteMapFile(
 			     mapBuilder,
 			     NULL);
       if (binaryFilename)
@@ -2543,7 +2565,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
 
   strcpy(mapFilenameVec->data,params.injectMapCache);
 
-  LALappsTSALoadCacheFile(status,
+  LALappsTSALoadCacheFile(
 			  mapFilenameVec,
 			  &mapCache);
 
@@ -2581,8 +2603,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
   /*
    * Free map cache structure
    */
-  LALappsTSADestroyCache(status,
-			 &mapCache);
+  LALappsTSADestroyCache(&mapCache);
 }
 /*
  * End LALappsDoTSAMapAnalysis
@@ -2640,7 +2661,7 @@ LALappsWriteCurveList(LALStatus            *status,
   /* Output Breve file */
   breveName=XLALCreateCHARVector(maxFilenameLength);
   sprintf(breveName->data,"%s.breve",filename);
-  LALappsWriteBreveResults(status,
+  LALappsWriteBreveResults(
 			   breveName->data,
 			   outCurve);
   if (breveName)
@@ -2650,7 +2671,7 @@ LALappsWriteCurveList(LALStatus            *status,
   totalName=XLALCreateCHARVector(maxFilenameLength);
 
   sprintf(totalName->data,"%s.full",filename);
-  LALappsWriteSearchResults(status,
+  LALappsWriteSearchResults(
 			    totalName->data,
 			    outCurve);
   if (totalName)
@@ -2661,7 +2682,7 @@ LALappsWriteCurveList(LALStatus            *status,
     {
       configName=XLALCreateCHARVector(maxFilenameLength);
       sprintf(configName->data,"%s.config",filename);
-      LALappsWriteSearchConfig(status->statusPtr,
+      LALappsWriteSearchConfig(
 			       configName->data,
 			       *params);
     }     
@@ -2675,7 +2696,7 @@ LALappsWriteCurveList(LALStatus            *status,
  */
 
 void
-LALappsWriteSearchConfig(LALStatus          *status,
+LALappsWriteSearchConfig(
 			 const CHAR*         myFilename,
 			 TSSearchParams      myParams)
 {
@@ -2796,7 +2817,7 @@ LALappsWriteSearchConfig(LALStatus          *status,
  */
 
 void
-LALappsWriteSearchResults(LALStatus      *status,
+LALappsWriteSearchResults(
 			  const CHAR*     myFilename,
 			  TrackSearchOut  outCurve)
 {
@@ -2841,7 +2862,7 @@ LALappsWriteSearchResults(LALStatus      *status,
  */
 
 void
-LALappsWriteBreveResults(LALStatus      *status,
+LALappsWriteBreveResults(
 			 const CHAR*     myFilename,
 			 TrackSearchOut  outCurve)
 {
@@ -3265,7 +3286,8 @@ void LALappsTrackSearchCalibrate( REAL4TimeSeries    *dataSet,
 /*
  * Butterworth Band passing
  */
-void LALappsTrackSearchBandPassing( REAL4TimeSeries     *dataSet,
+void LALappsTrackSearchBandPassing(
+				    REAL4TimeSeries     *dataSet,
 				    TSSearchParams       params)
 {
   PassBandParamStruc       bandPassParams;
@@ -3334,7 +3356,8 @@ void LALappsTrackSearchBandPassing( REAL4TimeSeries     *dataSet,
 /* 
  * Variation that removes harmonics from individual data segments
  */ 
-void LALappsTracksearchRemoveHarmonicsFromSegments(REAL4TimeSeries *dataSet,
+void LALappsTracksearchRemoveHarmonicsFromSegments(
+						   REAL4TimeSeries *dataSet,
 						   TSSegmentVector *dataSegments,
 						   TSSearchParams   params)
 {
@@ -3343,6 +3366,8 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(REAL4TimeSeries *dataSet,
   CHARVector       *dataLabel=NULL;
   LALStatus           status;
   memset(&status, 0, sizeof(status));
+
+  dataSet = NULL;
 
   for (j=0;j<dataSegments->length;j++)
     {
@@ -3377,7 +3402,8 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(REAL4TimeSeries *dataSet,
 /*
  * Removing harmonic lines from data
  */
-void LALappsTracksearchRemoveHarmonics( REAL4TimeSeries       *dataSet,
+void LALappsTracksearchRemoveHarmonics(
+				        REAL4TimeSeries       *dataSet,
 				        TSSearchParams         params)
 {
   COMPLEX8Vector           *referenceSignal=NULL;
@@ -3641,7 +3667,8 @@ void LALappsTracksearchRemoveHarmonics( REAL4TimeSeries       *dataSet,
 /*
  * Perform software injections if data is available
  */
-void LALappsTrackSearchPerformInjection(REAL4TimeSeries  *dataSet,
+void LALappsTrackSearchPerformInjection(
+					REAL4TimeSeries  *dataSet,
 					REAL4TimeSeries  *injectSet,
 					TSSearchParams     params)
 {

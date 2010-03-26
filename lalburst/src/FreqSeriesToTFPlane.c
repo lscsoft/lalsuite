@@ -39,7 +39,7 @@
 #include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
