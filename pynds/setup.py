@@ -1,8 +1,19 @@
 from distutils.core import setup
 from distutils.extension import Extension
 import os.path
+import os
 import sys
 import numpy
+
+
+boostdir = os.getenv('BOOSTDIR')
+if boostdir:
+    boost_include_dirs = [os.path.join(boostdir, 'include')]
+    boost_library_dirs = [os.path.join(boostdir, 'lib')]
+else:
+    boost_include_dirs = []
+    boost_library_dirs = []
+
 
 ## {{{ http://code.activestate.com/recipes/502261/ (r1)
 def pkgconfig(*packages, **kw):
@@ -22,7 +33,8 @@ setup(
     ext_modules=[
         Extension('nds_ext', ['nds_ext.cpp'],
             **pkgconfig('nds2-client',
-                include_dirs=[numpy.get_include()],
+                include_dirs=[numpy.get_include()] + boost_include_dirs,
+                library_dirs=boost_library_dirs,
                 libraries=['boost_python']
             )
         )
