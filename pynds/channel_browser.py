@@ -102,7 +102,7 @@ def make_channel_tree(channels):
 class Base:
     
     def __init__(self, host, port):
-        self.daq = nds.daq(self.host, self.port)
+        self.daq = nds.daq(host, port)
         self.channels = self.daq.recv_channel_list()
         self.channelLeaves, self.channelTree = make_channel_tree(self.channels)
         self.rates = tuple(sorted(set(int(c.rate) for c in self.channels)))
