@@ -23,6 +23,9 @@ To do
 Change Log
 ----------
 
+2010-03-27 Refactored channel browser into a reusable widget.
+           Added 'host' and 'port' options to channel_browser.py.
+
 2010-03-27 Added PyGTK-based channel browser demo script.
 
 2010-03-26 Added build parameter for non-system installation of Boost.Python.

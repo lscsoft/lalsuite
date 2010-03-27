@@ -5,12 +5,6 @@ import gobject
 import nds
 
 
-def list_store_fill(liststore, iterable):
-    for x in iterable:
-        liststore.append((x,))
-    return liststore
-
-
 def split_channel(channel):
     channel_name = channel.name
     name_parts = []
@@ -100,24 +94,181 @@ def make_channel_tree(channels):
 
 
 
-class Base:
+class ChannelBrowser(gtk.HPaned):
+    """An NDS1/NDS2 channel browser widget"""
     
-    def __init__(self, host, port):
-        self.daq = nds.daq(host, port)
-        self.channels = self.daq.recv_channel_list()
+    @staticmethod
+    def list_store_add(liststore, objs):
+        """Helper function to insert objects into a liststore"""
+        for obj in objs:
+            liststore.append( (obj,) )
+    
+    def __init__(self, channels):
+        super(ChannelBrowser, self).__init__()
+        self.channels = channels
         self.channelLeaves, self.channelTree = make_channel_tree(self.channels)
         self.rates = tuple(sorted(set(int(c.rate) for c in self.channels)))
         self.channel_types = tuple(c for c in nds.channel_type.values.values() if c != nds.channel_type.unknown)
         self.selected_rates = frozenset(self.rates)
         self.selected_channel_types = frozenset(self.channel_types)
+        
+        # Construct ListStore objects for four panes
+        instrument_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        system_store     = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        subsystem_store  = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        channel_store    = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        
+        # Populate the ListStore objects with elements from the channel tree
+        self.list_store_add(instrument_store, self.channelTree.children)
+        for instrument_node in self.channelTree.children:
+            self.list_store_add(system_store, instrument_node.children)
+            for system_node in instrument_node.children:
+                self.list_store_add(subsystem_store, system_node.children)
+                for subsystem_node in system_node.children:
+                    self.list_store_add(channel_store, subsystem_node.children)
+        
+        # Construct the view
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        
+        box1 = gtk.VBox()
+        scrolledwindow.add_with_viewport(box1)
+        self.pack1(scrolledwindow, shrink=False)
+        
+        liststore = gtk.ListStore(gobject.TYPE_UINT)
+        self.list_store_add(liststore, self.rates)
+        self.rates_filter = liststore.filter_new()
+        self.rates_filter.set_modify_func((gobject.TYPE_STRING,), self.rates_filter_modify)
+        treeview = gtk.TreeView(self.rates_filter)
+        tvcolumn = gtk.TreeViewColumn('Rate (Hz)')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.select_all()
+        selection.connect('changed', self.rates_selection_changed)
+        box1.pack_start(treeview, expand=False, fill=False)
+        
+        liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.list_store_add(liststore, self.channel_types)
+        self.channel_types_filter = liststore.filter_new()
+        self.channel_types_filter.set_modify_func((gobject.TYPE_STRING,), self.channel_types_filter_modify)
+        treeview = gtk.TreeView(self.channel_types_filter)
+        tvcolumn = gtk.TreeViewColumn('Channel type')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.select_all()
+        selection.connect('changed', self.channel_types_selection_changed)
+        box1.pack_start(treeview, expand=True, fill=True)
+        
+        box1 = gtk.HBox()
+        box1.set_homogeneous(True)
+        box1.set_size_request(640, 480)
+        self.pack2(box1, resize=True, shrink=True)
+        
+        self.instruments_filter = instrument_store.filter_new()
+        self.instruments_filter.set_visible_func(self.category_filter_visible)
+        self.instruments_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
+        treeview = gtk.TreeView(self.instruments_filter)
+        tvcolumn = gtk.TreeViewColumn('Instrument')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.set_select_function(self.category_select, full=True)
+        selection.connect('changed', self.instruments_selection_changed)
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        scrolledwindow.add(treeview)
+        box1.pack_start(scrolledwindow)
+        
+        self.systems_filter = system_store.filter_new()
+        self.systems_filter.set_visible_func(self.category_filter_visible)
+        self.systems_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
+        treeview = gtk.TreeView(self.systems_filter)
+        tvcolumn = gtk.TreeViewColumn('System')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.set_select_function(self.category_select, full=True)
+        selection.connect('changed', self.systems_selection_changed)
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        scrolledwindow.add(treeview)
+        box1.pack_start(scrolledwindow)
+        
+        self.subsystems_filter = subsystem_store.filter_new()
+        self.subsystems_filter.set_visible_func(self.category_filter_visible)
+        self.subsystems_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
+        treeview = gtk.TreeView(self.subsystems_filter)
+        tvcolumn = gtk.TreeViewColumn('Subsystem')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.set_select_function(self.category_select, full=True)
+        selection.connect('changed', self.subsystems_selection_changed)
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        scrolledwindow.add(treeview)
+        box1.pack_start(scrolledwindow)
+        
+        self.channels_filter = channel_store.filter_new()
+        self.channels_filter.set_visible_func(self.category_filter_visible)
+        self.channels_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
+        treeview = gtk.TreeView(self.channels_filter)
+        tvcolumn = gtk.TreeViewColumn('Channel')
+        treeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        treeview.set_search_column(0)
+        treeview.set_reorderable(False)
+        treeview.set_rubber_banding(True)
+        selection = treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
+        selection.set_select_function(self.category_select, full=True)
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        scrolledwindow.add(treeview)
+        box1.pack_start(scrolledwindow)
     
     def rates_filter_modify(self, model, iter, column):
         if column != 0:
             return None
-        orig = model.get_model().get_value(model.convert_iter_to_child_iter(iter), column)
+        orig = model.get_model().get_value(model.convert_iter_to_child_iter(iter), 0)
         nMatches = 0
-        for c in self.channels:
-            if int(c.rate) == orig and c.type in self.selected_channel_types:
+        for c in self.channelLeaves:
+            channel = c.value
+            if int(channel.rate) == orig and channel.type in self.selected_channel_types:
                 nMatches += 1
         return '%d (%d)' % (orig, nMatches)
     
@@ -137,10 +288,11 @@ class Base:
     def channel_types_filter_modify(self, model, iter, column):
         if column != 0:
             return None
-        orig = model.get_model().get_value(model.convert_iter_to_child_iter(iter), column)
+        orig = model.get_model().get_value(model.convert_iter_to_child_iter(iter), 0)
         nMatches = 0
-        for c in self.channels:
-            if c.type == orig and int(c.rate) in self.selected_rates:
+        for c in self.channelLeaves:
+            channel = c.value
+            if channel.type == orig and int(channel.rate) in self.selected_rates:
                 nMatches += 1
         return '%s (%d)' % (str(orig), nMatches)
     
@@ -184,171 +336,40 @@ class Base:
     
     def subsystems_selection_changed(self, object):
         self.channels_filter.refilter()
+
+
+
+class Base:
+    """A simple application that displays a channel browser in a window."""
     
-    def main(self):
+    def __init__(self, host, port):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect("destroy", self.destroy)
-        self.window.set_title("%s:%d" % (self.daq.host, self.daq.port))
         
+        daq = nds.daq(host, port)
+        channels = daq.recv_channel_list()
+        self.channelbrowser = ChannelBrowser(channels)
+        self.window.set_title("%s:%d" % (daq.host, daq.port))
         
-        box = gtk.HPaned()
-        
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        
-        box1 = gtk.VBox()
-        scrolledwindow.add_with_viewport(box1)
-        box.pack1(scrolledwindow, shrink=False)
-        
-        liststore = list_store_fill(gtk.ListStore(gobject.TYPE_UINT), self.rates)
-        self.rates_filter = liststore.filter_new()
-        self.rates_filter.set_modify_func((gobject.TYPE_STRING,), self.rates_filter_modify)
-        treeview = gtk.TreeView(self.rates_filter)
-        tvcolumn = gtk.TreeViewColumn('Rate (Hz)')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.select_all()
-        selection.connect('changed', self.rates_selection_changed)
-        box1.pack_start(treeview, expand=False, fill=False)
-        
-        liststore = list_store_fill(gtk.ListStore(gobject.TYPE_PYOBJECT), self.channel_types)
-        self.channel_types_filter = liststore.filter_new()
-        self.channel_types_filter.set_modify_func((gobject.TYPE_STRING,), self.channel_types_filter_modify)
-        treeview = gtk.TreeView(self.channel_types_filter)
-        tvcolumn = gtk.TreeViewColumn('Channel type')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.select_all()
-        selection.connect('changed', self.channel_types_selection_changed)
-        box1.pack_start(treeview, expand=True, fill=True)
-        
-        box1 = gtk.HBox()
-        box1.set_homogeneous(True)
-        box1.set_size_request(640, 480)
-        box.pack2(box1, resize=True, shrink=True)
-        
-        liststore = list_store_fill(gtk.ListStore(gobject.TYPE_PYOBJECT), self.channelTree.children)
-        self.instruments_filter = liststore.filter_new()
-        self.instruments_filter.set_visible_func(self.category_filter_visible)
-        self.instruments_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
-        treeview = gtk.TreeView(self.instruments_filter)
-        tvcolumn = gtk.TreeViewColumn('Instrument')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.set_select_function(self.category_select, full=True)
-        selection.connect('changed', self.instruments_selection_changed)
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        scrolledwindow.add(treeview)
-        box1.pack_start(scrolledwindow)
-        
-        liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        for instrument_node in self.channelTree.children:
-            list_store_fill(liststore, instrument_node.children)
-        self.systems_filter = liststore.filter_new()
-        self.systems_filter.set_visible_func(self.category_filter_visible)
-        self.systems_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
-        treeview = gtk.TreeView(self.systems_filter)
-        tvcolumn = gtk.TreeViewColumn('System')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.set_select_function(self.category_select, full=True)
-        selection.connect('changed', self.systems_selection_changed)
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        scrolledwindow.add(treeview)
-        box1.pack_start(scrolledwindow)
-        
-        liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        for instrument_node in self.channelTree.children:
-            for system_node in instrument_node.children:
-                list_store_fill(liststore, system_node.children)
-        self.subsystems_filter = liststore.filter_new()
-        self.subsystems_filter.set_visible_func(self.category_filter_visible)
-        self.subsystems_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
-        treeview = gtk.TreeView(self.subsystems_filter)
-        tvcolumn = gtk.TreeViewColumn('Subsystem')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.set_select_function(self.category_select, full=True)
-        selection.connect('changed', self.subsystems_selection_changed)
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        scrolledwindow.add(treeview)
-        box1.pack_start(scrolledwindow)
-        
-        liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        for instrument_node in self.channelTree.children:
-            for system_node in instrument_node.children:
-                for subsystem_node in system_node.children:
-                    list_store_fill(liststore, subsystem_node.children)
-        self.channels_filter = liststore.filter_new()
-        self.channels_filter.set_visible_func(self.category_filter_visible)
-        self.channels_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
-        treeview = gtk.TreeView(self.channels_filter)
-        tvcolumn = gtk.TreeViewColumn('Channel')
-        treeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        treeview.set_search_column(0)
-        treeview.set_reorderable(False)
-        treeview.set_rubber_banding(True)
-        selection = treeview.get_selection()
-        selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.set_select_function(self.category_select, full=True)
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        scrolledwindow.add(treeview)
-        box1.pack_start(scrolledwindow)
-        
-        self.window.add(box)
+        self.window.add(self.channelbrowser)
         self.window.show_all()
-        self.window.show()
-        
-        gtk.main()
     
-    def destroy(self, widget, data=None):
+    @staticmethod
+    def destroy(widget, data=None):
         gtk.main_quit()
-
+    
+    @staticmethod
+    def main():
+        gtk.main()
 
 
 
 if __name__ == '__main__':
-    base = Base("blue.ligo-wa.caltech.edu", 31200)
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option('-n', '--host', default='blue.ligo-wa.caltech.edu', metavar='HOSTNAME')
+    parser.add_option('-p', '--port', type='int', default=31200, metavar='PORT')
+    (options, args) = parser.parse_args()
+    
+    base = Base(options.host, options.port)
     base.main()
