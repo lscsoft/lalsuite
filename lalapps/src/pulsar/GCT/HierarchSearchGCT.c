@@ -1140,16 +1140,18 @@ int MAIN( int argc, char *argv[]) {
             /* get the 1st spindown of this fine-grid point */
             f1dot_tmp = finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg;
 
+            /* pre-compute prouduct */
             f1dot_eventB1 = f1dot_tmp * B1;
-
+                   
+            /* get the frequency of this fine-grid point at mid point of segment */
+            /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
+            freq_tmp = finegrid.freqmin_fg + f1dot_tmp * timeDiffSeg; /* first fine-grid frequency */
+             
+            /* compute the global-correlation coordinate indices */
+            U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
+            
             for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
-
-              /* get the frequency of this fine-grid point at mid point of segment */
-              freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg;
-
-              /* compute the global-correlation coordinate indices */
-              U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
-
+                           
               /* consider only relevant frequency values (do not step outside coarse grid) */
               if ( U1idx < fveclength ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
 
@@ -1162,7 +1164,7 @@ int MAIN( int argc, char *argv[]) {
                 if (TwoF_tmp > TwoFthreshold) {
                   finegrid.list[ifine].nc++;
                 }
-
+                
 #ifdef DIAGNOSISMODE
                 /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
                 if (finegrid.list[ifine].nc > nc_max) {
@@ -1172,7 +1174,6 @@ int MAIN( int argc, char *argv[]) {
                   sumTwoFmax = sumTwoF_tmp;
                 }
 #endif
-
               }
               else {
                 fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
@@ -1191,7 +1192,8 @@ int MAIN( int argc, char *argv[]) {
                }
                */
 
-              ifine++;
+              U1idx++; /* increment U1 index */
+              ifine++; /* increment fine-grid index */
 
             } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
 
