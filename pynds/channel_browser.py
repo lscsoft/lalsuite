@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""
+
+Channel browser for NDS1/NDS2 connections
+
+"""
+__author__       = "Leo Singer <leo.singer@ligo.org>"
+__organization__ = ["LIGO", "California Institute of Technology"]
+__copyright__    = "Copyright 2010, Leo Singer"
+
+
+
 
 import gtk
 import gobject
@@ -105,9 +116,9 @@ class ChannelBrowser(gtk.HPaned):
     
     def __init__(self, channels):
         super(ChannelBrowser, self).__init__()
-        self.channels = channels
-        self.channelLeaves, self.channelTree = make_channel_tree(self.channels)
-        self.rates = tuple(sorted(set(int(c.rate) for c in self.channels)))
+        self.channel_activated_func = None
+        self.channelLeaves, self.channelTree = make_channel_tree(channels)
+        self.rates = tuple(sorted(set(int(c.rate) for c in channels)))
         self.channel_types = tuple(c for c in nds.channel_type.values.values() if c != nds.channel_type.unknown)
         self.selected_rates = frozenset(self.rates)
         self.selected_channel_types = frozenset(self.channel_types)
@@ -246,6 +257,7 @@ class ChannelBrowser(gtk.HPaned):
         self.channels_filter.set_modify_func((gobject.TYPE_STRING,), self.category_filter_modify)
         treeview = gtk.TreeView(self.channels_filter)
         tvcolumn = gtk.TreeViewColumn('Channel')
+        treeview.connect('row-activated', self.channel_row_activated)
         treeview.append_column(tvcolumn)
         cell = gtk.CellRendererText()
         tvcolumn.pack_start(cell, True)
@@ -336,6 +348,13 @@ class ChannelBrowser(gtk.HPaned):
     
     def subsystems_selection_changed(self, object):
         self.channels_filter.refilter()
+    
+    def channel_row_activated(self, treeview, path, view_column):
+        if self.channel_activated_func:
+            model = treeview.get_model()
+            child_model = model.get_model()
+            channel = child_model.get_value(model.convert_iter_to_child_iter(model.get_iter(path)), 0).value
+            self.channel_activated_func(channel)
 
 
 
@@ -351,8 +370,13 @@ class Base:
         self.channelbrowser = ChannelBrowser(channels)
         self.window.set_title("%s:%d" % (daq.host, daq.port))
         
+        self.channelbrowser.channel_activated_func = self.channel_activated
         self.window.add(self.channelbrowser)
         self.window.show_all()
+    
+    @staticmethod
+    def channel_activated(channel):
+        print channel
     
     @staticmethod
     def destroy(widget, data=None):
