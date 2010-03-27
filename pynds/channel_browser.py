@@ -4,6 +4,7 @@ import gtk
 import gobject
 import nds
 
+
 def list_store_fill(liststore, iterable):
     for x in iterable:
         liststore.append((x,))
@@ -156,16 +157,19 @@ class Base:
         self.subsystems_filter.refilter()
         self.channels_filter.refilter()
     
-    def category_filter_visible(self, model, iter):
+    @staticmethod
+    def category_filter_visible(model, iter):
         return model.get_value(iter, 0).isEnabled()
     
-    def category_filter_modify(self, model, iter, column):
+    @staticmethod
+    def category_filter_modify(model, iter, column):
         if column != 0:
             return None
         else:
             return str(model.get_model().get_value(model.convert_iter_to_child_iter(iter), 0).value)
     
-    def category_select(self, selection, model, path, is_selected):
+    @staticmethod
+    def category_select(selection, model, path, is_selected):
         model.get_model().get_value(model.convert_iter_to_child_iter(model.get_iter(path)), 0).selected = not(is_selected)
         return True
     
