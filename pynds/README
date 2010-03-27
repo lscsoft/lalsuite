@@ -23,6 +23,8 @@ To do
 Change Log
 ----------
 
+2010-03-27 Added PyGTK-based channel browser demo script.
+
 2010-03-26 Added build parameter for non-system installation of Boost.Python.
 
 2010-03-26 Incremented to release 0.2.
