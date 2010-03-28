@@ -14,9 +14,9 @@
 typedef struct {
     PyObject_HEAD
     daq_t *daq;
-} _nds2_DaqObject;
+} _nds_c_DaqObject;
 
-static void Daq_dealloc(_nds2_DaqObject *self)
+static void Daq_dealloc(_nds_c_DaqObject *self)
 {
     if (self->daq != NULL) {
         free(self->daq);
@@ -28,9 +28,9 @@ static void Daq_dealloc(_nds2_DaqObject *self)
 
 static PyObject *Daq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _nds2_DaqObject *self;
+    _nds_c_DaqObject *self;
 
-    self = (_nds2_DaqObject *) type->tp_alloc(type, 0);
+    self = (_nds_c_DaqObject *) type->tp_alloc(type, 0);
 
     self->daq = (daq_t *) malloc(sizeof(daq_t));
 
@@ -38,18 +38,18 @@ static PyObject *Daq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 
-static int Daq_init(_nds2_DaqObject *self, PyObject *args, PyObject *kwds)
+static int Daq_init(_nds_c_DaqObject *self, PyObject *args, PyObject *kwds)
 {
     self->daq = (daq_t *) malloc(sizeof(daq_t));
 
     return 0;
 }
 
-static PyTypeObject _nds2_DaqType = {
+static PyTypeObject _nds_c_DaqType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "_nds2.daq_t",             /*tp_name*/
-    sizeof(_nds2_DaqObject),   /*tp_basicsize*/
+    "_nds_c.daq_t",             /*tp_name*/
+    sizeof(_nds_c_DaqObject),   /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     0,                         /*tp_dealloc*/
     0,                         /*tp_print*/
@@ -95,10 +95,10 @@ static PyTypeObject _nds2_DaqType = {
 typedef struct {
     PyObject_HEAD
     daq_channel_t *channel;
-} _nds2_DaqChannelObject;
+} _nds_c_DaqChannelObject;
 
 
-static void DaqChannel_dealloc(_nds2_DaqChannelObject *self)
+static void DaqChannel_dealloc(_nds_c_DaqChannelObject *self)
 {
     if (self->channel != NULL) {
         free(self->channel);
@@ -110,16 +110,16 @@ static void DaqChannel_dealloc(_nds2_DaqChannelObject *self)
 
 static PyObject *DaqChannel_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _nds2_DaqChannelObject *self;
+    _nds_c_DaqChannelObject *self;
 
-    self          = (_nds2_DaqChannelObject *) type->tp_alloc(type, 0);
+    self          = (_nds_c_DaqChannelObject *) type->tp_alloc(type, 0);
     self->channel = (daq_channel_t *) malloc(sizeof(daq_channel_t));
 
     return (PyObject *)self;
 }
 
 
-static int DaqChannel_init(_nds2_DaqChannelObject *self, PyObject *args, PyObject *kwds)
+static int DaqChannel_init(_nds_c_DaqChannelObject *self, PyObject *args, PyObject *kwds)
 {
     self->channel = (daq_channel_t *) malloc(sizeof(daq_channel_t));
     return 0;
@@ -131,7 +131,7 @@ static PyMemberDef DaqChannel_members[] = {
     {NULL}
 };
 
-static PyObject *DaqChannel_getname(_nds2_DaqChannelObject *self, void *closure) {
+static PyObject *DaqChannel_getname(_nds_c_DaqChannelObject *self, void *closure) {
     PyObject *name;
 
     if (self->channel != NULL) {
@@ -145,7 +145,7 @@ static PyObject *DaqChannel_getname(_nds2_DaqChannelObject *self, void *closure)
 }
 
 
-static int DaqChannel_setname(_nds2_DaqChannelObject *self, PyObject *value, void *closure) {
+static int DaqChannel_setname(_nds_c_DaqChannelObject *self, PyObject *value, void *closure) {
     char *name;
 
     name = PyString_AsString(value);
@@ -155,7 +155,7 @@ static int DaqChannel_setname(_nds2_DaqChannelObject *self, PyObject *value, voi
     return 0;
 }
 
-static PyObject *DaqChannel_getrate(_nds2_DaqChannelObject *self, void *closure) {
+static PyObject *DaqChannel_getrate(_nds_c_DaqChannelObject *self, void *closure) {
     PyObject *rate;
 
     if (self->channel != NULL) {
@@ -167,14 +167,14 @@ static PyObject *DaqChannel_getrate(_nds2_DaqChannelObject *self, void *closure)
     return rate;
 }
 
-static int DaqChannel_setrate(_nds2_DaqChannelObject *self, PyObject *value, void *closure) {
+static int DaqChannel_setrate(_nds_c_DaqChannelObject *self, PyObject *value, void *closure) {
     self->channel->rate = PyFloat_AsDouble(value);
 
     return 0;
 }
 
 
-static PyObject *DaqChannel_gettpnum(_nds2_DaqChannelObject *self, void *closure) {
+static PyObject *DaqChannel_gettpnum(_nds_c_DaqChannelObject *self, void *closure) {
     PyObject *tpn;
 
     if (self->channel != NULL) {
@@ -186,14 +186,14 @@ static PyObject *DaqChannel_gettpnum(_nds2_DaqChannelObject *self, void *closure
     return tpn;
 }
 
-static int DaqChannel_settpnum(_nds2_DaqChannelObject *self, PyObject *value, void *closure) {
+static int DaqChannel_settpnum(_nds_c_DaqChannelObject *self, PyObject *value, void *closure) {
     self->channel->tpnum = PyInt_AsLong(value);
 
     return 0;
 }
 
 
-static PyObject *DaqChannel_getbps(_nds2_DaqChannelObject *self, void *closure) {
+static PyObject *DaqChannel_getbps(_nds_c_DaqChannelObject *self, void *closure) {
     PyObject *bps;
 
     if (self->channel != NULL) {
@@ -205,14 +205,14 @@ static PyObject *DaqChannel_getbps(_nds2_DaqChannelObject *self, void *closure) 
     return bps;
 }
 
-static int DaqChannel_setbps(_nds2_DaqChannelObject *self, PyObject *value, void *closure) {
+static int DaqChannel_setbps(_nds_c_DaqChannelObject *self, PyObject *value, void *closure) {
     self->channel->bps = PyInt_AsLong(value);
 
     return 0;
 }
 
 
-static PyObject *DaqChannel_getchNum(_nds2_DaqChannelObject *self, void *closure) {
+static PyObject *DaqChannel_getchNum(_nds_c_DaqChannelObject *self, void *closure) {
     PyObject *chNum;
 
     if (self->channel != NULL) {
@@ -224,7 +224,7 @@ static PyObject *DaqChannel_getchNum(_nds2_DaqChannelObject *self, void *closure
     return chNum;
 }
 
-static int DaqChannel_setchNum(_nds2_DaqChannelObject *self, PyObject *value, void *closure) {
+static int DaqChannel_setchNum(_nds_c_DaqChannelObject *self, PyObject *value, void *closure) {
     self->channel->chNum = PyInt_AsLong(value);
 
     return 0;
@@ -244,11 +244,11 @@ static PyMethodDef daq_channel_t_methods[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject _nds2_DaqChannelType = {
+static PyTypeObject _nds_c_DaqChannelType = {
     PyObject_HEAD_INIT(NULL)
     0,                               /*ob_size*/
-    "_nds2.daq_channel_t",           /*tp_name*/
-    sizeof(_nds2_DaqChannelObject),  /*tp_basicsize*/
+    "_nds_c.daq_channel_t",           /*tp_name*/
+    sizeof(_nds_c_DaqChannelObject),  /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor) DaqChannel_dealloc, /*tp_dealloc*/
     0,                         /*tp_print*/
@@ -306,10 +306,10 @@ typedef struct {
     int start_gps_sec;
     int field_duration_sec;
     PyObject *data;
-} _nds2_ReturnObject;
+} _nds_c_ReturnObject;
 
 
-static void ReturnObject_dealloc(_nds2_ReturnObject *self)
+static void ReturnObject_dealloc(_nds_c_ReturnObject *self)
 {
     if (self->name) {
         free(self->name);
@@ -326,20 +326,20 @@ static void ReturnObject_dealloc(_nds2_ReturnObject *self)
 
 static PyObject *ReturnObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _nds2_ReturnObject *self;
+    _nds_c_ReturnObject *self;
 
-    self = (_nds2_ReturnObject *) type->tp_alloc(type, 0);
+    self = (_nds_c_ReturnObject *) type->tp_alloc(type, 0);
 
     return (PyObject *)self;
 }
 
 
-static int ReturnObject_init(_nds2_ReturnObject *self, PyObject *args, PyObject *kwds)
+static int ReturnObject_init(_nds_c_ReturnObject *self, PyObject *args, PyObject *kwds)
 {
     return 0;
 }
 
-static PyObject *ReturnObject_get_name(_nds2_ReturnObject *self, void *closure) {
+static PyObject *ReturnObject_get_name(_nds_c_ReturnObject *self, void *closure) {
     PyObject *name;
 
     if (self->name != NULL) {
@@ -352,7 +352,7 @@ static PyObject *ReturnObject_get_name(_nds2_ReturnObject *self, void *closure) 
     return name;
 }
 
-static int ReturnObject_set_name(_nds2_ReturnObject *self, PyObject *value, void *closure) {
+static int ReturnObject_set_name(_nds_c_ReturnObject *self, PyObject *value, void *closure) {
     char *name = PyString_AsString(value);
     
     self->name = (char *) malloc(strlen(name)+1);
@@ -362,20 +362,20 @@ static int ReturnObject_set_name(_nds2_ReturnObject *self, PyObject *value, void
     return 0;
 }
 
-static PyObject *ReturnObject_get_rate(_nds2_ReturnObject *self, void *closure) {
+static PyObject *ReturnObject_get_rate(_nds_c_ReturnObject *self, void *closure) {
     return Py_BuildValue("i", self->rate);
 }
 
-static int ReturnObject_set_rate(_nds2_ReturnObject *self, PyObject *value, void *closure) {
+static int ReturnObject_set_rate(_nds_c_ReturnObject *self, PyObject *value, void *closure) {
     self->rate = PyInt_AsLong(value);
     return 0;
 }
 
-static PyObject *ReturnObject_get_data(_nds2_ReturnObject *self, void *closure) {
+static PyObject *ReturnObject_get_data(_nds_c_ReturnObject *self, void *closure) {
     return self->data;
 }
 
-static int ReturnObject_set_data(_nds2_ReturnObject *self, PyObject *value, void *closure) {
+static int ReturnObject_set_data(_nds_c_ReturnObject *self, PyObject *value, void *closure) {
     self->data = value;
     /* TODO: decrement count on data, inc on value */
 
@@ -394,11 +394,11 @@ static PyMethodDef return_t_methods[] = {
 };
 
 
-static PyTypeObject _nds2_ReturnType = {
+static PyTypeObject _nds_c_ReturnType = {
     PyObject_HEAD_INIT(NULL)
     0,                            /*ob_size*/
-    "_nds2.return_t",             /*tp_name*/
-    sizeof(_nds2_ReturnObject),   /*tp_basicsize*/
+    "_nds_c.return_t",             /*tp_name*/
+    sizeof(_nds_c_ReturnObject),   /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     0,                         /*tp_dealloc*/
     0,                         /*tp_print*/
@@ -567,13 +567,13 @@ static PyObject *wrap_daq_connect(PyObject *self, PyObject *args)
 
     const char *node_id;
     int port_id;
-    _nds2_DaqObject *daq;
+    _nds_c_DaqObject *daq;
     int rc;
 
     if (!PyArg_ParseTuple(args, "Osi", &daq, &node_id, &port_id))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -590,13 +590,13 @@ static PyObject *wrap_daq_recv_channels(PyObject *self, PyObject *args)
     int i;
     int rc;
     PyObject *obj;
-    _nds2_DaqObject *daq;
-    _nds2_DaqChannelObject *inner;
+    _nds_c_DaqObject *daq;
+    _nds_c_DaqChannelObject *inner;
 
     if (!PyArg_ParseTuple(args, "OO", &daq, &obj))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -613,7 +613,7 @@ static PyObject *wrap_daq_recv_channels(PyObject *self, PyObject *args)
 
     if (rc == 0) {
         for (i=0; i < nChans; i++) {
-            inner = (_nds2_DaqChannelObject *) PySequence_GetItem(obj, i);
+            inner = (_nds_c_DaqChannelObject *) PySequence_GetItem(obj, i);
 
             memcpy(inner->channel, channel_list + i, sizeof(daq_channel_t));
         }
@@ -626,20 +626,20 @@ static PyObject *wrap_daq_recv_channels(PyObject *self, PyObject *args)
 
 static PyObject *wrap_daq_request_channel_from_chanlist(PyObject *self, PyObject *args)
 {
-    _nds2_DaqObject *daq;
-    _nds2_DaqChannelObject *channel;
+    _nds_c_DaqObject *daq;
+    _nds_c_DaqChannelObject *channel;
     int rc;
 
     if (!PyArg_ParseTuple(args, "OO", &daq, &channel))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
 
 
-    if (!PyObject_IsInstance((PyObject*) channel, (PyObject*) &_nds2_DaqChannelType)) {
+    if (!PyObject_IsInstance((PyObject*) channel, (PyObject*) &_nds_c_DaqChannelType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_channel_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -654,14 +654,14 @@ static PyObject *wrap_daq_request_data(PyObject *self, PyObject *args)
     unsigned long gps_start, gps_end, delta;
     unsigned long gps;
     PyObject *ret;
-    _nds2_DaqObject *daq;
+    _nds_c_DaqObject *daq;
     int rc;
     int i;
 
     if (!PyArg_ParseTuple(args, "Okkk", &daq, &gps_start, &gps_end, &delta))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -689,13 +689,13 @@ static PyObject *wrap_daq_request_data(PyObject *self, PyObject *args)
 
 static PyObject *wrap_daq_disconnect(PyObject *self, PyObject *args)
 {
-    _nds2_DaqObject *daq;
+    _nds_c_DaqObject *daq;
     int rc;
 
     if (!PyArg_ParseTuple(args, "O", &daq))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -707,13 +707,13 @@ static PyObject *wrap_daq_disconnect(PyObject *self, PyObject *args)
 
 static PyObject *wrap_daq_recv_shutdown(PyObject *self, PyObject *args)
 {
-    _nds2_DaqObject *daq;
+    _nds_c_DaqObject *daq;
     int rc;
 
     if (!PyArg_ParseTuple(args, "O", &daq))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+    if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
         PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
                 return (PyObject *) -1;
     }
@@ -725,12 +725,12 @@ static PyObject *wrap_daq_recv_shutdown(PyObject *self, PyObject *args)
 
 static PyObject *get_data(PyObject *self, PyObject *args)
 {
-	_nds2_DaqObject *daq;
+	_nds_c_DaqObject *daq;
     PyObject        *requests;
     PyObject        *array_mod, *array_class, *rargs, *inst, *meth, *res, *pmeth;
 	int             rc;
 	PyObject *      ret;
-	_nds2_ReturnObject *newRet;
+	_nds_c_ReturnObject *newRet;
 	char            *name;
 	chantype_t ctype = cUnknown;                                        
 	double     rate  = 0.0; 
@@ -743,7 +743,7 @@ static PyObject *get_data(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OOii", &daq, &requests, &start_time, &end_time))
 		return NULL;
 
-	if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds2_DaqType)) {
+	if (!PyObject_IsInstance((PyObject*) daq, (PyObject*) &_nds_c_DaqType)) {
 		PyErr_SetString(PyExc_TypeError, "instance of daq_t required for first argument");
 		return (PyObject *) -1;
 	}
@@ -766,7 +766,7 @@ static PyObject *get_data(PyObject *self, PyObject *args)
     ret = PyList_New(0);
 
 	for(i=0; i < nChanReq; i++) {
-        newRet          = (_nds2_ReturnObject *) _nds2_ReturnType.tp_alloc(&_nds2_ReturnType, 0);
+        newRet          = (_nds_c_ReturnObject *) _nds_c_ReturnType.tp_alloc(&_nds_c_ReturnType, 0);
         chan_req_t* req = daq->daq->chan_req_list + i;
 
         newRet->name          = (char *) malloc(strlen(req->name) + 1);
@@ -803,37 +803,37 @@ static PyMethodDef NDS2Methods[] = {
 };
 
 
-PyMODINIT_FUNC init_nds2(void)
+PyMODINIT_FUNC init_nds_c(void)
 {
     PyObject *m;
     PyObject *array_mod;
-    m = Py_InitModule("_nds2", NDS2Methods);
+    m = Py_InitModule("_nds_c", NDS2Methods);
 
-    _nds2_DaqChannelType.tp_new = PyType_GenericNew;
+    _nds_c_DaqChannelType.tp_new = PyType_GenericNew;
 
-    if (PyType_Ready(&_nds2_DaqChannelType) < 0)
+    if (PyType_Ready(&_nds_c_DaqChannelType) < 0)
         return;
 
-    Py_INCREF(&_nds2_DaqChannelType);
-    PyModule_AddObject(m, "daq_channel_t", (PyObject *)&_nds2_DaqChannelType);
+    Py_INCREF(&_nds_c_DaqChannelType);
+    PyModule_AddObject(m, "daq_channel_t", (PyObject *)&_nds_c_DaqChannelType);
 
 
-    _nds2_DaqType.tp_new = PyType_GenericNew;
+    _nds_c_DaqType.tp_new = PyType_GenericNew;
 
-    if (PyType_Ready(&_nds2_DaqType) < 0)
+    if (PyType_Ready(&_nds_c_DaqType) < 0)
         return;
 
-    Py_INCREF(&_nds2_DaqType);
-    PyModule_AddObject(m, "daq_t", (PyObject *)&_nds2_DaqType);
+    Py_INCREF(&_nds_c_DaqType);
+    PyModule_AddObject(m, "daq_t", (PyObject *)&_nds_c_DaqType);
 
 
-    _nds2_ReturnType.tp_new = PyType_GenericNew;
+    _nds_c_ReturnType.tp_new = PyType_GenericNew;
 
-    if (PyType_Ready(&_nds2_ReturnType) < 0)
+    if (PyType_Ready(&_nds_c_ReturnType) < 0)
         return;
 
-    Py_INCREF(&_nds2_ReturnType);
-    PyModule_AddObject(m, "return_t", (PyObject *)&_nds2_ReturnType);
+    Py_INCREF(&_nds_c_ReturnType);
+    PyModule_AddObject(m, "return_t", (PyObject *)&_nds_c_ReturnType);
 
     array_mod = PyImport_ImportModule("array");
 

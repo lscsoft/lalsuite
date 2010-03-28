@@ -31,12 +31,15 @@ setup(
     description='NDS1/NDS2 client',
     packages=['nds'],
     ext_modules=[
-        Extension('nds_ext', ['nds_ext.cpp'],
+        Extension('nds_ext', ['src/nds_ext.cpp'],
             **pkgconfig('nds2-client',
                 include_dirs=[numpy.get_include()] + boost_include_dirs,
                 library_dirs=boost_library_dirs,
                 libraries=['boost_python']
             )
+        ),
+        Extension('_nds_c', ['src/nds_c.c'],
+            **pkgconfig('nds2-client')
         )
     ]
 )

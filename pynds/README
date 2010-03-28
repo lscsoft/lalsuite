@@ -23,6 +23,9 @@ To do
 Change Log
 ----------
 
+2010-03-27 Integrated Larne's module with distutils script.  Moved demo scripts
+           into dedicated "demo" directory.  Moved source files into "src".
+
 2010-03-27 Refactored channel browser into a reusable widget.
            Added 'host' and 'port' options to channel_browser.py.
 
