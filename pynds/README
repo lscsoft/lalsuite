@@ -3,7 +3,7 @@ PyNDS: NDS1/NDS2 client
 =======================
 
 These are two independant wrappers for John Zweizig's NDS1/NDS2 client library.
-pynds and _nds2.  You can use either to retrieve data from any of the tens of
+pynds and nds_c.  You can use either to retrieve data from any of the tens of
 thousands of channels provided by the LHO and LLO sites.
 
 
@@ -125,7 +125,7 @@ pynds Usage
 -----------
 
 Examples showing the newly introduced iterator functionality are in 
-demo.py and demo_online.py in this directory.
+demo.py and demo_online.py in the "demo/" directory.
 
 Here is an example Python session using the NDS library::
     
@@ -163,7 +163,7 @@ Here is an example Python session using the NDS library::
 
 
 -----------
-_nds2 usage
+nds_c usage
 -----------
 
-See test_nds2.py in this directory
+See demo/test_nds_c.py
