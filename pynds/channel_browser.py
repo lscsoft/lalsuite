@@ -368,15 +368,56 @@ class Base:
         daq = nds.daq(host, port)
         channels = daq.recv_channel_list()
         self.channelbrowser = ChannelBrowser(channels)
+        self.channelbrowser.channel_activated_func = self.channel_activated
         self.window.set_title("%s:%d" % (daq.host, daq.port))
         
-        self.channelbrowser.channel_activated_func = self.channel_activated
-        self.window.add(self.channelbrowser)
+        self.chosen_channel_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        
+        # Change this to a "1" to show the list of currently chosen channels
+        # in a separate pane
+        if 0:
+            paned = gtk.VPaned()
+            self.window.add(paned)
+            paned.add1(self.channelbrowser)
+            
+            filter = self.chosen_channel_store.filter_new()
+            filter.set_modify_func( (gobject.TYPE_STRING,), self.chosen_channel_filter_modify)
+            treeview = gtk.TreeView(filter)
+            tvcolumn = gtk.TreeViewColumn('Selected Channels')
+            treeview.append_column(tvcolumn)
+            cell = gtk.CellRendererText()
+            tvcolumn.pack_start(cell, True)
+            tvcolumn.add_attribute(cell, 'text', 0)
+            treeview.set_search_column(0)
+            treeview.set_reorderable(True)
+            treeview.set_rubber_banding(True)
+            treeview.set_size_request(-1, 208)
+            selection = treeview.get_selection()
+            selection.set_mode(gtk.SELECTION_MULTIPLE)
+            scrolledwindow = gtk.ScrolledWindow()
+            scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+            scrolledwindow.add(treeview)
+            paned.add2(scrolledwindow)
+        else:
+            self.window.add(self.channelbrowser)
+
         self.window.show_all()
     
+    def channel_activated(self, channel):
+        iter = self.chosen_channel_store.get_iter_first()
+        if iter is not None:
+            while iter is not None:
+                if self.chosen_channel_store.get_value(iter, 0) == channel:
+                    return
+                iter = self.chosen_channel_store.iter_next(iter)
+        self.chosen_channel_store.append( (channel,) )
+    
     @staticmethod
-    def channel_activated(channel):
-        print channel
+    def chosen_channel_filter_modify(model, iter, column):
+        if column != 0:
+            return None
+        else:
+            return str(model.get_model().get_value(model.convert_iter_to_child_iter(iter), 0))
     
     @staticmethod
     def destroy(widget, data=None):
