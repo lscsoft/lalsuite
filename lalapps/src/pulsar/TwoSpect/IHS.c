@@ -422,7 +422,6 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
             //Check the IHS FOM against the FAR, if smaller, and the location is non-zero,
             //and the location is within range then we have a candidate
             if  (fom<=ihsfomfar && loc>=5.0 && inputParams->Tobs/loc>=2.0*3600.0) {
-               fprintf(stderr,"IHS statistic = %g (FAR = %g), FOM statistic = %g\n",ihsmaxima->maxima->data[checkbin], ihsfarstruct->ihsfar->data[ii]*meanNoise, fom);
                
                //Candidate frequency
                fsig = inputParams->fmin + (0.5*ii + jj)/inputParams->Tcoh;
@@ -432,6 +431,8 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                
                //Candidate period
                per0 = inputParams->Tobs/loc;
+               
+               fprintf(stderr,"IHS candidate %d: f0 = %g, P = %g, df = %g\n",(*numofcandidates),fsig,per0,B);
                
                REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
                REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);

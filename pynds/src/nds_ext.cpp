@@ -193,7 +193,7 @@ public:
             PyObject* array_obj = PyArray_SimpleNew(1, &dim, numpy_typenum_for_daq_data_t(channel->data_type));
             if (!array_obj) throw NoMemoryError();
             memcpy(PyArray_DATA(array_obj), this->tb->data + channel->offset, data_length);
-            l.append(make_tuple(channel, handle<>(array_obj)));
+            l.append(handle<>(array_obj));
         }
         return l;
     }
@@ -204,6 +204,13 @@ public:
         for (chan_req_t* channel = this->chan_req_list; channel < &this->chan_req_list[this->num_chan_request]; channel++)
             l.append(channel);
         return l;
+    }
+    
+    tuple get_timestamp()
+    {
+        if (!this->tb)
+            throw DaqError(DAQD_ERROR);
+        return make_tuple(this->tb->gps, this->tb->gpsn);
     }
     
     list recv_channel_list(chantype channeltype = cUnknown)
@@ -271,7 +278,7 @@ BOOST_PYTHON_MODULE(nds_ext)
         .value("minute_trend", cMTrend)
         .value("testpoint", cTestPoint);
     
-    enum_<nds_version>("nds_version", "NDS protocol version")
+    enum_<nds_version>("nds_version")
         .value("v1", nds_v1)
         .value("v2", nds_v2);
     
@@ -304,14 +311,15 @@ BOOST_PYTHON_MODULE(nds_ext)
     class_<_daq_t>("daq", init<const std::string&, int, nds_version>(args("host", "port", "nds_version")))
         .def(init<const std::string&, int>(args("host", "port")))
         .def("disconnect", &_daq_t::disconnect)
-        .def("recv_channel_list", &_daq_t::recv_channel_list)
-        .def("recv_channel_list", &_daq_t::recv_channel_list_any)
+        .def("recv_channel_list", &_daq_t::recv_channel_list, "get list of all available channels")
+        .def("recv_channel_list", &_daq_t::recv_channel_list_any, "get list of available channels matching a given channel type")
         .def("clear_channel_list", &_daq_t::clear_channel_list, "reset list of requested channels")
         .def("request_data", &_daq_t::request_data, args("gps_start", "gps_end", "stride"))
         .def("request_channel", &_daq_t::request_channel, "request a channel")
         .def("recv_next", &_daq_t::recv_next, "received next block")
         .def("unpack", &_daq_t::unpack, "unpack received data")
         .add_property("requested_channels", &_daq_t::get_requested_channels, "list of requested channels")
+        .add_property("timestamp", &_daq_t::get_timestamp, "tuple containing GPS seconds and nanoseconds of last received block")
         .def_readonly("rev", &_daq_t::rev, "revision of the underlying NDS client library")
         .def_readonly("nds_version", &_daq_t::nds_versn, "version of NDS protocol used for this connection");
     

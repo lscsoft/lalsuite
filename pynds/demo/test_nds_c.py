@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import nds2
+import nds.nds_c as nds_c
 import pylab
 import numpy
 
-daq = nds2.Daq('ldas-pcdev1.ligo.caltech.edu',31200)
+daq = nds_c.Daq('ldas-pcdev1.ligo.caltech.edu',31200)
 
 gps_start = 940523050
 gps_end   = 940523060

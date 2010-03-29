@@ -218,7 +218,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   estimateFAR(farval, template, 10000, 0.01, ffplanenoise);
                   REAL4 R = calculateR(ffdata->ffdata, template, ffplanenoise);
                   REAL4 snr = (R - farval->distMean)/farval->distSigma;
-                  if (snr > bestSNR) {
+                  if (R > farval->far && snr > bestSNR) {
                      bestSNR = snr;
                      bestmoddepth = mindf + kk*0.5/params->Tcoh;
                      bestR = R;

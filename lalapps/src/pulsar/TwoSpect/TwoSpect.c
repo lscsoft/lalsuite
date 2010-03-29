@@ -359,255 +359,172 @@ int main(int argc, char *argv[])
             
             /* Log the candidate if R exceeds the FAR or check other possibilities of different 
             periods. Use same farval.far because the FAR is ~independent on period. */
+            REAL4 bestPeriod = 0.0;
+            REAL4 bestsnr = 0.0;
+            REAL4 bestR = 0.0;
+            REAL4 initialFAR = farval->far;
             REAL4 Rfirst = R;
-            REAL4 Rtemp = R;
-            REAL4 bestPeriod = ihsCandidates[ii]->period;
-            if (Rfirst > farval->far) {
+            if (R > farval->far) {
+               bestR = R;
+               bestsnr = (R-farval->distMean)/farval->distSigma;
+               bestPeriod = ihsCandidates[ii]->period;
                gaussCandidates1[numofcandidates2] = new_candidate();
-               loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, Rfirst, (Rfirst-farval->distMean)/farval->distSigma, 0.0);
+               loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, bestsnr, 0.0);
                numofcandidates2++;
             }
             
-            //Check for smaller periods (=higher second FFT frequencies)
-            if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 0.5;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 2.0;
-            }
-            if (ihsCandidates[ii]->period/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period/3.0 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period /= 3.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 3.0;
-            }
-            if (ihsCandidates[ii]->period*0.25 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.25 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 0.25;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 4.0;
-            }
-            if (ihsCandidates[ii]->period*0.2 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.2 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 0.2;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 5.0;
-            }
-            //Check for larger periods (=lower second FFT frequencies)
-            if (ihsCandidates[ii]->period*2.0 < 0.2*inputParams->Tobs) {
-               ihsCandidates[ii]->period *= 2.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 0.5;
-            }
-            if (ihsCandidates[ii]->period*3.0 < 0.2*inputParams->Tobs) {
-               ihsCandidates[ii]->period *= 3.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period /= 3.0;
-            }
-            if (ihsCandidates[ii]->period*4.0 < 0.2*inputParams->Tobs) {
-               ihsCandidates[ii]->period *= 4.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 0.25;
-            }
-            if (ihsCandidates[ii]->period*5.0 < 0.2*inputParams->Tobs) {
-               ihsCandidates[ii]->period *= 5.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 0.2;
-            }
-            /* if (ihsCandidates[ii]->period*0.5 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.5 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 0.5;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 2.0;
-            }
-            if (ihsCandidates[ii]->period*2.0/3.0 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*2.0/3.0 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 2.0/3.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 1.5;
-            }
-            if (ihsCandidates[ii]->period*0.75 > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period*0.75 >= 2.0*3600.0) {
-               ihsCandidates[ii]->period *= 0.75;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period /= 0.75;
-            }
-            if (inputParams->Tobs/ihsCandidates[ii]->period*0.75 > 5) {
-               ihsCandidates[ii]->period *= 4.0/3.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 0.75;
-            }
-            if (inputParams->Tobs/ihsCandidates[ii]->period/1.5 > 5) {
-               ihsCandidates[ii]->period *= 1.5;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period /= 1.5;
-            }
-            if (inputParams->Tobs/ihsCandidates[ii]->period*0.5 > 5) {
-               ihsCandidates[ii]->period *= 2.0;
-               template = new_templateStruct(inputParams->templatelength);
-               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
-               R = calculateR(ffdata->ffdata, template, aveNoise);
-               if (R > Rtemp) {
-                  bestPeriod = ihsCandidates[ii]->period;
-                  Rtemp = R;
-               }
-               free_templateStruct(template);
-               template = NULL;
-               ihsCandidates[ii]->period *= 0.5;
-            } */
-            R = Rtemp;
+            //free_farStruct(farval);
+            //farval = NULL;
             
             
-            if (R > farval->far) {
-               ihsCandidates[ii]->period = bestPeriod;
-               //for (jj=0; jj<10; jj++) {
-               for (jj=0; jj<5; jj++) {
-                  //REAL4 periodfact = (jj*2+1)*ihsCandidates[ii]->period/(jj+1)*0.5;
-                  REAL4 periodfact = (jj+1)*ihsCandidates[ii]->period/(jj+2);
-                  if ( (ihsCandidates[ii]->period - periodfact) > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period-periodfact>2.0*3600.0) {
-                     ihsCandidates[ii]->period -= periodfact;
+            //Try something new...
+            if (bestsnr != 0.0) {
+               for (jj=0; jj<3; jj++) {
+                  REAL4 periodfact = (jj+1.0)/(jj+2.0);
+                  if ( periodfact*ihsCandidates[ii]->period > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && periodfact*ihsCandidates[ii]->period>2.0*3600.0) {
+                     ihsCandidates[ii]->period *= periodfact;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
                      R = calculateR(ffdata->ffdata, template, aveNoise);
-                     if (R > Rtemp) {
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
                         bestPeriod = ihsCandidates[ii]->period;
-                        Rtemp = R;
+                        bestsnr = snr;
+                        bestR = R;
                      }
                      free_templateStruct(template);
                      template = NULL;
-                     ihsCandidates[ii]->period += periodfact;
+                     ihsCandidates[ii]->period /= periodfact;
                   }
-                  /* periodfact = ihsCandidates[ii]->period*0.5;
-                  if ( inputParams->Tobs/(ihsCandidates[ii]->period + (jj+1)*periodfact) > 5) { */
-                  if ( (ihsCandidates[ii]->period + periodfact) < 0.2*inputParams->Tobs ) {
-                  //if ( inputParams->Tobs/(ihsCandidates[ii]->period + periodfact) > 5) {
-                     ihsCandidates[ii]->period += periodfact;
+                  periodfact = 1.0/periodfact;
+                  if ( periodfact*ihsCandidates[ii]->period < 0.2*inputParams->Tobs ) {
+                     ihsCandidates[ii]->period *= periodfact;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
                      R = calculateR(ffdata->ffdata, template, aveNoise);
-                     if (R > Rtemp) {
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
                         bestPeriod = ihsCandidates[ii]->period;
-                        Rtemp = R;
+                        bestsnr = snr;
+                        bestR = R;
                      }
                      free_templateStruct(template);
                      template = NULL;
-                     ihsCandidates[ii]->period -= periodfact;
+                     ihsCandidates[ii]->period /= periodfact;
                   }
                }
-               R = Rtemp;
+               //end of try something new...
                
-               if (Rfirst<R && Rfirst>farval->far) {
-                  free_candidate(gaussCandidates1[numofcandidates2-1]);
-                  gaussCandidates1[numofcandidates2-1] = NULL;
-                  gaussCandidates1[numofcandidates2-1] = new_candidate();
-                  loadCandidateData(gaussCandidates1[numofcandidates2-1], ihsCandidates[ii]->fsig, bestPeriod, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, (R-farval->distMean)/farval->distSigma, 0.0);
-               } else if (Rfirst<R && Rfirst<=farval->far) {
-                  gaussCandidates1[numofcandidates2] = new_candidate();
-                  loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, bestPeriod, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, (R-farval->distMean)/farval->distSigma, 0.0);
-                  numofcandidates2++;
+               for (jj=2; jj<6; jj++) {
+                  if (ihsCandidates[ii]->period/jj > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && ihsCandidates[ii]->period/jj >= 2.0*3600.0) {
+                     ihsCandidates[ii]->period /= jj;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        bestsnr = snr;
+                        bestR = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period *= jj;
+                  }
+                  if (ihsCandidates[ii]->period*jj < 0.2*inputParams->Tobs) {
+                     ihsCandidates[ii]->period *= jj;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        bestsnr = snr;
+                        bestR = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     ihsCandidates[ii]->period /= jj;
+                  }
                }
             }
             
             free_farStruct(farval);
             farval = NULL;
             
+            if (bestsnr != 0.0) {
+               ihsCandidates[ii]->period = bestPeriod;
+               
+               template = new_templateStruct(inputParams->templatelength);
+               makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+               farval = new_farStruct();
+               estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
+               free_templateStruct(template);
+               template = NULL;
+               
+               for (jj=0; jj<10; jj++) {
+                  //REAL4 periodfact = (jj*2+1)*ihsCandidates[ii]->period/(jj+1)*0.5;
+                  REAL4 periodfact = (jj+1.0)/(jj+2.0);
+                  if ( periodfact*ihsCandidates[ii]->period > minPeriod(ihsCandidates[ii]->moddepth, inputParams->Tcoh) && periodfact*ihsCandidates[ii]->period>2.0*3600.0) {
+                     ihsCandidates[ii]->period *= periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     //farval = new_farStruct();
+                     //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        bestsnr = snr;
+                        bestR = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     //free_farStruct(farval);
+                     //farval = NULL;
+                     ihsCandidates[ii]->period /= periodfact;
+                  }
+                  periodfact = 1.0/periodfact;
+                  if ( periodfact*ihsCandidates[ii]->period < 0.2*inputParams->Tobs ) {
+                     ihsCandidates[ii]->period *= periodfact;
+                     template = new_templateStruct(inputParams->templatelength);
+                     makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     //farval = new_farStruct();
+                     //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
+                     R = calculateR(ffdata->ffdata, template, aveNoise);
+                     REAL4 snr = (R-farval->distMean)/farval->distSigma;
+                     if (R>farval->far && snr > bestsnr) {
+                        bestPeriod = ihsCandidates[ii]->period;
+                        bestsnr = snr;
+                        bestR = R;
+                     }
+                     free_templateStruct(template);
+                     template = NULL;
+                     //free_farStruct(farval);
+                     //farval = NULL;
+                     ihsCandidates[ii]->period /= periodfact;
+                  }
+               }
+               
+               free_farStruct(farval);
+               farval = NULL;
+               
+               //If a better period was found, then make sure to save it
+               if (bestPeriod != 0.0) ihsCandidates[ii]->period = bestPeriod;
+               
+               if (Rfirst > initialFAR && bestsnr > gaussCandidates1[numofcandidates2-1]->snr) {
+                  free_candidate(gaussCandidates1[numofcandidates2-1]);
+                  gaussCandidates1[numofcandidates2-1] = NULL;
+                  gaussCandidates1[numofcandidates2-1] = new_candidate();
+                  loadCandidateData(gaussCandidates1[numofcandidates2-1], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestsnr, 0.0);
+               } else if (Rfirst <= initialFAR && bestsnr != 0.0) {
+                  gaussCandidates1[numofcandidates2] = new_candidate();
+                  loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestsnr, 0.0);
+                  numofcandidates2++;
+               }
+            }
          }
       }
       numofcandidates = numofcandidates2;
@@ -664,8 +581,6 @@ int main(int argc, char *argv[])
 ////////Start detailed Gaussian template search!
       fprintf(LOG,"Starting detailed search using Gaussian train templates... ");
       fprintf(stderr,"Starting detailed search using Gaussian train templates... ");
-      //REAL4 quadparam = 2.4e-3;
-      //REAL4 linparam = 4.1e-3;
       REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
       for (ii=0; ii<numofcandidates; ii++) {
          
@@ -691,7 +606,7 @@ int main(int argc, char *argv[])
          for (jj=0; jj<(INT4)numf; jj++) trialf->data[jj] = minf + 0.5*jj/inputParams->Tcoh;
          
          //Search over 5 different periods
-         nump = 5;
+         nump = 9;
          trialp = XLALCreateREAL4Vector(nump);
          
          //Now search over the parameter space. Frequency, then modulation depth, then period
@@ -938,11 +853,12 @@ int main(int argc, char *argv[])
          exactCandidates2[numofcandidates2+numofcandidatesadded] = new_candidate();
          loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, 0.0);
          
+         /*
          //Best template
          templateStruct *template = new_templateStruct(inputParams->templatelength);
          makeTemplate(template, exactCandidates2[numofcandidates2+numofcandidatesadded], inputParams, secondFFTplan);
          farval = new_farStruct();
-         estimateFAR(farval, template, (INT4)roundf(1000000*.01/templatefarthresh), templatefarthresh, aveNoise);
+         estimateFAR(farval, template, (INT4)roundf(100000*.01/templatefarthresh), templatefarthresh, aveNoise);
          
          //Determine log-likelihood
          REAL4 prob = 1.0;
@@ -950,17 +866,19 @@ int main(int argc, char *argv[])
          if (bestR > farval->far) {
             while (locinlist > 0 && bestR > farval->topRvalues->data[locinlist-1]) locinlist--;
          }
-         prob = log10((locinlist+1)/(0.01/templatefarthresh*1000000));
+         prob = log10((locinlist+1)/(0.01/templatefarthresh*100000));
          
          //Load the likelihood value
          loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, prob);
-         numofcandidates2++;
          
          //Clean up after log-likelihood measure
          free_templateStruct(template);
          free_farStruct(farval);
          template = NULL;
          farval = NULL;
+         */
+         
+         numofcandidates2++;
          
          //Destroy parameter space values
          XLALDestroyREAL4Vector(trialf);
