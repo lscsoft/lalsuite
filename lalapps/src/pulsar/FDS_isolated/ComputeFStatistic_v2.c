@@ -2033,7 +2033,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
       XLAL_ERROR_NULL( fn, XLAL_EDOM);
     }
 
-  len = LALSnprintf ( buf, MAXLEN, "tRef%09d_RA%.9g_DEC%.9g_Freq%.15g",
+  len = snprintf ( buf, MAXLEN, "tRef%09d_RA%.9g_DEC%.9g_Freq%.15g",
 		      par->refTime.gpsSeconds,
 		      par->Alpha,
 		      par->Delta,
@@ -2049,7 +2049,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
       if ( par->fkdot[i] )
 	{
 	  CHAR buf1[MAXLEN];
-	  len = LALSnprintf ( buf1, MAXLEN, "%s_f%ddot%.7g", buf, i, par->fkdot[i] );
+	  len = snprintf ( buf1, MAXLEN, "%s_f%ddot%.7g", buf, i, par->fkdot[i] );
 	  if ( len >= MAXLEN )
 	    {
 	      LogPrintf(LOG_CRITICAL, "%s: filename-size (%d) exceeded maximal length (%d): '%s'!\n", fn, len, MAXLEN, buf1 );
