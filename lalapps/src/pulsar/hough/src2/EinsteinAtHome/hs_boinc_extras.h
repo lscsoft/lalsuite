@@ -80,11 +80,14 @@ LocalComputeFStatFreqBand ( LALStatus *status,
                             const MultiNoiseWeights *multiWeights,
                             const MultiDetectorStateSeries *multiDetStates,
                             const ComputeFParams *params);
+
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 extern void
 LocalComputeFstatHoughMap ( LALStatus *status,
 			    SemiCohCandidateList  *out,   /* output candidates */
 			    HOUGHPeakGramVector *pgV, /* peakgram vector */
 			    SemiCoherentParams *params);
+#endif /* used for Hough HierarchicalSearch, not GCT */
 
 extern LALStatus *global_status;
 

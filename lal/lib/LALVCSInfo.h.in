@@ -38,13 +38,13 @@ extern "C" {
 #define LAL_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LAL_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LAL_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LAL_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LAL_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LAL_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LAL_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LAL_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LAL_VCS_IDENT_ID "$" "LALId: @ID@ " "$"
+#define LAL_VCS_IDENT_DATE "$" "LALDate: @DATE@ " "$"
+#define LAL_VCS_IDENT_BRANCH "$" "LALBranch: @BRANCH@ " "$"
+#define LAL_VCS_IDENT_TAG "$" "LALTag: @TAG@ " "$"
+#define LAL_VCS_IDENT_AUTHOR "$" "LALAuthor: @AUTHOR@ " "$"
+#define LAL_VCS_IDENT_COMMITTER "$" "LALCommitter: @COMMITTER@ " "$"
+#define LAL_VCS_IDENT_STATUS "$" "LALStatus: @STATUS@ " "$"
 
 /* global variables for vcs information, defined in LALVCSInfo.c */
 extern const char *lalVCSVersion;
@@ -71,9 +71,16 @@ typedef struct tagLALVCSInfo
 
 /* header and library vcs information structures */
 extern struct tagLALVCSInfo lalLibraryVCSInfo;
-static const struct tagLALVCSInfo lalHeaderVCSInfo = {LAL_VERSION, LAL_VCS_ID, \
-  LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
-  LAL_VCS_COMMITTER, LAL_VCS_STATUS};
+static const struct tagLALVCSInfo lalHeaderVCSInfo = { \
+  LAL_VERSION, \
+  LAL_VCS_ID, \
+  LAL_VCS_DATE, \
+  LAL_VCS_BRANCH, \
+  LAL_VCS_TAG, \
+  LAL_VCS_AUTHOR, \
+  LAL_VCS_COMMITTER, \
+  LAL_VCS_STATUS \
+};
 
 /*
  * function prototypes

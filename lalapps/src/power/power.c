@@ -40,8 +40,6 @@
 #include <sys/time.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <lalappsGitID.h>
-
 
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
@@ -67,9 +65,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLArray.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
@@ -81,8 +80,8 @@
 #include <lal/Units.h>
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
-#include <lal/lalGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 NRCSID(POWERC, "$Id$");
 RCSID("$Id$");
@@ -1549,16 +1548,9 @@ int main(int argc, char *argv[])
 	 */
 
 	_process_table = XLALCreateProcessTableRow();
-	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-	{
-		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 9))
-			exit(1);
-	}
-	else
-	{
-		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 9))
-			exit(1);
-	}
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 9))
+		exit(1);
+
 	XLALGPSTimeNow(&_process_table->start_time);
 
 	/*

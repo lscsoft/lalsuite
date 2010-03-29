@@ -64,22 +64,21 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Random.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/lalGitID.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/GenerateBurst.h>
 
-
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -99,6 +98,7 @@ extern int optind, opterr, optopt;
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
 
+/* FIXME:  should be "lalapps_StringSearch" to match the executable */
 #define PROGRAM_NAME "StringSearch"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
@@ -253,6 +253,7 @@ int main(int argc,char *argv[])
   highpassParams.a1   = -1;
   highpassParams.f2   = CommandLineArgs.flow;
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
+  printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
   printf("ReadData()\n");
@@ -398,7 +399,7 @@ int AddInjections(struct CommandLineArgsTag CLA){
   /* new injection code is double precision, so we need to create a
    * buffer to put the injections in and then quantize to single precision
    * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, GV.ht_proc->data->length);
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, (UINT4)GV.ht_proc->data->length);
   memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc -> for printing
@@ -542,10 +543,9 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	p++;
       }
 
-      peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pmax );
+      peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
       duration = GV.ht_proc->deltaT * ( pend - pstart );
-
-      starttime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pstart );
+      starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* Now copy stuff into event */
       strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
@@ -553,8 +553,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
       
       /* give trigger a 1 sample fuzz on either side */
-      starttime -= GV.ht_proc->deltaT *1e9;
-      duration += 2*GV.ht_proc->deltaT;
+      starttime -= round( 1e9 * GV.ht_proc->deltaT );
+      duration += 2 * GV.ht_proc->deltaT;
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
@@ -1087,7 +1087,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"max-mismatch",              required_argument,	NULL,	'M'},
     {"threshold",                 required_argument,	NULL,	't'},
     {"frame-cache",               required_argument,	NULL,	'F'},
-    {"channel-name",              required_argument,	NULL,	'C'},
+    {"channel",                   required_argument,	NULL,	'C'},
     {"output",                    required_argument,	NULL,	'o'},
     {"gps-end-time",              required_argument,	NULL,	'E'},
     {"gps-start-time",            required_argument,	NULL,	'S'},
@@ -1119,16 +1119,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   /* create the process and process params tables */
   procTable.processTable = XLALCreateProcessTableRow();
   XLALGPSTimeNow(&(procTable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-	exit(1);
-    }
-  else
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
-	exit(1);
-    }
+  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+    exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
@@ -1331,7 +1323,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--bank-freq-start (-L)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
+      fprintf(stdout,"\t--channel (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
       fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
@@ -1352,7 +1344,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1403,6 +1395,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n",argv[0]);
+      return 1;
+    }      
+  if(!(CLA->ChannelName[0] == 'V' || CLA->ChannelName[0] == 'H' || CLA->ChannelName[0] == 'L'))
+    {
+      fprintf(stderr,"The channel name is  not well specified\n");
+      fprintf(stderr,"It should start with H1, H2, L1 or V1\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      

@@ -1,6 +1,6 @@
-AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([ \
@@ -72,31 +72,11 @@ AC_CONFIG_FILES([ \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
-  packages/inspiral/Makefile \
-  packages/inspiral/doc/Makefile \
-  packages/inspiral/include/Makefile \
-  packages/inspiral/src/Makefile \
-  packages/inspiral/test/Makefile \
   packages/noisemodels/Makefile \
   packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile \
-  packages/bank/Makefile \
-  packages/bank/doc/Makefile \
-  packages/bank/include/Makefile \
-  packages/bank/src/Makefile \
-  packages/bank/test/Makefile \
-  packages/ring/Makefile \
-  packages/ring/doc/Makefile \
-  packages/ring/include/Makefile \
-  packages/ring/src/Makefile \
-  packages/ring/test/Makefile \
-  packages/findchirp/Makefile \
-  packages/findchirp/doc/Makefile \
-  packages/findchirp/include/Makefile \
-  packages/findchirp/src/Makefile \
-  packages/findchirp/test/Makefile \
   packages/support/Makefile \
   packages/support/doc/Makefile \
   packages/support/include/Makefile \
@@ -110,8 +90,6 @@ AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
 ])
-AH_TEMPLATE([LAL_SIZEOF_DOUBLE],[The number of bytes in a double.])
-AH_TEMPLATE([LAL_SIZEOF_FLOAT],[The number of bytes in a float.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])
@@ -157,7 +135,7 @@ AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
 # check for pthreads
 lal_pthread_available="yes"
-ACX_PTHREAD(,[lal_pthread_available="no"])
+AX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
     LIBS="$PTHREAD_LIBS $LIBS"
@@ -309,7 +287,7 @@ else
   else
     AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
   fi
-  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
+  AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
 
 # check for fft headers
@@ -365,8 +343,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF([float],[4])
-LAL_CHECK_SIZEOF([double],[8])
 
 # checks for library functions
 AC_CHECK_FUNCS([getopt])

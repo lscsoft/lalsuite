@@ -432,7 +432,6 @@ if opts.run_hardware_inj:
   inspiralutils.run_hardware_inj_part_one(cp,ifos)
   os.chdir("..")
 
-##############################################################################
 # create the list of files that will be concatenated into the ihope cache
 cachelist = []
 cachefilename = basename + '.cache'
@@ -981,6 +980,9 @@ if [ $# -eq 1 ] ; then
    rm -rf ${TMP_EXEC_DIR}
    mkdir ${TMP_EXEC_DIR}
    chmod 755 ${TMP_EXEC_DIR}
+ else
+   usage
+   exit 1
  fi
 fi
 
@@ -1032,6 +1034,54 @@ fi
 peg_fh.close()
 os.chmod("pegasus_submit_dax",0755)
 
+###############################################################################
+# write a shell script that can return the basedir and uber-concrete-dag
+
+basedir_fh = open("pegasus_basedir", "w")
+
+print >> basedir_fh, """#!/bin/bash
+
+TMP_EXEC_DIR=%s
+UEBER_CONCRETE_DAG=%s
+
+usage()
+{
+  echo "Usage: pegasus_basedir [-d]"
+  echo
+  echo "Prints the name of the Pegasus basedir where the condor files can be found"
+  echo
+  echo "  -d, --dag             Append the name of the concrete DAG to the basedir"
+  echo "  -h, --help            Print this message"
+  echo
+}
+
+if [ $# -gt 1 ] ; then
+  usage
+  exit 1
+fi
+
+
+if [ $# -eq 1 ] ; then
+ if [ $1 = "-h" ] || [ $1 = "--help" ] ; then
+   usage
+   exit 0
+ fi
+
+ if [ $1 = "-d" ] || [ $1 = "--dag" ] ; then
+   echo ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}
+   exit 0
+ else
+   usage
+   exit 1
+ fi
+fi
+
+echo ${TMP_EXEC_DIR}
+exit 0
+""" % ( tmp_exec_dir, dag.get_dax_file().replace('.dax','') + '-0.dag' )
+basedir_fh.close()
+os.chmod("pegasus_basedir",0755)
+
 pegprop_fh = open("pegasus.properties", "w")
 print >> pegprop_fh, """\
 ###############################################################################
@@ -1054,6 +1104,8 @@ pegasus.selector.site=RoundRobin
 pegasus.selector.replica=Default
 
 pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
+
+pegasus.dir.submit.subwf.labelbased=true
 """
 pegprop_fh.close()
 

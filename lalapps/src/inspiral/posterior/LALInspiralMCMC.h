@@ -337,8 +337,8 @@ tagLALMCMCInput
   UINT4 burninMaxNumber;  /* maximum number of trials */
 
 	/* Parameter for nested sampling */
-	UINT4 Nlive;
-	LALMCMCParameter **Live;
+  UINT4 Nlive;
+  LALMCMCParameter **Live;
 
 }  LALMCMCInput;
 /* </lalVerbatim>  */
@@ -466,6 +466,12 @@ void XLALMCMCRotateSky(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
 	);
+
+void XLALMCMCJumpSingle(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter,
+  gsl_matrix       *covMat
+);
 
 int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
 

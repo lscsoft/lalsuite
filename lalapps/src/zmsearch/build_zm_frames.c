@@ -19,8 +19,7 @@
 
 #include<stdio.h>
 #include<math.h>
-#include<stdarg.h> 
-#include <FrameL.h>
+#include<stdarg.h>
 
 #include <lalapps.h>
 #include <series.h>
@@ -35,6 +34,7 @@
 #include <lal/LALConstants.h>
 #include <lal/RealFFT.h>
 #include <lal/Interpolate.h>
+#include <lal/LALFrameL.h>
 
 RCSID( "$Id$" );
 
@@ -113,7 +113,7 @@ static void swap4(int n, char *b1) {
 }
 
 /* function to read in ZM waveforms */
-static int readZM(const char* fname,  float **time,  float **amplitude, float **ampcross)
+static int readZM(const char* fname,  float **lal_time,  float **amplitude, float **ampcross)
 {
   long n;
   int i;
@@ -134,9 +134,9 @@ static int readZM(const char* fname,  float **time,  float **amplitude, float **
   swap4(1,(char *)&n);
 
 
-  (*time) = (float *)malloc( n*sizeof(float));
-  fread(*time, sizeof(float), n, fp);
-  swap4(n,(char *)(*time));
+  (*lal_time) = (float *)malloc( n*sizeof(float));
+  fread(*lal_time, sizeof(float), n, fp);
+  swap4(n,(char *)(*lal_time));
 
   (*amplitude) = (float *)malloc( n*sizeof(float));
   fread(*amplitude, sizeof(float), n, fp);
@@ -151,7 +151,7 @@ static int readZM(const char* fname,  float **time,  float **amplitude, float **
 } 
 
 /* function to read in Ott et al waveforms */
-static int readOtt(const char* fname,  float **time,  float **amplitude, float **ampcross)
+static int readOtt(const char* fname,  float **lal_time,  float **amplitude, float **ampcross)
 {
   int i;
   FILE *fp;     
@@ -180,7 +180,7 @@ static int readOtt(const char* fname,  float **time,  float **amplitude, float *
   }
   fclose(fp);
 
-  itime = (*time) = (float *)malloc( nlines*sizeof(float));
+  itime = (*lal_time) = (float *)malloc( nlines*sizeof(float));
   iamp  = (*amplitude) = (float *)malloc( nlines*sizeof(float));
 
   (*ampcross) = (float *)malloc( nlines*sizeof(float));
@@ -203,7 +203,7 @@ static int readOtt(const char* fname,  float **time,  float **amplitude, float *
   return nlines;
 }
 
-static int readWarren(const char* fname,  float **time,  float **amplitude, float **ampcross)
+static int readWarren(const char* fname,  float **lal_time,  float **amplitude, float **ampcross)
 {
   int i;
   FILE *fp;     
@@ -232,7 +232,7 @@ static int readWarren(const char* fname,  float **time,  float **amplitude, floa
   }
   fclose(fp);
   
-  itime = (*time) = (float *)malloc( nlines*sizeof(float));
+  itime = (*lal_time) = (float *)malloc( nlines*sizeof(float));
   iamp  = (*amplitude) = (float *)malloc( nlines*sizeof(float));
   iampcross  = (*ampcross) = (float *)malloc( nlines*sizeof(float));
 
@@ -255,7 +255,7 @@ static int readWarren(const char* fname,  float **time,  float **amplitude, floa
 
 static void build_interpolate ( float **h, float **t, float **h_intpolat, float **t_intpolat, float dt, int l, int *N, int nfiles ){
 
-  static LALStatus stat;
+  static LALStatus status;
 
   float      t_target[5];
   float      h_target[5];
@@ -315,8 +315,8 @@ static void build_interpolate ( float **h, float **t, float **h_intpolat, float 
 
       target = t_intpolat[i][j];
 
-      LAL_CALL( LALSPolynomialInterpolation( &stat, &intout, target, &intpar ), 
-          &stat);
+      LAL_CALL( LALSPolynomialInterpolation( &status, &intout, target, &intpar ), 
+          &status);
       h_intpolat[i][j]=intout.y;
     }
   }
@@ -500,7 +500,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 
 int main(int argc, char **argv)
 {
-  static LALStatus stat;                                                      
+  static LALStatus status;
 
   struct options_t options;       /* command line */
 
@@ -518,7 +518,7 @@ int main(int argc, char **argv)
   int *tpeakindex;
   int tpeakmax;
 
-  float *time, *ampplus, *ampcross;
+  float *lal_time, *ampplus, *ampcross;
    
   float **hplus, **hcross, **t;
   float **hplus_intpolat, **hcross_intpolat, **t_intpolat;
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
       if (options.verbose)
 	fprintf(stdout,"Reading in file %s-%d.bin\n", options.infileindex, i);
       snprintf(filename,30,"%s-%d.bin", options.infileindex, i);
-      N[i] = readZM(filename,&time,&ampplus,&ampcross);
+      N[i] = readZM(filename,&lal_time,&ampplus,&ampcross);
 
       if (options.printrawdata){
 	/* print out in same format as Ott et al */
@@ -569,7 +569,7 @@ int main(int argc, char **argv)
 	/* write out the ZM waveforms */
 	fp = fopen(filename,"w");
 	for(j=0;j<N[i];j++){  
-	  fprintf(fp, "%e\t%e\t%e\n", *(time+j), *(ampplus+j), 1e-20*(*(ampplus+j)));
+	  fprintf(fp, "%e\t%e\t%e\n", *(lal_time+j), *(ampplus+j), 1e-20*(*(ampplus+j)));
 	}
 	fclose(fp);
       }    
@@ -579,7 +579,7 @@ int main(int argc, char **argv)
       if (options.verbose)
 	fprintf(stdout,"Reading in file %s-%d.bin\n", options.infileindex, i);
       snprintf(filename,30,"%s-%d.bin", options.infileindex, i);
-      N[i] = readOtt(filename,&time,&ampplus,&ampcross);
+      N[i] = readOtt(filename,&lal_time,&ampplus,&ampcross);
     }
     /*read in Warren waveforms*/
     else if (options.useWarrenWaveforms){
@@ -587,14 +587,14 @@ int main(int argc, char **argv)
 	fprintf(stdout,"Reading in file %s-%d.dat\n", options.infileindex, i);
       snprintf(filename,30,"%s-%d.bin", options.infileindex, i);
       snprintf(filename,30,"%s-%d.dat", options.infileindex, i);
-      N[i] = readWarren(filename,&time,&ampplus,&ampcross);
+      N[i] = readWarren(filename,&lal_time,&ampplus,&ampcross);
 
       if (options.printrawdata){
 	snprintf(filename,30,"%s-%d-raw.dat", options.infileindex, i);
 	/* write out the Warren waveforms */
 	fp = fopen(filename,"w");
 	for(j=0;j<N[i];j++){  
-	  fprintf(fp, "%e %e %e\n", *(time+j), *(ampplus+j), *(ampcross+j));
+	  fprintf(fp, "%e %e %e\n", *(lal_time+j), *(ampplus+j), *(ampcross+j));
 	}
 	fclose(fp);
       }
@@ -605,12 +605,12 @@ int main(int argc, char **argv)
 
     /* store the raw time and amplitudes in t & h */
     for(j=0;j<N[i];j++){   
-      t[i][j] = *(time+j);
+      t[i][j] = *(lal_time+j);
       hplus[i][j] = *(ampplus+j);
       hcross[i][j] = *(ampcross+j);
     }
 
-    free(time);
+    free(lal_time);
     free(ampplus);
     free(ampcross);
   }
@@ -729,7 +729,7 @@ int main(int argc, char **argv)
   }
 
   /* create the required vector to store the waveform */
-  LALSCreateVector( &stat, &(zmseries.data), lframe );
+  LALSCreateVector( &status, &(zmseries.data), lframe );
   zmseries.deltaT = dt;
   if ( options.verbose)
     printf("deltaT = %e\n",zmseries.deltaT);
@@ -740,6 +740,7 @@ int main(int argc, char **argv)
   /*************************************************************
    * Build the frames from the interpolated and padded waveforms
    ************************************************************/
+  CHAR channel[] = "strain";
   for(i=0;i<nfiles;i++){
     snprintf(outputfile,30,"plus_%s_%0d",options.infileindex,i);
 
@@ -749,7 +750,7 @@ int main(int argc, char **argv)
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &zmseries, "strain", outputfile );
+        &zmseries, channel, outputfile );
   }
 
   for(i=0;i<nfiles;i++){
@@ -761,7 +762,7 @@ int main(int argc, char **argv)
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &zmseries, "strain", outputfile );
+        &zmseries, channel, outputfile );
   }
 
   free_matrix(t_pad);

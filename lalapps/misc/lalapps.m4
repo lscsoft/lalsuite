@@ -1,4 +1,6 @@
-dnl lalapps.m4
+# lalapps.m4 - lalapps specific autoconf macros
+#
+# serial 3
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -125,6 +127,24 @@ AC_MSG_RESULT([unknown])
 [boinc=false])
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES],
+[AC_ARG_ENABLE(
+  [static_binaries],
+  AC_HELP_STRING([--enable-static-binaries],[build static binaries [default=no]]),
+  [ case "${enableval}" in
+      yes) static_binaries=true;;
+      no)  static_binaries=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-static-binaries) ;;
+    esac
+  ], [ static_binaries=false ] )
+if test "$condor" = "true"; then
+  static_binaries=false
+fi
+if test "$boinc" = "true"; then
+  static_binaries=false
+fi
+])
+
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
 [AC_ARG_ENABLE(
   [frame],
@@ -171,105 +191,6 @@ AC_DEFUN([LALAPPS_ENABLE_PSS],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
     esac
   ], [pss=false])
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALFRAME],
-[AC_ARG_ENABLE(
-  [lalframe],
-  AC_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalframe=true;;
-      no) lalframe=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
-    esac
-  ], [ lalframe=true ] )
-if test "$frame" = "false"; then
-  lalframe=false
-fi
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALMETAIO],
-[AC_ARG_ENABLE(
-  [lalmetaio],
-  AC_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalmetaio=true;;
-      no) lalmetaio=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
-    esac
-  ], [ lalmetaio=true ] )
-if test "$metaio" = "false"; then
-  lalmetaio=false
-fi
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALBURST],
-[AC_ARG_ENABLE(
-  [lalburst],
-  AC_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalburst=true;;
-      no) lalburst=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-burst) ;;
-    esac
-  ], [ lalburst=true ] )
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALPULSAR],
-[AC_ARG_ENABLE(
-  [lalpulsar],
-  AC_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalpulsar=true;;
-      no) lalpulsar=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
-    esac
-  ], [ lalpulsar=true ] )
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALSTOCHASTIC],
-[AC_ARG_ENABLE(
-  [lalstochastic],
-  AC_HELP_STRING([--enable-lalstochastic],[compile code that requires lalstochastic library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalstochastic=true;;
-      no) lalstochastic=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-stochastic) ;;
-    esac
-  ], [ lalstochastic=true ] )
-])
-
-AC_DEFUN([LALAPPS_ENABLE_LALXML],
-[AC_ARG_ENABLE(
-  [lalxml],
-  AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
-  [ case "${enableval}" in
-      yes) lalxml=true;;
-      no) lalxml=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
-    esac
-  ], [ lalxml=false ] )
-if test "$lalpulsar" = "false"; then
-  lalxml=false
-fi
-])
-
-AC_DEFUN([LALAPPS_CHECK_BOINC],
-[AC_MSG_CHECKING([whether LAL has been compiled with BOINC support])
-AC_TRY_RUN([
-#include <lal/LALConfig.h>
-#ifdef LAL_BOINC_ENABLED
-int main( void ) { return 0; }
-#else
-int main( void ) { return 1; }
-#endif
-],
-AC_MSG_RESULT([yes])
-[boinc=true],
-AC_MSG_RESULT([no])
-[boinc=false],
-AC_MSG_RESULT([unknown])
-[boinc=false])
 ])
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],

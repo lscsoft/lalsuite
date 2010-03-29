@@ -1,0 +1,15 @@
+/* only include this file if LALInspiral's config.h has not been included */
+
+#ifndef _LALINSPIRALCONFIG_H
+#define _LALINSPIRALCONFIG_H
+
+/* LALInspiral Version */
+#undef LALINSPIRAL_VERSION
+
+/* LALInspiral Configure Arguments */
+#undef LALINSPIRAL_CONFIGURE_ARGS
+
+/* LALInspiral Configure Date */
+#undef LALINSPIRAL_CONFIGURE_DATE
+
+#endif /* _LALINSPIRALCONFIG_H */

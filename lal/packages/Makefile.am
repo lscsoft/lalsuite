@@ -11,11 +11,7 @@ SUBDIRS = \
 	tdfilter \
 	window \
 	fft \
-	inspiral \
 	noisemodels \
-	bank \
-	ring \
-	findchirp \
 	support
 
 include-links:

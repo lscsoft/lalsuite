@@ -48,13 +48,10 @@
 
 #include <lal/FlatPulsarMetric.h>
 
-#include <lalapps.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 
-
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+#include <lalapps.h>
 
 RCSID ("$Id$");
 
@@ -208,6 +205,8 @@ typedef struct
   INT4 unitsType;	/**< which units to use for 't' and 'rX/c': SI vs natural */
 
   INT4 projection;     /**< project metric onto surface */
+
+  BOOLEAN version;	/**< output version-info */
 } UserVariables_t;
 
 
@@ -270,9 +269,7 @@ main(int argc, char *argv[])
   FILE *fpMetric = 0;
   PhaseType_t phaseType;
   MetricType_t startMetricType, stopMetricType, metricType;
-  CHAR dummy[512];
-  sprintf (dummy, "%s", lalGitID );
-  sprintf (dummy, "%s", lalappsGitID );
+  CHAR *VCSInfoString;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -293,6 +290,17 @@ main(int argc, char *argv[])
 
   if (uvar.help) 	/* help requested: we're done */
     exit (0);
+
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
+  if ( uvar.version )
+    {
+      printf ("%s\n", VCSInfoString );
+      exit(0);
+    }
 
   if ( uvar.outputMetric )
     if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
@@ -526,6 +534,8 @@ main(int argc, char *argv[])
   gsl_matrix_free ( m1_ij );
   gsl_matrix_free ( m2_ij );
   gsl_matrix_free ( m3_ij );
+
+  XLALFree ( VCSInfoString );
 
   LAL_CALL (FreeMem(&status, &config), &status);
 
@@ -969,6 +979,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregINTUserStruct(status,  	metricType,	 0,  UVAR_OPTIONAL,	"Type of metric: 0=ALL, 1=mF, 2=mPh, 3=mOrb, 4=mPtole, 5=flat");
   LALregINTUserStruct(status,  	unitsType,	 0,  UVAR_OPTIONAL,	"Which units to use for metric components: 0=SI, 1=natural (order-1)");
   LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Coordinate of metric projection: 0=none, 1=f, 2=Alpha, 3=Delta, 4=f1dot");
+
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
