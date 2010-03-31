@@ -38,8 +38,7 @@ include
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -1706,10 +1705,8 @@ int arg_parse_check( int argc, char *argv[])
     case 'V': {
       /* print version information and exit */
       fprintf( stdout, "COINcidences with EXTernal triggers\n" 
-               "Alexander Dietz\n"
-               "CVS Version: " CVS_ID_STRING "\n"
-               "CVS Tag: " CVS_NAME_STRING "\n" );
-      fprintf( stdout, lalappsGitID );
+               "Alexander Dietz\n");
+      XLALOutputVersionString(stderr, 0);
       exit( 0 );
       break;
     }

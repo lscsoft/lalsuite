@@ -37,3 +37,9 @@ lalapps_FindCoincidence_SOURCES = FindCoincidence_v1.c ReadSourceFile_v1.c \
 	ReadSourceFile_v1.h GenerateBinaryMesh_v1.h
 
 lalapps_ComputeUL_SOURCES = ComputeUL_v1.c ReadWriteBinaryHeader_v1.c ComputeUL_v1.h
+
+
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

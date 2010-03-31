@@ -2,25 +2,14 @@
 # $Id$
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -I$(top_srcdir)/misc
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
 #
 ## Compiling with OpenCL on Mac
 # LDFLAGS = -framework OpenCL
-
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
-## make sure lalapps.la is built
-lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
-$(lalappsla):
-	cd $(top_builddir)/src/lalapps && $(MAKE)
-LDADD = $(lalappsla)
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc
@@ -105,5 +94,12 @@ libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 libz.a:
 	cp -f `$(CC) -print-file-name=$@` $@
+
 exchndl.o: EinsteinAtHome/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
+

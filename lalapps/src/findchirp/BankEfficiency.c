@@ -1643,18 +1643,9 @@ void BankEfficiencyPrintResultsXml(
         (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow ( &(templateBank.processTable->start_time)) ;
 
-    if (strcmp(CVS_REVISION_C, "$Revi" "sion$"))
-    {
-      XLALPopulateProcessTable(templateBank.processTable, \
-          PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C, 0);
-    }
-    else
-    {
-      XLALPopulateProcessTable(templateBank.processTable, \
-          PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, \
-          lalappsGitCommitDate, 0);
-    }
-
+    XLALPopulateProcessTable(templateBank.processTable, \
+        PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, \
+        LALAPPS_VCS_IDENT_DATE, 0);
 
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -1786,17 +1777,9 @@ BankEfficiencyPrintProtoXml(
   templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow (&(templateBank.processTable->start_time));
 
-  if (strcmp(CVS_REVISION_C, "$Revi" "sion$"))
-  {
   XLALPopulateProcessTable(templateBank.processTable, \
-	PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(templateBank.processTable, \
-      PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, \
-	  lalappsGitCommitDate, 0);
-  }
+      PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, \
+      LALAPPS_VCS_IDENT_DATE, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -2454,17 +2437,9 @@ void BankEfficiencyBankPrintXML(
 
   XLALGPSTimeNow (&(proctable.processTable->start_time));
 
-  if (strcmp(CVS_REVISION_C, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, \
-    PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, \
-      PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, \
-      lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, \
+      PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, \
+      LALAPPS_VCS_IDENT_DATE, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
