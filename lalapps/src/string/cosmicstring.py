@@ -57,7 +57,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
     self.set_sub_file("lalapps_StringSearch.sub")
-    self.add_condor_cmd("Requirements", "Memory > 1200")
+    self.add_condor_cmd("Requirements", "Memory > 3000")
 
 
 class StringNode(pipeline.AnalysisNode):
