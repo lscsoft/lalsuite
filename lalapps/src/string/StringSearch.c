@@ -183,7 +183,9 @@ MetadataTable  procparams;
 MetadataTable  searchsumm;
 
 CHAR outfilename[256];
-CHAR ifo[4]; 
+CHAR ifo[4];
+
+double chi2cut[4][3]; 
 
 REAL4 SAMPLERATE;
 
@@ -199,6 +201,9 @@ PassBandParamStruc highpassParams;
 
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+
+/* Reads options in the option file */
+int ReadOptionFile(void);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
@@ -255,6 +260,10 @@ int main(int argc,char *argv[])
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
   printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
+  /****** ReadOptionFile ******/
+  printf("ReadOptionFile()\n");
+  if (ReadOptionFile()) return 1;
+
   /****** ReadData ******/
   printf("ReadData()\n");
   if (ReadData(CommandLineArgs)) return 2;
@@ -489,7 +498,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int p, pp;
+  int p, pp, ifoindex;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
@@ -515,18 +524,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       
       timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
       
-      if ( *thisEvent ){ /* create a new event */
-	(*thisEvent)->next = XLALCreateSnglBurst();
-	*thisEvent = (*thisEvent)->next;
-      }
-      else /* create the list */
-	*thisEvent = events = XLALCreateSnglBurst();
-            
-      if ( ! *thisEvent ){ /* allocation error */
-	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
-	return 1;
-      }
-
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
       while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
 	     && p<(int)(3*vector->length/4)){
@@ -546,6 +543,45 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
       duration = GV.ht_proc->deltaT * ( pend - pstart );
       starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
+      
+
+      /* compute \chi^{2} */
+      chi2=0, ndof=0;
+      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
+        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+        ndof += (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+      }
+
+ 
+      /* get the ifo index */
+      if(CLA.ChannelName[0]=='L'&&CLA.ChannelName[1]=='1')     /* L1 case */
+	ifoindex=0; 
+      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='1')/* H1 case */
+	ifoindex=1; 
+      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='2')/* H2 case */
+	ifoindex=2; 
+      else                                                     /* V1 case */
+	ifoindex=3; 
+      
+      /* Apply the \chi^{2} cut */
+      if( chi2cut[ifoindex][0]    > -9999
+	  && chi2cut[ifoindex][1] > -9999
+	  && chi2cut[ifoindex][2] > -9999 )
+	if(log10(chi2/ndof)>chi2cut[ifoindex][0]
+	   && log10(chi2/ndof)> chi2cut[ifoindex][1]*log10(fabs(maximum))+chi2cut[ifoindex][2]) continue;
+      
+
+      if ( *thisEvent ){ /* create a new event */
+	(*thisEvent)->next = XLALCreateSnglBurst();
+	*thisEvent = (*thisEvent)->next;
+      }
+      else /* create the list */
+	*thisEvent = events = XLALCreateSnglBurst();
+            
+      if ( ! *thisEvent ){ /* allocation error */
+	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
+	return 1;
+      }
 
       /* Now copy stuff into event */
       strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
@@ -555,13 +591,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       /* give trigger a 1 sample fuzz on either side */
       starttime -= round( 1e9 * GV.ht_proc->deltaT );
       duration += 2 * GV.ht_proc->deltaT;
-
-      /* compute \chi^{2} */
-      chi2=0, ndof=0;
-      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
-        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
-        ndof += (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
-      }
 
       XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
       XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
@@ -1072,6 +1101,60 @@ int ReadData(struct CommandLineArgsTag CLA){
 }
 
 
+
+/*******************************************************************************/
+
+int ReadOptionFile(void){
+ 
+  FILE * OptionFile;
+  int i,p;
+  char line[80], ifoname[4];
+  float par0, par1, par2;
+
+  /* open option.txt file */
+  /* FIXME : the name of the file could be given in the command line */
+  OptionFile = fopen ("option.txt","r");
+
+  /* default parameters */
+  for(i=0; i<4; i++) for(p=0; p<3; p++) chi2cut[i][p]=-9999.1;
+  
+  /* if the file does not exist, no chi2 cuts */
+  if (OptionFile==NULL){
+    printf("\tNo option file --> no chi2 selection\n");
+    return 0;
+  }
+  
+  /* Read the file line by line */
+  while(fgets(line,sizeof(line),OptionFile)){
+    sscanf (line,"%s %f %f %f",ifoname,&par0,&par1,&par2);
+
+    /* Get the parameter for the specified ifo */
+    if(ifoname[0]=='L'&&ifoname[1]=='1'){     /* L1 case */
+      chi2cut[0][0]=par0; chi2cut[0][1]=par1; chi2cut[0][2]=par2; 
+    }
+    else if(ifoname[0]=='H'&&ifoname[1]=='1'){/* H1 case */
+      chi2cut[1][0]=par0; chi2cut[1][1]=par1; chi2cut[1][2]=par2; 
+    }
+    else if(ifoname[0]=='H'&&ifoname[1]=='2'){/* H2 case */
+      chi2cut[2][0]=par0; chi2cut[2][1]=par1; chi2cut[2][2]=par2; 
+    }
+    else if(ifoname[0]=='V'&&ifoname[1]=='1'){/* V1 case */
+      chi2cut[3][0]=par0; chi2cut[3][1]=par1; chi2cut[3][2]=par2; 
+    }
+    else par0=par1; /* nothing happens */
+    
+  }
+  printf("\tChi2 selection parameters\n");
+  printf("\t-9999.1 means no selection\n");
+  printf("\tL1: %f %f %f \n",chi2cut[0][0],chi2cut[0][1],chi2cut[0][2]);
+  printf("\tH1: %f %f %f \n",chi2cut[1][0],chi2cut[1][1],chi2cut[1][2]);
+  printf("\tH2: %f %f %f \n",chi2cut[2][0],chi2cut[2][1],chi2cut[2][2]);
+  printf("\tV1: %f %f %f \n",chi2cut[3][0],chi2cut[3][1],chi2cut[3][2]);
+  
+  fclose(OptionFile);
+  
+  return 0;
+}
 
 
 /*******************************************************************************/
