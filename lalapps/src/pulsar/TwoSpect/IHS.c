@@ -207,6 +207,13 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    }
    XLALDestroyREAL8Vector(noise);
    
+   /*for (ii=0; ii<2000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   for (ii=2000; ii<4000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   for (ii=4000; ii<6000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   for (ii=6000; ii<8000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   for (ii=8000; ii<10000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   for (ii=10000; ii<(INT4)ihss->length; ii++) fprintf(stderr,"%g\n",ihss->data[ii]); */
+   
    //Calculate the IHS sum values for the IHS trials
    REAL8Vector *ihssumvals = ihsSums(ihss, columns);
    
@@ -215,7 +222,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    INT4 numToRemove = 0;
    for (ii=1; ii<=columns; ii++) {
       
-      if (ii>2) numToRemove += ii-1;
+      if (ii>2) numToRemove += ii-2;
       
       //Temporary vector to hold the trial values of IHS column sums
       tempihsvals = XLALCreateREAL8Vector((UINT4)(trials-(ii-1)));
@@ -224,6 +231,15 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
          //if (ii==0) tempihsvals->data[jj] = ihssumvals->data[jj];
          //else tempihsvals->data[jj] = ihssumvals->data[ii*trials-(ii-1)+jj];
       }
+      
+      /* if (ii==10) {
+         for (jj=0; jj<2000; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+         for (jj=2000; jj<4000; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+         for (jj=4000; jj<6000; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+         for (jj=6000; jj<8000; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+         for (jj=8000; jj<10000; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+         for (jj=10000; jj<(INT4)tempihsvals->length; jj++) fprintf(stderr,"%g\n",tempihsvals->data[jj]);
+      } */
       
       //Mean and sigma of the various trials
       out->ihsdistMean->data[ii-1] = calcMean(tempihsvals);
@@ -403,6 +419,10 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
          }
          REAL8 meanNoise = calcMean(noiseinrange);
          REAL8 rmsNoise = calcRms(noiseinrange);
+         
+         
+         //if (ii==1 || ii==2 || ii==9) fprintf(stderr,"%g %g %g\n",ihsfarstruct->ihsfar->data[ii],meanNoise,ihsmaxima->maxima->data[checkbin]);
+         
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
          if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {
