@@ -23,6 +23,11 @@ To do
 Change Log
 ----------
 
+2010-03-31 Used undocumented behavior of daq_recv_channel_list to query number
+           of channels, because on ldas-pcdev1.ligo.caltech.edu:31200 the 
+           number of available channels exceeds MAX_CHANNELS.  Bumped version 
+           number to 0.3.
+
 2010-03-27 Integrated Larne's module with distutils script.  Moved demo scripts
            into dedicated "demo" directory.  Moved source files into "src".
 

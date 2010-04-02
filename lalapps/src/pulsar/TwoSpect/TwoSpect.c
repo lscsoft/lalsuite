@@ -293,6 +293,13 @@ int main(int argc, char *argv[])
       REAL8Vector *antenna = CompAntennaPatternWeights((REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det);
       memcpy(ffdata->antweights->data, antenna->data, antenna->length*sizeof(*antenna->data));
       
+      /* REAL8 minantval = minValue(antenna);
+      REAL8 maxantval = maxValue(antenna);
+      if ((maxantval - minantval) <= 0.1) {
+         fprintf(stderr,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
+         ii = 0;
+      } */
+      
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL8Vector *initialTFdata = slideTFdata(inputParams, usableTFdata, binshifts);
       REAL8Vector *backgroundslide = slideTFdata(inputParams, background, binshifts);
@@ -1043,50 +1050,7 @@ void free_inputParams(inputParamsStruct *input)
 }
 
 
-//////////////////////////////////////////////////////////////
-// Create Gaussian distributed noise vector  -- done
-/* REAL4Vector * gaussRandNumVector(REAL4 sigma, UINT4 length, gsl_rng *ptrToGenerator)
-{
 
-   INT4 ii;
-   
-   REAL4Vector *noise = XLALCreateREAL4Vector(length);
-   
-   //Create the exponentially distributed noise
-   for (ii=0; ii<(INT4)noise->length; ii++) noise->data[ii] = gaussRandNum(sigma, ptrToGenerator);
-   
-   return noise;
-
-} */
-
-
-//////////////////////////////////////////////////////////////
-// Create a Gaussian distributed noise value  -- done
-/* REAL4 gaussRandNum(REAL4 sigma, gsl_rng *ptrToGenerator)
-{
-
-   REAL4 noise = gsl_ran_gaussian(ptrToGenerator, sigma);
-   
-   return noise;
-
-} */
-
-
-//////////////////////////////////////////////////////////////
-// Create exponentially distributed noise vector  -- done
-/* REAL4Vector * expRandNumVector(REAL4 mu, UINT4 length, gsl_rng *ptrToGenerator)
-{
-
-   INT4 ii;
-   
-   REAL4Vector *noise = XLALCreateREAL4Vector(length);
-   
-   //Create the exponentially distributed noise
-   for (ii=0; ii<(INT4)noise->length; ii++) noise->data[ii] = expRandNum(mu, ptrToGenerator);
-   
-   return noise;
-
-} */
 
 
 //////////////////////////////////////////////////////////////
@@ -1180,7 +1144,7 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
       if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*0.5*input->Tcoh+input->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = 2.0e42*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(z)^2 to recover 1.
+            tfdata->data[ii*sftlength + jj] = 2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(z)^2 to recover 1.
          }
       } else {
          for (jj=0; jj<sftlength; jj++) {
@@ -1219,25 +1183,6 @@ REAL8Vector * slideTFdata(inputParamsStruct *input, REAL8Vector *tfdata, INT4Vec
    return outtfdata;
    
 }
-
-
-//////////////////////////////////////////////////////////////
-// Slide SFT background TF data  -- done
-/* REAL4Vector * slideBackgroundData(inputParamsStruct *input, REAL4Vector *background, INT4Vector *binshifts)
-{
-   
-   INT4 ii, jj;
-   INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
-   INT4 numfbins = (INT4)(roundf(input->fspan*input->Tcoh)+1);
-   
-   REAL4Vector *outtfdata = XLALCreateREAL4Vector((UINT4)(numffts*numfbins));
-   for (ii=0; ii<numffts; ii++) {
-      for (jj=0; jj<numfbins; jj++) outtfdata->data[ii*numfbins + jj] = background->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
-   }
-   
-   return outtfdata;
-   
-} */
 
 
 
@@ -1381,10 +1326,10 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *rngMeans, REAL
    numffts = (INT4)floor(2*(param->Tobs/param->Tcoh)-1);     //Number of FFTs
    
    //Initialize the random number generator
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    
    //Mean value of F_n^4
    REAL8Vector *sqAntWeights = XLALCreateREAL8Vector(antPatternWeights->length);
@@ -1440,7 +1385,7 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *rngMeans, REAL
    
    XLALDestroyREAL8Vector(rngMeansInFreqBin);
    XLALDestroyREAL8Vector(sqAntWeights);
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return aveNoise;
 
@@ -1551,7 +1496,31 @@ REAL8 calcRms(REAL8Vector *vector)
 
 
 
+REAL8 minValue(REAL8Vector *vector)
+{
+   
+   REAL8 value = 1.0e20;
+   INT4 ii;
+   for (ii=0; ii<(INT4)vector->length; ii++) {
+      if (vector->data[ii]<value) value = vector->data[ii];
+   }
+   
+   return value;
+}
 
+
+REAL8 maxValue(REAL8Vector *vector)
+{
+   
+   REAL8 value = 0.0;
+   INT4 ii;
+   for (ii=0; ii<(INT4)vector->length; ii++) {
+      if (vector->data[ii]>value) value = vector->data[ii];
+   }
+   
+   return value;
+   
+}
 
 
 
