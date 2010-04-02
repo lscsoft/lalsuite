@@ -1136,9 +1136,10 @@ int ReadOptionFile(void){
     else if(ifoname[0]=='H'&&ifoname[1]=='2'){/* H2 case */
       chi2cut[2][0]=par0; chi2cut[2][1]=par1; chi2cut[2][2]=par2; 
     }
-    else{                                     /* V1 case */
+    else if(ifoname[0]=='V'&&ifoname[1]=='1'){/* V1 case */
       chi2cut[3][0]=par0; chi2cut[3][1]=par1; chi2cut[3][2]=par2; 
     }
+    else par0=par1; /* nothing happens */
     
   }
   printf("\tChi2 selection parameters\n");
