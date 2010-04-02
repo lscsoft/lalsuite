@@ -564,7 +564,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	ifoindex=3; 
       
       /* Apply the \chi^{2} cut */
-      if(chi2cut[ifoindex][0]<-9999||chi2cut[ifoindex][1]<-9999||chi2cut[ifoindex][2]<-9999)
+      if(chi2cut[ifoindex][0]>-9999&&chi2cut[ifoindex][1]&&-9999&&chi2cut[ifoindex][2]>-9999)
 	if(log10(chi2/ndof)>chi2cut[ifoindex][0]
 	   && log10(chi2/ndof)> chi2cut[ifoindex][1]*log10(fabs(maximum))+chi2cut[ifoindex][2]) continue;
       
