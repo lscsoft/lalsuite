@@ -226,7 +226,8 @@ public:
         if (!channels)
             throw NoMemoryError();
         
-        retval = daq_recv_channel_list(this, channels, MAX_CHANNELS, &nchannels_received, 0, channeltype);
+        int old_nchannels_received = nchannels_received;
+        retval = daq_recv_channel_list(this, channels, old_nchannels_received, &nchannels_received, 0, channeltype);
         
         if (retval)
         {
