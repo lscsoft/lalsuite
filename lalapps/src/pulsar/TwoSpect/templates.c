@@ -33,6 +33,7 @@ farStruct * new_farStruct(void)
 {
 
    farStruct *farstruct = (farStruct*)XLALMalloc(sizeof(farStruct));
+   farstruct->topRvalues = NULL;
 
    return farstruct;
 
@@ -44,6 +45,7 @@ void free_farStruct(farStruct *farstruct)
 {
    
    XLALDestroyREAL8Vector(farstruct->topRvalues);
+   farstruct->topRvalues = NULL;
    
    XLALFree((farStruct*)farstruct);
 
@@ -84,7 +86,7 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, RE
    REAL8 sigma = calcStddev(Rs);
    
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
-   out->topRvalues = XLALCreateREAL8Vector((UINT4)roundf(thresh*trials)+1);
+   if (out->topRvalues == NULL) out->topRvalues = XLALCreateREAL8Vector((UINT4)roundf(thresh*trials)+1);
    out->topRvalues->data[0] = Rs->data[0];
    for (ii=1; ii<(INT4)out->topRvalues->length; ii++) {
       INT4 insertionpoint = ii;
@@ -117,43 +119,86 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, RE
 
 //////////////////////////////////////////////////////////////
 // Analytically calculate the probability of a true signal
-/* REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8 R)
+REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8 R)
 {
    
    INT4 ii, jj;
    REAL8 prob = 0.0;
    REAL8 sumwsq = 0.0;
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatedatastruct->templatedata->data[ii];
+   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
    
+   REAL8 fact1, fact2, sumval, prodval, shiftamt;
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
-      REAL8 fact1 = fact2 = fact3 = sumval = prodval = 0.0;
+      fact1 = fact2 = sumval = shiftamt = 0.0;
+      prodval = 0.0;
+      
+      INT4 prodfactorposneg = 1;
       if (ii==0) {
-         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) {
+            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
+               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
+               //prodfactorposneg *= 1;
+            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
+               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
+               prodfactorposneg *= -1;
+            }
+         }
       } else if (ii==(INT4)templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) {
+            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
+               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
+               //prodfactorposneg *= 1;
+            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
+               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
+               prodfactorposneg *= -1;
+            }
+         }
       } else {
-         for (jj=0; jj<ii; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
-         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=0; jj<ii; jj++) {
+            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
+               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
+               //prodfactorposneg *= 1;
+            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
+               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
+               prodfactorposneg *= -1;
+            }
+         }
+         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) {
+            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
+               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
+               //prodfactorposneg *= 1;
+            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
+               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
+               prodfactorposneg *= -1;
+            }
+         }
       }
-      fact1 = exp((-R*sumwsq-sumval)/templatestruct->templatedata->data[ii]/ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ];
-      fact2 = pow(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ], templatestruct->templatedata->length);
+      
+      prodval = prodfactorposneg*exp(prodval);
+      
       if (ii==0) {
-         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) prodval *= templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
       } else if (ii==(INT4)templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) prodval *= templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
       } else {
-         for (jj=0; jj<ii; jj++) prodval *= templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
-         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) prodval *= templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatedatastruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=0; jj<ii; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
+         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
       }
-      prob += fact1*fact2/fact3;
+      
+      sumval += shiftamt;
+      
+      fact1 = (-R*sumwsq-sumval)/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]);
+      fact2 = ((REAL8)templatestruct->templatedata->length-1.0)*log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]);
+      
+      prob += exp(fact1+fact2)/prodval;
    }
    prob /= LAL_E;
    
    prob = log10(prob);
    
-   return prob
+   return prob;
    
-} */
+}
 
 
 templateStruct * new_templateStruct(INT4 length)
@@ -400,12 +445,13 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
       
       //Scale the data points by 1/N and window factor and (1/fs)
       //Order of vector is by second frequency then first frequency
+      //Ignore the DC and 1st frequency bins
       if (doSecondFFT==1) {
-         for (jj=0; jj<(INT4)psd->length; jj++) {
+         for (jj=2; jj<(INT4)psd->length; jj++) {
             
             REAL8 correctedValue = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
             
-            if (jj>1) sum += correctedValue;
+            sum += correctedValue;
             
             //If value is largest than smallest logged bin, then launch a simple search to find the place to insert it
             if (correctedValue > out->templatedata->data[out->templatedata->length-1]) {

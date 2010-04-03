@@ -42,8 +42,8 @@
 #include "cmdline.h"
 #include "IHS.h"
 #include "candidates.h"
-#include "templates.h"
 #include "antenna.h"
+#include "templates.h"
 #include "TwoSpect.h"
 
 
@@ -99,9 +99,9 @@ int main(int argc, char *argv[])
    ihsfarthresh = args_info.ihsfar_arg;
    templatefarthresh = args_info.tmplfar_arg;
    inputParams->blksize = args_info.blksize_arg;
-   earth_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
-   sun_ephemeris = (CHAR*)XLALMalloc(strlen(args_info.ephemDir_arg)+20);
-   sft_dir = (CHAR*)XLALMalloc(strlen(args_info.sftDir_arg)+20);
+   earth_ephemeris = (CHAR*)XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*earth_ephemeris));
+   sun_ephemeris = (CHAR*)XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*sun_ephemeris));
+   sft_dir = (CHAR*)XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
    sprintf(earth_ephemeris,"%s/earth05-09.dat",args_info.ephemDir_arg);
    sprintf(sun_ephemeris,"%s/sun05-09.dat",args_info.ephemDir_arg);
    sprintf(sft_dir,"%s/*.sft",args_info.sftDir_arg);
@@ -168,7 +168,8 @@ int main(int argc, char *argv[])
    }
    
    //Parameters for the sky-grid
-   CHAR *sky = (CHAR*)XLALMalloc(strlen(args_info.skyRegion_arg));
+   CHAR *sky;
+   sky = (CHAR*)XLALCalloc(strlen(args_info.skyRegion_arg)+1, sizeof(*sky));
    sprintf(sky,"%s",args_info.skyRegion_arg);
    DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
@@ -257,6 +258,7 @@ int main(int argc, char *argv[])
    fprintf(LOG,"Assessing background... ");
    fprintf(stderr,"Assessing background... ");
    REAL8Vector *background = tfRngMeans(tfdata, numffts, numfbins + 2*inputParams->maxbinshift, inputParams->blksize);
+   //for (ii=0; ii<(INT4)background->length; ii++) background->data[ii] = 1.0; //TODO: REMOVE THIS!!!
    fprintf(LOG,"done\n");
    fprintf(stderr,"done\n");
    
@@ -276,6 +278,8 @@ int main(int argc, char *argv[])
    fprintf(LOG,"Starting TwoSpect analysis...\n");
    fprintf(stderr,"Starting TwoSpect analysis...\n");
    
+   ihsMaximaStruct *ihsmaxima = new_ihsMaxima((INT4)ffdata->f->length, maxcols);
+   
    //Search over the sky
    while (scan.state != STATE_FINISHED) {
       fprintf(LOG,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
@@ -291,14 +295,8 @@ int main(int argc, char *argv[])
       
       //Compute antenna pattern weights
       REAL8Vector *antenna = CompAntennaPatternWeights((REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det);
+      //for (ii=0; ii<(INT4)antenna->length; ii++) antenna->data[ii] = 1.0; //TODO: REMOVE THIS!!!
       memcpy(ffdata->antweights->data, antenna->data, antenna->length*sizeof(*antenna->data));
-      
-      /* REAL8 minantval = minValue(antenna);
-      REAL8 maxantval = maxValue(antenna);
-      if ((maxantval - minantval) <= 0.1) {
-         fprintf(stderr,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
-         ii = 0;
-      } */
       
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL8Vector *initialTFdata = slideTFdata(inputParams, usableTFdata, binshifts);
@@ -320,7 +318,7 @@ int main(int argc, char *argv[])
       fprintf(stderr,"Std dev. expected noise = %g\n",calcStddev(aveNoise));
       
 ////////Start of the IHS step!
-      ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, maxcols);
+      //ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, maxcols);
       
       //Run the IHS algorithm on the data
       runIHS(ihsmaxima, ffdata, maxcols);
@@ -875,11 +873,16 @@ int main(int argc, char *argv[])
          exactCandidates2[numofcandidates2+numofcandidatesadded] = new_candidate();
          loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, 0.0);
          
-         /*
-         //Best template
+          //Best template and likelihood estimate
          templateStruct *template = new_templateStruct(inputParams->templatelength);
          makeTemplate(template, exactCandidates2[numofcandidates2+numofcandidatesadded], inputParams, secondFFTplan);
-         farval = new_farStruct();
+         REAL8 prob = probR(template, aveNoise, bestR);
+         free_templateStruct(template);
+         template = NULL;
+         loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, prob);
+         
+         //Caclulate empirical likelihood
+         /*farval = new_farStruct();
          estimateFAR(farval, template, (INT4)roundf(100000*.01/templatefarthresh), templatefarthresh, aveNoise);
          
          //Determine log-likelihood
@@ -894,11 +897,9 @@ int main(int argc, char *argv[])
          loadCandidateData(exactCandidates2[numofcandidates2+numofcandidatesadded], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, bestSNR, prob);
          
          //Clean up after log-likelihood measure
-         free_templateStruct(template);
          free_farStruct(farval);
-         template = NULL;
-         farval = NULL;
-         */
+         farval = NULL; */
+         
          
          numofcandidates2++;
          
@@ -936,7 +937,7 @@ int main(int argc, char *argv[])
       XLALDestroyREAL8Vector(weightedTFdata);
       XLALDestroyREAL8Vector(secFFTdata);
       XLALDestroyREAL8Vector(aveNoise);
-      free_ihsMaxima(ihsmaxima);
+      //free_ihsMaxima(ihsmaxima);
       
       //Iterate to next sky location
       XLALNextDopplerSkyPos(&dopplerpos, &scan);
@@ -960,9 +961,8 @@ int main(int argc, char *argv[])
    free_ffdata(ffdata);
    free_ihsfarStruct(ihsfarstruct);
    free_inputParams(inputParams);
+   free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL8FFTPlan(secondFFTplan);
-   //XLALFree((CHAR*)earth_ephemeris);
-   //XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sft_dir);
    free_Ephemeris(edat);
    cmdline_parser_free(&args_info);
@@ -1144,7 +1144,7 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
       if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*0.5*input->Tcoh+input->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = 2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(z)^2 to recover 1.
+            tfdata->data[ii*sftlength + jj] = 2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(x+i*y)^2 to recover 1.
          }
       } else {
          for (jj=0; jj<sftlength; jj++) {
