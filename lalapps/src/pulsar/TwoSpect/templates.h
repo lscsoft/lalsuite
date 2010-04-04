@@ -23,9 +23,8 @@
 #include <lal/RealFFT.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include "candidates.h"
-#include "TwoSpect.h"
 #include "TwoSpectTypes.h"
+#include "TwoSpect.h"
 
 
 farStruct * new_farStruct(void);
@@ -37,7 +36,7 @@ void free_templateStruct(templateStruct *nameoftemplate);
 void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params);
 void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL8FFTPlan *plan);
 
-//REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8 R);
+REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8 R);
 REAL8 sincxoverxsqminusone(REAL8 overage);
 
 #endif

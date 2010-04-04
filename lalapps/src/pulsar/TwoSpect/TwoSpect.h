@@ -25,7 +25,6 @@
 #include <lal/AVFactories.h>
 #include <gsl/gsl_rng.h>
 #include "TwoSpectTypes.h"
-#include "templates.h"
 
 
 inputParamsStruct * new_inputParams(void);

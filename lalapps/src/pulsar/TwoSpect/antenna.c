@@ -25,6 +25,8 @@
 EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris)
 {
    
+   LALStatus status;
+   status.statusPtr = NULL;
    EphemerisData *ephemdata = (EphemerisData*)XLALMalloc(sizeof(EphemerisData));
    ephemdata->ephiles.earthEphemeris = earth_ephemeris;
    ephemdata->ephiles.sunEphemeris = sun_ephemeris;
@@ -40,6 +42,8 @@ void free_Ephemeris(EphemerisData *ephemdata)
    
    XLALFree((CHAR*)ephemdata->ephiles.earthEphemeris);
    XLALFree((CHAR*)ephemdata->ephiles.sunEphemeris);
+   XLALFree((PosVelAcc*)ephemdata->ephemE);
+   XLALFree((PosVelAcc*)ephemdata->ephemS);
    XLALFree((EphemerisData*)ephemdata);
    
 }

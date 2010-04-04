@@ -25,17 +25,22 @@
 #include <lal/LALMalloc.h>
 
 #include "IHS.h"
+#include "TwoSpect.h"
 #include "candidates.h"
 
 //////////////////////////////////////////////////////////////
 // Create vectors for IHS maxima struct  -- done
-ihsMaximaStruct * new_ihsMaxima(ffdataStruct *ffdata, INT4 columns)
+ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 columns)
 {
 
    ihsMaximaStruct *ihsmaxima = (ihsMaximaStruct*)XLALMalloc(sizeof(ihsMaximaStruct));
    
-   ihsmaxima->maxima = XLALCreateREAL8Vector(ffdata->f->length*(UINT4)columns);
-   ihsmaxima->locations = XLALCreateINT4Vector(ffdata->f->length);
+   INT4 ii;
+   UINT4 numToRemove = 0;
+   for (ii=2; ii<=columns; ii++) numToRemove += (UINT4)(ii-1);
+   
+   ihsmaxima->maxima = XLALCreateREAL8Vector((UINT4)(fbins*columns) - numToRemove);
+   ihsmaxima->locations = XLALCreateINT4Vector((UINT4)fbins);
    ihsmaxima->columns = columns;
    
    return ihsmaxima;
@@ -82,7 +87,8 @@ void runIHS(ihsMaximaStruct *out, ffdataStruct *in, INT4 columns)
    }
    
    //Save the maxima for all the column sums
-   out->maxima = ihsSums(ihss, columns);
+   //out->maxima = ihsSums(ihss, columns);
+   ihsSums(out->maxima, ihss, columns);
    
    //Save the column widths
    out->columns = columns;
@@ -184,6 +190,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    
    INT4 trials = (INT4)roundf(10000*0.01/threshold);    //Number of trials to determine FAR value
    trials += columns;
+   
    REAL8Vector *ihss = XLALCreateREAL8Vector((UINT4)trials);
    
    //Initialize random number generator
@@ -207,7 +214,7 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    }
    XLALDestroyREAL8Vector(noise);
    
-   /*for (ii=0; ii<2000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
+   /* for (ii=0; ii<2000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
    for (ii=2000; ii<4000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
    for (ii=4000; ii<6000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
    for (ii=6000; ii<8000; ii++) fprintf(stderr,"%g\n",ihss->data[ii]);
@@ -215,7 +222,9 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    for (ii=10000; ii<(INT4)ihss->length; ii++) fprintf(stderr,"%g\n",ihss->data[ii]); */
    
    //Calculate the IHS sum values for the IHS trials
-   REAL8Vector *ihssumvals = ihsSums(ihss, columns);
+   //REAL8Vector *ihssumvals = ihsSums(ihss, columns);
+   ihsMaximaStruct *ihsmaxima = new_ihsMaxima(trials, columns);
+   ihsSums(ihsmaxima->maxima, ihss, columns);
    
    //Now determine distribution values and FAR for the different IHS sum values for each set of columns
    REAL8Vector *tempihsvals = NULL, *topihsvals = NULL;
@@ -227,9 +236,8 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
       //Temporary vector to hold the trial values of IHS column sums
       tempihsvals = XLALCreateREAL8Vector((UINT4)(trials-(ii-1)));
       for (jj=0; jj<(INT4)tempihsvals->length; jj++) {
-         tempihsvals->data[jj] = ihssumvals->data[(ii-1)*trials + jj - numToRemove];
-         //if (ii==0) tempihsvals->data[jj] = ihssumvals->data[jj];
-         //else tempihsvals->data[jj] = ihssumvals->data[ii*trials-(ii-1)+jj];
+         //tempihsvals->data[jj] = ihssumvals->data[(ii-1)*trials + jj - numToRemove];
+         tempihsvals->data[jj] = ihsmaxima->maxima->data[(ii-1)*trials + jj - numToRemove];
       }
       
       /* if (ii==10) {
@@ -275,9 +283,10 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
    }
    
    //Destroy variables
-   XLALDestroyREAL8Vector(ihssumvals);
+   //XLALDestroyREAL8Vector(ihssumvals);
    XLALDestroyREAL8Vector(ihss);
    free_ihsVals(ihsvals);
+   free_ihsMaxima(ihsmaxima);
    gsl_rng_free(rng);
    
 
@@ -287,21 +296,23 @@ void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 thre
 
 //////////////////////////////////////////////////////////////
 // Compute the IHS sums for a number of columns  -- 
-REAL8Vector * ihsSums(REAL8Vector *ihss, INT4 cols)
+//REAL8Vector * ihsSums(REAL8Vector *ihss, INT4 cols)
+void ihsSums(REAL8Vector *out, REAL8Vector *ihss, INT4 cols)
 {
    
    INT4 ii, jj, locInMaximaVector;
    INT4 startPosition = 0;
    
-   UINT4 numToRemove = 0;
-   for (ii=2; ii<=cols; ii++) numToRemove += (UINT4)(ii-1);
+   //UINT4 numToRemove = 0;
+   //for (ii=2; ii<=cols; ii++) numToRemove += (UINT4)(ii-1);
    
    
    //Initialize maxima vector
-   REAL8Vector *maxima = XLALCreateREAL8Vector((UINT4)(ihss->length * cols)-numToRemove);
+   //REAL8Vector *maxima = XLALCreateREAL8Vector((UINT4)(ihss->length * cols)-numToRemove);
    
    //Start with the vector of single column IHS values
-   for (ii=0; ii<(INT4)ihss->length; ii++) maxima->data[ii] = ihss->data[ii];
+   //for (ii=0; ii<(INT4)ihss->length; ii++) maxima->data[ii] = ihss->data[ii];
+   for (ii=0; ii<(INT4)ihss->length; ii++) out->data[ii] = ihss->data[ii];
    
    //Now make the sums. This is more efficient than summing each value separately.
    //We can just use the previous sum and the next value of the single column
@@ -311,12 +322,13 @@ REAL8Vector * ihsSums(REAL8Vector *ihss, INT4 cols)
       startPosition = locInMaximaVector - (INT4)ihss->length + (ii-1); 
       for (jj=0; jj<(INT4)ihss->length-ii; jj++) {
          //maxima->data[ii+jj] is the single column IHS values needed to be added to the total sum
-         maxima->data[locInMaximaVector] = maxima->data[startPosition+jj] + maxima->data[ii+jj];
+         //maxima->data[locInMaximaVector] = maxima->data[startPosition+jj] + maxima->data[ii+jj];
+         out->data[locInMaximaVector] = out->data[startPosition+jj] + out->data[ii+jj];
          locInMaximaVector++;
       }
    }
    
-   return maxima;
+   //return maxima;
 
 }
 
@@ -395,6 +407,8 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL8 fsig, per0, B;
    REAL8 ihsfomfar = 6.0;
    
+   //for (ii=0; ii<(INT4)aveFFnoise->length; ii++) fprintf(stderr,"%g %g\n",aveFFnoise->data[ii],ihsmaxima->maxima->data[ii]);
+   
    INT4 mincols = (INT4)floorf(2.0*inputParams->dfmin*inputParams->Tcoh)+1;
    INT4 removedbins = 0;
    for (ii=2; ii<=mincols-1; ii++) removedbins += ii-1;
@@ -452,7 +466,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                //Candidate period
                per0 = inputParams->Tobs/loc;
                
-               fprintf(stderr,"IHS candidate %d: f0 = %g, P = %g, df = %g\n",(*numofcandidates),fsig,per0,B);
+               //fprintf(stderr,"IHS candidate %d: f0 = %g, P = %g, df = %g\n",(*numofcandidates),fsig,per0,B);
                
                REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
                REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);

@@ -22,6 +22,7 @@
 #include <lal/RealFFT.h>
 #include "candidates.h"
 #include "templates.h"
+#include "TwoSpect.h"
 
 
 //////////////////////////////////////////////////////////////

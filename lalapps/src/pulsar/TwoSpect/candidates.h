@@ -23,7 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include "TwoSpectTypes.h"
-#include "TwoSpect.h"
 
 
 candidate * new_candidate(void);
