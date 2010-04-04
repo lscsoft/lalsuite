@@ -98,6 +98,21 @@ Dependencies
      $ popd
 
 
+   On Snow Leopard the symbol get_string exists in system library that
+   conflicts with the one in nds2.  Until a better solution can be found
+   this can be worked-around by doing the following before compiling
+
+   for i in `find src | xargs grep -l get_string` 
+   do 
+     sed 's/get_string/nds_get_string/g' $i > tmp
+     mv tmp $i
+   done
+
+   In addition if texlive has been installed from macports there may
+   be a symlink called 'mex' in /opt/local/bin pointing at pdflatex.
+   Remove this directory from your PATH or move this out of the way
+   before compiling.
+
 ----------------
 Installing pynds
 ----------------
@@ -131,6 +146,13 @@ pynds Usage
 
 Examples showing the newly introduced iterator functionality are in 
 demo.py and demo_online.py in the "demo/" directory.
+
+Depending on which version of pylab is installed it may be necessary to 
+change fig.show() to show().  In addition, under OS X it may be neccesary
+to add the following before importing pylab:
+
+  from matplotlib import use
+  use('MacOSX')
 
 Here is an example Python session using the NDS library::
     
