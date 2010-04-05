@@ -215,18 +215,30 @@ public:
     
     list recv_channel_list(chantype channeltype = cUnknown)
     {
-        daq_channel_t* channels = (daq_channel_t*) calloc(MAX_CHANNELS, sizeof(daq_channel_t));
-        if (!channels) throw NoMemoryError();
         int nchannels_received;
-        int retval = daq_recv_channel_list(this, channels, MAX_CHANNELS, &nchannels_received, 0, channeltype);
+        int retval = daq_recv_channel_list(this, NULL, 0, &nchannels_received, 0, channeltype);
+        
+        if (retval)
+            throw DaqError(retval);
+        
+        daq_channel_t* channels = (daq_channel_t*) calloc(nchannels_received, sizeof(daq_channel_t));
+        
+        if (!channels)
+            throw NoMemoryError();
+        
+        int old_nchannels_received = nchannels_received;
+        retval = daq_recv_channel_list(this, channels, old_nchannels_received, &nchannels_received, 0, channeltype);
+        
         if (retval)
         {
             free(channels);
             throw DaqError(retval);
         }
+        
         list l;
         for (daq_channel_t* channel = channels ; channel < &channels[nchannels_received]; channel++)
             l.append(*channel);
+        
         free(channels);
         return l;
     }

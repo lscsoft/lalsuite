@@ -25,6 +25,8 @@
 EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris)
 {
    
+   LALStatus status;
+   status.statusPtr = NULL;
    EphemerisData *ephemdata = (EphemerisData*)XLALMalloc(sizeof(EphemerisData));
    ephemdata->ephiles.earthEphemeris = earth_ephemeris;
    ephemdata->ephiles.sunEphemeris = sun_ephemeris;
@@ -40,6 +42,8 @@ void free_Ephemeris(EphemerisData *ephemdata)
    
    XLALFree((CHAR*)ephemdata->ephiles.earthEphemeris);
    XLALFree((CHAR*)ephemdata->ephiles.sunEphemeris);
+   XLALFree((PosVelAcc*)ephemdata->ephemE);
+   XLALFree((PosVelAcc*)ephemdata->ephemS);
    XLALFree((EphemerisData*)ephemdata);
    
 }
@@ -56,7 +60,7 @@ void initEphemeris(EphemerisData *ephemdata)
 }
 
 
-INT4Vector * CompBinShifts(REAL4 freq, REAL4Vector *velocities, REAL4 Tcoh, REAL4 dopplerMultiplier)
+INT4Vector * CompBinShifts(REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
    
    INT4Vector *binshifts = XLALCreateINT4Vector(velocities->length);
@@ -69,13 +73,13 @@ INT4Vector * CompBinShifts(REAL4 freq, REAL4Vector *velocities, REAL4 Tcoh, REAL
 }
 
 
-REAL4Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det)
+REAL8Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det)
 {
    
    INT4 ii;
    INT4 numffts = (INT4)floor(2*(Tobs/Tcoh)-1);    //Number of FFTs
    REAL8 fplus, fcross;
-   REAL4Vector *antptrnweights = XLALCreateREAL4Vector((UINT4)numffts);
+   REAL8Vector *antptrnweights = XLALCreateREAL8Vector((UINT4)numffts);
    
    for (ii=0; ii<numffts; ii++) {
       LIGOTimeGPS gpstime = {0,0};
@@ -83,7 +87,7 @@ REAL4Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tco
       gpstime.gpsNanoSeconds = (INT4)floor((t0+(ii+1)*Tcoh*0.5 - floor(t0+(ii+1)*Tcoh*0.5))*1e9);
       REAL8 gmst = XLALGreenwichMeanSiderealTime(&gpstime);
       XLALComputeDetAMResponse(&fplus, &fcross, det.response, ra, dec, 0.0, gmst);
-      antptrnweights->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
+      antptrnweights->data[ii] = fplus*fplus + fcross*fcross;
    }
    
    return antptrnweights;
@@ -92,7 +96,7 @@ REAL4Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tco
 
 
 
-REAL4Vector * CompAntennaVelocity(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+REAL4Vector * CompAntennaVelocity(REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    
    INT4 ii;
@@ -117,7 +121,7 @@ REAL4Vector * CompAntennaVelocity(REAL4 ra, REAL4 dec, REAL8 t0, REAL4 Tcoh, REA
 }
 
 
-REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL4 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    
    INT4 ii;
