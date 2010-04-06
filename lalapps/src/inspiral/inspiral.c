@@ -3655,6 +3655,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
                   long_options[option_index].name, optarg);
           exit( 1 );
+          }
         }
         /* if this option set a flag, do nothing else now */
         if ( long_options[option_index].flag != 0 )
