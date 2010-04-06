@@ -3423,6 +3423,7 @@ fprintf( a, "  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEF
 fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
+fprintf( a, "  --autochisq-length N         set the DOF of the autochisq to N in (1,1000)\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --maximization-interval MSEC set length of interval (in ms) for\n");\
 fprintf( a, "                                 maximization of triggers over the template bank.\n");\
@@ -3637,8 +3638,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     switch ( c )
     {
       case 0:
+
+        /* check for autochisq long options */
+        if ( !strcmp( long_options[option_index].name, "calib-sim") )
+        {
+          autochisqLength = atoi(optarg);
+	  /* FIXME have a sensible upper bound for dof computed from arguments */
+          if (autochisqLength < 1 || autochisqLength > 1000)
+          {
+          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
+                  long_options[option_index].name, optarg);
+          exit( 1 );
+        }
         /* if this option set a flag, do nothing else now */
-        
         if ( long_options[option_index].flag != 0 )
         {
           break;
