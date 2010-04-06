@@ -3585,6 +3585,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-coeff",          required_argument, 0,                '['},
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
+    {"autochisq-length",        required_argument, 0,                 0 },
     {"band-pass-template",      no_argument,       0,                '}'},
     {"taper-template",          required_argument, 0,                '{'},
     {"cdata-length",            required_argument, 0,                '|'},
@@ -3637,6 +3638,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {
       case 0:
         /* if this option set a flag, do nothing else now */
+        
         if ( long_options[option_index].flag != 0 )
         {
           break;
