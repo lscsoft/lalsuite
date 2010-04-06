@@ -47,7 +47,6 @@
 #include <unistd.h>
 #endif
 
-
 int finite(double);
 
 /* LAL-includes */
@@ -290,6 +289,7 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 
+
 CHAR *append_string ( CHAR *str1, const CHAR *append );
 
 
@@ -302,7 +302,7 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 /* ---------- Fstat-atoms related functions ----------*/
 int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, INT4 t0, INT4 t1, REAL8 tauMinDays, REAL8 tauMaxDays );
+REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, UINT4 t0, UINT4 t1, REAL8 tauMinDays, REAL8 tauMaxDays );
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
@@ -652,28 +652,32 @@ int main(int argc,char *argv[])
 	  fprintf (fpFstatAtoms, "%s", GV.logstring );
 
 	  XLALoutputMultiFstatAtoms ( fpFstatAtoms, Fstat.multiFstatAtoms );
-	  XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
+
+
+		if ( uvar.transientBstat )
+        {
+			REAL8 Btransient;
+
+			Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms,
+													uvar.transientMinStartTime,
+													uvar.transientMaxStartTime,
+													uvar.transientMinTauDays,
+													uvar.transientMaxTauDays );
+			if ( xlalErrno != 0 )
+			{
+				XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
+				return -1;
+			}
+
+        }
+
+
+      XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
 	  Fstat.multiFstatAtoms = NULL;
 
 	  fclose (fpFstatAtoms);
 
 	} /* if outputFstatAtoms */
-
-      if ( uvar.transientBstat )
-        {
-          REAL8 Btransient;
-
-          Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms,
-                                                   uvar.transientMinStartTime,
-                                                   uvar.transientMaxStartTime,
-                                                   uvar.transientMinTauDays,
-                                                   uvar.transientMaxTauDays );
-          if ( xlalErrno != 0 ) {
-            XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
-            return -1;
-          }
-
-        }
 
 
     } /* while more Doppler positions to scan */
@@ -927,7 +931,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "The orbital eccentricity");
 
   LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'");
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files"); 
+  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
@@ -1336,7 +1340,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.SSBprec = uvar->SSBprecision;
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
-  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
+  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL );
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
@@ -2122,25 +2126,114 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
  */
 REAL8
 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
-                            INT4 t0,					/**< [in] earliest start time */
-                            INT4 t1,					/**< [in] latest start-time */
+                            UINT4 t0,					/**< [in] earliest start time */
+                            UINT4 t1,					/**< [in] latest start-time */
                             REAL8 tauMinDays,				/**< [in] smallest duration-window tau */
                             REAL8 tauMaxDays				/**< [in] longest duration-window tau */
                             )
 {
   const char *fn = __func__;
+
+
+  REAL8 tau0 = tauMinDays * 3600 * 24; // smallest search duration-window in seconds
+  REAL8 tau1 = tauMaxDays * 3600 * 24; // largest search duration-window in seconds
+
+  // check input argument consistency
+  if ( t1 < t0 )
+    {
+      XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0, t1 );
+      XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+    }
+
+  if ( tau1 < tau0 )
+    {
+      XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau0, tau1 );
+      XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+    }
+
+
+  UINT4 t_i;        // t index (t-summation)
+  REAL8 tau_i;      // tau index (tau-summation)
+  REAL8 logBAYES = 0;  // return value of function
+
+  // Define and initiate F-Stat variables
+  REAL8 A = 0;
   REAL8 B = 0;
+  REAL8 C = 0;
+  REAL8 D = 0;
+  REAL8 Ds = 0;
+  COMPLEX8 FA = {0,0};
+  COMPLEX8 FB = {0,0};
+  REAL8 F = 0;
 
-  /* check input argument consistency */
-  if ( t0 < 0 ) {
-    XLALPrintError ("%s: invalid input argument '%d' < 0, must be positive.\n", fn, t0 );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
-  }
+  for (tau_i=tau0; tau_i <= tau1; tau_i+=1800) // FIXME use SFT duration
+    {
+
+      for (t_i=t0; t_i<=t1; t_i+=1800)
+        {
+          A = 0;
+          B = 0;
+          C = 0;
+          D = 0;
+          FA.re = 0;
+          FA.im = 0;
+          FB.re = 0;
+          FB.im = 0;
+          for ( UINT4 X=0; X < multiFstatAtoms->length; X++ ) // Loop over detectors
+            {
+              // Per IFO data ("atoms")
+              FstatAtoms *atoms_X = multiFstatAtoms->data[X];
+              UINT4 Natoms = atoms_X->length;
+              LIGOTimeGPS *t = atoms_X->timestamps;
+              REAL8 *a = atoms_X->a_alpha;
+              REAL8 *b = atoms_X->b_alpha;
+              COMPLEX8 *Fa = atoms_X->Fa_alpha;
+              COMPLEX8 *Fb = atoms_X->Fb_alpha;
+
+              UINT4 j = 0;
+              while ( (j < Natoms) && (t[j].gpsSeconds < t_i) )
+                j ++;
 
 
-  /* for -loops */
+              //for (j=t_i; j<t_i+tau_i; j++) t0-tau summation
+              while ( (j < Natoms) && ( t[j].gpsSeconds <= t_i + tau_i) )
+                {
+                  A += SQ(a[j]);
+                  B += SQ(b[j]);
+                  C += (a[j]*b[j]);
+
+                  FA.re += Fa[j].re;
+                  FA.im += Fa[j].im;
+                  FB.re += Fb[j].re;
+                  FB.im += Fb[j].im;
+
+                  j++;
+                }
 
 
-  return B;
+            } // for X < numDet
+          //printf("j=%d\n",j);
+          D = A*B - SQ(C);
+          F += (1.0/D)*( B*(SQ(FA.re)+SQ(FA.im)) +
+                         A*(SQ(FB.re)+SQ(FB.im)) -
+                         2*C*(FA.re*FB.re+FA.im*FB.im) ); /* Compute summed F-Statistic */
+          Ds += D;
+        } // for t0 in t0Range
+    } // for tau in tauRange
+  logBAYES = F - log(Ds);
+  printf("t_i=%d tau_i=%f \n",t_i-1800,(tau_i-1800)/(3600*24));
+  printf("A=%f \n",A);
+  printf("B=%f \n",B);
+  printf("C=%f \n",C);
+  printf("D=%f \n",D);
+  printf("sum(D)=%f \n",Ds);
+  printf("sum(2F)=%f \n",2*F);
+  printf("log(Bayes)=%f \n",logBAYES);
+
+  return logBAYES;
+
+  /*LIGOTimeGPS *gpstime = (LIGOTimeGPS*) bsearch(t0, t, sizeof(t0), sizeof(t), (*)(const void*, const void*)); */
 
 } /* XLALComputeTransientBstat() */
+
+/*****************************************************/
