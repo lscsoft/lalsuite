@@ -325,10 +325,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     UNUSED(fBucket);
     UNUSED(deltaT);
 
-    /* FIXME this should be a command line argument */
-     /*200 points of autocorrelation function stored */
-    bankVetoData->acorrMatSize = 200;
-
     /* Allocate memory for workspace and the autocorrelation if necessary */
     if ( !bankVetoData->acorr )
       bankVetoData->acorr = XLALCreateREAL4Vector((templateLength-1) * 2);
