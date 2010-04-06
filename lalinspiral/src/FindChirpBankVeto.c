@@ -574,7 +574,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	chisq.re = colSNR_real - crossCorr.re * (rowSNR_mag);
 	chisq.im = colSNR_imag - crossCorr.im * (rowSNR_mag);
 	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
-	(*dof)++;
+	(*dof)+=2;
 
     }
 
