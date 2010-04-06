@@ -3646,7 +3646,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 0:
 
         /* check for autochisq long options */
-        if ( !strcmp( long_options[option_index].name, "calib-sim") )
+        if ( !strcmp( long_options[option_index].name, "autochisq-length") )
         {
           autochisqLength = atoi(optarg);
 	  /* FIXME have a sensible upper bound for dof computed from arguments */
@@ -3656,6 +3656,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, optarg);
           exit( 1 );
           }
+          break;
         }
         /* if this option set a flag, do nothing else now */
         if ( long_options[option_index].flag != 0 )
