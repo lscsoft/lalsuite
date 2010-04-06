@@ -275,6 +275,7 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
+UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
 UINT4 ccFlag = 0;
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -2105,6 +2106,11 @@ int main( int argc, char *argv[] )
             &tdFollowUpEvents, ifo, mmFast, analyseThisTmplt );
       }
     }
+
+    /* set the autocorrelation chisq length */
+
+    bankVetoData.acorrMatSize = autochisqLength;
+
 
     /*
      *
