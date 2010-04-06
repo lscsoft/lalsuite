@@ -36,12 +36,7 @@ lalapps_BankEfficiency_SOURCES		= BankEfficiency.c BankEfficiency.h
 endif
 endif
 
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c TestRandomBank.c BankEfficiency.c BankEfficiency.h \
@@ -50,3 +45,5 @@ EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c TestRandomBank.c Bank
 CLEANFILES = 	lalapps_BankEfficiency  \
 		lalapps_InspiralOverlap
 
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

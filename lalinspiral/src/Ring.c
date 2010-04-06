@@ -209,6 +209,13 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
 }
 
 /* <lalVerbatim file="RingCP"> */
+REAL4 XLALBlackHoleRingHRSS( REAL4 f, REAL4 Q, REAL4 amplitude, REAL4 plus, REAL4 cross )
+  /* </lalVerbatim> */
+{
+  return amplitude * sqrt( Q * ( (0.5 + Q*Q ) * plus*plus + Q * plus*cross + Q*Q * cross*cross ) / ( 1.0 + 4.0 * Q*Q) / LAL_PI / f );
+}
+
+/* <lalVerbatim file="RingCP"> */
 REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
 /* </lalVerbatim> */
 {

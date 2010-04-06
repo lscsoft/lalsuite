@@ -32,18 +32,18 @@ void runIHS(ihsMaximaStruct *out, ffdataStruct *in, INT4 columns);
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
-void incHarmSum(ihsVals *out, REAL4Vector *in);
+void incHarmSum(ihsVals *out, REAL8Vector *in);
 
 ihsfarStruct * new_ihsfarStruct(INT4 columns);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
-void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL4 threshold);
+void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 threshold);
 
-void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, REAL4Vector *aveFFnoise, inputParamsStruct *inputParams, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4 ra, REAL4 dec);
+void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, REAL8Vector *aveFFnoise, inputParamsStruct *inputParams, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4 ra, REAL4 dec);
 
-REAL4Vector * ihsSums(REAL4Vector *ihss, INT4 cols);
+REAL8Vector * ihsSums(REAL8Vector *ihss, INT4 cols);
 
-REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect, REAL4Vector *sigma);
-REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *expect, REAL4Vector *sigma);
+REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma);
+REAL8 ihsLoc(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma);
 
 
 #endif

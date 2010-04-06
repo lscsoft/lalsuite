@@ -64,7 +64,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Random.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/lalGitID.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -77,10 +76,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/TimeSeries.h>
 #include <lal/GenerateBurst.h>
 
-
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -1121,16 +1119,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   /* create the process and process params tables */
   procTable.processTable = XLALCreateProcessTableRow();
   XLALGPSTimeNow(&(procTable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-	exit(1);
-    }
-  else
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
-	exit(1);
-    }
+  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+    exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);

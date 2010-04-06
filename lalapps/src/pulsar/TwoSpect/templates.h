@@ -31,16 +31,16 @@
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
 //void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise);
-void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise);
+void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL8Vector *ffplanenoise);
 
 templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);
 //void makeTemplateGaussians(ffdataStruct *out, candidate *in);
 //void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan);
 void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params);
-void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan);
+void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL8FFTPlan *plan);
 
-REAL4 sincxoverxsqminusone(REAL4 overage);
+REAL8 sincxoverxsqminusone(REAL8 overage);
 
 #endif
 
