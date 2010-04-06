@@ -71,7 +71,9 @@ XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
 InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 
-/* A convenience function to compute the time between two frequencies */
+/* FIXME this should be used when time offsets are applied to the bank veto */
+/* A convenience function to compute the time between two frequencies       */
+#if 0
 static double
 chirp_time_between_f1_and_f2 (double m1,
 			      double m2,
@@ -81,6 +83,7 @@ chirp_time_between_f1_and_f2 (double m1,
 {
     return XLALFindChirpChirpTime(m1,m2,fLower,order) - XLALFindChirpChirpTime(m1,m2,fUpper,order);
 }
+#endif
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
@@ -318,6 +321,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
     /* PSD bucket frequency used for chirp time offset */
     double fBucket = 150.0;
+    /* FIXME this should be uncommented when time shifts are added to the bank veto */
+    UNUSED(fBucket);
     UNUSED(deltaT);
 
     /* FIXME this should be a command line argument */
@@ -335,18 +340,19 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
       bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
 
     /* Decide how to time shift each template if necessary */
-    if ( !bankVetoData->timeshift)
+    if (!bankVetoData->timeshift)
     {
 	bankVetoData->timeshift = XLALCreateREAL4Vector(bankVetoData->length);
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
-						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
-						   fBucket,
-						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal,
-						   7) );
-
+	/* FIXME TIME SHIFTS ARE TURNED OFF, BUT THIS CODE IS IN PLACE IF SOMEONE WANTS TO INVESTIGATE IT						*/
+	/*    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,	*/
+	/*					   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,						*/
+	/*					   fBucket,												*/
+	/*					   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal,						*/
+	/*					   7) );												*/
+	bankVetoData->timeshift->data[row] = 0.0;
 	}
     }
 
