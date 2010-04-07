@@ -375,7 +375,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		/* Begin computation of the cross-correlation. */
 		for ( sample = startIndex; sample < templateLength; sample++ )
 		{
-		    //if ( (sample > sampleMaxTmpltRow) || (sample > sampleMaxTmpltCol) ) break;
+		    if ( (sample > sampleMaxTmpltRow) || (sample > sampleMaxTmpltCol) ) break;
 
 		    sqResp = ( bankVetoData->resp->data[sample].re *
 			       bankVetoData->resp->data[sample].re +
@@ -391,11 +391,12 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 			tmpltColReal = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
 			tmpltColImag = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-
+			
 			/*
 			 * Time shift tmpltRow forward by timeshift[row] and
 			 * tmpltCol forward by timeshift[col].
 			 */
+
 			phaseOffsetRow = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[row]);
 			phaseOffsetCol = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[col]);
 
