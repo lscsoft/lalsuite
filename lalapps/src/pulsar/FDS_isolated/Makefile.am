@@ -1,20 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 
-## make sure lalapps.la is built
-lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
-$(lalappsla):
-	cd $(top_builddir)/src/lalapps && $(MAKE)
-LDADD = $(lalappsla)
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS = OptimizedCFS ResamplingFstat
-
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
@@ -26,7 +17,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 
 check_PROGRAMS = testFstat_v3
 
-EXTRA_PROGRAMS = lalapps_CFSv3 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
+EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
+		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
 
 # CFSv2 doesn't compile with Condor
 if CONDOR_ENABLED
@@ -84,6 +76,8 @@ lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
+# force linking in C++ mode for E@H
+eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
@@ -114,3 +108,7 @@ CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

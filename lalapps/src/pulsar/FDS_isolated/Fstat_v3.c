@@ -39,10 +39,6 @@
 #include <lal/ComputeFstat.h>
 #include "Fstat_v3.h"
 
-
-#include <lal/lalGitID.h>
-/* #include <lalappsGitID.h> */
-
 #include <lalapps.h>
 
 /* local includes */

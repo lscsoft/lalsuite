@@ -1,6 +1,6 @@
 AC_INIT([lalapps],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([src/config.h.in])
+AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([\
@@ -25,7 +25,6 @@ AC_CONFIG_FILES([\
   src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
@@ -37,7 +36,6 @@ AC_CONFIG_FILES([\
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
-  src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \

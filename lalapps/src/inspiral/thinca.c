@@ -46,9 +46,8 @@
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
 #include <lalapps.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <processtable.h>
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -469,16 +468,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -997,10 +988,8 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "The Hierarchical INspiral Coincidence Analysis\n" 
-            "Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+            "Steve Fairhurst\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 

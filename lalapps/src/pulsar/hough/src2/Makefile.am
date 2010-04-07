@@ -2,25 +2,14 @@
 # $Id$
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -I$(top_srcdir)/misc
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
 #
 ## Compiling with OpenCL on Mac
 # LDFLAGS = -framework OpenCL
-
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
-## make sure lalapps.la is built
-lalappsla = $(top_builddir)/src/lalapps/liblalapps.la
-$(lalappsla):
-	cd $(top_builddir)/src/lalapps && $(MAKE)
-LDADD = $(lalappsla)
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc
@@ -68,7 +57,7 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
 HSLocalSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c
-EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp
+EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp EinsteinAtHome/win_lib.cpp
 
 ## optimized HierarchicalSearch targets
 
@@ -99,8 +88,18 @@ eah_HierarchicalSearch_LDFLAGS = -L. $(AM_LDFLAGS)
 # items in there should have rules listed below to create them
 # the idea is to increase compatibility of E@H applications by linking these libs statically
 eah_HierarchicalSearch_DEPENDENCIES = $(RELEASE_DEPS)
+eah_HierarchicalSearch_LDADD = $(LDADD) $(RELEASE_LDADD)
 
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 libz.a:
 	cp -f `$(CC) -print-file-name=$@` $@
+
+exchndl.o: EinsteinAtHome/exchndl.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
+

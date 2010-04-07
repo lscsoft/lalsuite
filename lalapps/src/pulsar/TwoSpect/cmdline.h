@@ -43,18 +43,9 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  double A_arg;	/**< @brief Amplitude of fake signal.  */
-  char * A_orig;	/**< @brief Amplitude of fake signal original value given at command line.  */
-  const char *A_help; /**< @brief Amplitude of fake signal help description.  */
-  double f0_arg;	/**< @brief Frequency of fake signal.  */
-  char * f0_orig;	/**< @brief Frequency of fake signal original value given at command line.  */
-  const char *f0_help; /**< @brief Frequency of fake signal help description.  */
-  double P_arg;	/**< @brief Period of binary orbit of fake signal.  */
-  char * P_orig;	/**< @brief Period of binary orbit of fake signal original value given at command line.  */
-  const char *P_help; /**< @brief Period of binary orbit of fake signal help description.  */
-  double df_arg;	/**< @brief Modulation depth of the signal due to the binary orbit.  */
-  char * df_orig;	/**< @brief Modulation depth of the signal due to the binary orbit original value given at command line.  */
-  const char *df_help; /**< @brief Modulation depth of the signal due to the binary orbit help description.  */
+  char * config_arg;	/**< @brief Configuration file in gengetopt format for passing parameters.  */
+  char * config_orig;	/**< @brief Configuration file in gengetopt format for passing parameters original value given at command line.  */
+  const char *config_help; /**< @brief Configuration file in gengetopt format for passing parameters help description.  */
   double Tobs_arg;	/**< @brief Total observation time.  */
   char * Tobs_orig;	/**< @brief Total observation time original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time help description.  */
@@ -64,18 +55,24 @@ struct gengetopt_args_info
   double t0_arg;	/**< @brief Start time of the search in GPS seconds.  */
   char * t0_orig;	/**< @brief Start time of the search in GPS seconds original value given at command line.  */
   const char *t0_help; /**< @brief Start time of the search in GPS seconds help description.  */
-  double fs_arg;	/**< @brief Sampling frequency of time series.  */
-  char * fs_orig;	/**< @brief Sampling frequency of time series original value given at command line.  */
-  const char *fs_help; /**< @brief Sampling frequency of time series help description.  */
   double fmin_arg;	/**< @brief Minimum frequency of band.  */
   char * fmin_orig;	/**< @brief Minimum frequency of band original value given at command line.  */
   const char *fmin_help; /**< @brief Minimum frequency of band help description.  */
   double fspan_arg;	/**< @brief Frequency span of band.  */
   char * fspan_orig;	/**< @brief Frequency span of band original value given at command line.  */
   const char *fspan_help; /**< @brief Frequency span of band help description.  */
-  int cols_arg;	/**< @brief Maximum column width to search.  */
-  char * cols_orig;	/**< @brief Maximum column width to search original value given at command line.  */
-  const char *cols_help; /**< @brief Maximum column width to search help description.  */
+  double Pmin_arg;	/**< @brief Minimum period to be searched (default='7200.0').  */
+  char * Pmin_orig;	/**< @brief Minimum period to be searched original value given at command line.  */
+  const char *Pmin_help; /**< @brief Minimum period to be searched help description.  */
+  double Pmax_arg;	/**< @brief Maximum period to be searched.  */
+  char * Pmax_orig;	/**< @brief Maximum period to be searched original value given at command line.  */
+  const char *Pmax_help; /**< @brief Maximum period to be searched help description.  */
+  double dfmin_arg;	/**< @brief Minimum modulation depth to search.  */
+  char * dfmin_orig;	/**< @brief Minimum modulation depth to search original value given at command line.  */
+  const char *dfmin_help; /**< @brief Minimum modulation depth to search help description.  */
+  double dfmax_arg;	/**< @brief Maximum modulation depth to search.  */
+  char * dfmax_orig;	/**< @brief Maximum modulation depth to search original value given at command line.  */
+  const char *dfmax_help; /**< @brief Maximum modulation depth to search help description.  */
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
@@ -88,6 +85,9 @@ struct gengetopt_args_info
   char * outdirectory_arg;	/**< @brief Output directory.  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
   char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lal/share/lal').  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
@@ -97,27 +97,31 @@ struct gengetopt_args_info
   int templateLength_arg;	/**< @brief Number of pixels to use in the template (default='50').  */
   char * templateLength_orig;	/**< @brief Number of pixels to use in the template original value given at command line.  */
   const char *templateLength_help; /**< @brief Number of pixels to use in the template help description.  */
+  char * skyRegion_arg;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky (default='allsky').  */
+  char * skyRegion_orig;	/**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky original value given at command line.  */
+  const char *skyRegion_help; /**< @brief Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
-  unsigned int A_given ;	/**< @brief Whether A was given.  */
-  unsigned int f0_given ;	/**< @brief Whether f0 was given.  */
-  unsigned int P_given ;	/**< @brief Whether P was given.  */
-  unsigned int df_given ;	/**< @brief Whether df was given.  */
+  unsigned int config_given ;	/**< @brief Whether config was given.  */
   unsigned int Tobs_given ;	/**< @brief Whether Tobs was given.  */
   unsigned int Tcoh_given ;	/**< @brief Whether Tcoh was given.  */
   unsigned int t0_given ;	/**< @brief Whether t0 was given.  */
-  unsigned int fs_given ;	/**< @brief Whether fs was given.  */
   unsigned int fmin_given ;	/**< @brief Whether fmin was given.  */
   unsigned int fspan_given ;	/**< @brief Whether fspan was given.  */
-  unsigned int cols_given ;	/**< @brief Whether cols was given.  */
+  unsigned int Pmin_given ;	/**< @brief Whether Pmin was given.  */
+  unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */
+  unsigned int dfmin_given ;	/**< @brief Whether dfmin was given.  */
+  unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
+  unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
+  unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
 
 } ;
 
@@ -229,6 +233,31 @@ void cmdline_parser_init (struct gengetopt_args_info *args_info);
  * @param args_info the structure to deallocate
  */
 void cmdline_parser_free (struct gengetopt_args_info *args_info);
+
+/**
+ * The config file parser (deprecated version)
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param override whether to override possibly already present options
+ * @param initialize whether to initialize the option structure my_args_info
+ * @param check_required whether to check that all required options were provided
+ * @return 0 if everything went fine, NON 0 if an error took place
+ * @deprecated use cmdline_parser_config_file() instead
+ */
+int cmdline_parser_configfile (const char *filename,
+  struct gengetopt_args_info *args_info,
+  int override, int initialize, int check_required);
+
+/**
+ * The config file parser
+ * @param filename the name of the config file
+ * @param args_info the structure where option information will be stored
+ * @param params additional parameters for the parser
+ * @return 0 if everything went fine, NON 0 if an error took place
+ */
+int cmdline_parser_config_file (const char *filename,
+  struct gengetopt_args_info *args_info,
+  struct cmdline_parser_params *params);
 
 /**
  * The string parser (interprets the passed string as a command line)

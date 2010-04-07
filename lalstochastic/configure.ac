@@ -1,6 +1,6 @@
 AC_INIT([lalstochastic],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \

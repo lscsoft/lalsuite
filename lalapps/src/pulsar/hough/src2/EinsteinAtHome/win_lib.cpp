@@ -21,6 +21,8 @@
 
 static volatile const char *rcsid_win_lib_cpp = "$Id$";
 
+#ifdef _WIN32
+
 /* This needs to be compiled in C++ mode ! */
 
 #include "win_lib.h"
@@ -172,3 +174,38 @@ int eah_rename(const char* old, const char* newf) {
   /* an error while deleting is not fatal */
   return(0);
 }
+
+char *strsep (char **stringp, const char *delim)
+{
+  char *start = *stringp;
+  char *ptr;
+
+  if (start == NULL)
+    return NULL;
+
+  /* Optimize the case of no delimiters.  */
+  if (delim[0] == '\0')
+    {
+      *stringp = NULL;
+      return start;
+    }
+
+  /* Optimize the case of one delimiter.  */
+  if (delim[1] == '\0')
+    ptr = strchr (start, delim[0]);
+  else
+    /* The general case.  */
+    ptr = strpbrk (start, delim);
+  if (ptr == NULL)
+    {
+      *stringp = NULL;
+      return start;
+    }
+
+  *ptr = '\0';
+  *stringp = ptr + 1;
+
+  return start;
+}
+
+#endif /* _WIN32 */

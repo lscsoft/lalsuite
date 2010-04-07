@@ -34,8 +34,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
-#include <FrameL.h>
-  
+#include <lal/LALFrameL.h>
+
 #define TRUE             1
 #define NCHAR           31
 #define NCHARMAX       100
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     printf("Configuration file %s does not exist.\n", configFile);
     exit(-1);
    }
-   
+
    if ((cfp = fopen(configFile, "r")) == NULL)
    {
       printf("Error opening input file %s.\n", configFile);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
                 break;
       case 4 :  i = 0;
                 while (TRUE)
-                { 
+                {
                  fscanf(cfp,"%s", stringTemp);
                  if (strcmp(stringTemp,"input") == 0) break;
                  strcpy(in.outFrameFile,stringTemp);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
      }
      system(command);
     }
-    pclose(ifp1);     
+    pclose(ifp1);
     if (grepCtr == 0)
     {
      printf("Invalid channel name %s\n", in.channel[i]);
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
   armLength   = 0.0;
 
 /*** read all the frames ***/
-  
+
   startTimeFrames = time(NULL);
   tmFrames = gmtime(&startTimeFrames);
   printf("Start reduced data set:  UTC %sReading all frames...\n",\
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
     }
     frame->history->time = history->time;
     strcpy(frame->history->name,history->name);
-  
+
     if (newFrameCtr == 0)
     {
      sprintf(outFile1,"%s-%d-16.gwf", in.outFrameFile, frame->GTimeS);
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
      outFileCtr++;
      newFrameCtr = 0;
     }
-   
+
     printf("%u processed\n", frame->GTimeS);
     fprintf(ofp2,"%u processed\n", frame->GTimeS);
     fflush(ofp2);
@@ -489,7 +489,7 @@ int main(int argc, char *argv[])
    FrFileIEnd(iFile);
 /* if (ENDRDS == TRUE) break; */
   } /* input frame file loop */
-  
+
 /*** close files ***/
 
    if (newFrameCtr > 0 && newFrameCtr < in.framesPerFile)

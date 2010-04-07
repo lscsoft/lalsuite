@@ -126,7 +126,7 @@ LALappsTSAMergeMap(LALStatus  *status,
 		   TSAMap    inputA,
 		   TSAMap    inputB);
 void
-LALappsTSAInitialize(LALStatus     *status,
+LALappsTSAInitialize(
 		     int            argc,
 		     char*          argv[],
 		     TSAparams     *params);

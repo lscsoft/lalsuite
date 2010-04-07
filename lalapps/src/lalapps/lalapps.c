@@ -224,7 +224,7 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALXML
   char lalxml_info[1024];
 #endif
-  char lalapps_info[1024];
+  char lalapps_info[2048];
   char *ret;
   const char delim[] = ":";
   char *tree_status;
