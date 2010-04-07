@@ -177,15 +177,74 @@ static void interpolation(void)
     }
 }
 
+static void uncertain(void)
+{
+
+    // Check that the kernel with calibration error goes to the simple kernel for zero
+    // error
+
+    XLALSkymapPlanType plan;
+    double direction[2];
+    XLALSkymapDirectionPropertiesType properties;
+    double wSw[5] = { 100., 100., 100., 100., 100. };
+    XLALSkymapKernelType kernel;
+    double error[5] = { 0., 0., 0., 0., 0. };
+    XLALSkymapKernelType kernel2;
+    int siteNumbers[] = { LAL_LHO_4K_DETECTOR, LAL_LLO_4K_DETECTOR, LAL_VIRGO_DETECTOR, LAL_GEO_600_DETECTOR, LAL_LHO_2K_DETECTOR };
+    RandomParams* rng;
+    int n;
+
+    rng = XLALCreateRandomParams(0);
+    
+    for (n = 3; n != 4; ++n)
+    {
+    	XLALSkymapPlanConstruct(8192, n, siteNumbers, &plan);
+	
+	direction[0] = LAL_PI * XLALUniformDeviate(rng);
+	direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
+	XLALSkymapDirectionPropertiesConstruct(&plan, direction, &properties);
+	
+	XLALSkymapKernelConstruct(&plan, &properties, wSw, &kernel);
+	XLALSkymapUncertainKernelConstruct(&plan, &properties, wSw, error, &kernel2);
+
+	for (int i = 0; i != n; ++i)
+	{
+	    for (int j = 0; j != n; ++j)
+	    {
+	        // fprintf(stderr, "%e =?= %e    ", kernel.k[i][j], kernel2.k[i][j]);
+	        if (fabs(kernel.k[i][j] - kernel2.k[i][j]) > 1e-10)
+		{
+		    fprintf(stderr, "Loose kernel does not match simple kernel for zero error\n");
+		    exit(1);
+		}
+	    }
+	    // fprintf(stderr, "\n");
+	}
+	// fprintf(stderr, "%e =?= %e\n", kernel.logNormalization, kernel2.logNormalization); 
+	if (fabs(kernel.logNormalization - kernel2.logNormalization) > 1e-10)
+	{
+	    fprintf(stderr, "Loose normalization does not match simple normalization for zero error\n");
+	    exit(1);
+	}
+    }
+}
+
+
 int main(void)
 {
 
     // check the fast analytic bayesian statistic against simpler but
     // slower numerical integration
 
-	numerical();
+    numerical();
+
+    // check the quality of the interpolation
 
     interpolation();
+
+    // check that for zero error the uncertain statistic goes to the exact statistic
+
+    uncertain();
 
     return 0;
 }

@@ -103,6 +103,14 @@ void XLALSkymapKernelConstruct(
     XLALSkymapKernelType* kernel
     );
 
+void XLALSkymapUncertainKernelConstruct(
+    XLALSkymapPlanType* plan,
+    XLALSkymapDirectionPropertiesType* properties,
+    double* wSw,
+    double* error,
+    XLALSkymapKernelType* kernel
+    );
+
 // Compute the Bayesian marginalization integral for the specified system
 
 void XLALSkymapApply(
