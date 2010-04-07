@@ -448,11 +448,19 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 	     * Fill in the cross-correlation matrix with computed values.
 	     * The matrix is hermitian so the imaginary flips sign.
 	     */
+	    /* FIXME, THIS COMMENTED OUT BIT IS "CORRECT"
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrReal;
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) crossCorrImag;
 
 	    bankVetoData->ccMat->data[col*bankVetoData->length + row].re = (REAL4) crossCorrReal;
 	    bankVetoData->ccMat->data[col*bankVetoData->length + row].im = (REAL4) -crossCorrImag;
+            */
+
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrReal;
+	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) 0.0-crossCorrImag;
+
+	    bankVetoData->ccMat->data[col*bankVetoData->length + row].re = (REAL4) crossCorrReal;
+	    bankVetoData->ccMat->data[col*bankVetoData->length + row].im = (REAL4) crossCorrImag;
 
 	    /* Store normalization factors normMat(i) = sqrt(<hi|hi>) (see below) */
 	    if ( row == col )
