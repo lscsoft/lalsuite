@@ -422,7 +422,7 @@ heterodyne.\n");  }
           /* if there is an error during read in then exit */
           if( ferror(fpin) ){
             fprintf(stderr, "Error... problem reading in binary data file!\n");
-            exit(0);
+            exit(1);
           }
   
           /* dynamically allocate memory 100 lines at a time */
@@ -581,7 +581,7 @@ sigma for 2nd time.\n",
         if( ferror(fpout) ){
           fprintf(stderr, "Error... problem writing out data to binary \
 file!\n");
-          exit(0);
+          exit(1);
         }
       }
       else{
@@ -894,12 +894,12 @@ the pulsar parameter file */
   if(inputParams->samplerate==0. || inputParams->resamplerate==0.){
     fprintf(stderr, "Error... sample rate and/or resample rate has not been \
 defined.\n");
-    exit(0);
+    exit(1);
   }
   else if(inputParams->samplerate < inputParams->resamplerate){ 
     /* if sr is less than rsr give error */
     fprintf(stderr, "Error... sample rate is less than the resample rate.\n");
-    exit(0);
+    exit(1);
   }
 
   /* FIXME: This check (fmod) doesn't work if any optimisation flags are set
@@ -912,7 +912,7 @@ defined.\n");
 
   if(inputParams->freqfactor < 0.){
     fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
-    exit(0);
+    exit(1);
   }
 
   /* check that we're not trying to set a binary file input for a coarse
@@ -921,7 +921,7 @@ defined.\n");
     if(inputParams->heterodyneflag == 0){
       fprintf(stderr, "Error... binary input should not be set for coarse \
 heterodyne!\n");
-      exit(0);
+      exit(1);
     }
   }
 }
@@ -1203,7 +1203,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   if(status.statusCode){
     fprintf(stderr, "Error... got error code %d and message:\n\t%s\n", 
     status.statusCode, status.statusDescription);
-    exit(0);
+    exit(1);
   }
 }
 
@@ -1335,7 +1335,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   else{ /* channel name is not recognised */
     fprintf(stderr, "Error... Channel name %s is not recognised as a proper \
 channel.\n", channel);
-    exit(0); /* abort code */
+    exit(1); /* abort code */
   }
 
   FrVectFree(frvect);
@@ -1605,7 +1605,7 @@ INT4 heterodyneflag){
 
   if((fp=fopen(seglistfile, "r"))==NULL){
     fprintf(stderr, "Error... can't open science segment list file.\n");
-    exit(0);
+    exit(1);
   }
 
   /* count number of lines in the file */
@@ -1715,7 +1715,7 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
 
   if( strlen(smalllist) > MAXLISTLENGTH ){
     fprintf(stderr, "Error... small list of frames files is too long.\n");
-    exit(0);
+    exit(1);
   }
 
   return smalllist;
@@ -1762,7 +1762,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n");
       fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
 Assume calibration coefficients are 1 and use the response funtcion.\n",
         calfiles.calibcoefficientfile);
-      exit(0);
+      exit(1);
     }
 
     /* open sensing function file for reading */
@@ -1798,22 +1798,22 @@ Assume calibration coefficients are 1 and use the response funtcion.\n",
         if( i != 0 && i%100 == 0 ){
           if( ( times = XLALRealloc( times, sizeof(REAL8)*(i+100))) == NULL ){
             fprintf(stderr, "Error... times memory allocation failed\n");
-            exit(0);
+            exit(1);
           }
           if( ( alpha = XLALRealloc( alpha, sizeof(REAL8)*(i+100))) == NULL ){
             fprintf(stderr, "Error... alpha memory allocation failed\n");
-            exit(0);
+            exit(1);
           }
           if( ( ggamma = XLALRealloc( ggamma, sizeof(REAL8)*(i+100))) == NULL){
             fprintf(stderr, "Error... gamma memory allocation failed\n");
-            exit(0);
+            exit(1);
           }
         }
 
         if(fscanf(fpcoeff, "%lf%lf%lf", &times[i], &alpha[i], &ggamma[i])!= 3){
          fprintf(stderr, "Error... problem reading in values from calibration \
 coefficient file!\n");
-         exit(0);
+         exit(1);
         }
         i++;
       }
@@ -1826,7 +1826,7 @@ coefficient file!\n");
         datatimes->data[0]){
       fprintf(stderr, "Error... calibration coefficients outside range of \
 data.\n");
-      exit(0);
+      exit(1);
     }
 
     /* calibrate */
@@ -1865,7 +1865,7 @@ data.\n");
           else{
             fprintf(stderr, "Error... data channel is not set. Give either AS_Q\
  or DARM_ERR!\n");
-            exit(0);
+            exit(1);
           }
 
           tempData = series->data->data[j];
@@ -1906,12 +1906,12 @@ void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename,
   /* open calibration file for reading */
   if(calibfilename == NULL){
     fprintf(stderr, "Error... calibration filename has a null pointer\n");
-    exit(0);
+    exit(1);
   }
   else if((fp = fopen(calibfilename, "r"))==NULL){
     fprintf(stderr, "Error... can't open calibration file %s.\n",
 calibfilename);
-    exit(0);
+    exit(1);
   }
 
   /*calibration files can have lines starting with % at the top so ignore them*/
@@ -1929,7 +1929,7 @@ calibfilename);
       if( fscanf(fp, "%lf%lf%lf", &freq, magnitude, phase) != 3 ){
         fprintf(stderr, "Error... problem reading data from calibration \
 file!\n");
-        exit(0);
+        exit(1);
       }
     }
   }while(!feof(fp) && freq < frequency); /* stop when we've read in response for
